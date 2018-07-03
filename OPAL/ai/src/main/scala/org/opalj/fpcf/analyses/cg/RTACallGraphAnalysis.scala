@@ -48,7 +48,7 @@ import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.properties.AllTypes
 import org.opalj.fpcf.properties.Callees
 import org.opalj.fpcf.properties.CalleesImplementation
-import org.opalj.fpcf.properties.Callers
+import org.opalj.fpcf.properties.CallersProperty
 import org.opalj.fpcf.properties.CallersImplementation
 import org.opalj.fpcf.properties.InstantiatedTypes
 import org.opalj.log.Error
@@ -89,12 +89,13 @@ case class State(
 /**
  * An rapid type call graph analysis (RTA). For a given [[Method]] it computes the set of outgoing
  * call edges ([[Callees]]). Furthermore, it updates the types for which allocations are present in
- * the [[SomeProject]] ([[InstantiatedTypes]]) and updates the [[org.opalj.fpcf.properties.Callers]].
+ * the [[SomeProject]] ([[InstantiatedTypes]]) and updates the [[org.opalj.fpcf.properties.CallersProperty]].
+ *
  * @author Florian Kuebler
  */
 class RTACallGraphAnalysis private[analyses] (
         final val project: SomeProject
-) extends FPCFAnalysis {
+) extends CallGraphAnalysis {
 
     type V = DUVar[(Domain with RecordDefUse)#DomainValue]
 
@@ -109,9 +110,17 @@ class RTACallGraphAnalysis private[analyses] (
         Array.fill(declaredMethods.size) { new AtomicBoolean } //TODO this does not work with dms
     }
 
-    def step1(
+    override def registerMethodToProcess(method: DeclaredMethod): Boolean = {
+        processedMethods(declaredMethods.methodID(method)).compareAndSet(false, true)
+    }
+
+    override def processMethod(
         declaredMethod: DeclaredMethod
     ): PropertyComputationResult = {
+
+        // we must only call this method once per method.
+        val methodID = declaredMethods.methodID(declaredMethod)
+        assert(processedMethods(methodID).get())
 
         // we only allow defined methods
         if (!declaredMethod.hasSingleDefinedMethod)
@@ -122,10 +131,6 @@ class RTACallGraphAnalysis private[analyses] (
         // we only allow defined methods with declared type eq. to the class of the method
         if (method.classFile.thisType ne declaredMethod.declaringClassType)
             return NoResult;
-
-        // we must only call this method once per method.
-        val methodID = declaredMethods.methodID(declaredMethod)
-        assert(processedMethods(methodID).get())
 
         if (method.body.isEmpty)
             // happens in particular for native methods
@@ -172,12 +177,12 @@ class RTACallGraphAnalysis private[analyses] (
             results +:= partialResultForInstantiatedTypes(method, newInstantiatedTypes)
 
         if (state.calleesOfM.nonEmpty)
-            results ++:= partialResultForCallers(declaredMethod.asDefinedMethod, state.calleesOfM)
+            results ++:= partialResultsForCallers(declaredMethod.asDefinedMethod, state.calleesOfM)
 
         IncrementalResult(
             Results(results),
             // continue the computation with the newly reachable methods
-            newReachableMethods.map(nextMethod ⇒ (step1 _, declaredMethods(nextMethod)))
+            newReachableMethods.map(nextMethod ⇒ (processMethod _, declaredMethods(nextMethod)))
         )
     }
 
@@ -204,11 +209,11 @@ class RTACallGraphAnalysis private[analyses] (
 
         var results = Seq(resultForCallees(instantiatedTypesEOptP, state))
         if (newCalleesOfM.nonEmpty)
-            results ++:= partialResultForCallers(state.method, state.calleesOfM)
+            results ++:= partialResultsForCallers(state.method, state.calleesOfM)
 
         IncrementalResult(
             Results(results),
-            newReachableMethods.map(nextMethod ⇒ (step1 _, declaredMethods(nextMethod)))
+            newReachableMethods.map(nextMethod ⇒ (processMethod _, declaredMethods(nextMethod)))
         )
     }
 
@@ -393,9 +398,9 @@ class RTACallGraphAnalysis private[analyses] (
                 state.method.definedMethod.classFile.thisType, instantiatedType, name, descr
             )
         } {
-            val tgtID = declaredMethods(tgt)
-            val tgtId = declaredMethods.methodID(tgtID)
-            addNewReachableMethod(tgtID, newReachableMethods)
+            val tgtDM = declaredMethods(tgt)
+            val tgtId = declaredMethods.methodID(tgtDM)
+            addNewReachableMethod(tgtDM, newReachableMethods)
             // in case newCalleesOfM equals state.calleesOfM this is safe
             result = result.updated(pc, result.getOrElse(pc, IntTrieSet.empty) + tgtId)
             state.addCallEdge(pc, tgtId)
@@ -403,16 +408,16 @@ class RTACallGraphAnalysis private[analyses] (
         result
     }
 
-    def partialResultForCallers(
+    def partialResultsForCallers(
         method:        DefinedMethod,
         newCalleesOfM: IntMap[IntTrieSet]
-    ): TraversableOnce[PartialResult[DeclaredMethod, Callers]] = {
+    ): TraversableOnce[PartialResult[DeclaredMethod, CallersProperty]] = {
         for {
             (pc: Int, tgtsOfM: IntTrieSet) ← newCalleesOfM.iterator
             tgtID: Int ← tgtsOfM.iterator
             tgtMethod = declaredMethods(tgtID)
-        } yield PartialResult[DeclaredMethod, Callers](tgtMethod, Callers.key, {
-            case EPS(e, lb: Callers, ub: CallersImplementation) ⇒
+        } yield PartialResult[DeclaredMethod, CallersProperty](tgtMethod, CallersProperty.key, {
+            case EPS(e, lb: CallersProperty, ub: CallersImplementation) ⇒
                 val newCallers = ub.updated(method, pc)
                 if (ub != newCallers)
                     Some(EPS(e, lb, newCallers))
@@ -421,9 +426,9 @@ class RTACallGraphAnalysis private[analyses] (
             case EPK(e, _) ⇒
                 Some(EPS(
                     tgtMethod,
-                    Callers.fallback(tgtMethod, project),
+                    CallersProperty.fallback(tgtMethod, project),
                     new CallersImplementation(
-                        Set(Callers.toLong(tgtID, pc)), declaredMethods
+                        Set(CallersProperty.toLong(tgtID, pc)), declaredMethods
                     )
                 ))
             case _ ⇒ throw new IllegalArgumentException()
@@ -509,5 +514,5 @@ object EagerRTACallGraphAnalysisScheduler extends FPCFEagerAnalysisScheduler {
 
     override def uses: Predef.Set[PropertyKind] = Predef.Set(InstantiatedTypes)
 
-    override def derives: Predef.Set[PropertyKind] = Predef.Set(InstantiatedTypes, Callers, Callees)
+    override def derives: Predef.Set[PropertyKind] = Predef.Set(InstantiatedTypes, CallersProperty, Callees)
 }

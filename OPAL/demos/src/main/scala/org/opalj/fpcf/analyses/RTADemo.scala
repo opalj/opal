@@ -38,7 +38,7 @@ import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ReportableAnalysisResult
 import org.opalj.fpcf.analyses.cg.EagerRTACallGraphAnalysisScheduler
 import org.opalj.fpcf.properties.Callees
-import org.opalj.fpcf.properties.Callers
+import org.opalj.fpcf.properties.CallersProperty
 import org.opalj.fpcf.properties.InstantiatedTypes
 import org.opalj.log.OPALLogger.info
 import org.opalj.tac.SimpleTACAIKey
@@ -71,7 +71,7 @@ object RTADemo extends DefaultOneStepAnalysis {
 
         println(ps(project, InstantiatedTypes.key).ub)
         for (m ← project.allMethods) {
-            ps(m, Callers.key)
+            ps(m, CallersProperty.key)
             /*if (callers.isFinal)
                 println(callers)*/
             ps(m, Callees.key)
