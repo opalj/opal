@@ -38,22 +38,76 @@ import org.opalj.bytecode.RTJar
 import org.opalj.fpcf.PropertyStoreKey.ConfigKeyPrefix
 import org.opalj.fpcf.analyses.EagerL1ThrownExceptionsAnalysis
 import org.opalj.fpcf.analyses.EagerVirtualMethodThrownExceptionsAnalysis
+import org.opalj.fpcf.analyses.purity.EagerL2PurityAnalysis
+import org.opalj.fpcf.properties.ClassImmutability
+import org.opalj.fpcf.properties.FieldLocality
+import org.opalj.fpcf.properties.FieldMutability
+import org.opalj.fpcf.properties.ReturnValueFreshness
 import org.opalj.fpcf.properties.ThrownExceptions
 import org.opalj.fpcf.properties.ThrownExceptionsByOverridingMethods
+import org.opalj.fpcf.properties.TypeImmutability
+import org.opalj.fpcf.properties.VirtualMethodPurity
+import org.opalj.fpcf.properties.VirtualMethodReturnValueFreshness
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
 import org.opalj.sbt.perf.spec.PerfSpec
+import org.opalj.support.info.Purity.supportingAnalyses
 
-class ReactiveAsyncPropertyStoreOverheadPerf extends PropertyStoreOverheadPerf {
+class L1TE_RAPropertyStoreOverheadPerf extends PropertyStoreOverheadPerf with L1ThrownExceptionsAnalysisOverhead {
     override def getPropertyStore: String = "org.opalj.fpcf.par.ReactiveAsyncPropertyStore"
 }
 
-class EPKPropertyStoreOverheadPerf extends PropertyStoreOverheadPerf {
+class L1TE_EPKPropertyStoreOverheadPerf extends PropertyStoreOverheadPerf with L1ThrownExceptionsAnalysisOverhead {
     override def getPropertyStore: String = "org.opalj.fpcf.seq.EPKSequentialPropertyStore"
 }
 
-class PKEPropertyStoreOverheadPerf extends PropertyStoreOverheadPerf {
+class L1TE_PKEPropertyStoreOverheadPerf extends PropertyStoreOverheadPerf with L1ThrownExceptionsAnalysisOverhead {
     override def getPropertyStore: String = "org.opalj.fpcf.seq.PKESequentialPropertyStore"
+}
+
+class L2P_RAPropertyStoreOverheadPerf extends PropertyStoreOverheadPerf with L2PurityAnalysisOverhead {
+    override def getPropertyStore: String = "org.opalj.fpcf.par.ReactiveAsyncPropertyStore"
+}
+
+class L2P_EPKPropertyStoreOverheadPerf extends PropertyStoreOverheadPerf with L2PurityAnalysisOverhead {
+    override def getPropertyStore: String = "org.opalj.fpcf.seq.EPKSequentialPropertyStore"
+}
+
+class L2P_PKEPropertyStoreOverheadPerf extends PropertyStoreOverheadPerf with L2PurityAnalysisOverhead {
+    override def getPropertyStore: String = "org.opalj.fpcf.seq.PKESequentialPropertyStore"
+}
+
+trait L1ThrownExceptionsAnalysisOverhead extends PropertyStoreOverheadPerf {
+    override def analysisName: String = "L1ThrownExceptionsAnalysis"
+    override def startAnalysis(): Unit = {
+        ps.setupPhase(
+            Set(ThrownExceptions.key, ThrownExceptionsByOverridingMethods.key)
+        )
+
+        EagerL1ThrownExceptionsAnalysis.start(project, ps)
+        EagerVirtualMethodThrownExceptionsAnalysis.start(project, ps)
+    }
+}
+
+trait L2PurityAnalysisOverhead extends PropertyStoreOverheadPerf {
+    override def analysisName: String = "L2PurityAnalysis"
+    override def startAnalysis(): Unit = {
+        ps.setupPhase(
+            Set(
+                org.opalj.fpcf.properties.Purity.key,
+                FieldMutability.key,
+                ClassImmutability.key,
+                TypeImmutability.key,
+                VirtualMethodPurity.key,
+                FieldLocality.key,
+                ReturnValueFreshness.key,
+                VirtualMethodReturnValueFreshness.key
+            )
+        )
+
+        supportingAnalyses(2).foreach(_.startLazily(project, ps))
+        EagerL2PurityAnalysis.start(project, ps)
+    }
 }
 
 /**
@@ -65,21 +119,19 @@ abstract class PropertyStoreOverheadPerf extends PerfSpec {
     implicit val logContext: LogContext = GlobalLogContext
 
     def getPropertyStore: String
+    def analysisName: String
+    def startAnalysis(): Unit
 
     val baseConfig: Config = ConfigFactory.load()
     val propertyStoreImplementation = ConfigKeyPrefix+"PropertyStoreImplementation"
 
-    println(s"*** Running analysis using $getPropertyStore ***")
+    println(s"*** Running $analysisName using $getPropertyStore ***")
     Console.out.flush()
 
     val project = buildProject(getPropertyStore)
     val ps = project.get(PropertyStoreKey)
-    ps.setupPhase(
-        Set(ThrownExceptions.key, ThrownExceptionsByOverridingMethods.key)
-    )
 
-    EagerL1ThrownExceptionsAnalysis.start(project, ps)
-    EagerVirtualMethodThrownExceptionsAnalysis.start(project, ps)
+    startAnalysis()
     ps.waitOnPhaseCompletion()
 
     measure(s"Size of PropertyStore") {
@@ -94,7 +146,7 @@ abstract class PropertyStoreOverheadPerf extends PerfSpec {
         val entities = ps.entities({_ => true})
         entities
             .flatMap { e =>
-                ps.properties(e).map(_.ub)
+                ps.properties(e).map(_.ub) // Only ub, because the EPS contains the entity as well
             }
             .toList
     }

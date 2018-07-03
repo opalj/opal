@@ -435,7 +435,7 @@ object PropertyStorePerformanceEvaluation {
             .filter(psI ⇒ allSchedulings || psI.configurationDescription == defaultConfigurationDescription)
             .filter(psI ⇒ specificPropertyStore.isEmpty || psI.className.contains(specificPropertyStore.get))
             .map { psI ⇒
-                var nanos: Nanoseconds = Nanoseconds.None
+                var nanosConsidered = Seq.empty[Nanoseconds]
 
                 val localParallelismRuns = if (psI.isParallel)
                     parallelismRuns
@@ -519,9 +519,10 @@ object PropertyStorePerformanceEvaluation {
                         propertyStore
                     }, true) {
                         case (c, s) ⇒
-                            nanos = Nanoseconds(s.map(_.timeSpan).sum / s.size)
+                            nanosConsidered = s
+                            val avg = Nanoseconds(s.map(_.timeSpan).sum / s.size)
                             run += 1
-                            println(f"Run ${run}%2s: ${c.toSeconds} (${nanos.toSeconds} avg) - Times considered: [${s.map(_.toSeconds).mkString(", ")}]")
+                            println(f"Run ${run}%2s: ${c.toSeconds} (${avg.toSeconds} avg) - Times considered: [${s.map(_.toSeconds).mkString(", ")}]")
                     }
 
                     if (exportHistogram) {
@@ -542,8 +543,9 @@ object PropertyStorePerformanceEvaluation {
 
                     println(result)
 
-                    println(s"Running analysis $analysis with $threads threads with PropertyStore ${psI.className} (${psI.configurationDescription})...done. Took average ${nanos.toSeconds.toString}")
-                    threads -> nanos
+                    val avg = Nanoseconds(nanosConsidered.map(_.timeSpan).sum / nanosConsidered.size)
+                    println(s"Running analysis $analysis with $threads threads with PropertyStore ${psI.className} (${psI.configurationDescription})...done. Took average ${avg.toSeconds.toString}")
+                    threads -> nanosConsidered
                 }
 
                 psI -> timings
@@ -552,16 +554,18 @@ object PropertyStorePerformanceEvaluation {
         psResults.foreach { r ⇒
             println(s"Using ${r._1.className} (${r._1.configurationDescription})")
             r._2.foreach { timings ⇒
-                println(f"\t\tThreads: ${timings._1}%-3s ${timings._2.toString}%20s ${timings._2.toSeconds.toString}%20s")
+                val avg = Nanoseconds(timings._2.map(_.timeSpan).sum / timings._2.size)
+                println(f"\t\tThreads: ${timings._1}%-3s ${avg.toString}%20s ${avg.toSeconds.toString}%20s - Times considered: [${timings._2.map(_.toSeconds).mkString(", ")}]")
             }
         }
 
         val p = org.opalj.io.write(
-            "PropertyStore;Config;Threads;avgTimeInNanos;avgTimeInSeconds\n"+
+            "PropertyStore;Config;Threads;avgTimeInNanos;avgTimeInSeconds;TimesConsideredInNanos;TimesConsideredInSeconds\n"+
                 psResults.flatMap { r ⇒
                     println(s"Using ${r._1.className} (${r._1.configurationDescription})")
                     r._2.map { timings ⇒
-                        s"${r._1.className};${r._1.configurationDescription};${timings._1};${timings._2.toString(false)};${timings._2.toSeconds.toString(false)}"
+                        val avg = Nanoseconds(timings._2.map(_.timeSpan).sum / timings._2.size)
+                        s"${r._1.className};${r._1.configurationDescription};${timings._1};${avg.toString(false)};${avg.toSeconds.toString(false)};${timings._2.map(_.toString(false)).mkString(",")};${timings._2.map(_.toSeconds.toString(false)).mkString(",")}"
                     }
                 }.mkString("\n"),
             s"PropertyStoreEvaluationResults_${analysis}_",
