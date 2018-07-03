@@ -1337,14 +1337,11 @@ object Project {
                         interfaceMethod.name, interfaceMethod.descriptor,
                         UIDSet.empty[ObjectType]
                     )(objectTypeToClassFile, classHierarchy, logContext)
-                if (maximallySpecificSuperiniterfaceMethod.size > 1) {
-                    // If there are multiple maximally specific interface methods, actually
-                    // none of them can be invoked
-                    definedMethods = definedMethods.filterNot { m ⇒
-                        interfaceMethod.name == m.name && interfaceMethod.descriptor == m.descriptor
-                    }
-                } else if (maximallySpecificSuperiniterfaceMethod.size == 1) {
-                    processMaximallySpecificSuperinterfaceMethod(maximallySpecificSuperiniterfaceMethod.head)
+                if (maximallySpecificSuperiniterfaceMethod.size == 1) {
+                    // A maximally specific interface method can only be invoked if it is unique!
+                    processMaximallySpecificSuperinterfaceMethod(
+                        maximallySpecificSuperiniterfaceMethod.head
+                    )
                 }
             }
 
