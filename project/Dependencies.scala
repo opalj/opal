@@ -54,8 +54,8 @@ object Dependencies {
         val chocosolver = "4.0.6"
         val fastutil = "8.1.1"
 
-        val reactiveasync = "0.2.0-SNAPSHOT"
-        val sbtPerfSpec = "0.2.0-SNAPSHOT"
+        val reactiveasync = "0.2.0"
+        val sbtPerfSpec = "0.2.0"
     }
 
     object library {

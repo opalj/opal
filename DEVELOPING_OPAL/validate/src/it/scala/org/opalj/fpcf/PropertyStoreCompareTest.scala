@@ -55,7 +55,7 @@ import org.opalj.log.ConsoleOPALLogger
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 import org.opalj.log.StandardLogContext
-import org.opalj.log.{Error => ErrorLogLevel}
+import org.opalj.log.{Error ⇒ ErrorLogLevel}
 import org.opalj.support.info.Purity.supportingAnalyses
 import org.opalj.tac.DefaultTACAIKey
 import org.opalj.util.ScalaMajorVersion
@@ -180,8 +180,8 @@ class PsL1FieldMutabilityAnalysis extends PropertyStoreCompareTester {
 }
 
 /**
-  * @note needs at least 4GB RAM!
-  */
+ * @note needs at least 4GB RAM!
+ */
 class PsL0PurityAnalysis extends PropertyStoreCompareTester {
     val psResults = executeAnalysisForEachPropertyStore() { (fixtureProject, ps) ⇒
         ps.setupPhase(
@@ -206,8 +206,8 @@ class PsL0PurityAnalysis extends PropertyStoreCompareTester {
 }
 
 /**
-  * @note needs at least 8GB RAM!
-  */
+ * @note needs at least 8GB RAM!
+ */
 class PsL1PurityAnalysis extends PropertyStoreCompareTester {
     val psResults = executeAnalysisForEachPropertyStore() { (fixtureProject, ps) ⇒
         ps.setupPhase(
@@ -239,8 +239,8 @@ class PsL1PurityAnalysis extends PropertyStoreCompareTester {
 }
 
 /**
-  * @note needs at least 10GB RAM!
-  */
+ * @note needs at least 10GB RAM!
+ */
 class PsL2PurityAnalysis extends PropertyStoreCompareTester {
     val psResults = executeAnalysisForEachPropertyStore() { (fixtureProject, ps) ⇒
         // Eager TAC
@@ -310,7 +310,7 @@ trait PropertyStoreCompareTester extends FunSpec with Matchers with Inspectors w
                 withClue(s"${ps._1} should be contain all scheduled entities: ") {
                     assert(scheduledEntities.toSet.subsetOf(el0))
                     val diff = scheduledEntities.diff(el0.toSeq)
-                    diff foreach { d =>
+                    diff foreach { d ⇒
                         assert(!scheduledEntities.contains(d))
                     }
                 }
