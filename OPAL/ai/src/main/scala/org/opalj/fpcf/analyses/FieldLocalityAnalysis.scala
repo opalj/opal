@@ -214,8 +214,7 @@ class FieldLocalityAnalysis private[analyses] (
                             if (handleEscape(escape)) {
                                 return Result(field, NoLocalField);
                             }
-                        case None ⇒ throw new RuntimeException("unexpected case")
-                        case _    ⇒
+                        case _ ⇒ // A field from a different class (None if that class is unknown)
                     }
 
                 // Values assigned to the field must be fresh and non-escaping.
@@ -227,8 +226,7 @@ class FieldLocalityAnalysis private[analyses] (
                             if (checkFreshnessAndEscapeOfValue(value, pc, stmts, method)) {
                                 return Result(field, NoLocalField);
                             }
-                        case None ⇒ throw new RuntimeException("unexpected case")
-                        case _    ⇒
+                        case _ ⇒ // A field from a different class (None if that class is unknown)
                     }
 
                 // When super.clone is called, the field must always be overwritten.
