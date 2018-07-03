@@ -103,62 +103,66 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
      * Collects all declared methods.
      */
     override protected def compute(p: SomeProject): DeclaredMethods = {
+
         val objectClassFile = p.classFile(ObjectType.Object)
+
         def findInterfaceMethod(
             cf:         ClassFile,
             name:       String,
             descriptor: MethodDescriptor
         ): Option[(MethodContext, DeclaredMethod)] = {
-            def lookupInObject(): Option[Method] = {
-                objectClassFile flatMap { classFile ⇒
-                    classFile.findMethod(name, descriptor) filter { m ⇒ m.isPublic && !m.isStatic }
-                }
-            }
 
             val classType = cf.thisType
 
-            if (cf.isInterfaceDeclaration) {
-                val methodO = cf.findMethod(name, descriptor) orElse lookupInObject()
-                if (methodO.isDefined) {
-                    val vm = DefinedMethod(classType, methodO.get)
-                    val context = MethodContext(p, classType, methodO.get)
-                    Some((context, vm))
-                } else {
-                    val superinterfaceTypes =
-                        p.classHierarchy.superinterfaceTypes(classType).get
-                    val (_, methods) =
-                        p.findMaximallySpecificSuperinterfaceMethods(
-                            superinterfaceTypes,
-                            name,
-                            descriptor,
-                            UIDSet.empty[ObjectType]
-                        )
-                    if (methods.size > 1 && !methods.head.isAbstract) {
-                        val vm = MultipleDefinedMethods(
-                            classType,
-                            ConstArray(methods.toSeq: _*)
-                        )
-                        val context = new MethodContext(name, descriptor)
-                        Some((context, vm))
-                    } else {
-                        methods.headOption map { method ⇒
-                            val vm = DefinedMethod(classType, method)
-                            val context = MethodContext(p, classType, method)
-                            (context, vm)
+            def findInSupertypes(): Option[Method] = {
+                if (cf.isInterfaceDeclaration) {
+                    objectClassFile flatMap { classFile ⇒
+                        classFile.findMethod(name, descriptor) filter { m ⇒
+                            m.isPublic && !m.isStatic
                         }
                     }
+                } else {
+                    p.resolveClassMethodReference(classType, name, descriptor) match {
+                        case Success(m) ⇒ Some(m)
+                        case _          ⇒ None
+                    }
                 }
-            } else
-                p.resolveMethodReference(
-                    classType,
-                    name,
-                    descriptor,
-                    forceLookupInSuperinterfacesOnFailure = true
-                ) map { method ⇒
-                    val vm = DefinedMethod(classType, method)
-                    val context = MethodContext(p, classType, method)
-                    (context, vm)
+            }
+
+            def findInSuperinterfaces(): Option[(MethodContext, DeclaredMethod)] = {
+                val superinterfaceTypes =
+                    p.classHierarchy.superinterfaceTypes(classType).get
+                val (_, methods) =
+                    p.findMaximallySpecificSuperinterfaceMethods(
+                        superinterfaceTypes,
+                        name,
+                        descriptor,
+                        UIDSet.empty[ObjectType]
+                    )
+                if (methods.size > 1) {
+                    val vm = MultipleDefinedMethods(
+                        classType,
+                        ConstArray(methods.toSeq: _*)
+                    )
+                    val context = new MethodContext(name, descriptor)
+                    Some((context, vm))
+                } else {
+                    methods.headOption map { method ⇒
+                        val vm = DefinedMethod(classType, method)
+                        val context = MethodContext(p, classType, method)
+                        (context, vm)
+                    }
                 }
+            }
+
+            val methodO = cf.findMethod(name, descriptor) orElse findInSupertypes()
+            if (methodO.isDefined) {
+                val vm = DefinedMethod(classType, methodO.get)
+                val context = MethodContext(p, classType, methodO.get)
+                Some((context, vm))
+            } else {
+                findInSuperinterfaces()
+            }
         }
 
         val result: ConcurrentHashMap[ReferenceType, ConcurrentHashMap[MethodContext, DeclaredMethod]] =
