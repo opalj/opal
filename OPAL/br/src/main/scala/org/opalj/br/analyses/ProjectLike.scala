@@ -298,9 +298,9 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
                         name,
                         SignaturePolymorphicMethodDescriptor
                     ) match {
-                            case r @ Success(mdc) if mdc.method.isNativeAndVarargs ⇒ r
-                            case _                                                 ⇒ Empty
-                        }
+                        case r @ Success(mdc) if mdc.method.isNativeAndVarargs ⇒ r
+                        case _                                                 ⇒ Empty
+                    }
                 } else {
                     Empty // here, we don't know if the project is incomplete or inconsistent
                 }
@@ -433,12 +433,11 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
                 classMethod match {
                     case Success(method) ⇒ Set(method)
                     case _ ⇒
-                        classHierarchy.allSuperinterfacetypes(receiverType) flatMap { superT ⇒
-                            val (_, methods) = findMaximallySpecificSuperinterfaceMethods(
-                                superT, name, descriptor, UIDSet.empty[ObjectType]
-                            )
-                            methods
-                        }
+                        val superinterfaces = classHierarchy.allSuperinterfacetypes(receiverType)
+                        val (_, methods) = findMaximallySpecificSuperinterfaceMethods(
+                            superinterfaces, name, descriptor, UIDSet.empty[ObjectType]
+                        )
+                        methods
                 }
 
             case None ⇒ Set.empty
