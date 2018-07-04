@@ -152,14 +152,14 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
                                         val interfaceMethod = interfaceMethods.head
                                         insertDm(
                                             subtypeDms,
-                                            MethodContext(p, classType, interfaceMethod),
-                                            DefinedMethod(classType, interfaceMethod)
+                                            MethodContext(p, subtype, interfaceMethod),
+                                            DefinedMethod(subtype, interfaceMethod)
                                         )
                                     case _ ⇒ insertDm(
                                         subtypeDms,
                                         new MethodContext(m.name, m.descriptor),
                                         MultipleDefinedMethods(
-                                            classType,
+                                            subtype,
                                             ConstArray(interfaceMethods.toSeq: _*)
                                         )
                                     )
