@@ -42,7 +42,6 @@ import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.instructions.NonVirtualMethodInvocationInstruction
 import org.opalj.br.MethodDescriptor.{SignaturePolymorphicMethod ⇒ SignaturePolymorphicMethodDescriptor}
-import org.opalj.br.analyses.DeclaredMethodsKey.MethodContext
 import org.opalj.log.OPALLogger
 import org.opalj.log.LogContext
 
@@ -299,9 +298,9 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
                         name,
                         SignaturePolymorphicMethodDescriptor
                     ) match {
-                        case r @ Success(mdc) if mdc.method.isNativeAndVarargs ⇒ r
-                        case _                                                 ⇒ Empty
-                    }
+                            case r @ Success(mdc) if mdc.method.isNativeAndVarargs ⇒ r
+                            case _                                                 ⇒ Empty
+                        }
                 } else {
                     Empty // here, we don't know if the project is incomplete or inconsistent
                 }

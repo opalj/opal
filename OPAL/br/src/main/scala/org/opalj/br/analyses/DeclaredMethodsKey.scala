@@ -36,7 +36,6 @@ import java.util.function.{Function ⇒ JFunction}
 import org.opalj.br.MethodDescriptor.SignaturePolymorphicMethod
 import org.opalj.br.ObjectType.MethodHandle
 import org.opalj.br.ObjectType.VarHandle
-import org.opalj.collection.immutable.UIDSet
 import org.opalj.collection.immutable.ConstArray
 
 /**
