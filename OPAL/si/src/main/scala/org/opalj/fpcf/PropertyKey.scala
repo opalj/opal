@@ -31,8 +31,10 @@ package org.opalj.fpcf
 import java.util.concurrent.locks.ReentrantReadWriteLock
 
 import scala.collection.mutable.ArrayBuffer
+
 import org.opalj.concurrent.Locking.withReadLock
 import org.opalj.concurrent.Locking.withWriteLock
+import org.opalj.fpcf.PropertyKind.SupportedPropertyKinds
 
 /**
  * A value object that identifies a specific kind of properties. Every entity in
@@ -61,7 +63,7 @@ object PropertyKey {
     private[this] val propertyKeyNames = ArrayBuffer.empty[String]
 
     private[this] val fallbackPropertyComputations = {
-        ArrayBuffer.empty[(PropertyStore, Entity) ⇒ Property]
+        ArrayBuffer.empty[(PropertyStore, FallbackReason, Entity) ⇒ Property]
     }
 
     private[this] val fastTrackPropertyComputations = {
@@ -98,7 +100,7 @@ object PropertyKey {
      */
     def create[E <: Entity, P <: Property](
         name:                         String,
-        fallbackPropertyComputation:  (PropertyStore, E) ⇒ P,
+        fallbackPropertyComputation:  FallbackPropertyComputation[E, P],
         cycleResolutionStrategy:      CycleResolutionStrategy[E, P],
         fastTrackPropertyComputation: (PropertyStore, E) ⇒ Option[P]
     ): PropertyKey[P] = {
@@ -110,13 +112,13 @@ object PropertyKey {
             lastKeyId += 1
             if (lastKeyId >= PropertyKind.SupportedPropertyKinds) {
                 throw new IllegalStateException(
-                    s"maximum number of property keys (${PropertyKind.SupportedPropertyKinds}) "+
+                    s"maximum number of property keys ($SupportedPropertyKinds) "+
                         "exceeded; increase PropertyKind.SupportedPropertyKinds"
                 )
             }
             propertyKeyNames += name
             fallbackPropertyComputations +=
-                fallbackPropertyComputation.asInstanceOf[(PropertyStore, Entity) ⇒ Property]
+                fallbackPropertyComputation.asInstanceOf[(PropertyStore, FallbackReason, Entity) ⇒ Property]
             fastTrackPropertyComputations +=
                 fastTrackPropertyComputation.asInstanceOf[(PropertyStore, Entity) ⇒ Option[Property]]
             cycleResolutionStrategies +=
@@ -134,7 +136,7 @@ object PropertyKey {
     ): PropertyKey[P] = {
         create(
             name,
-            (ps: PropertyStore, e: Entity) ⇒ fallbackProperty,
+            (_: PropertyStore, _: FallbackReason, _: Entity) ⇒ fallbackProperty,
             cycleResolutionStrategy,
             fastTrackPropertyComputation
         )
@@ -157,20 +159,22 @@ object PropertyKey {
      */
     def fallbackProperty[P <: Property](
         ps: PropertyStore,
+        fr: FallbackReason,
         e:  Entity,
         pk: PropertyKey[P]
     ): P = {
-        fallbackPropertyBasedOnPkId(ps, e, pk.id).asInstanceOf[P]
+        fallbackPropertyBasedOnPkId(ps, fr, e, pk.id).asInstanceOf[P]
     }
 
     private[fpcf] def fallbackPropertyBasedOnPkId(
         ps:   PropertyStore,
+        fr:   FallbackReason,
         e:    Entity,
         pkId: Int
     ): Property = {
         withReadLock(keysLock) {
             val fallbackPropertyComputation = fallbackPropertyComputations(pkId)
-            fallbackPropertyComputation(ps, e)
+            fallbackPropertyComputation(ps, fr, e)
         }
     }
 
@@ -211,4 +215,30 @@ object PropertyKey {
      */
     private[fpcf] def maxId = withReadLock(keysLock) { lastKeyId }
 
+}
+
+/**
+ * Specifies the reason why a fallback is used.
+ */
+sealed trait FallbackReason {
+    def propertyIsNotComputedByAnyAnalysis: Boolean
+    def propertyIsNotDerivedByPreviouslyExecutedAnalysis: Boolean
+}
+/**
+ * The fallback is used, because the property was queried, but was not explicitly computed in the
+ * past, is computed now or will be computed in the future.
+ */
+case object PropertyIsNotComputedByAnyAnalysis extends FallbackReason {
+    def propertyIsNotComputedByAnyAnalysis: Boolean = true
+    def propertyIsNotDerivedByPreviouslyExecutedAnalysis: Boolean = false
+}
+
+/**
+ * The fallback is used, because the property was queried/is required, but the property was
+ * not computed for the specific entity. This often happens for properties associated with
+ * dead code/code that is no used by the current project.
+ */
+case object PropertyIsNotDerivedByPreviouslyExecutedAnalysis extends FallbackReason {
+    def propertyIsNotComputedByAnyAnalysis: Boolean = false
+    def propertyIsNotDerivedByPreviouslyExecutedAnalysis: Boolean = true
 }
