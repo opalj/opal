@@ -68,6 +68,11 @@ class LoadedClassesState(
     }
 }
 
+/**
+ * Computes the set of classes that are being loaded by the VM during the execution of the
+ * `project`.
+ * @author Florian Kuebler
+ */
 class LoadedClassesAnalysis(
         val project:                         SomeProject,
         private[this] val callGraphAnalysis: CallGraphAnalysis
@@ -76,41 +81,82 @@ class LoadedClassesAnalysis(
     private val declaredMethods = project.get(DeclaredMethodsKey)
     private val propertyStore = project.get(PropertyStoreKey)
 
+    /**
+     * Each time a method gets reachable in the computation of the call graph
+     * (callers are added/it is an entry point [[CallersProperty]]) the declaring class gets loaded
+     * (if not already done) by the VM. Furthermore, access to static fields yields the VM to load
+     * a class. So for a new reachable method, we further check for such operations.
+     * For newly loaded classes, the analysis triggers the computation of the call graph properties
+     * ([[org.opalj.fpcf.properties.Callees]], [[org.opalj.fpcf.properties.CallersProperty]]) for
+     * the static initializer.
+     *
+     */
     def doAnalyze(project: SomeProject): PropertyComputationResult = {
-        var reachableMethods = List.empty[DeclaredMethod]
+        // todo use a better data structure here
+        var newReachableMethods = List.empty[DeclaredMethod]
         val state = new LoadedClassesState(UIDSet.empty, Set.empty)
 
         // todo: here we should depend on all updates
         for (m ← project.allMethods) {
             val dm = declaredMethods(m)
-            reachableMethods ++= handleCaller(state, propertyStore(dm, CallersProperty.key))
+            // check if the method is reachable and handle it correspondingly
+            newReachableMethods ++= handleCaller(state, propertyStore(dm, CallersProperty.key))
         }
 
-        returnResult(reachableMethods, state)
+        // if there are open dependencies left, return an intermediate result
+        // force call graph computation for new reachable methods
+        returnResult(newReachableMethods, state)
     }
 
+    /**
+     * If the method in `callersOfMethod` has no callers ([[NoCallers]]), it is not reachable, and
+     * its declaring class will not be loaded (at least not via this call).
+     *
+     * If it is not yet known, we register a dependency to it.
+     *
+     * In case there are definitively some callers, we remove the potential existing dependency
+     * and handle the method being newly reachable (i.e. analyse the field accesses of the method
+     * and update its declaring class type as reachable)
+     *
+     * @return the static initializers, that are definitively not yet processed by the call graph
+     *         analysis and became reachable here.
+     */
     def handleCaller(
-        state: LoadedClassesState, eOptP: EOptionP[DeclaredMethod, CallersProperty]
-    ): List[DeclaredMethod] = {
+        state: LoadedClassesState, callersOfMethod: EOptionP[DeclaredMethod, CallersProperty]
+    ): Traversable[DeclaredMethod] = {
         var reachableMethods = List.empty[DeclaredMethod]
-        eOptP match {
+        callersOfMethod match {
             case FinalEP(_, NoCallers) ⇒
                 // the method was not called at all
-                state.removeDependee(eOptP.toEPK)
+                state.removeDependee(callersOfMethod.toEPK)
             case _: EPK[DeclaredMethod, CallersProperty] ⇒
-                state.addDependee(eOptP)
+                // there is no result for this method available yet.
+                // here we assume that the dependency was not yet registered or a set is used
+                // as underlying data structure
+                state.addDependee(callersOfMethod)
             case eps @ EPS(_, _, NoCallers) ⇒
+                // the method may have no callers, or may be reachable.
+                // we do not know, so keep the dependency alive (up to date)
                 state.updateDependee(eps)
             case eps @ EPS(dm: DeclaredMethod, _, _) ⇒
+                // the method has callers. we have to analyze it and the dependency can be removed
                 state.removeDependee(eps.toEPK)
-
-                // the method has callers. we have to analyze it
                 val newReachableMethods = handleNewReachableMethod(dm, state)
                 reachableMethods ++= newReachableMethods
         }
         reachableMethods
     }
 
+    /**
+     * For a reachable method, its declaring class will be loaded by the VM (if not done already).
+     * In order to ensure this, the `state` will be updated.
+     *
+     * Furthermore, the method may access static fields, which again may lead to class loading.
+     *
+     * @return the static initializers, that became reachable and were not yet processed by the
+     *         call graph analysis.
+     *
+     */
     def handleNewReachableMethod(
         dm: DeclaredMethod, state: LoadedClassesState
     ): List[DeclaredMethod] = {
@@ -129,10 +175,10 @@ class LoadedClassesAnalysis(
 
         for (stmt ← tacaiProvider(method).stmts) {
             stmt match {
-                case PutStatic(_, dct, _, _, _) ⇒
+                case PutStatic(_, dct, _, _, _) if !state.loadedClasses.contains(dct) ⇒
                     handleType(dct).foreach(newReachableMethods +:= _)
                     state.addLoadedType(dct)
-                case Assignment(_, _, GetField(_, dct, _, _, _)) ⇒
+                case Assignment(_, _, GetField(_, dct, _, _, _)) if !state.loadedClasses.contains(dct) ⇒
                     handleType(dct).foreach(newReachableMethods +:= _)
                     state.addLoadedType(dct)
                 case _ ⇒
@@ -142,15 +188,29 @@ class LoadedClassesAnalysis(
         newReachableMethods
     }
 
+    /**
+     * Checks, whether the static initializer of the given type exisits and were not already
+     * processed by the `callGraphAlgorithm`.
+     * In this case it registers it for being processed and returns it as option.
+     * Otherwise it returns None.
+     */
     def handleType(declaringClassType: ObjectType): Option[DefinedMethod] = {
         project.classFile(declaringClassType).flatMap { cf ⇒
             cf.staticInitializer.flatMap { clInit ⇒
                 val clInitDM = declaredMethods(clInit)
+                // only if registerMethodToProcess returns true, we have Some(<clinit>)
+                // i.e. the call graph analysis has not already processed this method
+                // (after a successful registration, a second call will return false)
                 Some(clInitDM).filter(callGraphAnalysis.registerMethodToProcess)
             }
         }
     }
 
+    /**
+     * Returns an [[IncrementalResult]], which let the newly reachable methods being analyzed
+     * by the call graph analysis. This result contains the result for the loaded classes
+     * (intermediate if there are open dependencies)
+     */
     def returnResult(
         reachableMethods: Traversable[DeclaredMethod], state: LoadedClassesState
     ): PropertyComputationResult = {
@@ -170,6 +230,9 @@ class LoadedClassesAnalysis(
         )
     }
 
+    /**
+     * Just handles the update according to the `handleCaller` method and `returnResult`
+     */
     def continuation(state: LoadedClassesState)(eps: SomeEPS): PropertyComputationResult = {
         val reachableMethods =
             handleCaller(state, eps.asInstanceOf[EPS[DeclaredMethod, CallersProperty]])

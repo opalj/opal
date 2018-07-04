@@ -39,11 +39,13 @@ sealed trait LoadedClassesMetaInformation extends PropertyMetaInformation {
 }
 
 /**
+ * Represent the set of types (classes) that were loaded by the VM during execution of the
+ * respective [[org.opalj.br.analyses.Project]] (which is the entity for this property).
  *
  * @author Florian Kuebler
  */
 final class LoadedClasses(val classes: UIDSet[ObjectType])
-    extends Property with OrderedProperty with LoadedClassesMetaInformation {
+        extends Property with OrderedProperty with LoadedClassesMetaInformation {
 
     override def checkIsEqualOrBetterThan(e: Entity, other: LoadedClasses): Unit = {
         if (!classes.subsetOf(other.classes)) {
@@ -59,7 +61,7 @@ object LoadedClasses extends LoadedClassesMetaInformation {
         PropertyKey.create(
             "LoadedClasses",
             (ps: PropertyStore, _: FallbackReason, p: SomeProject) ⇒ {
-                ???
+                ??? // todo again it would be all types. maype we should make this available.
             },
             (_: PropertyStore, eps: EPS[SomeProject, LoadedClasses]) ⇒ eps.ub,
             (_: PropertyStore, _: SomeProject) ⇒ None
