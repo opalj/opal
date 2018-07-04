@@ -146,7 +146,7 @@ class FPCFAnalysesIntegrationTest extends FunSpec {
         !ep.e.toString.contains("Lambda$") &&
             // fallback properties may be set for different entities on different executions
             // because they are set lazily even for eager analyses
-            ep.ub != PropertyKey.fallbackProperty(ps, ep.e, pk) &&
+            ep.ub != PropertyKey.fallbackProperty(ps, PropertyIsNotComputedByAnyAnalysis, ep.e, pk) &&
             // Not analyzing the JDK, there are VirtualDeclaredMethods with Purity data
             // preconfigured that we don't want to record as they contain no additional information
             (ep.pk != Purity.key || ep.e.asInstanceOf[DeclaredMethod].hasSingleDefinedMethod)
