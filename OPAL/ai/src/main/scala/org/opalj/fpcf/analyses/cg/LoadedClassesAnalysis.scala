@@ -69,14 +69,14 @@ class LoadedClassesState(
 }
 
 class LoadedClassesAnalysis(
-        private[this] val project:           SomeProject,
+        val project:                         SomeProject,
         private[this] val callGraphAnalysis: CallGraphAnalysis
-) {
+) extends FPCFAnalysis {
     private val tacaiProvider = project.get(SimpleTACAIKey)
     private val declaredMethods = project.get(DeclaredMethodsKey)
     private val propertyStore = project.get(PropertyStoreKey)
 
-    def doAnalyze(): PropertyComputationResult = {
+    def doAnalyze(project: SomeProject): PropertyComputationResult = {
         var reachableMethods = List.empty[DeclaredMethod]
         val state = new LoadedClassesState(UIDSet.empty, Set.empty)
 
@@ -176,4 +176,17 @@ class LoadedClassesAnalysis(
 
         returnResult(reachableMethods, state)
     }
+}
+
+object EagerLoadedClassesAnalysis extends FPCFEagerAnalysisScheduler {
+
+    override def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
+        val analysis = new LoadedClassesAnalysis(project, null)
+        propertyStore.scheduleEagerComputationsForEntities(List(project))(analysis.doAnalyze)
+        analysis
+    }
+
+    override def uses: Predef.Set[PropertyKind] = Predef.Set(CallersProperty)
+
+    override def derives: Predef.Set[PropertyKind] = Predef.Set(LoadedClasses)
 }
