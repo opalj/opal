@@ -107,9 +107,15 @@ object Callees extends CalleesPropertyMetaInformation {
     final val key: PropertyKey[Callees] = {
         PropertyKey.create(
             "Callees",
-            (ps: PropertyStore, m: DeclaredMethod) ⇒ {
+            (ps: PropertyStore, r: FallbackReason, m: DeclaredMethod) ⇒ {
                 val p = ps.context[SomeProject]
-                Callees.fallback(m, p, p.get(DeclaredMethodsKey))
+                val declaredMethods = p.get(DeclaredMethodsKey)
+                r match {
+                    case PropertyIsNotComputedByAnyAnalysis ⇒
+                        Callees.fallback(m, p, declaredMethods)
+                    case PropertyIsNotDerivedByPreviouslyExecutedAnalysis ⇒
+                        new CalleesImplementation(IntMap.empty, declaredMethods)
+                }
             },
             (_: PropertyStore, eps: EPS[DeclaredMethod, Callees]) ⇒ eps.ub,
             (_: PropertyStore, _: DeclaredMethod) ⇒ None

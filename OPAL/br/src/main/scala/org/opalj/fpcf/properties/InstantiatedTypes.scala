@@ -91,7 +91,7 @@ object InstantiatedTypes extends InstantiatedTypesPropertyMetaInformation {
     final val key: PropertyKey[InstantiatedTypes] = {
         PropertyKey.create[ProjectLike, InstantiatedTypes](
             "InstantiatedTypes",
-            (_: PropertyStore, _: ProjectLike) ⇒ {
+            (_: PropertyStore, _: FallbackReason, _: ProjectLike) ⇒ {
                 AllTypes
             },
             (_, eps: EPS[ProjectLike, InstantiatedTypes]) ⇒ eps.ub,

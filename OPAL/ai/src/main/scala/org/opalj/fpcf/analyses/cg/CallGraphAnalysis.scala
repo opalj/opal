@@ -33,7 +33,7 @@ package cg
 
 import org.opalj.br.DeclaredMethod
 
-trait CallGraphAnalysis extends FPCFAnalysis{
-    def processMethod(method: DeclaredMethod): PropertyComputationResult
+trait CallGraphAnalysis extends FPCFAnalysis {
+    def processMethod(isEntryPoint: Boolean)(method: DeclaredMethod): PropertyComputationResult
     def registerMethodToProcess(method: DeclaredMethod): Boolean
 }

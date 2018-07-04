@@ -172,7 +172,12 @@ object CallersProperty extends CallersPropertyMetaInformation {
     final val key: PropertyKey[CallersProperty] = {
         PropertyKey.create(
             "Callers",
-            (ps: PropertyStore, m: DeclaredMethod) ⇒ CallersProperty.fallback(m, ps.context[SomeProject]),
+            (ps: PropertyStore, reason: FallbackReason, m: DeclaredMethod) ⇒ reason match {
+                case PropertyIsNotComputedByAnyAnalysis ⇒
+                    CallersProperty.fallback(m, ps.context[SomeProject])
+                case PropertyIsNotDerivedByPreviouslyExecutedAnalysis ⇒
+                    NoCallers
+            },
             (_: PropertyStore, eps: EPS[DeclaredMethod, CallersProperty]) ⇒ eps.ub,
             (_: PropertyStore, _: DeclaredMethod) ⇒ None
         )

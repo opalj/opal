@@ -30,21 +30,21 @@ package org.opalj
 package fpcf
 package properties
 
-import org.opalj.br.Method
+import org.opalj.br.DeclaredMethod
+import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.SomeProject
-import org.opalj.collection.immutable.UIDSet
+import org.opalj.collection.immutable.IntTrieSet
 
 sealed trait VMReachableMethodsMetaInformation extends PropertyMetaInformation {
     final type Self = VMReachableMethods
 }
 
-
 /**
-  *
-  * @author Florian Kuebler
-  */
-final class VMReachableMethods(val reachableMethods: UIDSet[Method])
-        extends Property with OrderedProperty with VMReachableMethodsMetaInformation {
+ *
+ * @author Florian Kuebler
+ */
+final class VMReachableMethods(private val reachableMethods: IntTrieSet)
+    extends Property with OrderedProperty with VMReachableMethodsMetaInformation {
 
     override def checkIsEqualOrBetterThan(e: Entity, other: VMReachableMethods): Unit = {
         if (!reachableMethods.subsetOf(other.reachableMethods)) {
@@ -53,13 +53,17 @@ final class VMReachableMethods(val reachableMethods: UIDSet[Method])
     }
 
     override def key: PropertyKey[VMReachableMethods] = VMReachableMethods.key
+
+    def vmReachableMethods(declaredMethods: DeclaredMethods): Iterator[DeclaredMethod] = {
+        reachableMethods.iterator.map(declaredMethods.apply)
+    }
 }
 
 object VMReachableMethods extends VMReachableMethodsMetaInformation {
     final val key: PropertyKey[VMReachableMethods] = {
         PropertyKey.create(
             "VMReachableMethods",
-            (ps: PropertyStore, p: SomeProject) ⇒ ???,
+            (ps: PropertyStore, _: FallbackReason, p: SomeProject) ⇒ ???,
             (_: PropertyStore, eps: EPS[SomeProject, VMReachableMethods]) ⇒ eps.ub,
             (_: PropertyStore, _: SomeProject) ⇒ None
         )

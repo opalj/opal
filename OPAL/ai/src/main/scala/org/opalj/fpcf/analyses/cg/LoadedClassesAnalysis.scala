@@ -36,10 +36,37 @@ import org.opalj.br.DefinedMethod
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.SomeProject
+import org.opalj.collection.immutable.UIDSet
+import org.opalj.fpcf.properties.CallersProperty
+import org.opalj.fpcf.properties.LoadedClasses
+import org.opalj.fpcf.properties.NoCallers
 import org.opalj.tac.Assignment
 import org.opalj.tac.GetField
 import org.opalj.tac.PutStatic
 import org.opalj.tac.SimpleTACAIKey
+
+class LoadedClassesState(
+        private[this] var _loadedClasses: UIDSet[ObjectType],
+        private[this] var _dependees:     Set[EOptionP[DeclaredMethod, CallersProperty]]
+) {
+    def loadedClasses: UIDSet[ObjectType] = _loadedClasses
+
+    def addLoadedType(objectType: ObjectType): Unit = _loadedClasses += objectType
+
+    def dependees: Traversable[EOptionP[DeclaredMethod, CallersProperty]] = _dependees
+
+    def addDependee(dependee: EOptionP[DeclaredMethod, CallersProperty]): Unit = {
+        _dependees += dependee
+    }
+    def removeDependee(epk: EPK[DeclaredMethod, CallersProperty]): Unit = {
+        assert(_dependees.count(dependee ⇒ (dependee.e eq epk.e) && dependee.pk == epk.pk) <= 1)
+        _dependees = _dependees.filter(dependee ⇒ (dependee.e ne epk.e) || dependee.pk != epk.pk)
+    }
+    def updateDependee(newEPS: EPS[DeclaredMethod, CallersProperty]): Unit = {
+        removeDependee(newEPS.toEPK)
+        addDependee(newEPS)
+    }
+}
 
 class LoadedClassesAnalysis(
         private[this] val project:           SomeProject,
@@ -47,27 +74,72 @@ class LoadedClassesAnalysis(
 ) {
     private val tacaiProvider = project.get(SimpleTACAIKey)
     private val declaredMethods = project.get(DeclaredMethodsKey)
+    private val propertyStore = project.get(PropertyStoreKey)
 
-    def newReachableMethod(dm: DeclaredMethod): PropertyComputationResult = {
+    def doAnalyze(): PropertyComputationResult = {
+        var reachableMethods = List.empty[DeclaredMethod]
+        val state = new LoadedClassesState(UIDSet.empty, Set.empty)
+
+        // todo: here we should depend on all updates
+        for (m ← project.allMethods) {
+            val dm = declaredMethods(m)
+            reachableMethods ++= handleCaller(state, propertyStore(dm, CallersProperty.key))
+        }
+
+        returnResult(reachableMethods, state)
+    }
+
+    def handleCaller(
+        state: LoadedClassesState, eOptP: EOptionP[DeclaredMethod, CallersProperty]
+    ): List[DeclaredMethod] = {
+        var reachableMethods = List.empty[DeclaredMethod]
+        eOptP match {
+            case FinalEP(_, NoCallers) ⇒
+                // the method was not called at all
+                state.removeDependee(eOptP.toEPK)
+            case _: EPK[DeclaredMethod, CallersProperty] ⇒
+                state.addDependee(eOptP)
+            case eps @ EPS(_, _, NoCallers) ⇒
+                state.updateDependee(eps)
+            case eps @ EPS(dm: DeclaredMethod, _, _) ⇒
+                state.removeDependee(eps.toEPK)
+
+                // the method has callers. we have to analyze it
+                val newReachableMethods = handleNewReachableMethod(dm, state)
+                reachableMethods ++= newReachableMethods
+        }
+        reachableMethods
+    }
+
+    def handleNewReachableMethod(
+        dm: DeclaredMethod, state: LoadedClassesState
+    ): List[DeclaredMethod] = {
         assert(dm.hasSingleDefinedMethod)
         val method = dm.definedMethod
-        assert(dm.declaringClassType eq method.classFile.thisType)
+        val methodDCT = method.classFile.thisType
+        assert(dm.declaringClassType eq methodDCT)
 
         var newReachableMethods = List.empty[DeclaredMethod]
 
-        for (stmt ← tacaiProvider(method)) {
+        // whenever a method is called the first time, its declaring class gets loaded
+        if (!state.loadedClasses.contains(method.classFile.thisType)) {
+            handleType(method.classFile.thisType).foreach(newReachableMethods +:= _)
+            state.addLoadedType(methodDCT)
+        }
+
+        for (stmt ← tacaiProvider(method).stmts) {
             stmt match {
-                case PutStatic(_, dc, _, _, _) ⇒
-                    handleType(dc).foreach(newReachableMethods +:= _)
-                case Assignment(_, _, GetField(_, dc, _, _, _)) ⇒
-                    handleType(dc).foreach(newReachableMethods +:= _)
+                case PutStatic(_, dct, _, _, _) ⇒
+                    handleType(dct).foreach(newReachableMethods +:= _)
+                    state.addLoadedType(dct)
+                case Assignment(_, _, GetField(_, dct, _, _, _)) ⇒
+                    handleType(dct).foreach(newReachableMethods +:= _)
+                    state.addLoadedType(dct)
+                case _ ⇒
             }
         }
 
-        IncrementalResult(
-            NoResult,
-            newReachableMethods.map(m ⇒ (callGraphAnalysis.processMethod _, m))
-        )
+        newReachableMethods
     }
 
     def handleType(declaringClassType: ObjectType): Option[DefinedMethod] = {
@@ -77,5 +149,31 @@ class LoadedClassesAnalysis(
                 Some(clInitDM).filter(callGraphAnalysis.registerMethodToProcess)
             }
         }
+    }
+
+    def returnResult(
+        reachableMethods: Traversable[DeclaredMethod], state: LoadedClassesState
+    ): PropertyComputationResult = {
+        val loadedClassesUB = new LoadedClasses(state.loadedClasses)
+
+        val loadedClassesResult = if (state.dependees.isEmpty) {
+            Result(project, new LoadedClasses(state.loadedClasses))
+        } else {
+            IntermediateResult(
+                project, null /*TODO LB */ , loadedClassesUB, state.dependees, continuation(state)
+            )
+        }
+
+        IncrementalResult(
+            loadedClassesResult,
+            reachableMethods.map(m ⇒ (callGraphAnalysis.processMethod(isEntryPoint = true) _, m))
+        )
+    }
+
+    def continuation(state: LoadedClassesState)(eps: SomeEPS): PropertyComputationResult = {
+        val reachableMethods =
+            handleCaller(state, eps.asInstanceOf[EPS[DeclaredMethod, CallersProperty]])
+
+        returnResult(reachableMethods, state)
     }
 }
