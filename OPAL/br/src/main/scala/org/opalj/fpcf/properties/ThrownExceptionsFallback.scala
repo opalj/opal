@@ -93,9 +93,13 @@ import org.opalj.fpcf.properties.ThrownExceptions.MethodBodyIsNotAvailable
  * Hence, the primary use case of this method is to identify those methods that are guaranteed
  * to '''never throw exceptions'''.
  */
-object ThrownExceptionsFallback extends ((PropertyStore, Entity) ⇒ ThrownExceptions) {
+object ThrownExceptionsFallback extends ((PropertyStore, FallbackReason, Entity) ⇒ ThrownExceptions) {
 
     final val ObjectEqualsMethodDescriptor = MethodDescriptor(ObjectType.Object, BooleanType)
+
+    def apply(ps: PropertyStore, reason: FallbackReason, e: Entity): ThrownExceptions = {
+        e match { case m: Method ⇒ this(ps, m) }
+    }
 
     def apply(ps: PropertyStore, e: Entity): ThrownExceptions = {
         e match { case m: Method ⇒ this(ps, m) }

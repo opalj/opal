@@ -347,7 +347,7 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
             IntermediateResult(
                 context.entity,
                 GlobalEscape, state.mostRestrictiveProperty,
-                state.dependees, continuation
+                state.dependees, continuation, CheapPropertyComputation
             )
         }
     }
@@ -357,7 +357,10 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
      */
     protected[this] def continuation(
         someEPS: SomeEPS
-    )(implicit context: AnalysisContext, state: AnalysisState): PropertyComputationResult
+    )(
+        implicit
+        context: AnalysisContext, state: AnalysisState
+    ): PropertyComputationResult
 
     /**
      * Extracts information from the given entity and should call [[doDetermineEscape]] afterwards.

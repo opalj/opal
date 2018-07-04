@@ -66,9 +66,8 @@ import org.opalj.br.ObjectType.Object
 
 /**
  * Represents '''a project's class hierarchy'''. The class hierarchy only contains
- * information about those classes that were explicitly added to it except of
- * `java.lang.Object`; the type `java.lang.Object` is always part of the class hierarchy.
- * Hence, the class hierarchy may contain holes.
+ * information about those classes that were explicitly added to it. Hence, the class hierarchy
+ * may contain holes. However, the type `java.lang.Object` is always part of the class hierarchy.
  *
  * ==Thread safety==
  * This class is effectively immutable; concurrent access to the class hierarchy is supported.
@@ -87,7 +86,7 @@ import org.opalj.br.ObjectType.Object
  *
  * @param   isKnownToBeFinalMap `true` if the class is known to be `final`. I.e.,
  *          if the class is final `isFinal(ClassFile(objectType)) =>
- *          isFinal(classHierachy(objectType))`.
+ *          isFinal(classHierarchy(objectType))`.
  *
  * @param   superclassTypeMap Contains type information about a type's immediate superclass.
  *          This value is always defined (i.e., not null) unless the key identifies the
@@ -147,6 +146,7 @@ class ClassHierarchy private (
         val leafTypes:                                       UIDSet[ObjectType],
         private[this] val isSupertypeInformationCompleteMap: Array[Boolean],
 
+        // IMPROVE [L6] use (implicit) Array based map as above to store supertypeInformation
         val supertypeInformation: Map[ObjectType, SupertypeInformation],
         val subtypeInformation:   Map[ObjectType, SubtypeInformation]
 )(
@@ -209,7 +209,7 @@ class ClassHierarchy private (
      * over all interfaces which are at the top of the interface inheritance hierarchy.
      */
     def rootInterfaceTypes(coll: Growable[ObjectType]): coll.type = {
-        superinterfaceTypesMap.view.zipWithIndex.foreach { si ⇒
+        superinterfaceTypesMap.iterator.zipWithIndex foreach { si ⇒
             val (superinterfaceTypes, id) = si
             if ((superinterfaceTypes ne null) &&
                 superinterfaceTypes.isEmpty &&
@@ -607,9 +607,6 @@ class ClassHierarchy private (
      * @param   objectType An `ObjectType`.
      */
     def foreachSubtype(objectType: ObjectType)(f: ObjectType ⇒ Unit): Unit = {
-        if (isUnknown(objectType))
-            return ;
-
         subtypeInformation.get(objectType) foreach { subtypeInformation ⇒
             subtypeInformation.foreach(f)
         }
@@ -618,6 +615,9 @@ class ClassHierarchy private (
         // We had to change this method to get better performance.
         // The naive implementation using foreach and (mutual) recursion
         // didn't perform well.
+        if (isUnknown(objectType))
+            return ;
+
         val oid = objectType.id
         var allSubtypes = subclassTypesMap(oid) :: subinterfaceTypesMap(oid) :: Nil
         while (allSubtypes.nonEmpty) {
@@ -647,7 +647,7 @@ class ClassHierarchy private (
      * @param    process The process function will be called for each subtype of the given type.
      *           If process returns false, subtypes of the current type will no longer be traversed.
      *           However, if a subtype of the current type is reachable via another path (by means
-     *           of interface inheritance) then that subtype will be processed.
+     *           of interface inheritance) then that subtype may be processed.
      *
      * @note    Classes are always traversed first.
      */
@@ -657,11 +657,7 @@ class ClassHierarchy private (
     )(
         process: ObjectType ⇒ Boolean
     ): Unit = {
-        if (isUnknown(objectType))
-            return ;
-
         var processed = UIDSet.empty[ObjectType]
-
         def foreachSubtype(objectType: ObjectType): Unit = {
             if (processed.contains(objectType))
                 return ;
@@ -674,6 +670,28 @@ class ClassHierarchy private (
                 subinterfaceTypesMap(oid) foreach { foreachSubtype }
             }
         }
+
+        if (objectType == ObjectType.Object) {
+            if (reflexive) {
+                if (!process(ObjectType.Object))
+                    return ;
+            };
+
+            rootTypes foreach { rootType ⇒
+                if (rootType ne ObjectType.Object) {
+                    foreachSubtype(rootType)
+                } else {
+                    // java.lang.Object is always known ...
+                    subclassTypesMap(ObjectType.ObjectId) foreach { foreachSubtype }
+                    subinterfaceTypesMap(ObjectType.ObjectId) foreach { foreachSubtype }
+                }
+            }
+
+            return ;
+        }
+
+        if (isUnknown(objectType))
+            return ;
 
         if (reflexive)
             foreachSubtype(objectType)
@@ -978,8 +996,10 @@ class ClassHierarchy private (
         objectType: ObjectType,
         reflexive:  Boolean    = false
     ): UIDSet[ObjectType] = {
-        var supertypes = UIDSet.empty[ObjectType]
-        foreachSupertype(objectType) { t ⇒ if (isInterface(t).isYes) supertypes += t }
+        var supertypes = supertypeInformation.get(objectType) match {
+            case Some(sti) ⇒ sti.interfaceTypes
+            case None      ⇒ UIDSet.empty[ObjectType]
+        }
         if (reflexive && isInterface(objectType).isYes) supertypes += objectType
         supertypes
     }
@@ -2899,14 +2919,14 @@ object ClassHierarchy {
                         // and we just want to provide some hints to the user...
                         // 1. Do we have a cycle in the extracted type information ?
                         {
-                            val ns = knownTypesMap.size
+                            val ns = knownTypesMap.length
                             val es: IntFunction[IntIterator] = (oid: Int) ⇒ {
                                 if (knownTypesMap(oid) ne null) {
                                     val it =
                                         subinterfaceTypesMap(oid).map(_.id).iterator ++
                                             subclassTypesMap(oid).map(_.id).iterator
                                     new IntIterator {
-                                        def hasNext = it.hasNext
+                                        def hasNext: Boolean = it.hasNext
                                         def next(): Int = it.next()
                                     }
                                 } else {

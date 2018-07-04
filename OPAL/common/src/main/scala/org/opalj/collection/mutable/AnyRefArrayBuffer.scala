@@ -30,6 +30,7 @@ package org.opalj.collection.mutable
 
 import scala.collection.AbstractIterator
 import scala.collection.mutable
+import scala.reflect.ClassTag
 
 /**
  * An array based implementation of a mutable buffer. This implementation offers highly
@@ -72,6 +73,18 @@ final class AnyRefArrayBuffer[N >: Null <: AnyRef] private (
         data(index).asInstanceOf[N]
     }
 
+    def toArray[T >: N: ClassTag]: Array[T] = {
+        val target = new Array[T](size0)
+        System.arraycopy(data, 0, target, 0, size0)
+        target
+    }
+
+    def toSet[T >: N]: Set[T] = {
+        val b = Set.newBuilder[T]
+        this.foreach(e ⇒ b += e)
+        b.result()
+    }
+
     def slice(startIndex: Int, endIndex: Int = size0 - 1): IndexedSeq[N] = {
         val r = new mutable.ArrayBuffer[N]((endIndex - startIndex) + 1)
         iterator(startIndex, endIndex).foreach(e ⇒ r += e)
@@ -80,6 +93,26 @@ final class AnyRefArrayBuffer[N >: Null <: AnyRef] private (
 
     def ++=(is: Traversable[N]): this.type = {
         is.foreach(+=)
+        this
+    }
+
+    def ++=(is: Iterator[N]): this.type = {
+        is.foreach(+=)
+        this
+    }
+
+    def ++=(other: AnyRefArrayBuffer[N]): this.type = {
+        if (data.length - size0 >= other.data.length) {
+            System.arraycopy(other.data, 0, this.data, size0, other.data.length)
+
+        } else {
+            val newData = new Array[AnyRef](this.size0 + other.size0 + 8)
+            System.arraycopy(data, 0, newData, 0, size0)
+            System.arraycopy(other.data, 0, newData, this.size0, other.size0)
+            data = newData
+            this.data = newData
+        }
+        this.size0 = this.size0 + other.size0
         this
     }
 
@@ -119,6 +152,16 @@ final class AnyRefArrayBuffer[N >: Null <: AnyRef] private (
         while (i < size) {
             f(data(i).asInstanceOf[N])
             i += 1
+        }
+    }
+
+    def iteratorFrom(startIndex: Int): Iterator[N] = new AbstractIterator[N] {
+        var currentIndex = startIndex
+        override def hasNext: Boolean = currentIndex < size0
+        override def next(): N = {
+            val r = data(currentIndex)
+            currentIndex += 1
+            r.asInstanceOf[N]
         }
     }
 

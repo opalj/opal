@@ -39,20 +39,21 @@ object Dependencies {
     object version {
         val junit = "4.12"
         val scalatest = "3.0.5"
-        val scalacheck = "1.13.5"
+        val scalacheck = "1.14.0"
 
         val scalaxml = "1.1.0"
         val playjson = "2.6.9"
         val ficus = "1.4.3"
-        val commonstext = "1.3"
-        val scalaparsercombinators = "1.1.0"
+        val commonstext = "1.4"
+        val scalaparsercombinators = "1.1.1"
 
         val scalafx = "8.0.144-R12"
-        val controlsfx = "8.40.14"
+        //val controlsfx = "8.40.14"
+        val controlsfx = "9.0.0"
         val txtmark = "0.16"
-        val jacksonDF = "2.9.5"
+        val jacksonDF = "2.9.6"
         val chocosolver = "4.0.6"
-        val fastutil = "8.1.1"
+        val fastutil = "8.2.1
 
         val reactiveasync = "0.2.0"
         val sbtPerfSpec = "0.2.0"

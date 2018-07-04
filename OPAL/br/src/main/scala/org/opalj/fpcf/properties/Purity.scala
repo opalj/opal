@@ -30,36 +30,57 @@ package org.opalj
 package fpcf
 package properties
 
+import scala.annotation.switch
 import org.opalj.br.DeclaredMethod
+import org.opalj.br.instructions.RETURN
+import org.opalj.br.instructions.GETSTATIC
+import org.opalj.br.instructions.NonVirtualMethodInvocationInstruction
+import org.opalj.br.instructions.BALOAD
+import org.opalj.br.instructions.DASTORE
+import org.opalj.br.instructions.MethodInvocationInstruction
+import org.opalj.br.instructions.BASTORE
+import org.opalj.br.instructions.INVOKEVIRTUAL
+import org.opalj.br.instructions.PUTSTATIC
+import org.opalj.br.instructions.INVOKESPECIAL
+import org.opalj.br.instructions.FRETURN
+import org.opalj.br.instructions.PUTFIELD
+import org.opalj.br.instructions.IASTORE
+import org.opalj.br.instructions.DRETURN
+import org.opalj.br.instructions.CALOAD
+import org.opalj.br.instructions.IRETURN
+import org.opalj.br.instructions.INVOKEINTERFACE
+import org.opalj.br.instructions.AALOAD
+import org.opalj.br.instructions.AASTORE
+import org.opalj.br.instructions.CASTORE
+import org.opalj.br.instructions.INVOKEDYNAMIC
+import org.opalj.br.instructions.MONITOREXIT
+import org.opalj.br.instructions.LALOAD
+import org.opalj.br.instructions.MONITORENTER
+import org.opalj.br.instructions.LRETURN
+import org.opalj.br.instructions.LASTORE
+import org.opalj.br.instructions.SASTORE
+import org.opalj.br.instructions.ARETURN
+import org.opalj.br.instructions.FALOAD
+import org.opalj.br.instructions.DALOAD
+import org.opalj.br.instructions.FASTORE
+import org.opalj.br.instructions.SALOAD
+import org.opalj.br.instructions.INVOKESTATIC
+import org.opalj.br.instructions.ARRAYLENGTH
+import org.opalj.br.instructions.IALOAD
+import org.opalj.br.instructions.GETFIELD
+import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.collection.immutable.EmptyIntTrieSet
+import org.opalj.br.instructions.IF_ACMPNE
+import org.opalj.br.instructions.IF_ACMPEQ
 import org.opalj.fpcf.properties.Purity.ContextuallyPureFlags
 import org.opalj.fpcf.properties.Purity.ContextuallySideEffectFreeFlags
-import org.opalj.fpcf.properties.Purity.ExternallyPureFlags
-import org.opalj.fpcf.properties.Purity.ExternallySideEffectFreeFlags
 import org.opalj.fpcf.properties.Purity.ImpureFlags
 import org.opalj.fpcf.properties.Purity.IsNonDeterministic
 import org.opalj.fpcf.properties.Purity.ModifiesParameters
-import org.opalj.fpcf.properties.Purity.ModifiesReceiver
 import org.opalj.fpcf.properties.Purity.PerformsDomainSpecificOperations
 import org.opalj.fpcf.properties.Purity.PureFlags
 import org.opalj.fpcf.properties.Purity.SideEffectFreeFlags
 import org.opalj.fpcf.properties.Purity.NotCompileTimePure
-import org.opalj.fpcf.properties.VirtualMethodPurity.VImpureByLackOfInformation
-import org.opalj.fpcf.properties.VirtualMethodPurity.VContextuallyPure
-import org.opalj.fpcf.properties.VirtualMethodPurity.VContextuallySideEffectFree
-import org.opalj.fpcf.properties.VirtualMethodPurity.VDContextuallyPure
-import org.opalj.fpcf.properties.VirtualMethodPurity.VDContextuallySideEffectFree
-import org.opalj.fpcf.properties.VirtualMethodPurity.VDExternallyPure
-import org.opalj.fpcf.properties.VirtualMethodPurity.VDExternallySideEffectFree
-import org.opalj.fpcf.properties.VirtualMethodPurity.VDPure
-import org.opalj.fpcf.properties.VirtualMethodPurity.VDSideEffectFree
-import org.opalj.fpcf.properties.VirtualMethodPurity.VExternallyPure
-import org.opalj.fpcf.properties.VirtualMethodPurity.VExternallySideEffectFree
-import org.opalj.fpcf.properties.VirtualMethodPurity.VImpureByAnalysis
-import org.opalj.fpcf.properties.VirtualMethodPurity.VPure
-import org.opalj.fpcf.properties.VirtualMethodPurity.VSideEffectFree
-import org.opalj.fpcf.properties.VirtualMethodPurity.VCompileTimePure
-
-import scala.annotation.switch
 
 sealed trait PurityPropertyMetaInformation extends PropertyMetaInformation {
 
@@ -152,7 +173,7 @@ sealed trait PurityPropertyMetaInformation extends PropertyMetaInformation {
  * their return value is of a reference type, they must return the same reference each time they are
  * invoked with identical parameters.
  *
- * [[ExternallySideEffectFree]] and [[ExternallyPure]] methods are also similar to
+ * `ExternallySideEffectFree` and `ExternallyPure` methods are also similar to
  * [[SideEffectFree]] and [[Pure]] methods, respectively, but may modify their receiver object.
  * These properties may be used to detect changes that are confined because the receiver object is
  * under the control of the caller.
@@ -166,7 +187,7 @@ sealed trait PurityPropertyMetaInformation extends PropertyMetaInformation {
  * some clients may want to treat as pure. Such actions include, e.g. logging. A `Rater` is used to
  * identify such actions and the properties contain a set of reasons assigned by the Rater.
  *
- * [[DExternallySideEffectFree]] and [[DExternallyPure]] methods are similar, but may again
+ * `DExternallySideEffectFree` and `DExternallyPure` methods are similar, but may again
  * modify their receiver, while [[DContextuallySideEffectFree]] and [[DContextuallyPure]]
  * methods may modify their parameters.
  *
@@ -190,9 +211,10 @@ sealed abstract class Purity
 
     def isCompileTimePure: Boolean = (flags & NotCompileTimePure) == 0
     def isDeterministic: Boolean = (flags & IsNonDeterministic) == 0
-    def modifiesReceiver: Boolean = (flags & ModifiesReceiver) != 0
     def modifiesParameters: Boolean = (flags & ModifiesParameters) != 0
     def usesDomainSpecificActions: Boolean = (flags & PerformsDomainSpecificOperations) != 0
+
+    final val aggregatedProperty = new VirtualMethodPurity(this)
 
     /**
      * Combines this purity value with another one to represent the progress by a purity
@@ -207,19 +229,17 @@ sealed abstract class Purity
      */
     override def meet(other: Purity): Purity = {
         other match {
-            case that: ClassifiedImpure ⇒ that
+            case _: ClassifiedImpure           ⇒ other
+            case _ if other.modifiesParameters ⇒ other.meet(this)
             case _ ⇒
                 Purity(this.flags | other.flags)
         }
     }
 
-    def withoutExternal: Purity =
-        if (modifiesReceiver) Purity(flags & ~ModifiesReceiver & ~ModifiesParameters)
-        else this
-
     def withoutContextual: Purity =
         if (modifiesParameters) Purity(flags & ~ModifiesParameters) else this
 
+    val modifiedParams: IntTrieSet = EmptyIntTrieSet
 }
 
 object Purity extends PurityPropertyMetaInformation {
@@ -227,20 +247,90 @@ object Purity extends PurityPropertyMetaInformation {
      * The key associated with every purity property. The name is "Purity"; the fallback is
      * "Impure".
      */
-    final val key = PropertyKey.create[DeclaredMethod, Purity]("Purity", ImpureByLackOfInformation)
+    final val key = PropertyKey.create[DeclaredMethod, Purity](
+        "Purity",
+        ImpureByLackOfInformation,
+        fastTrackPropertyComputation = (ps: PropertyStore, dm: DeclaredMethod) ⇒ {
+            if (!dm.hasSingleDefinedMethod) Some(ImpureByLackOfInformation)
+            else if (dm.definedMethod.classFile.thisType ne dm.declaringClassType) None
+            else {
+                val method = dm.definedMethod
+                val declaringClassType = method.classFile.thisType
+                val methodDescriptor = method.descriptor
+                val methodName = method.name
+                val body = method.body
+
+                val isImpure = body.isEmpty || method.isSynchronized && method.isStatic
+
+                val isPure =
+                    !isImpure && !method.isSynchronized && !method.returnType.isReferenceType &&
+                        body.get.instructions.forall { instruction ⇒
+                            (instruction ne null) && ((instruction.opcode: @switch) match {
+                                case INVOKESPECIAL.opcode | INVOKESTATIC.opcode ⇒ instruction match {
+
+                                    case MethodInvocationInstruction(`declaringClassType`, _, `methodName`, `methodDescriptor`) ⇒
+                                        // We have a self-recursive call; such calls do not influence
+                                        // the computation of the method's purity and are ignored.
+                                        // Let's continue with the evaluation of the next instruction.
+                                        true
+
+                                    case mii: NonVirtualMethodInvocationInstruction ⇒ false
+                                }
+
+                                case GETSTATIC.opcode | GETFIELD.opcode |
+                                    PUTFIELD.opcode | PUTSTATIC.opcode |
+                                    AALOAD.opcode | AASTORE.opcode |
+                                    BALOAD.opcode | BASTORE.opcode |
+                                    CALOAD.opcode | CASTORE.opcode |
+                                    SALOAD.opcode | SASTORE.opcode |
+                                    IALOAD.opcode | IASTORE.opcode |
+                                    LALOAD.opcode | LASTORE.opcode |
+                                    DALOAD.opcode | DASTORE.opcode |
+                                    FALOAD.opcode | FASTORE.opcode |
+                                    ARRAYLENGTH.opcode |
+                                    MONITORENTER.opcode | MONITOREXIT.opcode |
+                                    INVOKEDYNAMIC.opcode |
+                                    INVOKEVIRTUAL.opcode | INVOKEINTERFACE.opcode ⇒
+                                    false
+
+                                case ARETURN.opcode |
+                                    IRETURN.opcode | FRETURN.opcode | DRETURN.opcode | LRETURN.opcode |
+                                    RETURN.opcode ⇒
+                                    // if we have a monitor instruction the method is impure anyway..
+                                    // hence, we can ignore the monitor related implicit exception
+                                    true
+
+                                // Reference comparisons may have different results for structurally equal values
+                                case IF_ACMPEQ.opcode | IF_ACMPNE.opcode ⇒
+                                    false
+
+                                case _ ⇒
+                                    // All other instructions (IFs, Load/Stores, Arith., etc.) are pure
+                                    // as long as no implicit exceptions are raised.
+                                    // Remember that NEW/NEWARRAY/etc. may raise OutOfMemoryExceptions.
+                                    instruction.jvmExceptions.isEmpty
+                                // JVM Exceptions reify the stack and, hence, make the method impure as
+                                // the calling context is now an explicit part of the method's result.
+                                //Impure
+                            })
+                        }
+
+                if (isImpure) Some(ImpureByAnalysis)
+                else if (isPure) Some(CompileTimePure)
+                else None
+            }
+        }
+    )
 
     final val NotCompileTimePure = 0x1
     final val IsNonDeterministic = 0x2
-    final val ModifiesReceiver = 0x4
-    final val PerformsDomainSpecificOperations = 0x8
-    final val ModifiesParameters = 0x10
+    final val PerformsDomainSpecificOperations = 0x4
+    final val ModifiesParameters = 0x8
 
     final val PureFlags = NotCompileTimePure
-    final val ExternallyPureFlags = PureFlags | ModifiesReceiver
     final val SideEffectFreeFlags = IsNonDeterministic | PureFlags
-    final val ExternallySideEffectFreeFlags = SideEffectFreeFlags | ModifiesReceiver
-    final val ContextuallyPureFlags = ExternallyPureFlags | ModifiesParameters
-    final val ContextuallySideEffectFreeFlags = ExternallySideEffectFreeFlags | ModifiesParameters
+    final val ContextuallyPureFlags = PureFlags | ModifiesParameters
+    final val ContextuallySideEffectFreeFlags = SideEffectFreeFlags | ModifiesParameters
     // There is no flag for impurity as analyses have to treat [[ClassifiedImpure]] specially anyway
     final val ImpureFlags = ContextuallySideEffectFreeFlags | PerformsDomainSpecificOperations
 
@@ -254,38 +344,35 @@ object Purity extends PurityPropertyMetaInformation {
         case Pure.flags            ⇒ Pure
         // For non-pure levels, we don't have compile-time purity anymore
         case _ ⇒ (flags | NotCompileTimePure: @switch) match {
-            case SideEffectFree.flags            ⇒ SideEffectFree
-            case ExternallyPure.flags            ⇒ ExternallyPure
-            case ExternallySideEffectFree.flags  ⇒ ExternallySideEffectFree
-            case DPure.flags                     ⇒ DPure
-            case DSideEffectFree.flags           ⇒ DSideEffectFree
-            case DExternallyPure.flags           ⇒ DExternallyPure
-            case DExternallySideEffectFree.flags ⇒ DExternallySideEffectFree
-            // `ModifiesParameters` includes `ModifiesReceiver`
-            case _ ⇒ (flags | NotCompileTimePure | ModifiesReceiver: @switch) match {
-                case ContextuallyPure.flags            ⇒ ContextuallyPure
-                case ContextuallySideEffectFree.flags  ⇒ ContextuallySideEffectFree
-                case DContextuallyPure.flags           ⇒ DContextuallyPure
-                case DContextuallySideEffectFree.flags ⇒ DContextuallySideEffectFree
-            }
+            case SideEffectFree.flags  ⇒ SideEffectFree
+            case DPure.flags           ⇒ DPure
+            case DSideEffectFree.flags ⇒ DSideEffectFree
         }
     }
 
     def apply(name: String): Option[Purity] = name match {
-        case "CompileTimePure"             ⇒ Some(CompileTimePure)
-        case "Pure"                        ⇒ Some(Pure)
-        case "SideEffectFree"              ⇒ Some(SideEffectFree)
-        case "ExternallyPure"              ⇒ Some(ExternallyPure)
-        case "ExternallySideEffectFree"    ⇒ Some(ExternallySideEffectFree)
-        case "ContextuallyPure"            ⇒ Some(ContextuallyPure)
-        case "ContextuallySideEffectFree"  ⇒ Some(ContextuallySideEffectFree)
-        case "DPure"                       ⇒ Some(DPure)
-        case "DSideEffectFree"             ⇒ Some(DSideEffectFree)
-        case "DExternallyPure"             ⇒ Some(DExternallyPure)
-        case "DExternallySideEffectFree"   ⇒ Some(DExternallySideEffectFree)
-        case "DContextuallyPure"           ⇒ Some(DContextuallyPure)
-        case "DContextuallySideEffectFree" ⇒ Some(DContextuallySideEffectFree)
-        case _                             ⇒ None
+        case "CompileTimePure" ⇒ Some(CompileTimePure)
+        case "Pure"            ⇒ Some(Pure)
+        case "SideEffectFree"  ⇒ Some(SideEffectFree)
+        case "DPure"           ⇒ Some(DPure)
+        case "DSideEffectFree" ⇒ Some(DSideEffectFree)
+        case _ if name.startsWith("ContextuallyPure{") ⇒
+            Some(ContextuallyPure(parseParams(name.substring(17, name.length - 1))))
+        case _ if name.startsWith("ContextuallySideEffectFree{") ⇒
+            Some(ContextuallyPure(parseParams(name.substring(27, name.length - 1))))
+        case _ if name.startsWith("DContextuallyPure{") ⇒
+            Some(ContextuallyPure(parseParams(name.substring(18, name.length - 1))))
+        case _ if name.startsWith("DContextuallySideEffectFree{") ⇒
+            Some(ContextuallyPure(parseParams(name.substring(28, name.length - 1))))
+        case _ ⇒ None
+    }
+
+    def parseParams(s: String): IntTrieSet = {
+        val params = s.split(',')
+        var result: IntTrieSet = EmptyIntTrieSet
+        for (p ← params)
+            result = result + Integer.valueOf(p)
+        result
     }
 }
 
@@ -298,8 +385,6 @@ object Purity extends PurityPropertyMetaInformation {
 case object CompileTimePure extends Purity {
     final val flags = 0 // <=> no flag is set
 
-    final lazy val aggregatedProperty = VCompileTimePure
-
     final val isRefinable = false
     override def meet(other: Purity): Purity = other
 }
@@ -311,8 +396,6 @@ case object CompileTimePure extends Purity {
  */
 case object Pure extends Purity {
     final val flags = PureFlags
-
-    final lazy val aggregatedProperty = VPure
 }
 
 /**
@@ -323,10 +406,9 @@ case object Pure extends Purity {
  */
 case object SideEffectFree extends Purity {
     final val flags = SideEffectFreeFlags
-
-    final lazy val aggregatedProperty = VSideEffectFree
 }
 
+/*
 /**
  * The respective method may modify its receiver, but is pure otherwise.
  *
@@ -337,8 +419,6 @@ case object SideEffectFree extends Purity {
  */
 case object ExternallyPure extends Purity {
     final val flags = ExternallyPureFlags
-
-    final lazy val aggregatedProperty = VExternallyPure
 }
 
 /**
@@ -352,9 +432,7 @@ case object ExternallyPure extends Purity {
  */
 case object ExternallySideEffectFree extends Purity {
     final val flags = ExternallySideEffectFreeFlags
-
-    final lazy val aggregatedProperty = VExternallySideEffectFree
-}
+}*/
 
 /**
  * The respective method may modify its parameters, but is pure otherwise.
@@ -364,10 +442,26 @@ case object ExternallySideEffectFree extends Purity {
  *
  * @see [[Purity]] for further details regarding the purity levels.
  */
-case object ContextuallyPure extends Purity {
+case class ContextuallyPure(override val modifiedParams: IntTrieSet) extends Purity {
     final val flags = ContextuallyPureFlags
 
-    final lazy val aggregatedProperty = VContextuallyPure
+    override def meet(other: Purity): Purity = other match {
+        case _: ClassifiedImpure            ⇒ other
+        case ContextuallyPure(p)            ⇒ ContextuallyPure(this.modifiedParams ++ p)
+        case ContextuallySideEffectFree(p)  ⇒ ContextuallySideEffectFree(this.modifiedParams ++ p)
+        case DContextuallyPure(p)           ⇒ DContextuallyPure(this.modifiedParams ++ p)
+        case DContextuallySideEffectFree(p) ⇒ DContextuallySideEffectFree(this.modifiedParams ++ p)
+        case _ ⇒
+            (other.flags: @switch) match {
+                case CompileTimePure.flags | Pure.flags ⇒ this
+                // For non-pure levels, we don't have compile-time purity anymore
+                case _ ⇒ (other.flags | NotCompileTimePure: @switch) match {
+                    case SideEffectFree.flags  ⇒ ContextuallySideEffectFree(modifiedParams)
+                    case DPure.flags           ⇒ DContextuallyPure(modifiedParams)
+                    case DSideEffectFree.flags ⇒ DContextuallySideEffectFree(modifiedParams)
+                }
+            }
+    }
 }
 
 /**
@@ -379,10 +473,26 @@ case object ContextuallyPure extends Purity {
  *
  * @see [[Purity]] for further details regarding the purity levels.
  */
-case object ContextuallySideEffectFree extends Purity {
+case class ContextuallySideEffectFree(override val modifiedParams: IntTrieSet) extends Purity {
     final val flags = ContextuallySideEffectFreeFlags
 
-    final lazy val aggregatedProperty = VContextuallySideEffectFree
+    override def meet(other: Purity): Purity = other match {
+        case _: ClassifiedImpure            ⇒ other
+        case ContextuallyPure(p)            ⇒ ContextuallySideEffectFree(this.modifiedParams ++ p)
+        case ContextuallySideEffectFree(p)  ⇒ ContextuallySideEffectFree(this.modifiedParams ++ p)
+        case DContextuallyPure(p)           ⇒ DContextuallySideEffectFree(this.modifiedParams ++ p)
+        case DContextuallySideEffectFree(p) ⇒ DContextuallySideEffectFree(this.modifiedParams ++ p)
+        case _ ⇒
+            (other.flags: @switch) match {
+                case CompileTimePure.flags | Pure.flags ⇒ this
+                // For non-pure levels, we don't have compile-time purity anymore
+                case _ ⇒ (other.flags | NotCompileTimePure: @switch) match {
+                    case SideEffectFree.flags ⇒ this
+                    case DPure.flags | DSideEffectFree.flags ⇒
+                        DContextuallySideEffectFree(modifiedParams)
+                }
+            }
+    }
 }
 
 /**
@@ -393,8 +503,6 @@ case object ContextuallySideEffectFree extends Purity {
  */
 case object DPure extends Purity {
     final val flags = PureFlags | PerformsDomainSpecificOperations
-
-    final lazy val aggregatedProperty = VDPure
 }
 
 /**
@@ -405,10 +513,8 @@ case object DPure extends Purity {
  */
 case object DSideEffectFree extends Purity {
     final val flags = SideEffectFreeFlags | PerformsDomainSpecificOperations
-
-    final lazy val aggregatedProperty = VDSideEffectFree
 }
-
+/*
 /**
  * The respective method may perform actions that are generally considered impure or
  * non-deterministic that some clients may wish to treat as pure and it may modify its receiver.
@@ -418,8 +524,6 @@ case object DSideEffectFree extends Purity {
  */
 case object DExternallyPure extends Purity {
     final val flags = ExternallyPureFlags | PerformsDomainSpecificOperations
-
-    final lazy val aggregatedProperty = VDExternallyPure
 }
 
 /**
@@ -430,9 +534,7 @@ case object DExternallyPure extends Purity {
  */
 case object DExternallySideEffectFree extends Purity {
     final val flags = ExternallySideEffectFreeFlags | PerformsDomainSpecificOperations
-
-    final lazy val aggregatedProperty = VDExternallySideEffectFree
-}
+}*/
 
 /**
  * The respective method may perform actions that are generally considered impure or
@@ -441,10 +543,26 @@ case object DExternallySideEffectFree extends Purity {
  *
  * @see [[Purity]] for further details regarding the purity levels.
  */
-case object DContextuallyPure extends Purity {
+case class DContextuallyPure(override val modifiedParams: IntTrieSet) extends Purity {
     final val flags = ContextuallyPureFlags | PerformsDomainSpecificOperations
 
-    final lazy val aggregatedProperty = VDContextuallyPure
+    override def meet(other: Purity): Purity = other match {
+        case _: ClassifiedImpure            ⇒ other
+        case ContextuallyPure(p)            ⇒ DContextuallyPure(this.modifiedParams ++ p)
+        case ContextuallySideEffectFree(p)  ⇒ DContextuallySideEffectFree(this.modifiedParams ++ p)
+        case DContextuallyPure(p)           ⇒ DContextuallyPure(this.modifiedParams ++ p)
+        case DContextuallySideEffectFree(p) ⇒ DContextuallySideEffectFree(this.modifiedParams ++ p)
+        case _ ⇒
+            (other.flags: @switch) match {
+                case CompileTimePure.flags | Pure.flags ⇒ this
+                // For non-pure levels, we don't have compile-time purity anymore
+                case _ ⇒ (other.flags | NotCompileTimePure: @switch) match {
+                    case SideEffectFree.flags | DSideEffectFree.flags ⇒
+                        DContextuallySideEffectFree(modifiedParams)
+                    case DPure.flags ⇒ this
+                }
+            }
+    }
 }
 
 /**
@@ -453,10 +571,17 @@ case object DContextuallyPure extends Purity {
  *
  * @see [[Purity]] for further details regarding the purity levels.
  */
-case object DContextuallySideEffectFree extends Purity {
+case class DContextuallySideEffectFree(override val modifiedParams: IntTrieSet) extends Purity {
     final val flags = ContextuallySideEffectFreeFlags | PerformsDomainSpecificOperations
 
-    final lazy val aggregatedProperty = VDContextuallySideEffectFree
+    override def meet(other: Purity): Purity = other match {
+        case _: ClassifiedImpure            ⇒ other
+        case ContextuallyPure(p)            ⇒ DContextuallySideEffectFree(this.modifiedParams ++ p)
+        case ContextuallySideEffectFree(p)  ⇒ DContextuallySideEffectFree(this.modifiedParams ++ p)
+        case DContextuallyPure(p)           ⇒ DContextuallySideEffectFree(this.modifiedParams ++ p)
+        case DContextuallySideEffectFree(p) ⇒ DContextuallySideEffectFree(this.modifiedParams ++ p)
+        case _                              ⇒ this
+    }
 }
 
 /**
@@ -465,7 +590,6 @@ case object DContextuallySideEffectFree extends Purity {
  */
 sealed abstract class ClassifiedImpure extends Purity {
     final val flags = ImpureFlags
-    override val withoutExternal: ClassifiedImpure = this
     override val withoutContextual: ClassifiedImpure = this
 }
 
@@ -474,8 +598,6 @@ sealed abstract class ClassifiedImpure extends Purity {
  * analysis is not able to derive a more precise result; no more dependency exist.
  */
 case object ImpureByAnalysis extends ClassifiedImpure {
-    final lazy val aggregatedProperty = VImpureByAnalysis
-
     override def meet(other: Purity): Purity = {
         other match {
             case ImpureByLackOfInformation ⇒ ImpureByLackOfInformation
@@ -486,7 +608,5 @@ case object ImpureByAnalysis extends ClassifiedImpure {
 
 /** The method is (finally classified as) impure; this also models the fallback. */
 case object ImpureByLackOfInformation extends ClassifiedImpure {
-    final lazy val aggregatedProperty = VImpureByLackOfInformation
-
     override def meet(other: Purity): Purity = this
 }

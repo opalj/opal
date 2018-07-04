@@ -103,9 +103,18 @@ package object fpcf {
      */
     final type PropertyComputation[E <: Entity] = (E) ⇒ PropertyComputationResult
 
-    final type SomePropertyComputation = PropertyComputation[_ >: Entity]
+    final type SomePropertyComputation = PropertyComputation[Entity]
 
     final type OnUpdateContinuation = (SomeEPS) ⇒ PropertyComputationResult
+
+    /**
+     * The [[FallbackReason]] specifies the reason why a fallback property is required. This
+     * information can be used to handle situations where the fallback should be different
+     * based on the information whether a corresponding analysis was executed or not.
+     */
+    final type FallbackPropertyComputation[E <: Entity, P <: Property] = (PropertyStore, FallbackReason, E) ⇒ P
+
+    final type SomeFallbackPropertyComputation = FallbackPropertyComputation[_ <: Entity, _ <: Property]
 
     /**
      * A function that continues the computation of a property. It takes

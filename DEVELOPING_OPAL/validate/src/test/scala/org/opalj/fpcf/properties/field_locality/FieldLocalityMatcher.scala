@@ -55,7 +55,11 @@ class FieldLocalityMatcher(val property: FieldLocality) extends AbstractProperty
      *         why the analysis failed.
      */
     override def validateProperty(
-        p: Project[_], as: Set[ObjectType], entity: scala.Any, a: AnnotationLike, properties: Traversable[Property]
+        p:          Project[_],
+        as:         Set[ObjectType],
+        entity:     scala.Any,
+        a:          AnnotationLike,
+        properties: Traversable[Property]
     ): Option[String] = {
         if (!properties.exists {
             case `property` ⇒ true
@@ -68,8 +72,13 @@ class FieldLocalityMatcher(val property: FieldLocality) extends AbstractProperty
     }
 }
 
-class NoLocalFieldMatcher extends FieldLocalityMatcher(org.opalj.fpcf.properties.NoLocalField)
-class ExtensibleLocalFieldMatcher extends FieldLocalityMatcher(org.opalj.fpcf.properties.ExtensibleLocalField)
-class LocalFieldMatcher extends FieldLocalityMatcher(org.opalj.fpcf.properties.LocalField)
-class ExtensibleLocalFieldWithGetterMatcher extends FieldLocalityMatcher(org.opalj.fpcf.properties.ExtensibleLocalFieldWithGetter)
-class LocalFieldWithGetterMatcher extends FieldLocalityMatcher(org.opalj.fpcf.properties.LocalFieldWithGetter)
+class NoLocalFieldMatcher extends FieldLocalityMatcher(properties.NoLocalField)
+
+class ExtensibleLocalFieldMatcher extends FieldLocalityMatcher(properties.ExtensibleLocalField)
+
+class LocalFieldMatcher extends FieldLocalityMatcher(properties.LocalField)
+
+class ExtensibleLocalFieldWithGetterMatcher
+    extends FieldLocalityMatcher(properties.ExtensibleLocalFieldWithGetter)
+
+class LocalFieldWithGetterMatcher extends FieldLocalityMatcher(properties.LocalFieldWithGetter)

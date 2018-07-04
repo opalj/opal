@@ -55,8 +55,9 @@ object ThrownExceptionsByOverridingMethods
         new ThrownExceptionsByOverridingMethods(exceptions)
 
     def fallbackPropertyComputation(
-        ps: PropertyStore,
-        m:  br.Method
+        ps:     PropertyStore,
+        reason: FallbackReason,
+        m:      br.Method
     ): ThrownExceptionsByOverridingMethods = {
         if (m.isFinal || m.isStatic || m.isInitializer || m.isPrivate) {
             new ThrownExceptionsByOverridingMethods(ThrownExceptionsFallback(ps, m).types)
@@ -69,8 +70,8 @@ object ThrownExceptionsByOverridingMethods
         PropertyKey.create[br.Method, ThrownExceptionsByOverridingMethods](
             name = "ThrownExceptionsByOverridingMethods",
             fallbackPropertyComputation _,
-            (_: PropertyStore, eps: EPS[br.Method, ThrownExceptionsByOverridingMethods]) ⇒
-                eps.toUBEP
+            (_: PropertyStore, eps: EPS[br.Method, ThrownExceptionsByOverridingMethods]) ⇒ eps.ub,
+            (_: PropertyStore, _: Entity) ⇒ None
         )
     }
 

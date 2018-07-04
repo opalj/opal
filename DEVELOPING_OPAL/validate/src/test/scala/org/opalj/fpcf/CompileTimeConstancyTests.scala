@@ -26,35 +26,25 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.fpcf.properties.purity;
+package org.opalj
+package fpcf
 
-import org.opalj.fpcf.FPCFAnalysis;
-import org.opalj.fpcf.analyses.purity.L1PurityAnalysis;
-import org.opalj.fpcf.analyses.purity.L2PurityAnalysis;
-import org.opalj.fpcf.properties.PropertyValidator;
-
-import java.lang.annotation.Documented;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
+import org.opalj.fpcf.analyses.EagerL0CompileTimeConstancyAnalysis
 
 /**
- * Annotation to state that the annotated method is domain specific externally side effect free.
+ * Tests if the properties specified in the test project (the classes in the (sub-)package of
+ * org.opalj.fpcf.fixture) and the computed ones match. The actual matching is delegated to
+ * PropertyMatchers to facilitate matching arbitrary complex property specifications.
  *
  * @author Dominik Helm
  */
-@PropertyValidator(key = "Purity", validator = DomainSpecificExternallySideEffectFreeMatcher.class)
-@Documented
-@Retention(RetentionPolicy.CLASS)
-public @interface DomainSpecificExternallySideEffectFree {
+class CompileTimeConstancyTests extends PropertiesTest {
 
-    /**
-     * A short reasoning of this property.
-     */
-    String value(); // default = "N/A";
+    describe("the org.opalj.fpcf.analyses.L0CompileTimeConstancyAnalysis is executed") {
+        val as = executeAnalyses(
+            Set(EagerL0CompileTimeConstancyAnalysis)
+        )
+        validateProperties(as, fieldsWithAnnotations(as.project), Set("CompileTimeConstancy"))
+    }
 
-    Class<? extends FPCFAnalysis>[] analyses() default { L2PurityAnalysis.class };
-
-    EP[] eps() default {};
-
-    boolean negate() default false;
 }

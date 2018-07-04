@@ -2,7 +2,7 @@
 // useable by the dockerfile to configure the docker image used for building OPAL.
 
 // to build fat-jars
-addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "0.14.5")
+addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "0.14.6")
 
 resolvers += Resolver.url("scoverage-bintray", url("https://dl.bintray.com/sksamuel/sbt-plugins/"))(Resolver.ivyStylePatterns)
 addSbtPlugin("org.scoverage" %% "sbt-scoverage" % "1.5.1")

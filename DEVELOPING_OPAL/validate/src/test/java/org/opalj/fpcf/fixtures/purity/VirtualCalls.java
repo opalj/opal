@@ -109,7 +109,8 @@ public class VirtualCalls {
             return i + nonFinal;
         }
 
-        @ExternallySideEffectFree("modifies and returns instance field nonFinal")
+        @ContextuallySideEffectFree(value = "modifies and returns instance field nonFinal",
+                modifies = {0})
         @Impure(value = "modifies instance field nonFinal",
                 analyses = { L0PurityAnalysis.class, L1PurityAnalysis.class })
         public int nonAbstractMethod(int i) {

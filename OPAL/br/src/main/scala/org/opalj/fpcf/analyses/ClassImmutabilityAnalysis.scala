@@ -389,7 +389,8 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
 
             } else {
                 IntermediateResult(
-                    t, minLocalImmutability, maxLocalImmutability, dependees.values, c
+                    t, minLocalImmutability, maxLocalImmutability,
+                    dependees.values, c
                 )
 
             }
@@ -397,7 +398,8 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
 
         //[DEBUG] assert(initialImmutability.isRefinable)
         val result = IntermediateResult(
-            t, minLocalImmutability, maxLocalImmutability, dependees.values, c
+            t, minLocalImmutability, maxLocalImmutability,
+            dependees.values, c
         )
         if (lazyComputation)
             result
@@ -513,6 +515,7 @@ object LazyClassImmutabilityAnalysis
         val analysis = new ClassImmutabilityAnalysis(project)
 
         setResultsAnComputeEntities(project, propertyStore)
+        propertyStore.waitOnPhaseCompletion() // wait for completion of setting results
         propertyStore.registerLazyPropertyComputation(
             ClassImmutability.key, analysis.doDetermineClassImmutability
         )

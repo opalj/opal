@@ -91,6 +91,7 @@ trait CoreDomainFunctionality extends ValuesDomain with SubroutinesDomain { core
         oldLocals:                Locals,
         targetPC:                 Int,
         isExceptionalControlFlow: Boolean,
+        forceJoin:                Boolean,
         newOperands:              Operands,
         newLocals:                Locals
     ): (Operands, Locals) = (newOperands, newLocals)

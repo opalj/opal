@@ -35,6 +35,7 @@ import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.ProjectInformationKey
+import org.opalj.log.OPALLogger
 
 /**
  * The ''key'' object to get the project's [[org.opalj.fpcf.PropertyStore]].
@@ -44,7 +45,8 @@ import org.opalj.br.analyses.ProjectInformationKey
  *
  * @author Michael Eichberg
  */
-object PropertyStoreKey extends ProjectInformationKey[PropertyStore, Nothing] {
+object PropertyStoreKey
+    extends ProjectInformationKey[PropertyStore, (List[PropertyStoreContext[AnyRef]]) ⇒ PropertyStore] {
 
     final val ConfigKeyPrefix = "org.opalj.fpcf."
     final val DefaultPropertyStoreImplementation = "org.opalj.fpcf.par.ReactiveAsyncPropertyStore"
@@ -72,25 +74,33 @@ object PropertyStoreKey extends ProjectInformationKey[PropertyStore, Nothing] {
         val context: List[PropertyStoreContext[AnyRef]] = List(
             PropertyStoreContext[org.opalj.br.analyses.SomeProject](project)
         )
+        project.getProjectInformationKeyInitializationData(this) match {
+            case Some(psFactory) ⇒
+                OPALLogger.info(
+                    "analysis configuration",
+                    "the PropertyStore is created using project information key initialization data"
+                )(project.logContext)
+                psFactory(context)
+            case None ⇒
+                val key = ConfigKeyPrefix+"PropertyStoreImplementation"
+                val configuredPropertyStore = project.config.as[Option[String]](key)
+                val propertyStoreCompanion = configuredPropertyStore.getOrElse(DefaultPropertyStoreImplementation)+"$"
 
-        val key = ConfigKeyPrefix+"PropertyStoreImplementation"
-        val configuredPropertyStore = project.config.as[Option[String]](key)
-        val propertyStoreCompanion = configuredPropertyStore.getOrElse(DefaultPropertyStoreImplementation)+"$"
+                OPALLogger.info("PropertyStoreKey", s"Using PropertyStore $propertyStoreCompanion")(project.logContext)
 
-        OPALLogger.info("PropertyStoreKey", s"Using PropertyStore $propertyStoreCompanion")(project.logContext)
-
-        val propertyStoreCompanionClass = Class.forName(propertyStoreCompanion)
-        val apply = propertyStoreCompanionClass.getMethod(
-            "apply",
-            classOf[Int],
-            classOf[Seq[PropertyStoreContext[AnyRef]]],
-            classOf[LogContext]
-        )
-        apply.invoke(
-            propertyStoreCompanionClass.getField("MODULE$").get(null),
-            Integer.valueOf(parallelismLevel),
-            context,
-            project.logContext
-        ).asInstanceOf[PropertyStore]
+                val propertyStoreCompanionClass = Class.forName(propertyStoreCompanion)
+                val apply = propertyStoreCompanionClass.getMethod(
+                    "apply",
+                    classOf[Int],
+                    classOf[Seq[PropertyStoreContext[AnyRef]]],
+                    classOf[LogContext]
+                )
+                apply.invoke(
+                    propertyStoreCompanionClass.getField("MODULE$").get(null),
+                    Integer.valueOf(parallelismLevel),
+                    context,
+                    project.logContext
+                ).asInstanceOf[PropertyStore]
+        }
     }
 }

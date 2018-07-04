@@ -48,7 +48,7 @@ trait DependencyProcessor {
      *
      * @param source The source element that has a dependency on the `target` element.
      * @param target The source element that the `source` element depends on.
-     * @param dependencyType The type of the dependency.
+     * @param dType The type of the dependency.
      */
     def processDependency(
         source: VirtualSourceElement,
@@ -65,7 +65,7 @@ trait DependencyProcessor {
      *
      * @param source The source element that has a dependency on the array type.
      * @param arrayType The array type that the `source` element depends on.
-     * @param dependencyType The type of the dependency.
+     * @param dType The type of the dependency.
      */
     def processDependency(
         source:    VirtualSourceElement,
@@ -78,7 +78,7 @@ trait DependencyProcessor {
      *
      * @param source The source element that has a dependency on the base type.
      * @param baseType The base type on which the `source` element depends on.
-     * @param dependencyType The type of the dependency.
+     * @param dType The type of the dependency.
      */
     def processDependency(
         source:   VirtualSourceElement,
