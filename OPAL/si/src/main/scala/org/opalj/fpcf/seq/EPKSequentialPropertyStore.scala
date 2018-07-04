@@ -139,6 +139,8 @@ final class EPKSequentialPropertyStore private (
     /** The list of scheduled computations. */
     private[this] var tasks: AnyRefAppendChain[() ⇒ Unit] = new AnyRefAppendChain()
 
+    private[this] var previouslyComputedPropertyKinds: IntTrieSet = IntTrieSet.empty
+
     private[this] var computedPropertyKinds: IntTrieSet = _ /*null*/ // has to be set before usage
 
     private[this] var delayedPropertyKinds: IntTrieSet = _ /*null*/ // has to be set before usage
@@ -270,7 +272,13 @@ final class EPKSequentialPropertyStore private (
                             delayedPropertyKinds.contains(pkIdInt)) {
                             epk
                         } else {
-                            val p = PropertyKey.fallbackProperty(this, e, pk)
+                            val reason = {
+                                if (previouslyComputedPropertyKinds.contains(pkIdInt))
+                                    PropertyIsNotDerivedByPreviouslyExecutedAnalysis
+                                else
+                                    PropertyIsNotComputedByAnyAnalysis
+                            }
+                            val p = PropertyKey.fallbackProperty(this, reason, e, pk)
                             if (force) { set(e, p) }
                             FinalEP(e, p)
                         }
@@ -298,7 +306,14 @@ final class EPKSequentialPropertyStore private (
                                 delayedPropertyKinds.contains(pkIdInt)) {
                                 epk
                             } else {
-                                FinalEP(e, PropertyKey.fallbackProperty(this, e, pk))
+                                val fallbackReason = {
+                                    if (previouslyComputedPropertyKinds.contains(pkIdInt))
+                                        PropertyIsNotDerivedByPreviouslyExecutedAnalysis
+                                    else
+                                        PropertyIsNotComputedByAnyAnalysis
+                                }
+                                val p = PropertyKey.fallbackProperty(this, fallbackReason, e, pk)
+                                FinalEP(e, p)
                             }
                     }
 
@@ -729,6 +744,9 @@ final class EPKSequentialPropertyStore private (
                 "setup phase can only be called as long as no tasks are scheduled"
             )
         }
+        if (this.computedPropertyKinds != null) {
+            this.previouslyComputedPropertyKinds ++= this.computedPropertyKinds
+        }
 
         this.computedPropertyKinds = IntTrieSet.empty ++ computedPropertyKinds.iterator.map(_.id)
         this.delayedPropertyKinds = IntTrieSet.empty ++ delayedPropertyKinds.iterator.map(_.id)
@@ -766,17 +784,19 @@ final class EPKSequentialPropertyStore private (
                     // property will not be computed later on.
                     if (pValue.ub == null && !delayedPropertyKinds.contains(pkId)) {
                         assert(pValue.dependees.isEmpty)
-
-                        val fallbackProperty = fallbackPropertyBasedOnPkId(this, e, pkId)
-                        val fallbackResult = Result(e, fallbackProperty)
+                        val reason = {
+                            if (previouslyComputedPropertyKinds.contains(pkId) ||
+                                computedPropertyKinds.contains(pkId))
+                                PropertyIsNotDerivedByPreviouslyExecutedAnalysis
+                            else
+                                PropertyIsNotComputedByAnyAnalysis
+                        }
+                        val p = fallbackPropertyBasedOnPkId(this, reason, e, pkId)
                         if (traceFallbacks) {
-                            var message = s"used fallback $fallbackProperty for $e"
-                            if (computedPropertyKinds.contains(pkId)) {
-                                message += " (though an analysis was supposedly scheduled)"
-                            }
+                            val message = s"used fallback $p (reason=$reason) for $e"
                             info("analysis progress", message)
                         }
-                        handleResult(fallbackResult)
+                        handleResult(Result(e, p))
                         continueComputation = true
                     }
                 }

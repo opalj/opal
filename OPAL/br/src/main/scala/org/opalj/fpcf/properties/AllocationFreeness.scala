@@ -79,7 +79,7 @@ object AllocationFreeness extends AllocationFreenessPropertyMetaInformation {
      */
     final val key = PropertyKey.create[DeclaredMethod, AllocationFreeness](
         "AllocationFreeness",
-        (_: PropertyStore, dm: DeclaredMethod) ⇒ {
+        (_: PropertyStore, _: FallbackReason, dm: DeclaredMethod) ⇒ {
             if (dm.hasSingleDefinedMethod && dm.definedMethod.body.isDefined) {
                 val method = dm.definedMethod
                 val body = method.body.get

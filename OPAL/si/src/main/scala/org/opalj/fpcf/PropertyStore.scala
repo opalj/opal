@@ -277,25 +277,6 @@ abstract class PropertyStore {
     def hasProperty(e: Entity, pk: PropertyKind): Boolean
 
     /**
-     * Returns the current property of the respected kind associated with the given entity.
-     *
-     * This method is generally only useful when the property store has reached
-     * quiescence and – as a client – I do not want to distinguish between the case if
-     * a specific value was computed or not.
-     *
-     * @note Does not trigger lazy property computations.
-     */
-    def currentPropertyOrFallback[E <: Entity, P <: Property](
-        e:  E,
-        pk: PropertyKey[P]
-    ): EPS[E, P] = {
-        if (hasProperty(e, pk))
-            this(e, pk).asEPS
-        else
-            FinalEP(e, PropertyKey.fallbackProperty(this, e, pk))
-    }
-
-    /**
      * Returns an iterator of the different properties associated with the given element.
      *
      * This method is the preferred way to get a snapshot of all properties of an entity and should

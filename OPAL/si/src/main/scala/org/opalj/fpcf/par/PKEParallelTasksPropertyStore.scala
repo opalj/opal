@@ -203,6 +203,10 @@ final class PKEParallelTasksPropertyStore private (
         Array.fill(SupportedPropertyKinds) { new ConcurrentHashMap() }
     }
 
+    @volatile private[this] var previouslyComputedPropertyKinds: Array[Boolean] = {
+        new Array[Boolean](SupportedPropertyKinds)
+    }
+
     @volatile private[this] var computedPropertyKinds: Array[Boolean] = _ /*null*/
 
     @volatile private[this] var delayedPropertyKinds: Array[Boolean] = _ /*null*/
@@ -362,7 +366,7 @@ final class PKEParallelTasksPropertyStore private (
     /**
      * The jobs which update the store.
      */
-    private[this] final val StoreUpdateQueues = 4
+    private[this] final val StoreUpdateQueues = 5
     private[this] val storeUpdates = {
         Array.fill(StoreUpdateQueues)(new ConcurrentLinkedQueue[StoreUpdate]())
     }
@@ -622,7 +626,13 @@ final class PKEParallelTasksPropertyStore private (
                             fallbacksUsedCounter.incrementAndGet()
                             // We directly compute the property and store it to make
                             // it accessible later on...
-                            val p = PropertyKey.fallbackProperty(store, e, pk)
+                            val fallbackReason = {
+                                if (previouslyComputedPropertyKinds(pkId))
+                                    PropertyIsNotDerivedByPreviouslyExecutedAnalysis
+                                else
+                                    PropertyIsNotComputedByAnyAnalysis
+                            }
+                            val p = PropertyKey.fallbackProperty(store, fallbackReason, e, pk)
                             val finalEP = FinalEP(e, p)
                             val r = IdempotentResult(finalEP)
                             appendStoreUpdate(queueId = 0, PropertyUpdate(r))
@@ -750,7 +760,7 @@ final class PKEParallelTasksPropertyStore private (
                 }
 
             case IntermediateResult.id ⇒
-                val queueId = r.asIntermediateResult.dependees.size + 1
+                val queueId = r.asIntermediateResult.dependees.size / 4 + 1
                 val update = PropertyUpdate(r, forceEvaluation, forceDependersNotifications)
                 appendStoreUpdate(queueId, update)
 
@@ -1174,12 +1184,19 @@ final class PKEParallelTasksPropertyStore private (
                 "setup phase can only be called as long as no tasks are scheduled"
             )
         }
+        val currentComputedPropertyKinds = this.computedPropertyKinds
+        if (currentComputedPropertyKinds != null) {
+            currentComputedPropertyKinds.iterator.zipWithIndex foreach { e ⇒
+                val (isComputed, pkId) = e
+                previouslyComputedPropertyKinds(pkId) = isComputed
+            }
+        }
 
-        val newComputedPropertyKinds = new Array[Boolean](PropertyKind.SupportedPropertyKinds)
+        val newComputedPropertyKinds = new Array[Boolean](SupportedPropertyKinds)
         computedPropertyKinds foreach { pk ⇒ newComputedPropertyKinds(pk.id) = true }
         this.computedPropertyKinds = newComputedPropertyKinds
 
-        val newDelayedPropertyKinds = new Array[Boolean](PropertyKind.SupportedPropertyKinds)
+        val newDelayedPropertyKinds = new Array[Boolean](SupportedPropertyKinds)
         delayedPropertyKinds foreach { pk ⇒ newDelayedPropertyKinds(pk.id) = true }
         this.delayedPropertyKinds = newDelayedPropertyKinds
     }
@@ -1224,17 +1241,19 @@ final class PKEParallelTasksPropertyStore private (
                 if (!delayedPropertyKinds(pkId)) {
                     dependersOfEntity.keys foreach { e ⇒
                         if (propertiesOfEntity.get(e) == null) {
-                            val fallbackProperty = fallbackPropertyBasedOnPkId(this, e, pkId)
+                            val reason = {
+                                if (previouslyComputedPropertyKinds(pkId) || computedPropertyKinds(pkId))
+                                    PropertyIsNotDerivedByPreviouslyExecutedAnalysis
+                                else
+                                    PropertyIsNotComputedByAnyAnalysis
+                            }
+                            val p = fallbackPropertyBasedOnPkId(this, reason, e, pkId)
                             if (traceFallbacks) {
-                                var message = s"used fallback $fallbackProperty for $e"
-                                if (computedPropertyKinds(pkId)) {
-                                    message += " (though an analysis was supposedly scheduled)"
-                                }
+                                val message = s"used fallback $p (reason=$reason) for $e"
                                 trace("analysis progress", message)
                             }
                             fallbacksUsedCounter.incrementAndGet()
-                            val update = PropertyUpdate(Result(e, fallbackProperty))
-                            appendStoreUpdate(queueId = 0, update)
+                            appendStoreUpdate(queueId = 0, PropertyUpdate(Result(e, p)))
                             continueComputation = true
                         }
                     }

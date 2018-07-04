@@ -102,8 +102,12 @@ sealed abstract class PurityMatcher(val property: Purity) extends AbstractProper
         def checkProperty(eop: EOptionP[Entity, Property]): Boolean = {
             if (eop.hasProperty)
                 eop.ub.toString == p
-            else
-                PropertyKey.fallbackProperty(propertyStore, eop.e, eop.pk).toString == p
+            else {
+                // Here, the reason actually doesn't matter, because the fallback is always the
+                // same.
+                val reason = PropertyIsNotComputedByAnyAnalysis
+                PropertyKey.fallbackProperty(propertyStore, reason, eop.e, eop.pk).toString == p
+            }
         }
 
         if (field != "") {

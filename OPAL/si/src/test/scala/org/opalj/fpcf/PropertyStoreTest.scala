@@ -292,6 +292,71 @@ sealed abstract class PropertyStoreTest(
                 ps.shutdown()
             }
 
+            it("should specify that no analysis was scheduled when requesting the fallback in the respective case") {
+                val ps = createPropertyStore()
+                info(s"PropertyStore@${System.identityHashCode(ps).toHexString}")
+
+                // NOT import Palindromes.PalindromePropertyNotAnalyzed
+                import Palindromes.NoAnalysisForPalindromeProperty
+                ps.setupPhase(Set(Marker.MarkerKey), Set.empty)
+
+                val es = Set("aba", "cc", "d", "fd", "zu", "aaabbbaaa")
+
+                ps.scheduleEagerComputationsForEntities[String](es) { e ⇒
+                    def c(eps: SomeEOptionP): PropertyComputationResult = {
+                        eps match {
+                            case FinalEP(_, NoAnalysisForPalindromeProperty) /*<= the test...*/ ⇒
+                                Result(e, Marker.NotMarked)
+                            case epk: SomeEPK ⇒
+                                IntermediateResult(e, Marker.IsMarked, Marker.NotMarked, List(epk), c)
+                        }
+                    }
+                    c(ps(e, Palindromes.PalindromeKey))
+                }
+                ps.waitOnPhaseCompletion()
+
+                ps.entities(Marker.NotMarked, Marker.NotMarked).toSet should be(es)
+
+                ps.shutdown()
+            }
+
+            it("should specify that the property was not derived when an analysis was scheduled") {
+                val ps = createPropertyStore()
+                info(s"PropertyStore@${System.identityHashCode(ps).toHexString}")
+
+                import Palindromes.Palindrome
+                import Palindromes.NoPalindrome
+                import Palindromes.PalindromePropertyNotAnalyzed
+                // import Palindromes.NoAnalysisForPalindromeProperty
+                ps.setupPhase(Set(Palindromes.PalindromeKey, Marker.MarkerKey), Set.empty)
+
+                val es = Set("aba", "cc", "d", "fd", "zu", "aaabbbaaa")
+                ps.scheduleEagerComputationsForEntities(Set("aba", "cc", "d")) { e ⇒
+                    Result(e, if (e.reverse == e) Palindrome else NoPalindrome)
+                }
+                ps.scheduleEagerComputationsForEntities(es) { e ⇒
+                    def c(eps: SomeEOptionP): PropertyComputationResult = {
+                        eps match {
+                            case FinalEP(_, Palindrome) | FinalEP(_, NoPalindrome) ⇒
+                                Result(e, Marker.IsMarked)
+
+                            case FinalEP(_, PalindromePropertyNotAnalyzed) ⇒
+                                Result(e, Marker.NotMarked)
+
+                            case epk: SomeEPK ⇒ IntermediateResult(
+                                e, Marker.IsMarked, Marker.NotMarked, List(epk), c
+                            )
+                        }
+                    }
+                    c(ps(e, Palindromes.PalindromeKey))
+                }
+                ps.waitOnPhaseCompletion()
+
+                ps.entities(Marker.NotMarked, Marker.NotMarked).toSet should be(Set("fd", "zu", "aaabbbaaa"))
+
+                ps.shutdown()
+            }
+
             it("should not set an entity's property if it already has a property") {
                 val ps = createPropertyStore()
                 info(s"PropertyStore@${System.identityHashCode(ps).toHexString}")
@@ -565,7 +630,7 @@ sealed abstract class PropertyStoreTest(
 
                         PropertyKey.create[Node, ReachableNodes](
                             s"ReachableNodes(t=${System.nanoTime()})",
-                            (_: PropertyStore, e: Node) ⇒ AllNodes,
+                            (_: PropertyStore, reason: FallbackReason, e: Node) ⇒ AllNodes,
                             (_: PropertyStore, eps: EPS[Node, ReachableNodes]) ⇒ eps.ub,
                             (ps: PropertyStore, e: Entity) ⇒ None
                         )
@@ -1001,7 +1066,7 @@ sealed abstract class PropertyStoreTest(
                 val TreeLevelKey: PropertyKey[TreeLevel] = {
                     PropertyKey.create(
                         s"TreeLevel(t=${System.nanoTime()}",
-                        (ps: PropertyStore, e: Entity) ⇒ ???,
+                        (ps: PropertyStore, reason: FallbackReason, e: Entity) ⇒ ???,
                         (ps: PropertyStore, eps: SomeEPS) ⇒ ???,
                         (ps: PropertyStore, e: Entity) ⇒ None
                     )
@@ -1420,7 +1485,7 @@ object Marker {
     final val MarkerKey = {
         PropertyKey.create[Entity, MarkerProperty](
             "Marker",
-            (ps: PropertyStore, e: Entity) ⇒ NotMarked,
+            (ps: PropertyStore, reason: FallbackReason, e: Entity) ⇒ NotMarked,
             (ps: PropertyStore, eOptionP: SomeEOptionP) ⇒ ???,
             (ps: PropertyStore, e: Entity) ⇒ None
         )
@@ -1441,7 +1506,7 @@ object MarkerWithFastTrack {
 
         PropertyKey.create[Entity, MarkerWithFastTrackProperty](
             "MarkerWithFastTrack",
-            (ps: PropertyStore, e: Entity) ⇒ NotMarked,
+            (ps: PropertyStore, reason: FallbackReason, e: Entity) ⇒ NotMarked,
             (ps: PropertyStore, eOptionP: SomeEOptionP) ⇒ ???,
             (ps: PropertyStore, e: Entity) ⇒ {
                 Thread.sleep(System.nanoTime() % 50)
@@ -1461,10 +1526,17 @@ object MarkerWithFastTrack {
 // Test fixture related to Palindromes.
 object Palindromes {
 
-    final val PalindromeKey = {
+    final val PalindromeKey: PropertyKey[PalindromeProperty] = {
         PropertyKey.create[Entity, PalindromeProperty](
             "Palindrome",
-            (ps: PropertyStore, e: Entity) ⇒ NoPalindrome,
+            (ps: PropertyStore, reason: FallbackReason, e: Entity) ⇒ {
+                reason match {
+                    case PropertyIsNotComputedByAnyAnalysis ⇒
+                        NoAnalysisForPalindromeProperty
+                    case PropertyIsNotDerivedByPreviouslyExecutedAnalysis ⇒
+                        PalindromePropertyNotAnalyzed
+                }
+            },
             (ps: PropertyStore, eOptionP: SomeEOptionP) ⇒ ???,
             (ps: PropertyStore, e: Entity) ⇒ None
         )
@@ -1476,6 +1548,8 @@ object Palindromes {
     }
     case object Palindrome extends PalindromeProperty
     case object NoPalindrome extends PalindromeProperty
+    case object PalindromePropertyNotAnalyzed extends PalindromeProperty
+    case object NoAnalysisForPalindromeProperty extends PalindromeProperty
 
     // We consider a Palindrome a SuperPalindrome if also the first half
     // is a Palindrome. If the entities' size is odd, the middle element
@@ -1483,7 +1557,7 @@ object Palindromes {
     final val SuperPalindromeKey = {
         PropertyKey.create[Entity, SuperPalindromeProperty](
             "SuperPalindrome",
-            (ps: PropertyStore, e: Entity) ⇒ NoSuperPalindrome,
+            (ps: PropertyStore, reason: FallbackReason, e: Entity) ⇒ NoSuperPalindrome,
             (ps: PropertyStore, eOptionP: SomeEOptionP) ⇒ ???,
             (ps: PropertyStore, e: Entity) ⇒ None
         )
@@ -1535,7 +1609,7 @@ object ReachableNodesCount {
 
         PropertyKey.create[Node, ReachableNodesCount](
             s"ReachableNodesCount",
-            (_: PropertyStore, e: Node) ⇒ TooManyNodesReachable,
+            (_: PropertyStore, reason: FallbackReason, e: Node) ⇒ TooManyNodesReachable,
             (_: PropertyStore, eps: EPS[Node, ReachableNodesCount]) ⇒ TooManyNodesReachable,
             (ps: PropertyStore, e: Entity) ⇒ None
         )
