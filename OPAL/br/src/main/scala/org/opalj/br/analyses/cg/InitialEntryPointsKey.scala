@@ -36,11 +36,13 @@ import net.ceedubs.ficus.Ficus._
 /**
  *
  * TODO
- * The ''key'' object to get a function that determines whether a package is closed or not.
+ * The ''key'' object to get a traversable of entry points. Entry points are particulary relevant to
+ * construct call graphs.
  * See [[InitialEntryPointsKey]] for further details.
  *
- * This ''key'' reflectively instantiates the analysis that determines whether a package is closed
- * or not. The respective analysis has to extend the abstract [[InitialEntryPointsKey]] class.
+ * This ''key'' reflectively instantiates the analysis that determines the program's entry points.
+ * The respective analysis has to extend the trait [[InitialEntryPointsKey]] class.
+ *
  * To configure which analysis is used use the key
  * `org.opalj.br.analyses.cg.InitialEntryPointKey.analysis` to specify the name of the class which
  * implements the analysis.
@@ -64,11 +66,12 @@ object InitialEntryPointsKey extends ProjectInformationKey[Traversable[Method], 
     final val ConfigKeyPrefix = "org.opalj.br.analyses.cg.InitialEntryPointsKey."
 
     /**
-     * The [[InitialEntryPointsKey]] has no special prerequisites.
+     * The [[InitialEntryPointsKey]] depends on two other keys and queries information about closed
+     * packages and must answer the question whether a method can be overridden by unknown code.
      *
      * @return `Nil`.
      */
-    def requirements = Seq(TypeExtensibilityKey, IsOverridableMethodKey)
+    def requirements = Seq(ClosedPackagesKey, IsOverridableMethodKey)
 
     /**
      * Reflectively instantiates a ''ClosedPackagesAnalysis'' for the given project.
