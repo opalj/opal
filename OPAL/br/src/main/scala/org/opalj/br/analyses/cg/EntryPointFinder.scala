@@ -70,15 +70,19 @@ object ApplicationEntryPointsFinder extends ApplicationEntryPointsFinder
 trait LibraryEntryPointsFinder extends EntryPointFinder {
 
     override def collectEntryPoints(project: SomeProject): Traversable[Method] = {
-        val isOverridable = project.get(IsOverridableMethodKey)
         val isClosedPackage = project.get(ClosedPackagesKey).isClosed _
+        val isExtensible = project.get(TypeExtensibilityKey)
+        val isOverridable = project.get(IsOverridableMethodKey)
 
         @inline def isEntryPoint(method: Method): Boolean = {
             val classFile = method.classFile
             val ot = classFile.thisType
 
             if (isClosedPackage(ot.packageName)) {
-                if (method.isFinal) {
+                if (method.isStatic) {
+                    (classFile.isPublic && method.isPublic) ||
+                        (method.isProtected && isExtensible(ot).isYesOrUnknown)
+                } else if (method.isFinal) {
                     classFile.isPublic && method.isPublic
                 } else {
                     isOverridable(method).isYesOrUnknown
@@ -92,6 +96,7 @@ trait LibraryEntryPointsFinder extends EntryPointFinder {
         val eps = ArrayBuffer.empty[Method]
 
         project.allMethodsWithBody.foreach { method ⇒
+            println(method.toJava)
             if (isEntryPoint(method))
                 eps.append(method)
         }
