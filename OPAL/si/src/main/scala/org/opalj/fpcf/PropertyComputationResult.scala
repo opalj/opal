@@ -243,7 +243,7 @@ final case object CheapPropertyComputation extends PropertyComputationHint
 case class IncrementalResult[E <: Entity](
         result:                   PropertyComputationResult,
         nextComputations:         Iterator[(PropertyComputation[E], E)],
-        propertyComputationsHint: PropertyComputationHint                  = DefaultPropertyComputation
+        propertyComputationsHint: PropertyComputationHint               = DefaultPropertyComputation
 ) extends PropertyComputationResult {
 
     private[fpcf] final def id = IncrementalResult.id
