@@ -43,13 +43,13 @@ trait EntryPointFinder {
 
 class ApplicationEntryPointsFinder extends EntryPointFinder {
 
-    val MAIN_METHOD_DESCRIPTOR = MethodDescriptor.JustTakes(FieldType.apply("[Ljava.lang.String"))
+    val MAIN_METHOD_DESCRIPTOR = MethodDescriptor.JustTakes(FieldType.apply("[Ljava/lang/String;"))
 
     override def collectEntryPoints(project: SomeProject): Traversable[Method] = {
         project.allMethodsWithBody.collect {
             case m: Method if m.isStatic
-                && (m.descriptor eq MAIN_METHOD_DESCRIPTOR)
-                && (m.name eq "name") ⇒ m
+                && (m.descriptor == MAIN_METHOD_DESCRIPTOR)
+                && (m.name eq "main") ⇒ m
         }
     }
 }

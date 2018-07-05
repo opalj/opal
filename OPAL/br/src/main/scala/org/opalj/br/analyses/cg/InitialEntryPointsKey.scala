@@ -85,7 +85,7 @@ object InitialEntryPointsKey extends ProjectInformationKey[Traversable[Method], 
 
         val cls = Class.forName(entryPointFinder.get)
         val constructor = cls.getConstructors.head
-        val epFinder = constructor.newInstance(project).asInstanceOf[EntryPointFinder]
+        val epFinder = constructor.newInstance().asInstanceOf[EntryPointFinder]
         epFinder.collectEntryPoints(project)
     }
 
