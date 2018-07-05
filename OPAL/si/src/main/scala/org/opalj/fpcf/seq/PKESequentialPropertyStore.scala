@@ -510,7 +510,7 @@ final class PKESequentialPropertyStore private (
             // compute a/some property/properties for a given entity.
 
             case IncrementalResult.id ⇒
-                val IncrementalResult(ir, npcs /*: Traversable[(PropertyComputation[e],e)]*/ , _) = r
+                val IncrementalResult(ir, npcs /*: Iterator[(PropertyComputation[e],e)]*/ , _) = r
                 handleResult(ir)
                 npcs foreach { npc ⇒ val (pc, e) = npc; scheduleEagerComputationForEntity(e)(pc) }
 

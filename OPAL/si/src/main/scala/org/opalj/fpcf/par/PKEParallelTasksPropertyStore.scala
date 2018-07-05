@@ -936,12 +936,12 @@ final class PKEParallelTasksPropertyStore private (
                     val IncrementalResult(ir, npcs, propertyComputationsHint) = r
                     pcrs += ir
                     if (propertyComputationsHint == CheapPropertyComputation) {
-                        npcs /*: Traversable[(PropertyComputation[e],e)]*/ foreach { npc ⇒
+                        npcs /*: Iterator[(PropertyComputation[e],e)]*/ foreach { npc ⇒
                             val (pc, e) = npc
                             pcrs += pc(e)
                         }
                     } else {
-                        npcs /*: Traversable[(PropertyComputation[e],e)]*/ foreach { npc ⇒
+                        npcs /*: Iterator[(PropertyComputation[e],e)]*/ foreach { npc ⇒
                             val (pc, e) = npc
                             scheduleComputationForEntity(e, pc, forceEvaluation)
                         }
@@ -1161,9 +1161,9 @@ final class PKEParallelTasksPropertyStore private (
         }
 
         do {
-            while (pcrs.nonEmpty) {
+            do {
                 processResult(pcrs.pop())
-            }
+            } while (pcrs.nonEmpty)
             if (forceDependersNotifications.nonEmpty) {
                 val epk = forceDependersNotifications.head
                 forceDependersNotifications = forceDependersNotifications.tail
