@@ -66,12 +66,13 @@ object InitialEntryPointsKey extends ProjectInformationKey[Traversable[Method], 
     final val ConfigKeyPrefix = "org.opalj.br.analyses.cg.InitialEntryPointsKey."
 
     /**
-     * The [[InitialEntryPointsKey]] depends on two other keys and queries information about closed
-     * packages and must answer the question whether a method can be overridden by unknown code.
+     * The [[InitialEntryPointsKey]] depends on three other keys and queries information about closed
+     * packages, must answer the question whether a method can be overridden by unknown code, and
+     * performs checks whether types are extensible or not.
      *
      * @return `Nil`.
      */
-    def requirements = Seq(ClosedPackagesKey, IsOverridableMethodKey)
+    def requirements = Seq(TypeExtensibilityKey, ClosedPackagesKey, IsOverridableMethodKey)
 
     /**
      * Reflectively instantiates a ''ClosedPackagesAnalysis'' for the given project.
