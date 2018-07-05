@@ -44,7 +44,7 @@ sealed trait VMReachableMethodsMetaInformation extends PropertyMetaInformation {
  * @author Florian Kuebler
  */
 final class VMReachableMethods(private val reachableMethods: IntTrieSet)
-        extends Property with OrderedProperty with VMReachableMethodsMetaInformation {
+    extends Property with OrderedProperty with VMReachableMethodsMetaInformation {
 
     override def checkIsEqualOrBetterThan(e: Entity, other: VMReachableMethods): Unit = {
         if (!reachableMethods.subsetOf(other.reachableMethods)) {
