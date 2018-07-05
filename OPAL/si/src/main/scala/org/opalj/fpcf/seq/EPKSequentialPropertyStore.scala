@@ -552,7 +552,7 @@ final class EPKSequentialPropertyStore private (
                 results foreach { ep ⇒ update(ep.e, ep.p, ep.p, newDependees = Nil) }
 
             case IncrementalResult.id ⇒
-                val IncrementalResult(ir, npcs /*: Traversable[(PropertyComputation[e],e)]*/ , _) = r
+                val IncrementalResult(ir, npcs /*: Iterator[(PropertyComputation[e],e)]*/ , _) = r
                 handleResult(ir)
                 npcs foreach { npc ⇒ val (pc, e) = npc; scheduleEagerComputationForEntity(e)(pc) }
 

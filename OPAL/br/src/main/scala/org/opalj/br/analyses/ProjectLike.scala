@@ -32,6 +32,7 @@ package analyses
 
 import scala.collection.{Map ⇒ SomeMap}
 import scala.collection.{Set ⇒ SomeSet}
+
 import org.opalj.collection.immutable.ConstArray.find
 import org.opalj.collection.immutable.ConstArray
 import org.opalj.collection.immutable.UIDSet
@@ -298,9 +299,9 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
                         name,
                         SignaturePolymorphicMethodDescriptor
                     ) match {
-                        case r @ Success(mdc) if mdc.method.isNativeAndVarargs ⇒ r
-                        case _                                                 ⇒ Empty
-                    }
+                            case r @ Success(mdc) if mdc.method.isNativeAndVarargs ⇒ r
+                            case _                                                 ⇒ Empty
+                        }
                 } else {
                     Empty // here, we don't know if the project is incomplete or inconsistent
                 }
@@ -399,12 +400,14 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
      * `resolveMethodReference` or `resolveInterfaceMethodReference` for class and interface types
      * respectively except for the case where there are multiple maximally specific interface
      * methods in which case all of them are returned instead of only a single one.
+     *
      * @param declaringClassType The type of the object that receives the method call. The type may
-     *                           be a class or interface type.
-     * @return The set of resolved methods (empty if the resolution fails, more than one if
+     *         be a class or interface type.
+     *
+     * @return The set of resolved methods; empty if the resolution fails, more than one if
      *         resolution finds several maximally specific interface methods - in the latter case
      *         it is not possible to call the method on objects of the declaring class type, but
-     *         only on subclasses overriding the method uniquely)
+     *         only on subclasses overriding the method uniquely.
      */
     def resolveAllMethodReferences(
         declaringClassType: ReferenceType,
@@ -426,9 +429,11 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
 
         project.classFile(receiverType) match {
             case Some(classFile) ⇒
-                val classMethod = if (classFile.isInterfaceDeclaration)
-                    Result(classFile.findMethod(name, descriptor) orElse lookupInObject())
-                else resolveClassMethodReference(receiverType, name, descriptor)
+                val classMethod =
+                    if (classFile.isInterfaceDeclaration)
+                        Result(classFile.findMethod(name, descriptor) orElse lookupInObject())
+                    else
+                        resolveClassMethodReference(receiverType, name, descriptor)
 
                 classMethod match {
                     case Success(method) ⇒ Set(method)

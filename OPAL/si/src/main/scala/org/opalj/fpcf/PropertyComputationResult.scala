@@ -242,7 +242,7 @@ final case object CheapPropertyComputation extends PropertyComputationHint
  */
 case class IncrementalResult[E <: Entity](
         result:                   PropertyComputationResult,
-        nextComputations:         Traversable[(PropertyComputation[E], E)],
+        nextComputations:         Iterator[(PropertyComputation[E], E)],
         propertyComputationsHint: PropertyComputationHint                  = DefaultPropertyComputation
 ) extends PropertyComputationResult {
 

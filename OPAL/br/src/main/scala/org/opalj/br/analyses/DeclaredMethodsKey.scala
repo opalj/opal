@@ -112,7 +112,7 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
         val mapFactory: JFunction[ReferenceType, ConcurrentHashMap[MethodContext, DeclaredMethod]] =
             (_: ReferenceType) ⇒ { new ConcurrentHashMap() }
 
-        def insertDm(
+        def insertDeclaredMethod(
             dms:     ConcurrentHashMap[MethodContext, DeclaredMethod],
             context: MethodContext,
             dm:      DeclaredMethod
@@ -153,12 +153,12 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
                                     case 0 ⇒
                                     case 1 ⇒
                                         val interfaceMethod = interfaceMethods.head
-                                        insertDm(
+                                        insertDeclaredMethod(
                                             subtypeDms,
                                             MethodContext(p, subtype, interfaceMethod),
                                             DefinedMethod(subtype, interfaceMethod)
                                         )
-                                    case _ ⇒ insertDm(
+                                    case _ ⇒ insertDeclaredMethod(
                                         subtypeDms,
                                         new MethodContext(m.name, m.descriptor),
                                         MultipleDefinedMethods(
@@ -176,7 +176,7 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
                 }
                 val context = MethodContext(p, classType, m)
                 val dm = DefinedMethod(classType, m)
-                insertDm(dms, context, dm)
+                insertDeclaredMethod(dms, context, dm)
             }
 
             for {
@@ -186,7 +186,7 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
             } {
                 val context = MethodContext(p, classType, mc.method)
                 val dm = DefinedMethod(classType, mc.method)
-                insertDm(dms, context, dm)
+                insertDeclaredMethod(dms, context, dm)
             }
         }
 
@@ -195,14 +195,14 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
             val dms = result.computeIfAbsent(MethodHandle, _ ⇒ new ConcurrentHashMap)
             for (dm ← methodHandleSignaturePolymorphicMethods) {
                 val context = new MethodContext(dm.name, dm.descriptor)
-                insertDm(dms, context, dm)
+                insertDeclaredMethod(dms, context, dm)
             }
         }
         if (p.classFile(VarHandle).isEmpty) {
             val dms = result.computeIfAbsent(VarHandle, _ ⇒ new ConcurrentHashMap)
             for (dm ← varHandleSignaturePolymorphicMethods) {
                 val context = new MethodContext(dm.name, dm.descriptor)
-                insertDm(dms, context, dm)
+                insertDeclaredMethod(dms, context, dm)
             }
         }
 
