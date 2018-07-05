@@ -31,25 +31,79 @@ package br
 package analyses
 package cg
 
+import scala.collection.mutable.ArrayBuffer
+
 /**
+ * The EntryPointFinder trait is a common trait for all analyses that can derive an programs entry
+ * points. The concrete entry point finder that is used to determines a programs entry points directly
+ * impacts the computation of a programs call graph.
  *
+ * All subclasses should be implemented in a way that it is possible to chain them. (Decorator)
  *
  * @author Michael Reif
  */
-trait EntryPointFinder {
+sealed trait EntryPointFinder {
 
+    /*
+    * Returns the entry points with respect to a concrete scenario.
+    *
+    * This method must be implemented by any subtype.
+    */
     def collectEntryPoints(project: SomeProject): Traversable[Method] = Set.empty[Method]
 }
 
-class ApplicationEntryPointsFinder extends EntryPointFinder {
+trait ApplicationEntryPointsFinder extends EntryPointFinder {
 
     val MAIN_METHOD_DESCRIPTOR = MethodDescriptor.JustTakes(FieldType.apply("[Ljava/lang/String;"))
 
     override def collectEntryPoints(project: SomeProject): Traversable[Method] = {
-        project.allMethodsWithBody.collect {
+        super.collectEntryPoints(project) ++ project.allMethodsWithBody.collect {
             case m: Method if m.isStatic
                 && (m.descriptor == MAIN_METHOD_DESCRIPTOR)
                 && (m.name eq "main") ⇒ m
         }
     }
 }
+
+object ApplicationEntryPointsFinder extends EntryPointFinder
+
+trait LibraryEntryPointsFinder extends EntryPointFinder {
+
+    override def collectEntryPoints(project: SomeProject): Traversable[Method] = {
+        val isOverridable = project.get(IsOverridableMethodKey)
+        val isClosedPackage = project.get(ClosedPackagesKey).isClosed _
+        @inline def isEntryPoint(method: Method) : Boolean = {
+            val classFile = method.classFile
+            val ot = classFile.thisType
+
+            if (isClosedPackage(ot.packageName)) {
+                if (method.isFinal) {
+                    classFile.isPublic && method.isPublic
+                } else {
+                    isOverridable(method).isYesOrUnknown
+                }
+            } else {
+                // all methods in an open package are accessible
+                !method.isPrivate
+            }
+        }
+
+        val eps = ArrayBuffer.empty[Method]
+
+        project.allMethodsWithBody.foreach { method =>
+         if(isEntryPoint(method))
+             eps.append(method)
+        }
+        eps
+    }
+}
+
+
+object LibraryEntryPointsFinder extends LibraryEntryPointsFinder
+
+/*
+* The MetaEntryPointsFinder is a conservative EntryPoints finder triggers all known finders.
+*/
+object MetaEntryPointsFinder
+    extends ApplicationEntryPointsFinder
+        with LibraryEntryPointsFinder
