@@ -79,7 +79,6 @@ class LoadedClassesAnalysis(
 ) extends FPCFAnalysis {
     private val tacaiProvider = project.get(SimpleTACAIKey)
     private val declaredMethods = project.get(DeclaredMethodsKey)
-    private val propertyStore = project.get(PropertyStoreKey)
 
     /**
      * Each time a method gets reachable in the computation of the call graph
