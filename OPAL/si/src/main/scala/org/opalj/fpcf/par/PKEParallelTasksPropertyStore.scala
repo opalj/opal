@@ -1192,9 +1192,9 @@ final class PKEParallelTasksPropertyStore private (
         }
 
         do {
-            do {
+            while (pcrs.nonEmpty) {
                 processResult(pcrs.pop())
-            } while (pcrs.nonEmpty)
+            }
             if (forceDependersNotifications.nonEmpty) {
                 val epk = forceDependersNotifications.head
                 forceDependersNotifications = forceDependersNotifications.tail
