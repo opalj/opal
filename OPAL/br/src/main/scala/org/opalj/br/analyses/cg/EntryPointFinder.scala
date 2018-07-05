@@ -54,25 +54,26 @@ sealed trait EntryPointFinder {
 
 trait ApplicationEntryPointsFinder extends EntryPointFinder {
 
-    val MAIN_METHOD_DESCRIPTOR = MethodDescriptor.JustTakes(FieldType.apply("[Ljava/lang/String;"))
-
     override def collectEntryPoints(project: SomeProject): Traversable[Method] = {
+        val MAIN_METHOD_DESCRIPTOR = MethodDescriptor.JustTakes(FieldType.apply("[Ljava/lang/String;"))
+
         super.collectEntryPoints(project) ++ project.allMethodsWithBody.collect {
             case m: Method if m.isStatic
                 && (m.descriptor == MAIN_METHOD_DESCRIPTOR)
-                && (m.name eq "main") ⇒ m
+                && (m.name == "main") ⇒ m
         }
     }
 }
 
-object ApplicationEntryPointsFinder extends EntryPointFinder
+object ApplicationEntryPointsFinder extends ApplicationEntryPointsFinder
 
 trait LibraryEntryPointsFinder extends EntryPointFinder {
 
     override def collectEntryPoints(project: SomeProject): Traversable[Method] = {
         val isOverridable = project.get(IsOverridableMethodKey)
         val isClosedPackage = project.get(ClosedPackagesKey).isClosed _
-        @inline def isEntryPoint(method: Method) : Boolean = {
+
+        @inline def isEntryPoint(method: Method): Boolean = {
             val classFile = method.classFile
             val ot = classFile.thisType
 
@@ -90,14 +91,13 @@ trait LibraryEntryPointsFinder extends EntryPointFinder {
 
         val eps = ArrayBuffer.empty[Method]
 
-        project.allMethodsWithBody.foreach { method =>
-         if(isEntryPoint(method))
-             eps.append(method)
+        project.allMethodsWithBody.foreach { method ⇒
+            if (isEntryPoint(method))
+                eps.append(method)
         }
-        eps
+        super.collectEntryPoints(project) ++ eps
     }
 }
-
 
 object LibraryEntryPointsFinder extends LibraryEntryPointsFinder
 
@@ -106,4 +106,4 @@ object LibraryEntryPointsFinder extends LibraryEntryPointsFinder
 */
 object MetaEntryPointsFinder
     extends ApplicationEntryPointsFinder
-        with LibraryEntryPointsFinder
+    with LibraryEntryPointsFinder

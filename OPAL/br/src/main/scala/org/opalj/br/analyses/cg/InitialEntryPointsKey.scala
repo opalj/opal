@@ -86,10 +86,15 @@ object InitialEntryPointsKey extends ProjectInformationKey[Traversable[Method], 
             throw new IllegalArgumentException("No InitialEntryPointsKey configuration available; Entry Points cannot be computed!")
         }
 
-        val cls = Class.forName(entryPointFinder.get)
-        val constructor = cls.getConstructors.head
-        val epFinder = constructor.newInstance().asInstanceOf[EntryPointFinder]
+        val fqn = entryPointFinder.get
+        val epFinder = instantiateEntryPointFinder(fqn)
         epFinder.collectEntryPoints(project)
     }
 
+    private[this] def instantiateEntryPointFinder(fqn: String): EntryPointFinder = {
+        import scala.reflect.runtime.universe._
+        val mirror = runtimeMirror(this.getClass.getClassLoader)
+        val module = mirror.staticModule(fqn)
+        mirror.reflectModule(module).instance.asInstanceOf[EntryPointFinder]
+    }
 }
