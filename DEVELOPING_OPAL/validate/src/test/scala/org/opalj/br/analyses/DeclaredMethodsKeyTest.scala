@@ -33,6 +33,7 @@ package analyses
 import java.io.File
 import java.net.URL
 
+import org.opalj.collection.immutable.ConstArray
 import org.opalj.util.ScalaMajorVersion
 import org.scalatest.Matchers
 import org.scalatest.FunSpec
@@ -115,22 +116,27 @@ class DeclaredMethodsKeyTest extends FunSpec with Matchers {
     def checkDeclaredMethod(classType: ObjectType, annotation: Annotation): Unit = {
         val name = getValue(annotation, "name").asStringValue.value
         val descriptor = MethodDescriptor(getValue(annotation, "descriptor").asStringValue.value)
-        val declaringClass = getValue(annotation, "declaringClass").asClassValue.value.asObjectType
+        val declaringClasses = getValue(annotation, "declaringClass").asArrayValue.values
 
-        val methodO = FixtureProject.classFile(declaringClass).get.findMethod(name, descriptor)
+        val methodOs = declaringClasses map { declClass ⇒
+            val classType = declClass.asClassValue.value.asObjectType
+            (classType, FixtureProject.classFile(classType).get.findMethod(name, descriptor))
+        }
 
-        if (methodO.isEmpty)
-            fail(s"method $declaringClass.${descriptor.toJava(name)} not found in fixture project")
-        val method = methodO.get
+        val emptyMethodO = methodOs.find(_._2.isEmpty)
+        if (emptyMethodO.isDefined)
+            fail(s"method ${emptyMethodO.get._1.simpleName}.${descriptor.toJava(name)}"+
+                "not found in fixture project")
 
-        val expected = DefinedMethod(classType, method)
+        val expected =
+            if (methodOs.size == 1) DefinedMethod(classType, methodOs.head._2.get)
+            else MultipleDefinedMethods(classType, ConstArray(methodOs.map(_._2.get).toSeq: _*))
 
         if (declaredMethods.contains(expected))
             annotated += expected
         else
             fail(
-                s"No declared method for ${classType.simpleName}: "+
-                    s"${declaringClass.simpleName}.${descriptor.toJava(name)}"
+                s"No declared method for ${classType.simpleName}: $expected"
             )
     }
 

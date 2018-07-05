@@ -44,6 +44,7 @@ class AllocationFreenessTests extends PropertiesTest {
         val as = executeAnalyses(
             Set(EagerL0AllocationFreenessAnalysis)
         )
+        as.propertyStore.shutdown()
         validateProperties(
             as,
             declaredMethodsWithAnnotations(as.project),

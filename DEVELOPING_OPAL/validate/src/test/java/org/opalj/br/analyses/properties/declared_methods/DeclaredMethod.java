@@ -17,5 +17,5 @@ import static java.lang.annotation.ElementType.TYPE;
 public @interface DeclaredMethod {
     String name();
     String descriptor();
-    Class<?> declaringClass();
+    Class<?>[] declaringClass();
 }
