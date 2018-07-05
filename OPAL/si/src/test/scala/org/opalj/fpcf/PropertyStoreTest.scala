@@ -1086,8 +1086,7 @@ sealed abstract class PropertyStoreTest(
                  * the set of observed dependees.
                  */
                 def analysis(level: Int)(n: Node): PropertyComputationResult = {
-                    val nextPCs: Traversable[(PropertyComputation[Node], Node)] =
-                        n.targets.map(t ⇒ (analysis(level + 1) _, t))
+                    val nextPCs = n.targets.map(t ⇒ (analysis(level + 1) _, t)).iterator
                     IncrementalResult(Result(n, TreeLevel(level)), nextPCs)
                 }
 
