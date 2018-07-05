@@ -53,6 +53,7 @@ class ReturnValueFreshnessTests extends PropertiesTest {
 
     describe("return value freshness analysis is executed") {
         val as = executeAnalyses(Set(EagerReturnValueFreshnessAnalysis), lazyAnalysisScheduler)
+        as.propertyStore.shutdown()
         validateProperties(
             as,
             declaredMethodsWithAnnotations(as.project),
