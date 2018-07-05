@@ -33,7 +33,6 @@ package cg
 
 import org.opalj.ai.Domain
 import org.opalj.ai.domain.RecordDefUse
-import org.opalj.br.ArrayType
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
@@ -41,6 +40,7 @@ import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.cg.InitialEntryPointsKey
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.properties.AllTypes
@@ -102,11 +102,7 @@ class RTACallGraphAnalysis private[analyses] (
     private[this] val declaredMethods = project.get(DeclaredMethodsKey)
 
     def step1(p: SomeProject): PropertyComputationResult = {
-        // TODO use an initial entrypoint key here
-        val mainDescriptor = MethodDescriptor.JustTakes(ArrayType(ObjectType.String))
-        val entryPoints = project.allMethodsWithBody.filter { m ⇒
-            m.name == "main" && m.descriptor == mainDescriptor && m.isStatic && m.body.isDefined
-        }.map(declaredMethods.apply)
+        val entryPoints = project.get(InitialEntryPointsKey).map(declaredMethods.apply)
 
         if (entryPoints.isEmpty)
             OPALLogger.logOnce(
