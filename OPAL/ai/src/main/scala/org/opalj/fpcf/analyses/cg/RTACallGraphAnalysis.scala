@@ -109,15 +109,17 @@ class RTACallGraphAnalysis private[analyses] (
      * has been analysed using `step1` or not.
      */
     val processedMethods: Array[AtomicBoolean] = {
-        Array.fill(declaredMethods.size) { new AtomicBoolean } //TODO this does not work with dms
+        Array.fill(declaredMethods.size) {
+            new AtomicBoolean
+        } //TODO this does not work with dms
     }
 
     override def registerMethodToProcess(method: DeclaredMethod): Boolean = {
         processedMethods(declaredMethods.methodID(method)).compareAndSet(false, true)
     }
 
-    override def processMethod(entryPoint:     Boolean)(
-        declaredMethod: DeclaredMethod,
+    override def processMethod(entryPoint: Boolean)(
+        declaredMethod: DeclaredMethod
     ): PropertyComputationResult = {
 
         // we must only call this method once per method.
@@ -186,9 +188,9 @@ class RTACallGraphAnalysis private[analyses] (
         IncrementalResult(
             Results(results),
             // continue the computation with the newly reachable methods
-            newReachableMethods.map(
-                nextMethod ⇒ (processMethod(entryPoint = false) _, declaredMethods(nextMethod))
-            )
+            newReachableMethods.iterator.map { nextMethod ⇒
+                (processMethod(entryPoint = false)_, declaredMethods(nextMethod))
+            }
         )
     }
 
@@ -219,8 +221,8 @@ class RTACallGraphAnalysis private[analyses] (
 
         IncrementalResult(
             Results(results),
-            newReachableMethods map{
-                nextMethod ⇒ (processMethod(entryPoint = false) _, declaredMethods(nextMethod))
+            newReachableMethods.iterator.map { nextMethod ⇒
+                (processMethod(entryPoint = false)_, declaredMethods(nextMethod))
             }
         )
     }

@@ -37,13 +37,14 @@ import scala.collection.mutable.AnyRefMap
 import scala.collection.mutable.LongMap
 import scala.collection.mutable
 import scala.collection.{Map ⇒ SomeMap}
-
 import org.opalj.collection.mutable.AnyRefAppendChain
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.info
 import org.opalj.log.OPALLogger.error
 import org.opalj.fpcf.PropertyKey.fallbackPropertyBasedOnPkId
+
+import scala.collection.mutable.ArrayBuffer
 
 /**
  * A non-concurrent implementation of the property store. Entities are generally only stored on
@@ -136,6 +137,10 @@ final class EPKSequentialPropertyStore private (
     /** Those computations that will only be scheduled if the result is required. */
     private[this] var lazyComputations: LongMap[SomePropertyComputation] = LongMap.empty
 
+    private[this] var triggeredComputations: Array[ArrayBuffer[SomePropertyComputation]] = {
+        Array.fill(PropertyKind.SupportedPropertyKinds) { new ArrayBuffer[SomePropertyComputation](1) }
+    }
+
     /** The list of scheduled computations. */
     private[this] var tasks: AnyRefAppendChain[() ⇒ Unit] = new AnyRefAppendChain()
 
@@ -222,7 +227,27 @@ final class EPKSequentialPropertyStore private (
                 "lazy computations should only be registered while no analysis are scheduled"
             )
         }
-        lazyComputations.put(pk.id.toLong, pc.asInstanceOf[SomePropertyComputation])
+        lazyComputations.put(pk.id.toLong, pc)
+    }
+
+    override def registerTriggeredComputation[E <: Entity, P <: Property](
+        pk: PropertyKey[P],
+        pc: PropertyComputation[E]
+    ): Unit = {
+        if (debug && !tasks.isEmpty) {
+            throw new IllegalStateException(
+                "triggered computations should only be registered as long as no analysis is scheduled"
+            )
+        }
+        triggeredComputations(pk.id) += pc
+    }
+
+    private[this] def triggerComputations(e: Entity, pkId: Int): Unit = {
+        val triggeredComputations = this.triggeredComputations(pkId)
+        if (triggeredComputations != null) {
+            triggeredComputations foreach (pc ⇒
+                scheduleEagerComputationForEntity(e)(pc.asInstanceOf[PropertyComputation[Entity]]))
+        }
     }
 
     override def scheduleEagerComputationForEntity[E <: Entity](
@@ -378,7 +403,8 @@ final class EPKSequentialPropertyStore private (
         if (debug && e == null) {
             throw new IllegalArgumentException("the entity must not be null")
         }
-        val pkId = ub.key.id.toLong
+        val pkIdInt = ub.key.id
+        val pkId = pkIdInt.toLong
 
         ps.get(e) match {
             case None ⇒
@@ -387,6 +413,7 @@ final class EPKSequentialPropertyStore private (
                     e,
                     LongMap((pkId, PropertyValue(lb, ub, newDependees)))
                 ))
+                triggerComputations(e, pkIdInt)
                 // registration with the new dependees is done when processing IntermediateResult
                 true
 
@@ -396,6 +423,7 @@ final class EPKSequentialPropertyStore private (
                     // A property of the respective kind was not yet stored/requested.
                     // (=> there are no dependers/dependees):
                     pkIdPValue += ((pkId, PropertyValue(lb, ub, newDependees)))
+                    triggerComputations(e, pkIdInt)
                     // registration with the new dependees is done when processing IntermediateResult
                     true
 
@@ -438,6 +466,10 @@ final class EPKSequentialPropertyStore private (
                     pValue.ub = ub
                     // Updating lb and/or ub MAY CHANGE the PropertyValue's isFinal property!
                     val newPValueIsFinal = pValue.isFinal
+
+                    if (oldUB == null || oldUB == PropertyIsLazilyComputed) {
+                        triggerComputations(e, pkIdInt)
+                    }
 
                     // 2. Clear old dependees (remove onUpdateContinuation from dependees)
                     //    and then update dependees.

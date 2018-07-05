@@ -451,6 +451,38 @@ abstract class PropertyStore {
     ): Unit
 
     /**
+     * Registers a property computation that is eagerly triggered when a property of the given kind
+     * is derived for some entity for the first time. Note, that the property computation
+     * function – as usual – has to be thread safe. The primary use case is to kick-start the
+     * computation of some e/pk as soon as an entity "becomes relevant".
+     *
+     * In general, it also possible to have a standard analysis that just queries the properties
+     * of the respective entities and which maintains the list of dependees. However, if the
+     * list of dependees becomes larger and (at least initially) encompasses a significant fraction
+     * or even all entities of a specific kind, the overhead that is generated in the framework
+     * becomes very huge. In this case, it is way more efficient to register a triggered
+     * computation.
+     *
+     * For example, if you want to do some processing (kick-start further computations) related
+     * to methods that are reached, it is more efficient to register a property computation
+     * that is triggered when a method's `Caller` property is set. Please note, that the property
+     * computation is allowed to query and depend on the property that initially kicked-off the
+     * computation in the first place. '''Querying the property store may in particular be required
+     * to identify the reason why the property was set'''. For example, if the `Caller` property
+     * was set to the fallback due to a depending computation, it may be necessary to distinguish
+     * between the case "no callers" and "unknown callers"; in case of the final property
+     * "no callers" the result may very well be [[NoResult]].
+     *
+     * @param pk The property key.
+     * @param pc The computation that is (potentially concurrently) called to kick-start a
+     *           computation related to the given entity.
+     */
+    def registerTriggeredComputation[E <: Entity, P <: Property](
+        pk: PropertyKey[P],
+        pc: PropertyComputation[E]
+    ): Unit
+
+    /**
      * Needs to be called before an analysis is scheduled to inform the property store which
      * properties will be computed now and which are computed in a later phase. The later
      * information is used to decide when we use a fallback.

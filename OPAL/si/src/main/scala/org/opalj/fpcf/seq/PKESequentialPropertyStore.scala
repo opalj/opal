@@ -140,6 +140,10 @@ final class PKESequentialPropertyStore private (
         new Array(PropertyKind.SupportedPropertyKinds)
     }
 
+    private[this] var triggeredComputations: Array[ArrayBuffer[SomePropertyComputation]] = {
+        Array.fill(PropertyKind.SupportedPropertyKinds) { new ArrayBuffer[SomePropertyComputation](1) }
+    }
+
     // The list of scheduled computations
     private[this] var tasks: ArrayDeque[QualifiedTask] = new ArrayDeque(50000)
 
@@ -319,10 +323,30 @@ final class PKESequentialPropertyStore private (
     ): Unit = {
         if (debug && !tasks.isEmpty) {
             throw new IllegalStateException(
-                "lazy computations should only be registered while no analysis are scheduled"
+                "lazy computations should only be registered while no analysis is scheduled"
             )
         }
-        lazyComputations(pk.id) = pc.asInstanceOf[SomePropertyComputation]
+        lazyComputations(pk.id) = pc
+    }
+
+    override def registerTriggeredComputation[E <: Entity, P <: Property](
+        pk: PropertyKey[P],
+        pc: PropertyComputation[E]
+    ): Unit = {
+        if (debug && !tasks.isEmpty) {
+            throw new IllegalStateException(
+                "triggered computations should only be registered as long as no analysis is scheduled"
+            )
+        }
+        triggeredComputations(pk.id) += pc
+    }
+
+    private[this] def triggerComputations(e: Entity, pkId: Int): Unit = {
+        val triggeredComputations = this.triggeredComputations(pkId)
+        if (triggeredComputations != null) {
+            triggeredComputations foreach (pc ⇒
+                scheduleEagerComputationForEntity(e)(pc.asInstanceOf[PropertyComputation[Entity]]))
+        }
     }
 
     private[this] def scheduleLazyComputationForEntity[E <: Entity](
@@ -365,6 +389,7 @@ final class PKESequentialPropertyStore private (
             case null ⇒
                 // The entity is unknown (=> there are no dependers/dependees):
                 ps(pkId).put(e, PropertyValue(lb, ub, newDependees))
+                triggerComputations(e, pkId)
                 // registration with the new dependees is done when processing IntermediateResult
                 true
 
@@ -407,6 +432,10 @@ final class PKESequentialPropertyStore private (
                 pValue.ub = ub
                 // Updating lb and/or ub MAY CHANGE the PropertyValue's isFinal property!
                 val newPValueIsFinal = pValue.isFinal
+
+                if (oldLB == null || oldLB == PropertyIsLazilyComputed) {
+                    triggerComputations(e, pkId)
+                }
 
                 // 2. Clear old dependees (remove onUpdateContinuation from dependees)
                 //    and then update dependees.
@@ -741,7 +770,7 @@ final class PKESequentialPropertyStore private (
                 var pkId = 0
                 while (pkId < maxPKIndex) {
                     if (!delayedPropertyKinds(pkId)) {
-                        ps(pkId).forEach { (e, pValue) ⇒
+                        ps(pkId) forEach { (e, pValue) ⇒
                             // Check that we have no running computations and that the
                             // property will not be computed later on.
                             if (pValue.ub == null) {
@@ -831,7 +860,7 @@ final class PKESequentialPropertyStore private (
                     var toBeFinalized: List[(AnyRef, Property)] = Nil
                     while (pkId < maxPKIndex) {
                         if (!delayedPropertyKinds(pkId)) {
-                            ps(pkId).forEach { (e, pValue) ⇒
+                            ps(pkId) forEach { (e, pValue) ⇒
                                 // Check that we have no running computations and that the
                                 // property will not be computed later on.
                                 if (!pValue.isFinal && pValue.lb != pValue.ub && pValue.dependees.isEmpty) {

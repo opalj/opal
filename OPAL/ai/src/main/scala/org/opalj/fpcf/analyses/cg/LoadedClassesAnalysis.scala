@@ -104,7 +104,7 @@ class LoadedClassesAnalysis(
 
         // if there are open dependencies left, return an intermediate result
         // force call graph computation for new reachable methods
-        returnResult(newReachableMethods, state)
+        returnResult(newReachableMethods.iterator, state)
     }
 
     /**
@@ -122,7 +122,7 @@ class LoadedClassesAnalysis(
      */
     def handleCaller(
         state: LoadedClassesState, callersOfMethod: EOptionP[DeclaredMethod, CallersProperty]
-    ): Traversable[DeclaredMethod] = {
+    ): Iterator[DeclaredMethod] = {
         var reachableMethods = List.empty[DeclaredMethod]
         callersOfMethod match {
             case FinalEP(_, NoCallers) ⇒
@@ -143,7 +143,7 @@ class LoadedClassesAnalysis(
                 val newReachableMethods = handleNewReachableMethod(dm, state)
                 reachableMethods ++= newReachableMethods
         }
-        reachableMethods
+        reachableMethods.iterator
     }
 
     /**
@@ -211,7 +211,7 @@ class LoadedClassesAnalysis(
      * (intermediate if there are open dependencies)
      */
     def returnResult(
-        reachableMethods: Traversable[DeclaredMethod], state: LoadedClassesState
+        reachableMethods: Iterator[DeclaredMethod], state: LoadedClassesState
     ): PropertyComputationResult = {
         val loadedClassesUB = new LoadedClasses(state.loadedClasses)
 

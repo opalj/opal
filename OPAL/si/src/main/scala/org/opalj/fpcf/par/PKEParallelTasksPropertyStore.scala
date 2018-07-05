@@ -192,6 +192,10 @@ final class PKEParallelTasksPropertyStore private (
         new AtomicReferenceArray(SupportedPropertyKinds)
     }
 
+    private[this] var triggeredComputations: AtomicReferenceArray[ConcurrentLinkedQueue[SomePropertyComputation]] = {
+        new AtomicReferenceArray(SupportedPropertyKinds)
+    }
+
     // Read by many threads, updated only by the store updates thread.
     // ONLY contains `true` intermediate and final properties; i.e., the value is never null.
     private[this] val properties: Array[ConcurrentHashMap[Entity, SomeEPS]] = {
@@ -510,10 +514,31 @@ final class PKEParallelTasksPropertyStore private (
     ): Unit = {
         if (debug && openJobs.get() > 0) {
             throw new IllegalStateException(
-                "lazy computations can only be registered while no analysis are scheduled"
+                "lazy computations can only be registered while no analyses are scheduled"
             )
         }
-        lazyComputations.set(pk.id, pc.asInstanceOf[SomePropertyComputation])
+        lazyComputations.set(pk.id, pc)
+    }
+
+    override def registerTriggeredComputation[E <: Entity, P <: Property](
+        pk: PropertyKey[P],
+        pc: PropertyComputation[E]
+    ): Unit = {
+        if (debug && openJobs.get() > 0) {
+            throw new IllegalStateException(
+                "triggered computations can only be registered as long as no analysis is scheduled"
+            )
+        }
+        val pkId = pk.id
+        var computations = triggeredComputations.get(pkId)
+        if (computations == null) {
+            computations = new ConcurrentLinkedQueue
+            if (!triggeredComputations.compareAndSet(pkId, null, computations)) {
+                // the liar was set in the meantime ... hence, we have to get the "correct" set
+                computations = triggeredComputations.get(pkId)
+            }
+        }
+        computations.offer(pc)
     }
 
     override def isKnown(e: Entity): Boolean = properties.exists(_.containsKey(e))
@@ -660,7 +685,7 @@ final class PKEParallelTasksPropertyStore private (
         val pkId = pk.id
         if (forcedComputations(pkId).put(e, e) == null) {
 
-            val lc = lazyComputations.get(pkId)
+            val lc = lazyComputations.get(pkId).asInstanceOf[PropertyComputation[E]]
             if (lc != null) {
                 if (properties(pkId).get(e) == null) {
                     if (tracer.isDefined) tracer.get.force(e, pkId)
@@ -848,6 +873,12 @@ final class PKEParallelTasksPropertyStore private (
         // 2. check if update was ok
         if (oldEPS == null) {
             if (isFinal) oneStepFinalUpdatesCounter += 1
+            val computationsToStart = this.triggeredComputations.get(pkId)
+            if (computationsToStart ne null) {
+                computationsToStart.forEach { pc ⇒
+                    scheduleEagerComputationForEntity(e)(pc.asInstanceOf[PropertyComputation[Entity]])
+                }
+            }
         } else if (debug /*&& oldEPS != null*/ ) {
             // The entity is known and we have a property value for the respective
             // kind; i.e., we may have (old) dependees and/or also dependers.

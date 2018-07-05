@@ -117,7 +117,7 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
                     results ::= createResultForAllSubtypes(t, MutableObjectDueToUnknownSupertypes)
             }
         }
-        IncrementalResult(Results(results), nextComputations)
+        IncrementalResult(Results(results), nextComputations.iterator)
     }
 
     def doDetermineClassImmutability(e: Entity): PropertyComputationResult = {
