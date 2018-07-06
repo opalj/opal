@@ -235,21 +235,25 @@ class L0SelfReferenceLeakageAnalysis(
 
 object L0SelfReferenceLeakageAnalysis extends FPCFEagerAnalysisScheduler {
 
-    def uses: Set[PropertyKind] = Set.empty
+    override def uses: Set[PropertyKind] = Set.empty
 
-    def derives: Set[PropertyKind] = Set(SelfReferenceLeakage.Key)
+    override def derives: Set[PropertyKind] = Set(SelfReferenceLeakage.Key)
+
+    override type InitializationData = Null
+
+    override def init(p: SomeProject, ps: PropertyStore): Null = null
 
     /**
      * Starts the analysis for the given `project`. This method is typically implicitly
      * called by the [[FPCFAnalysesManager]].
      */
-    def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
-        val config = project.config
+    override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+        val config = p.config
         val debug = config.getBoolean("org.opalj.fcpf.analysis.L0SelfReferenceLeakage.debug")
-        val analysis = new L0SelfReferenceLeakageAnalysis(project, debug)
+        val analysis = new L0SelfReferenceLeakageAnalysis(p, debug)
         import analysis.determineSelfReferenceLeakage
-        import project.allProjectClassFiles
-        propertyStore.scheduleEagerComputationsForEntities(allProjectClassFiles)(determineSelfReferenceLeakage)
+        import p.allProjectClassFiles
+        ps.scheduleEagerComputationsForEntities(allProjectClassFiles)(determineSelfReferenceLeakage)
         analysis
     }
 

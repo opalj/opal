@@ -151,21 +151,31 @@ class VirtualMethodThrownExceptionsAnalysis private[analyses] (
     }
 }
 
+trait VirtualMethodThrownExceptionsAnalysisScheduler {
+
+    final type InitializationData = Null
+
+    final def uses: Set[PropertyKind] = Set(ThrownExceptions)
+
+    final def derives: Set[PropertyKind] = Set(ThrownExceptionsByOverridingMethods)
+
+    final def init(p: SomeProject, ps: PropertyStore): Null = null
+
+}
+
 /**
  * Factory/executor of the thrown exceptions analysis.
  *
  * @author Andreas Muttscheller
  * @author Michael Eichberg
  */
-object EagerVirtualMethodThrownExceptionsAnalysis extends FPCFEagerAnalysisScheduler {
+object EagerVirtualMethodThrownExceptionsAnalysis
+    extends VirtualMethodThrownExceptionsAnalysisScheduler
+    with FPCFEagerAnalysisScheduler {
 
-    override def uses: Set[PropertyKind] = Set(ThrownExceptions)
-
-    override def derives: Set[PropertyKind] = Set(ThrownExceptionsByOverridingMethods)
-
-    def start(project: SomeProject, ps: PropertyStore): FPCFAnalysis = {
-        val analysis = new VirtualMethodThrownExceptionsAnalysis(project)
-        val allMethods = project.allMethodsWithBody // FIXME we nee this information also for abstract methods ...
+    override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+        val analysis = new VirtualMethodThrownExceptionsAnalysis(p)
+        val allMethods = p.allMethodsWithBody // FIXME we need this information also for abstract methods ...
         ps.scheduleEagerComputationsForEntities(allMethods) {
             analysis.aggregateExceptionsThrownByOverridingMethods
         }
@@ -180,15 +190,13 @@ object EagerVirtualMethodThrownExceptionsAnalysis extends FPCFEagerAnalysisSched
  * @author Andreas Muttscheller
  * @author Michael Eichberg
  */
-object LazyVirtualMethodThrownExceptionsAnalysis extends FPCFLazyAnalysisScheduler {
-
-    override def uses: Set[PropertyKind] = Set(ThrownExceptions)
-
-    override def derives: Set[PropertyKind] = Set(ThrownExceptionsByOverridingMethods)
+object LazyVirtualMethodThrownExceptionsAnalysis
+    extends VirtualMethodThrownExceptionsAnalysisScheduler
+    with FPCFLazyAnalysisScheduler {
 
     /** Registers an analysis to compute the exceptions thrown by overriding methods lazily. */
-    def startLazily(project: SomeProject, ps: PropertyStore): FPCFAnalysis = {
-        val analysis = new VirtualMethodThrownExceptionsAnalysis(project)
+    override def startLazily(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+        val analysis = new VirtualMethodThrownExceptionsAnalysis(p)
         ps.registerLazyPropertyComputation(
             ThrownExceptionsByOverridingMethods.key,
             analysis.lazilyAggregateExceptionsThrownByOverridingMethods

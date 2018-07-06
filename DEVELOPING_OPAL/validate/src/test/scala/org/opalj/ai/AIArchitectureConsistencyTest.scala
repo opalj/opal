@@ -46,7 +46,7 @@ import org.opalj.av.checking.Specification
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class ArchitectureConsistencyTest extends FlatSpec with Matchers with BeforeAndAfterAll {
+class AIArchitectureConsistencyTest extends FlatSpec with Matchers with BeforeAndAfterAll {
 
     behavior of "the Abstract Interpretation Framework's implemented architecture"
 
@@ -62,7 +62,14 @@ class ArchitectureConsistencyTest extends FlatSpec with Matchers with BeforeAndA
                 ensemble('AI) {
                     "org.opalj.ai.*" except classes("""org\.opalj\.ai\..+Test.*""".r)
                 }
-
+                ensemble('Issues) {
+                    "org.opalj.issues.*" except
+                        classes("""org\.opalj\.issues\..+Test.*""".r)
+                }
+                ensemble('Common) {
+                    "org.opalj.ai.common.*" except
+                        classes("""org\.opalj\.ai\.common\..+Test.*""".r)
+                }
                 ensemble('Domain) {
                     "org.opalj.ai.domain.*" except
                         classes("""org\.opalj\.ai\.domain\..+Test.*""".r)
@@ -79,10 +86,6 @@ class ArchitectureConsistencyTest extends FlatSpec with Matchers with BeforeAndA
                     "org.opalj.ai.domain.l2.*" except
                         classes("""org\.opalj\.ai\.domain\.l2\..+Test.*""".r)
                 }
-                ensemble('DomainLI) {
-                    "org.opalj.ai.domain.li.*" except
-                        classes("""org\.opalj\.ai\.domain\.li\..+Test.*""".r)
-                }
                 ensemble('DomainTracing) {
                     "org.opalj.ai.domain.tracing.*" except
                         classes("""org\.opalj\.ai\.domain\.tracing\..+Test.*""".r)
@@ -97,31 +100,29 @@ class ArchitectureConsistencyTest extends FlatSpec with Matchers with BeforeAndA
                     "org.opalj.ai.domain.la.*" except
                         classes("""org\.opalj\.ai\.domain\.la\..+Test.*""".r)
                 }
-                ensemble('Analyses) { "org.opalj.ai.analyses.**" }
-                ensemble('AnalysesCallGraph) { "org.opalj.ai.analyses.cg.*" }
-
-                ensemble('Common) { "org.opalj.ai.common.*" }
+                ensemble('Analyses) { "org.opalj.fpcf.analyses.**" }
 
                 'Util is_only_allowed_to (USE, empty)
 
                 'AI is_only_allowed_to (USE, 'Util)
+
+                'Issues is_only_allowed_to (USE, 'AI)
 
                 'Domain is_only_allowed_to (USE, 'Util, 'AI)
 
                 'DomainL0 is_only_allowed_to (USE, 'Util, 'AI, 'Domain)
                 'DomainL1 is_only_allowed_to (USE, 'Util, 'AI, 'Domain, 'DomainL0)
                 'DomainL2 is_only_allowed_to (USE, 'Util, 'AI, 'Domain, 'DomainL0, 'DomainL1)
-                'DomainLI is_only_allowed_to (USE, 'Util, 'AI, 'Domain, 'DomainL0, 'DomainL1, 'DomainL2)
 
                 'DomainTracing is_only_allowed_to (USE, 'Util, 'AI, 'Domain)
 
-                'Project is_only_allowed_to (USE, 'Util, 'AI, 'Domain, 'DomainL0, 'DomainL1, 'DomainL2, 'DomainLI)
+                'Project is_only_allowed_to (USE, 'Util, 'AI, 'Domain, 'DomainL0, 'DomainL1, 'DomainL2)
 
                 // we have a cyclic dependency between code in ..ai.domain.la and
                 // ai.analyses.** which is "intended" since we do fix-point
                 // computations
-                'DomainLA is_only_allowed_to (USE, 'Util, 'AI, 'Domain, 'DomainL0, 'DomainL1, 'DomainL2, 'DomainLI, 'Analyses)
-                'Analyses is_only_allowed_to (USE, 'Util, 'AI, 'Domain, 'DomainL0, 'DomainL1, 'DomainL2, 'DomainLI, 'DomainLA, 'Project)
+                'DomainLA is_only_allowed_to (USE, 'Util, 'AI, 'Domain, 'DomainL0, 'DomainL1, 'DomainL2, 'Analyses)
+                'Analyses is_only_allowed_to (USE, 'Util, 'AI, 'Common, 'Domain, 'DomainL0, 'DomainL1, 'DomainL2, 'DomainLA, 'Project)
 
                 // 'Common is allowed to use everything
             }

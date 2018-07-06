@@ -413,9 +413,14 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
 }
 
 trait ClassImmutabilityAnalysisScheduler extends ComputationSpecification {
-    override def derives: Set[PropertyKind] = Set(ClassImmutability)
 
-    override def uses: Set[PropertyKind] = Set(TypeImmutability, FieldMutability)
+    final override def derives: Set[PropertyKind] = Set(ClassImmutability)
+
+    final override def uses: Set[PropertyKind] = Set(TypeImmutability, FieldMutability)
+
+    final override type InitializationData = Null
+
+    final def init(p: SomeProject, ps: PropertyStore): Null = null
 
     def setResultsAnComputeEntities(
         project: SomeProject, propertyStore: PropertyStore
@@ -485,12 +490,12 @@ object EagerClassImmutabilityAnalysis
     extends ClassImmutabilityAnalysisScheduler
     with FPCFEagerAnalysisScheduler {
 
-    override def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
+    override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
 
-        val analysis = new ClassImmutabilityAnalysis(project)
+        val analysis = new ClassImmutabilityAnalysis(p)
 
-        val cfs = setResultsAnComputeEntities(project, propertyStore)
-        propertyStore.scheduleEagerComputationsForEntities(cfs)(
+        val cfs = setResultsAnComputeEntities(p, ps)
+        ps.scheduleEagerComputationsForEntities(cfs)(
             analysis.determineClassImmutability(
                 null, FinalEP(ObjectType.Object, ImmutableObject), true, false
             )
@@ -509,14 +514,12 @@ object LazyClassImmutabilityAnalysis
     extends ClassImmutabilityAnalysisScheduler
     with FPCFLazyAnalysisScheduler {
 
-    override def startLazily(
-        project: SomeProject, propertyStore: PropertyStore
-    ): FPCFAnalysis = {
-        val analysis = new ClassImmutabilityAnalysis(project)
+    override def startLazily(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+        val analysis = new ClassImmutabilityAnalysis(p)
 
-        setResultsAnComputeEntities(project, propertyStore)
-        propertyStore.waitOnPhaseCompletion() // wait for completion of setting results
-        propertyStore.registerLazyPropertyComputation(
+        setResultsAnComputeEntities(p, ps)
+        ps.waitOnPhaseCompletion() // wait for completion of setting results
+        ps.registerLazyPropertyComputation(
             ClassImmutability.key, analysis.doDetermineClassImmutability
         )
         analysis

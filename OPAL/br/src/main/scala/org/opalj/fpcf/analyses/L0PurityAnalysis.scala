@@ -343,28 +343,38 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
 }
 
 trait L0PurityAnalysisScheduler extends ComputationSpecification {
-    override def derives: Set[PropertyKind] = Set(Purity)
 
-    override def uses: Set[PropertyKind] = Set(TypeImmutability, FieldMutability)
+    final override def derives: Set[PropertyKind] = Set(Purity)
+
+    final override def uses: Set[PropertyKind] = Set(TypeImmutability, FieldMutability)
+
+    final override type InitializationData = Null
+
+    final def init(p: SomeProject, ps: PropertyStore): Null = null
 }
 
-object EagerL0PurityAnalysis extends L0PurityAnalysisScheduler with FPCFEagerAnalysisScheduler {
+object EagerL0PurityAnalysis
+    extends L0PurityAnalysisScheduler
+    with FPCFEagerAnalysisScheduler {
 
-    def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
-        val analysis = new L0PurityAnalysis(project)
-        val dms = project.get(DeclaredMethodsKey).declaredMethods
-        val methodsWithBody = dms.collect {
+    override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+        val analysis = new L0PurityAnalysis(p)
+        val dms = p.get(DeclaredMethodsKey).declaredMethods
+        val methodsWithBody = dms.toIterator.collect {
             case dm if dm.hasSingleDefinedMethod && dm.definedMethod.body.isDefined ⇒ dm.asDefinedMethod
         }
-        propertyStore.scheduleEagerComputationsForEntities(methodsWithBody)(analysis.determinePurity)
+        ps.scheduleEagerComputationsForEntities(methodsWithBody)(analysis.determinePurity)
         analysis
     }
 }
 
-object LazyL0PurityAnalysis extends L0PurityAnalysisScheduler with FPCFLazyAnalysisScheduler {
-    def startLazily(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
-        val analysis = new L0PurityAnalysis(project)
-        propertyStore.registerLazyPropertyComputation(Purity.key, analysis.doDeterminePurity)
+object LazyL0PurityAnalysis
+    extends L0PurityAnalysisScheduler
+    with FPCFLazyAnalysisScheduler {
+
+    override def startLazily(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+        val analysis = new L0PurityAnalysis(p)
+        ps.registerLazyPropertyComputation(Purity.key, analysis.doDeterminePurity)
         analysis
     }
 }

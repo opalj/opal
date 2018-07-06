@@ -491,22 +491,26 @@ class ReturnValueFreshnessAnalysis private[analyses] (
 
 sealed trait ReturnValueFreshnessAnalysisScheduler extends ComputationSpecification {
 
-    override def derives: Set[PropertyKind] = Set(ReturnValueFreshness)
+    final override def derives: Set[PropertyKind] = Set(ReturnValueFreshness)
 
-    override def uses: Set[PropertyKind] = {
+    final override def uses: Set[PropertyKind] = {
         Set(EscapeProperty, VirtualMethodReturnValueFreshness, FieldLocality)
     }
+
+    final override type InitializationData = Null
+
+    final def init(p: SomeProject, ps: PropertyStore): Null = null
 }
 
 object EagerReturnValueFreshnessAnalysis
     extends ReturnValueFreshnessAnalysisScheduler
     with FPCFEagerAnalysisScheduler {
 
-    def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
+    override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val declaredMethods =
-            project.get(DeclaredMethodsKey).declaredMethods.filter(_.hasSingleDefinedMethod)
-        val analysis = new ReturnValueFreshnessAnalysis(project)
-        propertyStore.scheduleEagerComputationsForEntities(declaredMethods)(analysis.determineFreshness)
+            p.get(DeclaredMethodsKey).declaredMethods.filter(_.hasSingleDefinedMethod)
+        val analysis = new ReturnValueFreshnessAnalysis(p)
+        ps.scheduleEagerComputationsForEntities(declaredMethods)(analysis.determineFreshness)
         analysis
     }
 }
@@ -519,11 +523,9 @@ object LazyReturnValueFreshnessAnalysis
      * Registers the analysis as a lazy computation, that is, the method
      * will call `ProperytStore.scheduleLazyComputation`.
      */
-    def startLazily(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
-        val analysis = new ReturnValueFreshnessAnalysis(project)
-        propertyStore.registerLazyPropertyComputation(
-            ReturnValueFreshness.key, analysis.determineFreshness
-        )
+    override def startLazily(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+        val analysis = new ReturnValueFreshnessAnalysis(p)
+        ps.registerLazyPropertyComputation(ReturnValueFreshness.key, analysis.determineFreshness)
         analysis
     }
 }

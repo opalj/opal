@@ -126,9 +126,14 @@ class SimpleEscapeAnalysis( final val project: SomeProject)
 }
 
 trait SimpleEscapeAnalysisScheduler extends ComputationSpecification {
-    override def derives: Set[PropertyKind] = Set(EscapeProperty)
 
-    override def uses: Set[PropertyKind] = Set.empty
+    final override def derives: Set[PropertyKind] = Set(EscapeProperty)
+
+    final override def uses: Set[PropertyKind] = Set.empty
+
+    final override type InitializationData = Null
+
+    final def init(p: SomeProject, ps: PropertyStore): Null = null
 }
 
 /**
@@ -138,11 +143,11 @@ object EagerSimpleEscapeAnalysis
     extends SimpleEscapeAnalysisScheduler
     with FPCFEagerAnalysisScheduler {
 
-    def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
-        val fps = project.get(VirtualFormalParametersKey).virtualFormalParameters
-        val ass = project.get(DefinitionSitesKey).getAllocationSites
-        val analysis = new SimpleEscapeAnalysis(project)
-        propertyStore.scheduleEagerComputationsForEntities(fps ++ ass)(analysis.determineEscape)
+    override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+        val fps = p.get(VirtualFormalParametersKey).virtualFormalParameters
+        val ass = p.get(DefinitionSitesKey).getAllocationSites
+        val analysis = new SimpleEscapeAnalysis(p)
+        ps.scheduleEagerComputationsForEntities(fps ++ ass)(analysis.determineEscape)
         analysis
     }
 }
@@ -155,9 +160,9 @@ object LazySimpleEscapeAnalysis
      * Registers the analysis as a lazy computation, that is, the method
      * will call `ProperytStore.scheduleLazyComputation`.
      */
-    def startLazily(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
-        val analysis = new SimpleEscapeAnalysis(project)
-        propertyStore.registerLazyPropertyComputation(EscapeProperty.key, analysis.determineEscape)
+    override def startLazily(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+        val analysis = new SimpleEscapeAnalysis(p)
+        ps.registerLazyPropertyComputation(EscapeProperty.key, analysis.determineEscape)
         analysis
     }
 }

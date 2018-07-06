@@ -39,6 +39,8 @@ case class SpecificationViolation(message: String) extends Exception(message)
  */
 trait ComputationSpecification {
 
+    type InitializationData
+
     /**
      * Returns a short descriptive name of the analysis which is described by this specification.
      *
@@ -94,14 +96,14 @@ trait ComputationSpecification {
      * @note This method is intended to be overwritten by sub classes. The default implementation
      *       does nothing.
      */
-    def init(ps: PropertyStore): Unit = {}
+    def init(ps: PropertyStore): InitializationData
 
     /**
      * Called by the scheduler to start execution of this analysis.
      *
      * The analysis may very well be a lazy computation.
      */
-    def schedule(ps: PropertyStore): Unit
+    def schedule(ps: PropertyStore, i: InitializationData): Unit
 
     override def toString: String = {
         val uses =

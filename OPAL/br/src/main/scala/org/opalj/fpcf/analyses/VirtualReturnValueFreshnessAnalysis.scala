@@ -123,18 +123,23 @@ class VirtualReturnValueFreshnessAnalysis private[analyses] (
 
 sealed trait VirtualReturnValueFreshnessAnalysisScheduler extends ComputationSpecification {
 
-    override def derives: Set[PropertyKind] = Set(VirtualMethodReturnValueFreshness)
+    final type InitializationData = Null
 
-    override def uses: Set[PropertyKind] = Set(ReturnValueFreshness)
+    final override def derives: Set[PropertyKind] = Set(VirtualMethodReturnValueFreshness)
+
+    final override def uses: Set[PropertyKind] = Set(ReturnValueFreshness)
+
+    final def init(p: SomeProject, ps: PropertyStore): Null = null
 }
 
 object EagerVirtualReturnValueFreshnessAnalysis
     extends VirtualReturnValueFreshnessAnalysisScheduler
     with FPCFEagerAnalysisScheduler {
-    override def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
-        val declaredMethods = project.get(DeclaredMethodsKey).declaredMethods
-        val analysis = new VirtualReturnValueFreshnessAnalysis(project)
-        propertyStore.scheduleEagerComputationsForEntities(declaredMethods)(
+
+    override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+        val declaredMethods = p.get(DeclaredMethodsKey).declaredMethods
+        val analysis = new VirtualReturnValueFreshnessAnalysis(p)
+        ps.scheduleEagerComputationsForEntities(declaredMethods)(
             analysis.determineFreshness
         )
         analysis
@@ -144,9 +149,10 @@ object EagerVirtualReturnValueFreshnessAnalysis
 object LazyVirtualReturnValueFreshnessAnalysis
     extends VirtualReturnValueFreshnessAnalysisScheduler
     with FPCFLazyAnalysisScheduler {
-    override def startLazily(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
-        val analysis = new VirtualReturnValueFreshnessAnalysis(project)
-        propertyStore.registerLazyPropertyComputation(
+
+    override def startLazily(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+        val analysis = new VirtualReturnValueFreshnessAnalysis(p)
+        ps.registerLazyPropertyComputation(
             VirtualMethodReturnValueFreshness.key,
             analysis.determineFreshness
         )

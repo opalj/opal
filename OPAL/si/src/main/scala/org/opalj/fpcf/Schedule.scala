@@ -48,9 +48,10 @@ case class Schedule(
      * @param ps The property store which should be used to execute the analyses.
      */
     def apply(ps: PropertyStore): Unit = {
-        batches foreach { batch ⇒
-            batch foreach (cs ⇒ cs.init(ps))
-        }
+        val initInfo =
+            batches.flatMap { batch ⇒
+                batch.toIterator.map[(ComputationSpecification, Any)] { cs ⇒ cs -> cs.init(ps) }
+            }.toMap
         batches foreach { batch ⇒
             val computedProperties =
                 batch.foldLeft(Set.empty[PropertyKind])((c, n) ⇒ c ++ n.derives)
@@ -60,13 +61,19 @@ case class Schedule(
                     reduceOption((l, r) ⇒ l ++ r).
                     getOrElse(Set.empty)
             ps.setupPhase(computedProperties, openProperties)
-            batch.foreach { fpc ⇒ fpc.schedule(ps) }
+            for { cs ← batch } {
+                cs match {
+                    case cs: ComputationSpecification ⇒
+                        cs.schedule(ps, initInfo(cs).asInstanceOf[cs.InitializationData])
+                }
+            }
             ps.waitOnPhaseCompletion()
         }
     }
 
     override def toString: String = {
-        batches.map(_.map(_.name).mkString("{", ", ", "}")).mkString("Schedule(\n\t", "\n\t", "\n)")
+        batches.map(_.map(_.name).mkString("{", ", ", "}")).
+            mkString("Schedule(\n\t", "\n\t", "\n)")
     }
 
 }

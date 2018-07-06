@@ -176,8 +176,13 @@ case object AShortValue extends IsShortValue
 
 trait IsIntegerValue extends IsPrimitiveValue[IntegerType] {
     final def primitiveType: IntegerType = IntegerType
+    def lowerBound: Int
+    def upperBound: Int
 }
-case object AnIntegerValue extends IsIntegerValue
+case object AnIntegerValue extends IsIntegerValue {
+    def lowerBound: Int = Int.MinValue
+    def upperBound: Int = Int.MaxValue
+}
 
 trait IsFloatValue extends IsPrimitiveValue[FloatType] {
     final def primitiveType: FloatType = FloatType
@@ -195,13 +200,14 @@ trait IsDoubleValue extends IsPrimitiveValue[DoubleType] {
 case object ADoubleValue extends IsDoubleValue
 
 /**
- * Characterizes a reference value. Captures the information about the values
- * a domain value may refer to. For example, in the following:
+ * Describes the essential properties of a reference value in a program.
+ *
+ * For example, in the following:
  * {{{
  * val o = If(...) new Object() else "STRING"
  * }}}
  * o is a reference value (`IsReferenceValue`) that (may) refers to two "simple" base values:
- * `new Object()` and `"STRING"`; however, it is a decision of the the underlying domain whether
+ * `new Object()` and `"STRING"`; however, it is a decision of the underlying domain whether
  * the information about the base values is made available or not. Furthermore, if the base values
  * are actually used, the constraints in effect for the overall abstraction should be considered
  * to get the most precise result.

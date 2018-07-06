@@ -45,7 +45,7 @@ import org.opalj.av.checking.Specification
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class ArchitectureConsistencyTest extends FlatSpec with Matchers with BeforeAndAfterAll {
+class BRArchitectureConsistencyTest extends FlatSpec with Matchers with BeforeAndAfterAll {
 
     behavior of "the Bytecode Representation Project's implemented architecture"
 
