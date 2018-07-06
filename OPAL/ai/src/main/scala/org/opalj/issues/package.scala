@@ -35,6 +35,7 @@ import play.api.libs.json.Writes
 import play.api.libs.json.Json
 import play.api.libs.json.JsValue
 import play.api.libs.json.JsObject
+
 import org.opalj.br.LocalVariable
 import org.opalj.br.Type
 import org.opalj.br.BaseType
@@ -44,8 +45,8 @@ import org.opalj.br.ObjectType
 import org.opalj.br.ArrayType
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.methodAccessFlagsToString
-import org.opalj.ai.domain.l1.IntegerRangeValues
 import org.opalj.br.CTIntType
+import org.opalj.value.IsIntegerValue
 
 /**
  * Defines implicit conversions to wrap some types of analyses such that they generate
@@ -111,8 +112,8 @@ package object issues {
     def localVariableToString(localVariable: LocalVariable, value: AnyRef): String = {
         if ((localVariable.fieldType eq BooleanType) &&
             // SPECIAL HANDLING IF THE VALUE IS AN INTEGER RANGE VALUE
-            value.isInstanceOf[IntegerRangeValues#IntegerRange]) {
-            val range = value.asInstanceOf[IntegerRangeValues#IntegerRange]
+            value.isInstanceOf[IsIntegerValue]) {
+            val range = value.asInstanceOf[IsIntegerValue]
             if ( /*range.lowerBound == 0 &&*/ range.upperBound == 0)
                 "false"
             else if (range.lowerBound == 1 /* && range.upperBound == 1*/ )

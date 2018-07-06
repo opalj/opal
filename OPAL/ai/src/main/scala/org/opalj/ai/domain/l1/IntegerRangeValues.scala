@@ -168,6 +168,8 @@ trait IntegerRangeValues
      */
     trait AnIntegerValue extends IntegerLikeValue {
         this: DomainTypedValue[CTIntType] ⇒
+        def lowerBound: Int = Int.MinValue
+        def upperBound: Int = Int.MaxValue
     }
 
     /**
@@ -195,7 +197,7 @@ trait IntegerRangeValues
     /**
      * Creates a new IntegerRange value with the given bounds.
      */
-    def IntegerRange(lb: Int, ub: Int): DomainTypedValue[CTIntType]
+    def IntegerRange(lowerBound: Int, upperBound: Int): DomainTypedValue[CTIntType]
 
     /**
      * Creates a new IntegerRange value with the given bounds.
