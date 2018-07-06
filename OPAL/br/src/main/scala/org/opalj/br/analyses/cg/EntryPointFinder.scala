@@ -137,14 +137,21 @@ trait LibraryEntryPointsFinder extends EntryPointFinder {
  *        org.opalj.br.analyses {
  *            InitialEntryPointKey {
  *                analysis = "org.opalj.br.analyses.ConfigurationEntryPointsFinder"
- *                entryPoints = [
- *                     ("java/lang/List+", "add"),
- *                     ("java/lang/List", "remove, "(I)Z")
- *                ]
+ *                 entryPoints = [
+ *                   {declaringClass = "java/util/List+", name = "add"},
+ *                   {declaringClass = "java/util/List", name = "remove", descriptor = "(I)Z"}
+ *                 ]
  *            }
  *        }
  *  }}}
  *
+ * Please note that the first entry point, by adding the "=" to the declaring class' name, considers all
+ * "add" methods from all subtypes independently form the respective method's descriptor. In constrast,
+ * the second entry does specify a descriptor and does not consider list subtypes (by not suffixing a plus to
+ * the declaringClass) which implies that only the remove method with this descriptor is considered as entry point.
+ *
+  *
+  *  @author Michael Reif
  */
 trait ConfigurationEntryPointsFinder extends EntryPointFinder {
 
@@ -183,6 +190,8 @@ trait ConfigurationEntryPointsFinder extends EntryPointFinder {
 
         configEntryPoints foreach { ep ⇒
             val EntryPointContainer(configuredType, name, descriptor) = ep
+
+            OPALLogger.debug("EPFInder", ep.toString)
 
             val considerSubtypes = configuredType.endsWith("+")
             val typeName = if (considerSubtypes) {
@@ -254,22 +263,34 @@ trait ConfigurationEntryPointsFinder extends EntryPointFinder {
 
     /* Required by Ficus' `ArbitraryTypeReader`*/
     private case class EntryPointContainer(
-            declaringClass: String,
-            name:           String,
-            descriptor:     Option[String]
+        declaringClass: String,
+        name:           String,
+        descriptor:     Option[String]
     )
 }
 
+/**
+  * The ApplicationEntryPointsFinder considers all main methods plus additionally configured entry points.
+  *
+  * @author Michael Reif
+  */
 object ApplicationEntryPointsFinder
     extends ApplicationEntryPointsFinder
     with ConfigurationEntryPointsFinder
 
+/**
+  * The ApplicationEntryPointsFinder considers all main methods plus additionally configured entry points.
+  *
+  * @author Michael Reif
+  */
 object LibraryEntryPointsFinder
     extends LibraryEntryPointsFinder
     with ConfigurationEntryPointsFinder
 
 /*
 * The MetaEntryPointsFinder is a conservative EntryPoints finder triggers all known finders.
+*
+* @author Michael Reif
 */
 object MetaEntryPointsFinder
     extends ApplicationEntryPointsFinder
