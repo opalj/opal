@@ -67,8 +67,8 @@ class AIArchitectureConsistencyTest extends FlatSpec with Matchers with BeforeAn
                         classes("""org\.opalj\.issues\..+Test.*""".r)
                 }
                 ensemble('Common) {
-                    "org.opalj.common.*" except
-                        classes("""org\.opalj\.common\..+Test.*""".r)
+                    "org.opalj.ai.common.*" except
+                        classes("""org\.opalj\.ai\.common\..+Test.*""".r)
                 }
                 ensemble('Domain) {
                     "org.opalj.ai.domain.*" except
