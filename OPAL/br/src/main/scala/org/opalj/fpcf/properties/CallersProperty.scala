@@ -51,13 +51,17 @@ sealed trait CallersProperty extends Property with OrderedProperty with CallersP
 
     def hasCallersWithUnknownContext: Boolean
 
+    def hasVMLevelCallers: Boolean
+
     def size: Int
 
-    def callers: Set[(DeclaredMethod, Int /*PC*/ )] //TODO: maybe use traversable instead of set
+    def callers(implicit declaredMethods: DeclaredMethods): Traversable[(DeclaredMethod, Int /*PC*/ )] //TODO: maybe use traversable instead of set
 
-    def updated(caller: DeclaredMethod, pc: Int): CallersProperty
+    def updated(caller: DeclaredMethod, pc: Int)(implicit declaredMethods: DeclaredMethods): CallersProperty
 
-    def updateWithUnknownContext: CallersWithUnknownContext
+    def updateWithUnknownContext(): CallersProperty
+
+    def updateVMLevelCall(): CallersProperty
 
     override def toString: String = {
         s"Callers(size=${this.size})"
@@ -75,82 +79,146 @@ sealed trait CallersProperty extends Property with OrderedProperty with CallersP
     }
 }
 
-object NoCallers extends CallersWithoutUnknownContext with EmptyCallers
-
-object OnlyCallersWithUnknownContext extends CallersWithUnknownContext with EmptyCallers
-
 trait CallersWithoutUnknownContext extends CallersProperty {
     override def hasCallersWithUnknownContext: Boolean = false
 }
 
 trait CallersWithUnknownContext extends CallersProperty {
     override def hasCallersWithUnknownContext: Boolean = true
+    override def updateWithUnknownContext(): CallersWithUnknownContext = this
 }
 
-trait EmptyCallers extends CallersProperty {
+trait CallersWithVMLevelCall extends CallersProperty {
+    override def hasVMLevelCallers: Boolean = true
+    override def updateVMLevelCall(): CallersWithVMLevelCall = this
+}
+
+trait CallersWithoutVMLevelCall extends CallersProperty {
+    override def hasVMLevelCallers: Boolean = true
+}
+
+trait EmptyConcreteCallers extends CallersProperty {
     override def size: Int = 0
 
-    override def callers: Set[(DeclaredMethod, Int)] = Set.empty
+    override def callers(implicit declaredMethods: DeclaredMethods): Traversable[(DeclaredMethod, Int)] = {
+        Nil
+    }
 
-    override def updated(caller: DeclaredMethod, pc: Int): CallersProperty = {
-        if (hasCallersWithUnknownContext) {
-            ???
+    override def updated(caller: DeclaredMethod, pc: Int)(implicit declaredMethods: DeclaredMethods): CallersProperty = {
+
+        if (!hasCallersWithUnknownContext && !hasVMLevelCallers) {
+            new CallersOnlyWithConcreteCallers(Set(CallersProperty.toLong(declaredMethods.methodID(caller), pc)))
         } else {
             ???
         }
     }
-
-    override def updateWithUnknownContext: CallersWithUnknownContext = OnlyCallersWithUnknownContext
 }
 
+object NoCallers extends EmptyConcreteCallers with CallersWithoutUnknownContext with CallersWithoutVMLevelCall {
+    override def updateVMLevelCall(): CallersWithVMLevelCall = OnlyVMLevelCallers
+
+    override def updateWithUnknownContext(): CallersWithUnknownContext = OnlyCallersWithUnknownContext
+}
+
+object OnlyCallersWithUnknownContext
+        extends EmptyConcreteCallers with CallersWithUnknownContext with CallersWithoutVMLevelCall {
+    override def updateVMLevelCall(): CallersWithVMLevelCall = OnlyVMCallersAndWithUnknownContext
+}
+
+object OnlyVMLevelCallers
+        extends EmptyConcreteCallers with CallersWithoutUnknownContext with CallersWithVMLevelCall {
+    override def updateWithUnknownContext(): CallersWithUnknownContext = OnlyVMCallersAndWithUnknownContext
+}
+
+object OnlyVMCallersAndWithUnknownContext
+    extends EmptyConcreteCallers with CallersWithVMLevelCall with CallersWithUnknownContext
+
 trait CallersImplementation extends CallersProperty {
+    val encodedCallers: Set[Long /* MethodId + PC*/ ]
+    override def size: Int = encodedCallers.size
 
-    protected val encodedCallers: Set[Long /*MethodId + PC*/ ]
-    protected val declaredMethods: DeclaredMethods
-
-    override def callers: Set[(DeclaredMethod, Int /*PC*/ )] = {
+    override def callers(
+        implicit
+        declaredMethods: DeclaredMethods
+    ): Traversable[(DeclaredMethod, Int /*PC*/ )] = {
         for {
             encodedPair ← encodedCallers
             (mId, pc) = CallersProperty.toMethodAndPc(encodedPair)
         } yield declaredMethods(mId) → pc
     }
-
-    override val size: Int = {
-        encodedCallers.size
-    }
 }
 
-class CallersImplWithUnknownContext(
-        protected val encodedCallers:  Set[Long /*MethodId + PC*/ ],
-        protected val declaredMethods: DeclaredMethods
-) extends CallersImplementation with CallersWithUnknownContext {
-    override def updated(caller: DeclaredMethod, pc: Int): CallersProperty = {
-        new CallersImplWithUnknownContext(
-            encodedCallers + CallersProperty.toLong(declaredMethods.methodID(caller), pc), declaredMethods
-        )
+class CallersOnlyWithConcreteCallers(
+        val encodedCallers: Set[Long /*MethodId + PC*/ ]
+) extends CallersImplementation with CallersWithoutVMLevelCall with CallersWithoutUnknownContext {
+
+    override def updated(
+        caller: DeclaredMethod, pc: Int
+    )(implicit declaredMethods: DeclaredMethods): CallersProperty = {
+        val newCallers = this.encodedCallers +
+            CallersProperty.toLong(declaredMethods.methodID(caller), pc)
+        new CallersOnlyWithConcreteCallers(newCallers)
     }
 
-    override def updateWithUnknownContext: CallersWithUnknownContext = this
+    override def updateWithUnknownContext(): CallersProperty =
+        CallersImplWithOtherCalls(
+            encodedCallers,
+            hasVMLevelCallers = false,
+            hasCallersWithUnknownContext = true
+        )
+
+    override def updateVMLevelCall(): CallersProperty =
+        CallersImplWithOtherCalls(
+            encodedCallers,
+            hasVMLevelCallers = true,
+            hasCallersWithUnknownContext = false
+        )
 }
 
-class CallersImplWithoutUnknownContext(
-        protected val encodedCallers:  Set[Long /*MethodId + PC*/ ],
-        protected val declaredMethods: DeclaredMethods
-) extends CallersImplementation with CallersWithoutUnknownContext {
-    override def updated(caller: DeclaredMethod, pc: Int): CallersProperty = {
-        new CallersImplWithoutUnknownContext(
-            encodedCallers + CallersProperty.toLong(declaredMethods.methodID(caller), pc), declaredMethods
-        )
+class CallersImplWithOtherCalls(
+        val encodedCallers: Set[Long /*MethodId + PC*/ ],
+        val coding:         Byte // last bit vm lvl, second last bit unknown context
+) extends CallersImplementation {
+
+    override def hasVMLevelCallers: Boolean = (coding & 1) != 0
+
+    override def hasCallersWithUnknownContext: Boolean = (coding & 2) != 0
+
+    override def updated(
+        caller: DeclaredMethod, pc: Int
+    )(implicit declaredMethods: DeclaredMethods): CallersProperty = {
+        val newCallers = this.encodedCallers +
+            CallersProperty.toLong(declaredMethods.methodID(caller), pc)
+        new CallersImplWithOtherCalls(newCallers, coding)
     }
 
-    override def updateWithUnknownContext: CallersWithUnknownContext = {
-        new CallersImplWithUnknownContext(encodedCallers, declaredMethods)
+    override def updateVMLevelCall(): CallersProperty =
+        new CallersImplWithOtherCalls(encodedCallers, (coding | 1).toByte)
+
+    override def updateWithUnknownContext(): CallersProperty =
+        new CallersImplWithOtherCalls(encodedCallers, (coding | 2).toByte)
+}
+
+object CallersImplWithOtherCalls {
+    def apply(
+        encodedCallers:               Set[Long /* MethodId + PC */ ],
+        hasVMLevelCallers:            Boolean,
+        hasCallersWithUnknownContext: Boolean
+    ): CallersImplWithOtherCalls = {
+        assert(hasVMLevelCallers | hasCallersWithUnknownContext)
+
+        val vmLvlCallers = if (hasVMLevelCallers) 1 else 0
+        val unknownContext = if (hasCallersWithUnknownContext) 2 else 0
+
+        new CallersImplWithOtherCalls(
+            encodedCallers, (vmLvlCallers & unknownContext).toByte
+        )
     }
 }
 
 class LowerBoundCallers(
         project: SomeProject, method: DeclaredMethod
-) extends CallersWithUnknownContext {
+) extends CallersWithUnknownContext with CallersWithVMLevelCall {
 
     override lazy val size: Int = {
         //callees.size * project.allMethods.size
@@ -158,13 +226,16 @@ class LowerBoundCallers(
         Int.MaxValue
     }
 
-    override def callers: Set[(DeclaredMethod, Int /*PC*/ )] = {
+    override def callers(
+        implicit
+        declaredMethods: DeclaredMethods
+    ): Traversable[(DeclaredMethod, Int /*PC*/ )] = {
         ??? // todo
     }
 
-    override def updated(caller: DeclaredMethod, pc: Int): CallersProperty = this
-
-    override def updateWithUnknownContext: CallersWithUnknownContext = this
+    override def updated(
+        caller: DeclaredMethod, pc: Int
+    )(implicit declaredMethods: DeclaredMethods): CallersProperty = this
 }
 
 object CallersProperty extends CallersPropertyMetaInformation {

@@ -39,8 +39,9 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.properties.CallersProperty
 import org.opalj.fpcf.properties.LoadedClasses
+import org.opalj.fpcf.properties.LowerBoundCallers
 import org.opalj.fpcf.properties.NoCallers
-import org.opalj.fpcf.properties.OnlyCallersWithUnknownContext
+import org.opalj.fpcf.properties.OnlyVMLevelCallers
 import org.opalj.tac.Assignment
 import org.opalj.tac.GetField
 import org.opalj.tac.PutStatic
@@ -69,6 +70,7 @@ class LoadedClassesAnalysis(
      */
     def doAnalyze(project: SomeProject): PropertyComputationResult = {
 
+        // todo move to init
         propertyStore.registerTriggeredComputation(CallersProperty.key, handleCaller)
 
         PartialResult[SomeProject, LoadedClasses](project, LoadedClasses.key, {
@@ -119,12 +121,14 @@ class LoadedClassesAnalysis(
 
                     })
 
-                    newCLInits map { clinit ⇒
-                        PartialResult[DeclaredMethod, CallersProperty](clinit, CallersProperty.key, {
-                            case EPK(clInit, _) ⇒
-                                Some(EPS(clInit, CallersProperty.fallback(dm, p), OnlyCallersWithUnknownContext)) // todo use here VMLevel
-                            case EPS(clInit, lb, ub) if !ub.hasCallersWithUnknownContext ⇒
-                                Some(EPS(clInit, lb, ub.updateWithUnknownContext))
+                    newCLInits map { clInit ⇒
+                        PartialResult[DeclaredMethod, CallersProperty](clInit, CallersProperty.key, {
+                            case EPK(_, _) ⇒
+                                Some(EPS(
+                                    clInit, new LowerBoundCallers(project, clInit), OnlyVMLevelCallers
+                                ))
+                            case EPS(_, lb, ub) if !ub.hasCallersWithUnknownContext ⇒
+                                Some(EPS(clInit, lb, ub.updateVMLevelCall()))
                             case _ ⇒ None
                         })
                     }
