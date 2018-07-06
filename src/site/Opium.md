@@ -19,7 +19,7 @@ A current state of OPIUM can be obtained from
 `org.opalj.support.info.Purity`.
 
 ## Running OPIUM
-OPIUM uses a command line interface. To simply analyse an application, use
+OPIUM uses a command line interface. To simply analyse an application, use  
 `java -jar OPIUM.jar -cp <path to your application`.
 
 Use
@@ -36,7 +36,7 @@ The following changes have been made to OPIUM and its purity model since the pap
  - External Purity was removed in favor for a more fine-grained representation of Contextual Purity:
  Contextual Purity now includes the set of all parameters that may be modified by the method.
  External purity (as still reported separately by OPIUM) comprises all contextually pure methods
- where that set contains just the implicit `this` reference (i.e. instance methods for which the
+ where that set contains just the implicit _this_ reference (i.e. instance methods for which the
  set of modified parameters contains just the value 0).
  - OPIUM now uses parallel execution on as many cores as available, significantly speeding up 
  purity inference.
