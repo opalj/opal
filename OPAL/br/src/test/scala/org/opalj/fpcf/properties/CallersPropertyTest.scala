@@ -227,4 +227,16 @@ class CallersPropertyTest extends FlatSpec with Matchers {
         assert(withBoth.hasVMLevelCallers)
     }
 
+    behavior of "the lower bound callers"
+
+    it should "be a lower bound" in {
+        val lb = new LowerBoundCallers(typesProject, declaredMethod)
+        assert(lb.size == Int.MaxValue)
+        assert(lb.hasCallersWithUnknownContext)
+        assert(lb.hasVMLevelCallers)
+        assert(lb.updateVMLevelCall() eq lb)
+        assert(lb.updateWithUnknownContext() eq lb)
+        assert(lb.updated(declaredMethod, 0) eq lb)
+    }
+
 }

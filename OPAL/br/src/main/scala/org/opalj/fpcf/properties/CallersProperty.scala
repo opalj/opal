@@ -259,7 +259,7 @@ object CallersProperty extends CallersPropertyMetaInformation {
             "Callers",
             (ps: PropertyStore, reason: FallbackReason, m: DeclaredMethod) ⇒ reason match {
                 case PropertyIsNotComputedByAnyAnalysis ⇒
-                    CallersProperty.fallback(m, ps.context[SomeProject])
+                    CallersProperty.fallback(m, ps.context(classOf[SomeProject]))
                 case PropertyIsNotDerivedByPreviouslyExecutedAnalysis ⇒
                     NoCallers
             },
