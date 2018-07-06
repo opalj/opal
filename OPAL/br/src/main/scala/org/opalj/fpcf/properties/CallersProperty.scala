@@ -121,12 +121,12 @@ object NoCallers extends EmptyConcreteCallers with CallersWithoutUnknownContext 
 }
 
 object OnlyCallersWithUnknownContext
-        extends EmptyConcreteCallers with CallersWithUnknownContext with CallersWithoutVMLevelCall {
+    extends EmptyConcreteCallers with CallersWithUnknownContext with CallersWithoutVMLevelCall {
     override def updateVMLevelCall(): CallersWithVMLevelCall = OnlyVMCallersAndWithUnknownContext
 }
 
 object OnlyVMLevelCallers
-        extends EmptyConcreteCallers with CallersWithoutUnknownContext with CallersWithVMLevelCall {
+    extends EmptyConcreteCallers with CallersWithoutUnknownContext with CallersWithVMLevelCall {
     override def updateWithUnknownContext(): CallersWithUnknownContext = OnlyVMCallersAndWithUnknownContext
 }
 
