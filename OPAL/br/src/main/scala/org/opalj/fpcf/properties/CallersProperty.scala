@@ -94,7 +94,7 @@ trait CallersWithVMLevelCall extends CallersProperty {
 }
 
 trait CallersWithoutVMLevelCall extends CallersProperty {
-    override def hasVMLevelCallers: Boolean = true
+    override def hasVMLevelCallers: Boolean = false
 }
 
 trait EmptyConcreteCallers extends CallersProperty {
@@ -109,7 +109,7 @@ trait EmptyConcreteCallers extends CallersProperty {
         if (!hasCallersWithUnknownContext && !hasVMLevelCallers) {
             new CallersOnlyWithConcreteCallers(Set(CallersProperty.toLong(declaredMethods.methodID(caller), pc)))
         } else {
-            ???
+            CallersImplWithOtherCalls(Set(CallersProperty.toLong(declaredMethods.methodID(caller), pc)), hasVMLevelCallers, hasCallersWithUnknownContext)
         }
     }
 }
@@ -155,9 +155,12 @@ class CallersOnlyWithConcreteCallers(
     override def updated(
         caller: DeclaredMethod, pc: Int
     )(implicit declaredMethods: DeclaredMethods): CallersProperty = {
-        val newCallers = this.encodedCallers +
-            CallersProperty.toLong(declaredMethods.methodID(caller), pc)
-        new CallersOnlyWithConcreteCallers(newCallers)
+        val encodedCaller = CallersProperty.toLong(declaredMethods.methodID(caller), pc)
+        if (encodedCallers.contains(encodedCaller))
+            this
+        else
+            new CallersOnlyWithConcreteCallers(encodedCallers + encodedCaller)
+
     }
 
     override def updateWithUnknownContext(): CallersProperty =
@@ -179,6 +182,8 @@ class CallersImplWithOtherCalls(
         val encodedCallers: Set[Long /*MethodId + PC*/ ],
         val coding:         Byte // last bit vm lvl, second last bit unknown context
 ) extends CallersImplementation {
+    assert(encodedCallers.nonEmpty)
+    assert(coding >= 0 && coding <= 3)
 
     override def hasVMLevelCallers: Boolean = (coding & 1) != 0
 
@@ -187,16 +192,24 @@ class CallersImplWithOtherCalls(
     override def updated(
         caller: DeclaredMethod, pc: Int
     )(implicit declaredMethods: DeclaredMethods): CallersProperty = {
-        val newCallers = this.encodedCallers +
-            CallersProperty.toLong(declaredMethods.methodID(caller), pc)
-        new CallersImplWithOtherCalls(newCallers, coding)
+        val encodedCaller = CallersProperty.toLong(declaredMethods.methodID(caller), pc)
+        if (encodedCallers.contains(encodedCaller))
+            this
+        else
+            new CallersImplWithOtherCalls(encodedCallers + encodedCaller, coding)
     }
 
     override def updateVMLevelCall(): CallersProperty =
-        new CallersImplWithOtherCalls(encodedCallers, (coding | 1).toByte)
+        if (hasVMLevelCallers)
+            this
+        else
+            new CallersImplWithOtherCalls(encodedCallers, (coding | 1).toByte)
 
     override def updateWithUnknownContext(): CallersProperty =
-        new CallersImplWithOtherCalls(encodedCallers, (coding | 2).toByte)
+        if (hasCallersWithUnknownContext)
+            this
+        else
+            new CallersImplWithOtherCalls(encodedCallers, (coding | 2).toByte)
 }
 
 object CallersImplWithOtherCalls {
@@ -206,12 +219,13 @@ object CallersImplWithOtherCalls {
         hasCallersWithUnknownContext: Boolean
     ): CallersImplWithOtherCalls = {
         assert(hasVMLevelCallers | hasCallersWithUnknownContext)
+        assert(encodedCallers.nonEmpty)
 
         val vmLvlCallers = if (hasVMLevelCallers) 1 else 0
         val unknownContext = if (hasCallersWithUnknownContext) 2 else 0
 
         new CallersImplWithOtherCalls(
-            encodedCallers, (vmLvlCallers & unknownContext).toByte
+            encodedCallers, (vmLvlCallers | unknownContext).toByte
         )
     }
 }

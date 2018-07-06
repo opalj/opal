@@ -30,7 +30,6 @@ package org.opalj
 package fpcf
 package seq
 
-import scala.reflect.runtime.universe.Type
 import java.lang.System.identityHashCode
 
 import scala.collection.mutable.AnyRefMap
@@ -58,7 +57,7 @@ import scala.collection.mutable.ArrayBuffer
  *  Furthermore, this implementation is less polished w.r.t. the usage of data-structures.
  */
 final class EPKSequentialPropertyStore private (
-        val ctx: Map[Type, AnyRef]
+        val ctx: Map[Class[_], AnyRef]
 )(
         implicit
         val logContext: LogContext
@@ -951,7 +950,7 @@ object EPKSequentialPropertyStore extends PropertyStoreFactory {
         implicit
         logContext: LogContext
     ): EPKSequentialPropertyStore = {
-        val contextMap: Map[Type, AnyRef] = context.map(_.asTuple).toMap
+        val contextMap: Map[Class[_], AnyRef] = context.map(_.asTuple).toMap
         new EPKSequentialPropertyStore(contextMap)
     }
 }

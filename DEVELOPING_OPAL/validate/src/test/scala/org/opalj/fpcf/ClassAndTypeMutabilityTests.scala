@@ -47,6 +47,7 @@ class ClassAndTypeMutabilityTests extends PropertiesTest {
         ), Set(
             LazyL1FieldMutabilityAnalysis
         ))
+        as.propertyStore.shutdown()
         validateProperties(
             as,
             classFilesWithAnnotations(as.project).map(tp ⇒ (tp._1.thisType, tp._2, tp._3)),

@@ -46,6 +46,7 @@ class FieldLocalityTests extends PropertiesTest {
 
     describe("field locality analysis is executed") {
         val as = executeAnalyses(Set(EagerFieldLocalityAnalysis), lazyAnalysisScheduler)
+        as.propertyStore.shutdown()
         validateProperties(
             as,
             fieldsWithAnnotations(as.project),
