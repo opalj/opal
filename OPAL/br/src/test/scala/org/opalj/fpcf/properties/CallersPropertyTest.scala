@@ -47,13 +47,13 @@ class CallersPropertyTest extends FlatSpec with Matchers {
         Project(
             ClassFiles(locateTestResources("classhierarchy.jar", "bi")),
             Traversable.empty,
-            true
+            libraryClassFilesAreInterfacesOnly = true
         )
 
     implicit val declaredMethods: DeclaredMethods = typesProject.get(DeclaredMethodsKey)
 
     val declaredMethod: DeclaredMethod = declaredMethods.declaredMethods.find(_ ⇒ true).get
-    val otherMethod = declaredMethods.declaredMethods.find(_ ne declaredMethod).get
+    val otherMethod: DeclaredMethod = declaredMethods.declaredMethods.find(_ ne declaredMethod).get
 
     behavior of "the no caller object"
 
@@ -208,19 +208,25 @@ class CallersPropertyTest extends FlatSpec with Matchers {
 
     it should "behave correctly" in {
         val encodedCallers = Set(CallersProperty.toLong(declaredMethods.methodID(declaredMethod), 0))
-        val withVM = CallersImplWithOtherCalls(encodedCallers, true, false)
+        val withVM = CallersImplWithOtherCalls(
+            encodedCallers, hasVMLevelCallers = true, hasCallersWithUnknownContext = false
+        )
         assert(withVM.size == 1)
         assert(withVM.callers.exists { case (dm, pc) ⇒ (dm eq declaredMethod) && (pc == 0) })
         assert(!withVM.hasCallersWithUnknownContext)
         assert(withVM.hasVMLevelCallers)
 
-        val withUnknwonContext = CallersImplWithOtherCalls(encodedCallers, false, true)
+        val withUnknwonContext = CallersImplWithOtherCalls(
+            encodedCallers, hasVMLevelCallers = false, hasCallersWithUnknownContext = true
+        )
         assert(withUnknwonContext.size == 1)
         assert(withUnknwonContext.callers.exists { case (dm, pc) ⇒ (dm eq declaredMethod) && (pc == 0) })
         assert(withUnknwonContext.hasCallersWithUnknownContext)
         assert(!withUnknwonContext.hasVMLevelCallers)
 
-        val withBoth = CallersImplWithOtherCalls(encodedCallers, true, true)
+        val withBoth = CallersImplWithOtherCalls(
+            encodedCallers, hasVMLevelCallers = true, hasCallersWithUnknownContext = true
+        )
         assert(withBoth.size == 1)
         assert(withBoth.callers.exists { case (dm, pc) ⇒ (dm eq declaredMethod) && (pc == 0) })
         assert(withBoth.hasCallersWithUnknownContext)
