@@ -43,16 +43,19 @@ class FieldMutabilityTests extends PropertiesTest {
 
     describe("no analysis is scheduled") {
         val as = executeAnalyses(Set.empty)
+        as.propertyStore.shutdown()
         validateProperties(as, fieldsWithAnnotations(as.project), Set("FieldMutability"))
     }
 
     describe("the org.opalj.fpcf.analyses.L0FieldMutabilityAnalysis is executed") {
         val as = executeAnalyses(Set(EagerL0FieldMutabilityAnalysis))
+        as.propertyStore.shutdown()
         validateProperties(as, fieldsWithAnnotations(as.project), Set("FieldMutability"))
     }
 
     describe("the org.opalj.fpcf.analyses.L1FieldMutabilityAnalysis is executed") {
         val as = executeAnalyses(Set(EagerL1FieldMutabilityAnalysis))
+        as.propertyStore.shutdown()
         validateProperties(as, fieldsWithAnnotations(as.project), Set("FieldMutability"))
     }
 

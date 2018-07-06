@@ -787,6 +787,27 @@ class ClassHierarchyTest extends FlatSpec with Matchers {
         resolveInterfaceMethodReference(window, "draw", NoArgsAndReturnVoid) should be('nonEmpty)
     }
 
+    val jvmFeaturesProject =
+        Project(
+            ClassFiles(locateTestResources("jvm_features-1.8-g-parameters-genericsignature.jar", "bi")),
+            Traversable.empty,
+            true
+        )
+
+    it should "correctly iterate over all suptypes of Object, even without the JDK included" in {
+        var foundSomeEnumerationClass = false
+        jvmFeaturesProject.classHierarchy.foreachSubtypeCF(ObjectType.Object, false) { subTypeCF ⇒
+            val subType = subTypeCF.thisType
+            if (subType == ObjectType("class_types/SomeEnumeration")) {
+                foundSomeEnumerationClass = true
+                false
+            } else
+                true
+        }(jvmFeaturesProject)
+
+        foundSomeEnumerationClass should be(true)
+    }
+
 }
 
 object ClassHierarchyTest {

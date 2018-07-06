@@ -170,17 +170,23 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
         } else /* non-null, not precise object type */ {
 
             val callee =
-                declaredMethods(callerType.packageName, receiverType.get.asObjectType, name, descr)
+                declaredMethods(
+                    dc.asObjectType,
+                    callerType.packageName,
+                    receiverType.get.asObjectType,
+                    name,
+                    descr
+                )
 
-            if (!callee.hasDefinition ||
-                context.isMethodOverridable(callee.methodDefinition).isNotNo) {
+            if (!callee.hasSingleDefinedMethod ||
+                context.isMethodOverridable(callee.definedMethod).isNotNo) {
                 // the type of the virtual call is extensible and the analysis mode is library like
                 // therefore the method could be overriden and we do not know if the object escapes
                 //
                 // to optimize performance, we do not let the analysis run against the existing methods
                 state.meetMostRestrictive(AtMost(EscapeInCallee))
             } else {
-                val method = callee.methodDefinition
+                val method = callee.definedMethod
                 if (project.isSignaturePolymorphic(method.classFile.thisType, method)) {
                     //IMPROVE
                     // check if this is to much (param contains def-site)
@@ -227,7 +233,8 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
                     //IMPROVE
                     state.meetMostRestrictive(AtMost(EscapeInCallee))
                 } else {
-                    val fp = context.virtualFormalParameters(context.declaredMethods(method))(param)
+                    val fp =
+                        context.virtualFormalParameters(context.declaredMethods(method))(param)
 
                     // for self recursive calls, we do not need handle the call any further
                     if (fp != context.entity) {

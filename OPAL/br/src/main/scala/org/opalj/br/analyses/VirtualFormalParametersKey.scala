@@ -89,12 +89,12 @@ object VirtualFormalParametersKey extends ProjectInformationKey[VirtualFormalPar
 
         for {
             dm ← p.get(DeclaredMethodsKey).declaredMethods
-            if (dm.hasDefinition)
+            if (dm.hasSingleDefinedMethod)
         } {
             val md = dm.descriptor
             val parametersCount = md.parametersCount
             val formalParameters = new Array[VirtualFormalParameter](parametersCount + 1)
-            if (dm.hasDefinition && !dm.methodDefinition.isStatic)
+            if (dm.hasSingleDefinedMethod && !dm.definedMethod.isStatic)
                 formalParameters(0) = new VirtualFormalParameter(dm, -1)
 
             var p = 1

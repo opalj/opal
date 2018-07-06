@@ -39,7 +39,6 @@ import org.opalj.fpcf.properties.StaticDataUsage
 import org.opalj.fpcf.properties.UsesNoStaticData
 import org.opalj.fpcf.properties.UsesVaryingData
 import org.opalj.fpcf.properties.UsesConstantDataOnly
-import org.opalj.fpcf.properties.VirtualMethodAllocationFreeness.VMethodWithAllocations
 import org.opalj.fpcf.properties.VirtualMethodStaticDataUsage.VUsesVaryingData
 
 /**
@@ -53,9 +52,8 @@ class VirtualMethodStaticDataUsageAnalysis private[analyses] (
     private[this] val declaredMethods = project.get(DeclaredMethodsKey)
 
     def determineUsage(dm: DeclaredMethod): PropertyComputationResult = {
-        if (!dm.hasDefinition) return Result(dm, VUsesVaryingData);
+        if (!dm.hasSingleDefinedMethod && !dm.hasMultipleDefinedMethods) return Result(dm, VUsesVaryingData);
 
-        val m = dm.methodDefinition
         var dependees: Set[EOptionP[DeclaredMethod, StaticDataUsage]] = Set.empty
 
         var maxLevel: StaticDataUsage = UsesNoStaticData
@@ -64,17 +62,26 @@ class VirtualMethodStaticDataUsageAnalysis private[analyses] (
         else project.classFile(dm.declaringClassType.asObjectType)
         val methods =
             if (cfo.isDefined && cfo.get.isInterfaceDeclaration)
-                project.interfaceCall(dm.declaringClassType.asObjectType, m.name, m.descriptor)
-            else
+                project.interfaceCall(dm.declaringClassType.asObjectType, dm.name, dm.descriptor)
+            else if (dm.hasSingleDefinedMethod && dm.definedMethod.isPackagePrivate)
                 project.virtualCall(
-                    m.classFile.thisType.packageName, dm.declaringClassType, m.name, m.descriptor
+                    dm.definedMethod.classFile.thisType.packageName,
+                    dm.declaringClassType,
+                    dm.name,
+                    dm.descriptor
                 )
+            else project.virtualCall(
+                "" /* package is irrelevant, must be public interface methods */ ,
+                dm.declaringClassType,
+                dm.name,
+                dm.descriptor
+            )
 
         for (method ← methods) {
             propertyStore(declaredMethods(method), StaticDataUsage.key) match {
                 case FinalEP(_, UsesNoStaticData)     ⇒
                 case FinalEP(_, UsesConstantDataOnly) ⇒ maxLevel = UsesConstantDataOnly
-                case FinalEP(_, UsesVaryingData)      ⇒ return Result(dm, VMethodWithAllocations);
+                case FinalEP(_, UsesVaryingData)      ⇒ return Result(dm, VUsesVaryingData);
                 case ep @ IntermediateEP(_, _, UsesConstantDataOnly) ⇒
                     maxLevel = UsesConstantDataOnly
                     dependees += ep
@@ -88,7 +95,7 @@ class VirtualMethodStaticDataUsageAnalysis private[analyses] (
             eps match {
                 case FinalEP(_, UsesNoStaticData)     ⇒
                 case FinalEP(_, UsesConstantDataOnly) ⇒ maxLevel = UsesConstantDataOnly
-                case FinalEP(_, UsesVaryingData)      ⇒ return Result(dm, VMethodWithAllocations);
+                case FinalEP(_, UsesVaryingData)      ⇒ return Result(dm, VUsesVaryingData);
                 case ep @ IntermediateEP(_, _, UsesConstantDataOnly) ⇒
                     maxLevel = UsesConstantDataOnly
                     dependees += ep.asInstanceOf[EOptionP[DeclaredMethod, StaticDataUsage]]
@@ -99,11 +106,8 @@ class VirtualMethodStaticDataUsageAnalysis private[analyses] (
                 Result(dm, maxLevel.aggregatedProperty)
             } else {
                 IntermediateResult(
-                    dm,
-                    VMethodWithAllocations,
-                    maxLevel.aggregatedProperty,
-                    dependees,
-                    c
+                    dm, VUsesVaryingData, maxLevel.aggregatedProperty,
+                    dependees, c
                 )
             }
         }
@@ -112,11 +116,8 @@ class VirtualMethodStaticDataUsageAnalysis private[analyses] (
             Result(dm, maxLevel.aggregatedProperty)
         } else {
             IntermediateResult(
-                dm,
-                VMethodWithAllocations,
-                maxLevel.aggregatedProperty,
-                dependees,
-                c
+                dm, VUsesVaryingData, maxLevel.aggregatedProperty,
+                dependees, c
             )
         }
     }

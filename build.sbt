@@ -221,6 +221,8 @@ lazy val `AbstractInterpretationFramework` = (project in file("OPAL/ai"))
   .settings(
     name := "Abstract Interpretation Framework",
     scalacOptions in(Compile, doc) := (Opts.doc.title("OPAL - Abstract Interpretation Framework") ++ Seq("-groups", "-implicits")),
+    assemblyJarName in assembly := "OPALTACDisassembler.jar",
+    mainClass in assembly := Some("org.opalj.tac.TAC"),
     fork in run := true
   )
   .dependsOn(br % "it->it;it->test;test->test;compile->compile")

@@ -138,10 +138,13 @@ class LambdaExpressionRewritingBytecodeStructureTest extends FunSpec with Matche
             ).withValue(DeleteSynthesizedClassFilesAttributesConfigKey, configValueFalse)
             val lambdas = Project(lambdasJar, GlobalLogContext, config)
             info(lambdas.statistics.toList.map(_.toString).filter(_.startsWith("(Project")).mkString(","))
-            val verifiedMethodsCount =
-                testProject(lambdas, (p, m) ⇒ BaseDomain(p, m)) +
-                    testProject(lambdas, (p, m) ⇒ new DefaultDomainWithCFGAndDefUse(p, m))
-            info(s"interpreted ${verifiedMethodsCount / 2} methods")
+
+            it("should find rewritten Java lambda expressions in the lambdas test project") {
+                val verifiedMethodsCount =
+                    testProject(lambdas, (p, m) ⇒ BaseDomain(p, m)) +
+                        testProject(lambdas, (p, m) ⇒ new DefaultDomainWithCFGAndDefUse(p, m))
+                info(s"interpreted ${verifiedMethodsCount / 2} methods")
+            }
         }
 
         if (org.opalj.bi.isCurrentJREAtLeastJava8) {
@@ -153,10 +156,12 @@ class LambdaExpressionRewritingBytecodeStructureTest extends FunSpec with Matche
                 ).withValue(DeleteSynthesizedClassFilesAttributesConfigKey, configValueFalse)
                 val jre = Project(jrePath, GlobalLogContext, config)
                 info(jre.statistics.toList.map(_.toString).filter(_.startsWith("(Project")).mkString(","))
-                val verifiedMethodsCount =
-                    testProject(jre, (p, m) ⇒ BaseDomain(p, m)) +
-                        testProject(jre, (p, m) ⇒ new DefaultDomainWithCFGAndDefUse(p, m))
-                info(s"successfully interpreted ${verifiedMethodsCount / 2} methods")
+                it("should find rewritten Java lambda expressions in the JRE") {
+                    val verifiedMethodsCount =
+                        testProject(jre, (p, m) ⇒ BaseDomain(p, m)) +
+                            testProject(jre, (p, m) ⇒ new DefaultDomainWithCFGAndDefUse(p, m))
+                    info(s"successfully interpreted ${verifiedMethodsCount / 2} methods")
+                }
             }
         }
     }

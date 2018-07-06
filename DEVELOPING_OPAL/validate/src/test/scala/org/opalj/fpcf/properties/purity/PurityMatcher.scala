@@ -37,6 +37,8 @@ import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.collection.immutable.EmptyIntTrieSet
 
 /**
  * Base trait for matchers that match a method's `Purity` property.
@@ -60,7 +62,7 @@ sealed abstract class PurityMatcher(val property: Purity) extends AbstractProper
         val eps = getValue(p, annotationType, a.elementValuePairs, "eps").asArrayValue.values.map(ev ⇒ ev.asAnnotationValue.annotation)
         val negate = getValue(p, annotationType, a.elementValuePairs, "negate").asInstanceOf[BooleanValue].value
 
-        analyses.exists(as.contains) && (eps.forall(negate ^ evaluateEP(p, as, _, negate)))
+        analyses.exists(as.contains) && eps.forall(negate ^ evaluateEP(p, as, _, negate))
     }
 
     def evaluateEP(
@@ -73,14 +75,16 @@ sealed abstract class PurityMatcher(val property: Purity) extends AbstractProper
 
         val classType = getValue(project, annotationType, ep.elementValuePairs, "cf").asClassValue.value.asObjectType
 
-        val field = getValue(project, annotationType, ep.elementValuePairs, "field").asStringValue.value
-        val method = getValue(project, annotationType, ep.elementValuePairs, "method").asStringValue.value
+        val field =
+            getValue(project, annotationType, ep.elementValuePairs, "field").asStringValue.value
+        val method =
+            getValue(project, annotationType, ep.elementValuePairs, "method").asStringValue.value
 
         val analysesElementValues =
             getValue(project, annotationType, ep.elementValuePairs, "analyses").asArrayValue.values
         val analyses = analysesElementValues.map(ev ⇒ ev.asClassValue.value.asObjectType)
 
-        if (!analyses.isEmpty && !analyses.exists(as.contains)) {
+        if (analyses.nonEmpty && !analyses.exists(as.contains)) {
             return !negate // Analysis specific ep requirement, but analysis was not executed
         }
 
@@ -98,8 +102,12 @@ sealed abstract class PurityMatcher(val property: Purity) extends AbstractProper
         def checkProperty(eop: EOptionP[Entity, Property]): Boolean = {
             if (eop.hasProperty)
                 eop.ub.toString == p
-            else
-                PropertyKey.fallbackProperty(propertyStore, eop.e, eop.pk).toString == p
+            else {
+                // Here, the reason actually doesn't matter, because the fallback is always the
+                // same.
+                val reason = PropertyIsNotComputedByAnyAnalysis
+                PropertyKey.fallbackProperty(propertyStore, reason, eop.e, eop.pk).toString == p
+            }
         }
 
         if (field != "") {
@@ -133,8 +141,41 @@ sealed abstract class PurityMatcher(val property: Purity) extends AbstractProper
         a:          AnnotationLike,
         properties: Traversable[Property]
     ): Option[String] = {
-        if (!properties.exists(_ match {
+        if (!properties.exists {
             case `property` ⇒ true
+            case _          ⇒ false
+        }) {
+            // ... when we reach this point the expected property was not found.
+            Some(a.elementValuePairs.head.value.asStringValue.value)
+        } else {
+            None
+        }
+    }
+}
+
+sealed abstract class ContextualPurityMatcher(propertyConstructor: IntTrieSet ⇒ Purity)
+    extends PurityMatcher(null) {
+    override def validateProperty(
+        p:          SomeProject,
+        as:         Set[ObjectType],
+        entity:     Entity,
+        a:          AnnotationLike,
+        properties: Traversable[Property]
+    ): Option[String] = {
+        val annotationType = a.annotationType.asObjectType
+
+        val annotated =
+            getValue(p, annotationType, a.elementValuePairs, "modifies").asArrayValue.values
+
+        var modifiedParams: IntTrieSet = EmptyIntTrieSet
+        annotated.foreach { param ⇒
+            modifiedParams = modifiedParams + param.asIntValue.value
+        }
+
+        val expected = propertyConstructor(modifiedParams)
+
+        if (!properties.exists(_ match {
+            case `expected` ⇒ true
             case _          ⇒ false
         })) {
             // ... when we reach this point the expected property was not found.
@@ -165,27 +206,17 @@ class SideEffectFreeMatcher extends PurityMatcher(properties.SideEffectFree)
 
 /**
  * Matches a method's `Purity` property. The match is successful if the method has the property
- * [[org.opalj.fpcf.properties.ExternallyPure]].
- */
-class ExternallyPureMatcher extends PurityMatcher(properties.ExternallyPure)
-
-/**
- * Matches a method's `Purity` property. The match is successful if the method has the property
- * [[org.opalj.fpcf.properties.ExternallySideEffectFree]].
- */
-class ExternallySideEffectFreeMatcher extends PurityMatcher(properties.ExternallySideEffectFree)
-
-/**
- * Matches a method's `Purity` property. The match is successful if the method has the property
  * [[org.opalj.fpcf.properties.ContextuallyPure]].
  */
-class ContextuallyPureMatcher extends PurityMatcher(properties.ContextuallyPure)
+class ContextuallyPureMatcher
+    extends ContextualPurityMatcher(params ⇒ properties.ContextuallyPure(params))
 
 /**
  * Matches a method's `Purity` property. The match is successful if the method has the property
  * [[org.opalj.fpcf.properties.ContextuallySideEffectFree]].
  */
-class ContextuallySideEffectFreeMatcher extends PurityMatcher(properties.ContextuallySideEffectFree)
+class ContextuallySideEffectFreeMatcher
+    extends ContextualPurityMatcher(params ⇒ properties.ContextuallySideEffectFree(params))
 
 /**
  * Matches a method's `Purity` property. The match is successful if the method has the property
@@ -201,35 +232,23 @@ class DomainSpecificSideEffectFreeMatcher extends PurityMatcher(properties.DSide
 
 /**
  * Matches a method's `Purity` property. The match is successful if the method has the property
- * [[org.opalj.fpcf.properties.DExternallyPure]].
- */
-class DomainSpecificExternallyPureMatcher extends PurityMatcher(properties.DExternallyPure)
-
-/**
- * Matches a method's `Purity` property. The match is successful if the method has the property
- * [[org.opalj.fpcf.properties.DExternallySideEffectFree]].
- */
-class DomainSpecificExternallySideEffectFreeMatcher
-    extends PurityMatcher(properties.DExternallySideEffectFree)
-
-/**
- * Matches a method's `Purity` property. The match is successful if the method has the property
  * [[org.opalj.fpcf.properties.DContextuallyPure]].
  */
-class DomainSpecificContextuallyPureMatcher extends PurityMatcher(properties.DContextuallyPure)
+class DomainSpecificContextuallyPureMatcher
+    extends ContextualPurityMatcher(params ⇒ properties.DContextuallyPure(params))
 
 /**
  * Matches a method's `Purity` property. The match is successful if the method has the property
  * [[org.opalj.fpcf.properties.DContextuallySideEffectFree]].
  */
 class DomainSpecificContextuallySideEffectFreeMatcher
-    extends PurityMatcher(properties.DContextuallySideEffectFree)
+    extends ContextualPurityMatcher(params ⇒ properties.DContextuallySideEffectFree(params))
 
 /**
  * Matches a method's `Purity` property. The match is successful if the property is an instance of
  * [[org.opalj.fpcf.properties.ClassifiedImpure]].
  */
-class ImpureMatcher extends PurityMatcher(properties.ImpureByLackOfInformation) {
+class ImpureMatcher extends PurityMatcher(null) {
 
     override def validateProperty(
         p:          SomeProject,
@@ -238,10 +257,10 @@ class ImpureMatcher extends PurityMatcher(properties.ImpureByLackOfInformation) 
         a:          AnnotationLike,
         properties: Traversable[Property]
     ): Option[String] = {
-        if (!properties.exists(_ match {
+        if (!properties.exists {
             case _: ClassifiedImpure ⇒ true
             case _                   ⇒ false
-        })) {
+        }) {
             // ... when we reach this point the expected property was not found.
             Some(a.elementValuePairs.head.value.asStringValue.value)
         } else {

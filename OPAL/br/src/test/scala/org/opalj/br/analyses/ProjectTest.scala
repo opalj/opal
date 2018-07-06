@@ -168,6 +168,26 @@ class ProjectTest extends FlatSpec with Matchers {
         assert(r.get.classFile.thisType === ObjectType("methods/b/SuperI"))
     }
 
+    behavior of "a Project's instance methods"
+
+    import project.instanceMethods
+
+    it should "find inherited default method in interface with multiple parent interfaces" in {
+        assert(instanceMethods(SubSub2).exists(_.name == "foo"))
+    }
+
+    it should "not return an abstractly overridden default method in interface with multiple parent interfaces" in {
+        assert(!instanceMethods(SubSub).exists(_.name == "foo"))
+    }
+
+    it should "not return an abstractly overridden default method in a class that implements the interface twice" in {
+        assert(!instanceMethods(Subclass1).exists(_.name == "foo"))
+    }
+
+    it should "not return an abstractly overridden default method in a class that inherits the default method through its superclass" in {
+        assert(!instanceMethods(Subclass2).exists(_.name == "foo"))
+    }
+
     behavior of "A Project's information management methods"
 
     it should "be able to compute some project wide information on demand" in {
@@ -490,4 +510,8 @@ private object ProjectTest {
     val AbstractB = ObjectType("methods/b/AbstractB")
     val DeprecatedByAnnotation = ObjectType("deprecated/DeprecatedByAnnotation")
 
+    val SubSub = ObjectType("interfaces/SubSub")
+    val SubSub2 = ObjectType("interfaces/SubSub2")
+    val Subclass1 = ObjectType("interfaces/Subclass1")
+    val Subclass2 = ObjectType("interfaces/Subclass2")
 }

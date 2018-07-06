@@ -37,18 +37,28 @@ import org.opalj.collection.immutable.Naught
 import org.opalj.collection.immutable.Chain
 import org.opalj.collection.immutable.:&:
 
+/**
+ * Provides functionality to compute an optimal schedule to execute a set of analyses. Here,
+ * optimal means that the schedule will try to minimize the number of notifications due to updated
+ * properties by running analyses that just use information provided by earlier analyses,
+ * but which do not provide information required by the earlier ones, in a later batch.
+ *
+ * @author Michael Eichberg
+ */
 class AnalysisScenario {
 
-    private[this] var ccs: Set[ComputationSpecification] = Set.empty
-
+    private[this] var allCS: Set[ComputationSpecification] = Set.empty
+    private[this] var eagerCS: Set[ComputationSpecification] = Set.empty
+    private[this] var lazyCS: Set[ComputationSpecification] = Set.empty
     private[this] var lazilyComputedProperties: Set[PropertyKind] = Set.empty
 
     def allProperties: Set[PropertyKind] = {
-        ccs.foldLeft(Set.empty[PropertyKind]) { (c, n) ⇒ c ++ n.derives ++ n.uses }
+        eagerCS.foldLeft(Set.empty[PropertyKind]) { (c, n) ⇒ c ++ n.derives ++ n.uses } ++
+            lazilyComputedProperties
     }
 
     def +=(cs: ComputationSpecification): Unit = this.synchronized {
-        ccs += cs
+        allCS += cs
         if (cs.isLazy) {
             // check that lazily computed properties are always only computed by ONE analysis
             cs.derives.find(lazilyComputedProperties.contains) foreach { p ⇒
@@ -58,23 +68,25 @@ class AnalysisScenario {
                 throw new SpecificationViolation(m)
             }
             lazilyComputedProperties ++= cs.derives
+            lazyCS += cs
+        } else {
+            eagerCS += cs
         }
     }
 
     /**
-     * Returns the graph which depicts the dependencies between the properties based on
-     * the selected computations. I.e., a property `d` depends on another property `p` if the
-     * algorithm which computes `d` uses the property `p`.
+     * Returns the graph which depicts the dependencies between the computed properties
+     * based on the current computation specifications.
+     * I.e., a property `d` depends on another property `p` if the algorithm which computes
+     * `d` uses the property `p`.
      */
     def propertyComputationsDependencies: Graph[PropertyKind] = {
         val psDeps = Graph.empty[PropertyKind]
-        ccs foreach { cs ⇒
+        allCS foreach { cs ⇒
             // all derived properties depend on all used properties
             cs.derives foreach { derived ⇒
                 psDeps += derived
-                cs.uses foreach { use ⇒
-                    psDeps += (derived, use)
-                }
+                cs.uses foreach { use ⇒ psDeps += (derived, use) }
             }
         }
         psDeps
@@ -86,9 +98,9 @@ class AnalysisScenario {
     def computationDependencies: Graph[ComputationSpecification] = {
         val compDeps = Graph.empty[ComputationSpecification]
         val derivedBy: Map[PropertyKind, ComputationSpecification] = {
-            ccs.flatMap(cs ⇒ cs.derives.map(derives ⇒ (derives, cs))).toMap
+            allCS.flatMap(cs ⇒ cs.derives.map(derives ⇒ (derives, cs))).toMap
         }
-        ccs foreach { cs ⇒
+        allCS foreach { cs ⇒
             compDeps += cs
             cs.uses foreach { usedPK ⇒
                 derivedBy.get(usedPK).map { providerCS ⇒
@@ -116,10 +128,19 @@ class AnalysisScenario {
         implicit
         logContext: LogContext
     ): Schedule = this.synchronized {
+        if (eagerCS.isEmpty) {
+            if (lazyCS.isEmpty) {
+                return Schedule(Chain.empty)
+            } else {
+                // there is no need to compute batches...
+                val scheduleBuilder = (Chain.newBuilder[ComputationSpecification] ++= lazyCS)
+                return Schedule(Chain(scheduleBuilder.result))
+            }
+        }
 
         var derived: Set[PropertyKind] = Set.empty
         var uses: Set[PropertyKind] = Set.empty
-        ccs foreach { cs ⇒
+        allCS foreach { cs ⇒
             cs.derives foreach { pk ⇒ derived += pk }
             uses ++= cs.uses
         }
@@ -141,7 +162,7 @@ class AnalysisScenario {
             var leafComputations = computationDependencies.leafNodes
             while (leafComputations.nonEmpty) {
                 // assign each computation to its own "batch"
-                batches = batches ++! leafComputations.map(Chain.singleton(_)).to[Chain]
+                batches = batches ++! leafComputations.map(Chain.singleton).to[Chain]
                 computationDependencies --= leafComputations
                 leafComputations = computationDependencies.leafNodes
             }
@@ -155,7 +176,14 @@ class AnalysisScenario {
             }
         }
 
-        Schedule(batches)
+        // 3. schedule all lazy computations in batch "0"
+        if (lazyCS.nonEmpty) {
+            val eagerBatches = batches.map(b ⇒ b filter { cs ⇒ !cs.isLazy }).filter(b ⇒ b.nonEmpty)
+            val firstBatchWithLazyCS = (Chain.empty ++ lazyCS) :&:: eagerBatches.head
+            Schedule(firstBatchWithLazyCS :&: eagerBatches.tail)
+        } else {
+            Schedule(batches)
+        }
     }
 }
 

@@ -135,7 +135,7 @@ trait SimpleFieldAwareEscapeAnalysis extends AbstractEscapeAnalysis {
                             throw new UnknownError(s"Unexpected tac: $s")
                     }
 
-                } else if (referenceDefSite > ai.VMLevelValuesOriginOffset) {
+                } else if (referenceDefSite > ai.ImmediateVMExceptionsOriginOffset) {
                     // assigned to field of parameter
                     state.meetMostRestrictive(AtMost(EscapeViaParameter))
                     /* As may alias information are not easily available we cannot simply use

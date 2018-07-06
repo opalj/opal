@@ -33,6 +33,7 @@ package analyses
 import java.io.File
 import java.net.URL
 
+import org.opalj.collection.immutable.ConstArray
 import org.opalj.util.ScalaMajorVersion
 import org.scalatest.Matchers
 import org.scalatest.FunSpec
@@ -78,24 +79,26 @@ class DeclaredMethodsKeyTest extends FunSpec with Matchers {
         assert(declaredMethods.size == numDeclaredMethods, "duplicate methods found")
     }
 
-    var numAnnotated = 0
+    var annotated: Set[DeclaredMethod] = Set.empty
 
-    for {
-        cf ← FixtureProject.allProjectClassFiles
-        annotations = cf.runtimeInvisibleAnnotations
-        if annotations.nonEmpty
-        annotation ← annotations
-        annotationType = annotation.annotationType
-        if annotationType == singleAnnotationType || annotationType == multiAnnotationType
-    } {
+    for (cf ← FixtureProject.allProjectClassFiles) {
         val classType = cf.thisType
-        if (annotationType == singleAnnotationType)
-            checkDeclaredMethod(classType, annotation)
-        else {
-            for (value ← getValue(annotation, "value").asArrayValue.values) {
-                val annotation = value.asAnnotationValue.annotation
-                checkDeclaredMethod(classType, annotation)
-            }
+        it(classType.simpleName) {
+            val annotations = cf.runtimeInvisibleAnnotations
+            if (annotations.nonEmpty)
+                for {
+                    annotation ← annotations
+                    annotationType = annotation.annotationType
+                } {
+                    if (annotationType == singleAnnotationType)
+                        checkDeclaredMethod(classType, annotation)
+                    else if (annotationType == multiAnnotationType) {
+                        for (value ← getValue(annotation, "value").asArrayValue.values) {
+                            val annotation = value.asAnnotationValue.annotation
+                            checkDeclaredMethod(classType, annotation)
+                        }
+                    }
+                }
         }
     }
 
@@ -103,24 +106,38 @@ class DeclaredMethodsKeyTest extends FunSpec with Matchers {
     // there may not be any additional defined method. There may be VirtualDeclaredMethods for
     // predefined methods from the JDK, though.
     it("should not create excess declared methods") {
-        val definedMethods = declaredMethods.filter(_.hasDefinition)
-        assert(definedMethods.size == numAnnotated, "found unexpected defined methods")
+        val excessMethods = declaredMethods.filter(m ⇒ m.hasSingleDefinedMethod && !annotated.contains(m))
+        if (excessMethods.nonEmpty)
+            fail(
+                "fonud unexpected methods: \n\t"+excessMethods.mkString("\n\t")
+            )
     }
 
     def checkDeclaredMethod(classType: ObjectType, annotation: Annotation): Unit = {
         val name = getValue(annotation, "name").asStringValue.value
         val descriptor = MethodDescriptor(getValue(annotation, "descriptor").asStringValue.value)
-        val declaringClass = getValue(annotation, "declaringClass").asClassValue.value.asObjectType
+        val declaringClasses = getValue(annotation, "declaringClass").asArrayValue.values
 
-        val method = FixtureProject.classFile(declaringClass).get.findMethod(name, descriptor).get
-
-        val expected = DefinedMethod(classType, method)
-
-        it(s"${classType.simpleName}: ${declaringClass.simpleName}.$name$descriptor") {
-            assert(declaredMethods.contains(expected))
+        val methodOs = declaringClasses map { declClass ⇒
+            val classType = declClass.asClassValue.value.asObjectType
+            (classType, FixtureProject.classFile(classType).get.findMethod(name, descriptor))
         }
 
-        numAnnotated += 1
+        val emptyMethodO = methodOs.find(_._2.isEmpty)
+        if (emptyMethodO.isDefined)
+            fail(s"method ${emptyMethodO.get._1.simpleName}.${descriptor.toJava(name)}"+
+                "not found in fixture project")
+
+        val expected =
+            if (methodOs.size == 1) DefinedMethod(classType, methodOs.head._2.get)
+            else MultipleDefinedMethods(classType, ConstArray(methodOs.map(_._2.get).toSeq: _*))
+
+        if (declaredMethods.contains(expected))
+            annotated += expected
+        else
+            fail(
+                s"No declared method for ${classType.simpleName}: $expected"
+            )
     }
 
     def getValue(a: Annotation, name: String): ElementValue = {

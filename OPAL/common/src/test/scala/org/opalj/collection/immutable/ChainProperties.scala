@@ -597,6 +597,14 @@ object ChainProperties extends Properties("Chain") {
         val fl = Chain(l: _*).toIterator.toList
         fl == l
     }
+    property("toIntTrieSet") = forAll { l: List[Int] ⇒
+        val fl = Chain(l: _*).toIntTrieSet.iterator.toSet
+        fl == l.toSet
+    }
+    property("toIntArraySet") = forAll { l: List[Int] ⇒
+        val fl = Chain(l: _*).toIntArraySet.iterator.toSet
+        fl == l.toSet
+    }
 
     property("toTraversable") = forAll { l: List[String] ⇒
         val fl = Chain(l: _*).toTraversable.toList

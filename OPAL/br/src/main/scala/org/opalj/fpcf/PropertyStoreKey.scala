@@ -32,6 +32,7 @@ package fpcf
 import org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.ProjectInformationKey
+import org.opalj.log.OPALLogger
 
 /**
  * The ''key'' object to get the project's [[org.opalj.fpcf.PropertyStore]].
@@ -41,7 +42,8 @@ import org.opalj.br.analyses.ProjectInformationKey
  *
  * @author Michael Eichberg
  */
-object PropertyStoreKey extends ProjectInformationKey[PropertyStore, Nothing] {
+object PropertyStoreKey
+    extends ProjectInformationKey[PropertyStore, (List[PropertyStoreContext[AnyRef]]) ⇒ PropertyStore] {
 
     /**
      * Used to specify the number of threads the property store should use. This
@@ -66,9 +68,19 @@ object PropertyStoreKey extends ProjectInformationKey[PropertyStore, Nothing] {
         implicit val logContext = project.logContext
 
         val context: List[PropertyStoreContext[AnyRef]] = List(
-            PropertyStoreContext[org.opalj.br.analyses.SomeProject](project)
+            PropertyStoreContext(classOf[SomeProject], project)
         )
-        seq.PKESequentialPropertyStore(context: _*)
-        // seq.EPKSequentialPropertyStore(context: _*)
+        project.getProjectInformationKeyInitializationData(this) match {
+            case Some(psFactory) ⇒
+                OPALLogger.info(
+                    "analysis configuration",
+                    "the PropertyStore is created using project information key initialization data"
+                )(project.logContext)
+                psFactory(context)
+            case None ⇒
+                // val ps = seq.PKESequentialPropertyStore(context: _*)
+                val ps = par.PKEParallelTasksPropertyStore(context: _*)
+                ps
+        }
     }
 }

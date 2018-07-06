@@ -63,8 +63,9 @@ class PropertyComputationsSchedulerTest extends FunSpec with Matchers with Befor
     (0 to 10).foreach { i ⇒
         pks(i) = PropertyKey.create[Null, Null](
             "p"+(i),
-            (ps: PropertyStore, e: Entity) ⇒ ???,
-            (ps: PropertyStore, eps: SomeEPS) ⇒ ???
+            (_: PropertyStore, _: FallbackReason, _: Entity) ⇒ ???,
+            (_: PropertyStore, _: SomeEPS) ⇒ ???,
+            (_: PropertyStore, _: Entity) ⇒ None
         )
     }
 
@@ -109,11 +110,24 @@ class PropertyComputationsSchedulerTest extends FunSpec with Matchers with Befor
         Set(pks(5), pks(7), pks(8), pks(0)),
         Set(pks(6))
     )
+    val c7Lazy = BasicComputationSpecification(
+        "c7",
+        Set(pks(5), pks(7), pks(8), pks(0)),
+        Set(pks(6)),
+        isLazy = true
+    )
 
     val c8 = BasicComputationSpecification(
         "c8",
         Set(pks(6)),
         Set(pks(8), pks(9))
+    )
+
+    val c8Lazy = BasicComputationSpecification(
+        "c8",
+        Set(pks(6)),
+        Set(pks(8), pks(9)),
+        isLazy = true
     )
 
     val c9 = BasicComputationSpecification(
@@ -128,60 +142,82 @@ class PropertyComputationsSchedulerTest extends FunSpec with Matchers with Befor
         Set(pks(10)) // this one also derives property 10; e.g., at a more basic level
     )
 
+    val c10Lazy = BasicComputationSpecification(
+        "c10",
+        Set.empty,
+        Set(pks(10)), // this one also derives property 10; e.g., at a more basic level
+        isLazy = true
+    )
+
     //**********************************************************************************************
     //
     // TESTS
 
     describe("an AnalysisScenario") {
-        it("should be possible to see the dependencies between the computations") {
-            (AnalysisScenario(Set(c6, c7, c8))).propertyComputationsDependencies
-        }
-    }
 
-    describe("the scheduling of property computations") {
+        it("should be possible to see the dependencies between the computations") {
+            AnalysisScenario(Set(c6, c7, c8)).propertyComputationsDependencies
+        }
 
         it("should be possible to create an empty schedule") {
-            val batches = (AnalysisScenario(Set())).computeSchedule.batches
+            val batches = AnalysisScenario(Set()).computeSchedule.batches
             batches should be('empty)
         }
 
-        it("should be possible to create a schedule where a property is computed by multiple computations") {
-            val batches = (AnalysisScenario(Set(c9, c10))).computeSchedule.batches
-            batches.size should be(2)
+        describe("the scheduling of eager property computations") {
+
+            it("should be possible to create a schedule where a property is computed by multiple computations") {
+                val batches = (AnalysisScenario(Set(c9, c10))).computeSchedule.batches
+                batches.size should be(2)
+            }
+
+            it("should be possible to create a schedule with one computation") {
+                val batches = (AnalysisScenario(Set(c1))).computeSchedule.batches
+                batches.size should be(1)
+                batches.head.head should be(c1)
+            }
+
+            it("should be possible to create a schedule with two independent computations") {
+                val batches = (AnalysisScenario(Set(c1, c3))).computeSchedule.batches
+                batches.size should be(2)
+                batches.foreach(_.size should be(1))
+                batches.flatMap(batch ⇒ batch).toSet should be(Set(c1, c3))
+            }
+
+            it("should be possible to create a schedule where not all properties are explicitly derived") {
+                val batches = (AnalysisScenario(Set(c1, c2))).computeSchedule.batches
+                batches.size should be(2)
+                batches.foreach(_.size should be(1))
+                batches.head.head should be(c1)
+                batches.tail.head.head should be(c2)
+            }
+
+            it("should be possible to create a schedule where all computations depend on each other") {
+                val batches = (AnalysisScenario(Set(c6, c7, c8))).computeSchedule.batches
+                batches.size should be(1)
+                batches.head.toSet should be(Set(c6, c7, c8))
+            }
+
+            it("should be possible to create a complex schedule") {
+                val schedule = (AnalysisScenario(Set(c1, c2, c3, c4, c5, c6, c7, c8, c9))).computeSchedule
+                schedule.batches.take(5).flatMap(batch ⇒ batch).toSet should be(Set(c1, c2, c3, c4, c5))
+                schedule.batches.drop(5).head.toSet should be(Set(c6, c7, c8))
+            }
         }
 
-        it("should be possible to create a schedule with one computation") {
-            val batches = (AnalysisScenario(Set(c1))).computeSchedule.batches
-            batches.size should be(1)
-            batches.head.head should be(c1)
-        }
+        describe("the scheduling of mixed eager and lazy property computations") {
 
-        it("should be possible to create a schedule with two independent computations") {
-            val batches = (AnalysisScenario(Set(c1, c3))).computeSchedule.batches
-            batches.size should be(2)
-            batches.foreach(_.size should be(1))
-            batches.flatMap(batch ⇒ batch).toSet should be(Set(c1, c3))
-        }
+            it("should be possible to create a schedule where a property is computed by multiple computations") {
+                val batches = AnalysisScenario(Set(c9, c10Lazy)).computeSchedule.batches
+                batches.size should be(1)
+            }
 
-        it("should be possible to create a schedule where not all properties are explicitly derived") {
-            val batches = (AnalysisScenario(Set(c1, c2))).computeSchedule.batches
-            batches.size should be(2)
-            batches.foreach(_.size should be(1))
-            batches.head.head should be(c1)
-            batches.tail.head.head should be(c2)
-        }
-
-        it("should be possible to create a schedule where all computations depend on each other") {
-            val batches = (AnalysisScenario(Set(c6, c7, c8))).computeSchedule.batches
-            batches.size should be(1)
-            batches.head.toSet should be(Set(c6, c7, c8))
-        }
-
-        it("should be possible to create a complex schedule") {
-            val schedule = (AnalysisScenario(Set(c1, c2, c3, c4, c5, c6, c7, c8, c9))).computeSchedule
-            schedule.batches.take(5).flatMap(batch ⇒ batch).toSet should be(Set(c1, c2, c3, c4, c5))
-            schedule.batches.drop(5).head.toSet should be(Set(c6, c7, c8))
+            it("should be possible to create a complex schedule") {
+                val scenario = AnalysisScenario(Set(c1, c2, c3, c4, c5, c6, c7Lazy, c8Lazy, c9))
+                val schedule = scenario.computeSchedule
+                schedule.batches.head.toSet should contain(c7Lazy)
+                schedule.batches.head.toSet should contain(c8Lazy)
+            }
         }
     }
-
 }

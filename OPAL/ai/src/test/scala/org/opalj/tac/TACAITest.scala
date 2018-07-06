@@ -114,7 +114,8 @@ class TACAITest extends FunSpec with Matchers {
                             val expectedLine = expectedIt.next()
                             if (actualLine != expectedLine)
                                 fail(
-                                    s"comparison failed:\n$actualLine\n\t\tvs.\n$expectedLine\ncomputed representation:\n"+
+                                    s"comparison failed:\n$actualLine\n\t\tvs. (expected)\n"+
+                                        s"$expectedLine\ncomputed representation:\n"+
                                         actual.mkString("\n")
                                 )
                         }

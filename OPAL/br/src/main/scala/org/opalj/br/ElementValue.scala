@@ -46,6 +46,7 @@ sealed trait ElementValue extends Attribute {
      */
     def toJava: String
 
+    def asIntValue: IntValue = throw new ClassCastException()
     def asEnumValue: EnumValue = throw new ClassCastException()
     def asAnnotationValue: AnnotationValue = throw new ClassCastException()
     def asStringValue: StringValue = throw new ClassCastException()
@@ -146,6 +147,8 @@ case class IntValue(value: Int) extends BaseTypeElementValue {
     override def toJava: String = value.toString
 
     override def kindId: Int = IntValue.KindId
+
+    final override def asIntValue: IntValue = this
 
 }
 object IntValue {

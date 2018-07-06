@@ -458,7 +458,7 @@ final class Code private (
 
             @inline def runtimeSuccessor(pc: Int): Unit = {
                 if (isReached(pc))
-                    cfJoins += pc
+                    cfJoins +!= pc
                 else
                     isReached(pc) = true
             }
@@ -510,7 +510,7 @@ final class Code private (
         isReached(0) = true // the first instruction is always reached!
         @inline def runtimeSuccessor(successorPC: Int): Unit = {
             if (isReached(successorPC))
-                cfJoins += successorPC
+                cfJoins +!= successorPC
             else
                 isReached(successorPC) = true
         }
@@ -536,7 +536,7 @@ final class Code private (
                         if (predecessorPCs eq null) {
                             allPredecessorPCs(nextPC) = IntTrieSet1(pc)
                         } else {
-                            allPredecessorPCs(nextPC) = predecessorPCs + pc
+                            allPredecessorPCs(nextPC) = predecessorPCs +! pc
                         }
                     } else {
                         // This handles cases where we have totally broken code; e.g.,
@@ -544,7 +544,7 @@ final class Code private (
                         // very last instruction is not even a ret/jsr/goto/return/atrow
                         // instruction (e.g., a NOP instruction as in case of jPython
                         // related classes.)
-                        exitPCs += pc
+                        exitPCs +!= pc
                     }
                 }
             }
@@ -670,7 +670,7 @@ final class Code private (
     def cfPCs(
         implicit
         classHierarchy: ClassHierarchy = PreInitializedClassHierarchy
-    ): (PCs /*joins*/ , PCs /*forks*/ , IntMap[PCs] /*forkTargetPCs*/ ) = {
+    ): (PCs /*cfJoins*/ , PCs /*forks*/ , IntMap[PCs] /*forkTargetPCs*/ ) = {
         val instructions = this.instructions
         val instructionsLength = instructions.length
 
@@ -699,7 +699,7 @@ final class Code private (
                 case RET.opcode ⇒
                     // The ret may return to different sites;
                     // the potential path joins are determined when we process the JSR.
-                    cfForks += pc
+                    cfForks +!= pc
                     cfForkTargets += ((pc, cfg.successors(pc)))
 
                 case JSR.opcode | JSR_W.opcode ⇒
@@ -711,8 +711,8 @@ final class Code private (
                     val nextInstructions = instruction.nextInstructions(pc)(this, classHierarchy)
                     nextInstructions.foreach(runtimeSuccessor)
                     if (nextInstructions.hasMultipleElements) {
-                        cfForks += pc
-                        cfForkTargets += ((pc, nextInstructions.foldLeft(IntTrieSet.empty)(_ + _)))
+                        cfForks +!= pc
+                        cfForkTargets += ((pc, nextInstructions.foldLeft(IntTrieSet.empty)(_ +! _)))
                     }
             }
 
@@ -1170,19 +1170,17 @@ final class Code private (
     }
 
     /**
-     * Collects all instructions for which the given function is defined. The order in
-     * which the instructions are collected is reversed when compared to the order in the
-     * instructions array.
+     * Collects all instructions for which the given function is defined.
      */
-    def collectInstructionsWithIndex[B <: AnyRef](
-        f: PartialFunction[Instruction, B]
+    def collectInstructionsWithPC[B <: AnyRef](
+        f: PartialFunction[PCAndInstruction, B]
     ): List[PCAndAnyRef[B]] = {
         val max_pc = instructions.length
         var result: List[PCAndAnyRef[B]] = List.empty
         var pc = 0
         while (pc < max_pc) {
             val instruction = instructions(pc)
-            val r: Any = f.applyOrElse(instruction, AnyToAnyThis)
+            val r: Any = f.applyOrElse(PCAndInstruction(pc, instruction), AnyToAnyThis)
             if (r.asInstanceOf[AnyRef] ne AnyToAnyThis) {
                 result ::= PCAndAnyRef(pc, r.asInstanceOf[B])
             }
@@ -1724,7 +1722,7 @@ final class Code private (
      * identified sequences.
      * {{{
      * code.slidingCollect(2)({
-     *  case (pc, Seq(PUTFIELD(_, _, _), ALOAD_0)) ⇒ (pc)
+     *      case (pc, Seq(PUTFIELD(_, _, _), ALOAD_0)) ⇒ (pc)
      * }) should be(Seq(...))
      * }}}
      *

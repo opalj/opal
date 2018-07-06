@@ -38,6 +38,7 @@ class TrueTrueTruePKESequentialPropertyStoreTest extends PropertyStoreTestWithDe
             delayHandlingOfNonFinalDependeeUpdates = true
         )
         s.delayHandlingOfDependerNotification = true
+        s.suppressError = true
         s
     }
 
@@ -52,6 +53,7 @@ class FalseTrueTruePKESequentialPropertyStoreTest extends PropertyStoreTestWithD
             delayHandlingOfNonFinalDependeeUpdates = true
         )
         s.delayHandlingOfDependerNotification = true
+        s.suppressError = true
         s
     }
 }
@@ -65,6 +67,7 @@ class TrueFalseTruePKESequentialPropertyStoreTest extends PropertyStoreTestWithD
             delayHandlingOfNonFinalDependeeUpdates = false
         )
         s.delayHandlingOfDependerNotification = true
+        s.suppressError = true
         s
     }
 }
@@ -78,6 +81,7 @@ class TrueTrueFalsePKESequentialPropertyStoreTest extends PropertyStoreTestWithD
             delayHandlingOfNonFinalDependeeUpdates = true
         )
         s.delayHandlingOfDependerNotification = false
+        s.suppressError = true
         s
     }
 }
@@ -91,6 +95,7 @@ class FalseFalseTruePKESequentialPropertyStoreTest extends PropertyStoreTestWith
             delayHandlingOfNonFinalDependeeUpdates = false
         )
         s.delayHandlingOfDependerNotification = true
+        s.suppressError = true
         s
     }
 }
@@ -104,6 +109,7 @@ class FalseTrueFalsePKESequentialPropertyStoreTest extends PropertyStoreTestWith
             delayHandlingOfNonFinalDependeeUpdates = true
         )
         s.delayHandlingOfDependerNotification = false
+        s.suppressError = true
         s
     }
 }
@@ -117,6 +123,7 @@ class TrueFalseFalsePKESequentialPropertyStoreTest extends PropertyStoreTestWith
             delayHandlingOfNonFinalDependeeUpdates = false
         )
         s.delayHandlingOfDependerNotification = false
+        s.suppressError = true
         s
     }
 }
@@ -130,6 +137,7 @@ class FalseFalseFalsePKESequentialPropertyStoreTest extends PropertyStoreTestWit
             delayHandlingOfNonFinalDependeeUpdates = false
         )
         s.delayHandlingOfDependerNotification = false
+        s.suppressError = true
         s
     }
 }
@@ -140,6 +148,7 @@ class EagerFalsePKESequentialPropertyStoreTest extends PropertyStoreTestWithDebu
         val s = PKESequentialPropertyStore()
         s.dependeeUpdateHandling = EagerDependeeUpdateHandling
         s.delayHandlingOfDependerNotification = false
+        s.suppressError = true
         s
     }
 }
@@ -150,6 +159,7 @@ class EagerTruePKESequentialPropertyStoreTest extends PropertyStoreTestWithDebug
         val s = PKESequentialPropertyStore()
         s.dependeeUpdateHandling = EagerDependeeUpdateHandling
         s.delayHandlingOfDependerNotification = true
+        s.suppressError = true
         s
     }
 }

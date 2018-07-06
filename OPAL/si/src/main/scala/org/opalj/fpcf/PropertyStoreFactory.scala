@@ -29,8 +29,6 @@
 package org.opalj
 package fpcf
 
-import scala.reflect.runtime.universe.TypeTag
-
 import org.opalj.log.LogContext
 
 /**
@@ -38,13 +36,14 @@ import org.opalj.log.LogContext
  */
 trait PropertyStoreFactory {
 
-    final def apply[T <: AnyRef: TypeTag](
+    final def apply[T <: AnyRef](
+        key:     Class[T],
         context: T
     )(
         implicit
         logContext: LogContext
     ): PropertyStore = {
-        apply(PropertyStoreContext[T](context))
+        apply(PropertyStoreContext(key, context))
     }
 
     def apply(

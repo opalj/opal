@@ -37,6 +37,7 @@ import java.io.ByteArrayInputStream
 import java.io.DataInputStream
 import java.io.BufferedInputStream
 import java.io.IOException
+import java.io.EOFException
 import java.nio.file.FileSystems
 import java.nio.file.Path
 import java.nio.file.Files
@@ -45,6 +46,8 @@ import java.net.URL
 import java.net.URI
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.jar.JarInputStream
+import java.util.jar.JarEntry
 
 import scala.util.control.ControlThrowable
 import scala.collection.JavaConverters._
@@ -406,6 +409,40 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
 
         ClassFiles(jarFile, addClassFile, exceptionHandler)
         classFiles
+    }
+
+    /**
+     * Reads the class files from the given JarInputStream
+     */
+    // The following solution is inspired by Ben Hermann's solution found at:
+    // https://github.com/delphi-hub/delphi-crawler/blob/feature/streamworkaround/src/main/scala/de/upb/cs/swt/delphi/crawler/tools/JarStreamReader.scala
+    def ClassFiles(in: ⇒ JarInputStream): List[(ClassFile, String)] = process(in) { in ⇒
+        var je: JarEntry = in.getNextJarEntry()
+
+        var futures: List[Future[List[(ClassFile, String)]]] = Nil
+
+        while (je != null) {
+            val entryName = je.getName
+            if (je.getSize.toInt > 0) {
+                val entryBytes = new Array[Byte](je.getSize.toInt)
+
+                var remaining = entryBytes.length
+                var offset = 0
+                while (remaining > 0) {
+                    val readBytes = in.read(entryBytes, offset, remaining)
+                    if (readBytes < 0) throw new EOFException()
+                    remaining -= readBytes
+                    offset += readBytes
+                }
+                futures ::= Future[List[(ClassFile, String)]] {
+                    val cfs = ClassFile(new DataInputStream(new ByteArrayInputStream(entryBytes)))
+                    cfs map { cf ⇒ (cf, entryName) }
+                }(org.opalj.concurrent.OPALExecutionContext)
+            }
+            je = in.getNextJarEntry()
+        }
+
+        futures.flatMap(f ⇒ Await.result(f, Duration.Inf))
     }
 
     /**

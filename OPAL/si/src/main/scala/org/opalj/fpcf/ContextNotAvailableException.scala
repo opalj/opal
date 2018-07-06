@@ -28,8 +28,6 @@
  */
 package org.opalj.fpcf
 
-import scala.reflect.runtime.universe.Type
-
 /**
  * Thrown if a context object is requested, but could not be found.
  *
@@ -43,7 +41,7 @@ import scala.reflect.runtime.universe.Type
  */
 case class ContextNotAvailableException(
         context:         AnyRef,
-        completeContext: Map[Type, AnyRef]
+        completeContext: Map[Class[_], AnyRef]
 ) extends RuntimeException(
     completeContext.keys.mkString(s"unknown context $context; available: ", ", ", "")
 )

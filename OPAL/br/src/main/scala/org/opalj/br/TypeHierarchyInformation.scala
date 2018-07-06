@@ -61,8 +61,12 @@ sealed abstract class TypeHierarchyInformation {
         interfaceTypes.foldLeft(classTypes.foldLeft(z)(op))(op)
     }
 
+    def contains(t: ObjectType): Boolean = {
+        interfaceTypes.containsId(t.id) || classTypes.containsId(t.id)
+    }
+
     /**
-     * The set of all supertypes. The set is computed on demand and NOT cached; in general,
+     * The set of all types. The set is computed on demand and NOT cached; in general,
      * the higher-order methods should be used!
      */
     def all: UIDSet[ObjectType]

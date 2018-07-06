@@ -1,0 +1,29 @@
+/* PARAMETERS:
+   param1: useSites={1,3} (origin=-2)
+*/
+0:/*pc=0:*/ lv0 = 0
+1:/*pc=3:*/ if({param1} != 0) goto 4
+
+// 1 →
+2:/*pc=6:*/ lv2 = 10
+3:/*pc=9:*/ /*expression value is ignored:*/{lv2} / {param1}
+// ⚠️ ALWAYS THROWS EXCEPTION – ⚡️ java.lang.Exception → 8
+
+// 1 →
+4:/*pc=14:*/ lv4 = new RuntimeException
+5:/*pc=18:*/ lv5 = "unexpected value"
+6:/*pc=20:*/ {lv4}/*(non-virtual) java.lang.RuntimeException*/.<init>({lv5})
+// ⚡️ <uncaught exception ⇒ abnormal return>, ⚡️ java.lang.Exception → 8
+
+// 6 →
+7:/*pc=23:*/ throw {lv4}
+// ⚡️ java.lang.Exception → 8
+
+// java.lang.Exception →
+8:/*pc=24:*/ caught java.lang.Exception /* <= {lv4,exception@6,exception[VM]@3}*/
+9:/*pc=25:*/ lv9 = java.lang.System.out
+10:/*pc=29:*/ {lv9}/*java.io.PrintStream*/.println({lv4, exception@6, exception[VM]@3})
+// ⚡️ <uncaught exception ⇒ abnormal return>
+
+// 10 →
+11:/*pc=33:*/ return {lv0}

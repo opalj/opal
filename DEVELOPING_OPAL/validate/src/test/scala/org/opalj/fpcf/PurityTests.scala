@@ -29,6 +29,7 @@
 package org.opalj
 package fpcf
 
+import org.opalj.concurrent.ConcurrentExceptions
 import org.opalj.fpcf.analyses.EagerL0PurityAnalysis
 import org.opalj.fpcf.analyses.purity.EagerL1PurityAnalysis
 import org.opalj.fpcf.analyses.purity.EagerL2PurityAnalysis
@@ -37,7 +38,7 @@ import org.opalj.fpcf.analyses.purity.L2PurityAnalysis
 import org.opalj.fpcf.analyses.LazyClassImmutabilityAnalysis
 import org.opalj.fpcf.analyses.LazyFieldLocalityAnalysis
 import org.opalj.fpcf.analyses.LazyL1FieldMutabilityAnalysis
-import org.opalj.fpcf.analyses.LazyReturnValueFreshnessAnalysis
+import org.opalj.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
 import org.opalj.fpcf.analyses.LazyTypeImmutabilityAnalysis
 import org.opalj.fpcf.analyses.LazyVirtualCallAggregatingEscapeAnalysis
 import org.opalj.fpcf.analyses.LazyVirtualMethodPurityAnalysis
@@ -61,14 +62,21 @@ class PurityTests extends PropertiesTest {
     override def withRT = true
 
     describe("the org.opalj.fpcf.analyses.L0PurityAnalysis is executed") {
-        val as = executeAnalyses(
-            Set(EagerL0PurityAnalysis),
-            Set(
-                LazyL0FieldMutabilityAnalysis,
-                LazyClassImmutabilityAnalysis,
-                LazyTypeImmutabilityAnalysis
+        val as = try {
+            executeAnalyses(
+                Set(EagerL0PurityAnalysis),
+                Set(
+                    LazyL0FieldMutabilityAnalysis,
+                    LazyClassImmutabilityAnalysis,
+                    LazyTypeImmutabilityAnalysis
+                )
             )
-        )
+        } catch {
+            case ce: ConcurrentExceptions ⇒
+                ce.getSuppressed.foreach(e ⇒ e.printStackTrace())
+                throw ce;
+        }
+        as.propertyStore.shutdown()
         validateProperties(as, declaredMethodsWithAnnotations(as.project), Set("Purity"))
     }
 
@@ -83,6 +91,7 @@ class PurityTests extends PropertiesTest {
                 LazyVirtualMethodPurityAnalysis
             )
         )
+        as.propertyStore.shutdown()
         validateProperties(as, declaredMethodsWithAnnotations(as.project), Set("Purity"))
     }
 
@@ -105,6 +114,7 @@ class PurityTests extends PropertiesTest {
                 LazyVirtualMethodPurityAnalysis
             )
         )
+        as.propertyStore.shutdown()
         validateProperties(as, declaredMethodsWithAnnotations(as.project), Set("Purity"))
     }
 

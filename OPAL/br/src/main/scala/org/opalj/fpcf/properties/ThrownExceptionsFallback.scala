@@ -36,7 +36,7 @@ import org.opalj.br.ObjectType
 import org.opalj.br.BooleanType
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
-import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.Project
 import org.opalj.br.instructions.Instruction
 import org.opalj.br.instructions.ATHROW
 import org.opalj.br.instructions.INVOKESPECIAL
@@ -93,9 +93,13 @@ import org.opalj.fpcf.properties.ThrownExceptions.MethodBodyIsNotAvailable
  * Hence, the primary use case of this method is to identify those methods that are guaranteed
  * to '''never throw exceptions'''.
  */
-object ThrownExceptionsFallback extends ((PropertyStore, Entity) ⇒ ThrownExceptions) {
+object ThrownExceptionsFallback extends ((PropertyStore, FallbackReason, Entity) ⇒ ThrownExceptions) {
 
     final val ObjectEqualsMethodDescriptor = MethodDescriptor(ObjectType.Object, BooleanType)
+
+    def apply(ps: PropertyStore, reason: FallbackReason, e: Entity): ThrownExceptions = {
+        e match { case m: Method ⇒ this(ps, m) }
+    }
 
     def apply(ps: PropertyStore, e: Entity): ThrownExceptions = {
         e match { case m: Method ⇒ this(ps, m) }
@@ -118,7 +122,7 @@ object ThrownExceptionsFallback extends ((PropertyStore, Entity) ⇒ ThrownExcep
         val instructions = code.instructions
         val isStaticMethod = m.isStatic
 
-        val exceptions = new BRMutableTypesSet(ps.context[SomeProject].classHierarchy)
+        val exceptions = new BRMutableTypesSet(ps.context(classOf[Project[_]]).classHierarchy)
 
         var result: ThrownExceptions = null
 

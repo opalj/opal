@@ -29,7 +29,7 @@
 package org.opalj
 package fpcf
 package analyses
-// TODO @Florian please fix package structure
+package escape
 
 import scala.annotation.switch
 import org.opalj.ai.common.DefinitionSite
@@ -155,23 +155,23 @@ class ReturnValueFreshnessAnalysis private[analyses] (
         // if the method is inherited, query the result for the one in its defining class
         case DefinedMethod(_, m) ⇒
 
-            def c(someEPS: SomeEPS): PropertyComputationResult = {
-                handleReturnValueFreshness(someEPS)
-            }
-
             def handleReturnValueFreshness(
                 eOptP: SomeEOptionP
             ): PropertyComputationResult = eOptP match {
                 case FinalEP(_, p) ⇒ Result(e, p)
                 case IntermediateEP(_, lb, ub) ⇒
-                    IntermediateResult(e, lb, ub, Set(eOptP), c)
+                    IntermediateResult(
+                        e, lb, ub,
+                        Set(eOptP), handleReturnValueFreshness, CheapPropertyComputation
+                    )
                 case _ ⇒
-                    IntermediateResult(e, NoFreshReturnValue, FreshReturnValue, Set(eOptP), c)
+                    IntermediateResult(
+                        e, NoFreshReturnValue, FreshReturnValue,
+                        Set(eOptP), handleReturnValueFreshness, CheapPropertyComputation
+                    )
             }
 
-            handleReturnValueFreshness(
-                propertyStore(declaredMethods(m), ReturnValueFreshness.key)
-            )
+            handleReturnValueFreshness(propertyStore(declaredMethods(m), ReturnValueFreshness.key))
 
         case _ ⇒ throw new RuntimeException(s"Unsupported entity $e")
     }
@@ -278,7 +278,7 @@ class ReturnValueFreshnessAnalysis private[analyses] (
 
         val value = receiver.asVar.value.asDomainReferenceValue
         val dm = state.dm
-        val m = dm.methodDefinition
+        val m = dm.definedMethod
         val thisType = m.classFile.thisType
 
         val receiverType = value.valueType
@@ -292,12 +292,17 @@ class ReturnValueFreshnessAnalysis private[analyses] (
             val callee = project.instanceCall(thisType, receiverType.get, name, desc)
             handleConcreteCall(callee)
         } else {
-            val callee =
-                declaredMethods(thisType.packageName, receiverType.get.asObjectType, name, desc)
+            val callee = declaredMethods(
+                dc.asObjectType,
+                thisType.packageName,
+                receiverType.get.asObjectType,
+                name,
+                desc
+            )
 
             // unknown method
-            if (!callee.hasDefinition ||
-                isOverridableMethod(callee.methodDefinition).isYesOrUnknown)
+            if (!callee.hasSingleDefinedMethod ||
+                isOverridableMethod(callee.definedMethod).isYesOrUnknown)
                 return true;
 
             val rvf = propertyStore(callee, VirtualMethodReturnValueFreshness.key)
@@ -476,7 +481,8 @@ class ReturnValueFreshnessAnalysis private[analyses] (
                 NoFreshReturnValue,
                 state.ubRVF,
                 state.dependees,
-                continuation
+                continuation,
+                CheapPropertyComputation
             )
         else
             Result(state.dm, state.ubRVF)
@@ -498,7 +504,7 @@ object EagerReturnValueFreshnessAnalysis
 
     def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val declaredMethods =
-            project.get(DeclaredMethodsKey).declaredMethods.filter(_.hasDefinition)
+            project.get(DeclaredMethodsKey).declaredMethods.filter(_.hasSingleDefinedMethod)
         val analysis = new ReturnValueFreshnessAnalysis(project)
         propertyStore.scheduleEagerComputationsForEntities(declaredMethods)(analysis.determineFreshness)
         analysis

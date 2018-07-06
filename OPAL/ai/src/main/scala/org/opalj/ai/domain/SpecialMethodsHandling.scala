@@ -71,6 +71,12 @@ trait SpecialMethodsHandling extends MethodCallsHandling {
             return super.invokestatic(pc, declaringType, isInterface, name, descriptor, operands);
         }
 
+        // ON THE USAGE OF IMMEDIATE_VM_EXCEPTIONS
+        // Please note that we use "VM exceptions" in the following because System.arraycopy
+        // is native (implemented by the JVM) AND the thrown exceptions have never escaped in any
+        // way. Hence, the exceptions are fresh, the type is precise and the value is properly
+        // initialized in a well-defined(fixed) manner.
+
         val length :&: destPos :&: dest :&: sourcePos :&: source :&: _ = operands
         val sourceIsNull = refIsNull(pc, source)
         val destIsNull = refIsNull(pc, dest)
@@ -87,7 +93,7 @@ trait SpecialMethodsHandling extends MethodCallsHandling {
 
         exceptions ::=
             InitializedObjectValue(
-                ValueOriginForVMLevelValue(pc),
+                ValueOriginForImmediateVMException(pc),
                 ObjectType.IndexOutOfBoundsException
             )
         if (intIsSomeValueInRange(pc, sourcePos, 0, Int.MaxValue).isNo ||

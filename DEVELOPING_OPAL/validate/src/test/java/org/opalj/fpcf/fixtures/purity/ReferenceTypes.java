@@ -39,7 +39,7 @@ import org.opalj.fpcf.properties.purity.*;
  *
  * @author Dominik Helm
  */
-public class ReferenceTypes {
+final public class ReferenceTypes {
 
     // Fields with different attributes for use in test methods
 
@@ -74,7 +74,7 @@ public class ReferenceTypes {
         nonFinalField = 5;
     }
 
-    @ContextuallyPure("Only modifies fields of parameters")
+    @ContextuallyPure(value = "Only modifies fields of parameters", modifies = {1})
     @Impure(value = "Modifies field of different instance",
             analyses = {L0PurityAnalysis.class, L1PurityAnalysis.class})
     public ReferenceTypes(ReferenceTypes other) {
@@ -287,17 +287,18 @@ public class ReferenceTypes {
         return arr[index];
     }
 
-    @DomainSpecificExternallyPure(value = "Modified array is local",
+    @DomainSpecificContextuallyPure(value = "Modified array is local", modifies = {0},
             eps = @EP(cf = ReferenceTypes.class, pk = "FieldLocality", field = "nonConstFinalArr",
-                    p = "ExtensibleLocalField"))
+                    p = "LocalField"))
     @Impure(value = "Modifies array entry/array not recognized as local", negate = true,
             eps = @EP(cf = ReferenceTypes.class, pk = "FieldLocality", field = "nonConstFinalArr",
-                    p = "ExtensibleLocalField", analyses = L2PurityAnalysis.class))
+                    p = "LocalField", analyses = L2PurityAnalysis.class))
     public void setArrayEntry(int index, int value) {
         nonConstFinalArr[index] = value;
     }
 
-    @DomainSpecificContextuallyPure("Modifies parameter, array could be null or index out bounds")
+    @DomainSpecificContextuallyPure(
+            value = "Modifies parameter, array could be null or index out bounds", modifies = {0})
     @Impure(value = "Modifies array entry",
             analyses = {L0PurityAnalysis.class, L1PurityAnalysis.class})
     public static void setArrayEntryStatic(int[] arr, int index, int value) {
@@ -337,7 +338,7 @@ public class ReferenceTypes {
 
     // Synchronization is impure (unless done on a fresh, non-escaping object)
 
-    @DomainSpecificExternallyPure("Synchronizes on this reference")
+    @DomainSpecificContextuallyPure(value = "Synchronizes on this reference", modifies = {0})
     @Impure(value = "Synchronizes on this reference",
             analyses = {L0PurityAnalysis.class, L1PurityAnalysis.class})
     private int syncMethod() {
@@ -348,7 +349,7 @@ public class ReferenceTypes {
         return result;
     }
 
-    @ExternallyPure(value = "Synchronizes on this reference")
+    @ContextuallyPure(value = "Synchronizes on this reference", modifies = {0})
     @Impure(value = "Synchronizes on this reference",
             analyses = {L0PurityAnalysis.class, L1PurityAnalysis.class})
     private synchronized int syncMethod2() {

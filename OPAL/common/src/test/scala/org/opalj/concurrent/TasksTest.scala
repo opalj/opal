@@ -54,8 +54,7 @@ class TasksTest extends FunSpec with Matchers {
 
         it("it should be possible to process an empty set of tasks") {
             val counter = new AtomicInteger(0)
-            val exceptions = Tasks { (tasks: Tasks[Int], i: Int) ⇒ counter.incrementAndGet() }.join()
-            exceptions should be('empty)
+            Tasks { (tasks: Tasks[Int], i: Int) ⇒ counter.incrementAndGet() }.join()
             counter.get should be(0)
         }
 
@@ -66,9 +65,30 @@ class TasksTest extends FunSpec with Matchers {
                 Thread.sleep(50)
             }
             tasks.submit(1)
-            val exceptions = tasks.join()
-            exceptions should be('empty)
+            tasks.join()
             counter.get should be(1)
+        }
+
+        it("it should be possible to reuse tasks after join") {
+            val counter = new AtomicInteger(0)
+            val tasks = Tasks { (tasks: Tasks[Int], i: Int) ⇒
+                counter.incrementAndGet()
+            }
+            tasks.submit(1)
+            while (tasks.currentTasksCount > 0) {
+                Thread.sleep(50);
+            }
+            tasks.submit(1)
+            while (tasks.currentTasksCount > 0) {
+                Thread.sleep(50);
+            }
+            tasks.submit(1)
+            tasks.join()
+            counter.get should be(3)
+
+            tasks.submit(1)
+            tasks.join()
+            counter.get should be(4)
         }
 
         it("it should be possible to add a task while processing a task") {
@@ -79,8 +99,7 @@ class TasksTest extends FunSpec with Matchers {
                 Thread.sleep(50)
             }
             tasks.submit(1)
-            val exceptions = tasks.join()
-            exceptions should be('empty)
+            tasks.join()
             counter.get should be(2)
         }
 
@@ -97,8 +116,7 @@ class TasksTest extends FunSpec with Matchers {
                 }
             }
             tasks.submit(0)
-            val exceptions = tasks.join()
-            exceptions should be('empty)
+            tasks.join()
             for (i ← 0 until 100000) processedValues.get(i) should be(1)
         }
 
@@ -111,9 +129,8 @@ class TasksTest extends FunSpec with Matchers {
             tasks.submit(1)
             Thread.sleep(250) // ttask 1 is probably already long finished...
             tasks.submit(2)
-            val exceptions = tasks.join() // task 2 is probably still running..
+            tasks.join() // task 2 is probably still running..
             processedValues.get() should be(2)
-            exceptions should be('empty)
         }
 
         it("it should be possible to create thousands of tasks in multiple steps multiple times") {
@@ -133,8 +150,7 @@ class TasksTest extends FunSpec with Matchers {
                     }
                 }
                 for (i ← 0 until 100000) tasks.submit(i)
-                val exceptions = tasks.join()
-                exceptions should be('empty)
+                tasks.join()
                 processedValues.get() should be(100000 + subsequentlyScheduled.get)
                 info(s"run $r succeeded")
             }
@@ -147,12 +163,12 @@ class TasksTest extends FunSpec with Matchers {
 
             val nextValue = new AtomicInteger(100000)
             val tasks: Tasks[Int] = Tasks { (tasks: Tasks[Int], i: Int) ⇒
-                if ((i % 1000) == 0) {
+                if (i % 1000 == 0) {
                     for (i ← 1 until 10) {
                         subsequentlyScheduled.incrementAndGet()
                         tasks.submit(nextValue.incrementAndGet())
                     }
-                } else if ((i % 1333 == 0)) {
+                } else if (i % 1333 == 0) {
                     aborted.incrementAndGet()
                     throw new Exception();
                 } else {
@@ -162,7 +178,13 @@ class TasksTest extends FunSpec with Matchers {
             }
             for (i ← 0 until 100000) tasks.submit(i)
 
-            val exceptions = tasks.join()
+            var exceptions: Array[Throwable] = null
+            try {
+                tasks.join()
+            } catch {
+                case ce: ConcurrentExceptions ⇒
+                    exceptions = ce.getSuppressed
+            }
 
             info("subsequently scheduled: "+subsequentlyScheduled.get)
             info("number of caught exceptions: "+exceptions.size)

@@ -31,9 +31,6 @@ package fpcf
 package properties
 
 import org.opalj.br.DeclaredMethod
-import org.opalj.fpcf.properties.VirtualMethodStaticDataUsage.VUsesNoStaticData
-import org.opalj.fpcf.properties.VirtualMethodStaticDataUsage.VUsesVaryingData
-import org.opalj.fpcf.properties.VirtualMethodStaticDataUsage.VUsesConstantDataOnly
 
 sealed trait StaticDataUsagePropertyMetaInformation extends PropertyMetaInformation {
 
@@ -57,15 +54,16 @@ sealed abstract class StaticDataUsage
      */
     final def key: PropertyKey[StaticDataUsage] = StaticDataUsage.key
 
+    final val aggregatedProperty = new VirtualMethodStaticDataUsage(this)
 }
 
 object StaticDataUsage extends StaticDataUsagePropertyMetaInformation {
     /**
-     * The key associated with every static constant usage property. The name is
-     * "StaticConstantUsage"; the fallback is "UsesVaryingData".
+     * The key associated with every static data usage property. The name is
+     * "StaticDataUsage"; the fallback is "UsesVaryingData".
      */
     final val key = PropertyKey.create[DeclaredMethod, StaticDataUsage](
-        "StaticConstantUsage",
+        "StaticDataUsage",
         UsesVaryingData
     )
 }
@@ -82,8 +80,6 @@ case object UsesNoStaticData extends NoVaryingDataUse {
 
     override def checkIsEqualOrBetterThan(e: Entity, other: StaticDataUsage): Unit = {}
 
-    override val aggregatedProperty: VirtualMethodStaticDataUsage = VUsesNoStaticData
-
     override def meet(other: StaticDataUsage): StaticDataUsage = other
 }
 
@@ -96,8 +92,6 @@ case object UsesConstantDataOnly extends NoVaryingDataUse {
         if (other eq UsesNoStaticData)
             throw new IllegalArgumentException(s"$e: impossible refinement: $other ⇒ $this")
     }
-
-    override val aggregatedProperty: VirtualMethodStaticDataUsage = VUsesConstantDataOnly
 
     override def meet(other: StaticDataUsage): StaticDataUsage = other match {
         case UsesVaryingData ⇒ other
@@ -114,8 +108,6 @@ case object UsesVaryingData extends StaticDataUsage {
         if (other ne UsesVaryingData)
             throw new IllegalArgumentException(s"$e: impossible refinement: $other ⇒ $this")
     }
-
-    override val aggregatedProperty: VirtualMethodStaticDataUsage = VUsesVaryingData
 
     override def meet(other: StaticDataUsage): StaticDataUsage = this
 }

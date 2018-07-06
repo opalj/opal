@@ -82,13 +82,20 @@ trait IntegerValues extends IntegerValuesDomain with ConcreteIntegerValues {
      *
      * Models the top value of this domain's lattice.
      */
-    trait AnIntegerValue extends IntegerLikeValue { this: DomainTypedValue[CTIntType] ⇒ }
+    trait AnIntegerValue extends IntegerLikeValue { this: DomainTypedValue[CTIntType] ⇒
+
+        final override def lowerBound: Int = Int.MinValue
+        final override def upperBound: Int = Int.MaxValue
+    }
 
     /**
      * Represents one, concrete integer value.
      */
     abstract class TheIntegerValue extends IntegerLikeValue { this: DomainTypedValue[CTIntType] ⇒
         val value: Int
+
+        final override def lowerBound: Int = value
+        final override def upperBound: Int = value
     }
 
     object TheIntegerValue { def unapply(v: TheIntegerValue): Some[Int] = Some(v.value) }

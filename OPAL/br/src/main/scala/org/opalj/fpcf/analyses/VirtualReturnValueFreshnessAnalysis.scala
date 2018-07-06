@@ -48,7 +48,9 @@ import org.opalj.fpcf.properties.VirtualMethodReturnValueFreshness
  *
  * @author Florian Kuebler
  */
-class VirtualReturnValueFreshnessAnalysis private[analyses] ( final val project: SomeProject) extends FPCFAnalysis {
+class VirtualReturnValueFreshnessAnalysis private[analyses] (
+        final val project: SomeProject
+) extends FPCFAnalysis {
     private[this] val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
 
     def determineFreshness(m: DeclaredMethod): PropertyComputationResult = {
@@ -132,7 +134,9 @@ object EagerVirtualReturnValueFreshnessAnalysis
     override def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
         val declaredMethods = project.get(DeclaredMethodsKey).declaredMethods
         val analysis = new VirtualReturnValueFreshnessAnalysis(project)
-        propertyStore.scheduleEagerComputationsForEntities(declaredMethods)(analysis.determineFreshness)
+        propertyStore.scheduleEagerComputationsForEntities(declaredMethods)(
+            analysis.determineFreshness
+        )
         analysis
     }
 }

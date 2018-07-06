@@ -28,7 +28,8 @@
  */
 package org.opalj
 package fpcf
-import org.opalj.fpcf.analyses.EagerReturnValueFreshnessAnalysis
+
+import org.opalj.fpcf.analyses.escape.EagerReturnValueFreshnessAnalysis
 import org.opalj.fpcf.analyses.LazyFieldLocalityAnalysis
 import org.opalj.fpcf.analyses.LazyVirtualCallAggregatingEscapeAnalysis
 import org.opalj.fpcf.analyses.LazyVirtualReturnValueFreshnessAnalysis
@@ -52,6 +53,7 @@ class ReturnValueFreshnessTests extends PropertiesTest {
 
     describe("return value freshness analysis is executed") {
         val as = executeAnalyses(Set(EagerReturnValueFreshnessAnalysis), lazyAnalysisScheduler)
+        as.propertyStore.shutdown()
         validateProperties(
             as,
             declaredMethodsWithAnnotations(as.project),

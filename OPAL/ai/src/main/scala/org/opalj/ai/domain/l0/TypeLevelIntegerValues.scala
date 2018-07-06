@@ -122,6 +122,9 @@ trait TypeLevelIntegerValues extends Domain { this: Configuration ⇒
 
         final override def valueType: Option[IntegerType] = Some(IntegerType)
 
+        final override def lowerBound: Int = Int.MinValue
+        final override def upperBound: Int = Int.MaxValue
+
         override def adapt(target: TargetDomain, vo: ValueOrigin): target.DomainValue = {
             target.IntegerValue(vo)
         }

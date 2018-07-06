@@ -107,7 +107,8 @@ object ThrownExceptions extends ThrownExceptionsPropertyMetaInformation {
         PropertyKey.create[br.DeclaredMethod, ThrownExceptions](
             "ThrownExceptions",
             ThrownExceptionsFallback,
-            (ps: PropertyStore, eps: EPS[br.DeclaredMethod, ThrownExceptions]) ⇒ eps.toUBEP
+            (_: PropertyStore, eps: EPS[br.DeclaredMethod, ThrownExceptions]) ⇒ eps.ub,
+            (_: PropertyStore, _: Entity) ⇒ None
         )
     }
 

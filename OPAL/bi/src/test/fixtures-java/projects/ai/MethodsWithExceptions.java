@@ -99,14 +99,13 @@ public class MethodsWithExceptions {
                 throw t; // <= will throw t (non-null!)
             else {
                 System.out.println("Nothing happening");
-                // May throw a NullPointerException. However, it
+                // May throw some exception. However, it
                 // will be replaced by a NullPointerException in the finally
                 // clause because t is null; i.e., this potential NullPointerException
                 // will never be visible outside of this method.
             }
         } finally {
-            t.printStackTrace(); // <= t may be null => may
-            // throw NullPointerException
+            t.printStackTrace(); // <= t may be null => may throw NullPointerException
         }
     }
 
@@ -184,6 +183,17 @@ public class MethodsWithExceptions {
         try {
             o.toString();
         } catch (NullPointerException npe) {
+            return o; // null or a NullPointerException thrown by toString...
+        }
+        o.toString();
+        return o; // not-null
+    }
+
+    public static Object exceptionsWithMultipleReasonsForNull(Object o) throws Exception {
+        try {
+            o.toString();
+        } catch (NullPointerException npe) {
+            o.wait();
             return o; // null or a NullPointerException thrown by toString...
         }
         o.toString();
@@ -348,4 +358,39 @@ public class MethodsWithExceptions {
         }
         new java.util.HashMap<Integer,Integer>(i / j);
     }
+
+    public static int differentExceptionsHandledBySameHandler(int i) {
+        int j = 0;
+        try {
+            if(i == 0) {
+                j = 10 / i; // <= ArithmethicException
+            } else {
+                throw new RuntimeException("unexpected value");
+            }
+        } catch (Exception e) {
+            System.out.println(e);
+        }
+        return j;
+    }
+
+
+    public static void differentExceptionsRelatedToArraysHandledBySameHandler(int i) {
+        int j = 0;
+        Object[] as = new String[10];
+        Object value = null;
+        try {
+            if(i == 0) {
+                j = 10; // <= will cause IndexOutOfBounds in the following
+                value = "10";
+            } else {
+                j = 0;
+                value = new Object(); // <= will cause ArrayStoreException in the following
+            }
+            as[j] = value;
+        } catch (Exception e) {
+            System.out.println(e);
+        }
+    }
+
+
 }

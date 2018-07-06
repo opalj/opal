@@ -31,7 +31,6 @@ package collection
 package immutable
 
 import scala.language.implicitConversions
-
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalacheck.Properties
@@ -40,6 +39,8 @@ import org.scalacheck.Prop.classify
 import org.scalacheck.Prop.BooleanOperators
 import org.scalacheck.Gen
 import org.scalacheck.Arbitrary
+import org.scalatest.FunSpec
+import org.scalatest.Matchers
 
 /**
  * Tests `UIDSets` by creating standard Sets and comparing
@@ -50,7 +51,6 @@ import org.scalacheck.Arbitrary
 @RunWith(classOf[JUnitRunner])
 object UIDSetProperties extends Properties("UIDSet") {
 
-    case class SUID(id: Int) extends UID
     type SUIDSet = UIDSet[SUID]
     val EmptyUIDSet: SUIDSet = UIDSet.empty[SUID]
 
@@ -193,9 +193,26 @@ object UIDSetProperties extends Properties("UIDSet") {
         usFound.isDefined == ssFound.isDefined
     }
 
+    property("findById") = forAll { (s: Set[Int], e: Set[Int]) ⇒
+        val us = toSUIDSet(s) ++ UIDSet(e.slice(0, e.size / 2).map(SUID.apply).toSeq: _*)
+        classify(us.size > 0, "non-empty set") {
+            e.forall(v ⇒ us.find(_.id == v) == us.findById(v))
+        }
+    }
+
     property("iterator") = forAll { (s: Set[Int]) ⇒
         val us = toSUIDSet(s)
         us.iterator.toSet == s.map(SUID.apply)
+    }
+
+    property("idIterator") = forAll { (s: Set[Int]) ⇒
+        val us = toSUIDSet(s)
+        us.idIterator.toSet.iterator.toSet == s
+    }
+
+    property("idSet") = forAll { (s: Set[Int]) ⇒
+        val us = toSUIDSet(s)
+        us.idSet.iterator.toSet == s
     }
 
     property("last") = forAll { (s: Set[Int]) ⇒
@@ -354,4 +371,91 @@ object UIDSetProperties extends Properties("UIDSet") {
         val us = EmptyUIDSet ++ s
         (s.size == 1) == us.isSingletonSet
     }
+
+    property("add, remove, filter") = forAll { (a: Set[Int], b: Set[Int]) ⇒
+        val aus = UIDSet.empty[SUID] ++ a.map(SUID.apply)
+        val toBeRemoved = b.size / 2
+        val newAUS = ((aus ++ b.map(SUID.apply)) -- b.slice(0, toBeRemoved).map(SUID.apply)).filter(i ⇒ b.contains(i.id))
+        val newA = (a ++ b -- b.slice(0, toBeRemoved)).filter(b.contains)
+        classify(newA.size == 0, "new A is now empty") {
+            classify(newA.size < a.size, "new A is smaller than a") {
+                newAUS.size == newA.size &&
+                    newAUS.iterator.map(_.id).toSet == newA
+            }
+        }
+    }
 }
+
+@RunWith(classOf[JUnitRunner])
+class UIDSetTest extends FunSpec with Matchers {
+
+    describe("the equals operation for sets of one value") {
+        it("should return true for two sets containing the same value") {
+            assert(new UIDSet1(SUID(1)) == UIDSet1(SUID(1)))
+
+            assert(
+                new UIDTrieSetInnerNode[SUID](1, SUID(1), null, null) == UIDSet1(SUID(1))
+            )
+        }
+    }
+
+    describe("the equals operation for sets of two values") {
+
+        it("should return true for two new sets containing the same values") {
+            assert(new UIDSet2(SUID(1), SUID(2)) == new UIDSet2(SUID(2), SUID(1)))
+
+            assert(
+                new UIDSet3(SUID(1), SUID(2), SUID(3)).filter(_.id != 2)
+                    == new UIDSet2(SUID(3), SUID(1))
+            )
+            assert(
+                (UIDSet.empty[SUID] + SUID(1) + SUID(2) + SUID(3) + SUID(4)).filter(_.id != 2) - SUID(1)
+                    == new UIDSet2(SUID(3), SUID(4))
+            )
+
+            assert(
+
+                new UIDSet2(SUID(3), SUID(1)) ==
+                    new UIDSet3(SUID(1), SUID(2), SUID(3)).filter(_.id != 2)
+            )
+            assert(
+                new UIDSet2(SUID(3), SUID(4)) ==
+                    (UIDSet.empty[SUID] + SUID(1) + SUID(2) + SUID(3) + SUID(4)).filter(_.id != 2) - SUID(1)
+            )
+        }
+    }
+
+    describe("the equals operation for sets of three values") {
+
+        it("should return true for two new sets containing the same values") {
+            assert(new UIDSet2(SUID(3), SUID(2)) + SUID(1) == new UIDSet3(SUID(2), SUID(1), SUID(3)))
+            assert(new UIDSet2(SUID(1), SUID(2)) + SUID(3) == new UIDSet3(SUID(2), SUID(1), SUID(3)))
+
+            assert(
+                new UIDSet3(SUID(1), SUID(2), SUID(3)) ==
+                    (UIDSet.empty[SUID] + SUID(1) + SUID(2) + SUID(3) + SUID(4)).filter(_.id != 4)
+            )
+        }
+    }
+
+    describe("the equals operation for sets of four values") {
+
+        it("should return true for two new sets containing the same values") {
+            assert(
+                new UIDTrieSetInnerNode[SUID](1, SUID(1), null, null) + SUID(2) + SUID(3) + SUID(4) ==
+                    new UIDTrieSetInnerNode[SUID](1, SUID(4), null, null) + SUID(3) + SUID(2) + SUID(1)
+            )
+            assert(
+                new UIDTrieSetInnerNode[SUID](1, SUID(1), null, null) + SUID(2) + SUID(3) + SUID(4) ==
+                    new UIDTrieSetInnerNode[SUID](1, SUID(2), null, null) + SUID(4) + SUID(1) + SUID(3)
+            )
+            assert(
+                new UIDTrieSetInnerNode[SUID](1, SUID(1), null, null) + SUID(2) + SUID(3) + SUID(4) ==
+                    new UIDSet3[SUID](SUID(1), SUID(4), SUID(2)) + SUID(3)
+            )
+        }
+    }
+
+}
+
+case class SUID(val id: Int) extends UID

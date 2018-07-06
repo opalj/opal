@@ -42,12 +42,9 @@ trait FPCFLazyAnalysisScheduler extends AbstractFPCFAnalysisScheduler {
     final override def isLazy: Boolean = true
 
     final override def schedule(ps: PropertyStore): Unit = {
-        startLazily(ps.context[SomeProject], ps)
+        startLazily(ps.context(classOf[SomeProject]), ps)
     }
 
-    /**
-     * Starts
-     */
     final def startLazily(project: SomeProject): FPCFAnalysis = {
         startLazily(project, project.get(PropertyStoreKey))
     }

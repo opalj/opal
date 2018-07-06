@@ -31,6 +31,8 @@ package fpcf
 
 import java.util.concurrent.atomic.AtomicInteger
 
+import org.opalj.br.analyses.SomeProject
+
 /**
  * Provides the generic infrastructure that is implemented by all factories for
  * FPCF analyses.
@@ -52,6 +54,12 @@ private[fpcf] trait AbstractFPCFAnalysisScheduler extends ComputationSpecificati
      * Every factory for a specific analysis is automatically associated with a unique id.
      */
     final val uniqueId: Int = AbstractFPCFAnalysisScheduler.nextId
+
+    final override def init(ps: PropertyStore): Unit = {
+        init(ps.context(classOf[SomeProject]),ps)
+    }
+
+    def init(p : SomeProject, ps: PropertyStore): Unit = {}
 
 }
 

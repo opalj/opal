@@ -78,6 +78,25 @@ trait ComputationSpecification {
     def isLazy: Boolean
 
     /**
+     * Called by the scheduler before `schedule` is called to enable further initialization
+     * of the to be scheduled computations. For example to initialize global configuration
+     * information.
+     *
+     * If an [[AnalysisScenario]] is used to compute a schedule and execute it later on, `init`
+     * will be called before any analysis – independent – of the batch in which it will run,
+     * is called.
+     *
+     * A computation specification MUST NOT call any methods of the property store that
+     * may trigger or schedule computations; i.e.., it must – in particular – not call
+     * the methods `apply`, `schedule*`, `register*` or `waitOnPhaseCompletion`.
+     *
+     *
+     * @note This method is intended to be overwritten by sub classes. The default implementation
+     *       does nothing.
+     */
+    def init(ps: PropertyStore): Unit = {}
+
+    /**
      * Called by the scheduler to start execution of this analysis.
      *
      * The analysis may very well be a lazy computation.
