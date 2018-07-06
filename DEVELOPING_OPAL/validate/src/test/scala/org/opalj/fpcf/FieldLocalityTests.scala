@@ -37,7 +37,7 @@ import org.opalj.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 
 class FieldLocalityTests extends PropertiesTest {
 
-    val lazyAnalysisScheduler = Set(
+    val lazyAnalysisSchedulers = Set[FPCFLazyAnalysisScheduler { type InitializationData = Null }](
         LazyInterProceduralEscapeAnalysis,
         LazyVirtualCallAggregatingEscapeAnalysis,
         LazyVirtualReturnValueFreshnessAnalysis,
@@ -45,7 +45,7 @@ class FieldLocalityTests extends PropertiesTest {
     )
 
     describe("field locality analysis is executed") {
-        val as = executeAnalyses(Set(EagerFieldLocalityAnalysis), lazyAnalysisScheduler)
+        val as = executeAnalyses(Set(EagerFieldLocalityAnalysis), lazyAnalysisSchedulers)
         as.propertyStore.shutdown()
         validateProperties(
             as,

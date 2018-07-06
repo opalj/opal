@@ -44,7 +44,7 @@ import org.opalj.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
  */
 class ReturnValueFreshnessTests extends PropertiesTest {
 
-    val lazyAnalysisScheduler = Set(
+    val lazyAnalysisSchedulers = Set[FPCFLazyAnalysisScheduler { type InitializationData = Null }](
         LazyInterProceduralEscapeAnalysis,
         LazyVirtualCallAggregatingEscapeAnalysis,
         LazyVirtualReturnValueFreshnessAnalysis,
@@ -52,7 +52,10 @@ class ReturnValueFreshnessTests extends PropertiesTest {
     )
 
     describe("return value freshness analysis is executed") {
-        val as = executeAnalyses(Set(EagerReturnValueFreshnessAnalysis), lazyAnalysisScheduler)
+        val as = executeAnalyses(
+            Set[FPCFEagerAnalysisScheduler { type InitializationData = Null }](EagerReturnValueFreshnessAnalysis),
+            lazyAnalysisSchedulers
+        )
         as.propertyStore.shutdown()
         validateProperties(
             as,
