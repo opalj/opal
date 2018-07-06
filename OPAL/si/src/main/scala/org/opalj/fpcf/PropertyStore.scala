@@ -30,9 +30,6 @@ package org.opalj
 package fpcf
 
 import scala.util.control.ControlThrowable
-import scala.reflect.runtime.universe.TypeTag
-import scala.reflect.runtime.universe.Type
-import scala.reflect.runtime.universe.typeOf
 import scala.collection.{Map ⇒ SomeMap}
 
 import org.opalj.log.GlobalLogContext
@@ -143,15 +140,14 @@ abstract class PropertyStore {
     //
 
     /** Immutable map which stores the context objects given at initialization time. */
-    val ctx: Map[Type, AnyRef]
+    val ctx: Map[Class[_], AnyRef]
 
     /**
      * Looks up the context object of the given type. This is a comparatively expensive operation;
      * the result should be cached.
      */
-    final def context[T: TypeTag]: T = {
-        val t = typeOf[T]
-        ctx.getOrElse(t, { throw ContextNotAvailableException(t, ctx) }).asInstanceOf[T]
+    final def context[T](key: Class[T]): T = {
+        ctx.getOrElse(key, { throw ContextNotAvailableException(key, ctx) }).asInstanceOf[T]
     }
 
     //

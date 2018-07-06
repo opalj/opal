@@ -34,7 +34,6 @@ import java.lang.System.identityHashCode
 import java.util.ArrayDeque
 import java.util.IdentityHashMap
 
-import scala.reflect.runtime.universe.Type
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable
@@ -59,7 +58,7 @@ import org.opalj.fpcf.PropertyKey.fastTrackPropertyBasedOnPkId
  * @author Michael Eichberg
  */
 final class PKESequentialPropertyStore private (
-        val ctx: Map[Type, AnyRef]
+        val ctx: Map[Class[_], AnyRef]
 )(
         implicit
         val logContext: LogContext
@@ -916,7 +915,7 @@ object PKESequentialPropertyStore extends PropertyStoreFactory {
         implicit
         logContext: LogContext
     ): PKESequentialPropertyStore = {
-        val contextMap: Map[Type, AnyRef] = context.map(_.asTuple).toMap
+        val contextMap: Map[Class[_], AnyRef] = context.map(_.asTuple).toMap
         new PKESequentialPropertyStore(contextMap)
     }
 }

@@ -48,7 +48,7 @@ class PropertyStoreKeyTest extends FunSpec with Matchers {
         val ps = p.get(PropertyStoreKey)
 
         it("the context should always contain the project") {
-            assert(p == ps.context[org.opalj.br.analyses.SomeProject])
+            assert(p == ps.context(classOf[SomeProject]))
         }
     }
 }

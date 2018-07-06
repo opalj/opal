@@ -36,7 +36,7 @@ import org.opalj.br.ObjectType
 import org.opalj.br.BooleanType
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
-import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.Project
 import org.opalj.br.instructions.Instruction
 import org.opalj.br.instructions.ATHROW
 import org.opalj.br.instructions.INVOKESPECIAL
@@ -122,7 +122,7 @@ object ThrownExceptionsFallback extends ((PropertyStore, FallbackReason, Entity)
         val instructions = code.instructions
         val isStaticMethod = m.isStatic
 
-        val exceptions = new BRMutableTypesSet(ps.context[SomeProject].classHierarchy)
+        val exceptions = new BRMutableTypesSet(ps.context(classOf[Project[_]]).classHierarchy)
 
         var result: ThrownExceptions = null
 
