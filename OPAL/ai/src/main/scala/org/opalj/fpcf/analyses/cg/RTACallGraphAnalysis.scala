@@ -46,10 +46,10 @@ import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.properties.AllTypes
 import org.opalj.fpcf.properties.Callees
 import org.opalj.fpcf.properties.CalleesImplementation
-import org.opalj.fpcf.properties.CallersImplWithoutUnknownContext
-import org.opalj.fpcf.properties.CallersImplementation
+import org.opalj.fpcf.properties.CallersOnlyWithConcreteCallers
 import org.opalj.fpcf.properties.CallersProperty
 import org.opalj.fpcf.properties.InstantiatedTypes
+import org.opalj.fpcf.properties.LowerBoundCallers
 import org.opalj.fpcf.properties.OnlyCallersWithUnknownContext
 import org.opalj.log.Error
 import org.opalj.log.OPALLogger
@@ -99,7 +99,7 @@ class RTACallGraphAnalysis private[analyses] (
     type V = DUVar[(Domain with RecordDefUse)#DomainValue]
 
     private[this] val tacaiProvider = project.get(SimpleTACAIKey)
-    private[this] val declaredMethods = project.get(DeclaredMethodsKey)
+    private[this] implicit val declaredMethods = project.get(DeclaredMethodsKey)
 
     def step1(p: SomeProject): PropertyComputationResult = {
         val entryPoints = project.get(InitialEntryPointsKey).map(declaredMethods.apply)
@@ -109,6 +109,7 @@ class RTACallGraphAnalysis private[analyses] (
                 Error("analysis", "the project has no entry points")
             )(project.logContext)
 
+        // todo move to init
         propertyStore.registerTriggeredComputation(CallersProperty.key, processMethod)
 
         Results(
@@ -116,10 +117,10 @@ class RTACallGraphAnalysis private[analyses] (
                 PartialResult[DeclaredMethod, CallersProperty](_, CallersProperty.key, {
                     case EPK(ep, _) ⇒ Some(EPS(
                         ep,
-                        CallersProperty.fallback(ep, p), OnlyCallersWithUnknownContext
+                        new LowerBoundCallers(project, ep), OnlyCallersWithUnknownContext
                     ))
                     case EPS(ep, lb, ub) ⇒
-                        Some(EPS(ep, lb, ub.updateWithUnknownContext))
+                        Some(EPS(ep, lb, ub.updateWithUnknownContext()))
                         throw new IllegalStateException("this should not happen")
                     case _ ⇒ None
                 })
@@ -402,7 +403,7 @@ class RTACallGraphAnalysis private[analyses] (
             tgtID: Int ← tgtsOfM.iterator
             tgtMethod = declaredMethods(tgtID)
         } yield PartialResult[DeclaredMethod, CallersProperty](tgtMethod, CallersProperty.key, {
-            case EPS(e, lb: CallersProperty, ub: CallersImplementation) ⇒
+            case EPS(e, lb: CallersProperty, ub: CallersProperty) ⇒
                 val newCallers = ub.updated(method, pc)
                 if (ub != newCallers)
                     Some(EPS(e, lb, newCallers))
@@ -412,9 +413,7 @@ class RTACallGraphAnalysis private[analyses] (
                 Some(EPS(
                     tgtMethod,
                     CallersProperty.fallback(tgtMethod, project),
-                    new CallersImplWithoutUnknownContext(
-                        Set(CallersProperty.toLong(tgtID, pc)), declaredMethods
-                    )
+                    new CallersOnlyWithConcreteCallers(Set(CallersProperty.toLong(tgtID, pc)))
                 ))
             case _ ⇒ throw new IllegalArgumentException()
         })
