@@ -38,6 +38,7 @@ import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
+import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.InitialEntryPointsKey
@@ -99,7 +100,7 @@ class RTACallGraphAnalysis private[analyses] (
     type V = DUVar[(Domain with RecordDefUse)#DomainValue]
 
     private[this] val tacaiProvider = project.get(SimpleTACAIKey)
-    private[this] implicit val declaredMethods = project.get(DeclaredMethodsKey)
+    private[this] implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
 
     def step1(p: SomeProject): PropertyComputationResult = {
         val entryPoints = project.get(InitialEntryPointsKey).map(declaredMethods.apply)
@@ -405,7 +406,8 @@ class RTACallGraphAnalysis private[analyses] (
         } yield PartialResult[DeclaredMethod, CallersProperty](tgtMethod, CallersProperty.key, {
             case EPS(e, lb: CallersProperty, ub: CallersProperty) ⇒
                 val newCallers = ub.updated(method, pc)
-                if (ub != newCallers)
+                // here we assert that update returns the identity if there is no change
+                if (ub ne newCallers)
                     Some(EPS(e, lb, newCallers))
                 else
                     None
