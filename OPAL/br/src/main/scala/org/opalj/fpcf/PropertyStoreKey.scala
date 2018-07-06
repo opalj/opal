@@ -68,7 +68,7 @@ object PropertyStoreKey
         implicit val logContext = project.logContext
 
         val context: List[PropertyStoreContext[AnyRef]] = List(
-            PropertyStoreContext[org.opalj.br.analyses.SomeProject](project)
+            PropertyStoreContext(classOf[SomeProject], project)
         )
         project.getProjectInformationKeyInitializationData(this) match {
             case Some(psFactory) ⇒

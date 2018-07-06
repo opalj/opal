@@ -76,6 +76,7 @@ class PurityTests extends PropertiesTest {
                 ce.getSuppressed.foreach(e ⇒ e.printStackTrace())
                 throw ce;
         }
+        as.propertyStore.shutdown()
         validateProperties(as, declaredMethodsWithAnnotations(as.project), Set("Purity"))
     }
 
@@ -90,6 +91,7 @@ class PurityTests extends PropertiesTest {
                 LazyVirtualMethodPurityAnalysis
             )
         )
+        as.propertyStore.shutdown()
         validateProperties(as, declaredMethodsWithAnnotations(as.project), Set("Purity"))
     }
 
@@ -112,6 +114,7 @@ class PurityTests extends PropertiesTest {
                 LazyVirtualMethodPurityAnalysis
             )
         )
+        as.propertyStore.shutdown()
         validateProperties(as, declaredMethodsWithAnnotations(as.project), Set("Purity"))
     }
 

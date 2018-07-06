@@ -37,6 +37,14 @@ import org.opalj.collection.immutable.Naught
 import org.opalj.collection.immutable.Chain
 import org.opalj.collection.immutable.:&:
 
+/**
+ * Provides functionality to compute an optimal schedule to execute a set of analyses. Here,
+ * optimal means that the schedule will try to minimize the number of notifications due to updated
+ * properties by running analyses that just use information provided by earlier analyses,
+ * but which do not provide information required by the earlier ones, in a later batch.
+ *
+ * @author Michael Eichberg
+ */
 class AnalysisScenario {
 
     private[this] var allCS: Set[ComputationSpecification] = Set.empty

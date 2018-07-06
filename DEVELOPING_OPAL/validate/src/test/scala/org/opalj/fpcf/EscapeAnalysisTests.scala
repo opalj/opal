@@ -65,11 +65,13 @@ class EscapeAnalysisTests extends PropertiesTest {
         lazyAnalysisRunners.foreach(_.startLazily(p, ps))
         val as = eagerAnalysisRunners.map(ar ⇒ ar.start(p, ps))
         ps.waitOnPhaseCompletion()
+        ps.shutdown()
         TestContext(p, ps, as)
     }
 
     describe("no analysis is scheduled") {
         val as = executeAnalyses(Set.empty)
+        as.propertyStore.shutdown()
         validateProperties(
             as,
             allocationSitesWithAnnotations(as.project) ++
@@ -80,6 +82,7 @@ class EscapeAnalysisTests extends PropertiesTest {
 
     describe("the org.opalj.fpcf.analyses.escape.SimpleEscapeAnalysis is executed") {
         val as = executeAnalyses(Set(EagerSimpleEscapeAnalysis))
+        as.propertyStore.shutdown()
         validateProperties(
             as,
             allocationSitesWithAnnotations(as.project) ++
@@ -93,6 +96,7 @@ class EscapeAnalysisTests extends PropertiesTest {
             Set(EagerInterProceduralEscapeAnalysis),
             Set(LazyVirtualCallAggregatingEscapeAnalysis)
         )
+        as.propertyStore.shutdown()
         validateProperties(
             as,
             allocationSitesWithAnnotations(as.project) ++

@@ -44,6 +44,7 @@ class CompileTimeConstancyTests extends PropertiesTest {
         val as = executeAnalyses(
             Set(EagerL0CompileTimeConstancyAnalysis)
         )
+        as.propertyStore.shutdown()
         validateProperties(as, fieldsWithAnnotations(as.project), Set("CompileTimeConstancy"))
     }
 

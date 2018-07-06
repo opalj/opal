@@ -38,7 +38,6 @@ import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.Semaphore
 import java.util.concurrent.atomic.AtomicReferenceArray
 
-import scala.reflect.runtime.universe.Type
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.AnyRefMap
@@ -74,7 +73,7 @@ import org.opalj.log.GlobalLogContext
  * @author Michael Eichberg
  */
 final class PKEParallelTasksPropertyStore private (
-        val ctx:                                              Map[Type, AnyRef],
+        val ctx:                                              Map[Class[_], AnyRef],
         val NumberOfThreadsForProcessingPropertyComputations: Int,
         val tracer:                                           Option[PropertyStoreTracer]
 )(
@@ -1192,9 +1191,9 @@ final class PKEParallelTasksPropertyStore private (
         }
 
         do {
-            do {
+            while (pcrs.nonEmpty) {
                 processResult(pcrs.pop())
-            } while (pcrs.nonEmpty)
+            }
             if (forceDependersNotifications.nonEmpty) {
                 val epk = forceDependersNotifications.head
                 forceDependersNotifications = forceDependersNotifications.tail
@@ -1394,7 +1393,7 @@ object PKEParallelTasksPropertyStore extends PropertyStoreFactory {
         implicit
         logContext: LogContext
     ): PKEParallelTasksPropertyStore = {
-        val contextMap: Map[Type, AnyRef] = context.map(_.asTuple).toMap
+        val contextMap: Map[Class[_], AnyRef] = context.map(_.asTuple).toMap
         new PKEParallelTasksPropertyStore(
             contextMap,
             NumberOfThreadsForProcessingPropertyComputations,
@@ -1418,7 +1417,7 @@ object PKEParallelTasksPropertyStore extends PropertyStoreFactory {
 
     def create(
         tracer:  PropertyStoreTracer,
-        context: Map[Type, AnyRef] // ,PropertyStoreContext[_ <: AnyRef]*
+        context: Map[Class[_], AnyRef] // ,PropertyStoreContext[_ <: AnyRef]*
     )(
         implicit
         logContext: LogContext

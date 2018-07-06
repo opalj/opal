@@ -40,9 +40,17 @@ import org.opalj.collection.immutable.Chain
  */
 case class Schedule(
         batches: Chain[Chain[ComputationSpecification]]
-) extends ((PropertyStore) ⇒ Unit) {
+) extends (PropertyStore ⇒ Unit) {
 
+    /**
+     * Schedules the computation specifications; that is, executes the underlying analysis scenario.
+     *
+     * @param ps The property store which should be used to execute the analyses.
+     */
     def apply(ps: PropertyStore): Unit = {
+        batches foreach { batch ⇒
+            batch foreach (cs ⇒ cs.init(ps))
+        }
         batches foreach { batch ⇒
             val computedProperties =
                 batch.foldLeft(Set.empty[PropertyKind])((c, n) ⇒ c ++ n.derives)

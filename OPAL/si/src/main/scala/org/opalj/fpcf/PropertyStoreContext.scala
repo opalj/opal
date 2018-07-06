@@ -29,23 +29,15 @@
 package org.opalj
 package fpcf
 
-import scala.reflect.runtime.universe.TypeTag
-import scala.reflect.runtime.universe.Type
-import scala.reflect.runtime.universe.typeOf
+class PropertyStoreContext[+T <: AnyRef] private (val key: Class[_], val data: T) {
 
-class PropertyStoreContext[+T <: AnyRef] private (val t: Type, val data: T) {
-
-    def asTuple: (Type, T) = (t, data)
+    def asTuple: (Class[_], T) = (key, data)
 }
 
 object PropertyStoreContext {
 
-    def apply[T <: AnyRef](t: Type, data: T): PropertyStoreContext[T] = {
-        new PropertyStoreContext(t, data)
-    }
-
-    def apply[T <: AnyRef: TypeTag](data: T): PropertyStoreContext[T] = {
-        new PropertyStoreContext[T](typeOf[T], data)
+    def apply[T <: AnyRef](key: Class[T], data: T): PropertyStoreContext[T] = {
+        new PropertyStoreContext(key, data)
     }
 
 }

@@ -39,7 +39,7 @@ import org.opalj.fpcf.properties.purity.*;
  *
  * @author Dominik Helm
  */
-public class ReferenceTypes {
+final public class ReferenceTypes {
 
     // Fields with different attributes for use in test methods
 
@@ -289,10 +289,10 @@ public class ReferenceTypes {
 
     @DomainSpecificContextuallyPure(value = "Modified array is local", modifies = {0},
             eps = @EP(cf = ReferenceTypes.class, pk = "FieldLocality", field = "nonConstFinalArr",
-                    p = "ExtensibleLocalField"))
+                    p = "LocalField"))
     @Impure(value = "Modifies array entry/array not recognized as local", negate = true,
             eps = @EP(cf = ReferenceTypes.class, pk = "FieldLocality", field = "nonConstFinalArr",
-                    p = "ExtensibleLocalField", analyses = L2PurityAnalysis.class))
+                    p = "LocalField", analyses = L2PurityAnalysis.class))
     public void setArrayEntry(int index, int value) {
         nonConstFinalArr[index] = value;
     }
