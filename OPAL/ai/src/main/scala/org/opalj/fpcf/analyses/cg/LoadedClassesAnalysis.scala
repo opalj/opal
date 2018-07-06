@@ -70,9 +70,6 @@ class LoadedClassesAnalysis(
      */
     def doAnalyze(project: SomeProject): PropertyComputationResult = {
 
-        // todo move to init
-        propertyStore.registerTriggeredComputation(CallersProperty.key, handleCaller)
-
         PartialResult[SomeProject, LoadedClasses](project, LoadedClasses.key, {
             case EPK(p, _) ⇒ Some(EPS(p, null /*TODO LB*/ , new LoadedClasses(UIDSet.empty)))
             case _         ⇒ None
@@ -201,13 +198,24 @@ class LoadedClassesAnalysis(
 
 object EagerLoadedClassesAnalysis extends FPCFEagerAnalysisScheduler {
 
-    override def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
-        val analysis = new LoadedClassesAnalysis(project)
-        propertyStore.scheduleEagerComputationsForEntities(List(project))(analysis.doAnalyze)
-        analysis
+    override type InitializationData = LoadedClassesAnalysis
+
+    override def start(
+        project:               SomeProject,
+        propertyStore:         PropertyStore,
+        loadedClassesAnalysis: LoadedClassesAnalysis
+    ): FPCFAnalysis = {
+        propertyStore.scheduleEagerComputationsForEntities(List(project))(loadedClassesAnalysis.doAnalyze)
+        loadedClassesAnalysis
     }
 
     override def uses: Predef.Set[PropertyKind] = Predef.Set(CallersProperty)
 
     override def derives: Predef.Set[PropertyKind] = Predef.Set(LoadedClasses)
+
+    override def init(p: SomeProject, ps: PropertyStore): LoadedClassesAnalysis = {
+        val analysis = new LoadedClassesAnalysis(p)
+        ps.registerTriggeredComputation(CallersProperty.key, analysis.handleCaller)
+        analysis
+    }
 }

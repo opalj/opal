@@ -110,9 +110,6 @@ class RTACallGraphAnalysis private[analyses] (
                 Error("analysis", "the project has no entry points")
             )(project.logContext)
 
-        // todo move to init
-        propertyStore.registerTriggeredComputation(CallersProperty.key, processMethod)
-
         Results(
             entryPoints.map {
                 PartialResult[DeclaredMethod, CallersProperty](_, CallersProperty.key, {
@@ -468,15 +465,20 @@ class RTACallGraphAnalysis private[analyses] (
 
 object EagerRTACallGraphAnalysisScheduler extends FPCFEagerAnalysisScheduler {
 
-    override def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
-        val analysis = new RTACallGraphAnalysis(project)
+    override type InitializationData = RTACallGraphAnalysis
 
-        propertyStore.scheduleEagerComputationForEntity(project)(analysis.step1)
-
-        analysis
+    override def start(project: SomeProject, propertyStore: PropertyStore, rtaAnalysis: RTACallGraphAnalysis): FPCFAnalysis = {
+        propertyStore.scheduleEagerComputationForEntity(project)(rtaAnalysis.step1)
+        rtaAnalysis
     }
 
     override def uses: Predef.Set[PropertyKind] = Predef.Set(InstantiatedTypes)
 
     override def derives: Predef.Set[PropertyKind] = Predef.Set(InstantiatedTypes, CallersProperty, Callees)
+
+    override def init(p: SomeProject, ps: PropertyStore): RTACallGraphAnalysis = {
+        val analysis = new RTACallGraphAnalysis(p)
+        ps.registerTriggeredComputation(CallersProperty.key, analysis.processMethod)
+        analysis
+    }
 }
