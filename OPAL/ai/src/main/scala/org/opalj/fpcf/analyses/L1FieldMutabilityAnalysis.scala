@@ -160,9 +160,13 @@ class L1FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
 
 sealed trait L1FieldMutabilityAnalysisScheduler extends ComputationSpecification {
 
-    override def uses: Set[PropertyKind] = Set.empty
+    final override def uses: Set[PropertyKind] = Set.empty
 
-    override def derives: Set[PropertyKind] = Set(FieldMutability)
+    final override def derives: Set[PropertyKind] = Set(FieldMutability)
+
+    final override type InitializationData = Null
+
+    final def init(p: SomeProject, ps: PropertyStore): Null = null
 }
 
 /**
@@ -172,12 +176,10 @@ object EagerL1FieldMutabilityAnalysis
     extends L1FieldMutabilityAnalysisScheduler
     with FPCFEagerAnalysisScheduler {
 
-    def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
-        val analysis = new L1FieldMutabilityAnalysis(project)
-
-        val fields = project.allFields
-
-        propertyStore.scheduleEagerComputationsForEntities(fields)(analysis.determineFieldMutability)
+    final override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+        val analysis = new L1FieldMutabilityAnalysis(p)
+        val fields = p.allFields
+        ps.scheduleEagerComputationsForEntities(fields)(analysis.determineFieldMutability)
         analysis
     }
 }
@@ -189,9 +191,9 @@ object LazyL1FieldMutabilityAnalysis
     extends L1FieldMutabilityAnalysisScheduler
     with FPCFLazyAnalysisScheduler {
 
-    def startLazily(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
-        val analysis = new L1FieldMutabilityAnalysis(project)
-        propertyStore.registerLazyPropertyComputation(
+    final override def startLazily(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+        val analysis = new L1FieldMutabilityAnalysis(p)
+        ps.registerLazyPropertyComputation(
             FieldMutability.key, analysis.determineFieldMutability
         )
         analysis

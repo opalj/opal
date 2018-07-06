@@ -96,7 +96,8 @@ object FPCFAnalysesRegistry {
         val mirror = runtimeMirror(getClass.getClassLoader)
         try {
             val module = mirror.staticModule(fqn)
-            Some(mirror.reflectModule(module).instance.asInstanceOf[AbstractFPCFAnalysisScheduler])
+            import mirror.reflectModule
+            Some(reflectModule(module).instance.asInstanceOf[AbstractFPCFAnalysisScheduler])
         } catch {
             case sre: ScalaReflectionException ⇒
                 error("FPCF registry", "cannot find analysis scheduler", sre)

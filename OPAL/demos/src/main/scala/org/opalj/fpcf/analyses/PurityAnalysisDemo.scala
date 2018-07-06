@@ -112,8 +112,8 @@ object PurityAnalysisDemo extends DefaultOneStepAnalysis {
         } { r ⇒ setupTime = r }
 
         time {
-            LazyL0FieldMutabilityAnalysis.startLazily(project, propertyStore)
-            EagerL0PurityAnalysis.start(project, propertyStore)
+            LazyL0FieldMutabilityAnalysis.startLazily(project, propertyStore, null)
+            EagerL0PurityAnalysis.start(project, propertyStore, null)
             propertyStore.waitOnPhaseCompletion()
         } { r ⇒ analysisTime = r }
 

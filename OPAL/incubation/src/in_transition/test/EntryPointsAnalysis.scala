@@ -68,7 +68,7 @@ object EntryPointsAnalysis extends FPCFEagerAnalysisScheduler {
 
     override def usedProperties: Set[PropertyKind] = Set.empty
 
-    def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
+    final override def start(p: SomeProject, ps: PropertyStore, unused : Null): FPCFAnalysis = {
         import AnalysisModes._
         val ms = project.allMethods.filter(m ⇒ !m.isAbstract && !m.isNative)
         project.analysisMode match {

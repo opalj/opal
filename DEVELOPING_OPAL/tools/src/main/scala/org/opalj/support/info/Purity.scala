@@ -117,18 +117,18 @@ object Purity {
             "Example:\n\tjava …PurityAnalysisEvaluation -JDK -individual -closedWorld"
     }
 
-    val supportingAnalyses = List(
-        List(
+    val supportingAnalyses = IndexedSeq(
+        List[FPCFLazyAnalysisScheduler { type InitializationData = Null }](
             LazyL0FieldMutabilityAnalysis,
             LazyClassImmutabilityAnalysis,
             LazyTypeImmutabilityAnalysis
         ),
-        List(
+        List[FPCFLazyAnalysisScheduler { type InitializationData = Null }](
             LazyL1FieldMutabilityAnalysis,
             LazyClassImmutabilityAnalysis,
             LazyTypeImmutabilityAnalysis
         ),
-        List(
+        List[FPCFLazyAnalysisScheduler { type InitializationData = Null }](
             LazyL0CompileTimeConstancyAnalysis,
             LazyStaticDataUsageAnalysis,
             LazyVirtualMethodStaticDataUsageAnalysis,
@@ -147,7 +147,7 @@ object Purity {
         cp:                    File,
         projectDir:            Option[String],
         libDir:                Option[String],
-        analysis:              FPCFLazyAnalysisScheduler,
+        analysis:              FPCFLazyAnalysisScheduler { type InitializationData = Null },
         domain:                SomeProject ⇒ Method ⇒ Domain with RecordDefUse,
         rater:                 DomainSpecificRater,
         withoutJDK:            Boolean,
@@ -235,11 +235,11 @@ object Purity {
             propertyStore.setupPhase(pks)
 
             for (supportAnalysis ← support) {
-                supportAnalysis.startLazily(project, propertyStore)
+                supportAnalysis.startLazily(project, propertyStore, null)
             }
 
-            LazyVirtualMethodPurityAnalysis.startLazily(project, propertyStore)
-            analysis.startLazily(project, propertyStore)
+            LazyVirtualMethodPurityAnalysis.startLazily(project, propertyStore, null)
+            analysis.startLazily(project, propertyStore, null)
 
             projMethods.foreach { dm ⇒
                 propertyStore.force(dm, fpcf.properties.Purity.key)
@@ -447,7 +447,7 @@ object Purity {
             return ;
         }
 
-        val analysis = analysisName match {
+        val analysis: FPCFLazyAnalysisScheduler { type InitializationData = Null } = analysisName match {
             case Some("L0")        ⇒ LazyL0PurityAnalysis
             case Some("L1")        ⇒ LazyL1PurityAnalysis
             case None | Some("L2") ⇒ LazyL2PurityAnalysis
@@ -456,7 +456,6 @@ object Purity {
                 Console.println(s"unknown analysis: $a")
                 Console.println(usage)
                 return ;
-
         }
 
         val d = (p: SomeProject) ⇒ (m: Method) ⇒

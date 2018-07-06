@@ -65,7 +65,7 @@ object SelfReferenceLeakageAnalysisDemo extends DefaultOneStepAnalysis {
         var analysisTime = Seconds.None
         time {
             projectStore.setupPhase(Set(SelfReferenceLeakage.Key))
-            L0SelfReferenceLeakageAnalysis.start(project)
+            L0SelfReferenceLeakageAnalysis.start(project, null)
             projectStore.waitOnPhaseCompletion()
         } { t ⇒ analysisTime = t.toSeconds }
 

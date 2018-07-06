@@ -121,9 +121,14 @@ class L0FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
 }
 
 trait L0FieldMutabilityAnalysisScheduler extends ComputationSpecification {
-    def uses: Set[PropertyKind] = Set.empty
 
-    def derives: Set[PropertyKind] = Set(FieldMutability)
+    final override def uses: Set[PropertyKind] = Set.empty
+
+    final override def derives: Set[PropertyKind] = Set(FieldMutability)
+
+    final override type InitializationData = Null
+
+    final def init(p: SomeProject, ps: PropertyStore): Null = null
 }
 
 /**
@@ -133,19 +138,19 @@ object EagerL0FieldMutabilityAnalysis
     extends L0FieldMutabilityAnalysisScheduler
     with FPCFEagerAnalysisScheduler {
 
-    def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
-        val analysis = new L0FieldMutabilityAnalysis(project)
+    override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+        val analysis = new L0FieldMutabilityAnalysis(p)
         val classFileCandidates =
-            if (project.libraryClassFilesAreInterfacesOnly)
-                project.allProjectClassFiles
+            if (p.libraryClassFilesAreInterfacesOnly)
+                p.allProjectClassFiles
             else
-                project.allClassFiles
+                p.allClassFiles
 
         val fields = {
             classFileCandidates.filter(cf ⇒ cf.methods.forall(m ⇒ !m.isNative)).flatMap(_.fields)
         }
 
-        propertyStore.scheduleEagerComputationsForEntities(fields)(analysis.determineFieldMutability)
+        ps.scheduleEagerComputationsForEntities(fields)(analysis.determineFieldMutability)
         analysis
     }
 }
@@ -154,9 +159,9 @@ object LazyL0FieldMutabilityAnalysis
     extends L0FieldMutabilityAnalysisScheduler
     with FPCFLazyAnalysisScheduler {
 
-    def startLazily(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
-        val analysis = new L0FieldMutabilityAnalysis(project)
-        propertyStore.registerLazyPropertyComputation(
+    override def startLazily(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+        val analysis = new L0FieldMutabilityAnalysis(p)
+        ps.registerLazyPropertyComputation(
             FieldMutability.key,
             (field: Field) ⇒ analysis.determineFieldMutabilityLazy(field)
         )

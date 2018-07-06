@@ -168,9 +168,13 @@ class InterProceduralEscapeAnalysis private[analyses] (
 
 sealed trait InterProceduralEscapeAnalysisScheduler extends ComputationSpecification {
 
-    override def derives: Set[PropertyKind] = Set(EscapeProperty)
+    final override def derives: Set[PropertyKind] = Set(EscapeProperty)
 
-    override def uses: Set[PropertyKind] = Set(VirtualMethodEscapeProperty)
+    final override def uses: Set[PropertyKind] = Set(VirtualMethodEscapeProperty)
+
+    final override type InitializationData = Null
+
+    final def init(p: SomeProject, ps: PropertyStore): Null = null
 }
 
 object EagerInterProceduralEscapeAnalysis
@@ -178,13 +182,11 @@ object EagerInterProceduralEscapeAnalysis
     with FPCFEagerAnalysisScheduler {
     type V = DUVar[(Domain with RecordDefUse)#DomainValue]
 
-    def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
-
-        val analysis = new InterProceduralEscapeAnalysis(project)
-        val fps = project.get(VirtualFormalParametersKey).virtualFormalParameters
-        val ass = project.get(DefinitionSitesKey).getAllocationSites
-
-        propertyStore.scheduleEagerComputationsForEntities(fps ++ ass)(analysis.determineEscape)
+    override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+        val analysis = new InterProceduralEscapeAnalysis(p)
+        val fps = p.get(VirtualFormalParametersKey).virtualFormalParameters
+        val ass = p.get(DefinitionSitesKey).getAllocationSites
+        ps.scheduleEagerComputationsForEntities(fps ++ ass)(analysis.determineEscape)
         analysis
     }
 }
@@ -197,10 +199,9 @@ object LazyInterProceduralEscapeAnalysis
      * Registers the analysis as a lazy computation, that is, the method
      * will call `ProperytStore.scheduleLazyComputation`.
      */
-    def startLazily(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
-        val analysis = new InterProceduralEscapeAnalysis(project)
-
-        propertyStore.registerLazyPropertyComputation(EscapeProperty.key, analysis.determineEscape)
+    override def startLazily(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+        val analysis = new InterProceduralEscapeAnalysis(p)
+        ps.registerLazyPropertyComputation(EscapeProperty.key, analysis.determineEscape)
         analysis
     }
 }

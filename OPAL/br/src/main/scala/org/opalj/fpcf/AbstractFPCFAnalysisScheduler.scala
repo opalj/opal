@@ -55,11 +55,11 @@ private[fpcf] trait AbstractFPCFAnalysisScheduler extends ComputationSpecificati
      */
     final val uniqueId: Int = AbstractFPCFAnalysisScheduler.nextId
 
-    final override def init(ps: PropertyStore): Unit = {
-        init(ps.context(classOf[SomeProject]),ps)
+    final override def init(ps: PropertyStore): InitializationData = {
+        init(ps.context(classOf[SomeProject]), ps)
     }
 
-    def init(p : SomeProject, ps: PropertyStore): Unit = {}
+    def init(p: SomeProject, ps: PropertyStore): InitializationData
 
 }
 

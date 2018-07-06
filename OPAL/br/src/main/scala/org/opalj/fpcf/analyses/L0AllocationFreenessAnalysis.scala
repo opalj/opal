@@ -266,29 +266,37 @@ class L0AllocationFreenessAnalysis private[analyses] ( final val project: SomePr
 }
 
 trait L0AllocationFreenessAnalysisScheduler extends ComputationSpecification {
-    override def derives: Set[PropertyKind] = Set(AllocationFreeness)
 
-    override def uses: Set[PropertyKind] = Set.empty
+    final override def derives: Set[PropertyKind] = Set(AllocationFreeness)
+
+    final override def uses: Set[PropertyKind] = Set.empty
+
+    final override type InitializationData = Null
+
+    final def init(p: SomeProject, ps: PropertyStore): Null = null
 }
 
-object EagerL0AllocationFreenessAnalysis extends L0AllocationFreenessAnalysisScheduler
+object EagerL0AllocationFreenessAnalysis
+    extends L0AllocationFreenessAnalysisScheduler
     with FPCFEagerAnalysisScheduler {
 
-    def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
-        val analysis = new L0AllocationFreenessAnalysis(project)
-        val declaredMethods = project.get(DeclaredMethodsKey).declaredMethods.collect {
+    override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+        val analysis = new L0AllocationFreenessAnalysis(p)
+        val declaredMethods = p.get(DeclaredMethodsKey).declaredMethods.toIterator.collect {
             case dm if dm.hasSingleDefinedMethod && dm.definedMethod.body.isDefined ⇒ dm.asDefinedMethod
         }
-        propertyStore.scheduleEagerComputationsForEntities(declaredMethods)(analysis.determineAllocationFreeness)
+        ps.scheduleEagerComputationsForEntities(declaredMethods)(analysis.determineAllocationFreeness)
         analysis
     }
 }
 
-object LazyL0AllocationFreenessAnalysis extends L0AllocationFreenessAnalysisScheduler
+object LazyL0AllocationFreenessAnalysis
+    extends L0AllocationFreenessAnalysisScheduler
     with FPCFLazyAnalysisScheduler {
-    def startLazily(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
-        val analysis = new L0AllocationFreenessAnalysis(project)
-        propertyStore.registerLazyPropertyComputation(
+
+    override def startLazily(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+        val analysis = new L0AllocationFreenessAnalysis(p)
+        ps.registerLazyPropertyComputation(
             AllocationFreeness.key,
             analysis.doDetermineAllocationFreeness
         )
