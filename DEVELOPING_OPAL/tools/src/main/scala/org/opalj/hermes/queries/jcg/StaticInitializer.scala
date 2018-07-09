@@ -87,27 +87,26 @@ class StaticInitializer(implicit hermes: HermesConfig) extends DefaultFeatureQue
                     m.isNotStatic && m.body.nonEmpty && m.isPublic
                 }
 
-                if(hasStaticField) {
-                    if(hasDefaultMethod) {
+                if (hasStaticField) {
+                    if (hasDefaultMethod) {
                         classLocations(2) += classFileLocation
                     }
 
                     val si = classFile.staticInitializer.get
-                    val putStatics = si.body.get.collectInstructionsWithPC{
-                        case pci @ PCAndInstruction(_, PUTSTATIC(_,_,_)) => pci
+                    val putStatics = si.body.get.collectInstructionsWithPC {
+                        case pci @ PCAndInstruction(_, PUTSTATIC(_, _, _)) ⇒ pci
                     }
 
-                    putStatics.foreach { pcIns =>
+                    putStatics.foreach { pcIns ⇒
                         val pc = pcIns.pc
-                        val put = pcIns.value.instruction
+                        //   val put = pcIns.value.instruction
 
                         val ai = BaseAI
                         val aiResult = ai.apply(si, BaseDomain(project, si))
                         val operands = aiResult.operandsArray.apply(pc)
-
+                        println(operands.size)
 
                     }
-
 
                 }
             } else { // index 4 - 7
