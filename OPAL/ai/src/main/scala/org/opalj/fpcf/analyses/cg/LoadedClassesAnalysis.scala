@@ -39,6 +39,7 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.properties.CallersProperty
 import org.opalj.fpcf.properties.LoadedClasses
+import org.opalj.fpcf.properties.LoadedClassesLowerBound
 import org.opalj.fpcf.properties.LowerBoundCallers
 import org.opalj.fpcf.properties.NoCallers
 import org.opalj.fpcf.properties.OnlyVMLevelCallers
@@ -71,7 +72,7 @@ class LoadedClassesAnalysis(
     def doAnalyze(project: SomeProject): PropertyComputationResult = {
 
         PartialResult[SomeProject, LoadedClasses](project, LoadedClasses.key, {
-            case EPK(p, _) ⇒ Some(EPS(p, null /*TODO LB*/ , new LoadedClasses(UIDSet.empty)))
+            case EPK(p, _) ⇒ Some(EPS(p, LoadedClassesLowerBound, new LoadedClasses(UIDSet.empty)))
             case _         ⇒ None
         })
     }
@@ -108,9 +109,9 @@ class LoadedClassesAnalysis(
                 val (newCLInits, newLoadedClasses) = handleNewReachableMethod(dm)
 
                 if (newLoadedClasses.nonEmpty) {
-                    PartialResult[SomeProject, LoadedClasses](project, LoadedClasses.key, {
+                    val lcResult = PartialResult[SomeProject, LoadedClasses](project, LoadedClasses.key, {
                         case EPK(p, _) ⇒
-                            throw new IllegalStateException("there should be already a result")
+                            Some(EPS(p, LoadedClassesLowerBound, new LoadedClasses(UIDSet.empty)))
                         case EPS(_, _: LoadedClasses, ub: LoadedClasses) if newLoadedClasses.subsetOf(ub.classes) ⇒
                             None
                         case EPS(p, lb: LoadedClasses, ub: LoadedClasses) ⇒
@@ -118,7 +119,7 @@ class LoadedClassesAnalysis(
 
                     })
 
-                    newCLInits map { clInit ⇒
+                    val callersResult = newCLInits map { clInit ⇒
                         PartialResult[DeclaredMethod, CallersProperty](clInit, CallersProperty.key, {
                             case EPK(_, _) ⇒
                                 Some(EPS(
@@ -129,11 +130,10 @@ class LoadedClassesAnalysis(
                             case _ ⇒ None
                         })
                     }
+                    Results(Seq(lcResult) ++ callersResult)
                 } else {
                     NoResult
                 }
-
-                NoResult
         }
     }
 
@@ -162,15 +162,17 @@ class LoadedClassesAnalysis(
         handleType(method.classFile.thisType).foreach(newCLInits += _)
         newLoadedClasses += methodDCT
 
-        for (stmt ← tacaiProvider(method).stmts) {
-            stmt match {
-                case PutStatic(_, dc, _, _, _) if !newLoadedClasses.contains(dc) ⇒
-                    handleType(dc).foreach(newCLInits += _)
-                    newLoadedClasses += dc
-                case Assignment(_, _, GetField(_, dc, _, _, _)) if !newLoadedClasses.contains(dc) ⇒
-                    handleType(dc).foreach(newCLInits += _)
-                    newLoadedClasses += dc
-                case _ ⇒
+        if (method.body.isDefined) {
+            for (stmt ← tacaiProvider(method).stmts) {
+                stmt match {
+                    case PutStatic(_, dc, _, _, _) if !newLoadedClasses.contains(dc) ⇒
+                        handleType(dc).foreach(newCLInits += _)
+                        newLoadedClasses += dc
+                    case Assignment(_, _, GetField(_, dc, _, _, _)) if !newLoadedClasses.contains(dc) ⇒
+                        handleType(dc).foreach(newCLInits += _)
+                        newLoadedClasses += dc
+                    case _ ⇒
+                }
             }
         }
 

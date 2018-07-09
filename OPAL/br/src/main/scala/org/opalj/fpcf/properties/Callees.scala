@@ -114,6 +114,7 @@ object Callees extends CalleesPropertyMetaInformation {
                     case PropertyIsNotComputedByAnyAnalysis ⇒
                         Callees.fallback(m, p, declaredMethods)
                     case PropertyIsNotDerivedByPreviouslyExecutedAnalysis ⇒
+                        //println(s"Fallback callee $m")
                         new CalleesImplementation(IntMap.empty, declaredMethods)
                 }
             },

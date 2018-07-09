@@ -44,16 +44,24 @@ sealed trait LoadedClassesMetaInformation extends PropertyMetaInformation {
  *
  * @author Florian Kuebler
  */
-final class LoadedClasses(val classes: UIDSet[ObjectType])
-    extends Property with OrderedProperty with LoadedClassesMetaInformation {
+sealed class LoadedClasses(val classes: UIDSet[ObjectType])
+        extends Property with OrderedProperty with LoadedClassesMetaInformation {
 
     override def checkIsEqualOrBetterThan(e: Entity, other: LoadedClasses): Unit = {
-        if (!classes.subsetOf(other.classes)) {
+        if (other.classes != null && !classes.subsetOf(other.classes)) {
             throw new IllegalArgumentException(s"$e: illegal refinement of property $other to $this")
         }
     }
 
     override def key: PropertyKey[LoadedClasses] = LoadedClasses.key
+
+    override def toString: String = s"LoadedClasses(${classes.size})"
+}
+
+object LoadedClassesLowerBound extends LoadedClasses(classes = null) {
+    override def checkIsEqualOrBetterThan(e: Entity, other: LoadedClasses): Unit = {}
+
+    override def toString: String = "LoadedClassesLowerBound"
 }
 
 object LoadedClasses extends LoadedClassesMetaInformation {
