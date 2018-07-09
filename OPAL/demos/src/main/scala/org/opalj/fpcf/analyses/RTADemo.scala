@@ -68,8 +68,8 @@ object RTADemo extends DefaultOneStepAnalysis {
 
         val ps = project.get(PropertyStoreKey)
         PropertyStore.updateDebug(true)
-        PropertyStore.updateTraceCycleResolutions(true)
-        PropertyStore.updateTraceFallbacks(true)
+        //PropertyStore.updateTraceCycleResolutions(true)
+        //PropertyStore.updateTraceFallbacks(true)
 
         implicit val logContext = project.logContext
 

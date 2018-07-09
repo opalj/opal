@@ -51,6 +51,7 @@ import org.opalj.fpcf.properties.CallersOnlyWithConcreteCallers
 import org.opalj.fpcf.properties.CallersProperty
 import org.opalj.fpcf.properties.InstantiatedTypes
 import org.opalj.fpcf.properties.LowerBoundCallers
+import org.opalj.fpcf.properties.NoCallers
 import org.opalj.fpcf.properties.OnlyCallersWithUnknownContext
 import org.opalj.log.Error
 import org.opalj.log.OPALLogger
@@ -129,6 +130,21 @@ class RTACallGraphAnalysis private[analyses] (
     def processMethod(
         declaredMethod: DeclaredMethod
     ): PropertyComputationResult = {
+
+        val callersOfMethod = propertyStore(declaredMethod, CallersProperty.key)
+        callersOfMethod match {
+            case FinalEP(_, NoCallers) ⇒
+                // nothing to do, since there is no caller
+                return NoResult;
+            case EPK(_, _) ⇒
+                throw new IllegalStateException("unexpected state")
+            case EPS(_, _, NoCallers) ⇒
+                // we can not create a dependency here, so the analysis is not allowed to create
+                // such a result
+                throw new IllegalStateException("illegal immediate result for callers")
+            case _@EPS(_, _, _) ⇒
+            // the method is reachable, so we analyze it!
+        }
 
         // we only allow defined methods
         if (!declaredMethod.hasSingleDefinedMethod)
