@@ -47,7 +47,7 @@ import org.opalj.br.Method
 import org.opalj.br.reader.{BytecodeInstructionsCache, Java8FrameworkWithCaching}
 
 /**
- * Tests if we are able to usefull self-consistent collect def/use information for the entire
+ * Tests if we are able to useful self-consistent collect def/use information for the entire
  * test suite.
  *
  * @author Michael Eichberg
@@ -193,7 +193,7 @@ class RecordDefUseTest extends FunSpec with Matchers {
                 // expected to pop-up in the def-sites... and only if the instruction
                 // is a relevant use-site
                 if (opIndex < usedOperands &&
-                    // we already tested: !instruction.isStackManagementInstruciton
+                    // we already tested: !instruction.isStackManagementInstruction
                     !instruction.isStoreLocalVariableInstruction) {
                     defUseOrigins foreach { duo ⇒
                         val useSites = d.usedBy(duo)
