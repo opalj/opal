@@ -1,76 +1,104 @@
 #StaticInitializers
 Static initializers have to be treated as entry points.
 ##SI1
-[//]: # (MAIN: si1.Bar)
+[//]: # (MAIN: si.Bar)
 A static initializer should be triggered when a non-constant field is referenced.
 
 ```java
-// si1/Foo.java
-package si1;
+// si/Demo.java
+package si;
 
 import lib.annotations.callgraph.CallSite;
-public interface Foo {
+public interface Demo {
 
 	static String name = init();
 
-    @CallSite(name = "callback", line = 10, resolvedTargets = "Lsi1/Foo;")
+    @CallSite(name = "callback", line = 10, resolvedTargets = "Lsi/Demo;")
 	static String init() {
 		callback();
-		return "Foo";
+		return "Demo";
 	}
 
 	static void callback() {}
 }
-class Bar implements Foo {
+class Bar implements Demo {
 	public static void main(String[] args) {
-		Foo.name.toString();
+		Demo.name.toString();
 	}
 }
 ```
 [//]: # (END)
 
 ##SI2
-[//]: # (MAIN: si2.Bar)
-Static initializer of an interface with a default method.
-
+[//]: # (MAIN: si.Demo)
+A static initializer should be triggered when a static interface metod is invoked.
 ```java
-// si2/Foo.java
-package si2;
+// si/Interface.java
+package si;
 
 import lib.annotations.callgraph.CallSite;
-public interface Foo {
+public interface Interface {
 
 	static String name = init();
 
-    @CallSite(name = "callback", line = 10, resolvedTargets = "Lsi2/Foo;")
+    @CallSite(name = "callback", line = 10, resolvedTargets = "Lsi/Interface;")
 	static String init() {
 		callback();
-		return "Foo";
+		return "Demo";
 	}
-
-	default String m() { return "Foo"; }
 
 	static void callback() {}
 }
-class Bar implements Foo {
+class Demo implements Interface {
 	public static void main(String[] args) {
-		new Bar();
+		Interface.callback();
 	}
 }
 ```
 [//]: # (END)
 
 ##SI3
-[//]: # (MAIN: si3.Class)
-An interface static initializer should be triggered when a static field with a non-primitive type
+[//]: # (MAIN: si.Demo)
+Static initializer of an interface with a default method.
+
+```java
+// si/Interface.java
+package si;
+
+import lib.annotations.callgraph.CallSite;
+public interface Interface {
+
+	static String name = init();
+
+    @CallSite(name = "callback", line = 10, resolvedTargets = "Lsi/Interface;")
+	static String init() {
+		callback();
+		return "Demo";
+	}
+
+	default String m() { return "Demo"; }
+
+	static void callback() {}
+}
+class Demo implements Interface {
+	public static void main(String[] args) {
+		new Demo();
+	}
+}
+```
+[//]: # (END)
+
+##SI4
+[//]: # (MAIN: si.Demo)
+An interface static initializer should be triggered when a final static field with a non-primitive type
 and non-String type is referenced.
 
 ```java
-// si3/Class.java
-package si3;
+// si/Demo.java
+package si;
 
 import lib.annotations.callgraph.CallSite;
-public class Class {
+public class Demo {
 	public static void main(String[] args) {
 		Interface.referenceMe.toString();
 	}
@@ -78,11 +106,10 @@ public class Class {
 
 interface Interface {
     
-    static String name = init();
+    static String testHook = init();
+    static final Demo referenceMe = new Demo();
     
-    static Class referenceMe = new Class();
-    
-    @CallSite(name = "callback", line = 18, resolvedTargets = "Lsi3/Interface;")
+    @CallSite(name = "callback", line = 15, resolvedTargets = "Lsi/Interface;")
     static String init() {
         callback();
         return "Interface";
@@ -93,22 +120,22 @@ interface Interface {
 ```
 [//]: # (END)
 
-##SI4
-[//]: # (MAIN: si4.Foo)
+##SI5
+[//]: # (MAIN: si.Demo)
 Static initializer block of a class.
 
 ```java
-// si4/Foo.java
-package si4;
+// si/Demo.java
+package si;
 
 import lib.annotations.callgraph.CallSite;
-public class Foo {
+public class Demo {
 
 	static {
 		init();
 	}
 
-    @CallSite(name = "callback", line = 12, resolvedTargets = "Lsi4/Foo;")
+    @CallSite(name = "callback", line = 12, resolvedTargets = "Lsi/Demo;")
 	static void init() {
 		callback();
 	}
@@ -116,54 +143,84 @@ public class Foo {
 	static void callback() {}
 
 	public static void main(String[] args) {
-		new Foo();
-	}
-}
-```
-[//]: # (END)
-
-##SI5
-[//]: # (MAIN: si5.Foo)
-Static initializer method call in declaration of a class.
-
-```java
-// si5/Foo.java
-package si5;
-
-import lib.annotations.callgraph.CallSite;
-public class Foo {
-
-	static String name = init();
-
-    @CallSite(name = "callback", line = 10, resolvedTargets = "Lsi5/Foo;")
-	static String init() {
-		callback();
-		return "Foo";
-	}
-
-	static void callback() {}
-
-	public static void main(String[] args) {
-		new Foo();
+		new Demo();
 	}
 }
 ```
 [//]: # (END)
 
 ##SI6
-[//]: # (MAIN: si6.Class)
+[//]: # (MAIN: si.Demo)
+Static initializer method call in declaration of a class.
+
+```java
+// si/Demo.java
+package si;
+
+import lib.annotations.callgraph.CallSite;
+public class Demo {
+
+	static String name = init();
+
+    @CallSite(name = "callback", line = 10, resolvedTargets = "Lsi/Demo;")
+	static String init() {
+		callback();
+		return "Demo";
+	}
+
+	static void callback() {}
+
+	public static void main(String[] args) {
+		Demo.callback();
+	}
+}
+```
+[//]: # (END)
+
+##SI7
+[//]: # (MAIN: si.Demo)
+Static initializer method call in declaration of a class.
+
+```java
+// si/Demo.java
+package si;
+
+import lib.annotations.callgraph.CallSite;
+public class Demo {
+
+	static String name = init();
+
+    static int assignMe;
+
+    @CallSite(name = "callback", line = 12, resolvedTargets = "Lsi/Demo;")
+	static String init() {
+		callback();
+		return "Demo";
+	}
+
+	static void callback() {}
+
+	public static void main(String[] args) {
+		Demo.assignMe = 42;
+	}
+}
+```
+[//]: # (END)
+
+##SI8
+[//]: # (MAIN: si.Class)
 When a class is initialized, its super classes are also initialized.
 
 ```java
-// si6/Class.java
-package si6;
+// si/Class.java
+package si;
 
 import lib.annotations.callgraph.CallSite;
 public class Class extends SuperClass {
 
 	static String name = init();
 
-    @CallSite(name = "callback", line = 10, resolvedTargets = "Lsi6/Class;")
+    @CallSite(name = "callback", line = 10, resolvedTargets = "Lsi/Class;")
 	static String init() {
 		callback();
 		return "Class";
@@ -182,7 +239,7 @@ class SuperClass extends RootClass {
         superInit();
     }
     
-    @CallSite(name = "callback", line = 29, resolvedTargets = "Lsi6/SuperClass;")
+    @CallSite(name = "callback", line = 29, resolvedTargets = "Lsi/SuperClass;")
     static void superInit(){
         callback();
     }
@@ -196,7 +253,7 @@ class RootClass {
         rootInit();
     }
     
-    @CallSite(name = "callback", line = 43, resolvedTargets = "Lsi6/RootClass;")
+    @CallSite(name = "callback", line = 43, resolvedTargets = "Lsi/RootClass;")
     static void rootInit(){
       callback();
 }  

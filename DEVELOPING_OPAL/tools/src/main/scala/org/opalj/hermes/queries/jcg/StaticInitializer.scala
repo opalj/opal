@@ -31,7 +31,10 @@ package hermes
 package queries
 package jcg
 
+import org.opalj.br.ObjectType
+import org.opalj.br.PCAndInstruction
 import org.opalj.br.analyses.Project
+import org.opalj.br.instructions.PUTSTATIC
 import org.opalj.da.ClassFile
 
 /**
@@ -45,12 +48,14 @@ class StaticInitializer(implicit hermes: HermesConfig) extends DefaultFeatureQue
 
     override def featureIDs: Seq[String] = {
         Seq(
-            "SI1", /* 0 --- calls are not allowed to leave the package */
-            "SI2", /* 1  --- TODO */
-            "SI3", /* 2 --- TODO */
-            "SI4", /* 3 --- TODO */
-            "SI5", /* 4 --- TODO */
-            "SI6" /* 5 --- TODO */
+            "SI1", /* 0 --- reference of a non-constant field  within an interface. */
+            "SI2", /* 1  --- invocation of a static interface method. */
+            "SI3", /* 2  --- class creation when class impl. Interface with default method and static fields. */
+            "SI4", /* 3 ---  reference of a final non-primitive and non-String field within an interface. */
+            "SI5", /* 4 --- class creation should trigger the static initializer */
+            "SI6", /* 5 --- call of a static method */
+            "SI7" /* 6 --- assignment to a static field */ ,
+            "SI8" /* 7 --- initialization of a class should cause initialization of super classes */
         )
     }
 
@@ -59,8 +64,61 @@ class StaticInitializer(implicit hermes: HermesConfig) extends DefaultFeatureQue
         project:              Project[S],
         rawClassFiles:        Traversable[(ClassFile, S)]
     ): IndexedSeq[LocationsContainer[S]] = {
-        val instructionsLocations = Array.fill(6)(new LocationsContainer[S])
+        val classLocations = Array.fill(8)(new LocationsContainer[S])
 
-        instructionsLocations;
+        for {
+            (classFile, source) ← project.projectClassFilesWithSources
+            if classFile.staticInitializer.isDefined
+            if !isInterrupted()
+            classFileLocation = ClassFileLocation(source, classFile)
+        } {
+            val hasStaticField = classFile.fields.exists(_.isStatic)
+            val hasStaticMethod = classFile.methods.exists(m ⇒ m.isStatic && m.name != "<clinit>")
+
+            if (classFile.isInterfaceDeclaration) { // index 0 - 3
+
+                if (hasStaticMethod) {
+                    classLocations(1) += classFileLocation
+                }
+
+                val hasDefaultMethod = classFile.methods.exists { m ⇒
+                    m.isNotStatic && m.body.nonEmpty && m.isPublic
+                }
+
+                if(hasStaticField) {
+                    if(hasDefaultMethod) {
+                        classLocations(2) += classFileLocation
+                    }
+
+                    val si = classFile.staticInitializer.get
+                    val putStatics = si.body.get.collectInstructionsWithPC{
+                        case pci @ PCAndInstruction(_, PUTSTATIC(_,_,_)) => pci
+                    }
+
+
+                }
+            } else { // index 4 - 7
+                val hasNonPrivateConstructor = classFile.constructors.exists { !_.isPrivate }
+
+                if (hasNonPrivateConstructor) {
+                    classLocations(4) += classFileLocation
+                }
+
+                if (hasStaticMethod) {
+                    classLocations(5) += classFileLocation
+                }
+
+                if (hasStaticField) {
+                    classLocations(6) += classFileLocation
+                }
+
+                val superclassType = classFile.superclassType
+                if (superclassType.nonEmpty && superclassType.get != ObjectType.Object) {
+                    classLocations(7) += classFileLocation
+                }
+            }
+        }
+
+        classLocations;
     }
 }
