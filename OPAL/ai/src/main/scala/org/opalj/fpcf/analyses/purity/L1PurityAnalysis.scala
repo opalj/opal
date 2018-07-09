@@ -392,15 +392,20 @@ object L1PurityAnalysis {
 
 trait L1PurityAnalysisScheduler extends ComputationSpecification {
 
-    override def derives: Set[PropertyKind] = Set(Purity)
+    final override def derives: Set[PropertyKind] = Set(Purity)
 
-    override def uses: Set[PropertyKind] = {
+    final override def uses: Set[PropertyKind] = {
         Set(VirtualMethodPurity, FieldMutability, ClassImmutability, TypeImmutability)
     }
+
+    final override type InitializationData = Null
+
+    final def init(p: SomeProject, ps: PropertyStore): Null = null
 }
 
 object EagerL1PurityAnalysis extends L1PurityAnalysisScheduler with FPCFEagerAnalysisScheduler {
-    def start(p: SomeProject, ps: PropertyStore): FPCFAnalysis = {
+
+    override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new L1PurityAnalysis(p)
         val dms = p.get(DeclaredMethodsKey).declaredMethods
         val methodsWithBody = dms.collect {
@@ -415,7 +420,7 @@ object EagerL1PurityAnalysis extends L1PurityAnalysisScheduler with FPCFEagerAna
 
 object LazyL1PurityAnalysis extends L1PurityAnalysisScheduler with FPCFLazyAnalysisScheduler {
 
-    def startLazily(p: SomeProject, ps: PropertyStore): FPCFAnalysis = {
+    override def startLazily(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new L1PurityAnalysis(p)
         ps.registerLazyPropertyComputation(Purity.key, analysis.doDeterminePurity)
         analysis

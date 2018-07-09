@@ -86,7 +86,7 @@ object UnnecessarySynchronizationAnalysis extends DefaultOneStepAnalysis {
         } { t ⇒ info("progress", s"generating 3-address code took ${t.toSeconds}") }
 
         time {
-            EagerInterProceduralEscapeAnalysis.start(project)
+            EagerInterProceduralEscapeAnalysis.start(project, null)
             propertyStore.waitOnPhaseCompletion()
         } { t ⇒ info("progress", s"escape analysis took ${t.toSeconds}") }
 

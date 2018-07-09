@@ -411,9 +411,15 @@ class L1ThrownExceptionsAnalysis private[analyses] (
     }
 }
 
-abstract class ThrownExceptionsAnalysis extends ComputationSpecification {
-    override def uses: Set[PropertyKind] = Set(ThrownExceptionsByOverridingMethods)
-    override def derives: Set[PropertyKind] = Set(ThrownExceptions)
+abstract class ThrownExceptionsAnalysisScheduler extends ComputationSpecification {
+
+    final override def uses: Set[PropertyKind] = Set(ThrownExceptionsByOverridingMethods)
+
+    final override def derives: Set[PropertyKind] = Set(ThrownExceptions)
+
+    final override type InitializationData = Null
+
+    final def init(p: SomeProject, ps: PropertyStore): Null = null
 }
 
 /**
@@ -423,14 +429,14 @@ abstract class ThrownExceptionsAnalysis extends ComputationSpecification {
  * @author Michael Eichberg
  */
 object EagerL1ThrownExceptionsAnalysis
-    extends ThrownExceptionsAnalysis
+    extends ThrownExceptionsAnalysisScheduler
     with FPCFEagerAnalysisScheduler {
 
     /**
      * Eagerly schedules the computation of the thrown exceptions for all methods with bodies;
      * in general, the analysis is expected to be registered as a lazy computation.
      */
-    def start(p: SomeProject, ps: PropertyStore): FPCFAnalysis = {
+    override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new L1ThrownExceptionsAnalysis(p)
         val allMethods = p.allMethods
         ps.scheduleEagerComputationsForEntities(allMethods)(analysis.determineThrownExceptions)
@@ -445,19 +451,13 @@ object EagerL1ThrownExceptionsAnalysis
  * @author Michael Eichberg
  */
 object LazyL1ThrownExceptionsAnalysis
-    extends ThrownExceptionsAnalysis
+    extends ThrownExceptionsAnalysisScheduler
     with FPCFLazyAnalysisScheduler {
 
-    override def uses: Set[PropertyKind] = {
-        Set(ThrownExceptionsByOverridingMethods)
-    }
-
-    override def derives: Set[PropertyKind] = Set(ThrownExceptions)
-
     /** Registers an analysis to compute the thrown exceptions lazily. */
-    def startLazily(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
-        val analysis = new L1ThrownExceptionsAnalysis(project)
-        propertyStore.registerLazyPropertyComputation(
+    override def startLazily(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+        val analysis = new L1ThrownExceptionsAnalysis(p)
+        ps.registerLazyPropertyComputation(
             ThrownExceptions.key,
             analysis.lazilyDetermineThrownExceptions
         )

@@ -116,29 +116,33 @@ class L0CompileTimeConstancyAnalysis private[analyses] ( final val project: Some
 }
 
 trait L0CompileTimeConstancyAnalysisScheduler extends ComputationSpecification {
-    override def derives: Set[PropertyKind] = Set(CompileTimeConstancy)
 
-    override def uses: Set[PropertyKind] = Set(FieldMutability)
+    final override def derives: Set[PropertyKind] = Set(CompileTimeConstancy)
+
+    final override def uses: Set[PropertyKind] = Set(FieldMutability)
+
+    final override type InitializationData = Null
+
+    final def init(p: SomeProject, ps: PropertyStore): Null = null
 }
 
-object EagerL0CompileTimeConstancyAnalysis extends L0CompileTimeConstancyAnalysisScheduler
+object EagerL0CompileTimeConstancyAnalysis
+    extends L0CompileTimeConstancyAnalysisScheduler
     with FPCFEagerAnalysisScheduler {
 
-    def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
-        val analysis = new L0CompileTimeConstancyAnalysis(project)
-        propertyStore.scheduleEagerComputationsForEntities(project.allFields)(analysis.determineConstancy)
+    override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+        val analysis = new L0CompileTimeConstancyAnalysis(p)
+        ps.scheduleEagerComputationsForEntities(p.allFields)(analysis.determineConstancy)
         analysis
     }
 }
 
 object LazyL0CompileTimeConstancyAnalysis extends L0CompileTimeConstancyAnalysisScheduler
     with FPCFLazyAnalysisScheduler {
-    def startLazily(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
-        val analysis = new L0CompileTimeConstancyAnalysis(project)
-        propertyStore.registerLazyPropertyComputation(
-            CompileTimeConstancy.key,
-            analysis.doDetermineConstancy
-        )
+
+    override def startLazily(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+        val analysis = new L0CompileTimeConstancyAnalysis(p)
+        ps.registerLazyPropertyComputation(CompileTimeConstancy.key, analysis.doDetermineConstancy)
         analysis
     }
 }

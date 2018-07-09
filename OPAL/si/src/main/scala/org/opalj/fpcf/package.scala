@@ -130,6 +130,6 @@ package object fpcf {
      * The result of a computation if the computation derives multiple properties
      * at the same time.
      */
-    final type ComputationResults = Traversable[SomeFinalEP]
+    final type ComputationResults = TraversableOnce[SomeFinalEP]
 
 }

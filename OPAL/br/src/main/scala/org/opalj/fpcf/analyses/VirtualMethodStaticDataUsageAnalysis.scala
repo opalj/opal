@@ -135,26 +135,33 @@ class VirtualMethodStaticDataUsageAnalysis private[analyses] (
 }
 
 trait VirtualMethodStaticDataUsageAnalysisScheduler extends ComputationSpecification {
-    override def derives: Set[PropertyKind] = Set(VirtualMethodStaticDataUsage)
 
-    override def uses: Set[PropertyKind] = Set(StaticDataUsage)
+    final override def derives: Set[PropertyKind] = Set(VirtualMethodStaticDataUsage)
+
+    final override def uses: Set[PropertyKind] = Set(StaticDataUsage)
+
+    final override type InitializationData = Null
+
+    final def init(p: SomeProject, ps: PropertyStore): Null = null
 }
 
 object EagerVirtualMethodStaticDataUsageAnalysis
-    extends VirtualMethodStaticDataUsageAnalysisScheduler with FPCFEagerAnalysisScheduler {
+    extends VirtualMethodStaticDataUsageAnalysisScheduler
+    with FPCFEagerAnalysisScheduler {
 
-    def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
-        val analysis = new VirtualMethodStaticDataUsageAnalysis(project)
-        val vms = project.get(DeclaredMethodsKey)
-        propertyStore.scheduleEagerComputationsForEntities(vms.declaredMethods)(analysis.determineUsage)
+    def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+        val analysis = new VirtualMethodStaticDataUsageAnalysis(p)
+        val vms = p.get(DeclaredMethodsKey)
+        ps.scheduleEagerComputationsForEntities(vms.declaredMethods)(analysis.determineUsage)
         analysis
     }
 }
 
 object LazyVirtualMethodStaticDataUsageAnalysis
-    extends VirtualMethodStaticDataUsageAnalysisScheduler with FPCFLazyAnalysisScheduler {
+    extends VirtualMethodStaticDataUsageAnalysisScheduler
+    with FPCFLazyAnalysisScheduler {
 
-    def startLazily(p: SomeProject, ps: PropertyStore): FPCFAnalysis = {
+    def startLazily(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new VirtualMethodStaticDataUsageAnalysis(p)
         ps.registerLazyPropertyComputation(
             VirtualMethodAllocationFreeness.key,

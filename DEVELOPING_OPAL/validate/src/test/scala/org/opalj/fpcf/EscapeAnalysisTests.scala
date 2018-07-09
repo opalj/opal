@@ -45,8 +45,8 @@ import org.opalj.fpcf.analyses.escape.EagerSimpleEscapeAnalysis
 class EscapeAnalysisTests extends PropertiesTest {
 
     override def executeAnalyses(
-        eagerAnalysisRunners: Set[FPCFEagerAnalysisScheduler],
-        lazyAnalysisRunners:  Set[FPCFLazyAnalysisScheduler]
+        eagerAnalysisRunners: Set[FPCFEagerAnalysisScheduler { type InitializationData = Null }],
+        lazyAnalysisRunners:  Set[FPCFLazyAnalysisScheduler { type InitializationData = Null }]
     ): TestContext = {
         val p = FixtureProject.recreate()
 
@@ -62,8 +62,8 @@ class EscapeAnalysisTests extends PropertiesTest {
             _.derives.map(_.asInstanceOf[PropertyMetaInformation].key)
         ))
 
-        lazyAnalysisRunners.foreach(_.startLazily(p, ps))
-        val as = eagerAnalysisRunners.map(ar ⇒ ar.start(p, ps))
+        lazyAnalysisRunners.foreach(_.startLazily(p, ps, null))
+        val as = eagerAnalysisRunners.map(ar ⇒ ar.start(p, ps, null))
         ps.waitOnPhaseCompletion()
         ps.shutdown()
         TestContext(p, ps, as)
@@ -93,8 +93,12 @@ class EscapeAnalysisTests extends PropertiesTest {
 
     describe("the org.opalj.fpcf.analyses.escape.InterProceduralEscapeAnalysis is executed") {
         val as = executeAnalyses(
-            Set(EagerInterProceduralEscapeAnalysis),
-            Set(LazyVirtualCallAggregatingEscapeAnalysis)
+            Set[FPCFEagerAnalysisScheduler { type InitializationData = Null }](
+                EagerInterProceduralEscapeAnalysis
+            ),
+            Set[FPCFLazyAnalysisScheduler { type InitializationData = Null }](
+                LazyVirtualCallAggregatingEscapeAnalysis
+            )
         )
         as.propertyStore.shutdown()
         validateProperties(

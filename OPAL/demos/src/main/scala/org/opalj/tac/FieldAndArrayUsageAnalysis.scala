@@ -105,7 +105,7 @@ object FieldAndArrayUsageAnalysis extends DefaultOneStepAnalysis {
             project.get(PropertyStoreKey)
         } { t ⇒ info("progress", s"initialization of property store took ${t.toSeconds}") }
         time {
-            EagerSimpleEscapeAnalysis.start(project, propertyStore)
+            EagerSimpleEscapeAnalysis.start(project, propertyStore, null)
             propertyStore.waitOnPhaseCompletion()
         } { t ⇒ info("progress", s"escape analysis took ${t.toSeconds}") }
         for {

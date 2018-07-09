@@ -305,8 +305,8 @@ abstract class PropertiesTest extends FunSpec with Matchers {
     }
 
     def executeAnalyses(
-        eagerAnalysisRunners: Set[FPCFEagerAnalysisScheduler],
-        lazyAnalysisRunners:  Set[FPCFLazyAnalysisScheduler]  = Set.empty
+        eagerAnalysisRunners: Set[FPCFEagerAnalysisScheduler { type InitializationData = Null }],
+        lazyAnalysisRunners:  Set[FPCFLazyAnalysisScheduler { type InitializationData = Null }]  = Set.empty
     ): TestContext = {
         val p = FixtureProject.recreate { piKeyUnidueId ⇒
             piKeyUnidueId != PropertyStoreKey.uniqueId
@@ -326,8 +326,8 @@ abstract class PropertiesTest extends FunSpec with Matchers {
         ps.setupPhase((eagerAnalysisRunners ++ lazyAnalysisRunners).flatMap(
             _.derives.map(_.asInstanceOf[PropertyMetaInformation].key)
         ))
-        val las = lazyAnalysisRunners.map(ar ⇒ ar.startLazily(p, ps))
-        val as = eagerAnalysisRunners.map(ar ⇒ ar.start(p, ps))
+        val las = lazyAnalysisRunners.map(ar ⇒ ar.startLazily(p, ps, null))
+        val as = eagerAnalysisRunners.map(ar ⇒ ar.start(p, ps, null))
         ps.waitOnPhaseCompletion()
         TestContext(p, ps, as ++ las)
     }

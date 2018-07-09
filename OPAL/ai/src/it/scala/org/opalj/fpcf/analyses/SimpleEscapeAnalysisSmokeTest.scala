@@ -56,7 +56,7 @@ class SimpleEscapeAnalysisSmokeTest extends FunSpec with Matchers {
     def checkProject(p: SomeProject): Unit = {
         val ps = p.get(PropertyStoreKey)
         ps.setupPhase(Set(EscapeProperty), Set.empty)
-        EagerSimpleEscapeAnalysis.start(p)
+        EagerSimpleEscapeAnalysis.start(p,null)
         ps.waitOnPhaseCompletion()
     }
 

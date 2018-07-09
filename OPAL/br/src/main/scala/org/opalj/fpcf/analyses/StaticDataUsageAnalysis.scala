@@ -257,32 +257,39 @@ class StaticDataUsageAnalysis private[analyses] ( final val project: SomeProject
 }
 
 trait StaticDataUsageAnalysisScheduler extends ComputationSpecification {
-    override def derives: Set[PropertyKind] = Set(StaticDataUsage)
 
-    override def uses: Set[PropertyKind] = Set(CompileTimeConstancy)
+    final override def derives: Set[PropertyKind] = Set(StaticDataUsage)
+
+    final override def uses: Set[PropertyKind] = Set(CompileTimeConstancy)
+
+    final override type InitializationData = Null
+
+    final def init(p: SomeProject, ps: PropertyStore): Null = null
 }
 
-object EagerStaticDataUsageAnalysis extends StaticDataUsageAnalysisScheduler
+object EagerStaticDataUsageAnalysis
+    extends StaticDataUsageAnalysisScheduler
     with FPCFEagerAnalysisScheduler {
 
-    def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
-        val analysis = new StaticDataUsageAnalysis(project)
-        val declaredMethods = project.get(DeclaredMethodsKey).declaredMethods.collect {
+    override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+        val analysis = new StaticDataUsageAnalysis(p)
+        val declaredMethods = p.get(DeclaredMethodsKey).declaredMethods.collect {
             case dm if dm.hasSingleDefinedMethod && dm.definedMethod.body.isDefined ⇒ dm.asDefinedMethod
         }
-        propertyStore.scheduleEagerComputationsForEntities(declaredMethods)(analysis.determineUsage)
+        ps.scheduleEagerComputationsForEntities(declaredMethods)(analysis.determineUsage)
         analysis
     }
 }
 
-object LazyStaticDataUsageAnalysis extends StaticDataUsageAnalysisScheduler
+object LazyStaticDataUsageAnalysis
+    extends StaticDataUsageAnalysisScheduler
     with FPCFLazyAnalysisScheduler {
-    def startLazily(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
-        val analysis = new StaticDataUsageAnalysis(project)
-        propertyStore.registerLazyPropertyComputation(
-            StaticDataUsage.key,
-            analysis.doDetermineUsage
-        )
+
+    override def startLazily(
+        p: SomeProject, ps: PropertyStore, unused: Null
+    ): FPCFAnalysis = {
+        val analysis = new StaticDataUsageAnalysis(p)
+        ps.registerLazyPropertyComputation(StaticDataUsage.key, analysis.doDetermineUsage)
         analysis
     }
 }

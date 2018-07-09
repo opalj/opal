@@ -585,21 +585,25 @@ class FieldLocalityAnalysis private[analyses] (
 
 sealed trait FieldLocalityAnalysisScheduler extends ComputationSpecification {
 
-    override def derives: Set[PropertyKind] = Set(FieldLocality)
+    final override def derives: Set[PropertyKind] = Set(FieldLocality)
 
-    override def uses: Set[PropertyKind] = {
+    final override def uses: Set[PropertyKind] = {
         Set(ReturnValueFreshness, VirtualMethodReturnValueFreshness)
     }
+
+    final override type InitializationData = Null
+
+    final def init(p: SomeProject, ps: PropertyStore): Null = null
 }
 
 object EagerFieldLocalityAnalysis
     extends FieldLocalityAnalysisScheduler
     with FPCFEagerAnalysisScheduler {
 
-    def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
-        val allFields = project.allFields
-        val analysis = new FieldLocalityAnalysis(project)
-        propertyStore.scheduleEagerComputationsForEntities(allFields)(analysis.step1)
+    final override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+        val allFields = p.allFields
+        val analysis = new FieldLocalityAnalysis(p)
+        ps.scheduleEagerComputationsForEntities(allFields)(analysis.step1)
         analysis
     }
 }
@@ -612,9 +616,9 @@ object LazyFieldLocalityAnalysis
      * Registers the analysis as a lazy computation, that is, the method
      * will call `ProperytStore.scheduleLazyComputation`.
      */
-    def startLazily(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
-        val analysis = new FieldLocalityAnalysis(project)
-        propertyStore.registerLazyPropertyComputation(
+    final override def startLazily(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+        val analysis = new FieldLocalityAnalysis(p)
+        ps.registerLazyPropertyComputation(
             FieldLocality.key, analysis.step1
         )
         analysis

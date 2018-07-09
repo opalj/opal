@@ -48,8 +48,8 @@ object Dependencies {
         val scalaparsercombinators = "1.1.1"
 
         val scalafx = "8.0.144-R12"
-        //val controlsfx = "8.40.14"
-        val controlsfx = "9.0.0"
+        val controlsfx = "8.40.14"
+        //val controlsfx = "9.0.0" requires Java 9
         val txtmark = "0.16"
         val jacksonDF = "2.9.6"
         val chocosolver = "4.0.6"

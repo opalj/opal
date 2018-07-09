@@ -103,7 +103,7 @@ object SimpleEscapeAnalysisDemo extends DefaultOneStepAnalysis {
 
         time {
             propertyStore.setupPhase(Set(EscapeProperty.key))
-            EagerSimpleEscapeAnalysis.start(project)
+            EagerSimpleEscapeAnalysis.start(project, null)
             propertyStore.waitOnPhaseCompletion()
         } { t ⇒ info("progress", s"escape analysis took ${t.toSeconds}") }
 

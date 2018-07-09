@@ -131,28 +131,35 @@ class VirtualCallAggregatingEscapeAnalysis private[analyses] ( final val project
 
 sealed trait VirtualCallAggregatingEscapeAnalysisScheduler extends ComputationSpecification {
 
-    override def derives: Set[PropertyKind] = Set(VirtualMethodEscapeProperty)
+    final override def derives: Set[PropertyKind] = Set(VirtualMethodEscapeProperty)
 
-    override def uses: Set[PropertyKind] = Set(EscapeProperty)
+    final override def uses: Set[PropertyKind] = Set(EscapeProperty)
+
+    final override type InitializationData = Null
+
+    final def init(p: SomeProject, ps: PropertyStore): Null = null
 }
 
 object EagerVirtualCallAggregatingEscapeAnalysis
     extends VirtualCallAggregatingEscapeAnalysisScheduler
     with FPCFEagerAnalysisScheduler {
 
-    def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
-        val analysis = new VirtualCallAggregatingEscapeAnalysis(project)
-        val vfps = project.get(VirtualFormalParametersKey).virtualFormalParameters
-        propertyStore.scheduleEagerComputationsForEntities(vfps)(analysis.determineEscape)
+    override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+        val analysis = new VirtualCallAggregatingEscapeAnalysis(p)
+        val vfps = p.get(VirtualFormalParametersKey).virtualFormalParameters
+        ps.scheduleEagerComputationsForEntities(vfps)(analysis.determineEscape)
         analysis
     }
 }
+
 object LazyVirtualCallAggregatingEscapeAnalysis
     extends VirtualCallAggregatingEscapeAnalysisScheduler
     with FPCFLazyAnalysisScheduler {
-    def startLazily(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
-        val analysis = new VirtualCallAggregatingEscapeAnalysis(project)
-        propertyStore.registerLazyPropertyComputation(VirtualMethodEscapeProperty.key, analysis.determineEscape)
+
+    override def startLazily(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+        val analysis = new VirtualCallAggregatingEscapeAnalysis(p)
+        ps.registerLazyPropertyComputation(VirtualMethodEscapeProperty.key, analysis.determineEscape)
         analysis
     }
+
 }

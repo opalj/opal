@@ -650,14 +650,18 @@ final class PKEParallelTasksPropertyStore private (
                             fallbacksUsedCounter.incrementAndGet()
                             // We directly compute the property and store it to make
                             // it accessible later on...
-                            val fallbackReason = {
+                            val reason = {
                                 if (previouslyComputedPropertyKinds(pkId))
                                     PropertyIsNotDerivedByPreviouslyExecutedAnalysis
                                 else
                                     PropertyIsNotComputedByAnyAnalysis
                             }
-                            val p = PropertyKey.fallbackProperty(store, fallbackReason, e, pk)
-                            val finalEP = FinalEP(e, p)
+                            val p = fallbackPropertyBasedOnPkId(store, reason, e, pkId)
+                            if (traceFallbacks) {
+                                val message = s"used fallback $p (reason=$reason) for $e"
+                                trace("analysis progress", message)
+                            }
+                            val finalEP = FinalEP(e, p.asInstanceOf[P])
                             val r = IdempotentResult(finalEP)
                             appendStoreUpdate(queueId = 0, PropertyUpdate(r))
                             finalEP

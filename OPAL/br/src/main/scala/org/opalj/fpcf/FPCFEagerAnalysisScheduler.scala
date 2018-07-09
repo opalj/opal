@@ -40,21 +40,21 @@ trait FPCFEagerAnalysisScheduler extends AbstractFPCFAnalysisScheduler {
 
     final override def isLazy: Boolean = false
 
-    final override def schedule(ps: PropertyStore): Unit = {
-        start(ps.context(classOf[SomeProject]), ps)
+    final override def schedule(ps: PropertyStore, i: InitializationData): Unit = {
+        start(ps.context(classOf[SomeProject]), ps, i)
     }
 
     /**
      * Starts the analysis for the given `project`. This method is typically implicitly
      * called by the [[FPCFAnalysesManager]].
      */
-    def start(project: SomeProject): FPCFAnalysis = {
-        start(project, project.get(PropertyStoreKey))
+    def start(p: SomeProject, i: InitializationData): FPCFAnalysis = {
+        start(p, p.get(PropertyStoreKey), i)
     }
 
     /**
      * Starts the analysis for the given `project`. This method is typically implicitly
      * called by the [[FPCFAnalysesManager]].
      */
-    def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis
+    def start(p: SomeProject, ps: PropertyStore, i: InitializationData): FPCFAnalysis
 }

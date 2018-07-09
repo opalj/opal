@@ -70,9 +70,9 @@ object ImmutabilityAnalysisRunner extends DefaultOneStepAnalysis {
         // reactive async approach developed by P. Haller and Simon Gries.
         val ps = time { get(PropertyStoreKey) } { r ⇒ t = r.toSeconds }
         time {
-            EagerL0FieldMutabilityAnalysis.start(project, ps)
-            EagerClassImmutabilityAnalysis.start(project, ps)
-            EagerTypeImmutabilityAnalysis.start(project, ps)
+            EagerL0FieldMutabilityAnalysis.start(project, ps, null)
+            EagerClassImmutabilityAnalysis.start(project, ps, null)
+            EagerTypeImmutabilityAnalysis.start(project, ps, null)
             ps.waitOnPhaseCompletion()
         } { r ⇒ t += r.toSeconds }
 

@@ -118,25 +118,33 @@ class VirtualMethodAllocationFreenessAnalysis private[analyses] ( final val proj
 }
 
 trait VirtualMethodAllocationFreenessAnalysisScheduler extends ComputationSpecification {
-    override def derives: Set[PropertyKind] = Set(VirtualMethodAllocationFreeness)
 
-    override def uses: Set[PropertyKind] = Set(AllocationFreeness)
+    final override def derives: Set[PropertyKind] = Set(VirtualMethodAllocationFreeness)
+
+    final override def uses: Set[PropertyKind] = Set(AllocationFreeness)
+
+    final override type InitializationData = Null
+
+    final def init(p: SomeProject, ps: PropertyStore): Null = null
 }
 
 object EagerVirtualMethodAllocationFreenessAnalysis
-    extends VirtualMethodAllocationFreenessAnalysisScheduler with FPCFEagerAnalysisScheduler {
+    extends VirtualMethodAllocationFreenessAnalysisScheduler
+    with FPCFEagerAnalysisScheduler {
 
-    def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
-        val analysis = new VirtualMethodAllocationFreenessAnalysis(project)
-        val vms = project.get(DeclaredMethodsKey)
-        propertyStore.scheduleEagerComputationsForEntities(vms.declaredMethods)(analysis.determineAllocationFreeness)
+    override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+        val analysis = new VirtualMethodAllocationFreenessAnalysis(p)
+        val dms = p.get(DeclaredMethodsKey).declaredMethods
+        ps.scheduleEagerComputationsForEntities(dms)(analysis.determineAllocationFreeness)
         analysis
     }
 }
 
 object LazyVirtualMethodAllocationFreenessAnalysis
-    extends VirtualMethodAllocationFreenessAnalysisScheduler with FPCFLazyAnalysisScheduler {
-    def startLazily(p: SomeProject, ps: PropertyStore): FPCFAnalysis = {
+    extends VirtualMethodAllocationFreenessAnalysisScheduler
+    with FPCFLazyAnalysisScheduler {
+
+    override def startLazily(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new VirtualMethodAllocationFreenessAnalysis(p)
         ps.registerLazyPropertyComputation(
             VirtualMethodAllocationFreeness.key,
