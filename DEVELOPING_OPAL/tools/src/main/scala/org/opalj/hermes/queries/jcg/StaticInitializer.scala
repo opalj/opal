@@ -31,6 +31,8 @@ package hermes
 package queries
 package jcg
 
+import org.opalj.ai.BaseAI
+import org.opalj.ai.domain.l0.BaseDomain
 import org.opalj.br.ObjectType
 import org.opalj.br.PCAndInstruction
 import org.opalj.br.analyses.Project
@@ -93,6 +95,17 @@ class StaticInitializer(implicit hermes: HermesConfig) extends DefaultFeatureQue
                     val si = classFile.staticInitializer.get
                     val putStatics = si.body.get.collectInstructionsWithPC{
                         case pci @ PCAndInstruction(_, PUTSTATIC(_,_,_)) => pci
+                    }
+
+                    putStatics.foreach { pcIns =>
+                        val pc = pcIns.pc
+                        val put = pcIns.value.instruction
+
+                        val ai = BaseAI
+                        val aiResult = ai.apply(si, BaseDomain(project, si))
+                        val operands = aiResult.operandsArray.apply(pc)
+
+
                     }
 
 
