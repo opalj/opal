@@ -32,11 +32,13 @@ package queries
 package jcg
 
 import org.opalj.ai.BaseAI
-import org.opalj.ai.domain.l0.BaseDomain
+import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
 import org.opalj.br.ObjectType
 import org.opalj.br.PCAndInstruction
 import org.opalj.br.analyses.Project
 import org.opalj.br.instructions.PUTSTATIC
+import org.opalj.br.instructions.LDC
+import org.opalj.br.instructions.LDC_W
 import org.opalj.da.ClassFile
 
 /**
@@ -47,6 +49,9 @@ import org.opalj.da.ClassFile
  * @author Michael Reif
  */
 class StaticInitializer(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
+
+    val Object = ObjectType.Object
+    val String = ObjectType.String
 
     override def featureIDs: Seq[String] = {
         Seq(
@@ -75,16 +80,15 @@ class StaticInitializer(implicit hermes: HermesConfig) extends DefaultFeatureQue
             classFileLocation = ClassFileLocation(source, classFile)
         } {
             val hasStaticField = classFile.fields.exists(_.isStatic)
-            val hasStaticMethod = classFile.methods.exists(m ⇒ m.isStatic && m.name != "<clinit>")
+            val hasStaticMethod = classFile.methods.exists(m ⇒ m.isStatic && !m.isStaticInitializer)
 
             if (classFile.isInterfaceDeclaration) { // index 0 - 3
 
                 if (hasStaticMethod) {
                     classLocations(1) += classFileLocation
                 }
-
-                val hasDefaultMethod = classFile.methods.exists { m ⇒
-                    m.isNotStatic && m.body.nonEmpty && m.isPublic
+                val hasDefaultMethod = classFile.instanceMethods.exists { m ⇒
+                    m.body.nonEmpty && m.isPublic
                 }
 
                 if (hasStaticField) {
@@ -93,21 +97,26 @@ class StaticInitializer(implicit hermes: HermesConfig) extends DefaultFeatureQue
                     }
 
                     val si = classFile.staticInitializer.get
-                    val putStatics = si.body.get.collectInstructionsWithPC {
+                    val putStaticPCs = si.body.get.collectInstructionsWithPC {
                         case pci @ PCAndInstruction(_, PUTSTATIC(_, _, _)) ⇒ pci
                     }
 
-                    putStatics.foreach { pcIns ⇒
-                        val pc = pcIns.pc
-                        //   val put = pcIns.value.instruction
+                    val domain = new DefaultDomainWithCFGAndDefUse(project, si)
+
+                    putStaticPCs.foreach { pci ⇒
+                        val pc = pci.pc
 
                         val ai = BaseAI
-                        val aiResult = ai.apply(si, BaseDomain(project, si))
-                        val operands = aiResult.operandsArray.apply(pc)
-                        println(operands.size)
+                        val aiResult = ai.apply(si, domain)
+                        val vo = aiResult.domain.operandOrigin(pc, 0).head
+                        val inst = aiResult.code.instructions(vo)
 
+                        if (inst.isInvocationInstruction) {
+                            classLocations(3) += classFileLocation
+                        } else if (inst.opcode != LDC.opcode && inst.opcode != LDC_W.opcode) {
+                            classLocations(0) += classFileLocation
+                        }
                     }
-
                 }
             } else { // index 4 - 7
                 val hasNonPrivateConstructor = classFile.constructors.exists { !_.isPrivate }
@@ -125,7 +134,7 @@ class StaticInitializer(implicit hermes: HermesConfig) extends DefaultFeatureQue
                 }
 
                 val superclassType = classFile.superclassType
-                if (superclassType.nonEmpty && superclassType.get != ObjectType.Object) {
+                if (superclassType.nonEmpty && superclassType.get != Object) {
                     classLocations(7) += classFileLocation
                 }
             }
