@@ -92,6 +92,7 @@ abstract class ClosedPackages extends (String ⇒ Boolean) {
  *       well-defined extension point and is not a ''simple application'' in the above sense.
  */
 class ClosedCodeBase(val project: SomeProject) extends ClosedPackages {
+    //TODO Rename this class (e.g. AllPackagesClosed) for a more intuitive name of what this is
 
     /** Always returns true. */
     override def isClosed(packageName: String): Boolean = true
