@@ -52,6 +52,7 @@ case class Schedule(
             batches.flatMap { batch ⇒
                 batch.toIterator.map[(ComputationSpecification, Any)] { cs ⇒ cs -> cs.init(ps) }
             }.toMap
+
         batches foreach { batch ⇒
             val computedProperties =
                 batch.foldLeft(Set.empty[PropertyKind])((c, n) ⇒ c ++ n.derives)
@@ -61,13 +62,15 @@ case class Schedule(
                     reduceOption((l, r) ⇒ l ++ r).
                     getOrElse(Set.empty)
             ps.setupPhase(computedProperties, openProperties)
-            for { cs ← batch } {
-                cs match {
-                    case cs: ComputationSpecification ⇒
-                        cs.schedule(ps, initInfo(cs).asInstanceOf[cs.InitializationData])
-                }
+            batch foreach { cs ⇒
+                cs.beforeSchedule(ps)
+                cs.schedule(ps, initInfo(cs).asInstanceOf[cs.InitializationData])
             }
             ps.waitOnPhaseCompletion()
+            batch foreach { cs ⇒
+                cs.afterPhaseCompletion(ps)
+            }
+
         }
     }
 

@@ -122,8 +122,11 @@ trait L0CompileTimeConstancyAnalysisScheduler extends ComputationSpecification {
     final override def uses: Set[PropertyKind] = Set(FieldMutability)
 
     final override type InitializationData = Null
-
     final def init(p: SomeProject, ps: PropertyStore): Null = null
+
+    def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
+
+    def afterPhaseCompletion(p: SomeProject, ps: PropertyStore): Unit = {}
 }
 
 object EagerL0CompileTimeConstancyAnalysis

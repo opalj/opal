@@ -165,8 +165,12 @@ sealed trait L1FieldMutabilityAnalysisScheduler extends ComputationSpecification
     final override def derives: Set[PropertyKind] = Set(FieldMutability)
 
     final override type InitializationData = Null
-
     final def init(p: SomeProject, ps: PropertyStore): Null = null
+
+    def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
+
+    def afterPhaseCompletion(p: SomeProject, ps: PropertyStore): Unit = {}
+
 }
 
 /**

@@ -418,8 +418,12 @@ abstract class ThrownExceptionsAnalysisScheduler extends ComputationSpecificatio
     final override def derives: Set[PropertyKind] = Set(ThrownExceptions)
 
     final override type InitializationData = Null
-
     final def init(p: SomeProject, ps: PropertyStore): Null = null
+
+    def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
+
+    def afterPhaseCompletion(p: SomeProject, ps: PropertyStore): Unit = {}
+
 }
 
 /**

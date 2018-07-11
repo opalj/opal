@@ -53,8 +53,11 @@ class PropertyComputationsSchedulerTest extends FunSpec with Matchers with Befor
     ) extends ComputationSpecification {
 
         override type InitializationData = Null
-
         override def init(ps: PropertyStore): Null = null
+
+        override def beforeSchedule(ps: PropertyStore): Unit = {}
+
+        override def afterPhaseCompletion(ps: PropertyStore): Unit = {}
 
         override def schedule(ps: PropertyStore, unused: Null): Unit = {}
 

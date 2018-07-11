@@ -59,7 +59,19 @@ private[fpcf] trait AbstractFPCFAnalysisScheduler extends ComputationSpecificati
         init(ps.context(classOf[SomeProject]), ps)
     }
 
+    final override def beforeSchedule(ps: PropertyStore): Unit = {
+        beforeSchedule(ps.context(classOf[SomeProject]), ps)
+    }
+
+    final override def afterPhaseCompletion(ps: PropertyStore): Unit = {
+        afterPhaseCompletion(ps.context(classOf[SomeProject]), ps)
+    }
+
     def init(p: SomeProject, ps: PropertyStore): InitializationData
+
+    def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit
+
+    def afterPhaseCompletion(p: SomeProject, ps: PropertyStore): Unit
 
 }
 

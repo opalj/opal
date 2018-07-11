@@ -123,13 +123,17 @@ class VirtualReturnValueFreshnessAnalysis private[analyses] (
 
 sealed trait VirtualReturnValueFreshnessAnalysisScheduler extends ComputationSpecification {
 
-    final type InitializationData = Null
-
     final override def derives: Set[PropertyKind] = Set(VirtualMethodReturnValueFreshness)
 
     final override def uses: Set[PropertyKind] = Set(ReturnValueFreshness)
 
+    final type InitializationData = Null
     final def init(p: SomeProject, ps: PropertyStore): Null = null
+
+    def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
+
+    def afterPhaseCompletion(p: SomeProject, ps: PropertyStore): Unit = {}
+
 }
 
 object EagerVirtualReturnValueFreshnessAnalysis

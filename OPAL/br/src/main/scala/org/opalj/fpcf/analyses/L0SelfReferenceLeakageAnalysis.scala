@@ -240,8 +240,11 @@ object L0SelfReferenceLeakageAnalysis extends FPCFEagerAnalysisScheduler {
     override def derives: Set[PropertyKind] = Set(SelfReferenceLeakage.Key)
 
     override type InitializationData = Null
-
     override def init(p: SomeProject, ps: PropertyStore): Null = null
+
+    override def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
+
+    override def afterPhaseCompletion(p: SomeProject, ps: PropertyStore): Unit = {}
 
     /**
      * Starts the analysis for the given `project`. This method is typically implicitly

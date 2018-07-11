@@ -38,7 +38,7 @@ import org.opalj.util.PerformanceEvaluation._
 import org.opalj.br.analyses.SomeProject
 
 /**
- * Manages the execution of a set of analyses.
+ * Enables the execution of a set of analyses.
  *
  * To get an instance use the respective `FPCFAnalysesManagerKey`.
  *
@@ -55,10 +55,17 @@ class FPCFAnalysesManager private[fpcf] (
     private[this] final def propertyStore: PropertyStore = project.get(PropertyStoreKey)
     private[this] final def trace: Boolean = config.getBoolean(FPCFAnalysesManager.TraceConfigKey)
 
-    // Accesses to this field have to be synchronized
+    // Accesses to the following fields have to be synchronized
     private[this] final val derivedProperties: Array[Boolean] = {
         new Array[Boolean](PropertyKind.SupportedPropertyKinds)
     }
+
+    private[this] var schedules: List[Schedule] = Nil
+
+    /**
+     * Returns the executed schedules. The head is the latest executed schedule.
+     */
+    def executedSchedules: List[Schedule] = schedules
 
     final def runAll(analyses: ComputationSpecification*): PropertyStore = runAll(analyses.toSet)
 
@@ -82,7 +89,7 @@ class FPCFAnalysesManager private[fpcf] (
         properties foreach { p ⇒ derivedProperties(p.id) = true }
 
         val schedule = scenario.computeSchedule
-        // TODO Add schedule to Manager to make it available.
+        schedules ::= schedule
 
         if (trace) { debug("analysis progress", "executing "+schedule) }
         time {

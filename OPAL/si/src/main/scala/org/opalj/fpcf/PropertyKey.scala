@@ -28,6 +28,8 @@
  */
 package org.opalj.fpcf
 
+import scala.language.existentials
+
 import java.util.concurrent.locks.ReentrantReadWriteLock
 
 import scala.collection.mutable.ArrayBuffer
@@ -71,7 +73,7 @@ object PropertyKey {
     }
 
     private[this] val cycleResolutionStrategies = {
-        ArrayBuffer.empty[CycleResolutionStrategy[Entity, Property]]
+        ArrayBuffer.empty[CycleResolutionStrategy[_ <: Entity, _ <: Property]]
     }
 
     private[this] var lastKeyId: Int = -1
@@ -142,6 +144,26 @@ object PropertyKey {
         )
     }
 
+    /**
+     * Updates the (default) cycle resolution strategy associated with a specific kind of
+     * property. Updating the strategy is typically done by analyses that require a different
+     * strategy than the one defined by the property. For example, an analysis, which just
+     * computes a lower bound, generally has to overwrite the default strategy which picks
+     * the upper bound in case of a closed strongly connected component.
+     *
+     * @return The old strategy.
+     */
+    def updateCycleResolutionStrategy[E <: Entity, P <: Property](
+        key:                     PropertyKey[P],
+        cycleResolutionStrategy: CycleResolutionStrategy[E, P]
+    ): CycleResolutionStrategy[E, P] = {
+        withWriteLock(keysLock) {
+            val oldStrategy = cycleResolutionStrategies(key.id)
+            cycleResolutionStrategies(key.id) = cycleResolutionStrategy
+            oldStrategy.asInstanceOf[CycleResolutionStrategy[E, P]]
+        }
+    }
+
     //
     // Query the core properties of each property kind
     // ===============================================
@@ -204,7 +226,7 @@ object PropertyKey {
      */
     def resolveCycle[E <: Entity, P <: Property](ps: PropertyStore, eps: EPS[E, P]): P = {
         withReadLock(keysLock) {
-            cycleResolutionStrategies(eps.pk.id)(ps, eps).asInstanceOf[P]
+            cycleResolutionStrategies(eps.pk.id).asInstanceOf[CycleResolutionStrategy[E, P]](ps, eps)
         }
     }
 

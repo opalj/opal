@@ -153,14 +153,16 @@ class VirtualMethodThrownExceptionsAnalysis private[analyses] (
 
 trait VirtualMethodThrownExceptionsAnalysisScheduler {
 
-    final type InitializationData = Null
-
     final def uses: Set[PropertyKind] = Set(ThrownExceptions)
 
     final def derives: Set[PropertyKind] = Set(ThrownExceptionsByOverridingMethods)
 
+    final type InitializationData = Null
     final def init(p: SomeProject, ps: PropertyStore): Null = null
 
+    def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
+
+    def afterPhaseCompletion(p: SomeProject, ps: PropertyStore): Unit = {}
 }
 
 /**
