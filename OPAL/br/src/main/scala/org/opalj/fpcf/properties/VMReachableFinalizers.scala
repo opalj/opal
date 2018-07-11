@@ -30,42 +30,33 @@ package org.opalj
 package fpcf
 package properties
 
-import org.opalj.br.DeclaredMethod
-import org.opalj.br.analyses.DeclaredMethods
+import org.opalj.br.analyses.SomeProject
 import org.opalj.collection.immutable.IntTrieSet
 
-trait VMReachableMethods extends Property with OrderedProperty {
-
-    protected val reachableMethods: IntTrieSet
-
-    override type Self <: VMReachableMethods
-
-    override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {
-        if (other.reachableMethods != null && !reachableMethods.subsetOf(other.reachableMethods)) {
-            throw new IllegalArgumentException(s"$e: illegal refinement of property $other to $this")
-        }
-    }
-
-    def vmReachableMethods(implicit declaredMethods: DeclaredMethods): Iterator[DeclaredMethod] = {
-        reachableMethods.iterator.map(declaredMethods.apply)
-    }
-
-    def isMethodReachable(
-        declaredMethod: DeclaredMethod
-    )(implicit declaredMethods: DeclaredMethods): Boolean = {
-        reachableMethods contains declaredMethods.methodID(declaredMethod)
-    }
+sealed trait VMReachableFinalizersMetaInformation extends PropertyMetaInformation {
+    final type Self = VMReachableFinalizers
 }
 
-trait VMReachableMethodsFallback extends VMReachableMethods {
-    override def vmReachableMethods(
-        implicit
-        declaredMethods: DeclaredMethods
-    ): Iterator[DeclaredMethod] = declaredMethods.declaredMethods
+/**
+ * TODO
+ * @author Florian Kuebler
+ */
+sealed class VMReachableFinalizers(override protected val reachableMethods: IntTrieSet)
+        extends VMReachableMethods with VMReachableFinalizersMetaInformation {
 
-    override def isMethodReachable(
-        declaredMethod: DeclaredMethod
-    )(implicit declaredMethods: DeclaredMethods): Boolean = true
+    override def key: PropertyKey[VMReachableFinalizers] = VMReachableFinalizers.key
+}
 
-    override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {}
+object VMReachableFinalizersFallback extends VMReachableFinalizers(reachableMethods = null)
+    with VMReachableMethodsFallback
+
+object VMReachableFinalizers extends VMReachableFinalizersMetaInformation {
+    final val key: PropertyKey[VMReachableFinalizers] = {
+        PropertyKey.create(
+            "VMReachableFinalizers",
+            (ps: PropertyStore, _: FallbackReason, p: SomeProject) ⇒ VMReachableFinalizersFallback,
+            (_: PropertyStore, eps: EPS[SomeProject, VMReachableFinalizers]) ⇒ eps.ub,
+            (_: PropertyStore, _: SomeProject) ⇒ None
+        )
+    }
 }

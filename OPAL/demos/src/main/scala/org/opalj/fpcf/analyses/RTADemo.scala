@@ -37,6 +37,7 @@ import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ReportableAnalysisResult
+import org.opalj.fpcf.analyses.cg.EagerFinalizerAnalysisScheduler
 import org.opalj.fpcf.analyses.cg.EagerLoadedClassesAnalysis
 import org.opalj.fpcf.analyses.cg.EagerRTACallGraphAnalysisScheduler
 import org.opalj.fpcf.par.PKEParallelTasksPropertyStore
@@ -84,7 +85,11 @@ object RTADemo extends DefaultOneStepAnalysis {
         // the analysis itself.
         time {
             val manager = project.get(FPCFAnalysesManagerKey)
-            manager.runAll(EagerRTACallGraphAnalysisScheduler, EagerLoadedClassesAnalysis)
+            manager.runAll(
+                EagerRTACallGraphAnalysisScheduler,
+                EagerLoadedClassesAnalysis,
+                EagerFinalizerAnalysisScheduler
+            )
         } { t ⇒ info("progress", s"constructing the call graph took ${t.toSeconds}") }
 
         ps.waitOnPhaseCompletion()
