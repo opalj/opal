@@ -573,6 +573,8 @@ sealed abstract class MethodCall[+V <: Var[V]] extends Stmt[V] with Call[V] {
 
 sealed abstract class InstanceMethodCall[+V <: Var[V]] extends MethodCall[V] {
 
+    final override def allParams: Seq[Expr[V]] = receiver +: params
+
     def receiver: Expr[V]
     final override def asInstanceMethodCall: this.type = this
     final override def forallSubExpressions[W >: V <: Var[W]](p: Expr[W] ⇒ Boolean): Boolean = {
