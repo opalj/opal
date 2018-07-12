@@ -736,6 +736,8 @@ case class StaticFunctionCall[+V <: Var[V]](
         params:         Seq[Expr[V]]
 ) extends FunctionCall[V] {
 
+    final override def allParams: Seq[Expr[V]] = params
+
     final override def asStaticFunctionCall: this.type = this
     final override def astID: Int = StaticFunctionCall.ASTID
     final override def isSideEffectFree: Boolean = false
