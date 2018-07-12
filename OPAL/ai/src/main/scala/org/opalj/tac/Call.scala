@@ -33,7 +33,7 @@ trait Call[+V <: Var[V]] {
     /**
      * The parameters of the method call (including the implicit `this` reference if necessary.)
      */
-    def allParams: Seq[Expr[V]] = params
+    def allParams: Seq[Expr[V]]
 
     /**
      * Convenience method which abstracts over all kinds of calls; not all information is

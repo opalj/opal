@@ -683,6 +683,8 @@ case class StaticMethodCall[+V <: Var[V]](
         params:         Seq[Expr[V]]
 ) extends MethodCall[V] {
 
+    final override def allParams: Seq[Expr[V]] = params
+
     final override def asStaticMethodCall: this.type = this
     final override def astID: Int = StaticMethodCall.ASTID
     final override def forallSubExpressions[W >: V <: Var[W]](p: Expr[W] ⇒ Boolean): Boolean = {
