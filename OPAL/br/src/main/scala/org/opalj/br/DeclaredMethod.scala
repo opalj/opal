@@ -82,6 +82,7 @@ final case class VirtualDeclaredMethod(
         name:               String,
         descriptor:         MethodDescriptor
 ) extends DeclaredMethod {
+    // TODO Consider caching hashCode && overriding equals
 
     override def hasSingleDefinedMethod: Boolean = false
     override def definedMethod: Method = throw new UnsupportedOperationException();
@@ -108,6 +109,7 @@ final case class DefinedMethod(
         declaringClassType: ReferenceType,
         definedMethod:      Method
 ) extends DeclaredMethod {
+    // TODO Consider caching hashCode && overriding equals
 
     override def name: String = definedMethod.name
     override def descriptor: MethodDescriptor = definedMethod.descriptor
@@ -130,6 +132,7 @@ final case class MultipleDefinedMethods(
         declaringClassType: ReferenceType,
         definedMethods:     ConstArray[Method]
 ) extends DeclaredMethod {
+    // TODO Consider caching hashCode && overriding equals
 
     override def name: String = definedMethods.head.name
     override def descriptor: MethodDescriptor = definedMethods.head.descriptor
