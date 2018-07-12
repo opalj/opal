@@ -1,31 +1,4 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package fpcf
 package seq
@@ -34,7 +7,6 @@ import java.lang.System.identityHashCode
 import java.util.ArrayDeque
 import java.util.IdentityHashMap
 
-import scala.reflect.runtime.universe.Type
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable
@@ -59,7 +31,7 @@ import org.opalj.fpcf.PropertyKey.fastTrackPropertyBasedOnPkId
  * @author Michael Eichberg
  */
 final class PKESequentialPropertyStore private (
-        val ctx: Map[Type, AnyRef]
+        val ctx: Map[Class[_], AnyRef]
 )(
         implicit
         val logContext: LogContext
@@ -138,6 +110,10 @@ final class PKESequentialPropertyStore private (
     // Those computations that will only be scheduled if the result is required
     private[this] var lazyComputations: Array[SomePropertyComputation] = {
         new Array(PropertyKind.SupportedPropertyKinds)
+    }
+
+    private[this] var triggeredComputations: Array[ArrayBuffer[SomePropertyComputation]] = {
+        Array.fill(PropertyKind.SupportedPropertyKinds) { new ArrayBuffer[SomePropertyComputation](1) }
     }
 
     // The list of scheduled computations
@@ -319,10 +295,30 @@ final class PKESequentialPropertyStore private (
     ): Unit = {
         if (debug && !tasks.isEmpty) {
             throw new IllegalStateException(
-                "lazy computations should only be registered while no analysis are scheduled"
+                "lazy computations should only be registered while no analysis is scheduled"
             )
         }
-        lazyComputations(pk.id) = pc.asInstanceOf[SomePropertyComputation]
+        lazyComputations(pk.id) = pc
+    }
+
+    override def registerTriggeredComputation[E <: Entity, P <: Property](
+        pk: PropertyKey[P],
+        pc: PropertyComputation[E]
+    ): Unit = {
+        if (debug && !tasks.isEmpty) {
+            throw new IllegalStateException(
+                "triggered computations should only be registered as long as no analysis is scheduled"
+            )
+        }
+        triggeredComputations(pk.id) += pc
+    }
+
+    private[this] def triggerComputations(e: Entity, pkId: Int): Unit = {
+        val triggeredComputations = this.triggeredComputations(pkId)
+        if (triggeredComputations != null) {
+            triggeredComputations foreach (pc ⇒
+                scheduleEagerComputationForEntity(e)(pc.asInstanceOf[PropertyComputation[Entity]]))
+        }
     }
 
     private[this] def scheduleLazyComputationForEntity[E <: Entity](
@@ -365,6 +361,7 @@ final class PKESequentialPropertyStore private (
             case null ⇒
                 // The entity is unknown (=> there are no dependers/dependees):
                 ps(pkId).put(e, PropertyValue(lb, ub, newDependees))
+                triggerComputations(e, pkId)
                 // registration with the new dependees is done when processing IntermediateResult
                 true
 
@@ -407,6 +404,10 @@ final class PKESequentialPropertyStore private (
                 pValue.ub = ub
                 // Updating lb and/or ub MAY CHANGE the PropertyValue's isFinal property!
                 val newPValueIsFinal = pValue.isFinal
+
+                if (oldLB == null || oldLB == PropertyIsLazilyComputed) {
+                    triggerComputations(e, pkId)
+                }
 
                 // 2. Clear old dependees (remove onUpdateContinuation from dependees)
                 //    and then update dependees.
@@ -510,7 +511,7 @@ final class PKESequentialPropertyStore private (
             // compute a/some property/properties for a given entity.
 
             case IncrementalResult.id ⇒
-                val IncrementalResult(ir, npcs /*: Traversable[(PropertyComputation[e],e)]*/ , _) = r
+                val IncrementalResult(ir, npcs /*: Iterator[(PropertyComputation[e],e)]*/ , _) = r
                 handleResult(ir)
                 npcs foreach { npc ⇒ val (pc, e) = npc; scheduleEagerComputationForEntity(e)(pc) }
 
@@ -741,7 +742,7 @@ final class PKESequentialPropertyStore private (
                 var pkId = 0
                 while (pkId < maxPKIndex) {
                     if (!delayedPropertyKinds(pkId)) {
-                        ps(pkId).forEach { (e, pValue) ⇒
+                        ps(pkId) forEach { (e, pValue) ⇒
                             // Check that we have no running computations and that the
                             // property will not be computed later on.
                             if (pValue.ub == null) {
@@ -831,7 +832,7 @@ final class PKESequentialPropertyStore private (
                     var toBeFinalized: List[(AnyRef, Property)] = Nil
                     while (pkId < maxPKIndex) {
                         if (!delayedPropertyKinds(pkId)) {
-                            ps(pkId).forEach { (e, pValue) ⇒
+                            ps(pkId) forEach { (e, pValue) ⇒
                                 // Check that we have no running computations and that the
                                 // property will not be computed later on.
                                 if (!pValue.isFinal && pValue.lb != pValue.ub && pValue.dependees.isEmpty) {
@@ -887,7 +888,7 @@ object PKESequentialPropertyStore extends PropertyStoreFactory {
         implicit
         logContext: LogContext
     ): PKESequentialPropertyStore = {
-        val contextMap: Map[Type, AnyRef] = context.map(_.asTuple).toMap
+        val contextMap: Map[Class[_], AnyRef] = context.map(_.asTuple).toMap
         new PKESequentialPropertyStore(contextMap)
     }
 }

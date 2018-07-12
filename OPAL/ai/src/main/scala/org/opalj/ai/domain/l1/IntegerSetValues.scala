@@ -1,31 +1,4 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package ai
 package domain
@@ -98,6 +71,9 @@ trait IntegerSetValues
      */
     abstract class AnIntegerValue extends IntegerLikeValue {
         this: DomainTypedValue[CTIntType] ⇒
+
+        final override def lowerBound: Int = Int.MinValue
+        final override def upperBound: Int = Int.MaxValue
     }
 
     /**
@@ -108,6 +84,8 @@ trait IntegerSetValues
 
         val values: SortedSet[Int]
 
+        final override def lowerBound: Int = values.firstKey
+        final override def upperBound: Int = values.lastKey
     }
 
     /**
@@ -126,8 +104,6 @@ trait IntegerSetValues
     val DomainBaseTypesBasedSet: ClassTag[DomainBaseTypesBasedSet]
 
     trait BaseTypesBasedSet extends IntegerLikeValue { this: DomainTypedValue[CTIntType] ⇒
-        def lb: Int
-        def ub: Int
 
         def fuse(pc: PC, other: BaseTypesBasedSet): domain.DomainValue
 
@@ -138,8 +114,8 @@ trait IntegerSetValues
 
     abstract class U7BitSet extends BaseTypesBasedSet { this: DomainTypedValue[CTIntType] ⇒
 
-        final def lb = 0
-        final def ub = Byte.MaxValue
+        final override def lowerBound = 0
+        final override def upperBound = Byte.MaxValue
 
         def fuse(pc: PC, other: BaseTypesBasedSet): domain.DomainValue = {
             assert(this ne other)
@@ -158,8 +134,8 @@ trait IntegerSetValues
 
     abstract class U15BitSet extends BaseTypesBasedSet { this: DomainTypedValue[CTIntType] ⇒
 
-        final def lb = 0
-        final def ub = Short.MaxValue
+        final override def lowerBound = 0
+        final override def upperBound = Short.MaxValue
 
         def fuse(pc: PC, other: BaseTypesBasedSet): domain.DomainValue = {
             assert(this ne other)
@@ -175,8 +151,8 @@ trait IntegerSetValues
 
     abstract class CharSet extends BaseTypesBasedSet { this: DomainTypedValue[CTIntType] ⇒
 
-        final def lb = 0 // Char.MinValue
-        final def ub = Char.MaxValue
+        final override def lowerBound = 0 // Char.MinValue
+        final override def upperBound = Char.MaxValue
 
         def fuse(pc: PC, other: BaseTypesBasedSet): domain.DomainValue = {
             assert(this ne other)
@@ -188,8 +164,8 @@ trait IntegerSetValues
     }
 
     abstract class ByteSet extends BaseTypesBasedSet { this: DomainTypedValue[CTIntType] ⇒
-        final def lb = Byte.MinValue
-        final def ub = Byte.MaxValue
+        final override def lowerBound = Byte.MinValue
+        final override def upperBound = Byte.MaxValue
         def fuse(pc: PC, other: BaseTypesBasedSet): domain.DomainValue = {
             assert(this ne other)
             other match {
@@ -203,8 +179,8 @@ trait IntegerSetValues
     }
 
     abstract class ShortSet extends BaseTypesBasedSet { this: DomainTypedValue[CTIntType] ⇒
-        final def lb = Short.MinValue
-        final def ub = Short.MaxValue
+        final override def lowerBound = Short.MinValue
+        final override def upperBound = Short.MaxValue
         def fuse(pc: PC, other: BaseTypesBasedSet): domain.DomainValue = {
             assert(this ne other)
             other match {
@@ -218,16 +194,16 @@ trait IntegerSetValues
     }
 
     protected[this] def approximateSet(
-        origin: ValueOrigin,
-        lb:     Int, ub: Int
+        origin:     ValueOrigin,
+        lowerBound: Int, upperBound: Int
     ): DomainTypedValue[CTIntType] = {
-        if (lb >= 0) {
-            if (ub <= Byte.MaxValue) U7BitSet()
-            else if (ub <= Short.MaxValue) U15BitSet()
-            else if (ub <= Char.MaxValue) CharValue(origin)
+        if (lowerBound >= 0) {
+            if (upperBound <= Byte.MaxValue) U7BitSet()
+            else if (upperBound <= Short.MaxValue) U15BitSet()
+            else if (upperBound <= Char.MaxValue) CharValue(origin)
             else IntegerValue(origin = origin)
-        } else if (lb >= Byte.MinValue && ub <= Byte.MaxValue) ByteValue(origin)
-        else if (lb >= Short.MinValue && ub <= Short.MaxValue) ShortValue(origin)
+        } else if (lowerBound >= Byte.MinValue && upperBound <= Byte.MaxValue) ByteValue(origin)
+        else if (lowerBound >= Short.MinValue && upperBound <= Short.MaxValue) ShortValue(origin)
         else IntegerValue(origin = origin)
     }
 
@@ -348,7 +324,7 @@ trait IntegerSetValues
                 )
 
             case DomainBaseTypesBasedSet(value) ⇒
-                Answer(lowerBound <= value.ub && upperBound >= value.lb)
+                Answer(lowerBound <= value.upperBound && upperBound >= value.lowerBound)
 
             case _ ⇒ Unknown
         }
@@ -368,7 +344,7 @@ trait IntegerSetValues
                 Answer(values.firstKey < lowerBound || values.lastKey > upperBound)
 
             case DomainBaseTypesBasedSet(value) ⇒
-                Answer(value.lb < lowerBound || value.ub > upperBound)
+                Answer(value.lowerBound < lowerBound || value.upperBound > upperBound)
 
             case _ ⇒ Unknown
         }
@@ -398,9 +374,9 @@ trait IntegerSetValues
                         else
                             Unknown
                     case DomainBaseTypesBasedSet(left) ⇒
-                        if (left.ub < rightValues.firstKey)
+                        if (left.upperBound < rightValues.firstKey)
                             Yes
-                        else if (rightValues.lastKey <= left.lb)
+                        else if (rightValues.lastKey <= left.lowerBound)
                             No
 
                         else
@@ -413,9 +389,9 @@ trait IntegerSetValues
             case DomainBaseTypesBasedSet(right) ⇒
                 left match {
                     case IntegerSet(leftValues) ⇒
-                        if (leftValues.lastKey < right.lb)
+                        if (leftValues.lastKey < right.lowerBound)
                             Yes
-                        else if (leftValues.firstKey >= right.ub)
+                        else if (leftValues.firstKey >= right.upperBound)
                             No
                         else
                             Unknown
@@ -451,9 +427,9 @@ trait IntegerSetValues
                             Unknown
 
                     case DomainBaseTypesBasedSet(left) ⇒
-                        if (left.ub <= rightValues.firstKey)
+                        if (left.upperBound <= rightValues.firstKey)
                             Yes
-                        else if (left.lb > rightValues.lastKey)
+                        else if (left.lowerBound > rightValues.lastKey)
                             No
                         else
                             Unknown
@@ -464,9 +440,9 @@ trait IntegerSetValues
             case DomainBaseTypesBasedSet(right) ⇒
                 left match {
                     case IntegerSet(leftValues) ⇒
-                        if (leftValues.lastKey <= right.lb)
+                        if (leftValues.lastKey <= right.lowerBound)
                             Yes
-                        else if (leftValues.firstKey > right.ub)
+                        else if (leftValues.firstKey > right.upperBound)
                             No
                         else
                             Unknown
@@ -622,15 +598,16 @@ trait IntegerSetValues
                 }
 
             case (IntegerSet(ls), DomainBaseTypesBasedSet(right)) ⇒
-                val newLs = ls.filter(_ < right.ub)
+                val newLs = ls.filter(_ < right.upperBound)
                 updateMemoryLayout(left, IntegerSet(pc, newLs), operands, locals)
 
             case (DomainBaseTypesBasedSet(left), IntegerSet(rs)) ⇒
-                val newIntValue = approximateSet(pc, left.lb, rs.lastKey - 1)
+                val newIntValue = approximateSet(pc, left.lowerBound, rs.lastKey - 1)
                 updateMemoryLayout(left, newIntValue, operands, locals)
 
             case (DomainBaseTypesBasedSet(left), DomainBaseTypesBasedSet(right)) ⇒
-                updateMemoryLayout(left, approximateSet(pc, left.lb, right.ub), operands, locals)
+                val newIntValue = approximateSet(pc, left.lowerBound, right.upperBound)
+                updateMemoryLayout(left, newIntValue, operands, locals)
 
             case (_, DomainBaseTypesBasedSet(right)) ⇒
                 updateMemoryLayout(left, right.newInstance, operands, locals)
@@ -679,15 +656,15 @@ trait IntegerSetValues
                     newMemoryLayout
 
                 case (IntegerSet(ls), DomainBaseTypesBasedSet(right)) ⇒
-                    val newLs = ls.filter(_ <= right.ub)
+                    val newLs = ls.filter(_ <= right.upperBound)
                     updateMemoryLayout(left, IntegerSet(pc, newLs), operands, locals)
 
                 case (DomainBaseTypesBasedSet(left), IntegerSet(rs)) ⇒
-                    val newDomainValue = approximateSet(pc, left.lb, rs.lastKey)
+                    val newDomainValue = approximateSet(pc, left.lowerBound, rs.lastKey)
                     updateMemoryLayout(left, newDomainValue, operands, locals)
 
                 case (DomainBaseTypesBasedSet(left), DomainBaseTypesBasedSet(right)) ⇒
-                    val newIntValue = approximateSet(pc, left.lb, right.ub)
+                    val newIntValue = approximateSet(pc, left.lowerBound, right.upperBound)
                     updateMemoryLayout(left, newIntValue, operands, locals)
 
                 case (_, DomainBaseTypesBasedSet(right)) ⇒

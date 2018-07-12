@@ -46,10 +46,11 @@ class SubSub extends Sub {
 }
 
 @DeclaredMethod(name = "<init>", descriptor = "()V", declaringClass = ImplementsInterfaces.class)
-@DeclaredMethod(name = "interfaceMethod", descriptor = "()V", declaringClass = AnInterface.class)
+@DeclaredMethod(name = "interfaceMethod", descriptor = "()V",
+        declaringClass = { AnInterface.class, AnotherInterface.class })
 @DeclaredMethod(name = "interfaceMethod2", descriptor = "()V", declaringClass = AnInterface.class)
 abstract class ImplementsInterfaces implements AnInterface, AnotherInterface {
-    // Implements two interfaces with "interfaceMethod", only one of them may be used!
+    // Implements two interfaces with "interfaceMethod", both of which are maximally specific!
 
 }
 

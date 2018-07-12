@@ -1,31 +1,4 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package ai
 package domain
@@ -88,8 +61,8 @@ trait DefaultIntegerSetValues extends DefaultDomainValueBinding with IntegerSetV
                     // absolute maximum cardinality is 254 (ByteSet.cardinality-1)
                     val thisLB = this.values.firstKey
                     val thisUB = this.values.lastKey
-                    val newLB = min(thisLB, that.lb)
-                    val newUB = max(thisUB, that.ub)
+                    val newLB = min(thisLB, that.lowerBound)
+                    val newUB = max(thisUB, that.upperBound)
                     StructuralUpdate(approximateSet(pc, newLB, newUB))
 
                 case IntegerSet(thatValues) ⇒
@@ -165,18 +138,18 @@ trait DefaultIntegerSetValues extends DefaultDomainValueBinding with IntegerSetV
                 case _: AnIntegerValue ⇒ StructuralUpdate(AnIntegerValue())
 
                 case that: BaseTypesBasedSet ⇒
-                    val thisLB = this.lb
-                    val thisUB = this.ub
-                    val newLB = min(thisLB, that.lb)
-                    val newUB = max(thisUB, that.ub)
+                    val thisLB = this.lowerBound
+                    val thisUB = this.upperBound
+                    val newLB = min(thisLB, that.lowerBound)
+                    val newUB = max(thisUB, that.upperBound)
                     if (thisLB == newLB && thisUB == newUB)
                         MetaInformationUpdate(newInstance)
                     else
                         StructuralUpdate(approximateSet(pc, newLB, newUB))
 
                 case IntegerSet(thatValues) ⇒
-                    val thisLB = this.lb
-                    val thisUB = this.ub
+                    val thisLB = this.lowerBound
+                    val thisUB = this.upperBound
                     val thatLB = thatValues.firstKey
                     val thatUB = thatValues.lastKey
                     if (thisLB <= thatLB && thisUB >= thatUB)
@@ -194,9 +167,9 @@ trait DefaultIntegerSetValues extends DefaultDomainValueBinding with IntegerSetV
             (this eq other) || (
                 other match {
                     case other: BaseTypesBasedSet ⇒
-                        lb <= other.lb && ub >= other.ub
+                        lowerBound <= other.lowerBound && upperBound >= other.upperBound
                     case that: IntegerSet ⇒
-                        lb <= that.values.firstKey && ub >= that.values.lastKey
+                        lowerBound <= that.values.firstKey && upperBound >= that.values.lastKey
 
                     case _ ⇒ false
                 }
@@ -205,16 +178,18 @@ trait DefaultIntegerSetValues extends DefaultDomainValueBinding with IntegerSetV
 
         override def summarize(pc: Int): DomainValue = this
 
-        override def hashCode = ub
+        override def hashCode = upperBound
 
         override def equals(other: Any): Boolean = {
             other match {
-                case that: BaseTypesBasedSet ⇒ this.lb == that.lb && this.ub == that.ub
-                case _                       ⇒ false
+                case that: BaseTypesBasedSet ⇒
+                    this.lowerBound == that.lowerBound && this.upperBound == that.upperBound
+                case _ ⇒
+                    false
             }
         }
 
-        override def toString: String = s"$name=[$lb,$ub]"
+        override def toString: String = s"$name=[$lowerBound,$upperBound]"
     }
 
     type DomainBaseTypesBasedSet = BaseTypesBasedSet
@@ -228,7 +203,7 @@ trait DefaultIntegerSetValues extends DefaultDomainValueBinding with IntegerSetV
         override def adapt(target: TargetDomain, pc: Int): target.DomainValue = {
             val result = target match {
                 case isv: IntegerSetValues   ⇒ isv.U7BitSet()
-                case irv: IntegerRangeValues ⇒ irv.IntegerRange(lb, ub)
+                case irv: IntegerRangeValues ⇒ irv.IntegerRange(lowerBound, upperBound)
                 case _                       ⇒ target.ByteValue(pc)
             }
             result.asInstanceOf[target.DomainValue]
@@ -243,7 +218,7 @@ trait DefaultIntegerSetValues extends DefaultDomainValueBinding with IntegerSetV
         override def adapt(target: TargetDomain, pc: Int): target.DomainValue = {
             val result = target match {
                 case isv: IntegerSetValues   ⇒ isv.U15BitSet()
-                case irv: IntegerRangeValues ⇒ irv.IntegerRange(lb, ub)
+                case irv: IntegerRangeValues ⇒ irv.IntegerRange(lowerBound, upperBound)
                 case _                       ⇒ target.ByteValue(pc)
             }
             result.asInstanceOf[target.DomainValue]
@@ -268,7 +243,7 @@ trait DefaultIntegerSetValues extends DefaultDomainValueBinding with IntegerSetV
     }
 
     class CharSet extends super.CharSet with BaseTypesBasedSet {
-        def name = "CharCalue"
+        def name = "CharValue"
         def newInstance = new CharSet
         override def adapt(target: TargetDomain, pc: Int): target.DomainValue = {
             target.CharValue(pc)

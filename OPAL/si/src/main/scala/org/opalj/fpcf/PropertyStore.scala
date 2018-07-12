@@ -1,38 +1,8 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package fpcf
 
 import scala.util.control.ControlThrowable
-import scala.reflect.runtime.universe.TypeTag
-import scala.reflect.runtime.universe.Type
-import scala.reflect.runtime.universe.typeOf
 import scala.collection.{Map ⇒ SomeMap}
 
 import org.opalj.log.GlobalLogContext
@@ -143,15 +113,14 @@ abstract class PropertyStore {
     //
 
     /** Immutable map which stores the context objects given at initialization time. */
-    val ctx: Map[Type, AnyRef]
+    val ctx: Map[Class[_], AnyRef]
 
     /**
      * Looks up the context object of the given type. This is a comparatively expensive operation;
      * the result should be cached.
      */
-    final def context[T: TypeTag]: T = {
-        val t = typeOf[T]
-        ctx.getOrElse(t, { throw ContextNotAvailableException(t, ctx) }).asInstanceOf[T]
+    final def context[T](key: Class[T]): T = {
+        ctx.getOrElse(key, { throw ContextNotAvailableException(key, ctx) }).asInstanceOf[T]
     }
 
     //
@@ -446,6 +415,38 @@ abstract class PropertyStore {
      * any eager analysis that potentially reads the value.
      */
     def registerLazyPropertyComputation[E <: Entity, P <: Property](
+        pk: PropertyKey[P],
+        pc: PropertyComputation[E]
+    ): Unit
+
+    /**
+     * Registers a property computation that is eagerly triggered when a property of the given kind
+     * is derived for some entity for the first time. Note, that the property computation
+     * function – as usual – has to be thread safe. The primary use case is to kick-start the
+     * computation of some e/pk as soon as an entity "becomes relevant".
+     *
+     * In general, it also possible to have a standard analysis that just queries the properties
+     * of the respective entities and which maintains the list of dependees. However, if the
+     * list of dependees becomes larger and (at least initially) encompasses a significant fraction
+     * or even all entities of a specific kind, the overhead that is generated in the framework
+     * becomes very huge. In this case, it is way more efficient to register a triggered
+     * computation.
+     *
+     * For example, if you want to do some processing (kick-start further computations) related
+     * to methods that are reached, it is more efficient to register a property computation
+     * that is triggered when a method's `Caller` property is set. Please note, that the property
+     * computation is allowed to query and depend on the property that initially kicked-off the
+     * computation in the first place. '''Querying the property store may in particular be required
+     * to identify the reason why the property was set'''. For example, if the `Caller` property
+     * was set to the fallback due to a depending computation, it may be necessary to distinguish
+     * between the case "no callers" and "unknown callers"; in case of the final property
+     * "no callers" the result may very well be [[NoResult]].
+     *
+     * @param pk The property key.
+     * @param pc The computation that is (potentially concurrently) called to kick-start a
+     *           computation related to the given entity.
+     */
+    def registerTriggeredComputation[E <: Entity, P <: Property](
         pk: PropertyKey[P],
         pc: PropertyComputation[E]
     ): Unit

@@ -1,31 +1,4 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package bi
 package reader
@@ -37,6 +10,7 @@ import java.io.ByteArrayInputStream
 import java.io.DataInputStream
 import java.io.BufferedInputStream
 import java.io.IOException
+import java.io.EOFException
 import java.nio.file.FileSystems
 import java.nio.file.Path
 import java.nio.file.Files
@@ -45,6 +19,8 @@ import java.net.URL
 import java.net.URI
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.jar.JarInputStream
+import java.util.jar.JarEntry
 
 import scala.util.control.ControlThrowable
 import scala.collection.JavaConverters._
@@ -406,6 +382,40 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
 
         ClassFiles(jarFile, addClassFile, exceptionHandler)
         classFiles
+    }
+
+    /**
+     * Reads the class files from the given JarInputStream
+     */
+    // The following solution is inspired by Ben Hermann's solution found at:
+    // https://github.com/delphi-hub/delphi-crawler/blob/feature/streamworkaround/src/main/scala/de/upb/cs/swt/delphi/crawler/tools/JarStreamReader.scala
+    def ClassFiles(in: ⇒ JarInputStream): List[(ClassFile, String)] = process(in) { in ⇒
+        var je: JarEntry = in.getNextJarEntry()
+
+        var futures: List[Future[List[(ClassFile, String)]]] = Nil
+
+        while (je != null) {
+            val entryName = je.getName
+            if (je.getSize.toInt > 0) {
+                val entryBytes = new Array[Byte](je.getSize.toInt)
+
+                var remaining = entryBytes.length
+                var offset = 0
+                while (remaining > 0) {
+                    val readBytes = in.read(entryBytes, offset, remaining)
+                    if (readBytes < 0) throw new EOFException()
+                    remaining -= readBytes
+                    offset += readBytes
+                }
+                futures ::= Future[List[(ClassFile, String)]] {
+                    val cfs = ClassFile(new DataInputStream(new ByteArrayInputStream(entryBytes)))
+                    cfs map { cf ⇒ (cf, entryName) }
+                }(org.opalj.concurrent.OPALExecutionContext)
+            }
+            je = in.getNextJarEntry()
+        }
+
+        futures.flatMap(f ⇒ Await.result(f, Duration.Inf))
     }
 
     /**

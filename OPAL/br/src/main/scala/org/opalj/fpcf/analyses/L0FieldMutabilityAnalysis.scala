@@ -1,31 +1,4 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package fpcf
 package analyses
@@ -121,9 +94,17 @@ class L0FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
 }
 
 trait L0FieldMutabilityAnalysisScheduler extends ComputationSpecification {
-    def uses: Set[PropertyKind] = Set.empty
 
-    def derives: Set[PropertyKind] = Set(FieldMutability)
+    final override def uses: Set[PropertyKind] = Set.empty
+
+    final override def derives: Set[PropertyKind] = Set(FieldMutability)
+
+    final override type InitializationData = Null
+    final def init(p: SomeProject, ps: PropertyStore): Null = null
+
+    def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
+
+    def afterPhaseCompletion(p: SomeProject, ps: PropertyStore): Unit = {}
 }
 
 /**
@@ -133,19 +114,19 @@ object EagerL0FieldMutabilityAnalysis
     extends L0FieldMutabilityAnalysisScheduler
     with FPCFEagerAnalysisScheduler {
 
-    def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
-        val analysis = new L0FieldMutabilityAnalysis(project)
+    override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+        val analysis = new L0FieldMutabilityAnalysis(p)
         val classFileCandidates =
-            if (project.libraryClassFilesAreInterfacesOnly)
-                project.allProjectClassFiles
+            if (p.libraryClassFilesAreInterfacesOnly)
+                p.allProjectClassFiles
             else
-                project.allClassFiles
+                p.allClassFiles
 
         val fields = {
             classFileCandidates.filter(cf ⇒ cf.methods.forall(m ⇒ !m.isNative)).flatMap(_.fields)
         }
 
-        propertyStore.scheduleEagerComputationsForEntities(fields)(analysis.determineFieldMutability)
+        ps.scheduleEagerComputationsForEntities(fields)(analysis.determineFieldMutability)
         analysis
     }
 }
@@ -154,9 +135,9 @@ object LazyL0FieldMutabilityAnalysis
     extends L0FieldMutabilityAnalysisScheduler
     with FPCFLazyAnalysisScheduler {
 
-    def startLazily(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
-        val analysis = new L0FieldMutabilityAnalysis(project)
-        propertyStore.registerLazyPropertyComputation(
+    override def startLazily(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+        val analysis = new L0FieldMutabilityAnalysis(p)
+        ps.registerLazyPropertyComputation(
             FieldMutability.key,
             (field: Field) ⇒ analysis.determineFieldMutabilityLazy(field)
         )
