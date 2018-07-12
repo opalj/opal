@@ -36,6 +36,7 @@ import java.io.FileOutputStream
 import java.io.OutputStreamWriter
 import java.util.zip.DeflaterOutputStream
 import java.util.zip.InflaterInputStream
+import java.util.zip.GZIPInputStream
 
 import scala.reflect.runtime.universe.runtimeMirror
 import scala.io.Source
@@ -101,21 +102,22 @@ class FPCFAnalysesIntegrationTest extends FunSpec {
                             if (ep.isRefinable)
                                 fail(s"intermediate results left over $ep")
                             isRecordedProperty(property.key, ep)
-                        }.map(ep => s"${ep.e} => ${ep.ub}").toSeq.sorted
+                        }.map(ep ⇒ s"${ep.e} => ${ep.ub}").toSeq.sorted
                     }.toSeq
 
                     val actualIt = actual.iterator
 
-                    val fileName = s"$name-$projectName.ait"
+                    val fileName = s"$name-$projectName"
 
-                    val expectedStream = this.getClass.getResourceAsStream(fileName)
+                    val expectedStream = this.getClass.getResourceAsStream(s"$fileName.gz")
                     if (expectedStream eq null)
                         fail(
                             s"missing expected results: $name; "+
-                                s"current results written to:\n${writeResults(fileName, actual)}"
+                                s"current results written to:\n"+
+                                io.writeGZip(actual, fileName, ".gz")
                         )
                     val expectedIt =
-                        Source.fromInputStream(new InflaterInputStream(expectedStream)).getLines
+                        Source.fromInputStream(new GZIPInputStream(expectedStream)).getLines
 
                     while (actualIt.hasNext && expectedIt.hasNext) {
                         val actualLine = actualIt.next()
@@ -123,18 +125,21 @@ class FPCFAnalysesIntegrationTest extends FunSpec {
                         if (actualLine != expectedLine)
                             fail(
                                 s"comparison failed:\n$actualLine\n\t\tvs.\n$expectedLine\n"+
-                                    "current results written to :\n"+writeResults(fileName, actual)
+                                    "current results written to :\n"+
+                                    io.writeGZip(actual, fileName, ".gz")
                             )
                     }
                     if (actualIt.hasNext)
                         fail(
                             "actual is longer than expected - first line: "+actualIt.next()+
-                                "\n current results written to :\n"+writeResults(fileName, actual)
+                                "\n current results written to :\n"+
+                                io.writeGZip(actual, fileName, ".gz")
                         )
                     if (expectedIt.hasNext)
                         fail(
                             "expected is longer than actual - first line: "+expectedIt.next()+
-                                "\n current results written to :\n"+writeResults(fileName, actual)
+                                "\n current results written to :\n"+
+                                io.writeGZip(actual, fileName, ".gz")
                         )
                 }
             }
@@ -194,19 +199,6 @@ class FPCFAnalysesIntegrationTest extends FunSpec {
         if (curConfig != null) configurations :+= curConfig
 
         configurations
-    }
-
-    def writeResults(fileName: String, actual: Seq[String]): String = {
-        val file = new File(fileName)
-        val out = new PrintWriter(
-            new OutputStreamWriter(new DeflaterOutputStream(new FileOutputStream(file)))
-        )
-        try {
-            actual.foreach(out.println)
-        } finally {
-            out.close()
-        }
-        file.getAbsolutePath
     }
 }
 
