@@ -628,6 +628,8 @@ sealed abstract class FunctionCall[+V <: Var[V]] extends Expr[V] with Call[V] {
 
 sealed abstract class InstanceFunctionCall[+V <: Var[V]] extends FunctionCall[V] {
 
+    final override def allParams: Seq[Expr[V]] = receiver +: params
+
     def receiver: Expr[V]
     final override def subExprCount: Int = params.size + 1
     final override def subExpr(index: Int): Expr[V] = if (index == 0) receiver else params(index - 1)

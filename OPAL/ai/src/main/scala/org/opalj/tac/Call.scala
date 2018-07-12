@@ -18,9 +18,14 @@ trait Call[+V <: Var[V]] {
     def descriptor: MethodDescriptor
 
     /**
-     * The parameters of the method call (including the implicit `this` reference if necessary.)
+     * The parameters of the method call (excluding the implicit `this` reference.)
      */
     def params: Seq[Expr[V]] // TODO IndexedSeq
+
+    /**
+     * The parameters of the method call (including the implicit `this` reference if necessary.)
+     */
+    def allParams: Seq[Expr[V]] = params
 }
 
 object Call {
