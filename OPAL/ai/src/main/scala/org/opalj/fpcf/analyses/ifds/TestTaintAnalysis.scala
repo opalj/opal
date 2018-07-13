@@ -4,8 +4,6 @@ package fpcf
 package analyses
 package ifds
 
-import java.io.File
-
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.ObjectType
 import org.opalj.br.Method
@@ -13,6 +11,8 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.fpcf.analyses.ifds.AbstractIFDSAnalysis.V
+import org.opalj.fpcf.par.RecordAllPropertyStoreTracer
+import org.opalj.fpcf.par.PKEParallelTasksPropertyStore
 import org.opalj.fpcf.properties.IFDSProperty
 import org.opalj.fpcf.properties.IFDSPropertyMetaInformation
 import org.opalj.tac.Assignment
@@ -22,8 +22,8 @@ import org.opalj.tac.ArrayLoad
 import org.opalj.tac.ArrayStore
 import org.opalj.tac.Stmt
 import org.opalj.tac.ReturnValue
-import org.opalj.tac.PutStatic
-import org.opalj.tac.GetStatic
+//import org.opalj.tac.PutStatic
+//import org.opalj.tac.GetStatic
 import org.opalj.tac.PutField
 import org.opalj.tac.GetField
 
@@ -31,15 +31,15 @@ trait Fact
 
 case class Variable(source: Int) extends Fact
 case class ArrayElement(source: Int, element: Int) extends Fact
-case class StaticField(classType: ObjectType, fieldName: String) extends Fact
-case class InstanceField(source: Int, fieldName: String) extends Fact
+//case class StaticField(classType: ObjectType, fieldName: String) extends Fact
+case class InstanceField(source: Int, classType: ObjectType, fieldName: String) extends Fact
 
 class TestTaintAnalysis private[ifds] (
         implicit
         val project: SomeProject
 ) extends AbstractIFDSAnalysis[Fact] {
 
-    override val property = Taint
+    override val property: IFDSPropertyMetaInformation[Fact] = Taint
 
     override def createProperty(result: Map[Statement, Set[Fact]]): IFDSProperty[Fact] = {
         new Taint(result)
@@ -57,21 +57,21 @@ class TestTaintAnalysis private[ifds] (
                     if (index.isDefined)
                         in ++ definedBy.iterator.map(ArrayElement(_, index.get))
                     else
-                        in ++ definedBy.iterator.map(Variable(_))
+                        in ++ definedBy.iterator.map(Variable)
                 else if (index.isDefined && definedBy.size == 1)
                     in - ArrayElement(definedBy.head, index.get)
                 else in
-            case PutStatic.ASTID ⇒
+            /*case PutStatic.ASTID ⇒
                 val put = stmt.stmt.asPutStatic
                 if (isTainted(put.value, in)) in + StaticField(put.declaringClass, put.name)
-                else in - StaticField(put.declaringClass, put.name)
+                else in - StaticField(put.declaringClass, put.name)*/
             case PutField.ASTID ⇒
                 val put = stmt.stmt.asPutField
                 val definedBy = put.objRef.asVar.definedBy
                 if (isTainted(put.value, in))
-                    in ++ definedBy.iterator.map(InstanceField(_, put.name))
+                    in ++ definedBy.iterator.map(InstanceField(_, put.declaringClass, put.name))
                 else if (definedBy.size == 1)
-                    in - InstanceField(definedBy.head, put.name)
+                    in - InstanceField(definedBy.head, put.declaringClass, put.name)
                 else in
             case _ ⇒ in
         }
@@ -80,7 +80,7 @@ class TestTaintAnalysis private[ifds] (
         expr.isVar && in.exists {
             case Variable(source)         ⇒ expr.asVar.definedBy.contains(source)
             case ArrayElement(source, _)  ⇒ expr.asVar.definedBy.contains(source)
-            case InstanceField(source, _) ⇒ expr.asVar.definedBy.contains(source)
+            case InstanceField(source, _, _) ⇒ expr.asVar.definedBy.contains(source)
             case _                        ⇒ false
         }
     }
@@ -89,11 +89,13 @@ class TestTaintAnalysis private[ifds] (
         if (expr.isIntConst) Some(expr.asIntConst.value)
         else if (expr.isVar) {
             val constVals = expr.asVar.definedBy.iterator.map { idx ⇒
-                val stmt = code(idx)
-                if (stmt.astID == Assignment.ASTID && stmt.asAssignment.expr.isIntConst)
-                    Some(stmt.asAssignment.expr.asIntConst.value)
-                else
-                    None
+                if(idx >= 0) {
+                    val stmt = code(idx)
+                    if (stmt.astID == Assignment.ASTID && stmt.asAssignment.expr.isIntConst)
+                        Some(stmt.asAssignment.expr.asIntConst.value)
+                    else
+                        None
+                } else None
             }.toIterable
             if (constVals.forall(option ⇒ option.isDefined && option.get == constVals.head.get))
                 constVals.head
@@ -125,15 +127,15 @@ class TestTaintAnalysis private[ifds] (
                     in + Variable(stmt.index)
                 else
                     in
-            case GetStatic.ASTID ⇒
+            /*case GetStatic.ASTID ⇒
                 val get = expr.asGetStatic
                 if (in.contains(StaticField(get.declaringClass, get.name)))
                     in + Variable(stmt.index)
-                else in
+                else in*/
             case GetField.ASTID ⇒
                 val get = expr.asGetField
                 if (in.exists {
-                    case InstanceField(source, taintedField) ⇒
+                    case InstanceField(source, _, taintedField) ⇒
                         taintedField == get.name && get.objRef.asVar.definedBy.contains(source)
                     case Variable(source) ⇒ get.objRef.asVar.definedBy.contains(source)
                     case _                ⇒ false
@@ -158,24 +160,36 @@ class TestTaintAnalysis private[ifds] (
             })
                 println(s"Found flow: $stmt")
             Set.empty
-        } else {
+        } else if (callee.name == "forName" && (callee.declaringClassType eq ObjectType.Class) &&
+            callee.descriptor.parameterTypes == Seq(ObjectType.String)) {
+            if (in.exists {
+                case Variable(source) ⇒
+                    asCall(stmt.stmt).params.exists(p ⇒ p.asVar.definedBy.contains(source))
+                case _ ⇒ false
+            })
+                println(s"Found flow: $stmt")
+            Set.empty
+        } else if(callee.descriptor.returnType eq ObjectType.Class) {
             in.collect {
                 case Variable(source) ⇒
                     params.zipWithIndex.collect {
-                        case (param, index) if (param.asVar.definedBy.contains(source)) ⇒
+                        case (param, index) if param.asVar.definedBy.contains(source) ⇒
                             Variable(paramToIndex(index, callee.definedMethod))
                     }
                 case ArrayElement(source, taintedIndex) ⇒ params.zipWithIndex.collect {
-                    case (param, index) if (param.asVar.definedBy.contains(source)) ⇒
+                    case (param, index) if param.asVar.definedBy.contains(source) ⇒
                         ArrayElement(paramToIndex(index, callee.definedMethod), taintedIndex)
                 }
-                case InstanceField(source, taintedField) ⇒ params.zipWithIndex.collect {
-                    case (param, index) if (param.asVar.definedBy.contains(source)) ⇒
-                        InstanceField(paramToIndex(index, callee.definedMethod), taintedField)
+                case InstanceField(source, declClass, taintedField)
+                    if classHierarchy.isSubtypeOf(declClass, callee.declaringClassType).isYesOrUnknown ||
+                        classHierarchy.isSubtypeOf(callee.declaringClassType, declClass).isYesOrUnknown ⇒
+                    params.zipWithIndex.collect {
+                    case (param, index) if param.asVar.definedBy.contains(source) ⇒
+                        InstanceField(paramToIndex(index, callee.definedMethod), declClass, taintedField)
                 }
-                case sf: StaticField ⇒ Set(sf)
+                //case sf: StaticField ⇒ Set(sf)
             }.flatten
-        }
+        } else Set.empty
     }
 
     override def returnFlow(
@@ -193,19 +207,19 @@ class TestTaintAnalysis private[ifds] (
             var flows: Set[Fact] = Set.empty
             for (fact ← in) {
                 fact match {
-                    case Variable(source) if (source < 0) ⇒
+                    case Variable(source) if source < 0 && source > -100 ⇒
                         val param =
                             asCall(stmt.stmt).allParams(paramToIndex(source, callee.definedMethod))
-                        flows ++= param.asVar.definedBy.iterator.map(Variable(_))
-                    case ArrayElement(source, taintedIndex) if (source < 0) ⇒
+                        flows ++= param.asVar.definedBy.iterator.map(Variable)
+                    case ArrayElement(source, taintedIndex) if source < 0 && source > -100 ⇒
                         val param =
                             asCall(stmt.stmt).allParams(paramToIndex(source, callee.definedMethod))
                         flows ++= param.asVar.definedBy.iterator.map(ArrayElement(_, taintedIndex))
-                    case InstanceField(source, taintedField) if (source < 0) ⇒
+                    case InstanceField(source, declClass, taintedField) if source < 0 && source > -10 ⇒
                         val param =
                             asCall(stmt.stmt).allParams(paramToIndex(source, callee.definedMethod))
-                        flows ++= param.asVar.definedBy.iterator.map(InstanceField(_, taintedField))
-                    case sf: StaticField ⇒ flows += sf
+                        flows ++= param.asVar.definedBy.iterator.map(InstanceField(_, declClass, taintedField))
+                    //case sf: StaticField ⇒ flows += sf
                     case _               ⇒
                 }
             }
@@ -217,8 +231,8 @@ class TestTaintAnalysis private[ifds] (
                         Variable(stmt.index)
                     case ArrayElement(source, taintedIndex) if returnValue.definedBy.contains(source) ⇒
                         ArrayElement(stmt.index, taintedIndex)
-                    case InstanceField(source, taintedField) if returnValue.definedBy.contains(source) ⇒
-                        InstanceField(stmt.index, taintedField)
+                    case InstanceField(source, declClass, taintedField) if returnValue.definedBy.contains(source) ⇒
+                        InstanceField(stmt.index, declClass, taintedField)
                 }
             }
 
@@ -258,9 +272,9 @@ class Taint(val flows: Map[Statement, Set[Fact]]) extends IFDSProperty[Fact] {
 
     override type Self = Taint
 
-    def key = Taint.key
+    def key: PropertyKey[Taint] = Taint.key
 
-    def noFlowInformation = Taint.noFlowInformation
+    def noFlowInformation: Taint = Taint.noFlowInformation
 }
 
 object Taint extends IFDSPropertyMetaInformation[Fact] {
@@ -268,23 +282,51 @@ object Taint extends IFDSPropertyMetaInformation[Fact] {
 
     val noFlowInformation = new Taint(null)
 
-    val key = PropertyKey.create[DeclaredMethod, Taint](
+    val key: PropertyKey[Taint] = PropertyKey.create[DeclaredMethod, Taint](
         "TestTaint",
-        noFlowInformation /* TODO fallback */
+        noFlowInformation
     )
 }
 
 object TestTaintAnalysisRunner {
+
+    def paramToIndex(param: Int, callee: Method): Int =
+        -1 - param - (if (callee.isStatic) 1 else 0)
+
     def main(args: Array[String]): Unit = {
-        val p = Project(new File("/home/dominik/Desktop/test"))
+        //val p = Project(new File("/home/dominik/Desktop/test"))
+        val p = Project(bytecode.RTJar)
+        p.getOrCreateProjectInformationKeyInitializationData(
+            PropertyStoreKey,
+            (context: List[PropertyStoreContext[AnyRef]]) ⇒ {
+                val ps = PKEParallelTasksPropertyStore.create(
+                    new RecordAllPropertyStoreTracer,
+                    context.iterator.map(_.asTuple).toMap
+                )(p.logContext)
+                PropertyStore.updateDebug(true)
+                ps
+            }
+        )
         val ps = p.get(PropertyStoreKey)
         ps.setupPhase(Set(TestTaintAnalysis.property.key))
         TestTaintAnalysis.startLazily(p, ps, TestTaintAnalysis.init(p, ps))
         val declaredMethods = p.get(DeclaredMethodsKey)
+        var entryPoints = 0
         for (m ← p.allMethodsWithBody) {
-            val e = (declaredMethods(m), null)
-            ps.force(e, TestTaintAnalysis.property.key)
+            //val e = (declaredMethods(m), null)
+            //ps.force(e, TestTaintAnalysis.property.key)
+            if(m.isPublic && (/*m.descriptor.returnType == ObjectType.Object || */m.descriptor
+                .returnType == ObjectType.Class)){
+                m.descriptor.parameterTypes.zipWithIndex.collect {
+                    case (pType, index) if pType == ObjectType.String => index
+                } foreach { index =>
+                    val e = (declaredMethods(m), Variable(paramToIndex(index, m)))
+                    entryPoints += 1
+                    ps.force(e, TestTaintAnalysis.property.key)
+                }
+            }
         }
+        println(entryPoints)
         ps.waitOnPhaseCompletion()
     }
 }

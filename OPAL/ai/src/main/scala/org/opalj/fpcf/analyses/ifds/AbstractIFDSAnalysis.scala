@@ -4,6 +4,8 @@ package fpcf
 package analyses
 package ifds
 
+import java.util.concurrent.ConcurrentHashMap
+
 import scala.collection.{Set ⇒ SomeSet}
 import org.opalj.ai.Domain
 import org.opalj.ai.domain.RecordDefUse
@@ -61,7 +63,7 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
         val method:    Method,
         val code:      Array[Stmt[V]],
         val cfg:       CFG[Stmt[V], TACStmts[V]],
-        var dependees: Set[SomeEOptionP],
+        var dependees: Map[(DeclaredMethod, DataFlowFact), SomeEOptionP],
         var data:      Map[(DeclaredMethod, DataFlowFact), Set[(BasicBlock, Int)]],
         var incoming:  Map[BasicBlock, Set[DataFlowFact]],
         var outgoing:  Map[BasicBlock, Map[CFGNode, Set[DataFlowFact]]]
@@ -84,24 +86,25 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
         val TACode(_, code, _, cfg, _, _) = tacai(method)
 
         implicit val state: State =
-            new State(declaringClass, method, code, cfg, Set.empty, Map.empty, Map.empty, Map.empty)
+            new State(declaringClass, method, code, cfg, Map.empty, Map.empty, Map.empty, Map.empty)
 
         val start = cfg.startBlock
 
-        process(mutable.Queue((start, Set(sourceFact), None, None)))
+        state.incoming += start → Set(sourceFact)
+        process(mutable.Queue((start, Set(sourceFact), None, None, null.asInstanceOf[DataFlowFact])))
 
         createResult(source)
     }
 
     def process(
-        initialWorklist: mutable.Queue[(BasicBlock, Set[DataFlowFact], Option[Int], Option[Set[Method]])]
+        initialWorklist: mutable.Queue[(BasicBlock, Set[DataFlowFact], Option[Int], Option[Set[Method]], DataFlowFact)]
     )(implicit state: State): Unit = {
         val worklist = initialWorklist
 
         while (worklist.nonEmpty) {
-            val (bb, in, callIndex, callee) = worklist.dequeue()
+            val (bb, in, callIndex, callee, dff) = worklist.dequeue()
             val oldOut = state.outgoing.getOrElse(bb, Map.empty)
-            val nextOut = analyseBasicBlock(bb, in, callIndex, callee)
+            val nextOut = analyseBasicBlock(bb, in, callIndex, callee, dff)
 
             val allOut = mergeMaps(oldOut, nextOut)
             state.outgoing = state.outgoing.updated(bb, allOut.toMap)
@@ -120,17 +123,18 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
                 state.incoming = state.incoming.updated(succ, oldIn ++ nextIn)
                 val newIn = nextIn -- oldIn
                 if (newIn.nonEmpty) {
-                    worklist.enqueue((succ, newIn, None, None))
+                    worklist.enqueue((succ, newIn, None, None, null.asInstanceOf[DataFlowFact]))
                 }
             }
         }
     }
 
-    // TODO more efficient implementation?
     def mergeMaps[S, T](map1: Map[S, Set[T]], map2: Map[S, Set[T]]): Map[S, Set[T]] = {
-        (map1.keysIterator ++ map2.keysIterator).map { key ⇒
-            key → (map1.getOrElse(key, Set.empty) ++ map2.getOrElse(key, Set.empty))
-        }.toMap
+        var result = map1
+        for ((key, values) ← map2) {
+            result = result.updated(key, result.getOrElse(key, Set.empty) ++ values)
+        }
+        result
     }
 
     def createResult(
@@ -163,7 +167,7 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
                 source,
                 property.noFlowInformation,
                 createProperty(result),
-                state.dependees,
+                state.dependees.values,
                 c(source),
                 DefaultPropertyComputation
             )
@@ -175,11 +179,11 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
     )(
         eps: SomeEPS
     )(implicit state: State): PropertyComputationResult = {
-        state.dependees = state.dependees.filterNot(_.e eq eps.e)
+        state.dependees -= eps.e.asInstanceOf[(DeclaredMethod, DataFlowFact)]
 
         eps match {
             case EPS(e, _, _) ⇒
-                if (eps.isRefinable) state.dependees += eps
+                if (eps.isRefinable) state.dependees += eps.e.asInstanceOf[(DeclaredMethod, DataFlowFact)] → eps
                 handleCallUpdate(e.asInstanceOf[(DeclaredMethod, DataFlowFact)])
         }
 
@@ -190,7 +194,8 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
         bb:        BasicBlock,
         sources:   Set[DataFlowFact],
         callIndex: Option[Int], //TODO IntOption
-        callee:    Option[Set[Method]]
+        callee:    Option[Set[Method]],
+        fact:      DataFlowFact
     )(
         implicit
         state: State
@@ -198,28 +203,29 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
 
         var flows: Set[DataFlowFact] = sources
 
-        def statementAndCallees(index: Int): (Statement, Option[SomeSet[Method]]) = {
+        def statementAndCallees(index: Int): (Statement, Option[SomeSet[Method]], Option[DataFlowFact]) = {
             val stmt = state.code(index)
             val statement = Statement(state.method, stmt, index, state.code)
             val calleesO = if (callIndex.contains(index)) callee else getCallees(stmt)
-            (statement, calleesO)
+            val callFact = if (callIndex.contains(index)) Some(fact) else None
+            (statement, calleesO, callFact)
         }
 
         var index = bb.startPC
         val max = bb.endPC
         while (index < max) {
-            val (statement, calleesO) = statementAndCallees(index)
+            val (statement, calleesO, callFact) = statementAndCallees(index)
             flows =
                 if (calleesO.isEmpty) {
                     val successor =
                         Statement(state.method, state.code(index + 1), index + 1, state.code)
                     normalFlow(statement, successor, flows)
                 } else
-                    handleCall(bb, statement, bb.successors, calleesO.get, flows).values.head
+                    handleCall(bb, statement, bb.successors, calleesO.get, flows, callFact).values.head
             index += 1
         }
 
-        val (statement, calleesO) = statementAndCallees(bb.endPC)
+        val (statement, calleesO, callFact) = statementAndCallees(bb.endPC)
         var result =
             if (calleesO.isEmpty) {
                 var result: Map[CFGNode, Set[DataFlowFact]] = Map.empty
@@ -228,7 +234,7 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
                 }
                 result
             } else {
-                handleCall(bb, statement, bb.successors, calleesO.get, flows)
+                handleCall(bb, statement, bb.successors, calleesO.get, flows, callFact)
             }
         if (sources.contains(null.asInstanceOf[DataFlowFact]))
             result = result.map { result ⇒
@@ -245,23 +251,23 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
         implicit val project: SomeProject = p
         stmt.astID match {
             case StaticMethodCall.ASTID ⇒
-                Some(stmt.asStaticMethodCall.resolveCallTarget.toSet)
+                Some(stmt.asStaticMethodCall.resolveCallTarget.toSet.filter(_.body.isDefined))
 
             case NonVirtualMethodCall.ASTID ⇒
-                Some(stmt.asNonVirtualMethodCall.resolveCallTarget.toSet)
+                Some(stmt.asNonVirtualMethodCall.resolveCallTarget.toSet.filter(_.body.isDefined))
 
             case VirtualMethodCall.ASTID ⇒
-                Some(stmt.asVirtualMethodCall.resolveCallTargets(state.declClass))
+                Some(stmt.asVirtualMethodCall.resolveCallTargets(state.declClass).filter(_.body.isDefined))
 
             case Assignment.ASTID if expr(stmt).astID == StaticFunctionCall.ASTID ⇒
-                Some(stmt.asAssignment.expr.asStaticFunctionCall.resolveCallTarget.toSet)
+                Some(stmt.asAssignment.expr.asStaticFunctionCall.resolveCallTarget.toSet.filter(_.body.isDefined))
 
             case Assignment.ASTID if expr(stmt).astID == NonVirtualFunctionCall.ASTID ⇒
-                Some(stmt.asAssignment.expr.asNonVirtualFunctionCall.resolveCallTarget.toSet)
+                Some(stmt.asAssignment.expr.asNonVirtualFunctionCall.resolveCallTarget.toSet.filter(_.body.isDefined))
 
             case Assignment.ASTID if expr(stmt).astID == VirtualFunctionCall.ASTID ⇒
                 Some(
-                    stmt.asAssignment.expr.asVirtualFunctionCall.resolveCallTargets(state.declClass)
+                    stmt.asAssignment.expr.asVirtualFunctionCall.resolveCallTargets(state.declClass).filter(_.body.isDefined)
                 )
 
             case _ ⇒ None
@@ -270,19 +276,22 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
 
     def handleCallUpdate(e: (DeclaredMethod, DataFlowFact))(implicit state: State): Unit = {
         val blocks = state.data(e)
-        val queue: mutable.Queue[(BasicBlock, Set[DataFlowFact], Option[Int], Option[Set[Method]])] =
+        val queue: mutable.Queue[(BasicBlock, Set[DataFlowFact], Option[Int], Option[Set[Method]], DataFlowFact)] =
             mutable.Queue.empty
         for ((block, callSite) ← blocks)
-            queue.enqueue((block, state.incoming(block), Some(callSite), Some(Set(e._1.definedMethod))))
+            queue.enqueue((block, state.incoming(block), Some(callSite), Some(Set(e._1.definedMethod)), e._2))
         process(queue)
     }
+
+    var entities: ConcurrentHashMap[(DeclaredMethod, DataFlowFact), (DeclaredMethod, DataFlowFact)] = new ConcurrentHashMap
 
     def handleCall(
         block:      BasicBlock,
         call:       Statement,
         successors: Set[CFGNode],
         callees:    SomeSet[Method],
-        in:         Set[DataFlowFact]
+        in:         Set[DataFlowFact],
+        fact:       Option[DataFlowFact]
     )(
         implicit
         state: State
@@ -291,32 +300,34 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
         for (successor ← successors) {
             flows += successor → callToReturnFlow(call, firstStatement(successor), in)
         }
-        for (calledMethod ← callees) {
+        for (calledMethod ← callees) { // FIXME: Check for self-recursive calls!
             val callee = declaredMethods(calledMethod)
-            val toCall = callFlow(call, asCall(call.stmt).allParams, callee, in)
+            val toCall = if (fact.isDefined) fact.toSet
+            else callFlow(call, asCall(call.stmt).allParams, callee, in)
             var fromCall: Map[Statement, Set[DataFlowFact]] = Map.empty
             for (fact ← toCall) {
-                val e = (callee, fact)
-                val callFlows = propertyStore(e, property.key) //TODO always use the identical property
-                val oldState = state.dependees.find(eop ⇒ eop.e == e && (eop ne callFlows))
+                val e = entities.computeIfAbsent((callee, fact), _ ⇒ (callee, fact))
+                val callFlows = propertyStore(e, property.key)
+                val oldState = state.dependees.get(e)
                 fromCall = mergeMaps(
                     fromCall,
                     callFlows match {
-                        case FinalEP(_, p: IFDSProperty[DataFlowFact]) ⇒ p.flows
+                        case FinalEP(_, p: IFDSProperty[DataFlowFact]) ⇒
+                            state.dependees -= e
+                            p.flows
                         case EPS(_, _, ub: IFDSProperty[DataFlowFact]) ⇒
                             val newDependee = state.data.getOrElse(e, Set.empty) + ((block, call.index))
                             state.data = state.data.updated(e, newDependee)
-                            state.dependees += callFlows
+                            state.dependees += e → callFlows
                             ub.flows
                         case _ ⇒
                             val newDependee = state.data.getOrElse(e, Set.empty) + ((block, call.index))
                             state.data = state.data.updated(e, newDependee)
-                            state.dependees += callFlows
+                            state.dependees += e → callFlows
                             Map.empty
                     }
                 )
-                if (oldState.isDefined) {
-                    state.dependees -= oldState.get // FIXME
+                if (oldState.isDefined && oldState.get != callFlows) {
                     handleCallUpdate(e)
                 }
             }
@@ -328,7 +339,7 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
                 val c2rFlow = flows.getOrElse(node, Set.empty[DataFlowFact])
                 val retFlow =
                     returnFlow(call, callee, exit, successor, fromCall.getOrElse(exit, Set.empty))
-                flows += node -> (c2rFlow ++ retFlow)
+                flows += node → (c2rFlow ++ retFlow)
             }
         }
         flows
@@ -350,12 +361,16 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
             null
     }
 
+    val exits: ConcurrentHashMap[Method, Set[Statement]] = new ConcurrentHashMap
+
     def getExits(method: Method): Set[Statement] = {
-        val TACode(_, code, _, cfg, _, _) = tacai(method)
-        (cfg.abnormalReturnNode.predecessors ++ cfg.normalReturnNode.predecessors).map { block ⇒
-            val endPC = block.asBasicBlock.endPC
-            Statement(method, code(endPC), endPC, code)
-        }
+        exits.computeIfAbsent(method, _ ⇒ {
+            val TACode(_, code, _, cfg, _, _) = tacai(method)
+            (cfg.abnormalReturnNode.predecessors ++ cfg.normalReturnNode.predecessors).map { block ⇒
+                val endPC = block.asBasicBlock.endPC
+                Statement(method, code(endPC), endPC, code)
+            }
+        })
     }
 
     /**
