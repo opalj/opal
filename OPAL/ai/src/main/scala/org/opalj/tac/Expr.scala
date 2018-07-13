@@ -25,6 +25,8 @@ import org.opalj.br.MethodHandle
 import org.opalj.br.Method
 import org.opalj.br.PC
 import org.opalj.br.analyses.ProjectLike
+import org.opalj.value.IsReferenceValue
+import org.opalj.value.KnownValue
 
 /**
  * Represents an expression. In general, every expression should be a simple expression, where
@@ -750,6 +752,16 @@ case class StaticFunctionCall[+V <: Var[V]](
      */
     def resolveCallTarget(implicit p: ProjectLike): Result[Method] = {
         p.staticCall(declaringClass, isInterface, name, descriptor)
+    }
+
+    def resolveCallTargets(
+        callingContext: ObjectType
+    )(
+        implicit
+        p:  ProjectLike,
+        ev: V <:< DUVar[KnownValue]
+    ): Set[Method] = {
+        resolveCallTarget(p).toSet
     }
 
     private[tac] override def remapIndexes(

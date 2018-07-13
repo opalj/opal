@@ -2,8 +2,12 @@
 package org.opalj
 package tac
 
+import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ReferenceType
+import org.opalj.br.ObjectType
+import org.opalj.br.analyses.ProjectLike
+import org.opalj.value.KnownValue
 
 /**
  * Common supertrait of statements and expressions calling a method.
@@ -21,6 +25,14 @@ trait Call[+V <: Var[V]] {
      * The parameters of the method call (including the implicit `this` reference if necessary.)
      */
     def params: Seq[Expr[V]] // TODO IndexedSeq
+
+    def resolveCallTargets(
+        callingContext: ObjectType
+    )(
+        implicit
+        p:  ProjectLike,
+        ev: V <:< DUVar[KnownValue]
+    ): Set[Method]
 }
 
 object Call {
