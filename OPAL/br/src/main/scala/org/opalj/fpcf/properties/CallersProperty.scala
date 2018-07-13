@@ -229,7 +229,7 @@ object CallersProperty extends CallersPropertyMetaInformation {
 
     final val key: PropertyKey[CallersProperty] = {
         PropertyKey.create(
-            "Callers",
+            "CallersProperty",
             (ps: PropertyStore, reason: FallbackReason, m: DeclaredMethod) ⇒ reason match {
                 case PropertyIsNotComputedByAnyAnalysis ⇒
                     CallersProperty.fallback(m, ps.context(classOf[SomeProject]))

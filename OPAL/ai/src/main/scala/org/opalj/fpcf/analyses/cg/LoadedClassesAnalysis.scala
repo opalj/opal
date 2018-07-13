@@ -186,7 +186,7 @@ object EagerLoadedClassesAnalysis extends FPCFEagerAnalysisScheduler {
 
     override def uses: Predef.Set[PropertyKind] = Predef.Set(CallersProperty)
 
-    override def derives: Predef.Set[PropertyKind] = Predef.Set(LoadedClasses)
+    override def derives: Predef.Set[PropertyKind] = Predef.Set(LoadedClasses, CallersProperty)
 
     override def init(p: SomeProject, ps: PropertyStore): LoadedClassesAnalysis = {
         val analysis = new LoadedClassesAnalysis(p)

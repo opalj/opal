@@ -23,7 +23,9 @@ sealed class VMReachableFinalizers(override protected val reachableMethods: IntT
 }
 
 object VMReachableFinalizersFallback extends VMReachableFinalizers(reachableMethods = null)
-    with VMReachableMethodsFallback
+    with VMReachableMethodsFallback {
+    override def toString: String = "VMReachableFinalizersFallBack"
+}
 
 object VMReachableFinalizers extends VMReachableFinalizersMetaInformation {
     final val key: PropertyKey[VMReachableFinalizers] = {
