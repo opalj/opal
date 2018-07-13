@@ -1,31 +1,4 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package ai
 package common
@@ -217,21 +190,21 @@ object DomainRegistry {
     register(
         "computations are done at the type level",
         classOf[domain.l0.BaseDomain[_]],
-        Set.empty,
+        lessPreciseDomains = Set.empty,
         (project: SomeProject, method: Method) ⇒ new domain.l0.BaseDomain(project, method)
     )
 
     register(
         "computations are done at the type level; cfg and def/use information is recorded",
         classOf[domain.l0.BaseDomainWithDefUse[_]],
-        Set(classOf[domain.l0.BaseDomain[_]]),
+        lessPreciseDomains = Set(classOf[domain.l0.BaseDomain[_]]),
         (project: SomeProject, method: Method) ⇒ new domain.l0.BaseDomainWithDefUse(project, method)
     )
 
     register(
         "computations related to int values are done using intervals",
         classOf[domain.l1.DefaultIntervalValuesDomain[_]],
-        Set(classOf[domain.l0.BaseDomain[_]]),
+        lessPreciseDomains = Set(classOf[domain.l0.BaseDomain[_]]),
         (project: SomeProject, method: Method) ⇒ {
             new domain.l1.DefaultIntervalValuesDomain(project, method)
         }
@@ -240,7 +213,7 @@ object DomainRegistry {
     register(
         "computations related to int/long values are done using sets",
         classOf[domain.l1.DefaultSetValuesDomain[_]],
-        Set(classOf[domain.l0.BaseDomain[_]]),
+        lessPreciseDomains = Set(classOf[domain.l0.BaseDomain[_]]),
         (project: SomeProject, method: Method) ⇒ {
             new domain.l1.DefaultSetValuesDomain(project, method)
         }
@@ -249,7 +222,7 @@ object DomainRegistry {
     register(
         "computations related to reference types track nullness, must alias and origin information",
         classOf[domain.l1.DefaultReferenceValuesDomain[_]],
-        Set(classOf[domain.l0.BaseDomain[_]]),
+        lessPreciseDomains = Set(classOf[domain.l0.BaseDomain[_]]),
         (project: SomeProject, method: Method) ⇒ {
             new domain.l1.DefaultReferenceValuesDomain(project, method)
         }
@@ -258,7 +231,7 @@ object DomainRegistry {
     register(
         "computations related to ints use intervals; tracks nullness, must alias and origin information of reference values",
         classOf[domain.l1.DefaultDomain[_]],
-        Set(classOf[domain.l0.BaseDomain[_]]),
+        lessPreciseDomains = Set(classOf[domain.l0.BaseDomain[_]]),
         (project: SomeProject, method: Method) ⇒ {
             new domain.l1.DefaultDomain(project, method)
         }
@@ -267,7 +240,7 @@ object DomainRegistry {
     register(
         "uses intervals for int values and track nullness and must alias information for reference types; records the ai-time def-use information",
         classOf[domain.l1.DefaultDomainWithCFGAndDefUse[_]],
-        Set(classOf[domain.l0.BaseDomainWithDefUse[_]]),
+        lessPreciseDomains = Set(classOf[domain.l0.BaseDomainWithDefUse[_]]),
         (project: SomeProject, method: Method) ⇒ {
             new domain.l1.DefaultDomainWithCFGAndDefUse(project, method)
         }
@@ -276,7 +249,7 @@ object DomainRegistry {
     register(
         "performs simple method invocations additionally to performing int computations using intervals and ",
         classOf[domain.l2.DefaultPerformInvocationsDomain[_]],
-        Set(
+        lessPreciseDomains = Set(
             classOf[domain.l1.DefaultIntervalValuesDomain[_]],
             classOf[domain.l1.DefaultReferenceValuesDomain[_]]
         ),
@@ -288,7 +261,7 @@ object DomainRegistry {
     register(
         "called methods are context-sensitively analyzed (up to two levels per default)",
         classOf[domain.l2.DefaultDomain[_]],
-        Set(classOf[domain.l2.DefaultPerformInvocationsDomain[_]]),
+        lessPreciseDomains = Set(classOf[domain.l2.DefaultPerformInvocationsDomain[_]]),
         (project: SomeProject, method: Method) ⇒ new domain.l2.DefaultDomain(project, method)
     )
 

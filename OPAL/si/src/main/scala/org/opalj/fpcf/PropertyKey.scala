@@ -1,32 +1,7 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf
+
+import scala.language.existentials
 
 import java.util.concurrent.locks.ReentrantReadWriteLock
 
@@ -71,7 +46,7 @@ object PropertyKey {
     }
 
     private[this] val cycleResolutionStrategies = {
-        ArrayBuffer.empty[CycleResolutionStrategy[Entity, Property]]
+        ArrayBuffer.empty[CycleResolutionStrategy[_ <: Entity, _ <: Property]]
     }
 
     private[this] var lastKeyId: Int = -1
@@ -142,6 +117,26 @@ object PropertyKey {
         )
     }
 
+    /**
+     * Updates the (default) cycle resolution strategy associated with a specific kind of
+     * property. Updating the strategy is typically done by analyses that require a different
+     * strategy than the one defined by the property. For example, an analysis, which just
+     * computes a lower bound, generally has to overwrite the default strategy which picks
+     * the upper bound in case of a closed strongly connected component.
+     *
+     * @return The old strategy.
+     */
+    def updateCycleResolutionStrategy[E <: Entity, P <: Property](
+        key:                     PropertyKey[P],
+        cycleResolutionStrategy: CycleResolutionStrategy[E, P]
+    ): CycleResolutionStrategy[E, P] = {
+        withWriteLock(keysLock) {
+            val oldStrategy = cycleResolutionStrategies(key.id)
+            cycleResolutionStrategies(key.id) = cycleResolutionStrategy
+            oldStrategy.asInstanceOf[CycleResolutionStrategy[E, P]]
+        }
+    }
+
     //
     // Query the core properties of each property kind
     // ===============================================
@@ -204,7 +199,7 @@ object PropertyKey {
      */
     def resolveCycle[E <: Entity, P <: Property](ps: PropertyStore, eps: EPS[E, P]): P = {
         withReadLock(keysLock) {
-            cycleResolutionStrategies(eps.pk.id)(ps, eps).asInstanceOf[P]
+            cycleResolutionStrategies(eps.pk.id).asInstanceOf[CycleResolutionStrategy[E, P]](ps, eps)
         }
     }
 

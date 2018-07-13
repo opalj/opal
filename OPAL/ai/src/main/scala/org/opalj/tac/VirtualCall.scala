@@ -1,33 +1,8 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package tac
+
+import scala.collection.Set
 
 import org.opalj.ai.Domain
 import org.opalj.ai.domain.RecordDefUse
@@ -35,13 +10,6 @@ import org.opalj.br.Method
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.ProjectLike
 
-import scala.collection.Set
-
-/**
- * Common supertrait of statements and expressions calling a virtual method.
- *
- * @author Michael Eichberg
- */
 trait VirtualCall[+V <: Var[V]] { this: Call[V] ⇒
 
     def receiver: Expr[V]
@@ -72,11 +40,7 @@ trait VirtualCall[+V <: Var[V]] { this: Call[V] ⇒
         } else {
             // IMPROVE use the upper type bound to find the relevant types and then locate the methods
             import p.classHierarchy.joinReferenceTypesUntilSingleUpperBound
-            val typeUpperBound = joinReferenceTypesUntilSingleUpperBound(receiverValue.upperTypeBound)
-            val receiverType =
-                if (p.classHierarchy.isSubtypeOf(typeUpperBound, declaringClass).isNotYes)
-                    declaringClass
-                else typeUpperBound
+            val receiverType = joinReferenceTypesUntilSingleUpperBound(receiverValue.upperTypeBound)
             if (isInterface) {
                 p.interfaceCall(receiverType.asObjectType, name, descriptor)
             } else {
@@ -84,4 +48,5 @@ trait VirtualCall[+V <: Var[V]] { this: Call[V] ⇒
             }
         }
     }
+
 }
