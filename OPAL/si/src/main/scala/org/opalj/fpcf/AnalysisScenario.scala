@@ -70,19 +70,38 @@ class AnalysisScenario {
      */
     def computationDependencies: Graph[ComputationSpecification] = {
         val compDeps = Graph.empty[ComputationSpecification]
-        val derivedBy: Map[PropertyKind, ComputationSpecification] = {
-            allCS.flatMap(cs ⇒ cs.derives.map(derives ⇒ (derives, cs))).toMap
+        val derivedBy: Map[PropertyKind, Set[ComputationSpecification]] = {
+            var derivedBy: Map[PropertyKind, Set[ComputationSpecification]] = Map.empty
+            allCS foreach { cs ⇒
+                cs.derives foreach { derives ⇒
+                    derivedBy += derives -> (derivedBy.getOrElse(derives, Set.empty) + cs)
+                }
+            }
+            derivedBy
         }
         allCS foreach { cs ⇒
             compDeps += cs
             cs.uses foreach { usedPK ⇒
-                derivedBy.get(usedPK).map { providerCS ⇒
+                derivedBy.get(usedPK).iterator.flatten.foreach { providerCS ⇒
                     if (providerCS ne cs) {
                         compDeps += (cs, providerCS)
                     }
                 }
             }
         }
+        // let's handle the case that multiple analyses derives a property collaboratively
+        derivedBy.valuesIterator.filter(_.size > 1) foreach { css ⇒
+            val cssIt = css.iterator
+            val headCS = cssIt.next()
+            var lastCS = headCS
+            do {
+                val nextCS = cssIt.next()
+                compDeps += (lastCS -> nextCS)
+                lastCS = nextCS
+            } while (cssIt.hasNext)
+            compDeps += (lastCS -> headCS)
+        }
+
         compDeps
     }
 
