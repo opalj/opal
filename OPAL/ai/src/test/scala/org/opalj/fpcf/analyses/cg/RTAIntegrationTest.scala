@@ -93,14 +93,12 @@ class RTAIntegrationTest extends FlatSpec with Matchers {
                         dt.parameterTypes == declaredMethod.parameterTypes &&
                         dt.returnType == declaredMethod.returnType
             }
-            if (overApproximatedCallSites.isEmpty)
-                println("asddasdasasddsaasd")
-            //assert(overApproximatedCallSites.nonEmpty)
+            assert(overApproximatedCallSites.nonEmpty)
 
             val overApproximatedTgts = overApproximatedCallSites.flatMap(_.targets)
-           /* computedTargets.foreach { computedTgt ⇒
+            computedTargets.foreach { computedTgt ⇒
                 assert(overApproximatedTgts.contains(convertMethod(computedTgt)))
-            }*/
+            }
 
         }
     }

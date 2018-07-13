@@ -10,7 +10,6 @@ import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.fpcf.properties.Callees
 import org.opalj.fpcf.properties.CallersProperty
 import org.opalj.fpcf.properties.InstantiatedTypes
 import org.opalj.fpcf.properties.LowerBoundCallers
