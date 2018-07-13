@@ -64,8 +64,6 @@ class RTAIntegrationTest extends FlatSpec with Matchers {
     )
     implicit val declaredMethods: DeclaredMethods = columbusProject.get(DeclaredMethodsKey)
 
-    propertyStore.waitOnPhaseCompletion()
-
     it should "have matching callers and callees" in {
         checkBidirectionCallerCallee(propertyStore)
     }
@@ -119,6 +117,9 @@ class RTAIntegrationTest extends FlatSpec with Matchers {
             tgt ← tgts
         } {
             val containsCall = computedCallSites.exists(cs ⇒ cs._2.exists(computedTgt ⇒ convertMethod(computedTgt) == tgt))
+            if (!containsCall) {
+                println()
+            }
             assert(
                 containsCall,
                 s"cg does not contain call from \n\t$dm \nto \n\t$tgt \nat line $line in: \n\t $computedCallSites"
