@@ -46,6 +46,7 @@ import org.opalj.fpcf.properties.Callees
 import org.opalj.fpcf.properties.CallersProperty
 import org.opalj.fpcf.properties.InstantiatedTypes
 import org.opalj.fpcf.properties.LoadedClasses
+import org.opalj.fpcf.properties.VMReachableFinalizers
 import org.opalj.log.OPALLogger.info
 import org.opalj.tac.SimpleTACAIKey
 import org.opalj.util.PerformanceEvaluation.time
@@ -98,6 +99,7 @@ object RTADemo extends DefaultOneStepAnalysis {
 
         println(ps(project, InstantiatedTypes.key).ub)
         println(ps(project, LoadedClasses.key).ub)
+        println(ps(project, VMReachableFinalizers.key).ub)
         for (m ← project.allMethods) {
             val dm = declaredMethods(m)
             ps(dm, CallersProperty.key)

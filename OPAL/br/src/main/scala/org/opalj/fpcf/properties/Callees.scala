@@ -55,6 +55,8 @@ sealed trait Callees extends Property with OrderedProperty with CalleesPropertyM
 
     def callees(pc: Int): Set[DeclaredMethod]
 
+    def callees: TraversableOnce[(Int, Set[DeclaredMethod])]
+
     override def toString: String = {
         s"Callees(size=${this.size})"
     }
@@ -80,6 +82,14 @@ final class CalleesImplementation(
         calleesIds(pc).mapToAny[DeclaredMethod](declaredMethods.apply)
     }
 
+    override def callees: TraversableOnce[(Int, Set[DeclaredMethod])] = {
+        calleesIds.iterator.map {
+            case (pc, x) ⇒ {
+                pc → x.mapToAny[DeclaredMethod](declaredMethods.apply)
+            }
+        }
+    }
+
     override val size: Int = {
         calleesIds.iterator.map(_._2.size).sum
     }
@@ -100,6 +110,8 @@ class FallbackCallees(
     override def callees(pc: Int): Set[DeclaredMethod] = {
         project.allMethods.map(declaredMethods.apply).toSet
     }
+
+    override def callees: TraversableOnce[(UShort, Set[DeclaredMethod])] = ???
 }
 
 object Callees extends CalleesPropertyMetaInformation {

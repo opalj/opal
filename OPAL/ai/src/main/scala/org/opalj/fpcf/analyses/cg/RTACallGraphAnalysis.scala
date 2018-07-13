@@ -428,7 +428,8 @@ class RTACallGraphAnalysis private[analyses] (
                 Some(EPS(
                     tgtMethod,
                     CallersProperty.fallback(tgtMethod, project),
-                    new CallersOnlyWithConcreteCallers(Set(CallersProperty.toLong(tgtID, pc)))
+                    new CallersOnlyWithConcreteCallers(
+                        Set(CallersProperty.toLong(declaredMethods.methodID(method), pc)))
                 ))
             case _ ⇒ throw new IllegalArgumentException()
         })

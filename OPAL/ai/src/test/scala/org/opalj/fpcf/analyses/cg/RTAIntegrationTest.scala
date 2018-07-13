@@ -1,0 +1,181 @@
+/* BSD 2-Clause License:
+ * Copyright (c) 2009 - 2017
+ * Software Technology Group
+ * Department of Computer Science
+ * Technische Universität Darmstadt
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ *  - Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ *  - Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+package org.opalj
+package fpcf
+package analyses
+package cg
+
+import org.junit.runner.RunWith
+import org.opalj.bi.TestResources.locateTestResources
+import org.opalj.br.DeclaredMethod
+import org.opalj.br.analyses.DeclaredMethods
+import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.Project
+import org.opalj.br.instructions.MethodInvocationInstruction
+import org.opalj.br.reader.Java8Framework.ClassFiles
+import org.opalj.fpcf.properties.Callees
+import org.opalj.fpcf.properties.CallersProperty
+import org.scalatest.FlatSpec
+import org.scalatest.Matchers
+import org.scalatest.junit.JUnitRunner
+import play.api.libs.json.JsSuccess
+import play.api.libs.json.Json
+import play.api.libs.json.Reads
+
+case class CallSites(callSites: Set[CallSite])
+
+case class CallSite(declaredTarget: Method, line: Int, method: Method, targets: Set[Method])
+
+case class Method(name: String, declaringClass: String, returnType: String, parameterTypes: List[String])
+
+@RunWith(classOf[JUnitRunner])
+class RTAIntegrationTest extends FlatSpec with Matchers {
+
+    behavior of "the rta call graph analysis on columbus"
+
+
+    val columbusProject =
+        Project(
+            ClassFiles(locateTestResources("/classfiles/Columbus 2008_10_16 - target 1.5.jar", "bi")),
+            Traversable.empty,
+            libraryClassFilesAreInterfacesOnly = true
+        )
+
+    val manager: FPCFAnalysesManager = columbusProject.get(FPCFAnalysesManagerKey)
+
+    val propertyStore: PropertyStore = manager.runAll(
+        EagerRTACallGraphAnalysisScheduler,
+        EagerLoadedClassesAnalysis,
+        EagerFinalizerAnalysisScheduler
+    )
+    implicit val declaredMethods: DeclaredMethods = columbusProject.get(DeclaredMethodsKey)
+
+    propertyStore.waitOnPhaseCompletion()
+
+    it should "have matching callers and callees" in {
+        checkBidirectionCallerCallee(propertyStore)
+    }
+
+    it should "consists of calls that are also present in Soots CHA" in {
+        val callSites = retrieveCallSites("/columbus1_5_SOOT_CHA.json")
+
+        for (m ← columbusProject.allMethodsWithBody) {
+            val dm = declaredMethods(m)
+            val computedCallees = propertyStore(dm, Callees.key).asFinal.p
+            computedCallees.callees.foreach {
+                case (pc, computedTargets) ⇒
+                    val body = m.body.get
+                    val instr = body.instructions(pc).asMethodInvocationInstruction
+                    val declaredMethod = convertInstr(instr)
+
+                    val line = body.lineNumber(pc).get
+
+                    val overApproximatedCallSites = callSites.callSites.filter {
+                        case CallSite(dt, l, caller, _) ⇒
+                            l == line &&
+                                caller == convertMethod(dm) &&
+                                dt.name == declaredMethod.name &&
+                                dt.parameterTypes == declaredMethod.parameterTypes &&
+                                dt.returnType == declaredMethod.returnType
+                    }
+                    assert(overApproximatedCallSites.nonEmpty)
+
+                    val overApproximatedTgts = overApproximatedCallSites.flatMap(_.targets)
+                    computedTargets.foreach { computedTgt ⇒
+                        assert(overApproximatedTgts.contains(convertMethod(computedTgt)))
+                    }
+
+            }
+        }
+    }
+
+    def checkBidirectionCallerCallee(
+        propertyStore: PropertyStore
+    )(implicit declaredMethods: DeclaredMethods): Unit = {
+        for {
+            FinalEP(dm: DeclaredMethod, callees) ← propertyStore.entities(Callees.key).map(_.asFinal)
+            (pc, tgts) ← callees.callees
+            callee ← tgts
+        } {
+            val FinalEP(_, callersProperty) = propertyStore(callee, CallersProperty.key).asFinal
+            assert(callersProperty.callers.toSet.contains(dm → pc))
+        }
+
+        for {
+            FinalEP(dm: DeclaredMethod, callers) ← propertyStore.entities(CallersProperty.key).map(_.asFinal)
+            (caller, pc) ← callers.callers
+        } {
+            val FinalEP(_, calleesProperty) = propertyStore(caller, Callees.key).asFinal
+            calleesProperty.callees(pc).contains(dm)
+        }
+    }
+
+    def convertMethod(dm: DeclaredMethod): Method = {
+        assert(dm.hasSingleDefinedMethod)
+        val method = dm.definedMethod
+        assert(dm.declaringClassType eq method.classFile.thisType)
+
+        val name = method.name
+        val declaringClass = method.classFile.thisType.toJVMTypeName
+        val returnType = method.returnType.toJVMTypeName
+        val parameterTypes = method.parameterTypes.map(_.toJVMTypeName).toList
+
+        Method(name, declaringClass, returnType, parameterTypes)
+    }
+
+    def convertInstr(instr: MethodInvocationInstruction): Method = {
+        val name = instr.name
+        val declaringClass = instr.declaringClass.toJVMTypeName
+        val descriptor = instr.methodDescriptor
+        val returnType = descriptor.returnType.toJVMTypeName
+        val parameterTypes = descriptor.parameterTypes.map(_.toJVMTypeName).toList
+
+        Method(name, declaringClass, returnType, parameterTypes)
+    }
+
+    def retrieveCallSites(jsonPath: String): CallSites = {
+        val jsValue = Json.parse(getClass.getResourceAsStream(jsonPath))
+
+        implicit val methodReads: Reads[Method] = Json.reads[Method]
+        implicit val callSiteReads: Reads[CallSite] = Json.reads[CallSite]
+        implicit val callSitesReads: Reads[CallSites] = Json.reads[CallSites]
+        jsValue.validate[CallSite]
+        jsValue.validate[Method]
+        val jsResult = jsValue.validate[CallSites]
+        jsResult match {
+            case _: JsSuccess[CallSites] ⇒
+                jsResult.get
+
+            case _ ⇒
+                throw new IllegalArgumentException("invalid json file")
+        }
+
+    }
+
+}

@@ -45,7 +45,7 @@ sealed trait LoadedClassesMetaInformation extends PropertyMetaInformation {
  * @author Florian Kuebler
  */
 sealed class LoadedClasses(val classes: UIDSet[ObjectType])
-        extends Property with OrderedProperty with LoadedClassesMetaInformation {
+    extends Property with OrderedProperty with LoadedClassesMetaInformation {
 
     override def checkIsEqualOrBetterThan(e: Entity, other: LoadedClasses): Unit = {
         if (other.classes != null && !classes.subsetOf(other.classes)) {

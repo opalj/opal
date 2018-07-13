@@ -150,8 +150,8 @@ trait LibraryEntryPointsFinder extends EntryPointFinder {
  * the second entry does specify a descriptor and does not consider list subtypes (by not suffixing a plus to
  * the declaringClass) which implies that only the remove method with this descriptor is considered as entry point.
  *
-  *
-  *  @author Michael Reif
+ *
+ *  @author Michael Reif
  */
 trait ConfigurationEntryPointsFinder extends EntryPointFinder {
 
@@ -263,26 +263,26 @@ trait ConfigurationEntryPointsFinder extends EntryPointFinder {
 
     /* Required by Ficus' `ArbitraryTypeReader`*/
     private case class EntryPointContainer(
-        declaringClass: String,
-        name:           String,
-        descriptor:     Option[String]
+            declaringClass: String,
+            name:           String,
+            descriptor:     Option[String]
     )
 }
 
 /**
-  * The ApplicationEntryPointsFinder considers all main methods plus additionally configured entry points.
-  *
-  * @author Michael Reif
-  */
+ * The ApplicationEntryPointsFinder considers all main methods plus additionally configured entry points.
+ *
+ * @author Michael Reif
+ */
 object ApplicationEntryPointsFinder
     extends ApplicationEntryPointsFinder
     with ConfigurationEntryPointsFinder
 
 /**
-  * The ApplicationEntryPointsFinder considers all main methods plus additionally configured entry points.
-  *
-  * @author Michael Reif
-  */
+ * The ApplicationEntryPointsFinder considers all main methods plus additionally configured entry points.
+ *
+ * @author Michael Reif
+ */
 object LibraryEntryPointsFinder
     extends LibraryEntryPointsFinder
     with ConfigurationEntryPointsFinder

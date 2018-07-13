@@ -104,7 +104,9 @@ class FinalizerAnalysis private[analyses] (
         implicit
         state: FinalizerAnalysisState
     ): (IntTrieSet, Traversable[PartialResult[DeclaredMethod, CallersProperty]]) = {
-        instantiatedTypes.getNewTypes(state.seenTypes).foldLeft(
+        val index = state.seenTypes
+        state.seenTypes = instantiatedTypes.numElements
+        instantiatedTypes.getNewTypes(index).foldLeft(
             (IntTrieSet.empty, List.empty[PartialResult[DeclaredMethod, CallersProperty]])
         ) {
                 case ((finalizersR, resultsR), newInstantiatedType) ⇒
@@ -114,6 +116,7 @@ class FinalizerAnalysis private[analyses] (
                         MethodDescriptor.NoArgsAndReturnVoid
                     )
                     if (finalizers.size == 1) {
+
                         val finalizer = declaredMethods(finalizers.head)
                         val result = PartialResult[DeclaredMethod, CallersProperty](finalizer, CallersProperty.key, {
                             case EPK(e, _) ⇒ Some(
