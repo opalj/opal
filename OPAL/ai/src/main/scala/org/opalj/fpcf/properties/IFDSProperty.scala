@@ -20,4 +20,11 @@ abstract class IFDSProperty[DataFlowFact] extends Property
     type V = DUVar[(Domain with RecordDefUse)#DomainValue]
 
     def flows: Map[Statement, Set[DataFlowFact]]
+
+    override def equals(that: Any): Boolean = that match {
+        case other: IFDSProperty[DataFlowFact] if flows == other.flows => true
+        case _ => false
+    }
+
+    override def hashCode(): Int = flows.hashCode()
 }
