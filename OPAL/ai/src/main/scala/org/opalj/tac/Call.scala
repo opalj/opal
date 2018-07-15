@@ -2,6 +2,8 @@
 package org.opalj
 package tac
 
+import scala.collection.Set
+
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ReferenceType
@@ -28,6 +30,10 @@ trait Call[+V <: Var[V]] {
      */
     def params: Seq[Expr[V]] // TODO IndexedSeq
 
+    /**
+     * Convenience method which abstracts over all kinds of calls; not all information is
+     * always required.
+     */
     def resolveCallTargets(
         callingContext: ObjectType
     )(
