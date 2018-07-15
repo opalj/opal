@@ -22,8 +22,8 @@ trait RecordAllThrownExceptions extends domain.RecordThrownExceptions {
         value: ExceptionValue
     ): ThrownException = {
         value match {
-            case MultipleReferenceValues(values)        ⇒ values
-            case DomainSingleOriginReferenceValue(sorv) ⇒ Set.empty + sorv
+            case DomainMultipleReferenceValuesTag(value)   ⇒ value.values
+            case DomainSingleOriginReferenceValueTag(sorv) ⇒ Set.empty + sorv
         }
     }
 
@@ -33,8 +33,10 @@ trait RecordAllThrownExceptions extends domain.RecordThrownExceptions {
         value:                     ExceptionValue
     ): ThrownException = {
         value match {
-            case MultipleReferenceValues(values)        ⇒ previouslyThrownException ++ values
-            case DomainSingleOriginReferenceValue(sorv) ⇒ previouslyThrownException + sorv
+            case DomainMultipleReferenceValuesTag(value) ⇒
+                previouslyThrownException ++ value.values
+            case DomainSingleOriginReferenceValueTag(sorv) ⇒
+                previouslyThrownException + sorv
         }
     }
 }

@@ -213,7 +213,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
         someLocals: SomeLocals[domain.DomainValue] = None
     ): domain.Locals = {
 
-        import domain.DomainValue
+        import domain.DomainValueTag
 
         val locals = someLocals.map { l ⇒
             val maxLocals = method.body.get.maxLocals

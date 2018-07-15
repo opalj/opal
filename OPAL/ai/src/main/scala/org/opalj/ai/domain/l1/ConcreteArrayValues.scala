@@ -110,7 +110,7 @@ trait ConcreteArrayValues
     // DON'T DO: type DomainArrayValue <: ArrayValue with DomainSingleOriginReferenceValue
 
     type DomainConcreteArrayValue <: ConcreteArrayValue with DomainArrayValue
-    val DomainConcreteArrayValue: ClassTag[DomainConcreteArrayValue]
+    val DomainConcreteArrayValueTag: ClassTag[DomainConcreteArrayValue]
 
     /**
      * Represents arrays and their content.
@@ -205,7 +205,7 @@ trait ConcreteArrayValues
         ): Update[DomainSingleOriginReferenceValue] = {
 
             other match {
-                case DomainConcreteArrayValue(that) if this.refId == that.refId ⇒
+                case DomainConcreteArrayValueTag(that) if this.refId == that.refId ⇒
                     var update: UpdateType = NoUpdateType
                     var isOther: Boolean = true
                     val allValues = this.values.view.zip(that.values)
@@ -237,7 +237,7 @@ trait ConcreteArrayValues
                             }
                     }
 
-                // case DomainInitializedArrayValue(that) ⇒
+                // case DomainInitializedArrayValueTag(that) ⇒
 
                 case _ ⇒
                     val answer = super.doJoinWithNonNullValueWithSameOrigin(joinPC, other)
@@ -284,7 +284,7 @@ trait ConcreteArrayValues
 
         override def equals(other: Any): Boolean = {
             other match {
-                case DomainConcreteArrayValue(that) ⇒
+                case DomainConcreteArrayValueTag(that) ⇒
                     (that eq this) ||
                         (
                             (that canEqual this) &&

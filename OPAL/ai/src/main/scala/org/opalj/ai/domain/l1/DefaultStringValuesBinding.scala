@@ -13,7 +13,7 @@ trait DefaultStringValuesBinding extends DefaultReferenceValuesBinding with Stri
     domain: CorrelationalDomainSupport with IntegerValuesDomain with TypedValuesFactory with Configuration with TheClassHierarchy ⇒
 
     type DomainStringValue = StringValue
-    final val DomainStringValue: ClassTag[DomainStringValue] = implicitly
+    final val DomainStringValueTag: ClassTag[DomainStringValue] = implicitly
 
     //
     // FACTORY METHODS

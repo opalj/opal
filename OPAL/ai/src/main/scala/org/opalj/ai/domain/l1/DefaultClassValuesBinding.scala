@@ -15,7 +15,7 @@ trait DefaultClassValuesBinding extends DefaultStringValuesBinding with ClassVal
     domain: CorrelationalDomain with IntegerValuesDomain with TypedValuesFactory with Configuration with TheClassHierarchy ⇒
 
     type DomainClassValue = ClassValue
-    val DomainClassValue: ClassTag[DomainClassValue] = implicitly
+    val DomainClassValueTag: ClassTag[DomainClassValue] = implicitly
 
     //
     // FACTORY METHODS

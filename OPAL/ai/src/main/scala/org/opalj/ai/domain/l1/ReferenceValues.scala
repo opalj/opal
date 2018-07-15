@@ -5,7 +5,6 @@ package domain
 package l1
 
 import scala.language.existentials
-
 import scala.annotation.tailrec
 import scala.reflect.ClassTag
 
@@ -33,22 +32,22 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
     domain: CorrelationalDomainSupport with IntegerValuesDomain with TypedValuesFactory with Configuration with TheClassHierarchy ⇒
 
     type AReferenceValue <: ReferenceValue with DomainReferenceValue
-    val AReferenceValue: ClassTag[AReferenceValue]
+    val AReferenceValueTag: ClassTag[AReferenceValue]
 
     type DomainSingleOriginReferenceValue <: SingleOriginReferenceValue with AReferenceValue
-    val DomainSingleOriginReferenceValue: ClassTag[DomainSingleOriginReferenceValue]
+    val DomainSingleOriginReferenceValueTag: ClassTag[DomainSingleOriginReferenceValue]
 
     type DomainNullValue <: NullValue with DomainSingleOriginReferenceValue
-    val DomainNullValue: ClassTag[DomainNullValue]
+    val DomainNullValueTag: ClassTag[DomainNullValue]
 
     type DomainObjectValue <: ObjectValue with DomainSingleOriginReferenceValue
-    val DomainObjectValue: ClassTag[DomainObjectValue]
+    val DomainObjectValueTag: ClassTag[DomainObjectValue]
 
     type DomainArrayValue <: ArrayValue with DomainSingleOriginReferenceValue
-    val DomainArrayValue: ClassTag[DomainArrayValue]
+    val DomainArrayValueTag: ClassTag[DomainArrayValue]
 
     type DomainMultipleReferenceValues <: MultipleReferenceValues with AReferenceValue
-    val DomainMultipleReferenceValues: ClassTag[DomainMultipleReferenceValues]
+    val DomainMultipleReferenceValuesTag: ClassTag[DomainMultipleReferenceValues]
 
     abstract override def providesOriginInformationFor(ct: ComputationalType): Boolean = {
         ct == ComputationalTypeReference || super.providesOriginInformationFor(ct)
@@ -329,7 +328,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             (
                 // OPERANDS
                 operands mapConserve {
-                    case AReferenceValue(op) ⇒
+                    case AReferenceValueTag(op) ⇒
                         val newOp = refine(op)
                         if (newOp.refineIf(refinements))
                             // RESTART REFINEMENT PROCESS!
@@ -340,7 +339,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                 },
                 // REGISTERS
                 locals mapConserve {
-                    case AReferenceValue(l) ⇒
+                    case AReferenceValueTag(l) ⇒
                         val newL = refine(l)
                         if (newL.refineIf(refinements))
                             // RESTART REFINEMENT PROCESS!
@@ -519,10 +518,10 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             assert(this ne other)
 
             other match {
-                case DomainSingleOriginReferenceValue(that) ⇒
+                case DomainSingleOriginReferenceValueTag(that) ⇒
                     if (this.origin == that.origin)
                         that match {
-                            case DomainNullValue(that) ⇒
+                            case DomainNullValueTag(that) ⇒
                                 doJoinWithNullValueWithSameOrigin(joinPC, that)
                             case _ ⇒
                                 doJoinWithNonNullValueWithSameOrigin(joinPC, that)
@@ -531,7 +530,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                         val values = UIDSet2[DomainSingleOriginReferenceValue](this, that)
                         StructuralUpdate(MultipleReferenceValues(values))
                     }
-                case DomainMultipleReferenceValues(that) ⇒
+                case DomainMultipleReferenceValuesTag(that) ⇒
                     doJoinWithMultipleReferenceValues(joinPC, that)
             }
         }
@@ -1610,7 +1609,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                     } else
                         NoUpdate
 
-                case update @ SomeUpdate(DomainSingleOriginReferenceValue(joinedValue)) ⇒
+                case update @ SomeUpdate(DomainSingleOriginReferenceValueTag(joinedValue)) ⇒
                     update.updateValue(rejoinValue(thisValue, thatValue, joinedValue))
             }
         }
@@ -1620,7 +1619,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
 
             other match {
 
-                case DomainSingleOriginReferenceValue(thatValue) ⇒
+                case DomainSingleOriginReferenceValueTag(thatValue) ⇒
                     this.values.find(_.origin == thatValue.origin) match {
                         case Some(thisValue) ⇒
                             doRejoinSingleOriginReferenceValue(joinPC, thisValue, thatValue)
@@ -1628,7 +1627,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                             StructuralUpdate(this.addValue(thatValue))
                     }
 
-                case that: MultipleReferenceValues ⇒
+                case DomainMultipleReferenceValuesTag(that) ⇒
                     var updateType: UpdateType = NoUpdateType
                     var otherValues = that.values
                     var newValues = UIDSet.empty[DomainSingleOriginReferenceValue]
@@ -1649,7 +1648,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                                     joinResult match {
                                         case NoUpdate ⇒
                                             newValues += thisValue
-                                        case update @ SomeUpdate(DomainSingleOriginReferenceValue(otherValue)) ⇒
+                                        case update @ SomeUpdate(DomainSingleOriginReferenceValueTag(otherValue)) ⇒
                                             updateType = updateType &: update
                                             newValues += otherValue
                                     }

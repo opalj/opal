@@ -54,7 +54,7 @@ trait ValuesDomain { domain ⇒
      * (As of Scala 2.10 it is necessary that you do not use `implicit` in the subclass -
      * it will compile, but fail at runtime.)
      */
-    implicit val DomainValue: ClassTag[DomainValue]
+    implicit val DomainValueTag: ClassTag[DomainValue]
 
     /**
      * Abstracts over a concrete operand stack value or a value stored in one of the local
