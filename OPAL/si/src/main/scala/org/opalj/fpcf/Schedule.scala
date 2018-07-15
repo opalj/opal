@@ -45,6 +45,7 @@ case class Schedule(
             }
 
         }
+        ps.setupPhase(Set.empty, Set.empty)
     }
 
     override def toString: String = {

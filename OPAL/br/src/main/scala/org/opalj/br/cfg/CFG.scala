@@ -22,8 +22,7 @@ import org.opalj.graphs.Node
  * To compute a `CFG` use the [[CFGFactory]].
  *
  * ==Thread-Safety==
- * This class is thread-safe; all data is effectively immutable
- * '''after construction''' time.
+ * This class is thread-safe; all data is effectively immutable '''after construction''' time.
  *
  * @param   code The code for which the CFG was build.
  * @param   normalReturnNode The unique exit node of the control flow graph if the

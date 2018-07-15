@@ -10,11 +10,12 @@ import org.opalj.ai.isMethodExternalExceptionOrigin
 import org.opalj.ai.pcOfImmediateVMException
 import org.opalj.ai.pcOfMethodExternalException
 import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.value.KnownTypedValue
 
 /**
  * Identifies a variable which has a single static definition/initialization site.
  */
-abstract class DUVar[+Value <: org.opalj.ai.ValuesDomain#DomainValue] extends Var[DUVar[Value]] {
+abstract class DUVar[+Value <: KnownTypedValue] extends Var[DUVar[Value]] {
 
     /**
      * The information about the variable that were derived by the underlying data-flow analysis.

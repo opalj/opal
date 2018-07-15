@@ -31,7 +31,7 @@ import org.opalj.br.cfg.CFG
  *
  * @author Michael Eichberg
  */
-case class TACode[P <: AnyRef, V <: Var[V]](
+case class TACode[P <: AnyRef, +V <: Var[V]](
         params:            Parameters[P],
         stmts:             Array[Stmt[V]], // CONST
         pcToIndex:         Array[Int],

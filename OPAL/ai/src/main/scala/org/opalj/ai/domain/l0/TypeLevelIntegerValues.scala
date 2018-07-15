@@ -9,8 +9,6 @@ import org.opalj.value.IsByteValue
 import org.opalj.value.IsShortValue
 import org.opalj.value.IsBooleanValue
 import org.opalj.value.IsIntegerValue
-import org.opalj.br.ComputationalType
-import org.opalj.br.ComputationalTypeInt
 import org.opalj.br.BooleanType
 import org.opalj.br.CharType
 import org.opalj.br.ByteType
@@ -38,8 +36,6 @@ trait TypeLevelIntegerValues extends Domain { this: Configuration ⇒
      */
     protected[this] trait ComputationalTypeIntegerValue[T <: CTIntType] extends TypedValue[T] {
         this: DomainTypedValue[T] ⇒
-
-        final override def computationalType: ComputationalType = ComputationalTypeInt
 
         final override def verificationTypeInfo: VerificationTypeInfo = IntegerVariableInfo
 

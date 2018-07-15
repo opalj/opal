@@ -3,12 +3,11 @@ package org.opalj
 package tac
 
 import scala.collection.Set
-import org.opalj.ai.Domain
-import org.opalj.ai.domain.RecordDefUse
+
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.ProjectLike
-import org.opalj.value.KnownValue
+import org.opalj.value.KnownTypedValue
 
 trait VirtualCall[+V <: Var[V]] { this: Call[V] ⇒
 
@@ -26,7 +25,7 @@ trait VirtualCall[+V <: Var[V]] { this: Call[V] ⇒
     )(
         implicit
         p:  ProjectLike,
-        ev: V <:< DUVar[KnownValue]
+        ev: V <:< DUVar[KnownTypedValue]
     ): Set[Method] = {
         val receiverValue = receiver.asVar.value.asReferenceValue
 

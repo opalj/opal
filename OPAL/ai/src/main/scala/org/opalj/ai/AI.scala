@@ -9,22 +9,23 @@ import scala.util.control.ControlThrowable
 import org.opalj.log.Warn
 import org.opalj.log.OPALLogger
 import org.opalj.log.GlobalLogContext
+import org.opalj.control.foreachNonNullValue
+import org.opalj.bi.warnMissingLibrary
+import org.opalj.bytecode.BytecodeProcessingFailedException
+import org.opalj.br._
+import org.opalj.br.instructions._
+import org.opalj.collection.mutable.{Locals ⇒ Registers}
+import org.opalj.collection.mutable.IntArrayStack
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.:&:
 import org.opalj.collection.immutable.Chain
 import org.opalj.collection.immutable.Naught
 import org.opalj.collection.immutable.{Chain ⇒ List}
 import org.opalj.collection.immutable.{Naught ⇒ Nil}
-import org.opalj.control.foreachNonNullValue
-import org.opalj.bytecode.BytecodeProcessingFailedException
-import org.opalj.collection.mutable.{Locals ⇒ Registers}
 import org.opalj.ai.util.removeFirstUnless
 import org.opalj.ai.util.containsInPrefix
 import org.opalj.ai.util.insertBefore
 import org.opalj.ai.util.insertBeforeIfNew
-import org.opalj.br._
-import org.opalj.br.instructions._
-import org.opalj.collection.mutable.IntArrayStack
 
 /**
  * A highly-configurable framework for the (abstract) interpretation of Java bytecode.
@@ -1602,11 +1603,11 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                                             gotoExceptionHandler(pc, branchTarget, catchTypeOption)
                                             false
                                         } else {
-                                            val logContext = theDomain match {
+                                            implicit val logContext = theDomain match {
                                                 case ctx: LogContextProvider ⇒ ctx.logContext
                                                 case _                       ⇒ GlobalLogContext
                                             }
-                                            org.opalj.bi.warnMissingLibrary(logContext)
+                                            warnMissingLibrary
                                             var exceptionTypeAsJava =
                                                 exceptionValue.upperTypeBound.
                                                     iterator.map(_.toJava).
@@ -1619,7 +1620,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                                                     s"$exceptionTypeAsJava and ${caughtType.toJava}; "+
                                                     "aborting exception processing"
                                             )
-                                            OPALLogger.logOnce(warning)(logContext)
+                                            OPALLogger.logOnce(warning)
                                             true // effectively aborts the handling..
                                         }
                                 }
@@ -2155,7 +2156,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                         // stored in a table. At runtime the Java virtual machine searches
                         // the exception handlers of the current method in the order that
                         // they appear in the corresponding exception handler table.
-                        val theDomain.DomainReferenceValue(exceptionValue) = operands.head
+                        val theDomain.DomainReferenceValueTag(exceptionValue) = operands.head
                         handleException(
                             exceptionValue,
                             testForNullnessOfExceptionValue = true,

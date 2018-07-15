@@ -7,7 +7,7 @@ import org.opalj.br.MethodDescriptor
 import org.opalj.br.ReferenceType
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.ProjectLike
-import org.opalj.value.KnownValue
+import org.opalj.value.KnownTypedValue
 
 /**
  * Common supertrait of statements and expressions calling a method.
@@ -15,8 +15,10 @@ import org.opalj.value.KnownValue
  * @author Michael Eichberg
  */
 trait Call[+V <: Var[V]] {
+
     /** The declaring class; can be an array type for all methods defined by `java.lang.Object`. */
     def declaringClass: ReferenceType
+    /** `true` iff the declaring class is an interface. */
     def isInterface: Boolean
     def name: String
     def descriptor: MethodDescriptor
@@ -31,7 +33,7 @@ trait Call[+V <: Var[V]] {
     )(
         implicit
         p:  ProjectLike,
-        ev: V <:< DUVar[KnownValue]
+        ev: V <:< DUVar[KnownTypedValue]
     ): Set[Method]
 }
 

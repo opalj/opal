@@ -4,8 +4,6 @@ package ai
 package domain
 package l1
 
-import org.opalj.br.ComputationalType
-import org.opalj.br.ComputationalTypeLong
 import org.opalj.br.LongType
 import org.opalj.br.VerificationTypeInfo
 import org.opalj.br.LongVariableInfo
@@ -36,8 +34,6 @@ trait LongValues extends LongValuesDomain with ConcreteLongValues {
         this: DomainTypedValue[LongType] ⇒
 
         final override def valueType: Option[LongType] = Some(LongType)
-
-        final override def computationalType: ComputationalType = ComputationalTypeLong
 
         final override def verificationTypeInfo: VerificationTypeInfo = LongVariableInfo
     }

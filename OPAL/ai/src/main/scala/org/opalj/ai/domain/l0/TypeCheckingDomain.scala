@@ -54,7 +54,7 @@ final class TypeCheckingDomain(
     type AReferenceValue = ReferenceValue
     type DomainReferenceValue = AReferenceValue
 
-    final val DomainReferenceValue: ClassTag[DomainReferenceValue] = implicitly
+    final val DomainReferenceValueTag: ClassTag[DomainReferenceValue] = implicitly
 
     type DomainNullValue = NullValue
     type DomainObjectValue = ObjectValue

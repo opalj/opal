@@ -584,8 +584,8 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
 
         override def abstractsOver(other: DomainValue): Boolean = {
             (this eq other) || (other match {
-                case DomainReferenceValue(v) ⇒ v.isNull.isYes
-                case _                       ⇒ false
+                case DomainReferenceValueTag(v) ⇒ v.isNull.isYes
+                case _                          ⇒ false
             })
         }
 
@@ -992,7 +992,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             if (this eq other)
                 return true;
 
-            val DomainReferenceValue(that) = other
+            val DomainReferenceValueTag(that) = other
 
             if (this.isNull.isNo && that.isNull.isYesOrUnknown)
                 return false;
@@ -1112,6 +1112,8 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             s"invalid upper type bound: $upperTypeBound for: ${values.mkString("[", ";", "]")}"
         )
 
+        override def baseValues: Traversable[BaseReferenceValue] = values
+
         def addValue(newValue: DomainSingleOriginReferenceValue): DomainMultipleReferenceValues = {
 
             assert(!values.exists(_.origin == newValue.origin))
@@ -1204,8 +1206,6 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
         }
 
         override def originsIterator: IntIterator = values.idIterator
-
-        override def baseValues: Traversable[DomainReferenceValue] = values
 
         /**
          * Summarizes this value by creating a new domain value that abstracts over

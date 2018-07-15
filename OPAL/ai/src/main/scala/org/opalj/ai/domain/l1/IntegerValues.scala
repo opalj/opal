@@ -4,8 +4,6 @@ package ai
 package domain
 package l1
 
-import org.opalj.br.ComputationalType
-import org.opalj.br.ComputationalTypeInt
 import org.opalj.br.CTIntType
 import org.opalj.br.VerificationTypeInfo
 import org.opalj.br.IntegerVariableInfo
@@ -43,8 +41,6 @@ trait IntegerValues extends IntegerValuesDomain with ConcreteIntegerValues {
         this: DomainTypedValue[CTIntType] ⇒
 
         final override def valueType: Option[CTIntType] = Some(CTIntType)
-
-        final override def computationalType: ComputationalType = ComputationalTypeInt
 
         final override def verificationTypeInfo: VerificationTypeInfo = IntegerVariableInfo
 
