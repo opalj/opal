@@ -290,9 +290,9 @@ trait IsReferenceValue extends KnownTypedValue {
      * exactly one element. That is, the function is only always defined iff the type
      * is precise.
      */
-    final def theType: ReferenceType = {
+    final def asReferenceType: ReferenceType = {
         if (!upperTypeBound.isSingletonSet) {
-            throw new AssertionError(s"$upperTypeBound.size >= 1")
+            throw new ClassCastException(s"$upperTypeBound.size >= 1")
         }
 
         upperTypeBound.head

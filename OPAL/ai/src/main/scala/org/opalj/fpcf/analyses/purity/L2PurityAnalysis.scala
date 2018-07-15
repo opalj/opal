@@ -444,7 +444,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                 if (data._1.isVar) {
                     val value = data._1.asVar.value.asReferenceValue
                     value.isPrecise &&
-                        classHierarchy.isSubtypeOf(value.theType, ObjectType.Cloneable).isNo
+                        classHierarchy.isSubtypeOf(value.asReferenceType, ObjectType.Cloneable).isNo
                 } else
                     false
             case EPS(_, _, NoLocalField) ⇒
@@ -474,7 +474,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
             case FinalEP(_, ExtensibleGetter | VExtensibleGetter) ⇒
                 if (data._1.get.isVar) {
                     val value = data._1.get.asVar.value.asReferenceValue
-                    if (value.isPrecise && isSubtypeOf(value.theType, ObjectType.Cloneable).isNo) {
+                    if (value.isPrecise && isSubtypeOf(value.asReferenceType, ObjectType.Cloneable).isNo) {
                         if (data._2 meet state.ubPurity ne state.ubPurity)
                             isLocal(data._1.get, data._2)
                     } else {
