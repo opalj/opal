@@ -19,7 +19,6 @@ abstract class DUVar[+Value <: KnownTypedValue] extends Var[DUVar[Value]] {
 
     /**
      * The information about the variable that were derived by the underlying data-flow analysis.
-     *
      */
     def value: Value
 
