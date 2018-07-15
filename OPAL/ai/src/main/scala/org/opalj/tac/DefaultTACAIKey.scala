@@ -11,6 +11,7 @@ import org.opalj.ai.domain.RecordDefUse
 import org.opalj.ai.Domain
 import org.opalj.ai.AIResult
 import org.opalj.ai.common.SimpleAIKey
+import org.opalj.value.KnownTypedValue
 
 /**
  * ''Key'' to get the 3-address based code of a method computed using the result of the
@@ -41,16 +42,16 @@ object DefaultTACAIKey extends TACAIKey {
      */
     override protected def compute(
         project: SomeProject
-    ): Method ⇒ TACode[TACMethodParameter, DUVar[_ <: (Domain with RecordDefUse)#DomainValue]] = {
+    ): Method ⇒ TACode[TACMethodParameter, DUVar[KnownTypedValue]] = {
         val aiResults = project.get(SimpleAIKey)
-        val taCodes = TrieMap.empty[Method, TACode[TACMethodParameter, DUVar[(Domain with RecordDefUse)#DomainValue]]]
+        val taCodes = TrieMap.empty[Method, TACode[TACMethodParameter, DUVar[KnownTypedValue]]]
 
         def computeAndCacheTAC(m: Method) = { // never executed concurrently
             val aiResult = aiResults(m)
             val code = TACAI(m, project.classHierarchy, aiResult)(Nil)
             // well... the following cast is safe, because the underlying
-            // datastructure is actually, conceptually immutable
-            val taCode = code.asInstanceOf[TACode[TACMethodParameter, DUVar[(Domain with RecordDefUse)#DomainValue]]]
+            // data structure is actually (at least conceptually) immutable
+            val taCode = code.asInstanceOf[TACode[TACMethodParameter, DUVar[KnownTypedValue]]]
             taCodes.put(m, taCode)
             taCode
         }

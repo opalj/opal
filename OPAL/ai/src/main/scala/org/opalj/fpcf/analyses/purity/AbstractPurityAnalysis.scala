@@ -127,7 +127,10 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
 
     val rater: DomainSpecificRater
 
-    protected[this] val tacai: Method ⇒ TACode[TACMethodParameter, V] = project.get(DefaultTACAIKey)
+    protected[this] val tacai: Method ⇒ TACode[TACMethodParameter, V] = {
+        project.get(DefaultTACAIKey)
+    }
+
     protected[this] val isMethodOverridable: Method ⇒ Answer = project.get(IsOverridableMethodKey)
     protected[this] val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
 

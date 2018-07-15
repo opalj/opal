@@ -6,10 +6,8 @@ package analyses
 import java.util.concurrent.ConcurrentHashMap
 
 import org.opalj
-import org.opalj.ai.Domain
 import org.opalj.ai.ValueOrigin
 import org.opalj.ai.common.SimpleAIKey
-import org.opalj.ai.domain.RecordDefUse
 import org.opalj.br.ClassFile
 import org.opalj.br.DeclaredMethod
 import org.opalj.ai.common.DefinitionSiteLike
@@ -62,6 +60,7 @@ import org.opalj.tac.Stmt
 import org.opalj.tac.TACMethodParameter
 import org.opalj.tac.TACode
 import org.opalj.tac.VirtualFunctionCall
+import org.opalj.value.KnownTypedValue
 
 /**
  * Determines whether the lifetime of a reference type field is the same as that of its owning
@@ -75,7 +74,7 @@ class FieldLocalityAnalysis private[analyses] (
         final val project: SomeProject
 ) extends FPCFAnalysis {
 
-    type V = DUVar[(Domain with RecordDefUse)#DomainValue]
+    type V = DUVar[KnownTypedValue]
 
     private[this] val tacaiProvider = project.get(DefaultTACAIKey)
     private[this] val declaredMethods = project.get(DeclaredMethodsKey)
@@ -343,7 +342,7 @@ class FieldLocalityAnalysis private[analyses] (
 
             case Assignment(_, _, VirtualFunctionCall(_, rcvrType, _, name, desc, receiver, _)) ⇒
                 val callerType = caller.classFile.thisType
-                val value = receiver.asVar.value.asDomainReferenceValue
+                val value = receiver.asVar.value.asReferenceValue
                 val mostPreciseType = value.valueType
 
                 if (mostPreciseType.isEmpty) {
@@ -391,7 +390,12 @@ class FieldLocalityAnalysis private[analyses] (
      * @return false if the field may still be local, true otherwise.
      * @note Adds dependees as necessary.
      */
-    def handleConcreteCall(callee: opalj.Result[Method])(implicit state: FieldLocalityState): Boolean = {
+    def handleConcreteCall(
+        callee: opalj.Result[Method]
+    )(
+        implicit
+        state: FieldLocalityState
+    ): Boolean = {
         if (callee.isEmpty) { // Unknown method, not found in the scope of the current project
             true
         } else {

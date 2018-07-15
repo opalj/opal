@@ -6,8 +6,8 @@ package info
 import java.net.URL
 import java.util.concurrent.ConcurrentLinkedQueue
 
-import org.opalj.ai.Domain
-import org.opalj.ai.domain.RecordDefUse
+import scala.collection.JavaConverters._
+
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.Method
 import org.opalj.br.PC
@@ -18,6 +18,7 @@ import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.cg.IsOverridableMethodKey
+import org.opalj.value.KnownTypedValue
 import org.opalj.fpcf.PropertyStoreKey
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.PropertyStore
@@ -52,8 +53,6 @@ import org.opalj.tac.TACMethodParameter
 import org.opalj.tac.TACode
 import org.opalj.tac.DUVar
 
-import scala.collection.JavaConverters._
-
 /**
  * Identifies calls to pure/side-effect free methods where the results are not used subsequently.
  *
@@ -62,7 +61,7 @@ import scala.collection.JavaConverters._
 object UnusedResults extends DefaultOneStepAnalysis {
 
     /** The type of the TAC domain. */
-    type V = DUVar[(Domain with RecordDefUse)#DomainValue]
+    type V = DUVar[KnownTypedValue]
 
     override def title: String = "Unused Results Analysis"
 
@@ -167,7 +166,7 @@ object UnusedResults extends DefaultOneStepAnalysis {
         val callerType = caller.classFile.thisType
         val VirtualFunctionCall(_, dc, _, name, descr, receiver, _) = call
 
-        val value = receiver.asVar.value.asDomainReferenceValue
+        val value = receiver.asVar.value.asReferenceValue
         val receiverType = value.valueType
 
         if (receiverType.isEmpty) {
@@ -175,7 +174,7 @@ object UnusedResults extends DefaultOneStepAnalysis {
         } else if (receiverType.get.isArrayType) {
             val callee = project.instanceCall(callerType, ObjectType.Object, name, descr)
             handleCall(caller, callee, call.pc)
-        } else if (receiver.asVar.value.asDomainReferenceValue.isPrecise) {
+        } else if (value.isPrecise) {
             val callee = project.instanceCall(callerType, receiverType.get, name, descr)
             handleCall(caller, callee, call.pc)
         } else {
