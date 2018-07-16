@@ -220,6 +220,8 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
     trait ReferenceValue extends super.ReferenceValue with ArrayAbstraction {
         this: AReferenceValue ⇒
 
+        final override def asDomainReferenceValue: DomainReferenceValue = this
+
         override def valueType: Option[ReferenceType] = {
             upperTypeBound.size match {
                 case 0 ⇒ None /* only null has an empty upper type bound */
