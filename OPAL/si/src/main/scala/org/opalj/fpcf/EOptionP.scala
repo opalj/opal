@@ -3,7 +3,8 @@ package org.opalj
 package fpcf
 
 /**
- * An entity and an associated property - if it is (already) available.
+ * An entity associated with the current extension of a property or `None` if no (preliminary)
+ * property is already computed.
  *
  * @author Michael Eichberg
  */
@@ -14,9 +15,12 @@ sealed trait EOptionP[+E <: Entity, +P <: Property] {
      * to use entities that stand for specific elements in the code, but which
      * are not the concrete source code entities themselves. This greatly facilitates
      * associating properties with entities where the respective code is not available.
-     * For example, by using "declared methods" it is possible to associate (predetermined)
-     * properties with (selected) library methods even if those methods are not part of
-     * the analysis.
+     * For example, by using an object which acts as a representative for a concrete method
+     * it is possible to associate (predetermined) properties with (selected) library methods
+     * even if those methods are not part of the analysis.
+     *
+     * @note Entities have to implement `equals`/`hashCode` methods which are very efficient,
+     *       because entity based comparisons happen very frequently!
      */
     val e: E
 
@@ -33,6 +37,10 @@ sealed trait EOptionP[+E <: Entity, +P <: Property] {
      */
     def hasProperty: Boolean
     final def hasNoProperty: Boolean = !hasProperty
+
+    /**
+     * This EOptionP as an EPS object; defined iff at least a preliminary property exists.
+     */
     def asEPS: EPS[E, P]
 
     /**
@@ -86,7 +94,6 @@ sealed trait EOptionP[+E <: Entity, +P <: Property] {
      * `NumberFormatException` can be ruled out and a final result for `m` can be
      * computed.
      *
-     *
      * @note If the property is final, the lb (and ub) will return the final property `p`.
      */
     @throws[UnsupportedOperationException]("if no property is available")
@@ -105,7 +112,7 @@ sealed trait EOptionP[+E <: Entity, +P <: Property] {
 }
 
 /**
- * Factory and extractor for [[EPK]] objects.
+ * Factory and extractor for [[EOptionP]] objects.
  *
  * @author Michael Eichberg
  */
@@ -132,7 +139,7 @@ sealed trait EPS[+E <: Entity, +P <: Property] extends EOptionP[E, P] {
     /**
      * Creates a [[FinalEP]] object using the current ub.
      *
-     * No check is done whether the current state is actually final.
+     * @note No check is done whether the property is actually final.
      */
     final def toUBEP: FinalEP[E, P] = FinalEP(e, ub)
 
@@ -165,8 +172,8 @@ object EPS {
 }
 
 /**
- * Encapsulate the intermediate state related to the computation of the property `P` of
- * the respective kind for the entity `E`.
+ * Encapsulates the intermediate lower- and upper bound related to the computation of the respective
+ * property kind for the entity `E`.
  *
  * For a detailed discussion of the semantics of `lb` and `ub` see [[EOptionP.lb]].
  */
@@ -205,10 +212,9 @@ object IntermediateEP {
 }
 
 /**
- * Encapsulate the final state related to the computation of the property `P` of
- * the respective kind for the entity `E`.
+ * Encapsulate the final property `P` for the entity `E`.
  *
- * For a detailed discussion of the semantics of `lb` and `ub` see [[EOptionP.lb]].
+ * For a detailed discussion of the semantics of `lb` and `ub` see [[EOptionP.ub]].
  */
 final class FinalEP[+E <: Entity, +P <: Property](val e: E, val ub: P) extends EPS[E, P] {
 
@@ -246,10 +252,6 @@ object FinalEP {
 
 /**
  * A simple pair consisting of an [[Entity]] and a [[PropertyKey]].
- *
- * Compared to a standard `Tuple2` the entities are compared using reference comparison
- * and not equality based on `equals` checks. `PropertyKey`s are compared using equals
- * (structural equality).
  *
  * @author Michael Eichberg
  */

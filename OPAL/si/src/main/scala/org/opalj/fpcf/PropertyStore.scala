@@ -45,9 +45,10 @@ import org.opalj.log.OPALLogger.error
  *  - '''Thread-Safe PropertyComputation functions''' If a single instance of a property computation
  *    function (which is the standard case) is scheduled for computing the properties of multiple
  *    entities, that function has to be thread safe. I.e., the function may
- *    be executed concurrently for different entities.
+ *    be executed concurrently for different entities. The [[OnUpdateContinuation]] functions
+ *    are, however, executed sequentially w.r.t. one E/PK pair.
  *  - '''Non-Overlapping Results''' [[PropertyComputation]] functions that are invoked on different
- *    entities have to compute result sets that are disjoint.
+ *    entities have to compute result sets that are disjoint unless a [[PartialResult]] is used.
  *    For example, an analysis that performs a computation on class files and
  *    that derives properties of a specific kind related to a class file's methods must ensure
  *    that two concurrent calls of the same analysis - running concurrently on two different
@@ -78,13 +79,13 @@ import org.opalj.log.OPALLogger.error
  * ==Common Abbreviations==
  *  - e =         Entity
  *  - p =         Property
- *  - ps =        Properties (the properties of an entity - one per kind)
  *  - pk =        Property Key
  *  - pc =        Property Computation
  *  - lpc =       Lazy Property Computation
  *  - c =         Continuation (The part of the analysis that factors in all properties of dependees)
  *  - EPK =       Entity and a PropertyKey
- *  - EP =        Entity and an associated Property
+ *  - EPS =       Entity and an intermediate Property
+ *  - EP =        Entity and some (final or intermediate) Property
  *  - EOptionP =  Entity and either a PropertyKey or (if available) a Property
  *
  * ==Exceptions==
@@ -405,7 +406,7 @@ abstract class PropertyStore {
      * element then only because a dependee has changed!
      *
      * In general, the result can't be an `IncrementalResult` and `scheduleLazyPropertyComputation`
-     * cannot be used for properties which should be computed by staged analyses.
+     * cannot be used for properties which should be computed by phased analyses.
      *
      * '''A lazy computation must never return a [[NoResult]]; if the entity cannot be processed an
      * exception has to be thrown or the bottom value has to be returned.'''
@@ -422,8 +423,9 @@ abstract class PropertyStore {
     /**
      * Registers a property computation that is eagerly triggered when a property of the given kind
      * is derived for some entity for the first time. Note, that the property computation
-     * function – as usual – has to be thread safe. The primary use case is to kick-start the
-     * computation of some e/pk as soon as an entity "becomes relevant".
+     * function – as usual – has to be thread safe (only on-update continuaton functions are
+     * guaranteed to be executed sequentially per E/PK pair). The primary use case is to
+     * kick-start the computation of some e/pk as soon as an entity "becomes relevant".
      *
      * In general, it also possible to have a standard analysis that just queries the properties
      * of the respective entities and which maintains the list of dependees. However, if the
@@ -489,7 +491,7 @@ abstract class PropertyStore {
      * (cf. [[IncrementalResult]]) which, e.g., processes the class hierarchy in a top-down manner.
      *
      * @note   It is NOT possible to use scheduleEagerComputationForEntity for properties which
-     *         are also computed using a lazy property computation; use `force` instead!
+     *         are also computed by a lazy property computation; use `force` instead!
      *
      * @note   If any computation resulted in an exception, then the scheduling will fail and
      *         the exception related to the failing computation will be thrown again.
@@ -509,13 +511,13 @@ abstract class PropertyStore {
     def handleResult(r: PropertyComputationResult, forceEvaluation: Boolean = false): Unit
 
     /**
-     * Awaits the completion of all property computation functions which were previously registered.
+     * Awaits the completion of all property computations which were previously scheduled.
      * As soon as all initial computations have finished, dependencies on E/P pairs for which
-     * no value was computed and will be computed(!) (see `setupPhase` for details) will be
-     * identified and the fallback value will be used. After that, cycle resolution will be
-     * performed. I.e., first all _closed_ strongly connected components will be identified
-     * that do not contain any properties for which we will compute (in a future phase) any
-     * more refined values. Then the values will be made final.
+     * no value was computed and also will not be computed in the future(!) (see `setupPhase`
+     * for details), will be identified and the fallback value will be used. After that, cycle
+     * resolution will be performed. I.e., first all _closed_ strongly connected components
+     * will be identified that do not contain any properties for which we will compute (in a
+     * future phase) any more refined values. Then the values will be made final.
      *
      * If the store is suspended, waitOnPhaseCompletion will return as soon as all running
      * computations are finished. By updating the `isSuspended` state and calling
@@ -523,10 +525,10 @@ abstract class PropertyStore {
      *
      * @note If a second thread is used to register [[org.opalj.fpcf.PropertyComputation]] functions
      *       no guarantees are given; it is recommended to schedule all property computation
-     *       functions using one thread and using that thread to call this method.
+     *       functions using one thread and to also use that thread to call this method.
      * @note If a computation fails with an exception, the property store will stop in due time
      *       and return the thrown exception. No strong guarantees are given which exception
-     *       is returned in case of concurrent execution.
+     *       is returned in case of concurrent execution with multiple exceptions.
      * @note In case of an exception, the analyses are aborted as fast as possible and the
      *       store is no longer usable.
      */
@@ -588,6 +590,10 @@ abstract class PropertyStore {
     }
 }
 
+/**
+ * Manages general configuration options. Please note, that changes of these options
+ * can be done at any time.
+ */
 object PropertyStore {
 
     final val DebugKey = "org.opalj.debug.fpcf.PropertyStore.Debug"

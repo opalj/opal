@@ -4,11 +4,11 @@ package org.opalj.fpcf
 /**
  * Thrown if a context object is requested, but could not be found.
  *
- * Context objects are generally totally unrelated to entities and properties. They just store
- * information that may be required by analyses using the property store. In general, an analysis
- * should always be able to compute the properties if the context object is not
- * available; e.g., by using a fall back value. However, in case of `Project` based analyses
- * the context will always contain the project.
+ * Context objects are generally unrelated to entities and properties. They just store
+ * information that may be required by fixpoint computations executed using the property store.
+ *
+ * @note If the `org.opalj.br.ProjectInformationKey` is used to get the property store, the
+ *       `Project` is stored in the context.
  *
  * @author Michael Eichberg
  */
