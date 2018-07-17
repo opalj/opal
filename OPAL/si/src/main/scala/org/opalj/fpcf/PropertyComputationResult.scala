@@ -178,24 +178,6 @@ private[fpcf] object IntermediateResult {
 }
 
 /**
- * Hints about the nature of the property computations, which can/are used by the property store
- * to implement different scheduling schemes.
- */
-sealed trait PropertyComputationHint
-
-/**
- * A standard property computation.
- */
-final case object DefaultPropertyComputation extends PropertyComputationHint
-
-/**
- * The property computation is extremely cheap. Therefore, the computation can/should be
- * processed in the current thread, it is extremely unlikely that we will gain anything
- * from parallelization.
- */
-final case object CheapPropertyComputation extends PropertyComputationHint
-
-/**
  * Encapsulates some result and also some computations that should be computed next.
  * In this case the property store DOES NOT guarantee that the result is processed
  * before the next computations are triggered. Hence, `nextComputations` can query the e/pk
