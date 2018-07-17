@@ -26,7 +26,7 @@
             <nav id="nav">
                 <ul>
                     <li><a href="index.html">Getting Started</a></li>
-                    <li><a href="http://www.opal-project.de/library/api/SNAPSHOT/#org.opalj.package">ScalaDoc</a></li>
+                    <li><a href="http://www.opal-project.de/library/api/SNAPSHOT/org/opalj/index.html">ScalaDoc</a></li>
                     <li><a href="http://www.bitbucket.org/delors/opal">Repository</a></li>
                     <li><a href="https://search.maven.org/#search%7Cga%7C1%7Cg%3A%22de.opal-project%22">Maven Central</a></li>
                 </ul>
