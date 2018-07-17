@@ -24,6 +24,6 @@ case class ExceptionLogMessage(
             }
             message
         }
-        exceptionToMessage(baseMessage+"\n", t)
+        exceptionToMessage(baseMessage, t)
     }
 }
