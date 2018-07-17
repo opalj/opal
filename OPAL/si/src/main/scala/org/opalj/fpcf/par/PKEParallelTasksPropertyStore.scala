@@ -1289,7 +1289,7 @@ final class PKEParallelTasksPropertyStore private (
 
                 val cSCCs = graphs.closedSCCs(
                     epks,
-                    (epk: SomeEPK) ⇒ dependees(epk.pk.id)(epk.e).map(_.toEPK)
+                    (epk: SomeEPK) ⇒ this.dependees(epk.pk.id)(epk.e).map(_.toEPK)
                 )
                 if (cSCCs.nonEmpty) {
                     handleResult(CSCCsResult(cSCCs), false)
