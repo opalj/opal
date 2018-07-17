@@ -188,7 +188,7 @@ final class IntermediateEP[+E <: Entity, +P <: Property](
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: IntermediateEP[_, _] ⇒ (e eq that.e) && lb == that.lb && ub == that.ub
+            case that: IntermediateEP[_, _] ⇒ e == that.e && lb == that.lb && ub == that.ub
             case _                          ⇒ false
         }
     }
@@ -227,7 +227,7 @@ final class FinalEP[+E <: Entity, +P <: Property](val e: E, val ub: P) extends E
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: FinalEP[_, _] ⇒ (that.e eq this.e) && this.p == that.p
+            case that: FinalEP[_, _] ⇒ that.e == this.e && this.p == that.p
             case _                   ⇒ false
         }
     }
@@ -274,7 +274,7 @@ final class EPK[+E <: Entity, +P <: Property](
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: EPK[_, _] ⇒ (that.e eq this.e) && this.pk == that.pk
+            case that: EPK[_, _] ⇒ that.e == this.e && this.pk == that.pk
             case _               ⇒ false
         }
     }

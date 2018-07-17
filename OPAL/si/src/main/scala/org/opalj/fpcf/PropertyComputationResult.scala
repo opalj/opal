@@ -154,7 +154,7 @@ case class IntermediateResult[P <: Property](
     override def equals(other: Any): Boolean = {
         other match {
             case IntermediateResult(e, lb, ub, otherDependees, _, _) if (
-                (this.e eq e) && this.lb == lb && this.ub == ub
+                this.e == e && this.lb == lb && this.ub == ub
             ) ⇒
                 val dependees = this.dependees
                 dependees.size == otherDependees.size &&
@@ -216,12 +216,10 @@ case class Results(
 
 }
 private[fpcf] object Results {
+
     private[fpcf] final val id = 5
 
-    def apply(results: PropertyComputationResult*): Results = {
-        new Results(results)
-    }
-
+    def apply(results: PropertyComputationResult*): Results = new Results(results)
 }
 
 /**
