@@ -1,41 +1,10 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package fpcf
 package analyses
 
-import java.io.File
-import java.io.PrintWriter
-import java.io.FileOutputStream
-import java.io.OutputStreamWriter
-import java.util.zip.DeflaterOutputStream
-import java.util.zip.InflaterInputStream
+import java.nio.file.Paths
+import java.nio.file.Path
 import java.util.zip.GZIPInputStream
 
 import scala.reflect.runtime.universe.runtimeMirror
@@ -107,14 +76,13 @@ class FPCFAnalysesIntegrationTest extends FunSpec {
 
                     val actualIt = actual.iterator
 
-                    val fileName = s"$name-$projectName"
+                    val fileName = s"$name-$projectName.txt.gz"
 
-                    val expectedStream = this.getClass.getResourceAsStream(s"$fileName.gz")
+                    val expectedStream = this.getClass.getResourceAsStream(fileName)
                     if (expectedStream eq null)
                         fail(
                             s"missing expected results: $name; "+
-                                s"current results written to:\n"+
-                                io.writeGZip(actual, fileName, ".gz")
+                                s"current results written to:\n"+writeActual(actual, fileName)
                         )
                     val expectedIt =
                         Source.fromInputStream(new GZIPInputStream(expectedStream)).getLines
@@ -125,25 +93,28 @@ class FPCFAnalysesIntegrationTest extends FunSpec {
                         if (actualLine != expectedLine)
                             fail(
                                 s"comparison failed:\n$actualLine\n\t\tvs.\n$expectedLine\n"+
-                                    "current results written to :\n"+
-                                    io.writeGZip(actual, fileName, ".gz")
+                                    "current results written to :\n"+writeActual(actual, fileName)
                             )
                     }
                     if (actualIt.hasNext)
                         fail(
                             "actual is longer than expected - first line: "+actualIt.next()+
-                                "\n current results written to :\n"+
-                                io.writeGZip(actual, fileName, ".gz")
+                                "\n current results written to :\n"+writeActual(actual, fileName)
                         )
                     if (expectedIt.hasNext)
                         fail(
                             "expected is longer than actual - first line: "+expectedIt.next()+
-                                "\n current results written to :\n"+
-                                io.writeGZip(actual, fileName, ".gz")
+                                "\n current results written to :\n"+ writeActual(actual, fileName)
                         )
                 }
             }
         }
+    }
+
+    def writeActual(actual: Seq[String], fileName: String): Path = {
+        val path = Paths.get(fileName)
+        io.writeGZip(actual.iterator.map(_ + '\n').map(_.getBytes("UTF-8")), path)
+        path
     }
 
     def isRecordedProperty(pk: SomePropertyKey, ep: SomeEPS): Boolean = {

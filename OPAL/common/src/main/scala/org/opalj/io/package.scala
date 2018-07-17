@@ -53,10 +53,10 @@ package object io {
     @throws[IOException]("if it is not possible to create a temporary file")
     @throws[OpeningFileFailedException]("if it is not possible to open the file")
     def writeAndOpen(
-                        node:           Node,
-                        filenamePrefix: String,
-                        filenameSuffix: String
-                    ): File = {
+        node:           Node,
+        filenamePrefix: String,
+        filenameSuffix: String
+    ): File = {
         val data = node.toString
         writeAndOpen(data, filenamePrefix, filenameSuffix)
     }
@@ -88,10 +88,10 @@ package object io {
     @throws[IOException]("if it is not possible to create a temporary file")
     @throws[OpeningFileFailedException]("if it is not possible to open the file")
     def writeAndOpen(
-                        data:           String,
-                        filenamePrefix: String,
-                        filenameSuffix: String
-                    ): File = {
+        data:           String,
+        filenamePrefix: String,
+        filenameSuffix: String
+    ): File = {
         val file = write(data, filenamePrefix, filenameSuffix).toFile
         open(file)
         file
@@ -106,19 +106,19 @@ package object io {
     }
 
     def write(
-                 data:           String,
-                 filenamePrefix: String,
-                 filenameSuffix: String
-             ): Path = {
+        data:           String,
+        filenamePrefix: String,
+        filenameSuffix: String
+    ): Path = {
 
         write(Seq(data), filenamePrefix, filenameSuffix)
     }
 
     def write(
-                 data:           TraversableOnce[String],
-                 filenamePrefix: String,
-                 filenameSuffix: String
-             ): Path = {
+        data:           TraversableOnce[String],
+        filenamePrefix: String,
+        filenameSuffix: String
+    ): Path = {
 
         val path = Files.createTempFile(
             sanitizeFileName(filenamePrefix),
@@ -129,21 +129,19 @@ package object io {
     }
 
     def writeGZip(
-                     data:           String,
-                     filenamePrefix: String,
-                     filenameSuffix: String
-                 ): Path = {
+        data:           String,
+        filenamePrefix: String,
+        filenameSuffix: String
+    ): Path = {
 
         writeGZip(Seq(data), filenamePrefix, filenameSuffix)
     }
 
-
-
     def writeGZip(
-                     data:           TraversableOnce[String],
-                     filenamePrefix: String,
-                     filenameSuffix: String
-                 ): Path = {
+        data:           TraversableOnce[String],
+        filenamePrefix: String,
+        filenameSuffix: String
+    ): Path = {
 
         val path = Files.createTempFile(
             sanitizeFileName(filenamePrefix),
@@ -160,7 +158,7 @@ package object io {
 
     def write(data: TraversableOnce[Array[Byte]], path: Path): Unit = {
         val out = new FileOutputStream(path.toFile)
-        try{
+        try {
             data.foreach(out.write)
         } finally {
             out.close()
