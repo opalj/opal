@@ -2,7 +2,7 @@
 package org.opalj.fpcf
 
 /**
- * Encapsulates the result of the computation of a property.
+ * Encapsulates the (intermediate) result of the computation of a property.
  *
  * @author Michael Eichberg
  */
@@ -19,9 +19,6 @@ sealed abstract class PropertyComputationResult {
  *
  * @note A `NoResult` can only be used as the result of an initial computation. Hence, an
  *       `OnUpdateContinuation` must never return `NoResult`.
- *
- * In some cases it makes sense to do, e.g., an analysis per class to compute the properties
- * for some fields.
  */
 object NoResult extends PropertyComputationResult {
     private[fpcf] final val id = 0
@@ -29,10 +26,10 @@ object NoResult extends PropertyComputationResult {
 
 /**
  * Encapsulates the final result of the computation of a property. I.e., the analysis
- * determined that the computed property will not be updated because there is no further
- * chance to do so.
+ * determined that the computed property will not be updated in the future.
  *
- * A final result is only to be used if no further refinement is possible or may happen.
+ * A final result is only to be used if no further refinement is possible or may happen and
+ * if the bounds are correct/sound abstractions.
  *
  * @note   The framework will invoke and deregister all dependent computations (observers).
  *         If – after having a result - another result w.r.t. the given entity and property is given
@@ -157,7 +154,7 @@ case class IntermediateResult[P <: Property](
     override def equals(other: Any): Boolean = {
         other match {
             case IntermediateResult(e, lb, ub, otherDependees, _, _) if (
-                (this.e eq e) && this.lb == lb && this.ub == ub
+                this.e == e && this.lb == lb && this.ub == ub
             ) ⇒
                 val dependees = this.dependees
                 dependees.size == otherDependees.size &&
@@ -176,24 +173,6 @@ case class IntermediateResult[P <: Property](
 private[fpcf] object IntermediateResult {
     private[fpcf] final val id = 3
 }
-
-/**
- * Hints about the nature of the property computations, which can/are used by the property store
- * to implement different scheduling schemes.
- */
-sealed trait PropertyComputationHint
-
-/**
- * A standard property computation.
- */
-final case object DefaultPropertyComputation extends PropertyComputationHint
-
-/**
- * The property computation is extremely cheap. Therefore, the computation can/should be
- * processed in the current thread, it is extremely unlikely that we will gain anything
- * from parallelization.
- */
-final case object CheapPropertyComputation extends PropertyComputationHint
 
 /**
  * Encapsulates some result and also some computations that should be computed next.
@@ -237,12 +216,10 @@ case class Results(
 
 }
 private[fpcf] object Results {
+
     private[fpcf] final val id = 5
 
-    def apply(results: PropertyComputationResult*): Results = {
-        new Results(results)
-    }
-
+    def apply(results: PropertyComputationResult*): Results = new Results(results)
 }
 
 /**
@@ -252,7 +229,7 @@ private[fpcf] object Results {
  * For example, let's assume that we have an entity `Project` which has the property to store
  * the types which are instantiated and which is updated whenever an analysis of a method
  * detects the instantiation of a type. In this case, the analysis of the method could return
- * a [[Results]] which contains the `(Intermediate)Result` for the analysis of the method as
+ * a [[Results]] object which contains the `(Intermediate)Result` for the analysis of the method as
  * such and a `PartialResult` which will update the information about the overall set of
  * instantiated types.
  *

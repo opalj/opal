@@ -33,6 +33,8 @@ import org.opalj.log.OPALLogger.info
  *          `===`
  *      “B is depended on by A”
  *
+ * @note The very core of the framework is described in: [[https://conf.researchr.org/track/ecoop-issta-2018/SOAP-2018-papers#program Lattice Based Modularization of Static Analyses]]
+ *
  * @author Michael Eichberg
  */
 package object fpcf {
@@ -73,6 +75,11 @@ package object fpcf {
      *    about some other entity is available or,
      *  - an intermediate result which may be refined later on, but not by the
      *    current running analysis.
+     *
+     * @note In some cases it makes sense that an analysis processes entities of kind A, but derives
+     *       properties related to entities with kind B. E.g., it is possible to have an analysis
+     *       that processes entire classes to compute the properties of some fields. This scenario
+     *       is, however, only supported by eager analyses.
      */
     final type PropertyComputation[E <: Entity] = (E) ⇒ PropertyComputationResult
 
@@ -91,7 +98,7 @@ package object fpcf {
 
     /**
      * A function that continues the computation of a property. It takes
-     * the entity + property of the entity on which the computation depends.
+     * the entity and property of the entity on which the computation depends.
      */
     final type Continuation[P <: Property] = (Entity, P) ⇒ PropertyComputationResult
 
@@ -100,8 +107,7 @@ package object fpcf {
     final type SomePropertyKey = PropertyKey[_ <: Property]
 
     /**
-     * The result of a computation if the computation derives multiple properties
-     * at the same time.
+     * The result of a computation if the computation derives multiple properties at the same time.
      */
     final type ComputationResults = TraversableOnce[SomeFinalEP]
 

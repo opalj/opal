@@ -5,7 +5,7 @@ package fpcf
 import org.opalj.log.LogContext
 
 /**
- * Common interface of all [[PropertyStore]] factories.
+ * Common interface implemented by all [[PropertyStore]] factories.
  */
 trait PropertyStoreFactory {
 
