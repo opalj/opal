@@ -63,6 +63,18 @@ trait ComputationSpecification {
      */
     def isLazy: Boolean
 
+    override def toString: String = {
+        val uses =
+            this.uses.iterator.map(u ⇒ PropertyKey.name(u)).mkString("uses={", ", ", "}")
+        val derives =
+            this.derives.iterator.map(d ⇒ PropertyKey.name(d)).mkString("derives={", ", ", "}")
+        s"FPC(name=$name,lazy=$isLazy,$uses,$derives)"
+    }
+
+    //
+    // LIFECYCLE RELATED METHODS
+    //
+
     /**
      * Called before any analysis is called/scheduled that will be executed in the same phase.
      * This enables further initialization of the computations that will eventually be executed.
@@ -88,23 +100,15 @@ trait ComputationSpecification {
     def beforeSchedule(ps: PropertyStore): Unit
 
     /**
-     * Called after phase completion.
-     */
-    def afterPhaseCompletion(ps: PropertyStore): Unit
-
-    /**
      * Called by the scheduler to start execution of this analysis.
      *
      * The analysis may very well be a lazy computation.
      */
     def schedule(ps: PropertyStore, i: InitializationData): Unit
 
-    override def toString: String = {
-        val uses =
-            this.uses.iterator.map(u ⇒ PropertyKey.name(u)).mkString("uses={", ", ", "}")
-        val derives =
-            this.derives.iterator.map(d ⇒ PropertyKey.name(d)).mkString("derives={", ", ", "}")
-        s"FPC(name=$name,$uses,$derives)"
-    }
+    /**
+     * Called after phase completion.
+     */
+    def afterPhaseCompletion(ps: PropertyStore): Unit
 
 }
