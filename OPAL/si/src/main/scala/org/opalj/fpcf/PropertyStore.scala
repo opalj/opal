@@ -542,7 +542,8 @@ abstract class PropertyStore {
     protected[this] def onFirstException(t: Throwable): Unit = {
         shutdown()
         if (!suppressError) {
-            error("analysis progress", "analysis resulted in exception", t)
+            val storeId = "PropertyStore@"+System.identityHashCode(this).toHexString
+            error("analysis progress", s"$storeId: analysis resulted in exception", t)
         }
     }
 
