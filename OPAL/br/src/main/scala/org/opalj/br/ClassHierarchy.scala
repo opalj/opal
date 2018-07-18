@@ -1267,6 +1267,7 @@ class ClassHierarchy private (
             // and this is already checked before.
             return No;
 
+        /*
         @inline def implementsInterface(
             subtype:               ObjectType,
             theSuperinterfaceType: ObjectType
@@ -1336,11 +1337,20 @@ class ClassHierarchy private (
                 )
             }
         }
+        */
 
+        if (supertypeInformation(subtype).contains(theSupertype))
+            Yes
+        else if (isSupertypeInformationComplete(subtype))
+            No
+        else
+            Unknown
+        /*
         if (subtypeIsInterface /*&& supertypeIsInterface*/ )
             implementsInterface(subtype, theSupertype)
         else
             isSubtypeOf(subtype)
+        */
     }
 
     /**
