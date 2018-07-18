@@ -39,29 +39,29 @@ class DefaultReferenceValuesBindingTest extends FlatSpec with Matchers {
     behavior of "instances of domains of type DomainReferenceValuesBinding"
 
     it should "determine that a value with a single interface as its upper bound abstracts over "+
-    "a value that implements multiple interfaces that includes the previous one" in {
-        val t1 = ObjectType("org/omg/CORBA/Object")
-        val t2 = ObjectType("java/rmi/Remote")
-        val domain = ValuesDomain
-        val stValue = domain.ReferenceValue(-1, t1)
-        val mtValue = domain.ObjectValue(-1, UIDSet(t1, t2))
+        "a value that implements multiple interfaces that includes the previous one" in {
+            val t1 = ObjectType("org/omg/CORBA/Object")
+            val t2 = ObjectType("java/rmi/Remote")
+            val domain = ValuesDomain
+            val stValue = domain.ReferenceValue(-1, t1)
+            val mtValue = domain.ObjectValue(-1, UIDSet(t1, t2))
 
-        stValue.abstractsOver(mtValue) should be(true)
+            stValue.abstractsOver(mtValue) should be(true)
 
-    }
+        }
 
     it should "determine that a value with a single interface as its upper bound abstracts over "+
-    "a value that is non-null and that implements multiple interfaces that includes the previous one" in {
-        val t1 = ObjectType("org/omg/CORBA/Object")
-        val t2 = ObjectType("java/rmi/Remote")
-        val domain = ValuesDomain
-        val stValue = domain.ReferenceValue(-1, Unknown, false, t1)
-        val mtValue = domain.ObjectValue(-1, No, UIDSet(t1, t2))
+        "a value that is non-null and that implements multiple interfaces that includes the previous one" in {
+            val t1 = ObjectType("org/omg/CORBA/Object")
+            val t2 = ObjectType("java/rmi/Remote")
+            val domain = ValuesDomain
+            val stValue = domain.ReferenceValue(-1, Unknown, false, t1)
+            val mtValue = domain.ObjectValue(-1, No, UIDSet(t1, t2))
 
-        if (!stValue.abstractsOver(mtValue))
-            fail(stValue+" does not abstract over "+mtValue+" (Result of the join was: "+stValue.join(-1, mtValue)+")")
+            if (!stValue.abstractsOver(mtValue))
+                fail(stValue+" does not abstract over "+mtValue+" (Result of the join was: "+stValue.join(-1, mtValue)+")")
 
-    }
+        }
 
     it should "correctly join a value which implements multiple interfaces with a value that implementes just one interface that is a subtype of one of the previous interfaces" in {
         val l1 = ObjectType("java/io/Serializable")
