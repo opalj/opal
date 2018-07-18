@@ -9,7 +9,7 @@ package immutable
  * objects is done by doing a reference-based comparison of the stored values.
  *
  * @example
- *  {{{
+ * {{{
  *  val a = new String("fooBar")
  *  val b = "foo"+"Bar"
  *  val p1 = new IdentityPair(a,b) // #1
