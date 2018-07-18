@@ -2704,7 +2704,7 @@ object ClassHierarchy {
             }
         }
 
-        // Analyzes the given class file and extends the current class hierarchy.
+        // Analyzes the given class file and extend the current class hierarchy.
         val processedClassType: Array[Boolean] = new Array[Boolean](objectTypesCount)
         classFiles.seq foreach { classFile ⇒
             if (!classFile.isModuleDeclaration) {
@@ -3082,6 +3082,7 @@ object ClassHierarchy {
                 rootType ← await(rootTypesFuture, Inf) // we may have to wait...
                 if rootType ne ObjectType.Object
             } {
+                isSupertypeInformationCompleteMap(rootType.id) = false
                 subtypes(rootType).foreach(t ⇒ isSupertypeInformationCompleteMap(t.id) = false)
             }
             isSupertypeInformationCompleteMap
