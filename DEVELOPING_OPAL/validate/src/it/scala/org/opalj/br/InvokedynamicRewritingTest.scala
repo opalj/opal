@@ -122,12 +122,7 @@ class InvokedynamicRewritingTest extends FunSpec with Matchers {
 
         it("should execute Hermes successfully") {
             val resources = locateTestResources("classfiles/OPAL-MultiJar-SNAPSHOT-01-04-2018.jar", "bi")
-            println("located test resources: "+resources)
             val p = JavaFixtureProject(resources)
-            val scalaLib =
-                locateTestResources("classfiles/scala-2.12.4/", "bi").
-                    listFiles(JARsFileFilter).
-                    map(_.toURI.toURL)
             val opalDependencies =
                 locateTestResources(
                     "classfiles/OPAL-MultiJar-SNAPSHOT-01-04-2018-dependencies/", "bi"
@@ -145,19 +140,8 @@ class InvokedynamicRewritingTest extends FunSpec with Matchers {
                 new File("OPAL/bp/src/main/resources/").toURI.toURL,
                 new File("OPAL/br/src/main/resources/").toURI.toURL,
                 new File("OPAL/common/src/main/resources/").toURI.toURL
-            ) ++ scalaLib ++ opalDependencies
-            val parentClassLoader: ClassLoader =
-                if (!System.getProperty("java.version").startsWith("1.")) {
-                    // we are on Java 9+
-                    val m = classOf[ClassLoader].getMethod("getPlatformClassLoader")
-                    val parentClassLoader = m.invoke(null).asInstanceOf[ClassLoader]
-                    if (parentClassLoader == null)
-                        throw new UnknownError("platform class loader not available")
-                    parentClassLoader
-                } else {
-                    null
-                }
-            val resourceClassloader = new URLClassLoader(paths, parentClassLoader)
+            ) ++ opalDependencies
+            val resourceClassloader = new URLClassLoader(paths, this.getClass.getClassLoader)
             val inMemoryClassLoader = new ProjectBasedInMemoryClassLoader(p, resourceClassloader)
 
             val c = inMemoryClassLoader.loadClass("org.opalj.hermes.HermesCLI")
