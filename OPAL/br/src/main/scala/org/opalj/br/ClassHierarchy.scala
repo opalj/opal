@@ -120,7 +120,6 @@ class ClassHierarchy private (
         val leafTypes:                                       UIDSet[ObjectType],
         private[this] val isSupertypeInformationCompleteMap: Array[Boolean],
 
-        // IMPROVE [L6] use (implicit) Array based map as above to store supertypeInformation
         private[this] val supertypeInformationMap: Array[SupertypeInformation],
         private[this] val subtypeInformationMap:   Array[SubtypeInformation]
 )(
@@ -324,10 +323,27 @@ class ClassHierarchy private (
     //
     //
 
+    /**
+     * Returns the supertype if the given type is knonwn. If the given type is unknown
+     * `None` is returned.
+     */
     def supertypeInformation(objectType: ObjectType): Option[SupertypeInformation] = {
         val oid = objectType.id
         if (isKnown(oid)) {
             Some(supertypeInformationMap(oid))
+        } else {
+            None
+        }
+    }
+
+    /**
+     * Returns the subtype if the given type is knonwn. If the given type is unknown
+     * `None` is returned.
+     */
+    def subtypeInformation(objectType: ObjectType): Option[SubtypeInformation] = {
+        val oid = objectType.id
+        if (isKnown(oid)) {
+            Some(subtypeInformationMap(oid))
         } else {
             None
         }
