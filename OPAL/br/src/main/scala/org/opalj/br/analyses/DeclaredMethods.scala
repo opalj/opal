@@ -22,6 +22,7 @@ import scala.collection.mutable.ArrayBuffer
  */
 class DeclaredMethods(
         private[this] val p: SomeProject,
+        // TODO @Dominik/@Florian - Do we still need the caching? (Entities are now compared using equals...)
         // We need concurrent, mutable maps here, as VirtualDeclaredMethods may be added when they
         // are queried. This can result in DeclaredMethods added for a type not yet seen, too (e.g.
         // methods on type Object when not analyzing the JDK.
