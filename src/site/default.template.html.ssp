@@ -91,7 +91,7 @@
                                 <ul class="alt">
                                     <li><a href="http://ase2018.com">A Unified Lattice Model and Framework for Purity Analyses</a></li>
                                     <li><a href="https://conf.researchr.org/track/ecoop-issta-2018/SOAP-2018-papers#program">Lattice Based Modularization of Static Analyses</a></li>
-                                    <li><a href="articles/Hermes@PLDI.pdf">Assessment and Creation of Effective Test Corpora</a></li>
+                                    <li><a href="articles/Hermes@SOAP18.pdf">Assessment and Creation of Effective Test Corpora</a></li>
                                     <li><a href="http://doi.acm.org/10.1145/2950290.2950312">Call Graph Construction for Java Libraries</a></li>
                                     <li><a href="http://doi.acm.org/10.1145/2614628.2614630">A software product line for static analyses: the OPAL framework</a></li>
                                 </ul>
@@ -99,15 +99,18 @@
                         </div>
                     </div>
                     <div class="6u">
-                        <h3>Related Papers</h3>
+                        <h3>Research Using OPAL</h3>
+                        <emph>The following papers give you an idea what you can do with OPAL.</emph>
                         <ul class="alt">
-                            <li><a href="https://conf.researchr.org/track/ecoop-issta-2018/SOAP-2018-papers#program">Systematic Evaluation of the Unsoundness of Call Graph Construction Algorithms for Java</a></li>
+                            <li><a href="https://2018.splashcon.org/event/splash-2018-oopsla-algebraic-effects-for-the-masses">Algebraic Effects for the Masses</a></li>
+                            <li><a href="http://michael-reif.name/publications/JCG.pdf">Systematic Evaluation of the Unsoundness of Call Graph Construction Algorithms for Java</a></li>
                             <li><a href="http://doi.acm.org/10.1145/2786805.2786865">Hidden Truths in Dead Software Paths</a></li>
                             <li><a href="http://doi.acm.org/10.1145/2786805.2786829">Getting to know you. . . Towards a Capability Model for Java</a></li>
                         </ul>
                         <h3>Related Presentations</h3>
                         <ul class="alt">
                             <li><a href="articles/Your_JDK-Entwicklertag2015.pdf">Your JDK 8</a></li>
+                            <li><a href="articles/FPCF-Slides@SOAP18.pdf">Lattice Based Modularization of Static Analyses</a></li>
                         </ul>
                     </div>
     			</div>
