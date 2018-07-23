@@ -4,8 +4,6 @@ package fpcf
 package analyses
 package purity
 
-import org.opalj.ai.Domain
-import org.opalj.ai.domain.RecordDefUse
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.fpcf.properties.DPure
@@ -17,6 +15,7 @@ import org.opalj.tac.DUVar
 import org.opalj.tac.Expr
 import org.opalj.tac.GetStatic
 import org.opalj.tac.Stmt
+import org.opalj.value.KnownTypedValue
 
 /**
  * Rates, whether three address code statements perform actions that are domain-specific pure.
@@ -24,17 +23,27 @@ import org.opalj.tac.Stmt
  * @author Dominik Helm
  */
 trait DomainSpecificRater {
-    type V = DUVar[(Domain with RecordDefUse)#DomainValue]
+
+    type V = DUVar[KnownTypedValue]
 
     /**
      * Rates all types of calls.
      */
-    def handleCall(call: Call[V], receiver: Option[Expr[V]])(implicit project: SomeProject, code: Array[Stmt[V]]): Option[Purity]
+    def handleCall(
+        call:     Call[V],
+        receiver: Option[Expr[V]]
+    )(
+        implicit
+        project: SomeProject, code: Array[Stmt[V]]
+    ): Option[Purity]
 
     /**
      * Rates GetStatic expressions.
      */
-    def handleGetStatic(expr: GetStatic)(implicit project: SomeProject, code: Array[Stmt[V]]): Option[Purity]
+    def handleGetStatic(expr: GetStatic)(
+        implicit
+        project: SomeProject, code: Array[Stmt[V]]
+    ): Option[Purity]
 
     /**
      * Rates implicit VM exceptions

@@ -58,8 +58,6 @@ trait IntegerSetValues
 
         final override def valueType: Option[CTIntType] = Some(CTIntType)
 
-        final override def computationalType: ComputationalType = ComputationalTypeInt
-
         final override def verificationTypeInfo: VerificationTypeInfo = IntegerVariableInfo
 
     }

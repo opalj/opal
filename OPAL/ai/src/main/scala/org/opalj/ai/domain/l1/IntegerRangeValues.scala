@@ -9,8 +9,6 @@ import scala.Int.{MaxValue ⇒ MaxInt}
 
 import org.opalj.value.IsIntegerValue
 
-import org.opalj.br.ComputationalType
-import org.opalj.br.ComputationalTypeInt
 import org.opalj.br.CTIntType
 import org.opalj.br.VerificationTypeInfo
 import org.opalj.br.IntegerVariableInfo
@@ -126,8 +124,6 @@ trait IntegerRangeValues
         this: DomainTypedValue[CTIntType] ⇒
 
         final override def valueType: Option[CTIntType] = Some(CTIntType)
-
-        final override def computationalType: ComputationalType = ComputationalTypeInt
 
         final override def verificationTypeInfo: VerificationTypeInfo = IntegerVariableInfo
 

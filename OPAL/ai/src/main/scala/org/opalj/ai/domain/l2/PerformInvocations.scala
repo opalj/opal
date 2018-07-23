@@ -229,7 +229,7 @@ trait PerformInvocations extends MethodCallsHandling {
     ): MethodCallResult = {
         val receiver = operands(descriptor.parametersCount)
         receiver match {
-            case DomainReferenceValue(refValue) if refValue.isPrecise &&
+            case DomainReferenceValueTag(refValue) if refValue.isPrecise &&
                 refValue.isNull.isNo && // IMPROVE support the case that null is unknown
                 refValue.upperTypeBound.isSingletonSet &&
                 refValue.upperTypeBound.head.isObjectType ⇒

@@ -4,10 +4,8 @@ package ai
 
 import scala.language.higherKinds
 import scala.reflect.ClassTag
-
 import org.opalj.br.ComputationalType
 import org.opalj.br.ComputationalTypeReturnAddress
-import org.opalj.br.ComputationalTypeReference
 import org.opalj.br.ReferenceType
 import org.opalj.br.Type
 import org.opalj.br.TopVariableInfo
@@ -16,8 +14,8 @@ import org.opalj.br.NullVariableInfo
 import org.opalj.br.ObjectVariableInfo
 import org.opalj.value.ValueInformation
 import org.opalj.value.IsReferenceValue
-import org.opalj.value.KnownValue
 import org.opalj.value.UnknownValue
+import org.opalj.value.KnownTypedValue
 
 /**
  * Defines the concept of a value in a `Domain`.
@@ -27,7 +25,7 @@ import org.opalj.value.UnknownValue
  * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  * @author Dennis Siebert
  */
-trait ValuesDomain {
+trait ValuesDomain { domain ⇒
 
     // -----------------------------------------------------------------------------------
     //
@@ -56,7 +54,7 @@ trait ValuesDomain {
      * (As of Scala 2.10 it is necessary that you do not use `implicit` in the subclass -
      * it will compile, but fail at runtime.)
      */
-    implicit val DomainValue: ClassTag[DomainValue]
+    implicit val DomainValueTag: ClassTag[DomainValue]
 
     /**
      * Abstracts over a concrete operand stack value or a value stored in one of the local
@@ -119,20 +117,7 @@ trait ValuesDomain {
      *      domain. If values need to be compared across domains, they need to be adapted
      *      to a target domain first.
      */
-    trait Value { this: DomainValue ⇒
-
-        /**
-         * The computational type of the value.
-         *
-         * The precise computational type is needed by the framework to calculate the effect
-         * of generic stack manipulation instructions (e.g., `DUP_...` and `SWAP`)
-         * on the stack as well as to calculate the jump targets of `RET`
-         * instructions and to determine which values are actually copied by, e.g., the
-         * `dup_XX` instructions.
-         *
-         * @note The computational type has to be precise/correct.
-         */
-        def computationalType: ComputationalType
+    trait Value extends KnownTypedValue { this: DomainValue ⇒
 
         /**
          * The type of this value as used by the [[org.opalj.br.StackMapTable]] attribute.
@@ -149,8 +134,7 @@ trait ValuesDomain {
         }
 
         /**
-         * @return The represented reference value if and only if this value represents a reference
-         *         value.
+         * Returns the represented reference value iff this value represents a reference value.
          */
         def asDomainReferenceValue: DomainReferenceValue = {
             throw new ClassCastException(this.getClass.getSimpleName+" is no reference value")
@@ -373,7 +357,7 @@ trait ValuesDomain {
 
     type DomainTypedValue[+T <: Type] >: Null <: DomainValue
 
-    trait TypedValue[+T <: Type] extends Value with KnownValue {
+    trait TypedValue[+T <: Type] extends Value with KnownTypedValue {
         this: DomainTypedValue[T] ⇒
 
         /**
@@ -382,8 +366,8 @@ trait ValuesDomain {
          *
          * @return The type/the upper type bound of the value. If the type is a base type, then
          *         the type is necessarily precise. In case of a reference type the type may be
-         *         an upper type bound or may be precise. In the latter case, using the
-         *         concrete domain it may be possible to get further information.
+         *         an upper type bound or may be precise. In the latter case, it may be possible
+         *         to get further information using the concrete domain
          *         If the underlying value is `null`, `None` is returned.
          */
         def valueType: Option[T]
@@ -400,17 +384,13 @@ trait ValuesDomain {
      *     // v is now of the type DomainReferenceValue
      * }}}
      */
-    val DomainReferenceValue: ClassTag[DomainReferenceValue]
+    val DomainReferenceValueTag: ClassTag[DomainReferenceValue]
 
-    trait ReferenceValue
-        extends TypedValue[ReferenceType]
-        with IsReferenceValue[DomainReferenceValue] {
-        this: DomainReferenceValue ⇒
+    trait ReferenceValue extends TypedValue[ReferenceType] with IsReferenceValue {
+        this: domain.DomainReferenceValue ⇒
 
-        /**
-         * Returns `ComputationalTypeReference`.
-         */
-        final override def computationalType: ComputationalType = ComputationalTypeReference
+        final override type BaseReferenceValue = domain.DomainReferenceValue
+        final override def asBaseReferenceValue: BaseReferenceValue = this
 
         /**
          * Provides the correct verification type for non-locally initialized object values if
@@ -426,8 +406,6 @@ trait ValuesDomain {
                 ObjectVariableInfo(valueType.get.asReferenceType)
             }
         }
-
-        final override def asDomainReferenceValue: DomainReferenceValue = this
     }
 
     /**
@@ -474,6 +452,10 @@ trait ValuesDomain {
         }
 
         final override def verificationTypeInfo: VerificationTypeInfo = TopVariableInfo
+
+        final override def isPrimitiveValue: Boolean = false
+        final override def isReferenceValue: Boolean = false
+        final override def isVoid: Boolean = false
 
         @throws[DomainException]("doJoin(...) is not supported by IllegalValue")
         override protected def doJoin(pc: Int, other: DomainValue): Update[DomainValue] = {
@@ -539,6 +521,10 @@ trait ValuesDomain {
         final override def verificationTypeInfo: VerificationTypeInfo = {
             throw new UnsupportedOperationException("see JVM Spec.: StackMapTableAttribute");
         }
+
+        def isPrimitiveValue: Boolean = false
+        def isReferenceValue: Boolean = false
+        def isVoid: Boolean = false
 
         @throws[DomainException]("summarize(...) is not supported by RETValue")
         override def summarize(pc: Int): DomainValue = {

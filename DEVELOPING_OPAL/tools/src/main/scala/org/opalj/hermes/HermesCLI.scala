@@ -85,7 +85,7 @@ object HermesCLI {
         Hermes.initialize(new File(configFile))
         Hermes.analyzeCorpus(runAsDaemons = true)
         waitOnFinished.await() // we will not return until we have finished the analysis
-        println("Analysis finished.")
+        println("Hermes finished.")
     }
 
 }

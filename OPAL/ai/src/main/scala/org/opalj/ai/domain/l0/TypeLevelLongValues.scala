@@ -6,8 +6,6 @@ package l0
 
 import org.opalj.value.IsLongValue
 
-import org.opalj.br.ComputationalType
-import org.opalj.br.ComputationalTypeLong
 import org.opalj.br.LongType
 import org.opalj.br.LongVariableInfo
 import org.opalj.br.VerificationTypeInfo
@@ -36,8 +34,6 @@ trait TypeLevelLongValues extends LongValuesDomain {
         this: DomainTypedValue[LongType] ⇒
 
         final override def valueType: Option[LongType] = Some(LongType)
-
-        final override def computationalType: ComputationalType = ComputationalTypeLong
 
         final override def verificationTypeInfo: VerificationTypeInfo = LongVariableInfo
 

@@ -443,7 +443,7 @@ package object ai {
         // To enable uniform access, we always reserve space for the `this` parameter;
         // even if it is not used.
         val parametersCount = descriptor.parametersCount + 1
-        val params = aiResult.domain.DomainValue.newArray(parametersCount)
+        val params = aiResult.domain.DomainValueTag.newArray(parametersCount)
 
         var localsIndex = 0
         if (!isStatic) {
@@ -535,7 +535,7 @@ package object ai {
         )
 
         import org.opalj.collection.mutable.Locals
-        implicit val domainValue = targetDomain.DomainValue
+        implicit val domainValueTag = targetDomain.DomainValueTag
         val parameters = Locals[targetDomain.DomainValue](calledMethod.body.get.maxLocals)
         var localVariableIndex = 0
         var processedOperands = 0
@@ -575,8 +575,8 @@ package object ai {
         theOperands:  Operands[_ <: ValuesDomain#DomainValue],
         targetDomain: ValuesDomain with ValuesFactory
     ): Array[targetDomain.DomainValue] = {
-        implicit val domainValue = targetDomain.DomainValue
-
+        // implicit val domainValueTag = targetDomain.DomainValueTag
+        import targetDomain.DomainValueTag
         val operandsCount = theOperands.size
         val adaptedOperands = new Array[targetDomain.DomainValue](operandsCount)
         val processedOperands = new Array[Object](operandsCount)

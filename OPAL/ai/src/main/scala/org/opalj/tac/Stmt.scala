@@ -5,6 +5,7 @@ package tac
 import org.opalj.br._
 import org.opalj.br.analyses.ProjectLike
 import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.value.KnownTypedValue
 
 /**
  * Super trait of all quadruple statements.
@@ -612,6 +613,17 @@ case class NonVirtualMethodCall[+V <: Var[V]](
         p.specialCall(declaringClass, isInterface, name, descriptor)
     }
 
+    // convenience method to enable Call to define a single method to handle all kinds of calls
+    def resolveCallTargets(
+        callingContext: ObjectType
+    )(
+        implicit
+        p:  ProjectLike,
+        ev: V <:< DUVar[KnownTypedValue]
+    ): Set[Method] = {
+        resolveCallTarget(p).toSet
+    }
+
     override def toString: String = {
         val sig = descriptor.toJava(name)
         val declClass = declaringClass.toJava
@@ -670,6 +682,17 @@ case class StaticMethodCall[+V <: Var[V]](
      */
     def resolveCallTarget(implicit p: ProjectLike): Result[Method] = {
         p.staticCall(declaringClass, isInterface, name, descriptor)
+    }
+
+    // convenience method to enable Call to define a single method to handle all kinds of calls
+    def resolveCallTargets(
+        callingContext: ObjectType
+    )(
+        implicit
+        p:  ProjectLike,
+        ev: V <:< DUVar[KnownTypedValue]
+    ): Set[Method] = {
+        resolveCallTarget(p).toSet
     }
 
     private[tac] override def remapIndexes(

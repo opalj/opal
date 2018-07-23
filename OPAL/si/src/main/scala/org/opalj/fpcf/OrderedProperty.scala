@@ -2,7 +2,7 @@
 package org.opalj.fpcf
 
 /**
- * Ordered properties make the order between all properties regarding a respective kind explicit;
+ * Ordered properties make the order between all properties of a specific kind explicit;
  * all properties that are of the same kind have to inherit from ordered property or none.
  *
  * This information is used by the property store when assertions/debugging is turned on to test

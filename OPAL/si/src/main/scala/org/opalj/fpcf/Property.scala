@@ -30,12 +30,6 @@ trait Property extends PropertyMetaInformation {
     //
 
     /**
-     * Returns `true` if this property is currently computed or if its computation is already
-     * scheduled.
-     */
-    private[fpcf] def isBeingComputed: Boolean = false
-
-    /**
      * Returns `true` if this property inherits from [[OrderedProperty]].
      */
     final def isOrderedProperty: Boolean = this.isInstanceOf[OrderedProperty]
@@ -60,7 +54,5 @@ private[fpcf] case object PropertyIsLazilyComputed extends Property {
     type Self = PropertyIsLazilyComputed.type
 
     final override def key: Nothing = throw new UnsupportedOperationException
-
-    final override private[fpcf] def isBeingComputed: Boolean = true
 
 }

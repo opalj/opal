@@ -41,7 +41,7 @@ trait PerformInvocationsWithBasicVirtualMethodCallResolution
             val receiver = operands(descriptor.parametersCount)
 
             receiver match {
-                case DomainReferenceValue(refValue) if (
+                case DomainReferenceValueTag(refValue) if (
                     refValue.isNull.isNo && // IMPROVE the case if the value maybe null
                     refValue.upperTypeBound.isSingletonSet &&
                     refValue.upperTypeBound.head.isObjectType

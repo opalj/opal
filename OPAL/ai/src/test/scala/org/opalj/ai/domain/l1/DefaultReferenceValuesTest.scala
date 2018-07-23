@@ -378,7 +378,7 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers {
 
                 val joinResult = mv1.join(-1, mv2)
                 joinResult.updateType should be(StructuralUpdateType)
-                val ValuesDomain.DomainReferenceValue(joinedValue) = joinResult.value
+                val ValuesDomain.DomainReferenceValueTag(joinedValue) = joinResult.value
                 assert(joinedValue.isPrecise === false)
                 joinedValue.upperTypeBound should be(UIDSet(ObjectType.Object))
             }
@@ -658,7 +658,7 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers {
                 val method = ReferenceValuesFrenzy.methods.find(_.name == "simpleConditionalAssignment").get
                 val theDomain = new TheDomain
                 val result = BaseAI(method, theDomain)
-                val result.domain.DomainReferenceValue(head) = result.operandsArray(26).head
+                val result.domain.DomainReferenceValueTag(head) = result.operandsArray(26).head
                 val value @ BaseReferenceValues(values) = head
                 value.isNull should be(No)
                 value.isPrecise should be(true)
@@ -674,7 +674,7 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers {
                 val method = ReferenceValuesFrenzy.methods.find(_.name == "conditionalAssignment1").get
                 val theDomain = new TheDomain
                 val result = BaseAI(method, theDomain)
-                val result.domain.DomainReferenceValue(head) = result.operandsArray(46).head
+                val result.domain.DomainReferenceValueTag(head) = result.operandsArray(46).head
                 val value @ BaseReferenceValues(values) = head
                 value.isNull should be(Unknown)
                 value.isPrecise should be(true) // one value is null and the other is precise
@@ -698,7 +698,7 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers {
                 val theDomain.IsNull(secondReturn) = result.operandsArray(27).head
                 secondReturn should be(Unknown)
 
-                val result.domain.DomainReferenceValue(head) = result.operandsArray(27).head
+                val result.domain.DomainReferenceValueTag(head) = result.operandsArray(27).head
                 val BaseReferenceValues(values) = head
                 values foreach { _.isNull should be(Unknown) }
             }
@@ -708,7 +708,7 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers {
                 val theDomain = new TheDomain
                 val result = BaseAI(method, theDomain)
 
-                val result.domain.DomainReferenceValue(head) = result.operandsArray(5).head
+                val result.domain.DomainReferenceValueTag(head) = result.operandsArray(5).head
                 val value @ BaseReferenceValues(values) = head
                 value.isNull should be(No)
                 values.size should be(2)

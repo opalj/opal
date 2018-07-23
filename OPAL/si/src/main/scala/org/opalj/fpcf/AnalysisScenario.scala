@@ -13,8 +13,8 @@ import org.opalj.collection.immutable.:&:
 /**
  * Provides functionality to compute an optimal schedule to execute a set of analyses. Here,
  * optimal means that the schedule will try to minimize the number of notifications due to updated
- * properties by running analyses that just use information provided by earlier analyses,
- * but which do not provide information required by the earlier ones, in a later batch.
+ * properties. It will run analyses that just use information provided by earlier analyses,
+ * but which do not provide information required by the earlier ones, in a later batch/phase.
  *
  * @author Michael Eichberg
  */
@@ -110,11 +110,12 @@ class AnalysisScenario {
      * the specified analyses.
      *
      * The goal is to find a schedule that:
-     *   -  ... schedules as many analyses in parallel as possible
-     *   -  ... does not schedule two analyses A and B at the same time if B has a dependency on
-     *          the properties computed by A, but A has no dependency on B. Scheduling the
-     *          computation of B in a later batch potentially minimizes the number of derivations.
-     *
+     *   - ... schedules as many completely independent analyses in parallel as possible
+     *   - ... does not schedule two analyses A and B at the same time if B has a dependency on
+     *         the properties computed by A, but A has no dependency on B. Scheduling the
+     *         computation of B in a later batch potentially minimizes the number of derivations.
+     *   - ... schedules two analyses which collaboratively compute a property in the same batch/
+     *         phase.
      */
     def computeSchedule(
         implicit
@@ -179,6 +180,9 @@ class AnalysisScenario {
     }
 }
 
+/**
+ * Factory to create an [[AnalysisScenario]].
+ */
 object AnalysisScenario {
 
     def apply(analyses: Set[ComputationSpecification]): AnalysisScenario = {

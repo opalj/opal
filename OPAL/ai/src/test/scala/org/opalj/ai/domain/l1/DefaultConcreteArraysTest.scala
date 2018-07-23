@@ -408,8 +408,8 @@ class DefaultConcreteArraysTest extends FunSpec with Matchers {
 
             }
         }
-        /*
-        it("should be able to analyze a 3-dimensional array initialization with potential exceptions") {
+
+        ignore("should be able to analyze a 3-dimensional array initialization with potential exceptions") {
             evaluateMethod("a3DimensionalArrayWithPotentialExceptions") { domain ⇒
                 import domain._
                 val threeDimIntArray = ArrayType(ArrayType(ArrayType(IntegerType)))
@@ -440,7 +440,6 @@ class DefaultConcreteArraysTest extends FunSpec with Matchers {
                 )
             }
         }
-        */
     }
 
     describe("array accesses that lead to exceptions") {
@@ -490,8 +489,8 @@ class DefaultConcreteArraysTest extends FunSpec with Matchers {
     }
 
     describe("array stores") {
-        /*
-        it("should be able to analyze a method that updates a value stored in an array in a branch") {
+
+        ignore("should be able to analyze a method that updates a value stored in an array in a branch") {
             evaluateMethod("setValInBranch") { domain ⇒
                 import domain._
 
@@ -519,7 +518,7 @@ class DefaultConcreteArraysTest extends FunSpec with Matchers {
             }
         }
 
-        it("should be able to detect a possible array store exception and the default array value") {
+        ignore("should be able to detect a possible array store exception and the default array value") {
             evaluateMethod("arrayStoreException") { domain ⇒
                 import domain._
 
@@ -536,7 +535,6 @@ class DefaultConcreteArraysTest extends FunSpec with Matchers {
                 returnedValue should be(ComputedValueOrException(null, exceptions))
             }
         }
-        */
     }
 
     describe("complex array operations") {

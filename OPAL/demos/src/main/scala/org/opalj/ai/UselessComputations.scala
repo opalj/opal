@@ -66,7 +66,7 @@ object UselessComputations extends DefaultOneStepAnalysis {
                     case (
                         pc,
                         IFNULL(_) | IFNONNULL(_),
-                        Seq(domain.DomainReferenceValue(value), _*)
+                        Seq(domain.DomainReferenceValueTag(value), _*)
                         ) if value.isNull.isYesOrNo ⇒
                         UselessComputation(method, pc, "useless comparison with null")
                     case (

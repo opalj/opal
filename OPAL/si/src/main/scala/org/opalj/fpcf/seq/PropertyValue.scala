@@ -4,6 +4,8 @@ package fpcf
 package seq
 
 /**
+ * Enapculates the extension of a specific property for a specific entity.
+ *
  * @note   For collaboratively computed properties isFinal maybe false, but we do not
  *         have dependees!
  * @author Michael Eichberg

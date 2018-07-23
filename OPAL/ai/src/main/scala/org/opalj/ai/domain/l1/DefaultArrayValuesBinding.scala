@@ -15,7 +15,7 @@ trait DefaultArrayValuesBinding extends DefaultReferenceValuesBinding with Array
     domain: CorrelationalDomain with ConcreteIntegerValues with TheClassHierarchy ⇒
 
     type DomainInitializedArrayValue = InitializedArrayValue
-    final val DomainInitializedArrayValue: ClassTag[DomainInitializedArrayValue] = implicitly
+    final val DomainInitializedArrayValueTag: ClassTag[DomainInitializedArrayValue] = implicitly
 
     //
     // FACTORY METHODS

@@ -422,10 +422,8 @@ final class PKEParallelTasksPropertyStore private (
         try {
             f
         } catch {
-            case _: InterruptedException if storeUpdatesProcessor == null ⇒
-            /* ignore; we are shutting down */
-            case t: Throwable ⇒
-                collectException(t)
+            case _: InterruptedException if storeUpdatesProcessor == null ⇒ // ignore; shutting down
+            case t: Throwable                                             ⇒ collectException(t)
         }
     }
 
@@ -434,10 +432,12 @@ final class PKEParallelTasksPropertyStore private (
             return ;
 
         // We use the "Thread"s' interrupt method to finally abort the threads...
-        storeUpdatesProcessor.interrupt()
+        val oldStoreUpdatesProcessor = storeUpdatesProcessor
         storeUpdatesProcessor = null
-        tasksProcessors.interrupt()
+        oldStoreUpdatesProcessor.interrupt()
+        val oldTasksProcessors = tasksProcessors
         tasksProcessors = null
+        oldTasksProcessors.interrupt()
 
         if (latch != null) latch.countDown()
 
@@ -681,7 +681,7 @@ final class PKEParallelTasksPropertyStore private (
      */
     private[this] def clearDependees(epk: SomeEPK): Int = {
         assert(
-            Thread.currentThread() == storeUpdatesProcessor,
+            Thread.currentThread() == storeUpdatesProcessor || storeUpdatesProcessor == null,
             "only to be called by the store updates processing thread"
         )
 
@@ -833,7 +833,7 @@ final class PKEParallelTasksPropertyStore private (
     ): UpdateAndNotifyState = {
         updatesCounter += 1
         assert(
-            Thread.currentThread() == storeUpdatesProcessor,
+            Thread.currentThread() == storeUpdatesProcessor || storeUpdatesProcessor == null,
             "only to be called by the store updates processing thread"
         )
 
@@ -918,7 +918,7 @@ final class PKEParallelTasksPropertyStore private (
 
         def processResult(r: PropertyComputationResult): Unit = {
             assert(
-                Thread.currentThread() == storeUpdatesProcessor,
+                Thread.currentThread() == storeUpdatesProcessor || storeUpdatesProcessor == null,
                 "only to be called by the store updates processing thread"
             )
 
@@ -1289,7 +1289,7 @@ final class PKEParallelTasksPropertyStore private (
 
                 val cSCCs = graphs.closedSCCs(
                     epks,
-                    (epk: SomeEPK) ⇒ dependees(epk.pk.id)(epk.e).map(_.toEPK)
+                    (epk: SomeEPK) ⇒ this.dependees(epk.pk.id)(epk.e).map(_.toEPK)
                 )
                 if (cSCCs.nonEmpty) {
                     handleResult(CSCCsResult(cSCCs), false)

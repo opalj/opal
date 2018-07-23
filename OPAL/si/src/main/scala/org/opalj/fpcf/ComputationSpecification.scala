@@ -5,9 +5,13 @@ package fpcf
 case class SpecificationViolation(message: String) extends Exception(message)
 
 /**
- * Specification of the properties and the life-cycle methods of a fix-point computation
+ * Specification of the properties and the life-cycle methods of a fixpoint computation
  * (FPC) that are relevant when computing the correct scheduling order and actually executing
- * the analysis.
+ * the fixpoint computations.
+ *
+ * @note The [[PropertyStore]] can be used without using [[ComputationSpecification]]s and
+ *       [[AnalysisScenario]]s; both latter classes just provide convenience functionality
+ *       that ensures that common issues are identified early on/are avoided.
  *
  * @author Michael Eichberg
  */
@@ -15,8 +19,12 @@ trait ComputationSpecification {
 
     type InitializationData
 
+    //
+    // PROPERTIES OF COMPUTATION SPECIFICATIONS
+    //
+
     /**
-     * Returns a short descriptive name of the analysis which is described by this specification.
+     * Returns a short descriptive name of the computation which is described by this specification.
      *
      * The default name is the name of `this` class.
      *
@@ -49,18 +57,32 @@ trait ComputationSpecification {
 
     /**
      * Has to be true if a computation is performed lazily. This is used to check that we
-     * never schedule multiple analyses which compute the same kind of property.
+     * never schedule multiple lazy analyses which compute the same kind of property.
+     *
+     * @note Collaboratively computed properties can only be computed by eager analyses.
      */
     def isLazy: Boolean
 
+    override def toString: String = {
+        val uses =
+            this.uses.iterator.map(u ⇒ PropertyKey.name(u)).mkString("uses={", ", ", "}")
+        val derives =
+            this.derives.iterator.map(d ⇒ PropertyKey.name(d)).mkString("derives={", ", ", "}")
+        s"FPC(name=$name,lazy=$isLazy,$uses,$derives)"
+    }
+
+    //
+    // LIFECYCLE RELATED METHODS
+    //
+
     /**
-     * Called before any analysis is called/scheduled that will be executed in the same phase
-     * to enable further initialization of the computations that will eventually be executed.
+     * Called before any analysis is called/scheduled that will be executed in the same phase.
+     * This enables further initialization of the computations that will eventually be executed.
      * For example to initialize global configuration information.
      *
      * If an [[AnalysisScenario]] is used to compute a schedule and execute it later on, `init`
-     * will be called before any analysis – independent – of the batch in which it will run,
-     * is called.
+     * will be called before any analysis is scheduled – independent of the batch in which it
+     * will run.
      *
      * A computation specification MUST NOT call any methods of the property store that
      * may trigger or schedule computations; i.e., it must – in particular – not call
@@ -72,14 +94,10 @@ trait ComputationSpecification {
     def init(ps: PropertyStore): InitializationData
 
     /**
-     * Called directly before the analysis is scheduled. I.e., after phase setup.
+     * Called directly before the analysis is scheduled. I.e., after phase setup, but potentially
+     * after analysis are already scheduled.
      */
     def beforeSchedule(ps: PropertyStore): Unit
-
-    /**
-     * Called after phase completion.
-     */
-    def afterPhaseCompletion(ps: PropertyStore): Unit
 
     /**
      * Called by the scheduler to start execution of this analysis.
@@ -88,12 +106,9 @@ trait ComputationSpecification {
      */
     def schedule(ps: PropertyStore, i: InitializationData): Unit
 
-    override def toString: String = {
-        val uses =
-            this.uses.iterator.map(u ⇒ PropertyKey.name(u)).mkString("uses={", ", ", "}")
-        val derives =
-            this.derives.iterator.map(d ⇒ PropertyKey.name(d)).mkString("derives={", ", ", "}")
-        s"FPC(name=$name,$uses,$derives)"
-    }
+    /**
+     * Called after phase completion.
+     */
+    def afterPhaseCompletion(ps: PropertyStore): Unit
 
 }

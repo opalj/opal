@@ -25,7 +25,7 @@ trait ArrayValues extends l1.ReferenceValues {
     // DON'T DO: type DomainArrayValue <: ArrayValue with DomainSingleOriginReferenceValue
 
     type DomainInitializedArrayValue <: InitializedArrayValue with DomainArrayValue
-    val DomainInitializedArrayValue: ClassTag[DomainInitializedArrayValue]
+    val DomainInitializedArrayValueTag: ClassTag[DomainInitializedArrayValue]
 
     // IMPROVE Extend MultipleReferenceValues to handle the case that we reference multiple arrays.
     // IMPROVE Add support to track the size of arrays independent of a concrete instance
@@ -64,7 +64,7 @@ trait ArrayValues extends l1.ReferenceValues {
         ): Update[DomainSingleOriginReferenceValue] = {
 
             other match {
-                case DomainInitializedArrayValue(that) ⇒
+                case DomainInitializedArrayValueTag(that) ⇒
                     if (this.theUpperTypeBound eq that.theUpperTypeBound) {
                         if (that.theLength == this.theLength) {
                             if (this.refId == that.refId)
@@ -127,7 +127,7 @@ trait ArrayValues extends l1.ReferenceValues {
         }
 
         override def equals(other: Any): Boolean = other match {
-            case DomainInitializedArrayValue(that) ⇒
+            case DomainInitializedArrayValueTag(that) ⇒
                 (that eq this) || (
                     (that canEqual this) &&
                     this.origin == that.origin &&

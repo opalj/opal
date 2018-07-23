@@ -118,7 +118,7 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
         assert(receiver.isVar)
         val targetMethod = context.targetMethod
         val callerType = targetMethod.classFile.thisType
-        val value = receiver.asVar.value.asDomainReferenceValue
+        val value = receiver.asVar.value.asReferenceValue
 
         val receiverType = value.valueType
 

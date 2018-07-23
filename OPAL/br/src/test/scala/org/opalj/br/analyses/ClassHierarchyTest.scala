@@ -383,6 +383,8 @@ class ClassHierarchyTest extends FlatSpec with Matchers {
     }
 
     it should "return Unknown if two types are not in an inheritance relationship but the subtype's supertypes are not guaranteed to be known" in {
+        javaLangCH.isKnown(Serializable) should be(true)
+        javaLangCH.isSupertypeInformationComplete(Serializable) should be(false)
         javaLangCH.isSubtypeOf(Serializable, Cloneable) should be(Unknown)
     }
 

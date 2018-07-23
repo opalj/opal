@@ -40,7 +40,7 @@ trait ExceptionAwareEscapeAnalysis extends AbstractEscapeAnalysis {
                         case defSite: DefinitionSiteLike ⇒
                             val Assignment(_, left, _) = context.code.find(_.pc == defSite.pc).get
                             classHierarchy.joinReferenceTypesUntilSingleUpperBound(
-                                left.value.asDomainReferenceValue.upperTypeBound
+                                left.value.asReferenceValue.upperTypeBound
                             )
                         case VirtualFormalParameter(DefinedMethod(_, callee), -1) ⇒
                             callee.classFile.thisType

@@ -4,6 +4,7 @@ package br
 
 import org.scalatest.FunSpec
 import org.scalatest.Matchers
+
 import java.net.URL
 import java.net.URLClassLoader
 import java.io.File
@@ -120,13 +121,8 @@ class InvokedynamicRewritingTest extends FunSpec with Matchers {
     describe("behavior of rewritten OPAL") {
 
         it("should execute Hermes successfully") {
-            val p = JavaFixtureProject(
-                locateTestResources("classfiles/OPAL-MultiJar-SNAPSHOT-01-04-2018.jar", "bi")
-            )
-            val scalaLib =
-                locateTestResources("classfiles/scala-2.12.4/", "bi").
-                    listFiles(JARsFileFilter).
-                    map(_.toURI.toURL)
+            val resources = locateTestResources("classfiles/OPAL-MultiJar-SNAPSHOT-01-04-2018.jar", "bi")
+            val p = JavaFixtureProject(resources)
             val opalDependencies =
                 locateTestResources(
                     "classfiles/OPAL-MultiJar-SNAPSHOT-01-04-2018-dependencies/", "bi"
@@ -136,18 +132,16 @@ class InvokedynamicRewritingTest extends FunSpec with Matchers {
 
             // Otherwise, the hermes resources are not included and hermes won't find
             // HermesCLI.txt for example
-            val resourceClassloader = new URLClassLoader(
-                Array(
-                    new File("DEVELOPING_OPAL/tools/src/main/resources/").toURI.toURL,
-                    new File("OPAL/ai/src/main/resources/").toURI.toURL,
-                    new File("OPAL/ba/src/main/resources/").toURI.toURL,
-                    new File("OPAL/bi/src/main/resources/").toURI.toURL,
-                    new File("OPAL/bp/src/main/resources/").toURI.toURL,
-                    new File("OPAL/br/src/main/resources/").toURI.toURL,
-                    new File("OPAL/common/src/main/resources/").toURI.toURL
-                ) ++ scalaLib ++ opalDependencies,
-                null
-            )
+            val paths = Array(
+                new File("DEVELOPING_OPAL/tools/src/main/resources/").toURI.toURL,
+                new File("OPAL/ai/src/main/resources/").toURI.toURL,
+                new File("OPAL/ba/src/main/resources/").toURI.toURL,
+                new File("OPAL/bi/src/main/resources/").toURI.toURL,
+                new File("OPAL/bp/src/main/resources/").toURI.toURL,
+                new File("OPAL/br/src/main/resources/").toURI.toURL,
+                new File("OPAL/common/src/main/resources/").toURI.toURL
+            ) ++ opalDependencies
+            val resourceClassloader = new URLClassLoader(paths, this.getClass.getClassLoader)
             val inMemoryClassLoader = new ProjectBasedInMemoryClassLoader(p, resourceClassloader)
 
             val c = inMemoryClassLoader.loadClass("org.opalj.hermes.HermesCLI")
@@ -156,6 +150,7 @@ class InvokedynamicRewritingTest extends FunSpec with Matchers {
             val tempFile = Files.createTempFile("OPALValidate-Hermes-stats-", ".csv").toFile
             tempFile.delete()
 
+            println("Starting Hermes...")
             m.invoke(null, Array(
                 "-config", "DEVELOPING_OPAL/validate/src/it/resources/hermes-test-fixtures.json",
                 "-statistics", tempFile.getAbsolutePath
@@ -163,6 +158,8 @@ class InvokedynamicRewritingTest extends FunSpec with Matchers {
 
             assert(tempFile.exists())
             assert(tempFile.length() > 0)
+
+            resourceClassloader.close()
         }
     }
 }

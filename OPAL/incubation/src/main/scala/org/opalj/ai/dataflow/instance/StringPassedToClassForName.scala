@@ -79,7 +79,7 @@ abstract class StringPassedToClassForName[Source]
             ObjectType.String,
             _,
             _, // the caller
-            Tainted(value: IsReferenceValue[_]), // receiver type
+            Tainted(value: IsReferenceValue), // receiver type
             _ //receiver
             ) if value.isValueSubtypeOf(ObjectType.String).isYesOrUnknown ⇒
             ValueIsTainted

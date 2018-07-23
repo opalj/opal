@@ -23,7 +23,7 @@ trait StringValues
     domain: CorrelationalDomainSupport with IntegerValuesDomain with TypedValuesFactory with Configuration with TheClassHierarchy ⇒
 
     type DomainStringValue <: StringValue with DomainObjectValue
-    val DomainStringValue: ClassTag[DomainStringValue]
+    val DomainStringValueTag: ClassTag[DomainStringValue]
 
     /**
      * @param value `null` if and only if the StringValue is not yet completely initialized!
@@ -41,7 +41,7 @@ trait StringValues
         ): Update[DomainSingleOriginReferenceValue] = {
 
             other match {
-                case DomainStringValue(that) ⇒
+                case DomainStringValueTag(that) ⇒
                     if (this.value == that.value) {
                         if (this.refId == that.refId)
                             NoUpdate
