@@ -4,8 +4,6 @@ package fpcf
 package analyses
 package cg
 
-import org.opalj.ai.Domain
-import org.opalj.ai.domain.RecordDefUse
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
@@ -43,6 +41,7 @@ import org.opalj.tac.StaticMethodCall
 import org.opalj.tac.VirtualCall
 import org.opalj.tac.VirtualFunctionCallStatement
 import org.opalj.tac.VirtualMethodCall
+import org.opalj.value.KnownTypedValue
 
 import scala.collection.Set
 import scala.collection.immutable.IntMap
@@ -71,7 +70,7 @@ class RTACallGraphAnalysis private[analyses] (
         final val project: SomeProject
 ) extends FPCFAnalysis {
 
-    type V = DUVar[(Domain with RecordDefUse)#DomainValue]
+    type V = DUVar[KnownTypedValue]
 
     private[this] val tacaiProvider = project.get(SimpleTACAIKey)
     private[this] implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
@@ -292,7 +291,7 @@ class RTACallGraphAnalysis private[analyses] (
 
         var resCalleesOfM = calleesOfM
         var resVirtualCallSites = virtualCallSites
-        val rvs = call.receiver.asVar.value.asDomainReferenceValue.allValues
+        val rvs = call.receiver.asVar.value.asReferenceValue.allValues
         for (rv ← rvs) {
             // for null there is no call
             if (rv.isNull.isNoOrUnknown) {
