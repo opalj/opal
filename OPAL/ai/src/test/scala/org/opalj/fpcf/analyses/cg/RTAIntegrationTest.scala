@@ -34,11 +34,11 @@ class RTAIntegrationTest extends FlatSpec with Matchers {
 
     val columbusProject =
         Project(
-            ClassFiles(locateTestResources("/classfiles/Columbus 2008_10_16 - target 1.5.jar", "bi")),
+            ClassFiles(locateTestResources("/classfiles/Flashcards 0.4 - target 1.6.jar", "bi")),
+            //ClassFiles(locateTestResources("/classfiles/Columbus 2008_10_16 - target 1.5.jar", "bi")),
             Traversable.empty,
             libraryClassFilesAreInterfacesOnly = true
         )
-
 
     /*columbusProject.getOrCreateProjectInformationKeyInitializationData(
         PropertyStoreKey,
@@ -54,10 +54,8 @@ class RTAIntegrationTest extends FlatSpec with Matchers {
     val propertyStore: PropertyStore = columbusProject.get(PropertyStoreKey)
     //PropertyStore.updateDebug(true)
 
-
-
     val manager: FPCFAnalysesManager = columbusProject.get(FPCFAnalysesManagerKey)
-    /*val propertyStore = */manager.runAll(
+    /*val propertyStore = */ manager.runAll(
         EagerRTACallGraphAnalysisScheduler,
         EagerLoadedClassesAnalysis,
         EagerFinalizerAnalysisScheduler
@@ -69,7 +67,8 @@ class RTAIntegrationTest extends FlatSpec with Matchers {
     }
 
     it should "consists of calls that are also present in Soots CHA" in {
-        val callSites = retrieveCallSites("/columbus1_5_SOOT_CHA.json")
+        //val callSites = retrieveCallSites("/columbus1_5_SOOT_CHA.json")
+        val callSites = retrieveCallSites("/flashchards_SOOT_CHA.json")
 
         for {
             m ← columbusProject.allMethodsWithBody
@@ -102,7 +101,8 @@ class RTAIntegrationTest extends FlatSpec with Matchers {
     }
 
     it should "contain all calls from WALA 1-CFA" in {
-        val callSites = retrieveCallSites("/columbus1_5_WALA_1_CFA.json").callSites
+        //val callSites = retrieveCallSites("/columbus1_5_WALA_1_CFA.json").callSites
+        val callSites = retrieveCallSites("/flashchards_SOOT_SPARK.json").callSites
         for {
             m ← columbusProject.allMethodsWithBody
             dm = declaredMethods(m)
