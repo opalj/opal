@@ -195,7 +195,7 @@ class PsL0PurityAnalysis extends PropertyStoreCompareTester {
 
     val dms = fixtureProject.get(DeclaredMethodsKey).declaredMethods
     val methodsWithBody = dms.collect {
-        case dm if dm.hasDefinition && dm.methodDefinition.body.isDefined ⇒ dm.asDefinedMethod
+        case dm if dm.hasSingleDefinedMethod && dm.definedMethod.body.isDefined ⇒ dm.asDefinedMethod
     }
 
     it should behave like testEntitiesAndProperties[DefinedMethod](
@@ -227,7 +227,7 @@ class PsL1PurityAnalysis extends PropertyStoreCompareTester {
 
     val dms = fixtureProject.get(DeclaredMethodsKey).declaredMethods
     val methodsWithBody = dms.collect {
-        case dm if dm.hasDefinition && dm.methodDefinition.body.isDefined ⇒ dm.asDefinedMethod
+        case dm if dm.hasSingleDefinedMethod && dm.definedMethod.body.isDefined ⇒ dm.asDefinedMethod
     }
     val configuredPurity: ConfiguredPurity = fixtureProject.get(ConfiguredPurityKey)
 
@@ -267,7 +267,7 @@ class PsL2PurityAnalysis extends PropertyStoreCompareTester {
 
     val dms = fixtureProject.get(DeclaredMethodsKey).declaredMethods
     val methodsWithBody = dms.collect {
-        case dm if dm.hasDefinition && dm.methodDefinition.body.isDefined ⇒ dm.asDefinedMethod
+        case dm if dm.hasSingleDefinedMethod && dm.definedMethod.body.isDefined ⇒ dm.asDefinedMethod
     }
     val configuredPurity: ConfiguredPurity = fixtureProject.get(ConfiguredPurityKey)
 

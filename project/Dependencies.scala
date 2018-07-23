@@ -53,7 +53,7 @@ object Dependencies {
         val txtmark = "0.16"
         val jacksonDF = "2.9.6"
         val chocosolver = "4.0.6"
-        val fastutil = "8.2.1
+        val fastutil = "8.2.1"
 
         val reactiveasync = "0.2.0"
         val sbtPerfSpec = "0.2.0"

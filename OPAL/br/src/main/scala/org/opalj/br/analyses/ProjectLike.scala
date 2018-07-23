@@ -298,9 +298,9 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
                         name,
                         SignaturePolymorphicMethodDescriptor
                     ) match {
-                        case r @ Success(mdc) if mdc.method.isNativeAndVarargs ⇒ r
-                        case _                                                 ⇒ Empty
-                    }
+                            case r @ Success(mdc) if mdc.method.isNativeAndVarargs ⇒ r
+                            case _                                                 ⇒ Empty
+                        }
                 } else {
                     Empty // here, we don't know if the project is incomplete or inconsistent
                 }

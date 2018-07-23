@@ -41,6 +41,7 @@ import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPK
 import org.opalj.fpcf.EPS
 import org.opalj.fpcf.Entity
+import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.IncrementalResult
 import org.opalj.fpcf.IntermediateResult
 import org.opalj.fpcf.MultiResult
@@ -50,8 +51,12 @@ import org.opalj.fpcf.Property
 import org.opalj.fpcf.PropertyComputation
 import org.opalj.fpcf.PropertyComputationResult
 import org.opalj.fpcf.PropertyIsLazilyComputed
+import org.opalj.fpcf.PropertyIsNotComputedByAnyAnalysis
+import org.opalj.fpcf.PropertyIsNotDerivedByPreviouslyExecutedAnalysis
 import org.opalj.fpcf.PropertyKey
+import org.opalj.fpcf.PropertyKey.fallbackPropertyBasedOnPkId
 import org.opalj.fpcf.PropertyKind
+import org.opalj.fpcf.PropertyKind.SupportedPropertyKinds
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.PropertyStoreContext
 import org.opalj.fpcf.PropertyStoreFactory
@@ -59,7 +64,6 @@ import org.opalj.fpcf.Result
 import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEPK
 import org.opalj.fpcf.SomeEPS
-import org.opalj.fpcf.SomePropertyKey
 import org.opalj.log.LogContext
 
 import scala.collection.concurrent.TrieMap
@@ -113,7 +117,9 @@ class ReactiveAsyncPropertyStore private (
     // method we don't know what properties are computed in the given function. This will only be
     // known once the execution is done.
     private type PropertyTrieMap = TrieMap[Entity, CellCompleter[RAKey, PropertyValue]]
-    val ps: Array[PropertyTrieMap] = Array.fill(PropertyKind.SupportedPropertyKinds) { TrieMap.empty }
+    val ps: Array[PropertyTrieMap] = Array.fill(SupportedPropertyKinds) {
+        TrieMap.empty
+    }
 
     // This map keeps track of the dependencies. Key is (Entity, PropertyKind.id)
     val dependencyMap = TrieMap.empty[SomeEPK, Traversable[SomeEPK]]
@@ -124,8 +130,15 @@ class ReactiveAsyncPropertyStore private (
     val partialResultLockMap = TrieMap.empty[SomeEPK, ReentrantLock]
 
     // PropertyKinds that will be computed now or at a later time
-    var computedPropertyKinds: Set[PropertyKind] = Set.empty
-    var delayedPropertyKinds: Set[PropertyKind] = Set.empty
+    private[this] var computedPropertyKinds: Array[Boolean] = _
+    /*false*/
+    // has to be set before usage
+    private[this] var delayedPropertyKinds: Array[Boolean] = _ /*false*/
+    // has to be set before usage
+
+    @volatile private[this] var previouslyComputedPropertyKinds: Array[Boolean] = {
+        new Array[Boolean](SupportedPropertyKinds)
+    }
 
     // Counters for debug purposes
     val profilingCounter = TrieMap.empty[String, AtomicLong]
@@ -164,23 +177,57 @@ class ReactiveAsyncPropertyStore private (
             ")\n\n"
     }
 
+    override def supportsFastTrackPropertyComputations: Boolean = false
+
     /**
      * Simple counter of the number of tasks that were executed to perform an initial
      * computation of a property for some entity.
      */
-    override def scheduledTasks: Int = profilingCounter
+    override def scheduledTasksCount: Int = profilingCounter
         .getOrElseUpdate("EagerlyScheduledComputations", new AtomicLong(0))
         .intValue()
 
     /**
-     * Simple counter of the number of tasks (OnUpdateContinuations) that were executed
+     * Simple counter of the number of tasks ([[org.opalj.fpcf.OnUpdateContinuation]]s) that were executed
      * in response to an updated property.
      */
-    override def scheduledOnUpdateComputations: Int = profilingCounter
+    override def scheduledOnUpdateComputationsCount: Int = profilingCounter
         .getOrElseUpdate("handleResult.IntermediateResult.continuationFunction", new AtomicLong(0))
         .intValue()
 
-    override def eagerOnUpdateComputations: Int = -1
+    /**
+     * The number of times a property was directly computed again due to an updated
+     * dependee.
+     */
+    override def immediateOnUpdateComputationsCount: Int = 0
+
+    /**
+     * The number of resolved closed strongly connected components.
+     *
+     * Please note, that depending on the implementation strategy and the type of the
+     * closed strongly connected component, the resolution of one strongly connected
+     * component may require multiple phases. This is in particular true if a cSCC is
+     * resolved by committing an arbitrary value as a final value and we have a cSCC
+     * which is actually a chain-like cSCC. In the latter case committing a single value
+     * as final which just break up the chain, but will otherwise (in case of chains with
+     * more than three elements) lead to new cSCCs which the require detection and
+     * resolution.
+     */
+    override def resolvedCSCCsCount: Int = profilingCounter
+        .getOrElseUpdate("ResolveCalls", new AtomicLong(0))
+        .intValue()
+
+    /** The number of times the property store reached quiescence. */
+    override def quiescenceCount: Int = profilingCounter
+        .getOrElseUpdate("QuiescenceCount", new AtomicLong(0))
+        .intValue()
+
+    /** The number of properties that were computed using a fast-track. */
+    override def fastTrackPropertiesCount: Int = 0
+
+    /** Core statistics. */
+    override def statistics: collection.Map[String, Int] =
+        profilingCounter.map(c ⇒ (c._1, c._2.intValue()))
 
     /**
      * Returns `true` if the given entity is known to the property store. Here, `isKnown` can mean
@@ -200,6 +247,14 @@ class ReactiveAsyncPropertyStore private (
         }
 
     override def apply[E <: Entity, P <: Property](e: E, pk: PropertyKey[P]): EOptionP[E, P] = {
+        apply(e, pk, false)
+    }
+
+    private[this] def apply[E <: Entity, P <: Property](
+        e:     E,
+        pk:    PropertyKey[P],
+        force: Boolean
+    ): EOptionP[E, P] = {
         // Here we query the internal property store. We don't work on a snapshot, on the entity
         // level, because we want to update it
         val pkId = pk.id
@@ -223,15 +278,33 @@ class ReactiveAsyncPropertyStore private (
                 incCounter("apply.miss")
                 // We haven't calculated the property yet. Check if the property has to be computed
                 // lazily
-                lazyTasks.get(pkId).foreach { pc ⇒
-                    if (startedLazyTasks.putIfAbsent(EPK(e, pk), true).isEmpty) {
-                        incCounter("apply.lazy.schedule")
-                        scheduleEagerComputationForEntity(e)(pc.asInstanceOf[PropertyComputation[E]])
-                    } else {
-                        incCounter("apply.lazy.ignore")
-                    }
+                lazyTasks.get(pkId) match {
+                    case None ⇒
+                        val isComputed = computedPropertyKinds(pkId)
+                        if (isComputed || delayedPropertyKinds(pkId)) {
+                            EPK(e, pk)
+                        } else {
+                            val reason = {
+                                if (previouslyComputedPropertyKinds(pkId))
+                                    PropertyIsNotDerivedByPreviouslyExecutedAnalysis
+                                else
+                                    PropertyIsNotComputedByAnyAnalysis
+                            }
+                            val p = fallbackPropertyBasedOnPkId(this, reason, e, pkId)
+                            if (force) {
+                                set(e, p)
+                            }
+                            FinalEP(e, p.asInstanceOf[P])
+                        }
+                    case Some(pc) ⇒
+                        if (startedLazyTasks.putIfAbsent(EPK(e, pk), true).isEmpty) {
+                            incCounter("apply.lazy.schedule")
+                            scheduleEagerComputationForEntity(e)(pc.asInstanceOf[PropertyComputation[E]])
+                        } else {
+                            incCounter("apply.lazy.ignore")
+                        }
+                        EPK(e, pk)
                 }
-                EPK(e, pk)
         }
     }
 
@@ -248,9 +321,9 @@ class ReactiveAsyncPropertyStore private (
      * we may have to compute the property for some entities of the libraries, but we don't
      * want to compute them for all.
      */
-    override def force(e: Entity, pk: SomePropertyKey): Unit = {
+    override def force[E <: Entity, P <: Property](e: E, pk: PropertyKey[P]): Unit = {
         // apply triggers lazy computation
-        apply(e, pk)
+        apply(e, pk, true)
     }
 
     /**
@@ -439,8 +512,21 @@ class ReactiveAsyncPropertyStore private (
         computedPropertyKinds: Set[PropertyKind],
         delayedPropertyKinds:  Set[PropertyKind]
     ): Unit = {
-        this.computedPropertyKinds ++= computedPropertyKinds
-        this.delayedPropertyKinds ++= delayedPropertyKinds
+        val currentComputedPropertyKinds = this.computedPropertyKinds
+        if (currentComputedPropertyKinds != null) {
+            currentComputedPropertyKinds.iterator.zipWithIndex foreach { e ⇒
+                val (isComputed, pkId) = e
+                previouslyComputedPropertyKinds(pkId) = isComputed
+            }
+        }
+
+        val newComputedPropertyKinds = new Array[Boolean](PropertyKind.SupportedPropertyKinds)
+        this.computedPropertyKinds = newComputedPropertyKinds
+        computedPropertyKinds foreach { pk ⇒ newComputedPropertyKinds(pk.id) = true }
+
+        val newDelayedPropertyKinds = new Array[Boolean](PropertyKind.SupportedPropertyKinds)
+        this.delayedPropertyKinds = newDelayedPropertyKinds
+        delayedPropertyKinds foreach { pk ⇒ newDelayedPropertyKinds(pk.id) = true }
     }
 
     /**
@@ -460,7 +546,7 @@ class ReactiveAsyncPropertyStore private (
                 case Result.id ⇒
                     dependencyCounter.getOrElseUpdate(0, new AtomicLong(0)).incrementAndGet()
                 case IntermediateResult.id ⇒
-                    val IntermediateResult(_, _, _, d, _) = r
+                    val IntermediateResult(_, _, _, d, _, _) = r
                     dependencyCounter.getOrElseUpdate(d.size, new AtomicLong(0)).incrementAndGet()
                     incCounter("DependenciesLowerBound", d.size)
                 case _ ⇒
@@ -475,10 +561,10 @@ class ReactiveAsyncPropertyStore private (
      * given result is a meaningful update of the previous property associated with the respective
      * entity - if any!
      */
-    override def handleResult(r: PropertyComputationResult, wasLazilyTriggered: Boolean): Unit = {
+    override def handleResult(r: PropertyComputationResult, forceEvaluation: Boolean): Unit = {
         incCounter("handleResult")
 
-        if (isInterrupted()) {
+        if (isSuspended()) {
             handlerPool.interrupt()
         }
 
@@ -502,17 +588,26 @@ class ReactiveAsyncPropertyStore private (
                 // For ordered properties: Check if the new value is better than the current one
                 val currentResult = cc.cell.getResult()
                 if (p.isOrderedProperty && currentResult != null) {
-                    val pAsOP = p.asOrderedProperty
-                    pAsOP.checkIsEqualOrBetterThan(e, currentResult.lb.asInstanceOf[pAsOP.Self])
-                    val storedUbAsOP = currentResult.ub.asOrderedProperty
-                    storedUbAsOP.checkIsEqualOrBetterThan(e, p.asInstanceOf[storedUbAsOP.Self])
+                    try {
+                        val pAsOP = p.asOrderedProperty
+                        pAsOP.checkIsEqualOrBetterThan(e, currentResult.lb.asInstanceOf[pAsOP.Self])
+                        val storedUbAsOP = currentResult.ub.asOrderedProperty
+                        storedUbAsOP.checkIsEqualOrBetterThan(e, p.asInstanceOf[storedUbAsOP.Self])
+                    } catch {
+                        case t: Throwable ⇒
+                            throw new IllegalArgumentException(
+                                s"entity=$e illegal update to: lb=$p; ub=$p; "+
+                                    "; cause="+t.getMessage,
+                                t
+                            )
+                    }
                 }
                 cc.putFinal(new PropertyValue(p))
                 dependencyMap.remove(EPK(e, p.key))
                 partialResultLockMap.remove(EPK(e, p.key))
 
             case IntermediateResult.id ⇒
-                val IntermediateResult(e, lb, ub, dependees, c) = r
+                val IntermediateResult(e, lb, ub, dependees, c, _) = r
 
                 if (debug) {
                     if (lb.key.id != ub.key.id) {
@@ -525,8 +620,18 @@ class ReactiveAsyncPropertyStore private (
                         throw new IllegalArgumentException("IntermediateResult without dependees")
                     }
                     if (lb.isOrderedProperty) {
-                        val ubAsOP = ub.asOrderedProperty
-                        ubAsOP.checkIsEqualOrBetterThan(e, lb.asInstanceOf[ubAsOP.Self])
+                        try {
+                            val ubAsOP = ub.asOrderedProperty
+                            ubAsOP.checkIsEqualOrBetterThan(e, lb.asInstanceOf[ubAsOP.Self])
+                        } catch {
+                            case t: Throwable ⇒
+                                throw new IllegalArgumentException(
+                                    s"entity=$e illegal update to: lb=$lb; ub=$ub; "+
+                                        dependees.mkString("newDependees={", ", ", "}")+
+                                        "; cause="+t.getMessage,
+                                    t
+                                )
+                        }
                     }
                 }
 
@@ -547,10 +652,20 @@ class ReactiveAsyncPropertyStore private (
                 if (oldResult == null || oldResult.lb != lb || oldResult.ub != ub) {
                     // For ordered properties: Check if the new value is better than the current one
                     if (lb.isOrderedProperty && oldResult != null) {
-                        val lbAsOP = lb.asOrderedProperty
-                        lbAsOP.checkIsEqualOrBetterThan(e, oldResult.lb.asInstanceOf[lbAsOP.Self])
-                        val storedUbAsOP = oldResult.ub.asOrderedProperty
-                        storedUbAsOP.checkIsEqualOrBetterThan(e, ub.asInstanceOf[storedUbAsOP.Self])
+                        try {
+                            val lbAsOP = lb.asOrderedProperty
+                            lbAsOP.checkIsEqualOrBetterThan(e, oldResult.lb.asInstanceOf[lbAsOP.Self])
+                            val storedUbAsOP = oldResult.ub.asOrderedProperty
+                            storedUbAsOP.checkIsEqualOrBetterThan(e, ub.asInstanceOf[storedUbAsOP.Self])
+                        } catch {
+                            case t: Throwable ⇒
+                                throw new IllegalArgumentException(
+                                    s"entity=$e illegal update to: lb=$lb; ub=$ub; "+
+                                        dependees.mkString("newDependees={", ", ", "}")+
+                                        "; cause="+t.getMessage,
+                                    t
+                                )
+                        }
                     }
                     cc.putNext(new PropertyValue(lb, ub))
                 }
@@ -633,7 +748,7 @@ class ReactiveAsyncPropertyStore private (
                 }
 
             case IncrementalResult.id ⇒
-                val IncrementalResult(ir, nextComputations) = r
+                val IncrementalResult(ir, nextComputations, _) = r
 
                 incCounter("handleResult.IncrementalResult")
                 handleResult(ir)
@@ -645,7 +760,7 @@ class ReactiveAsyncPropertyStore private (
             case Results.id ⇒
                 val Results(results) = r
                 incCounter("handleResult.Results")
-                results foreach handleResult
+                results.foreach(r ⇒ handleResult(r, forceEvaluation))
 
             case MultiResult.id ⇒
                 val MultiResult(mr) = r
@@ -731,10 +846,12 @@ class ReactiveAsyncPropertyStore private (
      */
     override def waitOnPhaseCompletion(): Unit = {
         thrownExceptionsInHandlerPool.clear()
-        if (this.isInterrupted())
+        if (this.isSuspended())
             return ;
 
         handlerPool.resume()
+
+        handlerPool.onQuiescent(() ⇒ incCounter("QuiescenceCount"))
 
         val fut = handlerPool.quiescentResolveCell
         var interrupted: Boolean = false
@@ -743,7 +860,7 @@ class ReactiveAsyncPropertyStore private (
             try {
                 Await.ready(fut, 1.second)
             } catch {
-                case _: TimeoutException ⇒ interrupted = this.isInterrupted()
+                case _: TimeoutException ⇒ interrupted = this.isSuspended()
             }
         }
 
@@ -755,6 +872,8 @@ class ReactiveAsyncPropertyStore private (
 
         incCounter("dependencyMap.size", dependencyMap.size)
     }
+
+    override def shutdown(): Unit = {}
 
     private def incCounter(key: String, n: Int = 1): Long = {
         profilingCounter.getOrElseUpdate(key, new AtomicLong(0)).addAndGet(n.toLong)
@@ -779,7 +898,7 @@ class ReactiveAsyncPropertyStore private (
                 headCell.getResult().toEPS[headCellKey.e.type, Property](headCellKey.e).get
             )
 
-            Iterable((headCell, new PropertyValue(result.p)))
+            Iterable((headCell, new PropertyValue(result)))
         }
 
         override def fallback[K <: Key[PropertyValue]](
@@ -801,8 +920,16 @@ class ReactiveAsyncPropertyStore private (
                 .map { cell ⇒
                     val key = cell.key.asInstanceOf[RAKey]
                     if (!delayedPropertyKinds.contains(key.pk) && (cell.getResult() != null || cell.isADependee)) {
+                        val reason = {
+                            if (previouslyComputedPropertyKinds(key.pk.id) ||
+                                computedPropertyKinds(key.pk.id))
+                                PropertyIsNotDerivedByPreviouslyExecutedAnalysis
+                            else
+                                PropertyIsNotComputedByAnyAnalysis
+                        }
                         (cell, new PropertyValue(PropertyKey.fallbackProperty(
                             ReactiveAsyncPropertyStore.this,
+                            reason,
                             key.e,
                             key.pk
                         )))
@@ -822,6 +949,7 @@ class ReactiveAsyncPropertyStore private (
 
     /**
      * PropertyValue that is stored inside the cell.
+     *
      * @param lb The lower bound of the value in the lattice.
      * @param ub The upper bound of the value in the lattice. ub == lb if the value is final
      */
@@ -842,6 +970,7 @@ class ReactiveAsyncPropertyStore private (
                 Some(EPS(e, lb.asInstanceOf[P], ub.asInstanceOf[P]))
         }
     }
+
 }
 
 object ReactiveAsyncPropertyStore extends PropertyStoreFactory {
