@@ -25,4 +25,5 @@ addSbtPlugin("org.xerial.sbt" % "sbt-sonatype" % "2.0")
 // TODO Use scalariform to automatically format the build files!
 addSbtPlugin("org.scalariform" % "sbt-scalariform" % "1.8.2")
 
+resolvers += Resolver.bintrayIvyRepo("delors", "sbt-plugins")
 addSbtPlugin("de.opal-project" % "sbt-perf" % "0.2.0")
