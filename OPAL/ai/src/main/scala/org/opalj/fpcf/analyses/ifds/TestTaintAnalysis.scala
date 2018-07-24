@@ -6,7 +6,6 @@ package ifds
 
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.ObjectType
-import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.DeclaredMethodsKey
@@ -29,10 +28,10 @@ import org.opalj.tac.GetField
 
 trait Fact
 
-case class Variable(source: Int) extends Fact
-case class ArrayElement(source: Int, element: Int) extends Fact
+case class Variable(index: Int) extends Fact
+case class ArrayElement(index: Int, element: Int) extends Fact
 //case class StaticField(classType: ObjectType, fieldName: String) extends Fact
-case class InstanceField(source: Int, classType: ObjectType, fieldName: String) extends Fact
+case class InstanceField(index: Int, classType: ObjectType, fieldName: String) extends Fact
 
 /**
  * A simple IFDS taint analysis.
@@ -62,7 +61,7 @@ class TestTaintAnalysis private[ifds] (
                     if (index.isDefined) // Taint known array index
                         in ++ definedBy.iterator.map(ArrayElement(_, index.get))
                     else // Taint whole array if index is unknown
-                        in ++ definedBy.iterator.map(org.opalj.fpcf.analyses.ifds.Variable)
+                        in ++ definedBy.iterator.map(Variable)
                 else if (index.isDefined && definedBy.size == 1) // Untaint if possible
                     in - ArrayElement(definedBy.head, index.get)
                 else in
@@ -86,10 +85,10 @@ class TestTaintAnalysis private[ifds] (
      */
     def isTainted(expr: Expr[V], in: Set[Fact]): Boolean = {
         expr.isVar && in.exists {
-            case Variable(source)            ⇒ expr.asVar.definedBy.contains(source)
-            case ArrayElement(source, _)     ⇒ expr.asVar.definedBy.contains(source)
-            case InstanceField(source, _, _) ⇒ expr.asVar.definedBy.contains(source)
-            case _                           ⇒ false
+            case Variable(index)            ⇒ expr.asVar.definedBy.contains(index)
+            case ArrayElement(index, _)     ⇒ expr.asVar.definedBy.contains(index)
+            case InstanceField(index, _, _) ⇒ expr.asVar.definedBy.contains(index)
+            case _                          ⇒ false
         }
     }
 
@@ -118,9 +117,9 @@ class TestTaintAnalysis private[ifds] (
         expr.astID match {
             case Var.ASTID ⇒
                 val newTaint = in.collect {
-                    case Variable(source) if expr.asVar.definedBy.contains(source) ⇒
-                        Some(org.opalj.fpcf.analyses.ifds.Variable(stmt.index))
-                    case ArrayElement(source, taintIndex) if expr.asVar.definedBy.contains(source) ⇒
+                    case Variable(index) if expr.asVar.definedBy.contains(index) ⇒
+                        Some(Variable(stmt.index))
+                    case ArrayElement(index, taintIndex) if expr.asVar.definedBy.contains(index) ⇒
                         Some(ArrayElement(stmt.index, taintIndex))
                     case _ ⇒ None
                 }.flatten
@@ -129,15 +128,15 @@ class TestTaintAnalysis private[ifds] (
                 val load = expr.asArrayLoad
                 if (in.exists {
                     // The specific array element may be tainted
-                    case ArrayElement(source, taintedIndex) ⇒
-                        val index = getConstValue(load.index, stmt.code)
-                        load.arrayRef.asVar.definedBy.contains(source) &&
-                            (index.isEmpty || taintedIndex == index.get)
+                    case ArrayElement(index, taintedIndex) ⇒
+                        val element = getConstValue(load.index, stmt.code)
+                        load.arrayRef.asVar.definedBy.contains(index) &&
+                            (element.isEmpty || taintedIndex == element.get)
                     // Or the whole array
-                    case Variable(source) ⇒ load.arrayRef.asVar.definedBy.contains(source)
-                    case _                ⇒ false
+                    case Variable(index) ⇒ load.arrayRef.asVar.definedBy.contains(index)
+                    case _               ⇒ false
                 })
-                    in + org.opalj.fpcf.analyses.ifds.Variable(stmt.index)
+                    in + Variable(stmt.index)
                 else
                     in
             /*case GetStatic.ASTID ⇒
@@ -149,13 +148,13 @@ class TestTaintAnalysis private[ifds] (
                 val get = expr.asGetField
                 if (in.exists {
                     // The specific field may be tainted
-                    case InstanceField(source, _, taintedField) ⇒
-                        taintedField == get.name && get.objRef.asVar.definedBy.contains(source)
+                    case InstanceField(index, _, taintedField) ⇒
+                        taintedField == get.name && get.objRef.asVar.definedBy.contains(index)
                     // Or the whole object
-                    case Variable(source) ⇒ get.objRef.asVar.definedBy.contains(source)
-                    case _                ⇒ false
+                    case Variable(index) ⇒ get.objRef.asVar.definedBy.contains(index)
+                    case _               ⇒ false
                 })
-                    in + org.opalj.fpcf.analyses.ifds.Variable(stmt.index)
+                    in + Variable(stmt.index)
                 else
                     in
             case _ ⇒ in
@@ -168,8 +167,8 @@ class TestTaintAnalysis private[ifds] (
     ): Set[Fact] = {
         if (callee.name == "sink") {
             if (in.exists {
-                case Variable(source) ⇒
-                    asCall(stmt.stmt).allParams.exists(p ⇒ p.asVar.definedBy.contains(source))
+                case Variable(index) ⇒
+                    asCall(stmt.stmt).allParams.exists(p ⇒ p.asVar.definedBy.contains(index))
                 case _ ⇒ false
             })
                 println(s"Found flow: $stmt")
@@ -177,8 +176,8 @@ class TestTaintAnalysis private[ifds] (
         } else if (callee.name == "forName" && (callee.declaringClassType eq ObjectType.Class) &&
             callee.descriptor.parameterTypes == Seq(ObjectType.String)) {
             if (in.exists {
-                case Variable(source) ⇒
-                    asCall(stmt.stmt).params.exists(p ⇒ p.asVar.definedBy.contains(source))
+                case Variable(index) ⇒
+                    asCall(stmt.stmt).params.exists(p ⇒ p.asVar.definedBy.contains(index))
                 case _ ⇒ false
             })
                 println(s"Found flow: $stmt")
@@ -186,26 +185,26 @@ class TestTaintAnalysis private[ifds] (
         } else if ((callee.descriptor.returnType eq ObjectType.Class) ||
             (callee.descriptor.returnType eq ObjectType.Object)) {
             in.collect {
-                case Variable(source) ⇒ // Taint formal parameter if actual parameter is tainted
+                case Variable(index) ⇒ // Taint formal parameter if actual parameter is tainted
                     asCall(stmt.stmt).allParams.zipWithIndex.collect {
-                        case (param, index) if param.asVar.definedBy.contains(source) ⇒
-                            org.opalj.fpcf.analyses.ifds.Variable(paramToIndex(index, !callee.definedMethod.isStatic))
+                        case (param, pIndex) if param.asVar.definedBy.contains(index) ⇒
+                            Variable(paramToIndex(pIndex, !callee.definedMethod.isStatic))
                     }
 
-                case ArrayElement(source, taintedIndex) ⇒
+                case ArrayElement(index, taintedIndex) ⇒
                     // Taint element of formal parameter if element of actual parameter is tainted
                     asCall(stmt.stmt).allParams.zipWithIndex.collect {
-                        case (param, index) if param.asVar.definedBy.contains(source) ⇒
-                            ArrayElement(paramToIndex(index, !callee.definedMethod.isStatic), taintedIndex)
+                        case (param, pIndex) if param.asVar.definedBy.contains(index) ⇒
+                            ArrayElement(paramToIndex(pIndex, !callee.definedMethod.isStatic), taintedIndex)
                     }
 
-                case InstanceField(source, declClass, taintedField) if classHierarchy.isSubtypeOf(declClass, callee.declaringClassType).isYesOrUnknown ||
+                case InstanceField(index, declClass, taintedField) if classHierarchy.isSubtypeOf(declClass, callee.declaringClassType).isYesOrUnknown ||
                     classHierarchy.isSubtypeOf(callee.declaringClassType, declClass).isYesOrUnknown ⇒
                     // Taint field of formal parameter if field of actual parameter is tainted
                     // Only if the formal parameter is of a type that may have that field!
                     asCall(stmt.stmt).allParams.zipWithIndex.collect {
-                        case (param, index) if param.asVar.definedBy.contains(source) ⇒
-                            InstanceField(paramToIndex(index, !callee.definedMethod.isStatic), declClass, taintedField)
+                        case (param, pIndex) if param.asVar.definedBy.contains(index) ⇒
+                            InstanceField(paramToIndex(pIndex, !callee.definedMethod.isStatic), declClass, taintedField)
                     }
                 //case sf: StaticField ⇒ Set(sf)
             }.flatten
@@ -224,38 +223,38 @@ class TestTaintAnalysis private[ifds] (
          * Checks whether the formal parameter is of a reference type, as primitive types are
          * call-by-value.
          */
-        def isRefTypeParam(source: Int): Boolean =
-            if (source == -1) true
+        def isRefTypeParam(index: Int): Boolean =
+            if (index == -1) true
             else {
                 callee.descriptor.parameterType(
-                    paramToIndex(source, false)
+                    paramToIndex(index, false)
                 ).isReferenceType
             }
 
         if (callee.name == "source" && stmt.stmt.astID == Assignment.ASTID)
-            Set(org.opalj.fpcf.analyses.ifds.Variable(stmt.index))
+            Set(Variable(stmt.index))
         else if (callee.name == "sanitize")
             Set.empty
         else {
             var flows: Set[Fact] = Set.empty
             for (fact ← in) {
                 fact match {
-                    case Variable(source) if source < 0 && source > -100 && isRefTypeParam(source) ⇒
+                    case Variable(index) if index < 0 && index > -100 && isRefTypeParam(index) ⇒
                         // Taint actual parameter if formal parameter is tainted
                         val param =
-                            asCall(stmt.stmt).allParams(paramToIndex(source, !callee.definedMethod.isStatic))
-                        flows ++= param.asVar.definedBy.iterator.map(org.opalj.fpcf.analyses.ifds.Variable)
+                            asCall(stmt.stmt).allParams(paramToIndex(index, !callee.definedMethod.isStatic))
+                        flows ++= param.asVar.definedBy.iterator.map(Variable)
 
-                    case ArrayElement(source, taintedIndex) if source < 0 && source > -100 ⇒
+                    case ArrayElement(index, taintedIndex) if index < 0 && index > -100 ⇒
                         // Taint element of actual parameter if element of formal parameter is tainted
                         val param =
-                            asCall(stmt.stmt).allParams(paramToIndex(source, !callee.definedMethod.isStatic))
+                            asCall(stmt.stmt).allParams(paramToIndex(index, !callee.definedMethod.isStatic))
                         flows ++= param.asVar.definedBy.iterator.map(ArrayElement(_, taintedIndex))
 
-                    case InstanceField(source, declClass, taintedField) if source < 0 && source > -10 ⇒
+                    case InstanceField(index, declClass, taintedField) if index < 0 && index > -10 ⇒
                         // Taint field of actual parameter if field of formal parameter is tainted
                         val param =
-                            asCall(stmt.stmt).allParams(paramToIndex(source, !callee.definedMethod.isStatic))
+                            asCall(stmt.stmt).allParams(paramToIndex(index, !callee.definedMethod.isStatic))
                         flows ++= param.asVar.definedBy.iterator.map(InstanceField(_, declClass, taintedField))
                     //case sf: StaticField ⇒ flows += sf
                     case _ ⇒
@@ -266,11 +265,11 @@ class TestTaintAnalysis private[ifds] (
             if (exit.stmt.astID == ReturnValue.ASTID && stmt.stmt.astID == Assignment.ASTID) {
                 val returnValue = exit.stmt.asReturnValue.expr.asVar
                 flows ++= in.collect {
-                    case Variable(source) if returnValue.definedBy.contains(source) ⇒
-                        org.opalj.fpcf.analyses.ifds.Variable(stmt.index)
-                    case ArrayElement(source, taintedIndex) if returnValue.definedBy.contains(source) ⇒
+                    case Variable(index) if returnValue.definedBy.contains(index) ⇒
+                        Variable(stmt.index)
+                    case ArrayElement(index, taintedIndex) if returnValue.definedBy.contains(index) ⇒
                         ArrayElement(stmt.index, taintedIndex)
-                    case InstanceField(source, declClass, taintedField) if returnValue.definedBy.contains(source) ⇒
+                    case InstanceField(index, declClass, taintedField) if returnValue.definedBy.contains(index) ⇒
                         InstanceField(stmt.index, declClass, taintedField)
                 }
             }
@@ -288,15 +287,14 @@ class TestTaintAnalysis private[ifds] (
     override def callToReturnFlow(stmt: Statement, succ: Statement, in: Set[Fact]): Set[Fact] = {
         val call = asCall(stmt.stmt)
         if (call.name == "sanitize") {
-            val a = in.filter {
-                case Variable(source) ⇒
+            in.filter {
+                case Variable(index) ⇒
                     !call.allParams.exists { p ⇒
                         val definedBy = p.asVar.definedBy
-                        definedBy.size == 1 && definedBy.contains(source)
+                        definedBy.size == 1 && definedBy.contains(index)
                     }
                 case _ ⇒ true
             }
-            a
         } else
             in
     }
@@ -332,9 +330,6 @@ object Taint extends IFDSPropertyMetaInformation[Fact] {
 
 object TestTaintAnalysisRunner {
 
-    def paramToIndex(param: Int, callee: Method): Int =
-        -1 - param - (if (callee.isStatic) 1 else 0)
-
     def main(args: Array[String]): Unit = {
         //val p = Project(new File("/home/dominik/Desktop/test"))
         val p = Project(bytecode.RTJar)
@@ -362,7 +357,7 @@ object TestTaintAnalysisRunner {
                 m.descriptor.parameterTypes.zipWithIndex.collect {
                     case (pType, index) if pType == ObjectType.String ⇒ index
                 } foreach { index ⇒
-                    val e = (declaredMethods(m), org.opalj.fpcf.analyses.ifds.Variable(paramToIndex(index, m)))
+                    val e = (declaredMethods(m), Variable(-2 - index))
                     entryPoints += 1
                     ps.force(e, TestTaintAnalysis.property.key)
                 }

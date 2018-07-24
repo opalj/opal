@@ -94,17 +94,17 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
     val entities: ConcurrentHashMap[(DeclaredMethod, DataFlowFact), (DeclaredMethod, DataFlowFact)] = new ConcurrentHashMap
 
     class State(
-        val declClass: ObjectType,
-        val method:    Method,
-        val source:    (DeclaredMethod, DataFlowFact),
-        val code:      Array[Stmt[V]],
-        val cfg:       CFG[Stmt[V], TACStmts[V]],
-        var data:      Map[(DeclaredMethod, DataFlowFact), Set[(BasicBlock, Int)]],
-        var dependees: Map[(DeclaredMethod, DataFlowFact), EOptionP[(DeclaredMethod, DataFlowFact), IFDSProperty[DataFlowFact]]] = Map.empty,
-        // DataFlowFacts known to be valid on entry to a basic block
-        var incoming: Map[BasicBlock, Set[DataFlowFact]] = Map.empty,
-        // DataFlowFacts known to be valid on exit from a basic block on the cfg edge to a specific successor
-        var outgoing: Map[BasicBlock, Map[CFGNode, Set[DataFlowFact]]] = Map.empty
+            val declClass: ObjectType,
+            val method:    Method,
+            val source:    (DeclaredMethod, DataFlowFact),
+            val code:      Array[Stmt[V]],
+            val cfg:       CFG[Stmt[V], TACStmts[V]],
+            var data:      Map[(DeclaredMethod, DataFlowFact), Set[(BasicBlock, Int)]],
+            var dependees: Map[(DeclaredMethod, DataFlowFact), EOptionP[(DeclaredMethod, DataFlowFact), IFDSProperty[DataFlowFact]]] = Map.empty,
+            // DataFlowFacts known to be valid on entry to a basic block
+            var incoming: Map[BasicBlock, Set[DataFlowFact]] = Map.empty,
+            // DataFlowFacts known to be valid on exit from a basic block on the cfg edge to a specific successor
+            var outgoing: Map[BasicBlock, Map[CFGNode, Set[DataFlowFact]]] = Map.empty
     )
 
     /**
@@ -613,7 +613,7 @@ sealed trait IFDSAnalysisScheduler[DataFlowFact] extends ComputationSpecificatio
 }
 
 abstract class LazyIFDSAnalysis[DataFlowFact] extends IFDSAnalysisScheduler[DataFlowFact]
-        with FPCFLazyAnalysisScheduler {
+    with FPCFLazyAnalysisScheduler {
 
     final override def derives: Set[PropertyKind] = Set(property)
 
