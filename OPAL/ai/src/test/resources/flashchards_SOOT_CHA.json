@@ -10769,7 +10769,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljava/awt/Frame;",
+                    "declaringClass": "Ljavax/swing/JFrame;",
                     "name": "setTitle",
                     "parameterTypes": [
                         "Ljava/lang/String;"
@@ -10857,7 +10857,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljava/awt/Frame;",
+                    "declaringClass": "Ljavax/swing/JFrame;",
                     "name": "setTitle",
                     "parameterTypes": [
                         "Ljava/lang/String;"
@@ -10954,7 +10954,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljavax/swing/AbstractButton;",
+                    "declaringClass": "Ljavax/swing/JButton;",
                     "name": "setVerticalTextPosition",
                     "parameterTypes": [
                         "I"
@@ -10985,7 +10985,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljavax/swing/AbstractButton;",
+                    "declaringClass": "Ljavax/swing/JButton;",
                     "name": "setHorizontalTextPosition",
                     "parameterTypes": [
                         "I"
@@ -11016,7 +11016,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljavax/swing/JComponent;",
+                    "declaringClass": "Ljavax/swing/JButton;",
                     "name": "setOpaque",
                     "parameterTypes": [
                         "Z"
@@ -11086,7 +11086,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljavax/swing/JComponent;",
+                    "declaringClass": "Ljavax/swing/JButton;",
                     "name": "setBorder",
                     "parameterTypes": [
                         "Ljavax/swing/border/Border;"
@@ -11597,7 +11597,7 @@
         },
         {
             "declaredTarget": {
-                "declaringClass": "Ljava/lang/Throwable;",
+                "declaringClass": "Ljava/lang/Exception;",
                 "name": "getLocalizedMessage",
                 "parameterTypes": [],
                 "returnType": "Ljava/lang/String;"
@@ -11611,7 +11611,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljava/lang/Throwable;",
+                    "declaringClass": "Ljava/lang/Exception;",
                     "name": "getLocalizedMessage",
                     "parameterTypes": [],
                     "returnType": "Ljava/lang/String;"
@@ -11821,7 +11821,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljava/util/Hashtable;",
+                    "declaringClass": "Ljavax/swing/UIDefaults;",
                     "name": "entrySet",
                     "parameterTypes": [],
                     "returnType": "Ljava/util/Set;"
@@ -11868,6 +11868,12 @@
                     "returnType": "Ljava/util/Iterator;"
                 },
                 {
+                    "declaringClass": "Ljava/util/Set;",
+                    "name": "iterator",
+                    "parameterTypes": [],
+                    "returnType": "Ljava/util/Iterator;"
+                },
+                {
                     "declaringClass": "Ljava/util/HashSet;",
                     "name": "iterator",
                     "parameterTypes": [],
@@ -11889,7 +11895,14 @@
                 "parameterTypes": [],
                 "returnType": "V"
             },
-            "targets": []
+            "targets": [
+                {
+                    "declaringClass": "Ljava/util/Iterator;",
+                    "name": "next",
+                    "parameterTypes": [],
+                    "returnType": "Ljava/lang/Object;"
+                }
+            ]
         },
         {
             "declaredTarget": {
@@ -11949,6 +11962,12 @@
                 },
                 {
                     "declaringClass": "Ljava/util/concurrent/ConcurrentHashMap$Node;",
+                    "name": "getKey",
+                    "parameterTypes": [],
+                    "returnType": "Ljava/lang/Object;"
+                },
+                {
+                    "declaringClass": "Ljava/util/Map$Entry;",
                     "name": "getKey",
                     "parameterTypes": [],
                     "returnType": "Ljava/lang/Object;"
@@ -12147,7 +12166,14 @@
                 "parameterTypes": [],
                 "returnType": "V"
             },
-            "targets": []
+            "targets": [
+                {
+                    "declaringClass": "Ljava/util/Iterator;",
+                    "name": "hasNext",
+                    "parameterTypes": [],
+                    "returnType": "Z"
+                }
+            ]
         },
         {
             "declaredTarget": {
@@ -12279,7 +12305,7 @@
         },
         {
             "declaredTarget": {
-                "declaringClass": "Ljava/lang/Throwable;",
+                "declaringClass": "Ljava/lang/Exception;",
                 "name": "printStackTrace",
                 "parameterTypes": [],
                 "returnType": "V"
@@ -12295,7 +12321,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljava/lang/Throwable;",
+                    "declaringClass": "Ljava/lang/Exception;",
                     "name": "printStackTrace",
                     "parameterTypes": [],
                     "returnType": "V"
@@ -13119,7 +13145,14 @@
                 ],
                 "returnType": "V"
             },
-            "targets": []
+            "targets": [
+                {
+                    "declaringClass": "Ljava/awt/Toolkit;",
+                    "name": "getMenuShortcutKeyMask",
+                    "parameterTypes": [],
+                    "returnType": "I"
+                }
+            ]
         },
         {
             "declaredTarget": {
@@ -13238,7 +13271,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljavax/swing/AbstractButton;",
+                    "declaringClass": "Ljavax/swing/JMenuItem;",
                     "name": "addActionListener",
                     "parameterTypes": [
                         "Ljava/awt/event/ActionListener;"
@@ -13317,7 +13350,14 @@
                 ],
                 "returnType": "V"
             },
-            "targets": []
+            "targets": [
+                {
+                    "declaringClass": "Ljava/awt/Toolkit;",
+                    "name": "getMenuShortcutKeyMask",
+                    "parameterTypes": [],
+                    "returnType": "I"
+                }
+            ]
         },
         {
             "declaredTarget": {
@@ -13436,7 +13476,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljavax/swing/AbstractButton;",
+                    "declaringClass": "Ljavax/swing/JMenuItem;",
                     "name": "addActionListener",
                     "parameterTypes": [
                         "Ljava/awt/event/ActionListener;"
@@ -13515,7 +13555,14 @@
                 ],
                 "returnType": "V"
             },
-            "targets": []
+            "targets": [
+                {
+                    "declaringClass": "Ljava/awt/Toolkit;",
+                    "name": "getMenuShortcutKeyMask",
+                    "parameterTypes": [],
+                    "returnType": "I"
+                }
+            ]
         },
         {
             "declaredTarget": {
@@ -13634,7 +13681,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljavax/swing/AbstractButton;",
+                    "declaringClass": "Ljavax/swing/JMenuItem;",
                     "name": "addActionListener",
                     "parameterTypes": [
                         "Ljava/awt/event/ActionListener;"
@@ -13713,7 +13760,14 @@
                 ],
                 "returnType": "V"
             },
-            "targets": []
+            "targets": [
+                {
+                    "declaringClass": "Ljava/awt/Toolkit;",
+                    "name": "getMenuShortcutKeyMask",
+                    "parameterTypes": [],
+                    "returnType": "I"
+                }
+            ]
         },
         {
             "declaredTarget": {
@@ -13832,7 +13886,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljavax/swing/AbstractButton;",
+                    "declaringClass": "Ljavax/swing/JMenuItem;",
                     "name": "addActionListener",
                     "parameterTypes": [
                         "Ljava/awt/event/ActionListener;"
@@ -13911,7 +13965,14 @@
                 ],
                 "returnType": "V"
             },
-            "targets": []
+            "targets": [
+                {
+                    "declaringClass": "Ljava/awt/Toolkit;",
+                    "name": "getMenuShortcutKeyMask",
+                    "parameterTypes": [],
+                    "returnType": "I"
+                }
+            ]
         },
         {
             "declaredTarget": {
@@ -14030,7 +14091,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljavax/swing/AbstractButton;",
+                    "declaringClass": "Ljavax/swing/JMenuItem;",
                     "name": "addActionListener",
                     "parameterTypes": [
                         "Ljava/awt/event/ActionListener;"
@@ -14424,7 +14485,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljavax/swing/AbstractButton;",
+                    "declaringClass": "Ljavax/swing/JButton;",
                     "name": "addActionListener",
                     "parameterTypes": [
                         "Ljava/awt/event/ActionListener;"
@@ -14486,7 +14547,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljavax/swing/AbstractButton;",
+                    "declaringClass": "Ljavax/swing/JButton;",
                     "name": "setEnabled",
                     "parameterTypes": [
                         "Z"
@@ -14544,7 +14605,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljavax/swing/AbstractButton;",
+                    "declaringClass": "Ljavax/swing/JButton;",
                     "name": "addActionListener",
                     "parameterTypes": [
                         "Ljava/awt/event/ActionListener;"
@@ -14606,7 +14667,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljavax/swing/AbstractButton;",
+                    "declaringClass": "Ljavax/swing/JButton;",
                     "name": "setEnabled",
                     "parameterTypes": [
                         "Z"
@@ -14664,7 +14725,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljavax/swing/AbstractButton;",
+                    "declaringClass": "Ljavax/swing/JButton;",
                     "name": "addActionListener",
                     "parameterTypes": [
                         "Ljava/awt/event/ActionListener;"
@@ -14726,7 +14787,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljavax/swing/AbstractButton;",
+                    "declaringClass": "Ljavax/swing/JButton;",
                     "name": "setEnabled",
                     "parameterTypes": [
                         "Z"
@@ -14784,7 +14845,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljavax/swing/AbstractButton;",
+                    "declaringClass": "Ljavax/swing/JButton;",
                     "name": "addActionListener",
                     "parameterTypes": [
                         "Ljava/awt/event/ActionListener;"
@@ -14846,7 +14907,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljavax/swing/AbstractButton;",
+                    "declaringClass": "Ljavax/swing/JButton;",
                     "name": "setEnabled",
                     "parameterTypes": [
                         "Z"
@@ -14904,7 +14965,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljavax/swing/AbstractButton;",
+                    "declaringClass": "Ljavax/swing/JButton;",
                     "name": "addActionListener",
                     "parameterTypes": [
                         "Ljava/awt/event/ActionListener;"
@@ -15053,7 +15114,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljavax/swing/AbstractButton;",
+                    "declaringClass": "Ljavax/swing/JButton;",
                     "name": "addActionListener",
                     "parameterTypes": [
                         "Ljava/awt/event/ActionListener;"
@@ -15112,7 +15173,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljavax/swing/JComponent;",
+                    "declaringClass": "Ljavax/swing/JTextField;",
                     "name": "putClientProperty",
                     "parameterTypes": [
                         "Ljava/lang/Object;",
@@ -15167,7 +15228,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljavax/swing/JComponent;",
+                    "declaringClass": "Ljavax/swing/JTextField;",
                     "name": "setMaximumSize",
                     "parameterTypes": [
                         "Ljava/awt/Dimension;"
@@ -15194,7 +15255,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljavax/swing/text/JTextComponent;",
+                    "declaringClass": "Ljavax/swing/JTextField;",
                     "name": "getDocument",
                     "parameterTypes": [],
                     "returnType": "Ljavax/swing/text/Document;"
@@ -15248,7 +15309,16 @@
                 ],
                 "returnType": "V"
             },
-            "targets": []
+            "targets": [
+                {
+                    "declaringClass": "Ljavax/swing/text/Document;",
+                    "name": "addDocumentListener",
+                    "parameterTypes": [
+                        "Ljavax/swing/event/DocumentListener;"
+                    ],
+                    "returnType": "V"
+                }
+            ]
         },
         {
             "declaredTarget": {
@@ -15296,7 +15366,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljavax/swing/JComponent;",
+                    "declaringClass": "Ljavax/swing/JToolBar;",
                     "name": "putClientProperty",
                     "parameterTypes": [
                         "Ljava/lang/Object;",
@@ -15355,7 +15425,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljava/awt/Container;",
+                    "declaringClass": "Ljavax/swing/JToolBar;",
                     "name": "add",
                     "parameterTypes": [
                         "Ljava/awt/Component;"
@@ -15384,7 +15454,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljava/awt/Container;",
+                    "declaringClass": "Ljavax/swing/JToolBar;",
                     "name": "add",
                     "parameterTypes": [
                         "Ljava/awt/Component;"
@@ -15438,7 +15508,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljava/awt/Container;",
+                    "declaringClass": "Ljavax/swing/JToolBar;",
                     "name": "add",
                     "parameterTypes": [
                         "Ljava/awt/Component;"
@@ -15492,7 +15562,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljava/awt/Container;",
+                    "declaringClass": "Ljavax/swing/JToolBar;",
                     "name": "add",
                     "parameterTypes": [
                         "Ljava/awt/Component;"
@@ -15521,7 +15591,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljava/awt/Container;",
+                    "declaringClass": "Ljavax/swing/JToolBar;",
                     "name": "add",
                     "parameterTypes": [
                         "Ljava/awt/Component;"
@@ -15575,7 +15645,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljava/awt/Container;",
+                    "declaringClass": "Ljavax/swing/JToolBar;",
                     "name": "add",
                     "parameterTypes": [
                         "Ljava/awt/Component;"
@@ -15604,7 +15674,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljava/awt/Container;",
+                    "declaringClass": "Ljavax/swing/JToolBar;",
                     "name": "add",
                     "parameterTypes": [
                         "Ljava/awt/Component;"
@@ -15658,7 +15728,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljava/awt/Container;",
+                    "declaringClass": "Ljavax/swing/JToolBar;",
                     "name": "add",
                     "parameterTypes": [
                         "Ljava/awt/Component;"
@@ -15687,7 +15757,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljava/awt/Container;",
+                    "declaringClass": "Ljavax/swing/JToolBar;",
                     "name": "add",
                     "parameterTypes": [
                         "Ljava/awt/Component;"
@@ -15770,7 +15840,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljavax/swing/JComponent;",
+                    "declaringClass": "Ljavax/swing/JPanel;",
                     "name": "setOpaque",
                     "parameterTypes": [
                         "Z"
@@ -15840,7 +15910,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljavax/swing/JComponent;",
+                    "declaringClass": "Ljavax/swing/JPanel;",
                     "name": "setBorder",
                     "parameterTypes": [
                         "Ljavax/swing/border/Border;"
@@ -15902,7 +15972,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljavax/swing/JComponent;",
+                    "declaringClass": "Ljavax/swing/JPanel;",
                     "name": "setBackground",
                     "parameterTypes": [
                         "Ljava/awt/Color;"
@@ -15962,7 +16032,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljava/awt/Container;",
+                    "declaringClass": "Ljavax/swing/JPanel;",
                     "name": "setLayout",
                     "parameterTypes": [
                         "Ljava/awt/LayoutManager;"
@@ -16206,7 +16276,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljavax/swing/AbstractButton;",
+                    "declaringClass": "Ljavax/swing/JMenuItem;",
                     "name": "addActionListener",
                     "parameterTypes": [
                         "Ljava/awt/event/ActionListener;"
@@ -16295,7 +16365,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljavax/swing/AbstractButton;",
+                    "declaringClass": "Ljavax/swing/JMenuItem;",
                     "name": "addActionListener",
                     "parameterTypes": [
                         "Ljava/awt/event/ActionListener;"
@@ -16384,7 +16454,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljavax/swing/AbstractButton;",
+                    "declaringClass": "Ljavax/swing/JMenuItem;",
                     "name": "addActionListener",
                     "parameterTypes": [
                         "Ljava/awt/event/ActionListener;"
@@ -16527,7 +16597,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljavax/swing/JComponent;",
+                    "declaringClass": "Ljavax/swing/JPopupMenu;",
                     "name": "getPreferredSize",
                     "parameterTypes": [],
                     "returnType": "Ljava/awt/Dimension;"
@@ -16616,7 +16686,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljavax/swing/AbstractButton;",
+                    "declaringClass": "Ljavax/swing/JButton;",
                     "name": "setIconTextGap",
                     "parameterTypes": [
                         "I"
@@ -16645,7 +16715,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljavax/swing/AbstractButton;",
+                    "declaringClass": "Ljavax/swing/JButton;",
                     "name": "setVerticalTextPosition",
                     "parameterTypes": [
                         "I"
@@ -16674,7 +16744,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljavax/swing/AbstractButton;",
+                    "declaringClass": "Ljavax/swing/JButton;",
                     "name": "setHorizontalTextPosition",
                     "parameterTypes": [
                         "I"
@@ -16704,7 +16774,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljavax/swing/JComponent;",
+                    "declaringClass": "Ljavax/swing/JButton;",
                     "name": "putClientProperty",
                     "parameterTypes": [
                         "Ljava/lang/Object;",
@@ -16735,7 +16805,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljavax/swing/JComponent;",
+                    "declaringClass": "Ljavax/swing/JButton;",
                     "name": "putClientProperty",
                     "parameterTypes": [
                         "Ljava/lang/Object;",
@@ -16794,7 +16864,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljavax/swing/AbstractButton;",
+                    "declaringClass": "Ljavax/swing/JButton;",
                     "name": "addActionListener",
                     "parameterTypes": [
                         "Ljava/awt/event/ActionListener;"
@@ -16993,7 +17063,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljavax/swing/JComponent;",
+                    "declaringClass": "Ljavax/swing/JScrollPane;",
                     "name": "setBorder",
                     "parameterTypes": [
                         "Ljavax/swing/border/Border;"
@@ -17105,7 +17175,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljavax/swing/JComponent;",
+                    "declaringClass": "Ljavax/swing/JPanel;",
                     "name": "setOpaque",
                     "parameterTypes": [
                         "Z"
@@ -17169,7 +17239,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljavax/swing/JComponent;",
+                    "declaringClass": "Ljavax/swing/JPanel;",
                     "name": "setBackground",
                     "parameterTypes": [
                         "Ljava/awt/Color;"
@@ -17199,7 +17269,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljava/awt/Container;",
+                    "declaringClass": "Ljavax/swing/JPanel;",
                     "name": "add",
                     "parameterTypes": [
                         "Ljava/awt/Component;",
@@ -17229,7 +17299,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljava/awt/Container;",
+                    "declaringClass": "Ljavax/swing/JPanel;",
                     "name": "add",
                     "parameterTypes": [
                         "Ljava/awt/Component;"
@@ -17576,7 +17646,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljava/awt/Window;",
+                    "declaringClass": "Ljavax/swing/JFrame;",
                     "name": "setSize",
                     "parameterTypes": [
                         "I",
@@ -17606,7 +17676,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljava/awt/Window;",
+                    "declaringClass": "Ljavax/swing/JFrame;",
                     "name": "setLocationByPlatform",
                     "parameterTypes": [
                         "Z"
@@ -17693,7 +17763,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljava/awt/Window;",
+                    "declaringClass": "Ljavax/swing/JFrame;",
                     "name": "addWindowListener",
                     "parameterTypes": [
                         "Ljava/awt/event/WindowListener;"
@@ -17780,7 +17850,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljava/awt/Window;",
+                    "declaringClass": "Ljavax/swing/JFrame;",
                     "name": "setVisible",
                     "parameterTypes": [
                         "Z"
@@ -17912,7 +17982,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljavax/swing/JComponent;",
+                    "declaringClass": "Ljavax/swing/JLabel;",
                     "name": "setFont",
                     "parameterTypes": [
                         "Ljava/awt/Font;"
@@ -17968,7 +18038,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljava/awt/Container;",
+                    "declaringClass": "Ljavax/swing/Box;",
                     "name": "add",
                     "parameterTypes": [
                         "Ljava/awt/Component;"
@@ -18024,7 +18094,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljava/awt/Container;",
+                    "declaringClass": "Ljavax/swing/Box;",
                     "name": "add",
                     "parameterTypes": [
                         "Ljava/awt/Component;"
@@ -18142,7 +18212,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljavax/swing/JComponent;",
+                    "declaringClass": "Ljavax/swing/JLabel;",
                     "name": "getPreferredSize",
                     "parameterTypes": [],
                     "returnType": "Ljava/awt/Dimension;"
@@ -18170,7 +18240,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljavax/swing/JComponent;",
+                    "declaringClass": "Ljavax/swing/JLabel;",
                     "name": "setPreferredSize",
                     "parameterTypes": [
                         "Ljava/awt/Dimension;"
@@ -18198,7 +18268,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljavax/swing/JComponent;",
+                    "declaringClass": "Ljavax/swing/JLabel;",
                     "name": "getPreferredSize",
                     "parameterTypes": [],
                     "returnType": "Ljava/awt/Dimension;"
@@ -18226,7 +18296,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljavax/swing/JComponent;",
+                    "declaringClass": "Ljavax/swing/JLabel;",
                     "name": "setMinimumSize",
                     "parameterTypes": [
                         "Ljava/awt/Dimension;"
@@ -18286,7 +18356,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljavax/swing/JComponent;",
+                    "declaringClass": "Ljavax/swing/JLabel;",
                     "name": "setFont",
                     "parameterTypes": [
                         "Ljava/awt/Font;"
@@ -18368,7 +18438,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljava/awt/Container;",
+                    "declaringClass": "Ljavax/swing/Box;",
                     "name": "add",
                     "parameterTypes": [
                         "Ljava/awt/Component;"
@@ -18398,7 +18468,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljava/awt/Container;",
+                    "declaringClass": "Ljavax/swing/Box;",
                     "name": "add",
                     "parameterTypes": [
                         "Ljava/awt/Component;"
@@ -18428,7 +18498,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljava/awt/Container;",
+                    "declaringClass": "Ljavax/swing/JPanel;",
                     "name": "add",
                     "parameterTypes": [
                         "Ljava/awt/Component;"
@@ -18458,7 +18528,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljava/awt/Container;",
+                    "declaringClass": "Ljavax/swing/JPanel;",
                     "name": "add",
                     "parameterTypes": [
                         "Ljava/awt/Component;"
@@ -18518,7 +18588,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljava/awt/Container;",
+                    "declaringClass": "Ljavax/swing/JPanel;",
                     "name": "add",
                     "parameterTypes": [
                         "Ljava/awt/Component;"
@@ -20915,7 +20985,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljavax/swing/JComponent;",
+                    "declaringClass": "Lde/tud/cs/se/flashcards/ui/FlashcardListCellRenderer;",
                     "name": "setOpaque",
                     "parameterTypes": [
                         "Z"
@@ -20987,7 +21057,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljavax/swing/JComponent;",
+                    "declaringClass": "Lde/tud/cs/se/flashcards/ui/FlashcardListCellRenderer;",
                     "name": "setBorder",
                     "parameterTypes": [
                         "Ljavax/swing/border/Border;"
@@ -21439,7 +21509,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljavax/swing/JComponent;",
+                    "declaringClass": "Ljavax/swing/JTextField;",
                     "name": "setAlignmentX",
                     "parameterTypes": [
                         "F"
@@ -21538,7 +21608,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljavax/swing/JComponent;",
+                    "declaringClass": "Ljavax/swing/JLabel;",
                     "name": "setBorder",
                     "parameterTypes": [
                         "Ljavax/swing/border/Border;"
@@ -21567,7 +21637,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljavax/swing/JComponent;",
+                    "declaringClass": "Ljavax/swing/JLabel;",
                     "name": "setAlignmentX",
                     "parameterTypes": [
                         "F"
@@ -21716,7 +21786,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljavax/swing/JComponent;",
+                    "declaringClass": "Ljavax/swing/Box;",
                     "name": "setBorder",
                     "parameterTypes": [
                         "Ljavax/swing/border/Border;"
@@ -21745,7 +21815,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljava/awt/Container;",
+                    "declaringClass": "Ljavax/swing/Box;",
                     "name": "add",
                     "parameterTypes": [
                         "Ljava/awt/Component;"
@@ -21803,7 +21873,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljava/awt/Container;",
+                    "declaringClass": "Ljavax/swing/Box;",
                     "name": "add",
                     "parameterTypes": [
                         "Ljava/awt/Component;"
@@ -21832,7 +21902,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljava/awt/Container;",
+                    "declaringClass": "Ljavax/swing/Box;",
                     "name": "add",
                     "parameterTypes": [
                         "Ljava/awt/Component;"
@@ -21890,7 +21960,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljavax/swing/JComponent;",
+                    "declaringClass": "Ljavax/swing/JLabel;",
                     "name": "setAlignmentX",
                     "parameterTypes": [
                         "F"
@@ -21954,7 +22024,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljavax/swing/JComponent;",
+                    "declaringClass": "Ljavax/swing/JLabel;",
                     "name": "setBorder",
                     "parameterTypes": [
                         "Ljavax/swing/border/Border;"
@@ -22095,7 +22165,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljavax/swing/JComponent;",
+                    "declaringClass": "Ljavax/swing/JScrollPane;",
                     "name": "setAlignmentX",
                     "parameterTypes": [
                         "F"
@@ -22159,7 +22229,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljavax/swing/JComponent;",
+                    "declaringClass": "Ljavax/swing/JScrollPane;",
                     "name": "setBorder",
                     "parameterTypes": [
                         "Ljavax/swing/border/Border;"
@@ -22337,7 +22407,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljavax/swing/JComponent;",
+                    "declaringClass": "Ljavax/swing/Box;",
                     "name": "setBorder",
                     "parameterTypes": [
                         "Ljavax/swing/border/Border;"
@@ -22366,7 +22436,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljava/awt/Container;",
+                    "declaringClass": "Ljavax/swing/Box;",
                     "name": "add",
                     "parameterTypes": [
                         "Ljava/awt/Component;"
@@ -22424,7 +22494,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljava/awt/Container;",
+                    "declaringClass": "Ljavax/swing/Box;",
                     "name": "add",
                     "parameterTypes": [
                         "Ljava/awt/Component;"
@@ -22453,7 +22523,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljava/awt/Container;",
+                    "declaringClass": "Ljavax/swing/Box;",
                     "name": "add",
                     "parameterTypes": [
                         "Ljava/awt/Component;"
@@ -22540,7 +22610,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljavax/swing/AbstractButton;",
+                    "declaringClass": "Ljavax/swing/JButton;",
                     "name": "addActionListener",
                     "parameterTypes": [
                         "Ljava/awt/event/ActionListener;"
@@ -22627,7 +22697,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljavax/swing/AbstractButton;",
+                    "declaringClass": "Ljavax/swing/JButton;",
                     "name": "addActionListener",
                     "parameterTypes": [
                         "Ljava/awt/event/ActionListener;"
@@ -22716,7 +22786,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljavax/swing/JComponent;",
+                    "declaringClass": "Ljavax/swing/Box;",
                     "name": "setBorder",
                     "parameterTypes": [
                         "Ljavax/swing/border/Border;"
@@ -22770,7 +22840,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljava/awt/Container;",
+                    "declaringClass": "Ljavax/swing/Box;",
                     "name": "add",
                     "parameterTypes": [
                         "Ljava/awt/Component;"
@@ -22799,7 +22869,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljava/awt/Container;",
+                    "declaringClass": "Ljavax/swing/Box;",
                     "name": "add",
                     "parameterTypes": [
                         "Ljava/awt/Component;"
@@ -22828,7 +22898,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljava/awt/Container;",
+                    "declaringClass": "Ljavax/swing/Box;",
                     "name": "add",
                     "parameterTypes": [
                         "Ljava/awt/Component;"
@@ -23031,7 +23101,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljava/awt/Window;",
+                    "declaringClass": "Ljavax/swing/JDialog;",
                     "name": "setMinimumSize",
                     "parameterTypes": [
                         "Ljava/awt/Dimension;"
@@ -23061,7 +23131,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljava/awt/Window;",
+                    "declaringClass": "Ljavax/swing/JDialog;",
                     "name": "setSize",
                     "parameterTypes": [
                         "I",
@@ -23116,7 +23186,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljava/awt/Window;",
+                    "declaringClass": "Ljavax/swing/JDialog;",
                     "name": "setLocationRelativeTo",
                     "parameterTypes": [
                         "Ljava/awt/Component;"
@@ -23763,7 +23833,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljavax/swing/JComponent;",
+                    "declaringClass": "Ljavax/swing/JLabel;",
                     "name": "setBorder",
                     "parameterTypes": [
                         "Ljavax/swing/border/Border;"
@@ -23848,7 +23918,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljavax/swing/JComponent;",
+                    "declaringClass": "Ljavax/swing/JLabel;",
                     "name": "getPreferredSize",
                     "parameterTypes": [],
                     "returnType": "Ljava/awt/Dimension;"
@@ -23875,7 +23945,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljavax/swing/JComponent;",
+                    "declaringClass": "Ljavax/swing/JLabel;",
                     "name": "setPreferredSize",
                     "parameterTypes": [
                         "Ljava/awt/Dimension;"
@@ -24024,7 +24094,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljavax/swing/JComponent;",
+                    "declaringClass": "Ljavax/swing/JButton;",
                     "name": "setBorder",
                     "parameterTypes": [
                         "Ljavax/swing/border/Border;"
@@ -24082,7 +24152,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljavax/swing/AbstractButton;",
+                    "declaringClass": "Ljavax/swing/JButton;",
                     "name": "addActionListener",
                     "parameterTypes": [
                         "Ljava/awt/event/ActionListener;"
@@ -24206,7 +24276,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljavax/swing/JComponent;",
+                    "declaringClass": "Ljavax/swing/JButton;",
                     "name": "setBorder",
                     "parameterTypes": [
                         "Ljavax/swing/border/Border;"
@@ -24264,7 +24334,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljavax/swing/AbstractButton;",
+                    "declaringClass": "Ljavax/swing/JButton;",
                     "name": "addActionListener",
                     "parameterTypes": [
                         "Ljava/awt/event/ActionListener;"
@@ -24318,7 +24388,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljava/awt/Container;",
+                    "declaringClass": "Ljavax/swing/Box;",
                     "name": "add",
                     "parameterTypes": [
                         "Ljava/awt/Component;"
@@ -24372,7 +24442,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljava/awt/Container;",
+                    "declaringClass": "Ljavax/swing/Box;",
                     "name": "add",
                     "parameterTypes": [
                         "Ljava/awt/Component;"
@@ -24401,7 +24471,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljava/awt/Container;",
+                    "declaringClass": "Ljavax/swing/Box;",
                     "name": "add",
                     "parameterTypes": [
                         "Ljava/awt/Component;"
@@ -24455,7 +24525,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljava/awt/Container;",
+                    "declaringClass": "Ljavax/swing/Box;",
                     "name": "add",
                     "parameterTypes": [
                         "Ljava/awt/Component;"
@@ -24484,7 +24554,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljava/awt/Container;",
+                    "declaringClass": "Ljavax/swing/Box;",
                     "name": "add",
                     "parameterTypes": [
                         "Ljava/awt/Component;"
@@ -24513,7 +24583,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljava/awt/Container;",
+                    "declaringClass": "Ljavax/swing/Box;",
                     "name": "add",
                     "parameterTypes": [
                         "Ljava/awt/Component;"
@@ -24567,7 +24637,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljava/awt/Component;",
+                    "declaringClass": "Ljavax/swing/JLabel;",
                     "name": "setSize",
                     "parameterTypes": [
                         "Ljava/awt/Dimension;"
@@ -24596,7 +24666,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljavax/swing/JComponent;",
+                    "declaringClass": "Ljavax/swing/JLabel;",
                     "name": "setPreferredSize",
                     "parameterTypes": [
                         "Ljava/awt/Dimension;"
@@ -24654,7 +24724,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljavax/swing/JComponent;",
+                    "declaringClass": "Ljavax/swing/JLabel;",
                     "name": "setBorder",
                     "parameterTypes": [
                         "Ljavax/swing/border/Border;"
@@ -24718,7 +24788,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljavax/swing/JComponent;",
+                    "declaringClass": "Ljavax/swing/JLabel;",
                     "name": "setFont",
                     "parameterTypes": [
                         "Ljava/awt/Font;"
@@ -24865,7 +24935,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljavax/swing/AbstractButton;",
+                    "declaringClass": "Ljavax/swing/JButton;",
                     "name": "addActionListener",
                     "parameterTypes": [
                         "Ljava/awt/event/ActionListener;"
@@ -24983,7 +25053,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljavax/swing/AbstractButton;",
+                    "declaringClass": "Ljavax/swing/JButton;",
                     "name": "addActionListener",
                     "parameterTypes": [
                         "Ljava/awt/event/ActionListener;"
@@ -25101,7 +25171,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljavax/swing/AbstractButton;",
+                    "declaringClass": "Ljavax/swing/JButton;",
                     "name": "addActionListener",
                     "parameterTypes": [
                         "Ljava/awt/event/ActionListener;"
@@ -25180,7 +25250,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljava/awt/Container;",
+                    "declaringClass": "Ljavax/swing/Box;",
                     "name": "add",
                     "parameterTypes": [
                         "Ljava/awt/Component;"
@@ -25549,7 +25619,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljava/awt/Window;",
+                    "declaringClass": "Ljavax/swing/JDialog;",
                     "name": "addWindowListener",
                     "parameterTypes": [
                         "Ljava/awt/event/WindowListener;"
@@ -25605,7 +25675,14 @@
                 ],
                 "returnType": "V"
             },
-            "targets": []
+            "targets": [
+                {
+                    "declaringClass": "Ljava/awt/Toolkit;",
+                    "name": "getScreenSize",
+                    "parameterTypes": [],
+                    "returnType": "Ljava/awt/Dimension;"
+                }
+            ]
         },
         {
             "declaredTarget": {
@@ -25628,7 +25705,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljava/awt/Window;",
+                    "declaringClass": "Ljavax/swing/JDialog;",
                     "name": "setLocation",
                     "parameterTypes": [
                         "I",
@@ -25658,7 +25735,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljava/awt/Dialog;",
+                    "declaringClass": "Ljavax/swing/JDialog;",
                     "name": "setUndecorated",
                     "parameterTypes": [
                         "Z"
@@ -25776,7 +25853,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljava/awt/Window;",
+                    "declaringClass": "Ljavax/swing/JDialog;",
                     "name": "pack",
                     "parameterTypes": [],
                     "returnType": "V"
@@ -26794,7 +26871,7 @@
                 "parameterTypes": [],
                 "returnType": "V"
             },
-            "line": 61,
+            "line": 58,
             "method": {
                 "declaringClass": "Lde/tud/cs/se/flashcards/model/CommandHistory;",
                 "name": "setCommandHistoryChangedListener",
@@ -33071,7 +33148,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljavax/swing/AbstractButton;",
+                    "declaringClass": "Ljavax/swing/JButton;",
                     "name": "setEnabled",
                     "parameterTypes": [
                         "Z"
@@ -33311,7 +33388,7 @@
             },
             "targets": [
                 {
-                    "declaringClass": "Ljavax/swing/AbstractButton;",
+                    "declaringClass": "Ljavax/swing/JButton;",
                     "name": "setEnabled",
                     "parameterTypes": [
                         "Z"
@@ -36384,7 +36461,7 @@
                 "parameterTypes": [],
                 "returnType": "V"
             },
-            "line": 83,
+            "line": 79,
             "method": {
                 "declaringClass": "Lde/tud/cs/se/flashcards/model/FlashcardSeriesFilter$1;",
                 "name": "intervalAdded",
@@ -56907,7 +56984,14 @@
                 "parameterTypes": [],
                 "returnType": "V"
             },
-            "targets": []
+            "targets": [
+                {
+                    "declaringClass": "Ljava/util/Date;",
+                    "name": "<init>",
+                    "parameterTypes": [],
+                    "returnType": "V"
+                }
+            ]
         },
         {
             "declaredTarget": {

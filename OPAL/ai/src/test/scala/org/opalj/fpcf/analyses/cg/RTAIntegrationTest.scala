@@ -83,9 +83,7 @@ class RTAIntegrationTest extends FlatSpec with Matchers {
 
             val overApproximatedTgts = overApproximatedCallSites.flatMap(_.targets)
             computedTargets.foreach { computedTgt ⇒
-                if (!overApproximatedTgts.contains(convertMethod(computedTgt)))
-                    println("asd")
-                //assert(overApproximatedTgts.contains(convertMethod(computedTgt)))
+                assert(overApproximatedTgts.contains(convertMethod(computedTgt)))
             }
 
         }
