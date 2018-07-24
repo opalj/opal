@@ -19845,29 +19845,6 @@
         },
         {
             "declaredTarget": {
-                "declaringClass": "Ljava/lang/Class;",
-                "name": "desiredAssertionStatus",
-                "parameterTypes": [],
-                "returnType": "Z"
-            },
-            "line": 69,
-            "method": {
-                "declaringClass": "Lde/tud/cs/se/flashcards/ui/LearnDialog;",
-                "name": "<clinit>",
-                "parameterTypes": [],
-                "returnType": "V"
-            },
-            "targets": [
-                {
-                    "declaringClass": "Ljava/lang/Class;",
-                    "name": "desiredAssertionStatus",
-                    "parameterTypes": [],
-                    "returnType": "Z"
-                }
-            ]
-        },
-        {
-            "declaredTarget": {
                 "declaringClass": "Ljava/lang/Object;",
                 "name": "<init>",
                 "parameterTypes": [],
@@ -22938,7 +22915,7 @@
                 "parameterTypes": [],
                 "returnType": "V"
             },
-            "line": 61,
+            "line": 58,
             "method": {
                 "declaringClass": "Lde/tud/cs/se/flashcards/model/CommandHistory;",
                 "name": "setCommandHistoryChangedListener",
