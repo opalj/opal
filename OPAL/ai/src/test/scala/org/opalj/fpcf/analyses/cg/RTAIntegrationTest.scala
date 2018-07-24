@@ -57,7 +57,7 @@ class RTAIntegrationTest extends FlatSpec with Matchers {
 
     it should "consists of calls that are also present in Soots CHA" in {
         //val callSites = retrieveCallSites("/columbus1_5_SOOT_CHA.json")
-        val callSites = retrieveCallSites("/flashchards_SOOT_CHA.json")
+        val callSites = retrieveCallSites("/flashchards_SOOT_CHA_MODIFIED.json")
 
         for {
             m ← project.allMethodsWithBody
@@ -90,7 +90,7 @@ class RTAIntegrationTest extends FlatSpec with Matchers {
     }
 
     it should "contain all calls from Soots SPARK" in {
-        val callSites = retrieveCallSites("/flashchards_SOOT_SPARK.json").callSites
+        val callSites = retrieveCallSites("/flashchards_SOOT_SPARK_MODIFIED.json").callSites
         for {
             m ← project.allMethodsWithBody
             dm = declaredMethods(m)
