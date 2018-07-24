@@ -82,7 +82,7 @@ class Java8PolymorphicCalls(implicit hermes: HermesConfig) extends DefaultFeatur
             pcAndInvocation ← body collect {
                 case iv: INVOKEVIRTUAL if isPotentialCallOnDefaultMethod(iv, project)   ⇒ iv
                 case ii: INVOKEINTERFACE if isPotentialCallOnDefaultMethod(ii, project) ⇒ ii
-                case is: INVOKESTATIC if is.isInterface == true                         ⇒ is
+                case is: INVOKESTATIC if is.isInterface                         ⇒ is
             }
         } {
             val pc = pcAndInvocation.pc
@@ -97,7 +97,7 @@ class Java8PolymorphicCalls(implicit hermes: HermesConfig) extends DefaultFeatur
                         val target = project.instanceCall(callerType, ot, name, md)
                         if (target.hasValue) {
                             val definingClass = target.value.asVirtualMethod.classType.asObjectType
-                            project.classFile(definingClass).map(_.isInterfaceDeclaration).getOrElse(false)
+                            project.classFile(definingClass).exists(_.isInterfaceDeclaration)
                         } else
                             false
                     }
@@ -115,7 +115,7 @@ class Java8PolymorphicCalls(implicit hermes: HermesConfig) extends DefaultFeatur
                         val target = project.instanceCall(callerType, ot, name, md)
                         if (target.hasValue) {
                             val definingClass = target.value.asVirtualMethod.classType.asObjectType
-                            val isIDM = project.classFile(definingClass).map(_.isInterfaceDeclaration).getOrElse(false)
+                            val isIDM = project.classFile(definingClass).exists(_.isInterfaceDeclaration)
                             if (isIDM) {
                                 // if the method is resolved to an IDM we have to check whether there are multiple options
                                 // in order to check the linearization order
@@ -123,7 +123,7 @@ class Java8PolymorphicCalls(implicit hermes: HermesConfig) extends DefaultFeatur
                                     val cf = project.classFile(it)
                                     if (cf.nonEmpty) {
                                         val method = cf.get.findMethod(name, md)
-                                        method.map(_.body.nonEmpty).getOrElse(false)
+                                        method.exists(_.body.nonEmpty)
                                     } else {
                                         false
                                     }
