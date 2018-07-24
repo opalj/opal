@@ -52,7 +52,9 @@ class DirectCalls(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
             "DC1", /* 0 --- static method call */
             "DC2", /* 1 --- constructor call */
             "DC3", /* 2 --- call on super */
-            "DC4" /* 3 --- private method call */
+            "DC4", /* 3 --- private method call */
+            "DC5", /* 4 --- static call to an interface (private or not) */
+            "DC6" /* 5 --- private method call with interface receiver */
         )
     }
 
@@ -82,13 +84,26 @@ class DirectCalls(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
             val l = InstructionLocation(methodLocation, pc)
 
             val kindID = invokeKind match {
-                case _: INVOKESTATIC ⇒ 0
+                case _ @  INVOKESTATIC(declaringClass,_,_,_) ⇒ {
+                    val cf = project.classFile(declaringClass)
+                    if(cf.isEmpty)
+                        -1
+                    else if(cf.get.isInterfaceDeclaration)
+                        4 /* static interface receiver */
+                    else
+                        0 /* static call to class type*/
+                }
                 case invSpec @ INVOKESPECIAL(declaringClass, _, name, _) ⇒ {
-                    println(declaringClass.toJava)
                     if (name != "<init>") {
                         if (declType eq declaringClass) {
                             if (project.specialCall(invSpec).value.isPrivate) {
-                                2
+                                val cf = project.classFile(declaringClass)
+                                if(cf.isEmpty)
+                                    -1
+                                else if(cf.get.isInterfaceDeclaration)
+                                    5
+                                else
+                                    2
                             } else {
                                 -1
                             }
@@ -97,7 +112,7 @@ class DirectCalls(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
                             3
                         }
                     } else {
-                        val superTypes = project.classHierarchy.directSupertypes(declType);
+                        val superTypes = project.classHierarchy.directSupertypes(declType)
                         val isSuperConstructor = superTypes.contains(declaringClass)
                         if ((declaringClass ne ObjectType.Object) && !isSuperConstructor) {
                             1
