@@ -62,7 +62,7 @@ class TestTaintAnalysis private[ifds] (
                     if (index.isDefined) // Taint known array index
                         in ++ definedBy.iterator.map(ArrayElement(_, index.get))
                     else // Taint whole array if index is unknown
-                        in ++ definedBy.iterator.map(Variable)
+                        in ++ definedBy.iterator.map(org.opalj.fpcf.analyses.ifds.Variable)
                 else if (index.isDefined && definedBy.size == 1) // Untaint if possible
                     in - ArrayElement(definedBy.head, index.get)
                 else in
@@ -119,7 +119,7 @@ class TestTaintAnalysis private[ifds] (
             case Var.ASTID ⇒
                 val newTaint = in.collect {
                     case Variable(source) if expr.asVar.definedBy.contains(source) ⇒
-                        Some(Variable(stmt.index))
+                        Some(org.opalj.fpcf.analyses.ifds.Variable(stmt.index))
                     case ArrayElement(source, taintIndex) if expr.asVar.definedBy.contains(source) ⇒
                         Some(ArrayElement(stmt.index, taintIndex))
                     case _ ⇒ None
@@ -137,7 +137,7 @@ class TestTaintAnalysis private[ifds] (
                     case Variable(source) ⇒ load.arrayRef.asVar.definedBy.contains(source)
                     case _                ⇒ false
                 })
-                    in + Variable(stmt.index)
+                    in + org.opalj.fpcf.analyses.ifds.Variable(stmt.index)
                 else
                     in
             /*case GetStatic.ASTID ⇒
@@ -155,7 +155,7 @@ class TestTaintAnalysis private[ifds] (
                     case Variable(source) ⇒ get.objRef.asVar.definedBy.contains(source)
                     case _                ⇒ false
                 })
-                    in + Variable(stmt.index)
+                    in + org.opalj.fpcf.analyses.ifds.Variable(stmt.index)
                 else
                     in
             case _ ⇒ in
@@ -189,14 +189,14 @@ class TestTaintAnalysis private[ifds] (
                 case Variable(source) ⇒ // Taint formal parameter if actual parameter is tainted
                     asCall(stmt.stmt).allParams.zipWithIndex.collect {
                         case (param, index) if param.asVar.definedBy.contains(source) ⇒
-                            Variable(paramToIndex(index, callee.definedMethod))
+                            org.opalj.fpcf.analyses.ifds.Variable(paramToIndex(index, !callee.definedMethod.isStatic))
                     }
 
                 case ArrayElement(source, taintedIndex) ⇒
                     // Taint element of formal parameter if element of actual parameter is tainted
                     asCall(stmt.stmt).allParams.zipWithIndex.collect {
                         case (param, index) if param.asVar.definedBy.contains(source) ⇒
-                            ArrayElement(paramToIndex(index, callee.definedMethod), taintedIndex)
+                            ArrayElement(paramToIndex(index, !callee.definedMethod.isStatic), taintedIndex)
                     }
 
                 case InstanceField(source, declClass, taintedField) if classHierarchy.isSubtypeOf(declClass, callee.declaringClassType).isYesOrUnknown ||
@@ -205,7 +205,7 @@ class TestTaintAnalysis private[ifds] (
                     // Only if the formal parameter is of a type that may have that field!
                     asCall(stmt.stmt).allParams.zipWithIndex.collect {
                         case (param, index) if param.asVar.definedBy.contains(source) ⇒
-                            InstanceField(paramToIndex(index, callee.definedMethod), declClass, taintedField)
+                            InstanceField(paramToIndex(index, !callee.definedMethod.isStatic), declClass, taintedField)
                     }
                 //case sf: StaticField ⇒ Set(sf)
             }.flatten
@@ -225,13 +225,15 @@ class TestTaintAnalysis private[ifds] (
          * call-by-value.
          */
         def isRefTypeParam(source: Int): Boolean =
-            callee.descriptor.parameterType(
-                paramToIndex(source, callee.definedMethod)
-            ).isReferenceType
-
+            if (source == -1) true
+            else {
+                callee.descriptor.parameterType(
+                    paramToIndex(source, false)
+                ).isReferenceType
+            }
 
         if (callee.name == "source" && stmt.stmt.astID == Assignment.ASTID)
-            Set(Variable(stmt.index))
+            Set(org.opalj.fpcf.analyses.ifds.Variable(stmt.index))
         else if (callee.name == "sanitize")
             Set.empty
         else {
@@ -241,19 +243,19 @@ class TestTaintAnalysis private[ifds] (
                     case Variable(source) if source < 0 && source > -100 && isRefTypeParam(source) ⇒
                         // Taint actual parameter if formal parameter is tainted
                         val param =
-                            asCall(stmt.stmt).allParams(paramToIndex(source, callee.definedMethod))
-                        flows ++= param.asVar.definedBy.iterator.map(Variable)
+                            asCall(stmt.stmt).allParams(paramToIndex(source, !callee.definedMethod.isStatic))
+                        flows ++= param.asVar.definedBy.iterator.map(org.opalj.fpcf.analyses.ifds.Variable)
 
                     case ArrayElement(source, taintedIndex) if source < 0 && source > -100 ⇒
                         // Taint element of actual parameter if element of formal parameter is tainted
                         val param =
-                            asCall(stmt.stmt).allParams(paramToIndex(source, callee.definedMethod))
+                            asCall(stmt.stmt).allParams(paramToIndex(source, !callee.definedMethod.isStatic))
                         flows ++= param.asVar.definedBy.iterator.map(ArrayElement(_, taintedIndex))
 
                     case InstanceField(source, declClass, taintedField) if source < 0 && source > -10 ⇒
                         // Taint field of actual parameter if field of formal parameter is tainted
                         val param =
-                            asCall(stmt.stmt).allParams(paramToIndex(source, callee.definedMethod))
+                            asCall(stmt.stmt).allParams(paramToIndex(source, !callee.definedMethod.isStatic))
                         flows ++= param.asVar.definedBy.iterator.map(InstanceField(_, declClass, taintedField))
                     //case sf: StaticField ⇒ flows += sf
                     case _ ⇒
@@ -265,7 +267,7 @@ class TestTaintAnalysis private[ifds] (
                 val returnValue = exit.stmt.asReturnValue.expr.asVar
                 flows ++= in.collect {
                     case Variable(source) if returnValue.definedBy.contains(source) ⇒
-                        Variable(stmt.index)
+                        org.opalj.fpcf.analyses.ifds.Variable(stmt.index)
                     case ArrayElement(source, taintedIndex) if returnValue.definedBy.contains(source) ⇒
                         ArrayElement(stmt.index, taintedIndex)
                     case InstanceField(source, declClass, taintedField) if returnValue.definedBy.contains(source) ⇒
@@ -280,8 +282,8 @@ class TestTaintAnalysis private[ifds] (
     /**
      * Converts a parameter origin to the index in the parameter seq (and vice-versa).
      */
-    def paramToIndex(param: Int, callee: Method): Int =
-        -1 - param - (if (callee.isStatic) 1 else 0)
+    def paramToIndex(param: Int, includeThis: Boolean): Int =
+        (if (includeThis) -1 else -2) - param
 
     override def callToReturnFlow(stmt: Statement, succ: Statement, in: Set[Fact]): Set[Fact] = {
         val call = asCall(stmt.stmt)
@@ -360,7 +362,7 @@ object TestTaintAnalysisRunner {
                 m.descriptor.parameterTypes.zipWithIndex.collect {
                     case (pType, index) if pType == ObjectType.String ⇒ index
                 } foreach { index ⇒
-                    val e = (declaredMethods(m), Variable(paramToIndex(index, m)))
+                    val e = (declaredMethods(m), org.opalj.fpcf.analyses.ifds.Variable(paramToIndex(index, m)))
                     entryPoints += 1
                     ps.force(e, TestTaintAnalysis.property.key)
                 }
