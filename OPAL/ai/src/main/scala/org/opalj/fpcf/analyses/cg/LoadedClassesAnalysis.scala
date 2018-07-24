@@ -123,7 +123,9 @@ class LoadedClassesAnalysis(
     def handleNewReachableMethod(
         dm: DeclaredMethod
     ): (Set[DeclaredMethod], UIDSet[ObjectType]) = {
-        assert(dm.hasSingleDefinedMethod)
+        if (!dm.hasSingleDefinedMethod)
+            return (Set.empty, UIDSet.empty)
+
         val method = dm.definedMethod
         val methodDCT = method.classFile.thisType
         assert(dm.declaringClassType eq methodDCT)

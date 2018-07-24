@@ -114,7 +114,7 @@ class RTACallGraphAnalysis private[analyses] (
                 // we can not create a dependency here, so the analysis is not allowed to create
                 // such a result
                 throw new IllegalStateException("illegal immediate result for callers")
-            case _@EPS(_, _, _) ⇒
+            case _@ EPS(_, _, _) ⇒
             // the method is reachable, so we analyze it!
         }
 
@@ -204,7 +204,7 @@ class RTACallGraphAnalysis private[analyses] (
 
     def handleStmts(
         method:              Method,
-        instantiatedTypesUB: UIDSet[ObjectType],
+        instantiatedTypesUB: UIDSet[ObjectType]
     ): (UIDSet[ObjectType], IntMap[IntTrieSet], Traversable[(Int, ObjectType, String, MethodDescriptor)]) = {
         implicit val p: SomeProject = project
 
@@ -218,6 +218,8 @@ class RTACallGraphAnalysis private[analyses] (
         var newInstantiatedTypes = UIDSet.empty[ObjectType]
 
         val stmts = tacaiProvider(method).stmts
+
+        val packageName = method.classFile.thisType.packageName
 
         // for allocation sites, add new types
         // for calls, add new edges
@@ -237,21 +239,25 @@ class RTACallGraphAnalysis private[analyses] (
                     calleesOfM = handleCall(
                         stmt.pc, call.resolveCallTarget.toSet, calleesOfM
                     )
+                    calleesOfM = unknownLibraryCall(call, packageName, stmt.pc, calleesOfM)
 
                 case call: StaticMethodCall[V] ⇒
                     calleesOfM = handleCall(
                         stmt.pc, call.resolveCallTarget.toSet, calleesOfM
                     )
+                    calleesOfM = unknownLibraryCall(call, packageName, stmt.pc, calleesOfM)
 
                 case NonVirtualFunctionCallStatement(call) ⇒
                     calleesOfM = handleCall(
                         stmt.pc, call.resolveCallTarget.toSet, calleesOfM
                     )
+                    calleesOfM = unknownLibraryCall(call, packageName, stmt.pc, calleesOfM)
 
                 case call: NonVirtualMethodCall[V] ⇒
                     calleesOfM = handleCall(
                         stmt.pc, call.resolveCallTarget.toSet, calleesOfM
                     )
+                    calleesOfM = unknownLibraryCall(call, packageName, stmt.pc, calleesOfM)
 
                 case VirtualFunctionCallStatement(call) ⇒
                     val r = handleVirtualCall(
@@ -281,12 +287,34 @@ class RTACallGraphAnalysis private[analyses] (
         (newInstantiatedTypes, calleesOfM, virtualCallSites)
     }
 
+    def unknownLibraryCall(
+        call: Call[V], packageName: String, pc: Int, callesOfM: IntMap[IntTrieSet]
+    ): IntMap[IntTrieSet] = {
+        var result = callesOfM
+        val declaringClassType = call.declaringClass.asObjectType
+        val declTgt = declaredMethods.apply(
+            declaringClassType,
+            packageName,
+            declaringClassType,
+            call.name,
+            call.descriptor
+        )
+
+        if (!declTgt.hasSingleDefinedMethod && !declTgt.hasMultipleDefinedMethods) {
+            val tgtId = declaredMethods.methodID(declTgt)
+            result = result.updated(
+                pc, result.getOrElse(pc, IntTrieSet.empty) + tgtId
+            )
+        }
+        result
+    }
+
     def handleVirtualCall(
-        method:              Method,
-        call:                Call[V] with VirtualCall[V],
-        pc:                  Int,
-        calleesOfM:          IntMap[IntTrieSet],
-        virtualCallSites:    List[(Int /*PC*/ , ObjectType, String, MethodDescriptor)]
+        method:           Method,
+        call:             Call[V] with VirtualCall[V],
+        pc:               Int,
+        calleesOfM:       IntMap[IntTrieSet],
+        virtualCallSites: List[(Int /*PC*/ , ObjectType, String, MethodDescriptor)]
     ): (IntMap[IntTrieSet], List[(Int /*PC*/ , ObjectType, String, MethodDescriptor)]) = {
 
         var resCalleesOfM = calleesOfM
@@ -327,6 +355,13 @@ class RTACallGraphAnalysis private[analyses] (
             }
         }
 
+        resCalleesOfM = unknownLibraryCall(
+            call,
+            method.classFile.thisType.packageName,
+            pc,
+            resCalleesOfM
+        )
+
         (resCalleesOfM, resVirtualCallSites)
 
     }
@@ -337,7 +372,7 @@ class RTACallGraphAnalysis private[analyses] (
      */
     def handleCall(
         pc: Int, targets: Set[Method],
-        calleesOfM:          IntMap[IntTrieSet]
+        calleesOfM: IntMap[IntTrieSet]
     ): IntMap[IntTrieSet] = {
 
         var result = calleesOfM
@@ -365,7 +400,7 @@ class RTACallGraphAnalysis private[analyses] (
             instantiatedType ← newInstantiatedTypes // only iterate once!
             (pc, typeBound, name, descr) ← state.virtualCallSites
 
-            if project.classHierarchy.allSubclassTypes(typeBound, true).contains(instantiatedType)//.subtypeInformation.get(typeBound).exists(_.contains(instantiatedType))
+            if project.classHierarchy.allSubclassTypes(typeBound, true).contains(instantiatedType) //.subtypeInformation.get(typeBound).exists(_.contains(instantiatedType))
             //if project.classHierarchy.isSubtypeOf(instantiatedType, typeBound).isYes
             tgt ← project.instanceCall(
                 state.method.definedMethod.classFile.thisType, instantiatedType, name, descr
@@ -401,7 +436,8 @@ class RTACallGraphAnalysis private[analyses] (
                     tgtMethod,
                     CallersProperty.fallback(tgtMethod, project),
                     new CallersOnlyWithConcreteCallers(
-                        Set(CallersProperty.toLong(declaredMethods.methodID(method), pc)))
+                        Set(CallersProperty.toLong(declaredMethods.methodID(method), pc))
+                    )
                 ))
             case _ ⇒ throw new IllegalArgumentException()
         })

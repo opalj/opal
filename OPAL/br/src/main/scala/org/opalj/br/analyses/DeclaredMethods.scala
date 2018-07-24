@@ -69,7 +69,7 @@ class DeclaredMethods(
                     method2id.put(vm, vmId)
                     id2method += vm
                     _size += 1
-                    ???
+                    vm
                 }
             )
         } else {
