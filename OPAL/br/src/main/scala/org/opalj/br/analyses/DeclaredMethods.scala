@@ -4,16 +4,13 @@ package br
 package analyses
 
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.atomic.AtomicInteger
 
-import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap
 import org.opalj.br.MethodDescriptor.SignaturePolymorphicMethod
 import org.opalj.br.ObjectType.MethodHandle
 import org.opalj.br.ObjectType.VarHandle
 import org.opalj.br.analyses.DeclaredMethodsKey.MethodContext
 import org.opalj.br.analyses.DeclaredMethodsKey.MethodContextQuery
-
-import scala.collection.mutable.ArrayBuffer
+import org.opalj.collection.mutable.BidirectionalObject2IDMap
 
 /**
  * The set of all [[org.opalj.br.DeclaredMethod]]s (potentially used by the property store).
@@ -22,16 +19,12 @@ import scala.collection.mutable.ArrayBuffer
  */
 class DeclaredMethods(
         private[this] val p: SomeProject,
-        // TODO @Dominik/@Florian - Do we still need the caching? (Entities are now compared using equals...)
         // We need concurrent, mutable maps here, as VirtualDeclaredMethods may be added when they
         // are queried. This can result in DeclaredMethods added for a type not yet seen, too (e.g.
         // methods on type Object when not analyzing the JDK.
         private[this] val data:      ConcurrentHashMap[ReferenceType, ConcurrentHashMap[MethodContext, DeclaredMethod]],
-        private[this] val id2method: ArrayBuffer[DeclaredMethod],
-        private[this] val method2id: Object2IntOpenHashMap[DeclaredMethod],
-        private[this] var _size:     Int
+        private[this] val ids: BidirectionalObject2IDMap[DeclaredMethod]
 ) {
-    val id = new AtomicInteger(id2method.size)
 
     def apply(
         declaredType: ObjectType,
@@ -65,10 +58,7 @@ class DeclaredMethods(
                 new MethodContext(name, descriptor),
                 _ ⇒ {
                     val vm = VirtualDeclaredMethod(classType, name, descriptor)
-                    val vmId = id.getAndIncrement()
-                    method2id.put(vm, vmId)
-                    id2method += vm
-                    _size += 1
+                    ids.addData(vm)
                     vm
                 }
             )
@@ -83,11 +73,11 @@ class DeclaredMethods(
     }
 
     def apply(methodId: Int): DeclaredMethod = {
-        id2method(methodId)
+        ids.getData(methodId)
     }
 
     def methodID(dm: DeclaredMethod): Int = {
-        method2id.getInt(dm)
+        ids.getID(dm)
     }
 
     def declaredMethods: Iterator[DeclaredMethod] = {
@@ -95,6 +85,6 @@ class DeclaredMethods(
         // Thread-safe as .values() creates a view of the current state
         data.values().asScala.iterator.flatMap { _.values().asScala }
     }
-
-    def size: Int = _size
 }
+
+

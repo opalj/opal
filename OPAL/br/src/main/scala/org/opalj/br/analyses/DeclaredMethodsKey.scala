@@ -4,13 +4,14 @@ package br
 package analyses
 
 import java.util.concurrent.ConcurrentHashMap
-import java.util.function.{Function ⇒ JFunction}
+import java.util.function.{Function => JFunction}
 
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap
 import org.opalj.br.MethodDescriptor.SignaturePolymorphicMethod
 import org.opalj.br.ObjectType.MethodHandle
 import org.opalj.br.ObjectType.VarHandle
 import org.opalj.collection.immutable.ConstArray
+import org.opalj.collection.mutable.BidirectionalObject2IDMap
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -192,9 +193,12 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
             method2Id.put(dm, id)
             id2method.append(dm)
             id += 1
+            assert(id > 0)
         }
 
-        new DeclaredMethods(p, result, id2method, method2Id, id)
+        val ids = new BidirectionalObject2IDMap[DeclaredMethod](id2method, method2Id, id)
+
+        new DeclaredMethods(p, result, ids)
     }
 
     /**
