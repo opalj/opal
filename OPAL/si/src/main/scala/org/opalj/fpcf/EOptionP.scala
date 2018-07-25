@@ -184,7 +184,7 @@ final class IntermediateEP[+E <: Entity, +P <: Property](
 ) extends EPS[E, P] {
 
     override def isFinal: Boolean = false
-    override def asFinal: FinalEP[E, P] = throw new ClassCastException()
+    override def asFinal: FinalEP[E, P] = throw new ClassCastException();
 
     override def equals(other: Any): Boolean = {
         other match {
@@ -265,10 +265,10 @@ final class EPK[+E <: Entity, +P <: Property](
     override def ub: Nothing = throw new UnsupportedOperationException()
 
     override def isFinal: Boolean = false
-    override def asFinal: FinalEP[E, P] = throw new ClassCastException()
+    override def asFinal: FinalEP[E, P] = throw new ClassCastException();
 
     override def hasProperty: Boolean = false
-    override def asEPS: EPS[E, P] = throw new ClassCastException()
+    override def asEPS: EPS[E, P] = throw new ClassCastException();
 
     override def toEPK: this.type = this
 

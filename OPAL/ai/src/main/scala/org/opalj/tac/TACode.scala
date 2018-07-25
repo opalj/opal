@@ -29,11 +29,15 @@ import org.opalj.br.cfg.CFG
  *               index of the first statement that was generated for the bytecode instruction
  *               - if any. For details see `TACNaive` and `TACAI`
  *
+ * @tparam V     The type of Vars used by the underlying code.
+ *               Given that the stmts array is conceptually immutable - i.e., no client is allowed
+ *               to change it(!!!) - the type V is actually co-variant, but we cannot express this.
+ *
  * @author Michael Eichberg
  */
 case class TACode[P <: AnyRef, V <: Var[V]](
         params:            Parameters[P],
-        stmts:             Array[Stmt[V]], // CONST
+        stmts:             Array[Stmt[V]], // TODO use TypeSafeArray to make it possible to make V covariant!
         pcToIndex:         Array[Int],
         cfg:               CFG[Stmt[V], TACStmts[V]],
         exceptionHandlers: ExceptionHandlers,

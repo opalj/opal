@@ -130,14 +130,14 @@ trait ValuesDomain { domain ⇒
          *          `ReturnAddressValue`.
          */
         private[ai] def asReturnAddressValue: Int = {
-            throw new ClassCastException(this.getClass.getSimpleName+" is no return address value")
+            throw new ClassCastException(this.getClass.getSimpleName+" is no return address value");
         }
 
         /**
          * Returns the represented reference value iff this value represents a reference value.
          */
         def asDomainReferenceValue: DomainReferenceValue = {
-            throw new ClassCastException(this.getClass.getSimpleName+" is no reference value")
+            throw new ClassCastException(this.getClass.getSimpleName+" is no reference value");
         }
 
         /**

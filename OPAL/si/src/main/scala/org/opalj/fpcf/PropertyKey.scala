@@ -31,6 +31,7 @@ final class PropertyKey[+P] private[fpcf] (val id: Int) extends AnyVal with Prop
  */
 object PropertyKey {
 
+    // TODO pass the cycle to the cycle resolution strategy to enable decisions about the "correct" value
     type CycleResolutionStrategy[E <: Entity, P <: Property] = (PropertyStore, EPS[E, P]) ⇒ P
 
     private[this] val keysLock = new ReentrantReadWriteLock
