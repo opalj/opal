@@ -11,7 +11,9 @@ sealed abstract class PropertyComputationResult {
     private[fpcf] def id: Int
 
     private[fpcf] def isIntermediateResult: Boolean = false
-    private[fpcf] def asIntermediateResult: IntermediateResult[_] = throw new ClassCastException
+    private[fpcf] def asIntermediateResult: IntermediateResult[_ <: Property] = {
+        throw new ClassCastException();
+    }
 }
 
 /**
