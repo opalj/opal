@@ -21,24 +21,24 @@ trait DefaultReferenceValuesBinding extends l1.ReferenceValues with DefaultExcep
     // Let's fix the type hierarchy
 
     type AReferenceValue = ReferenceValue
-    final val AReferenceValue: ClassTag[AReferenceValue] = implicitly
+    final val AReferenceValueTag: ClassTag[AReferenceValue] = implicitly
     type DomainReferenceValue = AReferenceValue
-    final val DomainReferenceValue: ClassTag[DomainReferenceValue] = implicitly
+    final val DomainReferenceValueTag: ClassTag[DomainReferenceValue] = implicitly
 
     type DomainSingleOriginReferenceValue = SingleOriginReferenceValue
-    final val DomainSingleOriginReferenceValue: ClassTag[DomainSingleOriginReferenceValue] = implicitly
+    final val DomainSingleOriginReferenceValueTag: ClassTag[DomainSingleOriginReferenceValue] = implicitly
 
     type DomainNullValue = NullValue
-    final val DomainNullValue: ClassTag[DomainNullValue] = implicitly
+    final val DomainNullValueTag: ClassTag[DomainNullValue] = implicitly
 
     type DomainObjectValue = ObjectValue
-    final val DomainObjectValue: ClassTag[DomainObjectValue] = implicitly
+    final val DomainObjectValueTag: ClassTag[DomainObjectValue] = implicitly
 
     type DomainArrayValue = ArrayValue
-    final val DomainArrayValue: ClassTag[DomainArrayValue] = implicitly
+    final val DomainArrayValueTag: ClassTag[DomainArrayValue] = implicitly
 
     type DomainMultipleReferenceValues = MultipleReferenceValues
-    final val DomainMultipleReferenceValues: ClassTag[DomainMultipleReferenceValues] = implicitly
+    final val DomainMultipleReferenceValuesTag: ClassTag[DomainMultipleReferenceValues] = implicitly
 
     //
     // FACTORY METHODS

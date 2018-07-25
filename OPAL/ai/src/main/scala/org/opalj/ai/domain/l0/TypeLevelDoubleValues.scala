@@ -4,8 +4,6 @@ package ai
 package domain
 package l0
 
-import org.opalj.br.ComputationalType
-import org.opalj.br.ComputationalTypeDouble
 import org.opalj.br.DoubleType
 import org.opalj.br.DoubleVariableInfo
 import org.opalj.br.VerificationTypeInfo
@@ -34,8 +32,6 @@ trait TypeLevelDoubleValues extends DoubleValuesDomain {
      */
     trait DoubleValue extends TypedValue[DoubleType] with IsDoubleValue {
         this: DomainTypedValue[DoubleType] ⇒
-
-        final override def computationalType: ComputationalType = ComputationalTypeDouble
 
         final override def verificationTypeInfo: VerificationTypeInfo = DoubleVariableInfo
 

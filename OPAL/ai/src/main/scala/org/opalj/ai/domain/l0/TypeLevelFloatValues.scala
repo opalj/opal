@@ -5,8 +5,6 @@ package domain
 package l0
 
 import org.opalj.value.IsFloatValue
-import org.opalj.br.ComputationalType
-import org.opalj.br.ComputationalTypeFloat
 import org.opalj.br.FloatType
 import org.opalj.br.FloatVariableInfo
 import org.opalj.br.VerificationTypeInfo
@@ -36,8 +34,6 @@ trait TypeLevelFloatValues extends FloatValuesDomain {
         this: DomainTypedValue[FloatType] ⇒
 
         final override def valueType: Option[FloatType] = Some(FloatType)
-
-        final override def computationalType: ComputationalType = ComputationalTypeFloat
 
         final override def verificationTypeInfo: VerificationTypeInfo = FloatVariableInfo
 

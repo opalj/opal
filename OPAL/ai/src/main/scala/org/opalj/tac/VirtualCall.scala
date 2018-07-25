@@ -4,11 +4,10 @@ package tac
 
 import scala.collection.Set
 
-import org.opalj.ai.Domain
-import org.opalj.ai.domain.RecordDefUse
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.ProjectLike
+import org.opalj.value.KnownTypedValue
 
 trait VirtualCall[+V <: Var[V]] { this: Call[V] ⇒
 
@@ -26,16 +25,16 @@ trait VirtualCall[+V <: Var[V]] { this: Call[V] ⇒
     )(
         implicit
         p:  ProjectLike,
-        ev: V <:< DUVar[(Domain with RecordDefUse)#DomainValue]
+        ev: V <:< DUVar[KnownTypedValue]
     ): Set[Method] = {
-        val receiverValue = receiver.asVar.value.asDomainReferenceValue
+        val receiverValue = receiver.asVar.value.asReferenceValue
 
         if (receiverValue.isNull.isYes) {
             Set.empty
         } else if (declaringClass.isArrayType) {
             p.instanceCall(ObjectType.Object, ObjectType.Object, name, descriptor).toSet
         } else if (receiverValue.isPrecise) {
-            val receiverType = receiverValue.valueType.get
+            val receiverType = receiverValue.upperTypeBound.head
             p.instanceCall(callingContext, receiverType, name, descriptor).toSet
         } else {
             // IMPROVE use the upper type bound to find the relevant types and then locate the methods

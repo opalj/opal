@@ -4,9 +4,10 @@ package fpcf
 package par
 
 import org.opalj.fpcf.PropertyStore.{Debug ⇒ debug}
+
 /**
  * We generally distinguish between tasks that compute properties which are explicitly required
- * and those tasks which are not yet / no longer required, because no strictly depending analyses
+ * and those tasks which are not yet/no longer required, because no strictly depending analyses
  * requires them (anymore.)
  *
  * @author Michael Eichberg

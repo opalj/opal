@@ -5,10 +5,9 @@ package analyses
 package purity
 
 import scala.annotation.switch
-import org.opalj.ai.Domain
+
 import org.opalj.ai.ValueOrigin
 import org.opalj.ai.isImmediateVMException
-import org.opalj.ai.domain.RecordDefUse
 import org.opalj.br.ComputationalTypeReference
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
@@ -92,6 +91,7 @@ import org.opalj.tac.Var
 import org.opalj.tac.VirtualFunctionCall
 import org.opalj.tac.VirtualMethodCall
 import org.opalj.tac.FieldRead
+import org.opalj.value.KnownTypedValue
 
 /**
  * Base trait for analyses that analyze the purity of methods.
@@ -101,7 +101,7 @@ import org.opalj.tac.FieldRead
 trait AbstractPurityAnalysis extends FPCFAnalysis {
 
     /** The type of the TAC domain. */
-    type V = DUVar[(Domain with RecordDefUse)#DomainValue]
+    type V = DUVar[KnownTypedValue]
 
     /**
      * The state of the analysis.
@@ -127,7 +127,10 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
 
     val rater: DomainSpecificRater
 
-    protected[this] val tacai: Method ⇒ TACode[TACMethodParameter, V] = project.get(DefaultTACAIKey)
+    protected[this] val tacai: Method ⇒ TACode[TACMethodParameter, V] = {
+        project.get(DefaultTACAIKey)
+    }
+
     protected[this] val isMethodOverridable: Method ⇒ Answer = project.get(IsOverridableMethodKey)
     protected[this] val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
 
@@ -178,7 +181,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
 
                 case NonVirtualFunctionCall.ASTID | VirtualFunctionCall.ASTID ⇒
                     val rcvr = expr.asInstanceFunctionCall.receiver
-                    !rcvr.isVar || rcvr.asVar.value.asDomainReferenceValue.isNull.isYesOrUnknown
+                    !rcvr.isVar || rcvr.asVar.value.asReferenceValue.isNull.isYesOrUnknown
 
                 case StaticFunctionCall.ASTID ⇒ false
 
@@ -191,11 +194,11 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
             case StaticMethodCall.ASTID ⇒ false // We are looking for implicit exceptions only
 
             case Throw.ASTID ⇒
-                stmt.asThrow.exception.asVar.value.asDomainReferenceValue.isNull.isNotNo
+                stmt.asThrow.exception.asVar.value.asReferenceValue.isNull.isNotNo
 
             case NonVirtualMethodCall.ASTID | VirtualMethodCall.ASTID ⇒
                 val rcvr = stmt.asInstanceMethodCall.receiver
-                !rcvr.isVar || rcvr.asVar.value.asDomainReferenceValue.isNull.isNotNo
+                !rcvr.isVar || rcvr.asVar.value.asReferenceValue.isNull.isNotNo
 
             case Assignment.ASTID ⇒ evaluationMayCauseVMLevelException(stmt.asAssignment.expr)
 
@@ -388,12 +391,14 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
         params:    Seq[Expr[V]],
         descr:     MethodDescriptor
     )(implicit state: StateType): Boolean = {
-        onVirtualMethod(rcvrType, interface, name, params.head, descr,
+        onVirtualMethod(
+            rcvrType, interface, name, params.head, descr,
             callee ⇒ checkPurityOfCall(rcvrType, name, descr, params, callee),
             dm ⇒ checkMethodPurity(
                 propertyStore(dm, VirtualMethodPurity.key), params
             ),
-            () ⇒ { atMost(ImpureByAnalysis); false })
+            () ⇒ { atMost(ImpureByAnalysis); false }
+        )
     }
 
     def onVirtualMethod(
@@ -406,9 +411,8 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
         onMultiple:   DeclaredMethod ⇒ Boolean,
         onUnknown:    () ⇒ Boolean
     )(implicit state: StateType): Boolean = {
-        val rcvrType =
-            if (receiver.isVar) receiver.asVar.value.asDomainReferenceValue.valueType
-            else Some(receiverType)
+        val rcvrValue = receiver.asVar.value.asReferenceValue
+        val rcvrType = if (receiver.isVar) rcvrValue.valueType else Some(receiverType)
 
         if (rcvrType.isEmpty) {
             // IMPROVE Just use the CFG to check if we have a normal successor
@@ -416,7 +420,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
         } else if (rcvrType.get.isArrayType) {
             val callee = project.instanceCall(state.declClass, ObjectType.Object, name, descr)
             onPrecise(callee)
-        } else if (receiver.asVar.value.asDomainReferenceValue.isPrecise) {
+        } else if (rcvrValue.isPrecise) {
             // The receiver could refer to further expressions in a non-flat representation.
             // To avoid special handling, we just fallback to the general case of virtual/interface
             // calls here as the analysis is intended to be used on flat representations anyway.
@@ -554,7 +558,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
             return ;
         }
 
-        val value = returnValue.asVar.value.asDomainReferenceValue
+        val value = returnValue.asVar.value.asReferenceValue
         if (value.isNull.isYes)
             return ; // Null is immutable
 

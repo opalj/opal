@@ -623,7 +623,10 @@ trait LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
 
         val updatedClassFile = privateTargetMethod match {
             case Some(m) ⇒
-                val forwardingName = "$forward$"+m.name
+                val forwardingName =
+                    if (m.isConstructor) "$forward$initializer"
+                    else if (m.isStaticInitializer) "$forward$static_initializer"
+                    else "$forward$"+m.name
                 val descriptor =
                     if (m.isConstructor) m.descriptor.copy(returnType = receiverType)
                     else m.descriptor

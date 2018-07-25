@@ -137,7 +137,7 @@ object InfiniteRecursions extends DefaultOneStepAnalysis {
                         // in the same manner; the idea is to reduce false positives
                         // due to non-infinite recursions due to side effects
                         if (callOperands.forall {
-                            case domain.DomainSingleOriginReferenceValue(v) ⇒
+                            case domain.DomainSingleOriginReferenceValueTag(v) ⇒
                                 if (v.origin < 0 /* === the value is a parameter*/ ||
                                     // the value is always created anew (no sideeffect)
                                     body.instructions(v.origin).opcode == NEW.opcode)

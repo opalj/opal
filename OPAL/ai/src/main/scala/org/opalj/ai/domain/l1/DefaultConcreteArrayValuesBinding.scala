@@ -17,7 +17,7 @@ trait DefaultConcreteArrayValuesBinding
     domain: CorrelationalDomain with ConcreteIntegerValues with TheClassHierarchy with LogContextProvider ⇒
 
     type DomainConcreteArrayValue = ConcreteArrayValue
-    final val DomainConcreteArrayValue: ClassTag[DomainConcreteArrayValue] = implicitly
+    final val DomainConcreteArrayValueTag: ClassTag[DomainConcreteArrayValue] = implicitly
 
     //
     // FACTORY METHODS

@@ -3,5 +3,7 @@ package org.opalj.fpcf
 
 /**
  * Encapsulates the bounds of a property.
+ *
+ * @author Michael Eichberg
  */
 case class PropertyBounds[P <: Property](lb: P, ub: P)

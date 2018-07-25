@@ -7,6 +7,8 @@ import java.io.File
 import java.io.IOException
 import java.io.Closeable
 import java.awt.Desktop
+import java.io.FileOutputStream
+import java.util.zip.GZIPOutputStream
 
 import scala.io.Source
 import scala.xml.Node
@@ -109,11 +111,43 @@ package object io {
         filenameSuffix: String
     ): Path = {
 
+        write(Seq(data), filenamePrefix, filenameSuffix)
+    }
+
+    def write(
+        data:           TraversableOnce[String],
+        filenamePrefix: String,
+        filenameSuffix: String
+    ): Path = {
+
         val path = Files.createTempFile(
             sanitizeFileName(filenamePrefix),
             sanitizeFileName(filenameSuffix)
         )
-        write(data.getBytes("UTF-8"), path)
+        write(data.map(_.getBytes("UTF-8")), path)
+        path
+    }
+
+    def writeGZip(
+        data:           String,
+        filenamePrefix: String,
+        filenameSuffix: String
+    ): Path = {
+
+        writeGZip(Seq(data), filenamePrefix, filenameSuffix)
+    }
+
+    def writeGZip(
+        data:           TraversableOnce[String],
+        filenamePrefix: String,
+        filenameSuffix: String
+    ): Path = {
+
+        val path = Files.createTempFile(
+            sanitizeFileName(filenamePrefix),
+            sanitizeFileName(filenameSuffix)
+        )
+        writeGZip(data.map(_.getBytes("UTF-8")), path)
         path
     }
 
@@ -121,6 +155,28 @@ package object io {
      * A simple wrapper for `java.nio.Files.write(Path,byte[])`.
      */
     def write(data: Array[Byte], path: Path): Unit = Files.write(path, data)
+
+    def write(data: TraversableOnce[Array[Byte]], path: Path): Unit = {
+        val out = new FileOutputStream(path.toFile)
+        try {
+            data.foreach(out.write)
+        } finally {
+            out.close()
+        }
+    }
+
+    def writeGZip(data: Array[Byte], path: Path): Unit = {
+        writeGZip(Seq(data), path)
+    }
+
+    def writeGZip(data: TraversableOnce[Array[Byte]], path: Path): Unit = {
+        val out = new GZIPOutputStream(new FileOutputStream(path.toFile))
+        try {
+            data.foreach(out.write)
+        } finally {
+            out.close()
+        }
+    }
 
     /**
      * This function takes a `Closeable` resource and a function `r` that will

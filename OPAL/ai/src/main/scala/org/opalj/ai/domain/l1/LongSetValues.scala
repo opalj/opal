@@ -47,8 +47,6 @@ trait LongSetValues extends LongValuesDomain with ConcreteLongValues {
 
         final override def valueType: Option[LongType] = Some(LongType)
 
-        final override def computationalType: ComputationalType = ComputationalTypeLong
-
         final override def verificationTypeInfo: VerificationTypeInfo = LongVariableInfo
 
     }

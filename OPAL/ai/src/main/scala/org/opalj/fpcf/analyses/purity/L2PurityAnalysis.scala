@@ -442,9 +442,9 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                 true
             case FinalEP(_, ExtensibleLocalField | ExtensibleLocalFieldWithGetter) ⇒
                 if (data._1.isVar) {
-                    val value = data._1.asVar.value.asDomainReferenceValue
+                    val value = data._1.asVar.value.asReferenceValue
                     value.isPrecise &&
-                        classHierarchy.isSubtypeOf(value.valueType.get, ObjectType.Cloneable).isNo
+                        classHierarchy.isSubtypeOf(value.asReferenceType, ObjectType.Cloneable).isNo
                 } else
                     false
             case EPS(_, _, NoLocalField) ⇒
@@ -463,43 +463,45 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
     def checkLocalityOfReturn(
         ep:   EOptionP[DeclaredMethod, Property],
         data: (Option[Expr[V]], Purity)
-    )(implicit state: State): Unit = ep match {
-        case EPS(_, PrimitiveReturnValue | FreshReturnValue |
-            VPrimitiveReturnValue | VFreshReturnValue, _) ⇒
-        case FinalEP(_, Getter | VGetter) ⇒
-            if (data._2 meet state.ubPurity ne state.ubPurity)
-                isLocal(data._1.get, data._2)
-        case FinalEP(_, ExtensibleGetter | VExtensibleGetter) ⇒
-            if (data._1.get.isVar) {
-                val value = data._1.get.asVar.value.asDomainReferenceValue
-                if (value.isPrecise &&
-                    classHierarchy.isSubtypeOf(value.valueType.get, ObjectType.Cloneable).isNo) {
-                    if (data._2 meet state.ubPurity ne state.ubPurity)
-                        isLocal(data._1.get, data._2)
+    )(implicit state: State): Unit = {
+        import project.classHierarchy.isSubtypeOf
+        ep match {
+            case EPS(_, PrimitiveReturnValue | FreshReturnValue |
+                VPrimitiveReturnValue | VFreshReturnValue, _) ⇒
+            case FinalEP(_, Getter | VGetter) ⇒
+                if (data._2 meet state.ubPurity ne state.ubPurity)
+                    isLocal(data._1.get, data._2)
+            case FinalEP(_, ExtensibleGetter | VExtensibleGetter) ⇒
+                if (data._1.get.isVar) {
+                    val value = data._1.get.asVar.value.asReferenceValue
+                    if (value.isPrecise && isSubtypeOf(value.asReferenceType, ObjectType.Cloneable).isNo) {
+                        if (data._2 meet state.ubPurity ne state.ubPurity)
+                            isLocal(data._1.get, data._2)
+                    } else {
+                        atMost(data._2)
+                    }
                 } else {
                     atMost(data._2)
                 }
-            } else {
+            case EPS(_, _, NoFreshReturnValue | VNoFreshReturnValue) ⇒
                 atMost(data._2)
-            }
-        case EPS(_, _, NoFreshReturnValue | VNoFreshReturnValue) ⇒
-            atMost(data._2)
-        case EOptionP(e, pk) ⇒
-            reducePurityLB(data._2)
-            if (data._2 meet state.ubPurity ne state.ubPurity) {
-                if (pk == ReturnValueFreshness.key)
-                    state.addRVFDependee(
-                        e,
-                        ep.asInstanceOf[EOptionP[DeclaredMethod, ReturnValueFreshness]],
-                        data
-                    )
-                else
-                    state.addVirtualRVFDependee(
-                        e,
-                        ep.asInstanceOf[EOptionP[DeclaredMethod, VirtualMethodReturnValueFreshness]],
-                        data
-                    )
-            }
+            case EOptionP(e, pk) ⇒
+                reducePurityLB(data._2)
+                if (data._2 meet state.ubPurity ne state.ubPurity) {
+                    if (pk == ReturnValueFreshness.key)
+                        state.addRVFDependee(
+                            e,
+                            ep.asInstanceOf[EOptionP[DeclaredMethod, ReturnValueFreshness]],
+                            data
+                        )
+                    else
+                        state.addVirtualRVFDependee(
+                            e,
+                            ep.asInstanceOf[EOptionP[DeclaredMethod, VirtualMethodReturnValueFreshness]],
+                            data
+                        )
+                }
+        }
     }
 
     /**

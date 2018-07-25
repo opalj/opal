@@ -5,10 +5,8 @@ package analyses
 package escape
 
 import scala.annotation.switch
-import org.opalj.ai.common.DefinitionSite
-import org.opalj.ai.Domain
-import org.opalj.ai.common.DefinitionSitesKey
-import org.opalj.ai.domain.RecordDefUse
+
+import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
 import org.opalj.br.Field
@@ -18,7 +16,6 @@ import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.cg.IsOverridableMethodKey
-import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.properties.AtMost
 import org.opalj.fpcf.properties.EscapeInCallee
 import org.opalj.fpcf.properties.EscapeProperty
@@ -41,8 +38,9 @@ import org.opalj.fpcf.properties.VFreshReturnValue
 import org.opalj.fpcf.properties.VGetter
 import org.opalj.fpcf.properties.VNoFreshReturnValue
 import org.opalj.fpcf.properties.VirtualMethodReturnValueFreshness
+import org.opalj.ai.common.DefinitionSite
+import org.opalj.ai.common.DefinitionSitesKey
 import org.opalj.tac.Assignment
-import org.opalj.tac.DUVar
 import org.opalj.tac.DefaultTACAIKey
 import org.opalj.tac.GetField
 import org.opalj.tac.New
@@ -111,8 +109,6 @@ class ReturnValueFreshnessState(val dm: DeclaredMethod) {
 class ReturnValueFreshnessAnalysis private[analyses] (
         final val project: SomeProject
 ) extends FPCFAnalysis {
-
-    type V = DUVar[(Domain with RecordDefUse)#DomainValue] // TODO @Florian already defined in the package, isn't it?
 
     private[this] val tacaiProvider = project.get(DefaultTACAIKey)
     private[this] val declaredMethods = project.get(DeclaredMethodsKey)
@@ -249,7 +245,7 @@ class ReturnValueFreshnessAnalysis private[analyses] (
     ): Boolean = {
         val VirtualFunctionCall(_, dc, _, name, desc, receiver, _) = callSite
 
-        val value = receiver.asVar.value.asDomainReferenceValue
+        val value = receiver.asVar.value.asReferenceValue
         val dm = state.dm
         val m = dm.definedMethod
         val thisType = m.classFile.thisType

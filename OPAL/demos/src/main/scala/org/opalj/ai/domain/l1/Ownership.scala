@@ -93,7 +93,7 @@ object OwnershipAnalysis extends DefaultOneStepAnalysis {
 
                                 def checkValue(returnValue: domain.DomainSingleOriginReferenceValue): Boolean = {
                                     returnValue match {
-                                        case domain.DomainArrayValue(av) ⇒
+                                        case domain.DomainArrayValueTag(av) ⇒
                                             checkOrigin(av.origin)
                                         case _ ⇒
                                             true
@@ -102,9 +102,9 @@ object OwnershipAnalysis extends DefaultOneStepAnalysis {
                                 }
 
                                 returnedValue match {
-                                    case domain.DomainSingleOriginReferenceValue(sorv) ⇒
+                                    case domain.DomainSingleOriginReferenceValueTag(sorv) ⇒
                                         checkValue(sorv)
-                                    case domain.DomainMultipleReferenceValues(morv) ⇒
+                                    case domain.DomainMultipleReferenceValuesTag(morv) ⇒
                                         morv.values.forall(checkValue(_))
                                 }
                             }

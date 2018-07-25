@@ -5,7 +5,8 @@ package fpcf
 import org.opalj.collection.immutable.Chain
 
 /**
- * Encapsulates a computed schedule and enables the execution of it.
+ * Encapsulates a computed schedule and enables the execution of it. Use an [[AnalysisScenario]]
+ * to compute a schedule.
  *
  * @param batches The representation of the computed schedule.
  *
@@ -45,6 +46,7 @@ case class Schedule(
             }
 
         }
+        ps.setupPhase(Set.empty, Set.empty)
     }
 
     override def toString: String = {

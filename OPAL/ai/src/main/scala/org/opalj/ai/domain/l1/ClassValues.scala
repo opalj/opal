@@ -41,7 +41,7 @@ trait ClassValues extends StringValues with FieldAccessesDomain with MethodCalls
     domain: CorrelationalDomain with IntegerValuesDomain with TypedValuesFactory with Configuration with TheClassHierarchy ⇒
 
     type DomainClassValue <: ClassValue with DomainObjectValue
-    val DomainClassValue: ClassTag[DomainClassValue]
+    val DomainClassValueTag: ClassTag[DomainClassValue]
 
     /**
      * All values (`Class<...> c`) that represent the same type (e.g. `java.lang.String`)

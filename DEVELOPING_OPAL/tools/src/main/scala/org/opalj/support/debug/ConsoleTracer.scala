@@ -64,7 +64,7 @@ trait ConsoleTracer extends AITracer { tracer ⇒
 
         if (printOIDs) {
             value match {
-                case rv: IsReferenceValue[_] if rv.allValues.size > 1 ⇒
+                case rv: IsReferenceValue if rv.allValues.size > 1 ⇒
                     val values = rv.allValues
                     val t =
                         if (rv.isInstanceOf[domain.l1.ReferenceValues#ReferenceValue])

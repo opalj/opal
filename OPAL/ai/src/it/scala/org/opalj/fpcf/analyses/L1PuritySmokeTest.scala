@@ -48,9 +48,13 @@ class L1PuritySmokeTest extends FunSpec with Matchers {
         p.get(FPCFAnalysesManagerKey).runAll(analyses)
 
         val propertyStore = p.get(PropertyStoreKey)
-        if (propertyStore.entities(Purity.key).exists(_.isRefinable) ||
-            propertyStore.entities(VirtualMethodPurity.key).exists(_.isRefinable)) {
-            fail("Analysis left over non-final purity results")
+        try {
+            if (propertyStore.entities(Purity.key).exists(_.isRefinable) ||
+                propertyStore.entities(VirtualMethodPurity.key).exists(_.isRefinable)) {
+                fail("Analysis left over non-final purity results")
+            }
+        }finally {
+            propertyStore.shutdown()
         }
     }
 
