@@ -633,7 +633,6 @@ case class Invokedynamic[+V <: Var[V]](
             descriptor.hashCode
     }
 
-
     override def toString: String = {
         val sig = descriptor.toJava(name)
         val params = this.params.mkString("(", ",", ")")
@@ -723,9 +722,8 @@ case class NonVirtualFunctionCall[+V <: Var[V]](
             pc) * 31 +
             declaringClass.hashCode) * 31 +
             name.hashCode) * 31 +
-        descriptor.hashCode
+            descriptor.hashCode
     }
-
 
     override def toString: String = {
         val sig = descriptor.toJava(name)
@@ -763,7 +761,7 @@ case class VirtualFunctionCall[+V <: Var[V]](
         (((VirtualFunctionCall.ASTID * 1171 +
             pc) * 31 +
             declaringClass.hashCode) * 31 +
-            name.hashCode) * 31+
+            name.hashCode) * 31 +
             descriptor.hashCode
     }
 
@@ -824,7 +822,7 @@ case class StaticFunctionCall[+V <: Var[V]](
         (((StaticFunctionCall.ASTID * 1171 +
             pc) * 31 +
             declaringClass.hashCode) * 31 +
-            name.hashCode) * 31+
+            name.hashCode) * 31 +
             descriptor.hashCode
     }
 

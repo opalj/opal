@@ -154,7 +154,7 @@ class DVar[+Value <: org.opalj.ai.ValuesDomain#DomainValue] private (
         }
     }
 
-    override def hashCode(): Int =          Var.ASTID * 1171 -13 + origin
+    override def hashCode(): Int = Var.ASTID * 1171 - 13 + origin
 
     override def toString: String = {
         s"DVar(useSites=${useSites.mkString("{", ",", "}")},value=$value,origin=$origin)"
@@ -235,7 +235,7 @@ class UVar[+Value <: org.opalj.ai.ValuesDomain#DomainValue] private (
         }
     }
 
-    override def hashCode(): Int =          Var.ASTID * 1171 -113 + defSites.hashCode
+    override def hashCode(): Int = Var.ASTID * 1171 - 113 + defSites.hashCode
 
     override def toString: String = {
         s"UVar(defSites=${defSites.mkString("{", ",", "}")},value=$value)"

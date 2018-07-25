@@ -471,7 +471,7 @@ case class Throw[+V <: Var[V]](pc: Int, exception: Expr[V]) extends Stmt[V] {
 
     final override def isSideEffectFree: Boolean = false
 
-    override def hashCode(): Opcode =  (Throw.ASTID * 1171 + pc) * 31 + exception.hashCode
+    override def hashCode(): Opcode = (Throw.ASTID * 1171 + pc) * 31 + exception.hashCode
 
     override def toString: String = s"Throw(pc=$pc,$exception)"
 }
@@ -511,8 +511,8 @@ case class PutStatic[+V <: Var[V]](
         false
     }
 
-    override def hashCode(): Opcode =  {
-        ((PutStatic.ASTID * 1171 + pc) * 31 + declaringClass.hashCode ) * 31 + name.hashCode
+    override def hashCode(): Opcode = {
+        ((PutStatic.ASTID * 1171 + pc) * 31 + declaringClass.hashCode) * 31 + name.hashCode
     }
 
     override def toString: String = {
@@ -551,8 +551,8 @@ case class PutField[+V <: Var[V]](
         false
     }
 
-    override def hashCode(): Opcode =  {
-        ((PutField.ASTID * 1171 + pc) * 31 + declaringClass.hashCode ) * 31 + name.hashCode
+    override def hashCode(): Opcode = {
+        ((PutField.ASTID * 1171 + pc) * 31 + declaringClass.hashCode) * 31 + name.hashCode
     }
 
     override def toString: String = {
@@ -749,7 +749,7 @@ case class ExprStmt[+V <: Var[V]](pc: Int, expr: Expr[V]) extends Stmt[V] {
         false
     }
 
-    override def hashCode(): Opcode =  (ExprStmt.ASTID * 1171 + pc) * 31 + expr.hashCode
+    override def hashCode(): Opcode = (ExprStmt.ASTID * 1171 + pc) * 31 + expr.hashCode
 
     override def toString: String = s"ExprStmt(pc=$pc,$expr)"
 
