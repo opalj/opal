@@ -34,9 +34,7 @@ sealed abstract class TypeHierarchyInformation {
         interfaceTypes.foldLeft(classTypes.foldLeft(z)(op))(op)
     }
 
-    def contains(t: ObjectType): Boolean = {
-        interfaceTypes.containsId(t.id) || classTypes.containsId(t.id)
-    }
+    def contains(t: ObjectType): Boolean = all.containsId(t.id)
 
     /**
      * The set of all types. The set is computed on demand and NOT cached; in general,
@@ -96,6 +94,8 @@ object SubtypeInformation {
             new SubtypeInformation {
                 val classTypes: UIDSet[ObjectType] = theClassTypes
                 val interfaceTypes: UIDSet[ObjectType] = theInterfaceTypes
+                // We precompute the information to ensure that tests that will fail will
+                // only take half as many steps... (see containsID)
                 val all: UIDSet[ObjectType] = initialAllTypes ++ classTypes ++ interfaceTypes
             }
         }
@@ -154,7 +154,7 @@ object SupertypeInformation {
                     final def classTypes: UIDSet[ObjectType] = ClassHierarchy.JustObject
                     final val interfaceTypes: UIDSet[ObjectType] = theInterfaceTypes
                     final val all: UIDSet[ObjectType] = {
-                        initialAllTypes ++ theInterfaceTypes + ObjectType.Object
+                        initialAllTypes + ObjectType.Object ++ theInterfaceTypes
                     }
                 }
             } else {
