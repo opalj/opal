@@ -17,6 +17,14 @@ import org.opalj.fpcf.properties.OnlyVMLevelCallers
 import org.opalj.fpcf.properties.VMReachableFinalizers
 import org.opalj.fpcf.properties.VMReachableFinalizersFallback
 
+/**
+ * Computes the set of finalize methods that are being called by the VM during the execution of the
+ * `project`.
+ * Extends the call graph analysis (e.g. [[RTACallGraphAnalysis]]) to include the calls to these
+ * methods.
+ *
+ * @author Florian Kuebler
+ */
 class FinalizerAnalysisState(var seenTypes: Int, private[this] var _vmReachableFinalizers: IntTrieSet) {
     def addFinalizer(finalizer: DeclaredMethod)(implicit declaredMethods: DeclaredMethods): Unit = {
         _vmReachableFinalizers += declaredMethods.methodID(finalizer)

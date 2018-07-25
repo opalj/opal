@@ -61,8 +61,14 @@ case class RTAState(
 
 /**
  * An rapid type call graph analysis (RTA). For a given [[Method]] it computes the set of outgoing
- * call edges ([[Callees]]). Furthermore, it updates the types for which allocations are present in
- * the [[SomeProject]] ([[InstantiatedTypes]]) and updates the [[org.opalj.fpcf.properties.CallersProperty]].
+ * call edges ([[org.opalj.fpcf.properties.Callees]]). Furthermore, it updates the types for which
+ * allocations are present in the [[SomeProject]] ([[org.opalj.fpcf.properties.InstantiatedTypes]])
+ * and updates the [[org.opalj.fpcf.properties.CallersProperty]].
+ *
+ * This analysis does not handle features s.a. JVM calls to static initializers, finalize etc.
+ * However, analyses for these features (e.g. [[org.opalj.fpcf.analyses.cg.FinalizerAnalysis]] or
+ * the [[org.opalj.fpcf.analyses.cg.LoadedClassesAnalysis]]) can be executed within the same batch
+ * and the call graph will be generated in collaboration)
  *
  * @author Florian Kuebler
  */
@@ -75,7 +81,12 @@ class RTACallGraphAnalysis private[analyses] (
     private[this] val tacaiProvider = project.get(SimpleTACAIKey)
     private[this] implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
 
-    def step1(p: SomeProject): PropertyComputationResult = {
+    /**
+     * Updates the caller properties of the initial entry points ([[InitialEntryPointsKey]]) to be
+     * called from an unknown context.
+     * This will trigger the computation of the callees for these methods (see `processMethod`).
+     */
+    def processEntryPoints(p: SomeProject): PropertyComputationResult = {
         val entryPoints = project.get(InitialEntryPointsKey).map(declaredMethods.apply)
 
         if (entryPoints.isEmpty)
@@ -99,6 +110,15 @@ class RTACallGraphAnalysis private[analyses] (
         )
     }
 
+    /**
+     * Computes the calls from the given method ([[Callees]] property) and updates the
+     * [[CallersProperty]] and the [[InstantiatedTypes]].
+     *
+     * Whenever a `declaredMethod` becomes reachable (the caller property is set initially),
+     * this method is called.
+     * In case the method never becomes reachable, the fallback [[NoCallers]] will be used by the
+     * framework and this method returns [[NoResult]].
+     */
     def processMethod(
         declaredMethod: DeclaredMethod
     ): PropertyComputationResult = {
@@ -176,7 +196,7 @@ class RTACallGraphAnalysis private[analyses] (
         Results(results)
     }
 
-    def continuation(
+    private[this] def continuation(
         instantiatedTypesEOptP: SomeEPS,
         state:                  RTAState
     ): PropertyComputationResult = {
@@ -287,7 +307,7 @@ class RTACallGraphAnalysis private[analyses] (
         (newInstantiatedTypes, calleesOfM, virtualCallSites)
     }
 
-    def unknownLibraryCall(
+    private[this] def unknownLibraryCall(
         call: Call[V], packageName: String, pc: Int, callesOfM: IntMap[IntTrieSet]
     ): IntMap[IntTrieSet] = {
         var result = callesOfM
@@ -309,7 +329,13 @@ class RTACallGraphAnalysis private[analyses] (
         result
     }
 
-    def handleVirtualCall(
+    /**
+     * Computes the calles of the given `method` including the known effect of the `call` and
+     * the call sites associated ith this call (in order to process updates of instantiated types).
+     * There can be multiple "call sites", in case the three-address code has computed multiple
+     * type bounds for the receiver.
+     */
+    private[this] def handleVirtualCall(
         method:           Method,
         call:             Call[V] with VirtualCall[V],
         pc:               Int,
@@ -370,7 +396,7 @@ class RTACallGraphAnalysis private[analyses] (
      * For a call at `pc` and the set of `targets` (determined by CHA), add corresponding
      * edges for all targets.
      */
-    def handleCall(
+    private[this] def handleCall(
         pc: Int, targets: Set[Method],
         calleesOfM: IntMap[IntTrieSet]
     ): IntMap[IntTrieSet] = {
@@ -390,7 +416,7 @@ class RTACallGraphAnalysis private[analyses] (
     // modifies state
     // modifies newReachable methods
     // returns updated newCalleesOfM
-    def handleVirtualCallSites(
+    private[this] def handleVirtualCallSites(
         state:                RTAState,
         newInstantiatedTypes: Iterator[ObjectType],
         newCalleesOfM:        IntMap[IntTrieSet]
@@ -415,7 +441,7 @@ class RTACallGraphAnalysis private[analyses] (
         result
     }
 
-    def partialResultsForCallers(
+    private[this] def partialResultsForCallers(
         method:        DefinedMethod,
         newCalleesOfM: IntMap[IntTrieSet]
     ): TraversableOnce[PartialResult[DeclaredMethod, CallersProperty]] = {
@@ -443,7 +469,7 @@ class RTACallGraphAnalysis private[analyses] (
         })
     }
 
-    def partialResultForInstantiatedTypes(
+    private[this] def partialResultForInstantiatedTypes(
         method: Method, newInstantiatedTypes: UIDSet[ObjectType]
     ): PartialResult[SomeProject, InstantiatedTypes] = {
         PartialResult[SomeProject, InstantiatedTypes](p, InstantiatedTypes.key,
@@ -466,7 +492,7 @@ class RTACallGraphAnalysis private[analyses] (
             })
     }
 
-    def resultForCallees(
+    private[this] def resultForCallees(
         instantiatedTypesEOptP: SomeEOptionP, state: RTAState
     ): PropertyComputationResult = {
         val calleesLB = Callees.fallback(state.method, p, declaredMethods)
@@ -493,16 +519,20 @@ object EagerRTACallGraphAnalysisScheduler extends FPCFEagerAnalysisScheduler {
     override type InitializationData = RTACallGraphAnalysis
 
     override def start(project: SomeProject, propertyStore: PropertyStore, rtaAnalysis: RTACallGraphAnalysis): FPCFAnalysis = {
-        propertyStore.scheduleEagerComputationForEntity(project)(rtaAnalysis.step1)
+        // let the entry points become reachable
+        propertyStore.scheduleEagerComputationForEntity(project)(rtaAnalysis.processEntryPoints)
         rtaAnalysis
     }
 
     override def uses: Predef.Set[PropertyKind] = Predef.Set(InstantiatedTypes)
 
-    override def derives: Predef.Set[PropertyKind] = Predef.Set(InstantiatedTypes, CallersProperty, Callees)
+    override def derives: Predef.Set[PropertyKind] = Predef.Set(
+        InstantiatedTypes, CallersProperty, Callees
+    )
 
     override def init(p: SomeProject, ps: PropertyStore): RTACallGraphAnalysis = {
         val analysis = new RTACallGraphAnalysis(p)
+        // register the analysis for initial values for callers (i.e. methods becoming reachable)
         ps.registerTriggeredComputation(CallersProperty.key, analysis.processMethod)
         analysis
     }

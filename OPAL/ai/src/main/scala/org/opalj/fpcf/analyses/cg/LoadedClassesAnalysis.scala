@@ -24,6 +24,9 @@ import org.opalj.tac.SimpleTACAIKey
 /**
  * Computes the set of classes that are being loaded by the VM during the execution of the
  * `project`.
+ * Extends the call graph analysis (e.g. [[RTACallGraphAnalysis]]) to include calls to static
+ * initializers from within the JVM.
+  *
  * @author Florian Kuebler
  */
 class LoadedClassesAnalysis(
@@ -77,7 +80,7 @@ class LoadedClassesAnalysis(
                 // we can not create a dependency here, so the analysis is not allowed to create
                 // such a result
                 throw new IllegalStateException("illegal immediate result for callers")
-            case eps @ EPS(dm: DeclaredMethod, _, _) ⇒
+            case _@ EPS(dm: DeclaredMethod, _, _) ⇒
                 // the method has callers. we have to analyze it
                 val (newCLInits, newLoadedClasses) = handleNewReachableMethod(dm)
 
@@ -96,7 +99,9 @@ class LoadedClassesAnalysis(
                         PartialResult[DeclaredMethod, CallersProperty](clInit, CallersProperty.key, {
                             case EPK(_, _) ⇒
                                 Some(EPS(
-                                    clInit, new LowerBoundCallers(project, clInit), OnlyVMLevelCallers
+                                    clInit,
+                                    new LowerBoundCallers(project, clInit),
+                                    OnlyVMLevelCallers
                                 ))
                             case EPS(_, lb, ub) if !ub.hasCallersWithUnknownContext ⇒
                                 Some(EPS(clInit, lb, ub.updateVMLevelCall()))
