@@ -6,9 +6,7 @@ package ifds
 
 import java.util.concurrent.ConcurrentHashMap
 
-import scala.collection.{Set ⇒ SomeSet}
-import org.opalj.ai.Domain
-import org.opalj.ai.domain.RecordDefUse
+import scala.collection.{Set => SomeSet}
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
@@ -38,6 +36,7 @@ import org.opalj.tac.TACStmts
 import org.opalj.tac.Expr
 import org.opalj.tac.Call
 import org.opalj.tac.ExprStmt
+import org.opalj.value.KnownTypedValue
 
 import scala.annotation.tailrec
 import scala.collection.mutable
@@ -88,11 +87,6 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
     protected[this] val tacai: Method ⇒ TACode[TACMethodParameter, V] = project.get(DefaultTACAIKey)
     protected[this] val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
 
-    /**
-     * Ensures that we query the PropertyStore with identical entities each time
-     */
-    val entities: ConcurrentHashMap[(DeclaredMethod, DataFlowFact), (DeclaredMethod, DataFlowFact)] = new ConcurrentHashMap
-
     class State(
                    val declClass: ObjectType,
                    val method:    Method,
@@ -111,8 +105,6 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
      * Performs IFDS aAnalysis for one specific entity, i.e. one DeclaredMethod/DataFlowFact pair.
      */
     def performAnalysis(source: (DeclaredMethod, DataFlowFact)): PropertyComputationResult = {
-        entities.putIfAbsent(source, source)
-
         val (declaredMethod, sourceFact) = source
 
         // Deal only with single defined methods for now
@@ -445,8 +437,7 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
                         )
                     )
                 } else {
-                    // Ensures that we access the property store always with identical entities
-                    val e = entities.computeIfAbsent((callee, fact), _ ⇒ (callee, fact))
+                    val e = (callee, fact)
 
                     val callFlows = propertyStore(e, property.key).asInstanceOf[EOptionP[(DeclaredMethod, DataFlowFact), IFDSProperty[DataFlowFact]]]
 
@@ -614,7 +605,7 @@ case class Statement(
 object AbstractIFDSAnalysis {
 
     /** The type of the TAC domain. */
-    type V = DUVar[(Domain with RecordDefUse)#DomainValue]
+    type V = DUVar[KnownTypedValue]
 }
 
 sealed trait IFDSAnalysisScheduler[DataFlowFact] extends ComputationSpecification {
