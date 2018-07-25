@@ -4,16 +4,12 @@ package br
 package analyses
 
 import java.util.concurrent.ConcurrentHashMap
-import java.util.function.{Function => JFunction}
+import java.util.function.{Function ⇒ JFunction}
 
-import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap
 import org.opalj.br.MethodDescriptor.SignaturePolymorphicMethod
 import org.opalj.br.ObjectType.MethodHandle
 import org.opalj.br.ObjectType.VarHandle
 import org.opalj.collection.immutable.ConstArray
-import org.opalj.collection.mutable.BidirectionalObject2IDMap
-
-import scala.collection.mutable.ArrayBuffer
 
 /**
  * The ''key'' object to get information about all declared methods.
@@ -181,8 +177,7 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
         }
 
         // assign each declared method a unique id
-        val method2Id = new Object2IntOpenHashMap[DeclaredMethod]()
-        val id2method = new ArrayBuffer[DeclaredMethod](result.size() * 30)
+        var method2Id = Map.empty[DeclaredMethod, Int]
 
         import scala.collection.JavaConverters._
         var id = 0
@@ -190,15 +185,15 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
             context2Method ← result.elements().asScala
             dm ← context2Method.elements().asScala
         } {
-            method2Id.put(dm, id)
-            id2method.append(dm)
+            method2Id += dm → id
             id += 1
             assert(id > 0)
         }
 
-        val ids = new BidirectionalObject2IDMap[DeclaredMethod](id2method, method2Id, id)
+        val id2method = new Array[DeclaredMethod](method2Id.size + 1000)
+        method2Id.foreach { case (m, i) ⇒ id2method(i) = m }
 
-        new DeclaredMethods(p, result, ids)
+        new DeclaredMethods(p, result, method2Id, id2method)
     }
 
     /**

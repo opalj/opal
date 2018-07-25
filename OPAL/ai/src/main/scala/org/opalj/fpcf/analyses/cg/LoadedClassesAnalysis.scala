@@ -26,7 +26,7 @@ import org.opalj.tac.SimpleTACAIKey
  * `project`.
  * Extends the call graph analysis (e.g. [[RTACallGraphAnalysis]]) to include calls to static
  * initializers from within the JVM.
-  *
+ *
  * @author Florian Kuebler
  */
 class LoadedClassesAnalysis(

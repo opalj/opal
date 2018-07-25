@@ -4,13 +4,14 @@ package br
 package analyses
 
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.locks.ReentrantReadWriteLock
 
 import org.opalj.br.MethodDescriptor.SignaturePolymorphicMethod
 import org.opalj.br.ObjectType.MethodHandle
 import org.opalj.br.ObjectType.VarHandle
 import org.opalj.br.analyses.DeclaredMethodsKey.MethodContext
 import org.opalj.br.analyses.DeclaredMethodsKey.MethodContextQuery
-import org.opalj.collection.mutable.BidirectionalObject2IDMap
+import org.opalj.log.OPALLogger
 
 /**
  * The set of all [[org.opalj.br.DeclaredMethod]]s (potentially used by the property store).
@@ -23,8 +24,11 @@ class DeclaredMethods(
         // are queried. This can result in DeclaredMethods added for a type not yet seen, too (e.g.
         // methods on type Object when not analyzing the JDK.
         private[this] val data:      ConcurrentHashMap[ReferenceType, ConcurrentHashMap[MethodContext, DeclaredMethod]],
-        private[this] val ids: BidirectionalObject2IDMap[DeclaredMethod]
+        private[this] var method2id: Map[DeclaredMethod, Int],
+        private[this] var id2method: Array[DeclaredMethod]
 ) {
+
+    val lock = new ReentrantReadWriteLock()
 
     def apply(
         declaredType: ObjectType,
@@ -50,18 +54,34 @@ class DeclaredMethods(
             )
         }
 
+        implicit val logContext = p.logContext
+
         if (method == null) {
-            // No matching declared method found, need to construct a virtual declared method, but
-            // a concurrent execution of this method may have put the virtual declared method into
-            // the set already already
-            dmSet.computeIfAbsent(
-                new MethodContext(name, descriptor),
-                _ ⇒ {
-                    val vm = VirtualDeclaredMethod(classType, name, descriptor)
-                    ids.addData(vm)
-                    vm
+            val vm = VirtualDeclaredMethod(classType, name, descriptor)
+            lock.readLock().lock()
+
+            // in case of an unseen method, compute id
+            if (!method2id.contains(vm)) {
+                lock.readLock().unlock()
+                lock.writeLock().lock()
+
+                if (!method2id.contains(vm)) {
+                    val id = method2id.size
+                    method2id += vm → id
+                    if (id2method.size <= id) {
+                        OPALLogger.info("project", "too many new virtual declared methods. extended the underlying array.")
+                        //IMPROVE use variable increment
+                        val id2methodExt = new Array[DeclaredMethod](id2method.length + 1000)
+                        Array.copy(id2method, 0, id2methodExt, 0, id2method.length)
+                        id2method = id2methodExt
+                    }
+                    id2method(id) = vm
                 }
-            )
+                lock.readLock().lock()
+                lock.writeLock().unlock()
+            }
+            lock.readLock().unlock()
+            vm
         } else {
             method
         }
@@ -73,11 +93,21 @@ class DeclaredMethods(
     }
 
     def apply(methodId: Int): DeclaredMethod = {
-        ids.getData(methodId)
+        lock.readLock().lock()
+        try {
+            id2method(methodId)
+        } finally {
+            lock.readLock().unlock()
+        }
     }
 
     def methodID(dm: DeclaredMethod): Int = {
-        ids.getID(dm)
+        lock.readLock().lock()
+        try {
+            method2id(dm)
+        } finally {
+            lock.readLock().unlock()
+        }
     }
 
     def declaredMethods: Iterator[DeclaredMethod] = {
@@ -86,5 +116,4 @@ class DeclaredMethods(
         data.values().asScala.iterator.flatMap { _.values().asScala }
     }
 }
-
 
