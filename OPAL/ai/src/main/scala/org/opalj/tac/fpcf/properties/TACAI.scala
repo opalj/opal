@@ -16,10 +16,11 @@ import org.opalj.fpcf.PropertyIsNotDerivedByPreviouslyExecutedAnalysis
 import org.opalj.fpcf.PropertyIsNotComputedByAnyAnalysis
 import org.opalj.ai.domain.l0.PrimitiveTACAIDomain
 import org.opalj.value.KnownTypedValue
+import org.opalj.tac.{TACAI ⇒ TACAIFactory}
 
-sealed trait AIBasedTACPropertyMetaInformation extends PropertyMetaInformation {
+sealed trait TACAIPropertyMetaInformation extends PropertyMetaInformation {
 
-    final type Self = AIBasedTAC
+    final type Self = TACAI
 
 }
 
@@ -32,12 +33,12 @@ sealed trait AIBasedTACPropertyMetaInformation extends PropertyMetaInformation {
  *
  * @author Michael Eichberg
  */
-sealed trait AIBasedTAC extends Property with AIBasedTACPropertyMetaInformation {
+sealed trait TACAI extends Property with TACAIPropertyMetaInformation {
 
     /**
      * Returns the key used by all `BaseAIResult` properties.
      */
-    final def key = AIBasedTAC.key
+    final def key = TACAI.key
 
     /**
      * @return The three-address code if the method is reachable; `None` otherwise.
@@ -49,45 +50,45 @@ sealed trait AIBasedTAC extends Property with AIBasedTACPropertyMetaInformation 
  * Models the TOP of the lattice. Used iff the method is not reachable, which generally requires
  * the computation of a call graph.
  */
-case object NoAIBasedTAC extends AIBasedTAC {
+case object NoTACAI extends TACAI {
     def tac: Option[TACode[TACMethodParameter, DUVar[KnownTypedValue]]] = None
 }
 
-case class AnAIBasedTAC(
+case class TheTACAI(
         theTAC: TACode[TACMethodParameter, DUVar[KnownTypedValue]]
-) extends AIBasedTAC {
+) extends TACAI {
     def tac: Option[TACode[TACMethodParameter, DUVar[KnownTypedValue]]] = Some(theTAC)
 }
 
 /**
- * Common constants use by all [[AIBasedTAC]] properties associated with methods.
+ * Common constants use by all [[TACAI]] properties associated with methods.
  */
-object AIBasedTAC extends AIBasedTACPropertyMetaInformation {
+object TACAI extends TACAIPropertyMetaInformation {
 
     /**
-     * The key associated with every [[AIBasedTAC]] property.
+     * The key associated with every [[TACAI]] property.
      */
-    final val key: PropertyKey[AIBasedTAC] = PropertyKey.create[Method, AIBasedTAC](
+    final val key: PropertyKey[TACAI] = PropertyKey.create[Method, TACAI](
         "org.opalj.tac.fpcf.properties.AIBasedTAC",
         // fallback property computation...
         (ps: PropertyStore, r: FallbackReason, m: Method) ⇒ {
             r match {
                 case PropertyIsNotDerivedByPreviouslyExecutedAnalysis ⇒
-                    NoAIBasedTAC
+                    NoTACAI
 
                 case PropertyIsNotComputedByAnyAnalysis ⇒
                     val p = ps.context(classOf[SomeProject])
                     val d = new PrimitiveTACAIDomain(p.classHierarchy, m)
-                    val taCode = TACAI(p, m)(d)
-                    AnAIBasedTAC(
+                    val taCode = TACAIFactory(p, m)(d)
+                    TheTACAI(
                         // the following cast is safe - see TACode for details
                         // IMPROVE Get rid of nasty type checks/casts related to TACode once we use ConstCovariantArray in TACode.. (here and elsewhere)
                         taCode.asInstanceOf[TACode[TACMethodParameter, DUVar[KnownTypedValue]]]
                     )
             }
-        }: AIBasedTAC,
+        }: TACAI,
         // cycle resolution strategy...
-        (_: PropertyStore, eps: EPS[Method, AIBasedTAC]) ⇒ eps.ub,
+        (_: PropertyStore, eps: EPS[Method, TACAI]) ⇒ eps.ub,
         // fast-track property computation...
         (_: PropertyStore, _: Method) ⇒ None
     )
