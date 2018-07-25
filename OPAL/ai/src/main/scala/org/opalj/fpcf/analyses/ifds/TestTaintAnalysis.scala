@@ -4,27 +4,33 @@ package fpcf
 package analyses
 package ifds
 
+//import java.io.File
+
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.ObjectType
+import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.fpcf.analyses.ifds.AbstractIFDSAnalysis.V
-import org.opalj.fpcf.par.RecordAllPropertyStoreTracer
 import org.opalj.fpcf.par.PKEParallelTasksPropertyStore
+import org.opalj.fpcf.par.RecordAllPropertyStoreTracer
 import org.opalj.fpcf.properties.IFDSProperty
 import org.opalj.fpcf.properties.IFDSPropertyMetaInformation
+//import org.opalj.fpcf.seq.PKESequentialPropertyStore
 import org.opalj.tac.Assignment
 import org.opalj.tac.Expr
 import org.opalj.tac.Var
+//import org.opalj.tac.PutStatic
+//import org.opalj.tac.GetStatic
+//import org.opalj.tac.PutField
+//import org.opalj.tac.GetField
 import org.opalj.tac.ArrayLoad
 import org.opalj.tac.ArrayStore
 import org.opalj.tac.Stmt
 import org.opalj.tac.ReturnValue
-//import org.opalj.tac.PutStatic
-//import org.opalj.tac.GetStatic
-import org.opalj.tac.PutField
-import org.opalj.tac.GetField
+
+import scala.collection.immutable.ListSet
 
 trait Fact
 
@@ -32,6 +38,9 @@ case class Variable(index: Int) extends Fact
 case class ArrayElement(index: Int, element: Int) extends Fact
 //case class StaticField(classType: ObjectType, fieldName: String) extends Fact
 case class InstanceField(index: Int, classType: ObjectType, fieldName: String) extends Fact
+case class FlowFact(flow: ListSet[Method]) extends Fact {
+    override val hashCode: Int = { flow.foldLeft(1)(_ + _.hashCode() * 31) }
+}
 
 /**
  * A simple IFDS taint analysis.
@@ -39,9 +48,9 @@ case class InstanceField(index: Int, classType: ObjectType, fieldName: String) e
  * @author Dominik Helm
  */
 class TestTaintAnalysis private[ifds] (
-        implicit
-        val project: SomeProject
-) extends AbstractIFDSAnalysis[Fact] {
+                                          implicit
+                                          val project: SomeProject
+                                      ) extends AbstractIFDSAnalysis[Fact] {
 
     override val property: IFDSPropertyMetaInformation[Fact] = Taint
 
@@ -69,14 +78,14 @@ class TestTaintAnalysis private[ifds] (
                 val put = stmt.stmt.asPutStatic
                 if (isTainted(put.value, in)) in + StaticField(put.declaringClass, put.name)
                 else in - StaticField(put.declaringClass, put.name)*/
-            case PutField.ASTID ⇒
+            /*case PutField.ASTID ⇒
                 val put = stmt.stmt.asPutField
                 val definedBy = put.objRef.asVar.definedBy
                 if (isTainted(put.value, in))
                     in ++ definedBy.iterator.map(InstanceField(_, put.declaringClass, put.name))
                 else if (definedBy.size == 1) // Untaint if object is known precisely
                     in - InstanceField(definedBy.head, put.declaringClass, put.name)
-                else in
+                else in*/
             case _ ⇒ in
         }
 
@@ -144,7 +153,7 @@ class TestTaintAnalysis private[ifds] (
                 if (in.contains(StaticField(get.declaringClass, get.name)))
                     in + Variable(stmt.index)
                 else in*/
-            case GetField.ASTID ⇒
+            /*case GetField.ASTID ⇒
                 val get = expr.asGetField
                 if (in.exists {
                     // The specific field may be tainted
@@ -156,15 +165,15 @@ class TestTaintAnalysis private[ifds] (
                 })
                     in + Variable(stmt.index)
                 else
-                    in
+                    in*/
             case _ ⇒ in
         }
 
     override def callFlow(
-        stmt:   Statement,
-        callee: DeclaredMethod,
-        in:     Set[Fact]
-    ): Set[Fact] = {
+                             stmt:   Statement,
+                             callee: DeclaredMethod,
+                             in:     Set[Fact]
+                         ): Set[Fact] = {
         if (callee.name == "sink") {
             if (in.exists {
                 case Variable(index) ⇒
@@ -181,8 +190,8 @@ class TestTaintAnalysis private[ifds] (
                 case _ ⇒ false
             })
                 println(s"Found flow: $stmt")
-            Set.empty
-        } else if ((callee.descriptor.returnType eq ObjectType.Class) ||
+            in + FlowFact(ListSet(stmt.method))
+        } else if (true || (callee.descriptor.returnType eq ObjectType.Class) ||
             (callee.descriptor.returnType eq ObjectType.Object)) {
             in.collect {
                 case Variable(index) ⇒ // Taint formal parameter if actual parameter is tainted
@@ -198,26 +207,26 @@ class TestTaintAnalysis private[ifds] (
                             ArrayElement(paramToIndex(pIndex, !callee.definedMethod.isStatic), taintedIndex)
                     }
 
-                case InstanceField(index, declClass, taintedField) if classHierarchy.isSubtypeOf(declClass, callee.declaringClassType).isYesOrUnknown ||
+                /* case InstanceField(index, declClass, taintedField) if classHierarchy.isSubtypeOf(declClass, callee.declaringClassType).isYesOrUnknown ||
                     classHierarchy.isSubtypeOf(callee.declaringClassType, declClass).isYesOrUnknown ⇒
                     // Taint field of formal parameter if field of actual parameter is tainted
                     // Only if the formal parameter is of a type that may have that field!
                     asCall(stmt.stmt).allParams.zipWithIndex.collect {
                         case (param, pIndex) if param.asVar.definedBy.contains(index) ⇒
                             InstanceField(paramToIndex(pIndex, !callee.definedMethod.isStatic), declClass, taintedField)
-                    }
+                    }*/
                 //case sf: StaticField ⇒ Set(sf)
             }.flatten
         } else Set.empty
     }
 
     override def returnFlow(
-        stmt:   Statement,
-        callee: DeclaredMethod,
-        exit:   Statement,
-        succ:   Statement,
-        in:     Set[Fact]
-    ): Set[Fact] = {
+                               stmt:   Statement,
+                               callee: DeclaredMethod,
+                               exit:   Statement,
+                               succ:   Statement,
+                               in:     Set[Fact]
+                           ): Set[Fact] = {
 
         /**
          * Checks whether the formal parameter is of a reference type, as primitive types are
@@ -257,6 +266,8 @@ class TestTaintAnalysis private[ifds] (
                             asCall(stmt.stmt).allParams(paramToIndex(index, !callee.definedMethod.isStatic))
                         flows ++= param.asVar.definedBy.iterator.map(InstanceField(_, declClass, taintedField))
                     //case sf: StaticField ⇒ flows += sf
+                    case FlowFact(flow) ⇒
+                        flows += FlowFact(flow + stmt.method)
                     case _ ⇒
                 }
             }
@@ -320,7 +331,7 @@ class Taint(val flows: Map[Statement, Set[Fact]]) extends IFDSProperty[Fact] {
 object Taint extends IFDSPropertyMetaInformation[Fact] {
     override type Self = Taint
 
-    val noFlowInformation = new Taint(null)
+    val noFlowInformation = new Taint(Map.empty)
 
     val key: PropertyKey[Taint] = PropertyKey.create[DeclaredMethod, Taint](
         "TestTaint",
@@ -332,6 +343,7 @@ object TestTaintAnalysisRunner {
 
     def main(args: Array[String]): Unit = {
         //val p = Project(new File("/home/dominik/Desktop/test"))
+        //val p = Project(new File("/home/dominik/Work/opal/OPAL/bi/src/test/resources/classfiles/OPAL-MultiJar-SNAPSHOT-01-04-2018.jar"))
         val p = Project(bytecode.RTJar)
         p.getOrCreateProjectInformationKeyInitializationData(
             PropertyStoreKey,
@@ -340,6 +352,8 @@ object TestTaintAnalysisRunner {
                     new RecordAllPropertyStoreTracer,
                     context.iterator.map(_.asTuple).toMap
                 )(p.logContext)
+                /*implicit val lg = p.logContext
+                val ps = PKESequentialPropertyStore.apply(context: _*)*/
                 PropertyStore.updateDebug(true)
                 ps
             }
@@ -348,22 +362,32 @@ object TestTaintAnalysisRunner {
         ps.setupPhase(Set(TestTaintAnalysis.property.key))
         TestTaintAnalysis.startLazily(p, ps, TestTaintAnalysis.init(p, ps))
         val declaredMethods = p.get(DeclaredMethodsKey)
-        var entryPoints = 0
+        var entryPoints: Set[(DeclaredMethod, Fact)] = Set.empty
         for (m ← p.allMethodsWithBody) {
             //val e = (declaredMethods(m), null)
             //ps.force(e, TestTaintAnalysis.property.key)
-            if (m.isPublic && (m.descriptor.returnType == ObjectType.Object ||
+            if ((m.isPublic || m.isProtected) && (m.descriptor.returnType == ObjectType.Object ||
                 m.descriptor.returnType == ObjectType.Class)) {
                 m.descriptor.parameterTypes.zipWithIndex.collect {
                     case (pType, index) if pType == ObjectType.String ⇒ index
                 } foreach { index ⇒
                     val e = (declaredMethods(m), Variable(-2 - index))
-                    entryPoints += 1
+                    entryPoints += e
                     ps.force(e, TestTaintAnalysis.property.key)
                 }
             }
         }
-        println(entryPoints)
+        println(entryPoints.size)
         ps.waitOnPhaseCompletion()
+        for {
+            e ← entryPoints
+            flows = ps(e, TestTaintAnalysis.property.key)
+            fact <- flows.ub.asInstanceOf[IFDSProperty[Fact]].flows.values.flatten.toSet[Fact]
+        } {
+            fact match {
+                case FlowFact(flow) ⇒ println(s"flow: "+flow.map(_.toJava).mkString(", "))
+                case _              ⇒
+            }
+        }
     }
 }
