@@ -396,7 +396,7 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
 
         while (je != null) {
             val entryName = je.getName
-            if (je.getSize.toInt > 0) {
+            if (je.getSize.toInt > 0 && (entryName.endsWith(".class") || entryName.endsWith(".jar"))) {
                 val entryBytes = new Array[Byte](je.getSize.toInt)
 
                 var remaining = entryBytes.length
@@ -408,8 +408,12 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
                     offset += readBytes
                 }
                 futures ::= Future[List[(ClassFile, String)]] {
-                    val cfs = ClassFile(new DataInputStream(new ByteArrayInputStream(entryBytes)))
-                    cfs map { cf ⇒ (cf, entryName) }
+                    if (entryName.endsWith(".class")) {
+                        val cfs = ClassFile(new DataInputStream(new ByteArrayInputStream(entryBytes)))
+                        cfs map { cf ⇒ (cf, entryName) }
+                    } else { // ends with ".jar"
+                        ClassFiles(new JarInputStream(new ByteArrayInputStream(entryBytes)))
+                    }
                 }(org.opalj.concurrent.OPALExecutionContext)
             }
             je = in.getNextJarEntry()
