@@ -81,7 +81,7 @@ object AIBasedTAC extends AIBasedTACPropertyMetaInformation {
                     val taCode = TACAI(p, m)(d)
                     AnAIBasedTAC(
                         // the following cast is safe - see TACode for details
-                        // TODO Get rid of nasty type checks/casts related to TACode once we use TypeSafeArray in TACode.. (here and elsewhere)
+                        // IMPROVE Get rid of nasty type checks/casts related to TACode once we use ConstCovariantArray in TACode.. (here and elsewhere)
                         taCode.asInstanceOf[TACode[TACMethodParameter, DUVar[KnownTypedValue]]]
                     )
             }

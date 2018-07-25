@@ -37,7 +37,7 @@ import org.opalj.br.cfg.CFG
  */
 case class TACode[P <: AnyRef, V <: Var[V]](
         params:            Parameters[P],
-        stmts:             Array[Stmt[V]], // TODO use TypeSafeArray to make it possible to make V covariant!
+        stmts:             Array[Stmt[V]], // IMPROVE use ConstCovariantArray to make it possible to make V covariant!
         pcToIndex:         Array[Int],
         cfg:               CFG[Stmt[V], TACStmts[V]],
         exceptionHandlers: ExceptionHandlers,

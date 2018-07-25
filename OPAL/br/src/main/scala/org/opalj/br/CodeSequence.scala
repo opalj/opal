@@ -16,6 +16,6 @@ trait CodeSequence[Instruction <: AnyRef] {
 
     def pcOfNextInstruction(pc: Int): Int /*PC*/
 
-    def instructions: Array[Instruction] // TODO use TypeSafeArray to make code sequence covariant in Instruction
+    def instructions: Array[Instruction] // IMPROVE use ConstCovariantArray to make code sequence covariant in Instruction
 
 }
