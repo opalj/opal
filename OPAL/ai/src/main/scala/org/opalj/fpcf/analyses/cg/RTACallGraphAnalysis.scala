@@ -311,7 +311,12 @@ class RTACallGraphAnalysis private[analyses] (
         call: Call[V], packageName: String, pc: Int, callesOfM: IntMap[IntTrieSet]
     ): IntMap[IntTrieSet] = {
         var result = callesOfM
-        val declaringClassType = call.declaringClass.asObjectType
+
+        val declaringClassType = if (call.declaringClass.isArrayType)
+            ObjectType.Object
+        else
+            call.declaringClass.asObjectType
+
         val declTgt = declaredMethods.apply(
             declaringClassType,
             packageName,
