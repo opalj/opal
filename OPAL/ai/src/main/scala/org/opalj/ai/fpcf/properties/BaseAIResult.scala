@@ -57,6 +57,14 @@ case class AnAIResult(theAIResult: AIResult) extends BaseAIResult {
 object BaseAIResult extends BaseAIResultPropertyMetaInformation {
 
     /**
+     * Performs an abstract interpretation of the method using the [[AIDomainFactoryKey]].
+     */
+    def computeAIResult(p: SomeProject, m: Method): AIResult = {
+        // we may still have requirements on the domain that we are going to use...
+        p.get(AIDomainFactoryKey)(p, m)
+    }
+
+    /**
      * The key associated with every [[BaseAIResult]] property.
      */
     final val key: PropertyKey[BaseAIResult] = PropertyKey.create[Method, BaseAIResult](
@@ -70,7 +78,7 @@ object BaseAIResult extends BaseAIResultPropertyMetaInformation {
                 case PropertyIsNotComputedByAnyAnalysis ⇒
                     // we may still have requirements on the domain that we are going to use...
                     val p = ps.context(classOf[SomeProject])
-                    AnAIResult(p.get(AIDomainFactoryKey)(p, m))
+                    AnAIResult(computeAIResult(p, m))
             }
         }: BaseAIResult,
         // cycle resolution strategy...
