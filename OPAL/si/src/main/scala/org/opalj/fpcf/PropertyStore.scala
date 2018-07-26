@@ -2,13 +2,15 @@
 package org.opalj
 package fpcf
 
+import org.opalj.collection.immutable.IntTrieSet
+
 import scala.util.control.ControlThrowable
 import scala.collection.{Map ⇒ SomeMap}
-
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.info
 import org.opalj.log.OPALLogger.error
+import org.opalj.fpcf.PropertyKind.SupportedPropertyKinds
 
 /**
  * A property store manages the execution of computations of properties related to specific
@@ -420,10 +422,45 @@ abstract class PropertyStore {
         pc: PropertyComputation[E]
     ): Unit
 
+    private[fpcf] val simultaneouslyLazilyComputedPropertyKinds: Array[IntTrieSet /*Set[PKId]*/ ] = {
+        Array.fill(SupportedPropertyKinds)(IntTrieSet.empty)
+    }
+
+    /**
+     * Registers a function that lazily computes multiple properties of different kinds
+     * at the same time for an element of the store.
+     *
+     * For further details see [[registerLazyPropertyComputation]].
+     */
+    def registerLazyMultiPropertyComputation[E <: Entity, P <: Property](
+        pc:  PropertyComputation[E],
+        pks: PropertyKey[P]*
+    ): Unit = {
+        if (pks.isEmpty) {
+            throw new IllegalArgumentException("pks is empty")
+        };
+        if (pks.size == 1) {
+            registerLazyPropertyComputation(pks.head, pc)
+        } else {
+            pks foreach { pk ⇒
+                registerLazyPropertyComputation(pk, pc)
+                var simultaneouslyComputed = IntTrieSet.empty
+                pks filter (_ != pk) foreach { otherPk ⇒
+                    simultaneouslyComputed += otherPk.id
+                }
+                if (simultaneouslyComputed.isEmpty) {
+                    throw new IllegalArgumentException(
+                        pks.mkString("pks is not disjunct: ", ", ", "")
+                    )
+                }
+            }
+        }
+    }
+
     /**
      * Registers a property computation that is eagerly triggered when a property of the given kind
      * is derived for some entity for the first time. Note, that the property computation
-     * function – as usual – has to be thread safe (only on-update continuaton functions are
+     * function – as usual – has to be thread safe (only on-update continuation functions are
      * guaranteed to be executed sequentially per E/PK pair). The primary use case is to
      * kick-start the computation of some e/pk as soon as an entity "becomes relevant".
      *

@@ -42,7 +42,7 @@ sealed trait ValueInformation {
 
     /** True if the value has a reference type; undefined if the type is unknown. */
     def isReferenceValue: Boolean
-    def asReferenceValue: IsReferenceValue = throw new ClassCastException
+    def asReferenceValue: IsReferenceValue = throw new ClassCastException();
 
 }
 
@@ -292,7 +292,7 @@ trait IsReferenceValue extends KnownTypedValue {
      */
     final def asReferenceType: ReferenceType = {
         if (!upperTypeBound.isSingletonSet) {
-            throw new ClassCastException(s"$upperTypeBound.size >= 1")
+            throw new ClassCastException(s"$upperTypeBound.size >= 1");
         }
 
         upperTypeBound.head

@@ -14,6 +14,10 @@ sealed abstract class TypeHierarchyInformation {
     def typeInformationType: String
     def classTypes: UIDSet[ObjectType]
     def interfaceTypes: UIDSet[ObjectType]
+    /**
+     * The set of all types; cached if usefull.
+     */
+    def allTypes: UIDSet[ObjectType]
 
     def size: Int = classTypes.size + interfaceTypes.size
 
@@ -34,15 +38,7 @@ sealed abstract class TypeHierarchyInformation {
         interfaceTypes.foldLeft(classTypes.foldLeft(z)(op))(op)
     }
 
-    def contains(t: ObjectType): Boolean = {
-        interfaceTypes.containsId(t.id) || classTypes.containsId(t.id)
-    }
-
-    /**
-     * The set of all types. The set is computed on demand and NOT cached; in general,
-     * the higher-order methods should be used!
-     */
-    def all: UIDSet[ObjectType]
+    def contains(t: ObjectType): Boolean
 
     override def toString: String = {
         val classInfo = classTypes.map(_.toJava).mkString("classes={", ", ", "}")
@@ -66,13 +62,30 @@ sealed abstract class SubtypeInformation extends TypeHierarchyInformation {
  */
 object SubtypeInformation {
 
-    final val None = new SubtypeInformation {
-        def classTypes: UIDSet[ObjectType] = UIDSet.empty
-        def interfaceTypes: UIDSet[ObjectType] = UIDSet.empty
-        def all: UIDSet[ObjectType] = UIDSet.empty
+    final val None: SubtypeInformation = new SubtypeInformation {
+        final override def classTypes: UIDSet[ObjectType] = UIDSet.empty
+        final override def interfaceTypes: UIDSet[ObjectType] = UIDSet.empty
+        final override def allTypes: UIDSet[ObjectType] = UIDSet.empty
+        final override def contains(t: ObjectType): Boolean = false
     }
 
-    def apply(
+    def forObject(
+        theClassTypes:     UIDSet[ObjectType],
+        theInterfaceTypes: UIDSet[ObjectType],
+        initialAllTypes:   UIDSet[ObjectType] // just used to increase "sharing" possibilities
+    ): SubtypeInformation = {
+        val theAllTypes = initialAllTypes ++ theClassTypes ++ theInterfaceTypes
+        new SubtypeInformation {
+            final override val classTypes: UIDSet[ObjectType] = theClassTypes
+            final override val interfaceTypes: UIDSet[ObjectType] = theInterfaceTypes
+            final override val allTypes: UIDSet[ObjectType] = theAllTypes
+            final override def contains(t: ObjectType): Boolean = true
+        }
+    }
+
+    def forSubtypesOfObject(
+        isKnownType:       Array[Boolean],
+        isInterfaceType:   Array[Boolean],
         theClassTypes:     UIDSet[ObjectType],
         theInterfaceTypes: UIDSet[ObjectType],
         initialAllTypes:   UIDSet[ObjectType] // just used to increase "sharing" possibilities
@@ -82,21 +95,47 @@ object SubtypeInformation {
                 None
             else
                 new SubtypeInformation {
-                    def classTypes: UIDSet[ObjectType] = UIDSet.empty
-                    val interfaceTypes: UIDSet[ObjectType] = theInterfaceTypes
-                    def all: UIDSet[ObjectType] = interfaceTypes
+                    final override def classTypes: UIDSet[ObjectType] = UIDSet.empty
+                    final override val interfaceTypes: UIDSet[ObjectType] = theInterfaceTypes
+                    final override def allTypes: UIDSet[ObjectType] = interfaceTypes
+                    final override def contains(t: ObjectType): Boolean = {
+                        val tid = t.id
+                        // the first three checks are just guard checks..
+                        tid != ObjectType.ObjectId &&
+                            tid < isKnownType.length && isKnownType(tid) &&
+                            isInterfaceType(tid) &&
+                            interfaceTypes.containsId(tid)
+                    }
                 }
         } else if (theInterfaceTypes.isEmpty) {
             new SubtypeInformation {
-                val classTypes: UIDSet[ObjectType] = theClassTypes
-                def interfaceTypes: UIDSet[ObjectType] = UIDSet.empty
-                def all: UIDSet[ObjectType] = classTypes
+                final override val classTypes: UIDSet[ObjectType] = theClassTypes
+                final override def interfaceTypes: UIDSet[ObjectType] = UIDSet.empty
+                final override def allTypes: UIDSet[ObjectType] = classTypes
+                final override def contains(t: ObjectType): Boolean = {
+                    val tid = t.id
+                    // the first three checks are just guard checks..
+                    tid != ObjectType.ObjectId &&
+                        tid < isKnownType.length && isKnownType(tid) &&
+                        !isInterfaceType(tid) &&
+                        classTypes.containsId(tid)
+                }
             }
         } else {
+            val theAllTypes = initialAllTypes ++ theClassTypes ++ theInterfaceTypes
             new SubtypeInformation {
-                val classTypes: UIDSet[ObjectType] = theClassTypes
-                val interfaceTypes: UIDSet[ObjectType] = theInterfaceTypes
-                val all: UIDSet[ObjectType] = initialAllTypes ++ classTypes ++ interfaceTypes
+                final override val classTypes: UIDSet[ObjectType] = theClassTypes
+                final override val interfaceTypes: UIDSet[ObjectType] = theInterfaceTypes
+                // We precompute the information to ensure that tests that will fail will
+                // only take half as many steps... (see containsID)
+                final override val allTypes: UIDSet[ObjectType] = theAllTypes
+                final override def contains(t: ObjectType): Boolean = {
+                    val tid = t.id
+                    // the first two checks are just guard checks...
+                    tid != ObjectType.ObjectId &&
+                        tid < isKnownType.length && isKnownType(tid) &&
+                        allTypes.containsId(tid)
+                }
             }
         }
     }
@@ -113,56 +152,100 @@ sealed abstract class SupertypeInformation extends TypeHierarchyInformation {
 
 object SupertypeInformation {
 
-    final val JustObject = new SupertypeInformation {
-        final def classTypes: UIDSet[ObjectType] = ClassHierarchy.JustObject
-        final def interfaceTypes: UIDSet[ObjectType] = UIDSet.empty
-        final def all: UIDSet[ObjectType] = ClassHierarchy.JustObject
+    final val JustObject: SupertypeInformation = new SupertypeInformation {
+        final override def classTypes: UIDSet[ObjectType] = ClassHierarchy.JustObject
+        final override def interfaceTypes: UIDSet[ObjectType] = UIDSet.empty
+        final override def allTypes: UIDSet[ObjectType] = ClassHierarchy.JustObject
+        final override def contains(t: ObjectType): Boolean = t eq ObjectType.Object
     }
 
-    final val None = new SupertypeInformation {
-        final def classTypes: UIDSet[ObjectType] = UIDSet.empty
-        final def interfaceTypes: UIDSet[ObjectType] = UIDSet.empty
-        final def all: UIDSet[ObjectType] = UIDSet.empty
+    // Required in case of incomplete type hierarchies:
+    final val Unknown: SupertypeInformation = new SupertypeInformation {
+        final override def classTypes: UIDSet[ObjectType] = UIDSet.empty
+        final override def interfaceTypes: UIDSet[ObjectType] = UIDSet.empty
+        final override def allTypes: UIDSet[ObjectType] = UIDSet.empty
+        final override def contains(t: ObjectType): Boolean = t eq ObjectType.Object
     }
 
-    def apply(
+    final val ForObject: SupertypeInformation = new SupertypeInformation {
+        final override val classTypes: UIDSet[ObjectType] = UIDSet.empty
+        final override def interfaceTypes: UIDSet[ObjectType] = UIDSet.empty
+        final override def allTypes: UIDSet[ObjectType] = UIDSet.empty
+        final override def contains(t: ObjectType): Boolean = false
+    }
+
+    def forSubtypesOfObject(
+        isKnownType:       Array[Boolean],
+        isInterfaceType:   Array[Boolean],
         theClassTypes:     UIDSet[ObjectType],
         theInterfaceTypes: UIDSet[ObjectType],
         initialAllTypes:   UIDSet[ObjectType] // just used to increase "sharing" possibilities
     ): SupertypeInformation = {
         if (theInterfaceTypes.isEmpty) {
             if (theClassTypes.isEmpty) {
-                None
+                Unknown
             } else if (theClassTypes.isSingletonSet && (theClassTypes.head eq ObjectType.Object)) {
                 JustObject
             } else {
                 new SupertypeInformation {
-                    final val classTypes: UIDSet[ObjectType] = theClassTypes
-                    final def interfaceTypes: UIDSet[ObjectType] = UIDSet.empty
-                    final def all: UIDSet[ObjectType] = classTypes
+                    final override val classTypes: UIDSet[ObjectType] = theClassTypes
+                    final override def interfaceTypes: UIDSet[ObjectType] = UIDSet.empty
+                    final override def allTypes: UIDSet[ObjectType] = classTypes
+                    final override def contains(t: ObjectType): Boolean = {
+                        val tid = t.id
+                        tid == ObjectType.ObjectId || (
+                            tid < isKnownType.length && isKnownType(tid) &&
+                            !isInterfaceType(tid) &&
+                            classTypes.containsId(t.id)
+                        )
+                    }
                 }
             }
         } else {
             if (theClassTypes.isEmpty) {
+                // we have an interface type with an incomplete type hierarchy
                 new SupertypeInformation {
-                    final def classTypes: UIDSet[ObjectType] = UIDSet.empty
-                    final val interfaceTypes: UIDSet[ObjectType] = theInterfaceTypes
-                    final def all: UIDSet[ObjectType] = theInterfaceTypes
+                    final override def classTypes: UIDSet[ObjectType] = UIDSet.empty
+                    final override val interfaceTypes: UIDSet[ObjectType] = theInterfaceTypes
+                    final override def allTypes: UIDSet[ObjectType] = interfaceTypes
+                    final override def contains(t: ObjectType): Boolean = {
+                        val tid = t.id
+                        tid == ObjectType.ObjectId || (
+                            tid < isKnownType.length && isKnownType(tid) &&
+                            isInterfaceType(tid) &&
+                            interfaceTypes.containsId(t.id)
+                        )
+                    }
                 }
             } else if (theClassTypes.isSingletonSet && (theClassTypes.head eq ObjectType.Object)) {
                 new SupertypeInformation {
-                    final def classTypes: UIDSet[ObjectType] = ClassHierarchy.JustObject
-                    final val interfaceTypes: UIDSet[ObjectType] = theInterfaceTypes
-                    final val all: UIDSet[ObjectType] = {
-                        initialAllTypes ++ theInterfaceTypes + ObjectType.Object
+                    final override def classTypes: UIDSet[ObjectType] = ClassHierarchy.JustObject
+                    final override val interfaceTypes: UIDSet[ObjectType] = theInterfaceTypes
+                    final override val allTypes: UIDSet[ObjectType] = {
+                        initialAllTypes + ObjectType.Object ++ theInterfaceTypes
+                    }
+                    final override def contains(t: ObjectType): Boolean = {
+                        val tid = t.id
+                        tid == ObjectType.ObjectId || (
+                            tid < isKnownType.length && isKnownType(tid) &&
+                            isInterfaceType(tid) &&
+                            interfaceTypes.containsId(t.id)
+                        )
                     }
                 }
             } else {
                 new SupertypeInformation {
-                    final val classTypes: UIDSet[ObjectType] = theClassTypes
-                    final val interfaceTypes: UIDSet[ObjectType] = theInterfaceTypes
-                    final val all: UIDSet[ObjectType] = {
+                    final override val classTypes: UIDSet[ObjectType] = theClassTypes
+                    final override val interfaceTypes: UIDSet[ObjectType] = theInterfaceTypes
+                    final override val allTypes: UIDSet[ObjectType] = {
                         initialAllTypes ++ classTypes ++ interfaceTypes
+                    }
+                    final override def contains(t: ObjectType): Boolean = {
+                        val tid = t.id
+                        tid == ObjectType.ObjectId || (
+                            tid < isKnownType.length && isKnownType(tid) &&
+                            allTypes.containsId(t.id)
+                        )
                     }
                 }
             }

@@ -29,9 +29,13 @@ import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
  * @note   To get the index use the [[org.opalj.br.analyses.Project]]'s `get` method and
  *         pass in `this` object.
  *
+ * @note   '''If you are developing analyses using the `PropertyStore` use an appropriate analysis
+ *         that stores the results of an abstract interpretation in the store.'''
+ *
  * @author Michael Eichberg
  */
-object SimpleAIKey extends AIKey {
+object SimpleAIKey
+    extends ProjectInformationKey[Method ⇒ AIResult { val domain: Domain with RecordDefUse }, /*DomainFactory*/ Method ⇒ Domain with RecordDefUse] {
 
     /**
      * The SimpleAIKey has no special prerequisites.

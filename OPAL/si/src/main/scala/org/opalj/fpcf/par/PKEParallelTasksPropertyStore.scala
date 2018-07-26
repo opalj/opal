@@ -16,7 +16,6 @@ import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.AnyRefMap
 import scala.collection.mutable
 import scala.collection.{Map ⇒ SomeMap}
-
 import org.opalj.graphs
 import org.opalj.collection.mutable.AnyRefArrayStack
 import org.opalj.log.LogContext
@@ -160,11 +159,11 @@ final class PKEParallelTasksPropertyStore private (
     //
 
     // Those computations that will only be scheduled if the property is required.
-    private[this] var lazyComputations: AtomicReferenceArray[SomePropertyComputation] = {
+    private[this] val lazyComputations: AtomicReferenceArray[SomePropertyComputation] = {
         new AtomicReferenceArray(SupportedPropertyKinds)
     }
 
-    private[this] var triggeredComputations: AtomicReferenceArray[ConcurrentLinkedQueue[SomePropertyComputation]] = {
+    private[this] val triggeredComputations: AtomicReferenceArray[ConcurrentLinkedQueue[SomePropertyComputation]] = {
         new AtomicReferenceArray(SupportedPropertyKinds)
     }
 
@@ -377,6 +376,15 @@ final class PKEParallelTasksPropertyStore private (
                         if (currentP == null) {
                             if (triggeredLazyComputations(pkId).add(e)) {
                                 if (tracer.isDefined) tracer.get.schedulingLazyComputation(e, pkId)
+
+                                val alsoComputedPKIds = simultaneouslyLazilyComputedPropertyKinds(pkId)
+                                alsoComputedPKIds foreach { computedPKId ⇒
+                                    if (!triggeredLazyComputations(computedPKId).add(e)) {
+                                        throw new UnknownError(
+                                            "a simultaneously computed property kind was already triggered"
+                                        )
+                                    }
+                                }
 
                                 scheduledLazyTasksCounter += 1
                                 appendTask(new PropertyComputationTask[Entity](store, e, pkId, lc))
@@ -1292,7 +1300,7 @@ final class PKEParallelTasksPropertyStore private (
                     (epk: SomeEPK) ⇒ this.dependees(epk.pk.id)(epk.e).map(_.toEPK)
                 )
                 if (cSCCs.nonEmpty) {
-                    handleResult(CSCCsResult(cSCCs), false)
+                    handleResult(CSCCsResult(cSCCs), forceEvaluation = false)
                     continueComputation = true
                 }
             }
