@@ -17,6 +17,7 @@ import org.opalj.br.reader.BytecodeInstructionsCache
 import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.bi.TestResources.allBITestProjectFolders
 import org.opalj.bi.TestResources.allBITestJARs
+import org.opalj.bi.TestResources.allManagedBITestJARs
 
 /**
  * Common helper and factory methods required by tests.
@@ -91,18 +92,18 @@ object TestSupport {
         }
     }
 
-    def allBITestProjects(
-                         projectReader: ClassFileReader         = DefaultJava9Reader,
-                         jreReader:     ClassFileReader = Java9LibraryFramework
-                     ): Iterator[(String, () ⇒ Project[URL])] = {
-                val jreCFs = jreReader.ClassFiles(RTJar) // we share the loaded JRE!
-            val jrePublicAPIOnly = jreReader.loadsInterfacesOnly
-                allBITestProjectFolders().toIterator map { biProject ⇒
-                    val projectClassFiles = projectReader.ClassFiles(biProject)
-                    val readerFactory = () ⇒ Project(projectClassFiles, jreCFs, jrePublicAPIOnly)
-                    (biProject.getName, readerFactory)
-                }
+    def allManagedBITestProjects(
+        projectReader: ClassFileReader = DefaultJava9Reader,
+        jreReader:     ClassFileReader = Java9LibraryFramework
+    ): Iterator[(String, () ⇒ Project[URL])] = {
+        val jreCFs = jreReader.ClassFiles(RTJar) // we share the loaded JRE!
+        val jrePublicAPIOnly = jreReader.loadsInterfacesOnly
+        allManagedBITestJARs().toIterator map { biProject ⇒
+            val projectClassFiles = projectReader.ClassFiles(biProject)
+            val readerFactory = () ⇒ Project(projectClassFiles, jreCFs, jrePublicAPIOnly)
+            (biProject.getName, readerFactory)
         }
+    }
 
     /**
      * @note     Using this method in combination with Scalatest, where the test cases are generated
