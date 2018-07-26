@@ -9,10 +9,12 @@ package ifds
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.ObjectType
 import org.opalj.br.Method
+import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.fpcf.analyses.ifds.AbstractIFDSAnalysis.V
+//import org.opalj.fpcf.seq.EPKSequentialPropertyStore
 import org.opalj.fpcf.par.PKEParallelTasksPropertyStore
 import org.opalj.fpcf.par.RecordAllPropertyStoreTracer
 import org.opalj.fpcf.properties.IFDSProperty
@@ -23,8 +25,8 @@ import org.opalj.tac.Expr
 import org.opalj.tac.Var
 //import org.opalj.tac.PutStatic
 //import org.opalj.tac.GetStatic
-//import org.opalj.tac.PutField
-//import org.opalj.tac.GetField
+import org.opalj.tac.PutField
+import org.opalj.tac.GetField
 import org.opalj.tac.ArrayLoad
 import org.opalj.tac.ArrayStore
 import org.opalj.tac.Stmt
@@ -48,9 +50,9 @@ case class FlowFact(flow: ListSet[Method]) extends Fact {
  * @author Dominik Helm
  */
 class TestTaintAnalysis private[ifds] (
-                                          implicit
-                                          val project: SomeProject
-                                      ) extends AbstractIFDSAnalysis[Fact] {
+        implicit
+        val project: SomeProject
+) extends AbstractIFDSAnalysis[Fact] {
 
     override val property: IFDSPropertyMetaInformation[Fact] = Taint
 
@@ -78,14 +80,14 @@ class TestTaintAnalysis private[ifds] (
                 val put = stmt.stmt.asPutStatic
                 if (isTainted(put.value, in)) in + StaticField(put.declaringClass, put.name)
                 else in - StaticField(put.declaringClass, put.name)*/
-            /*case PutField.ASTID ⇒
+            case PutField.ASTID ⇒
                 val put = stmt.stmt.asPutField
                 val definedBy = put.objRef.asVar.definedBy
                 if (isTainted(put.value, in))
                     in ++ definedBy.iterator.map(InstanceField(_, put.declaringClass, put.name))
                 else if (definedBy.size == 1) // Untaint if object is known precisely
                     in - InstanceField(definedBy.head, put.declaringClass, put.name)
-                else in*/
+                else in
             case _ ⇒ in
         }
 
@@ -153,7 +155,7 @@ class TestTaintAnalysis private[ifds] (
                 if (in.contains(StaticField(get.declaringClass, get.name)))
                     in + Variable(stmt.index)
                 else in*/
-            /*case GetField.ASTID ⇒
+            case GetField.ASTID ⇒
                 val get = expr.asGetField
                 if (in.exists {
                     // The specific field may be tainted
@@ -165,15 +167,15 @@ class TestTaintAnalysis private[ifds] (
                 })
                     in + Variable(stmt.index)
                 else
-                    in*/
+                    in
             case _ ⇒ in
         }
 
     override def callFlow(
-                             stmt:   Statement,
-                             callee: DeclaredMethod,
-                             in:     Set[Fact]
-                         ): Set[Fact] = {
+        stmt:   Statement,
+        callee: DeclaredMethod,
+        in:     Set[Fact]
+    ): Set[Fact] = {
         if (callee.name == "sink") {
             if (in.exists {
                 case Variable(index) ⇒
@@ -190,7 +192,7 @@ class TestTaintAnalysis private[ifds] (
                 case _ ⇒ false
             })
                 println(s"Found flow: $stmt")
-            in + FlowFact(ListSet(stmt.method))
+            Set(FlowFact(ListSet(stmt.method)))
         } else if (true || (callee.descriptor.returnType eq ObjectType.Class) ||
             (callee.descriptor.returnType eq ObjectType.Object)) {
             in.collect {
@@ -207,26 +209,33 @@ class TestTaintAnalysis private[ifds] (
                             ArrayElement(paramToIndex(pIndex, !callee.definedMethod.isStatic), taintedIndex)
                     }
 
-                /* case InstanceField(index, declClass, taintedField) if classHierarchy.isSubtypeOf(declClass, callee.declaringClassType).isYesOrUnknown ||
-                    classHierarchy.isSubtypeOf(callee.declaringClassType, declClass).isYesOrUnknown ⇒
+                case InstanceField(index, declClass, taintedField) ⇒
                     // Taint field of formal parameter if field of actual parameter is tainted
                     // Only if the formal parameter is of a type that may have that field!
                     asCall(stmt.stmt).allParams.zipWithIndex.collect {
-                        case (param, pIndex) if param.asVar.definedBy.contains(index) ⇒
+                        case (param, pIndex) if param.asVar.definedBy.contains(index) &&
+                            (paramToIndex(pIndex, !callee.definedMethod.isStatic) != -1 ||
+                                isRelatedType(declClass, callee.declaringClassType)) ⇒
                             InstanceField(paramToIndex(pIndex, !callee.definedMethod.isStatic), declClass, taintedField)
-                    }*/
+                    }
                 //case sf: StaticField ⇒ Set(sf)
             }.flatten
         } else Set.empty
     }
 
+    def isRelatedType(type1: ObjectType, type2: ReferenceType): Boolean = {
+        type2.isObjectType &&
+            (classHierarchy.isSubtypeOf(type1, type2.asObjectType).isYesOrUnknown ||
+                classHierarchy.isSubtypeOf(type2.asObjectType, type1).isYesOrUnknown)
+    }
+
     override def returnFlow(
-                               stmt:   Statement,
-                               callee: DeclaredMethod,
-                               exit:   Statement,
-                               succ:   Statement,
-                               in:     Set[Fact]
-                           ): Set[Fact] = {
+        stmt:   Statement,
+        callee: DeclaredMethod,
+        exit:   Statement,
+        succ:   Statement,
+        in:     Set[Fact]
+    ): Set[Fact] = {
 
         /**
          * Checks whether the formal parameter is of a reference type, as primitive types are
@@ -354,6 +363,7 @@ object TestTaintAnalysisRunner {
                 )(p.logContext)
                 /*implicit val lg = p.logContext
                 val ps = PKESequentialPropertyStore.apply(context: _*)*/
+                PropertyStore.updateTraceCycleResolutions(true)
                 PropertyStore.updateDebug(true)
                 ps
             }
@@ -382,7 +392,7 @@ object TestTaintAnalysisRunner {
         for {
             e ← entryPoints
             flows = ps(e, TestTaintAnalysis.property.key)
-            fact <- flows.ub.asInstanceOf[IFDSProperty[Fact]].flows.values.flatten.toSet[Fact]
+            fact ← flows.ub.asInstanceOf[IFDSProperty[Fact]].flows.values.flatten.toSet[Fact]
         } {
             fact match {
                 case FlowFact(flow) ⇒ println(s"flow: "+flow.map(_.toJava).mkString(", "))

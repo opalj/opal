@@ -21,9 +21,14 @@ abstract class IFDSProperty[DataFlowFact] extends Property
     def flows: Map[Statement, Set[DataFlowFact]]
 
     override def equals(that: Any): Boolean = that match {
-        case other: IFDSProperty[DataFlowFact] if flows == other.flows ⇒ true
+        case other: IFDSProperty[DataFlowFact]  =>
+            if(this eq noFlowInformation) (other eq noFlowInformation)
+            else if(other eq noFlowInformation) false
+            else flows == other.flows
         case _ ⇒ false
     }
+
+    def noFlowInformation: IFDSProperty[DataFlowFact]
 
     override def hashCode(): Int = flows.hashCode()
 }
