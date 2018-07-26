@@ -321,7 +321,7 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
     )(implicit context: AnalysisContext, state: AnalysisState): PropertyComputationResult = {
 
         someEPS.e match {
-            case VirtualFormalParameter(DefinedMethod(_, m), -1) if m.isConstructor ⇒
+            case VirtualFormalParameter(dm: DefinedMethod, -1) if dm.definedMethod.isConstructor ⇒
                 throw new RuntimeException("can't handle the this-reference of the constructor")
 
             // this entity is passed as parameter (or this local) to a method

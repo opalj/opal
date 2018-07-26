@@ -26,8 +26,8 @@ import org.opalj.fpcf.properties.VMReachableFinalizersFallback
  * @author Florian Kuebler
  */
 class FinalizerAnalysisState(var seenTypes: Int, private[this] var _vmReachableFinalizers: IntTrieSet) {
-    def addFinalizer(finalizer: DeclaredMethod)(implicit declaredMethods: DeclaredMethods): Unit = {
-        _vmReachableFinalizers += declaredMethods.methodID(finalizer)
+    def addFinalizer(finalizer: DeclaredMethod): Unit = {
+        _vmReachableFinalizers += finalizer.id
     }
 
     def addFinalizers(finalizers: IntTrieSet): Unit = {
@@ -108,7 +108,7 @@ class FinalizerAnalysis private[analyses] (
                             case _ ⇒ None
                         })
 
-                        (finalizersR + declaredMethods.methodID(finalizer)) → (result +: resultsR)
+                        (finalizersR + finalizer.id) → (result +: resultsR)
 
                     } else {
                         (finalizersR, resultsR)

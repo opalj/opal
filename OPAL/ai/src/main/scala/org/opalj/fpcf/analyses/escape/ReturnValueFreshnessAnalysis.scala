@@ -119,10 +119,10 @@ class ReturnValueFreshnessAnalysis private[analyses] (
      * Ensures that we invoke [[doDetermineFreshness]] for [[org.opalj.br.DefinedMethod]]s only.
      */
     def determineFreshness(e: Entity): PropertyComputationResult = e match {
-        case dm @ DefinedMethod(dc, m) if m.classFile.thisType == dc ⇒ doDetermineFreshness(dm)
+        case dm: DefinedMethod if dm.definedMethod.classFile.thisType == dm.declaringClassType ⇒ doDetermineFreshness(dm)
 
         // if the method is inherited, query the result for the one in its defining class
-        case DefinedMethod(_, m) ⇒
+        case dm: DefinedMethod ⇒
 
             def handleReturnValueFreshness(
                 eOptP: SomeEOptionP
@@ -140,7 +140,9 @@ class ReturnValueFreshnessAnalysis private[analyses] (
                     )
             }
 
-            handleReturnValueFreshness(propertyStore(declaredMethods(m), ReturnValueFreshness.key))
+            handleReturnValueFreshness(
+                propertyStore(declaredMethods(dm.definedMethod), ReturnValueFreshness.key)
+            )
 
         case _ ⇒ throw new RuntimeException(s"Unsupported entity $e")
     }
@@ -476,8 +478,8 @@ sealed trait ReturnValueFreshnessAnalysisScheduler extends ComputationSpecificat
 }
 
 object EagerReturnValueFreshnessAnalysis
-    extends ReturnValueFreshnessAnalysisScheduler
-    with FPCFEagerAnalysisScheduler {
+        extends ReturnValueFreshnessAnalysisScheduler
+        with FPCFEagerAnalysisScheduler {
 
     override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val declaredMethods =
@@ -489,8 +491,8 @@ object EagerReturnValueFreshnessAnalysis
 }
 
 object LazyReturnValueFreshnessAnalysis
-    extends ReturnValueFreshnessAnalysisScheduler
-    with FPCFLazyAnalysisScheduler {
+        extends ReturnValueFreshnessAnalysisScheduler
+        with FPCFLazyAnalysisScheduler {
 
     /**
      * Registers the analysis as a lazy computation, that is, the method

@@ -82,7 +82,7 @@ class DeclaredMethodsKeyTest extends FunSpec with Matchers {
         val excessMethods = declaredMethods.filter(m ⇒ m.hasSingleDefinedMethod && !annotated.contains(m))
         if (excessMethods.nonEmpty)
             fail(
-                "fonud unexpected methods: \n\t"+excessMethods.mkString("\n\t")
+                "found unexpected methods: \n\t"+excessMethods.mkString("\n\t")
             )
     }
 
@@ -92,8 +92,8 @@ class DeclaredMethodsKeyTest extends FunSpec with Matchers {
         val declaringClasses = getValue(annotation, "declaringClass").asArrayValue.values
 
         val methodOs = declaringClasses map { declClass ⇒
-            val classType = declClass.asClassValue.value.asObjectType
-            (classType, FixtureProject.classFile(classType).get.findMethod(name, descriptor))
+            val declClassType = declClass.asClassValue.value.asObjectType
+            (declClassType, FixtureProject.classFile(declClassType).get.findMethod(name, descriptor))
         }
 
         val emptyMethodO = methodOs.find(_._2.isEmpty)
@@ -101,15 +101,27 @@ class DeclaredMethodsKeyTest extends FunSpec with Matchers {
             fail(s"method ${emptyMethodO.get._1.simpleName}.${descriptor.toJava(name)}"+
                 "not found in fixture project")
 
-        val expected =
-            if (methodOs.size == 1) DefinedMethod(classType, methodOs.head._2.get)
-            else MultipleDefinedMethods(classType, ConstArray(methodOs.map(_._2.get).toSeq: _*))
+        val actual = declaredMethodsKey(
+            methodOs.head._1,
+            methodOs.head._1.packageName,
+            classType,
+            name,
+            descriptor
+        )
 
-        if (declaredMethods.contains(expected))
-            annotated += expected
+        val foundMethod = if (methodOs.size == 1) {
+            actual.hasSingleDefinedMethod && (actual.definedMethod eq methodOs.head._2.get)
+        } else {
+            actual.hasMultipleDefinedMethods &&
+                ConstArray(methodOs.map(_._2.get): _*) == actual.definedMethods
+
+        }
+
+        if (foundMethod)
+            annotated += actual
         else
             fail(
-                s"No declared method for ${classType.simpleName}: $expected"
+                s"No declared method for ${classType.simpleName}: $actual"
             )
     }
 

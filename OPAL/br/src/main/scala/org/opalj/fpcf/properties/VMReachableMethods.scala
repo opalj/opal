@@ -25,8 +25,8 @@ trait VMReachableMethods extends Property with OrderedProperty {
 
     def isMethodReachable(
         declaredMethod: DeclaredMethod
-    )(implicit declaredMethods: DeclaredMethods): Boolean = {
-        reachableMethods contains declaredMethods.methodID(declaredMethod)
+    ): Boolean = {
+        reachableMethods contains declaredMethod.id
     }
 }
 
@@ -38,7 +38,7 @@ trait VMReachableMethodsFallback extends VMReachableMethods {
 
     override def isMethodReachable(
         declaredMethod: DeclaredMethod
-    )(implicit declaredMethods: DeclaredMethods): Boolean = true
+    ): Boolean = true
 
     override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {}
 }

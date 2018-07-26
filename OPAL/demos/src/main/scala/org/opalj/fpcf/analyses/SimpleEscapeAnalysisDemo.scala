@@ -83,7 +83,7 @@ object SimpleEscapeAnalysisDemo extends DefaultOneStepAnalysis {
         def countAS(entities: Iterator[Entity]) = entities.count(_.isInstanceOf[DefinitionSite])
 
         // we are only interested in the this locals of the constructors
-        def countFP(entities: Iterator[Entity]) = entities.collect { case e @ VirtualFormalParameter(DefinedMethod(_, m), -1) if m.isConstructor ⇒ e }.size
+        def countFP(entities: Iterator[Entity]) = entities.collect { case e @ VirtualFormalParameter(dm: DefinedMethod, -1) if dm.definedMethod.isConstructor ⇒ e }.size
 
         val message =
             s"""|ALLOCATION SITES:

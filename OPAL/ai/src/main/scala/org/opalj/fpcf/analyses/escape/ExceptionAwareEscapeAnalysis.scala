@@ -42,8 +42,8 @@ trait ExceptionAwareEscapeAnalysis extends AbstractEscapeAnalysis {
                             classHierarchy.joinReferenceTypesUntilSingleUpperBound(
                                 left.value.asReferenceValue.upperTypeBound
                             )
-                        case VirtualFormalParameter(DefinedMethod(_, callee), -1) ⇒
-                            callee.classFile.thisType
+                        case VirtualFormalParameter(dm: DefinedMethod, -1) ⇒
+                            dm.definedMethod.classFile.thisType
                         case VirtualFormalParameter(callee, origin) ⇒
                             // we would not end in this case if the parameter is not an object
                             callee.descriptor.parameterTypes(-2 - origin).asObjectType

@@ -10,6 +10,7 @@ import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.Project
 import org.opalj.br.reader.Java8Framework.ClassFiles
+import org.opalj.collection.immutable.LongTrieSet
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
 import org.scalatest.junit.JUnitRunner
@@ -180,7 +181,7 @@ class CallersPropertyTest extends FlatSpec with Matchers {
     }
 
     it should "behave correctly" in {
-        val encodedCallers = Set(CallersProperty.toLong(declaredMethods.methodID(declaredMethod), 0))
+        val encodedCallers = LongTrieSet(CallersProperty.toLong(declaredMethod.id, 0))
         val withVM = CallersImplWithOtherCalls(
             encodedCallers, hasVMLevelCallers = true, hasCallersWithUnknownContext = false
         )

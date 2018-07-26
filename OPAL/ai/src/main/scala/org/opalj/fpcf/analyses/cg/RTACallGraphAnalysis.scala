@@ -14,6 +14,7 @@ import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.InitialEntryPointsKey
 import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.collection.immutable.LongTrieSet
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.properties.AllTypes
 import org.opalj.fpcf.properties.Callees
@@ -196,32 +197,6 @@ class RTACallGraphAnalysis private[analyses] (
         Results(results)
     }
 
-    private[this] def continuation(
-        instantiatedTypesEOptP: SomeEPS,
-        state:                  RTAState
-    ): PropertyComputationResult = {
-        // find the new types, that should be processed
-        val newInstantiatedTypes = instantiatedTypesEOptP match {
-            case EPS(_, _, ub: InstantiatedTypes) ⇒
-                val toBeDropped = state.numTypesProcessed
-                state.numTypesProcessed = ub.numElements
-                ub.getNewTypes(toBeDropped)
-            case _ ⇒ Iterator.empty // the initial types are already processed
-        }
-
-        // the new edges in the call graph due to the new types
-        val newCalleesOfM = handleVirtualCallSites(
-            state, newInstantiatedTypes, IntMap.empty
-        )
-
-        var results = Seq(resultForCallees(instantiatedTypesEOptP, state))
-        if (newCalleesOfM.nonEmpty)
-            results ++:= partialResultsForCallers(state.method, state.calleesOfM)
-
-        Results(results)
-
-    }
-
     def handleStmts(
         method:              Method,
         instantiatedTypesUB: UIDSet[ObjectType]
@@ -326,7 +301,7 @@ class RTACallGraphAnalysis private[analyses] (
         )
 
         if (!declTgt.hasSingleDefinedMethod && !declTgt.hasMultipleDefinedMethods) {
-            val tgtId = declaredMethods.methodID(declTgt)
+            val tgtId = declTgt.id
             result = result.updated(
                 pc, result.getOrElse(pc, IntTrieSet.empty) + tgtId
             )
@@ -411,7 +386,7 @@ class RTACallGraphAnalysis private[analyses] (
             tgt ← targets
         } {
             val tgtDM = declaredMethods(tgt)
-            val tgtId = declaredMethods.methodID(tgtDM)
+            val tgtId = tgtDM.id
             // add call edge to CG
             result = result.updated(pc, result.getOrElse(pc, IntTrieSet.empty) + tgtId)
         }
@@ -419,7 +394,6 @@ class RTACallGraphAnalysis private[analyses] (
     }
 
     // modifies state
-    // modifies newReachable methods
     // returns updated newCalleesOfM
     private[this] def handleVirtualCallSites(
         state:                RTAState,
@@ -430,20 +404,49 @@ class RTACallGraphAnalysis private[analyses] (
         for {
             instantiatedType ← newInstantiatedTypes // only iterate once!
             (pc, typeBound, name, descr) ← state.virtualCallSites
-
-            if project.classHierarchy.allSubclassTypes(typeBound, true).contains(instantiatedType) //.subtypeInformation.get(typeBound).exists(_.contains(instantiatedType))
-            //if project.classHierarchy.isSubtypeOf(instantiatedType, typeBound).isYes
+            //sti ← classHierarchy.subtypeInformation(typeBound)
+            if project.classHierarchy.isSubtypeOf(instantiatedType, typeBound).isYes
+            //if sti.contains(instantiatedType)
             tgt ← project.instanceCall(
                 state.method.definedMethod.classFile.thisType, instantiatedType, name, descr
             )
         } {
             val tgtDM = declaredMethods(tgt)
-            val tgtId = declaredMethods.methodID(tgtDM)
+            val tgtId = tgtDM.id
             // in case newCalleesOfM equals state.calleesOfM this is safe
             result = result.updated(pc, result.getOrElse(pc, IntTrieSet.empty) + tgtId)
             state.addCallEdge(pc, tgtId)
         }
         result
+    }
+
+    private[this] def continuation(
+        instantiatedTypesEOptP: SomeEPS,
+        state:                  RTAState
+    ): PropertyComputationResult = {
+        // find the new types, that should be processed
+        val newInstantiatedTypes = instantiatedTypesEOptP match {
+            case EPS(_, _, ub: InstantiatedTypes) ⇒
+                val toBeDropped = state.numTypesProcessed
+                state.numTypesProcessed = ub.numElements
+                ub.getNewTypes(toBeDropped)
+            case _ ⇒ Iterator.empty // the initial types are already processed
+        }
+
+        // the new edges in the call graph due to the new types
+        val newCalleesOfM = handleVirtualCallSites(
+            state, newInstantiatedTypes, IntMap.empty
+        )
+
+        val resultsForCallees = Iterator(resultForCallees(instantiatedTypesEOptP, state))
+
+        Results(
+            if (newCalleesOfM.nonEmpty)
+                resultsForCallees ++ partialResultsForCallers(state.method, state.calleesOfM)
+            else
+                resultsForCallees
+        )
+
     }
 
     private[this] def partialResultsForCallers(
@@ -453,25 +456,26 @@ class RTACallGraphAnalysis private[analyses] (
         for {
             (pc: Int, tgtsOfM: IntTrieSet) ← newCalleesOfM.iterator
             tgtID: Int ← tgtsOfM.iterator
-            tgtMethod = declaredMethods(tgtID)
-        } yield PartialResult[DeclaredMethod, CallersProperty](tgtMethod, CallersProperty.key, {
-            case EPS(e, lb: CallersProperty, ub: CallersProperty) ⇒
-                val newCallers = ub.updated(method, pc)
-                // here we assert that update returns the identity if there is no change
-                if (ub ne newCallers)
-                    Some(EPS(e, lb, newCallers))
-                else
-                    None
-            case EPK(e, _) ⇒
-                Some(EPS(
-                    tgtMethod,
-                    CallersProperty.fallback(tgtMethod, project),
-                    new CallersOnlyWithConcreteCallers(
-                        Set(CallersProperty.toLong(declaredMethods.methodID(method), pc))
-                    )
-                ))
-            case _ ⇒ throw new IllegalArgumentException()
-        })
+        } yield {
+            val tgtMethod = declaredMethods(tgtID)
+            PartialResult[DeclaredMethod, CallersProperty](tgtMethod, CallersProperty.key, {
+                case EPS(e, lb, ub: CallersProperty) ⇒
+                    val newCallers = ub.updated(method, pc)
+                    // here we assert that update returns the identity if there is no change
+                    if (ub ne newCallers)
+                        Some(EPS(e, lb, newCallers))
+                    else
+                        None
+                case EPK(e, _) ⇒
+                    val set = LongTrieSet(CallersProperty.toLong(method.id, pc))
+                    Some(EPS(
+                        tgtMethod,
+                        CallersProperty.fallback(tgtMethod, project),
+                        new CallersOnlyWithConcreteCallers(set)
+                    ))
+                case _ ⇒ throw new IllegalArgumentException()
+            })
+        }
     }
 
     private[this] def partialResultForInstantiatedTypes(

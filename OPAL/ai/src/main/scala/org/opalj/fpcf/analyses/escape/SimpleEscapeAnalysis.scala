@@ -23,21 +23,21 @@ import org.opalj.tac.TACStmts
 import org.opalj.tac.TACode
 
 class SimpleEscapeAnalysisContext(
-        val entity:                  Entity,
-        val defSite:                 ValueOrigin,
-        val targetMethod:            Method,
-        val uses:                    IntTrieSet,
-        val code:                    Array[Stmt[V]],
-        val cfg:                     CFG[Stmt[V], TACStmts[V]],
-        val declaredMethods:         DeclaredMethods,
-        val virtualFormalParameters: VirtualFormalParameters,
-        val project:                 SomeProject,
-        val propertyStore:           PropertyStore
+    val entity:                  Entity,
+    val defSite:                 ValueOrigin,
+    val targetMethod:            Method,
+    val uses:                    IntTrieSet,
+    val code:                    Array[Stmt[V]],
+    val cfg:                     CFG[Stmt[V], TACStmts[V]],
+    val declaredMethods:         DeclaredMethods,
+    val virtualFormalParameters: VirtualFormalParameters,
+    val project:                 SomeProject,
+    val propertyStore:           PropertyStore
 ) extends AbstractEscapeAnalysisContext
-    with PropertyStoreContainer
-    with VirtualFormalParametersContainer
-    with DeclaredMethodsContainer
-    with CFGContainer
+        with PropertyStoreContainer
+        with VirtualFormalParametersContainer
+        with DeclaredMethodsContainer
+        with CFGContainer
 
 /**
  * A simple escape analysis that can handle [[org.opalj.ai.common.DefinitionSiteLike]]s and
@@ -51,20 +51,21 @@ class SimpleEscapeAnalysisContext(
  * @author Florian Kuebler
  */
 class SimpleEscapeAnalysis( final val project: SomeProject)
-    extends DefaultEscapeAnalysis
-    with ConstructorSensitiveEscapeAnalysis
-    with ConfigurationBasedConstructorEscapeAnalysis
-    with SimpleFieldAwareEscapeAnalysis
-    with ExceptionAwareEscapeAnalysis {
+        extends DefaultEscapeAnalysis
+        with ConstructorSensitiveEscapeAnalysis
+        with ConfigurationBasedConstructorEscapeAnalysis
+        with SimpleFieldAwareEscapeAnalysis
+        with ExceptionAwareEscapeAnalysis {
 
     override type AnalysisContext = SimpleEscapeAnalysisContext
     override type AnalysisState = AbstractEscapeAnalysisState
 
     override def determineEscapeOfFP(fp: VirtualFormalParameter): PropertyComputationResult = {
         fp match {
-            case VirtualFormalParameter(DefinedMethod(_, m), _) if m.body.isEmpty ⇒
+            case VirtualFormalParameter(dm: DefinedMethod, _) if dm.definedMethod.body.isEmpty ⇒
                 Result(fp, AtMost(NoEscape))
-            case VirtualFormalParameter(DefinedMethod(_, m), -1) if m.isInitializer ⇒
+            case VirtualFormalParameter(dm: DefinedMethod, -1) if dm.definedMethod.isInitializer ⇒
+                val m = dm.definedMethod
                 val TACode(params, code, _, cfg, _, _) = tacaiProvider(m)
                 val useSites = params.thisParameter.useSites
                 val ctx = createContext(fp, -1, m, useSites, code, cfg)
@@ -117,8 +118,8 @@ trait SimpleEscapeAnalysisScheduler extends ComputationSpecification {
  * A companion object used to start the analysis.
  */
 object EagerSimpleEscapeAnalysis
-    extends SimpleEscapeAnalysisScheduler
-    with FPCFEagerAnalysisScheduler {
+        extends SimpleEscapeAnalysisScheduler
+        with FPCFEagerAnalysisScheduler {
 
     override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val fps = p.get(VirtualFormalParametersKey).virtualFormalParameters
@@ -130,8 +131,8 @@ object EagerSimpleEscapeAnalysis
 }
 
 object LazySimpleEscapeAnalysis
-    extends SimpleEscapeAnalysisScheduler
-    with FPCFLazyAnalysisScheduler {
+        extends SimpleEscapeAnalysisScheduler
+        with FPCFLazyAnalysisScheduler {
 
     /**
      * Registers the analysis as a lazy computation, that is, the method

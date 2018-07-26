@@ -135,7 +135,7 @@ trait ConstructorSensitiveEscapeAnalysis extends AbstractEscapeAnalysis {
     )(implicit context: AnalysisContext, state: AnalysisState): PropertyComputationResult = {
 
         someEPS.e match {
-            case VirtualFormalParameter(DefinedMethod(_, method), -1) if method.isConstructor ⇒
+            case VirtualFormalParameter(dm: DefinedMethod, -1) if dm.definedMethod.isConstructor ⇒
                 state.removeDependency(someEPS)
                 handleEscapeState(someEPS)
                 returnResult

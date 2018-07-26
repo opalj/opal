@@ -27,23 +27,23 @@ import org.opalj.tac.TACode
 import org.opalj.tac.TACStmts
 
 class InterProceduralEscapeAnalysisContext(
-        val entity:                  Entity,
-        val defSite:                 ValueOrigin,
-        val targetMethod:            Method,
-        val uses:                    IntTrieSet,
-        val code:                    Array[Stmt[V]],
-        val cfg:                     CFG[Stmt[V], TACStmts[V]],
-        val declaredMethods:         DeclaredMethods,
-        val virtualFormalParameters: VirtualFormalParameters,
-        val project:                 SomeProject,
-        val propertyStore:           PropertyStore,
-        val isMethodOverridable:     Method ⇒ Answer
+    val entity:                  Entity,
+    val defSite:                 ValueOrigin,
+    val targetMethod:            Method,
+    val uses:                    IntTrieSet,
+    val code:                    Array[Stmt[V]],
+    val cfg:                     CFG[Stmt[V], TACStmts[V]],
+    val declaredMethods:         DeclaredMethods,
+    val virtualFormalParameters: VirtualFormalParameters,
+    val project:                 SomeProject,
+    val propertyStore:           PropertyStore,
+    val isMethodOverridable:     Method ⇒ Answer
 ) extends AbstractEscapeAnalysisContext
-    with PropertyStoreContainer
-    with IsMethodOverridableContainer
-    with VirtualFormalParametersContainer
-    with DeclaredMethodsContainer
-    with CFGContainer
+        with PropertyStoreContainer
+        with IsMethodOverridableContainer
+        with VirtualFormalParametersContainer
+        with DeclaredMethodsContainer
+        with CFGContainer
 
 class InterProceduralEscapeAnalysisState
     extends AbstractEscapeAnalysisState with DependeeCache with ReturnValueUseSites
@@ -54,13 +54,13 @@ class InterProceduralEscapeAnalysisState
  * @author Florian Kuebler
  */
 class InterProceduralEscapeAnalysis private[analyses] (
-        final val project: SomeProject
+    final val project: SomeProject
 ) extends DefaultEscapeAnalysis
-    with AbstractInterProceduralEscapeAnalysis
-    with ConstructorSensitiveEscapeAnalysis
-    with ConfigurationBasedConstructorEscapeAnalysis
-    with SimpleFieldAwareEscapeAnalysis
-    with ExceptionAwareEscapeAnalysis {
+        with AbstractInterProceduralEscapeAnalysis
+        with ConstructorSensitiveEscapeAnalysis
+        with ConfigurationBasedConstructorEscapeAnalysis
+        with SimpleFieldAwareEscapeAnalysis
+        with ExceptionAwareEscapeAnalysis {
 
     override type AnalysisContext = InterProceduralEscapeAnalysisContext
     type AnalysisState = InterProceduralEscapeAnalysisState
@@ -71,7 +71,7 @@ class InterProceduralEscapeAnalysis private[analyses] (
         fp match {
             // if the underlying method is inherited, we avoid recomputation and query the
             // result of the method for its defining class.
-            case VirtualFormalParameter(DefinedMethod(dc, m), i) if dc != m.classFile.thisType ⇒
+            case VirtualFormalParameter(dm: DefinedMethod, i) if dm.declaringClassType != dm.definedMethod.classFile.thisType ⇒
                 def handleEscapeState(eOptionP: SomeEOptionP): PropertyComputationResult = {
                     eOptionP match {
                         case FinalEP(_, p) ⇒
@@ -91,11 +91,13 @@ class InterProceduralEscapeAnalysis private[analyses] (
                     }
                 }
 
-                val parameterOfBase = virtualFormalParameters(declaredMethods(m))(-i - 1)
+                val parameterOfBase = virtualFormalParameters(
+                    declaredMethods(dm.definedMethod)
+                )(-i - 1)
 
                 handleEscapeState(propertyStore(parameterOfBase, EscapeProperty.key))
 
-            case VirtualFormalParameter(DefinedMethod(_, m), _) if m.body.isEmpty ⇒
+            case VirtualFormalParameter(dm: DefinedMethod, _) if dm.definedMethod.body.isEmpty ⇒
                 //TODO IntermediateResult(fp, GlobalEscape, AtMost(NoEscape), Seq.empty, (_) ⇒ throw new RuntimeException())
                 Result(fp, AtMost(NoEscape))
 
@@ -104,13 +106,14 @@ class InterProceduralEscapeAnalysis private[analyses] (
                 //TODO IntermediateResult(fp, GlobalEscape, AtMost(NoEscape), Seq.empty, (_) ⇒ throw new RuntimeException())
                 Result(fp, AtMost(NoEscape))
 
-            case VirtualFormalParameter(DefinedMethod(_, m), i) ⇒
+            case VirtualFormalParameter(dm: DefinedMethod, i) ⇒
+                val m = dm.definedMethod
                 val TACode(params, code, _, cfg, _, _) = project.get(DefaultTACAIKey)(m)
                 val param = params.parameter(i)
                 val ctx = createContext(fp, param.origin, m, param.useSites, code, cfg)
                 doDetermineEscape(ctx, createState)
 
-            case VirtualFormalParameter(VirtualDeclaredMethod(_, _, _), _) ⇒
+            case VirtualFormalParameter(_: VirtualDeclaredMethod, _) ⇒
                 throw new IllegalArgumentException()
         }
     }
@@ -155,8 +158,8 @@ sealed trait InterProceduralEscapeAnalysisScheduler extends ComputationSpecifica
 }
 
 object EagerInterProceduralEscapeAnalysis
-    extends InterProceduralEscapeAnalysisScheduler
-    with FPCFEagerAnalysisScheduler {
+        extends InterProceduralEscapeAnalysisScheduler
+        with FPCFEagerAnalysisScheduler {
     type V = DUVar[(Domain with RecordDefUse)#DomainValue]
 
     override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
@@ -169,8 +172,8 @@ object EagerInterProceduralEscapeAnalysis
 }
 
 object LazyInterProceduralEscapeAnalysis
-    extends InterProceduralEscapeAnalysisScheduler
-    with FPCFLazyAnalysisScheduler {
+        extends InterProceduralEscapeAnalysisScheduler
+        with FPCFLazyAnalysisScheduler {
 
     /**
      * Registers the analysis as a lazy computation, that is, the method
