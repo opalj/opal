@@ -44,7 +44,7 @@ sealed abstract class TypeHierarchyInformation {
      * Checks if the objectTypeId is contained in the underlying set; no special cases
      * related to `java.lang.Object` are supported!
      */
-    private[br] def containsId(objectTypeId : Int): Boolean
+    private[br] def containsId(objectTypeId: Int): Boolean
 
     override def toString: String = {
         val classInfo = classTypes.map(_.toJava).mkString("classes={", ", ", "}")
@@ -73,7 +73,7 @@ object SubtypeInformation {
         final override def interfaceTypes: UIDSet[ObjectType] = UIDSet.empty
         final override def allTypes: UIDSet[ObjectType] = UIDSet.empty
         final override def contains(t: ObjectType): Boolean = false
-        final override private[br] def containsId(objectTypeId : Int): Boolean = false
+        final override private[br] def containsId(objectTypeId: Int): Boolean = false
     }
 
     def forObject(
@@ -87,7 +87,7 @@ object SubtypeInformation {
             final override val interfaceTypes: UIDSet[ObjectType] = theInterfaceTypes
             final override val allTypes: UIDSet[ObjectType] = theAllTypes
             final override def contains(t: ObjectType): Boolean = true
-            final override private[br] def containsId(objectTypeId : Int): Boolean = true
+            final override private[br] def containsId(objectTypeId: Int): Boolean = true
         }
     }
 
@@ -114,7 +114,7 @@ object SubtypeInformation {
                             isInterfaceType(tid) &&
                             interfaceTypes.containsId(tid)
                     }
-                    final override private[br] def containsId(objectTypeId : Int): Boolean = {
+                    final override private[br] def containsId(objectTypeId: Int): Boolean = {
                         interfaceTypes.containsId(objectTypeId)
                     }
                 }
@@ -131,7 +131,7 @@ object SubtypeInformation {
                         !isInterfaceType(tid) &&
                         classTypes.containsId(tid)
                 }
-                final override private[br] def containsId(objectTypeId : Int): Boolean = {
+                final override private[br] def containsId(objectTypeId: Int): Boolean = {
                     classTypes.containsId(objectTypeId)
                 }
             }
@@ -150,7 +150,7 @@ object SubtypeInformation {
                         tid < isKnownType.length && isKnownType(tid) &&
                         allTypes.containsId(tid)
                 }
-                final override private[br] def containsId(objectTypeId : Int): Boolean = {
+                final override private[br] def containsId(objectTypeId: Int): Boolean = {
                     allTypes.containsId(objectTypeId)
                 }
             }
@@ -174,7 +174,7 @@ object SupertypeInformation {
         final override def interfaceTypes: UIDSet[ObjectType] = UIDSet.empty
         final override def allTypes: UIDSet[ObjectType] = ClassHierarchy.JustObject
         final override def contains(t: ObjectType): Boolean = t eq ObjectType.Object
-        final override private[br] def containsId(objectTypeId : Int): Boolean = {
+        final override private[br] def containsId(objectTypeId: Int): Boolean = {
             ObjectType.ObjectId == objectTypeId
         }
     }
@@ -185,7 +185,7 @@ object SupertypeInformation {
         final override def interfaceTypes: UIDSet[ObjectType] = UIDSet.empty
         final override def allTypes: UIDSet[ObjectType] = UIDSet.empty
         final override def contains(t: ObjectType): Boolean = t eq ObjectType.Object
-        final override private[br] def containsId(objectTypeId : Int): Boolean = false
+        final override private[br] def containsId(objectTypeId: Int): Boolean = false
     }
 
     final val ForObject: SupertypeInformation = new SupertypeInformation {
@@ -193,7 +193,7 @@ object SupertypeInformation {
         final override def interfaceTypes: UIDSet[ObjectType] = UIDSet.empty
         final override def allTypes: UIDSet[ObjectType] = UIDSet.empty
         final override def contains(t: ObjectType): Boolean = false
-        final override private[br] def containsId(objectTypeId : Int): Boolean = false
+        final override private[br] def containsId(objectTypeId: Int): Boolean = false
     }
 
     def forSubtypesOfObject(
@@ -221,7 +221,7 @@ object SupertypeInformation {
                             classTypes.containsId(t.id)
                         )
                     }
-                    final override private[br] def containsId(objectTypeId : Int): Boolean = {
+                    final override private[br] def containsId(objectTypeId: Int): Boolean = {
                         classTypes.containsId(objectTypeId)
                     }
                 }
@@ -241,7 +241,7 @@ object SupertypeInformation {
                             interfaceTypes.containsId(t.id)
                         )
                     }
-                    final override private[br] def containsId(objectTypeId : Int): Boolean = {
+                    final override private[br] def containsId(objectTypeId: Int): Boolean = {
                         interfaceTypes.containsId(objectTypeId)
                     }
                 }
@@ -260,7 +260,7 @@ object SupertypeInformation {
                             interfaceTypes.containsId(t.id)
                         )
                     }
-                    final override private[br] def containsId(objectTypeId : Int): Boolean = {
+                    final override private[br] def containsId(objectTypeId: Int): Boolean = {
                         interfaceTypes.containsId(objectTypeId)
                     }
                 }
@@ -278,7 +278,7 @@ object SupertypeInformation {
                             allTypes.containsId(t.id)
                         )
                     }
-                    final override private[br] def containsId(objectTypeId : Int): Boolean = {
+                    final override private[br] def containsId(objectTypeId: Int): Boolean = {
                         allTypes.containsId(objectTypeId)
                     }
                 }
