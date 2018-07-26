@@ -9,7 +9,6 @@ package ifds
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.ObjectType
 import org.opalj.br.Method
-import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.DeclaredMethodsKey
@@ -25,8 +24,8 @@ import org.opalj.tac.Expr
 import org.opalj.tac.Var
 //import org.opalj.tac.PutStatic
 //import org.opalj.tac.GetStatic
-import org.opalj.tac.PutField
-import org.opalj.tac.GetField
+//import org.opalj.tac.PutField
+//import org.opalj.tac.GetField
 import org.opalj.tac.ArrayLoad
 import org.opalj.tac.ArrayStore
 import org.opalj.tac.Stmt
@@ -76,18 +75,18 @@ class TestTaintAnalysis private[ifds] (
                 else if (index.isDefined && definedBy.size == 1) // Untaint if possible
                     in - ArrayElement(definedBy.head, index.get)
                 else in
-            /*case PutStatic.ASTID ⇒
-                val put = stmt.stmt.asPutStatic
-                if (isTainted(put.value, in)) in + StaticField(put.declaringClass, put.name)
-                else in - StaticField(put.declaringClass, put.name)*/
-            case PutField.ASTID ⇒
-                val put = stmt.stmt.asPutField
-                val definedBy = put.objRef.asVar.definedBy
-                if (isTainted(put.value, in))
-                    in ++ definedBy.iterator.map(InstanceField(_, put.declaringClass, put.name))
-                else if (definedBy.size == 1) // Untaint if object is known precisely
-                    in - InstanceField(definedBy.head, put.declaringClass, put.name)
-                else in
+                /*case PutStatic.ASTID ⇒
+                    val put = stmt.stmt.asPutStatic
+                    if (isTainted(put.value, in)) in + StaticField(put.declaringClass, put.name)
+                    else in - StaticField(put.declaringClass, put.name)*/
+                /*case PutField.ASTID ⇒
+                    val put = stmt.stmt.asPutField
+                    val definedBy = put.objRef.asVar.definedBy
+                    if (isTainted(put.value, in))
+                        in ++ definedBy.iterator.map(InstanceField(_, put.declaringClass, put.name))
+                    else if (definedBy.size == 1) // Untaint if object is known precisely
+                        in - InstanceField(definedBy.head, put.declaringClass, put.name)
+                    else*/ in
             case _ ⇒ in
         }
 
@@ -155,7 +154,7 @@ class TestTaintAnalysis private[ifds] (
                 if (in.contains(StaticField(get.declaringClass, get.name)))
                     in + Variable(stmt.index)
                 else in*/
-            case GetField.ASTID ⇒
+            /*case GetField.ASTID ⇒
                 val get = expr.asGetField
                 if (in.exists {
                     // The specific field may be tainted
@@ -167,7 +166,7 @@ class TestTaintAnalysis private[ifds] (
                 })
                     in + Variable(stmt.index)
                 else
-                    in
+                    in*/
             case _ ⇒ in
         }
 
@@ -209,24 +208,18 @@ class TestTaintAnalysis private[ifds] (
                             ArrayElement(paramToIndex(pIndex, !callee.definedMethod.isStatic), taintedIndex)
                     }
 
-                case InstanceField(index, declClass, taintedField) ⇒
+                /*case InstanceField(index, declClass, taintedField) ⇒
                     // Taint field of formal parameter if field of actual parameter is tainted
                     // Only if the formal parameter is of a type that may have that field!
                     asCall(stmt.stmt).allParams.zipWithIndex.collect {
                         case (param, pIndex) if param.asVar.definedBy.contains(index) &&
                             (paramToIndex(pIndex, !callee.definedMethod.isStatic) != -1 ||
-                                isRelatedType(declClass, callee.declaringClassType)) ⇒
+                                classHierarchy.isSubtypeOf(declClass, callee.declaringClassType).isYesOrUnknown) ⇒
                             InstanceField(paramToIndex(pIndex, !callee.definedMethod.isStatic), declClass, taintedField)
-                    }
+                    }*/
                 //case sf: StaticField ⇒ Set(sf)
             }.flatten
         } else Set.empty
-    }
-
-    def isRelatedType(type1: ObjectType, type2: ReferenceType): Boolean = {
-        type2.isObjectType &&
-            (classHierarchy.isSubtypeOf(type1, type2.asObjectType).isYesOrUnknown ||
-                classHierarchy.isSubtypeOf(type2.asObjectType, type1).isYesOrUnknown)
     }
 
     override def returnFlow(
@@ -362,7 +355,7 @@ object TestTaintAnalysisRunner {
                     context.iterator.map(_.asTuple).toMap
                 )(p.logContext)
                 /*implicit val lg = p.logContext
-                val ps = PKESequentialPropertyStore.apply(context: _*)*/
+                val ps = EPKSequentialPropertyStore.apply(context: _*)*/
                 PropertyStore.updateTraceCycleResolutions(true)
                 PropertyStore.updateDebug(true)
                 ps
@@ -376,7 +369,7 @@ object TestTaintAnalysisRunner {
         for (m ← p.allMethodsWithBody) {
             //val e = (declaredMethods(m), null)
             //ps.force(e, TestTaintAnalysis.property.key)
-            if ((m.isPublic || m.isProtected) && (m.descriptor.returnType == ObjectType.Object ||
+            if (m.isPublic && (m.descriptor.returnType == ObjectType.Object ||
                 m.descriptor.returnType == ObjectType.Class)) {
                 m.descriptor.parameterTypes.zipWithIndex.collect {
                     case (pType, index) if pType == ObjectType.String ⇒ index
