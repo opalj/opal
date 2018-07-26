@@ -358,6 +358,7 @@ class ClassHierarchy private (
     @inline final def isKnown(objectType: ObjectType): Boolean = isKnown(objectType.id)
 
     @inline final def isKnown(objectTypeId: Int): Boolean = {
+        val knownTypesMap = this.knownTypesMap
         (objectTypeId < knownTypesMap.length) && (knownTypesMap(objectTypeId) ne null)
     }
 
@@ -371,6 +372,7 @@ class ClassHierarchy private (
     @inline final def isUnknown(objectType: ObjectType): Boolean = isUnknown(objectType.id)
 
     @inline final def isUnknown(objectTypeId: Int): Boolean = {
+        val knownTypesMap = this.knownTypesMap
         (objectTypeId >= knownTypesMap.length) || (knownTypesMap(objectTypeId) eq null)
     }
 
@@ -458,6 +460,10 @@ class ClassHierarchy private (
         isKnown(objectTypeId) && interfaceTypesMap(objectTypeId)
     }
 
+    @inline private[br] def unsafeIsInterface(objectTypeId: Int): Boolean = {
+        interfaceTypesMap(objectTypeId)
+    }
+
     /**
      * Returns `true` if the type hierarchy information related to the given type's
      * supertypes is complete.
@@ -526,9 +532,9 @@ class ClassHierarchy private (
             return if (reflexive) UIDSet1(objectType) else UIDSet.empty
 
         if (reflexive)
-            subtypeInformationMap(oid).all + objectType
+            subtypeInformationMap(oid).allTypes + objectType
         else
-            subtypeInformationMap(oid).all
+            subtypeInformationMap(oid).allTypes
     }
 
     /**
@@ -906,7 +912,7 @@ class ClassHierarchy private (
         if (isUnknown(oid))
             return UIDSet.empty
 
-        val ts = supertypeInformationMap(oid).all
+        val ts = supertypeInformationMap(oid).allTypes
         if (reflexive)
             ts + objectType
         else
@@ -1181,13 +1187,12 @@ class ClassHierarchy private (
      * implemented by the caller of this method.
      *
      * @note    This method performs an upwards search only. E.g., given the following
-     *          type hierarchy:
+     *          incomplete(!) type hierarchy where the type C is unknown:
      *          `class D inherits from C`
      *          `class E inherits from D`
      *          and the query `isSubtypeOf(D,E)`, the answer will be `Unknown` if `C` is
      *          `Unknown` and `No` otherwise.
-     * @note    No explicit `isKnown` check is required; if the type is unknown an empty
-     *          iterator is returned.
+     * @note    No explicit `isKnown` check is required.
      * @param   subtype Any `ObjectType`.
      * @param   theSupertype Any `ObjectType`.
      * @return  `Yes` if `subtype` is a subtype of the given `supertype`. `No`
@@ -1236,6 +1241,8 @@ class ClassHierarchy private (
         if (supertypeInformationMap(subtypeId).contains(theSupertype))
             Yes
         else if (isSupertypeInformationCompleteMap(subtypeId))
+            No
+        else if (supertypeInformationMap(theSupertypeId).contains(subtype))
             No
         else
             Unknown
@@ -2511,7 +2518,7 @@ object ClassHierarchy {
 
         val objectTypesCount = ObjectType.objectTypesCount
         val knownTypesMap = new Array[ObjectType](objectTypesCount)
-        val interfaceTypesMap = new Array[Boolean](objectTypesCount)
+        val isInterfaceTypesMap = new Array[Boolean](objectTypesCount)
         val superclassTypeMap = new Array[ObjectType](objectTypesCount)
         val isKnownToBeFinalMap = new Array[Boolean](objectTypesCount)
         val superinterfaceTypesMap = new Array[UIDSet[ObjectType]](objectTypesCount)
@@ -2560,7 +2567,7 @@ object ClassHierarchy {
             //
             val objectTypeId = objectType.id
             knownTypesMap(objectTypeId) = objectType
-            interfaceTypesMap(objectTypeId) = isInterfaceType
+            isInterfaceTypesMap(objectTypeId) = isInterfaceType
             isKnownToBeFinalMap(objectTypeId) = isFinal
             superclassTypeMap(objectTypeId) = theSuperclassType.orNull
             superinterfaceTypesMap(objectTypeId) = theSuperinterfaceTypes
@@ -2588,8 +2595,8 @@ object ClassHierarchy {
 
                 if (knownTypesMap(aSuperinterfaceTypeId) eq null) {
                     knownTypesMap(aSuperinterfaceTypeId) = aSuperinterfaceType
-                    interfaceTypesMap(aSuperinterfaceTypeId) = true
-                } else if (!interfaceTypesMap(aSuperinterfaceTypeId)) {
+                    isInterfaceTypesMap(aSuperinterfaceTypeId) = true
+                } else if (!isInterfaceTypesMap(aSuperinterfaceTypeId)) {
                     val message = s"the class file ${objectType.toJava} defines a "+
                         s"super interface ${knownTypesMap(aSuperinterfaceTypeId).toJava} "+
                         "which is actually a regular class file"
@@ -2676,7 +2683,7 @@ object ClassHierarchy {
         // _____________________________________________________________________________________
         //
 
-        assert(knownTypesMap.length == interfaceTypesMap.length)
+        assert(knownTypesMap.length == isInterfaceTypesMap.length)
         assert(knownTypesMap.length == isKnownToBeFinalMap.length)
         assert(knownTypesMap.length == superclassTypeMap.length)
         assert(knownTypesMap.length == superinterfaceTypesMap.length)
@@ -2694,6 +2701,8 @@ object ClassHierarchy {
         // LET'S DERIVE SOME FURTHER INFORMATION WHICH IS FREQUENTLY USED!
         // _____________________________________________________________________________________
         //
+
+        val isKnownTypesMap: Array[Boolean] = knownTypesMap.map(_ != null)
 
         val rootTypesFuture = Future[UIDSet[ObjectType]] {
             knownTypesMap.foldLeft(UIDSet.empty[ObjectType]) { (rootTypes, objectType) ⇒
@@ -2764,7 +2773,7 @@ object ClassHierarchy {
                                     allSubinterfaceTypes ++= subSubtypes.interfaceTypes
                                     allSubclassTypes ++= subSubtypes.classTypes
                                     allSubinterfaceTypes += subtype
-                                    allSubtypes ++= (subSubtypes.all + subtype)
+                                    allSubtypes ++= (subSubtypes.allTypes + subtype)
                                     true
                             }
                         } && subclassTypesMap(tid).forall { subtype ⇒
@@ -2776,14 +2785,18 @@ object ClassHierarchy {
                                     // (java.lang.Object is not considered)
                                     allSubclassTypes ++= subSubtypes.classTypes
                                     allSubclassTypes += subtype
-                                    allSubtypes ++= (subSubtypes.all + subtype)
+                                    allSubtypes ++= (subSubtypes.allTypes + subtype)
                                     true
                             }
                         }
 
                     if (done) {
                         madeProgress = true
-                        val subtypeInfo = SubtypeInformation(allSubclassTypes, allSubinterfaceTypes, allSubtypes)
+                        val subtypeInfo = SubtypeInformation.forSubtypesOfObject(
+                            isKnownTypesMap,
+                            isInterfaceTypesMap,
+                            allSubclassTypes, allSubinterfaceTypes, allSubtypes
+                        )
                         subtypes(t.id) = subtypeInfo
                         scheduleSupertypes(t)
                     } else {
@@ -2864,16 +2877,18 @@ object ClassHierarchy {
             } {
                 val tid = t.id
                 val theSubtypes = subtypes(tid)
-                if (interfaceTypesMap(tid)) {
+                if (isInterfaceTypesMap(tid)) {
                     allInterfaceType ++= theSubtypes.interfaceTypes
-                    allNoneObjectTypes ++= theSubtypes.all
+                    allNoneObjectTypes ++= theSubtypes.allTypes
                 } else if (t ne ObjectType.Object) {
                     allNoneObjectClassTypes ++= theSubtypes.classTypes
-                    allNoneObjectTypes ++= theSubtypes.all
+                    allNoneObjectTypes ++= theSubtypes.allTypes
                 }
             }
             subtypes(ObjectType.ObjectId) =
-                SubtypeInformation(allNoneObjectClassTypes, allInterfaceType, allNoneObjectTypes)
+                SubtypeInformation.forObject(
+                    allNoneObjectClassTypes, allInterfaceType, allNoneObjectTypes
+                )
 
             (leafTypes, subtypes)
         }
@@ -2884,13 +2899,13 @@ object ClassHierarchy {
             def rootInterfaceTypes: Iterator[ObjectType] = {
                 superinterfaceTypesMap.iterator.zipWithIndex.filter { si ⇒
                     val (superinterfaceTypes, id) = si
-                    interfaceTypesMap(id) &&
+                    isInterfaceTypesMap(id) &&
                         ((superinterfaceTypes eq null) || superinterfaceTypes.isEmpty)
                 }.map { ts ⇒ knownTypesMap(ts._2) }
             }
 
             val supertypes = new Array[SupertypeInformation](knownTypesMap.length)
-            supertypes(ObjectId) = SupertypeInformation.None
+            supertypes(ObjectId) = SupertypeInformation.ForObject
 
             val typesToProcess = mutable.Queue.empty[ObjectType] ++ rootInterfaceTypes
 
@@ -2923,13 +2938,15 @@ object ClassHierarchy {
                             superinterfaceTypesMap(supertypeId) eq null
                         case supertypes ⇒
                             allSuperSuperinterfaceTypes ++= supertypes.interfaceTypes
-                            allSupertypes ++= supertypes.all
+                            allSupertypes ++= supertypes.allTypes
                             true
 
                     }
                 }) {
                     supertypes(t.id) =
-                        SupertypeInformation(
+                        SupertypeInformation.forSubtypesOfObject(
+                            isKnownTypesMap,
+                            isInterfaceTypesMap,
                             ClassHierarchy.JustObject,
                             allSuperSuperinterfaceTypes ++ superinterfaceTypes,
                             allSupertypes ++ superinterfaceTypes
@@ -2942,50 +2959,52 @@ object ClassHierarchy {
 
             // 2. process all class types
             val rootTypes = await(rootTypesFuture, Inf) // we may have to wait...
-            typesToProcess ++= rootTypes.iterator.filter(t ⇒ !interfaceTypesMap(t.id))
+            typesToProcess ++= rootTypes.iterator.filter(t ⇒ !isInterfaceTypesMap(t.id))
             while (typesToProcess.nonEmpty) {
                 val t = typesToProcess.dequeue
                 val tid = t.id
-                val superinterfaceTypes = {
-                    val superinterfaceTypes = superinterfaceTypesMap(tid)
-                    if (superinterfaceTypes ne null)
-                        superinterfaceTypes
-                    else
-                        UIDSet.empty[ObjectType]
-                }
-                val superclassType = superclassTypeMap(t.id)
-                val allSuperinterfaceTypes =
-                    superinterfaceTypes.foldLeft(
-                        if (superclassType ne null) {
-                            // interfaces inherited via super class
-                            supertypes(superclassType.id).interfaceTypes
-                        } else {
+                if (tid != ObjectId) {
+                    val superinterfaceTypes = {
+                        val superinterfaceTypes = superinterfaceTypesMap(tid)
+                        if (superinterfaceTypes ne null)
+                            superinterfaceTypes
+                        else
                             UIDSet.empty[ObjectType]
-                        }
-                    ) { (allInterfaceTypes, nextSuperinterfacetype) ⇒
-                            (supertypes(nextSuperinterfacetype.id) match {
-                                case null ⇒
-                                    allInterfaceTypes
-                                case supertypes ⇒
-                                    allInterfaceTypes ++ supertypes.interfaceTypes
-                            }) + nextSuperinterfacetype
-                        }
-                supertypes(tid) =
-                    SupertypeInformation(
-                        {
-                            if (superclassType ne null)
-                                supertypes(superclassType.id).classTypes + superclassType
-                            else
-                                ClassHierarchy.JustObject // we do our best....
-                        },
-                        allSuperinterfaceTypes,
-                        {
-                            if (superclassType ne null)
-                                supertypes(superclassType.id).all + superclassType
-                            else
-                                ClassHierarchy.JustObject // we do our best....
-                        }
-                    )
+                    }
+                    val superclassType = superclassTypeMap(t.id)
+                    val allSuperinterfaceTypes =
+                        superinterfaceTypes.foldLeft(
+                            if (superclassType ne null) {
+                                // interfaces inherited via super class
+                                supertypes(superclassType.id).interfaceTypes
+                            } else {
+                                UIDSet.empty[ObjectType]
+                            }
+                        ) { (allInterfaceTypes, nextSuperinterfacetype) ⇒
+                                (supertypes(nextSuperinterfacetype.id) match {
+                                    case null       ⇒ allInterfaceTypes
+                                    case supertypes ⇒ allInterfaceTypes ++ supertypes.interfaceTypes
+                                }) + nextSuperinterfacetype
+                            }
+                    supertypes(tid) =
+                        SupertypeInformation.forSubtypesOfObject(
+                            isKnownTypesMap,
+                            isInterfaceTypesMap,
+                            {
+                                if (superclassType ne null)
+                                    supertypes(superclassType.id).classTypes + superclassType
+                                else
+                                    ClassHierarchy.JustObject // we do our best....
+                            },
+                            allSuperinterfaceTypes,
+                            {
+                                if (superclassType ne null)
+                                    supertypes(superclassType.id).allTypes + superclassType
+                                else
+                                    ClassHierarchy.JustObject // we do our best....
+                            }
+                        )
+                }
                 typesToProcess ++= subclassTypesMap(t.id)
             }
 
@@ -3023,7 +3042,7 @@ object ClassHierarchy {
                     "supertype information incomplete:\n\t"+
                         unexpectedRootTypes.
                         map { t ⇒
-                            (if (interfaceTypesMap(t.id)) "interface " else "class ") + t.toJava
+                            (if (isInterfaceTypesMap(t.id)) "interface " else "class ") + t.toJava
                         }.
                         toList.sorted.mkString("\n\t")
                 )
@@ -3064,7 +3083,7 @@ object ClassHierarchy {
         new ClassHierarchy(
             // BAREBONE INFORMATION
             knownTypesMap,
-            interfaceTypesMap,
+            isInterfaceTypesMap,
             isKnownToBeFinalMap,
             superclassTypeMap,
             superinterfaceTypesMap,
