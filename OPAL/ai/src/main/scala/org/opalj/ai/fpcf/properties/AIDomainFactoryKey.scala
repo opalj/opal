@@ -47,6 +47,7 @@ object AIDomainFactoryKey
             getProjectInformationKeyInitializationData(this).
             getOrElse(Set.empty)
 
+        // TODO make the strategy configurable...
         val domainFactories = DomainRegistry.selectBest(domainFactoryRequirements)
         if (domainFactories.isEmpty) {
             val message = domainFactoryRequirements.mkString(

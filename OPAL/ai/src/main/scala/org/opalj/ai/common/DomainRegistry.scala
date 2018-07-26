@@ -200,7 +200,7 @@ object DomainRegistry {
 
     register(
         "computations are done at the type level; cfg and def/use information is recorded",
-        classOf[domain.l0.BaseDomainWithDefUse[_]],
+        classOf[domain.l0.PrimitiveTACAIDomain],
         lessPreciseDomains = Set(classOf[domain.l0.BaseDomain[_]]),
         (project: SomeProject, method: Method) ⇒ new domain.l0.BaseDomainWithDefUse(project, method)
     )
@@ -244,7 +244,7 @@ object DomainRegistry {
     register(
         "uses intervals for int values and track nullness and must alias information for reference types; records the ai-time def-use information",
         classOf[domain.l1.DefaultDomainWithCFGAndDefUse[_]],
-        lessPreciseDomains = Set(classOf[domain.l0.BaseDomainWithDefUse[_]]),
+        lessPreciseDomains = Set(classOf[domain.l0.PrimitiveTACAIDomain]),
         (project: SomeProject, method: Method) ⇒ {
             new domain.l1.DefaultDomainWithCFGAndDefUse(project, method)
         }

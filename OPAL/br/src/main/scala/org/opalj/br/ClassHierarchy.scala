@@ -1186,12 +1186,6 @@ class ClassHierarchy private (
      * for handling `null` values and for considering the runtime type needs to be
      * implemented by the caller of this method.
      *
-     * @note    This method performs an upwards search only. E.g., given the following
-     *          incomplete(!) type hierarchy where the type C is unknown:
-     *          `class D inherits from C`
-     *          `class E inherits from D`
-     *          and the query `isSubtypeOf(D,E)`, the answer will be `Unknown` if `C` is
-     *          `Unknown` and `No` otherwise.
      * @note    No explicit `isKnown` check is required.
      * @param   subtype Any `ObjectType`.
      * @param   theSupertype Any `ObjectType`.
@@ -1230,6 +1224,7 @@ class ClassHierarchy private (
                 return Unknown;
         }
 
+        val interfaceTypesMap = this.interfaceTypesMap
         val subtypeIsInterface = interfaceTypesMap(subtypeId)
         val supertypeIsInterface = interfaceTypesMap(theSupertypeId)
 
@@ -1238,11 +1233,12 @@ class ClassHierarchy private (
             // and this is already checked before.
             return No;
 
-        if (supertypeInformationMap(subtypeId).contains(theSupertype))
+        val supertypeInformationMap = this.supertypeInformationMap
+        if (supertypeInformationMap(subtypeId).containsId(theSupertypeId))
             Yes
         else if (isSupertypeInformationCompleteMap(subtypeId))
             No
-        else if (supertypeInformationMap(theSupertypeId).contains(subtype))
+        else if (supertypeInformationMap(theSupertypeId).containsId(subtypeId))
             No
         else
             Unknown
