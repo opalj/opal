@@ -404,7 +404,6 @@ class RTACallGraphAnalysis private[analyses] (
         for {
             instantiatedType ← newInstantiatedTypes // only iterate once!
             (pc, typeBound, name, descr) ← state.virtualCallSites
-            if project.classHierarchy.isSubtypeOf(instantiatedType, typeBound).isYes
             sti ← classHierarchy.subtypeInformation(typeBound)
             if instantiatedType == typeBound || sti.contains(instantiatedType)
             tgt ← project.instanceCall(
