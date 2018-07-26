@@ -150,7 +150,7 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
             for (successor ← bb.successors) {
                 if (successor.isExitNode) {
                     // Handle self-dependencies: Propagate new information to self calls
-                    if ((nextOut(successor) -- oldOut.getOrElse(successor, Set.empty)).nonEmpty)
+                    if ((nextOut.getOrElse(successor, Set.empty) -- oldOut.getOrElse(successor, Set.empty)).nonEmpty)
                         handleCallUpdate(state.source)
                 } else {
                     val succ = (if (successor.isBasicBlock) {
@@ -161,7 +161,7 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
                         successor.successors.head
                     }).asBasicBlock
 
-                    val nextIn = nextOut(successor)
+                    val nextIn = nextOut.getOrElse(successor, Set.empty)
                     val oldIn = state.incoming.getOrElse(succ, Set.empty)
                     state.incoming = state.incoming.updated(succ, oldIn ++ nextIn)
                     val newIn = nextIn -- oldIn
