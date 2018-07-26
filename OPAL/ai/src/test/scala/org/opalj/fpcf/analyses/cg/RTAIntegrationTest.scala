@@ -107,7 +107,7 @@ class RTAIntegrationTest extends FlatSpec with Matchers {
             val containsCall = computedCallSites.exists(cs ⇒ cs._2.exists(computedTgt ⇒ convertMethod(computedTgt) == tgt))
             assert(
                 containsCall,
-                s"cg does not contain call from \n\t$dm \nto \n\t$tgt \nat line $line in: \n\t $computedCallSites"
+                s"missed call $line: ${tgt.returnType} ${tgt.name} ${tgt.parameterTypes} \n in: \n\t${dm.declaringClassType} ${dm.definedMethod} \nto \n\t${tgt.declaringClass} \ncomputed calls: \n\t $computedCallSites"
             )
         }
     }
