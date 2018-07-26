@@ -26,7 +26,7 @@ trait CodeElement[+T] {
 
     def isTry: Boolean
 
-    def asTry: TRY = throw new ClassCastException(s"cannot cast $this to TRY")
+    def asTry: TRY = throw new ClassCastException(s"cannot cast $this to TRY");
 
     def isCatch: Boolean
 

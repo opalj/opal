@@ -77,7 +77,7 @@ object DomainRegistry {
         domains
     }
 
-    def selectCandidates(requirements: Seq[Class[_ <: AnyRef]]): Set[Class[_ <: Domain]] = {
+    def selectCandidates(requirements: Traversable[Class[_ <: AnyRef]]): Set[Class[_ <: Domain]] = {
         classRegistry.keys.filter { candidate ⇒
             requirements.forall(r ⇒ r.isAssignableFrom(candidate))
         }.toSet
@@ -96,7 +96,7 @@ object DomainRegistry {
      *
      * @return The best domain satisfying the stated requirements.
      */
-    def selectBest(requirements: Seq[Class[_ <: AnyRef]]): Set[Class[_ <: Domain]] = {
+    def selectBest(requirements: Traversable[Class[_ <: AnyRef]]): Set[Class[_ <: Domain]] = {
         val candidateClasses = selectCandidates(requirements)
         if (candidateClasses.isEmpty)
             return Set.empty;
@@ -119,7 +119,7 @@ object DomainRegistry {
         best
     }
 
-    def selectCheapest(requirements: Seq[Class[_ <: AnyRef]]): Set[Class[_ <: Domain]] = {
+    def selectCheapest(requirements: Traversable[Class[_ <: AnyRef]]): Set[Class[_ <: Domain]] = {
         val candidateClasses = selectCandidates(requirements)
         if (candidateClasses.isEmpty)
             return Set.empty;
@@ -181,6 +181,10 @@ object DomainRegistry {
      * @param method A method with a body.
      */
     def newDomain(domainClass: Class[_ <: Domain], project: SomeProject, method: Method): Domain = {
+        this.synchronized { classRegistry(domainClass).factory(project, method) }
+    }
+
+    def domainFactory(domainClass: Class[_ <: Domain])(project: SomeProject, method: Method): Domain = {
         this.synchronized { classRegistry(domainClass).factory(project, method) }
     }
 

@@ -557,6 +557,13 @@ case class GetField[+V <: Var[V]](
         false
     }
 
+    override def hashCode(): Int = {
+        ((GetField.ASTID * 1171 +
+            pc) * 31 +
+            declaringClass.hashCode) * 31 +
+            name.hashCode
+    }
+
     override def toString: String = {
         s"GetField(pc=$pc,${declaringClass.toJava},$name,${declaredFieldType.toJava},$objRef)"
     }
@@ -576,6 +583,13 @@ case class GetStatic(
     final override def subExprCount: Int = 0
     final override def subExpr(index: Int): Nothing = throw new IndexOutOfBoundsException();
     final override def forallSubExpressions[W >: Nothing <: Var[W]](p: Expr[W] ⇒ Boolean): Boolean = true
+
+    override def hashCode(): Int = {
+        ((GetStatic.ASTID * 1171 +
+            pc) * 31 +
+            declaringClass.hashCode) * 31 +
+            name.hashCode
+    }
 
     override def toString: String = {
         s"GetStatic(pc=$pc,${declaringClass.toJava},$name,${declaredFieldType.toJava})"
@@ -609,6 +623,14 @@ case class Invokedynamic[+V <: Var[V]](
         isIndexOfCaughtExceptionStmt: Int ⇒ Boolean
     ): Unit = {
         params.foreach { p ⇒ p.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt) }
+    }
+
+    override def hashCode(): Int = {
+        (((Invokedynamic.ASTID * 1171 +
+            pc) * 31 +
+            bootstrapMethod.hashCode) * 31 +
+            name.hashCode) * 31 +
+            descriptor.hashCode
     }
 
     override def toString: String = {
@@ -697,6 +719,14 @@ case class NonVirtualFunctionCall[+V <: Var[V]](
         params foreach { p ⇒ p.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt) }
     }
 
+    override def hashCode(): Int = {
+        (((NonVirtualFunctionCall.ASTID * 1171 +
+            pc) * 31 +
+            declaringClass.hashCode) * 31 +
+            name.hashCode) * 31 +
+            descriptor.hashCode
+    }
+
     override def toString: String = {
         val sig = descriptor.toJava(name)
         val declClass = declaringClass.toJava
@@ -727,6 +757,14 @@ case class VirtualFunctionCall[+V <: Var[V]](
     ): Unit = {
         receiver.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt)
         params.foreach { p ⇒ p.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt) }
+    }
+
+    override def hashCode(): Int = {
+        (((VirtualFunctionCall.ASTID * 1171 +
+            pc) * 31 +
+            declaringClass.hashCode) * 31 +
+            name.hashCode) * 31 +
+            descriptor.hashCode
     }
 
     override def toString: String = {
@@ -782,6 +820,14 @@ case class StaticFunctionCall[+V <: Var[V]](
         isIndexOfCaughtExceptionStmt: Int ⇒ Boolean
     ): Unit = {
         params.foreach { p ⇒ p.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt) }
+    }
+
+    override def hashCode(): Int = {
+        (((StaticFunctionCall.ASTID * 1171 +
+            pc) * 31 +
+            declaringClass.hashCode) * 31 +
+            name.hashCode) * 31 +
+            descriptor.hashCode
     }
 
     override def toString: String = {

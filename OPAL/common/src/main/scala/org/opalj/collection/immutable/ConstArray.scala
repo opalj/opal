@@ -117,7 +117,7 @@ object ConstArray extends LowLevelConstArrayImplicits {
     /**
      * Creates a new [[ConstArray]] from the given array. Hence, changes to the underlying array
      * would be reflected! '''Only use this factory method if you have full control over all
-     * alias to the given array to ensure that the underlying array is not mutated.'''
+     * aliases to the given array to ensure that the underlying array is not mutated.'''
      */
     // IMPROVE Use an ownership annotation to specify that ConstArray takes over the ownership of the array.
     def from[T <: AnyRef](data: Array[T]): ConstArray[T] = new ConstArray(data)

@@ -13,7 +13,7 @@ sealed abstract class VerificationTypeInfo {
 
     def isObjectVariableInfo: Boolean = false
     def asObjectVariableInfo: ObjectVariableInfo = {
-        throw new ClassCastException(s"$this cannot be cast to ObjectVariableInfo")
+        throw new ClassCastException(s"$this cannot be cast to ObjectVariableInfo");
     }
 }
 

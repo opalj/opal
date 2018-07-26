@@ -244,6 +244,14 @@ final class PKESequentialPropertyStore private (
                                 // create PropertyValue to ensure that we do not schedule
                                 // multiple (lazy) computations => the entity is now known
                                 ps(pkId).put(e, PropertyValue.lazilyComputed)
+                                val alsoComputedPKIds = simultaneouslyLazilyComputedPropertyKinds(pkId)
+                                alsoComputedPKIds foreach { computedPKId ⇒
+                                    if (ps(computedPKId).put(e, PropertyValue.lazilyComputed).nonEmpty) {
+                                        throw new UnknownError(
+                                            "a simultaneously computed property kind was already triggered"
+                                        )
+                                    }
+                                }
                                 scheduleLazyComputationForEntity(e)(lc)
                                 // return the "current" result
                                 epk
