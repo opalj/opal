@@ -13,8 +13,8 @@ import org.opalj.br.analyses.ReportableAnalysisResult
 import org.opalj.fpcf.analyses.cg.EagerFinalizerAnalysisScheduler
 import org.opalj.fpcf.analyses.cg.EagerLoadedClassesAnalysis
 import org.opalj.fpcf.analyses.cg.EagerRTACallGraphAnalysisScheduler
-import org.opalj.fpcf.par.PKEParallelTasksPropertyStore
-import org.opalj.fpcf.par.RecordAllPropertyStoreTracer
+//import org.opalj.fpcf.par.PKEParallelTasksPropertyStore
+//import org.opalj.fpcf.par.RecordAllPropertyStoreTracer
 import org.opalj.fpcf.properties.Callees
 import org.opalj.fpcf.properties.CallersProperty
 import org.opalj.fpcf.properties.InstantiatedTypes
@@ -29,7 +29,7 @@ object RTADemo extends DefaultOneStepAnalysis {
         project: Project[URL], parameters: Seq[String], isInterrupted: () ⇒ Boolean
     ): ReportableAnalysisResult = {
 
-        project.getOrCreateProjectInformationKeyInitializationData(
+        /*project.getOrCreateProjectInformationKeyInitializationData(
             PropertyStoreKey,
             (context: List[PropertyStoreContext[AnyRef]]) ⇒ {
                 val ps = PKEParallelTasksPropertyStore.create(
@@ -39,10 +39,10 @@ object RTADemo extends DefaultOneStepAnalysis {
                 PropertyStore.updateDebug(true)
                 ps
             }
-        )
+        )*/
 
         val ps = project.get(PropertyStoreKey)
-        PropertyStore.updateDebug(true)
+        PropertyStore.updateDebug(false)
         //PropertyStore.updateTraceCycleResolutions(true)
         //PropertyStore.updateTraceFallbacks(true)
 
