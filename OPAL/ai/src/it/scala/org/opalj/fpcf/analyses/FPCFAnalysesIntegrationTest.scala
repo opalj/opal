@@ -104,7 +104,7 @@ class FPCFAnalysesIntegrationTest extends FunSpec {
                     if (expectedIt.hasNext)
                         fail(
                             "expected is longer than actual - first line: "+expectedIt.next()+
-                                "\n current results written to :\n"+ writeActual(actual, fileName)
+                                "\n current results written to :\n"+writeActual(actual, fileName)
                         )
                 }
             }
