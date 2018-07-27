@@ -585,8 +585,8 @@ final class PKEParallelTasksPropertyStore private (
         // the result of the scheduled computation.
         val pkId = pk.id
         val fastTrackPropertyOption =
-            if ((computedPropertyKinds(pkId) || delayedPropertyKinds(pkId)) &&
-                useFastTrackPropertyComputations)
+            if (useFastTrackPropertyComputations &&
+                (computedPropertyKinds(pkId) || delayedPropertyKinds(pkId)))
                 fastTrackPropertyBasedOnPkId(this, e, pkId)
             else
                 None
