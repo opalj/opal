@@ -92,7 +92,8 @@ class FPCFAnalysesIntegrationTest extends FunSpec {
                         val expectedLine = expectedIt.next()
                         if (actualLine != expectedLine)
                             fail(
-                                s"comparison failed:\n$actualLine\n\t\tvs.\n$expectedLine\n"+
+                                s"comparison failed:\nnew: $actualLine\n\t\t" +
+                                    s"vs.\nold: $expectedLine\n"+
                                     "current results written to :\n"+writeActual(actual, fileName)
                             )
                     }
