@@ -93,12 +93,12 @@ object NoCallers extends EmptyConcreteCallers with CallersWithoutUnknownContext 
 }
 
 object OnlyCallersWithUnknownContext
-    extends EmptyConcreteCallers with CallersWithUnknownContext with CallersWithoutVMLevelCall {
+        extends EmptyConcreteCallers with CallersWithUnknownContext with CallersWithoutVMLevelCall {
     override def updateVMLevelCall(): CallersWithVMLevelCall = OnlyVMCallersAndWithUnknownContext
 }
 
 object OnlyVMLevelCallers
-    extends EmptyConcreteCallers with CallersWithoutUnknownContext with CallersWithVMLevelCall {
+        extends EmptyConcreteCallers with CallersWithoutUnknownContext with CallersWithVMLevelCall {
     override def updateWithUnknownContext(): CallersWithUnknownContext = OnlyVMCallersAndWithUnknownContext
 }
 
@@ -244,10 +244,11 @@ object CallersProperty extends CallersPropertyMetaInformation {
     }
 
     def toLong(methodId: Int, pc: Int): Long = {
-        assert(pc >= 0 && pc < 0xFFFFL)
-        (methodId.toLong << 16) | pc
+        assert(pc >= 0 && pc < 0xFFFF)
+        assert(methodId >= 0 && methodId <= 0x3FFFFF)
+        (methodId.toLong & 0x3FFFFF) | (pc << 22)
     }
-    def toMethodAndPc(methodAndPc: Long): (Int, Int) = {
-        ((methodAndPc >> 16).toInt, methodAndPc.toInt & 0xFFFF)
+    def toMethodAndPc(pcAndMethod: Long): (Int, Int) = {
+        (pcAndMethod.toInt & 0x3FFFFF, (pcAndMethod >> 22).toInt)
     }
 }
