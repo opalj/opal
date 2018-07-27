@@ -478,8 +478,8 @@ class DefaultConcreteArraysTest extends FunSpec with Matchers {
                 // make sure the class hierarchy is as expected
                 assert(domain.classHierarchy.isKnown(ObjectType.Class))
                 assert(domain.classHierarchy.isKnown(ObjectType.String))
-                assert(isSubtypeOf(ObjectType.Class, ObjectType.String) === No)
-                assert(isSubtypeOf(ObjectType.String, ObjectType.Class) === No)
+                assert(!isSubtypeOf(ObjectType.Class, ObjectType.String))
+                assert(!isSubtypeOf(ObjectType.String, ObjectType.Class))
 
                 val array = InitializedObjectValue(returnIndex, ObjectType.Class)
                 val index = IntegerValue(returnIndex, 3)

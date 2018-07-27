@@ -818,7 +818,7 @@ final class Code private (
         implicit
         classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
     ): Chain[ExceptionHandler] = {
-        import classHierarchy.isSubtypeOf
+        import classHierarchy.isASubtypeOf
 
         var handledExceptions = Set.empty[ObjectType]
 
@@ -828,7 +828,7 @@ final class Code private (
                 val catchTypeOption = eh.catchType
                 if (catchTypeOption.isDefined) {
                     val catchType = catchTypeOption.get
-                    val isSubtype = isSubtypeOf(exception, catchType)
+                    val isSubtype = isASubtypeOf(exception, catchType)
                     if (isSubtype.isYes) {
                         ehs += eh
                         /* we found a definitiv matching handler*/ false

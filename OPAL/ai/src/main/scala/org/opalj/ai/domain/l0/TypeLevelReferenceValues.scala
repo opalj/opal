@@ -518,8 +518,8 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
                 val ch = classHierarchy
                 // - both values may not be null
                 // - at least one value is not precise
-                if (ch.isSubtypeOf(v1UTB, v2UTB).isNo &&
-                    ch.isSubtypeOf(v2UTB, v1UTB).isNo &&
+                if (ch.isASubtypeOf(v1UTB, v2UTB).isNo &&
+                    ch.isASubtypeOf(v2UTB, v1UTB).isNo &&
                     // two interfaces that are not in an inheritance relation can
                     // still be implemented by the same class and, hence, the references
                     // can still be equal

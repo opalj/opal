@@ -715,7 +715,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                         val thatUTB = that.upperTypeBound
                         thatUTB.isSingletonSet &&
                             thatUTB.head.isArrayType &&
-                            isSubtypeOf(thatUTB.head.asArrayType, this.theUpperTypeBound).isYes
+                            isSubtypeOf(thatUTB.head.asArrayType, this.theUpperTypeBound)
                     }
             result
         }
@@ -811,14 +811,14 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
 
             assert(thisUTB ne supertype)
             assert(
-                !isPrecise || domain.isSubtypeOf(supertype, thisUTB).isNoOrUnknown,
+                !isPrecise || !domain.isSubtypeOf(supertype, thisUTB),
                 s"this type is precise ${thisUTB.toJava}; "+
                     s"refinement goal: ${supertype.toJava} "+
                     "(is this type a subtype of the given type: "+
                     s"${domain.isSubtypeOf(thisUTB, supertype)})"
             )
 
-            if (domain.isSubtypeOf(supertype, thisUTB).isYes) {
+            if (domain.isSubtypeOf(supertype, thisUTB)) {
                 // this also handles the case where we cast an object to an array
                 ReferenceValue(this.origin, this.isNull, false, supertype)
             } else {
@@ -851,21 +851,21 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
 
                 case that: SObjectValue ⇒
                     checkPrecisionAndNullness(that) &&
-                        isSubtypeOf(that.theUpperTypeBound, this.theUpperTypeBound).isYes
+                        isSubtypeOf(that.theUpperTypeBound, this.theUpperTypeBound)
 
                 case that: ArrayValue ⇒
                     checkPrecisionAndNullness(that) &&
-                        isSubtypeOf(that.theUpperTypeBound, this.theUpperTypeBound).isYes
+                        isSubtypeOf(that.theUpperTypeBound, this.theUpperTypeBound)
 
                 case that: MultipleReferenceValues ⇒
                     checkPrecisionAndNullness(that) &&
-                        classHierarchy.isSubtypeOf(that.upperTypeBound, theUpperTypeBound).isYes
+                        classHierarchy.isSubtypeOf(that.upperTypeBound, theUpperTypeBound)
 
                 case that: MObjectValue ⇒
                     val thisUTB = this.theUpperTypeBound
                     val thatUTB = that.upperTypeBound.asInstanceOf[UIDSet[ReferenceType]]
                     checkPrecisionAndNullness(that) &&
-                        classHierarchy.isSubtypeOf(thatUTB, thisUTB).isYes
+                        classHierarchy.isSubtypeOf(thatUTB, thisUTB)
 
                 case _: NullValue ⇒ this.isNull.isUnknown
 
@@ -947,17 +947,16 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                 val theSupertype = supertype.asObjectType
                 var newUTB: UIDSet[ObjectType] = UIDSet.empty
                 upperTypeBound foreach { (anUTB: ObjectType) ⇒
-                    domain.isSubtypeOf(supertype, anUTB) match {
-                        case Yes ⇒
+                    if (domain.isSubtypeOf(supertype, anUTB))
+                        newUTB += theSupertype
+                    else {
+                        // supertype is either a supertype of anUTB or the
+                        // the relationship is unknown; in both cases
+                        // we have to keep "anUTB"; however, we also have
+                        // to add supertype if the relation is unknown.
+                        newUTB += anUTB
+                        if (domain.isASubtypeOf(anUTB, supertype).isUnknown)
                             newUTB += theSupertype
-                        case _ ⇒
-                            // supertype is either a supertype of anUTB or the
-                            // the relationship is unknown; in both cases
-                            // we have to keep "anUTB"; however, we also have
-                            // to add supertype if the relation is unknown.
-                            newUTB += anUTB
-                            if (domain.isSubtypeOf(anUTB, supertype).isUnknown)
-                                newUTB += theSupertype
                     }
                 }
                 if (newUTB.isSingletonSet) {
@@ -997,7 +996,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                 return false;
 
             val thatUTB = that.upperTypeBound
-            classHierarchy.isSubtypeOf(thatUTB, this.upperTypeBound).isYes
+            classHierarchy.isSubtypeOf(thatUTB, this.upperTypeBound)
         }
 
         override def adapt(target: TargetDomain, origin: ValueOrigin): target.DomainValue =
@@ -1096,10 +1095,10 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                 isNull.isNoOrUnknown &&
                 upperTypeBound.nonEmpty && (
                     domain.upperTypeBound(values) == upperTypeBound ||
-                    classHierarchy.isSubtypeOf(
+                    !classHierarchy.isSubtypeOf(
                         domain.upperTypeBound(values),
                         upperTypeBound
-                    ).isNoOrUnknown
+                    )
                 )
             ),
             s"the upper type bound (isNull == $isNull) of ${values.mkString(",")} "+
@@ -1181,7 +1180,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                             this.upperTypeBound, joinedValue.upperTypeBound
                         )
                     if (newValuesUTB != baseUTB &&
-                        classHierarchy.isSubtypeOf(newValuesUTB, baseUTB).isYes)
+                        classHierarchy.isSubtypeOf(newValuesUTB, baseUTB))
                         newValuesUTB
                     else
                         baseUTB
@@ -1236,10 +1235,10 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             // It may the case that the subtype relation of each individual value – 
             // when compared with supertype - is Unknown, but that the type of the
             // value as a whole is still known to be a subtype
-            val isSubtypeOf = classHierarchy.isSubtypeOf(this.upperTypeBound, supertype)
-            if (isSubtypeOf eq Yes)
+            val isASubtypeOf = classHierarchy.isASubtypeOf(this.upperTypeBound, supertype)
+            if (isASubtypeOf eq Yes)
                 return Yes;
-            if ((isSubtypeOf eq No) && isPrecise)
+            if ((isASubtypeOf eq No) && isPrecise)
                 return No;
 
             // Recall that the runtime type of this value can still be a
@@ -1302,7 +1301,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                     // part of the "MultipleReferenceValues"
                     if ((thisIsNull.isUnknown || thisIsNull == refinedValue.isNull) &&
                         (!refinedValue.isPrecise ||
-                            classHierarchy.isSubtypeOf(
+                            classHierarchy.isASubtypeOf(
                                 refinedValue.upperTypeBound, upperTypeBound
                             ).isYesOrUnknown)) {
 
@@ -1331,7 +1330,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                 if (thisIsNull.isNoOrUnknown /*if the value is null then there is nothing (more) to do*/ &&
                     !refinedValue.isPrecise /*if the value isPrecise then there is nothing (more) to do*/ &&
                     thisUpperTypeBound != refinedValue.upperTypeBound &&
-                    classHierarchy.isSubtypeOf(thisUpperTypeBound, refinedValue.upperTypeBound).isYes) {
+                    classHierarchy.isSubtypeOf(thisUpperTypeBound, refinedValue.upperTypeBound)) {
                     if (thisUpperTypeBound.isSingletonSet)
                         refinedValue =
                             refinedValue.
@@ -1368,7 +1367,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                         val newRefinedValuesUTB =
                             domain.upperTypeBound(refinedValues)
                         if (newRefinedValuesUTB != upperTypeBound &&
-                            classHierarchy.isSubtypeOf(newRefinedValuesUTB, upperTypeBound).isYes)
+                            classHierarchy.isSubtypeOf(newRefinedValuesUTB, upperTypeBound))
                             newRefinedValuesUTB
                         else
                             upperTypeBound
@@ -1408,12 +1407,12 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                 if (upperTypeBoundGoal != newValueUTB) {
                     // ALSO have to handle the case where upperTypeBoundGoal and
                     // newValueUTB are NOT in an inheritance relationship!
-                    val goalIsSubtype = classHierarchy.isSubtypeOf(upperTypeBoundGoal, newValueUTB)
-                    if (goalIsSubtype.isYes)
+                    val goalIsASubtype = classHierarchy.isASubtypeOf(upperTypeBoundGoal, newValueUTB)
+                    if (goalIsASubtype.isYes)
                         newValue = newValue.doRefineUpperTypeBound(upperTypeBoundGoal)
-                    else if (goalIsSubtype.isUnknown)
+                    else if (goalIsASubtype.isUnknown)
                         newValue = newValue.doRefineUpperTypeBound(upperTypeBoundGoal ++ newValueUTB)
-                    else if (classHierarchy.isSubtypeOf(newValueUTB, upperTypeBoundGoal).isNoOrUnknown)
+                    else if (!classHierarchy.isSubtypeOf(newValueUTB, upperTypeBoundGoal))
                         newValue = newValue.doRefineUpperTypeBound(upperTypeBoundGoal ++ newValueUTB)
                 }
             }
@@ -1467,7 +1466,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                             origins,
                             No, // we refined the "isNull" property!
                             domain.isPrecise(newValues),
-                            if (classHierarchy.isSubtypeOf(thisUTB, newValuesUTB).isYesOrUnknown)
+                            if (classHierarchy.isASubtypeOf(thisUTB, newValuesUTB).isYesOrUnknown)
                                 thisUTB
                             else
                                 newValuesUTB,
@@ -1527,12 +1526,12 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                 // therefore, we simply accept the target refinement type.
                 val supertypeUTB: UIDSet[_ <: ReferenceType] =
                     if (supertype.isObjectType &&
-                        classHierarchy.isSubtypeOf(supertype, this.upperTypeBound).isNoOrUnknown)
+                        !classHierarchy.isSubtypeOf(supertype, this.upperTypeBound))
                         this.upperTypeBound add supertype
                     else
                         UIDSet[ReferenceType](supertype)
                 val newUTB: UIDSet[_ <: ReferenceType] =
-                    if (classHierarchy.isSubtypeOf(filteredValuesUTB, supertypeUTB).isYes)
+                    if (classHierarchy.isSubtypeOf(filteredValuesUTB, supertypeUTB))
                         filteredValuesUTB
                     else
                         supertypeUTB
@@ -1675,7 +1674,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                             val newValuesUTB = domain.upperTypeBound(newValues)
 
                             if (newValuesUTB != baseUTB &&
-                                classHierarchy.isSubtypeOf(newValuesUTB, baseUTB).isYes) {
+                                classHierarchy.isSubtypeOf(newValuesUTB, baseUTB)) {
                                 newValuesUTB
                             } else
                                 baseUTB

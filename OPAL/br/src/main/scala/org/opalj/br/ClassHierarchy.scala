@@ -1109,6 +1109,120 @@ class ClassHierarchy private (
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
     /**
+     * Determines if `subtype` is a subtype of `supertype` using this class hierarchy.
+     *
+     * This method can be used as a foundation for implementing the logic of the JVM's
+     * `instanceof` and `classcast` instructions. But, in both cases additional logic
+     * for handling `null` values and for considering the runtime type needs to be
+     * implemented by the caller of this method.
+     *
+     * @note    The answer `false` does not necessarily imply that two '''runtime values''' for
+     *          which the given types are only upper bounds are not (w.r.t. '''their
+     *          runtime types''') in a subtype relation. E.g., if `subtype` denotes the type
+     *          `java.util.List` and `supertype` denotes the type `java.util.ArrayList` then
+     *          the answer is clearly `false`. But, at runtime, this may not be the case. I.e.,
+     *          only the answer `true` is conclusive. In case of `false` further information
+     *          needs to be taken into account by the caller to determine what it means that
+     *          the (upper) type (bounds) of the underlying values are not in an inheritance
+     *          relation.
+     * @param   subtype Any class, interface  or array type.
+     * @param   supertype Any class, interface or array type.
+     * @return  `true` if `subtype` is indeed a subtype of the given `supertype`. `false` is
+     *          returned if the typing relation is unknown OR if `subtype` is definitively not
+     *          a subtype of `supertype`.
+     */
+    @tailrec final def isSubtypeOf(subtype: ReferenceType, supertype: ReferenceType): Boolean = {
+        // necessary to get reasonable answers in case of incomplete type hierarchies
+        if (subtype eq supertype)
+            return true;
+
+        if (subtype.isObjectType) {
+            if (supertype.isObjectType)
+                isSubtypeOf(subtype.asObjectType, supertype.asObjectType)
+            else
+                // the supertype is an array type..
+                false
+        } else {
+            // the subtype is an array type
+            if (supertype.isObjectType) {
+                import ObjectType.{Serializable, Cloneable}
+                (supertype eq ObjectType.Object) ||
+                    (supertype eq Serializable) ||
+                    (supertype eq Cloneable)
+            } else {
+                // ... and the supertype is also an array type
+                // The case:
+                //    `componentType eq superComponentType`
+                // is already handled by the very first test `subtype eq supertype` because
+                // ArrayTypes are internalized.
+                val componentType = subtype.asArrayType.componentType
+                val superComponentType = supertype.asArrayType.componentType
+                if (superComponentType.isBaseType || componentType.isBaseType)
+                    false
+                else
+                    isSubtypeOf(componentType.asReferenceType, superComponentType.asReferenceType)
+            }
+        }
+    }
+
+    /**
+     * Returns `true` if subtype is a subtype of `supertype`; `false` is returned if
+     * the subtyping relationship is unknown OR `subtype` is not a subtype of `supertype`.
+     * `isSubtypeOf` is reflexive.
+     *
+     * See `isASubtypeOf` if more precise information about the subtyping relationship is required.
+     */
+    def isSubtypeOf(subtype: ObjectType, theSupertype: ObjectType): Boolean = {
+        if (subtype eq theSupertype)
+            return true;
+
+        val theSupertypeId = theSupertype.id
+        if (isUnknown(theSupertypeId))
+            return false;
+
+        subtypeInformationMap(theSupertypeId).contains(subtype)
+    }
+
+    /**
+     * Determines if the type described by the first set of upper type bounds is
+     * a subtype of the second type. I.e., it checks, if for all types of the
+     * `subtypes` upper type bound, a type in the `supertypes` type exists that is a
+     * supertype of the respective subtype. If `subtypes` is empty, `true` will be
+     * returned; an empty upper type bound is expected to model `null`.
+     */
+    def isSubtypeOf(
+        subtypes:   UIDSet[_ <: ReferenceType],
+        supertypes: UIDSet[_ <: ReferenceType]
+    ): Boolean = {
+        if (subtypes.isEmpty /*the upper type bound of "null" values*/ || subtypes == supertypes)
+            return true;
+
+        supertypes forall { supertype: ReferenceType ⇒
+            subtypes exists { subtype: ReferenceType ⇒
+                this.isSubtypeOf(subtype, supertype)
+            }
+        }
+    }
+
+    /**
+     * Returns `true` if the subtype is a subtype of '''all''' given supertypes. Hence,
+     * supertypes should not contain more than one class type.
+     */
+    def isSubtypeOf(subtype: ReferenceType, supertypes: UIDSet[_ <: ReferenceType]): Boolean = {
+        if (supertypes.isEmpty /*the upper type bound of "null" values*/ )
+            return false;
+
+        supertypes forall { supertype: ReferenceType ⇒ isSubtypeOf(subtype, supertype) }
+    }
+
+    def isSubtypeOf(subtypes: UIDSet[_ <: ReferenceType], supertype: ReferenceType): Boolean = {
+        if (subtypes.isEmpty) /*the upper type bound of "null" values*/
+            return true;
+
+        subtypes exists { subtype: ReferenceType ⇒ this.isSubtypeOf(subtype, supertype) }
+    }
+
+    /**
      * Determines if a value of type `elementValueType` can be stored in an array of
      * type `arrayType`. E.g., a value of type `IntegerType` can be stored in an
      * array (one-dimensional) of type `ArrayType(IntegerType)`. This method takes
@@ -1148,7 +1262,7 @@ class ClassHierarchy private (
                 val componentObjectType = arrayType.componentType.asObjectType
                 // Recall that `isSubtypeOf` completely handles all cases that make
                 // it possible to store an array in a value of type ObjectType.
-                isSubtypeOf(elementValueType.asArrayType, componentObjectType) match {
+                isASubtypeOf(elementValueType.asArrayType, componentObjectType) match {
                     case Yes ⇒ if (arrayTypeIsPrecise) Yes else Unknown
                     case No  ⇒ No
                     case _   ⇒ throw new AssertionError("some array type <: some object type failed")
@@ -1160,7 +1274,7 @@ class ClassHierarchy private (
             } else {
                 val elementValueObjectType = elementValueType.asObjectType
                 val arrayComponentReferenceType = arrayType.componentType.asReferenceType
-                isSubtypeOf(elementValueObjectType, arrayComponentReferenceType) match {
+                isASubtypeOf(elementValueObjectType, arrayComponentReferenceType) match {
                     case Yes ⇒
                         if (arrayTypeIsPrecise || isKnownToBeFinal(elementValueObjectType))
                             Yes
@@ -1196,7 +1310,7 @@ class ClassHierarchy private (
      *          is not available.
      *
      */
-    def isSubtypeOf(subtype: ObjectType, theSupertype: ObjectType): Answer = {
+    def isASubtypeOf(subtype: ObjectType, theSupertype: ObjectType): Answer = {
         if (subtype eq theSupertype)
             return Yes;
 
@@ -1270,7 +1384,7 @@ class ClassHierarchy private (
      *          completely available and hence precise information about a type's supertypes
      *          is not available.
      */
-    @tailrec final def isSubtypeOf(subtype: ReferenceType, supertype: ReferenceType): Answer = {
+    @tailrec final def isASubtypeOf(subtype: ReferenceType, supertype: ReferenceType): Answer = {
 
         // The following two tests are particulary relevant in case of incomplete
         // class hierarchies since they allow to give definitive answers in some
@@ -1289,7 +1403,7 @@ class ClassHierarchy private (
                 // The analysis is conclusive iff we can get all supertypes
                 // for the given type (ot) up until "java/lang/Object"; i.e.,
                 // if there are no holes.
-                isSubtypeOf(subtypeAsObjectType, supertype.asObjectType)
+                isASubtypeOf(subtypeAsObjectType, supertype.asObjectType)
         } else {
             // ... subtype is an ArrayType
             if (supertype.isObjectType) {
@@ -1307,7 +1421,7 @@ class ClassHierarchy private (
                 // is already handled by the very first test `subtype eq supertype` because
                 // ArrayTypes are internalized.
                 else
-                    isSubtypeOf(componentType.asReferenceType, superComponentType.asReferenceType)
+                    isASubtypeOf(componentType.asReferenceType, superComponentType.asReferenceType)
             }
         }
     }
@@ -1319,7 +1433,7 @@ class ClassHierarchy private (
      * supertype of the respective subtype. If `subtypes` is empty, `Yes` will be
      * returned; an empty upper type bound is expected to model `null`.
      */
-    def isSubtypeOf(
+    def isASubtypeOf(
         subtypes:   UIDSet[_ <: ReferenceType],
         supertypes: UIDSet[_ <: ReferenceType]
     ): Answer = {
@@ -1331,7 +1445,7 @@ class ClassHierarchy private (
                 var subtypingRelationUnknown = false
                 val subtypeExists =
                     subtypes exists { subtype: ReferenceType ⇒
-                        val isSubtypeOf = this.isSubtypeOf(subtype, supertype)
+                        val isSubtypeOf = this.isASubtypeOf(subtype, supertype)
                         isSubtypeOf match {
                             case Yes ⇒
                                 true
@@ -1356,12 +1470,12 @@ class ClassHierarchy private (
      * Returns `Yes` if the subtype is a subtype of '''all''' given supertypes. Hence,
      * supertypes should not contain more than one class type.
      */
-    def isSubtypeOf(subtype: ReferenceType, supertypes: UIDSet[_ <: ReferenceType]): Answer = {
+    def isASubtypeOf(subtype: ReferenceType, supertypes: UIDSet[_ <: ReferenceType]): Answer = {
         if (supertypes.isEmpty /*the upper type bound of "null" values*/ )
             return No;
 
         supertypes foreach { supertype: ReferenceType ⇒
-            isSubtypeOf(subtype, supertype) match {
+            isASubtypeOf(subtype, supertype) match {
                 case Yes     ⇒ /*Nothing to do*/
                 case Unknown ⇒ return Unknown; // FIXME No should have precedence over Unknown even if some supertypes are Unknown...
                 case No      ⇒ return No;
@@ -1371,14 +1485,14 @@ class ClassHierarchy private (
         Yes
     }
 
-    def isSubtypeOf(subtypes: UIDSet[_ <: ReferenceType], supertype: ReferenceType): Answer = {
+    def isASubtypeOf(subtypes: UIDSet[_ <: ReferenceType], supertype: ReferenceType): Answer = {
         if (subtypes.isEmpty) /*the upper type bound of "null" values*/
             return Yes;
 
         var subtypeRelationUnknown = false
         val subtypeExists =
             subtypes exists { subtype: ReferenceType ⇒
-                this.isSubtypeOf(subtype, supertype) match {
+                this.isASubtypeOf(subtype, supertype) match {
                     case Yes ⇒ true
                     case Unknown ⇒
                         subtypeRelationUnknown = true; false /* continue searching */
@@ -1430,12 +1544,12 @@ class ClassHierarchy private (
             processedTypes += candidateType
             val isCommonSubtype =
                 remainingTypeBounds.forall { otherTypeBound: ObjectType ⇒
-                    isSubtypeOf(candidateType, otherTypeBound).isYesOrUnknown
+                    isASubtypeOf(candidateType, otherTypeBound).isYesOrUnknown
                 }
             if (isCommonSubtype) {
                 directSubtypes =
                     directSubtypes.filter { candidateDirectSubtype ⇒
-                        isSubtypeOf(candidateDirectSubtype, candidateType).isNoOrUnknown
+                        isASubtypeOf(candidateDirectSubtype, candidateType).isNoOrUnknown
                     } +
                         candidateType
             } else {
@@ -1464,7 +1578,7 @@ class ClassHierarchy private (
      * we have to check two different things. First compare the [[ObjectType]]s, if they are equal
      * we still have to care about the [[TypeArgument]]s since we are dealing with generics.
      */
-    private[this] def isSubtypeOfByTypeArgument(
+    private[this] def isASubtypeOfByTypeArgument(
         subtype:   TypeArgument,
         supertype: TypeArgument
     )(
@@ -1473,25 +1587,25 @@ class ClassHierarchy private (
     ): Answer = {
         (subtype, supertype) match {
             case (ConcreteTypeArgument(et), ConcreteTypeArgument(superEt)) ⇒ Answer(et eq superEt)
-            case (ConcreteTypeArgument(et), UpperTypeBound(superEt))       ⇒ isSubtypeOf(et, superEt)
-            case (ConcreteTypeArgument(et), LowerTypeBound(superEt))       ⇒ isSubtypeOf(superEt, et)
+            case (ConcreteTypeArgument(et), UpperTypeBound(superEt))       ⇒ isASubtypeOf(et, superEt)
+            case (ConcreteTypeArgument(et), LowerTypeBound(superEt))       ⇒ isASubtypeOf(superEt, et)
             case (_, Wildcard)                                             ⇒ Yes
             case (GenericTypeArgument(varInd, cts), GenericTypeArgument(supVarInd, supCts)) ⇒
                 (varInd, supVarInd) match {
                     case (None, None) ⇒
-                        if (cts.objectType eq supCts.objectType) isSubtypeOf(cts, supCts) else No
+                        if (cts.objectType eq supCts.objectType) isASubtypeOf(cts, supCts) else No
                     case (None, Some(CovariantIndicator)) ⇒
-                        isSubtypeOf(cts, supCts)
+                        isASubtypeOf(cts, supCts)
                     case (None, Some(ContravariantIndicator)) ⇒
-                        isSubtypeOf(supCts, cts)
+                        isASubtypeOf(supCts, cts)
                     case (Some(CovariantIndicator), Some(CovariantIndicator)) ⇒
-                        isSubtypeOf(cts, supCts)
+                        isASubtypeOf(cts, supCts)
                     case (Some(ContravariantIndicator), Some(ContravariantIndicator)) ⇒
-                        isSubtypeOf(supCts, cts)
+                        isASubtypeOf(supCts, cts)
                     case _ ⇒ No
                 }
-            case (UpperTypeBound(et), UpperTypeBound(superEt)) ⇒ isSubtypeOf(et, superEt)
-            case (LowerTypeBound(et), LowerTypeBound(superEt)) ⇒ isSubtypeOf(superEt, et)
+            case (UpperTypeBound(et), UpperTypeBound(superEt)) ⇒ isASubtypeOf(et, superEt)
+            case (LowerTypeBound(et), LowerTypeBound(superEt)) ⇒ isASubtypeOf(superEt, et)
             case _                                             ⇒ No
         }
     }
@@ -1508,9 +1622,10 @@ class ClassHierarchy private (
             case (Nil, Nil)          ⇒ Yes
             case (Nil, _) | (_, Nil) ⇒ No
             case (arg :: tail, supArg :: supTail) ⇒
-                val isSubtypeOf = isSubtypeOfByTypeArgument(arg, supArg)
-                if (isSubtypeOf.isNoOrUnknown)
-                    isSubtypeOf
+                // IMPROVE Consider implementing an "isSubtypeOfByTypeArgument:Boolean" method.
+                val isASubtypeOf = isASubtypeOfByTypeArgument(arg, supArg)
+                if (isASubtypeOf.isNoOrUnknown)
+                    isASubtypeOf
                 else
                     compareTypeArguments(tail, supTail)
         }
@@ -1643,7 +1758,7 @@ class ClassHierarchy private (
      * we know can compare the according [[TypeArgument]]s. All other parameters can be ignored because they are no important
      * to decide the subtype relation.
      */
-    def isSubtypeOf(
+    def isASubtypeOf(
         subtype:   ClassTypeSignature,
         supertype: ClassTypeSignature
     )(
@@ -1670,7 +1785,7 @@ class ClassHierarchy private (
                     Yes
 
                 case (GenericType(_, _), ConcreteType(_)) ⇒
-                    isSubtypeOf(subtype.objectType, supertype.objectType)
+                    isASubtypeOf(subtype.objectType, supertype.objectType)
 
                 case (GenericType(_, elements), GenericType(_, superElements)) ⇒
                     compareTypeArguments(elements, superElements)
@@ -1685,8 +1800,8 @@ class ClassHierarchy private (
                 case _ ⇒ No
             }
         } else {
-            val isSubtype = isSubtypeOf(subtype.objectType, supertype.objectType)
-            if (isSubtype.isYes) {
+            val isASubtype = isASubtypeOf(subtype.objectType, supertype.objectType)
+            if (isASubtype.isYes) {
 
                 def haveSameTypeBinding(
                     subtype:            ObjectType,
@@ -1775,7 +1890,7 @@ class ClassHierarchy private (
                     }
                     case _ ⇒ No
                 }
-            } else isSubtype
+            } else isASubtype
         }
     }
 
@@ -1796,7 +1911,7 @@ class ClassHierarchy private (
      *          is not available.
      *
      */
-    def isSubtypeOf(
+    def isASubtypeOf(
         subtype:   ClassTypeSignature,
         supertype: FormalTypeParameter
     )(
@@ -1808,7 +1923,7 @@ class ClassHierarchy private (
         (supertype.classBound.toList ++ supertype.interfaceBound).
             collect { case s: ClassTypeSignature ⇒ s }.
             foldLeft(Yes: Answer) { (a, superCTS) ⇒
-                (a, isSubtypeOf(subtype, superCTS)) match {
+                (a, isASubtypeOf(subtype, superCTS)) match {
                     case (_, Unknown)     ⇒ return Unknown;
                     case (x, y) if x ne y ⇒ No
                     case (x, _ /*x*/ )    ⇒ x
@@ -1927,7 +2042,7 @@ class ClassHierarchy private (
         types filter { aType ⇒
             isUnknown(aType) ||
                 //!(directSubtypesOf(aType) exists { t ⇒ types.contains(t) })
-                !(types exists { t ⇒ (t ne aType) && isSubtypeOf(t, aType).isYes })
+                !(types exists { t ⇒ (t ne aType) && isSubtypeOf(t, aType) })
         }
     }
 
@@ -2131,14 +2246,14 @@ class ClassHierarchy private (
                 return directSupertypes(upperTypeBoundA /*or ...B*/ );
         }
 
-        if (isSubtypeOf(upperTypeBoundB, upperTypeBoundA).isYes) {
+        if (isSubtypeOf(upperTypeBoundB, upperTypeBoundA)) {
             if (reflexive)
                 return new UIDSet1(upperTypeBoundA);
             else
                 return directSupertypes(upperTypeBoundA);
         }
 
-        if (isSubtypeOf(upperTypeBoundA, upperTypeBoundB).isYes) {
+        if (isSubtypeOf(upperTypeBoundA, upperTypeBoundB)) {
             if (reflexive)
                 return new UIDSet1(upperTypeBoundB);
             else
@@ -2172,13 +2287,9 @@ class ClassHierarchy private (
             thatUpperTypeBound
         else {
             val isSerializable =
-                thatUpperTypeBound exists { thatType ⇒
-                    isSubtypeOf(thatType, Serializable).isYes
-                }
+                thatUpperTypeBound exists { thatType ⇒ isSubtypeOf(thatType, Serializable) }
             val isCloneable =
-                thatUpperTypeBound exists { thatType ⇒
-                    isSubtypeOf(thatType, Cloneable).isYes
-                }
+                thatUpperTypeBound exists { thatType ⇒ isSubtypeOf(thatType, Cloneable) }
             if (isSerializable) {
                 if (isCloneable)
                     SerializableAndCloneable
@@ -2206,9 +2317,9 @@ class ClassHierarchy private (
             new UIDSet1(thatUpperTypeBound)
         else {
             var newUpperTypeBound: UIDSet[ObjectType] = UIDSet.empty
-            if (isSubtypeOf(thatUpperTypeBound, Serializable).isYes)
+            if (isSubtypeOf(thatUpperTypeBound, Serializable))
                 newUpperTypeBound += Serializable
-            if (isSubtypeOf(thatUpperTypeBound, Cloneable).isYes)
+            if (isSubtypeOf(thatUpperTypeBound, Cloneable))
                 newUpperTypeBound += Cloneable
             if (newUpperTypeBound.isEmpty)
                 new UIDSet1(Object)

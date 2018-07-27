@@ -53,13 +53,11 @@ class ProjectTest extends FlatSpec with Matchers {
 
     it should "identify the class methods.a.Super as belonging to the core code" in {
         isLibraryType(SuperType) should be(false)
-
         isLibraryType(classFile(SuperType).get) should be(false)
     }
 
     it should "identify the class deprecated.DeprecatedByAnnotation as belonging to the library code" in {
         isLibraryType(DeprecatedByAnnotation) should be(true)
-
         isLibraryType(classFile(DeprecatedByAnnotation).get) should be(true)
     }
 
@@ -109,7 +107,7 @@ class ProjectTest extends FlatSpec with Matchers {
             SuperType, "staticDefaultVisibilityMethod", MethodDescriptor("()V")
         ) should be('Defined)
         // let's make sure the class is a super class
-        project.classHierarchy.isSubtypeOf(DirectSub, SuperType) should be(Yes)
+        project.classHierarchy.isSubtypeOf(DirectSub, SuperType) should be(true)
 
         // let's test the resolving
         resolveMethodReference(
