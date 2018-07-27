@@ -160,7 +160,7 @@ object MoreCheckers {
                 }
             } yield (classFile /*.thisClass.className*/ , method /*.name*/ )
         } { t ⇒ collect("CN_IDIOM_NO_SUPER_CALL", t /*nsToSecs(t)*/ ) }
-        println(", " /*"\tViolations: "*/ +cloneDoesNotCallSuperClone.size /*+": "+cloneDoesNotCallSuperClone.mkString("; ")*/ )
+        println(", " /*"\tViolations: "*/ +cloneDoesNotCallSuperClone.length /*+": "+cloneDoesNotCallSuperClone.mkString("; ")*/ )
 
         // FINDBUGS: CN: Class defines clone() but doesn't implement Cloneable (CN_IMPLEMENTS_CLONE_BUT_NOT_CLONEABLE)
         val cloneButNotCloneable = time {
