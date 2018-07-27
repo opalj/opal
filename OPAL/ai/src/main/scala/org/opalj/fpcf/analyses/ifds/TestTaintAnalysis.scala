@@ -6,6 +6,7 @@ package ifds
 
 //import java.io.File
 
+import org.opalj.ai.fpcf.properties.BaseAIResult
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.ObjectType
 import org.opalj.br.Method
@@ -13,6 +14,8 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.fpcf.analyses.ifds.AbstractIFDSAnalysis.V
+import org.opalj.tac.fpcf.analyses.LazyL0TACAIAnalysis
+import org.opalj.tac.fpcf.properties.TACAI
 //import org.opalj.fpcf.seq.EPKSequentialPropertyStore
 import org.opalj.fpcf.par.PKEParallelTasksPropertyStore
 import org.opalj.fpcf.par.RecordAllPropertyStoreTracer
@@ -318,7 +321,7 @@ object TestTaintAnalysis extends LazyIFDSAnalysis[Fact] {
 
     override def property: IFDSPropertyMetaInformation[Fact] = Taint
 
-    override val uses: Set[PropertyKind] = Set.empty
+    override val uses: Set[PropertyKind] = Set(BaseAIResult, TACAI)
 }
 
 class Taint(val flows: Map[Statement, Set[Fact]]) extends IFDSProperty[Fact] {
@@ -362,7 +365,9 @@ object TestTaintAnalysisRunner {
             }
         )
         val ps = p.get(PropertyStoreKey)
-        ps.setupPhase(Set(TestTaintAnalysis.property.key))
+        ps.setupPhase(Set(BaseAIResult, TACAI, TestTaintAnalysis.property))
+        LazyL0TACAIAnalysis.init(ps)
+        LazyL0TACAIAnalysis.schedule(ps, null)
         TestTaintAnalysis.startLazily(p, ps, TestTaintAnalysis.init(p, ps))
         val declaredMethods = p.get(DeclaredMethodsKey)
         var entryPoints: Set[(DeclaredMethod, Fact)] = Set.empty
