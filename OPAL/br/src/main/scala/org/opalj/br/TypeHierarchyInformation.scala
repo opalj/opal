@@ -38,6 +38,11 @@ sealed abstract class TypeHierarchyInformation {
         interfaceTypes.foldLeft(classTypes.foldLeft(z)(op))(op)
     }
 
+    /**
+     * Tests if the given type belongs to the super/subtype of `this` type; this
+     * test is not reflexive. I.e., if this information was computed for the type
+     * X and contains is called with X, `false` will be returned!
+     */
     def contains(t: ObjectType): Boolean
 
     /**
