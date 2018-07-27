@@ -53,7 +53,7 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers {
 
     describe("the DefaultReferenceValues domain") {
 
-        describe("isValueSubtypeOf") {
+        describe("isValueASubtypeOf") {
 
             it("should be able to cast an array of objects to an array of array of ints") {
 
@@ -64,7 +64,7 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers {
                 ) should be(Yes)
 
                 val v1 = ArrayValue(111, No, false, ArrayType(ObjectType.Object), 1)
-                v1.isValueSubtypeOf(ArrayType(ArrayType(IntegerType))) should be(Unknown)
+                v1.isValueASubtypeOf(ArrayType(ArrayType(IntegerType))) should be(Unknown)
             }
         }
 

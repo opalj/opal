@@ -316,9 +316,9 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
          *
          * @return Throws a `DomainException` that states that this method is not supported.
          */
-        @throws[DomainException]("Always - isValueSubtypeOf is not defined on \"null\" values.")
-        final override def isValueSubtypeOf(referenceType: ReferenceType): Nothing = {
-            throw DomainException("\"isValueSubtypeOf\" is not defined on \"null\" values")
+        @throws[DomainException]("Always - isValueASubtypeOf is not defined on \"null\" values.")
+        final override def isValueASubtypeOf(referenceType: ReferenceType): Nothing = {
+            throw DomainException("\"isValueASubtypeOf\" is not defined on \"null\" values")
         }
 
         override def summarize(pc: Int): this.type = this
@@ -532,8 +532,8 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
         }
     }
 
-    final override def isValueSubtypeOf(value: DomainValue, supertype: ReferenceType): Answer = {
-        asReferenceValue(value).isValueSubtypeOf(supertype)
+    final override def isValueASubtypeOf(value: DomainValue, supertype: ReferenceType): Answer = {
+        asReferenceValue(value).isValueASubtypeOf(supertype)
     }
 
     /**

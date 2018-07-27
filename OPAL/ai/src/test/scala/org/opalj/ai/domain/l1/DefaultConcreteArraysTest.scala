@@ -57,7 +57,7 @@ class DefaultConcreteArraysTest extends FunSpec with Matchers {
 
                 allReturnedValues.size should be(1)
 
-                isValueSubtypeOf(varray, ArrayType(IntegerType)) should be(Yes)
+                isValueASubtypeOf(varray, ArrayType(IntegerType)) should be(Yes)
 
                 arraylength(21, varray) should be(ComputedValue(IntegerRange(4)))
 
@@ -79,7 +79,7 @@ class DefaultConcreteArraysTest extends FunSpec with Matchers {
 
                 allReturnedValues.size should be(1)
 
-                isValueSubtypeOf(varray, ArrayType(ByteType)) should be(Yes)
+                isValueASubtypeOf(varray, ArrayType(ByteType)) should be(Yes)
 
                 arraylength(returnIndex, varray) should be(ComputedValue(IntegerRange(4)))
 
@@ -101,7 +101,7 @@ class DefaultConcreteArraysTest extends FunSpec with Matchers {
 
                 allReturnedValues.size should be(1)
 
-                isValueSubtypeOf(varray, ArrayType(ShortType)) should be(Yes)
+                isValueASubtypeOf(varray, ArrayType(ShortType)) should be(Yes)
 
                 arraylength(returnIndex, varray) should be(ComputedValue(IntegerRange(4)))
 
@@ -123,7 +123,7 @@ class DefaultConcreteArraysTest extends FunSpec with Matchers {
 
                 allReturnedValues.size should be(1)
 
-                isValueSubtypeOf(varray, ArrayType(LongType)) should be(Yes)
+                isValueASubtypeOf(varray, ArrayType(LongType)) should be(Yes)
 
                 arraylength(returnIndex, varray) should be(ComputedValue(IntegerRange(4)))
 
@@ -145,7 +145,7 @@ class DefaultConcreteArraysTest extends FunSpec with Matchers {
 
                 allReturnedValues.size should be(1)
 
-                isValueSubtypeOf(varray, ArrayType(FloatType)) should be(Yes)
+                isValueASubtypeOf(varray, ArrayType(FloatType)) should be(Yes)
 
                 arraylength(returnIndex, varray) should be(ComputedValue(IntegerRange(4)))
 
@@ -167,7 +167,7 @@ class DefaultConcreteArraysTest extends FunSpec with Matchers {
 
                 allReturnedValues.size should be(1)
 
-                isValueSubtypeOf(varray, ArrayType(DoubleType)) should be(Yes)
+                isValueASubtypeOf(varray, ArrayType(DoubleType)) should be(Yes)
 
                 arraylength(returnIndex, varray) should be(ComputedValue(IntegerRange(4)))
 
@@ -189,7 +189,7 @@ class DefaultConcreteArraysTest extends FunSpec with Matchers {
 
                 allReturnedValues.size should be(1)
 
-                isValueSubtypeOf(varray, ArrayType(BooleanType)) should be(Yes)
+                isValueASubtypeOf(varray, ArrayType(BooleanType)) should be(Yes)
 
                 arraylength(returnIndex, varray) should be(ComputedValue(IntegerRange(4)))
 
@@ -216,7 +216,7 @@ class DefaultConcreteArraysTest extends FunSpec with Matchers {
 
                 allReturnedValues.size should be(1)
 
-                isValueSubtypeOf(varray, ArrayType(CharType)) should be(Yes)
+                isValueASubtypeOf(varray, ArrayType(CharType)) should be(Yes)
 
                 arraylength(returnIndex, varray) should be(ComputedValue(IntegerRange(4)))
 
@@ -238,7 +238,7 @@ class DefaultConcreteArraysTest extends FunSpec with Matchers {
 
                 allReturnedValues.size should be(1)
 
-                isValueSubtypeOf(varray, ArrayType(ObjectType.String)) should be(Yes)
+                isValueASubtypeOf(varray, ArrayType(ObjectType.String)) should be(Yes)
 
                 arraylength(returnIndex, varray) should be(ComputedValue(IntegerRange(4)))
 
@@ -260,7 +260,7 @@ class DefaultConcreteArraysTest extends FunSpec with Matchers {
 
                 allReturnedValues.size should be(1)
 
-                isValueSubtypeOf(varray, ArrayType(ObjectType.Object)) should be(Yes)
+                isValueASubtypeOf(varray, ArrayType(ObjectType.Object)) should be(Yes)
 
                 arraylength(
                     returnIndex, varray
@@ -279,11 +279,11 @@ class DefaultConcreteArraysTest extends FunSpec with Matchers {
 
                 allReturnedValues.size should be(1)
 
-                isValueSubtypeOf(varray, ArrayType(ObjectType.Object)) should be(Yes)
+                isValueASubtypeOf(varray, ArrayType(ObjectType.Object)) should be(Yes)
 
                 arraylength(returnIndex, varray) should be(ComputedValue(IntegerRange(5)))
 
-                isValueSubtypeOf(
+                isValueASubtypeOf(
                     arrayload(
                         returnIndex,
                         IntegerValue(10, 0),
@@ -291,7 +291,7 @@ class DefaultConcreteArraysTest extends FunSpec with Matchers {
                     ).result, ObjectType.Integer
                 ) should be(Yes)
 
-                isValueSubtypeOf(
+                isValueASubtypeOf(
                     arrayload(
                         returnIndex,
                         IntegerValue(17, 1),
@@ -299,7 +299,7 @@ class DefaultConcreteArraysTest extends FunSpec with Matchers {
                     ).result, ObjectType.Float
                 ) should be(Yes)
 
-                isValueSubtypeOf(
+                isValueASubtypeOf(
                     arrayload(
                         returnIndex,
                         IntegerValue(26, 2),
@@ -307,7 +307,7 @@ class DefaultConcreteArraysTest extends FunSpec with Matchers {
                     ).result, ObjectType.Double
                 ) should be(Yes)
 
-                isValueSubtypeOf(
+                isValueASubtypeOf(
                     arrayload(
                         returnIndex,
                         IntegerValue(33, 3),
@@ -315,7 +315,7 @@ class DefaultConcreteArraysTest extends FunSpec with Matchers {
                     ).result, ObjectType.Boolean
                 ) should be(Yes)
 
-                isValueSubtypeOf(
+                isValueASubtypeOf(
                     arrayload(
                         returnIndex,
                         IntegerValue(41, 4),
@@ -323,7 +323,7 @@ class DefaultConcreteArraysTest extends FunSpec with Matchers {
                     ).result, ObjectType.Character
                 ) should be(Yes)
 
-                isValueSubtypeOf(
+                isValueASubtypeOf(
                     arrayload(
                         returnIndex,
                         IntegerValue(41, 4),
@@ -499,7 +499,7 @@ class DefaultConcreteArraysTest extends FunSpec with Matchers {
 
                 allReturnedValues.size should be(1)
 
-                isValueSubtypeOf(varray, ArrayType(IntegerType)) should be(Yes)
+                isValueASubtypeOf(varray, ArrayType(IntegerType)) should be(Yes)
                 arraylength(returnIndex, varray) should be(ComputedValue(IntegerValue(2)))
 
                 // after array initialization all values should be 0
@@ -528,7 +528,7 @@ class DefaultConcreteArraysTest extends FunSpec with Matchers {
 
                 allReturnedValues.size should be(1)
 
-                isValueSubtypeOf(varray, ArrayType(ObjectType.Cloneable)) should be(Yes)
+                isValueASubtypeOf(varray, ArrayType(ObjectType.Cloneable)) should be(Yes)
 
                 val returnedValue = arrayload(returnIndex, IntegerValue(returnIndex, 0), varray)
                 val exceptions = List(ObjectType.ArrayStoreException)
@@ -548,7 +548,7 @@ class DefaultConcreteArraysTest extends FunSpec with Matchers {
 
                 allReturnedValues.size should be(1)
 
-                isValueSubtypeOf(varray, ArrayType(ObjectType.Object)) should be(Yes)
+                isValueASubtypeOf(varray, ArrayType(ObjectType.Object)) should be(Yes)
 
                 arraylength(returnIndex, varray) should be(throws(InitializedObjectValue(-100007, ObjectType.NullPointerException)))
 
@@ -569,7 +569,7 @@ class DefaultConcreteArraysTest extends FunSpec with Matchers {
 
                 allReturnedValues.size should be(1)
 
-                isValueSubtypeOf(varray, ArrayType(ObjectType.Object)) should be(Yes)
+                isValueASubtypeOf(varray, ArrayType(ObjectType.Object)) should be(Yes)
 
             }
         }

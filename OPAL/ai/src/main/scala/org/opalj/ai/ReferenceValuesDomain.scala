@@ -36,7 +36,7 @@ trait ReferenceValuesDomain extends ReferenceValuesFactory { domain ⇒
      * @note   The returned value is only meaningful if `value` does not represent
      *         the runtime value `null`.
      */
-    /*ABSTRACT*/ def isValueSubtypeOf(
+    /*ABSTRACT*/ def isValueASubtypeOf(
         value:     DomainValue,
         supertype: ReferenceType
     ): Answer

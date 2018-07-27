@@ -60,9 +60,9 @@ trait DefaultTypeLevelReferenceValues
 
         override def baseValues: Traversable[DomainArrayValue] = Traversable.empty
 
-        override def isValueSubtypeOf(supertype: ReferenceType): Answer = {
             val isSubtypeOf = domain.isSubtypeOf(theUpperTypeBound, supertype)
             isSubtypeOf match {
+        override def isValueASubtypeOf(supertype: ReferenceType): Answer = {
                 case Yes ⇒ Yes
                 case No if isPrecise ||
                     /* the array's supertypes: Object, Serializable and Cloneable
@@ -262,9 +262,9 @@ trait DefaultTypeLevelReferenceValues
          *      takes the property whether the upper type bound '''is precise''' into
          *      account.
          */
-        override def isValueSubtypeOf(supertype: ReferenceType): Answer = {
             val isSubtypeOf = domain.isSubtypeOf(theUpperTypeBound, supertype)
             val result = isSubtypeOf match {
+        override def isValueASubtypeOf(supertype: ReferenceType): Answer = {
                 case Yes ⇒
                     Yes
                 case No if isPrecise
@@ -388,8 +388,8 @@ trait DefaultTypeLevelReferenceValues
          *      value is '''not''' a subtype of the given type as this implementation
          *      does not distinguish between class types and interface types.
          */
-        override def isValueSubtypeOf(supertype: ReferenceType): Answer = {
             var isSubtypeOf: Answer = No
+        override def isValueASubtypeOf(supertype: ReferenceType): Answer = {
             upperTypeBound foreach { anUpperTypeBound ⇒
                 domain.isSubtypeOf(anUpperTypeBound, supertype) match {
                     case Yes     ⇒ return Yes; // <= Shortcut evaluation

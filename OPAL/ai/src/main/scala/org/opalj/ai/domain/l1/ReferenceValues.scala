@@ -275,7 +275,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
          *
          * ==Precondition==
          * This method is only to be called if a previous "subtype of" test
-         * (`this.isValueSubtypeOf(supertype)`)
+         * (`this.isValueASubtypeOf(supertype)`)
          * returned `Unknown` and we are now on the branch where the value has to be of
          * the respective type. '''Hence, this method only handles the case where
          * supertype is more strict than this type's upper type bound.'''
@@ -1228,9 +1228,9 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             summarize(pc).adapt(target, pc)
         }
 
-        override def isValueSubtypeOf(supertype: ReferenceType): Answer = {
+        override def isValueASubtypeOf(supertype: ReferenceType): Answer = {
             // Recall that the client has to make an "isNull" check before calling
-            // isValueSubtypeOf. Hence, at least one of the possible reference values
+            // isValueASubtypeOf. Hence, at least one of the possible reference values
             // has to be non null and this value's upper type bound has to be non-empty.
 
             // It may the case that the subtype relation of each individual value – 
@@ -1247,12 +1247,12 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             // a subtype of supertype.
 
             val values = this.values.iterator.filter(_.isNull.isNoOrUnknown)
-            var answer: Answer = values.next.isValueSubtypeOf(supertype)
+            var answer: Answer = values.next.isValueASubtypeOf(supertype)
             values foreach { value ⇒ /* the first value is already removed */
                 if (answer eq Unknown)
                     return answer; //isSubtype
 
-                answer = answer join value.isValueSubtypeOf(supertype)
+                answer = answer join value.isValueASubtypeOf(supertype)
             }
 
             answer
@@ -1491,7 +1491,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             val filteredValues =
                 this.values filter { value ⇒
                     value.isNull.isYes || {
-                        value.isValueSubtypeOf(supertype) match {
+                        value.isValueASubtypeOf(supertype) match {
                             case Yes | Unknown ⇒ true
                             case No            ⇒ { filteredValuesOrigins -= value.id; false }
                         }
