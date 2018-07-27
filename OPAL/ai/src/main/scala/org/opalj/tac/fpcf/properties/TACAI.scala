@@ -29,7 +29,6 @@ sealed trait TACAIPropertyMetaInformation extends PropertyMetaInformation {
  *
  * @note The underlying domain that is used to create the three-address code is determined by
  *       the scheduled analysis.
- *       If no analysis is scheduled, the [[PrimitiveTACAIDomain]] will be used.
  *
  * @author Michael Eichberg
  */
