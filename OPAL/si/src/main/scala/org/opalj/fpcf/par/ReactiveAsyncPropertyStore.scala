@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
+ * Copyright (c) 2009 - 2018
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -70,10 +70,9 @@ import scala.collection.concurrent.TrieMap
 import scala.concurrent.Await
 import scala.concurrent.TimeoutException
 import scala.concurrent.duration._
-import scala.reflect.runtime.universe.Type
 
 class ReactiveAsyncPropertyStore private (
-        final val ctx:         Map[Type, AnyRef],
+        final val ctx:         Map[Class[_], AnyRef],
         final val parallelism: Int
 )(
         implicit
@@ -347,6 +346,11 @@ class ReactiveAsyncPropertyStore private (
     override def apply[E <: Entity, P <: Property](epk: EPK[E, P]): EOptionP[E, P] = {
         apply(epk.e, epk.pk)
     }
+
+    def registerTriggeredComputation[E <: Entity, P <: Property](
+        pk: PropertyKey[P],
+        pc: PropertyComputation[E]
+    ): Unit = {}
 
     /**
      * Returns an iterator of the different properties associated with the given element.
@@ -981,7 +985,7 @@ object ReactiveAsyncPropertyStore extends PropertyStoreFactory {
         implicit
         logContext: LogContext
     ): ReactiveAsyncPropertyStore = {
-        val contextMap: Map[Type, AnyRef] = context.map(_.asTuple).toMap
+        val contextMap: Map[Class[_], AnyRef] = context.map(_.asTuple).toMap
         new ReactiveAsyncPropertyStore(contextMap, parallelism)
     }
 
@@ -991,7 +995,7 @@ object ReactiveAsyncPropertyStore extends PropertyStoreFactory {
         implicit
         logContext: LogContext
     ): ReactiveAsyncPropertyStore = {
-        val contextMap: Map[Type, AnyRef] = context.map(_.asTuple).toMap
+        val contextMap: Map[Class[_], AnyRef] = context.map(_.asTuple).toMap
         new ReactiveAsyncPropertyStore(contextMap, NumberOfThreadsForCPUBoundTasks)
     }
 }

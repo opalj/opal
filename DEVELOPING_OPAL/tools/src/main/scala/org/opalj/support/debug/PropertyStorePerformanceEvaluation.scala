@@ -37,7 +37,10 @@ import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory
 import org.opalj.ai.common.SimpleAIKey
 import org.opalj.ai.domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse
+import org.opalj.br.DeclaredMethod
 import org.opalj.br.Method
+import org.opalj.br.ObjectType
+import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.Project
 import org.opalj.bytecode.RTJar
 import org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks
@@ -45,6 +48,9 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.PropertyStoreKey
 import org.opalj.fpcf.PropertyStoreKey.ConfigKeyPrefix
 import org.opalj.fpcf.analyses._
+import org.opalj.fpcf.analyses.ifds.Fact
+import org.opalj.fpcf.analyses.ifds.TestTaintAnalysis
+import org.opalj.fpcf.analyses.ifds.Variable
 import org.opalj.fpcf.analyses.purity.EagerL1PurityAnalysis
 import org.opalj.fpcf.analyses.purity.EagerL2PurityAnalysis
 import org.opalj.fpcf.par.ReactiveAsyncPropertyStore
@@ -355,6 +361,10 @@ object PropertyStorePerformanceEvaluation {
         new PropertyStoreEvaluation(
             "org.opalj.fpcf.par.ReactiveAsyncPropertyStore",
             true
+        ),
+        new PropertyStoreEvaluation(
+            "org.opalj.fpcf.par.PKEParallelTasksPropertyStore",
+            false
         )
     )
 
@@ -488,31 +498,65 @@ object PropertyStorePerformanceEvaluation {
                             FieldLocality.key,
                             Purity.key,
                             ThrownExceptions.key,
-                            ThrownExceptionsByOverridingMethods.key
+                            ThrownExceptionsByOverridingMethods.key,
+                            TestTaintAnalysis.property.key
                         ))
 
+                        val i = null
                         analysis match {
                             case "TypeImmutabilityAnalysis" ⇒
-                                EagerTypeImmutabilityAnalysis.start(project, propertyStore)
+                                EagerTypeImmutabilityAnalysis.start(project, propertyStore, i)
                             case "L0FieldMutabilityAnalysis" ⇒
-                                EagerL0FieldMutabilityAnalysis.start(project, propertyStore)
+                                EagerL0FieldMutabilityAnalysis.start(project, propertyStore, i)
                             case "L1FieldMutabilityAnalysis" ⇒
-                                EagerL1FieldMutabilityAnalysis.start(project, propertyStore)
+                                EagerL1FieldMutabilityAnalysis.start(project, propertyStore, i)
                             case "L0PurityAnalysis" ⇒
-                                info.Purity.supportingAnalyses(0).foreach(_.startLazily(project, propertyStore))
-                                EagerL0PurityAnalysis.start(project, propertyStore)
+                                info.Purity.supportingAnalyses(0).foreach(_.startLazily(
+                                    project,
+                                    propertyStore, i
+                                ))
+                                EagerL0PurityAnalysis.start(project, propertyStore, i)
                             case "L1PurityAnalysis" ⇒
-                                info.Purity.supportingAnalyses(1).foreach(_.startLazily(project, propertyStore))
-                                EagerL1PurityAnalysis.start(project, propertyStore)
+                                info.Purity.supportingAnalyses(1).foreach(_.startLazily(
+                                    project,
+                                    propertyStore, i
+                                ))
+                                EagerL1PurityAnalysis.start(project, propertyStore, i)
                             case "L2PurityAnalysis" | "L2PurityAnalysisEagerTAC" ⇒
-                                info.Purity.supportingAnalyses(2).foreach(_.startLazily(project, propertyStore))
-                                EagerL2PurityAnalysis.start(project, propertyStore)
+                                info.Purity.supportingAnalyses(2).foreach(_.startLazily(
+                                    project,
+                                    propertyStore, i
+                                ))
+                                EagerL2PurityAnalysis.start(project, propertyStore, i)
                             case "L1ThrownExceptionsAnalysis" ⇒
-                                LazyVirtualMethodThrownExceptionsAnalysis.startLazily(project, propertyStore)
-                                EagerL1ThrownExceptionsAnalysis.start(project, propertyStore)
+                                LazyVirtualMethodThrownExceptionsAnalysis.startLazily(
+                                    project,
+                                    propertyStore, i
+                                )
+                                EagerL1ThrownExceptionsAnalysis.start(project, propertyStore, i)
                             case "EagerTAC" ⇒
                                 val tac = project.get(DefaultTACAIKey)
                                 project.parForeachMethodWithBody() { m ⇒ tac(m.method) }
+                            case "Taint" ⇒
+                                TestTaintAnalysis.startLazily(project, propertyStore,
+                                    TestTaintAnalysis
+                                        .init(project, propertyStore))
+                                val declaredMethods = project.get(DeclaredMethodsKey)
+                                var entryPoints: Set[(DeclaredMethod, Fact)] = Set.empty
+                                for (m ← project.allMethodsWithBody) {
+                                    //val e = (declaredMethods(m), null)
+                                    //ps.force(e, TestTaintAnalysis.property.key)
+                                    if ((m.isPublic || m.isProtected) && (m.descriptor.returnType == ObjectType.Object ||
+                                        m.descriptor.returnType == ObjectType.Class)) {
+                                        m.descriptor.parameterTypes.zipWithIndex.collect {
+                                            case (pType, index) if pType == ObjectType.String ⇒ index
+                                        } foreach { index ⇒
+                                            val e = (declaredMethods(m), Variable(-2 - index))
+                                            entryPoints += e
+                                            propertyStore.force(e, TestTaintAnalysis.property.key)
+                                        }
+                                    }
+                                }
                         }
 
                         propertyStore.waitOnPhaseCompletion()
