@@ -1,31 +1,4 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 
 import org.opalj.log.GlobalLogContext
@@ -59,6 +32,8 @@ import org.opalj.log.OPALLogger.info
  *      “A is the depender, B is the dependee”.
  *          `===`
  *      “B is depended on by A”
+ *
+ * @note The very core of the framework is described in: [[https://conf.researchr.org/track/ecoop-issta-2018/SOAP-2018-papers#program Lattice Based Modularization of Static Analyses]]
  *
  * @author Michael Eichberg
  */
@@ -100,10 +75,15 @@ package object fpcf {
      *    about some other entity is available or,
      *  - an intermediate result which may be refined later on, but not by the
      *    current running analysis.
+     *
+     * @note In some cases it makes sense that an analysis processes entities of kind A, but derives
+     *       properties related to entities with kind B. E.g., it is possible to have an analysis
+     *       that processes entire classes to compute the properties of some fields. This scenario
+     *       is, however, only supported by eager analyses.
      */
     final type PropertyComputation[E <: Entity] = (E) ⇒ PropertyComputationResult
 
-    final type SomePropertyComputation = PropertyComputation[Entity]
+    final type SomePropertyComputation = PropertyComputation[_ <: Entity]
 
     final type OnUpdateContinuation = (SomeEPS) ⇒ PropertyComputationResult
 
@@ -118,7 +98,7 @@ package object fpcf {
 
     /**
      * A function that continues the computation of a property. It takes
-     * the entity + property of the entity on which the computation depends.
+     * the entity and property of the entity on which the computation depends.
      */
     final type Continuation[P <: Property] = (Entity, P) ⇒ PropertyComputationResult
 
@@ -127,9 +107,8 @@ package object fpcf {
     final type SomePropertyKey = PropertyKey[_ <: Property]
 
     /**
-     * The result of a computation if the computation derives multiple properties
-     * at the same time.
+     * The result of a computation if the computation derives multiple properties at the same time.
      */
-    final type ComputationResults = Traversable[SomeFinalEP]
+    final type ComputationResults = TraversableOnce[SomeFinalEP]
 
 }

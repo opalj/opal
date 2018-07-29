@@ -1,31 +1,4 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package fpcf
 package analyses
@@ -151,21 +124,33 @@ class VirtualMethodThrownExceptionsAnalysis private[analyses] (
     }
 }
 
+trait VirtualMethodThrownExceptionsAnalysisScheduler {
+
+    final def uses: Set[PropertyKind] = Set(ThrownExceptions)
+
+    final def derives: Set[PropertyKind] = Set(ThrownExceptionsByOverridingMethods)
+
+    final type InitializationData = Null
+    final def init(p: SomeProject, ps: PropertyStore): Null = null
+
+    def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
+
+    def afterPhaseCompletion(p: SomeProject, ps: PropertyStore): Unit = {}
+}
+
 /**
  * Factory/executor of the thrown exceptions analysis.
  *
  * @author Andreas Muttscheller
  * @author Michael Eichberg
  */
-object EagerVirtualMethodThrownExceptionsAnalysis extends FPCFEagerAnalysisScheduler {
+object EagerVirtualMethodThrownExceptionsAnalysis
+    extends VirtualMethodThrownExceptionsAnalysisScheduler
+    with FPCFEagerAnalysisScheduler {
 
-    override def uses: Set[PropertyKind] = Set(ThrownExceptions)
-
-    override def derives: Set[PropertyKind] = Set(ThrownExceptionsByOverridingMethods)
-
-    def start(project: SomeProject, ps: PropertyStore): FPCFAnalysis = {
-        val analysis = new VirtualMethodThrownExceptionsAnalysis(project)
-        val allMethods = project.allMethodsWithBody // FIXME we nee this information also for abstract methods ...
+    override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+        val analysis = new VirtualMethodThrownExceptionsAnalysis(p)
+        val allMethods = p.allMethodsWithBody // FIXME we need this information also for abstract methods ...
         ps.scheduleEagerComputationsForEntities(allMethods) {
             analysis.aggregateExceptionsThrownByOverridingMethods
         }
@@ -180,15 +165,13 @@ object EagerVirtualMethodThrownExceptionsAnalysis extends FPCFEagerAnalysisSched
  * @author Andreas Muttscheller
  * @author Michael Eichberg
  */
-object LazyVirtualMethodThrownExceptionsAnalysis extends FPCFLazyAnalysisScheduler {
-
-    override def uses: Set[PropertyKind] = Set(ThrownExceptions)
-
-    override def derives: Set[PropertyKind] = Set(ThrownExceptionsByOverridingMethods)
+object LazyVirtualMethodThrownExceptionsAnalysis
+    extends VirtualMethodThrownExceptionsAnalysisScheduler
+    with FPCFLazyAnalysisScheduler {
 
     /** Registers an analysis to compute the exceptions thrown by overriding methods lazily. */
-    def startLazily(project: SomeProject, ps: PropertyStore): FPCFAnalysis = {
-        val analysis = new VirtualMethodThrownExceptionsAnalysis(project)
+    override def startLazily(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+        val analysis = new VirtualMethodThrownExceptionsAnalysis(p)
         ps.registerLazyPropertyComputation(
             ThrownExceptionsByOverridingMethods.key,
             analysis.lazilyAggregateExceptionsThrownByOverridingMethods

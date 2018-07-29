@@ -1,31 +1,4 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 
 import scala.language.existentials
@@ -470,7 +443,7 @@ package object ai {
         // To enable uniform access, we always reserve space for the `this` parameter;
         // even if it is not used.
         val parametersCount = descriptor.parametersCount + 1
-        val params = aiResult.domain.DomainValue.newArray(parametersCount)
+        val params = aiResult.domain.DomainValueTag.newArray(parametersCount)
 
         var localsIndex = 0
         if (!isStatic) {
@@ -562,7 +535,7 @@ package object ai {
         )
 
         import org.opalj.collection.mutable.Locals
-        implicit val domainValue = targetDomain.DomainValue
+        implicit val domainValueTag = targetDomain.DomainValueTag
         val parameters = Locals[targetDomain.DomainValue](calledMethod.body.get.maxLocals)
         var localVariableIndex = 0
         var processedOperands = 0
@@ -602,8 +575,8 @@ package object ai {
         theOperands:  Operands[_ <: ValuesDomain#DomainValue],
         targetDomain: ValuesDomain with ValuesFactory
     ): Array[targetDomain.DomainValue] = {
-        implicit val domainValue = targetDomain.DomainValue
-
+        // implicit val domainValueTag = targetDomain.DomainValueTag
+        import targetDomain.DomainValueTag
         val operandsCount = theOperands.size
         val adaptedOperands = new Array[targetDomain.DomainValue](operandsCount)
         val processedOperands = new Array[Object](operandsCount)

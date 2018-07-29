@@ -1,31 +1,4 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 
 import java.io.File
@@ -35,6 +8,7 @@ import play.api.libs.json.Writes
 import play.api.libs.json.Json
 import play.api.libs.json.JsValue
 import play.api.libs.json.JsObject
+
 import org.opalj.br.LocalVariable
 import org.opalj.br.Type
 import org.opalj.br.BaseType
@@ -44,8 +18,8 @@ import org.opalj.br.ObjectType
 import org.opalj.br.ArrayType
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.methodAccessFlagsToString
-import org.opalj.ai.domain.l1.IntegerRangeValues
 import org.opalj.br.CTIntType
+import org.opalj.value.IsIntegerValue
 
 /**
  * Defines implicit conversions to wrap some types of analyses such that they generate
@@ -111,8 +85,8 @@ package object issues {
     def localVariableToString(localVariable: LocalVariable, value: AnyRef): String = {
         if ((localVariable.fieldType eq BooleanType) &&
             // SPECIAL HANDLING IF THE VALUE IS AN INTEGER RANGE VALUE
-            value.isInstanceOf[IntegerRangeValues#IntegerRange]) {
-            val range = value.asInstanceOf[IntegerRangeValues#IntegerRange]
+            value.isInstanceOf[IsIntegerValue]) {
+            val range = value.asInstanceOf[IsIntegerValue]
             if ( /*range.lowerBound == 0 &&*/ range.upperBound == 0)
                 "false"
             else if (range.lowerBound == 1 /* && range.upperBound == 1*/ )

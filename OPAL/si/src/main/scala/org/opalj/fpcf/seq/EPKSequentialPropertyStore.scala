@@ -1,49 +1,22 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package fpcf
 package seq
 
-import scala.reflect.runtime.universe.Type
 import java.lang.System.identityHashCode
 
 import scala.collection.mutable.AnyRefMap
 import scala.collection.mutable.LongMap
 import scala.collection.mutable
 import scala.collection.{Map ⇒ SomeMap}
-
 import org.opalj.collection.mutable.AnyRefAppendChain
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.info
 import org.opalj.log.OPALLogger.error
 import org.opalj.fpcf.PropertyKey.fallbackPropertyBasedOnPkId
+
+import scala.collection.mutable.ArrayBuffer
 
 /**
  * A non-concurrent implementation of the property store. Entities are generally only stored on
@@ -57,7 +30,7 @@ import org.opalj.fpcf.PropertyKey.fallbackPropertyBasedOnPkId
  *  Furthermore, this implementation is less polished w.r.t. the usage of data-structures.
  */
 final class EPKSequentialPropertyStore private (
-        val ctx: Map[Type, AnyRef]
+        val ctx: Map[Class[_], AnyRef]
 )(
         implicit
         val logContext: LogContext
@@ -135,6 +108,10 @@ final class EPKSequentialPropertyStore private (
 
     /** Those computations that will only be scheduled if the result is required. */
     private[this] var lazyComputations: LongMap[SomePropertyComputation] = LongMap.empty
+
+    private[this] var triggeredComputations: Array[ArrayBuffer[SomePropertyComputation]] = {
+        Array.fill(PropertyKind.SupportedPropertyKinds) { new ArrayBuffer[SomePropertyComputation](1) }
+    }
 
     /** The list of scheduled computations. */
     private[this] var tasks: AnyRefAppendChain[() ⇒ Unit] = new AnyRefAppendChain()
@@ -222,7 +199,27 @@ final class EPKSequentialPropertyStore private (
                 "lazy computations should only be registered while no analysis are scheduled"
             )
         }
-        lazyComputations.put(pk.id.toLong, pc.asInstanceOf[SomePropertyComputation])
+        lazyComputations.put(pk.id.toLong, pc)
+    }
+
+    override def registerTriggeredComputation[E <: Entity, P <: Property](
+        pk: PropertyKey[P],
+        pc: PropertyComputation[E]
+    ): Unit = {
+        if (debug && !tasks.isEmpty) {
+            throw new IllegalStateException(
+                "triggered computations should only be registered as long as no analysis is scheduled"
+            )
+        }
+        triggeredComputations(pk.id) += pc
+    }
+
+    private[this] def triggerComputations(e: Entity, pkId: Int): Unit = {
+        val triggeredComputations = this.triggeredComputations(pkId)
+        if (triggeredComputations != null) {
+            triggeredComputations foreach (pc ⇒
+                scheduleEagerComputationForEntity(e)(pc.asInstanceOf[PropertyComputation[Entity]]))
+        }
     }
 
     override def scheduleEagerComputationForEntity[E <: Entity](
@@ -378,7 +375,8 @@ final class EPKSequentialPropertyStore private (
         if (debug && e == null) {
             throw new IllegalArgumentException("the entity must not be null")
         }
-        val pkId = ub.key.id.toLong
+        val pkIdInt = ub.key.id
+        val pkId = pkIdInt.toLong
 
         ps.get(e) match {
             case None ⇒
@@ -387,6 +385,7 @@ final class EPKSequentialPropertyStore private (
                     e,
                     LongMap((pkId, PropertyValue(lb, ub, newDependees)))
                 ))
+                triggerComputations(e, pkIdInt)
                 // registration with the new dependees is done when processing IntermediateResult
                 true
 
@@ -396,6 +395,7 @@ final class EPKSequentialPropertyStore private (
                     // A property of the respective kind was not yet stored/requested.
                     // (=> there are no dependers/dependees):
                     pkIdPValue += ((pkId, PropertyValue(lb, ub, newDependees)))
+                    triggerComputations(e, pkIdInt)
                     // registration with the new dependees is done when processing IntermediateResult
                     true
 
@@ -438,6 +438,10 @@ final class EPKSequentialPropertyStore private (
                     pValue.ub = ub
                     // Updating lb and/or ub MAY CHANGE the PropertyValue's isFinal property!
                     val newPValueIsFinal = pValue.isFinal
+
+                    if (oldUB == null || oldUB == PropertyIsLazilyComputed) {
+                        triggerComputations(e, pkIdInt)
+                    }
 
                     // 2. Clear old dependees (remove onUpdateContinuation from dependees)
                     //    and then update dependees.
@@ -552,7 +556,7 @@ final class EPKSequentialPropertyStore private (
                 results foreach { ep ⇒ update(ep.e, ep.p, ep.p, newDependees = Nil) }
 
             case IncrementalResult.id ⇒
-                val IncrementalResult(ir, npcs /*: Traversable[(PropertyComputation[e],e)]*/ , _) = r
+                val IncrementalResult(ir, npcs /*: Iterator[(PropertyComputation[e],e)]*/ , _) = r
                 handleResult(ir)
                 npcs foreach { npc ⇒ val (pc, e) = npc; scheduleEagerComputationForEntity(e)(pc) }
 
@@ -919,7 +923,7 @@ object EPKSequentialPropertyStore extends PropertyStoreFactory {
         implicit
         logContext: LogContext
     ): EPKSequentialPropertyStore = {
-        val contextMap: Map[Type, AnyRef] = context.map(_.asTuple).toMap
+        val contextMap: Map[Class[_], AnyRef] = context.map(_.asTuple).toMap
         new EPKSequentialPropertyStore(contextMap)
     }
 }

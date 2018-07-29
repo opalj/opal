@@ -1,31 +1,4 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package ai
 package domain
@@ -65,33 +38,35 @@ class DefaultReferenceValuesBindingTest extends FlatSpec with Matchers {
 
     behavior of "instances of domains of type DomainReferenceValuesBinding"
 
-    it should "be able to determine that a value with a single interface as its upper bound abstracts over a value that implements multiple interfaces that includes the previous one" in {
-        val t1 = ObjectType("org/omg/CORBA/Object")
-        val t2 = ObjectType("java/rmi/Remote")
-        val domain = ValuesDomain
-        val stValue = domain.ReferenceValue(-1, t1)
-        val mtValue = domain.ObjectValue(-1, UIDSet(t1, t2))
+    it should "determine that a value with a single interface as its upper bound abstracts over "+
+        "a value that implements multiple interfaces that includes the previous one" in {
+            val t1 = ObjectType("org/omg/CORBA/Object")
+            val t2 = ObjectType("java/rmi/Remote")
+            val domain = ValuesDomain
+            val stValue = domain.ReferenceValue(-1, t1)
+            val mtValue = domain.ObjectValue(-1, UIDSet(t1, t2))
 
-        stValue.abstractsOver(mtValue) should be(true)
+            stValue.abstractsOver(mtValue) should be(true)
 
-    }
+        }
 
-    it should "be able to determine that a value with a single interface as its upper bound abstracts over a value that is non-null and that implements multiple interfaces that includes the previous one" in {
-        val t1 = ObjectType("org/omg/CORBA/Object")
-        val t2 = ObjectType("java/rmi/Remote")
-        val domain = ValuesDomain
-        val stValue = domain.ReferenceValue(-1, Unknown, false, t1)
-        val mtValue = domain.ObjectValue(-1, No, UIDSet(t1, t2))
+    it should "determine that a value with a single interface as its upper bound abstracts over "+
+        "a value that is non-null and that implements multiple interfaces that includes the previous one" in {
+            val t1 = ObjectType("org/omg/CORBA/Object")
+            val t2 = ObjectType("java/rmi/Remote")
+            val domain = ValuesDomain
+            val stValue = domain.ReferenceValue(-1, Unknown, false, t1)
+            val mtValue = domain.ObjectValue(-1, No, UIDSet(t1, t2))
 
-        if (!stValue.abstractsOver(mtValue))
-            fail(stValue+" does not abstract over "+mtValue+" (Result of the join was: "+stValue.join(-1, mtValue)+")")
+            if (!stValue.abstractsOver(mtValue))
+                fail(stValue+" does not abstract over "+mtValue+" (Result of the join was: "+stValue.join(-1, mtValue)+")")
 
-    }
+        }
 
-    it should "be able to join a value which implements multiple interfaces with a value that implementes just one interface that is a subtype of one of the previous interfaces" in {
-        val l1 = ObjectType("com/sun/org/apache/xml/internal/utils/PrefixResolver")
-        val l2 = ObjectType("org/w3c/dom/xpath/XPathNSResolver")
-        val r = ObjectType("com/sun/org/apache/xpath/internal/domapi/XPathEvaluatorImpl$DummyPrefixResolver")
+    it should "correctly join a value which implements multiple interfaces with a value that implementes just one interface that is a subtype of one of the previous interfaces" in {
+        val l1 = ObjectType("java/io/Serializable")
+        val l2 = ObjectType("java/util/RandomAccess")
+        val r = ObjectType("java/io/Externalizable")
         val domain = ValuesDomain
         val lValue = domain.ObjectValue(-1, No, UIDSet(l1, l2))
         val rValue = domain.ReferenceValue(-1, r)
@@ -102,7 +77,7 @@ class DefaultReferenceValuesBindingTest extends FlatSpec with Matchers {
             fail(lValue+" join "+rValue+" was "+joinedValue+" expected "+expectedValue)
     }
 
-    it should "be able to calculate the correct least upper type bound if one of the types of a MultipleReferenceValues already defines that bound" in {
+    it should "calculate the correct least upper type bound if one of the types of a MultipleReferenceValues already defines that bound" in {
         val l = ObjectType("java/util/AbstractCollection")
         val r = ObjectType("java/util/ArrayList")
         val lValue = ValuesDomain.ObjectValue(-1, l)

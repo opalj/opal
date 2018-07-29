@@ -1,31 +1,4 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package br
 
@@ -88,6 +61,9 @@ sealed abstract class SubtypeInformation extends TypeHierarchyInformation {
     def typeInformationType: String = "SubtypeInformation"
 }
 
+/**
+ * Factory to create the subtype information data structure.
+ */
 object SubtypeInformation {
 
     final val None = new SubtypeInformation {
@@ -98,7 +74,8 @@ object SubtypeInformation {
 
     def apply(
         theClassTypes:     UIDSet[ObjectType],
-        theInterfaceTypes: UIDSet[ObjectType]
+        theInterfaceTypes: UIDSet[ObjectType],
+        initialAllTypes:   UIDSet[ObjectType] // just used to increase "sharing" possibilities
     ): SubtypeInformation = {
         if (theClassTypes.isEmpty) {
             if (theInterfaceTypes.isEmpty)
@@ -106,20 +83,20 @@ object SubtypeInformation {
             else
                 new SubtypeInformation {
                     def classTypes: UIDSet[ObjectType] = UIDSet.empty
-                    val interfaceTypes = theInterfaceTypes
+                    val interfaceTypes: UIDSet[ObjectType] = theInterfaceTypes
                     def all: UIDSet[ObjectType] = interfaceTypes
                 }
         } else if (theInterfaceTypes.isEmpty) {
             new SubtypeInformation {
-                val classTypes = theClassTypes
+                val classTypes: UIDSet[ObjectType] = theClassTypes
                 def interfaceTypes: UIDSet[ObjectType] = UIDSet.empty
                 def all: UIDSet[ObjectType] = classTypes
             }
         } else {
             new SubtypeInformation {
-                val classTypes = theClassTypes
-                val interfaceTypes = theInterfaceTypes
-                def all: UIDSet[ObjectType] = classTypes ++ interfaceTypes
+                val classTypes: UIDSet[ObjectType] = theClassTypes
+                val interfaceTypes: UIDSet[ObjectType] = theInterfaceTypes
+                val all: UIDSet[ObjectType] = initialAllTypes ++ classTypes ++ interfaceTypes
             }
         }
     }
@@ -150,7 +127,8 @@ object SupertypeInformation {
 
     def apply(
         theClassTypes:     UIDSet[ObjectType],
-        theInterfaceTypes: UIDSet[ObjectType]
+        theInterfaceTypes: UIDSet[ObjectType],
+        initialAllTypes:   UIDSet[ObjectType] // just used to increase "sharing" possibilities
     ): SupertypeInformation = {
         if (theInterfaceTypes.isEmpty) {
             if (theClassTypes.isEmpty) {
@@ -175,13 +153,17 @@ object SupertypeInformation {
                 new SupertypeInformation {
                     final def classTypes: UIDSet[ObjectType] = ClassHierarchy.JustObject
                     final val interfaceTypes: UIDSet[ObjectType] = theInterfaceTypes
-                    final def all: UIDSet[ObjectType] = theInterfaceTypes + ObjectType.Object
+                    final val all: UIDSet[ObjectType] = {
+                        initialAllTypes ++ theInterfaceTypes + ObjectType.Object
+                    }
                 }
             } else {
                 new SupertypeInformation {
                     final val classTypes: UIDSet[ObjectType] = theClassTypes
                     final val interfaceTypes: UIDSet[ObjectType] = theInterfaceTypes
-                    final def all: UIDSet[ObjectType] = classTypes ++ interfaceTypes
+                    final val all: UIDSet[ObjectType] = {
+                        initialAllTypes ++ classTypes ++ interfaceTypes
+                    }
                 }
             }
         }

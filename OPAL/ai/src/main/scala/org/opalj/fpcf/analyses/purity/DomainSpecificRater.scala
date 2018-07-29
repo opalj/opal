@@ -1,38 +1,9 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package fpcf
 package analyses
 package purity
 
-import org.opalj.ai.Domain
-import org.opalj.ai.domain.RecordDefUse
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.fpcf.properties.DPure
@@ -44,6 +15,7 @@ import org.opalj.tac.DUVar
 import org.opalj.tac.Expr
 import org.opalj.tac.GetStatic
 import org.opalj.tac.Stmt
+import org.opalj.value.KnownTypedValue
 
 /**
  * Rates, whether three address code statements perform actions that are domain-specific pure.
@@ -51,17 +23,27 @@ import org.opalj.tac.Stmt
  * @author Dominik Helm
  */
 trait DomainSpecificRater {
-    type V = DUVar[(Domain with RecordDefUse)#DomainValue]
+
+    type V = DUVar[KnownTypedValue]
 
     /**
      * Rates all types of calls.
      */
-    def handleCall(call: Call[V], receiver: Option[Expr[V]])(implicit project: SomeProject, code: Array[Stmt[V]]): Option[Purity]
+    def handleCall(
+        call:     Call[V],
+        receiver: Option[Expr[V]]
+    )(
+        implicit
+        project: SomeProject, code: Array[Stmt[V]]
+    ): Option[Purity]
 
     /**
      * Rates GetStatic expressions.
      */
-    def handleGetStatic(expr: GetStatic)(implicit project: SomeProject, code: Array[Stmt[V]]): Option[Purity]
+    def handleGetStatic(expr: GetStatic)(
+        implicit
+        project: SomeProject, code: Array[Stmt[V]]
+    ): Option[Purity]
 
     /**
      * Rates implicit VM exceptions
