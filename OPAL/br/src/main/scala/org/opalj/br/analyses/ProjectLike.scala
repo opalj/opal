@@ -663,7 +663,7 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
         // ...  the receiver type of super initializer calls is always explicitly given
         classFile(declaringClassType) match {
             case Some(classFile) ⇒
-                // TODO Java9+ Do we have to remove this check?
+                // TODO Java9 or Java10 Do we have to remove this check?
                 if (classFile.isInterfaceDeclaration != isInterface)
                     Failure
                 else {

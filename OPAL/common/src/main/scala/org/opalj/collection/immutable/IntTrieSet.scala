@@ -561,7 +561,6 @@ private[immutable] final class IntTrieSet3 private[immutable] (
 private[immutable] abstract class IntTrieSetNN extends IntTrieSet {
 
     final override def isSingletonSet: Boolean = size == 1
-    final override def hasMultipleElements: Boolean = size > 1
     final override def isEmpty: Boolean = false
 
     final override def map(f: Int ⇒ Int): IntTrieSet = {
@@ -614,7 +613,7 @@ private[immutable] final class IntTrieSetN private[immutable] (
     assert(size > 0) // <= can be "one" at construction time
 
     override def head: Int = if (left.nonEmpty) left.head else right.head
-
+    override def hasMultipleElements: Boolean = size > 1
     override def exists(p: Int ⇒ Boolean): Boolean = left.exists(p) || right.exists(p)
     override def forall(p: Int ⇒ Boolean): Boolean = left.forall(p) && right.forall(p)
 
@@ -874,6 +873,7 @@ private[immutable] final class IntTrieSetNJustRight private[immutable] (
 
     assert(size > 0) // <= can be "one" at construction time
 
+    override def hasMultipleElements: Boolean = right.hasMultipleElements
     override def size: Int = right.size
     override def head: Int = right.head
     override def exists(p: Int ⇒ Boolean): Boolean = right.exists(p)
@@ -1001,7 +1001,7 @@ private[immutable] final class IntTrieSetNJustLeft private[immutable] (
     assert(size > 0) // <= can be "one" at construction time
 
     override def size: Int = left.size
-
+    override def hasMultipleElements: Boolean = left.hasMultipleElements
     override def head: Int = left.head
     override def exists(p: Int ⇒ Boolean): Boolean = left.exists(p)
     override def forall(p: Int ⇒ Boolean): Boolean = left.forall(p)
@@ -1107,7 +1107,7 @@ private[immutable] final class IntTrieSetNJustLeft private[immutable] (
 
     }
 
-    override def filter(p: (Int) ⇒ Boolean): IntTrieSet = {
+    override def filter(p: Int ⇒ Boolean): IntTrieSet = {
         val left = this.left
         val newLeft = left.filter(p)
         if (newLeft eq left)
