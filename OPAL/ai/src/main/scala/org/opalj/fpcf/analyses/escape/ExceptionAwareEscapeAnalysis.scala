@@ -50,7 +50,7 @@ trait ExceptionAwareEscapeAnalysis extends AbstractEscapeAnalysis {
                     }
                     pc.asCatchNode.catchType match {
                         case Some(catchType) ⇒
-                            if (classHierarchy.isSubtypeOf(exceptionType, catchType).isYes)
+                            if (classHierarchy.isSubtypeOf(exceptionType, catchType))
                                 isCaught = true
                         case None ⇒
                     }

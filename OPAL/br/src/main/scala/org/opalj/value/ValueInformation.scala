@@ -331,7 +331,7 @@ trait IsReferenceValue extends KnownTypedValue {
      * not in an inheritance relationship. However, if the specified supertype would
      * be `java.util.List` the answer would be unknown.
      *
-     * @note The function `isValueSubtypeOf` is not defined if `isNull` returns `Yes`;
+     * @note The function `isValueASubtypeOf` is not defined if `isNull` returns `Yes`;
      *      if `isNull` is `Unknown` then the result is given under the
      *      assumption that the value is not `null` at runtime.
      *      In other words, if this value represents `null` this method is not supported.
@@ -339,7 +339,7 @@ trait IsReferenceValue extends KnownTypedValue {
      *
      * @return This default implementation always returns `Unknown`.
      */
-    def isValueSubtypeOf(referenceType: ReferenceType): Answer = Unknown
+    def isValueASubtypeOf(referenceType: ReferenceType): Answer = Unknown
 
     type BaseReferenceValue <: IsReferenceValue
     def asBaseReferenceValue: BaseReferenceValue
