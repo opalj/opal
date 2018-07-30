@@ -110,9 +110,9 @@ case class InstanceAPIMethod(
 object InstanceAPIMethod {
 
     def apply(
-         declClass: ObjectType,
-         name:      String,
-         ): InstanceAPIMethod = {
+        declClass: ObjectType,
+        name:      String
+    ): InstanceAPIMethod = {
         InstanceAPIMethod(declClass, name, None)
     }
 
