@@ -16,19 +16,19 @@ import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.fpcf.analyses.ifds.AbstractIFDSAnalysis.V
 import org.opalj.tac.fpcf.analyses.LazyL0TACAIAnalysis
 import org.opalj.tac.fpcf.properties.TACAI
-//import org.opalj.fpcf.seq.EPKSequentialPropertyStore
 import org.opalj.fpcf.par.PKEParallelTasksPropertyStore
-import org.opalj.fpcf.par.RecordAllPropertyStoreTracer
+//import org.opalj.fpcf.par.RecordAllPropertyStoreTracer
+//import org.opalj.fpcf.seq.EPKSequentialPropertyStore
+//import org.opalj.fpcf.seq.PKESequentialPropertyStore
 import org.opalj.fpcf.properties.IFDSProperty
 import org.opalj.fpcf.properties.IFDSPropertyMetaInformation
-//import org.opalj.fpcf.seq.PKESequentialPropertyStore
 import org.opalj.tac.Assignment
 import org.opalj.tac.Expr
 import org.opalj.tac.Var
 //import org.opalj.tac.PutStatic
 //import org.opalj.tac.GetStatic
-//import org.opalj.tac.PutField
-//import org.opalj.tac.GetField
+import org.opalj.tac.PutField
+import org.opalj.tac.GetField
 import org.opalj.tac.ArrayLoad
 import org.opalj.tac.ArrayStore
 import org.opalj.tac.Stmt
@@ -217,7 +217,7 @@ class TestTaintAnalysis private[ifds] (
                     asCall(stmt.stmt).allParams.zipWithIndex.collect {
                         case (param, pIndex) if param.asVar.definedBy.contains(index) &&
                             (paramToIndex(pIndex, !callee.definedMethod.isStatic) != -1 ||
-                                classHierarchy.isSubtypeOf(declClass, callee.declaringClassType).isYesOrUnknown) ⇒
+                                classHierarchy.isSubtypeOf(declClass, callee.declaringClassType)) ⇒
                             InstanceField(paramToIndex(pIndex, !callee.definedMethod.isStatic), declClass, taintedField)
                     }*/
                 //case sf: StaticField ⇒ Set(sf)
@@ -353,12 +353,13 @@ object TestTaintAnalysisRunner {
         p.getOrCreateProjectInformationKeyInitializationData(
             PropertyStoreKey,
             (context: List[PropertyStoreContext[AnyRef]]) ⇒ {
-                val ps = PKEParallelTasksPropertyStore.create(
+                /*val ps = PKEParallelTasksPropertyStore.create(
                     new RecordAllPropertyStoreTracer,
                     context.iterator.map(_.asTuple).toMap
-                )(p.logContext)
-                /*implicit val lg = p.logContext
-                val ps = EPKSequentialPropertyStore.apply(context: _*)*/
+                )(p.logContext)*/
+                implicit val lg = p.logContext
+                val ps = PKEParallelTasksPropertyStore(context: _*)
+                //val ps = EPKSequentialPropertyStore.apply(context: _*)
                 PropertyStore.updateTraceCycleResolutions(true)
                 PropertyStore.updateDebug(true)
                 ps
