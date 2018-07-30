@@ -344,7 +344,7 @@ class RTACallGraphAnalysis private[analyses] (
                             rv.upperTypeBound
                         )
                     val receiverType =
-                        if (project.classHierarchy.isSubtypeOf(typeBound, call.declaringClass).isYes)
+                        if (project.classHierarchy.isSubtypeOf(typeBound, call.declaringClass))
                             typeBound
                         else
                             call.declaringClass
