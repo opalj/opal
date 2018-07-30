@@ -53,5 +53,7 @@ final class AnyRefAccumulator[A <: AnyRef] private (
 object AnyRefAccumulator {
 
     def empty[N >: Null <: AnyRef]: AnyRefAccumulator[N] = new AnyRefAccumulator[N](Nil)
+
+    def apply[N >: Null <: AnyRef](e: N): AnyRefAccumulator[N] = new AnyRefAccumulator[N](List(e))
 }
 
