@@ -82,7 +82,7 @@ class Java8PolymorphicCalls(implicit hermes: HermesConfig) extends DefaultFeatur
             pcAndInvocation ← body collect {
                 case iv: INVOKEVIRTUAL if isPotentialCallOnDefaultMethod(iv, project)   ⇒ iv
                 case ii: INVOKEINTERFACE if isPotentialCallOnDefaultMethod(ii, project) ⇒ ii
-                case is: INVOKESTATIC if is.isInterface                         ⇒ is
+                case is: INVOKESTATIC if is.isInterface                                 ⇒ is
             }
         } {
             val pc = pcAndInvocation.pc

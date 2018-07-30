@@ -84,11 +84,11 @@ class DirectCalls(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
             val l = InstructionLocation(methodLocation, pc)
 
             val kindID = invokeKind match {
-                case _ @  INVOKESTATIC(declaringClass,_,_,_) ⇒ {
+                case _@ INVOKESTATIC(declaringClass, _, _, _) ⇒ {
                     val cf = project.classFile(declaringClass)
-                    if(cf.isEmpty)
+                    if (cf.isEmpty)
                         -1
-                    else if(cf.get.isInterfaceDeclaration)
+                    else if (cf.get.isInterfaceDeclaration)
                         4 /* static interface receiver */
                     else
                         0 /* static call to class type*/
@@ -98,9 +98,9 @@ class DirectCalls(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
                         if (declType eq declaringClass) {
                             if (project.specialCall(invSpec).value.isPrivate) {
                                 val cf = project.classFile(declaringClass)
-                                if(cf.isEmpty)
+                                if (cf.isEmpty)
                                     -1
-                                else if(cf.get.isInterfaceDeclaration)
+                                else if (cf.get.isInterfaceDeclaration)
                                     5
                                 else
                                     2
