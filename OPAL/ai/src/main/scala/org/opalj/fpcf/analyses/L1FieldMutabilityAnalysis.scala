@@ -52,19 +52,20 @@ class L1FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
      * native methods are filtered.
      */
     private[analyses] def determineFieldMutability(field: Field): PropertyComputationResult = {
-        if (field.isFinal)
-            return Result(field, DeclaredFinalField)
-
-        val thisType = field.classFile.thisType
+        if (field.isFinal) {
+            return Result(field, DeclaredFinalField);
+        }
 
         if (field.isPublic)
-            return Result(field, NonFinalFieldByLackOfInformation)
+            return Result(field, NonFinalFieldByLackOfInformation);
 
+        val thisType = field.classFile.thisType
         var classesHavingAccess: Set[ClassFile] = Set(field.classFile)
 
         if (field.isProtected || field.isPackagePrivate) {
             if (!closedPackagesKey.isClosed(thisType.packageName))
-                return Result(field, NonFinalFieldByLackOfInformation)
+                return Result(field, NonFinalFieldByLackOfInformation);
+// IMPROVE determing "classesHavingAccess" this way is SUPER expensive...
             classesHavingAccess ++= project.allClassFiles.filter {
                 _.thisType.packageName == thisType.packageName
             }
@@ -72,14 +73,14 @@ class L1FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
 
         if (field.isProtected) {
             if (typeExtensibility(thisType).isYesOrUnknown) {
-                return Result(field, NonFinalFieldByLackOfInformation)
+                return Result(field, NonFinalFieldByLackOfInformation);
             }
             val subTypes = classHierarchy.allSubclassTypes(thisType, reflexive = false)
             classesHavingAccess ++= subTypes.map(project.classFile(_).get)
         }
 
-        if (classesHavingAccess.flatMap(_.methods).exists(_.isNative))
-            return Result(field, NonFinalFieldByLackOfInformation)
+        if (classesHavingAccess.exists(_.methods.exists(_.isNative)))
+            return Result(field, NonFinalFieldByLackOfInformation);
 
         // We now (compared to the simple one) have to analyze the static initializer as
         // the static initializer can be used to initialize a private field of an instance
