@@ -7,8 +7,7 @@ import scala.reflect.ClassTag
 
 /**
  * An array based implementation of a mutable buffer. This implementation offers highly
- * optimized, but very unsafe methods and is therefore __not__ a general
- * purpose data-structure which .
+ * optimized, but very unsafe methods and is therefore __not__ a general purpose data-structure.
  * In general, this buffer should only be used to reference objects which outlive the life time
  * of the buffer AND where the buffer is only used locally. To foster a local usage only, we do
  * not inherit from any standard collection classes.
@@ -28,8 +27,8 @@ final class AnyRefArrayBuffer[N >: Null <: AnyRef] private (
 
     /**
      * Resets the size of the buffer, but does not clear the underlying array; hence,
-     * the stack may prevent the garbage collection of the still referenced values.
-     * This is generally not a problem, if the stack is only used locally and the
+     * the array may prevent the garbage collection of the still referenced values.
+     * This is generally not a problem, if the array is only used locally and the
      * referenced (dead) objects outlive the lifetime of the buffer!
      */
     def resetSize(): Unit = size0 = 0
