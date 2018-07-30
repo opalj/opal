@@ -26,6 +26,8 @@ import org.opalj.br.instructions._
 import org.opalj.br.instructions.ClassFileFactory.DefaultFactoryMethodName
 import org.opalj.br.instructions.ClassFileFactory.AlternativeFactoryMethodName
 
+import scala.collection.mutable.ArrayBuffer
+
 /**
  * Provides support for rewriting Java 8/Scala lambda or method reference expressions that
  * were compiled to [[org.opalj.br.instructions.INVOKEDYNAMIC]] instructions.
@@ -45,6 +47,7 @@ import org.opalj.br.instructions.ClassFileFactory.AlternativeFactoryMethodName
  * @author Arne Lottmann
  * @author Michael Eichberg
  * @author Andreas Muttscheller
+ * @author Dominik Helm
  */
 trait LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
     this: ClassFileBinding ⇒
@@ -139,6 +142,23 @@ trait LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
             s"${surroundingType.id.toHexString}:${nextId.toHexString}"
     }
 
+    /**
+     * Counter to ensure that the generated methods have unique names.
+     */
+    private final val stringConcatIdGenerator = new AtomicInteger(0)
+
+    /**
+     * Generates a new, internal name for a string concatenation method.
+     *
+     * It follows the pattern: `$concat${uniqueId}`, where `uniqueId` is simply a run-on counter.
+     * For example: `$concat$4` would refer to the fourth string concat INVOKEDYNAMIC parsed during
+     * the analysis of the project.
+     */
+    private def newStringConcatName(): String = {
+        val nextId = stringConcatIdGenerator.getAndIncrement()
+        s"$$concat$$${nextId.toHexString}"
+    }
+
     override def deferredInvokedynamicResolution(
         classFile:         ClassFile,
         cp:                Constant_Pool,
@@ -193,6 +213,8 @@ trait LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
         val invokedynamic = instructions(pc).asInstanceOf[INVOKEDYNAMIC]
         if (LambdaExpressionsRewriting.isJava8LikeLambdaExpression(invokedynamic)) {
             java8LambdaResolution(updatedClassFile, instructions, pc, invokedynamic)
+        } else if (isJava10StringConcatInvokedynamic(invokedynamic)) {
+            java10StringConcatResolution(updatedClassFile, instructions, pc, invokedynamic)
         } else if (isScalaLambdaDeserializeExpression(invokedynamic)) {
             scalaLambdaDeserializeResolution(updatedClassFile, instructions, pc, invokedynamic)
         } else if (isScalaSymbolExpression(invokedynamic)) {
@@ -206,15 +228,6 @@ trait LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
                 ))
             }
             updatedClassFile
-        } else if (isJava10StringConcatInvokedynamic(invokedynamic)) {
-            if (logUnknownInvokeDynamics) {
-                OPALLogger.logOnce(StandardLogMessage(
-                    Info,
-                    Some("load-time transformation"),
-                    "Java10's StringConcatFactory INVOKEDYNAMICs are not yet rewritten"
-                ))
-            }
-            updatedClassFile
         } else {
             if (logUnknownInvokeDynamics) {
                 val t = classFile.thisType.toJava
@@ -222,6 +235,250 @@ trait LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
             }
             updatedClassFile
         }
+    }
+
+    /**
+     * Resolution of java 10 string concat expressions.
+     *
+     * @see More information about string concat factory:
+     *      [https://docs.oracle.com/javase/10/docs/api/java/lang/invoke/StringConcatFactory.html]
+     *
+     * @param classFile The classfile to parse.
+     * @param instructions The instructions of the method we are currently parsing.
+     * @param pc The program counter of the current instruction.
+     * @param invokedynamic The INVOKEDYNAMIC instruction we want to replace.
+     * @return A classfile which has the INVOKEDYNAMIC instruction replaced.
+     */
+    private def java10StringConcatResolution(
+        classFile:     ClassFile,
+        instructions:  Array[Instruction],
+        pc:            PC,
+        invokedynamic: INVOKEDYNAMIC
+    ): ClassFile = {
+        val INVOKEDYNAMIC(
+            bootstrapMethod, functionalInterfaceMethodName, factoryDescriptor
+            ) = invokedynamic
+
+        val args = bootstrapMethod.arguments
+
+        // Extract the recipe and static arguments if present (if not, the dynamic arguments are
+        // simply concatenated)
+        val (recipe, staticArgs) =
+            if (args.isEmpty) (None, None)
+            else (
+                args.headOption.asInstanceOf[Option[ConstantString]],
+                Some(args.tail.asInstanceOf[IndexedSeq[ConstantValue[_]]])
+            )
+
+        def insertNulls(buffer: ArrayBuffer[Instruction], numNulls: Int): Unit = {
+            var i = 0
+            while (i < numNulls) {
+                buffer += null
+                i += 1
+            }
+        }
+
+        // Creates concat method
+        def createConcatMethod(
+            name:       String,
+            descriptor: MethodDescriptor,
+            recipeO:    Option[ConstantString],
+            constants:  Option[IndexedSeq[ConstantValue[_]]]
+        ): MethodTemplate = {
+            // A guess on the number of append operations required, need not be precise
+            val numEntries =
+                (if (recipeO.isDefined) recipeO.get.value.length else descriptor.parametersCount)
+            val body: ArrayBuffer[Instruction] = new ArrayBuffer(11 + 6 * numEntries)
+
+            body += NEW(StringBuilder)
+            body += null; body += null
+            body += DUP
+            body += INVOKESPECIAL(
+                StringBuilder,
+                isInterface = false,
+                "<init>",
+                MethodDescriptor.NoArgsAndReturnVoid
+            )
+            body += null; body += null
+
+            def appendType(t: Type): FieldType = {
+                if (t.isBaseType) t.asBaseType
+                else if (t eq ObjectType.String) ObjectType.String
+                else ObjectType.Object
+            }
+
+            // Generate instructions to append a parameter to the StringBuilder
+            def appendParam(paramType: FieldType, index: Int): Unit = {
+                val isWide = index > 255
+                if (isWide) body += WIDE
+
+                val load = LoadLocalVariableInstruction(paramType, index)
+                body += load
+                insertNulls(body, load.indexOfNextInstruction(0, modifiedByWide = isWide) - 1)
+
+                body += INVOKEVIRTUAL(
+                    StringBuilder,
+                    "append",
+                    MethodDescriptor(appendType(paramType), StringBuilder)
+                )
+                body += null; body += null
+            }
+
+            // Generate instructions to append a static constant to the StringBuilder
+            def appendConstant(constantIndex: Int): Unit = {
+                val constant = constants.get(constantIndex)
+
+                // Load the constant using _W variant of load instruction to be safe
+                val loadConstant = LoadConstantInstruction(constant, wide = true)
+                body += loadConstant
+                insertNulls(body, loadConstant.length - 1)
+
+                body += INVOKEVIRTUAL(
+                    StringBuilder,
+                    "append",
+                    MethodDescriptor(appendType(constant.valueType), StringBuilder)
+                )
+                body += null; body += null
+            }
+
+            // Generate code to append a substring of the recipe verbatim to the StringBuilder
+            def appendString(startIndex: Int, endIndex: Int): Unit = {
+                // Use `substring` to extract the relevant part of the recipe
+
+                // Loading the recipe with `LDC` is safe, as the removal of the bootstrapMethod will
+                // free one index in the constant pool where the recipe can be moved on
+                // serialization of the class
+                body += LDC(recipeO.get)
+                body += null
+
+                val loadBegin = LoadConstantInstruction(startIndex)
+                body += loadBegin
+                insertNulls(body, loadBegin.length - 1)
+
+                val loadEnd = LoadConstantInstruction(endIndex)
+                body += loadEnd
+                insertNulls(body, loadEnd.length - 1)
+
+                body += INVOKEVIRTUAL(
+                    ObjectType.String,
+                    "substring",
+                    MethodDescriptor(IndexedSeq(IntegerType, IntegerType), ObjectType.String)
+                )
+                body += null; body += null
+
+                body += INVOKEVIRTUAL(
+                    StringBuilder,
+                    "append",
+                    MethodDescriptor(ObjectType.String, StringBuilder)
+                )
+                body += null; body += null
+            }
+
+            var lvIndex = 0 // Local variable index for the next parameter
+
+            // At least 2 (for StringBuilder + param for append), but increased below if necessary
+            var maxStack = 2
+
+            if (recipeO.isDefined) {
+                val recipe = recipeO.get.value
+
+                // Index of next parameter (counting +1, while lvIndex respects operand sizes
+                var paramIndex = 0
+                // Index of next constant (from bootstrap arguments)
+                var constantIndex = 0
+                // Character position in the recipe where processing continues
+                var recipeIndex = 0
+
+                var nextParam = recipe.indexOf('\u0001') // Next parameter insertion point
+                var nextConstant = recipe.indexOf('\u0002') // Next constant insertion point
+                var nextInsert = 0 // Next insertion point (parameter or constant)
+
+                while (recipeIndex < recipe.length) {
+                    // Next insertion point is smaller of nextParam/nextConstant if each of those
+                    // exist. If they don't exist, use recipe.length to append last verbatim part
+                    // (if any) and terminate
+                    nextInsert =
+                        if (nextParam == -1)
+                            if (nextConstant == -1) recipe.length
+                            else nextConstant
+                        else if (nextConstant == -1) nextParam
+                        else Math.min(nextParam, nextConstant)
+
+                    // Append parts from recipe between insertion points verbatim
+                    if (nextInsert > recipeIndex) {
+                        appendString(recipeIndex, nextInsert)
+                        maxStack = 4
+                    }
+
+                    if (nextInsert < recipe.length) {
+                        if (nextInsert == nextParam) {
+                            assert(recipe.charAt(nextInsert) == '\u0001')
+                            val paramType = descriptor.parameterType(paramIndex)
+                            appendParam(paramType, lvIndex)
+                            val opSize = paramType.computationalType.operandSize
+                            if (maxStack == 2 && opSize == 2) maxStack = 3
+                            lvIndex += opSize
+                            paramIndex += 1
+                            nextParam = recipe.indexOf('\u0001', nextParam + 1)
+                        } else {
+                            assert(recipe.charAt(nextInsert) == '\u0002')
+                            appendConstant(constantIndex)
+                            constantIndex += 1
+                            nextConstant = recipe.indexOf('\u0002', nextConstant + 1)
+                        }
+                    }
+
+                    recipeIndex = nextInsert + 1 // skip after current insertion point
+                }
+            } else {
+                descriptor.parameterTypes.foreach { paramType ⇒
+                    appendParam(paramType, lvIndex)
+                    val opSize = paramType.computationalType.operandSize
+                    if (maxStack == 2 && opSize == 2) maxStack = 3
+                    lvIndex += opSize
+                }
+            }
+
+            // Finally, turn StringBuilder to String
+            body += INVOKEVIRTUAL(StringBuilder, "toString", MethodDescriptor.JustReturnsString)
+            insertNulls(body, 2)
+            body += ARETURN
+
+            val maxLocals = descriptor.requiredRegisters
+
+            val code = Code(maxStack, maxLocals, body.toArray, IndexedSeq.empty, Seq.empty)
+
+            // Access flags for the concat are `private static`
+            val accessFlags = ACC_PRIVATE.mask | ACC_STATIC.mask
+
+            Method(accessFlags, name, descriptor, Seq(code))
+        }
+
+        val concatName = newStringConcatName()
+        val concatMethod =
+            createConcatMethod(concatName, factoryDescriptor, recipe, staticArgs)
+
+        val updatedClassFile =
+            classFile.copy(methods = classFile.methods.map(_.copy()) :+ concatMethod)
+
+        val newInvokestatic = INVOKESTATIC(
+            classFile.thisType,
+            isInterface = classFile.isInterfaceDeclaration,
+            concatName,
+            factoryDescriptor
+        )
+
+        if (logLambdaExpressionsRewrites) {
+            info("rewriting invokedynamic", s"Java: $invokedynamic ⇒ $newInvokestatic")
+        }
+
+        instructions(pc) = newInvokestatic
+        // since invokestatic is two bytes shorter than invokedynamic, we need to fill the
+        // two-byte gap following the invokestatic with NOPs
+        instructions(pc + 3) = NOP
+        instructions(pc + 4) = NOP
+
+        updatedClassFile
     }
 
     /**
@@ -820,6 +1077,8 @@ object LambdaExpressionsRewriting {
     final val LambdaExpressionsLogUnknownInvokeDynamicsConfigKey = {
         LambdaExpressionsConfigKeyPrefix+"logUnknownInvokeDynamics"
     }
+
+    final val StringBuilder = ObjectType("java/lang/StringBuilder")
 
     def isJava8LikeLambdaExpression(invokedynamic: INVOKEDYNAMIC): Boolean = {
         import ObjectType.LambdaMetafactory
