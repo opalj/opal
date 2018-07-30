@@ -55,13 +55,43 @@ class FixedSizeHashIDMapTest extends FlatSpec with Matchers {
         entries.next() should be((Node(8), 8))
     }
 
-    it should "return the added entries using foreach" in {
+    it should "return the added entries using iterate" in {
         val m = FixedSizedHashIDMap[Node, Int](-10, 10)
         m.put(Node(1), 1)
         m.put(Node(8), 8)
         var node1Found = false
         var node8Found = false
-        m.foreach { (n, id) ⇒
+        m iterate { (n, id) ⇒
+            if (n == Node(1) && id == 1) node1Found = true
+            if (n == Node(8) && id == 8) node8Found = true
+        }
+        assert(node1Found)
+        assert(node8Found)
+    }
+
+    it should "return the added entries using foreach (explicitly)" in {
+        val m = FixedSizedHashIDMap[Node, Int](-10, 10)
+        m.put(Node(1), 1)
+        m.put(Node(8), 8)
+        var node1Found = false
+        var node8Found = false
+        m foreach { x ⇒
+            val (n, id) = x
+            if (n == Node(1) && id == 1) node1Found = true
+            if (n == Node(8) && id == 8) node8Found = true
+        }
+        assert(node1Found)
+        assert(node8Found)
+    }
+
+    it should "return the added entries using foreach (for comprehension)" in {
+        val m = FixedSizedHashIDMap[Node, Int](-10, 10)
+        m.put(Node(1), 1)
+        m.put(Node(8), 8)
+        var node1Found = false
+        var node8Found = false
+        for (e ← m) {
+            val (n, id) = e
             if (n == Node(1) && id == 1) node1Found = true
             if (n == Node(8) && id == 8) node8Found = true
         }
