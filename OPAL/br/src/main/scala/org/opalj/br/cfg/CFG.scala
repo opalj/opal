@@ -4,15 +4,14 @@ package br
 package cfg
 
 import java.util.Arrays
-import java.util.HashMap
 
 import scala.collection.{Set ⇒ SomeSet}
 import scala.collection.AbstractIterator
-
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.OPALLogger.info
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.IntTrieSet1
+import org.opalj.collection.mutable.FixedSizedHashIDMap
 import org.opalj.graphs.DefaultMutableNode
 import org.opalj.graphs.Node
 
@@ -344,7 +343,14 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
         */
 
         val bbsLength = basicBlocks.length
-        val bbMapping = new HashMap[CFGNode, CFGNode]()
+        // Note, catch node ids have values in the range [-3-number of catch nodes,-3].
+        // Furthermore, we may have "dead" exception handlers and therefore the number
+        // of catch nodes does not necessarily reflect the smallest catch node id.
+        val leastCatchNodeId = if (catchNodes.isEmpty) 0 else catchNodes.iterator.map(_.nodeId).min
+        val bbMapping = FixedSizedHashIDMap[CFGNode, CFGNode](
+            minValue = Math.min(-2 /*the exit nodes*/ , leastCatchNodeId),
+            maxValue = code.instructions.length
+        )
 
         val newBasicBlocks = new Array[BasicBlock](lastIndex + 1)
         val newBasicBlocksArray = newBasicBlocks.asInstanceOf[Array[Object]]
@@ -415,13 +421,9 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
         bbMapping.put(abnormalReturnNode, newAbnormalReturnNode)
 
         // rewire the graph
-        val oldBBToNewBBIt = bbMapping.entrySet().iterator()
-        while (oldBBToNewBBIt.hasNext) {
-            val oldBBToNewBB = oldBBToNewBBIt.next()
-            val oldBB = oldBBToNewBB.getKey
-            val newBB = oldBBToNewBB.getValue
+        bbMapping iterate { (oldBB, newBB) ⇒
             oldBB.successors foreach { oldSuccBB ⇒
-                val newSuccBB = bbMapping.get(oldSuccBB)
+                val newSuccBB = bbMapping(oldSuccBB)
                 assert(newSuccBB ne null, s"no mapping for $oldSuccBB")
                 newBB.addSuccessor(newSuccBB)
                 // Instead of iterating over the predecessors, we just iterate over
@@ -432,7 +434,7 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
             }
         }
 
-        val newCatchNodes = catchNodes.map(bbMapping.get(_).asInstanceOf[CatchNode])
+        val newCatchNodes = catchNodes.map(bbMapping(_).asInstanceOf[CatchNode])
         assert(newCatchNodes.forall { _ ne null })
 
         // let's see if we can merge the first two basic blocks

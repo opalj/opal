@@ -41,12 +41,28 @@ class FixedSizedHashIDMap[K <: AnyRef, V] private (
 
     def put(k: K, v: V): this.type = {
         val id = k.hashCode() + hashCodeOffset
+        if (id < 0) {
+            throw new IllegalArgumentException(s"the key's id (${k.hashCode()}+$hashCodeOffset) is out of range: $k")
+        }
         theKeys(id) = k
         theValues(id) = v
         this
     }
 
-    def foreach(f: (K, V) ⇒ Unit): Unit = {
+    def foreach(f: ((K, V)) ⇒ Unit): Unit = {
+        val keys = this.theKeys
+        val values = this.theValues
+        var i = 0
+        val max = keys.length
+        while (i < max) {
+            val k = keys(i)
+            // Recall that all values have to be non-null...
+            if (k ne null) f((k, values(i)))
+            i += 1
+        }
+    }
+
+    def iterate(f: (K, V) ⇒ Unit): Unit = {
         val keys = this.theKeys
         val values = this.theValues
         var i = 0
@@ -107,14 +123,14 @@ class FixedSizedHashIDMap[K <: AnyRef, V] private (
 object FixedSizedHashIDMap {
 
     def apply[K <: AnyRef: ClassTag, V: ClassTag](
-        minValue: Int,
-        maxValue: Int
+        minValue: Int, // inclusive
+        maxValue: Int // inclusive
     ): FixedSizedHashIDMap[K, V] = {
         if (minValue > maxValue) {
             throw new IllegalArgumentException(s"$minValue > $maxValue");
         }
 
-        val length: Long = maxValue.toLong - minValue.toLong
+        val length: Long = maxValue.toLong - minValue.toLong + 1L
         if (length > Int.MaxValue.toLong) {
             throw new IllegalArgumentException(s"range to large: [$minValue,$maxValue]");
         }
