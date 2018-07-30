@@ -1088,55 +1088,64 @@ object Project {
                         }) + ot.toJava
                     }.getOrElse("<None>")
 
-                m.body.get.iterate { (pc: Int, instruction: Instruction) ⇒
-                    (instruction.opcode: @switch) match {
+                m.body.get iterate { (pc: Int, instruction: Instruction) ⇒
+                    try {
+                        (instruction.opcode: @switch) match {
 
-                        case NEW.opcode ⇒
-                            val NEW(objectType) = instruction
-                            if (isInterface(objectType).isYes) {
-                                val ex = InconsistentProjectException(
-                                    s"cannot create an instance of interface ${objectType.toJava} in "+
-                                        m.toJava(s"pc=$pc $disclaimer"),
-                                    Error
-                                )
-                                addException(ex)
-                            }
-
-                        case INVOKESTATIC.opcode ⇒
-                            val invokestatic = instruction.asInstanceOf[INVOKESTATIC]
-                            project.staticCall(invokestatic) match {
-                                case _: Success[_] ⇒ /*OK*/
-                                case Empty         ⇒ /*OK - partial project*/
-                                case Failure ⇒
+                            case NEW.opcode ⇒
+                                val NEW(objectType) = instruction
+                                if (isInterface(objectType).isYes) {
                                     val ex = InconsistentProjectException(
-                                        s"target method of invokestatic call in "+
-                                            m.toJava(s"pc=$pc; $invokestatic - $disclaimer")+
-                                            " cannot be resolved; supertype information is complete="+
-                                            completeSupertypeInformation+
-                                            "; missing supertype class file: "+missingSupertypeClassFile,
+                                        s"cannot create an instance of interface ${objectType.toJava} in "+
+                                            m.toJava(s"pc=$pc $disclaimer"),
                                         Error
                                     )
                                     addException(ex)
-                            }
+                                }
 
-                        case INVOKESPECIAL.opcode ⇒
-                            val invokespecial = instruction.asInstanceOf[INVOKESPECIAL]
-                            project.specialCall(invokespecial) match {
-                                case _: Success[_] ⇒ /*OK*/
-                                case Empty         ⇒ /*OK - partial project*/
-                                case Failure ⇒
-                                    val ex = InconsistentProjectException(
-                                        s"target method of invokespecial call in "+
-                                            m.toJava(s"pc=$pc; $invokespecial - $disclaimer")+
-                                            " cannot be resolved; supertype information is complete="+
-                                            completeSupertypeInformation+
-                                            "; missing supertype class file: "+missingSupertypeClassFile,
-                                        Error
-                                    )
-                                    addException(ex)
-                            }
+                            case INVOKESTATIC.opcode ⇒
+                                val invokestatic = instruction.asInstanceOf[INVOKESTATIC]
+                                project.staticCall(invokestatic) match {
+                                    case _: Success[_] ⇒ /*OK*/
+                                    case Empty         ⇒ /*OK - partial project*/
+                                    case Failure ⇒
+                                        val ex = InconsistentProjectException(
+                                            s"target method of invokestatic call in "+
+                                                m.toJava(s"pc=$pc; $invokestatic - $disclaimer")+
+                                                " cannot be resolved; supertype information is complete="+
+                                                completeSupertypeInformation+
+                                                "; missing supertype class file: "+missingSupertypeClassFile,
+                                            Error
+                                        )
+                                        addException(ex)
+                                }
 
-                        case _ ⇒ // Nothing special is checked (so far)
+                            case INVOKESPECIAL.opcode ⇒
+                                val invokespecial = instruction.asInstanceOf[INVOKESPECIAL]
+                                project.specialCall(invokespecial) match {
+                                    case _: Success[_] ⇒ /*OK*/
+                                    case Empty         ⇒ /*OK - partial project*/
+                                    case Failure ⇒
+                                        val ex = InconsistentProjectException(
+                                            s"target method of invokespecial call in "+
+                                                m.toJava(s"pc=$pc; $invokespecial - $disclaimer")+
+                                                " cannot be resolved; supertype information is complete="+
+                                                completeSupertypeInformation+
+                                                "; missing supertype class file: "+missingSupertypeClassFile,
+                                            Error
+                                        )
+                                        addException(ex)
+                                }
+
+                            case _ ⇒ // Nothing special is checked (so far)
+                        }
+                    } catch {
+                        case t: Throwable ⇒
+                            OPALLogger.error(
+                                "OPAL",
+                                s"project validation of ${m.toJava(s"pc=$pc/$instruction")} failed unexpectedly",
+                                t
+                            )
                     }
                 }
             }
