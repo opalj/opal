@@ -7,6 +7,7 @@ import scala.annotation.switch
 
 import scala.collection.immutable.IntMap
 import scala.collection.immutable.HashMap
+
 import org.opalj.collection.immutable.IntArraySet
 import org.opalj.br.instructions.Instruction
 import org.opalj.br.instructions.JSRInstruction

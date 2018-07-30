@@ -11,7 +11,11 @@ package org.opalj.br.cfg
  */
 class ExitNode( final val normalReturn: Boolean) extends CFGNode {
 
-    final override def nodeId: Int = if (normalReturn) Int.MinValue else Int.MinValue + 1
+    final override def nodeId: Int = {
+        // OLD: if (normalReturn) Int.MinValue else Int.MinValue + 1
+        /*-1==normal exit, -2==abnormal exit*/
+        if (normalReturn) -1 else -2
+    }
 
     final override def isBasicBlock: Boolean = false
     final override def isCatchNode: Boolean = false
