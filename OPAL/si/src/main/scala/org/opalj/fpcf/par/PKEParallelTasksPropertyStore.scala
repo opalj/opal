@@ -17,7 +17,7 @@ import scala.collection.mutable.AnyRefMap
 import scala.collection.mutable
 import scala.collection.{Map ⇒ SomeMap}
 import org.opalj.graphs
-import org.opalj.collection.mutable.AnyRefArrayStack
+import org.opalj.collection.mutable.AnyRefAccumulator
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.info
 import org.opalj.log.OPALLogger.{debug ⇒ trace}
@@ -787,7 +787,7 @@ final class PKEParallelTasksPropertyStore private (
 
     private[this] def notifyDependers(
         newEPS: SomeEPS,
-        pcrs:   AnyRefArrayStack[PropertyComputationResult]
+        pcrs:   AnyRefAccumulator[PropertyComputationResult]
     ): Unit = {
         val e = newEPS.e
         val pkId = newEPS.pk.id
@@ -836,8 +836,8 @@ final class PKEParallelTasksPropertyStore private (
      */
     private[this] def updateAndNotify(
         e: Entity, lb: Property, ub: Property,
-        notifyDependersAboutNonFinalUpdates: Boolean                                     = true,
-        pcrs:                                AnyRefArrayStack[PropertyComputationResult]
+        notifyDependersAboutNonFinalUpdates: Boolean                                      = true,
+        pcrs:                                AnyRefAccumulator[PropertyComputationResult]
     ): UpdateAndNotifyState = {
         updatesCounter += 1
         assert(
@@ -921,7 +921,7 @@ final class PKEParallelTasksPropertyStore private (
     ): Unit = {
 
         // Used to store immediate results, which need to be handled immediately
-        val pcrs: AnyRefArrayStack[PropertyComputationResult] = new AnyRefArrayStack(r, 4)
+        val pcrs: AnyRefAccumulator[PropertyComputationResult] = AnyRefAccumulator(r)
         var forceDependersNotifications = initialForceDependersNotifications
 
         def processResult(r: PropertyComputationResult): Unit = {
@@ -951,9 +951,9 @@ final class PKEParallelTasksPropertyStore private (
                     val IncrementalResult(ir, npcs, propertyComputationsHint) = r
                     pcrs += ir
                     if (propertyComputationsHint == CheapPropertyComputation) {
-                        npcs /*: Iterator[(PropertyComputation[e],e)]*/ foreach { npc ⇒
+                        pcrs ++= npcs /*: Iterator[(PropertyComputation[e],e)]*/ map { npc ⇒
                             val (pc, e) = npc
-                            pcrs += pc(e)
+                            pc(e)
                         }
                     } else {
                         npcs /*: Iterator[(PropertyComputation[e],e)]*/ foreach { npc ⇒
