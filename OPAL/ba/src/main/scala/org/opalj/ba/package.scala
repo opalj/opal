@@ -257,7 +257,7 @@ package object ba { ba ⇒
         config:          ToDAConfig
     ): da.Code_attribute = {
         import constantsBuffer._
-        val data = new ByteArrayOutputStream(code.instructions.size)
+        val data = new ByteArrayOutputStream(code.instructions.length)
         val instructions = new DataOutputStream(data)
 
         def writeMethodRef(i: Instruction): MethodInvocationInstruction = {
