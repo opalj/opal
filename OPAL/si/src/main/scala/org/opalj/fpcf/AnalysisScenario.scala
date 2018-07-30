@@ -1,31 +1,4 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package fpcf
 
@@ -40,8 +13,8 @@ import org.opalj.collection.immutable.:&:
 /**
  * Provides functionality to compute an optimal schedule to execute a set of analyses. Here,
  * optimal means that the schedule will try to minimize the number of notifications due to updated
- * properties by running analyses that just use information provided by earlier analyses,
- * but which do not provide information required by the earlier ones, in a later batch.
+ * properties. It will run analyses that just use information provided by earlier analyses,
+ * but which do not provide information required by the earlier ones, in a later batch/phase.
  *
  * @author Michael Eichberg
  */
@@ -97,19 +70,38 @@ class AnalysisScenario {
      */
     def computationDependencies: Graph[ComputationSpecification] = {
         val compDeps = Graph.empty[ComputationSpecification]
-        val derivedBy: Map[PropertyKind, ComputationSpecification] = {
-            allCS.flatMap(cs ⇒ cs.derives.map(derives ⇒ (derives, cs))).toMap
+        val derivedBy: Map[PropertyKind, Set[ComputationSpecification]] = {
+            var derivedBy: Map[PropertyKind, Set[ComputationSpecification]] = Map.empty
+            allCS foreach { cs ⇒
+                cs.derives foreach { derives ⇒
+                    derivedBy += derives -> (derivedBy.getOrElse(derives, Set.empty) + cs)
+                }
+            }
+            derivedBy
         }
         allCS foreach { cs ⇒
             compDeps += cs
             cs.uses foreach { usedPK ⇒
-                derivedBy.get(usedPK).map { providerCS ⇒
+                derivedBy.get(usedPK).iterator.flatten.foreach { providerCS ⇒
                     if (providerCS ne cs) {
                         compDeps += (cs, providerCS)
                     }
                 }
             }
         }
+        // let's handle the case that multiple analyses derives a property collaboratively
+        derivedBy.valuesIterator.filter(_.size > 1) foreach { css ⇒
+            val cssIt = css.iterator
+            val headCS = cssIt.next()
+            var lastCS = headCS
+            do {
+                val nextCS = cssIt.next()
+                compDeps += (lastCS -> nextCS)
+                lastCS = nextCS
+            } while (cssIt.hasNext)
+            compDeps += (lastCS -> headCS)
+        }
+
         compDeps
     }
 
@@ -118,11 +110,12 @@ class AnalysisScenario {
      * the specified analyses.
      *
      * The goal is to find a schedule that:
-     *   -  ... schedules as many analyses in parallel as possible
-     *   -  ... does not schedule two analyses A and B at the same time if B has a dependency on
-     *          the properties computed by A, but A has no dependency on B. Scheduling the
-     *          computation of B in a later batch potentially minimizes the number of derivations.
-     *
+     *   - ... schedules as many completely independent analyses in parallel as possible
+     *   - ... does not schedule two analyses A and B at the same time if B has a dependency on
+     *         the properties computed by A, but A has no dependency on B. Scheduling the
+     *         computation of B in a later batch potentially minimizes the number of derivations.
+     *   - ... schedules two analyses which collaboratively compute a property in the same batch/
+     *         phase.
      */
     def computeSchedule(
         implicit
@@ -187,6 +180,9 @@ class AnalysisScenario {
     }
 }
 
+/**
+ * Factory to create an [[AnalysisScenario]].
+ */
 object AnalysisScenario {
 
     def apply(analyses: Set[ComputationSpecification]): AnalysisScenario = {

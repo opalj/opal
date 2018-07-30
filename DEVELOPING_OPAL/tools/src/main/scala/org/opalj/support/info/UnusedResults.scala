@@ -1,31 +1,4 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package support
 package info
@@ -33,8 +6,8 @@ package info
 import java.net.URL
 import java.util.concurrent.ConcurrentLinkedQueue
 
-import org.opalj.ai.Domain
-import org.opalj.ai.domain.RecordDefUse
+import scala.collection.JavaConverters._
+
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.Method
 import org.opalj.br.PC
@@ -45,6 +18,7 @@ import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.cg.IsOverridableMethodKey
+import org.opalj.value.KnownTypedValue
 import org.opalj.fpcf.PropertyStoreKey
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.PropertyStore
@@ -79,8 +53,6 @@ import org.opalj.tac.TACMethodParameter
 import org.opalj.tac.TACode
 import org.opalj.tac.DUVar
 
-import scala.collection.JavaConverters._
-
 /**
  * Identifies calls to pure/side-effect free methods where the results are not used subsequently.
  *
@@ -89,7 +61,7 @@ import scala.collection.JavaConverters._
 object UnusedResults extends DefaultOneStepAnalysis {
 
     /** The type of the TAC domain. */
-    type V = DUVar[(Domain with RecordDefUse)#DomainValue]
+    type V = DUVar[KnownTypedValue]
 
     override def title: String = "Unused Results Analysis"
 
@@ -194,7 +166,7 @@ object UnusedResults extends DefaultOneStepAnalysis {
         val callerType = caller.classFile.thisType
         val VirtualFunctionCall(_, dc, _, name, descr, receiver, _) = call
 
-        val value = receiver.asVar.value.asDomainReferenceValue
+        val value = receiver.asVar.value.asReferenceValue
         val receiverType = value.valueType
 
         if (receiverType.isEmpty) {
@@ -202,7 +174,7 @@ object UnusedResults extends DefaultOneStepAnalysis {
         } else if (receiverType.get.isArrayType) {
             val callee = project.instanceCall(callerType, ObjectType.Object, name, descr)
             handleCall(caller, callee, call.pc)
-        } else if (receiver.asVar.value.asDomainReferenceValue.isPrecise) {
+        } else if (value.isPrecise) {
             val callee = project.instanceCall(callerType, receiverType.get, name, descr)
             handleCall(caller, callee, call.pc)
         } else {

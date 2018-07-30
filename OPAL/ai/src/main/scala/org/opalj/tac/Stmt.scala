@@ -1,40 +1,14 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package tac
 
 import org.opalj.br._
 import org.opalj.br.analyses.ProjectLike
 import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.value.KnownTypedValue
 
 /**
- * Super trait of all quadruple statements.
+ * Super trait of all three-address code/quadruple statements.
  *
  * @author Michael Eichberg
  * @author Roberts Kolosovs
@@ -258,7 +232,7 @@ case class Switch[+V <: Var[V]](
         pc:                        PC,
         private var defaultTarget: PC,
         index:                     Expr[V],
-        private var npairs:        IndexedSeq[(Int, PC)]
+        private var npairs:        IndexedSeq[(Int, PC)] // IMPROVE use IntPair
 ) extends Stmt[V] {
 
     final override def asSwitch: this.type = this
@@ -315,6 +289,8 @@ case class Assignment[+V <: Var[V]](pc: Int, targetVar: V, expr: Expr[V]) extend
     }
 
     final override def isSideEffectFree: Boolean = expr.isSideEffectFree
+
+    override def hashCode(): Opcode = (Assignment.ASTID * 1171 + pc) * 31 + expr.hashCode
 
     override def toString: String = s"Assignment(pc=$pc,$targetVar,$expr)"
 
@@ -495,6 +471,8 @@ case class Throw[+V <: Var[V]](pc: Int, exception: Expr[V]) extends Stmt[V] {
 
     final override def isSideEffectFree: Boolean = false
 
+    override def hashCode(): Opcode = (Throw.ASTID * 1171 + pc) * 31 + exception.hashCode
+
     override def toString: String = s"Throw(pc=$pc,$exception)"
 }
 object Throw {
@@ -533,6 +511,10 @@ case class PutStatic[+V <: Var[V]](
         false
     }
 
+    override def hashCode(): Opcode = {
+        ((PutStatic.ASTID * 1171 + pc) * 31 + declaringClass.hashCode) * 31 + name.hashCode
+    }
+
     override def toString: String = {
         s"PutStatic(pc=$pc,${declaringClass.toJava},name,${declaredFieldType.toJava},$value)"
     }
@@ -567,6 +549,10 @@ case class PutField[+V <: Var[V]](
     final override def isSideEffectFree: Boolean = {
         // IMPROVE Is it a redundant write?
         false
+    }
+
+    override def hashCode(): Opcode = {
+        ((PutField.ASTID * 1171 + pc) * 31 + declaringClass.hashCode) * 31 + name.hashCode
     }
 
     override def toString: String = {
@@ -639,6 +625,17 @@ case class NonVirtualMethodCall[+V <: Var[V]](
         p.specialCall(declaringClass, isInterface, name, descriptor)
     }
 
+    // convenience method to enable Call to define a single method to handle all kinds of calls
+    def resolveCallTargets(
+        callingContext: ObjectType
+    )(
+        implicit
+        p:  ProjectLike,
+        ev: V <:< DUVar[KnownTypedValue]
+    ): Set[Method] = {
+        resolveCallTarget(p).toSet
+    }
+
     override def toString: String = {
         val sig = descriptor.toJava(name)
         val declClass = declaringClass.toJava
@@ -699,6 +696,17 @@ case class StaticMethodCall[+V <: Var[V]](
         p.staticCall(declaringClass, isInterface, name, descriptor)
     }
 
+    // convenience method to enable Call to define a single method to handle all kinds of calls
+    def resolveCallTargets(
+        callingContext: ObjectType
+    )(
+        implicit
+        p:  ProjectLike,
+        ev: V <:< DUVar[KnownTypedValue]
+    ): Set[Method] = {
+        resolveCallTarget(p).toSet
+    }
+
     private[tac] override def remapIndexes(
         pcToIndex:                    Array[Int],
         isIndexOfCaughtExceptionStmt: Int ⇒ Boolean
@@ -740,6 +748,8 @@ case class ExprStmt[+V <: Var[V]](pc: Int, expr: Expr[V]) extends Stmt[V] {
         )
         false
     }
+
+    override def hashCode(): Opcode = (ExprStmt.ASTID * 1171 + pc) * 31 + expr.hashCode
 
     override def toString: String = s"ExprStmt(pc=$pc,$expr)"
 

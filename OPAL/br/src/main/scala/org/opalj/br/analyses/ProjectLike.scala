@@ -1,31 +1,4 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package br
 package analyses
@@ -813,7 +786,7 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
                     // is an abstract class in a closed package/module
                     methods ++=
                         overriddenBy(mdc.method).iterator.filter { m ⇒
-                            (m.classFile.thisType isSubtypeOf subtype).isYes
+                            m.classFile.thisType isSubtypeOf subtype
                         }
 
                     // for interfaces we have to continue, because we may have inherited a
@@ -1065,10 +1038,10 @@ object ProjectLike {
                     currentMaximallySpecificMethods =
                         currentMaximallySpecificMethods.filter { currentMaximallySpecificMethod ⇒
                             val specificMethodDeclaringClassType = currentMaximallySpecificMethod.classFile.thisType
-                            if ((specificMethodDeclaringClassType isSubtypeOf newMethodDeclaringClassType).isYes) {
+                            if (specificMethodDeclaringClassType isSubtypeOf newMethodDeclaringClassType) {
                                 addNewMethod = false
                                 true
-                            } else if ((newMethodDeclaringClassType isSubtypeOf specificMethodDeclaringClassType).isYes) {
+                            } else if (newMethodDeclaringClassType isSubtypeOf specificMethodDeclaringClassType) {
                                 false
                             } else {
                                 //... we have an incomplete class hierarchy; let's keep both methods

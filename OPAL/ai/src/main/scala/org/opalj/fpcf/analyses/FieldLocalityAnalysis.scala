@@ -1,31 +1,4 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package fpcf
 package analyses
@@ -33,10 +6,8 @@ package analyses
 import java.util.concurrent.ConcurrentHashMap
 
 import org.opalj
-import org.opalj.ai.Domain
 import org.opalj.ai.ValueOrigin
 import org.opalj.ai.common.SimpleAIKey
-import org.opalj.ai.domain.RecordDefUse
 import org.opalj.br.ClassFile
 import org.opalj.br.DeclaredMethod
 import org.opalj.ai.common.DefinitionSiteLike
@@ -89,6 +60,7 @@ import org.opalj.tac.Stmt
 import org.opalj.tac.TACMethodParameter
 import org.opalj.tac.TACode
 import org.opalj.tac.VirtualFunctionCall
+import org.opalj.value.KnownTypedValue
 
 /**
  * Determines whether the lifetime of a reference type field is the same as that of its owning
@@ -102,7 +74,7 @@ class FieldLocalityAnalysis private[analyses] (
         final val project: SomeProject
 ) extends FPCFAnalysis {
 
-    type V = DUVar[(Domain with RecordDefUse)#DomainValue]
+    type V = DUVar[KnownTypedValue]
 
     private[this] val tacaiProvider = project.get(DefaultTACAIKey)
     private[this] val declaredMethods = project.get(DeclaredMethodsKey)
@@ -168,12 +140,12 @@ class FieldLocalityAnalysis private[analyses] (
             // If the class is not [[java.lang.Cloneable]] it can't be cloned directly
             // (`java.lang.Object.clone` with throw a [[java.lang.CloneNotSupportedException]]).
             // Otherwise, the field may be leaked!
-            if (project.classHierarchy.isSubtypeOf(thisType, ObjectType.Cloneable).isYesOrUnknown)
+            if (classHierarchy.isASubtypeOf(thisType, ObjectType.Cloneable).isYesOrUnknown)
                 return Result(field, NoLocalField)
 
             val subtypes = classHierarchy.allSubtypes(thisType, reflexive = false)
             val existsCloneableSubtype = subtypes.exists { subtype ⇒
-                project.classHierarchy.isSubtypeOf(subtype, ObjectType.Cloneable).isYesOrUnknown
+                classHierarchy.isASubtypeOf(subtype, ObjectType.Cloneable).isYesOrUnknown
             }
 
             // If there may be a Cloneable subtype, the field could be leaked through this subtype,
@@ -370,7 +342,7 @@ class FieldLocalityAnalysis private[analyses] (
 
             case Assignment(_, _, VirtualFunctionCall(_, rcvrType, _, name, desc, receiver, _)) ⇒
                 val callerType = caller.classFile.thisType
-                val value = receiver.asVar.value.asDomainReferenceValue
+                val value = receiver.asVar.value.asReferenceValue
                 val mostPreciseType = value.valueType
 
                 if (mostPreciseType.isEmpty) {
@@ -418,7 +390,12 @@ class FieldLocalityAnalysis private[analyses] (
      * @return false if the field may still be local, true otherwise.
      * @note Adds dependees as necessary.
      */
-    def handleConcreteCall(callee: opalj.Result[Method])(implicit state: FieldLocalityState): Boolean = {
+    def handleConcreteCall(
+        callee: opalj.Result[Method]
+    )(
+        implicit
+        state: FieldLocalityState
+    ): Boolean = {
         if (callee.isEmpty) { // Unknown method, not found in the scope of the current project
             true
         } else {
@@ -592,8 +569,11 @@ sealed trait FieldLocalityAnalysisScheduler extends ComputationSpecification {
     }
 
     final override type InitializationData = Null
-
     final def init(p: SomeProject, ps: PropertyStore): Null = null
+
+    def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
+
+    def afterPhaseCompletion(p: SomeProject, ps: PropertyStore): Unit = {}
 }
 
 object EagerFieldLocalityAnalysis

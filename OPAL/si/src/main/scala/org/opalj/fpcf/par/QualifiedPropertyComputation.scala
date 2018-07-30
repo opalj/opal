@@ -1,39 +1,13 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package fpcf
 package par
 
 import org.opalj.fpcf.PropertyStore.{Debug ⇒ debug}
+
 /**
  * We generally distinguish between tasks that compute properties which are explicitly required
- * and those tasks which are not yet / no longer required, because no strictly depending analyses
+ * and those tasks which are not yet/no longer required, because no strictly depending analyses
  * requires them (anymore.)
  *
  * @author Michael Eichberg
@@ -41,7 +15,7 @@ import org.opalj.fpcf.PropertyStore.{Debug ⇒ debug}
 private[par] sealed trait QualifiedTask[E <: Entity] extends (() ⇒ Unit) {
 
     def isInitialTask: Boolean
-    def asInitialTask: InitialPropertyComputationTask[E] = throw new ClassCastException()
+    def asInitialTask: InitialPropertyComputationTask[E] = throw new ClassCastException();
 }
 
 private[par] sealed trait FirstPropertyComputationTask[E <: Entity] extends QualifiedTask[E] {
@@ -107,11 +81,10 @@ private[par] final case class OnUpdateComputationTask[E <: Entity, P <: Property
     override def dependeePKId: Int = dependeeEPK.pk.id
 
     override def apply(): Unit = {
-        // get the most current pValue when the depender
-        // is eventually evaluated; the effectiveness
-        // of this check depends on the scheduling strategy(!)
-        val pValue = ps(dependeeEPK)
-        val eps = EPS(dependeeEPK.e, pValue.lb, pValue.ub)
+        // get the most current property when the depender is eventually evaluated;
+        // the effectiveness of this check depends on the scheduling strategy(!)
+        val eOptionP = ps(dependeeEPK)
+        val eps = EPS(dependeeEPK.e, eOptionP.lb, eOptionP.ub)
         ps.handleResult(c(eps), forceEvaluation = false)
     }
 }
@@ -129,7 +102,7 @@ private[par] final case class ImmediateOnUpdateComputationTask[E <: Entity, P <:
     override def dependeePKId: Int = dependeeEPK.pk.id
 
     override def apply(): Unit = {
-        // Get the most current pValue when the depender is eventually evaluated;
+        // Get the most current property when the depender is eventually evaluated;
         // the effectiveness of this check depends on the scheduling strategy(!).
         val newResult = c(ps(dependeeEPK).asEPS)
         if (debug && newResult == previousResult) {
@@ -154,7 +127,7 @@ private[par] final case class ImmediateOnFinalUpdateComputationTask[E <: Entity,
     override def dependeePKId: Int = dependeeFinalEP.pk.id
 
     override def apply(): Unit = {
-        // get the most current pValue when the depender is eventually evaluated;
+        // get the most current property when the depender is eventually evaluated;
         // the effectiveness of this check depends on the scheduling strategy(!)
         val newResult = c(dependeeFinalEP)
         if (debug && newResult == previousResult) {

@@ -1,31 +1,4 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf
 
 import org.junit.runner.RunWith
@@ -520,7 +493,7 @@ sealed abstract class PropertyStoreTest(
                     IntermediateResult(
                         "e", Marker.NotMarked, Marker.IsMarked,
                         Seq(initiallyExpectedEP),
-                        (eps) ⇒ {
+                        eps ⇒ {
                             // Depending the scheduling, we can have a final result here as well.
                             if (eps.isFinal) {
                                 if (eps.lb == SuperPalindrome)
@@ -1237,7 +1210,7 @@ abstract class PropertyStoreTestWithDebugging(
 
                 def aAnalysis(ignored: Node): PropertyComputationResult = {
                     val bEOptionP = ps(nodeB, ReachableNodesCount.Key)
-                    new IntermediateResult(
+                    IntermediateResult(
                         nodeA, ReachableNodesCount(10), ReachableNodesCount(20), List(bEOptionP),
                         (bStringEOptionP: SomeEOptionP) ⇒ ???,
                         pch
@@ -1274,9 +1247,9 @@ abstract class PropertyStoreTestWithDebugging(
                 def c(n: Node)(eOptP: SomeEOptionP): PropertyComputationResult = {
                     n match {
                         case `nodeA` ⇒
-                            new Result(nodeA, ReachableNodesCount(50))
+                            Result(nodeA, ReachableNodesCount(50))
                         case `nodeB` ⇒
-                            new IntermediateResult(
+                            IntermediateResult(
                                 n,
                                 ReachableNodesCount(100), // <= invalid refinement of lower bound!
                                 ReachableNodesCount(count),
@@ -1289,7 +1262,7 @@ abstract class PropertyStoreTestWithDebugging(
                 def lazyAnalysis(n: Node): PropertyComputationResult = n match {
                     case `nodeA` ⇒
                         val bEOptionP = ps(nodeB, ReachableNodesCount.Key)
-                        new IntermediateResult(
+                        IntermediateResult(
                             nodeA, ReachableNodesCount(20), ReachableNodesCount(0),
                             List(bEOptionP),
                             c(nodeA), pch
@@ -1298,7 +1271,7 @@ abstract class PropertyStoreTestWithDebugging(
                     case `nodeB` ⇒
                         val cEOptionP = ps(nodeC, ReachableNodesCount.Key)
                         count += 1
-                        new IntermediateResult(
+                        IntermediateResult(
                             n, ReachableNodesCount(100 - count), ReachableNodesCount(count),
                             List(cEOptionP),
                             c(nodeB), pch
@@ -1344,9 +1317,9 @@ abstract class PropertyStoreTestWithDebugging(
                 def c(n: Node)(eOptP: SomeEOptionP): PropertyComputationResult = {
                     n match {
                         case `nodeA` ⇒
-                            new Result(nodeA, ReachableNodesCount(50))
+                            Result(nodeA, ReachableNodesCount(50))
                         case `nodeB` ⇒
-                            new IntermediateResult(
+                            IntermediateResult(
                                 n,
                                 ReachableNodesCount(100 - count),
                                 ReachableNodesCount(0), // <= invalid refinement of upper bound!
@@ -1359,7 +1332,7 @@ abstract class PropertyStoreTestWithDebugging(
                 def lazyAnalysis(n: Node): PropertyComputationResult = n match {
                     case `nodeA` ⇒
                         val bEOptionP = ps(nodeB, ReachableNodesCount.Key)
-                        new IntermediateResult(
+                        IntermediateResult(
                             nodeA, ReachableNodesCount(20), ReachableNodesCount(0),
                             List(bEOptionP),
                             c(nodeA), pch
@@ -1368,7 +1341,7 @@ abstract class PropertyStoreTestWithDebugging(
                     case `nodeB` ⇒
                         val cEOptionP = ps(nodeC, ReachableNodesCount.Key)
                         count += 1
-                        new IntermediateResult(
+                        IntermediateResult(
                             n, ReachableNodesCount(100 - count), ReachableNodesCount(10),
                             List(cEOptionP),
                             c(nodeB), pch
@@ -1415,7 +1388,7 @@ abstract class PropertyStoreTestWithDebugging(
                         case `nodeA` ⇒
                             new Result(nodeA, ReachableNodesCount(50))
                         case `nodeB` ⇒
-                            new IntermediateResult(
+                            IntermediateResult(
                                 n,
                                 ReachableNodesCount(40),
                                 ReachableNodesCount(50),
@@ -1428,7 +1401,7 @@ abstract class PropertyStoreTestWithDebugging(
                 def lazyAnalysis(n: Node): PropertyComputationResult = n match {
                     case `nodeA` ⇒
                         val bEOptionP = ps(nodeB, ReachableNodesCount.Key)
-                        new IntermediateResult(
+                        IntermediateResult(
                             nodeA, ReachableNodesCount(20), ReachableNodesCount(0),
                             List(bEOptionP),
                             c(nodeA), pch
@@ -1437,7 +1410,7 @@ abstract class PropertyStoreTestWithDebugging(
                     case `nodeB` ⇒
                         val cEOptionP = ps(nodeC, ReachableNodesCount.Key)
                         count += 1
-                        new IntermediateResult(
+                        IntermediateResult(
                             n, ReachableNodesCount(100 - count), ReachableNodesCount(10),
                             List(cEOptionP),
                             c(nodeB), pch

@@ -1,31 +1,4 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package fpcf
 package analyses
@@ -469,9 +442,9 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                 true
             case FinalEP(_, ExtensibleLocalField | ExtensibleLocalFieldWithGetter) ⇒
                 if (data._1.isVar) {
-                    val value = data._1.asVar.value.asDomainReferenceValue
+                    val value = data._1.asVar.value.asReferenceValue
                     value.isPrecise &&
-                        classHierarchy.isSubtypeOf(value.valueType.get, ObjectType.Cloneable).isNo
+                        !classHierarchy.isSubtypeOf(value.asReferenceType, ObjectType.Cloneable)
                 } else
                     false
             case EPS(_, _, NoLocalField) ⇒
@@ -490,43 +463,45 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
     def checkLocalityOfReturn(
         ep:   EOptionP[DeclaredMethod, Property],
         data: (Option[Expr[V]], Purity)
-    )(implicit state: State): Unit = ep match {
-        case EPS(_, PrimitiveReturnValue | FreshReturnValue |
-            VPrimitiveReturnValue | VFreshReturnValue, _) ⇒
-        case FinalEP(_, Getter | VGetter) ⇒
-            if (data._2 meet state.ubPurity ne state.ubPurity)
-                isLocal(data._1.get, data._2)
-        case FinalEP(_, ExtensibleGetter | VExtensibleGetter) ⇒
-            if (data._1.get.isVar) {
-                val value = data._1.get.asVar.value.asDomainReferenceValue
-                if (value.isPrecise &&
-                    classHierarchy.isSubtypeOf(value.valueType.get, ObjectType.Cloneable).isNo) {
-                    if (data._2 meet state.ubPurity ne state.ubPurity)
-                        isLocal(data._1.get, data._2)
+    )(implicit state: State): Unit = {
+        import project.classHierarchy.isSubtypeOf
+        ep match {
+            case EPS(_, PrimitiveReturnValue | FreshReturnValue |
+                VPrimitiveReturnValue | VFreshReturnValue, _) ⇒
+            case FinalEP(_, Getter | VGetter) ⇒
+                if (data._2 meet state.ubPurity ne state.ubPurity)
+                    isLocal(data._1.get, data._2)
+            case FinalEP(_, ExtensibleGetter | VExtensibleGetter) ⇒
+                if (data._1.get.isVar) {
+                    val value = data._1.get.asVar.value.asReferenceValue
+                    if (value.isPrecise && !isSubtypeOf(value.asReferenceType, ObjectType.Cloneable)) {
+                        if (data._2 meet state.ubPurity ne state.ubPurity)
+                            isLocal(data._1.get, data._2)
+                    } else {
+                        atMost(data._2)
+                    }
                 } else {
                     atMost(data._2)
                 }
-            } else {
+            case EPS(_, _, NoFreshReturnValue | VNoFreshReturnValue) ⇒
                 atMost(data._2)
-            }
-        case EPS(_, _, NoFreshReturnValue | VNoFreshReturnValue) ⇒
-            atMost(data._2)
-        case EOptionP(e, pk) ⇒
-            reducePurityLB(data._2)
-            if (data._2 meet state.ubPurity ne state.ubPurity) {
-                if (pk == ReturnValueFreshness.key)
-                    state.addRVFDependee(
-                        e,
-                        ep.asInstanceOf[EOptionP[DeclaredMethod, ReturnValueFreshness]],
-                        data
-                    )
-                else
-                    state.addVirtualRVFDependee(
-                        e,
-                        ep.asInstanceOf[EOptionP[DeclaredMethod, VirtualMethodReturnValueFreshness]],
-                        data
-                    )
-            }
+            case EOptionP(e, pk) ⇒
+                reducePurityLB(data._2)
+                if (data._2 meet state.ubPurity ne state.ubPurity) {
+                    if (pk == ReturnValueFreshness.key)
+                        state.addRVFDependee(
+                            e,
+                            ep.asInstanceOf[EOptionP[DeclaredMethod, ReturnValueFreshness]],
+                            data
+                        )
+                    else
+                        state.addVirtualRVFDependee(
+                            e,
+                            ep.asInstanceOf[EOptionP[DeclaredMethod, VirtualMethodReturnValueFreshness]],
+                            data
+                        )
+                }
+        }
     }
 
     /**
@@ -910,7 +885,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
 
         // Special case: The Throwable constructor is `LBSideEffectFree`, but subtype constructors
         // may not be because of overridable fillInStackTrace method
-        if (method.isConstructor && declClass.isSubtypeOf(ObjectType.Throwable).isYes)
+        if (method.isConstructor && declClass.isSubtypeOf(ObjectType.Throwable))
             project.instanceMethods(declClass).foreach { mdc ⇒
                 if (mdc.name == "fillInStackTrace" &&
                     mdc.method.classFile.thisType != ObjectType.Throwable) {
@@ -1005,8 +980,12 @@ trait L2PurityAnalysisScheduler extends ComputationSpecification {
     }
 
     final override type InitializationData = Null
-
     final def init(p: SomeProject, ps: PropertyStore): Null = null
+
+    def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
+
+    def afterPhaseCompletion(p: SomeProject, ps: PropertyStore): Unit = {}
+
 }
 
 object EagerL2PurityAnalysis extends L2PurityAnalysisScheduler with FPCFEagerAnalysisScheduler {

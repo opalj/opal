@@ -1,31 +1,4 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package ai
 package domain
@@ -87,13 +60,12 @@ trait DefaultTypeLevelReferenceValues
 
         override def baseValues: Traversable[DomainArrayValue] = Traversable.empty
 
-        override def isValueSubtypeOf(supertype: ReferenceType): Answer = {
-            val isSubtypeOf = domain.isSubtypeOf(theUpperTypeBound, supertype)
-            isSubtypeOf match {
+        override def isValueASubtypeOf(supertype: ReferenceType): Answer = {
+            domain.isASubtypeOf(theUpperTypeBound, supertype) match {
                 case Yes ⇒ Yes
                 case No if isPrecise ||
-                    /* the array's supertypes: Object, Serializable and Cloneable
-                     * are handled by domain.isSubtypeOf */
+                    // the array's supertypes: Object, Serializable and Cloneable
+                    // are handled by domain.isASubtypeOf
                     supertype.isObjectType ||
                     theUpperTypeBound.elementType.isBaseType ||
                     (
@@ -229,7 +201,7 @@ trait DefaultTypeLevelReferenceValues
             other match {
                 case _: NullValue ⇒ true
                 case ArrayValue(thatUpperTypeBound) ⇒
-                    domain.isSubtypeOf(thatUpperTypeBound, this.theUpperTypeBound).isYes
+                    domain.isSubtypeOf(thatUpperTypeBound, this.theUpperTypeBound)
                 case _ ⇒ false
             }
         }
@@ -289,9 +261,8 @@ trait DefaultTypeLevelReferenceValues
          *      takes the property whether the upper type bound '''is precise''' into
          *      account.
          */
-        override def isValueSubtypeOf(supertype: ReferenceType): Answer = {
-            val isSubtypeOf = domain.isSubtypeOf(theUpperTypeBound, supertype)
-            val result = isSubtypeOf match {
+        override def isValueASubtypeOf(supertype: ReferenceType): Answer = {
+            domain.isASubtypeOf(theUpperTypeBound, supertype) match {
                 case Yes ⇒
                     Yes
                 case No if isPrecise
@@ -310,17 +281,16 @@ trait DefaultTypeLevelReferenceValues
                             classHierarchy.isKnown(theUpperTypeBound) &&
                             classHierarchy.isInterface(supertype.asObjectType).isNo &&
                             classHierarchy.isInterface(theUpperTypeBound).isNo &&
-                            domain.isSubtypeOf(supertype, theUpperTypeBound).isNo
+                            domain.isASubtypeOf(supertype, theUpperTypeBound).isNo
                         ) ⇒
                     No
                 case _ if isPrecise &&
                     // Note "reflexivity" is already captured by the first isSubtypeOf call
-                    domain.isSubtypeOf(supertype, theUpperTypeBound).isYes ⇒
+                    domain.isSubtypeOf(supertype, theUpperTypeBound) ⇒
                     No
                 case _ ⇒
                     Unknown
             }
-            result
         }
 
         // WIDENING OPERATION
@@ -369,16 +339,16 @@ trait DefaultTypeLevelReferenceValues
         override def abstractsOver(other: DomainValue): Boolean = {
             other match {
                 case SObjectValue(thatUpperTypeBound) ⇒
-                    domain.isSubtypeOf(thatUpperTypeBound, this.theUpperTypeBound).isYes
+                    domain.isSubtypeOf(thatUpperTypeBound, this.theUpperTypeBound)
 
                 case ArrayValue(thatUpperTypeBound) ⇒
-                    domain.isSubtypeOf(thatUpperTypeBound, this.theUpperTypeBound).isYes
+                    domain.isSubtypeOf(thatUpperTypeBound, this.theUpperTypeBound)
 
                 case MObjectValue(thatUpperTypeBound) ⇒
                     classHierarchy.isSubtypeOf(
                         thatUpperTypeBound.asInstanceOf[UIDSet[ReferenceType]],
                         this.theUpperTypeBound
-                    ).isYes
+                    )
 
                 case _: NullValue ⇒ true
             }
@@ -415,12 +385,12 @@ trait DefaultTypeLevelReferenceValues
          *      value is '''not''' a subtype of the given type as this implementation
          *      does not distinguish between class types and interface types.
          */
-        override def isValueSubtypeOf(supertype: ReferenceType): Answer = {
-            var isSubtypeOf: Answer = No
+        override def isValueASubtypeOf(supertype: ReferenceType): Answer = {
+            var isASubtypeOf: Answer = No
             upperTypeBound foreach { anUpperTypeBound ⇒
-                domain.isSubtypeOf(anUpperTypeBound, supertype) match {
+                domain.isASubtypeOf(anUpperTypeBound, supertype) match {
                     case Yes     ⇒ return Yes; // <= Shortcut evaluation
-                    case Unknown ⇒ isSubtypeOf = Unknown
+                    case Unknown ⇒ isASubtypeOf = Unknown
                     case No      ⇒ /*nothing to do*/
                 }
             }
@@ -435,7 +405,7 @@ trait DefaultTypeLevelReferenceValues
             // analyze a library the answer generally has to be `Unknown`
             // unless we also consider the classes that are final or ....
 
-            isSubtypeOf match {
+            isASubtypeOf match {
                 // Yes is not possible here!
 
                 case No if (

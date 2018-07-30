@@ -1,41 +1,12 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package fpcf
 package analyses
 package escape
 
 import scala.annotation.switch
-import org.opalj.ai.common.DefinitionSite
-import org.opalj.ai.Domain
-import org.opalj.ai.common.DefinitionSitesKey
-import org.opalj.ai.domain.RecordDefUse
+
+import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
 import org.opalj.br.Field
@@ -45,7 +16,6 @@ import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.cg.IsOverridableMethodKey
-import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.properties.AtMost
 import org.opalj.fpcf.properties.EscapeInCallee
 import org.opalj.fpcf.properties.EscapeProperty
@@ -68,8 +38,9 @@ import org.opalj.fpcf.properties.VFreshReturnValue
 import org.opalj.fpcf.properties.VGetter
 import org.opalj.fpcf.properties.VNoFreshReturnValue
 import org.opalj.fpcf.properties.VirtualMethodReturnValueFreshness
+import org.opalj.ai.common.DefinitionSite
+import org.opalj.ai.common.DefinitionSitesKey
 import org.opalj.tac.Assignment
-import org.opalj.tac.DUVar
 import org.opalj.tac.DefaultTACAIKey
 import org.opalj.tac.GetField
 import org.opalj.tac.New
@@ -138,8 +109,6 @@ class ReturnValueFreshnessState(val dm: DeclaredMethod) {
 class ReturnValueFreshnessAnalysis private[analyses] (
         final val project: SomeProject
 ) extends FPCFAnalysis {
-
-    type V = DUVar[(Domain with RecordDefUse)#DomainValue] // TODO @Florian already defined in the package, isn't it?
 
     private[this] val tacaiProvider = project.get(DefaultTACAIKey)
     private[this] val declaredMethods = project.get(DeclaredMethodsKey)
@@ -276,7 +245,7 @@ class ReturnValueFreshnessAnalysis private[analyses] (
     ): Boolean = {
         val VirtualFunctionCall(_, dc, _, name, desc, receiver, _) = callSite
 
-        val value = receiver.asVar.value.asDomainReferenceValue
+        val value = receiver.asVar.value.asReferenceValue
         val dm = state.dm
         val m = dm.definedMethod
         val thisType = m.classFile.thisType
@@ -498,8 +467,12 @@ sealed trait ReturnValueFreshnessAnalysisScheduler extends ComputationSpecificat
     }
 
     final override type InitializationData = Null
-
     final def init(p: SomeProject, ps: PropertyStore): Null = null
+
+    def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
+
+    def afterPhaseCompletion(p: SomeProject, ps: PropertyStore): Unit = {}
+
 }
 
 object EagerReturnValueFreshnessAnalysis

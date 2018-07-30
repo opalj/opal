@@ -1,36 +1,10 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package fpcf
 
 /**
- * An entity and an associated property - if it is (already) available.
+ * An entity associated with the current extension of a property or `None` if no (preliminary)
+ * property is already computed.
  *
  * @author Michael Eichberg
  */
@@ -41,9 +15,12 @@ sealed trait EOptionP[+E <: Entity, +P <: Property] {
      * to use entities that stand for specific elements in the code, but which
      * are not the concrete source code entities themselves. This greatly facilitates
      * associating properties with entities where the respective code is not available.
-     * For example, by using "declared methods" it is possible to associate (predetermined)
-     * properties with (selected) library methods even if those methods are not part of
-     * the analysis.
+     * For example, by using an object which acts as a representative for a concrete method
+     * it is possible to associate (predetermined) properties with (selected) library methods
+     * even if those methods are not part of the analysis.
+     *
+     * @note Entities have to implement `equals`/`hashCode` methods which are very efficient,
+     *       because entity based comparisons happen very frequently!
      */
     val e: E
 
@@ -60,6 +37,10 @@ sealed trait EOptionP[+E <: Entity, +P <: Property] {
      */
     def hasProperty: Boolean
     final def hasNoProperty: Boolean = !hasProperty
+
+    /**
+     * This EOptionP as an EPS object; defined iff at least a preliminary property exists.
+     */
     def asEPS: EPS[E, P]
 
     /**
@@ -113,7 +94,6 @@ sealed trait EOptionP[+E <: Entity, +P <: Property] {
      * `NumberFormatException` can be ruled out and a final result for `m` can be
      * computed.
      *
-     *
      * @note If the property is final, the lb (and ub) will return the final property `p`.
      */
     @throws[UnsupportedOperationException]("if no property is available")
@@ -132,7 +112,7 @@ sealed trait EOptionP[+E <: Entity, +P <: Property] {
 }
 
 /**
- * Factory and extractor for [[EPK]] objects.
+ * Factory and extractor for [[EOptionP]] objects.
  *
  * @author Michael Eichberg
  */
@@ -159,7 +139,7 @@ sealed trait EPS[+E <: Entity, +P <: Property] extends EOptionP[E, P] {
     /**
      * Creates a [[FinalEP]] object using the current ub.
      *
-     * No check is done whether the current state is actually final.
+     * @note No check is done whether the property is actually final.
      */
     final def toUBEP: FinalEP[E, P] = FinalEP(e, ub)
 
@@ -192,8 +172,8 @@ object EPS {
 }
 
 /**
- * Encapsulate the intermediate state related to the computation of the property `P` of
- * the respective kind for the entity `E`.
+ * Encapsulates the intermediate lower- and upper bound related to the computation of the respective
+ * property kind for the entity `E`.
  *
  * For a detailed discussion of the semantics of `lb` and `ub` see [[EOptionP.lb]].
  */
@@ -204,11 +184,11 @@ final class IntermediateEP[+E <: Entity, +P <: Property](
 ) extends EPS[E, P] {
 
     override def isFinal: Boolean = false
-    override def asFinal: FinalEP[E, P] = throw new ClassCastException()
+    override def asFinal: FinalEP[E, P] = throw new ClassCastException();
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: IntermediateEP[_, _] ⇒ (e eq that.e) && lb == that.lb && ub == that.ub
+            case that: IntermediateEP[_, _] ⇒ e == that.e && lb == that.lb && ub == that.ub
             case _                          ⇒ false
         }
     }
@@ -232,10 +212,9 @@ object IntermediateEP {
 }
 
 /**
- * Encapsulate the final state related to the computation of the property `P` of
- * the respective kind for the entity `E`.
+ * Encapsulate the final property `P` for the entity `E`.
  *
- * For a detailed discussion of the semantics of `lb` and `ub` see [[EOptionP.lb]].
+ * For a detailed discussion of the semantics of `lb` and `ub` see [[EOptionP.ub]].
  */
 final class FinalEP[+E <: Entity, +P <: Property](val e: E, val ub: P) extends EPS[E, P] {
 
@@ -248,7 +227,7 @@ final class FinalEP[+E <: Entity, +P <: Property](val e: E, val ub: P) extends E
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: FinalEP[_, _] ⇒ (that.e eq this.e) && this.p == that.p
+            case that: FinalEP[_, _] ⇒ that.e == this.e && this.p == that.p
             case _                   ⇒ false
         }
     }
@@ -274,10 +253,6 @@ object FinalEP {
 /**
  * A simple pair consisting of an [[Entity]] and a [[PropertyKey]].
  *
- * Compared to a standard `Tuple2` the entities are compared using reference comparison
- * and not equality based on `equals` checks. `PropertyKey`s are compared using equals
- * (structural equality).
- *
  * @author Michael Eichberg
  */
 final class EPK[+E <: Entity, +P <: Property](
@@ -290,16 +265,16 @@ final class EPK[+E <: Entity, +P <: Property](
     override def ub: Nothing = throw new UnsupportedOperationException()
 
     override def isFinal: Boolean = false
-    override def asFinal: FinalEP[E, P] = throw new ClassCastException()
+    override def asFinal: FinalEP[E, P] = throw new ClassCastException();
 
     override def hasProperty: Boolean = false
-    override def asEPS: EPS[E, P] = throw new ClassCastException()
+    override def asEPS: EPS[E, P] = throw new ClassCastException();
 
     override def toEPK: this.type = this
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: EPK[_, _] ⇒ (that.e eq this.e) && this.pk == that.pk
+            case that: EPK[_, _] ⇒ that.e == this.e && this.pk == that.pk
             case _               ⇒ false
         }
     }

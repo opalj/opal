@@ -1,31 +1,4 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package fpcf
 
@@ -53,8 +26,11 @@ class PropertyComputationsSchedulerTest extends FunSpec with Matchers with Befor
     ) extends ComputationSpecification {
 
         override type InitializationData = Null
-
         override def init(ps: PropertyStore): Null = null
+
+        override def beforeSchedule(ps: PropertyStore): Unit = {}
+
+        override def afterPhaseCompletion(ps: PropertyStore): Unit = {}
 
         override def schedule(ps: PropertyStore, unused: Null): Unit = {}
 
@@ -62,8 +38,8 @@ class PropertyComputationsSchedulerTest extends FunSpec with Matchers with Befor
 
     implicit val logContext = GlobalLogContext
 
-    val pks: Array[PropertyKind] = new Array[PropertyKind](11)
-    (0 to 10).foreach { i ⇒
+    val pks: Array[PropertyKind] = new Array[PropertyKind](12)
+    (0 to 11).foreach { i ⇒
         pks(i) = PropertyKey.create[Null, Null](
             "p"+(i),
             (_: PropertyStore, _: FallbackReason, _: Entity) ⇒ ???,
@@ -152,6 +128,12 @@ class PropertyComputationsSchedulerTest extends FunSpec with Matchers with Befor
         isLazy = true
     )
 
+    val c11 = BasicComputationSpecification(
+        "c11",
+        Set.empty,
+        Set(pks(11), pks(10)) // this one also derives property 10; e.g., at a more basic level
+    )
+
     //**********************************************************************************************
     //
     // TESTS
@@ -169,9 +151,14 @@ class PropertyComputationsSchedulerTest extends FunSpec with Matchers with Befor
 
         describe("the scheduling of eager property computations") {
 
-            it("should be possible to create a schedule where a property is computed by multiple computations") {
+            it("should be possible to create a schedule where a property is computed by two computations") {
                 val batches = (AnalysisScenario(Set(c9, c10))).computeSchedule.batches
-                batches.size should be(2)
+                batches.size should be(1)
+            }
+
+            it("should be possible to create a schedule where a property is computed by three computations") {
+                val batches = (AnalysisScenario(Set(c9, c10, c11))).computeSchedule.batches
+                batches.size should be(1)
             }
 
             it("should be possible to create a schedule with one computation") {
@@ -216,6 +203,11 @@ class PropertyComputationsSchedulerTest extends FunSpec with Matchers with Befor
                 /*smoke test: */ schedule(EPKSequentialPropertyStore())
 
                 val batches = schedule.batches
+                batches.size should be(1)
+            }
+
+            it("should be possible to create a mixed schedule where a property is computed by three computations") {
+                val batches = (AnalysisScenario(Set(c9, c10Lazy, c11))).computeSchedule.batches
                 batches.size should be(1)
             }
 

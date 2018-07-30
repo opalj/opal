@@ -1,31 +1,4 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.collection.mutable
 
 import scala.collection.AbstractIterator
@@ -34,8 +7,7 @@ import scala.reflect.ClassTag
 
 /**
  * An array based implementation of a mutable buffer. This implementation offers highly
- * optimized, but very unsafe methods and is therefore __not__ a general
- * purpose data-structure which .
+ * optimized, but very unsafe methods and is therefore __not__ a general purpose data-structure.
  * In general, this buffer should only be used to reference objects which outlive the life time
  * of the buffer AND where the buffer is only used locally. To foster a local usage only, we do
  * not inherit from any standard collection classes.
@@ -55,8 +27,8 @@ final class AnyRefArrayBuffer[N >: Null <: AnyRef] private (
 
     /**
      * Resets the size of the buffer, but does not clear the underlying array; hence,
-     * the stack may prevent the garbage collection of the still referenced values.
-     * This is generally not a problem, if the stack is only used locally and the
+     * the array may prevent the garbage collection of the still referenced values.
+     * This is generally not a problem, if the array is only used locally and the
      * referenced (dead) objects outlive the lifetime of the buffer!
      */
     def resetSize(): Unit = size0 = 0
