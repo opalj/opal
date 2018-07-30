@@ -53,7 +53,7 @@ class L1PuritySmokeTest extends FunSpec with Matchers {
                 propertyStore.entities(VirtualMethodPurity.key).exists(_.isRefinable)) {
                 fail("Analysis left over non-final purity results")
             }
-        }finally {
+        } finally {
             propertyStore.shutdown()
         }
     }

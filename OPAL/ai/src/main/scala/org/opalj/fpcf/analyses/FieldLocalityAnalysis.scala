@@ -140,12 +140,12 @@ class FieldLocalityAnalysis private[analyses] (
             // If the class is not [[java.lang.Cloneable]] it can't be cloned directly
             // (`java.lang.Object.clone` with throw a [[java.lang.CloneNotSupportedException]]).
             // Otherwise, the field may be leaked!
-            if (project.classHierarchy.isSubtypeOf(thisType, ObjectType.Cloneable).isYesOrUnknown)
+            if (classHierarchy.isASubtypeOf(thisType, ObjectType.Cloneable).isYesOrUnknown)
                 return Result(field, NoLocalField)
 
             val subtypes = classHierarchy.allSubtypes(thisType, reflexive = false)
             val existsCloneableSubtype = subtypes.exists { subtype ⇒
-                project.classHierarchy.isSubtypeOf(subtype, ObjectType.Cloneable).isYesOrUnknown
+                classHierarchy.isASubtypeOf(subtype, ObjectType.Cloneable).isYesOrUnknown
             }
 
             // If there may be a Cloneable subtype, the field could be leaked through this subtype,

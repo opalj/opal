@@ -72,7 +72,7 @@ object CFGFactory {
          * instruction unless the previous instruction ended the basic block.
          */
 
-        import classHierarchy.isSubtypeOf
+        import classHierarchy.isASubtypeOf
 
         val instructions = code.instructions
         val codeSize = instructions.length
@@ -206,7 +206,7 @@ object CFGFactory {
                             linkWithExceptionHandler(currentBB, eh)
                             true // also aborts the evaluation
                         } else {
-                            val isCaught = isSubtypeOf(thrownException, catchType.get)
+                            val isCaught = isASubtypeOf(thrownException, catchType.get)
                             if (isCaught.isYes) {
                                 linkWithExceptionHandler(currentBB, eh)
                                 true // also aborts the evaluation

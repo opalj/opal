@@ -989,7 +989,11 @@ final class ObjectType private ( // DO NOT MAKE THIS A CASE CLASS!
         ObjectType.unboxValue(targetType)
     }
 
-    def isSubtypeOf(that: ObjectType)(implicit classHierarchy: ClassHierarchy): Answer = {
+    def isASubtypeOf(that: ObjectType)(implicit classHierarchy: ClassHierarchy): Answer = {
+        classHierarchy.isASubtypeOf(this, that)
+    }
+
+    def isSubtypeOf(that: ObjectType)(implicit classHierarchy: ClassHierarchy): Boolean = {
         classHierarchy.isSubtypeOf(this, that)
     }
 

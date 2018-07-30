@@ -1576,7 +1576,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                                 gotoExceptionHandler(pc, branchTarget, None)
                                 true
                             } else {
-                                theDomain.isValueSubtypeOf(exceptionValue, caughtType) match {
+                                theDomain.isValueASubtypeOf(exceptionValue, caughtType) match {
                                     case No ⇒
                                         false
                                     case Yes ⇒
@@ -2852,7 +2852,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                             // if objectref is null => UNCHANGED (see spec. for details)
                             fallThrough()
                         else {
-                            theDomain.isValueSubtypeOf(objectref, supertype) match {
+                            theDomain.isValueASubtypeOf(objectref, supertype) match {
                                 case Yes ⇒
                                     // if objectref is a subtype => UNCHANGED
                                     fallThrough()
@@ -2890,12 +2890,12 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                                     assert(
                                         {
                                             val castedValue = newOperands.head
-                                            theDomain.isValueSubtypeOf(castedValue, supertype).isYes
+                                            theDomain.isValueASubtypeOf(castedValue, supertype).isYes
                                         },
                                         s"the cast of $objectref to ${supertype.toJava} failed: "+
                                             s"the subtyping relation between "+
                                             s"${newOperands.head} and ${supertype.toJava} is "+
-                                            theDomain.isValueSubtypeOf(newOperands.head, supertype)
+                                            theDomain.isValueASubtypeOf(newOperands.head, supertype).isYes
                                     )
                                     fallThrough(newOperands, newLocals)
 
@@ -2922,7 +2922,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                             if (valueIsNull.isYes)
                                 theDomain.BooleanValue(pc, false)
                             else
-                                theDomain.isValueSubtypeOf(value, referenceType) match {
+                                theDomain.isValueASubtypeOf(value, referenceType) match {
                                     case No ⇒
                                         theDomain.BooleanValue(pc, false)
 

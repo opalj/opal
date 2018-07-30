@@ -160,7 +160,7 @@ object MoreCheckers {
                 }
             } yield (classFile /*.thisClass.className*/ , method /*.name*/ )
         } { t ⇒ collect("CN_IDIOM_NO_SUPER_CALL", t /*nsToSecs(t)*/ ) }
-        println(", " /*"\tViolations: "*/ +cloneDoesNotCallSuperClone.size /*+": "+cloneDoesNotCallSuperClone.mkString("; ")*/ )
+        println(", " /*"\tViolations: "*/ +cloneDoesNotCallSuperClone.length /*+": "+cloneDoesNotCallSuperClone.mkString("; ")*/ )
 
         // FINDBUGS: CN: Class defines clone() but doesn't implement Cloneable (CN_IMPLEMENTS_CLONE_BUT_NOT_CLONEABLE)
         val cloneButNotCloneable = time {
@@ -169,7 +169,7 @@ object MoreCheckers {
                 if !classFile.isAnnotationDeclaration
                 if classFile.superclassType.isDefined
                 method @ Method(_, "clone", MethodDescriptor(Seq(), ObjectType.Object)) ← classFile.methods
-                if !classHierarchy.isSubtypeOf(classFile.thisType, ObjectType("java/lang/Cloneable")).isNo
+                if classHierarchy.isASubtypeOf(classFile.thisType, ObjectType("java/lang/Cloneable")).isYesOrUnknown
             } yield (classFile.thisType.fqn, method.name)
         }(t ⇒ collect("CN_IMPLEMENTS_CLONE_BUT_NOT_CLONEABLE", t /*nsToSecs(t)*/ ))
         println(", " /*"\tViolations: "*/ /*+cloneButNotCloneable.mkString(", ")*/ +cloneButNotCloneable.size)

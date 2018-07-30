@@ -291,7 +291,7 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
 
         // Special case: The Throwable constructor is `LBSideEffectFree`, but subtype constructors
         // may not be because of overridable fillInStackTrace method
-        if (method.isConstructor && declClass.isSubtypeOf(ObjectType.Throwable).isYes)
+        if (method.isConstructor && declClass.isSubtypeOf(ObjectType.Throwable))
             project.instanceMethods(declClass).foreach { mdc ⇒
                 if (mdc.name == "fillInStackTrace" &&
                     mdc.method.classFile.thisType != ObjectType.Throwable) {

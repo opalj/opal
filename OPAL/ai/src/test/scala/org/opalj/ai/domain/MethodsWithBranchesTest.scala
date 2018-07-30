@@ -83,14 +83,14 @@ class MethodsWithBranchesTest extends FlatSpec with Matchers {
             domain.allConstraints exists { constraint ⇒
                 val ReifiedSingleValueConstraint(pc, value, kind) = constraint
                 pc == 4 &&
-                    domain.isValueSubtypeOf(value, ObjectType.Object).isYes &&
+                    domain.isValueASubtypeOf(value, ObjectType.Object).isYes &&
                     kind == "is null"
             } should be(true)
 
             domain.allConstraints exists { constraint ⇒
                 val ReifiedSingleValueConstraint(pc, value, kind) = constraint
                 pc == 6 &&
-                    domain.isValueSubtypeOf(value, ObjectType.Object).isYes &&
+                    domain.isValueASubtypeOf(value, ObjectType.Object).isYes &&
                     kind == "is not null"
             } should be(true)
         }
@@ -112,14 +112,14 @@ class MethodsWithBranchesTest extends FlatSpec with Matchers {
             domain.allConstraints exists { constraint ⇒
                 val ReifiedSingleValueConstraint(pc, value, kind) = constraint
                 pc == 6 &&
-                    domain.isValueSubtypeOf(value, ObjectType.Object).isYes &&
+                    domain.isValueASubtypeOf(value, ObjectType.Object).isYes &&
                     kind == "is null"
             } should be(true)
 
             domain.allConstraints exists { constraint ⇒
                 val ReifiedSingleValueConstraint(pc, value, kind) = constraint
                 pc == 4 &&
-                    domain.isValueSubtypeOf(value, ObjectType.Object).isYes &&
+                    domain.isValueASubtypeOf(value, ObjectType.Object).isYes &&
                     kind == "is not null"
             } should be(true)
         }
