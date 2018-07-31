@@ -27,8 +27,8 @@ import org.opalj.tac.Expr
 import org.opalj.tac.Var
 //import org.opalj.tac.PutStatic
 //import org.opalj.tac.GetStatic
-import org.opalj.tac.PutField
-import org.opalj.tac.GetField
+//import org.opalj.tac.PutField
+//import org.opalj.tac.GetField
 import org.opalj.tac.ArrayLoad
 import org.opalj.tac.ArrayStore
 import org.opalj.tac.Stmt
@@ -359,7 +359,7 @@ object TestTaintAnalysisRunner {
                 )(p.logContext)*/
                 implicit val lg = p.logContext
                 val ps = PKEParallelTasksPropertyStore(context: _*)
-                //val ps = EPKSequentialPropertyStore.apply(context: _*)
+                //val ps = PKESequentialPropertyStore.apply(context: _*)
                 PropertyStore.updateTraceCycleResolutions(true)
                 PropertyStore.updateDebug(true)
                 ps
