@@ -34,14 +34,16 @@ class L1FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
 
     final val tacai = project.get(DefaultTACAIKey)
     final val typeExtensibility = project.get(TypeExtensibilityKey)
-    final val closedPackagesKey = project.get(ClosedPackagesKey)
+    final val closedPackages = project.get(ClosedPackagesKey)
     final val fieldAccessInformation = project.get(FieldAccessInformationKey)
 
-    def doDetermineFieldMutability(entity: Entity): PropertyComputationResult = entity match {
-        case field: Field ⇒ determineFieldMutability(field)
-        case _ ⇒
-            val m = entity.getClass.getSimpleName+"is not an org.opalj.br.Field"
-            throw new IllegalArgumentException(m)
+    def doDetermineFieldMutability(entity: Entity): PropertyComputationResult = {
+        entity match {
+            case field: Field ⇒ determineFieldMutability(field)
+            case _ ⇒
+                val m = entity.getClass.getName+"is not an org.opalj.br.Field"
+                throw new IllegalArgumentException(m)
+        }
     }
 
     /**
@@ -52,34 +54,36 @@ class L1FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
      * native methods are filtered.
      */
     private[analyses] def determineFieldMutability(field: Field): PropertyComputationResult = {
-        if (field.isFinal)
+        if (field.isFinal){
             return Result(field, DeclaredFinalField)
+        }
 
         val thisType = field.classFile.thisType
 
-        if (field.isPublic)
-            return Result(field, NonFinalFieldByLackOfInformation)
+        if (field.isPublic) {
+            return Result(field, NonFinalFieldByLackOfInformation);
+        }
 
-        var classesHavingAccess: Set[ClassFile] = Set(field.classFile)
+        var classesHavingAccess: Iterator[ClassFile] = Iterator(field.classFile)
 
         if (field.isProtected || field.isPackagePrivate) {
-            if (!closedPackagesKey.isClosed(thisType.packageName))
+            if (!closedPackages.isClosed(thisType.packageName)){
                 return Result(field, NonFinalFieldByLackOfInformation)
-            classesHavingAccess ++= project.allClassFiles.filter {
-                _.thisType.packageName == thisType.packageName
-            }
+            };
+            classesHavingAccess ++= project.classesPerPackage(thisType.packageName).iterator
         }
 
         if (field.isProtected) {
             if (typeExtensibility(thisType).isYesOrUnknown) {
-                return Result(field, NonFinalFieldByLackOfInformation)
+                return Result(field, NonFinalFieldByLackOfInformation);
             }
             val subTypes = classHierarchy.allSubclassTypes(thisType, reflexive = false)
             classesHavingAccess ++= subTypes.map(project.classFile(_).get)
         }
 
-        if (classesHavingAccess.flatMap(_.methods).exists(_.isNative))
-            return Result(field, NonFinalFieldByLackOfInformation)
+        if (classesHavingAccess.exists(_.methods.exists(_.isNative))){
+            return Result(field, NonFinalFieldByLackOfInformation);
+        }
 
         // We now (compared to the simple one) have to analyze the static initializer as
         // the static initializer can be used to initialize a private field of an instance
@@ -105,28 +109,35 @@ class L1FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
             (method, pcs) ← fieldAccessInformation.writeAccesses(field)
             pc ← pcs
         } {
-            val stmts = tacai(method).stmts
-            stmts.find(_.pc == pc) match {
-                case None ⇒ // nothing to do as the put field is dead
-                case Some(_: PutStatic[_]) ⇒
-                    if (!method.isStaticInitializer)
-                        return Result(field, NonFinalFieldByAnalysis)
-                case Some(stmt: PutField[DUVar[_]]) ⇒
-                    val objRef = stmt.objRef
-                    if (!method.isConstructor || objRef.asVar.definedBy != SelfReferenceParameter) {
-                        // note that here we assume real three address code (flat hierarchy)
+            val taCode = tacai(method)
+            val stmts = taCode.stmts
+            val stmtCandidate = stmts(taCode.pcToIndex(pc))
+            if(stmtCandidate.pc == pc) {
+                stmtCandidate match {
+                    case _: PutStatic[_] ⇒
+                        if (!method.isStaticInitializer) {
+                            return Result(field, NonFinalFieldByAnalysis)
+                        };
+                    case stmt: PutField[DUVar[_]] ⇒
+                        val objRef = stmt.objRef
+                        if (!method.isConstructor || objRef.asVar.definedBy != SelfReferenceParameter) {
+                            // note that here we assume real three address code (flat hierarchy)
 
-                        // for instance fields it is okay if they are written in the constructor
-                        // (w.r.t. the currently initialized object!)
+                            // for instance fields it is okay if they are written in the constructor
+                            // (w.r.t. the currently initialized object!)
 
-                        // If the field that is written is not the one referred to by the
-                        // self reference, it is not effectively final.
-                        return Result(field, NonFinalFieldByAnalysis)
+                            // If the field that is written is not the one referred to by the
+                            // self reference, it is not effectively final.
+                            return Result(field, NonFinalFieldByAnalysis)
 
-                    }
-                case _ ⇒ throw new RuntimeException("unexpected field access")
+                        }
+                    case _ ⇒ throw new RuntimeException("unexpected field access")
+                }
+            } else {
+                // nothing to do as the put field is dead
             }
         }
+
         Result(field, EffectivelyFinalField)
     }
 }
@@ -168,7 +179,11 @@ object LazyL1FieldMutabilityAnalysis
     extends L1FieldMutabilityAnalysisScheduler
     with FPCFLazyAnalysisScheduler {
 
-    final override def startLazily(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+    final override def startLazily(
+                                      p: SomeProject,
+                                      ps: PropertyStore,
+                                      unused: Null
+                                  ): FPCFAnalysis = {
         val analysis = new L1FieldMutabilityAnalysis(p)
         ps.registerLazyPropertyComputation(
             FieldMutability.key, analysis.determineFieldMutability
