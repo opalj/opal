@@ -76,12 +76,12 @@ class FieldLocalityAnalysis private[analyses] (
 
     type V = DUVar[KnownTypedValue]
 
-    private[this] val tacaiProvider = project.get(DefaultTACAIKey)
-    private[this] val declaredMethods = project.get(DeclaredMethodsKey)
-    private[this] val typeExtensiblity = project.get(TypeExtensibilityKey)
-    private[this] val definitionSites = project.get(DefinitionSitesKey)
-    private[this] val aiResult = project.get(SimpleAIKey)
-    private[this] val isOverridableMethod = project.get(IsOverridableMethodKey)
+    final val tacaiProvider = project.get(DefaultTACAIKey)
+    final val declaredMethods = project.get(DeclaredMethodsKey)
+    final val typeExtensiblity = project.get(TypeExtensibilityKey)
+    final val definitionSites = project.get(DefinitionSitesKey)
+    final val aiResult = project.get(SimpleAIKey)
+    final val isOverridableMethod = project.get(IsOverridableMethodKey)
 
     /**
      * Checks if the field locality can be determined trivially.
@@ -91,15 +91,18 @@ class FieldLocalityAnalysis private[analyses] (
         val fieldType = field.fieldType
         val thisType = field.classFile.thisType
         // base types can be considered to be local
-        if (fieldType.isBaseType)
+        if (fieldType.isBaseType) {
             return Result(field, LocalField);
+        }
 
-        if (field.isStatic)
+        if (field.isStatic) {
             return Result(field, NoLocalField);
+        }
 
         // this analysis can not track public fields
-        if (field.isPublic)
+        if (field.isPublic) {
             return Result(field, NoLocalField);
+        }
 
         // There may be methods in unknown subtypes that leak the field
         if (field.isProtected && typeExtensiblity(thisType).isYesOrUnknown) {
@@ -131,7 +134,7 @@ class FieldLocalityAnalysis private[analyses] (
 
         val thisType = field.classFile.thisType
 
-        val methodsOfThisType = field.classFile.methodsWithBody.map(_._1)
+        val methodsOfThisType = field.classFile.methodsWithBody
 
         // If the class does not override clone, it can be leaked by `java.lang.Object.clone` that
         // creates a shallow copy.
@@ -140,8 +143,9 @@ class FieldLocalityAnalysis private[analyses] (
             // If the class is not [[java.lang.Cloneable]] it can't be cloned directly
             // (`java.lang.Object.clone` with throw a [[java.lang.CloneNotSupportedException]]).
             // Otherwise, the field may be leaked!
-            if (classHierarchy.isASubtypeOf(thisType, ObjectType.Cloneable).isYesOrUnknown)
+            if (classHierarchy.isASubtypeOf(thisType, ObjectType.Cloneable).isYesOrUnknown) {
                 return Result(field, NoLocalField)
+            };
 
             val subtypes = classHierarchy.allSubtypes(thisType, reflexive = false)
             val existsCloneableSubtype = subtypes.exists { subtype ⇒
@@ -166,14 +170,19 @@ class FieldLocalityAnalysis private[analyses] (
      * has to overwritten to prevent it from being leaked by the shallow copy created through
      * `java.lang.Object.clone`.
      */
-    private[this] def step3(field: Field)(implicit state: FieldLocalityState): PropertyComputationResult = {
+    private[this] def step3(
+        field: Field
+    )(
+        implicit
+        state: FieldLocalityState
+    ): PropertyComputationResult = {
         val fieldName = field.name
         val fieldType = field.fieldType
         for {
             method ← allMethodsHavingAccess(field)
             tacai = tacaiProvider(method)
             stmts = tacai.stmts
-            (stmt, index) ← stmts.zipWithIndex
+            (stmt, index) ← stmts.iterator.zipWithIndex
         } {
             stmt match {
                 // Values read from the field may not escape, except for
@@ -221,21 +230,24 @@ class FieldLocalityAnalysis private[analyses] (
      * the declaring class, those of classes in the same package for package-private and protected
      * fields as well as those of subclasses for protected fields.
      */
-    def allMethodsHavingAccess(field: Field): Set[Method] = {
+    def allMethodsHavingAccess(field: Field): Iterator[Method] = {
         val thisType = field.classFile.thisType
-        var classes: Set[ClassFile] =
+        val initialClasses: Set[ClassFile] =
             if (field.isPackagePrivate || field.isProtected) {
-                //classes ++= project.allClassFiles.filter(_.thisType.packageName == thisType.packageName)
                 project.classesPerPackage(thisType.packageName) + field.classFile
             } else {
                 Set(field.classFile)
             }
         if (field.isProtected) {
-            classes ++= project.classHierarchy.allSubclassTypes(thisType, reflexive = false).map(
-                project.classFile(_).get
-            )
+            val subclassesIterator: Iterator[ClassFile] =
+                classHierarchy.allSubclassTypes(thisType, reflexive = false).
+                    flatMap { ot ⇒
+                        project.classFile(ot).filter(cf ⇒ !initialClasses.contains(cf))
+                    }
+            (initialClasses.iterator ++ subclassesIterator).flatMap(_.methodsWithBody)
+        } else {
+            initialClasses.iterator.flatMap(_.methodsWithBody)
         }
-        classes.flatMap(_.methodsWithBody.map(_._1))
     }
 
     /**
@@ -245,7 +257,10 @@ class FieldLocalityAnalysis private[analyses] (
      */
     private[this] def handleEscape(
         eOptionP: EOptionP[DefinitionSiteLike, EscapeProperty]
-    )(implicit state: FieldLocalityState): Boolean = eOptionP match {
+    )(
+        implicit
+        state: FieldLocalityState
+    ): Boolean = eOptionP match {
 
         case FinalEP(_, NoEscape | EscapeInCallee) ⇒ false
 
@@ -271,7 +286,7 @@ class FieldLocalityAnalysis private[analyses] (
                 true
 
         // The escape state is worse than [[org.opalj.fpcf.properties.EscapeViaReturn]].
-        case EPS(_, _, _) ⇒
+        case _: EPS[_, _] ⇒
             true
 
         case _ ⇒
@@ -287,7 +302,7 @@ class FieldLocalityAnalysis private[analyses] (
         stmt match {
             case Some(Assignment(_, _, getField: GetField[V])) ⇒
                 getField.objRef.asVar.definedBy == tac.SelfReferenceParameter
-            case Some(_) | None ⇒ // this method is also called for put fields
+            case _ /*Some(_) | None*/ ⇒ // this method is also called for put fields
                 false
         }
     }
@@ -299,7 +314,7 @@ class FieldLocalityAnalysis private[analyses] (
     private[this] def checkFreshnessAndEscapeOfValue(
         value: Expr[V], putField: Int, stmts: Array[Stmt[V]], method: Method
     )(implicit state: FieldLocalityState): Boolean = {
-        value.asVar.definedBy.exists { defSite ⇒
+        value.asVar.definedBy exists { defSite ⇒
             if (defSite < 0)
                 true // Parameters are not fresh
             else {
@@ -353,8 +368,7 @@ class FieldLocalityAnalysis private[analyses] (
                     handleConcreteCall(callee)
 
                 } else if (value.isPrecise) {
-                    val callee =
-                        project.instanceCall(callerType, mostPreciseType.get, name, desc)
+                    val callee = project.instanceCall(callerType, mostPreciseType.get, name, desc)
                     handleConcreteCall(callee)
 
                 } else {

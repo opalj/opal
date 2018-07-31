@@ -49,6 +49,8 @@ private[seq] sealed abstract class PropertyValue {
             Some(EPS(e, lb, ub))
     }
 
+    private[seq] def toEPKUnsafe[E <: Entity](e: E): EPK[E, Property] = EPK(e, lb)
+
     private[seq] def toEPSUnsafe[E <: Entity, P <: Property](e: E): Option[EPS[E, P]] = {
         if (ub == null || ub == PropertyIsLazilyComputed)
             None

@@ -28,8 +28,8 @@ object LoadMethodHandleOrMethodType extends DefaultOneStepAnalysis {
         val loads =
             for {
                 classFile ← project.allProjectClassFiles.par
-                (method, code) ← classFile.methodsWithBody
-                pcAndInstruction ← code collect {
+                method ← classFile.methodsWithBody
+                pcAndInstruction ← method.body.get collect {
                     case LoadMethodHandle(mh)   ⇒ mh
                     case LoadMethodHandle_W(mh) ⇒ mh
                     case LoadMethodType(md)     ⇒ md
