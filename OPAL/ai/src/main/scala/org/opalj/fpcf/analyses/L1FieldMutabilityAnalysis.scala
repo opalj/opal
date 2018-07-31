@@ -54,7 +54,7 @@ class L1FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
      * native methods are filtered.
      */
     private[analyses] def determineFieldMutability(field: Field): PropertyComputationResult = {
-        if (field.isFinal) {
+        if (field.isFinal){
             return Result(field, DeclaredFinalField)
         }
 
@@ -67,7 +67,7 @@ class L1FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
         var classesHavingAccess: Iterator[ClassFile] = Iterator(field.classFile)
 
         if (field.isProtected || field.isPackagePrivate) {
-            if (!closedPackages.isClosed(thisType.packageName)) {
+            if (!closedPackages.isClosed(thisType.packageName)){
                 return Result(field, NonFinalFieldByLackOfInformation)
             };
             classesHavingAccess ++= project.classesPerPackage(thisType.packageName).iterator
@@ -81,7 +81,7 @@ class L1FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
             classesHavingAccess ++= subTypes.map(project.classFile(_).get)
         }
 
-        if (classesHavingAccess.exists(_.methods.exists(_.isNative))) {
+        if (classesHavingAccess.exists(_.methods.exists(_.isNative))){
             return Result(field, NonFinalFieldByLackOfInformation);
         }
 
@@ -111,30 +111,34 @@ class L1FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
         } {
             val taCode = tacai(method)
             val stmts = taCode.stmts
-            val stmtCandidate = stmts(taCode.pcToIndex(pc))
-            if (stmtCandidate.pc == pc) {
-                stmtCandidate match {
-                    case _: PutStatic[_] ⇒
-                        if (!method.isStaticInitializer) {
-                            return Result(field, NonFinalFieldByAnalysis)
-                        };
-                    case stmt: PutField[DUVar[_]] ⇒
-                        val objRef = stmt.objRef
-                        if (!method.isConstructor || objRef.asVar.definedBy != SelfReferenceParameter) {
-                            // note that here we assume real three address code (flat hierarchy)
+            val index = taCode.pcToIndex(pc)
+            if(index >= 0) {
+                val stmtCandidate = stmts(index)
+                if (stmtCandidate.pc == pc) {
+                    stmtCandidate match {
+                        case _: PutStatic[_] ⇒
+                            if (!method.isStaticInitializer) {
+                                return Result(field, NonFinalFieldByAnalysis)
+                            };
+                        case stmt: PutField[DUVar[_]] ⇒
+                            val objRef = stmt.objRef
+                            if (!method.isConstructor ||
+                                objRef.asVar.definedBy != SelfReferenceParameter) {
+                                // note that here we assume real three address code (flat hierarchy)
 
-                            // for instance fields it is okay if they are written in the constructor
-                            // (w.r.t. the currently initialized object!)
+                                // for instance fields it is okay if they are written in the constructor
+                                // (w.r.t. the currently initialized object!)
 
-                            // If the field that is written is not the one referred to by the
-                            // self reference, it is not effectively final.
-                            return Result(field, NonFinalFieldByAnalysis)
+                                // If the field that is written is not the one referred to by the
+                                // self reference, it is not effectively final.
+                                return Result(field, NonFinalFieldByAnalysis)
 
-                        }
-                    case _ ⇒ throw new RuntimeException("unexpected field access")
+                            }
+                        case _ ⇒ throw new RuntimeException("unexpected field access")
+                    }
+                } else {
+                    // nothing to do as the put field is dead
                 }
-            } else {
-                // nothing to do as the put field is dead
             }
         }
 
@@ -180,10 +184,10 @@ object LazyL1FieldMutabilityAnalysis
     with FPCFLazyAnalysisScheduler {
 
     final override def startLazily(
-        p:      SomeProject,
-        ps:     PropertyStore,
-        unused: Null
-    ): FPCFAnalysis = {
+                                      p: SomeProject,
+                                      ps: PropertyStore,
+                                      unused: Null
+                                  ): FPCFAnalysis = {
         val analysis = new L1FieldMutabilityAnalysis(p)
         ps.registerLazyPropertyComputation(
             FieldMutability.key, analysis.determineFieldMutability
