@@ -64,21 +64,29 @@ class L1FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
             return Result(field, NonFinalFieldByLackOfInformation);
         }
 
-        var classesHavingAccess: Iterator[ClassFile] = Iterator(field.classFile)
-
+        val initialClasses =
         if (field.isProtected || field.isPackagePrivate) {
             if (!closedPackages.isClosed(thisType.packageName)) {
                 return Result(field, NonFinalFieldByLackOfInformation);
             }
-            classesHavingAccess ++= project.classesPerPackage(thisType.packageName).iterator
+            project.classesPerPackage(thisType.packageName)
+        } else {
+            Set(field.classFile)
         }
 
+        val classesHavingAccess: Iterator[ClassFile] =
         if (field.isProtected) {
             if (typeExtensibility(thisType).isYesOrUnknown) {
                 return Result(field, NonFinalFieldByLackOfInformation);
             }
-            val subTypes = classHierarchy.allSubclassTypes(thisType, reflexive = false)
-            classesHavingAccess ++= subTypes.map(project.classFile(_).get)
+            val subclassesIterator: Iterator[ClassFile] =
+                classHierarchy.allSubclassTypes(thisType, reflexive = false).
+                    flatMap { ot ⇒
+                        project.classFile(ot).filter(cf ⇒ !initialClasses.contains(cf))
+                    }
+            initialClasses.iterator ++ subclassesIterator
+        } else {
+            initialClasses.iterator
         }
 
         if (classesHavingAccess.exists(_.methods.exists(_.isNative))) {
