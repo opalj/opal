@@ -54,7 +54,7 @@ class L1FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
      * native methods are filtered.
      */
     private[analyses] def determineFieldMutability(field: Field): PropertyComputationResult = {
-        if (field.isFinal){
+        if (field.isFinal) {
             return Result(field, DeclaredFinalField)
         }
 
@@ -67,7 +67,7 @@ class L1FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
         var classesHavingAccess: Iterator[ClassFile] = Iterator(field.classFile)
 
         if (field.isProtected || field.isPackagePrivate) {
-            if (!closedPackages.isClosed(thisType.packageName)){
+            if (!closedPackages.isClosed(thisType.packageName)) {
                 return Result(field, NonFinalFieldByLackOfInformation)
             };
             classesHavingAccess ++= project.classesPerPackage(thisType.packageName).iterator
@@ -81,7 +81,7 @@ class L1FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
             classesHavingAccess ++= subTypes.map(project.classFile(_).get)
         }
 
-        if (classesHavingAccess.exists(_.methods.exists(_.isNative))){
+        if (classesHavingAccess.exists(_.methods.exists(_.isNative))) {
             return Result(field, NonFinalFieldByLackOfInformation);
         }
 
@@ -112,7 +112,7 @@ class L1FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
             val taCode = tacai(method)
             val stmts = taCode.stmts
             val stmtCandidate = stmts(taCode.pcToIndex(pc))
-            if(stmtCandidate.pc == pc) {
+            if (stmtCandidate.pc == pc) {
                 stmtCandidate match {
                     case _: PutStatic[_] ⇒
                         if (!method.isStaticInitializer) {
@@ -180,10 +180,10 @@ object LazyL1FieldMutabilityAnalysis
     with FPCFLazyAnalysisScheduler {
 
     final override def startLazily(
-                                      p: SomeProject,
-                                      ps: PropertyStore,
-                                      unused: Null
-                                  ): FPCFAnalysis = {
+        p:      SomeProject,
+        ps:     PropertyStore,
+        unused: Null
+    ): FPCFAnalysis = {
         val analysis = new L1FieldMutabilityAnalysis(p)
         ps.registerLazyPropertyComputation(
             FieldMutability.key, analysis.determineFieldMutability

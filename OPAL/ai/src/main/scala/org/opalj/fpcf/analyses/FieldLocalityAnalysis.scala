@@ -274,7 +274,7 @@ class FieldLocalityAnalysis private[analyses] (
                 true
 
         // The escape state is worse than [[org.opalj.fpcf.properties.EscapeViaReturn]].
-        case _:  EPS[_,_] ⇒
+        case _: EPS[_, _] ⇒
             true
 
         case _ ⇒
