@@ -25,8 +25,8 @@ import org.opalj.tac.Expr
 import org.opalj.tac.Var
 //import org.opalj.tac.PutStatic
 //import org.opalj.tac.GetStatic
-import org.opalj.tac.PutField
-import org.opalj.tac.GetField
+//import org.opalj.tac.PutField
+//import org.opalj.tac.GetField
 import org.opalj.tac.ArrayLoad
 import org.opalj.tac.ArrayStore
 import org.opalj.tac.Stmt
@@ -80,14 +80,14 @@ class TestTaintAnalysis private[ifds] (
                 val put = stmt.stmt.asPutStatic
                 if (isTainted(put.value, in)) in + StaticField(put.declaringClass, put.name)
                 else in - StaticField(put.declaringClass, put.name)*/
-            case PutField.ASTID ⇒
+            /*case PutField.ASTID ⇒
                 val put = stmt.stmt.asPutField
                 val definedBy = put.objRef.asVar.definedBy
                 if (isTainted(put.value, in))
                     in ++ definedBy.iterator.map(InstanceField(_, put.declaringClass, put.name))
                 else if (definedBy.size == 1) // Untaint if object is known precisely
                     in - InstanceField(definedBy.head, put.declaringClass, put.name)
-                else in
+                else in*/
             case _ ⇒ in
         }
 
@@ -155,7 +155,7 @@ class TestTaintAnalysis private[ifds] (
                 if (in.contains(StaticField(get.declaringClass, get.name)))
                     in + Variable(stmt.index)
                 else in*/
-            case GetField.ASTID ⇒
+            /*case GetField.ASTID ⇒
                 val get = expr.asGetField
                 if (in.exists {
                     // The specific field may be tainted
@@ -167,7 +167,7 @@ class TestTaintAnalysis private[ifds] (
                 })
                     in + Variable(stmt.index)
                 else
-                    in
+                    in*/
             case _ ⇒ in
         }
 
@@ -209,7 +209,7 @@ class TestTaintAnalysis private[ifds] (
                             ArrayElement(paramToIndex(pIndex, !callee.definedMethod.isStatic), taintedIndex)
                     }
 
-                case InstanceField(index, declClass, taintedField) ⇒
+                /*case InstanceField(index, declClass, taintedField) ⇒
                     // Taint field of formal parameter if field of actual parameter is tainted
                     // Only if the formal parameter is of a type that may have that field!
                     asCall(stmt.stmt).allParams.zipWithIndex.collect {
@@ -217,7 +217,7 @@ class TestTaintAnalysis private[ifds] (
                             (paramToIndex(pIndex, !callee.definedMethod.isStatic) != -1 ||
                                 isRelatedType(declClass, callee.declaringClassType)) ⇒
                             InstanceField(paramToIndex(pIndex, !callee.definedMethod.isStatic), declClass, taintedField)
-                    }
+                    }*/
                 //case sf: StaticField ⇒ Set(sf)
             }.flatten
         } else Set.empty
