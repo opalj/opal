@@ -1,31 +1,4 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package fpcf
 package par
@@ -38,7 +11,6 @@ import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.Semaphore
 import java.util.concurrent.atomic.AtomicReferenceArray
 
-import scala.reflect.runtime.universe.Type
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.AnyRefMap
@@ -74,7 +46,7 @@ import org.opalj.log.GlobalLogContext
  * @author Michael Eichberg
  */
 final class PKEParallelTasksPropertyStore private (
-        val ctx:                                              Map[Type, AnyRef],
+        val ctx:                                              Map[Class[_], AnyRef],
         val NumberOfThreadsForProcessingPropertyComputations: Int,
         val tracer:                                           Option[PropertyStoreTracer]
 )(
@@ -192,6 +164,10 @@ final class PKEParallelTasksPropertyStore private (
         new AtomicReferenceArray(SupportedPropertyKinds)
     }
 
+    private[this] var triggeredComputations: AtomicReferenceArray[ConcurrentLinkedQueue[SomePropertyComputation]] = {
+        new AtomicReferenceArray(SupportedPropertyKinds)
+    }
+
     // Read by many threads, updated only by the store updates thread.
     // ONLY contains `true` intermediate and final properties; i.e., the value is never null.
     private[this] val properties: Array[ConcurrentHashMap[Entity, SomeEPS]] = {
@@ -239,18 +215,18 @@ final class PKEParallelTasksPropertyStore private (
      */
     private[this] val openJobs = new AtomicInteger(0)
     /**
-     * MUST BE CALLED AFTER the respective task was processed.
-     */
-    private[this] def decOpenJobs(): Unit = {
-        val v = openJobs.decrementAndGet()
-        if (v == 0) { latch.countDown() }
-    }
-    /**
      * MUST BE CALLED BEFORE the job is actually processed.
      */
     private[this] def incOpenJobs(): Unit = {
         val v = openJobs.getAndIncrement()
         if (v == 0) { latch = new CountDownLatch(0) }
+    }
+    /**
+     * MUST BE CALLED AFTER the respective task was processed.
+     */
+    private[this] def decOpenJobs(): Unit = {
+        val v = openJobs.decrementAndGet()
+        if (v == 0) { latch.countDown() }
     }
 
     // --------------------------------------------------------------------------------------------
@@ -446,10 +422,8 @@ final class PKEParallelTasksPropertyStore private (
         try {
             f
         } catch {
-            case _: InterruptedException if storeUpdatesProcessor == null ⇒
-            /* ignore; we are shutting down */
-            case t: Throwable ⇒
-                collectException(t)
+            case _: InterruptedException if storeUpdatesProcessor == null ⇒ // ignore; shutting down
+            case t: Throwable                                             ⇒ collectException(t)
         }
     }
 
@@ -458,10 +432,12 @@ final class PKEParallelTasksPropertyStore private (
             return ;
 
         // We use the "Thread"s' interrupt method to finally abort the threads...
-        storeUpdatesProcessor.interrupt()
+        val oldStoreUpdatesProcessor = storeUpdatesProcessor
         storeUpdatesProcessor = null
-        tasksProcessors.interrupt()
+        oldStoreUpdatesProcessor.interrupt()
+        val oldTasksProcessors = tasksProcessors
         tasksProcessors = null
+        oldTasksProcessors.interrupt()
 
         if (latch != null) latch.countDown()
 
@@ -510,10 +486,31 @@ final class PKEParallelTasksPropertyStore private (
     ): Unit = {
         if (debug && openJobs.get() > 0) {
             throw new IllegalStateException(
-                "lazy computations can only be registered while no analysis are scheduled"
+                "lazy computations can only be registered while no analyses are scheduled"
             )
         }
-        lazyComputations.set(pk.id, pc.asInstanceOf[SomePropertyComputation])
+        lazyComputations.set(pk.id, pc)
+    }
+
+    override def registerTriggeredComputation[E <: Entity, P <: Property](
+        pk: PropertyKey[P],
+        pc: PropertyComputation[E]
+    ): Unit = {
+        if (debug && openJobs.get() > 0) {
+            throw new IllegalStateException(
+                "triggered computations can only be registered as long as no analysis is scheduled"
+            )
+        }
+        val pkId = pk.id
+        var computations = triggeredComputations.get(pkId)
+        if (computations == null) {
+            computations = new ConcurrentLinkedQueue
+            if (!triggeredComputations.compareAndSet(pkId, null, computations)) {
+                // the liar was set in the meantime ... hence, we have to get the "correct" set
+                computations = triggeredComputations.get(pkId)
+            }
+        }
+        computations.offer(pc)
     }
 
     override def isKnown(e: Entity): Boolean = properties.exists(_.containsKey(e))
@@ -626,14 +623,18 @@ final class PKEParallelTasksPropertyStore private (
                             fallbacksUsedCounter.incrementAndGet()
                             // We directly compute the property and store it to make
                             // it accessible later on...
-                            val fallbackReason = {
+                            val reason = {
                                 if (previouslyComputedPropertyKinds(pkId))
                                     PropertyIsNotDerivedByPreviouslyExecutedAnalysis
                                 else
                                     PropertyIsNotComputedByAnyAnalysis
                             }
-                            val p = PropertyKey.fallbackProperty(store, fallbackReason, e, pk)
-                            val finalEP = FinalEP(e, p)
+                            val p = fallbackPropertyBasedOnPkId(store, reason, e, pkId)
+                            if (traceFallbacks) {
+                                val message = s"used fallback $p (reason=$reason) for $e"
+                                trace("analysis progress", message)
+                            }
+                            val finalEP = FinalEP(e, p.asInstanceOf[P])
                             val r = IdempotentResult(finalEP)
                             appendStoreUpdate(queueId = 0, PropertyUpdate(r))
                             finalEP
@@ -660,7 +661,7 @@ final class PKEParallelTasksPropertyStore private (
         val pkId = pk.id
         if (forcedComputations(pkId).put(e, e) == null) {
 
-            val lc = lazyComputations.get(pkId)
+            val lc = lazyComputations.get(pkId).asInstanceOf[PropertyComputation[E]]
             if (lc != null) {
                 if (properties(pkId).get(e) == null) {
                     if (tracer.isDefined) tracer.get.force(e, pkId)
@@ -680,7 +681,7 @@ final class PKEParallelTasksPropertyStore private (
      */
     private[this] def clearDependees(epk: SomeEPK): Int = {
         assert(
-            Thread.currentThread() == storeUpdatesProcessor,
+            Thread.currentThread() == storeUpdatesProcessor || storeUpdatesProcessor == null,
             "only to be called by the store updates processing thread"
         )
 
@@ -832,7 +833,7 @@ final class PKEParallelTasksPropertyStore private (
     ): UpdateAndNotifyState = {
         updatesCounter += 1
         assert(
-            Thread.currentThread() == storeUpdatesProcessor,
+            Thread.currentThread() == storeUpdatesProcessor || storeUpdatesProcessor == null,
             "only to be called by the store updates processing thread"
         )
 
@@ -848,6 +849,12 @@ final class PKEParallelTasksPropertyStore private (
         // 2. check if update was ok
         if (oldEPS == null) {
             if (isFinal) oneStepFinalUpdatesCounter += 1
+            val computationsToStart = this.triggeredComputations.get(pkId)
+            if (computationsToStart ne null) {
+                computationsToStart.forEach { pc ⇒
+                    scheduleEagerComputationForEntity(e)(pc.asInstanceOf[PropertyComputation[Entity]])
+                }
+            }
         } else if (debug /*&& oldEPS != null*/ ) {
             // The entity is known and we have a property value for the respective
             // kind; i.e., we may have (old) dependees and/or also dependers.
@@ -911,7 +918,7 @@ final class PKEParallelTasksPropertyStore private (
 
         def processResult(r: PropertyComputationResult): Unit = {
             assert(
-                Thread.currentThread() == storeUpdatesProcessor,
+                Thread.currentThread() == storeUpdatesProcessor || storeUpdatesProcessor == null,
                 "only to be called by the store updates processing thread"
             )
 
@@ -936,12 +943,12 @@ final class PKEParallelTasksPropertyStore private (
                     val IncrementalResult(ir, npcs, propertyComputationsHint) = r
                     pcrs += ir
                     if (propertyComputationsHint == CheapPropertyComputation) {
-                        npcs /*: Traversable[(PropertyComputation[e],e)]*/ foreach { npc ⇒
+                        npcs /*: Iterator[(PropertyComputation[e],e)]*/ foreach { npc ⇒
                             val (pc, e) = npc
                             pcrs += pc(e)
                         }
                     } else {
-                        npcs /*: Traversable[(PropertyComputation[e],e)]*/ foreach { npc ⇒
+                        npcs /*: Iterator[(PropertyComputation[e],e)]*/ foreach { npc ⇒
                             val (pc, e) = npc
                             scheduleComputationForEntity(e, pc, forceEvaluation)
                         }
@@ -1282,7 +1289,7 @@ final class PKEParallelTasksPropertyStore private (
 
                 val cSCCs = graphs.closedSCCs(
                     epks,
-                    (epk: SomeEPK) ⇒ dependees(epk.pk.id)(epk.e).map(_.toEPK)
+                    (epk: SomeEPK) ⇒ this.dependees(epk.pk.id)(epk.e).map(_.toEPK)
                 )
                 if (cSCCs.nonEmpty) {
                     handleResult(CSCCsResult(cSCCs), false)
@@ -1363,7 +1370,7 @@ object PKEParallelTasksPropertyStore extends PropertyStoreFactory {
         implicit
         logContext: LogContext
     ): PKEParallelTasksPropertyStore = {
-        val contextMap: Map[Type, AnyRef] = context.map(_.asTuple).toMap
+        val contextMap: Map[Class[_], AnyRef] = context.map(_.asTuple).toMap
         new PKEParallelTasksPropertyStore(
             contextMap,
             NumberOfThreadsForProcessingPropertyComputations,
@@ -1387,7 +1394,7 @@ object PKEParallelTasksPropertyStore extends PropertyStoreFactory {
 
     def create(
         tracer:  PropertyStoreTracer,
-        context: Map[Type, AnyRef] // ,PropertyStoreContext[_ <: AnyRef]*
+        context: Map[Class[_], AnyRef] // ,PropertyStoreContext[_ <: AnyRef]*
     )(
         implicit
         logContext: LogContext

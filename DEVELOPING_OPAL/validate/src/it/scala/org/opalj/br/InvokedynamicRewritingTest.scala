@@ -1,36 +1,10 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package br
 
 import org.scalatest.FunSpec
 import org.scalatest.Matchers
+
 import java.net.URL
 import java.net.URLClassLoader
 import java.io.File
@@ -147,13 +121,8 @@ class InvokedynamicRewritingTest extends FunSpec with Matchers {
     describe("behavior of rewritten OPAL") {
 
         it("should execute Hermes successfully") {
-            val p = JavaFixtureProject(
-                locateTestResources("classfiles/OPAL-MultiJar-SNAPSHOT-01-04-2018.jar", "bi")
-            )
-            val scalaLib =
-                locateTestResources("classfiles/scala-2.12.4/", "bi").
-                    listFiles(JARsFileFilter).
-                    map(_.toURI.toURL)
+            val resources = locateTestResources("classfiles/OPAL-MultiJar-SNAPSHOT-01-04-2018.jar", "bi")
+            val p = JavaFixtureProject(resources)
             val opalDependencies =
                 locateTestResources(
                     "classfiles/OPAL-MultiJar-SNAPSHOT-01-04-2018-dependencies/", "bi"
@@ -163,18 +132,16 @@ class InvokedynamicRewritingTest extends FunSpec with Matchers {
 
             // Otherwise, the hermes resources are not included and hermes won't find
             // HermesCLI.txt for example
-            val resourceClassloader = new URLClassLoader(
-                Array(
-                    new File("DEVELOPING_OPAL/tools/src/main/resources/").toURI.toURL,
-                    new File("OPAL/ai/src/main/resources/").toURI.toURL,
-                    new File("OPAL/ba/src/main/resources/").toURI.toURL,
-                    new File("OPAL/bi/src/main/resources/").toURI.toURL,
-                    new File("OPAL/bp/src/main/resources/").toURI.toURL,
-                    new File("OPAL/br/src/main/resources/").toURI.toURL,
-                    new File("OPAL/common/src/main/resources/").toURI.toURL
-                ) ++ scalaLib ++ opalDependencies,
-                null
-            )
+            val paths = Array(
+                new File("DEVELOPING_OPAL/tools/src/main/resources/").toURI.toURL,
+                new File("OPAL/ai/src/main/resources/").toURI.toURL,
+                new File("OPAL/ba/src/main/resources/").toURI.toURL,
+                new File("OPAL/bi/src/main/resources/").toURI.toURL,
+                new File("OPAL/bp/src/main/resources/").toURI.toURL,
+                new File("OPAL/br/src/main/resources/").toURI.toURL,
+                new File("OPAL/common/src/main/resources/").toURI.toURL
+            ) ++ opalDependencies
+            val resourceClassloader = new URLClassLoader(paths, this.getClass.getClassLoader)
             val inMemoryClassLoader = new ProjectBasedInMemoryClassLoader(p, resourceClassloader)
 
             val c = inMemoryClassLoader.loadClass("org.opalj.hermes.HermesCLI")
@@ -183,6 +150,7 @@ class InvokedynamicRewritingTest extends FunSpec with Matchers {
             val tempFile = Files.createTempFile("OPALValidate-Hermes-stats-", ".csv").toFile
             tempFile.delete()
 
+            println("Starting Hermes...")
             m.invoke(null, Array(
                 "-config", "DEVELOPING_OPAL/validate/src/it/resources/hermes-test-fixtures.json",
                 "-statistics", tempFile.getAbsolutePath
@@ -190,6 +158,8 @@ class InvokedynamicRewritingTest extends FunSpec with Matchers {
 
             assert(tempFile.exists())
             assert(tempFile.length() > 0)
+
+            resourceClassloader.close()
         }
     }
 }

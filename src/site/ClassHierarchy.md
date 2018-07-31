@@ -9,12 +9,12 @@ One of the most common tasks when implementing static analyses is to get informa
 
 The class hierarchy, e.g., directly makes the information about a type's super/sub types available:
 
-    val subtypes : Map[ObjectType,SubtypeInformation] = classHierarchy.subtypes
-    val supertypes : Map[ObjectType,SupertypeInformation] = classHierarchy.supertypes
+    def subtypeInformation(ObjectType) : SubtypeInformation 
+    def supertypeInformation(ObjectType) : SupertypeInformation 
 
-Now, to get all subtypes of, e.g., `java.io.Serializable`, it is sufficient to query the subtypes information:
+To get, e.g., all subtypes of `java.io.Serializable`, it is sufficient to query the subtypes information:
 
-    val subtypeInformation = subtypes(ObjectType("java/io/Serializable"))
+    val subtypesOfSerializable = subtypeInformation(ObjectType("java/io/Serializable"))
 
 >Recall that in Java bytecode package names are separated using "/" and not "." as used in Java/Scala/... source code.
 

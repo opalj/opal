@@ -1,31 +1,4 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische UniversitÃ¤t Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package value
 
@@ -42,6 +15,9 @@ import org.opalj.br.LongType
 import org.opalj.br.FloatType
 import org.opalj.br.DoubleType
 import org.opalj.br.VoidType
+import org.opalj.br.ComputationalType
+import org.opalj.br.ComputationalTypeReference
+import org.opalj.br.ComputationalTypeReturnAddress
 import org.opalj.collection.immutable.UIDSet1
 
 import scala.annotation.switch
@@ -61,21 +37,17 @@ sealed trait ValueInformation {
     /** True if the value is "Void"; undefined if the type is unknown. */
     def isVoid: Boolean
 
-    /** True if the value has a reference type; undefined if the type is unknown. */
-    def isReferenceValue: Boolean
-
     /** True in case of a value with primitive type; undefined if the type is unknown. */
     def isPrimitiveValue: Boolean
+
+    /** True if the value has a reference type; undefined if the type is unknown. */
+    def isReferenceValue: Boolean
+    def asReferenceValue: IsReferenceValue = throw new ClassCastException
 
 }
 
 object ValueInformation {
 
-    /**
-     *
-     * @param t
-     * @return
-     */
     def apply(t: Type): ValueInformation = {
         (t.id: @switch) match {
             case VoidType.id     â‡’ VoidValue
@@ -119,7 +91,7 @@ case object UnknownValue extends ValueInformation {
 
 }
 
-trait KnownValue extends ValueInformation {
+sealed trait KnownValue extends ValueInformation {
 
     final override def isUnknownValue: Boolean = false
 
@@ -132,12 +104,45 @@ object VoidValue extends KnownValue {
     override def isPrimitiveValue: Boolean = false
 
     override def isReferenceValue: Boolean = false
+
+}
+
+trait KnownTypedValue extends KnownValue {
+
+    /**
+     * The computational type of the value.
+     *
+     * The precise computational type is, e.g., needed to calculate the effect
+     * of generic stack manipulation instructions (e.g., `DUP_...` and `SWAP`)
+     * on the stack as well as to calculate the jump targets of `RET` instructions
+     * and to determine which values are actually copied by, e.g., the `dup_XX`
+     * instructions.
+     *
+     * @note The computational type has to be precise/correct.
+     */
+    def computationalType: ComputationalType
+
 }
 
 /**
  * The value has the primitive type.
  */
-sealed trait IsPrimitiveValue[T <: BaseType] extends KnownValue {
+trait IsReturnAddressValue extends KnownTypedValue {
+
+    final override def isVoid: Boolean = false
+
+    final override def isReferenceValue: Boolean = false
+
+    final override def isPrimitiveValue: Boolean = false
+
+    final override def computationalType: ComputationalType = ComputationalTypeReturnAddress
+
+}
+
+/**
+ * The value has the primitive type.
+ */
+sealed trait IsPrimitiveValue[T <: BaseType] extends KnownTypedValue {
 
     final override def isVoid: Boolean = false
 
@@ -146,6 +151,8 @@ sealed trait IsPrimitiveValue[T <: BaseType] extends KnownValue {
     final override def isPrimitiveValue: Boolean = true
 
     def primitiveType: T
+
+    final override def computationalType: ComputationalType = primitiveType.computationalType
 
 }
 
@@ -176,8 +183,13 @@ case object AShortValue extends IsShortValue
 
 trait IsIntegerValue extends IsPrimitiveValue[IntegerType] {
     final def primitiveType: IntegerType = IntegerType
+    def lowerBound: Int
+    def upperBound: Int
 }
-case object AnIntegerValue extends IsIntegerValue
+case object AnIntegerValue extends IsIntegerValue {
+    def lowerBound: Int = Int.MinValue
+    def upperBound: Int = Int.MaxValue
+}
 
 trait IsFloatValue extends IsPrimitiveValue[FloatType] {
     final def primitiveType: FloatType = FloatType
@@ -195,26 +207,30 @@ trait IsDoubleValue extends IsPrimitiveValue[DoubleType] {
 case object ADoubleValue extends IsDoubleValue
 
 /**
- * Characterizes a reference value. Captures the information about the values
- * a domain value may refer to. For example, in the following:
+ * Describes the essential properties of a reference value in a program.
+ *
+ * For example, in the following:
  * {{{
  * val o = If(...) new Object() else "STRING"
  * }}}
  * o is a reference value (`IsReferenceValue`) that (may) refers to two "simple" base values:
- * `new Object()` and `"STRING"`; however, it is a decision of the the underlying domain whether
+ * `new Object()` and `"STRING"`; however, it is a decision of the underlying domain whether
  * the information about the base values is made available or not. Furthermore, if the base values
  * are actually used, the constraints in effect for the overall abstraction should be considered
  * to get the most precise result.
  *
  * @author Michael Eichberg
  */
-trait IsReferenceValue[+T <: IsReferenceValue[T]] extends KnownValue { this: T â‡’
+trait IsReferenceValue extends KnownTypedValue {
 
     final override def isVoid: Boolean = false
 
     final override def isReferenceValue: Boolean = true
+    final override def asReferenceValue: IsReferenceValue = this
 
     final override def isPrimitiveValue: Boolean = false
+
+    final override def computationalType: ComputationalType = ComputationalTypeReference
 
     /**
      * The upper bound of the value's type. The upper bound is empty if this
@@ -245,7 +261,7 @@ trait IsReferenceValue[+T <: IsReferenceValue[T]] extends KnownValue { this: T â
      *
      * @note '''This method is expected to be overridden by subtypes.'''
      *
-     * @return `Unknown`.
+     * @return `Unknown` (default)
      */
     def isNull: Answer = Unknown
 
@@ -265,9 +281,27 @@ trait IsReferenceValue[+T <: IsReferenceValue[T]] extends KnownValue { this: T â
      *
      * @note '''This method is expected to be overridden by subtypes.'''
      *
-     * @return `false`
+     * @return `false` (default)
      */
     def isPrecise: Boolean = false
+
+    /**
+     * Returns '''the type of the upper type bound''' if the upper type bound contains
+     * exactly one element. That is, the function is only always defined iff the type
+     * is precise.
+     */
+    final def asReferenceType: ReferenceType = {
+        if (!upperTypeBound.isSingletonSet) {
+            throw new ClassCastException(s"$upperTypeBound.size >= 1")
+        }
+
+        upperTypeBound.head
+    }
+
+    /**
+     * The least upper unique type bound of the upper type value. `None` if and only if the underlying value is `null`.
+     */
+    def valueType: Option[ReferenceType]
 
     /**
      * Tests if the type of this value is potentially a subtype of the specified
@@ -307,6 +341,9 @@ trait IsReferenceValue[+T <: IsReferenceValue[T]] extends KnownValue { this: T â
      */
     def isValueSubtypeOf(referenceType: ReferenceType): Answer = Unknown
 
+    type BaseReferenceValue <: IsReferenceValue
+    def asBaseReferenceValue: BaseReferenceValue
+
     /**
      * In general an `IsReferenceValue` abstracts over all potential values and this information is
      * sufficient for subsequent analyses; but in some cases, analyzing the set of underlying values
@@ -331,7 +368,7 @@ trait IsReferenceValue[+T <: IsReferenceValue[T]] extends KnownValue { this: T â
      * @return The set of values this reference value abstracts over. The set is empty if this
      *         value is already a base value and it does not abstract over other values.
      */
-    def baseValues: Traversable[T]
+    def baseValues: Traversable[BaseReferenceValue]
 
     /**
      * The set of base values this value abstracts over. This set is never empty and contains
@@ -340,14 +377,19 @@ trait IsReferenceValue[+T <: IsReferenceValue[T]] extends KnownValue { this: T â
      *
      * @note Primarily defined as a convenience interface.
      */
-    final def allValues: Traversable[T] = {
+    final def allValues: Traversable[BaseReferenceValue] = {
         val baseValues = this.baseValues
-        if (baseValues.isEmpty) Traversable(this) else baseValues
+        if (baseValues.isEmpty) Set(asBaseReferenceValue) else baseValues
     }
+
 }
 
-case class AReferenceValue(referenceType: ReferenceType) extends IsReferenceValue[AReferenceValue] {
+case class AReferenceValue(referenceType: ReferenceType) extends IsReferenceValue {
+    override type BaseReferenceValue = AReferenceValue
+    override def asBaseReferenceValue: AReferenceValue = this
+
     override def upperTypeBound: UIDSet[_ <: ReferenceType] = UIDSet1(referenceType)
+    override def valueType: Option[ReferenceType] = Some(referenceType)
     override def baseValues: Traversable[AReferenceValue] = Traversable(this)
 }
 
@@ -357,10 +399,7 @@ case class AReferenceValue(referenceType: ReferenceType) extends IsReferenceValu
  * @author Michael Eichberg
  */
 object TypeOfReferenceValue {
-
-    def unapply(rv: IsReferenceValue[_]): Some[UIDSet[_ <: ReferenceType]] = {
-        Some(rv.upperTypeBound)
-    }
+    def unapply(rv: IsReferenceValue): Some[UIDSet[_ <: ReferenceType]] = Some(rv.upperTypeBound)
 }
 
 /**
@@ -379,12 +418,7 @@ object TypeOfReferenceValue {
  * @author Michael Eichberg
  */
 object BaseReferenceValues {
-
-    def unapply[T <: IsReferenceValue[T]](
-        rv: IsReferenceValue[T]
-    ): Some[Traversable[IsReferenceValue[T]]] = {
-        Some(rv.allValues)
-    }
+    def unapply(rv: IsReferenceValue): Some[Traversable[IsReferenceValue]] = Some(rv.allValues)
 }
 
 /**
@@ -393,7 +427,5 @@ object BaseReferenceValues {
  * @author Michael Eichberg
  */
 object IsNullValue {
-
-    def unapply(rv: IsReferenceValue[_]): Boolean = rv.isNull == Yes
-
+    def unapply(rv: IsReferenceValue): Boolean = rv.isNull == Yes
 }
