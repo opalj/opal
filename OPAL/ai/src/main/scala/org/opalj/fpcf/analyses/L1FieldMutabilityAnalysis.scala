@@ -54,7 +54,7 @@ class L1FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
      * native methods are filtered.
      */
     private[analyses] def determineFieldMutability(field: Field): PropertyComputationResult = {
-        if (field.isFinal){
+        if (field.isFinal) {
             return Result(field, DeclaredFinalField)
         }
 
@@ -67,7 +67,7 @@ class L1FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
         var classesHavingAccess: Iterator[ClassFile] = Iterator(field.classFile)
 
         if (field.isProtected || field.isPackagePrivate) {
-            if (!closedPackages.isClosed(thisType.packageName)){
+            if (!closedPackages.isClosed(thisType.packageName)) {
                 return Result(field, NonFinalFieldByLackOfInformation)
             };
             classesHavingAccess ++= project.classesPerPackage(thisType.packageName).iterator
@@ -81,7 +81,7 @@ class L1FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
             classesHavingAccess ++= subTypes.map(project.classFile(_).get)
         }
 
-        if (classesHavingAccess.exists(_.methods.exists(_.isNative))){
+        if (classesHavingAccess.exists(_.methods.exists(_.isNative))) {
             return Result(field, NonFinalFieldByLackOfInformation);
         }
 
@@ -107,12 +107,12 @@ class L1FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
 
         for {
             (method, pcs) ← fieldAccessInformation.writeAccesses(field)
+            taCode = tacai(method)
+            stmts = taCode.stmts
             pc ← pcs
         } {
-            val taCode = tacai(method)
-            val stmts = taCode.stmts
             val index = taCode.pcToIndex(pc)
-            if(index >= 0) {
+            if (index >= 0) {
                 val stmtCandidate = stmts(index)
                 if (stmtCandidate.pc == pc) {
                     stmtCandidate match {
@@ -184,10 +184,10 @@ object LazyL1FieldMutabilityAnalysis
     with FPCFLazyAnalysisScheduler {
 
     final override def startLazily(
-                                      p: SomeProject,
-                                      ps: PropertyStore,
-                                      unused: Null
-                                  ): FPCFAnalysis = {
+        p:      SomeProject,
+        ps:     PropertyStore,
+        unused: Null
+    ): FPCFAnalysis = {
         val analysis = new L1FieldMutabilityAnalysis(p)
         ps.registerLazyPropertyComputation(
             FieldMutability.key, analysis.determineFieldMutability
