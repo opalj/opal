@@ -68,8 +68,8 @@ class L1FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
 
         if (field.isProtected || field.isPackagePrivate) {
             if (!closedPackages.isClosed(thisType.packageName)) {
-                return Result(field, NonFinalFieldByLackOfInformation)
-            };
+                return Result(field, NonFinalFieldByLackOfInformation);
+            }
             classesHavingAccess ++= project.classesPerPackage(thisType.packageName).iterator
         }
 
@@ -131,10 +131,9 @@ class L1FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
 
                                 // If the field that is written is not the one referred to by the
                                 // self reference, it is not effectively final.
-                                return Result(field, NonFinalFieldByAnalysis)
-
+                                return Result(field, NonFinalFieldByAnalysis);
                             }
-                        case _ ⇒ throw new RuntimeException("unexpected field access")
+                        case _ ⇒ throw new RuntimeException("unexpected field access");
                     }
                 } else {
                     // nothing to do as the put field is dead
