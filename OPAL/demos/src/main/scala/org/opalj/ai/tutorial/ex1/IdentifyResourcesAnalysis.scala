@@ -53,10 +53,10 @@ object IdentifyResourcesAnalysis extends DefaultOneStepAnalysis {
         val callSites = time {
             (for {
                 cf ← theProject.allClassFiles.par
-                (m, body) ← cf.methodsWithBody
+                m ← cf.methodsWithBody
             } yield {
                 val pcs =
-                    body.foldLeft(Chain.empty[Int /*PC*/ ]) { (pcs, pc, instruction) ⇒
+                    m.body.get.foldLeft(Chain.empty[Int /*PC*/ ]) { (pcs, pc, instruction) ⇒
                         instruction match {
                             case INVOKESPECIAL(
                                 ObjectType("java/io/File"), false /* = isInterface*/ ,
