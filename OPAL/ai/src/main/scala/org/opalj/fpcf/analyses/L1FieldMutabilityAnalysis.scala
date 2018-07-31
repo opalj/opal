@@ -65,29 +65,29 @@ class L1FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
         }
 
         val initialClasses =
-        if (field.isProtected || field.isPackagePrivate) {
-            if (!closedPackages.isClosed(thisType.packageName)) {
-                return Result(field, NonFinalFieldByLackOfInformation);
+            if (field.isProtected || field.isPackagePrivate) {
+                if (!closedPackages.isClosed(thisType.packageName)) {
+                    return Result(field, NonFinalFieldByLackOfInformation);
+                }
+                project.classesPerPackage(thisType.packageName)
+            } else {
+                Set(field.classFile)
             }
-            project.classesPerPackage(thisType.packageName)
-        } else {
-            Set(field.classFile)
-        }
 
         val classesHavingAccess: Iterator[ClassFile] =
-        if (field.isProtected) {
-            if (typeExtensibility(thisType).isYesOrUnknown) {
-                return Result(field, NonFinalFieldByLackOfInformation);
+            if (field.isProtected) {
+                if (typeExtensibility(thisType).isYesOrUnknown) {
+                    return Result(field, NonFinalFieldByLackOfInformation);
+                }
+                val subclassesIterator: Iterator[ClassFile] =
+                    classHierarchy.allSubclassTypes(thisType, reflexive = false).
+                        flatMap { ot ⇒
+                            project.classFile(ot).filter(cf ⇒ !initialClasses.contains(cf))
+                        }
+                initialClasses.iterator ++ subclassesIterator
+            } else {
+                initialClasses.iterator
             }
-            val subclassesIterator: Iterator[ClassFile] =
-                classHierarchy.allSubclassTypes(thisType, reflexive = false).
-                    flatMap { ot ⇒
-                        project.classFile(ot).filter(cf ⇒ !initialClasses.contains(cf))
-                    }
-            initialClasses.iterator ++ subclassesIterator
-        } else {
-            initialClasses.iterator
-        }
 
         if (classesHavingAccess.exists(_.methods.exists(_.isNative))) {
             return Result(field, NonFinalFieldByLackOfInformation);
