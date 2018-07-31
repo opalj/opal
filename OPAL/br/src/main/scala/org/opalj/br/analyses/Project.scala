@@ -471,6 +471,24 @@ class Project[Source] private (
     }
 
     /**
+     * Updates project information key specific initialization object. If an object is already
+     * registered, that object will be given to `info`.
+     *
+     * @note    Initialization data is discarded once the key is used.
+     */
+    def updateProjectInformationKeyInitializationData[T <: AnyRef, I <: AnyRef](
+        key:  ProjectInformationKey[T, I],
+        info: Option[I] ⇒ I
+    ): I = {
+        projectInformationKeyInitializationData.compute(
+            key.asInstanceOf[ProjectInformationKey[AnyRef, AnyRef]],
+            (_, current: AnyRef) ⇒ {
+                info(Option(current.asInstanceOf[I]))
+            }: I
+        ).asInstanceOf[I]
+    }
+
+    /**
      * Returns the additional project information that is ''currently'' available.
      *
      * If some analyses are still running it may be possible that additional

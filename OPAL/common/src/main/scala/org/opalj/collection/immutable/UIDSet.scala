@@ -796,7 +796,7 @@ sealed private[immutable] abstract class UIDTrieSetNodeLike[T <: UID] extends No
 
     private def +(e: T, eId: Int, shiftedEId: Int, level: Int): UIDTrieSetNodeLike[T] = {
         val valueId = this.value.id
-        // In the following we try to minimize the high of the tree.
+        // In the following, we try to minimize the high of the tree.
         if (valueId == eId)
             return this;
 
@@ -814,7 +814,7 @@ sealed private[immutable] abstract class UIDTrieSetNodeLike[T <: UID] extends No
                     (valueId >>> level & 1) == 0 &&
                     !newRight.containsId(eId, newShiftedEId)) {
                     // we can move the current value to the empty left branch...
-                    return new UIDTrieSetInnerNode(size + 1, e, new UIDTrieSetLeaf(value), newRight)
+                    return new UIDTrieSetInnerNode(size + 1, e, new UIDTrieSetLeaf(value), newRight);
                 } else {
                     newRight += (e, eId, newShiftedEId, level + 1)
                     if (newRight eq right)
@@ -830,7 +830,7 @@ sealed private[immutable] abstract class UIDTrieSetNodeLike[T <: UID] extends No
                     (valueId >>> level & 1) == 1 &&
                     !newLeft.containsId(eId, newShiftedEId)) {
                     // we can move the current value to the empty right branch...
-                    return new UIDTrieSetInnerNode(size + 1, e, newLeft, new UIDTrieSetLeaf(value))
+                    return new UIDTrieSetInnerNode(size + 1, e, newLeft, new UIDTrieSetLeaf(value));
                 } else {
                     newLeft += (e, eId, newShiftedEId, level + 1)
                     if (newLeft eq left)

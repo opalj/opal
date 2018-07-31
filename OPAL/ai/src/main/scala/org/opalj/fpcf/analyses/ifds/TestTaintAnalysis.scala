@@ -6,20 +6,22 @@ package ifds
 
 //import java.io.File
 
+import org.opalj.ai.fpcf.properties.BaseAIResult
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.ObjectType
 import org.opalj.br.Method
-import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.fpcf.analyses.ifds.AbstractIFDSAnalysis.V
-//import org.opalj.fpcf.seq.EPKSequentialPropertyStore
+import org.opalj.tac.fpcf.analyses.LazyL0TACAIAnalysis
+import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.fpcf.par.PKEParallelTasksPropertyStore
-import org.opalj.fpcf.par.RecordAllPropertyStoreTracer
+//import org.opalj.fpcf.par.RecordAllPropertyStoreTracer
+//import org.opalj.fpcf.seq.EPKSequentialPropertyStore
+//import org.opalj.fpcf.seq.PKESequentialPropertyStore
 import org.opalj.fpcf.properties.IFDSProperty
 import org.opalj.fpcf.properties.IFDSPropertyMetaInformation
-//import org.opalj.fpcf.seq.PKESequentialPropertyStore
 import org.opalj.tac.Assignment
 import org.opalj.tac.Expr
 import org.opalj.tac.Var
@@ -215,18 +217,12 @@ class TestTaintAnalysis private[ifds] (
                     asCall(stmt.stmt).allParams.zipWithIndex.collect {
                         case (param, pIndex) if param.asVar.definedBy.contains(index) &&
                             (paramToIndex(pIndex, !callee.definedMethod.isStatic) != -1 ||
-                                isRelatedType(declClass, callee.declaringClassType)) ⇒
+                                classHierarchy.isSubtypeOf(declClass, callee.declaringClassType)) ⇒
                             InstanceField(paramToIndex(pIndex, !callee.definedMethod.isStatic), declClass, taintedField)
                     }*/
                 //case sf: StaticField ⇒ Set(sf)
             }.flatten
         } else Set.empty
-    }
-
-    def isRelatedType(type1: ObjectType, type2: ReferenceType): Boolean = {
-        type2.isObjectType &&
-            (classHierarchy.isSubtypeOf(type1, type2.asObjectType).isYesOrUnknown ||
-                classHierarchy.isSubtypeOf(type2.asObjectType, type1).isYesOrUnknown)
     }
 
     override def returnFlow(
@@ -325,7 +321,7 @@ object TestTaintAnalysis extends LazyIFDSAnalysis[Fact] {
 
     override def property: IFDSPropertyMetaInformation[Fact] = Taint
 
-    override val uses: Set[PropertyKind] = Set.empty
+    override val uses: Set[PropertyKind] = Set(BaseAIResult, TACAI)
 }
 
 class Taint(val flows: Map[Statement, Set[Fact]]) extends IFDSProperty[Fact] {
@@ -357,26 +353,29 @@ object TestTaintAnalysisRunner {
         p.getOrCreateProjectInformationKeyInitializationData(
             PropertyStoreKey,
             (context: List[PropertyStoreContext[AnyRef]]) ⇒ {
-                val ps = PKEParallelTasksPropertyStore.create(
+                /*val ps = PKEParallelTasksPropertyStore.create(
                     new RecordAllPropertyStoreTracer,
                     context.iterator.map(_.asTuple).toMap
-                )(p.logContext)
-                /*implicit val lg = p.logContext
-                val ps = PKESequentialPropertyStore.apply(context: _*)*/
+                )(p.logContext)*/
+                implicit val lg = p.logContext
+                val ps = PKEParallelTasksPropertyStore(context: _*)
+                //val ps = EPKSequentialPropertyStore.apply(context: _*)
                 PropertyStore.updateTraceCycleResolutions(true)
                 PropertyStore.updateDebug(true)
                 ps
             }
         )
         val ps = p.get(PropertyStoreKey)
-        ps.setupPhase(Set(TestTaintAnalysis.property.key))
+        ps.setupPhase(Set(BaseAIResult, TACAI, TestTaintAnalysis.property))
+        LazyL0TACAIAnalysis.init(ps)
+        LazyL0TACAIAnalysis.schedule(ps, null)
         TestTaintAnalysis.startLazily(p, ps, TestTaintAnalysis.init(p, ps))
         val declaredMethods = p.get(DeclaredMethodsKey)
         var entryPoints: Set[(DeclaredMethod, Fact)] = Set.empty
         for (m ← p.allMethodsWithBody) {
             //val e = (declaredMethods(m), null)
             //ps.force(e, TestTaintAnalysis.property.key)
-            if ((m.isPublic || m.isProtected) && (m.descriptor.returnType == ObjectType.Object ||
+            if (m.isPublic && (m.descriptor.returnType == ObjectType.Object ||
                 m.descriptor.returnType == ObjectType.Class)) {
                 m.descriptor.parameterTypes.zipWithIndex.collect {
                     case (pType, index) if pType == ObjectType.String ⇒ index

@@ -61,7 +61,7 @@ object SecondInstrumentation extends App {
                     PCAndInstruction(pc, INVOKEVIRTUAL(_, "println", PrintlnDescriptor)) ← code
                     param = operandsArray(pc).head
                     // if param.asDomainReferenceValue.valueType.get == CollectionType
-                    if param.asDomainReferenceValue.isValueSubtypeOf(CollectionType).isYes
+                    if param.asDomainReferenceValue.isValueASubtypeOf(CollectionType).isYes
                 } {
                     modified = true
                     lCode.insert(

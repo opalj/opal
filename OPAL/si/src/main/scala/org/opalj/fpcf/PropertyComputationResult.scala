@@ -11,7 +11,9 @@ sealed abstract class PropertyComputationResult {
     private[fpcf] def id: Int
 
     private[fpcf] def isIntermediateResult: Boolean = false
-    private[fpcf] def asIntermediateResult: IntermediateResult[_] = throw new ClassCastException
+    private[fpcf] def asIntermediateResult: IntermediateResult[_ <: Property] = {
+        throw new ClassCastException();
+    }
 }
 
 /**
@@ -50,7 +52,7 @@ case class Result(e: Entity, p: Property) extends FinalPropertyComputationResult
 
     override def toString: String = s"Result($e@${System.identityHashCode(e).toHexString},p=$p)"
 }
-private[fpcf] object Result { private[fpcf] final val id = 1 }
+object Result { private[fpcf] final val id = 1 }
 
 /**
  * Encapsulates the '''final results''' of the computation of a set of properties. Hence, all
@@ -65,7 +67,7 @@ case class MultiResult(properties: ComputationResults) extends FinalPropertyComp
     private[fpcf] final def id = MultiResult.id
 
 }
-private[fpcf] object MultiResult { private[fpcf] final val id = 2 }
+object MultiResult { private[fpcf] final val id = 2 }
 
 /**
  * Encapsulates an intermediate result of the computation of a property.
@@ -147,7 +149,7 @@ case class IntermediateResult[P <: Property](
     private[fpcf] final def id = IntermediateResult.id
 
     private[fpcf] final override def isIntermediateResult: Boolean = true
-    private[fpcf] final override def asIntermediateResult: IntermediateResult[_] = this
+    private[fpcf] final override def asIntermediateResult: IntermediateResult[_ <: Property] = this
 
     override def hashCode: Int = e.hashCode * 17 + dependees.hashCode
 
@@ -170,7 +172,7 @@ case class IntermediateResult[P <: Property](
             s"dependees=${dependees.mkString("{", ",", "}")},c=$c)"
     }
 }
-private[fpcf] object IntermediateResult {
+object IntermediateResult {
     private[fpcf] final val id = 3
 }
 
@@ -202,7 +204,7 @@ case class IncrementalResult[E <: Entity](
 
 }
 
-private[fpcf] object IncrementalResult { private[fpcf] final val id = 4 }
+object IncrementalResult { private[fpcf] final val id = 4 }
 
 /**
  * Just a collection of multiple results. The results have to be disjoint w.r.t. the underlying
@@ -215,7 +217,7 @@ case class Results(
     private[fpcf] final def id = Results.id
 
 }
-private[fpcf] object Results {
+object Results {
 
     private[fpcf] final val id = 5
 
@@ -249,7 +251,7 @@ case class PartialResult[E >: Null <: Entity, P >: Null <: Property](
     private[fpcf] final def id = PartialResult.id
 
 }
-private[fpcf] object PartialResult { private[fpcf] final val id = 6 }
+object PartialResult { private[fpcf] final val id = 6 }
 
 /**************************************************************************************************\
  *

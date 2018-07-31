@@ -69,11 +69,23 @@ object SystemOutLoggingAllExceptionRater extends BaseDomainSpecificRater
  * Basic rater that does nothing.
  */
 class BaseDomainSpecificRater extends DomainSpecificRater {
-    def handleCall(call: Call[V], receiver: Option[Expr[V]])(implicit project: SomeProject, code: Array[Stmt[V]]): Option[Purity] = {
+    def handleCall(
+        call:     Call[V],
+        receiver: Option[Expr[V]]
+    )(
+        implicit
+        project: SomeProject,
+        code:    Array[Stmt[V]]
+    ): Option[Purity] = {
         None
     }
 
-    def handleGetStatic(expr: GetStatic)(implicit project: SomeProject, code: Array[Stmt[V]]): Option[Purity] = {
+    def handleGetStatic(
+        expr: GetStatic
+    )(
+        implicit
+        project: SomeProject, code: Array[Stmt[V]]
+    ): Option[Purity] = {
         None
     }
 
@@ -88,13 +100,25 @@ class BaseDomainSpecificRater extends DomainSpecificRater {
 trait SystemOutErrRater extends DomainSpecificRater {
     private final val printStream = ObjectType("java/io/PrintStream")
 
-    abstract override def handleCall(call: Call[V], receiver: Option[Expr[V]])(implicit project: SomeProject, code: Array[Stmt[V]]): Option[Purity] = {
+    abstract override def handleCall(
+        call:     Call[V],
+        receiver: Option[Expr[V]]
+    )(
+        implicit
+        project: SomeProject, code: Array[Stmt[V]]
+    ): Option[Purity] = {
         if (receiver.isDefined && call.declaringClass == printStream && isOutErr(receiver.get))
             Some(DPure)
         else super.handleCall(call, receiver)
     }
 
-    abstract override def handleGetStatic(expr: GetStatic)(implicit project: SomeProject, code: Array[Stmt[V]]): Option[Purity] = {
+    abstract override def handleGetStatic(
+        expr: GetStatic
+    )(
+        implicit
+        project: SomeProject,
+        code:    Array[Stmt[V]]
+    ): Option[Purity] = {
         val GetStatic(_, declaringClass, name, _) = expr
         if (declaringClass == ObjectType.System && (name == "out" || name == "err"))
             Some(Pure)
@@ -141,16 +165,28 @@ trait LoggingRater extends DomainSpecificRater {
         ObjectType("java/util/logging/Level")
     )
 
-    abstract override def handleCall(call: Call[V], receiver: Option[Expr[V]])(implicit project: SomeProject, code: Array[Stmt[V]]): Option[Purity] = {
+    abstract override def handleCall(
+        call: Call[V], receiver: Option[Expr[V]]
+    )(
+        implicit
+        project: SomeProject,
+        code:    Array[Stmt[V]]
+    ): Option[Purity] = {
         if (call.declaringClass.isObjectType) {
             val declClass = call.declaringClass.asObjectType
-            if (loggers.exists(declClass.isSubtypeOf(_)(project.classHierarchy).isYes))
+            if (loggers.exists(declClass.isSubtypeOf(_)(project.classHierarchy)))
                 Some(DPure)
             else super.handleCall(call, receiver)
         } else super.handleCall(call, receiver)
     }
 
-    abstract override def handleGetStatic(expr: GetStatic)(implicit project: SomeProject, code: Array[Stmt[V]]): Option[Purity] = {
+    abstract override def handleGetStatic(
+        expr: GetStatic
+    )(
+        implicit
+        project: SomeProject,
+        code:    Array[Stmt[V]]
+    ): Option[Purity] = {
         val GetStatic(_, declaringClass, _, _) = expr
         if (logLevels.exists(declaringClass == _))
             Some(DPure)
@@ -162,11 +198,18 @@ trait LoggingRater extends DomainSpecificRater {
  * Mixin that treats all exceptions as domain-specific.
  */
 trait ExceptionRater extends DomainSpecificRater {
-    abstract override def handleCall(call: Call[V], receiver: Option[Expr[V]])(implicit project: SomeProject, code: Array[Stmt[V]]): Option[Purity] = {
+    abstract override def handleCall(
+        call:     Call[V],
+        receiver: Option[Expr[V]]
+    )(
+        implicit
+        project: SomeProject,
+        code:    Array[Stmt[V]]
+    ): Option[Purity] = {
         implicit val classHierarchy = project.classHierarchy
         val declClass = call.declaringClass
         if (declClass.isObjectType && call.name == "<init>" &&
-            declClass.asObjectType.isSubtypeOf(ObjectType.Throwable).isYes &&
+            declClass.asObjectType.isSubtypeOf(ObjectType.Throwable) &&
             !project.instanceMethods(declClass.asObjectType).exists { mdc ⇒
                 mdc.name == "fillInStackTrace" &&
                     mdc.method.classFile.thisType != ObjectType.Throwable
@@ -175,7 +218,13 @@ trait ExceptionRater extends DomainSpecificRater {
         else super.handleCall(call, receiver)
     }
 
-    abstract override def handleGetStatic(expr: GetStatic)(implicit project: SomeProject, code: Array[Stmt[V]]): Option[Purity] = {
+    abstract override def handleGetStatic(
+        expr: GetStatic
+    )(
+        implicit
+        project: SomeProject,
+        code:    Array[Stmt[V]]
+    ): Option[Purity] = {
         super.handleGetStatic(expr)
     }
 
@@ -196,15 +245,27 @@ trait AssertionExceptionRater extends DomainSpecificRater {
         ObjectType("java/lang/IllegalStateException")
     )
 
-    abstract override def handleCall(call: Call[V], receiver: Option[Expr[V]])(implicit project: SomeProject, code: Array[Stmt[V]]): Option[Purity] = {
+    abstract override def handleCall(
+        call:     Call[V],
+        receiver: Option[Expr[V]]
+    )(
+        implicit
+        project: SomeProject, code: Array[Stmt[V]]
+    ): Option[Purity] = {
         implicit val classHierarchy = project.classHierarchy;
         if (call.declaringClass.isObjectType && call.name == "<init>" &&
-            exceptionTypes.exists(call.declaringClass.asObjectType.isSubtypeOf(_).isYes))
+            exceptionTypes.exists(call.declaringClass.asObjectType.isSubtypeOf))
             Some(DPure)
         else super.handleCall(call, receiver)
     }
 
-    abstract override def handleGetStatic(expr: GetStatic)(implicit project: SomeProject, code: Array[Stmt[V]]): Option[Purity] = {
+    abstract override def handleGetStatic(
+        expr: GetStatic
+    )(
+        implicit
+        project: SomeProject,
+        code:    Array[Stmt[V]]
+    ): Option[Purity] = {
         super.handleGetStatic(expr)
     }
 

@@ -39,7 +39,7 @@ private[seq] sealed abstract class PropertyValue {
     def isFinal: Boolean
 
     def asIntermediate: IntermediatePropertyValue = {
-        throw new ClassCastException(s"$this is not an IntermediatePropertyValue")
+        throw new ClassCastException(s"$this is not an IntermediatePropertyValue");
     }
 
     def toEPS[E <: Entity](e: E): Option[EPS[E, Property]] = {

@@ -28,14 +28,20 @@ class CatchNode(
         val catchType: Option[ObjectType]
 ) extends CFGNode {
 
+    /**
+     * @param handler The Handler.
+     * @param index The unique index in the exception handler table; this enables us to assign
+     *              unique nodeids to catch nodes.
+     */
     def this(handler: ExceptionHandler, index: Int) {
         this(index, handler.startPC, handler.endPC, handler.handlerPC, handler.catchType)
     }
 
     final override def nodeId: Int = {
-        // the offset is required to ensure that catch node ids do not collide with basic
-        // block ids (even if the index is zero!)
-        0xFFFFFF + startPC + (index << 16)
+        // OLD: the offset is required to ensure that catch node ids do not collide with basic
+        // OLD: block ids (even if the index is zero!)
+        // OLD: 0xFFFFFF + startPC + (index << 16)
+        /*-1==normal exit, -2==abnormal exit*/ -3 - index
     }
 
     def copy(

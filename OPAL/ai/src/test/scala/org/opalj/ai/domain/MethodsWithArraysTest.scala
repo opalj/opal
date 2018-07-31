@@ -79,7 +79,7 @@ class MethodsWithArraysTest extends FlatSpec with Matchers {
     it should "be able to analyze a method that uses the Java feature that arrays are covariant" in {
         evaluateMethod("covariantArrays", domain ⇒ {
             domain.allReturnedValues.size should be(1)
-            domain.isValueSubtypeOf(
+            domain.isValueASubtypeOf(
                 domain.allReturnedValues(24), ObjectType.Object
             ) should be(Yes)
         })
@@ -88,10 +88,10 @@ class MethodsWithArraysTest extends FlatSpec with Matchers {
     it should "be able to analyze a method that does various (complex) type casts related to arrays" in {
         evaluateMethod("integerArraysFrenzy", domain ⇒ {
             domain.allReturnedValues.size should be(2)
-            domain.isValueSubtypeOf(
+            domain.isValueASubtypeOf(
                 domain.allReturnedValues(78), ArrayType(IntegerType)
             ) should be(Yes)
-            domain.isValueSubtypeOf(
+            domain.isValueASubtypeOf(
                 domain.allReturnedValues(76), ArrayType(ByteType)
             ) should be(Yes)
         })

@@ -154,7 +154,7 @@ trait Constant_PoolReader extends Constant_PoolAbstractions {
                 case CONSTANT_Utf8_ID ⇒
                     i += 1
                     if (in.markSupported()) {
-                        in.mark(UShort.MaxValue)
+                        in.mark(UShort.MaxValue + 2)
                         val length = in.readUnsignedShort
                         val raw = new Array[Byte](length)
                         in.readFully(raw)

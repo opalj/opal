@@ -19,12 +19,12 @@ sealed trait ElementValue extends Attribute {
      */
     def toJava: String
 
-    def asIntValue: IntValue = throw new ClassCastException()
-    def asEnumValue: EnumValue = throw new ClassCastException()
-    def asAnnotationValue: AnnotationValue = throw new ClassCastException()
-    def asStringValue: StringValue = throw new ClassCastException()
-    def asArrayValue: ArrayValue = throw new ClassCastException()
-    def asClassValue: ClassValue = throw new ClassCastException()
+    def asIntValue: IntValue = throw new ClassCastException();
+    def asEnumValue: EnumValue = throw new ClassCastException();
+    def asAnnotationValue: AnnotationValue = throw new ClassCastException();
+    def asStringValue: StringValue = throw new ClassCastException();
+    def asArrayValue: ArrayValue = throw new ClassCastException();
+    def asClassValue: ClassValue = throw new ClassCastException();
 
 }
 object ElementValue {

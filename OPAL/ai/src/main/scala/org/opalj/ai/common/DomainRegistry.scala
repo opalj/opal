@@ -77,7 +77,7 @@ object DomainRegistry {
         domains
     }
 
-    def selectCandidates(requirements: Seq[Class[_ <: AnyRef]]): Set[Class[_ <: Domain]] = {
+    def selectCandidates(requirements: Traversable[Class[_ <: AnyRef]]): Set[Class[_ <: Domain]] = {
         classRegistry.keys.filter { candidate ⇒
             requirements.forall(r ⇒ r.isAssignableFrom(candidate))
         }.toSet
@@ -96,7 +96,7 @@ object DomainRegistry {
      *
      * @return The best domain satisfying the stated requirements.
      */
-    def selectBest(requirements: Seq[Class[_ <: AnyRef]]): Set[Class[_ <: Domain]] = {
+    def selectBest(requirements: Traversable[Class[_ <: AnyRef]]): Set[Class[_ <: Domain]] = {
         val candidateClasses = selectCandidates(requirements)
         if (candidateClasses.isEmpty)
             return Set.empty;
@@ -119,7 +119,7 @@ object DomainRegistry {
         best
     }
 
-    def selectCheapest(requirements: Seq[Class[_ <: AnyRef]]): Set[Class[_ <: Domain]] = {
+    def selectCheapest(requirements: Traversable[Class[_ <: AnyRef]]): Set[Class[_ <: Domain]] = {
         val candidateClasses = selectCandidates(requirements)
         if (candidateClasses.isEmpty)
             return Set.empty;
@@ -184,6 +184,10 @@ object DomainRegistry {
         this.synchronized { classRegistry(domainClass).factory(project, method) }
     }
 
+    def domainFactory(domainClass: Class[_ <: Domain])(project: SomeProject, method: Method): Domain = {
+        this.synchronized { classRegistry(domainClass).factory(project, method) }
+    }
+
     // initialize the registry with the known default domains
 
     // IMPROVE Add functionality to the domains to provide a description and then use that information when registering the domain factory
@@ -196,7 +200,7 @@ object DomainRegistry {
 
     register(
         "computations are done at the type level; cfg and def/use information is recorded",
-        classOf[domain.l0.BaseDomainWithDefUse[_]],
+        classOf[domain.l0.PrimitiveTACAIDomain],
         lessPreciseDomains = Set(classOf[domain.l0.BaseDomain[_]]),
         (project: SomeProject, method: Method) ⇒ new domain.l0.BaseDomainWithDefUse(project, method)
     )
@@ -240,7 +244,7 @@ object DomainRegistry {
     register(
         "uses intervals for int values and track nullness and must alias information for reference types; records the ai-time def-use information",
         classOf[domain.l1.DefaultDomainWithCFGAndDefUse[_]],
-        lessPreciseDomains = Set(classOf[domain.l0.BaseDomainWithDefUse[_]]),
+        lessPreciseDomains = Set(classOf[domain.l0.PrimitiveTACAIDomain]),
         (project: SomeProject, method: Method) ⇒ {
             new domain.l1.DefaultDomainWithCFGAndDefUse(project, method)
         }

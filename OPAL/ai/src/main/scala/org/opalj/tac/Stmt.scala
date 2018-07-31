@@ -8,7 +8,7 @@ import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.value.KnownTypedValue
 
 /**
- * Super trait of all quadruple statements.
+ * Super trait of all three-address code/quadruple statements.
  *
  * @author Michael Eichberg
  * @author Roberts Kolosovs
@@ -232,7 +232,7 @@ case class Switch[+V <: Var[V]](
         pc:                        PC,
         private var defaultTarget: PC,
         index:                     Expr[V],
-        private var npairs:        IndexedSeq[(Int, PC)]
+        private var npairs:        IndexedSeq[(Int, PC)] // IMPROVE use IntPair
 ) extends Stmt[V] {
 
     final override def asSwitch: this.type = this
@@ -289,6 +289,8 @@ case class Assignment[+V <: Var[V]](pc: Int, targetVar: V, expr: Expr[V]) extend
     }
 
     final override def isSideEffectFree: Boolean = expr.isSideEffectFree
+
+    override def hashCode(): Opcode = (Assignment.ASTID * 1171 + pc) * 31 + expr.hashCode
 
     override def toString: String = s"Assignment(pc=$pc,$targetVar,$expr)"
 
@@ -469,6 +471,8 @@ case class Throw[+V <: Var[V]](pc: Int, exception: Expr[V]) extends Stmt[V] {
 
     final override def isSideEffectFree: Boolean = false
 
+    override def hashCode(): Opcode = (Throw.ASTID * 1171 + pc) * 31 + exception.hashCode
+
     override def toString: String = s"Throw(pc=$pc,$exception)"
 }
 object Throw {
@@ -507,6 +511,10 @@ case class PutStatic[+V <: Var[V]](
         false
     }
 
+    override def hashCode(): Opcode = {
+        ((PutStatic.ASTID * 1171 + pc) * 31 + declaringClass.hashCode) * 31 + name.hashCode
+    }
+
     override def toString: String = {
         s"PutStatic(pc=$pc,${declaringClass.toJava},name,${declaredFieldType.toJava},$value)"
     }
@@ -541,6 +549,10 @@ case class PutField[+V <: Var[V]](
     final override def isSideEffectFree: Boolean = {
         // IMPROVE Is it a redundant write?
         false
+    }
+
+    override def hashCode(): Opcode = {
+        ((PutField.ASTID * 1171 + pc) * 31 + declaringClass.hashCode) * 31 + name.hashCode
     }
 
     override def toString: String = {
@@ -740,6 +752,8 @@ case class ExprStmt[+V <: Var[V]](pc: Int, expr: Expr[V]) extends Stmt[V] {
         )
         false
     }
+
+    override def hashCode(): Opcode = (ExprStmt.ASTID * 1171 + pc) * 31 + expr.hashCode
 
     override def toString: String = s"ExprStmt(pc=$pc,$expr)"
 

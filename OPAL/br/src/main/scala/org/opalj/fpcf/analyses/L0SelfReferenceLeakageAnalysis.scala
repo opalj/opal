@@ -51,7 +51,7 @@ class L0SelfReferenceLeakageAnalysis(
         val classType = classFile.thisType
 
         def thisIsSubtypeOf(otherType: ObjectType): Boolean = {
-            classHierarchy.isSubtypeOf(classType, otherType.asObjectType).isYesOrUnknown
+            classHierarchy.isASubtypeOf(classType, otherType.asObjectType).isYesOrUnknown
         }
 
         // This method just implements a very quick check if there is any potential

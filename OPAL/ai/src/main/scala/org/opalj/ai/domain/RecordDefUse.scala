@@ -467,7 +467,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode with Th
                                     code.handlersFor(currentPC) filter { eh ⇒
                                         !foundDefinitiveHandler && (
                                             (eh.catchType.isEmpty && { foundDefinitiveHandler = true; true }) || {
-                                                val isHandled = isSubtypeOf(ObjectType.NullPointerException, eh.catchType.get)
+                                                val isHandled = isASubtypeOf(ObjectType.NullPointerException, eh.catchType.get)
                                                 if (isHandled.isYes) {
                                                     foundDefinitiveHandler = true
                                                     true

@@ -140,42 +140,42 @@ sealed trait Type extends UIDValue with Ordered[Type] {
 
     @throws[ClassCastException]("if this type is not a reference type")
     def asReferenceType: ReferenceType = {
-        throw new ClassCastException(this.toJava+" cannot be cast to a ReferenceType")
+        throw new ClassCastException(this.toJava+" cannot be cast to a ReferenceType");
     }
 
     @throws[ClassCastException]("if this type is not an array type")
     def asArrayType: ArrayType = {
-        throw new ClassCastException(this.toJava+" cannot be cast to an ArrayType")
+        throw new ClassCastException(this.toJava+" cannot be cast to an ArrayType");
     }
 
     @throws[ClassCastException]("if this type is not an object type")
     def asObjectType: ObjectType = {
-        throw new ClassCastException(this.toJava+" cannot be cast to an ObjectType")
+        throw new ClassCastException(this.toJava+" cannot be cast to an ObjectType");
     }
 
     @throws[ClassCastException]("if this type is not a base type")
     def asBaseType: BaseType = {
-        throw new ClassCastException(getClass.getSimpleName+" cannot be cast to a BaseType")
+        throw new ClassCastException(getClass.getSimpleName+" cannot be cast to a BaseType");
     }
 
     @throws[ClassCastException]("if this type is not a field type")
     def asFieldType: FieldType = {
-        throw new ClassCastException(getClass.getSimpleName+" cannot be cast to a FieldType")
+        throw new ClassCastException(getClass.getSimpleName+" cannot be cast to a FieldType");
     }
 
     @throws[ClassCastException]("if this is not a numeric type")
     def asNumericType: NumericType = {
-        throw new ClassCastException(getClass.getSimpleName+" cannot be cast to a NumericType")
+        throw new ClassCastException(getClass.getSimpleName+" cannot be cast to a NumericType");
     }
 
     @throws[ClassCastException]("if this is not an int like type")
     def asIntLikeType: IntLikeType = {
-        throw new ClassCastException(getClass.getSimpleName+" cannot be cast to an IntLikeType")
+        throw new ClassCastException(getClass.getSimpleName+" cannot be cast to an IntLikeType");
     }
 
     @throws[ClassCastException]("if this is not a boolean type")
     def asBooleanType: BooleanType = {
-        throw new ClassCastException(getClass.getSimpleName+" cannot be cast to an IntLikeType")
+        throw new ClassCastException(getClass.getSimpleName+" cannot be cast to an IntLikeType");
     }
 
     /**
@@ -989,7 +989,11 @@ final class ObjectType private ( // DO NOT MAKE THIS A CASE CLASS!
         ObjectType.unboxValue(targetType)
     }
 
-    def isSubtypeOf(that: ObjectType)(implicit classHierarchy: ClassHierarchy): Answer = {
+    def isASubtypeOf(that: ObjectType)(implicit classHierarchy: ClassHierarchy): Answer = {
+        classHierarchy.isASubtypeOf(this, that)
+    }
+
+    def isSubtypeOf(that: ObjectType)(implicit classHierarchy: ClassHierarchy): Boolean = {
         classHierarchy.isSubtypeOf(this, that)
     }
 

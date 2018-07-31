@@ -53,7 +53,7 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers {
 
     describe("the DefaultReferenceValues domain") {
 
-        describe("isValueSubtypeOf") {
+        describe("isValueASubtypeOf") {
 
             it("should be able to cast an array of objects to an array of array of ints") {
 
@@ -61,10 +61,10 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers {
                 isSubtypeOf(
                     ArrayType(ArrayType(IntegerType)),
                     ArrayType(ObjectType.Object)
-                ) should be(Yes)
+                ) should be(true)
 
                 val v1 = ArrayValue(111, No, false, ArrayType(ObjectType.Object), 1)
-                v1.isValueSubtypeOf(ArrayType(ArrayType(IntegerType))) should be(Unknown)
+                v1.isValueASubtypeOf(ArrayType(ArrayType(IntegerType))) should be(Unknown)
             }
         }
 
@@ -231,8 +231,8 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers {
                 val Field = ObjectType("java/lang/reflect/Field")
                 val Constructor = ObjectType("java/lang/reflect/Constructor")
 
-                assert(isSubtypeOf(Field, Member).isYes)
-                assert(isSubtypeOf(Constructor, Member).isYes)
+                assert(isSubtypeOf(Field, Member))
+                assert(isSubtypeOf(Constructor, Member))
 
                 val v1 = ObjectValue(111, No, true, Field, 1)
                 val v2 = ObjectValue(222, Unknown, false, Member, 2)
@@ -841,7 +841,7 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers {
                 val theDomain = new TheDomain
                 val result = BaseAI(method, theDomain)
 
-                assert(theDomain.isSubtypeOf(ObjectType.Exception, ObjectType.Throwable).isYes)
+                assert(theDomain.isSubtypeOf(ObjectType.Exception, ObjectType.Throwable))
 
                 val value78 @ BaseReferenceValues(values78) = result.operandsArray(78).head.asDomainReferenceValue
                 values78.size should be(1)
