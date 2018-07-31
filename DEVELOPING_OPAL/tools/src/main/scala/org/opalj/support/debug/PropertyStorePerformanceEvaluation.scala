@@ -493,23 +493,23 @@ object PropertyStorePerformanceEvaluation {
 
                         analysis match {
                             case "TypeImmutabilityAnalysis" ⇒
-                                EagerTypeImmutabilityAnalysis.start(project, propertyStore)
+                                EagerTypeImmutabilityAnalysis.start(project, propertyStore, null)
                             case "L0FieldMutabilityAnalysis" ⇒
-                                EagerL0FieldMutabilityAnalysis.start(project, propertyStore)
+                                EagerL0FieldMutabilityAnalysis.start(project, propertyStore, null)
                             case "L1FieldMutabilityAnalysis" ⇒
-                                EagerL1FieldMutabilityAnalysis.start(project, propertyStore)
+                                EagerL1FieldMutabilityAnalysis.start(project, propertyStore, null)
                             case "L0PurityAnalysis" ⇒
-                                info.Purity.supportingAnalyses(0).foreach(_.startLazily(project, propertyStore))
-                                EagerL0PurityAnalysis.start(project, propertyStore)
+                                info.Purity.supportingAnalyses(0).foreach(_.startLazily(project, propertyStore, null))
+                                EagerL0PurityAnalysis.start(project, propertyStore, null)
                             case "L1PurityAnalysis" ⇒
-                                info.Purity.supportingAnalyses(1).foreach(_.startLazily(project, propertyStore))
-                                EagerL1PurityAnalysis.start(project, propertyStore)
+                                info.Purity.supportingAnalyses(1).foreach(_.startLazily(project, propertyStore, null))
+                                EagerL1PurityAnalysis.start(project, propertyStore, null)
                             case "L2PurityAnalysis" | "L2PurityAnalysisEagerTAC" ⇒
-                                info.Purity.supportingAnalyses(2).foreach(_.startLazily(project, propertyStore))
-                                EagerL2PurityAnalysis.start(project, propertyStore)
+                                info.Purity.supportingAnalyses(2).foreach(_.startLazily(project, propertyStore, null))
+                                EagerL2PurityAnalysis.start(project, propertyStore, null)
                             case "L1ThrownExceptionsAnalysis" ⇒
-                                LazyVirtualMethodThrownExceptionsAnalysis.startLazily(project, propertyStore)
-                                EagerL1ThrownExceptionsAnalysis.start(project, propertyStore)
+                                LazyVirtualMethodThrownExceptionsAnalysis.startLazily(project, propertyStore, null)
+                                EagerL1ThrownExceptionsAnalysis.start(project, propertyStore, null)
                             case "EagerTAC" ⇒
                                 val tac = project.get(DefaultTACAIKey)
                                 project.parForeachMethodWithBody() { m ⇒ tac(m.method) }

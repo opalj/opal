@@ -70,10 +70,9 @@ import scala.collection.concurrent.TrieMap
 import scala.concurrent.Await
 import scala.concurrent.TimeoutException
 import scala.concurrent.duration._
-import scala.reflect.runtime.universe.Type
 
 class ReactiveAsyncPropertyStore private (
-        final val ctx:         Map[Type, AnyRef],
+        final val ctx:         Map[Class[_], AnyRef],
         final val parallelism: Int
 )(
         implicit
@@ -239,6 +238,8 @@ class ReactiveAsyncPropertyStore private (
      */
     override def isKnown(e: Entity): Boolean =
         ps.exists(psE ⇒ psE.contains(e)) || startedLazyTasks.keySet.exists(k ⇒ k.e == e)
+
+    override def registerTriggeredComputation[E <: Entity, P <: Property](pk: PropertyKey[P], pc: PropertyComputation[E]): Unit = ???
 
     override def hasProperty(e: Entity, pk: PropertyKind): Boolean =
         isKnown(e) && ps(pk.id).contains(e) && {
@@ -981,7 +982,7 @@ object ReactiveAsyncPropertyStore extends PropertyStoreFactory {
         implicit
         logContext: LogContext
     ): ReactiveAsyncPropertyStore = {
-        val contextMap: Map[Type, AnyRef] = context.map(_.asTuple).toMap
+        val contextMap: Map[Class[_], AnyRef] = context.map(_.asTuple).toMap
         new ReactiveAsyncPropertyStore(contextMap, parallelism)
     }
 
@@ -991,7 +992,7 @@ object ReactiveAsyncPropertyStore extends PropertyStoreFactory {
         implicit
         logContext: LogContext
     ): ReactiveAsyncPropertyStore = {
-        val contextMap: Map[Type, AnyRef] = context.map(_.asTuple).toMap
+        val contextMap: Map[Class[_], AnyRef] = context.map(_.asTuple).toMap
         new ReactiveAsyncPropertyStore(contextMap, NumberOfThreadsForCPUBoundTasks)
     }
 }
