@@ -13,9 +13,7 @@ class AnyRefAppendChain[N >: Null <: AnyRef] private (
         private var l: AnyRefAppendChainNode[N]
 ) {
 
-    def this() {
-        this(null, null)
-    }
+    def this() { this(null, null) }
 
     def isEmpty = h == null
 

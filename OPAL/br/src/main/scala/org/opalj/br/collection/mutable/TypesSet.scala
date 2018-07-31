@@ -35,7 +35,7 @@ class TypesSet( final val classHierarchy: ClassHierarchy) extends collection.Typ
 
     def +=(tpe: ObjectType): Unit = {
         if (!theConcreteTypes.contains(tpe) &&
-            !theUpperTypeBounds.exists(utb ⇒ isSubtypeOf(tpe, utb).isYes)) {
+            !theUpperTypeBounds.exists(utb ⇒ isSubtypeOf(tpe, utb))) {
             theConcreteTypes += tpe
         }
     }
@@ -54,17 +54,17 @@ class TypesSet( final val classHierarchy: ClassHierarchy) extends collection.Typ
         if (theConcreteTypes.contains(tpe)) {
             theConcreteTypes -= tpe
             theUpperTypeBounds =
-                theUpperTypeBounds.filter(utb ⇒ isSubtypeOf(utb, tpe).isNoOrUnknown) + tpe
+                theUpperTypeBounds.filter(utb ⇒ !isSubtypeOf(utb, tpe)) + tpe
         } else {
             var doNotAddTPE: Boolean = false
             var newUpperTypeBounds = theUpperTypeBounds.filter { utb ⇒
-                val keepExistingUTB = isSubtypeOf(utb, tpe).isNoOrUnknown
-                if (keepExistingUTB && !doNotAddTPE && isSubtypeOf(tpe, utb).isYes) {
+                val keepExistingUTB = !isSubtypeOf(utb, tpe)
+                if (keepExistingUTB && !doNotAddTPE && isSubtypeOf(tpe, utb)) {
                     doNotAddTPE = true
                 }
                 keepExistingUTB
             }
-            theConcreteTypes = theConcreteTypes.filter { ct ⇒ isSubtypeOf(ct, tpe).isNoOrUnknown }
+            theConcreteTypes = theConcreteTypes.filter { ct ⇒ !isSubtypeOf(ct, tpe) }
             if (!doNotAddTPE) newUpperTypeBounds += tpe
             theUpperTypeBounds = newUpperTypeBounds
         }

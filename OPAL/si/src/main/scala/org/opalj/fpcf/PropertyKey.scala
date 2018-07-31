@@ -3,12 +3,9 @@ package org.opalj.fpcf
 
 import scala.language.existentials
 
-import java.util.concurrent.locks.ReentrantReadWriteLock
+import java.util.concurrent.atomic.AtomicReferenceArray
+import java.util.concurrent.atomic.AtomicInteger
 
-import scala.collection.mutable.ArrayBuffer
-
-import org.opalj.concurrent.Locking.withReadLock
-import org.opalj.concurrent.Locking.withWriteLock
 import org.opalj.fpcf.PropertyKind.SupportedPropertyKinds
 
 /**
@@ -31,25 +28,24 @@ final class PropertyKey[+P] private[fpcf] (val id: Int) extends AnyVal with Prop
  */
 object PropertyKey {
 
+    // TODO pass the cycle to the cycle resolution strategy to enable decisions about the "correct" value
     type CycleResolutionStrategy[E <: Entity, P <: Property] = (PropertyStore, EPS[E, P]) ⇒ P
 
-    private[this] val keysLock = new ReentrantReadWriteLock
-
-    private[this] val propertyKeyNames = ArrayBuffer.empty[String]
+    private[this] val propertyKeyNames = new AtomicReferenceArray[String](SupportedPropertyKinds)
 
     private[this] val fallbackPropertyComputations = {
-        ArrayBuffer.empty[(PropertyStore, FallbackReason, Entity) ⇒ Property]
+        new AtomicReferenceArray[(PropertyStore, FallbackReason, Entity) ⇒ Property](SupportedPropertyKinds)
     }
 
     private[this] val fastTrackPropertyComputations = {
-        ArrayBuffer.empty[(PropertyStore, Entity) ⇒ Option[Property]]
+        new AtomicReferenceArray[(PropertyStore, Entity) ⇒ Option[Property]](SupportedPropertyKinds)
     }
 
     private[this] val cycleResolutionStrategies = {
-        ArrayBuffer.empty[CycleResolutionStrategy[_ <: Entity, _ <: Property]]
+        new AtomicReferenceArray[CycleResolutionStrategy[_ <: Entity, _ <: Property]](SupportedPropertyKinds)
     }
 
-    private[this] var lastKeyId: Int = -1
+    private[this] val lastKeyId = new AtomicInteger(-1)
 
     /**
      * Creates a new [[PropertyKey]] object that is to be shared by all properties that belong to
@@ -79,28 +75,34 @@ object PropertyKey {
         cycleResolutionStrategy:      CycleResolutionStrategy[E, P],
         fastTrackPropertyComputation: (PropertyStore, E) ⇒ Option[P]
     ): PropertyKey[P] = {
-        withWriteLock(keysLock) {
-            if (propertyKeyNames.contains(name)) {
-                throw new IllegalArgumentException(s"the property kind name $name is already used")
-            }
-
-            lastKeyId += 1
-            if (lastKeyId >= PropertyKind.SupportedPropertyKinds) {
-                throw new IllegalStateException(
-                    s"maximum number of property keys ($SupportedPropertyKinds) "+
-                        "exceeded; increase PropertyKind.SupportedPropertyKinds"
-                )
-            }
-            propertyKeyNames += name
-            fallbackPropertyComputations +=
-                fallbackPropertyComputation.asInstanceOf[(PropertyStore, FallbackReason, Entity) ⇒ Property]
-            fastTrackPropertyComputations +=
-                fastTrackPropertyComputation.asInstanceOf[(PropertyStore, Entity) ⇒ Option[Property]]
-            cycleResolutionStrategies +=
-                cycleResolutionStrategy.asInstanceOf[CycleResolutionStrategy[Entity, Property]]
-
-            new PropertyKey(lastKeyId)
+        val lastKeyId = this.lastKeyId.incrementAndGet()
+        if (lastKeyId >= PropertyKind.SupportedPropertyKinds) {
+            throw new IllegalStateException(
+                s"maximum number of property keys ($SupportedPropertyKinds) "+
+                    "exceeded; increase PropertyKind.SupportedPropertyKinds"
+            );
         }
+        propertyKeyNames.set(lastKeyId, name)
+        var i = 0
+        while (i < lastKeyId) {
+            if (propertyKeyNames.get(i) == name)
+                throw new IllegalArgumentException(s"the property name $name is already used");
+            i += 1
+        }
+        fallbackPropertyComputations.set(
+            lastKeyId,
+            fallbackPropertyComputation.asInstanceOf[(PropertyStore, FallbackReason, Entity) ⇒ Property]
+        )
+        fastTrackPropertyComputations.set(
+            lastKeyId,
+            fastTrackPropertyComputation.asInstanceOf[(PropertyStore, Entity) ⇒ Option[Property]]
+        )
+        cycleResolutionStrategies.set(
+            lastKeyId,
+            cycleResolutionStrategy.asInstanceOf[CycleResolutionStrategy[Entity, Property]]
+        )
+
+        new PropertyKey(lastKeyId)
     }
 
     def create[E <: Entity, P <: Property](
@@ -130,11 +132,9 @@ object PropertyKey {
         key:                     PropertyKey[P],
         cycleResolutionStrategy: CycleResolutionStrategy[E, P]
     ): CycleResolutionStrategy[E, P] = {
-        withWriteLock(keysLock) {
-            val oldStrategy = cycleResolutionStrategies(key.id)
-            cycleResolutionStrategies(key.id) = cycleResolutionStrategy
-            oldStrategy.asInstanceOf[CycleResolutionStrategy[E, P]]
-        }
+        val oldStrategy = cycleResolutionStrategies.get(key.id)
+        cycleResolutionStrategies.set(key.id, cycleResolutionStrategy)
+        oldStrategy.asInstanceOf[CycleResolutionStrategy[E, P]]
     }
 
     //
@@ -145,7 +145,7 @@ object PropertyKey {
     /**
      * Returns the unique name of the kind of properties associated with the given key id.
      */
-    def name(id: Int): String = withReadLock(keysLock) { propertyKeyNames(id) }
+    def name(id: Int): String = propertyKeyNames.get(id)
 
     final def name(pKind: PropertyKind): String = name(pKind.id)
 
@@ -167,10 +167,7 @@ object PropertyKey {
         e:    Entity,
         pkId: Int
     ): Property = {
-        withReadLock(keysLock) {
-            val fallbackPropertyComputation = fallbackPropertyComputations(pkId)
-            fallbackPropertyComputation(ps, fr, e)
-        }
+        fallbackPropertyComputations.get(pkId)(ps, fr, e)
     }
 
     /**
@@ -188,19 +185,14 @@ object PropertyKey {
         e:    Entity,
         pkId: Int
     ): Option[Property] = {
-        withReadLock(keysLock) {
-            val fastTrackPropertyComputation = fastTrackPropertyComputations(pkId)
-            fastTrackPropertyComputation(ps, e)
-        }
+        fastTrackPropertyComputations.get(pkId)(ps, e)
     }
 
     /**
      * @note This method is intended to be called by the framework.
      */
     def resolveCycle[E <: Entity, P <: Property](ps: PropertyStore, eps: EPS[E, P]): P = {
-        withReadLock(keysLock) {
-            cycleResolutionStrategies(eps.pk.id).asInstanceOf[CycleResolutionStrategy[E, P]](ps, eps)
-        }
+        cycleResolutionStrategies.get(eps.pk.id).asInstanceOf[CycleResolutionStrategy[E, P]](ps, eps)
     }
 
     /**
@@ -208,7 +200,7 @@ object PropertyKey {
      * The id associated with the first property kind is `0`;
      * `-1` is returned if no property key is created so far.
      */
-    private[fpcf] def maxId = withReadLock(keysLock) { lastKeyId }
+    private[fpcf] def maxId: Int = lastKeyId.get
 
 }
 

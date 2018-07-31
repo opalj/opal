@@ -51,7 +51,7 @@ object ExceptionUsage extends DefaultOneStepAnalysis {
             //    to analyze the operands.)
             def collectExceptions(value: result.domain.DomainSingleOriginReferenceValue): Unit = {
                 if (value.isNull.isNoOrUnknown &&
-                    value.isValueSubtypeOf(ObjectType.Throwable).isYes) {
+                    value.isValueASubtypeOf(ObjectType.Throwable).isYes) {
                     val key = (value.origin, typeName(value))
                     if (!exceptionUsages.contains(key)) {
                         exceptionUsages += ((key, Set.empty))

@@ -81,11 +81,11 @@ package object fpcf {
      *       that processes entire classes to compute the properties of some fields. This scenario
      *       is, however, only supported by eager analyses.
      */
-    final type PropertyComputation[E <: Entity] = (E) ⇒ PropertyComputationResult
+    final type PropertyComputation[E <: Entity] = E ⇒ PropertyComputationResult
 
     final type SomePropertyComputation = PropertyComputation[_ <: Entity]
 
-    final type OnUpdateContinuation = (SomeEPS) ⇒ PropertyComputationResult
+    final type OnUpdateContinuation = SomeEPS ⇒ PropertyComputationResult
 
     /**
      * The [[FallbackReason]] specifies the reason why a fallback property is required. This

@@ -444,7 +444,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                 if (data._1.isVar) {
                     val value = data._1.asVar.value.asReferenceValue
                     value.isPrecise &&
-                        classHierarchy.isSubtypeOf(value.asReferenceType, ObjectType.Cloneable).isNo
+                        !classHierarchy.isSubtypeOf(value.asReferenceType, ObjectType.Cloneable)
                 } else
                     false
             case EPS(_, _, NoLocalField) ⇒
@@ -474,7 +474,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
             case FinalEP(_, ExtensibleGetter | VExtensibleGetter) ⇒
                 if (data._1.get.isVar) {
                     val value = data._1.get.asVar.value.asReferenceValue
-                    if (value.isPrecise && isSubtypeOf(value.asReferenceType, ObjectType.Cloneable).isNo) {
+                    if (value.isPrecise && !isSubtypeOf(value.asReferenceType, ObjectType.Cloneable)) {
                         if (data._2 meet state.ubPurity ne state.ubPurity)
                             isLocal(data._1.get, data._2)
                     } else {
@@ -885,7 +885,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
 
         // Special case: The Throwable constructor is `LBSideEffectFree`, but subtype constructors
         // may not be because of overridable fillInStackTrace method
-        if (method.isConstructor && declClass.isSubtypeOf(ObjectType.Throwable).isYes)
+        if (method.isConstructor && declClass.isSubtypeOf(ObjectType.Throwable))
             project.instanceMethods(declClass).foreach { mdc ⇒
                 if (mdc.name == "fillInStackTrace" &&
                     mdc.method.classFile.thisType != ObjectType.Throwable) {

@@ -255,7 +255,12 @@ final class EPKSequentialPropertyStore private (
                     case Some(lc) ⇒
                         // create PropertyValue to ensure that we do not schedule
                         // multiple (lazy) computations => the entity is now known
-                        ps += ((e, LongMap((pkId, PropertyValue.lazilyComputed))))
+                        val pkIdPValue = LongMap((pkId, PropertyValue.lazilyComputed))
+                        val alsoComputedPKIds = simultaneouslyLazilyComputedPropertyKinds(pkId.toInt)
+                        alsoComputedPKIds foreach { computedPKId ⇒
+                            pkIdPValue += (computedPKId.toLong -> PropertyValue.lazilyComputed)
+                        }
+                        ps += ((e, pkIdPValue))
                         scheduleEagerComputationForEntity(e)(lc.asInstanceOf[PropertyComputation[E]])
                         // return the "current" result
                         epk
@@ -291,6 +296,10 @@ final class EPKSequentialPropertyStore private (
                             // create PropertyValue to ensure that we do not schedule
                             // multiple (lazy) computations => the entity is now known
                             pkIdPValue += ((pkId, PropertyValue.lazilyComputed))
+                            val alsoComputedPKIds = simultaneouslyLazilyComputedPropertyKinds(pkId.toInt)
+                            alsoComputedPKIds foreach { computedPKId ⇒
+                                pkIdPValue += (computedPKId.toLong -> PropertyValue.lazilyComputed)
+                            }
                             scheduleEagerComputationForEntity(e)(lc.asInstanceOf[PropertyComputation[E]])
                             epk
 

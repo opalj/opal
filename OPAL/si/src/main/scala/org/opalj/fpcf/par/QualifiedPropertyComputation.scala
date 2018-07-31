@@ -15,7 +15,7 @@ import org.opalj.fpcf.PropertyStore.{Debug ⇒ debug}
 private[par] sealed trait QualifiedTask[E <: Entity] extends (() ⇒ Unit) {
 
     def isInitialTask: Boolean
-    def asInitialTask: InitialPropertyComputationTask[E] = throw new ClassCastException()
+    def asInitialTask: InitialPropertyComputationTask[E] = throw new ClassCastException();
 }
 
 private[par] sealed trait FirstPropertyComputationTask[E <: Entity] extends QualifiedTask[E] {

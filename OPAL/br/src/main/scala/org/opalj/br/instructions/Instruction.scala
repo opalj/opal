@@ -110,7 +110,7 @@ trait Instruction extends InstructionLike {
 
     def asInvocationInstruction: InvocationInstruction = throw new ClassCastException();
     def asMethodInvocationInstruction: MethodInvocationInstruction = {
-        throw new ClassCastException()
+        throw new ClassCastException();
     };
 
     def asArithmeticInstruction: ArithmeticInstruction = throw new ClassCastException();

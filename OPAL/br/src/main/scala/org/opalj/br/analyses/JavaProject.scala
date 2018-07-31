@@ -55,7 +55,7 @@ class JavaProject( final val project: Project[java.net.URL]) {
 
 object JavaProject {
 
-    // Supress all opal info related log messages and show only errors.
+    // Suppress all opal info related log messages and show only errors.
     private final val Logger = new ConsoleOPALLogger(true, Error)
 
     OPALLogger.updateLogger(GlobalLogContext, Logger)

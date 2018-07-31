@@ -663,7 +663,7 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
         // ...  the receiver type of super initializer calls is always explicitly given
         classFile(declaringClassType) match {
             case Some(classFile) ⇒
-                // TODO Java9+ Do we have to remove this check?
+                // TODO Java9 or Java10 Do we have to remove this check?
                 if (classFile.isInterfaceDeclaration != isInterface)
                     Failure
                 else {
@@ -786,7 +786,7 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
                     // is an abstract class in a closed package/module
                     methods ++=
                         overriddenBy(mdc.method).iterator.filter { m ⇒
-                            (m.classFile.thisType isSubtypeOf subtype).isYes
+                            m.classFile.thisType isSubtypeOf subtype
                         }
 
                     // for interfaces we have to continue, because we may have inherited a
@@ -1038,10 +1038,10 @@ object ProjectLike {
                     currentMaximallySpecificMethods =
                         currentMaximallySpecificMethods.filter { currentMaximallySpecificMethod ⇒
                             val specificMethodDeclaringClassType = currentMaximallySpecificMethod.classFile.thisType
-                            if ((specificMethodDeclaringClassType isSubtypeOf newMethodDeclaringClassType).isYes) {
+                            if (specificMethodDeclaringClassType isSubtypeOf newMethodDeclaringClassType) {
                                 addNewMethod = false
                                 true
-                            } else if ((newMethodDeclaringClassType isSubtypeOf specificMethodDeclaringClassType).isYes) {
+                            } else if (newMethodDeclaringClassType isSubtypeOf specificMethodDeclaringClassType) {
                                 false
                             } else {
                                 //... we have an incomplete class hierarchy; let's keep both methods

@@ -283,11 +283,11 @@ object DeadEdgesAnalysis {
                         val throwsError =
                             (
                                 zDomain.asReferenceValue(exceptionValue).
-                                isValueSubtypeOf(ObjectType.Error).
+                                isValueASubtypeOf(ObjectType.Error).
                                 isYesOrUnknown
                             ) ||
                                 zDomain.asReferenceValue(exceptionValue).
-                                isValueSubtypeOf(ObjectType("java/lang/IllegalStateException")).
+                                isValueASubtypeOf(ObjectType("java/lang/IllegalStateException")).
                                 isYesOrUnknown
 
                         throwsError

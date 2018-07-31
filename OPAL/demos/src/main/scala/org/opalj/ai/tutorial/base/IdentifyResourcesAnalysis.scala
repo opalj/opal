@@ -27,10 +27,10 @@ object IdentifyResourcesAnalysis extends DefaultOneStepAnalysis {
         val callSites =
             (for {
                 cf ← theProject.allProjectClassFiles.par
-                (m, body) ← cf.methodsWithBody
+                m ← cf.methodsWithBody
             } yield {
                 val pcs =
-                    body.collectWithIndex {
+                    m.body.get.collectWithIndex {
                         case PCAndInstruction(
                             pc,
                             INVOKESPECIAL(

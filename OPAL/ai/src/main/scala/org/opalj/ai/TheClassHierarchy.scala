@@ -24,11 +24,20 @@ trait TheClassHierarchy {
     implicit def classHierarchy: ClassHierarchy
 
     /**
+     * @see [[Domain.isASubtypeOf]]
+     *
+     * @see Delegates to [[org.opalj.br.ClassHierarchy]]'s `isSubtypeOf` method.
+     */
+    /*override*/ def isASubtypeOf(subtype: ReferenceType, supertype: ReferenceType): Answer = {
+        classHierarchy.isASubtypeOf(subtype, supertype)
+    }
+
+    /**
      * @see [[Domain.isSubtypeOf]]
      *
      * @see Delegates to [[org.opalj.br.ClassHierarchy]]'s `isSubtypeOf` method.
      */
-    /*override*/ def isSubtypeOf(subtype: ReferenceType, supertype: ReferenceType): Answer = {
+    /*override*/ def isSubtypeOf(subtype: ReferenceType, supertype: ReferenceType): Boolean = {
         classHierarchy.isSubtypeOf(subtype, supertype)
     }
 

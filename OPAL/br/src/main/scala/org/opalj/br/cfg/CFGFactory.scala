@@ -7,6 +7,7 @@ import scala.annotation.switch
 
 import scala.collection.immutable.IntMap
 import scala.collection.immutable.HashMap
+
 import org.opalj.collection.immutable.IntArraySet
 import org.opalj.br.instructions.Instruction
 import org.opalj.br.instructions.JSRInstruction
@@ -72,7 +73,7 @@ object CFGFactory {
          * instruction unless the previous instruction ended the basic block.
          */
 
-        import classHierarchy.isSubtypeOf
+        import classHierarchy.isASubtypeOf
 
         val instructions = code.instructions
         val codeSize = instructions.length
@@ -206,7 +207,7 @@ object CFGFactory {
                             linkWithExceptionHandler(currentBB, eh)
                             true // also aborts the evaluation
                         } else {
-                            val isCaught = isSubtypeOf(thrownException, catchType.get)
+                            val isCaught = isASubtypeOf(thrownException, catchType.get)
                             if (isCaught.isYes) {
                                 linkWithExceptionHandler(currentBB, eh)
                                 true // also aborts the evaluation

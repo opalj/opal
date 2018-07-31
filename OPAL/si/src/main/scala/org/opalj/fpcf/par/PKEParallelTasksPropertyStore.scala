@@ -16,9 +16,8 @@ import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.AnyRefMap
 import scala.collection.mutable
 import scala.collection.{Map ⇒ SomeMap}
-
 import org.opalj.graphs
-import org.opalj.collection.mutable.AnyRefArrayStack
+import org.opalj.collection.mutable.AnyRefAccumulator
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.info
 import org.opalj.log.OPALLogger.{debug ⇒ trace}
@@ -160,11 +159,11 @@ final class PKEParallelTasksPropertyStore private (
     //
 
     // Those computations that will only be scheduled if the property is required.
-    private[this] var lazyComputations: AtomicReferenceArray[SomePropertyComputation] = {
+    private[this] val lazyComputations: AtomicReferenceArray[SomePropertyComputation] = {
         new AtomicReferenceArray(SupportedPropertyKinds)
     }
 
-    private[this] var triggeredComputations: AtomicReferenceArray[ConcurrentLinkedQueue[SomePropertyComputation]] = {
+    private[this] val triggeredComputations: AtomicReferenceArray[ConcurrentLinkedQueue[SomePropertyComputation]] = {
         new AtomicReferenceArray(SupportedPropertyKinds)
     }
 
@@ -378,6 +377,15 @@ final class PKEParallelTasksPropertyStore private (
                             if (triggeredLazyComputations(pkId).add(e)) {
                                 if (tracer.isDefined) tracer.get.schedulingLazyComputation(e, pkId)
 
+                                val alsoComputedPKIds = simultaneouslyLazilyComputedPropertyKinds(pkId)
+                                alsoComputedPKIds foreach { computedPKId ⇒
+                                    if (!triggeredLazyComputations(computedPKId).add(e)) {
+                                        throw new UnknownError(
+                                            "a simultaneously computed property kind was already triggered"
+                                        )
+                                    }
+                                }
+
                                 scheduledLazyTasksCounter += 1
                                 appendTask(new PropertyComputationTask[Entity](store, e, pkId, lc))
                             }
@@ -577,8 +585,8 @@ final class PKEParallelTasksPropertyStore private (
         // the result of the scheduled computation.
         val pkId = pk.id
         val fastTrackPropertyOption =
-            if ((computedPropertyKinds(pkId) || delayedPropertyKinds(pkId)) &&
-                useFastTrackPropertyComputations)
+            if (useFastTrackPropertyComputations &&
+                (computedPropertyKinds(pkId) || delayedPropertyKinds(pkId)))
                 fastTrackPropertyBasedOnPkId(this, e, pkId)
             else
                 None
@@ -779,7 +787,7 @@ final class PKEParallelTasksPropertyStore private (
 
     private[this] def notifyDependers(
         newEPS: SomeEPS,
-        pcrs:   AnyRefArrayStack[PropertyComputationResult]
+        pcrs:   AnyRefAccumulator[PropertyComputationResult]
     ): Unit = {
         val e = newEPS.e
         val pkId = newEPS.pk.id
@@ -828,8 +836,8 @@ final class PKEParallelTasksPropertyStore private (
      */
     private[this] def updateAndNotify(
         e: Entity, lb: Property, ub: Property,
-        notifyDependersAboutNonFinalUpdates: Boolean                                     = true,
-        pcrs:                                AnyRefArrayStack[PropertyComputationResult]
+        notifyDependersAboutNonFinalUpdates: Boolean                                      = true,
+        pcrs:                                AnyRefAccumulator[PropertyComputationResult]
     ): UpdateAndNotifyState = {
         updatesCounter += 1
         assert(
@@ -913,7 +921,7 @@ final class PKEParallelTasksPropertyStore private (
     ): Unit = {
 
         // Used to store immediate results, which need to be handled immediately
-        val pcrs: AnyRefArrayStack[PropertyComputationResult] = new AnyRefArrayStack(r, 4)
+        val pcrs: AnyRefAccumulator[PropertyComputationResult] = AnyRefAccumulator(r)
         var forceDependersNotifications = initialForceDependersNotifications
 
         def processResult(r: PropertyComputationResult): Unit = {
@@ -943,9 +951,9 @@ final class PKEParallelTasksPropertyStore private (
                     val IncrementalResult(ir, npcs, propertyComputationsHint) = r
                     pcrs += ir
                     if (propertyComputationsHint == CheapPropertyComputation) {
-                        npcs /*: Iterator[(PropertyComputation[e],e)]*/ foreach { npc ⇒
+                        pcrs ++= npcs /*: Iterator[(PropertyComputation[e],e)]*/ map { npc ⇒
                             val (pc, e) = npc
-                            pcrs += pc(e)
+                            pc(e)
                         }
                     } else {
                         npcs /*: Iterator[(PropertyComputation[e],e)]*/ foreach { npc ⇒
@@ -1292,7 +1300,7 @@ final class PKEParallelTasksPropertyStore private (
                     (epk: SomeEPK) ⇒ this.dependees(epk.pk.id)(epk.e).map(_.toEPK)
                 )
                 if (cSCCs.nonEmpty) {
-                    handleResult(CSCCsResult(cSCCs), false)
+                    handleResult(CSCCsResult(cSCCs), forceEvaluation = false)
                     continueComputation = true
                 }
             }

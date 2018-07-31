@@ -126,7 +126,7 @@ object ThirdInstrumentation extends App {
 
                 for {
                     PCAndInstruction(pc, INVOKEVIRTUAL(_, "println", PrintlnDescriptor)) ← code
-                    if aiResult.operandsArray(pc).head.asDomainReferenceValue.isValueSubtypeOf(CollectionType).isYes
+                    if aiResult.operandsArray(pc).head.asDomainReferenceValue.isValueASubtypeOf(CollectionType).isYes
                 } {
                     lCode.insert(
                         pc, InsertionPosition.Before,

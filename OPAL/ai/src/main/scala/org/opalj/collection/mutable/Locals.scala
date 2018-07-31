@@ -314,7 +314,7 @@ private[mutable] final object Locals0 extends Locals[Null] {
             this
         else
             // thrown to make the exception homogeneous
-            throw new ClassCastException(other+" cannot be cast to Locals0")
+            throw new ClassCastException(other+" cannot be cast to Locals0");
     }
 
     override def foreach(f: Null ⇒ Unit): Unit = { /*nothing to do*/ }
