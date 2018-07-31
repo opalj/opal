@@ -173,7 +173,7 @@ class FieldLocalityAnalysis private[analyses] (
             method ← allMethodsHavingAccess(field)
             tacai = tacaiProvider(method)
             stmts = tacai.stmts
-            (stmt, index) ← stmts.zipWithIndex
+            (stmt, index) ← stmts.iterator.zipWithIndex
         } {
             stmt match {
                 // Values read from the field may not escape, except for
@@ -245,7 +245,10 @@ class FieldLocalityAnalysis private[analyses] (
      */
     private[this] def handleEscape(
         eOptionP: EOptionP[DefinitionSiteLike, EscapeProperty]
-    )(implicit state: FieldLocalityState): Boolean = eOptionP match {
+    )(
+        implicit
+        state: FieldLocalityState
+    ): Boolean = eOptionP match {
 
         case FinalEP(_, NoEscape | EscapeInCallee) ⇒ false
 
@@ -271,7 +274,7 @@ class FieldLocalityAnalysis private[analyses] (
                 true
 
         // The escape state is worse than [[org.opalj.fpcf.properties.EscapeViaReturn]].
-        case EPS(_, _, _) ⇒
+        case _:  EPS[_,_] ⇒
             true
 
         case _ ⇒
@@ -287,7 +290,7 @@ class FieldLocalityAnalysis private[analyses] (
         stmt match {
             case Some(Assignment(_, _, getField: GetField[V])) ⇒
                 getField.objRef.asVar.definedBy == tac.SelfReferenceParameter
-            case Some(_) | None ⇒ // this method is also called for put fields
+            case _ /*Some(_) | None*/ ⇒ // this method is also called for put fields
                 false
         }
     }
@@ -299,7 +302,7 @@ class FieldLocalityAnalysis private[analyses] (
     private[this] def checkFreshnessAndEscapeOfValue(
         value: Expr[V], putField: Int, stmts: Array[Stmt[V]], method: Method
     )(implicit state: FieldLocalityState): Boolean = {
-        value.asVar.definedBy.exists { defSite ⇒
+        value.asVar.definedBy exists { defSite ⇒
             if (defSite < 0)
                 true // Parameters are not fresh
             else {
@@ -353,8 +356,7 @@ class FieldLocalityAnalysis private[analyses] (
                     handleConcreteCall(callee)
 
                 } else if (value.isPrecise) {
-                    val callee =
-                        project.instanceCall(callerType, mostPreciseType.get, name, desc)
+                    val callee = project.instanceCall(callerType, mostPreciseType.get, name, desc)
                     handleConcreteCall(callee)
 
                 } else {
