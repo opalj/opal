@@ -4,6 +4,7 @@ package collection
 package immutable
 
 import scala.language.implicitConversions
+
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalacheck.Properties
@@ -14,6 +15,8 @@ import org.scalacheck.Gen
 import org.scalacheck.Arbitrary
 import org.scalatest.FunSpec
 import org.scalatest.Matchers
+
+import org.opalj.util.PerformanceEvaluation
 
 /**
  * Tests `UIDSets` by creating standard Sets and comparing
@@ -426,6 +429,45 @@ class UIDSetTest extends FunSpec with Matchers {
                 new UIDTrieSetInnerNode[SUID](1, SUID(1), null, null) + SUID(2) + SUID(3) + SUID(4) ==
                     new UIDSet3[SUID](SUID(1), SUID(4), SUID(2)) + SUID(3)
             )
+        }
+    }
+
+    describe("freezing") {
+        it("should return an efficiently queryable data structure") {
+            val p = new PerformanceEvaluation()
+            import p.time
+            for {
+                i ← (1 to 1000)
+            } {
+                val c = i * 10
+                var s = UIDSet.empty[SUID]
+                for { i ← 1 to c } {
+                    s += SUID(scala.util.Random.nextInt(300000))
+                }
+                val frozenS = s.freeze
+                assert(frozenS.iterator.toSet === s.iterator.toSet)
+
+                val rnd = new java.util.Random(0)
+                var foundInTrieSetCount = 0
+                time('UIDTrieSet) {
+                    for { i ← 1 to 100 } {
+                        if (s.contains(SUID(scala.util.Random.nextInt(300000)))) {
+                            foundInTrieSetCount += 1
+                        }
+                    }
+                }
+                rnd.setSeed(0)
+                var foundInArraySetCount = 0
+                time('UIDArraySet) {
+                    for { i ← 1 to 100 } {
+                        if (frozenS.contains(SUID(scala.util.Random.nextInt(300000)))) {
+                            foundInArraySetCount += 1
+                        }
+                    }
+                }
+                assert(foundInArraySetCount === foundInTrieSetCount)
+            }
+            info(s"performance: ${p.getTime('UIDTrieSet)} (UIDTrieSet.contains) vs. ${p.getTime('UIDArraySet)} (UIDArraySet.contains)")
         }
     }
 

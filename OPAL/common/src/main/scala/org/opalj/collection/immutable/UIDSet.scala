@@ -59,6 +59,8 @@ sealed abstract class UIDSet[T <: UID]
     def ++(es: UIDSet[T]): UIDSet[T]
     def findById(id: Int): Option[T]
 
+    final def freeze: FrozenUIDSet[T] = FrozenUIDSet(this)
+
     /**
      * Adds the given element to this set by mutating it!
      */
