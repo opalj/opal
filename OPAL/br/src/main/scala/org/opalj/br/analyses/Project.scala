@@ -278,7 +278,7 @@ class Project[Source] private (
         // the set of interfaces that are not functional interfaces themselve, but
         // which can be extended.
         var irrelevantInterfaces = UIDSet.empty[ObjectType]
-        var functionalInterfaces = Map.empty[ObjectType, MethodSignature]
+        val functionalInterfaces = AnyRefMap.empty[ObjectType, MethodSignature]
         var otherInterfaces = UIDSet.empty[ObjectType]
 
         // our worklist/-set; it only contains those interface types for which
@@ -392,14 +392,11 @@ class Project[Source] private (
                         if (isPotentiallyIrrelevant)
                             irrelevantInterfaces += interfaceType
                         else
-                            functionalInterfaces += ((
-                                interfaceType,
-                                abstractMethods.head.signature
-                            ))
+                            functionalInterfaces(interfaceType) = abstractMethods.head.signature
                         processSubinterfaces(interfaceType)
                     } else if (isPotentiallyIrrelevant ||
                         sharedFunctionalMethod == abstractMethods.head.signature) {
-                        functionalInterfaces += ((interfaceType, sharedFunctionalMethod))
+                        functionalInterfaces(interfaceType) = sharedFunctionalMethod
                         processSubinterfaces(interfaceType)
                     } else {
                         // different methods are defined...
@@ -1177,7 +1174,7 @@ object Project {
 
     def instanceMethods(
         classHierarchy:        ClassHierarchy,
-        objectTypeToClassFile: (ObjectType) ⇒ Option[ClassFile]
+        objectTypeToClassFile: ObjectType ⇒ Option[ClassFile]
     )(
         implicit
         logContext: LogContext
@@ -1188,7 +1185,7 @@ object Project {
         // IDEA
         // Process the type hierarchy starting with the root type(s) to ensure that all method
         // information about all super types is available (already stored in instanceMethods)
-        // when we process the subtype. If not, all information is already available, which
+        // when we process the subtype. If not all information is already available, which
         // can happen in the following case if the processing of C would be scheduled before B:
         //      interface A; interface B extends A; interface C extends A, B,
         // we postpone the processing of C until the information is available.
@@ -1206,7 +1203,7 @@ object Project {
         @inline def notYetAvailable(superinterfaceType: ObjectType): Boolean = {
             methods.get(superinterfaceType).isEmpty &&
                 // If the class file is not known, we will never have any details;
-                // hence, the information will be "NEVER" available; or - in other
+                // hence, the information will "NEVER" be available; or - in other
                 // words - all potentially available information is available.
                 objectTypeToClassFile(superinterfaceType).nonEmpty
         }
@@ -1346,9 +1343,7 @@ object Project {
 
             objectTypeToClassFile(objectType) match {
                 case Some(classFile) ⇒
-                    for {
-                        declaredMethod ← classFile.methods
-                    } {
+                    for { declaredMethod ← classFile.methods } {
                         if (declaredMethod.isVirtualMethodDeclaration) {
                             val declaredMethodContext = MethodDeclarationContext(declaredMethod)
                             // We have to filter multiple methods when we inherit (w.r.t. the
@@ -1379,9 +1374,15 @@ object Project {
                             }
                         }
                     }
-                case None ⇒ // ... reached only in case of rather incomplete projects...
+
+                case None ⇒
+                    // ... reached only in case of rather incomplete projects...
+                    OPALLogger.warn(
+                        "project configuration - instance methods",
+                        s"no class file for ${objectType.toJava}"
+                    )
             }
-            methods += ((objectType, definedMethods))
+            methods(objectType) = definedMethods
             classHierarchy.foreachDirectSubtypeOf(objectType)(tasks.submit)
         }
 
@@ -1496,7 +1497,7 @@ object Project {
 
                         if (declaredMethod.isNotAbstract) overridingMethods += declaredMethod
 
-                        methods.put(declaredMethod, overridingMethods)
+                        methods(declaredMethod) = overridingMethods
                     }
                 }
             } finally {
@@ -1884,8 +1885,8 @@ object Project {
                         method.body.foreach(codeSize += _.instructions.length)
                     }
                     projectFieldsCount += classFile.fields.size
-                    objectTypeToClassFile.put(projectType, classFile)
-                    source.foreach(sources.put(classFile.thisType, _))
+                    objectTypeToClassFile(projectType) = classFile
+                    source.foreach(sources(classFile.thisType) = _)
                 }
             }
 
@@ -1952,8 +1953,8 @@ object Project {
                         method.body.foreach(codeSize += _.instructions.length)
                     }
                     libraryFieldsCount += libClassFile.fields.size
-                    objectTypeToClassFile.put(libraryType, libClassFile)
-                    sources.put(libraryType, source)
+                    objectTypeToClassFile(libraryType) = libClassFile
+                    sources(libraryType) = source
                 }
             }
 
