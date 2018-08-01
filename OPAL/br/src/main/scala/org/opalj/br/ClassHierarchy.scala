@@ -3,18 +3,19 @@ package org.opalj
 package br
 
 import scala.annotation.tailrec
-
 import java.io.InputStream
 import java.util.concurrent.locks.ReentrantReadWriteLock
 import java.util.function.IntFunction
 
+import it.unimi.dsi.fastutil.ints.Int2IntArrayMap
+
 import scala.io.BufferedSource
 import scala.collection.mutable
 import scala.collection.generic.Growable
+import scala.collection.JavaConverters._
 import scala.concurrent.Future
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
-
 import org.opalj.control.foreachNonNullValue
 import org.opalj.io.process
 import org.opalj.io.processSource
@@ -2487,6 +2488,68 @@ class ClassHierarchy private (
                 true
             )
         }
+    }
+
+    override def toString: String = {
+        var s = "ClassHierarchy(\n\t"
+
+        // compute some fundamental class hierarchy statistics
+        // subtype information
+        {
+            var i = 1 // let's skip java.lang.Object
+            val subtypesToFrequency = new Int2IntArrayMap()
+            while (i < subtypeInformationMap.length) {
+                if (subtypeInformationMap(i) != null) {
+                    val subtypesCount = subtypeInformationMap(i).allTypes.size
+                    subtypesToFrequency.put(
+                        subtypesCount,
+                        subtypesToFrequency.getOrDefault(subtypesCount, 0) + 1
+                    )
+                }
+                i += 1
+            }
+            val subtypesCounts = subtypesToFrequency.keySet().asScala.toList.sorted
+            var overallDepth: Double = 0d
+            s += "subtype statistics=\n\t"
+            s += " subtypes count   / frequency of occurrence (without java.lang.Object)\n\t"
+            s +=
+                subtypesCounts.map { subtypesCount ⇒
+                    val i: Int = subtypesCount.intValue()
+                    val frequency = subtypesToFrequency.get(i)
+                    overallDepth += i * frequency
+                    f"$subtypesCount%17d / $frequency"
+                }.mkString("\n\t")
+            s += "\n\t average number of subtypes: "+(overallDepth / (subtypeInformationMap.count(_ != null) - 1))+"\n\t"
+        }
+        // supertype information
+        {
+            var i = 1 // let's skip java.lang.Object
+            val supertypesToFrequency = new Int2IntArrayMap()
+            while (i < supertypeInformationMap.length) {
+                if (supertypeInformationMap(i) != null) {
+                    val supertypesCount = supertypeInformationMap(i).allTypes.size
+                    supertypesToFrequency.put(
+                        supertypesCount,
+                        supertypesToFrequency.getOrDefault(supertypesCount, 0) + 1
+                    )
+                }
+                i += 1
+            }
+            val supertypesCounts = supertypesToFrequency.keySet().asScala.toList.sorted
+            var overallDepth: Double = 0d
+            s += "supertype statistics=\n\t"
+            s += " supertypes count / frequency of occurrence (without java.lang.Object)\n\t"
+            s +=
+                supertypesCounts.map { supertypesCount ⇒
+                    val i: Int = supertypesCount.intValue()
+                    val frequency = supertypesToFrequency.get(i)
+                    overallDepth += i * frequency
+                    f"$supertypesCount%17d / $frequency"
+                }.mkString("\n\t")
+            s += "\n\t average number of supertypes: "+(overallDepth / (subtypeInformationMap.count(_ != null) - 1))
+        }
+        s += "\n)"
+        s
     }
 
 }
