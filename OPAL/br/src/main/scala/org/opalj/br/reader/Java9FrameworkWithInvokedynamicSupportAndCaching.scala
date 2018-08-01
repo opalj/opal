@@ -10,6 +10,6 @@ package reader
  *
  * @author Michael Eichberg
  */
-class Java9FrameworkWithLambdaExpressionsSupportAndCaching(
+class Java9FrameworkWithInvokedynamicSupportAndCaching(
         cache: BytecodeInstructionsCache
-) extends Java8FrameworkWithLambdaExpressionsSupportAndCaching(cache) with Java9LibraryFramework
+) extends Java8FrameworkWithInvokedynamicSupportAndCaching(cache) with Java9LibraryFramework

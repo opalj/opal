@@ -3,6 +3,8 @@ package org.opalj
 package br
 package reader
 
+import java.io.File
+
 import org.scalatest.Matchers
 import org.scalatest.FunSpec
 import org.scalactic.Equality
@@ -21,7 +23,7 @@ import org.opalj.br.instructions.MethodInvocationInstruction
 
 /**
  * Tests the rewriting of lambda expressions/method references using Java 8's infrastructure. I.e.,
- * tests rewritinh of [[org.opalj.br.instructions.INVOKEDYNAMIC]] instruction using
+ * tests rewriting of [[org.opalj.br.instructions.INVOKEDYNAMIC]] instruction using
  * `LambdaMetafactory`s.
  *
  * @author Arne Lottmann
@@ -35,7 +37,7 @@ class BasicLambdaExpressionsRewritingTest extends FunSpec with Matchers {
 
     val InvokedMethods = ObjectType("annotations/target/InvokedMethods")
 
-    val lambda18TestResources = locate("lambdas-1.8-g-parameters-genericsignature.jar", "bi")
+    val lambda18TestResources: File = locate("lambdas-1.8-g-parameters-genericsignature.jar", "bi")
 
     private def testMethod(project: SomeProject, classFile: ClassFile, name: String): Unit = {
         info(s"Testing $name")
@@ -44,20 +46,18 @@ class BasicLambdaExpressionsRewritingTest extends FunSpec with Matchers {
             method ← classFile.findMethod(name)
             body ← method.body
             factoryCall ← body.iterator.collect { case i: INVOKESTATIC ⇒ i }
-            if factoryCall.declaringClass.fqn.matches(LambdaExpressionsRewriting.LambdaNameRegEx)
+            if factoryCall.declaringClass.fqn.matches(InvokedynamicRewriting.LambdaNameRegEx)
             annotations = method.runtimeVisibleAnnotations
         } {
             successFull = true
-            implicit val MethodDeclarationEquality = new Equality[Method] {
-                def areEqual(a: Method, b: Any): Boolean =
-                    b match {
-                        case m: Method ⇒
-                            a.compare(m) == 0 /* <=> same name and descriptor */ &&
-                                a.visibilityModifier == m.visibilityModifier &&
-                                a.isStatic == m.isStatic
-                        case _ ⇒ false
-                    }
-            }
+            implicit val MethodDeclarationEquality: Equality[Method] =
+                (a: Method, b: Any) ⇒ b match {
+                    case m: Method ⇒
+                        a.compare(m) == 0 /* <=> same name and descriptor */ &&
+                            a.visibilityModifier == m.visibilityModifier &&
+                            a.isStatic == m.isStatic
+                    case _ ⇒ false
+                }
 
             if (annotations.exists(_.annotationType == InvokedMethods)) {
                 val invokedTarget = annotations
@@ -172,7 +172,7 @@ class BasicLambdaExpressionsRewritingTest extends FunSpec with Matchers {
                     filter(_.annotationType == InvokedMethod).
                     mkString("\n\t", "\n\t", "\n")
             fail(
-                s"the specified invoked method ${message} is not defined "+
+                s"the specified invoked method $message is not defined "+
                     classFile.methods.map(_.name).mkString("; defined methods = {", ",", "}")
             )
         }
@@ -293,21 +293,21 @@ class BasicLambdaExpressionsRewritingTest extends FunSpec with Matchers {
         OPALLogger.register(logContext, new ConsoleOPALLogger(ansiColored = true))
 
         val baseConfig: Config = ConfigFactory.load()
-        val rewritingConfigKey = LambdaExpressionsRewriting.LambdaExpressionsRewritingConfigKey
-        val logRewritingsConfigKey = LambdaExpressionsRewriting.LambdaExpressionsLogRewritingsConfigKey
+        val rewritingConfigKey = InvokedynamicRewriting.LambdaExpressionsRewritingConfigKey
+        val logRewritingsConfigKey = InvokedynamicRewriting.LambdaExpressionsLogRewritingsConfigKey
         val testConfig = baseConfig.
             withValue(rewritingConfigKey, ConfigValueFactory.fromAnyRef(java.lang.Boolean.TRUE)).
             withValue(logRewritingsConfigKey, ConfigValueFactory.fromAnyRef(java.lang.Boolean.FALSE))
         object Framework extends {
             override val config = testConfig
-        } with Java8FrameworkWithLambdaExpressionsSupportAndCaching(
+        } with Java8FrameworkWithInvokedynamicSupportAndCaching(
             new BytecodeInstructionsCache
         )
 
         val project = Project(
             Framework.ClassFiles(lambda18TestResources),
             Java8LibraryFramework.ClassFiles(org.opalj.bytecode.JRELibraryFolder),
-            true,
+            libraryClassFilesAreInterfacesOnly = true,
             Traversable.empty,
             Project.defaultHandlerForInconsistentProjects,
             testConfig,

@@ -49,13 +49,13 @@ import scala.collection.mutable.ArrayBuffer
  * @author Andreas Muttscheller
  * @author Dominik Helm
  */
-trait LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
+trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
     this: ClassFileBinding ⇒
 
-    import LambdaExpressionsRewriting._
+    import InvokedynamicRewriting._
 
     val performLambdaExpressionsRewriting: Boolean = {
-        import LambdaExpressionsRewriting.{LambdaExpressionsRewritingConfigKey ⇒ Key}
+        import InvokedynamicRewriting.{LambdaExpressionsRewritingConfigKey ⇒ Key}
         val rewrite: Boolean =
             try {
                 config.getBoolean(Key)
@@ -67,19 +67,19 @@ trait LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
         if (rewrite) {
             info(
                 "class file reader",
-                "invokedynamics using LambdaMetaFactory are rewritten"
+                "invokedynamics are rewritten"
             )
         } else {
             info(
                 "class file reader",
-                "invokedynamics using LambdaMetaFactory are not rewritten"
+                "invokedynamics are not rewritten"
             )
         }
         rewrite
     }
 
     val logLambdaExpressionsRewrites: Boolean = {
-        import LambdaExpressionsRewriting.{LambdaExpressionsLogRewritingsConfigKey ⇒ Key}
+        import InvokedynamicRewriting.{LambdaExpressionsLogRewritingsConfigKey ⇒ Key}
         val logRewrites: Boolean =
             try {
                 config.getBoolean(Key)
@@ -103,7 +103,7 @@ trait LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
     }
 
     val logUnknownInvokeDynamics: Boolean = {
-        import LambdaExpressionsRewriting.{LambdaExpressionsLogUnknownInvokeDynamicsConfigKey ⇒ Key}
+        import InvokedynamicRewriting.{LambdaExpressionsLogUnknownInvokeDynamicsConfigKey ⇒ Key}
         val logUnknownInvokeDynamics: Boolean =
             try {
                 config.getBoolean(Key)
@@ -150,13 +150,13 @@ trait LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
     /**
      * Generates a new, internal name for a string concatenation method.
      *
-     * It follows the pattern: `$concat${uniqueId}`, where `uniqueId` is simply a run-on counter.
-     * For example: `$concat$4` would refer to the fourth string concat INVOKEDYNAMIC parsed during
-     * the analysis of the project.
+     * It follows the pattern: `$string_concat${uniqueId}`, where `uniqueId` is simply a run-on
+     * counter. For example: `$concat$4` would refer to the fourth string concat INVOKEDYNAMIC
+     * parsed during the analysis of the project.
      */
     private def newStringConcatName(): String = {
         val nextId = stringConcatIdGenerator.getAndIncrement()
-        s"$$concat$$${nextId.toHexString}"
+        s"$$string_concat$$${nextId.toHexString}"
     }
 
     override def deferredInvokedynamicResolution(
@@ -211,7 +211,7 @@ trait LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
         )
 
         val invokedynamic = instructions(pc).asInstanceOf[INVOKEDYNAMIC]
-        if (LambdaExpressionsRewriting.isJava8LikeLambdaExpression(invokedynamic)) {
+        if (InvokedynamicRewriting.isJava8LikeLambdaExpression(invokedynamic)) {
             java8LambdaResolution(updatedClassFile, instructions, pc, invokedynamic)
         } else if (isJava10StringConcatInvokedynamic(invokedynamic)) {
             java10StringConcatResolution(updatedClassFile, instructions, pc, invokedynamic)
@@ -1056,11 +1056,13 @@ trait LambdaExpressionsRewriting extends DeferredInvokedynamicResolution {
     }
 }
 
-object LambdaExpressionsRewriting {
+object InvokedynamicRewriting {
 
     final val DefaultDeserializeLambdaStaticMethodName = "$deserializeLambda"
 
     final val LambdaNameRegEx = "[a-zA-Z0-9\\/.$]*Lambda\\$[0-9a-f]+:[0-9a-f]+$"
+
+    final val StringConcatNameRegEx = "\\$string_concat\\$[0-9a-f]+$"
 
     final val LambdaExpressionsConfigKeyPrefix = {
         ClassFileReaderConfiguration.ConfigKeyPrefix+"LambdaExpressions."

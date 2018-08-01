@@ -4,36 +4,35 @@ package br
 package reader
 
 import org.junit.runner.RunWith
-
 import org.scalatest.Matchers
 import org.scalatest.FunSpec
 import org.scalatest.junit.JUnitRunner
-
 import java.util.concurrent.atomic.AtomicInteger
 
 import com.typesafe.config.ConfigValueFactory
-
 import org.opalj.log.GlobalLogContext
 import org.opalj.bi.TestResources.locateTestResources
-
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.instructions.INVOKESTATIC
-import org.opalj.br.reader.LambdaExpressionsRewriting.LambdaNameRegEx
+import org.opalj.br.reader.InvokedynamicRewriting.LambdaNameRegEx
 import org.opalj.ai.BaseAI
 import org.opalj.ai.InterpretationFailedException
 import org.opalj.ai.Domain
 import org.opalj.ai.domain.l0.BaseDomain
 import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
+import org.opalj.br.instructions.WIDE
+import org.opalj.br.reader.InvokedynamicRewriting.StringConcatNameRegEx
 
 /**
  * Test that code with rewritten `invokedynamic` instructions is still valid bytecode.
  *
  * @author Arne Lottmann
  * @author Michael Eichberg
+ * @author Dominik Helm
  */
 @RunWith(classOf[JUnitRunner])
-class LambdaExpressionRewritingBytecodeStructureTest extends FunSpec with Matchers {
+class InvokedynamicRewritingBytecodeStructureTest extends FunSpec with Matchers {
 
     def verifyMethod(
         testProject:   SomeProject,
@@ -45,16 +44,17 @@ class LambdaExpressionRewritingBytecodeStructureTest extends FunSpec with Matche
         val instructions = code.instructions
 
         classFile.bootstrapMethodTable should be('empty)
-        classFile.attributes.count(_.kindId == SynthesizedClassFiles.KindId) should be <= (1)
+        classFile.attributes.count(_.kindId == SynthesizedClassFiles.KindId) should be <= 1
 
         val domain = domainFactory(testProject, method)
         try {
             val result = BaseAI(method, domain)
             // the abstract interpretation succeed
-            result should not be ('wasAborted)
+            result should not be 'wasAborted
             // the layout of the instructions array is correct
-            for { pc ← 0 until instructions.size; if instructions(pc) != null } {
-                val nextPc = instructions(pc).indexOfNextInstruction(pc, false)
+            for { pc ← instructions.indices; if instructions(pc) != null } {
+                val modifiedByWide = pc != 0 && instructions(pc) == WIDE
+                val nextPc = instructions(pc).indexOfNextInstruction(pc, modifiedByWide)
                 instructions.slice(pc + 1, nextPc).foreach(_ should be(null))
             }
         } catch {
@@ -83,8 +83,10 @@ class LambdaExpressionRewritingBytecodeStructureTest extends FunSpec with Matche
             method @ MethodWithBody(body) ← classFile.methods
             instructions = body.instructions
             if instructions.exists {
-                case i: INVOKESTATIC ⇒ i.declaringClass.fqn.matches(LambdaNameRegEx)
-                case _               ⇒ false
+                case i: INVOKESTATIC ⇒
+                    i.declaringClass.fqn.matches(LambdaNameRegEx) ||
+                        i.name.matches(StringConcatNameRegEx)
+                case _ ⇒ false
             }
         } {
             verifiedMethodsCounter.incrementAndGet()
@@ -105,7 +107,7 @@ class LambdaExpressionRewritingBytecodeStructureTest extends FunSpec with Matche
         describe("testing the rewritten methods of the lambdas test project") {
             val lambdasJarName = "lambdas-1.8-g-parameters-genericsignature.jar"
             val lambdasJar = locateTestResources(lambdasJarName, "bi")
-            val config = LambdaExpressionsRewriting.defaultConfig(
+            val config = InvokedynamicRewriting.defaultConfig(
                 rewrite = true,
                 logRewrites = false
             ).withValue(DeleteSynthesizedClassFilesAttributesConfigKey, configValueFalse)
@@ -120,10 +122,28 @@ class LambdaExpressionRewritingBytecodeStructureTest extends FunSpec with Matche
             }
         }
 
+        describe("testing the rewritten methods of the string concat test project") {
+            val stringConcatJarName = "classfiles/string_concat.jar"
+            val stringConcatJar = locateTestResources(stringConcatJarName, "bi")
+            val config = InvokedynamicRewriting.defaultConfig(
+                rewrite = true,
+                logRewrites = false
+            ).withValue(DeleteSynthesizedClassFilesAttributesConfigKey, configValueFalse)
+            val stringConcat = Project(stringConcatJar, GlobalLogContext, config)
+            info(stringConcat.statistics.toList.map(_.toString).filter(_.startsWith("(Project")).mkString(","))
+
+            it("should find rewritten Java string concat expressions in the string concat test project") {
+                val verifiedMethodsCount =
+                    testProject(stringConcat, (p, m) ⇒ BaseDomain(p, m)) +
+                        testProject(stringConcat, (p, m) ⇒ new DefaultDomainWithCFGAndDefUse(p, m))
+                info(s"interpreted ${verifiedMethodsCount / 2} methods")
+            }
+        }
+
         if (org.opalj.bi.isCurrentJREAtLeastJava8) {
             describe("testing the rewritten methods of the rewritten JRE") {
                 val jrePath = org.opalj.bytecode.JRELibraryFolder
-                val config = LambdaExpressionsRewriting.defaultConfig(
+                val config = InvokedynamicRewriting.defaultConfig(
                     rewrite = true,
                     logRewrites = false
                 ).withValue(DeleteSynthesizedClassFilesAttributesConfigKey, configValueFalse)

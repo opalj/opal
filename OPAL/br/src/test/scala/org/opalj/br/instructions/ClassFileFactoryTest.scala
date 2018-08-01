@@ -15,7 +15,7 @@ import org.opalj.br.TestSupport.biProject
 import org.opalj.br.analyses.Project
 import org.opalj.log.GlobalLogContext
 import com.typesafe.config.Config
-import org.opalj.br.reader.LambdaExpressionsRewriting
+import org.opalj.br.reader.InvokedynamicRewriting
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory
 
@@ -36,8 +36,8 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
     val lambdasProject = {
         val jarFile = locateTestResources("lambdas-1.8-g-parameters-genericsignature.jar", "bi")
         val baseConfig: Config = ConfigFactory.load()
-        val rewritingConfigKey = LambdaExpressionsRewriting.LambdaExpressionsRewritingConfigKey
-        val logRewritingsConfigKey = LambdaExpressionsRewriting.LambdaExpressionsLogRewritingsConfigKey
+        val rewritingConfigKey = InvokedynamicRewriting.LambdaExpressionsRewritingConfigKey
+        val logRewritingsConfigKey = InvokedynamicRewriting.LambdaExpressionsLogRewritingsConfigKey
         val config = baseConfig.
             withValue(rewritingConfigKey, ConfigValueFactory.fromAnyRef(java.lang.Boolean.FALSE)).
             withValue(logRewritingsConfigKey, ConfigValueFactory.fromAnyRef(java.lang.Boolean.TRUE))

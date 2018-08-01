@@ -43,7 +43,7 @@ import org.opalj.collection.immutable.Chain
 import org.opalj.collection.immutable.Naught
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.br.reader.BytecodeInstructionsCache
-import org.opalj.br.reader.Java9FrameworkWithLambdaExpressionsSupportAndCaching
+import org.opalj.br.reader.Java9FrameworkWithInvokedynamicSupportAndCaching
 import org.opalj.br.reader.Java9LibraryFramework
 import org.opalj.br.instructions.Instruction
 import org.opalj.br.instructions.NEW
@@ -1041,12 +1041,12 @@ object Project {
     def JavaClassFileReader(
         theLogContext: LogContext = GlobalLogContext,
         theConfig:     Config     = BaseConfig
-    ): Java9FrameworkWithLambdaExpressionsSupportAndCaching = {
+    ): Java9FrameworkWithInvokedynamicSupportAndCaching = {
         // The following makes use of early initializers
         class ConfiguredFramework extends {
             override implicit val logContext: LogContext = theLogContext
             override implicit val config: Config = theConfig
-        } with Java9FrameworkWithLambdaExpressionsSupportAndCaching(cache)
+        } with Java9FrameworkWithInvokedynamicSupportAndCaching(cache)
         new ConfiguredFramework
     }
 

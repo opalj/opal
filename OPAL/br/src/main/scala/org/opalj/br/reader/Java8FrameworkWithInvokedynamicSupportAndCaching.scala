@@ -12,7 +12,7 @@ package reader
  * @author Arne Lottmann
  * @author Michael Eichberg
  */
-class Java8FrameworkWithLambdaExpressionsSupportAndCaching(
+class Java8FrameworkWithInvokedynamicSupportAndCaching(
         cache: BytecodeInstructionsCache
 ) extends Java8FrameworkWithCaching(cache)
-    with LambdaExpressionsRewriting
+    with InvokedynamicRewriting
