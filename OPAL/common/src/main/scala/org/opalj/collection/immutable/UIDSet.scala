@@ -59,7 +59,12 @@ sealed abstract class UIDSet[T <: UID]
     def ++(es: UIDSet[T]): UIDSet[T]
     def findById(id: Int): Option[T]
 
-    final def freeze: FrozenUIDSet[T] = FrozenUIDSet(this)
+    /**
+     * Converts this UIDSet to a UIDLinearProbingSet which generally offers much better
+     * query (contains check) performance - in particular if the sets are larger.
+     * (Factory 2 to 3 times better for larger sets.)
+     */
+    final def toLinearProbingSet: UIDLinearProbingSet[T] = UIDLinearProbingSet(this)
 
     /**
      * Adds the given element to this set by mutating it!

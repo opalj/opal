@@ -432,45 +432,66 @@ class UIDSetTest extends FunSpec with Matchers {
         }
     }
 
-    describe("freezing") {
+    describe("the effect of freezing the UIDSet") {
+
         it("should return an efficiently queryable data structure") {
             val p = new PerformanceEvaluation()
             import p.time
+            var entriesCount = 0
             for {
-                i ← (1 to 1000)
+                i ← 1 to 1000 // determines the target set's size
+                j ← 1 to 5 // repeat tests at this level...
             } {
-                val c = i * 10
+                val c = i * 2 // final set size
                 var s = UIDSet.empty[SUID]
-                for { i ← 1 to c } {
-                    s += SUID(scala.util.Random.nextInt(300000))
+                time('init) {
+                    for { i ← 1 to c } {
+                        s += SUID(scala.util.Random.nextInt(300000))
+                    }
                 }
-                val frozenS = s.freeze
-                assert(frozenS.iterator.toSet === s.iterator.toSet)
+                entriesCount += s.size
+                val linearProbingSet = time('toLinearProbingSet) { s.toLinearProbingSet }
+                assert(linearProbingSet.iterator.toSet === s.iterator.toSet)
 
                 val rnd = new java.util.Random(0)
-                var foundInTrieSetCount = 0
+                var foundInTrieSetCount: Int = 0
                 time('UIDTrieSet) {
                     for { i ← 1 to 100 } {
-                        if (s.contains(SUID(scala.util.Random.nextInt(300000)))) {
+                        val v = rnd.nextInt(300000)
+                        if (s.contains(SUID(v))) {
                             foundInTrieSetCount += 1
                         }
                     }
                 }
                 rnd.setSeed(0)
-                var foundInArraySetCount = 0
-                time('UIDArraySet) {
+                var foundInLinearProbingSetCount: Int = 0
+                time('UIDLinearProbingSet) {
                     for { i ← 1 to 100 } {
-                        if (frozenS.contains(SUID(scala.util.Random.nextInt(300000)))) {
-                            foundInArraySetCount += 1
+                        val v = rnd.nextInt(300000)
+                        if (linearProbingSet.contains(SUID(v))) {
+                            foundInLinearProbingSetCount += 1
                         }
                     }
                 }
-                assert(foundInArraySetCount === foundInTrieSetCount)
+                assert(
+                    foundInTrieSetCount == foundInLinearProbingSetCount,
+                    s"run $i: \n"+
+                        s.iterator.map(_.id).toList.sorted.mkString(", ")+"\n"+
+                        linearProbingSet.iterator.map(_.id).toList.sorted.mkString(", ")
+                )
             }
-            info(s"performance: ${p.getTime('UIDTrieSet)} (UIDTrieSet.contains) vs. ${p.getTime('UIDArraySet)} (UIDArraySet.contains)")
+            info(
+                "performance:\n\t\t"+
+                    s"UIDSet creation:              ${p.getTime('init).toSeconds}\n\t\t"+
+                    s"UIDSet freeze:                ${p.getTime('toLinearProbingSet).toSeconds}\n\t\t"+
+                    s"- - - - - - - - - - - - - - - - - - -\n\t\t"+
+                    s"UIDTrieSet.contains:          ${p.getTime('UIDTrieSet).toSeconds}\n\t\t"+
+                    "                               vs. \n\t\t"+
+                    s"UIDLinearProbingSet.contains: ${p.getTime('UIDLinearProbingSet).toSeconds}"
+            )
         }
     }
 
 }
 
-case class SUID(val id: Int) extends UID
+case class SUID(id: Int) extends UID

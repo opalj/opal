@@ -6,7 +6,7 @@ package immutable
 /**
  * An '''unordered''' set based on the unique ids of the stored [[UID]] objects.
  */
-sealed abstract class FrozenUIDSet[+T <: UID] {
+sealed abstract class UIDLinearProbingSet[+T <: UID] {
 
     def iterator: Iterator[T]
 
@@ -14,22 +14,23 @@ sealed abstract class FrozenUIDSet[+T <: UID] {
     def containsId(i: Int): Boolean
 }
 
-object EmptyFrozenUIDSet extends FrozenUIDSet[Nothing] {
+private[immutable] object EmptyUIDLinearProbingSet extends UIDLinearProbingSet[Nothing] {
     def iterator: Iterator[Nothing] = Iterator.empty
     def contains(t: UID): Boolean = false
     def containsId(i: Int): Boolean = false
 }
 
-class FrozenUIDArraySet[+T <: UID] private[immutable] (
+private[immutable] class UIDArrayLinearProbingSet[+T <: UID] private[immutable] (
         private[this] val data: Array[UID]
-) extends FrozenUIDSet[T] {
+) extends UIDLinearProbingSet[T] {
 
     def iterator: Iterator[T] = data.iterator.asInstanceOf[Iterator[T]] filter (_ != null)
     def contains(t: UID): Boolean = containsId(t.id)
     def containsId(id: Int): Boolean = {
-        val length = data.length
+        val length = data.length // length is always >= 1
 
         var key = id % length
+        if (key < 0) key = -key // this is safe, because key will never be Int.MinValue
         var e = data(key)
         if (e == null) {
             false
@@ -51,11 +52,11 @@ class FrozenUIDArraySet[+T <: UID] private[immutable] (
     }
 }
 
-object FrozenUIDSet {
+object UIDLinearProbingSet {
 
-    def empty[T <: UID]: FrozenUIDSet[T] = EmptyFrozenUIDSet
+    def empty[T <: UID]: UIDLinearProbingSet[T] = EmptyUIDLinearProbingSet
 
-    def apply[T <: UID](es: Iterable[T]): FrozenUIDSet[T] = {
+    def apply[T <: UID](es: Iterable[T]): UIDLinearProbingSet[T] = {
         if (es.isEmpty)
             empty[T]
         else {
@@ -64,12 +65,13 @@ object FrozenUIDSet {
             es foreach { e ⇒
                 val id = e.id
                 var key = id % length
+                if (key < 0) key = -key // this is safe, because key will never be Int.MinValue
                 while (data(key) != null) {
                     key = (key + 1) % length
                 }
                 data(key) = e
             }
-            new FrozenUIDArraySet[T](data)
+            new UIDArrayLinearProbingSet[T](data)
         }
     }
 
