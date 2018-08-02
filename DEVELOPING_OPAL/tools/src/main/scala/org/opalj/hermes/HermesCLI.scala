@@ -80,12 +80,13 @@ object HermesCLI {
                 Hermes.exportStatistics(theStatisticsFile, !noProjectStatistics)
                 println("Wrote statistics: "+theStatisticsFile)
 
-                val theLocationsDir = Directory(new File(locationsDir))
-                if (!theLocationsDir.exists) {
-                    assert(false)
+                if(locationsDir ne null) {
+                    val theLocationsDir = Directory(new File(locationsDir))
+                    Hermes.exportLocations(theLocationsDir)
+                    println("Wrote locations: "+theLocationsDir)
+                } else {
+                    println("Skip writing locations, not specified.")
                 }
-                Hermes.exportLocations(theLocationsDir)
-                println("Wrote locations: "+theLocationsDir)
 
                 mappingFile.foreach { mappingFile ⇒
                     val theMappingFile = new File(mappingFile).getAbsoluteFile()
