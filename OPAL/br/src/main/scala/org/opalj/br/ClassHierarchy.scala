@@ -1169,11 +1169,16 @@ class ClassHierarchy private (
             typesToProcess = typesToProcess.tail
             processedTypes += superType
             if (!isInterface(superType.id) || f(superType)) {
-                (directSuperinterfacesOf(superType).iterator ++
-                    superclassType(superType).iterator) foreach { i ⇒
-                        if (!processedTypes.contains(i))
-                            typesToProcess += i
+                val superInterfaces: Iterator[ObjectType] =
+                    if (directSuperinterfacesOf(superType) eq null) {
+                        Iterator.empty
+                    } else {
+                        directSuperinterfacesOf(superType).iterator
                     }
+                (superInterfaces ++ superclassType(superType).iterator) foreach { i ⇒
+                    if (!processedTypes.contains(i))
+                        typesToProcess += i
+                }
             }
         }
     }
