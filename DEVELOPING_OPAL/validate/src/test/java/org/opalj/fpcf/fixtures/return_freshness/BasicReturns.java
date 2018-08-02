@@ -1,3 +1,4 @@
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.return_freshness;
 
 import org.opalj.fpcf.properties.return_freshness.FreshReturnValue;

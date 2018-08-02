@@ -1,0 +1,1 @@
+Requires Java 10 - Can be moved to the regular test fixtures folder once we have a Java 10 compiler
