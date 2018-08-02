@@ -9,8 +9,6 @@ import java.net.URLClassLoader
 import java.io.File
 import java.io.ByteArrayOutputStream
 import java.io.PrintStream
-import java.lang.Double
-import java.lang.Long
 import java.nio.file.Files
 
 import org.opalj.bytecode.RTJar
@@ -51,8 +49,8 @@ class InvokedynamicRewritingExecutionTest extends FunSpec with Matchers {
         it("simpleLambdaAdd should calculate 2+2 correctly") {
             val c = inMemoryClassLoader.loadClass("lambdas.InvokeDynamics")
             val instance = c.getDeclaredConstructor().newInstance()
-            val m = c.getMethod("simpleLambdaAdd", Integer.TYPE, Integer.TYPE)
-            val res = m.invoke(instance, Integer.valueOf(2), Integer.valueOf(2))
+            val m = c.getMethod("simpleLambdaAdd", classOf[Int], classOf[Int])
+            val res = m.invoke(instance, Int.box(2), Int.box(2))
 
             assert(res.asInstanceOf[Integer] == 4)
         }
@@ -135,6 +133,8 @@ class InvokedynamicRewritingExecutionTest extends FunSpec with Matchers {
             val m = c.getMethod("simpleConcat", classOf[String], classOf[String])
             val res = m.invoke(null, "ab", "c")
 
+            // Not using res.toString as that would not check that e.g. the StringBuilder is not
+            // returned directly
             assert(res.asInstanceOf[String] == "abc")
         }
 
@@ -149,24 +149,25 @@ class InvokedynamicRewritingExecutionTest extends FunSpec with Matchers {
         it("concatObjectAndInt should produce the correct result") {
             val c = inMemoryClassLoader.loadClass(testClassType.toJava)
             val m =
-                c.getMethod("concatObjectAndInt", classOf[String], classOf[Object], Integer.TYPE)
-            val res = m.invoke(null, "ab", List(1, "c"), Integer.valueOf(5))
+                c.getMethod("concatObjectAndInt", classOf[String], classOf[Object], classOf[Int])
+            val res = m.invoke(null, "ab", List(1, "c"), Int.box(5))
 
             assert(res.asInstanceOf[String] == "abList(1, c)5")
         }
 
         it("concatObjectAndDoubleWithConstants should produce the correct result") {
             val c = inMemoryClassLoader.loadClass(testClassType.toJava)
-            val m = c.getMethod("concatObjectAndDoubleWithConstants", classOf[Object], Double.TYPE)
-            val res = m.invoke(null, List("ab", 1), Double.valueOf(7.3))
+            val m =
+                c.getMethod("concatObjectAndDoubleWithConstants", classOf[Object], classOf[Double])
+            val res = m.invoke(null, List("ab", 1), Double.box(7.3))
 
             assert(res.asInstanceOf[String] == " 7.32.5List(ab, 1)")
         }
 
         it("concatLongAndConstant should produce the correct result") {
             val c = inMemoryClassLoader.loadClass(testClassType.toJava)
-            val m = c.getMethod("concatLongAndConstant", Long.TYPE, classOf[String])
-            val res = m.invoke(null, Long.valueOf(7L), "ab")
+            val m = c.getMethod("concatLongAndConstant", classOf[Long], classOf[String])
+            val res = m.invoke(null, Long.box(7L), "ab")
 
             assert(res.asInstanceOf[String] == "ab157")
         }

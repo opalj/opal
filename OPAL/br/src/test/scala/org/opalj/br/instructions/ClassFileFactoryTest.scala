@@ -36,7 +36,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
     val lambdasProject = {
         val jarFile = locateTestResources("lambdas-1.8-g-parameters-genericsignature.jar", "bi")
         val baseConfig: Config = ConfigFactory.load()
-        val rewritingConfigKey = InvokedynamicRewriting.LambdaExpressionsRewritingConfigKey
+        val rewritingConfigKey = InvokedynamicRewriting.InvokedynamicRewritingConfigKey
         val logRewritingsConfigKey = InvokedynamicRewriting.LambdaExpressionsLogRewritingsConfigKey
         val config = baseConfig.
             withValue(rewritingConfigKey, ConfigValueFactory.fromAnyRef(java.lang.Boolean.FALSE)).

@@ -76,11 +76,13 @@ abstract class InvokedynamicRewritingTest extends FunSuite {
      */
     protected def project(libraryPath: java.io.File): (SomeProject, Iterable[INVOKESTATIC]) = {
         val baseConfig: Config = ConfigFactory.load()
-        val rewritingConfigKey = InvokedynamicRewriting.LambdaExpressionsRewritingConfigKey
-        val logRewritingsConfigKey = InvokedynamicRewriting.LambdaExpressionsLogRewritingsConfigKey
+        val rewritingConfigKey = InvokedynamicRewriting.InvokedynamicRewritingConfigKey
+        val logLambdaConfigKey = InvokedynamicRewriting.LambdaExpressionsLogRewritingsConfigKey
+        val logConcatConfigKey = InvokedynamicRewriting.StringConcatLogRewritingsConfigKey
         val config = baseConfig.
             withValue(rewritingConfigKey, ConfigValueFactory.fromAnyRef(JBoolean.TRUE)).
-            withValue(logRewritingsConfigKey, ConfigValueFactory.fromAnyRef(JBoolean.FALSE)) /*.
+            withValue(logLambdaConfigKey, ConfigValueFactory.fromAnyRef(JBoolean.FALSE)).
+            withValue(logConcatConfigKey, ConfigValueFactory.fromAnyRef(JBoolean.FALSE)) /*.
             withValue(SynthesizedClassFiles., ConfigValueFactory.fromAnyRef(JBoolean.FALSE))
             */
 

@@ -1,3 +1,4 @@
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package string_concat;
 
 public class StringConcatFactoryTest {

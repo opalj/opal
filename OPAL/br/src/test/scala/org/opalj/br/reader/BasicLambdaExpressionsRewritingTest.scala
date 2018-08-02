@@ -293,11 +293,13 @@ class BasicLambdaExpressionsRewritingTest extends FunSpec with Matchers {
         OPALLogger.register(logContext, new ConsoleOPALLogger(ansiColored = true))
 
         val baseConfig: Config = ConfigFactory.load()
-        val rewritingConfigKey = InvokedynamicRewriting.LambdaExpressionsRewritingConfigKey
-        val logRewritingsConfigKey = InvokedynamicRewriting.LambdaExpressionsLogRewritingsConfigKey
+        val rewritingConfigKey = InvokedynamicRewriting.InvokedynamicRewritingConfigKey
+        val logLambdaConfigKey = InvokedynamicRewriting.LambdaExpressionsLogRewritingsConfigKey
+        val logConcatConfigKey = InvokedynamicRewriting.StringConcatLogRewritingsConfigKey
         val testConfig = baseConfig.
             withValue(rewritingConfigKey, ConfigValueFactory.fromAnyRef(java.lang.Boolean.TRUE)).
-            withValue(logRewritingsConfigKey, ConfigValueFactory.fromAnyRef(java.lang.Boolean.FALSE))
+            withValue(logLambdaConfigKey, ConfigValueFactory.fromAnyRef(java.lang.Boolean.FALSE)).
+            withValue(logConcatConfigKey, ConfigValueFactory.fromAnyRef(java.lang.Boolean.FALSE))
         object Framework extends {
             override val config = testConfig
         } with Java8FrameworkWithInvokedynamicSupportAndCaching(

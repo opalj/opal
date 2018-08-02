@@ -1162,6 +1162,8 @@ object ObjectType {
     final val Exception = ObjectType("java/lang/Exception")
     final val RuntimeException = ObjectType("java/lang/RuntimeException")
 
+    final val StringBuilder = ObjectType("java/lang/StringBuilder")
+
     // Types related to the invokedynamic instruction
     final val VarHandle = ObjectType("java/lang/invoke/VarHandle")
     final val MethodHandle = ObjectType("java/lang/invoke/MethodHandle")

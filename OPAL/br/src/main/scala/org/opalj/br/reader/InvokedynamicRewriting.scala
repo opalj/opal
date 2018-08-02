@@ -14,6 +14,7 @@ import org.opalj.bi.AccessFlags
 import org.opalj.bi.ACC_PRIVATE
 import org.opalj.bi.ACC_PUBLIC
 import org.opalj.bi.ACC_STATIC
+import org.opalj.bi.ACC_SYNTHETIC
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.log.OPALLogger.info
 import org.opalj.log.Info
@@ -22,11 +23,10 @@ import org.opalj.log.OPALLogger
 import org.opalj.log.StandardLogMessage
 import org.opalj.br.MethodDescriptor.LambdaMetafactoryDescriptor
 import org.opalj.br.MethodDescriptor.LambdaAltMetafactoryDescriptor
+import org.opalj.br.collection.mutable.InstructionsBuffer
 import org.opalj.br.instructions._
 import org.opalj.br.instructions.ClassFileFactory.DefaultFactoryMethodName
 import org.opalj.br.instructions.ClassFileFactory.AlternativeFactoryMethodName
-
-import scala.collection.mutable.ArrayBuffer
 
 /**
  * Provides support for rewriting Java 8/Scala lambda or method reference expressions that
@@ -55,7 +55,7 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
     import InvokedynamicRewriting._
 
     val performLambdaExpressionsRewriting: Boolean = {
-        import InvokedynamicRewriting.{LambdaExpressionsRewritingConfigKey ⇒ Key}
+        import InvokedynamicRewriting.{InvokedynamicRewritingConfigKey ⇒ Key}
         val rewrite: Boolean =
             try {
                 config.getBoolean(Key)
@@ -102,8 +102,32 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
         logRewrites
     }
 
+    val logStringConcatRewrites: Boolean = {
+        import InvokedynamicRewriting.{StringConcatLogRewritingsConfigKey ⇒ Key}
+        val logRewrites: Boolean =
+            try {
+                config.getBoolean(Key)
+            } catch {
+                case t: Throwable ⇒
+                    error("class file reader", s"couldn't read: $Key", t)
+                    false
+            }
+        if (logRewrites) {
+            info(
+                "class file reader",
+                "rewrites of StringConcatFactory based invokedynamics are logged"
+            )
+        } else {
+            info(
+                "class file reader",
+                "rewrites of StringConcatFactory based invokedynamics are not logged"
+            )
+        }
+        logRewrites
+    }
+
     val logUnknownInvokeDynamics: Boolean = {
-        import InvokedynamicRewriting.{LambdaExpressionsLogUnknownInvokeDynamicsConfigKey ⇒ Key}
+        import InvokedynamicRewriting.{InvokedynamicLogUnknownInvokeDynamicsConfigKey ⇒ Key}
         val logUnknownInvokeDynamics: Boolean =
             try {
                 config.getBoolean(Key)
@@ -255,9 +279,8 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
         pc:            PC,
         invokedynamic: INVOKEDYNAMIC
     ): ClassFile = {
-        val INVOKEDYNAMIC(
-            bootstrapMethod, functionalInterfaceMethodName, factoryDescriptor
-            ) = invokedynamic
+        val INVOKEDYNAMIC(bootstrapMethod, functionalInterfaceMethodName, factoryDescriptor) =
+            invokedynamic
 
         val args = bootstrapMethod.arguments
 
@@ -270,14 +293,6 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
                 Some(args.tail.asInstanceOf[IndexedSeq[ConstantValue[_]]])
             )
 
-        def insertNulls(buffer: ArrayBuffer[Instruction], numNulls: Int): Unit = {
-            var i = 0
-            while (i < numNulls) {
-                buffer += null
-                i += 1
-            }
-        }
-
         // Creates concat method
         def createConcatMethod(
             name:       String,
@@ -288,18 +303,16 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
             // A guess on the number of append operations required, need not be precise
             val numEntries =
                 (if (recipeO.isDefined) recipeO.get.value.length else descriptor.parametersCount)
-            val body: ArrayBuffer[Instruction] = new ArrayBuffer(11 + 6 * numEntries)
+            val body: InstructionsBuffer = new InstructionsBuffer(11 + 6 * numEntries)
 
-            body += NEW(StringBuilder)
-            body += null; body += null
-            body += DUP
-            body += INVOKESPECIAL(
-                StringBuilder,
+            body ++= NEW(ObjectType.StringBuilder)
+            body ++= DUP
+            body ++= INVOKESPECIAL(
+                ObjectType.StringBuilder,
                 isInterface = false,
                 "<init>",
                 MethodDescriptor.NoArgsAndReturnVoid
             )
-            body += null; body += null
 
             def appendType(t: Type): FieldType = {
                 if (t.isBaseType) t.asBaseType
@@ -310,35 +323,30 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
             // Generate instructions to append a parameter to the StringBuilder
             def appendParam(paramType: FieldType, index: Int): Unit = {
                 val isWide = index > 255
-                if (isWide) body += WIDE
+                if (isWide) body ++= WIDE
 
                 val load = LoadLocalVariableInstruction(paramType, index)
-                body += load
-                insertNulls(body, load.indexOfNextInstruction(0, modifiedByWide = isWide) - 1)
+                body ++= (load, load.indexOfNextInstruction(0, modifiedByWide = isWide))
 
-                body += INVOKEVIRTUAL(
-                    StringBuilder,
+                body ++= INVOKEVIRTUAL(
+                    ObjectType.StringBuilder,
                     "append",
-                    MethodDescriptor(appendType(paramType), StringBuilder)
+                    MethodDescriptor(appendType(paramType), ObjectType.StringBuilder)
                 )
-                body += null; body += null
             }
 
             // Generate instructions to append a static constant to the StringBuilder
-            def appendConstant(constantIndex: Int): Unit = {
-                val constant = constants.get(constantIndex)
+            def appendConstant(constant: ConstantValue[_]): Unit = {
+                // Load the constant using _W variant of load instruction to ensure that we can
+                // create a valid constant pool if the rest of the code in the class already uses up
+                // “all” constant pool entries in the range [1..255]
+                body ++= LoadConstantInstruction(constant, wide = true)
 
-                // Load the constant using _W variant of load instruction to be safe
-                val loadConstant = LoadConstantInstruction(constant, wide = true)
-                body += loadConstant
-                insertNulls(body, loadConstant.length - 1)
-
-                body += INVOKEVIRTUAL(
-                    StringBuilder,
+                body ++= INVOKEVIRTUAL(
+                    ObjectType.StringBuilder,
                     "append",
-                    MethodDescriptor(appendType(constant.valueType), StringBuilder)
+                    MethodDescriptor(appendType(constant.valueType), ObjectType.StringBuilder)
                 )
-                body += null; body += null
             }
 
             // Generate code to append a substring of the recipe verbatim to the StringBuilder
@@ -348,30 +356,22 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
                 // Loading the recipe with `LDC` is safe, as the removal of the bootstrapMethod will
                 // free one index in the constant pool where the recipe can be moved on
                 // serialization of the class
-                body += LDC(recipeO.get)
-                body += null
+                body ++= LDC(recipeO.get)
 
-                val loadBegin = LoadConstantInstruction(startIndex)
-                body += loadBegin
-                insertNulls(body, loadBegin.length - 1)
+                body ++= LoadConstantInstruction(startIndex)
+                body ++= LoadConstantInstruction(endIndex)
 
-                val loadEnd = LoadConstantInstruction(endIndex)
-                body += loadEnd
-                insertNulls(body, loadEnd.length - 1)
-
-                body += INVOKEVIRTUAL(
+                body ++= INVOKEVIRTUAL(
                     ObjectType.String,
                     "substring",
                     MethodDescriptor(IndexedSeq(IntegerType, IntegerType), ObjectType.String)
                 )
-                body += null; body += null
 
-                body += INVOKEVIRTUAL(
-                    StringBuilder,
+                body ++= INVOKEVIRTUAL(
+                    ObjectType.StringBuilder,
                     "append",
-                    MethodDescriptor(ObjectType.String, StringBuilder)
+                    MethodDescriptor(ObjectType.String, ObjectType.StringBuilder)
                 )
-                body += null; body += null
             }
 
             var lvIndex = 0 // Local variable index for the next parameter
@@ -407,7 +407,7 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
                     // Append parts from recipe between insertion points verbatim
                     if (nextInsert > recipeIndex) {
                         appendString(recipeIndex, nextInsert)
-                        maxStack = 4
+                        maxStack = 4 // StringBuilder, String, BeginIndex, EndIndex
                     }
 
                     if (nextInsert < recipe.length) {
@@ -422,7 +422,10 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
                             nextParam = recipe.indexOf('\u0001', nextParam + 1)
                         } else {
                             assert(recipe.charAt(nextInsert) == '\u0002')
-                            appendConstant(constantIndex)
+                            val constant = constants.get(constantIndex)
+                            appendConstant(constant)
+                            val opSize = constant.valueType.computationalType.operandSize
+                            if (maxStack == 2 && opSize == 2) maxStack = 3
                             constantIndex += 1
                             nextConstant = recipe.indexOf('\u0002', nextConstant + 1)
                         }
@@ -440,16 +443,19 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
             }
 
             // Finally, turn StringBuilder to String
-            body += INVOKEVIRTUAL(StringBuilder, "toString", MethodDescriptor.JustReturnsString)
-            insertNulls(body, 2)
-            body += ARETURN
+            body ++= INVOKEVIRTUAL(
+                ObjectType.StringBuilder,
+                "toString",
+                MethodDescriptor.JustReturnsString
+            )
+            body ++= ARETURN
 
             val maxLocals = descriptor.requiredRegisters
 
             val code = Code(maxStack, maxLocals, body.toArray, IndexedSeq.empty, Seq.empty)
 
-            // Access flags for the concat are `private static`
-            val accessFlags = ACC_PRIVATE.mask | ACC_STATIC.mask
+            // Access flags for the concat are `/* SYNTHETIC */ private static`
+            val accessFlags = ACC_SYNTHETIC.mask | ACC_PRIVATE.mask | ACC_STATIC.mask
 
             Method(accessFlags, name, descriptor, Seq(code))
         }
@@ -468,7 +474,7 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
             factoryDescriptor
         )
 
-        if (logLambdaExpressionsRewrites) {
+        if (logStringConcatRewrites) {
             info("rewriting invokedynamic", s"Java: $invokedynamic ⇒ $newInvokestatic")
         }
 
@@ -1064,23 +1070,25 @@ object InvokedynamicRewriting {
 
     final val StringConcatNameRegEx = "\\$string_concat\\$[0-9a-f]+$"
 
-    final val LambdaExpressionsConfigKeyPrefix = {
-        ClassFileReaderConfiguration.ConfigKeyPrefix+"LambdaExpressions."
+    final val InvokedynamicKeyPrefix = {
+        ClassFileReaderConfiguration.ConfigKeyPrefix+"Invokedynamic."
     }
 
-    final val LambdaExpressionsRewritingConfigKey = {
-        LambdaExpressionsConfigKeyPrefix+"rewrite"
+    final val InvokedynamicRewritingConfigKey = {
+        InvokedynamicKeyPrefix+"rewrite"
     }
 
     final val LambdaExpressionsLogRewritingsConfigKey = {
-        LambdaExpressionsConfigKeyPrefix+"logRewrites"
+        InvokedynamicKeyPrefix+"logLambdaRewrites"
     }
 
-    final val LambdaExpressionsLogUnknownInvokeDynamicsConfigKey = {
-        LambdaExpressionsConfigKeyPrefix+"logUnknownInvokeDynamics"
+    final val StringConcatLogRewritingsConfigKey = {
+        InvokedynamicKeyPrefix+"logStringConcatRewrites"
     }
 
-    final val StringBuilder = ObjectType("java/lang/StringBuilder")
+    final val InvokedynamicLogUnknownInvokeDynamicsConfigKey = {
+        InvokedynamicKeyPrefix+"logUnknownInvokeDynamics"
+    }
 
     def isJava8LikeLambdaExpression(invokedynamic: INVOKEDYNAMIC): Boolean = {
         import ObjectType.LambdaMetafactory
@@ -1138,10 +1146,12 @@ object InvokedynamicRewriting {
      */
     def defaultConfig(rewrite: Boolean, logRewrites: Boolean): Config = {
         val baseConfig: Config = ConfigFactory.load()
-        val rewritingConfigKey = LambdaExpressionsRewritingConfigKey
-        val logRewritingsConfigKey = LambdaExpressionsLogRewritingsConfigKey
+        val rewritingConfigKey = InvokedynamicRewritingConfigKey
+        val logLambdaConfigKey = LambdaExpressionsLogRewritingsConfigKey
+        val logConcatConfigKey = StringConcatLogRewritingsConfigKey
         baseConfig.
             withValue(rewritingConfigKey, ConfigValueFactory.fromAnyRef(rewrite)).
-            withValue(logRewritingsConfigKey, ConfigValueFactory.fromAnyRef(logRewrites))
+            withValue(logLambdaConfigKey, ConfigValueFactory.fromAnyRef(logRewrites)).
+            withValue(logConcatConfigKey, ConfigValueFactory.fromAnyRef(logRewrites))
     }
 }

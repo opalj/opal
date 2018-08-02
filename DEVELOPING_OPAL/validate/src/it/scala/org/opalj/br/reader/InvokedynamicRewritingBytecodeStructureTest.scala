@@ -114,7 +114,8 @@ class InvokedynamicRewritingBytecodeStructureTest extends FunSpec with Matchers 
             val lambdas = Project(lambdasJar, GlobalLogContext, config)
             info(lambdas.statistics.toList.map(_.toString).filter(_.startsWith("(Project")).mkString(","))
 
-            it("should find rewritten Java lambda expressions in the lambdas test project") {
+            it("should be able to perform abstract interpretation of rewritten Java lambda"+
+                "expressions in the lambdas test project") {
                 val verifiedMethodsCount =
                     testProject(lambdas, (p, m) ⇒ BaseDomain(p, m)) +
                         testProject(lambdas, (p, m) ⇒ new DefaultDomainWithCFGAndDefUse(p, m))
@@ -132,7 +133,8 @@ class InvokedynamicRewritingBytecodeStructureTest extends FunSpec with Matchers 
             val stringConcat = Project(stringConcatJar, GlobalLogContext, config)
             info(stringConcat.statistics.toList.map(_.toString).filter(_.startsWith("(Project")).mkString(","))
 
-            it("should find rewritten Java string concat expressions in the string concat test project") {
+            it("should be able to perform abstract interpretation of rewritten Java string concat"+
+                " expressions in the string concat test project") {
                 val verifiedMethodsCount =
                     testProject(stringConcat, (p, m) ⇒ BaseDomain(p, m)) +
                         testProject(stringConcat, (p, m) ⇒ new DefaultDomainWithCFGAndDefUse(p, m))
@@ -149,7 +151,8 @@ class InvokedynamicRewritingBytecodeStructureTest extends FunSpec with Matchers 
                 ).withValue(DeleteSynthesizedClassFilesAttributesConfigKey, configValueFalse)
                 val jre = Project(jrePath, GlobalLogContext, config)
                 info(jre.statistics.toList.map(_.toString).filter(_.startsWith("(Project")).mkString(","))
-                it("should find rewritten Java lambda expressions in the JRE") {
+                it("should be able to perform abstract interpretation of rewritten Java lambda "+
+                    "expressions in the JRE") {
                     val verifiedMethodsCount =
                         testProject(jre, (p, m) ⇒ BaseDomain(p, m)) +
                             testProject(jre, (p, m) ⇒ new DefaultDomainWithCFGAndDefUse(p, m))
