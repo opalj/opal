@@ -45,8 +45,11 @@ class FinalizerAnalysis private[analyses] (
 
     def analyze(p: SomeProject): PropertyComputationResult = {
 
-        implicit val state: FinalizerAnalysisState = new FinalizerAnalysisState(0, IntTrieSet.empty)
-        val instantiatedTypesResult: EOptionP[SomeProject, InstantiatedTypes] = propertyStore(p, InstantiatedTypes.key)
+        implicit val state: FinalizerAnalysisState =
+            new FinalizerAnalysisState(0, IntTrieSet.empty)
+        
+        val instantiatedTypesResult: EOptionP[SomeProject, InstantiatedTypes] =
+            propertyStore(p, InstantiatedTypes.key)
 
         handleInstantiatedTypesUpdate(instantiatedTypesResult.asEPS)
     }
