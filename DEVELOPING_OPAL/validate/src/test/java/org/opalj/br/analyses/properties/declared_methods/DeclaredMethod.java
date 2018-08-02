@@ -1,3 +1,4 @@
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.br.analyses.properties.declared_methods;
 
 import java.lang.annotation.*;

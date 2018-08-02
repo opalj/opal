@@ -1,3 +1,4 @@
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.compile_time_constancy;
 
 import org.opalj.fpcf.properties.compile_time_constancy.CompileTimeConstant;
