@@ -74,21 +74,21 @@ class LoadedClassesAnalysis(
             case FinalEP(_, NoCallers) ⇒
                 // nothing to do, since there is no caller
                 NoResult
-            case EPK(_, _) ⇒
+            case _: EPK[_, _] ⇒
                 throw new IllegalStateException("unexpected state")
             case EPS(_, _, NoCallers) ⇒
                 // we can not create a dependency here, so the analysis is not allowed to create
                 // such a result
                 throw new IllegalStateException("illegal immediate result for callers")
-            case _@ EPS(dm: DeclaredMethod, _, _) ⇒
+            case _: EPS[_, _] ⇒
                 // the method has callers. we have to analyze it
-                val (newCLInits, newLoadedClasses) = handleNewReachableMethod(dm)
+                val (newCLInits, newLoadedClasses) = handleNewReachableMethod(callersOfMethod.e)
 
                 if (newLoadedClasses.nonEmpty) {
                     val lcResult = PartialResult[SomeProject, LoadedClasses](project, LoadedClasses.key, {
                         case EPK(p, _) ⇒
                             Some(EPS(p, LoadedClassesLowerBound, new LoadedClasses(UIDSet.empty)))
-                        case EPS(_, _: LoadedClasses, ub: LoadedClasses) if newLoadedClasses.subsetOf(ub.classes) ⇒
+                        case EPS(_, _, ub: LoadedClasses) if newLoadedClasses.subsetOf(ub.classes) ⇒
                             None
                         case EPS(p, lb: LoadedClasses, ub: LoadedClasses) ⇒
                             Some(EPS(p, lb, new LoadedClasses(ub.classes ++ newLoadedClasses)))
@@ -139,7 +139,7 @@ class LoadedClassesAnalysis(
         var newLoadedClasses = UIDSet.empty[ObjectType]
 
         // whenever a method is called the first time, its declaring class gets loaded
-        handleType(method.classFile.thisType).foreach(newCLInits += _)
+        handleType(methodDCT).foreach(newCLInits += _)
         newLoadedClasses += methodDCT
 
         if (method.body.isDefined) {
@@ -167,12 +167,12 @@ class LoadedClassesAnalysis(
      */
     def handleType(declaringClassType: ObjectType): Option[DefinedMethod] = {
         project.classFile(declaringClassType).flatMap { cf ⇒
-            cf.staticInitializer.flatMap { clInit ⇒
+            cf.staticInitializer map { clInit ⇒
                 val clInitDM = declaredMethods(clInit)
                 // only if registerMethodToProcess returns true, we have Some(<clinit>)
                 // i.e. the call graph analysis has not already processed this method
                 // (after a successful registration, a second call will return false)
-                Some(clInitDM)
+                clInitDM
             }
         }
     }
