@@ -66,7 +66,7 @@ case class RTAState(
  * allocations are present in the [[SomeProject]] ([[org.opalj.fpcf.properties.InstantiatedTypes]])
  * and updates the [[org.opalj.fpcf.properties.CallersProperty]].
  *
- * This analysis does not handle features s.a. JVM calls to static initializers, finalize etc.
+ * This analysis does not handle features such as JVM calls to static initializers, finalize etc.
  * However, analyses for these features (e.g. [[org.opalj.fpcf.analyses.cg.FinalizerAnalysis]] or
  * the [[org.opalj.fpcf.analyses.cg.LoadedClassesAnalysis]]) can be executed within the same batch
  * and the call graph will be generated in collaboration)
@@ -458,14 +458,14 @@ class RTACallGraphAnalysis private[analyses] (
         } yield {
             val tgtMethod = declaredMethods(tgtID)
             PartialResult[DeclaredMethod, CallersProperty](tgtMethod, CallersProperty.key, {
-                case EPS(e, lb, ub: CallersProperty) ⇒
+                case EPS(_, lb, ub) ⇒
                     val newCallers = ub.updated(method, pc)
                     // here we assert that update returns the identity if there is no change
                     if (ub ne newCallers)
-                        Some(EPS(e, lb, newCallers))
+                        Some(EPS(tgtMethod, lb, newCallers))
                     else
                         None
-                case EPK(e, _) ⇒
+                case EPK(_, _) ⇒
                     val set = LongTrieSet(CallersProperty.toLong(method.id, pc))
                     Some(EPS(
                         tgtMethod,

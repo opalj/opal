@@ -81,6 +81,7 @@ class LoadedClassesAnalysis(
                 // such a result
                 throw new IllegalStateException("illegal immediate result for callers")
             case _: EPS[_, _] ⇒
+
                 // the method has callers. we have to analyze it
                 val (newCLInits, newLoadedClasses) = handleNewReachableMethod(callersOfMethod.e)
 
@@ -88,10 +89,14 @@ class LoadedClassesAnalysis(
                     val lcResult = PartialResult[SomeProject, LoadedClasses](project, LoadedClasses.key, {
                         case EPK(p, _) ⇒
                             Some(EPS(p, LoadedClassesLowerBound, new LoadedClasses(UIDSet.empty)))
-                        case EPS(_, _, ub: LoadedClasses) if newLoadedClasses.subsetOf(ub.classes) ⇒
-                            None
-                        case EPS(p, lb: LoadedClasses, ub: LoadedClasses) ⇒
-                            Some(EPS(p, lb, new LoadedClasses(ub.classes ++ newLoadedClasses)))
+                        case EPS(p, lb, ub) ⇒
+                            val newUb = ub.classes ++ newLoadedClasses
+                            // due to monotonicity:
+                            // the size check sufficiently replaces the subset check
+                            if (newUb.size > ub.classes.size)
+                                Some(EPS(p, lb, new LoadedClasses(newUb)))
+                            else
+                                None
 
                     })
 
@@ -138,18 +143,32 @@ class LoadedClassesAnalysis(
         var newCLInits = Set.empty[DeclaredMethod]
         var newLoadedClasses = UIDSet.empty[ObjectType]
 
+        val currentLoadedClassesEPS: EOptionP[SomeProject, LoadedClasses] =
+            propertyStore(project, LoadedClasses.key)
+
+        val currentLoadedClasses = currentLoadedClassesEPS match {
+            case _: EPK[_, _]  ⇒ UIDSet.empty[ObjectType]
+            case EPS(_, _, ub) ⇒ ub.classes
+        }
+
+        @inline def isNewLoadedClass(dc: ObjectType): Boolean = {
+            !currentLoadedClasses.contains(dc) && !newLoadedClasses.contains(dc)
+        }
+        //
+        retrieveStaticInitializer(methodDCT).foreach(newCLInits += _)
+
         // whenever a method is called the first time, its declaring class gets loaded
-        handleType(methodDCT).foreach(newCLInits += _)
-        newLoadedClasses += methodDCT
+        if (isNewLoadedClass(methodDCT))
+            newLoadedClasses += methodDCT
 
         if (method.body.isDefined) {
             for (stmt ← tacaiProvider(method).stmts) {
                 stmt match {
-                    case PutStatic(_, dc, _, _, _) if !newLoadedClasses.contains(dc) ⇒
-                        handleType(dc).foreach(newCLInits += _)
+                    case PutStatic(_, dc, _, _, _) if isNewLoadedClass(dc) ⇒
+                        retrieveStaticInitializer(dc).foreach(newCLInits += _)
                         newLoadedClasses += dc
-                    case Assignment(_, _, GetField(_, dc, _, _, _)) if !newLoadedClasses.contains(dc) ⇒
-                        handleType(dc).foreach(newCLInits += _)
+                    case Assignment(_, _, GetField(_, dc, _, _, _)) if isNewLoadedClass(dc) ⇒
+                        retrieveStaticInitializer(dc).foreach(newCLInits += _)
                         newLoadedClasses += dc
                     case _ ⇒
                 }
@@ -160,19 +179,13 @@ class LoadedClassesAnalysis(
     }
 
     /**
-     * Checks, whether the static initializer of the given type exisits and were not already
-     * processed by the `callGraphAlgorithm`.
-     * In this case it registers it for being processed and returns it as option.
-     * Otherwise it returns None.
+     * Retrieves the static initializer of the given type if present.
      */
-    def handleType(declaringClassType: ObjectType): Option[DefinedMethod] = {
+    def retrieveStaticInitializer(declaringClassType: ObjectType): Option[DefinedMethod] = {
         project.classFile(declaringClassType).flatMap { cf ⇒
             cf.staticInitializer map { clInit ⇒
-                val clInitDM = declaredMethods(clInit)
-                // only if registerMethodToProcess returns true, we have Some(<clinit>)
-                // i.e. the call graph analysis has not already processed this method
-                // (after a successful registration, a second call will return false)
-                clInitDM
+                // IMPROVE: Only return the static initializer if it is not already present
+                declaredMethods(clInit)
             }
         }
     }
