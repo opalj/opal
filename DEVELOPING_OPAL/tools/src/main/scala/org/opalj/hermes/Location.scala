@@ -7,6 +7,7 @@ import org.opalj.br.Field
 import org.opalj.br.ClassFile
 import org.opalj.br.ObjectType
 import org.opalj.br.FieldType
+import org.opalj.br.MethodDescriptor
 import org.opalj.br.analyses.MethodInfo
 import org.opalj.br.analyses.Project
 
@@ -27,7 +28,7 @@ sealed abstract class Location[S] {
 
 }
 
-case class PackageLocation[S](
+final case class PackageLocation[S](
         override val source: Option[S],
         packageName:         String
 ) extends Location[S] {
@@ -50,7 +51,7 @@ object PackageLocation {
     }
 }
 
-case class ClassFileLocation[S](
+final case class ClassFileLocation[S](
         override val source: Option[S],
         classFileFQN:        String
 ) extends Location[S] {
@@ -88,7 +89,7 @@ object ClassFileLocation {
 
 }
 
-case class FieldLocation[S](
+final case class FieldLocation[S](
         classFileLocation: ClassFileLocation[S],
         fieldName:         String,
         fieldType:         FieldType
@@ -116,17 +117,19 @@ object FieldLocation {
     }
 }
 
-case class MethodLocation[S](
+final case class MethodLocation[S](
         classFileLocation: ClassFileLocation[S],
-        methodSignature:   String
+        methodName:        String,
+        methodDescriptor:  MethodDescriptor
 ) extends Location[S] {
 
     override def source: Option[S] = classFileLocation.source
 
+    def methodSignature: String = methodDescriptor.toJava(methodName)
+
     def classFileFQN: String = classFileLocation.classFileFQN
 
     override def toString: String = {
-
         val s = s"${classFileLocation.classFileFQN}{ /*method*/ $methodSignature }"
         val source = classFileLocation.source
         if (source.isDefined)
@@ -136,16 +139,16 @@ case class MethodLocation[S](
     }
 
 }
+
 object MethodLocation {
 
     def apply[S](source: S, method: Method): MethodLocation[S] = {
         val cf = method.classFile
-        val md = method.descriptor.toJava(method.name)
-        new MethodLocation(ClassFileLocation(source, cf), md)
+        new MethodLocation(ClassFileLocation(source, cf), method.name, method.descriptor)
     }
 
     def apply[S](classFileLocation: ClassFileLocation[S], method: Method): MethodLocation[S] = {
-        new MethodLocation(classFileLocation, method.descriptor.toJava(method.name))
+        new MethodLocation(classFileLocation, method.name, method.descriptor)
     }
 
     final def apply[S](methodInfo: MethodInfo[S]): MethodLocation[S] = {
@@ -154,7 +157,7 @@ object MethodLocation {
 
 }
 
-case class InstructionLocation[S](methodLocation: MethodLocation[S], pc: Int) extends Location[S] {
+final case class InstructionLocation[S](methodLocation: MethodLocation[S], pc: Int) extends Location[S] {
 
     override def source: Option[S] = methodLocation.source
 
@@ -176,7 +179,7 @@ object InstructionLocation {
 
     def apply[S](source: S, method: Method, pc: Int): InstructionLocation[S] = {
         val classFileLocation = ClassFileLocation(source, method.classFile)
-        val methodLocation = MethodLocation(classFileLocation, method.name + method.descriptor)
+        val methodLocation = MethodLocation(classFileLocation, method.name, method.descriptor)
         new InstructionLocation(methodLocation, pc)
     }
 
