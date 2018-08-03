@@ -77,6 +77,43 @@ class RTACallGraphAnalysis private[analyses] (
         final val project: SomeProject
 ) extends FPCFAnalysis {
 
+    private[cg] class CalleesAndCallers {
+
+        private[cg] var calleesOfM: IntMap[IntTrieSet] = IntMap.empty
+        private[cg] var partialResultsForCallers: List[PartialResult[DeclaredMethod, CallersProperty]] = List.empty
+
+        private[cg] def updateWithCall(caller: DefinedMethod, callee: DeclaredMethod, pc: Int): Unit = {
+            val calleeId = callee.id
+            if (!calleesOfM.contains(pc) || !calleesOfM(pc).contains(calleeId)) {
+                calleesOfM = calleesOfM.updated(pc, calleesOfM.getOrElse(pc, IntTrieSet.empty) + calleeId)
+                partialResultsForCallers ::= updateCallerProperty(caller, callee, pc)
+
+            }
+        }
+
+        private def updateCallerProperty(
+            caller: DefinedMethod, callee: DeclaredMethod, pc: Int
+        ): PartialResult[DeclaredMethod, CallersProperty] = {
+            PartialResult[DeclaredMethod, CallersProperty](callee, CallersProperty.key, {
+                case EPS(_, lb, ub) ⇒
+                    val newCallers = ub.updated(caller, pc)
+                    // here we assert that update returns the identity if there is no change
+                    if (ub ne newCallers)
+                        Some(EPS(callee, lb, newCallers))
+                    else
+                        None
+                case EPK(_, _) ⇒
+                    val set = LongTrieSet(CallersProperty.toLong(caller.id, pc))
+                    Some(EPS(
+                        callee,
+                        CallersProperty.fallback(callee, project),
+                        new CallersOnlyWithConcreteCallers(set)
+                    ))
+                case _ ⇒
+                    throw new IllegalArgumentException()
+            })
+        }
+    }
     type V = DUVar[KnownTypedValue]
 
     private[this] val tacaiProvider = project.get(SimpleTACAIKey)
@@ -124,17 +161,19 @@ class RTACallGraphAnalysis private[analyses] (
         declaredMethod: DeclaredMethod
     ): PropertyComputationResult = {
 
-        val callersOfMethod = propertyStore(declaredMethod, CallersProperty.key)
-        callersOfMethod match {
+        propertyStore(declaredMethod, CallersProperty.key) match {
             case FinalEP(_, NoCallers) ⇒
                 // nothing to do, since there is no caller
                 return NoResult;
+
             case EPK(_, _) ⇒
                 throw new IllegalStateException("unexpected state")
+
             case EPS(_, _, NoCallers) ⇒
                 // we can not create a dependency here, so the analysis is not allowed to create
                 // such a result
                 throw new IllegalStateException("illegal immediate result for callers")
+
             case _@ EPS(_, _, _) ⇒
             // the method is reachable, so we analyze it!
         }
@@ -171,40 +210,39 @@ class RTACallGraphAnalysis private[analyses] (
         //  1. newly allocated types
         //  2. methods (+ pc) called by the current method
         //  3. compute the call sites of virtual calls, whose targets are not yet final
-        val (newInstantiatedTypes, calleesOfM, virtualCallSites) = handleStmts(
-            method, instantiatedTypesUB
+        val (newInstantiatedTypes, calleesAndCallers, virtualCallSites) = handleStmts(
+            declaredMethod.asDefinedMethod, instantiatedTypesUB
         )
 
         // the number of types, already seen by the analysis
         val numTypesProcessed = instantiatedTypesUB.size
 
         val state = RTAState(
-            declaredMethod.asDefinedMethod, virtualCallSites, calleesOfM, numTypesProcessed
+            declaredMethod.asDefinedMethod,
+            virtualCallSites,
+            calleesAndCallers.calleesOfM,
+            numTypesProcessed
         )
 
         // here we can ignore the return value, as the state also gets updated
-        handleVirtualCallSites(state, instantiatedTypesUB.iterator, calleesOfM)
+        handleVirtualCallSites(state, instantiatedTypesUB.iterator, calleesAndCallers)
 
-        var results = Seq(resultForCallees(instantiatedTypesEOptP, state))
+        var results = resultForCallees(instantiatedTypesEOptP, state) :: calleesAndCallers.partialResultsForCallers
         if (newInstantiatedTypes.nonEmpty)
-            results +:= partialResultForInstantiatedTypes(method, newInstantiatedTypes)
-
-        if (state.calleesOfM.nonEmpty)
-            results ++:= partialResultsForCallers(
-                declaredMethod.asDefinedMethod, state.calleesOfM
-            )
+            results ::= partialResultForInstantiatedTypes(method, newInstantiatedTypes)
 
         Results(results)
     }
 
     def handleStmts(
-        method:              Method,
+        method:              DefinedMethod,
         instantiatedTypesUB: UIDSet[ObjectType]
-    ): (UIDSet[ObjectType], IntMap[IntTrieSet], Traversable[(Int, ObjectType, String, MethodDescriptor)]) = {
+    // (new instantiated types, callees map, virtual call sites)
+    ): (UIDSet[ObjectType], CalleesAndCallers, Traversable[(Int, ObjectType, String, MethodDescriptor)]) = {
         implicit val p: SomeProject = project
 
         // for each call site in the current method, the set of methods that might called
-        var calleesOfM = IntMap.empty[IntTrieSet]
+        val calleesAndCallers = new CalleesAndCallers()
 
         // the virtual call sites, where we can not determine the precise tgts
         var virtualCallSites = List.empty[(Int /*PC*/ , ObjectType, String, MethodDescriptor)]
@@ -212,9 +250,9 @@ class RTACallGraphAnalysis private[analyses] (
         // the set of types for which we find an allocation which was not present before
         var newInstantiatedTypes = UIDSet.empty[ObjectType]
 
-        val stmts = tacaiProvider(method).stmts
+        val stmts = tacaiProvider(method.definedMethod).stmts
 
-        val packageName = method.classFile.thisType.packageName
+        val packageName = method.definedMethod.classFile.thisType.packageName
 
         // for allocation sites, add new types
         // for calls, add new edges
@@ -231,42 +269,38 @@ class RTACallGraphAnalysis private[analyses] (
                     }
 
                 case StaticFunctionCallStatement(call) ⇒
-                    calleesOfM = handleCall(
-                        stmt.pc, call.resolveCallTarget.toSet, calleesOfM
+                    handleCall(
+                        method, stmt.pc, call.resolveCallTarget.toSet, calleesAndCallers
                     )
-                    calleesOfM = unknownLibraryCall(call, packageName, stmt.pc, calleesOfM)
+                    unknownLibraryCall(method, call, packageName, stmt.pc, calleesAndCallers)
 
                 case call: StaticMethodCall[V] ⇒
-                    calleesOfM = handleCall(
-                        stmt.pc, call.resolveCallTarget.toSet, calleesOfM
+                    handleCall(
+                        method, stmt.pc, call.resolveCallTarget.toSet, calleesAndCallers
                     )
-                    calleesOfM = unknownLibraryCall(call, packageName, stmt.pc, calleesOfM)
+                    unknownLibraryCall(method, call, packageName, stmt.pc, calleesAndCallers)
 
                 case NonVirtualFunctionCallStatement(call) ⇒
-                    calleesOfM = handleCall(
-                        stmt.pc, call.resolveCallTarget.toSet, calleesOfM
+                    handleCall(
+                        method, stmt.pc, call.resolveCallTarget.toSet, calleesAndCallers
                     )
-                    calleesOfM = unknownLibraryCall(call, packageName, stmt.pc, calleesOfM)
+                    unknownLibraryCall(method, call, packageName, stmt.pc, calleesAndCallers)
 
                 case call: NonVirtualMethodCall[V] ⇒
-                    calleesOfM = handleCall(
-                        stmt.pc, call.resolveCallTarget.toSet, calleesOfM
+                    handleCall(
+                        method, stmt.pc, call.resolveCallTarget.toSet, calleesAndCallers
                     )
-                    calleesOfM = unknownLibraryCall(call, packageName, stmt.pc, calleesOfM)
+                    unknownLibraryCall(method, call, packageName, stmt.pc, calleesAndCallers)
 
                 case VirtualFunctionCallStatement(call) ⇒
-                    val r = handleVirtualCall(
-                        method, call, call.pc, calleesOfM, virtualCallSites
+                    virtualCallSites = handleVirtualCall(
+                        method, call, call.pc, calleesAndCallers, virtualCallSites
                     )
-                    calleesOfM = r._1
-                    virtualCallSites = r._2
 
                 case call: VirtualMethodCall[V] ⇒
-                    val r = handleVirtualCall(
-                        method, call, call.pc, calleesOfM, virtualCallSites
+                    virtualCallSites = handleVirtualCall(
+                        method, call, call.pc, calleesAndCallers, virtualCallSites
                     )
-                    calleesOfM = r._1
-                    virtualCallSites = r._2
 
                 case Assignment(_, _, _: Invokedynamic[V]) | ExprStmt(_, _: Invokedynamic[V]) ⇒
                     OPALLogger.logOnce(
@@ -279,13 +313,16 @@ class RTACallGraphAnalysis private[analyses] (
                 case _ ⇒ //nothing to do
             }
         }
-        (newInstantiatedTypes, calleesOfM, virtualCallSites)
+        (newInstantiatedTypes, calleesAndCallers, virtualCallSites)
     }
 
     private[this] def unknownLibraryCall(
-        call: Call[V], packageName: String, pc: Int, callesOfM: IntMap[IntTrieSet]
-    ): IntMap[IntTrieSet] = {
-        var result = callesOfM
+        method:            DefinedMethod,
+        call:              Call[V],
+        packageName:       String,
+        pc:                Int,
+        calleesAndCallers: CalleesAndCallers
+    ): Unit = {
 
         val declaringClassType = if (call.declaringClass.isArrayType)
             ObjectType.Object
@@ -301,12 +338,8 @@ class RTACallGraphAnalysis private[analyses] (
         )
 
         if (!declTgt.hasSingleDefinedMethod && !declTgt.hasMultipleDefinedMethods) {
-            val tgtId = declTgt.id
-            result = result.updated(
-                pc, result.getOrElse(pc, IntTrieSet.empty) + tgtId
-            )
+            calleesAndCallers.updateWithCall(method, declTgt, pc)
         }
-        result
     }
 
     /**
@@ -316,14 +349,14 @@ class RTACallGraphAnalysis private[analyses] (
      * type bounds for the receiver.
      */
     private[this] def handleVirtualCall(
-        method:           Method,
-        call:             Call[V] with VirtualCall[V],
-        pc:               Int,
-        calleesOfM:       IntMap[IntTrieSet],
-        virtualCallSites: List[(Int /*PC*/ , ObjectType, String, MethodDescriptor)]
-    ): (IntMap[IntTrieSet], List[(Int /*PC*/ , ObjectType, String, MethodDescriptor)]) = {
+        method:            DefinedMethod,
+        call:              Call[V] with VirtualCall[V],
+        pc:                Int,
+        calleesAndCallers: CalleesAndCallers,
+        virtualCallSites:  List[(Int /*PC*/ , ObjectType, String, MethodDescriptor)]
+    ): List[(Int /*PC*/ , ObjectType, String, MethodDescriptor)] = {
+        val thisType = method.definedMethod.classFile.thisType
 
-        var resCalleesOfM = calleesOfM
         var resVirtualCallSites = virtualCallSites
         val rvs = call.receiver.asVar.value.asReferenceValue.allValues
         for (rv ← rvs) {
@@ -332,12 +365,12 @@ class RTACallGraphAnalysis private[analyses] (
                 // for precise types we can directly add the call edge here
                 if (rv.isPrecise) {
                     val tgt = project.instanceCall(
-                        method.classFile.thisType,
+                        thisType,
                         rv.valueType.get,
                         call.name,
                         call.descriptor
                     )
-                    resCalleesOfM = handleCall(pc, tgt.toSet, resCalleesOfM)
+                    handleCall(method, pc, tgt.toSet, calleesAndCallers)
                 } else {
                     val typeBound =
                         project.classHierarchy.joinReferenceTypesUntilSingleUpperBound(
@@ -351,9 +384,9 @@ class RTACallGraphAnalysis private[analyses] (
 
                     if (receiverType.isArrayType) {
                         val tgts = project.instanceCall(
-                            method.classFile.thisType, receiverType, call.name, call.descriptor
+                            thisType, receiverType, call.name, call.descriptor
                         ).toSet
-                        resCalleesOfM = handleCall(pc, tgts, resCalleesOfM)
+                        handleCall(method, pc, tgts, calleesAndCallers)
                     } else {
                         resVirtualCallSites ::= ((pc, receiverType.asObjectType, call.name, call.descriptor))
                     }
@@ -361,14 +394,15 @@ class RTACallGraphAnalysis private[analyses] (
             }
         }
 
-        resCalleesOfM = unknownLibraryCall(
+        unknownLibraryCall(
+            method,
             call,
-            method.classFile.thisType.packageName,
+            thisType.packageName,
             pc,
-            resCalleesOfM
+            calleesAndCallers
         )
 
-        (resCalleesOfM, resVirtualCallSites)
+        resVirtualCallSites
 
     }
 
@@ -377,30 +411,26 @@ class RTACallGraphAnalysis private[analyses] (
      * edges for all targets.
      */
     private[this] def handleCall(
-        pc: Int, targets: Set[Method],
-        calleesOfM: IntMap[IntTrieSet]
-    ): IntMap[IntTrieSet] = {
-
-        var result = calleesOfM
+        caller:            DefinedMethod,
+        pc:                Int,
+        targets:           Set[Method],
+        calleesAndCallers: CalleesAndCallers
+    ): Unit = {
         for {
             tgt ← targets
         } {
             val tgtDM = declaredMethods(tgt)
-            val tgtId = tgtDM.id
             // add call edge to CG
-            result = result.updated(pc, result.getOrElse(pc, IntTrieSet.empty) + tgtId)
+            calleesAndCallers.updateWithCall(caller, tgtDM, pc)
         }
-        result
     }
 
-    // modifies state
-    // returns updated newCalleesOfM
+    // modifies state and the calleesAndCallers
     private[this] def handleVirtualCallSites(
         state:                RTAState,
         newInstantiatedTypes: Iterator[ObjectType],
-        newCalleesOfM:        IntMap[IntTrieSet]
-    ): IntMap[IntTrieSet] = {
-        var result = newCalleesOfM
+        calleesAndCallers:    CalleesAndCallers
+    ): Unit = {
         for {
             instantiatedType ← newInstantiatedTypes // only iterate once!
             (pc, typeBound, name, descr) ← state.virtualCallSites
@@ -411,12 +441,10 @@ class RTACallGraphAnalysis private[analyses] (
             )
         } {
             val tgtDM = declaredMethods(tgt)
-            val tgtId = tgtDM.id
-            // in case newCalleesOfM equals state.calleesOfM this is safe
-            result = result.updated(pc, result.getOrElse(pc, IntTrieSet.empty) + tgtId)
-            state.addCallEdge(pc, tgtId)
+            calleesAndCallers.updateWithCall(state.method, tgtDM, pc)
+            state.addCallEdge(pc, tgtDM.id)
+
         }
-        result
     }
 
     private[this] def continuation(
@@ -432,49 +460,17 @@ class RTACallGraphAnalysis private[analyses] (
             case _ ⇒ Iterator.empty // the initial types are already processed
         }
 
-        // the new edges in the call graph due to the new types
-        val newCalleesOfM = handleVirtualCallSites(
-            state, newInstantiatedTypes, IntMap.empty
-        )
+        val calleesAndCallers = new CalleesAndCallers
 
-        val resultsForCallees = Iterator(resultForCallees(instantiatedTypesEOptP, state))
+        // the new edges in the call graph due to the new types
+        handleVirtualCallSites(
+            state, newInstantiatedTypes, calleesAndCallers
+        )
 
         Results(
-            if (newCalleesOfM.nonEmpty)
-                resultsForCallees ++ partialResultsForCallers(state.method, state.calleesOfM)
-            else
-                resultsForCallees
+            resultForCallees(instantiatedTypesEOptP, state) :: calleesAndCallers.partialResultsForCallers
         )
 
-    }
-
-    private[this] def partialResultsForCallers(
-        method:        DefinedMethod,
-        newCalleesOfM: IntMap[IntTrieSet]
-    ): TraversableOnce[PartialResult[DeclaredMethod, CallersProperty]] = {
-        for {
-            (pc: Int, tgtsOfM: IntTrieSet) ← newCalleesOfM.iterator
-            tgtID: Int ← tgtsOfM.iterator
-        } yield {
-            val tgtMethod = declaredMethods(tgtID)
-            PartialResult[DeclaredMethod, CallersProperty](tgtMethod, CallersProperty.key, {
-                case EPS(_, lb, ub) ⇒
-                    val newCallers = ub.updated(method, pc)
-                    // here we assert that update returns the identity if there is no change
-                    if (ub ne newCallers)
-                        Some(EPS(tgtMethod, lb, newCallers))
-                    else
-                        None
-                case EPK(_, _) ⇒
-                    val set = LongTrieSet(CallersProperty.toLong(method.id, pc))
-                    Some(EPS(
-                        tgtMethod,
-                        CallersProperty.fallback(tgtMethod, project),
-                        new CallersOnlyWithConcreteCallers(set)
-                    ))
-                case _ ⇒ throw new IllegalArgumentException()
-            })
-        }
     }
 
     private[this] def partialResultForInstantiatedTypes(
@@ -508,7 +504,7 @@ class RTACallGraphAnalysis private[analyses] (
         // here we need a immutable copy of the current state
         val newCallees = new CalleesImplementation(state.calleesOfM, declaredMethods)
         // todo equal size or equal callees?
-        if (instantiatedTypesEOptP.isFinal || newCallees.size == calleesLB.size)
+        if (state.virtualCallSites.isEmpty || instantiatedTypesEOptP.isFinal || newCallees.size == calleesLB.size)
             Result(state.method, newCallees)
         else {
             IntermediateResult(

@@ -47,7 +47,7 @@ class FinalizerAnalysis private[analyses] (
 
         implicit val state: FinalizerAnalysisState =
             new FinalizerAnalysisState(0, IntTrieSet.empty)
-        
+
         val instantiatedTypesResult: EOptionP[SomeProject, InstantiatedTypes] =
             propertyStore(p, InstantiatedTypes.key)
 

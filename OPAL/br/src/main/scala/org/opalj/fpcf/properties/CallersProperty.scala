@@ -246,7 +246,7 @@ object CallersProperty extends CallersPropertyMetaInformation {
     def toLong(methodId: Int, pc: Int): Long = {
         assert(pc >= 0 && pc < 0xFFFF)
         assert(methodId >= 0 && methodId <= 0x3FFFFF)
-        (methodId.toLong & 0x3FFFFF) | (pc << 22)
+        (methodId.toLong & 0x3FFFFF) | (pc.toLong << 22)
     }
     def toMethodAndPc(pcAndMethod: Long): (Int, Int) = {
         (pcAndMethod.toInt & 0x3FFFFF, (pcAndMethod >> 22).toInt)
