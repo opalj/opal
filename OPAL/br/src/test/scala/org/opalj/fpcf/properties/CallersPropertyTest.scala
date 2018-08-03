@@ -32,8 +32,8 @@ class CallersPropertyTest extends FlatSpec with Matchers {
     behavior of "the no caller object"
 
     it should "update correctly" in {
-        assert(NoCallers.updateVMLevelCall() eq OnlyVMLevelCallers)
-        assert(NoCallers.updateWithUnknownContext() eq OnlyCallersWithUnknownContext)
+        assert(NoCallers.updatedWithVMLevelCall() eq OnlyVMLevelCallers)
+        assert(NoCallers.updatedWithUnknownContext() eq OnlyCallersWithUnknownContext)
         val oneCaller = NoCallers.updated(declaredMethod, pc = 0)
         assert(oneCaller.isInstanceOf[CallersOnlyWithConcreteCallers])
         assert(oneCaller.callers.size == 1 && oneCaller.callers.exists {
@@ -52,8 +52,8 @@ class CallersPropertyTest extends FlatSpec with Matchers {
     behavior of "only vm level callers"
 
     it should "update correctly" in {
-        assert(OnlyVMLevelCallers.updateVMLevelCall() eq OnlyVMLevelCallers)
-        assert(OnlyVMLevelCallers.updateWithUnknownContext() eq OnlyVMCallersAndWithUnknownContext)
+        assert(OnlyVMLevelCallers.updatedWithVMLevelCall() eq OnlyVMLevelCallers)
+        assert(OnlyVMLevelCallers.updatedWithUnknownContext() eq OnlyVMCallersAndWithUnknownContext)
         val oneCaller = OnlyVMLevelCallers.updated(declaredMethod, pc = 0)
         assert(oneCaller.isInstanceOf[CallersImplWithOtherCalls])
         assert(oneCaller.callers.size == 1 && oneCaller.callers.exists {
@@ -73,8 +73,8 @@ class CallersPropertyTest extends FlatSpec with Matchers {
     behavior of "only unknown callers"
 
     it should "update correctly" in {
-        assert(OnlyCallersWithUnknownContext.updateVMLevelCall() eq OnlyVMCallersAndWithUnknownContext)
-        assert(OnlyCallersWithUnknownContext.updateWithUnknownContext() eq OnlyCallersWithUnknownContext)
+        assert(OnlyCallersWithUnknownContext.updatedWithVMLevelCall() eq OnlyVMCallersAndWithUnknownContext)
+        assert(OnlyCallersWithUnknownContext.updatedWithUnknownContext() eq OnlyCallersWithUnknownContext)
         val oneCaller = OnlyCallersWithUnknownContext.updated(declaredMethod, pc = 0)
         assert(oneCaller.isInstanceOf[CallersImplWithOtherCalls])
         assert(oneCaller.callers.size == 1 && oneCaller.callers.exists {
@@ -95,10 +95,10 @@ class CallersPropertyTest extends FlatSpec with Matchers {
 
     it should "update correctly" in {
         assert(
-            OnlyVMCallersAndWithUnknownContext.updateVMLevelCall() eq OnlyVMCallersAndWithUnknownContext
+            OnlyVMCallersAndWithUnknownContext.updatedWithVMLevelCall() eq OnlyVMCallersAndWithUnknownContext
         )
         assert(
-            OnlyVMCallersAndWithUnknownContext.updateWithUnknownContext() eq OnlyVMCallersAndWithUnknownContext
+            OnlyVMCallersAndWithUnknownContext.updatedWithUnknownContext() eq OnlyVMCallersAndWithUnknownContext
         )
         val oneCaller = OnlyVMCallersAndWithUnknownContext.updated(declaredMethod, pc = 0)
         assert(oneCaller.isInstanceOf[CallersImplWithOtherCalls])
@@ -128,12 +128,12 @@ class CallersPropertyTest extends FlatSpec with Matchers {
         val updateWithSame = callers.updated(declaredMethod, 0)
         assert(callers eq updateWithSame)
 
-        val withVMLevelCallers = callers.updateVMLevelCall()
+        val withVMLevelCallers = callers.updatedWithVMLevelCall()
         assert(withVMLevelCallers.hasVMLevelCallers)
         assert(withVMLevelCallers.isInstanceOf[CallersImplWithOtherCalls])
         assert(!withVMLevelCallers.hasCallersWithUnknownContext)
 
-        val withUnknownContext = callers.updateWithUnknownContext()
+        val withUnknownContext = callers.updatedWithUnknownContext()
         assert(!withUnknownContext.hasVMLevelCallers)
         assert(withUnknownContext.isInstanceOf[CallersImplWithOtherCalls])
         assert(withUnknownContext.hasCallersWithUnknownContext)
@@ -151,8 +151,8 @@ class CallersPropertyTest extends FlatSpec with Matchers {
 
     it should "update correctly" in {
         val callersWithVMLevelCall = OnlyVMLevelCallers.updated(declaredMethod, 0)
-        assert(callersWithVMLevelCall.updateVMLevelCall() eq callersWithVMLevelCall)
-        val callersWithBothUnknownCalls1 = callersWithVMLevelCall.updateWithUnknownContext()
+        assert(callersWithVMLevelCall.updatedWithVMLevelCall() eq callersWithVMLevelCall)
+        val callersWithBothUnknownCalls1 = callersWithVMLevelCall.updatedWithUnknownContext()
         assert(callersWithBothUnknownCalls1.hasCallersWithUnknownContext)
         assert(callersWithBothUnknownCalls1.hasVMLevelCallers)
         assert(callersWithBothUnknownCalls1.callers.size == 1)
@@ -161,8 +161,8 @@ class CallersPropertyTest extends FlatSpec with Matchers {
         })
 
         val callersWithUnknownCallers = OnlyCallersWithUnknownContext.updated(declaredMethod, pc = 0)
-        assert(callersWithUnknownCallers.updateWithUnknownContext() eq callersWithUnknownCallers)
-        val callersWithBothUnknownCalls2 = callersWithUnknownCallers.updateVMLevelCall()
+        assert(callersWithUnknownCallers.updatedWithUnknownContext() eq callersWithUnknownCallers)
+        val callersWithBothUnknownCalls2 = callersWithUnknownCallers.updatedWithVMLevelCall()
         assert(callersWithBothUnknownCalls2.hasCallersWithUnknownContext)
         assert(callersWithBothUnknownCalls2.hasVMLevelCallers)
         assert(callersWithBothUnknownCalls2.callers.size == 1)
@@ -210,12 +210,12 @@ class CallersPropertyTest extends FlatSpec with Matchers {
     behavior of "the lower bound callers"
 
     it should "be a lower bound" in {
-        val lb = new LowerBoundCallers(typesProject, declaredMethod)
+        val lb = LowerBoundCallers
         assert(lb.size == Int.MaxValue)
         assert(lb.hasCallersWithUnknownContext)
         assert(lb.hasVMLevelCallers)
-        assert(lb.updateVMLevelCall() eq lb)
-        assert(lb.updateWithUnknownContext() eq lb)
+        assert(lb.updatedWithVMLevelCall() eq lb)
+        assert(lb.updatedWithUnknownContext() eq lb)
         assert(lb.updated(declaredMethod, 0) eq lb)
     }
 

@@ -41,9 +41,7 @@ object LoadedClasses extends LoadedClassesMetaInformation {
     final val key: PropertyKey[LoadedClasses] = {
         PropertyKey.create(
             "LoadedClasses",
-            (ps: PropertyStore, _: FallbackReason, p: SomeProject) ⇒ {
-                ??? // todo again it would be all types. maype we should make this available.
-            },
+            (_: PropertyStore, _: FallbackReason, _: SomeProject) ⇒ LoadedClassesLowerBound,
             (_: PropertyStore, eps: EPS[SomeProject, LoadedClasses]) ⇒ eps.ub,
             (_: PropertyStore, _: SomeProject) ⇒ None
         )

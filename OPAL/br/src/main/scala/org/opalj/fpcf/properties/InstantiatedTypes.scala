@@ -7,7 +7,6 @@ import org.opalj.br.ObjectType
 import org.opalj.br.analyses.ProjectLike
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.collection.immutable.UIDSet1
-import org.opalj.collection.mutable.AnyRefArrayBuffer
 
 import scala.collection.Set
 
@@ -22,13 +21,11 @@ sealed trait InstantiatedTypesPropertyMetaInformation extends PropertyMetaInform
 }
 
 case class InstantiatedTypes private[properties] (
-        // todo use boolean array here
-        private val _orderedTypes: AnyRefArrayBuffer[ObjectType], private val _types: UIDSet[ObjectType]
+        private val orderedTypes: List[ObjectType],
+        types:                    UIDSet[ObjectType]
 ) extends Property with OrderedProperty with InstantiatedTypesPropertyMetaInformation {
 
-    def types: UIDSet[ObjectType] = _types
-
-    assert(_orderedTypes == null || _orderedTypes.size == _types.size)
+    assert(orderedTypes == null || orderedTypes.size == types.size)
 
     final def key: PropertyKey[InstantiatedTypes] = InstantiatedTypes.key
 
@@ -42,31 +39,30 @@ case class InstantiatedTypes private[properties] (
 
     def updated(newTypes: Set[ObjectType]): InstantiatedTypes = {
 
-        val newOrderedTypes = new AnyRefArrayBuffer[ObjectType](_orderedTypes.size + newTypes.size)
-        newOrderedTypes ++= _orderedTypes
-        for { t ← newTypes; if !types.contains(t) } {
-            newOrderedTypes += t
+        var newOrderedTypes = orderedTypes
+        for { t ← newTypes if !types.contains(t) } {
+            newOrderedTypes ::= t
         }
-        new InstantiatedTypes(newOrderedTypes, _types ++ newTypes)
+        new InstantiatedTypes(newOrderedTypes, types ++ newTypes)
     }
 
-    def getNewTypes(index: Int): Iterator[ObjectType] = _orderedTypes.iteratorFrom(index)
+    def getNewTypes(index: Int): Iterator[ObjectType] = {
+        orderedTypes.iterator.take(types.size - index)
+    }
 
-    def numElements: Int = _types.size
+    def numElements: Int = types.size
 }
 
 object InstantiatedTypes extends InstantiatedTypesPropertyMetaInformation {
 
     def initial(types: UIDSet[ObjectType]): InstantiatedTypes = {
-        new InstantiatedTypes(new AnyRefArrayBuffer[ObjectType]() ++= types.iterator, types)
+        new InstantiatedTypes(types.toList, types)
     }
 
     final val key: PropertyKey[InstantiatedTypes] = {
         PropertyKey.create[ProjectLike, InstantiatedTypes](
             "InstantiatedTypes",
-            (_: PropertyStore, _: FallbackReason, _: ProjectLike) ⇒ {
-                AllTypes
-            },
+            (_: PropertyStore, _: FallbackReason, _: ProjectLike) ⇒ AllTypes,
             (_, eps: EPS[ProjectLike, InstantiatedTypes]) ⇒ eps.ub,
             (_: PropertyStore, _: ProjectLike) ⇒ None
         )
@@ -89,6 +85,4 @@ object AllTypes extends InstantiatedTypes(null, null) {
     override def getNewTypes(index: Int): Iterator[ObjectType] = Iterator.empty
 
     override def numElements: Int = throw new UnsupportedOperationException()
-
-    override def types: UIDSet[ObjectType] = throw new UnsupportedOperationException()
 }

@@ -4,7 +4,6 @@ package fpcf
 package properties
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.analyses.DeclaredMethods
-import org.opalj.br.analyses.SomeProject
 import org.opalj.collection.immutable.LongTrieSet
 
 /**
@@ -26,13 +25,13 @@ sealed trait CallersProperty extends Property with OrderedProperty with CallersP
 
     def size: Int
 
-    def callers(implicit declaredMethods: DeclaredMethods): TraversableOnce[(DeclaredMethod, Int /*PC*/ )] //TODO: maybe use traversable instead of set
+    def callers(implicit declaredMethods: DeclaredMethods): TraversableOnce[(DeclaredMethod, Int /*PC*/ )]
 
     def updated(caller: DeclaredMethod, pc: Int)(implicit declaredMethods: DeclaredMethods): CallersProperty
 
-    def updateWithUnknownContext(): CallersProperty
+    def updatedWithUnknownContext(): CallersProperty
 
-    def updateVMLevelCall(): CallersProperty
+    def updatedWithVMLevelCall(): CallersProperty
 
     override def toString: String = {
         s"Callers(size=${this.size})"
@@ -40,42 +39,43 @@ sealed trait CallersProperty extends Property with OrderedProperty with CallersP
 
     final def key: PropertyKey[CallersProperty] = CallersProperty.key
 
-    /**
-     * Tests if this property is equal or better than the given one (better means that the
-     * value is above the given value in the underlying lattice.)
-     */
     override def checkIsEqualOrBetterThan(e: Entity, other: CallersProperty): Unit = {
-        if (other.size < size) //todo if (!pcMethodPairs.subsetOf(other.pcMethodPairs))
+        if (other.size < size)
             throw new IllegalArgumentException(s"$e: illegal refinement of property $other to $this")
     }
 }
 
-trait CallersWithoutUnknownContext extends CallersProperty {
-    override def hasCallersWithUnknownContext: Boolean = false
+sealed trait CallersWithoutUnknownContext extends CallersProperty {
+    final override def hasCallersWithUnknownContext: Boolean = false
 }
 
-trait CallersWithUnknownContext extends CallersProperty {
-    override def hasCallersWithUnknownContext: Boolean = true
-    override def updateWithUnknownContext(): CallersWithUnknownContext = this
+sealed trait CallersWithUnknownContext extends CallersProperty {
+    final override def hasCallersWithUnknownContext: Boolean = true
+    final override def updatedWithUnknownContext(): CallersWithUnknownContext = this
 }
 
-trait CallersWithVMLevelCall extends CallersProperty {
-    override def hasVMLevelCallers: Boolean = true
-    override def updateVMLevelCall(): CallersWithVMLevelCall = this
+sealed trait CallersWithVMLevelCall extends CallersProperty {
+    final override def hasVMLevelCallers: Boolean = true
+    final override def updatedWithVMLevelCall(): CallersWithVMLevelCall = this
 }
 
-trait CallersWithoutVMLevelCall extends CallersProperty {
-    override def hasVMLevelCallers: Boolean = false
+sealed trait CallersWithoutVMLevelCall extends CallersProperty {
+    final override def hasVMLevelCallers: Boolean = false
 }
 
-trait EmptyConcreteCallers extends CallersProperty {
-    override def size: Int = 0
+sealed trait EmptyConcreteCallers extends CallersProperty {
+    final override def size: Int = 0
 
-    override def callers(implicit declaredMethods: DeclaredMethods): TraversableOnce[(DeclaredMethod, Int)] = {
+    final override def callers(
+        implicit
+        declaredMethods: DeclaredMethods
+    ): TraversableOnce[(DeclaredMethod, Int)] = {
         Nil
     }
 
-    override def updated(caller: DeclaredMethod, pc: Int)(implicit declaredMethods: DeclaredMethods): CallersProperty = {
+    final override def updated(
+        caller: DeclaredMethod, pc: Int
+    )(implicit declaredMethods: DeclaredMethods): CallersProperty = {
         val set = LongTrieSet(CallersProperty.toLong(caller.id, pc))
 
         if (!hasCallersWithUnknownContext && !hasVMLevelCallers) {
@@ -86,30 +86,31 @@ trait EmptyConcreteCallers extends CallersProperty {
     }
 }
 
-object NoCallers extends EmptyConcreteCallers with CallersWithoutUnknownContext with CallersWithoutVMLevelCall {
-    override def updateVMLevelCall(): CallersWithVMLevelCall = OnlyVMLevelCallers
+object NoCallers
+        extends EmptyConcreteCallers with CallersWithoutUnknownContext with CallersWithoutVMLevelCall {
+    override def updatedWithVMLevelCall(): CallersWithVMLevelCall = OnlyVMLevelCallers
 
-    override def updateWithUnknownContext(): CallersWithUnknownContext = OnlyCallersWithUnknownContext
+    override def updatedWithUnknownContext(): CallersWithUnknownContext = OnlyCallersWithUnknownContext
 }
 
 object OnlyCallersWithUnknownContext
-    extends EmptyConcreteCallers with CallersWithUnknownContext with CallersWithoutVMLevelCall {
-    override def updateVMLevelCall(): CallersWithVMLevelCall = OnlyVMCallersAndWithUnknownContext
+        extends EmptyConcreteCallers with CallersWithUnknownContext with CallersWithoutVMLevelCall {
+    override def updatedWithVMLevelCall(): CallersWithVMLevelCall = OnlyVMCallersAndWithUnknownContext
 }
 
 object OnlyVMLevelCallers
-    extends EmptyConcreteCallers with CallersWithoutUnknownContext with CallersWithVMLevelCall {
-    override def updateWithUnknownContext(): CallersWithUnknownContext = OnlyVMCallersAndWithUnknownContext
+        extends EmptyConcreteCallers with CallersWithoutUnknownContext with CallersWithVMLevelCall {
+    override def updatedWithUnknownContext(): CallersWithUnknownContext = OnlyVMCallersAndWithUnknownContext
 }
 
 object OnlyVMCallersAndWithUnknownContext
     extends EmptyConcreteCallers with CallersWithVMLevelCall with CallersWithUnknownContext
 
-trait CallersImplementation extends CallersProperty {
+sealed trait CallersImplementation extends CallersProperty {
     val encodedCallers: LongTrieSet /* MethodId + PC*/
-    override def size: Int = encodedCallers.size
+    final override def size: Int = encodedCallers.size
 
-    override def callers(
+    final override def callers(
         implicit
         declaredMethods: DeclaredMethods
     ): TraversableOnce[(DeclaredMethod, Int /*PC*/ )] = {
@@ -134,14 +135,14 @@ class CallersOnlyWithConcreteCallers(
             new CallersOnlyWithConcreteCallers(encodedCallers + encodedCaller)
     }
 
-    override def updateWithUnknownContext(): CallersProperty =
+    override def updatedWithUnknownContext(): CallersProperty =
         CallersImplWithOtherCalls(
             encodedCallers,
             hasVMLevelCallers = false,
             hasCallersWithUnknownContext = true
         )
 
-    override def updateVMLevelCall(): CallersProperty =
+    override def updatedWithVMLevelCall(): CallersProperty =
         CallersImplWithOtherCalls(
             encodedCallers,
             hasVMLevelCallers = true,
@@ -150,15 +151,15 @@ class CallersOnlyWithConcreteCallers(
 }
 
 class CallersImplWithOtherCalls(
-        val encodedCallers: LongTrieSet /*MethodId + PC*/ ,
-        val coding:         Byte // last bit vm lvl, second last bit unknown context
+        val encodedCallers:                LongTrieSet /*MethodId + PC*/ ,
+        private val specialCallSitesFlags: Byte // last bit vm lvl, second last bit unknown context
 ) extends CallersImplementation {
     assert(!encodedCallers.isEmpty)
-    assert(coding >= 0 && coding <= 3)
+    assert(specialCallSitesFlags >= 0 && specialCallSitesFlags <= 3)
 
-    override def hasVMLevelCallers: Boolean = (coding & 1) != 0
+    override def hasVMLevelCallers: Boolean = (specialCallSitesFlags & 1) != 0
 
-    override def hasCallersWithUnknownContext: Boolean = (coding & 2) != 0
+    override def hasCallersWithUnknownContext: Boolean = (specialCallSitesFlags & 2) != 0
 
     override def updated(
         caller: DeclaredMethod, pc: Int
@@ -167,20 +168,20 @@ class CallersImplWithOtherCalls(
         if (encodedCallers.contains(encodedCaller: java.lang.Long))
             this
         else
-            new CallersImplWithOtherCalls(encodedCallers + encodedCaller, coding)
+            new CallersImplWithOtherCalls(encodedCallers + encodedCaller, specialCallSitesFlags)
     }
 
-    override def updateVMLevelCall(): CallersProperty =
+    override def updatedWithVMLevelCall(): CallersProperty =
         if (hasVMLevelCallers)
             this
         else
-            new CallersImplWithOtherCalls(encodedCallers, (coding | 1).toByte)
+            new CallersImplWithOtherCalls(encodedCallers, (specialCallSitesFlags | 1).toByte)
 
-    override def updateWithUnknownContext(): CallersProperty =
+    override def updatedWithUnknownContext(): CallersProperty =
         if (hasCallersWithUnknownContext)
             this
         else
-            new CallersImplWithOtherCalls(encodedCallers, (coding | 2).toByte)
+            new CallersImplWithOtherCalls(encodedCallers, (specialCallSitesFlags | 2).toByte)
 }
 
 object CallersImplWithOtherCalls {
@@ -201,13 +202,9 @@ object CallersImplWithOtherCalls {
     }
 }
 
-class LowerBoundCallers(
-        project: SomeProject, method: DeclaredMethod
-) extends CallersWithUnknownContext with CallersWithVMLevelCall {
+object LowerBoundCallers extends CallersWithUnknownContext with CallersWithVMLevelCall {
 
     override lazy val size: Int = {
-        //callees.size * project.allMethods.size
-        // todo this is for performance improvement only
         Int.MaxValue
     }
 
@@ -215,7 +212,7 @@ class LowerBoundCallers(
         implicit
         declaredMethods: DeclaredMethods
     ): TraversableOnce[(DeclaredMethod, Int /*PC*/ )] = {
-        ??? // todo
+        throw new UnsupportedOperationException()
     }
 
     override def updated(
@@ -230,7 +227,7 @@ object CallersProperty extends CallersPropertyMetaInformation {
             "CallersProperty",
             (ps: PropertyStore, reason: FallbackReason, m: DeclaredMethod) ⇒ reason match {
                 case PropertyIsNotComputedByAnyAnalysis ⇒
-                    CallersProperty.fallback(m, ps.context(classOf[SomeProject]))
+                    LowerBoundCallers
                 case PropertyIsNotDerivedByPreviouslyExecutedAnalysis ⇒
                     NoCallers
             },
@@ -239,14 +236,10 @@ object CallersProperty extends CallersPropertyMetaInformation {
         )
     }
 
-    def fallback(m: DeclaredMethod, p: SomeProject): CallersProperty = {
-        new LowerBoundCallers(p, m)
-    }
-
     def toLong(methodId: Int, pc: Int): Long = {
         assert(pc >= 0 && pc < 0xFFFF)
         assert(methodId >= 0 && methodId <= 0x3FFFFF)
-        (methodId.toLong & 0x3FFFFF) | (pc.toLong << 22)
+        methodId.toLong | (pc.toLong << 22)
     }
     def toMethodAndPc(pcAndMethod: Long): (Int, Int) = {
         (pcAndMethod.toInt & 0x3FFFFF, (pcAndMethod >> 22).toInt)

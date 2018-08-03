@@ -103,10 +103,10 @@ class FinalizerAnalysis private[analyses] (
                         val finalizer = declaredMethods(finalizers.head)
                         val result = PartialResult[DeclaredMethod, CallersProperty](finalizer, CallersProperty.key, {
                             case EPK(e, _) ⇒ Some(
-                                EPS(e, new LowerBoundCallers(project, e), OnlyVMLevelCallers)
+                                EPS(e, LowerBoundCallers, OnlyVMLevelCallers)
                             )
                             case EPS(e, lb, ub) if !ub.hasVMLevelCallers ⇒
-                                Some(EPS(e, lb, ub.updateVMLevelCall()))
+                                Some(EPS(e, lb, ub.updatedWithVMLevelCall()))
 
                             case _ ⇒ None
                         })

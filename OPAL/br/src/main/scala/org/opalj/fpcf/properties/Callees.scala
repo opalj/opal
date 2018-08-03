@@ -5,8 +5,6 @@ package properties
 
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.analyses.DeclaredMethods
-import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.analyses.SomeProject
 import org.opalj.collection.immutable.IntTrieSet
 
 import scala.collection.immutable.IntMap
@@ -26,9 +24,9 @@ sealed trait Callees extends Property with OrderedProperty with CalleesPropertyM
 
     def size: Int
 
-    def callees(pc: Int): Set[DeclaredMethod]
+    def callees(pc: Int)(implicit declaredMethods: DeclaredMethods): Set[DeclaredMethod]
 
-    def callees: Iterator[(Int, Set[DeclaredMethod])]
+    def callees(implicit declaredMethods: DeclaredMethods): Iterator[(Int, Set[DeclaredMethod])]
 
     override def toString: String = {
         s"Callees(size=${this.size})"
@@ -36,26 +34,24 @@ sealed trait Callees extends Property with OrderedProperty with CalleesPropertyM
 
     final def key: PropertyKey[Callees] = Callees.key
 
-    /**
-     * Tests if this property is equal or better than the given one (better means that the
-     * value is above the given value in the underlying lattice.)
-     */
     override def checkIsEqualOrBetterThan(e: Entity, other: Callees): Unit = {
-        if (other.size < size) //todo if (!pcMethodPairs.subsetOf(other.pcMethodPairs))
+        if (other.size < size)
             throw new IllegalArgumentException(s"$e: illegal refinement of property $other to $this")
     }
 }
 
 final class CalleesImplementation(
-        private[this] val calleesIds:      IntMap[IntTrieSet],
-        private[this] val declaredMethods: DeclaredMethods
+        private[this] val calleesIds: IntMap[IntTrieSet]
 ) extends Callees {
 
-    override def callees(pc: Int): Set[DeclaredMethod] = {
+    override def callees(pc: Int)(implicit declaredMethods: DeclaredMethods): Set[DeclaredMethod] = {
         calleesIds(pc).mapToAny[DeclaredMethod](declaredMethods.apply)
     }
 
-    override def callees: Iterator[(Int, Set[DeclaredMethod])] = {
+    override def callees(
+        implicit
+        declaredMethods: DeclaredMethods
+    ): Iterator[(Int, Set[DeclaredMethod])] = {
         calleesIds.iterator.map {
             case (pc, x) ⇒ {
                 pc → x.mapToAny[DeclaredMethod](declaredMethods.apply)
@@ -68,23 +64,22 @@ final class CalleesImplementation(
     }
 }
 
-class FallbackCallees(
-        private[this] val project:         SomeProject,
-        private[this] val method:          DeclaredMethod,
-        private[this] val declaredMethods: DeclaredMethods
-) extends Callees {
+object LowerBoundCallees extends Callees {
 
     override lazy val size: Int = {
-        //callees.size * project.allMethods.size
-        // todo this is for performance improvement only
         Int.MaxValue
     }
 
-    override def callees(pc: Int): Set[DeclaredMethod] = {
-        project.allMethods.map(declaredMethods.apply).toSet
+    override def callees(
+        pc: Int
+    )(implicit declaredMethods: DeclaredMethods): Set[DeclaredMethod] = {
+        throw new UnsupportedOperationException()
     }
 
-    override def callees: Iterator[(UShort, Set[DeclaredMethod])] = ???
+    override def callees(
+        implicit
+        declaredMethods: DeclaredMethods
+    ): Iterator[(UShort, Set[DeclaredMethod])] = throw new UnsupportedOperationException()
 }
 
 object Callees extends CalleesPropertyMetaInformation {
@@ -92,23 +87,17 @@ object Callees extends CalleesPropertyMetaInformation {
     final val key: PropertyKey[Callees] = {
         PropertyKey.create(
             "Callees",
-            (ps: PropertyStore, r: FallbackReason, m: DeclaredMethod) ⇒ {
-                val p = ps.context(classOf[SomeProject])
-                val declaredMethods = p.get(DeclaredMethodsKey)
+            (_: PropertyStore, r: FallbackReason, _: DeclaredMethod) ⇒ {
                 r match {
                     case PropertyIsNotComputedByAnyAnalysis ⇒
-                        Callees.fallback(m, p, declaredMethods)
+                        LowerBoundCallees
                     case PropertyIsNotDerivedByPreviouslyExecutedAnalysis ⇒
                         //println(s"Fallback callee $m")
-                        new CalleesImplementation(IntMap.empty, declaredMethods)
+                        new CalleesImplementation(IntMap.empty)
                 }
             },
             (_: PropertyStore, eps: EPS[DeclaredMethod, Callees]) ⇒ eps.ub,
             (_: PropertyStore, _: DeclaredMethod) ⇒ None
         )
-    }
-
-    def fallback(m: DeclaredMethod, p: SomeProject, declaredMethods: DeclaredMethods): Callees = {
-        new FallbackCallees(p, m, declaredMethods)
     }
 }

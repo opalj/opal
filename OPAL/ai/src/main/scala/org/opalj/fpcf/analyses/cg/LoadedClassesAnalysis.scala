@@ -105,11 +105,11 @@ class LoadedClassesAnalysis(
                             case EPK(_, _) ⇒
                                 Some(EPS(
                                     clInit,
-                                    new LowerBoundCallers(project, clInit),
+                                    LowerBoundCallers,
                                     OnlyVMLevelCallers
                                 ))
                             case EPS(_, lb, ub) if !ub.hasCallersWithUnknownContext ⇒
-                                Some(EPS(clInit, lb, ub.updateVMLevelCall()))
+                                Some(EPS(clInit, lb, ub.updatedWithVMLevelCall()))
                             case _ ⇒ None
                         })
                     }
