@@ -37,7 +37,7 @@ trait CalleesLikeImplementation extends CalleesLike {
     private[properties] val calleesIds: IntMap[IntTrieSet]
 
     override def callees(pc: Int)(implicit declaredMethods: DeclaredMethods): Set[DeclaredMethod] = {
-        calleesIds(pc).mapToAny[DeclaredMethod](declaredMethods.apply)
+        calleesIds.getOrElse(pc, IntTrieSet.empty).mapToAny[DeclaredMethod](declaredMethods.apply)
     }
 
     override def callees(

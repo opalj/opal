@@ -114,8 +114,8 @@ class CalleesAnalysis private[analyses] (
     @inline def updateCallees(callees: CalleesLike, allCallees: IntMap[IntTrieSet] = IntMap.empty[IntTrieSet]): IntMap[IntTrieSet] = {
         var resAllCallees = allCallees
         for ((pc, tgts) ← callees.encodedCallees) {
-            val old = allCallees.getOrElse(pc, IntTrieSet.empty)
-            resAllCallees = allCallees.updated(pc, old ++ tgts)
+            val old = resAllCallees.getOrElse(pc, IntTrieSet.empty)
+            resAllCallees = resAllCallees.updated(pc, old ++ tgts)
         }
 
         resAllCallees
