@@ -29,7 +29,7 @@ case class InstantiatedTypes private[properties] (
 
     final def key: PropertyKey[InstantiatedTypes] = InstantiatedTypes.key
 
-    override def toString: String = s"InstantiatedTypes(size=${types.size}\n\t$types)"
+    override def toString: String = s"InstantiatedTypes(size=${types.size})"
 
     override def checkIsEqualOrBetterThan(e: Entity, other: InstantiatedTypes): Unit = {
         if ((other ne AllTypes) && !types.subsetOf(other.types)) {
