@@ -155,7 +155,7 @@ class LoadedClassesAnalysis(
             !currentLoadedClasses.contains(dc) && !newLoadedClasses.contains(dc)
         }
         //
-        retrieveStaticInitializer(methodDCT).foreach(newCLInits += _)
+        retrieveStaticInitializers(methodDCT).foreach(newCLInits += _)
 
         // whenever a method is called the first time, its declaring class gets loaded
         if (isNewLoadedClass(methodDCT))
@@ -165,10 +165,10 @@ class LoadedClassesAnalysis(
             for (stmt ← tacaiProvider(method).stmts) {
                 stmt match {
                     case PutStatic(_, dc, _, _, _) if isNewLoadedClass(dc) ⇒
-                        retrieveStaticInitializer(dc).foreach(newCLInits += _)
+                        retrieveStaticInitializers(dc).foreach(newCLInits += _)
                         newLoadedClasses += dc
                     case Assignment(_, _, GetField(_, dc, _, _, _)) if isNewLoadedClass(dc) ⇒
-                        retrieveStaticInitializer(dc).foreach(newCLInits += _)
+                        retrieveStaticInitializers(dc).foreach(newCLInits += _)
                         newLoadedClasses += dc
                     case _ ⇒
                 }
@@ -181,11 +181,13 @@ class LoadedClassesAnalysis(
     /**
      * Retrieves the static initializer of the given type if present.
      */
-    def retrieveStaticInitializer(declaringClassType: ObjectType): Option[DefinedMethod] = {
-        project.classFile(declaringClassType).flatMap { cf ⇒
-            cf.staticInitializer map { clInit ⇒
-                // IMPROVE: Only return the static initializer if it is not already present
-                declaredMethods(clInit)
+    def retrieveStaticInitializers(declaringClassType: ObjectType): Set[DefinedMethod] = {
+        classHierarchy.allSupertypes(declaringClassType, reflexive = true) flatMap { t ⇒
+            project.classFile(t) flatMap { cf ⇒
+                cf.staticInitializer map { clInit ⇒
+                    // IMPROVE: Only return the static initializer if it is not already present
+                    declaredMethods(clInit)
+                }
             }
         }
     }
