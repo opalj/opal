@@ -23,6 +23,8 @@ trait CalleesLike extends OrderedProperty with CalleesLikePropertyMetaInformatio
 
     def callees(implicit declaredMethods: DeclaredMethods): Iterator[(Int, Set[DeclaredMethod])]
 
+    private[fpcf] /*todo better package*/ def encodedCallees: IntMap[IntTrieSet]
+
     def updated(pc: Int, callee: DeclaredMethod)(implicit declaredMethods: DeclaredMethods): Self
 
     override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {
@@ -51,6 +53,8 @@ trait CalleesLikeImplementation extends CalleesLike {
     override val size: Int = {
         calleesIds.iterator.map(_._2.size).sum
     }
+
+    override private[fpcf] def encodedCallees: IntMap[IntTrieSet] = calleesIds
 }
 
 trait CalleesLikeLowerBound extends CalleesLike {
@@ -68,6 +72,8 @@ trait CalleesLikeLowerBound extends CalleesLike {
         implicit
         declaredMethods: DeclaredMethods
     ): Iterator[(UShort, Set[DeclaredMethod])] = throw new UnsupportedOperationException()
+
+    override private[fpcf] def encodedCallees: IntMap[IntTrieSet] = IntMap.empty
 }
 
 trait CalleesLikePropertyMetaInformation extends PropertyMetaInformation {
