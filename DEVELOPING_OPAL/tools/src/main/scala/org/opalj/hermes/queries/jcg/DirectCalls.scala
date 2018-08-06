@@ -37,7 +37,7 @@ class DirectCalls(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
         rawClassFiles:        Traversable[(ClassFile, S)]
     ): IndexedSeq[LocationsContainer[S]] = {
 
-        val instructionsLocations = Array.fill(4)(new LocationsContainer[S])
+        val instructionsLocations = Array.fill(6)(new LocationsContainer[S])
 
         for {
             (classFile, source) ← project.projectClassFilesWithSources
