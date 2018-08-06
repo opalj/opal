@@ -41,7 +41,7 @@ class LoadedClassesAnalysis(
      * (if not already done) by the VM. Furthermore, access to static fields yields the VM to load
      * a class. So for a new reachable method, we further check for such operations.
      * For newly loaded classes, the analysis triggers the computation of the call graph properties
-     * ([[org.opalj.fpcf.properties.Callees]], [[org.opalj.fpcf.properties.CallersProperty]]) for
+     * ([[org.opalj.fpcf.properties.StandardInvokeCallees]], [[org.opalj.fpcf.properties.CallersProperty]]) for
      * the static initializer.
      *
      */
@@ -204,9 +204,9 @@ object EagerLoadedClassesAnalysis extends FPCFEagerAnalysisScheduler {
         loadedClassesAnalysis
     }
 
-    override def uses: Predef.Set[PropertyKind] = Predef.Set(CallersProperty)
+    override def uses: Set[PropertyKind] = Set(CallersProperty)
 
-    override def derives: Predef.Set[PropertyKind] = Predef.Set(LoadedClasses, CallersProperty)
+    override def derives: Set[PropertyKind] = Set(LoadedClasses, CallersProperty)
 
     override def init(p: SomeProject, ps: PropertyStore): LoadedClassesAnalysis = {
         val analysis = new LoadedClassesAnalysis(p)

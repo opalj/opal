@@ -5,7 +5,6 @@ package analyses
 package cg
 
 import scala.language.existentials
-
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
@@ -19,13 +18,13 @@ import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.LongTrieSet
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.properties.AllTypes
-import org.opalj.fpcf.properties.Callees
-import org.opalj.fpcf.properties.CalleesImplementation
+import org.opalj.fpcf.properties.StandardInvokeCallees
+import org.opalj.fpcf.properties.StandardInvokeCalleesImplementation
 import org.opalj.fpcf.properties.CallersOnlyWithConcreteCallers
 import org.opalj.fpcf.properties.CallersProperty
-import org.opalj.fpcf.properties.LowerBoundCallees
 import org.opalj.fpcf.properties.InstantiatedTypes
 import org.opalj.fpcf.properties.LowerBoundCallers
+import org.opalj.fpcf.properties.LowerBoundStandardInvokeCallees
 import org.opalj.fpcf.properties.NoCallers
 import org.opalj.fpcf.properties.OnlyCallersWithUnknownContext
 import org.opalj.log.Error
@@ -64,7 +63,7 @@ case class RTAState(
 
 /**
  * A rapid type call graph analysis (RTA). For a given [[Method]] it computes the set of outgoing
- * call edges ([[org.opalj.fpcf.properties.Callees]]). Furthermore, it updates the types for which
+ * call edges ([[org.opalj.fpcf.properties.StandardInvokeCallees]]). Furthermore, it updates the types for which
  * allocations are present in the [[SomeProject]] ([[org.opalj.fpcf.properties.InstantiatedTypes]])
  * and updates the [[org.opalj.fpcf.properties.CallersProperty]].
  *
@@ -81,18 +80,21 @@ class RTACallGraphAnalysis private[analyses] (
 
     private[cg] class CalleesAndCallers {
 
-        private[this] var _callees: IntMap[IntTrieSet] = IntMap.empty
-        private[this] var _partialResultsForCallers: List[PartialResult[DeclaredMethod, CallersProperty]] = List.empty
+        private[this] var _standardInvokeCallees: IntMap[IntTrieSet] = IntMap.empty
 
-        private[cg] def callees: IntMap[IntTrieSet] = _callees
-        private[cg] def partialResultsForCallers: List[PartialResult[DeclaredMethod, CallersProperty]] = _partialResultsForCallers
+        private[this] var _partialResultsForCallers: List[PartialResult[DeclaredMethod, CallersProperty]] =
+            List.empty
+
+        private[cg] def standardInvokeCallees: IntMap[IntTrieSet] = _standardInvokeCallees
+        private[cg] def partialResultsForCallers: List[PartialResult[DeclaredMethod, CallersProperty]] = {
+            _partialResultsForCallers
+        }
 
         private[cg] def updateWithCall(caller: DefinedMethod, callee: DeclaredMethod, pc: Int): Unit = {
             val calleeId = callee.id
-            if (!_callees.contains(pc) || !_callees(pc).contains(calleeId)) {
-                _callees = _callees.updated(pc, _callees.getOrElse(pc, IntTrieSet.empty) + calleeId)
+            if (!_standardInvokeCallees.contains(pc) || !_standardInvokeCallees(pc).contains(calleeId)) {
+                _standardInvokeCallees = _standardInvokeCallees.updated(pc, _standardInvokeCallees.getOrElse(pc, IntTrieSet.empty) + calleeId)
                 _partialResultsForCallers ::= createPartialResultForCaller(caller, callee, pc)
-
             }
         }
 
@@ -123,7 +125,7 @@ class RTACallGraphAnalysis private[analyses] (
     private[this] implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
 
     /**
-     * Computes the calls from the given method ([[Callees]] property) and updates the
+     * Computes the calls from the given method ([[StandardInvokeCallees]] property) and updates the
      * [[CallersProperty]] and the [[InstantiatedTypes]].
      *
      * Whenever a `declaredMethod` becomes reachable (the caller property is set initially),
@@ -189,14 +191,14 @@ class RTACallGraphAnalysis private[analyses] (
         val state = RTAState(
             declaredMethod.asDefinedMethod,
             virtualCallSites,
-            calleesAndCallers.callees,
+            calleesAndCallers.standardInvokeCallees,
             numTypesProcessed
         )
 
         // here we can ignore the return value, as the state also gets updated
         handleVirtualCallSites(state, instantiatedTypesUB.iterator, calleesAndCallers)
 
-        var results = resultForCallees(instantiatedTypesEOptP, state) :: calleesAndCallers.partialResultsForCallers
+        var results = resultForStandardInvokeCallees(instantiatedTypesEOptP, state) :: calleesAndCallers.partialResultsForCallers
         if (newInstantiatedTypes.nonEmpty)
             results ::= partialResultForInstantiatedTypes(method, newInstantiatedTypes)
 
@@ -434,7 +436,7 @@ class RTACallGraphAnalysis private[analyses] (
         )
 
         Results(
-            resultForCallees(instantiatedTypesEOptP, state) :: calleesAndCallers.partialResultsForCallers
+            resultForStandardInvokeCallees(instantiatedTypesEOptP, state) :: calleesAndCallers.partialResultsForCallers
         )
 
     }
@@ -464,14 +466,14 @@ class RTACallGraphAnalysis private[analyses] (
             })
     }
 
-    private[this] def resultForCallees(
+    private[this] def resultForStandardInvokeCallees(
         instantiatedTypesEOptP: SomeEOptionP, state: RTAState
     ): PropertyComputationResult = {
 
-        val calleesLB = LowerBoundCallees
+        val calleesLB = LowerBoundStandardInvokeCallees
 
         // here we need a immutable copy of the current state
-        val newCallees = new CalleesImplementation(state.callees)
+        val newCallees = new StandardInvokeCalleesImplementation(state.callees)
         if (state.virtualCallSites.isEmpty || instantiatedTypesEOptP.isFinal || newCallees.size == calleesLB.size)
             Result(state.method, newCallees)
         else {
@@ -490,10 +492,10 @@ object EagerRTACallGraphAnalysisScheduler extends FPCFEagerAnalysisScheduler {
 
     override type InitializationData = RTACallGraphAnalysis
 
-    override def uses: Predef.Set[PropertyKind] = Predef.Set(InstantiatedTypes)
+    override def uses: Set[PropertyKind] = Set(InstantiatedTypes)
 
-    override def derives: Predef.Set[PropertyKind] = Predef.Set(
-        InstantiatedTypes, CallersProperty, Callees
+    override def derives: Set[PropertyKind] = Set(
+        InstantiatedTypes, CallersProperty, StandardInvokeCallees
     )
 
     override def init(p: SomeProject, ps: PropertyStore): RTACallGraphAnalysis = {

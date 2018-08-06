@@ -131,9 +131,9 @@ object EagerFinalizerAnalysisScheduler extends FPCFEagerAnalysisScheduler {
         finalizerAnalysis
     }
 
-    override def uses: Predef.Set[PropertyKind] = Predef.Set(InstantiatedTypes)
+    override def uses: Set[PropertyKind] = Set(InstantiatedTypes)
 
-    override def derives: Predef.Set[PropertyKind] = Predef.Set(VMReachableFinalizers, CallersProperty)
+    override def derives: Set[PropertyKind] = Set(VMReachableFinalizers, CallersProperty)
 
     override def init(p: SomeProject, ps: PropertyStore): FinalizerAnalysis = {
         val analysis = new FinalizerAnalysis(p)

@@ -15,57 +15,57 @@ import scala.collection.immutable.IntMap
  *
  * @author Florian Kuebler
  */
-sealed trait CalleesPropertyMetaInformation extends PropertyMetaInformation {
+sealed trait StandardInvokeCalleesPropertyMetaInformation extends CalleesLikePropertyMetaInformation {
 
-    final type Self = Callees
+    final type Self = StandardInvokeCallees
 }
 
-sealed trait Callees extends CalleesLike with CalleesPropertyMetaInformation {
+sealed trait StandardInvokeCallees extends CalleesLike with StandardInvokeCalleesPropertyMetaInformation {
 
     override def toString: String = {
-        s"Callees(size=${this.size})"
+        s"StandardInvokeCallees(size=${this.size})"
     }
 
-    final def key: PropertyKey[Callees] = Callees.key
+    final def key: PropertyKey[StandardInvokeCallees] = StandardInvokeCallees.key
 }
 
-final class CalleesImplementation(
+final class StandardInvokeCalleesImplementation(
         private[properties] val calleesIds: IntMap[IntTrieSet]
-) extends Callees with CalleesLikeImplementation {
+) extends StandardInvokeCallees with CalleesLikeImplementation {
     override def updated(
         pc: Int, callee: DeclaredMethod
-    )(implicit declaredMethods: DeclaredMethods): Callees = {
+    )(implicit declaredMethods: DeclaredMethods): StandardInvokeCallees = {
         if (calleesIds.contains(pc) && calleesIds(pc).contains(callee.id)) {
             this
         } else {
             val old = calleesIds.getOrElse(pc, IntTrieSet.empty)
             val newCalleesIds = calleesIds.updated(pc, old + callee.id)
-            new CalleesImplementation(newCalleesIds)
+            new StandardInvokeCalleesImplementation(newCalleesIds)
         }
     }
 }
 
-object LowerBoundCallees extends Callees with CalleesLikeLowerBound {
+object LowerBoundStandardInvokeCallees extends StandardInvokeCallees with CalleesLikeLowerBound {
     override def updated(
         pc: Int, callee: DeclaredMethod
-    )(implicit declaredMethods: DeclaredMethods): Callees = this
+    )(implicit declaredMethods: DeclaredMethods): StandardInvokeCallees = this
 }
 
-object Callees extends CalleesPropertyMetaInformation {
+object StandardInvokeCallees extends StandardInvokeCalleesPropertyMetaInformation {
 
-    final val key: PropertyKey[Callees] = {
+    final val key: PropertyKey[StandardInvokeCallees] = {
         PropertyKey.create(
-            "Callees",
+            "StandardInvokeCallees",
             (_: PropertyStore, r: FallbackReason, _: DeclaredMethod) ⇒ {
                 r match {
                     case PropertyIsNotComputedByAnyAnalysis ⇒
-                        LowerBoundCallees
+                        LowerBoundStandardInvokeCallees
                     case PropertyIsNotDerivedByPreviouslyExecutedAnalysis ⇒
                         //println(s"Fallback callee $m")
-                        new CalleesImplementation(IntMap.empty)
+                        new StandardInvokeCalleesImplementation(IntMap.empty)
                 }
             },
-            (_: PropertyStore, eps: EPS[DeclaredMethod, Callees]) ⇒ eps.ub,
+            (_: PropertyStore, eps: EPS[DeclaredMethod, StandardInvokeCallees]) ⇒ eps.ub,
             (_: PropertyStore, _: DeclaredMethod) ⇒ None
         )
     }

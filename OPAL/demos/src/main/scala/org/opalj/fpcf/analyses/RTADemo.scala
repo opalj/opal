@@ -13,9 +13,12 @@ import org.opalj.br.analyses.ReportableAnalysisResult
 import org.opalj.fpcf.analyses.cg.EagerFinalizerAnalysisScheduler
 import org.opalj.fpcf.analyses.cg.EagerLoadedClassesAnalysis
 import org.opalj.fpcf.analyses.cg.EagerRTACallGraphAnalysisScheduler
+import org.opalj.fpcf.analyses.cg.LazyCalleesAnalysis
+import org.opalj.fpcf.properties.Callees
+import org.opalj.fpcf.properties.CalleesLikePropertyMetaInformation
+import org.opalj.fpcf.properties.StandardInvokeCallees
 //import org.opalj.fpcf.par.PKEParallelTasksPropertyStore
 //import org.opalj.fpcf.par.RecordAllPropertyStoreTracer
-import org.opalj.fpcf.properties.Callees
 import org.opalj.fpcf.properties.CallersProperty
 import org.opalj.fpcf.properties.InstantiatedTypes
 import org.opalj.fpcf.properties.LoadedClasses
@@ -62,13 +65,17 @@ object RTADemo extends DefaultOneStepAnalysis {
             manager.runAll(
                 EagerRTACallGraphAnalysisScheduler,
                 EagerLoadedClassesAnalysis,
-                EagerFinalizerAnalysisScheduler
+                EagerFinalizerAnalysisScheduler,
+                new LazyCalleesAnalysis(Set(StandardInvokeCallees.asInstanceOf[CalleesLikePropertyMetaInformation]))
             )
         } { t ⇒ info("progress", s"constructing the call graph took ${t.toSeconds}") }
 
-        ps.waitOnPhaseCompletion()
-
         val declaredMethods = project.get(DeclaredMethodsKey)
+        for (dm ← declaredMethods.declaredMethods) {
+            ps(dm, Callees.key)
+        }
+
+        ps.waitOnPhaseCompletion()
 
         println(ps(project, InstantiatedTypes.key).ub)
         println(ps(project, LoadedClasses.key).ub)
