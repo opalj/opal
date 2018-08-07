@@ -136,7 +136,7 @@ object EOptionP {
  */
 sealed trait EPS[+E <: Entity, +P <: Property] extends EOptionP[E, P] {
 
-    final override def pk: PropertyKey[P] = lb.key.asInstanceOf[PropertyKey[P]]
+    final override def pk: PropertyKey[P] = ub.key.asInstanceOf[PropertyKey[P]]
 
     final override def toEPK: EPK[E, P] = EPK(e, pk)
 
@@ -296,7 +296,7 @@ final class FinalEP[+E <: Entity, +P <: Property](val e: E, val ub: P) extends E
         }
     }
 
-    override def hashCode: Int = ((e.hashCode() * 727 + lb.hashCode()) * 31) + ub.hashCode()
+    override def hashCode: Int = e.hashCode() * 727  + ub.hashCode()
 
     override def toString: String = {
         s"FinalEP($e@${System.identityHashCode(e).toHexString},p=$p)"
