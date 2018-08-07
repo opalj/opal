@@ -977,7 +977,9 @@ final class PKEParallelTasksPropertyStore private (
             // kind; i.e., we may have (old) dependees and/or also dependers.
             val oldUB = oldEPS.ub
             assertNonFinal(e, oldEPS)
-            assertRelation(e, ub, oldUB)
+            if (ub.isOrderedProperty) {
+                assertRelation(e, ub, oldUB)
+            }
         }
 
         // 3. check if the property is updated and generate the corresponding result
