@@ -200,7 +200,7 @@ class PropertyComputationsSchedulerTest extends FunSpec with Matchers with Befor
             it("should be possible to create a schedule where a property is computed by multiple computations") {
                 val schedule = AnalysisScenario(Set(c9, c10Lazy)).computeSchedule
 
-                /*smoke test: */ schedule(EPKSequentialPropertyStore())
+                /*smoke test: */ schedule(PKESequentialPropertyStore())
 
                 val batches = schedule.batches
                 batches.size should be(1)
@@ -214,8 +214,9 @@ class PropertyComputationsSchedulerTest extends FunSpec with Matchers with Befor
             it("should be possible to create a complex schedule") {
                 val scenario = AnalysisScenario(Set(c1, c2, c3, c4, c5, c6, c7Lazy, c8Lazy, c9))
                 val schedule = scenario.computeSchedule
+                val ps = PKESequentialPropertyStore()
+                /*smoke test: */ schedule(ps)
 
-                /*smoke test: */ schedule(EPKSequentialPropertyStore())
 
                 schedule.batches.head.toSet should contain(c7Lazy)
                 schedule.batches.head.toSet should contain(c8Lazy)
