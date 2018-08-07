@@ -14,6 +14,12 @@ sealed abstract class PropertyComputationResult {
     private[fpcf] def asIntermediateResult: IntermediateResult[_ <: Property] = {
         throw new ClassCastException();
     }
+
+    private[fpcf] def isSimplePIntermediateResult: Boolean = false
+    private[fpcf] def asSimplePIntermediateResult: SimplePIntermediateResult[_ <: Property] = {
+        throw new ClassCastException();
+    }
+
 }
 
 /**
@@ -176,6 +182,56 @@ object IntermediateResult {
     private[fpcf] final val id = 3
 }
 
+case class SimplePIntermediateResult[P <: Property](
+        e:         Entity,
+        ub:        P,
+        dependees: Traversable[SomeEOptionP],
+        c:         OnUpdateContinuation,
+        hint:      PropertyComputationHint   = DefaultPropertyComputation
+) extends PropertyComputationResult {
+
+    if (PropertyStore.Debug) {
+        if (dependees.isEmpty) {
+            throw new IllegalArgumentException(
+                s"intermediate result without dependencies: $this"+
+                    " (use PartialResult for collaboratively computed results)"
+            )
+        }
+        if (dependees.exists(eOptP ⇒ eOptP.e == e && eOptP.pk == ub.key)) {
+            throw new IllegalArgumentException(
+                s"intermediate result with an illegal self-dependency: "+this
+            )
+        }
+    }
+
+    private[fpcf] final def id = SimplePIntermediateResult.id
+
+    private[fpcf] final override def isSimplePIntermediateResult: Boolean = true
+    private[fpcf] final override def asSimplePIntermediateResult: SimplePIntermediateResult[_ <: Property] = this
+
+    override def hashCode: Int = e.hashCode * 33 + dependees.hashCode
+
+    override def equals(other: Any): Boolean = {
+        other match {
+            case SimplePIntermediateResult(e, ub, otherDependees, _, _) if this.e == e ⇒
+                val dependees = this.dependees
+                dependees.size == otherDependees.size &&
+                    dependees.forall(thisDependee ⇒ otherDependees.exists(_ == thisDependee))
+
+            case _ ⇒
+                false
+        }
+    }
+
+    override def toString: String = {
+        s"SimplePIntermediateResult($e@${System.identityHashCode(e).toHexString},ub=$ub,"+
+            s"dependees=${dependees.mkString("{", ",", "}")},c=$c)"
+    }
+}
+object SimplePIntermediateResult {
+    private[fpcf] final val id = 4
+}
+
 /**
  * Encapsulates some result and also some computations that should be computed next.
  * In this case the property store DOES NOT guarantee that the result is processed
@@ -204,7 +260,7 @@ case class IncrementalResult[E <: Entity](
 
 }
 
-object IncrementalResult { private[fpcf] final val id = 4 }
+object IncrementalResult { private[fpcf] final val id = 5 }
 
 /**
  * Just a collection of multiple results. The results have to be disjoint w.r.t. the underlying
@@ -219,7 +275,7 @@ case class Results(
 }
 object Results {
 
-    private[fpcf] final val id = 5
+    private[fpcf] final val id = 6
 
     def apply(results: PropertyComputationResult*): Results = new Results(results)
 }
@@ -251,7 +307,7 @@ case class PartialResult[E >: Null <: Entity, P >: Null <: Property](
     private[fpcf] final def id = PartialResult.id
 
 }
-object PartialResult { private[fpcf] final val id = 6 }
+object PartialResult { private[fpcf] final val id = 7 }
 
 /**************************************************************************************************\
  *
@@ -267,7 +323,7 @@ private[fpcf] case class ExternalResult(
     private[fpcf] final def id = ExternalResult.id
 
 }
-private[fpcf] object ExternalResult { private[fpcf] final val id = 7 }
+private[fpcf] object ExternalResult { private[fpcf] final val id = 8 }
 
 private[fpcf] case class CSCCsResult(
         csccs: List[Iterable[SomeEPK]]
@@ -276,7 +332,7 @@ private[fpcf] case class CSCCsResult(
     private[fpcf] final def id = CSCCsResult.id
 
 }
-private[fpcf] object CSCCsResult { private[fpcf] final val id = 8 }
+private[fpcf] object CSCCsResult { private[fpcf] final val id = 9 }
 
 private[fpcf] case class IdempotentResult(
         finalEP: SomeFinalEP
@@ -284,4 +340,4 @@ private[fpcf] case class IdempotentResult(
     private[fpcf] final def id = IdempotentResult.id
 
 }
-private[fpcf] object IdempotentResult { private[fpcf] final val id = 9 }
+private[fpcf] object IdempotentResult { private[fpcf] final val id = 10 }

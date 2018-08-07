@@ -45,7 +45,7 @@ trait PropertyStoreTracer {
     def delayedNotification(newEPS: SomeEPS): Unit
 
     def immediateDependeeUpdate(
-        e: Entity, lb: Property, ub: Property,
+        e: Entity, pk: SomePropertyKey,
         processedDependee:    SomeEOptionP,
         currentDependee:      SomeEPS,
         updateAndNotifyState: UpdateAndNotifyState
@@ -153,9 +153,9 @@ case class DelayedDependersNotification(
 }
 
 case class ImmediateDependeeUpdate(
-        eventId: Int,
-        e:       Entity,
-        lb:      Property, ub: Property,
+        eventId:              Int,
+        e:                    Entity,
+        pk:                   SomePropertyKey,
         processedDependee:    SomeEOptionP,
         currentDependee:      SomeEPS,
         updateAndNotifyState: UpdateAndNotifyState
@@ -163,7 +163,7 @@ case class ImmediateDependeeUpdate(
 
     override def toTxt: String = {
         s"$eventId: ImmediateDependeeUpdate($e@${System.identityHashCode(e).toHexString},"+
-            s"lb=$lb,processedDependee=$processedDependee,currentDependee=$currentDependee,"+
+            s"pk=$pk,processedDependee=$processedDependee,currentDependee=$currentDependee,"+
             s"updateAndNotifyState=$updateAndNotifyState)"
     }
 
@@ -254,13 +254,13 @@ class RecordAllPropertyStoreTracer extends PropertyStoreTracer {
     }
 
     def immediateDependeeUpdate(
-        e: Entity, lb: Property, ub: Property,
+        e: Entity, pk: SomePropertyKey,
         processedDependee: SomeEOptionP, currentDependee: SomeEPS,
         updateAndNotifyState: UpdateAndNotifyState
     ): Unit = {
         events offer ImmediateDependeeUpdate(
             eventCounter.incrementAndGet(),
-            e, lb, ub,
+            e, pk,
             processedDependee,
             currentDependee,
             updateAndNotifyState
