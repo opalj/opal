@@ -3,7 +3,7 @@ package org.opalj
 package fpcf
 
 import org.junit.runner.RunWith
-import org.opalj.fpcf.seq.EPKSequentialPropertyStore
+import org.opalj.fpcf.seq.PKESequentialPropertyStore
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.Matchers
 import org.scalatest.FunSpec
@@ -62,8 +62,8 @@ class PropertyComputationsSchedulerTest extends FunSpec with Matchers with Befor
 
     val c3 = BasicComputationSpecification(
         "c3",
-        Set.empty,
-        Set(pks(3))
+        uses = Set.empty,
+        derives = Set(pks(3))
     )
 
     val c4 = BasicComputationSpecification(
@@ -90,7 +90,7 @@ class PropertyComputationsSchedulerTest extends FunSpec with Matchers with Befor
         Set(pks(6))
     )
     val c7Lazy = BasicComputationSpecification(
-        "c7",
+        "c7lazy",
         Set(pks(5), pks(7), pks(8), pks(0)),
         Set(pks(6)),
         isLazy = true
@@ -103,7 +103,7 @@ class PropertyComputationsSchedulerTest extends FunSpec with Matchers with Befor
     )
 
     val c8Lazy = BasicComputationSpecification(
-        "c8",
+        "c8lazy",
         Set(pks(6)),
         Set(pks(8), pks(9)),
         isLazy = true
@@ -122,7 +122,7 @@ class PropertyComputationsSchedulerTest extends FunSpec with Matchers with Befor
     )
 
     val c10Lazy = BasicComputationSpecification(
-        "c10",
+        "c10lazy",
         Set.empty,
         Set(pks(10)), // this one also derives property 10; e.g., at a more basic level
         isLazy = true
@@ -152,30 +152,30 @@ class PropertyComputationsSchedulerTest extends FunSpec with Matchers with Befor
         describe("the scheduling of eager property computations") {
 
             it("should be possible to create a schedule where a property is computed by two computations") {
-                val batches = (AnalysisScenario(Set(c9, c10))).computeSchedule.batches
+                val batches = AnalysisScenario(Set(c9, c10)).computeSchedule.batches
                 batches.size should be(1)
             }
 
             it("should be possible to create a schedule where a property is computed by three computations") {
-                val batches = (AnalysisScenario(Set(c9, c10, c11))).computeSchedule.batches
+                val batches = AnalysisScenario(Set(c9, c10, c11)).computeSchedule.batches
                 batches.size should be(1)
             }
 
             it("should be possible to create a schedule with one computation") {
-                val batches = (AnalysisScenario(Set(c1))).computeSchedule.batches
+                val batches = AnalysisScenario(Set(c1)).computeSchedule.batches
                 batches.size should be(1)
                 batches.head.head should be(c1)
             }
 
             it("should be possible to create a schedule with two independent computations") {
-                val batches = (AnalysisScenario(Set(c1, c3))).computeSchedule.batches
+                val batches = AnalysisScenario(Set(c1, c3)).computeSchedule.batches
                 batches.size should be(2)
                 batches.foreach(_.size should be(1))
                 batches.flatMap(batch ⇒ batch).toSet should be(Set(c1, c3))
             }
 
             it("should be possible to create a schedule where not all properties are explicitly derived") {
-                val batches = (AnalysisScenario(Set(c1, c2))).computeSchedule.batches
+                val batches = AnalysisScenario(Set(c1, c2)).computeSchedule.batches
                 batches.size should be(2)
                 batches.foreach(_.size should be(1))
                 batches.head.head should be(c1)
@@ -183,13 +183,13 @@ class PropertyComputationsSchedulerTest extends FunSpec with Matchers with Befor
             }
 
             it("should be possible to create a schedule where all computations depend on each other") {
-                val batches = (AnalysisScenario(Set(c6, c7, c8))).computeSchedule.batches
+                val batches = AnalysisScenario(Set(c6, c7, c8)).computeSchedule.batches
                 batches.size should be(1)
                 batches.head.toSet should be(Set(c6, c7, c8))
             }
 
             it("should be possible to create a complex schedule") {
-                val schedule = (AnalysisScenario(Set(c1, c2, c3, c4, c5, c6, c7, c8, c9))).computeSchedule
+                val schedule = AnalysisScenario(Set(c1, c2, c3, c4, c5, c6, c7, c8, c9)).computeSchedule
                 schedule.batches.take(5).flatMap(batch ⇒ batch).toSet should be(Set(c1, c2, c3, c4, c5))
                 schedule.batches.drop(5).head.toSet should be(Set(c6, c7, c8))
             }
@@ -207,7 +207,7 @@ class PropertyComputationsSchedulerTest extends FunSpec with Matchers with Befor
             }
 
             it("should be possible to create a mixed schedule where a property is computed by three computations") {
-                val batches = (AnalysisScenario(Set(c9, c10Lazy, c11))).computeSchedule.batches
+                val batches = AnalysisScenario(Set(c9, c10Lazy, c11)).computeSchedule.batches
                 batches.size should be(1)
             }
 
@@ -217,9 +217,8 @@ class PropertyComputationsSchedulerTest extends FunSpec with Matchers with Befor
                 val ps = PKESequentialPropertyStore()
                 /*smoke test: */ schedule(ps)
 
-
-                schedule.batches.head.toSet should contain(c7Lazy)
-                schedule.batches.head.toSet should contain(c8Lazy)
+                schedule.batches(5).toSet should contain(c7Lazy)
+                schedule.batches(5).toSet should contain(c8Lazy)
             }
         }
     }
