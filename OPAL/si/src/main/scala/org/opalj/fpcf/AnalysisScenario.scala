@@ -168,15 +168,7 @@ class AnalysisScenario {
                 computationDependencies --= cyclicComputation
             }
         }
-
-        // 3. schedule all lazy computations in batch "0"
-        if (lazyCS.nonEmpty) {
-            val eagerBatches = batches.map(b ⇒ b filter { cs ⇒ !cs.isLazy }).filter(b ⇒ b.nonEmpty)
-            val firstBatchWithLazyCS = (Chain.empty ++ lazyCS) :&:: eagerBatches.head
-            Schedule(firstBatchWithLazyCS :&: eagerBatches.tail)
-        } else {
-            Schedule(batches)
-        }
+        Schedule(batches)
     }
 }
 
