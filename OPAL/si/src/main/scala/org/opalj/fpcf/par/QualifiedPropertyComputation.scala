@@ -83,9 +83,9 @@ private[par] final case class OnUpdateComputationTask[E <: Entity, P <: Property
     override def apply(): Unit = {
         // get the most current property when the depender is eventually evaluated;
         // the effectiveness of this check depends on the scheduling strategy(!)
-        val eOptionP = ps(dependeeEPK)
-        val eps = EPS(dependeeEPK.e, eOptionP.lb, eOptionP.ub)
-        ps.handleResult(c(eps), forceEvaluation = false)
+        val eps = ps(dependeeEPK).asEPS
+        val newResult = c(eps)
+        ps.handleResult(newResult, forceEvaluation = false)
     }
 }
 
