@@ -55,7 +55,9 @@ sealed trait EOptionP[+E <: Entity, +P <: Property] {
      * Combines the test if we have a final property and – if we have one – if it is equal (by
      * means of equality check) to the given one.
      */
-    def is(p: AnyRef): Boolean = this.hasProperty && isFinal && this.ub == p
+    def is(p: AnyRef): Boolean = /*this.hasProperty && */ this.isFinal && this.ub == p
+
+    private[fpcf] def toUBEP: FinalEP[E, P]
 
     /**
      * Returns the upper bound of the property if it is available – [[hasProperty]] has to be
@@ -63,14 +65,15 @@ sealed trait EOptionP[+E <: Entity, +P <: Property] {
      *
      * The upper bound always models the best/most precise result w.r.t. the underlying lattice.
      * Here, "best" means that the set of potentially reachable states/instructions that the
-     * analyzed program can ever have is potentially smaller when compared to a worse property.
+     * analyzed program can ever assume, is potentially smaller when compared to a worse property.
      *
      * The upper bound models the sound and precise result under the assumption that the
      * properties of all explicitly and implicitly relevant entities is as last queried or
      * implicitly assumed. I.e., unless a dependee is updated the upper bound represents
-     * the correct and most precise result.
+     * the correct and most precise result. The upper bound also models the extension of
+     * simple properties.
      *
-     * The lower bound models the worst case property that a specific entity can have under
+     * The lower bound models the worst case property that a specific entity can have under the
      * assumption that all other relevant properties will get their worst properties. This
      * can – but does not have to be – the underlying lattice's bottom value.
      * The lower bound is generally helpful for client analyses to determine final
@@ -100,11 +103,12 @@ sealed trait EOptionP[+E <: Entity, +P <: Property] {
     def ub: P
 
     /**
-     * Returns the lower bound of the property if it is available
+     * Returns the lower bound of the property if it is available,
      * otherwise an `UnsupportedOperationException` is thrown. For details regarding the
      * precise semantics see the discussion for [[ub]].
      *
      * @note If the property is final, the lb (and ub) will return the final property `p`.
+     * @note For simple properties an [[IllegalArgumentException]] is thrown.
      */
     @throws[UnsupportedOperationException]("if no property is available")
     def lb: P
@@ -171,6 +175,24 @@ object EPS {
 
 }
 
+object ESimplePS {
+
+    def apply[E <: Entity, P <: Property](e: E, ub: P, isFinal: Boolean): EPS[E, P] = {
+        if (isFinal)
+            FinalEP(e, ub)
+        else
+            IntermediateESimpleP(e, ub)
+    }
+
+    /**
+     * Returns the `(Entity, UpperBound : Property, isFinal : Boolean)`.
+     */
+    def unapply[E <: Entity, P <: Property](eps: EPS[E, P]): Some[(E, P, Boolean)] = {
+        Some((eps.e, eps.ub, eps.isFinal))
+    }
+
+}
+
 /**
  * Encapsulates the intermediate lower- and upper bound related to the computation of the respective
  * property kind for the entity `E`.
@@ -208,6 +230,48 @@ object IntermediateEP {
 
     def unapply[E <: Entity, P <: Property](eps: IntermediateEP[E, P]): Option[(E, P, P)] = {
         Some((eps.e, eps.lb, eps.ub))
+    }
+}
+
+/**
+ * Encapsulates the intermediate simple property of the respective property kind for the entity `E`.
+ *
+ * For a more detailed discussion see [[EOptionP.ub]].
+ */
+final class IntermediateESimpleP[+E <: Entity, +P <: Property](
+        val e:  E,
+        val ub: P
+) extends EPS[E, P] {
+
+    override def lb: P = {
+        throw new IllegalArgumentException("intermediate property of a simple property")
+    }
+
+    override def isFinal: Boolean = false
+    override def asFinal: FinalEP[E, P] = throw new ClassCastException();
+
+    override def equals(other: Any): Boolean = {
+        other match {
+            case that: IntermediateESimpleP[_, _] ⇒ e == that.e && ub == that.ub
+            case _                                ⇒ false
+        }
+    }
+
+    override def hashCode: Int = e.hashCode() * 31 + ub.hashCode()
+
+    override def toString: String = {
+        s"IntermediateESimpleP($e@${System.identityHashCode(e).toHexString},ub=$ub)"
+    }
+}
+
+object IntermediateESimpleP {
+
+    def apply[E <: Entity, P <: Property](e: E, ub: P): IntermediateESimpleP[E, P] = {
+        new IntermediateESimpleP(e, ub)
+    }
+
+    def unapply[E <: Entity, P <: Property](eps: IntermediateESimpleP[E, P]): Option[(E, P)] = {
+        Some((eps.e, eps.ub))
     }
 }
 
@@ -260,12 +324,14 @@ final class EPK[+E <: Entity, +P <: Property](
         val pk: PropertyKey[P]
 ) extends EOptionP[E, P] {
 
-    override def lb: Nothing = throw new UnsupportedOperationException()
+    override def lb: Nothing = throw new UnsupportedOperationException();
 
-    override def ub: Nothing = throw new UnsupportedOperationException()
+    override def ub: Nothing = throw new UnsupportedOperationException();
 
     override def isFinal: Boolean = false
     override def asFinal: FinalEP[E, P] = throw new ClassCastException();
+
+    private[fpcf] def toUBEP: FinalEP[E, P] = throw new UnsupportedOperationException();
 
     override def hasProperty: Boolean = false
     override def asEPS: EPS[E, P] = throw new ClassCastException();

@@ -2,7 +2,7 @@
 package org.opalj.fpcf
 
 /**
- * Encapsulates the bounds of a property.
+ * Encapsulates the bounds related to a specific entity/property kind.
  *
  * @author Michael Eichberg
  */

@@ -16,7 +16,7 @@ import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
 import org.opalj.br.instructions.INVOKEDYNAMIC
 import org.opalj.br.analyses.DefaultOneStepAnalysis
-import org.opalj.br.reader.LambdaExpressionsRewriting.{defaultConfig ⇒ lambdasRewritingConfig}
+import org.opalj.br.reader.InvokedynamicRewriting.{defaultConfig ⇒ invokedynamicRewritingConfig}
 
 /**
  * Prints out the immediately available information about invokedynamic instructions.
@@ -38,7 +38,7 @@ object InvokedynamicPrinter extends DefaultOneStepAnalysis {
         implicit
         initialLogContext: LogContext
     ): Project[URL] = {
-        val baseConfig = lambdasRewritingConfig(rewrite = false, logRewrites = true)
+        val baseConfig = invokedynamicRewritingConfig(rewrite = false, logRewrites = true)
         val config = baseConfig.withFallback(fallbackConfiguration)
         super.setupProject(cpFiles, libcpFiles, completelyLoadLibraries, projectType, config)
     }

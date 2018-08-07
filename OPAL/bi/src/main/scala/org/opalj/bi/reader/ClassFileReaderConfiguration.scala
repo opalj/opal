@@ -18,7 +18,7 @@ import org.opalj.log.LogContext
  * class ConfiguredFramework extends {
  *      override implicit val logContext: LogContext = theLogContext
  *      override implicit val config: Config = theConfig
- * } with Java9FrameworkWithLambdaExpressionsSupportAndCaching(cache)
+ * } with Java9FrameworkWithInvokedynamicSupportAndCaching(cache)
  * new ConfiguredFramework
  * }}}
  */

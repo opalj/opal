@@ -69,7 +69,7 @@ package object bi {
     }
 
     final val Java10MajorVersion = 54
-    final val Java10Version = UShortPair(0, Java9MajorVersion)
+    final val Java10Version = UShortPair(0, Java10MajorVersion)
     final val Java9MajorVersion = 53
     final val Java9Version = UShortPair(0, Java9MajorVersion)
     final val Java8MajorVersion = 52

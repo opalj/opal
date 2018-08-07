@@ -931,7 +931,7 @@ object ProjectLike {
         analyzedSuperinterfaceTypes: UIDSet[ObjectType] = UIDSet.empty
     )(
         implicit
-        objectTypeToClassFile: (ObjectType) ⇒ Option[ClassFile],
+        objectTypeToClassFile: ObjectType ⇒ Option[ClassFile],
         classHierarchy:        ClassHierarchy,
         logContext:            LogContext
     ): ( /*analyzed types*/ UIDSet[ObjectType], Set[Method]) = {

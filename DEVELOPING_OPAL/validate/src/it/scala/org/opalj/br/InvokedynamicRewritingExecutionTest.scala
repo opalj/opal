@@ -4,7 +4,6 @@ package br
 
 import org.scalatest.FunSpec
 import org.scalatest.Matchers
-
 import java.net.URL
 import java.net.URLClassLoader
 import java.io.File
@@ -16,15 +15,18 @@ import org.opalj.bytecode.RTJar
 import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br.analyses.Project
 import org.opalj.ba.ProjectBasedInMemoryClassLoader
+import org.opalj.bc.Assembler
 import org.opalj.io.JARsFileFilter
+import org.opalj.util.InMemoryClassLoader
 
 /**
- * Tests if OPAL is able to rewrite invokedynamics using LambdaMetaFactory and checks if the
- * rewritten bytecode is executable.
+ * Tests if OPAL is able to rewrite invokedynamics and checks if the rewritten bytecode is
+ * executable and produces correct results.
  *
  * @author Andreas Muttscheller
+ * @author Dominik Helm
  */
-class InvokedynamicRewritingTest extends FunSpec with Matchers {
+class InvokedynamicRewritingExecutionTest extends FunSpec with Matchers {
 
     def JavaFixtureProject(fixtureFiles: File): Project[URL] = {
 
@@ -47,8 +49,8 @@ class InvokedynamicRewritingTest extends FunSpec with Matchers {
         it("simpleLambdaAdd should calculate 2+2 correctly") {
             val c = inMemoryClassLoader.loadClass("lambdas.InvokeDynamics")
             val instance = c.getDeclaredConstructor().newInstance()
-            val m = c.getMethod("simpleLambdaAdd", Integer.TYPE, Integer.TYPE)
-            val res = m.invoke(instance, Integer.valueOf(2), Integer.valueOf(2))
+            val m = c.getMethod("simpleLambdaAdd", classOf[Int], classOf[Int])
+            val res = m.invoke(instance, Int.box(2), Int.box(2))
 
             assert(res.asInstanceOf[Integer] == 4)
         }
@@ -115,6 +117,75 @@ class InvokedynamicRewritingTest extends FunSpec with Matchers {
 
             // Reset System.out
             System.setOut(defaultOut)
+        }
+    }
+
+    describe("behavior of rewritten string_concat fixture") {
+        val testClassType = ObjectType("string_concat/StringConcatFactoryTest")
+        val r = locateTestResources("classfiles/string_concat.jar", "bi")
+        val p = JavaFixtureProject(r)
+        val cf = p.classFile(testClassType).get.copy(version = bi.Java8Version)
+        val inMemoryClassLoader =
+            new InMemoryClassLoader(Map(testClassType.toJava -> Assembler(ba.toDA(cf))))
+
+        it("simpleConcat should concatenate strings correctly") {
+            val c = inMemoryClassLoader.loadClass(testClassType.toJava)
+            val m = c.getMethod("simpleConcat", classOf[String], classOf[String])
+            val res = m.invoke(null, "ab", "c")
+
+            // Not using res.toString as that would not check that e.g. the StringBuilder is not
+            // returned directly
+            assert(res.asInstanceOf[String] == "abc")
+        }
+
+        it("concatConstants should produce the correct result") {
+            val c = inMemoryClassLoader.loadClass(testClassType.toJava)
+            val m = c.getMethod("concatConstants", classOf[String], classOf[String])
+            val res = m.invoke(null, "ab", "c")
+
+            assert(res.asInstanceOf[String] == "ab c5")
+        }
+
+        it("concatObjectAndInt should produce the correct result") {
+            val c = inMemoryClassLoader.loadClass(testClassType.toJava)
+            val m =
+                c.getMethod("concatObjectAndInt", classOf[String], classOf[Object], classOf[Int])
+            val res = m.invoke(null, "ab", List(1, "c"), Int.box(5))
+
+            assert(res.asInstanceOf[String] == "abList(1, c)5")
+        }
+
+        it("concatObjectAndDoubleWithConstants should produce the correct result") {
+            val c = inMemoryClassLoader.loadClass(testClassType.toJava)
+            val m =
+                c.getMethod("concatObjectAndDoubleWithConstants", classOf[Object], classOf[Double])
+            val res = m.invoke(null, List("ab", 1), Double.box(7.3))
+
+            assert(res.asInstanceOf[String] == " 7.32.5List(ab, 1)")
+        }
+
+        it("concatLongAndConstant should produce the correct result") {
+            val c = inMemoryClassLoader.loadClass(testClassType.toJava)
+            val m = c.getMethod("concatLongAndConstant", classOf[Long], classOf[String])
+            val res = m.invoke(null, Long.box(7L), "ab")
+
+            assert(res.asInstanceOf[String] == "ab157")
+        }
+
+        it("concatClassConstant should produce the correct result.StringConcatFactoryTest") {
+            val c = inMemoryClassLoader.loadClass(testClassType.toJava)
+            val m = c.getMethod("concatClassConstant", classOf[String])
+            val res = m.invoke(null, "ab")
+
+            assert(res.asInstanceOf[String] == "abclass string_concat.StringConcatFactoryTest")
+        }
+
+        it("concatNonInlineableConstant should produce the correct result") {
+            val c = inMemoryClassLoader.loadClass(testClassType.toJava)
+            val m = c.getMethod("concatNonInlineableConstant", classOf[String])
+            val res = m.invoke(null, "ab")
+
+            assert(res.asInstanceOf[String] == "ab\u0001\u0002")
         }
     }
 

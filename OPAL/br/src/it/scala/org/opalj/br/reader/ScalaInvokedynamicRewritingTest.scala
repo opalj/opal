@@ -12,7 +12,7 @@ import org.opalj.br.instructions.INVOKEDYNAMIC
  * @author Andreas Amuttsch
  * @author Michael Eichberg
  */
-class ScalaLambdaExpressionsRewritingTest extends LambdaExpressionsRewritingTest {
+class ScalaInvokedynamicRewritingTest extends InvokedynamicRewritingTest {
 
     test("rewriting of invokedynamic instructions in Scala 2.12.4 library") {
         val project = load(locateTestResources("classfiles/scala-2.12.4", "bi"))
@@ -20,9 +20,10 @@ class ScalaLambdaExpressionsRewritingTest extends LambdaExpressionsRewritingTest
         val invokedynamics = project.allMethodsWithBody.par.flatMap { method ⇒
             method.body.get.collect {
                 case i: INVOKEDYNAMIC if (
-                    LambdaExpressionsRewriting.isJava8LikeLambdaExpression(i) ||
-                    LambdaExpressionsRewriting.isScalaLambdaDeserializeExpression(i) ||
-                    LambdaExpressionsRewriting.isScalaSymbolExpression(i)
+                    InvokedynamicRewriting.isJava8LikeLambdaExpression(i) ||
+                    InvokedynamicRewriting.isJava10StringConcatInvokedynamic(i) ||
+                    InvokedynamicRewriting.isScalaLambdaDeserializeExpression(i) ||
+                    InvokedynamicRewriting.isScalaSymbolExpression(i)
                 ) ⇒ i
             }
         }

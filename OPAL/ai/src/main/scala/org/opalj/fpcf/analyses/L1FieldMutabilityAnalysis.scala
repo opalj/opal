@@ -64,22 +64,30 @@ class L1FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
             return Result(field, NonFinalFieldByLackOfInformation);
         }
 
-        var classesHavingAccess: Iterator[ClassFile] = Iterator(field.classFile)
-
-        if (field.isProtected || field.isPackagePrivate) {
-            if (!closedPackages.isClosed(thisType.packageName)) {
-                return Result(field, NonFinalFieldByLackOfInformation);
+        val initialClasses =
+            if (field.isProtected || field.isPackagePrivate) {
+                if (!closedPackages.isClosed(thisType.packageName)) {
+                    return Result(field, NonFinalFieldByLackOfInformation);
+                }
+                project.classesPerPackage(thisType.packageName)
+            } else {
+                Set(field.classFile)
             }
-            classesHavingAccess ++= project.classesPerPackage(thisType.packageName).iterator
-        }
 
-        if (field.isProtected) {
-            if (typeExtensibility(thisType).isYesOrUnknown) {
-                return Result(field, NonFinalFieldByLackOfInformation);
+        val classesHavingAccess: Iterator[ClassFile] =
+            if (field.isProtected) {
+                if (typeExtensibility(thisType).isYesOrUnknown) {
+                    return Result(field, NonFinalFieldByLackOfInformation);
+                }
+                val subclassesIterator: Iterator[ClassFile] =
+                    classHierarchy.allSubclassTypes(thisType, reflexive = false).
+                        flatMap { ot ⇒
+                            project.classFile(ot).filter(cf ⇒ !initialClasses.contains(cf))
+                        }
+                initialClasses.iterator ++ subclassesIterator
+            } else {
+                initialClasses.iterator
             }
-            val subTypes = classHierarchy.allSubclassTypes(thisType, reflexive = false)
-            classesHavingAccess ++= subTypes.map(project.classFile(_).get)
-        }
 
         if (classesHavingAccess.exists(_.methods.exists(_.isNative))) {
             return Result(field, NonFinalFieldByLackOfInformation);

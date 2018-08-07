@@ -3,6 +3,12 @@ package org.opalj.fpcf
 
 /**
  * Identifies the kind of a property.
+ *
+ * Generally, we distinguish between regular properties and simple properties. The latter
+ * are generally only to be used if lower bounds cannot be computed or a very extensive and
+ * are never of interest to any potential client. E.g., in case of an IFDS analysis,
+ * computing the lower bound is not meaningful; in case of a call graph analysis, the lower
+ * bound is usually either prohibitively expensive or is not usefull to any analysis.
  */
 trait PropertyKind extends Any /* we now have a universal trait */ {
 

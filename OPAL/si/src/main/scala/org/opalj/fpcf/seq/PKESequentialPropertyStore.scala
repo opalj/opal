@@ -16,8 +16,8 @@ import org.opalj.log.OPALLogger.info
 import org.opalj.log.OPALLogger.{debug ⇒ trace}
 import org.opalj.log.OPALLogger.error
 import org.opalj.fpcf.PropertyKind.SupportedPropertyKinds
-import org.opalj.fpcf.PropertyKey.fallbackPropertyBasedOnPkId
-import org.opalj.fpcf.PropertyKey.fastTrackPropertyBasedOnPkId
+import org.opalj.fpcf.PropertyKey.fallbackPropertyBasedOnPKId
+import org.opalj.fpcf.PropertyKey.fastTrackPropertyBasedOnPKId
 
 /**
  * A non-concurrent implementation of the property store. Entities are generally only stored on
@@ -222,7 +222,7 @@ final class PKESequentialPropertyStore private (
                                 else
                                     PropertyIsNotComputedByAnyAnalysis
                             }
-                            val p = fallbackPropertyBasedOnPkId(this, reason, e, pkId)
+                            val p = fallbackPropertyBasedOnPKId(this, reason, e, pkId)
                             if (force) {
                                 set(e, p)
                             }
@@ -232,7 +232,7 @@ final class PKESequentialPropertyStore private (
                     case lc: PropertyComputation[E] @unchecked ⇒
                         val fastTrackPropertyOption: Option[P] =
                             if (isComputed && useFastTrackPropertyComputations)
-                                fastTrackPropertyBasedOnPkId(this, e, pkId).asInstanceOf[Option[P]]
+                                fastTrackPropertyBasedOnPKId(this, e, pkId).asInstanceOf[Option[P]]
                             else
                                 None
                         fastTrackPropertyOption match {
@@ -770,7 +770,7 @@ final class PKESequentialPropertyStore private (
                                     else
                                         PropertyIsNotComputedByAnyAnalysis
                                 }
-                                val p = fallbackPropertyBasedOnPkId(this, reason, e, pkId)
+                                val p = fallbackPropertyBasedOnPKId(this, reason, e, pkId)
                                 if (traceFallbacks) {
                                     val message = s"used fallback $p (reason=$reason) for $e"
                                     trace("analysis progress", message)

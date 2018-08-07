@@ -43,7 +43,7 @@ import org.opalj.br.ClassFile
 import org.opalj.bugpicker.ui.dialogs.LoadedFiles
 import org.opalj.log.OPALLogger
 
-import org.opalj.br.reader.Java9FrameworkWithLambdaExpressionsSupportAndCaching
+import org.opalj.br.reader.Java9FrameworkWithInvokedynamicSupportAndCaching
 
 object ProjectHelper {
 
@@ -72,13 +72,13 @@ object ProjectHelper {
     ): Project[URL] = {
         OPALLogger.info("creating project", "reading project class files")
         val cache: BytecodeInstructionsCache = new BytecodeInstructionsCache
-        val Java8ClassFileReader = new Java9FrameworkWithLambdaExpressionsSupportAndCaching(cache)
-        val Java8LibraryClassFileReader = Java9LibraryFramework
+        val Java9ClassFileReader = new Java9FrameworkWithInvokedynamicSupportAndCaching(cache)
+        val Java9LibraryClassFileReader = Java9LibraryFramework
 
         val (classFiles, exceptions1) =
             br.reader.readClassFiles(
                 cpFiles,
-                Java8ClassFileReader.ClassFiles,
+                Java9ClassFileReader.ClassFiles,
                 (file) ⇒ OPALLogger.info(
                     "creating project",
                     "project class path member: "+file.toString
@@ -90,7 +90,7 @@ object ProjectHelper {
                 OPALLogger.info("creating project", "reading library class files")
                 br.reader.readClassFiles(
                     libcpFiles,
-                    Java8LibraryClassFileReader.ClassFiles,
+                    Java9LibraryClassFileReader.ClassFiles,
                     (file) ⇒ OPALLogger.info(
                         "creating project",
                         "library class path member: "+file.toString

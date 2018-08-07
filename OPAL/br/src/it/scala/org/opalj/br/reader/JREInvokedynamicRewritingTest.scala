@@ -12,7 +12,7 @@ import org.opalj.bi.isCurrentJREAtLeastJava8
  *
  * @author Arne Lottmann
  */
-class JRELambdaExpressionsRewritingTest extends LambdaExpressionsRewritingTest {
+class JREInvokedynamicRewritingTest extends InvokedynamicRewritingTest {
 
     test("rewriting of invokedynamic instructions in the JRE") {
         if (!isCurrentJREAtLeastJava8) {
@@ -23,8 +23,7 @@ class JRELambdaExpressionsRewritingTest extends LambdaExpressionsRewritingTest {
 
         val invokedynamics = project.allMethodsWithBody.par.flatMap { method ⇒
             method.body.get.collect {
-                // TODO [Java10] Remove the filter of StringConcat related invokedynamics (when we have full support this should no longer be necessary!)
-                case i: INVOKEDYNAMIC if !LambdaExpressionsRewriting.isJava10StringConcatInvokedynamic(i) ⇒ i
+                case i: INVOKEDYNAMIC ⇒ i
             }
         }
 

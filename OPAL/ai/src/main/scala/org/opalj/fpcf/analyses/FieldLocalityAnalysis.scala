@@ -234,7 +234,7 @@ class FieldLocalityAnalysis private[analyses] (
         val thisType = field.classFile.thisType
         val initialClasses: Set[ClassFile] =
             if (field.isPackagePrivate || field.isProtected) {
-                project.classesPerPackage(thisType.packageName) + field.classFile
+                project.classesPerPackage(thisType.packageName)
             } else {
                 Set(field.classFile)
             }

@@ -50,7 +50,7 @@ trait StringBuilderValues extends StringValues {
         this: DomainStringValue ⇒
 
         assert(builder != null)
-        assert((builderType eq JavaStringBuffer) || (builderType eq JavaStringBuilder))
+        assert((builderType eq JavaStringBuffer) || (builderType eq ObjectType.StringBuilder))
 
         override def doJoinWithNonNullValueWithSameOrigin(
             joinPC: Int,
@@ -143,6 +143,5 @@ trait StringBuilderValues extends StringValues {
 }
 
 object StringBuilderValues {
-    val JavaStringBuilder = ObjectType("java/lang/StringBuilder")
     val JavaStringBuffer = ObjectType("java/lang/StringBuffer")
 }

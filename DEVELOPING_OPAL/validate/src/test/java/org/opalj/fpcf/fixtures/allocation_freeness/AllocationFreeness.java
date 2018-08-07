@@ -1,3 +1,4 @@
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.allocation_freeness;
 
 import org.opalj.fpcf.properties.allocation_freeness.AllocationFreeMethod;
