@@ -22,7 +22,7 @@ import org.opalj.br.Method
 import org.opalj.br.analyses.Project
 import org.opalj.br.reader.BytecodeInstructionsCache
 import org.opalj.br.analyses.MethodInfo
-import org.opalj.br.reader.Java9FrameworkWithLambdaExpressionsSupportAndCaching
+import org.opalj.br.reader.Java9FrameworkWithInvokedynamicSupportAndCaching
 import org.opalj.ai.util.XHTML
 
 /**
@@ -163,7 +163,7 @@ abstract class DomainTestInfrastructure(domainName: String) extends FlatSpec wit
     //
 
     val cache = new BytecodeInstructionsCache
-    val reader = new Java9FrameworkWithLambdaExpressionsSupportAndCaching(cache)
+    val reader = new Java9FrameworkWithInvokedynamicSupportAndCaching(cache)
 
     behavior of domainName
 

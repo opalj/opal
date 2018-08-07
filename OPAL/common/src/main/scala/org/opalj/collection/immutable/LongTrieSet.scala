@@ -94,7 +94,7 @@ final class FilteredLongTrieSet(
     override def flatMap(f: Long ⇒ LongTrieSet): LongTrieSet = {
         s.flatMap(i ⇒ if (p(i)) f(i) else EmptyLongTrieSet)
     }
-    override def withFilter(p: (Long) ⇒ Boolean): LongTrieSet = {
+    override def withFilter(p: Long ⇒ Boolean): LongTrieSet = {
         new FilteredLongTrieSet(s, i ⇒ p(i) && this.p(i))
     }
 
@@ -154,8 +154,8 @@ case object EmptyLongTrieSet extends LongTrieSetL {
     }
     override def foreach(f: LongConsumer): Unit = {}
     override def foreachPair[U](f: (Long, Long) ⇒ U): Unit = {}
-    override def filter(p: (Long) ⇒ Boolean): LongTrieSet = this
-    override def withFilter(p: (Long) ⇒ Boolean): LongTrieSet = this
+    override def filter(p: Long ⇒ Boolean): LongTrieSet = this
+    override def withFilter(p: Long ⇒ Boolean): LongTrieSet = this
     override def map(f: Long ⇒ Long): LongTrieSet = this
     override def -(i: Long): this.type = this
     override def +(i: Long): LongTrieSet1 = LongTrieSet1(i)

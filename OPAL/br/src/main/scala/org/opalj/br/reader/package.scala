@@ -79,7 +79,7 @@ package object reader {
         cache: BytecodeInstructionsCache = new BytecodeInstructionsCache
     )(
         implicit
-        reader:     ClassFileBinding = new Java9FrameworkWithLambdaExpressionsSupportAndCaching(cache),
+        reader:     ClassFileBinding = new Java9FrameworkWithInvokedynamicSupportAndCaching(cache),
         logContext: LogContext       = GlobalLogContext
     ): Seq[(ClassFile, URL)] = {
         val classFiles = reader.ClassFiles(JRELibraryFolder)
@@ -94,7 +94,7 @@ package object reader {
         cache: BytecodeInstructionsCache = new BytecodeInstructionsCache
     )(
         implicit
-        reader:     ClassFileBinding = new Java9FrameworkWithLambdaExpressionsSupportAndCaching(cache),
+        reader:     ClassFileBinding = new Java9FrameworkWithInvokedynamicSupportAndCaching(cache),
         logContext: LogContext       = GlobalLogContext
     ): Traversable[(ClassFile, URL)] = {
         val classFiles = reader.ClassFiles(RTJar)

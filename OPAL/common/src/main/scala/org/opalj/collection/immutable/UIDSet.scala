@@ -7,6 +7,7 @@ import scala.collection.AbstractIterator
 import scala.collection.generic.CanBuildFrom
 import scala.collection.mutable.Builder
 import scala.collection.mutable.ArrayStack
+import scala.reflect.ClassTag
 
 /**
  * An '''unordered''' trie-set based on the unique ids of the stored [[UID]] objects. I.e.,
@@ -58,6 +59,15 @@ sealed abstract class UIDSet[T <: UID]
 
     def ++(es: UIDSet[T]): UIDSet[T]
     def findById(id: Int): Option[T]
+
+    /**
+     * Converts this UIDSet to a UIDLinearProbingSet which generally offers much better
+     * query (contains check) performance - in particular if the sets are larger.
+     * (Factory 2 to 3 times better for larger sets.)
+     */
+    final def toLinearProbingSet[X >: T <: UID: ClassTag]: UIDLinearProbingSet[X] = {
+        UIDLinearProbingSet[X](this)
+    }
 
     /**
      * Adds the given element to this set by mutating it!

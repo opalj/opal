@@ -197,7 +197,7 @@ object Purity {
 
         val declaredMethods = project.get(DeclaredMethodsKey)
         val projMethods = for (cf ← project.allProjectClassFiles; m ← cf.methodsWithBody)
-            yield declaredMethods(m._1)
+            yield declaredMethods(m)
 
         time {
             val pks: Set[PropertyKind] = support.flatMap(

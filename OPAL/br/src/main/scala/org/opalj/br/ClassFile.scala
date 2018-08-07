@@ -200,9 +200,9 @@ final class ClassFile private (
         )
     }
 
-    def methodsWithBody: Iterator[(Method, Code)] = {
-        methods.iterator.filter(_.body.isDefined).map(m ⇒ (m, m.body.get))
-    }
+    def methodsWithBody: Iterator[Method] = methods.iterator.filter(_.body.isDefined)
+
+    def methodBodies: Iterator[Code] = methods.iterator.flatMap(_.body)
 
     import ClassFile._
 

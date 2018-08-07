@@ -1,3 +1,4 @@
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.mutability;
 
 import org.opalj.fpcf.properties.class_mutability.ImmutableContainerObject;

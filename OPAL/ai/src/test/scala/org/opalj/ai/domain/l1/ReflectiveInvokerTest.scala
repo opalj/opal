@@ -56,13 +56,11 @@ class ReflectiveInvokerTest extends FlatSpec with Matchers {
 
         def lastValue(): Object = lastObject
 
-        val StringBuilderType = ObjectType("java/lang/StringBuilder")
-
         override def toJavaObject(pc: PC, value: DomainValue): Option[Object] = {
             value match {
                 case i: IntegerRange if i.lowerBound == i.upperBound ⇒
                     Some(Integer.valueOf(i.lowerBound))
-                case r: ReferenceValue if r.upperTypeBound.includes(StringBuilderType) ⇒
+                case r: ReferenceValue if r.upperTypeBound.includes(ObjectType.StringBuilder) ⇒
                     Some(new java.lang.StringBuilder())
                 case _ ⇒
                     super.toJavaObject(pc, value)
@@ -160,7 +158,7 @@ class ReflectiveInvokerTest extends FlatSpec with Matchers {
         val domain = createDomain()
         import domain._
 
-        val declaringClass = ObjectType("java/lang/StringBuilder")
+        val declaringClass = ObjectType.StringBuilder
         val descriptor = MethodDescriptor(IndexedSeq(IntegerType), VoidType)
         val operands =
             IntegerValue(IrrelevantPC, 1) :&:

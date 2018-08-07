@@ -632,7 +632,7 @@ trait RecordCFG
      * Returns `true` if the instruction with the given pc has multiple direct
      * predecessors (more than one).
      */
-    final def hasMultiplePredecessors(pc: Int): Boolean = predecessorsOf(pc).size > 1
+    final def hasMultiplePredecessors(pc: Int): Boolean = predecessorsOf(pc).hasMultipleElements
 
     final def foreachPredecessorOf(pc: Int)(f: IntConsumer /*PC ⇒ Unit*/ ): Unit = {
         predecessorsOf(pc).foreach(f)

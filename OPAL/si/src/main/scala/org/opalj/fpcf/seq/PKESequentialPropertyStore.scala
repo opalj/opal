@@ -16,8 +16,8 @@ import org.opalj.log.OPALLogger.info
 import org.opalj.log.OPALLogger.{debug ⇒ trace}
 import org.opalj.log.OPALLogger.error
 import org.opalj.fpcf.PropertyKind.SupportedPropertyKinds
-import org.opalj.fpcf.PropertyKey.fallbackPropertyBasedOnPkId
-import org.opalj.fpcf.PropertyKey.fastTrackPropertyBasedOnPkId
+import org.opalj.fpcf.PropertyKey.fallbackPropertyBasedOnPKId
+import org.opalj.fpcf.PropertyKey.fastTrackPropertyBasedOnPKId
 
 /**
  * A non-concurrent implementation of the property store. Entities are generally only stored on
@@ -222,7 +222,7 @@ final class PKESequentialPropertyStore private (
                                 else
                                     PropertyIsNotComputedByAnyAnalysis
                             }
-                            val p = fallbackPropertyBasedOnPkId(this, reason, e, pkId)
+                            val p = fallbackPropertyBasedOnPKId(this, reason, e, pkId)
                             if (force) {
                                 set(e, p)
                             }
@@ -232,7 +232,7 @@ final class PKESequentialPropertyStore private (
                     case lc: PropertyComputation[E] @unchecked ⇒
                         val fastTrackPropertyOption: Option[P] =
                             if (isComputed && useFastTrackPropertyComputations)
-                                fastTrackPropertyBasedOnPkId(this, e, pkId).asInstanceOf[Option[P]]
+                                fastTrackPropertyBasedOnPKId(this, e, pkId).asInstanceOf[Option[P]]
                             else
                                 None
                         fastTrackPropertyOption match {
@@ -346,6 +346,26 @@ final class PKESequentialPropertyStore private (
         tasks.addLast(new PropertyComputationTask(this, e, pc))
     }
 
+    private[this] def clearDependees(pValue: PropertyValue, pValueEPK: SomeEPK): Unit = {
+        val dependees = pValue.dependees
+        if (dependees == null)
+            return ;
+
+        for {
+            eOptP @ EOptionP(oldDependeeE, oldDependeePK) ← dependees // <= the old ones
+        } {
+            val oldDependeePKId = oldDependeePK.id
+            // Please recall, that we don't create support data-structures
+            // (i.e., PropertyValue) eagerly... but they should have been
+            // created by now or the dependees should be empty!
+            val dependeePValue = ps(oldDependeePKId)(oldDependeeE)
+            val dependeeIntermediatePValue = dependeePValue.asIntermediate
+            val dependersOfDependee = dependeeIntermediatePValue.dependers
+            dependeeIntermediatePValue.dependers = dependersOfDependee - pValueEPK
+        }
+        pValue.asIntermediate.dependees = null
+    }
+
     /**
      * Updates the entity; returns true if no property already existed and is also not computed;
      * i.e., setting the value was w.r.t. the current state of the property state OK.
@@ -418,20 +438,8 @@ final class PKESequentialPropertyStore private (
 
                 // 2. Clear old dependees (remove onUpdateContinuation from dependees)
                 //    and then update dependees.
-                val epk = EPK(e, ub /*or lb*/ )
-                for {
-                    eOptP @ EOptionP(oldDependeeE, oldDependeePK) ← pValue.dependees // <= the old ones
-                } {
-                    val oldDependeePKId = oldDependeePK.id
-                    // Please recall, that we don't create support data-structures
-                    // (i.e., PropertyValue) eagerly... but they should have been
-                    // created by now or the dependees should be empty!
-
-                    val dependeePValue = ps(oldDependeePKId)(oldDependeeE)
-                    val dependeeIntermediatePValue = dependeePValue.asIntermediate
-                    val dependersOfDependee = dependeeIntermediatePValue.dependers
-                    dependeeIntermediatePValue.dependers = dependersOfDependee - epk
-                }
+                val epk = pValue.toEPKUnsafe(e)
+                clearDependees(pValue, epk)
                 if (newPValueIsFinal)
                     ps(pkId).put(e, new FinalPropertyValue(ub))
                 else
@@ -762,7 +770,7 @@ final class PKESequentialPropertyStore private (
                                     else
                                         PropertyIsNotComputedByAnyAnalysis
                                 }
-                                val p = fallbackPropertyBasedOnPkId(this, reason, e, pkId)
+                                val p = fallbackPropertyBasedOnPKId(this, reason, e, pkId)
                                 if (traceFallbacks) {
                                     val message = s"used fallback $p (reason=$reason) for $e"
                                     trace("analysis progress", message)
@@ -805,6 +813,7 @@ final class PKESequentialPropertyStore private (
                         epks,
                         (epk: SomeEOptionP) ⇒ ps(epk.pk.id)(epk.e).dependees
                     )
+                    /*
                     for (cSCC ← cSCCs) {
                         val headEPK = cSCC.head
                         val e = headEPK.e
@@ -828,6 +837,43 @@ final class PKESequentialPropertyStore private (
                         }
                         resolvedCSCCsCounter += 1
                         update(e, newP, newP, Nil)
+                        continueComputation = true
+                    }
+                    */
+                    for (cSCC ← cSCCs) {
+                        // 1. clear all dependees of all members of a cycle to avoid
+                        //    inner cycle notifications!
+                        for (epk ← cSCC) {
+                            val e = epk.e
+                            val pk = epk.pk
+                            val pkId = pk.id
+                            val pValue = ps(pkId)(e)
+                            clearDependees(pValue, EPK(e, pk))
+                        }
+                        // 2. set all values
+                        for (epk ← cSCC) {
+                            val e = epk.e
+                            val pkId = epk.pk.id
+                            val pValue = ps(pkId)(e)
+                            val lb = pValue.lb
+                            val ub = pValue.ub
+                            val headEPS = IntermediateEP(e, lb, ub)
+                            val newP = PropertyKey.resolveCycle(this, headEPS)
+                            if (traceCycleResolutions) {
+                                val cycleAsText =
+                                    if (cSCC.size > 10)
+                                        cSCC.take(10).mkString("", ",", "...")
+                                    else
+                                        cSCC.mkString(",")
+
+                                info(
+                                    "analysis progress",
+                                    s"resolving cycle(iteration:$quiescenceCounter): $cycleAsText by updating $e:ub=$ub with $newP"
+                                )
+                            }
+                            update(e, newP, newP, Nil)
+                        }
+                        resolvedCSCCsCounter += 1
                         continueComputation = true
                     }
                 }
