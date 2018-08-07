@@ -13,9 +13,9 @@ import org.opalj.br.analyses.Project
 import org.opalj.br.instructions.MethodInvocationInstruction
 import org.opalj.br.reader.Java8Framework.ClassFiles
 import org.opalj.fpcf.properties.Callees
-import org.opalj.fpcf.properties.CalleesLikePropertyMetaInformation
 import org.opalj.fpcf.properties.CallersProperty
 import org.opalj.fpcf.properties.StandardInvokeCallees
+import org.opalj.fpcf.properties.ThreadRelatedCallees
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
 import org.scalatest.junit.JUnitRunner
@@ -50,7 +50,8 @@ class RTAIntegrationTest extends FlatSpec with Matchers {
         EagerRTACallGraphAnalysisScheduler,
         EagerLoadedClassesAnalysis,
         EagerFinalizerAnalysisScheduler,
-        new LazyCalleesAnalysis(Set(StandardInvokeCallees.asInstanceOf[CalleesLikePropertyMetaInformation]))
+        EagerThreadRelatedCallsAnalysis,
+        new LazyCalleesAnalysis(Set(StandardInvokeCallees, ThreadRelatedCallees))
     )
     implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
     for (dm ← declaredMethods.declaredMethods) { propertyStore(dm, Callees.key) }
