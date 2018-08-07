@@ -329,18 +329,14 @@ class Taint(val flows: Map[Statement, Set[Fact]]) extends IFDSProperty[Fact] {
     override type Self = Taint
 
     def key: PropertyKey[Taint] = Taint.key
-
-    def noFlowInformation: Taint = Taint.noFlowInformation
 }
 
 object Taint extends IFDSPropertyMetaInformation[Fact] {
     override type Self = Taint
 
-    val noFlowInformation = new Taint(Map.empty)
-
-    val key: PropertyKey[Taint] = PropertyKey.create[DeclaredMethod, Taint](
+    val key: PropertyKey[Taint] = PropertyKey.forSimpleProperty[Taint](
         "TestTaint",
-        noFlowInformation
+        new Taint(Map.empty)
     )
 }
 

@@ -8,7 +8,6 @@ import java.util.concurrent.ConcurrentHashMap
 
 import scala.collection.{Set ⇒ SomeSet}
 import org.opalj.br.DeclaredMethod
-import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
@@ -108,7 +107,7 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
 
         // Deal only with single defined methods for now
         if (!declaredMethod.hasSingleDefinedMethod)
-            return Result(source, property.noFlowInformation);
+            return Result(source, createProperty(Map.empty));
 
         val method = declaredMethod.definedMethod
         val declaringClass: ObjectType = method.classFile.thisType
@@ -116,7 +115,7 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
         // If this is not the method's declaration, but a non-overwritten method in a subtype,
         // don't re-analyze the code
         if (declaringClass ne declaredMethod.declaringClassType)
-            return baseMethodResult(declaredMethod.asDefinedMethod, sourceFact);
+            return baseMethodResult(source);
 
         val (code, cfg) = propertyStore(method, TACAI.key) match {
             case finalEP: FinalEP[Method, TACAI] ⇒
@@ -124,9 +123,8 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
                 (tac.stmts, tac.cfg)
             case _: IntermediateEP[Method, TACAI] ⇒
                 throw new UnknownError("Can not handle intermediate TAC")
-            case epk ⇒ return IntermediateResult(
+            case epk ⇒ return SimplePIntermediateResult(
                 source,
-                property.noFlowInformation,
                 createProperty(Map.empty),
                 Seq(epk),
                 _ ⇒ performAnalysis(source),
@@ -233,9 +231,8 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
                 createProperty(result)
             )
         } else {
-            IntermediateResult(
+            SimplePIntermediateResult(
                 state.source,
-                property.noFlowInformation,
                 createProperty(result),
                 dependees,
                 c,
@@ -258,7 +255,7 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
                 handleCallUpdate(m)
                 state.tacData -= m
                 state.tacDependees -= m
-            case IntermediateEP(m, _, _: TACAI) ⇒
+            case IntermediateEP(_, _, _: TACAI) ⇒
                 throw new UnknownError("Can not handle intermediate TAC")
         }
 
@@ -622,21 +619,19 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
      * Retrieves and commits the methods result as calculated for its declaring class type for the
      * current DefinedMethod that represents the non-overwritten method in a subtype.
      */
-    def baseMethodResult(dm: DefinedMethod, sourceFact: DataFlowFact): PropertyComputationResult = {
+    def baseMethodResult(source: (DeclaredMethod, DataFlowFact)): PropertyComputationResult = {
         def c(eps: SomeEOptionP): PropertyComputationResult = eps match {
-            case FinalEP(_, p) ⇒ Result(dm, p)
-            case ep @ IntermediateEP(_, lb, ub) ⇒
-                IntermediateResult(
-                    (dm, sourceFact), lb, ub,
-                    Seq(ep), c, CheapPropertyComputation
+            case ep: FinalEP[_, _] ⇒ Result(source, ep.p)
+            case ep: IntermediateESimpleP[_, _] ⇒
+                SimplePIntermediateResult(
+                    source, ep.ub, Seq(ep), c, CheapPropertyComputation
                 )
             case epk ⇒
-                IntermediateResult(
-                    (dm, sourceFact), property.noFlowInformation, createProperty(Map.empty),
-                    Seq(epk), c, CheapPropertyComputation
+                SimplePIntermediateResult(
+                    source, createProperty(Map.empty), Seq(epk), c, CheapPropertyComputation
                 )
         }
-        c(propertyStore((declaredMethods(dm.definedMethod), sourceFact), property.key))
+        c(propertyStore((declaredMethods(source._1.definedMethod), source._2), property.key))
     }
 }
 
