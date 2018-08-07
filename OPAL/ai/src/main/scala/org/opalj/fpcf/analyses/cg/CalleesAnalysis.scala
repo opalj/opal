@@ -49,11 +49,11 @@ class CalleesAnalysis private[analyses] (
         eOptionP match {
             case ep @ FinalEP(_, callees) ⇒
                 resDependees = removeDependee(ep, dependees)
-                resAllCallees = updateCallees(callees)
+                resAllCallees = updateCallees(callees, resAllCallees)
 
             case ep @ EPS(_, _, callees) ⇒
                 resDependees = updateDependee(ep, dependees)
-                resAllCallees = updateCallees(callees)
+                resAllCallees = updateCallees(callees, resAllCallees)
             case epk: EPK[DeclaredMethod, CalleesLike] ⇒
                 resDependees = updateDependee(epk, dependees)
         }
@@ -111,7 +111,7 @@ class CalleesAnalysis private[analyses] (
 
     // todo: if this method is called from the continuation, this is incredibly slow
     // IMPROVE: get IntTrieSet from CalleesLike
-    @inline def updateCallees(callees: CalleesLike, allCallees: IntMap[IntTrieSet] = IntMap.empty[IntTrieSet]): IntMap[IntTrieSet] = {
+    @inline def updateCallees(callees: CalleesLike, allCallees: IntMap[IntTrieSet]): IntMap[IntTrieSet] = {
         var resAllCallees = allCallees
         for ((pc, tgts) ← callees.encodedCallees) {
             val old = resAllCallees.getOrElse(pc, IntTrieSet.empty)
