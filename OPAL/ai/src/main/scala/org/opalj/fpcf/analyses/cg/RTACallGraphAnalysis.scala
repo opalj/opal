@@ -62,6 +62,50 @@ case class RTAState(
     private[cg] def callees: IntMap[IntTrieSet] = _callees
 }
 
+private[cg] class CalleesAndCallers {
+
+    private[this] var _calleees: IntMap[IntTrieSet] = IntMap.empty
+
+    private[this] var _partialResultsForCallers: List[PartialResult[DeclaredMethod, CallersProperty]] =
+        List.empty
+
+    private[cg] def callees: IntMap[IntTrieSet] = _calleees
+    private[cg] def partialResultsForCallers: List[PartialResult[DeclaredMethod, CallersProperty]] = {
+        _partialResultsForCallers
+    }
+
+    private[cg] def updateWithCall(
+        caller: DefinedMethod, callee: DeclaredMethod, pc: Int
+    )(implicit declaredMethods: DeclaredMethods): Unit = {
+        val calleeId = callee.id
+        if (!_calleees.contains(pc) || !_calleees(pc).contains(calleeId)) {
+            _calleees = _calleees.updated(pc, _calleees.getOrElse(pc, IntTrieSet.empty) + calleeId)
+            _partialResultsForCallers ::= createPartialResultForCaller(caller, callee, pc)
+        }
+    }
+
+    private[this] def createPartialResultForCaller(
+        caller: DefinedMethod, callee: DeclaredMethod, pc: Int
+    )(implicit declaredMethods: DeclaredMethods): PartialResult[DeclaredMethod, CallersProperty] = {
+        PartialResult[DeclaredMethod, CallersProperty](callee, CallersProperty.key, {
+            case EPS(_, lb, ub) ⇒
+                val newCallers = ub.updated(caller, pc)
+                // here we assert that update returns the identity if there is no change
+                if (ub ne newCallers)
+                    Some(EPS(callee, lb, newCallers))
+                else
+                    None
+            case _: EPK[_, _] ⇒
+                val set = LongTrieSet(CallersProperty.toLong(caller.id, pc))
+                Some(EPS(
+                    callee,
+                    LowerBoundCallers,
+                    new CallersOnlyWithConcreteCallers(set)
+                ))
+        })
+    }
+}
+
 /**
  * A rapid type call graph analysis (RTA). For a given [[Method]] it computes the set of outgoing
  * call edges ([[org.opalj.fpcf.properties.StandardInvokeCallees]]). Furthermore, it updates the types for which
@@ -79,47 +123,6 @@ class RTACallGraphAnalysis private[analyses] (
         final val project: SomeProject
 ) extends FPCFAnalysis {
 
-    private[cg] class CalleesAndCallers {
-
-        private[this] var _standardInvokeCallees: IntMap[IntTrieSet] = IntMap.empty
-
-        private[this] var _partialResultsForCallers: List[PartialResult[DeclaredMethod, CallersProperty]] =
-            List.empty
-
-        private[cg] def standardInvokeCallees: IntMap[IntTrieSet] = _standardInvokeCallees
-        private[cg] def partialResultsForCallers: List[PartialResult[DeclaredMethod, CallersProperty]] = {
-            _partialResultsForCallers
-        }
-
-        private[cg] def updateWithCall(caller: DefinedMethod, callee: DeclaredMethod, pc: Int): Unit = {
-            val calleeId = callee.id
-            if (!_standardInvokeCallees.contains(pc) || !_standardInvokeCallees(pc).contains(calleeId)) {
-                _standardInvokeCallees = _standardInvokeCallees.updated(pc, _standardInvokeCallees.getOrElse(pc, IntTrieSet.empty) + calleeId)
-                _partialResultsForCallers ::= createPartialResultForCaller(caller, callee, pc)
-            }
-        }
-
-        private[this] def createPartialResultForCaller(
-            caller: DefinedMethod, callee: DeclaredMethod, pc: Int
-        ): PartialResult[DeclaredMethod, CallersProperty] = {
-            PartialResult[DeclaredMethod, CallersProperty](callee, CallersProperty.key, {
-                case EPS(_, lb, ub) ⇒
-                    val newCallers = ub.updated(caller, pc)
-                    // here we assert that update returns the identity if there is no change
-                    if (ub ne newCallers)
-                        Some(EPS(callee, lb, newCallers))
-                    else
-                        None
-                case _: EPK[_, _] ⇒
-                    val set = LongTrieSet(CallersProperty.toLong(caller.id, pc))
-                    Some(EPS(
-                        callee,
-                        LowerBoundCallers,
-                        new CallersOnlyWithConcreteCallers(set)
-                    ))
-            })
-        }
-    }
     type V = DUVar[KnownTypedValue]
 
     private[this] val tacaiProvider = project.get(SimpleTACAIKey)
@@ -192,7 +195,7 @@ class RTACallGraphAnalysis private[analyses] (
         val state = RTAState(
             declaredMethod.asDefinedMethod,
             virtualCallSites,
-            calleesAndCallers.standardInvokeCallees,
+            calleesAndCallers.callees,
             numTypesProcessed
         )
 
