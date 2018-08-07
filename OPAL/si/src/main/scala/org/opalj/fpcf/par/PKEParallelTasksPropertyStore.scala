@@ -1458,15 +1458,13 @@ final class PKEParallelTasksPropertyStore private (
                         // "notComputedProperty".
                         val dependersOfEntity = dependers(pkId).keys
                         val propertiesOfEntity = properties(pkId)
-                        if (dependersOfEntity.nonEmpty) {
-                            dependersOfEntity foreach { e ⇒
-                                if (propertiesOfEntity.get(e) == null) {
-                                    // ... we have dependers on a property, which was not computed!
-                                    val p = notComputedPropertyBasedOnPKId(pkId)
-                                    appendStoreUpdate(queueId = 0, NewProperty(Result(e, p)))
-                                }
+                        dependersOfEntity foreach { e ⇒
+                            if (propertiesOfEntity.get(e) == null) {
+                                // ... we have dependers on a property, which was not computed!
+                                val p = notComputedPropertyBasedOnPKId(pkId)
+                                appendStoreUpdate(queueId = 0, NewProperty(Result(e, p)))
+                                continueComputation = true
                             }
-                            continueComputation = true
                         }
                     }
                     pkId += 1
@@ -1482,15 +1480,15 @@ final class PKEParallelTasksPropertyStore private (
                         val propertiesOfEntity = properties(pkId)
                         // Iterate over all entities which have NON-FINAL simple properties
                         // and commit the current property extension.
-                        if (dependersOfEntity.nonEmpty) {
-                            dependersOfEntity.keys foreach { e ⇒
-                                val propertyOfEntity = propertiesOfEntity.get(e)
-                                if (propertyOfEntity != null && propertyOfEntity.isRefinable) {
-                                    // ... we don't do cycle resolution, we just commit all values.
-                                    val epk: SomeEPK = EPK(e, new PropertyKey[Property](pkId))
-                                    entitiesWithSimplePropertiesToBeCommitted ::= epk
-                                    clearDependees(epk)
-                                }
+                        dependersOfEntity.keys foreach { e ⇒
+                            val propertyOfEntity = propertiesOfEntity.get(e)
+                            if (propertyOfEntity != null && propertyOfEntity.isRefinable) {
+                                // ... we don't do cycle resolution, we just commit all values.
+                                // however, before we can do that, we first have to break
+                                // dependencies on the dependees.
+                                val epk: SomeEPK = EPK(e, new PropertyKey[Property](pkId))
+                                entitiesWithSimplePropertiesToBeCommitted ::= epk
+                                clearDependees(epk)
                                 continueComputation = true
                             }
                         }
