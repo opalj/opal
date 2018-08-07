@@ -9,6 +9,7 @@ import org.scalatest.Matchers
 import org.scalatest.FunSpec
 import org.scalatest.BeforeAndAfterEach
 import org.opalj.log.GlobalLogContext
+import org.opalj.log.LogContext
 
 /**
  * Tests the property computations scheduler.
@@ -197,6 +198,52 @@ class PropertyComputationsSchedulerTest extends FunSpec with Matchers with Befor
 
         describe("the scheduling of mixed eager and lazy property computations") {
 
+            class PropertyStoreConfigurationRecorder extends PropertyStore {
+                implicit val logContext: LogContext = GlobalLogContext
+                val ctx: Map[Class[_], AnyRef] = Map.empty
+                def shutdown(): Unit = ???
+                def supportsFastTrackPropertyComputations: Boolean = ???
+                def toString(printProperties: Boolean): String = ???
+                def scheduledTasksCount: Int = ???
+                def scheduledOnUpdateComputationsCount: Int = ???
+                def immediateOnUpdateComputationsCount: Int = ???
+                def resolvedCSCCsCount: Int = ???
+                def quiescenceCount: Int = ???
+                def fastTrackPropertiesCount: Int = ???
+                def statistics: scala.collection.Map[String, Int] = ???
+                def isKnown(e: Entity): Boolean = ???
+                def hasProperty(e: Entity, pk: PropertyKind): Boolean = ???
+                def properties[E <: Entity](e: E): Iterator[EPS[E, Property]] = ???
+                def entities[P <: Property](pk: PropertyKey[P]): Iterator[EPS[Entity, P]] = ???
+                def entities[P <: Property](lb: P, ub: P): Iterator[Entity] = ???
+                def entities(propertyFilter: SomeEPS ⇒ Boolean): Iterator[Entity] = ???
+                def set(e: Entity, p: Property): Unit = ???
+                def apply[E <: Entity, P <: Property](e: E, pk: PropertyKey[P]): EOptionP[E, P] = ???
+                def apply[E <: Entity, P <: Property](epk: EPK[E, P]): EOptionP[E, P] = ???
+                def force[E <: Entity, P <: Property](e: E, pk: PropertyKey[P]): Unit = ???
+
+                def registerLazyPropertyComputation[E <: Entity, P <: Property](
+                    pk: PropertyKey[P],
+                    pc: PropertyComputation[E]
+                ): Unit = {}
+                def registerTriggeredComputation[E <: Entity, P <: Property](
+                    pk: PropertyKey[P],
+                    pc: PropertyComputation[E]
+                ): Unit = {}
+                def scheduleEagerComputationForEntity[E <: Entity](e: E)(pc: PropertyComputation[E]): Unit = {}
+                def handleResult(r: PropertyComputationResult, forceEvaluation: Boolean = false): Unit = {}
+                def waitOnPhaseCompletion(): Unit = {}
+
+                var phaseConfigurations: List[(Set[PropertyKind], Set[PropertyKind])] = List.empty
+                def setupPhase(
+                    computedPropertyKinds: Set[PropertyKind],
+                    delayedPropertyKinds:  Set[PropertyKind] = Set.empty
+                ): Unit = {
+                    phaseConfigurations ::= ((computedPropertyKinds, delayedPropertyKinds))
+                }
+
+            }
+
             it("should be possible to create a schedule where a property is computed by multiple computations") {
                 val schedule = AnalysisScenario(Set(c9, c10Lazy)).computeSchedule
 
@@ -211,15 +258,19 @@ class PropertyComputationsSchedulerTest extends FunSpec with Matchers with Befor
                 batches.size should be(1)
             }
 
-            it("should be possible to create a complex schedule") {
+            it("should be possible to create a complex schedule where some lazily computed properties are computed across multiple batches") {
                 val scenario = AnalysisScenario(Set(c1, c2, c3, c4, c5, c6, c7Lazy, c8Lazy, c9))
                 val schedule = scenario.computeSchedule
-                val ps = PKESequentialPropertyStore()
+                val ps = new PropertyStoreConfigurationRecorder()
                 /*smoke test: */ schedule(ps)
 
                 schedule.batches(5).toSet should contain(c7Lazy)
                 schedule.batches(5).toSet should contain(c8Lazy)
+                ps.phaseConfigurations.tail.head._1 should be(Set(pks(10), pks(9), pks(8), pks(6)))
+                // ensure that at the end we always set the phase to "empty, empty"
+                ps.phaseConfigurations.head should be((Set.empty, Set.empty))
             }
         }
     }
 }
+
