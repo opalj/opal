@@ -84,19 +84,19 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
     protected[this] val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
 
     class State(
-            val declClass:     ObjectType,
-            val method:        Method,
-            val source:        (DeclaredMethod, DataFlowFact),
-            val code:          Array[Stmt[V]],
-            val cfg:           CFG[Stmt[V], TACStmts[V]],
-            var ifdsData:      Map[(DeclaredMethod, DataFlowFact), Set[(BasicBlock, Int)]],
-            var ifdsDependees: Map[(DeclaredMethod, DataFlowFact), EOptionP[(DeclaredMethod, DataFlowFact), IFDSProperty[DataFlowFact]]] = Map.empty,
-            var tacDependees:  Map[Method, EOptionP[Method, TACAI]]                                                                      = Map.empty,
-            var tacData:       Map[Method, Set[(BasicBlock, Int)]]                                                                       = Map.empty,
-            // DataFlowFacts known to be valid on entry to a basic block
-            var incoming: Map[BasicBlock, Set[DataFlowFact]] = Map.empty,
-            // DataFlowFacts known to be valid on exit from a basic block on the cfg edge to a specific successor
-            var outgoing: Map[BasicBlock, Map[CFGNode, Set[DataFlowFact]]] = Map.empty
+        val declClass:     ObjectType,
+        val method:        Method,
+        val source:        (DeclaredMethod, DataFlowFact),
+        val code:          Array[Stmt[V]],
+        val cfg:           CFG[Stmt[V], TACStmts[V]],
+        var ifdsData:      Map[(DeclaredMethod, DataFlowFact), Set[(BasicBlock, Int)]],
+        var ifdsDependees: Map[(DeclaredMethod, DataFlowFact), EOptionP[(DeclaredMethod, DataFlowFact), IFDSProperty[DataFlowFact]]] = Map.empty,
+        var tacDependees:  Map[Method, EOptionP[Method, TACAI]]                                                                      = Map.empty,
+        var tacData:       Map[Method, Set[(BasicBlock, Int)]]                                                                       = Map.empty,
+        // DataFlowFacts known to be valid on entry to a basic block
+        var incoming: Map[BasicBlock, Set[DataFlowFact]] = Map.empty,
+        // DataFlowFacts known to be valid on exit from a basic block on the cfg edge to a specific successor
+        var outgoing: Map[BasicBlock, Map[CFGNode, Set[DataFlowFact]]] = Map.empty
     )
 
     /**
@@ -486,15 +486,15 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
                         fromCall,
                         mapDifference( // Only process new facts, that were not known in `oldState`
                             callFlows match {
-                                case FinalEP(_, p: IFDSProperty[DataFlowFact]) ⇒
+                                case ep: FinalEP[_, IFDSProperty[DataFlowFact]] ⇒
                                     state.ifdsDependees -= e
-                                    p.flows
-                                case EPS(_, _, ub: IFDSProperty[DataFlowFact]) ⇒
+                                    ep.p.flows
+                                case ep: IntermediateESimpleP[_, IFDSProperty[DataFlowFact]] ⇒
                                     val newDependee =
                                         state.ifdsData.getOrElse(e, Set.empty) + ((callBB, call.index))
                                     state.ifdsData = state.ifdsData.updated(e, newDependee)
                                     state.ifdsDependees += e → callFlows
-                                    ub.flows
+                                    ep.ub.flows
                                 case _ ⇒
                                     val newDependee =
                                         state.ifdsData.getOrElse(e, Set.empty) + ((callBB, call.index))
@@ -504,8 +504,9 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
                             },
                             if (oldState.isDefined)
                                 oldState.get match {
-                                case EPS(_, _, ub) ⇒ ub.flows
-                                case _             ⇒ Map.empty
+                                case ep: IntermediateESimpleP[_, IFDSProperty[DataFlowFact]] ⇒
+                                    ep.ub.flows
+                                case _ ⇒ Map.empty
                             }
                             else Map.empty
                         )
@@ -672,7 +673,7 @@ sealed trait IFDSAnalysisScheduler[DataFlowFact] extends ComputationSpecificatio
 }
 
 abstract class LazyIFDSAnalysis[DataFlowFact] extends IFDSAnalysisScheduler[DataFlowFact]
-    with FPCFLazyAnalysisScheduler {
+        with FPCFLazyAnalysisScheduler {
 
     final override def derives: Set[PropertyKind] = Set(property)
 
