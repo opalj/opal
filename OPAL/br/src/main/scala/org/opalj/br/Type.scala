@@ -1165,6 +1165,8 @@ object ObjectType {
     final val Thread = ObjectType("java/lang/Thread")
     final val Runnable = ObjectType("java/lang/Runnable")
 
+    final val StringBuilder = ObjectType("java/lang/StringBuilder")
+
     // Types related to the invokedynamic instruction
     final val VarHandle = ObjectType("java/lang/invoke/VarHandle")
     final val MethodHandle = ObjectType("java/lang/invoke/MethodHandle")
