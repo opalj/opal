@@ -29,7 +29,7 @@ sealed trait Callees extends CalleesLike with CalleesPropertyMetaInformation {
     final def key: PropertyKey[Callees] = Callees.key
 }
 
-final class CalleesImplementation(
+sealed class CalleesImplementation(
         private[properties] val calleesIds: IntMap[IntTrieSet]
 ) extends Callees with CalleesLikeImplementation {
     override def updated(
@@ -51,6 +51,8 @@ object LowerBoundCallees extends Callees with CalleesLikeLowerBound {
     )(implicit declaredMethods: DeclaredMethods): Callees = this
 }
 
+object NoCallees extends CalleesImplementation(IntMap.empty)
+
 object Callees extends CalleesPropertyMetaInformation {
 
     final val key: PropertyKey[Callees] = {
@@ -61,8 +63,7 @@ object Callees extends CalleesPropertyMetaInformation {
                     case PropertyIsNotComputedByAnyAnalysis ⇒
                         LowerBoundCallees
                     case PropertyIsNotDerivedByPreviouslyExecutedAnalysis ⇒
-                        //println(s"Fallback callee $m")
-                        new CalleesImplementation(IntMap.empty)
+                        NoCallees
                 }
             },
             (_: PropertyStore, eps: EPS[DeclaredMethod, Callees]) ⇒ eps.ub,

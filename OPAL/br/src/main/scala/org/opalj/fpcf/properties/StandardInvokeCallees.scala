@@ -29,7 +29,7 @@ sealed trait StandardInvokeCallees extends CalleesLike with StandardInvokeCallee
     final def key: PropertyKey[StandardInvokeCallees] = StandardInvokeCallees.key
 }
 
-final class StandardInvokeCalleesImplementation(
+sealed class StandardInvokeCalleesImplementation(
         private[properties] val calleesIds: IntMap[IntTrieSet]
 ) extends StandardInvokeCallees with CalleesLikeImplementation {
     override def updated(
@@ -51,6 +51,8 @@ object LowerBoundStandardInvokeCallees extends StandardInvokeCallees with Callee
     )(implicit declaredMethods: DeclaredMethods): StandardInvokeCallees = this
 }
 
+object NoStandardInvokeCallees extends StandardInvokeCalleesImplementation(IntMap.empty)
+
 object StandardInvokeCallees extends StandardInvokeCalleesPropertyMetaInformation {
 
     final val key: PropertyKey[StandardInvokeCallees] = {
@@ -61,8 +63,7 @@ object StandardInvokeCallees extends StandardInvokeCalleesPropertyMetaInformatio
                     case PropertyIsNotComputedByAnyAnalysis ⇒
                         LowerBoundStandardInvokeCallees
                     case PropertyIsNotDerivedByPreviouslyExecutedAnalysis ⇒
-                        //println(s"Fallback callee $m")
-                        new StandardInvokeCalleesImplementation(IntMap.empty)
+                        NoStandardInvokeCallees
                 }
             },
             (_: PropertyStore, eps: EPS[DeclaredMethod, StandardInvokeCallees]) ⇒ eps.ub,

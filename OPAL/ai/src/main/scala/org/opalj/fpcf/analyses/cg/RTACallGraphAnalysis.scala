@@ -26,6 +26,7 @@ import org.opalj.fpcf.properties.InstantiatedTypes
 import org.opalj.fpcf.properties.LowerBoundCallers
 import org.opalj.fpcf.properties.LowerBoundStandardInvokeCallees
 import org.opalj.fpcf.properties.NoCallers
+import org.opalj.fpcf.properties.NoStandardInvokeCallees
 import org.opalj.fpcf.properties.OnlyCallersWithUnknownContext
 import org.opalj.log.Error
 import org.opalj.log.OPALLogger
@@ -473,7 +474,12 @@ class RTACallGraphAnalysis private[analyses] (
         val calleesLB = LowerBoundStandardInvokeCallees
 
         // here we need a immutable copy of the current state
-        val newCallees = new StandardInvokeCalleesImplementation(state.callees)
+        val newCallees =
+            if (state.callees.isEmpty)
+                NoStandardInvokeCallees
+            else
+                new StandardInvokeCalleesImplementation(state.callees)
+
         if (state.virtualCallSites.isEmpty || instantiatedTypesEOptP.isFinal || newCallees.size == calleesLB.size)
             Result(state.method, newCallees)
         else {
