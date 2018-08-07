@@ -25,6 +25,17 @@ package object control {
     ): Unit = macro ControlAbstractionsImplementation.foreachNonNullValue[T]
 
     /**
+     * Allocation free, local iteration over all elements of an array.
+     *
+     * @note '''This is a macro.'''
+     */
+    final def foreachValue[T <: AnyRef](
+        a: Array[T]
+    )(
+        f: (Int, T) ⇒ Unit
+    ): Unit = macro ControlAbstractionsImplementation.foreachValue[T]
+
+    /**
      * Executes the given function `f` for the first `n` values of the given list.
      * The behavior is undefined if the given list does not have at least `n` elements.
      *
@@ -173,6 +184,27 @@ package control {
                 while (i < arrayLength) {
                     val arrayEntry = array(i)
                     if (arrayEntry ne null) f.splice(i, arrayEntry)
+                    i += 1
+                }
+            }
+        }
+
+        def foreachValue[T <: AnyRef: c.WeakTypeTag](
+            c: Context
+        )(
+            a: c.Expr[Array[T]]
+        )(
+            f: c.Expr[(Int, T) ⇒ Unit]
+        ): c.Expr[Unit] = {
+            import c.universe._
+
+            reify {
+                val array = a.splice // evaluate only once!
+                val arrayLength = array.length
+                var i = 0
+                while (i < arrayLength) {
+                    val arrayEntry = array(i)
+                    f.splice(i, arrayEntry)
                     i += 1
                 }
             }
