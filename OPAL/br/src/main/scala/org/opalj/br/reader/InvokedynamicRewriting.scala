@@ -247,6 +247,16 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
             scalaLambdaDeserializeResolution(updatedClassFile, instructions, pc, invokedynamic)
         } else if (isScalaSymbolExpression(invokedynamic)) {
             scalaSymbolResolution(updatedClassFile, instructions, pc, invokedynamic)
+        } else if (isScalaStructuralCallSite(invokedynamic, instructions, pc)) {
+            scalaStructuralCallSiteResolution(
+                updatedClassFile,
+                instructions,
+                pc,
+                invokedynamic,
+                cp,
+                as_name_index,
+                as_descriptor_index
+            )
         } else if (isGroovyInvokedynamic(invokedynamic)) {
             if (logUnknownInvokeDynamics) {
                 OPALLogger.logOnce(StandardLogMessage(
@@ -533,7 +543,76 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
     }
 
     /**
-     * The scala compiler (and possibly other comilers targeting JVM bytecode) add a
+     * Remove invokedynamic instructions that use Scala's StructuralCallSite to implement caching
+     * of resolved methods.
+     *
+     * @param classFile The classfile to parse
+     * @param instructions The instructions of the method we are currently parsing
+     * @param pc The program counter of the current instuction
+     * @param invokedynamic The INVOKEDYNAMIC instruction we want to replace
+     * @return A classfile which has the INVOKEDYNAMIC instruction replaced
+     */
+    private def scalaStructuralCallSiteResolution(
+        classFile:           ClassFile,
+        instructions:        Array[Instruction],
+        pc:                  PC,
+        invokedynamic:       INVOKEDYNAMIC,
+        cp:                  Constant_Pool,
+        as_name_index:       Constant_Pool_Index,
+        as_descriptor_index: Constant_Pool_Index
+    ): ClassFile = {
+        val methodType = invokedynamic.bootstrapMethod.arguments.head.asInstanceOf[MethodDescriptor]
+
+        val body = new InstructionsBuffer(18)
+
+        body ++= GETSTATIC(
+            ObjectType("scala/runtime/ScalaRunTime$"),
+            "MODULE$",
+            ObjectType("scala/runtime/ScalaRunTime$")
+        )
+
+        body ++= ALOAD_0
+
+        body ++= instructions(22).asInstanceOf[LoadString]
+
+        // Using `LoadMethodType` instead of `LoadMethodType_W` is safe, as the removal of the
+        // bootstrapMethod will free one index in the constant pool where the method type can be
+        // moved on serialization of the class
+        body ++= LoadMethodType(methodType)
+        body ++= INVOKEVIRTUAL(
+            ObjectType.MethodType,
+            "parameterArray",
+            MethodDescriptor.withNoArgs(ArrayType(ObjectType.Class))
+        )
+
+        body ++= instructions(28).asMethodInvocationInstruction // .getMethod
+
+        body ++= instructions(31).asMethodInvocationInstruction // .ensureAccessible
+
+        body ++= ARETURN
+
+        if (logLambdaExpressionsRewrites) {
+            info("rewriting invokedynamic", s"Scala: Removed $invokedynamic")
+        }
+
+        val methodName = cp(as_name_index).asString
+        val methodDescriptor = cp(as_descriptor_index).asMethodDescriptor
+
+        val methodToRewrite = classFile.findMethod(methodName, methodDescriptor)
+
+        val code = Code(4, 1, body.toArray, IndexedSeq.empty, Seq.empty)
+
+        val rewrittenMethod =
+            Method(methodToRewrite.get.accessFlags, methodName, methodDescriptor, Seq(code))
+
+        classFile.copy(
+            methods =
+                classFile.methods.filter(_ ne methodToRewrite.get).map(_.copy()) :+ rewrittenMethod
+        )
+    }
+
+    /**
+     * The scala compiler (and possibly other compilers targeting JVM bytecode) add a
      * `$deserializeLambda$`, which handles validation of lambda methods if the lambda is
      * Serializable. This method is called when the serialized lambda is deserialized.
      * For scala 2.12, it includes an INVOKEDYNAMIC instruction. This one has to be replaced with
@@ -1125,6 +1204,38 @@ object InvokedynamicRewriting {
             case InvokeStaticMethodHandle(
                 ScalaSymbolLiteral, false, "bootstrap", ScalaSymbolLiteralDescriptor
                 ) ⇒ true
+            case _ ⇒ false
+        }
+    }
+
+    def isScalaStructuralCallSite(
+        invokedynamic: INVOKEDYNAMIC,
+        instructions:  Array[Instruction],
+        pc:            Int
+    ): Boolean = {
+        import MethodDescriptor.ScalaStructuralCallSiteDescriptor
+        import ObjectType.ScalaStructuralCallSite
+        invokedynamic.bootstrapMethod.handle match {
+            case InvokeStaticMethodHandle(
+                ScalaStructuralCallSite, false, "bootstrap", ScalaStructuralCallSiteDescriptor
+                ) ⇒
+                pc == 0 &&
+                    instructions.length == 44 &&
+                    instructions(22).isInstanceOf[LoadString] &&
+                    instructions(28) == INVOKEVIRTUAL(
+                        ObjectType.Class,
+                        "getMethod",
+                        MethodDescriptor(
+                            IndexedSeq(ObjectType.String, ArrayType(ObjectType.Class)),
+                            ObjectType.Method
+                        )
+                    ) &&
+                        instructions(31) == INVOKEVIRTUAL(
+                            ObjectType("scala/runtime/ScalaRunTime$"),
+                            "ensureAccessible",
+                            MethodDescriptor(ObjectType.Method, ObjectType.Method)
+                        )
+
             case _ ⇒ false
         }
     }

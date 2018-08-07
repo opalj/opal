@@ -30,5 +30,11 @@ class InstructionsBuffer(val initialSize: Int) {
         ++=(value, value.length)
     }
 
+    def ++=(instructions: Array[Instruction]): Unit = {
+        control.foreachValue(instructions) { (_, inst) ⇒
+            buffer += inst
+        }
+    }
+
     def toArray: Array[Instruction] = buffer.toArray
 }
