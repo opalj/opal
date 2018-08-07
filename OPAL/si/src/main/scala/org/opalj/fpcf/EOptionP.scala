@@ -296,7 +296,7 @@ final class FinalEP[+E <: Entity, +P <: Property](val e: E, val ub: P) extends E
         }
     }
 
-    override def hashCode: Int = e.hashCode() * 727  + ub.hashCode()
+    override def hashCode: Int = e.hashCode() * 727 + ub.hashCode()
 
     override def toString: String = {
         s"FinalEP($e@${System.identityHashCode(e).toHexString},p=$p)"
