@@ -252,7 +252,7 @@ class Project[Source] private (
             val packageName = cf.thisType.packageName
             val buffer =
                 classesPerPackage.getOrElse(packageName, {
-                    val buffer = new AnyRefArrayBuffer[ClassFile]()
+                    val buffer = AnyRefArrayBuffer.empty[ClassFile]
                     classesPerPackage = classesPerPackage.updated(packageName, buffer)
                     buffer
                 })
