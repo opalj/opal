@@ -4,7 +4,6 @@ package br
 package reader
 
 import java.lang.invoke.LambdaMetafactory
-import java.util.concurrent.atomic.AtomicInteger
 
 import scala.annotation.switch
 import com.typesafe.config.Config
@@ -145,52 +144,72 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
     }
 
     /**
-     * Counter to ensure that the generated types have unique names.
-     */
-    private final val jreLikeLambdaTypeIdGenerator = new AtomicInteger(0)
-
-    /**
-     * Generates a new, internal name for a lambda expression found in the given
-     * `surroundingType`.
+     * Generates a new, internal name for the proxy class for a rewritten invokedynamic.
      *
-     * It follows the pattern: `{surroundingType.simpleName}Lambda${surroundingType.id}:{uniqueId}`,
-     * where `uniqueId` is simply a run-on counter. For example: `Lambda$17:4` would refer to
-     * the fourth Lambda INVOKEDYNAMIC parsed during the analysis of the project, which
-     * is defined in the [[ClassFile]] with the type id `17`.
+     * It follows the pattern:
+     * `{surroundingType.simpleName}${surroundingMethodName}{surroundingMethodDescriptor}:pc$Lambda`
+     * where surroundingMethodDescriptor is the JVM descriptor of the method sanitized to not
+     * contain characters illegal in type names (replacing /, [ and ; by $, ] and : respectively)
+     * and where pc is the pc of the invokedynamic that is rewritten.
+     * For example: `Foo$bar()I:5` would refer to the invokedynamic instruction at pc 5 of the
+     * method `bar` in class `Foo` that takes no parameters and returns an int.
      *
      * @param surroundingType the type in which the Lambda expression has been found
      */
-    private def newLambdaTypeName(surroundingType: ObjectType): String = {
-        val nextId = jreLikeLambdaTypeIdGenerator.getAndIncrement()
-        s"${surroundingType.packageName}/${surroundingType.simpleName}$$Lambda$$"+
-            s"${surroundingType.id.toHexString}:${nextId.toHexString}"
+    private def newLambdaTypeName(
+        surroundingType:             ObjectType,
+        surroundingMethodName:       String,
+        surroundingMethodDescriptor: MethodDescriptor,
+        pc:                          Int
+    ): String = {
+        val descriptor = surroundingMethodDescriptor.toJVMDescriptor
+        val sanitizedDescriptor = replaceChars(descriptor, "/[;", "$]:")
+        s"${surroundingType.packageName}/${surroundingType.simpleName}$$"+
+            s"$surroundingMethodName$sanitizedDescriptor:$pc$$Lambda"
     }
-
-    /**
-     * Counter to ensure that the generated methods have unique names.
-     */
-    private final val stringConcatIdGenerator = new AtomicInteger(0)
 
     /**
      * Generates a new, internal name for a string concatenation method.
      *
-     * It follows the pattern: `$string_concat${uniqueId}`, where `uniqueId` is simply a run-on
-     * counter. For example: `$concat$4` would refer to the fourth string concat INVOKEDYNAMIC
-     * parsed during the analysis of the project.
+     * It follows the pattern:
+     * `$string_concat${surroundingMethodName}{surroundingMethodDescriptor}:pc`, where
+     * surroundingMethodDescriptor is the JVM descriptor of the method sanitized to not contain
+     * characters illegal in method names (replacing /, [, ;, < and > by $, ], :, _ and _
+     * respectively) and where pc is the pc of the invokedynamic that is rewritten.
      */
-    private def newStringConcatName(): String = {
-        val nextId = stringConcatIdGenerator.getAndIncrement()
-        s"$$string_concat$$${nextId.toHexString}"
+    private def newStringConcatName(
+        surroundingMethodName:       String,
+        surroundingMethodDescriptor: MethodDescriptor,
+        pc:                          Int
+    ): String = {
+        val methodName =
+            if (surroundingMethodName == "<init>") "$constructor$"
+            else if (surroundingMethodName == "<clinit>") "$static_initializer$"
+            else surroundingMethodName
+        val descriptor = surroundingMethodDescriptor.toJVMDescriptor
+        val sanitizedDescriptor = replaceChars(descriptor, "/[;<>", "$]:__")
+        s"$$string_concat$$$methodName$sanitizedDescriptor:$pc"
+    }
+
+    /**
+     * Replaces each of several characters in a String with a given corresponding character.
+     */
+    private def replaceChars(in: String, oldChars: String, newChars: String): String = {
+        var result = in
+        for ((oldC, newC) ← oldChars.zip(newChars)) {
+            result = result.replace(oldC, newC)
+        }
+        result
     }
 
     override def deferredInvokedynamicResolution(
-        classFile:           ClassFile,
-        cp:                  Constant_Pool,
-        invokeDynamicInfo:   CONSTANT_InvokeDynamic_info,
-        instructions:        Array[Instruction],
-        as_name_index:       Constant_Pool_Index,
-        as_descriptor_index: Constant_Pool_Index,
-        pc:                  PC
+        classFile:             ClassFile,
+        cp:                    Constant_Pool,
+        invokeDynamicInfo:     CONSTANT_InvokeDynamic_info,
+        instructions:          Array[Instruction],
+        methodNameIndex:       Constant_Pool_Index,
+        methodDescriptorIndex: Constant_Pool_Index,
+        pc:                    PC
     ): ClassFile = {
         // gather complete information about invokedynamic instructions from the bootstrap
         // method table
@@ -200,8 +219,8 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
                 cp,
                 invokeDynamicInfo,
                 instructions,
-                as_name_index,
-                as_descriptor_index,
+                methodNameIndex,
+                methodDescriptorIndex,
                 pc
             )
 
@@ -240,11 +259,35 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
 
         val invokedynamic = instructions(pc).asInstanceOf[INVOKEDYNAMIC]
         if (InvokedynamicRewriting.isJava8LikeLambdaExpression(invokedynamic)) {
-            java8LambdaResolution(updatedClassFile, instructions, pc, invokedynamic)
+            java8LambdaResolution(
+                updatedClassFile,
+                instructions,
+                pc,
+                invokedynamic,
+                cp,
+                methodNameIndex,
+                methodDescriptorIndex
+            )
         } else if (isJava10StringConcatInvokedynamic(invokedynamic)) {
-            java10StringConcatResolution(updatedClassFile, instructions, pc, invokedynamic)
+            java10StringConcatResolution(
+                updatedClassFile,
+                instructions,
+                pc,
+                invokedynamic,
+                cp,
+                methodNameIndex,
+                methodDescriptorIndex
+            )
         } else if (isScalaLambdaDeserializeExpression(invokedynamic)) {
-            scalaLambdaDeserializeResolution(updatedClassFile, instructions, pc, invokedynamic)
+            scalaLambdaDeserializeResolution(
+                updatedClassFile,
+                instructions,
+                pc,
+                invokedynamic,
+                cp,
+                methodNameIndex,
+                methodDescriptorIndex
+            )
         } else if (isScalaSymbolExpression(invokedynamic)) {
             scalaSymbolResolution(updatedClassFile, instructions, pc, invokedynamic)
         } else if (isScalaStructuralCallSite(invokedynamic, instructions, pc)) {
@@ -254,8 +297,8 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
                 pc,
                 invokedynamic,
                 cp,
-                as_name_index,
-                as_descriptor_index
+                methodNameIndex,
+                methodDescriptorIndex
             )
         } else if (isGroovyInvokedynamic(invokedynamic)) {
             if (logUnknownInvokeDynamics) {
@@ -288,10 +331,13 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
      * @return A classfile which has the INVOKEDYNAMIC instruction replaced.
      */
     private def java10StringConcatResolution(
-        classFile:     ClassFile,
-        instructions:  Array[Instruction],
-        pc:            PC,
-        invokedynamic: INVOKEDYNAMIC
+        classFile:             ClassFile,
+        instructions:          Array[Instruction],
+        pc:                    PC,
+        invokedynamic:         INVOKEDYNAMIC,
+        cp:                    Constant_Pool,
+        methodNameIndex:       Constant_Pool_Index,
+        methodDescriptorIndex: Constant_Pool_Index
     ): ClassFile = {
         val INVOKEDYNAMIC(bootstrapMethod, functionalInterfaceMethodName, factoryDescriptor) =
             invokedynamic
@@ -474,7 +520,10 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
             Method(accessFlags, name, descriptor, Seq(code))
         }
 
-        val concatName = newStringConcatName()
+        val methodName = cp(methodNameIndex).asString
+        val methodDescriptor = cp(methodDescriptorIndex).asMethodDescriptor
+
+        val concatName = newStringConcatName(methodName, methodDescriptor, pc)
         val concatMethod =
             createConcatMethod(concatName, factoryDescriptor, recipe, staticArgs)
 
@@ -553,13 +602,13 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
      * @return A classfile which has the INVOKEDYNAMIC instruction replaced
      */
     private def scalaStructuralCallSiteResolution(
-        classFile:           ClassFile,
-        instructions:        Array[Instruction],
-        pc:                  PC,
-        invokedynamic:       INVOKEDYNAMIC,
-        cp:                  Constant_Pool,
-        as_name_index:       Constant_Pool_Index,
-        as_descriptor_index: Constant_Pool_Index
+        classFile:             ClassFile,
+        instructions:          Array[Instruction],
+        pc:                    PC,
+        invokedynamic:         INVOKEDYNAMIC,
+        cp:                    Constant_Pool,
+        methodNameIndex:       Constant_Pool_Index,
+        methodDescriptorIndex: Constant_Pool_Index
     ): ClassFile = {
         val methodType = invokedynamic.bootstrapMethod.arguments.head.asInstanceOf[MethodDescriptor]
 
@@ -595,8 +644,8 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
             info("rewriting invokedynamic", s"Scala: Removed $invokedynamic")
         }
 
-        val methodName = cp(as_name_index).asString
-        val methodDescriptor = cp(as_descriptor_index).asMethodDescriptor
+        val methodName = cp(methodNameIndex).asString
+        val methodDescriptor = cp(methodDescriptorIndex).asMethodDescriptor
 
         val methodToRewrite = classFile.findMethod(methodName, methodDescriptor)
 
@@ -639,10 +688,13 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
      * @return A classfile which has the INVOKEDYNAMIC instruction replaced
      */
     private def scalaLambdaDeserializeResolution(
-        classFile:     ClassFile,
-        instructions:  Array[Instruction],
-        pc:            PC,
-        invokedynamic: INVOKEDYNAMIC
+        classFile:             ClassFile,
+        instructions:          Array[Instruction],
+        pc:                    PC,
+        invokedynamic:         INVOKEDYNAMIC,
+        cp:                    Constant_Pool,
+        methodNameIndex:       Constant_Pool_Index,
+        methodDescriptorIndex: Constant_Pool_Index
     ): ClassFile = {
         val bootstrapArguments = invokedynamic.bootstrapMethod.arguments
 
@@ -652,8 +704,11 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
             "ensures that the test isScalaLambdaDeserialize was executed"
         )
 
+        val methodName = cp(methodNameIndex).asString
+        val methodDescriptor = cp(methodDescriptorIndex).asMethodDescriptor
+
         val typeDeclaration = TypeDeclaration(
-            ObjectType(newLambdaTypeName(classFile.thisType)),
+            ObjectType(newLambdaTypeName(classFile.thisType, methodName, methodDescriptor, pc)),
             isInterfaceType = false,
             Some(LambdaMetafactoryDescriptor.returnType.asObjectType), // we basically create a "CallSiteObject"
             UIDSet.empty
@@ -704,10 +759,13 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
      * @return A classfile which has the INVOKEDYNAMIC instruction replaced.
      */
     private def java8LambdaResolution(
-        classFile:     ClassFile,
-        instructions:  Array[Instruction],
-        pc:            PC,
-        invokedynamic: INVOKEDYNAMIC
+        classFile:             ClassFile,
+        instructions:          Array[Instruction],
+        pc:                    PC,
+        invokedynamic:         INVOKEDYNAMIC,
+        cp:                    Constant_Pool,
+        methodNameIndex:       Constant_Pool_Index,
+        methodDescriptorIndex: Constant_Pool_Index
     ): ClassFile = {
         val INVOKEDYNAMIC(
             bootstrapMethod, functionalInterfaceMethodName, factoryDescriptor
@@ -762,8 +820,11 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
             superInterfaceTypesBuilder += mi.asObjectType
         }
 
+        val methodName = cp(methodNameIndex).asString
+        val methodDescriptor = cp(methodDescriptorIndex).asMethodDescriptor
+
         val typeDeclaration = TypeDeclaration(
-            ObjectType(newLambdaTypeName(thisType)),
+            ObjectType(newLambdaTypeName(thisType, methodName, methodDescriptor, pc)),
             isInterfaceType = false,
             Some(ObjectType.Object), // we basically create a "CallSiteObject"
             superInterfaceTypesBuilder.result()
@@ -1149,9 +1210,9 @@ object InvokedynamicRewriting {
 
     final val DefaultDeserializeLambdaStaticMethodName = "$deserializeLambda"
 
-    final val LambdaNameRegEx = "[a-zA-Z0-9\\/.$]*Lambda\\$[0-9a-f]+:[0-9a-f]+$"
+    final val LambdaNameRegEx = "[^.;\\[]*:[0-9]+\\$Lambda$"
 
-    final val StringConcatNameRegEx = "\\$string_concat\\$[0-9a-f]+$"
+    final val StringConcatNameRegEx = "\\$string_concat\\$[^.;\\[/<>]*:[0-9]+$"
 
     final val InvokedynamicKeyPrefix = {
         ClassFileReaderConfiguration.ConfigKeyPrefix+"Invokedynamic."
