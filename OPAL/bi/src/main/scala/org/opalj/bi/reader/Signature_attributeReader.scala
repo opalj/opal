@@ -43,7 +43,10 @@ trait Signature_attributeReader extends AttributeReader {
         constant_pool:        Constant_Pool,
         ap:                   AttributeParent,
         attribute_name_index: Constant_Pool_Index,
-        signature_index:      Constant_Pool_Index
+        signature_index:      Constant_Pool_Index,
+        // The scope in which the attribute is defined
+        as_name_index:       Constant_Pool_Index,
+        as_descriptor_index: Constant_Pool_Index
     ): Signature_attribute
 
     /**
@@ -64,7 +67,10 @@ trait Signature_attributeReader extends AttributeReader {
      * is skipped.
      */
     private[this] def parser(
-        ap:                   AttributeParent,
+        ap: AttributeParent,
+        // The scope in which the attribute is defined
+        as_name_index:        Constant_Pool_Index,
+        as_descriptor_index:  Constant_Pool_Index,
         cp:                   Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
         in:                   DataInputStream
@@ -72,7 +78,9 @@ trait Signature_attributeReader extends AttributeReader {
         /*val attribute_length =*/ in.readInt
         val signature_index = in.readUnsignedShort
         try {
-            Signature_attribute(cp, ap, attribute_name_index, signature_index)
+            Signature_attribute(
+                cp, ap, attribute_name_index, signature_index, as_name_index, as_descriptor_index
+            )
         } catch {
             case iae: IllegalArgumentException ⇒
                 OPALLogger.error(

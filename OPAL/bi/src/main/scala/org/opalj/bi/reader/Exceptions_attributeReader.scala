@@ -22,7 +22,10 @@ trait Exceptions_attributeReader extends AttributeReader {
     def Exceptions_attribute(
         constant_pool:         Constant_Pool,
         attribute_name_index:  Constant_Pool_Index,
-        exception_index_table: ExceptionIndexTable
+        exception_index_table: ExceptionIndexTable,
+        // The scope in which the attribute is defined
+        as_name_index:       Constant_Pool_Index,
+        as_descriptor_index: Constant_Pool_Index
     ): Exceptions_attribute
 
     //
@@ -42,6 +45,8 @@ trait Exceptions_attributeReader extends AttributeReader {
      */
     private[this] def parserFactory() = (
         ap: AttributeParent,
+        as_name_index: Constant_Pool_Index,
+        as_descriptor_index: Constant_Pool_Index,
         cp: Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
         in: DataInputStream
@@ -50,7 +55,13 @@ trait Exceptions_attributeReader extends AttributeReader {
         val number_of_exceptions = in.readUnsignedShort
         if (number_of_exceptions > 0 || reifyEmptyAttributes) {
             val exceptions = repeat(number_of_exceptions) { in.readUnsignedShort }
-            Exceptions_attribute(cp, attribute_name_index, exceptions)
+            Exceptions_attribute(
+                cp,
+                attribute_name_index,
+                exceptions,
+                as_name_index,
+                as_descriptor_index
+            )
         } else
             null
     }

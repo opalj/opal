@@ -41,7 +41,10 @@ trait AnnotationAttributesBinding
     def AnnotationDefault_attribute(
         cp:                   Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
-        element_value:        ElementValue
+        element_value:        ElementValue,
+        // The scope in which the attribute is defined
+        as_name_index:       Constant_Pool_Index,
+        as_descriptor_index: Constant_Pool_Index
     ): AnnotationDefault_attribute = {
         element_value
     }
@@ -49,7 +52,10 @@ trait AnnotationAttributesBinding
     def RuntimeVisibleAnnotations_attribute(
         cp:                   Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
-        annotations:          Annotations
+        annotations:          Annotations,
+        // The scope in which the attribute is defined
+        as_name_index:       Constant_Pool_Index,
+        as_descriptor_index: Constant_Pool_Index
     ): RuntimeVisibleAnnotations_attribute = {
         new RuntimeVisibleAnnotations_attribute(annotations)
     }
@@ -57,7 +63,10 @@ trait AnnotationAttributesBinding
     def RuntimeInvisibleAnnotations_attribute(
         cp:                   Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
-        annotations:          Annotations
+        annotations:          Annotations,
+        // The scope in which the attribute is defined
+        as_name_index:       Constant_Pool_Index,
+        as_descriptor_index: Constant_Pool_Index
     ): RuntimeInvisibleAnnotations_attribute = {
         new RuntimeInvisibleAnnotations_attribute(annotations)
     }
@@ -65,7 +74,10 @@ trait AnnotationAttributesBinding
     def RuntimeVisibleParameterAnnotations_attribute(
         cp:                     Constant_Pool,
         attribute_name_index:   Constant_Pool_Index,
-        parameters_annotations: ParametersAnnotations
+        parameters_annotations: ParametersAnnotations,
+        // The scope in which the attribute is defined
+        as_name_index:       Constant_Pool_Index,
+        as_descriptor_index: Constant_Pool_Index
     ): RuntimeVisibleParameterAnnotations_attribute = {
         new RuntimeVisibleParameterAnnotations_attribute(parameters_annotations)
     }
@@ -73,7 +85,10 @@ trait AnnotationAttributesBinding
     def RuntimeInvisibleParameterAnnotations_attribute(
         cp:                     Constant_Pool,
         attribute_name_index:   Constant_Pool_Index,
-        parameters_annotations: ParametersAnnotations
+        parameters_annotations: ParametersAnnotations,
+        // The scope in which the attribute is defined
+        as_name_index:       Constant_Pool_Index,
+        as_descriptor_index: Constant_Pool_Index
     ): RuntimeInvisibleParameterAnnotations_attribute = {
         new RuntimeInvisibleParameterAnnotations_attribute(parameters_annotations)
     }

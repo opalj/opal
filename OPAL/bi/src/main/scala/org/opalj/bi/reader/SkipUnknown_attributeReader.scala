@@ -23,6 +23,8 @@ trait SkipUnknown_attributeReader extends Unknown_attributeAbstractions {
 
     def Unknown_attribute(
         ap:                   AttributeParent,
+        as_name_index:        Constant_Pool_Index,
+        as_descriptor_index:  Constant_Pool_Index,
         cp:                   Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
         in:                   DataInputStream

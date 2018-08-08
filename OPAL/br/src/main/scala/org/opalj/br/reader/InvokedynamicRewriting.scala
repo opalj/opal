@@ -184,11 +184,13 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
     }
 
     override def deferredInvokedynamicResolution(
-        classFile:         ClassFile,
-        cp:                Constant_Pool,
-        invokeDynamicInfo: CONSTANT_InvokeDynamic_info,
-        instructions:      Array[Instruction],
-        pc:                PC
+        classFile:           ClassFile,
+        cp:                  Constant_Pool,
+        invokeDynamicInfo:   CONSTANT_InvokeDynamic_info,
+        instructions:        Array[Instruction],
+        as_name_index:       Constant_Pool_Index,
+        as_descriptor_index: Constant_Pool_Index,
+        pc:                  PC
     ): ClassFile = {
         // gather complete information about invokedynamic instructions from the bootstrap
         // method table
@@ -198,6 +200,8 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
                 cp,
                 invokeDynamicInfo,
                 instructions,
+                as_name_index,
+                as_descriptor_index,
                 pc
             )
 

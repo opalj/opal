@@ -34,7 +34,10 @@ trait BootstrapMethods_attributeReader extends AttributeReader {
     def BootstrapMethods_attribute(
         constant_pool:        Constant_Pool,
         attribute_name_index: Int,
-        bootstrap_methods:    BootstrapMethods
+        bootstrap_methods:    BootstrapMethods,
+        // The scope in which the attribute is defined
+        as_name_index:       Constant_Pool_Index,
+        as_descriptor_index: Constant_Pool_Index
     ): BootstrapMethods_attribute
 
     def BootstrapMethod(
@@ -85,6 +88,8 @@ trait BootstrapMethods_attributeReader extends AttributeReader {
      */
     private[this] def parserFactory() = (
         ap: AttributeParent,
+        as_name_index: Constant_Pool_Index,
+        as_descriptor_index: Constant_Pool_Index,
         cp: Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
         in: DataInputStream
@@ -95,7 +100,9 @@ trait BootstrapMethods_attributeReader extends AttributeReader {
             BootstrapMethods_attribute(
                 cp,
                 attribute_name_index,
-                repeat(num_bootstrap_methods) { BootstrapMethod(cp, in) }
+                repeat(num_bootstrap_methods) { BootstrapMethod(cp, in) },
+                as_name_index,
+                as_descriptor_index
             )
         } else
             null

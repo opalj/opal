@@ -25,7 +25,9 @@ trait UnpackedLineNumberTable_attributeBinding
     override def LineNumberTable_attribute(
         constant_pool:        Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
-        line_number_table:    LineNumbers
+        line_number_table:    LineNumbers,
+        as_name_index:        Constant_Pool_Index,
+        as_descriptor_index:  Constant_Pool_Index
     ): UnpackedLineNumberTable = {
         new UnpackedLineNumberTable(line_number_table)
     }
@@ -53,7 +55,9 @@ trait CompactLineNumberTable_attributeBinding
     override def LineNumberTable_attribute(
         constant_pool:        Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
-        line_number_table:    Array[Byte]
+        line_number_table:    Array[Byte],
+        as_name_index:        Constant_Pool_Index,
+        as_descriptor_index:  Constant_Pool_Index
     ): CompactLineNumberTable = {
         new CompactLineNumberTable(line_number_table)
     }

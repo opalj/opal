@@ -16,7 +16,10 @@ trait EnclosingMethod_attributeReader extends AttributeReader {
         constant_pool:        Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
         class_index:          Constant_Pool_Index,
-        method_index:         Constant_Pool_Index
+        method_index:         Constant_Pool_Index,
+        // The scope in which the attribute is defined
+        as_name_index:       Constant_Pool_Index,
+        as_descriptor_index: Constant_Pool_Index
     ): EnclosingMethod_attribute
 
     //
@@ -35,6 +38,8 @@ trait EnclosingMethod_attributeReader extends AttributeReader {
      */
     private[this] def parserFactory() = (
         ap: AttributeParent,
+        as_name_index: Constant_Pool_Index,
+        as_descriptor_index: Constant_Pool_Index,
         cp: Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
         in: DataInputStream
@@ -44,7 +49,9 @@ trait EnclosingMethod_attributeReader extends AttributeReader {
             cp,
             attribute_name_index,
             in.readUnsignedShort,
-            in.readUnsignedShort
+            in.readUnsignedShort,
+            as_name_index,
+            as_descriptor_index
         )
     }
 

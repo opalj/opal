@@ -16,7 +16,10 @@ trait CompactLineNumberTable_attributeReader extends AttributeReader {
     def LineNumberTable_attribute(
         constant_pool:        Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
-        line_number_table:    Array[Byte]
+        line_number_table:    Array[Byte],
+        // The scope in which the attribute is defined
+        as_name_index:       Constant_Pool_Index,
+        as_descriptor_index: Constant_Pool_Index
     ): LineNumberTable_attribute
 
     //
@@ -38,6 +41,8 @@ trait CompactLineNumberTable_attributeReader extends AttributeReader {
      */
     private[this] def parserFactory() = (
         ap: AttributeParent,
+        as_name_index: Constant_Pool_Index,
+        as_descriptor_index: Constant_Pool_Index,
         cp: Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
         in: DataInputStream
@@ -47,7 +52,13 @@ trait CompactLineNumberTable_attributeReader extends AttributeReader {
         if (table_length > 0 || reifyEmptyAttributes) {
             val data = new Array[Byte](table_length * 4)
             in.readFully(data)
-            LineNumberTable_attribute(cp, attribute_name_index, data)
+            LineNumberTable_attribute(
+                cp,
+                attribute_name_index,
+                data,
+                as_name_index,
+                as_descriptor_index
+            )
         } else {
             null
         }

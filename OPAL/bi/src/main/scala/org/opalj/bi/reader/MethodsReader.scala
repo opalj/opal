@@ -22,8 +22,11 @@ trait MethodsReader extends Constant_PoolAbstractions {
 
     protected def Attributes(
         ap: AttributeParent,
-        cp: Constant_Pool,
-        in: DataInputStream
+        // The scope in which the attribute is defined
+        as_name_index:       Constant_Pool_Index,
+        as_descriptor_index: Constant_Pool_Index, // -1 if no descriptor is available; i.e., the parent is the class file
+        cp:                  Constant_Pool,
+        in:                  DataInputStream
     ): Attributes
 
     type Method_Info
@@ -51,13 +54,15 @@ trait MethodsReader extends Constant_PoolAbstractions {
     }
 
     private def Method_Info(cp: Constant_Pool, in: DataInputStream): Method_Info = {
+        val accessFlags = in.readUnsignedShort
+        val name_index = in.readUnsignedShort
+        val descriptor_index = in.readUnsignedShort
         Method_Info(
             cp,
-            in.readUnsignedShort,
-            in.readUnsignedShort,
-            in.readUnsignedShort,
-            Attributes(AttributesParent.Method, cp, in)
+            accessFlags,
+            name_index,
+            descriptor_index,
+            Attributes(AttributesParent.Method, name_index, descriptor_index, cp, in)
         )
     }
-
 }

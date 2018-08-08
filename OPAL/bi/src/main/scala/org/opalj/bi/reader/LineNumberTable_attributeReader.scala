@@ -22,7 +22,10 @@ trait LineNumberTable_attributeReader extends AttributeReader {
     def LineNumberTable_attribute(
         constant_pool:        Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
-        line_number_table:    LineNumbers
+        line_number_table:    LineNumbers,
+        // The scope in which the attribute is defined
+        as_name_index:       Constant_Pool_Index,
+        as_descriptor_index: Constant_Pool_Index
     ): LineNumberTable_attribute
 
     def LineNumberTableEntry(start_pc: Int, line_number: Int): LineNumberTableEntry
@@ -47,6 +50,8 @@ trait LineNumberTable_attributeReader extends AttributeReader {
      */
     private[this] def parserFactory() = (
         ap: AttributeParent,
+        as_name_index: Constant_Pool_Index,
+        as_descriptor_index: Constant_Pool_Index,
         cp: Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
         in: DataInputStream
@@ -59,7 +64,9 @@ trait LineNumberTable_attributeReader extends AttributeReader {
                 attribute_name_index,
                 repeat(line_number_table_length) {
                     LineNumberTableEntry(in.readUnsignedShort, in.readUnsignedShort)
-                }
+                },
+                as_name_index,
+                as_descriptor_index
             )
         } else
             null

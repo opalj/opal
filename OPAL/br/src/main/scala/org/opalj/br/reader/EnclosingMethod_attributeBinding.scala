@@ -20,7 +20,10 @@ trait EnclosingMethod_attributeBinding
         cp:                   Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
         class_index:          Constant_Pool_Index,
-        method_index:         Constant_Pool_Index
+        method_index:         Constant_Pool_Index,
+        // The scope in which the attribute is defined
+        as_name_index:       Constant_Pool_Index,
+        as_descriptor_index: Constant_Pool_Index
     ): EnclosingMethod_attribute = {
 
         if (method_index == 0)

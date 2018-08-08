@@ -20,7 +20,10 @@ trait SourceDebugExtension_attributeBinding
     def SourceDebugExtension_attribute(
         constant_pool:        Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
-        debug_extension:      Array[Byte]
+        debug_extension:      Array[Byte],
+        // The scope in which the attribute is defined
+        as_name_index:       Constant_Pool_Index,
+        as_descriptor_index: Constant_Pool_Index
     ): SourceDebugExtension_attribute = {
         new SourceDebugExtension(debug_extension)
     }

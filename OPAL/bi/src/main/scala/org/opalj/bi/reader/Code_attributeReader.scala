@@ -27,12 +27,20 @@ trait Code_attributeReader extends AttributeReader {
 
     type Attributes
 
-    def Instructions(cp: Constant_Pool, in: DataInputStream): Instructions
+    def Instructions(
+        as_name_index:       Constant_Pool_Index,
+        as_descriptor_index: Constant_Pool_Index,
+        cp:                  Constant_Pool,
+        in:                  DataInputStream
+    ): Instructions
 
     protected def Attributes(
         ap: AttributeParent,
-        cp: Constant_Pool,
-        in: DataInputStream
+        // The scope in which the attribute is defined
+        as_name_index:       Constant_Pool_Index,
+        as_descriptor_index: Constant_Pool_Index,
+        cp:                  Constant_Pool,
+        in:                  DataInputStream
     ): Attributes
 
     def Code_attribute(
@@ -42,7 +50,10 @@ trait Code_attributeReader extends AttributeReader {
         max_locals:           Int,
         instructions:         Instructions,
         exception_handlers:   ExceptionHandlers,
-        attributes:           Attributes
+        // The scope in which the attribute is defined
+        as_name_index:       Constant_Pool_Index,
+        as_descriptor_index: Constant_Pool_Index,
+        attributes:          Attributes
     ): Code_attribute
 
     def ExceptionTableEntry(
@@ -81,6 +92,8 @@ trait Code_attributeReader extends AttributeReader {
      */
     private[this] def parserFactory() = (
         ap: AttributeParent,
+        as_name_index: Constant_Pool_Index,
+        as_descriptor_index: Constant_Pool_Index,
         cp: Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
         in: DataInputStream
@@ -91,7 +104,7 @@ trait Code_attributeReader extends AttributeReader {
             attribute_name_index,
             in.readUnsignedShort(),
             in.readUnsignedShort(),
-            Instructions(cp, in),
+            Instructions(as_name_index, as_descriptor_index, cp, in),
             repeat(in.readUnsignedShort()) { // "exception_table_length" times
                 ExceptionTableEntry(
                     cp,
@@ -99,7 +112,9 @@ trait Code_attributeReader extends AttributeReader {
                     in.readUnsignedShort, in.readUnsignedShort
                 )
             },
-            Attributes(AttributesParent.Code, cp, in)
+            as_name_index,
+            as_descriptor_index,
+            Attributes(AttributesParent.Code, as_name_index, as_descriptor_index, cp, in)
         )
     }
 

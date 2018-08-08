@@ -20,7 +20,10 @@ trait RuntimeVisibleAnnotations_attributeReader extends AttributeReader {
     def RuntimeVisibleAnnotations_attribute(
         constant_pool:        Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
-        annotations:          Annotations
+        annotations:          Annotations,
+        // The scope in which the attribute is defined
+        as_name_index:       Constant_Pool_Index,
+        as_descriptor_index: Constant_Pool_Index
     ): RuntimeVisibleAnnotations_attribute
 
     //
@@ -29,6 +32,8 @@ trait RuntimeVisibleAnnotations_attributeReader extends AttributeReader {
 
     private[this] def parserFactory() = (
         ap: AttributeParent,
+        as_name_index: Constant_Pool_Index,
+        as_descriptor_index: Constant_Pool_Index,
         cp: Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
         in: DataInputStream
@@ -36,7 +41,9 @@ trait RuntimeVisibleAnnotations_attributeReader extends AttributeReader {
         /*val attribute_length =*/ in.readInt()
         val annotations = Annotations(cp, in)
         if (annotations.nonEmpty || reifyEmptyAttributes) {
-            RuntimeVisibleAnnotations_attribute(cp, attribute_name_index, annotations)
+            RuntimeVisibleAnnotations_attribute(
+                cp, attribute_name_index, annotations, as_name_index, as_descriptor_index
+            )
         } else {
             null
         }

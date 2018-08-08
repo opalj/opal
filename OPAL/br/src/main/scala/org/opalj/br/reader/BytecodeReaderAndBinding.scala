@@ -4,7 +4,6 @@ package br
 package reader
 
 import scala.annotation.switch
-
 import org.opalj.control.repeat
 import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.br.instructions._
@@ -23,7 +22,12 @@ trait BytecodeReaderAndBinding extends InstructionsDeserializer {
     /**
      * Transforms an array of bytes into an array of [[org.opalj.br.instructions.Instruction]]s.
      */
-    def Instructions(cp: Constant_Pool, source: Array[Byte]): Instructions = {
+    def Instructions(
+        as_name_index:       Constant_Pool_Index,
+        as_descriptor_index: Constant_Pool_Index,
+        cp:                  Constant_Pool,
+        source:              Array[Byte]
+    ): Instructions = {
         import java.io.DataInputStream
         import java.io.ByteArrayInputStream
 
@@ -201,7 +205,13 @@ trait BytecodeReaderAndBinding extends InstructionsDeserializer {
                     in.readByte // ignored; fixed value
                     registerDeferredAction(cp) { classFile ⇒
                         deferredInvokedynamicResolution(
-                            classFile, cp, invokeDynamicInfo, instructions, index /* <=> pc */
+                            classFile,
+                            cp,
+                            invokeDynamicInfo,
+                            instructions,
+                            as_name_index,
+                            as_descriptor_index,
+                            index /* <=> pc */
                         )
                     }
                     INCOMPLETE_INVOKEDYNAMIC
