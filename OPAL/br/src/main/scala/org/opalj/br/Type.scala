@@ -1216,6 +1216,9 @@ object ObjectType {
     // Given the importance of "Object Serialization" we also predefine Externalizable
     final val Externalizable = ObjectType("java/io/Externalizable")
 
+    final val ObjectInputStream = ObjectType("java/io/ObjectInputStream")
+    final val ObjectOutputStream = ObjectType("java/io/ObjectOutputStream")
+
     /**
      * Implicit mapping from a wrapper type to its primitive type.
      * @example

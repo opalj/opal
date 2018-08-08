@@ -84,6 +84,30 @@ private[cg] class CalleesAndCallers {
         }
     }
 
+    def updateWithCallOrFallback(
+        caller:             DefinedMethod,
+        callee:             org.opalj.Result[Method],
+        pc:                 Int,
+        callerPackage:      String,
+        fallbackType:       ObjectType,
+        fallbackName:       String,
+        fallbackDescriptor: MethodDescriptor
+    )(implicit declaredMethods: DeclaredMethods): Unit = {
+        if (callee.hasValue) {
+            updateWithCall(caller, declaredMethods(callee.value), pc)
+        } else {
+            val fallbackCallee = declaredMethods(
+                fallbackType,
+                callerPackage,
+                fallbackType,
+                fallbackName,
+                fallbackDescriptor
+            )
+            updateWithCall(caller, fallbackCallee, pc)
+
+        }
+    }
+
     private[this] def createPartialResultForCaller(
         caller: DefinedMethod, callee: DeclaredMethod, pc: Int
     )(implicit declaredMethods: DeclaredMethods): PartialResult[DeclaredMethod, CallersProperty] = {
@@ -204,7 +228,9 @@ class RTACallGraphAnalysis private[analyses] (
 
         var results = resultForStandardInvokeCallees(instantiatedTypesEOptP, state) :: calleesAndCallers.partialResultsForCallers
         if (newInstantiatedTypes.nonEmpty)
-            results ::= partialResultForInstantiatedTypes(method, newInstantiatedTypes)
+            results ::= RTACallGraphAnalysis.partialResultForInstantiatedTypes(
+                p, newInstantiatedTypes
+            )
 
         Results(results)
     }
@@ -445,31 +471,6 @@ class RTACallGraphAnalysis private[analyses] (
 
     }
 
-    private[this] def partialResultForInstantiatedTypes(
-        method: Method, newInstantiatedTypes: UIDSet[ObjectType]
-    ): PartialResult[SomeProject, InstantiatedTypes] = {
-        PartialResult[SomeProject, InstantiatedTypes](p, InstantiatedTypes.key,
-            {
-                case EPS(_, lb, ub) ⇒
-                    if (newInstantiatedTypes.nonEmpty) {
-                        Some(EPS(
-                            project,
-                            lb,
-                            ub.updated(newInstantiatedTypes)
-                        ))
-                    } else {
-                        None
-                    }
-
-                case _ ⇒
-                    Some(EPS(
-                        project,
-                        AllTypes,
-                        InstantiatedTypes.initial(InstantiatedTypes.initialTypes ++ newInstantiatedTypes)
-                    ))
-            })
-    }
-
     private[this] def resultForStandardInvokeCallees(
         instantiatedTypesEOptP: SomeEOptionP, state: RTAState
     ): PropertyComputationResult = {
@@ -494,6 +495,34 @@ class RTACallGraphAnalysis private[analyses] (
                 continuation(state)
             )
         }
+    }
+}
+
+object RTACallGraphAnalysis {
+    def partialResultForInstantiatedTypes(
+        p:                    SomeProject,
+        newInstantiatedTypes: UIDSet[ObjectType]
+    ): PartialResult[SomeProject, InstantiatedTypes] = {
+        PartialResult[SomeProject, InstantiatedTypes](p, InstantiatedTypes.key,
+            {
+                case EPS(_, lb, ub) ⇒
+                    if (newInstantiatedTypes.nonEmpty) {
+                        Some(EPS(
+                            p,
+                            lb,
+                            ub.updated(newInstantiatedTypes)
+                        ))
+                    } else {
+                        None
+                    }
+
+                case _ ⇒
+                    Some(EPS(
+                        p,
+                        AllTypes,
+                        InstantiatedTypes.initial(InstantiatedTypes.initialTypes ++ newInstantiatedTypes)
+                    ))
+            })
     }
 }
 

@@ -13,9 +13,11 @@ import org.opalj.br.analyses.ReportableAnalysisResult
 import org.opalj.fpcf.analyses.cg.EagerFinalizerAnalysisScheduler
 import org.opalj.fpcf.analyses.cg.EagerLoadedClassesAnalysis
 import org.opalj.fpcf.analyses.cg.EagerRTACallGraphAnalysisScheduler
+import org.opalj.fpcf.analyses.cg.EagerSerializationRelatedCallsAnalysis
 import org.opalj.fpcf.analyses.cg.EagerThreadRelatedCallsAnalysis
 import org.opalj.fpcf.analyses.cg.LazyCalleesAnalysis
 import org.opalj.fpcf.properties.Callees
+import org.opalj.fpcf.properties.SerializationRelatedCallees
 import org.opalj.fpcf.properties.StandardInvokeCallees
 import org.opalj.fpcf.properties.ThreadRelatedCallees
 //import org.opalj.fpcf.par.PKEParallelTasksPropertyStore
@@ -68,7 +70,10 @@ object RTADemo extends DefaultOneStepAnalysis {
                 EagerLoadedClassesAnalysis,
                 EagerFinalizerAnalysisScheduler,
                 EagerThreadRelatedCallsAnalysis,
-                new LazyCalleesAnalysis(Set(StandardInvokeCallees, ThreadRelatedCallees))
+                EagerSerializationRelatedCallsAnalysis,
+                new LazyCalleesAnalysis(
+                    Set(StandardInvokeCallees, ThreadRelatedCallees, SerializationRelatedCallees)
+                )
             )
         } { t ⇒ info("progress", s"constructing the call graph took ${t.toSeconds}") }
 
