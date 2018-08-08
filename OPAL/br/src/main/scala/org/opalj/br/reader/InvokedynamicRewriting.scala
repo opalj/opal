@@ -213,7 +213,7 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
     ): ClassFile = {
         // gather complete information about invokedynamic instructions from the bootstrap
         // method table
-        var updatedClassFile =
+        val updatedClassFile =
             super.deferredInvokedynamicResolution(
                 classFile,
                 cp,
@@ -226,36 +226,6 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
 
         if (!performLambdaExpressionsRewriting)
             return updatedClassFile;
-
-        // We have to rewrite the synthetic lambda methods to be accessible from the same package.
-        // This is necessary, because the java / scala compiler introduces a private synthetic
-        // method which handles primitive type handling. Since the new proxyclass is a different
-        // class, we have to make the synthetic method accessible from the proxy class.
-        updatedClassFile = updatedClassFile.copy(
-            methods = classFile.methods.map { m ⇒
-                val name = m.name
-                if ((name.startsWith("lambda$") || name.equals("$deserializeLambda$")) &&
-                    m.hasFlags(AccessFlags.ACC_SYNTHETIC_STATIC_PRIVATE)) {
-                    val syntheticLambdaMethodAccessFlags =
-                        if (updatedClassFile.isInterfaceDeclaration) {
-                            // An interface method must have either ACC_PUBLIC or ACC_PRIVATE and
-                            // NOT have ACC_FINAL set. Since the lambda class is in a different
-                            // class in the same package, we have to declare the method as public.
-                            // For more information see:
-                            //   https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-4.html#jvms-4.6
-                            (m.accessFlags & ~ACC_PRIVATE.mask) | ACC_PUBLIC.mask
-                        } else {
-                            // Make the class package private if it is private, so the lambda can
-                            // access its methods.
-                            // Note: No access modifier means package private
-                            m.accessFlags & ~ACC_PRIVATE.mask
-                        }
-                    m.copy(accessFlags = syntheticLambdaMethodAccessFlags)
-                } else {
-                    m.copy()
-                }
-            }
-        )
 
         val invokedynamic = instructions(pc).asInstanceOf[INVOKEDYNAMIC]
         if (InvokedynamicRewriting.isJava8LikeLambdaExpression(invokedynamic)) {
@@ -955,116 +925,112 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
             // Access flags for the forwarder are the same as the target method but without private
             // modifier. For interfaces, ACC_PUBLIC is required and constructors are forwarded by
             // a static method.
-            var accessFlags = m.accessFlags & ~ACC_PRIVATE.mask
-            if (receiverIsInterface) accessFlags |= ACC_PUBLIC.mask
-            if (m.isConstructor) accessFlags |= ACC_STATIC.mask
+            val accessFlags =
+                if (receiverIsInterface) (m.accessFlags & ~ACC_PRIVATE.mask) | ACC_PUBLIC.mask
+                else m.accessFlags & ~ACC_PRIVATE.mask
+
+            // Instructions to push the parameters onto the stack
+            val forwardParameters = ClassFileFactory.parameterForwardingInstructions(
+                descriptor, descriptor, 1, Seq.empty, classFile.thisType
+            )
+
+            val body = new InstructionsBuffer(7 + forwardParameters.length) // TODO
 
             // if the receiver method is not static, we need to push the receiver object
             // onto the stack by an ALOAD_0 unless we have a method reference where the receiver
             // will be explicitly provided
-            val loadReceiverObject: Array[Instruction] =
-                if (invocationInstruction == INVOKESTATIC.opcode) {
-                    Array()
-                } else if (m.isConstructor) {
-                    Array(NEW(receiverType), null, null, DUP)
-                } else {
-                    Array(ALOAD_0)
-                }
+            body ++= ALOAD_0
 
-            // If the forwarder is not static, `this` occupies variable 0.
-            val variableOffset = if ((accessFlags & ACC_STATIC.mask) != 0) 0 else 1
-
-            // Instructions to push the parameters onto the stack
-            val forwardParameters = ClassFileFactory.parameterForwardingInstructions(
-                descriptor, descriptor, variableOffset, Seq.empty, classFile.thisType
-            )
+            body ++= forwardParameters
 
             val recType = implMethod.receiverType.asObjectType
 
             // The call instruction itself
-            val forwardCall: Array[Instruction] = (invocationInstruction: @switch) match {
-                case INVOKESTATIC.opcode ⇒
-                    val invoke = INVOKESTATIC(recType, receiverIsInterface, m.name, m.descriptor)
-                    Array(invoke, null, null)
-
+            (invocationInstruction: @switch) match {
                 case INVOKESPECIAL.opcode ⇒
-                    val invoke = INVOKESPECIAL(recType, receiverIsInterface, m.name, m.descriptor)
-                    Array(invoke, null, null)
+                    body ++= INVOKESPECIAL(recType, receiverIsInterface, m.name, m.descriptor)
 
                 case INVOKEINTERFACE.opcode ⇒
-                    val invoke = INVOKEINTERFACE(recType, m.name, m.descriptor)
-                    Array(invoke, null, null, null, null)
+                    body ++= INVOKEINTERFACE(recType, m.name, m.descriptor)
 
                 case INVOKEVIRTUAL.opcode ⇒
-                    val invoke = INVOKEVIRTUAL(implMethod.receiverType, m.name, m.descriptor)
-                    Array(invoke, null, null)
+                    body ++= INVOKEVIRTUAL(implMethod.receiverType, m.name, m.descriptor)
             }
 
             // The return instruction matching the return type
-            val returnInst = ReturnInstruction(descriptor.returnType)
+            body ++= ReturnInstruction(descriptor.returnType)
 
-            val bytecodeInsts = loadReceiverObject ++ forwardParameters ++ forwardCall :+ returnInst
-
-            val receiverObjectStackSize = if (invocationInstruction == INVOKESTATIC.opcode) 0 else 1
             val parametersStackSize = implMethod.methodDescriptor.requiredRegisters
-            val returnValueStackSize = descriptor.returnType.operandSize
 
-            val maxStack =
-                1 + // Required if, e.g., we first have to create and initialize an object;
-                    // which is done by "dup"licating the new created, but not yet initialized
-                    // object reference on the stack.
-                    math.max(receiverObjectStackSize + parametersStackSize, returnValueStackSize)
+            val maxStack = 2 + parametersStackSize
+            val maxLocals = 1 + parametersStackSize
 
-            val maxLocals = 1 + receiverObjectStackSize + parametersStackSize + returnValueStackSize
-
-            val code = Code(maxStack, maxLocals, bytecodeInsts, IndexedSeq.empty, Seq.empty)
+            val code = Code(maxStack, maxLocals, body.toArray, IndexedSeq.empty, Seq.empty)
 
             Method(accessFlags, name, descriptor, Seq(code))
         }
 
         // If the target method is private, we have to generate a forwarding method that is
-        // accessible by the proxy class, i.e. not private.
-        val privateTargetMethod = classFile.methods.find { m ⇒
+        // accessible by the proxy class, i.e. not private, or we have to lift the target method
+        // (only for static methods and constructors, where the lifted method can not interfere with
+        // inherited methods).
+        val targetMethod = classFile.methods.find { m ⇒
             m.isPrivate && m.name == targetMethodName && m.descriptor == targetMethodDescriptor
         }
+        val liftTargetMethod = targetMethod.exists(m ⇒ m.isStatic || m.isConstructor)
 
-        val updatedClassFile = privateTargetMethod match {
-            case Some(m) ⇒
-                val forwardingName =
-                    if (m.isConstructor) "$forward$initializer"
-                    else if (m.isStaticInitializer) "$forward$static_initializer"
-                    else "$forward$"+m.name
-                val descriptor =
-                    if (m.isConstructor) m.descriptor.copy(returnType = receiverType)
-                    else m.descriptor
-
-                val forwarderO = classFile.findMethod(forwardingName, descriptor)
-
-                val (forwarder, cf) = forwarderO match {
-                    case Some(f) ⇒ (f, classFile)
-                    case None ⇒
-                        val f = createForwardingMethod(m, forwardingName, descriptor)
-                        val cf = classFile.copy(methods = classFile.methods.map(_.copy()) :+ f)
-                        (f, cf)
+        val deserializeLambda =
+            if (serializable)
+                classFile.methods.find { m ⇒
+                    m.hasFlags(AccessFlags.ACC_SYNTHETIC_STATIC_PRIVATE) &&
+                        m.name == "$deserializeLambda$"
                 }
+            else None
 
-                val isInterface = classFile.isInterfaceDeclaration
+        val isInterface = classFile.isInterfaceDeclaration
+
+        def liftMethods(methods: br.Methods): IndexedSeq[MethodTemplate] = {
+            methods.map { m ⇒
+                if ((liftTargetMethod && m == targetMethod.get) || deserializeLambda.contains(m)) {
+                    val accessFlags =
+                        if (isInterface) {
+                            // Interface methods must be private or public => public so proxy can
+                            // access it
+                            (m.accessFlags & ~ACC_PRIVATE.mask) | ACC_PUBLIC.mask
+                        } else {
+                            m.accessFlags & ~ACC_PRIVATE.mask // Package private, i.e. no modifier
+                        }
+                    m.copy(accessFlags = accessFlags)
+                } else
+                    m.copy()
+            }
+        }
+
+        val updatedClassFile =
+            if (targetMethod.isDefined && !liftTargetMethod) {
+                val m = targetMethod.get
+                val forwardingName = "$forward$"+m.name
 
                 // Update the implMethod and other information to match the forwarder
-                implMethod = if (forwarder.isStatic) {
-                    InvokeStaticMethodHandle(thisType, isInterface, forwardingName, descriptor)
-                } else if (isInterface) {
-                    InvokeInterfaceMethodHandle(thisType, forwardingName, descriptor)
+                implMethod = if (isInterface) {
+                    InvokeInterfaceMethodHandle(thisType, forwardingName, m.descriptor)
                 } else {
-                    InvokeVirtualMethodHandle(thisType, forwardingName, descriptor)
+                    InvokeVirtualMethodHandle(thisType, forwardingName, m.descriptor)
                 }
                 invocationInstruction = implMethod.opcodeOfUnderlyingInstruction
                 receiverType = thisType
-                receiverIsInterface = classFile.isInterfaceDeclaration
+                receiverIsInterface = isInterface
 
-                cf
-            case None ⇒ classFile
-        }
+                val forwarderO = classFile.findMethod(forwardingName, m.descriptor)
+                if (forwarderO.isEmpty) {
+                    val forwarder = createForwardingMethod(m, forwardingName, m.descriptor)
+                    classFile.copy(methods = liftMethods(classFile.methods) :+ forwarder)
+                } else classFile
+            } else if (liftTargetMethod || deserializeLambda.isDefined) {
+                classFile.copy(methods = liftMethods(classFile.methods))
+            } else {
+                classFile
+            }
 
         val needsBridgeMethod = samMethodType != instantiatedMethodType
 
