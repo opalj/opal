@@ -15,12 +15,14 @@ import scala.collection.immutable.IntMap
  *
  * @author Florian Kuebler
  */
-sealed trait StandardInvokeCalleesPropertyMetaInformation extends CalleesLikePropertyMetaInformation {
+sealed trait StandardInvokeCalleesPropertyMetaInformation
+        extends CalleesLikePropertyMetaInformation {
 
     final type Self = StandardInvokeCallees
 }
 
-sealed trait StandardInvokeCallees extends CalleesLike with StandardInvokeCalleesPropertyMetaInformation {
+sealed trait StandardInvokeCallees extends CalleesLike
+        with StandardInvokeCalleesPropertyMetaInformation {
 
     override def toString: String = {
         s"StandardInvokeCallees(size=${this.size})"
@@ -53,6 +55,9 @@ object LowerBoundStandardInvokeCallees extends StandardInvokeCallees with Callee
 
 object NoStandardInvokeCallees extends StandardInvokeCalleesImplementation(IntMap.empty)
 
+object NoStandardInvokeCalleesDueToNotReachableMethod extends StandardInvokeCallees
+    with CalleesLikeNotReachable
+
 object StandardInvokeCallees extends StandardInvokeCalleesPropertyMetaInformation {
 
     final val key: PropertyKey[StandardInvokeCallees] = {
@@ -63,7 +68,7 @@ object StandardInvokeCallees extends StandardInvokeCalleesPropertyMetaInformatio
                     case PropertyIsNotComputedByAnyAnalysis ⇒
                         LowerBoundStandardInvokeCallees
                     case PropertyIsNotDerivedByPreviouslyExecutedAnalysis ⇒
-                        NoStandardInvokeCallees
+                        NoStandardInvokeCalleesDueToNotReachableMethod
                 }
             },
             (_: PropertyStore, eps: EPS[DeclaredMethod, StandardInvokeCallees]) ⇒ eps.ub,

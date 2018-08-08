@@ -53,6 +53,8 @@ object LowerBoundCallees extends Callees with CalleesLikeLowerBound {
 
 object NoCallees extends CalleesImplementation(IntMap.empty)
 
+object NoCalleesDueToNotReachableMethod extends Callees with CalleesLikeNotReachable
+
 object Callees extends CalleesPropertyMetaInformation {
 
     final val key: PropertyKey[Callees] = {
@@ -63,7 +65,7 @@ object Callees extends CalleesPropertyMetaInformation {
                     case PropertyIsNotComputedByAnyAnalysis ⇒
                         LowerBoundCallees
                     case PropertyIsNotDerivedByPreviouslyExecutedAnalysis ⇒
-                        NoCallees
+                        NoCalleesDueToNotReachableMethod
                 }
             },
             (_: PropertyStore, eps: EPS[DeclaredMethod, Callees]) ⇒ eps.ub,

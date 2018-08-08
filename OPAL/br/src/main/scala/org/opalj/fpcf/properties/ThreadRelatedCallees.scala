@@ -15,12 +15,14 @@ import scala.collection.immutable.IntMap
  *
  * @author Florian Kuebler
  */
-sealed trait ThreadRelatedCalleesPropertyMetaInformation extends CalleesLikePropertyMetaInformation {
+sealed trait ThreadRelatedCalleesPropertyMetaInformation
+        extends CalleesLikePropertyMetaInformation {
 
     final type Self = ThreadRelatedCallees
 }
 
-sealed trait ThreadRelatedCallees extends CalleesLike with ThreadRelatedCalleesPropertyMetaInformation {
+sealed trait ThreadRelatedCallees extends CalleesLike
+        with ThreadRelatedCalleesPropertyMetaInformation {
 
     override def toString: String = {
         s"ThreadRelatedCallees(size=${this.size})"
@@ -53,6 +55,9 @@ object LowerBoundThreadRelatedCallees extends ThreadRelatedCallees with CalleesL
 
 object NoThreadRelatedCallees extends ThreadRelatedCalleesImplementation(IntMap.empty)
 
+object NoThreadRelatedCalleesDueToNotReachableMethod extends ThreadRelatedCallees
+    with CalleesLikeNotReachable
+
 object ThreadRelatedCallees extends ThreadRelatedCalleesPropertyMetaInformation {
 
     final val key: PropertyKey[ThreadRelatedCallees] = {
@@ -63,7 +68,7 @@ object ThreadRelatedCallees extends ThreadRelatedCalleesPropertyMetaInformation 
                     case PropertyIsNotComputedByAnyAnalysis ⇒
                         LowerBoundThreadRelatedCallees
                     case PropertyIsNotDerivedByPreviouslyExecutedAnalysis ⇒
-                        NoThreadRelatedCallees
+                        NoThreadRelatedCalleesDueToNotReachableMethod
                 }
             },
             (_: PropertyStore, eps: EPS[DeclaredMethod, ThreadRelatedCallees]) ⇒ eps.ub,

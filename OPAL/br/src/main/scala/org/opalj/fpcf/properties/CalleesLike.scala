@@ -58,7 +58,7 @@ trait CalleesLikeImplementation extends CalleesLike {
 }
 
 trait CalleesLikeLowerBound extends CalleesLike {
-    override lazy val size: Int = {
+    override def size: Int = {
         Int.MaxValue
     }
 
@@ -74,6 +74,29 @@ trait CalleesLikeLowerBound extends CalleesLike {
     ): Iterator[(UShort, Set[DeclaredMethod])] = throw new UnsupportedOperationException()
 
     override private[fpcf] def encodedCallees: IntMap[IntTrieSet] = IntMap.empty
+}
+
+trait CalleesLikeNotReachable extends CalleesLike {
+    override def size: Int = 0
+
+    override def callees(
+        implicit
+        declaredMethods: DeclaredMethods
+    ): Iterator[(Int, Set[DeclaredMethod])] = {
+        Iterator.empty
+    }
+
+    override def callees(
+        pc: Int
+    )(implicit declaredMethods: DeclaredMethods): Set[DeclaredMethod] = {
+        Set.empty
+    }
+
+    override private[fpcf] def encodedCallees: IntMap[IntTrieSet] = IntMap.empty
+
+    override def updated(
+        pc: Int, callee: DeclaredMethod
+    )(implicit declaredMethods: DeclaredMethods): Self = throw new UnsupportedOperationException()
 }
 
 trait CalleesLikePropertyMetaInformation extends PropertyMetaInformation {

@@ -12,8 +12,11 @@ import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.properties.Callees
 import org.opalj.fpcf.properties.CalleesImplementation
 import org.opalj.fpcf.properties.CalleesLike
+import org.opalj.fpcf.properties.CalleesLikeNotReachable
 import org.opalj.fpcf.properties.CalleesLikePropertyMetaInformation
 import org.opalj.fpcf.properties.LowerBoundCallees
+import org.opalj.fpcf.properties.NoCallees
+import org.opalj.fpcf.properties.NoCalleesDueToNotReachableMethod
 
 import scala.collection.immutable.IntMap
 
@@ -28,14 +31,16 @@ class CalleesAnalysis private[analyses] (
     def doAnalysis(dm: DeclaredMethod): PropertyComputationResult = {
         var dependees = Set.empty[EOptionP[DeclaredMethod, CalleesLike]]
         var allCallees: IntMap[IntTrieSet] = IntMap.empty[IntTrieSet]
+        var isReachable = false
 
         for (pk ← calleesPropertyKeys) {
             val r = handleEOptP(propertyStore(dm, pk), dependees, allCallees)
             dependees = r._1
             allCallees = r._2
+            isReachable |= r._3
         }
 
-        returnResult(dm, dependees, allCallees)
+        returnResult(dm, dependees, allCallees, isReachable)
 
     }
 
@@ -43,13 +48,18 @@ class CalleesAnalysis private[analyses] (
         eOptionP:   EOptionP[DeclaredMethod, CalleesLike],
         dependees:  Set[EOptionP[DeclaredMethod, CalleesLike]],
         allCallees: IntMap[IntTrieSet]
-    ): (Set[EOptionP[DeclaredMethod, CalleesLike]], IntMap[IntTrieSet]) = {
+    ): (Set[EOptionP[DeclaredMethod, CalleesLike]], IntMap[IntTrieSet], Boolean) = {
         var resDependees = dependees
         var resAllCallees = allCallees
         eOptionP match {
+            case FinalEP(_, _: CalleesLikeNotReachable) ⇒
+                return (resDependees, resAllCallees, false);
             case ep @ FinalEP(_, callees) ⇒
                 resDependees = removeDependee(ep, dependees)
                 resAllCallees = updateCallees(callees, resAllCallees)
+
+            case EPS(_, _, _: CalleesLikeNotReachable) ⇒
+                throw new IllegalArgumentException("non reachable methods must have final property")
 
             case ep @ EPS(_, _, callees) ⇒
                 resDependees = updateDependee(ep, dependees)
@@ -57,7 +67,7 @@ class CalleesAnalysis private[analyses] (
             case epk: EPK[DeclaredMethod, CalleesLike] ⇒
                 resDependees = updateDependee(epk, dependees)
         }
-        (resDependees, resAllCallees)
+        (resDependees, resAllCallees, true)
     }
 
     def continuation(
@@ -65,18 +75,23 @@ class CalleesAnalysis private[analyses] (
         dependees:      Set[EOptionP[DeclaredMethod, CalleesLike]],
         allCallees:     IntMap[IntTrieSet]
     )(eOptionP: SomeEPS): PropertyComputationResult = {
-        val (newDependees, newAllCallees) = handleEOptP(
+        val (newDependees, newAllCallees, _) = handleEOptP(
             eOptionP.asInstanceOf[EPS[DeclaredMethod, CalleesLike]], dependees, allCallees
         )
-        returnResult(declaredMethod, newDependees, newAllCallees)
+        returnResult(declaredMethod, newDependees, newAllCallees, true)
     }
 
     @inline def returnResult(
         declaredMethod: DeclaredMethod,
         dependees:      Set[EOptionP[DeclaredMethod, CalleesLike]],
-        allCallees:     IntMap[IntTrieSet]
+        allCallees:     IntMap[IntTrieSet],
+        isReachable:    Boolean
     ): PropertyComputationResult = {
-        val callees = new CalleesImplementation(allCallees)
+        if (!isReachable) {
+            assert(allCallees.isEmpty)
+            return Result(declaredMethod, NoCalleesDueToNotReachableMethod);
+        }
+        val callees = if (allCallees.isEmpty) NoCallees else new CalleesImplementation(allCallees)
         if (dependees.isEmpty) {
             Result(declaredMethod, callees)
         } else {
