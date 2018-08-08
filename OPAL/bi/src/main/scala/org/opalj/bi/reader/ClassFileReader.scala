@@ -10,7 +10,7 @@ import java.io.ByteArrayInputStream
 import java.io.DataInputStream
 import java.io.BufferedInputStream
 import java.io.IOException
-import java.io.EOFException
+import java.io.ByteArrayOutputStream
 import java.nio.file.FileSystems
 import java.nio.file.Path
 import java.nio.file.Files
@@ -389,6 +389,8 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
      */
     // The following solution is inspired by Ben Hermann's solution found at:
     // https://github.com/delphi-hub/delphi-crawler/blob/feature/streamworkaround/src/main/scala/de/upb/cs/swt/delphi/crawler/tools/JarStreamReader.scala
+    // and
+    // https://github.com/delphi-hub/delphi-crawler/blob/develop/src/main/scala/de/upb/cs/swt/delphi/crawler/tools/ClassStreamReader.scala
     def ClassFiles(in: ⇒ JarInputStream): List[(ClassFile, String)] = process(in) { in ⇒
         var je: JarEntry = in.getNextJarEntry()
 
@@ -396,16 +398,16 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
 
         while (je != null) {
             val entryName = je.getName
-            if (je.getSize.toInt > 0 && (entryName.endsWith(".class") || entryName.endsWith(".jar"))) {
-                val entryBytes = new Array[Byte](je.getSize.toInt)
+            if (entryName.endsWith(".class") || entryName.endsWith(".jar")) {
+                val entryBytes = {
+                    val baos = new ByteArrayOutputStream()
+                    val buffer = new Array[Byte](32 * 1024)
 
-                var remaining = entryBytes.length
-                var offset = 0
-                while (remaining > 0) {
-                    val readBytes = in.read(entryBytes, offset, remaining)
-                    if (readBytes < 0) throw new EOFException()
-                    remaining -= readBytes
-                    offset += readBytes
+                    Stream.continually(in.read(buffer)).takeWhile(_ > 0).foreach { bytesRead ⇒
+                        baos.write(buffer, 0, bytesRead)
+                        baos.flush()
+                    }
+                    baos.toByteArray
                 }
                 futures ::= Future[List[(ClassFile, String)]] {
                     if (entryName.endsWith(".class")) {
