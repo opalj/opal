@@ -29,12 +29,15 @@ import scala.concurrent.duration.Duration
 import scala.concurrent.Future
 import org.apache.commons.text.similarity.LevenshteinDistance
 import org.opalj.log.OPALLogger.error
+import org.opalj.log.OPALLogger.info
 import org.opalj.log.GlobalLogContext
 import org.opalj.control.repeat
 import org.opalj.io.process
 import org.opalj.concurrent.OPALExecutionContextTaskSupport
 import org.opalj.concurrent.NumberOfThreadsForIOBoundTasks
 import org.opalj.bytecode.BytecodeProcessingFailedException
+
+import scala.concurrent.ExecutionContext
 
 /**
  * Implements the template method to read in a Java class file. Additionally,
@@ -414,9 +417,16 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
                         val cfs = ClassFile(new DataInputStream(new ByteArrayInputStream(entryBytes)))
                         cfs map { cf ⇒ (cf, entryName) }
                     } else { // ends with ".jar"
+                        info("class file reader", s"reading inner jar $entryName")
                         ClassFiles(new JarInputStream(new ByteArrayInputStream(entryBytes)))
                     }
-                }(org.opalj.concurrent.OPALExecutionContext)
+                }(
+                    // we can't use the OPALExecutionContext here, because the number of
+                    // threads is bounded and (depending on the nesting level, we may need
+                    // more threads..)
+                    ExecutionContext.global
+                )
+
             }
             je = in.getNextJarEntry()
         }
