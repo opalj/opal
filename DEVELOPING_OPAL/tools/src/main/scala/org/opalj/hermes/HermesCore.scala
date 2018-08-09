@@ -358,30 +358,33 @@ trait HermesCore extends HermesConfig {
                     case PackageLocation(source, packageName) ⇒
                         writeEntry(source, packageName)
                     case ClassFileLocation(source, classFileFQN) ⇒
-                        writeEntry(source, "", classFileFQN)
+                        writeEntry(source, "", s"L$classFileFQN;")
                     case ml @ MethodLocation(cfl, _, _) ⇒
+                        val jvmTypeName = s"L${ml.classFileFQN};"
                         writeEntry(
                             cfl.source,
                             "",
-                            cfl.classFileFQN,
+                            jvmTypeName,
                             ml.methodName,
                             ml.methodDescriptor.toJVMDescriptor
                         )
                     case InstructionLocation(ml, pc) ⇒
+                        val jvmTypeName = s"L${ml.classFileFQN};"
                         writeEntry(
                             ml.source,
                             "",
-                            ml.classFileFQN,
+                            jvmTypeName,
                             ml.methodName,
                             ml.methodDescriptor.toJVMDescriptor,
                             pc.toString
                         )
                     case FieldLocation(cfl, fieldName, fieldType) ⇒
                         val fieldEntry = s"$fieldName : ${fieldType.toJava}"
+                        val jvmTypeName = s"L${cfl.classFileFQN};"
                         writeEntry(
                             cfl.source,
                             "",
-                            cfl.classFileFQN,
+                            jvmTypeName,
                             field = fieldEntry
                         )
                     case _ ⇒ throw new UnknownError(s"unsupported location type: $l")
