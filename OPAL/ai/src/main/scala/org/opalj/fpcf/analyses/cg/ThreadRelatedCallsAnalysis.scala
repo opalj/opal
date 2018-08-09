@@ -149,13 +149,13 @@ class ThreadRelatedCallsAnalysis private[analyses] (
         }
     }
 
-    def getConstructorCalls(expr: Expr[V], stmts: Array[Stmt[V]]): Iterator[NonVirtualMethodCall[V]] = {
+    def getConstructorCalls(expr: Expr[V], defSite: Int, stmts: Array[Stmt[V]]): Iterator[NonVirtualMethodCall[V]] = {
         var r = List.empty[NonVirtualMethodCall[V]]
         expr.asVar.usedBy.foreach { use ⇒
             val stmt = stmts(use)
             if (stmt.isInstanceOf[NonVirtualMethodCall[V]]) {
                 val call = stmt.asNonVirtualMethodCall
-                if (call.name == "<init>" && call.receiver.asVar.definedBy.contains(use)) {
+                if (call.name == "<init>" && call.receiver.asVar.definedBy.contains(defSite)) {
                     r ::= call
                 }
             }
@@ -180,7 +180,7 @@ class ThreadRelatedCallsAnalysis private[analyses] (
                 stmts(threadDefSite) match {
                     case Assignment(_, thread, New(_, _)) ⇒
                         for {
-                            NonVirtualMethodCall(_, _, _, "<init>", descriptor, _, params) ← getConstructorCalls(thread, stmts)
+                            NonVirtualMethodCall(_, _, _, "<init>", descriptor, _, params) ← getConstructorCalls(thread, threadDefSite, stmts)
                         } {
                             val indexOfRunnableParameter = descriptor.parameterTypes.indexWhere {
                                 _ == ObjectType.Runnable

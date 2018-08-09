@@ -10,8 +10,7 @@ import org.opalj.collection.immutable.IntTrieSet
 import scala.collection.immutable.IntMap
 
 /**
- * For a given [[DeclaredMethod]], and for each call site (represented by the PC), the set of methods
- * that are possible call targets.
+ * TODO
  *
  * @author Florian Kuebler
  */
