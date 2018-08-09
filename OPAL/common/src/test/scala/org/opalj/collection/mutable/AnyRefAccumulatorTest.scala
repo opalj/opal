@@ -22,7 +22,7 @@ class AnyRefAccumulatorTest extends FlatSpec with Matchers {
         l.nonEmpty should be(false)
     }
 
-    it should "be possible to add primitive values" in {
+    it should "be possible to add reference values" in {
         val l = AnyRefAccumulator.empty[String]
         l += "s"
         l += "d"
@@ -33,7 +33,7 @@ class AnyRefAccumulatorTest extends FlatSpec with Matchers {
         l should be('empty)
     }
 
-    it should "be possible to add collections of primitive values" in {
+    it should "be possible to add collections of reference values" in {
         val l = AnyRefAccumulator.empty[String]
         l ++= List("s")
         l ++= Iterator("d", "c")
@@ -45,7 +45,7 @@ class AnyRefAccumulatorTest extends FlatSpec with Matchers {
         l should be('empty)
     }
 
-    it should "be possible to add collections of primitive values and also primitive values" in {
+    it should "be possible to add collections of reference values and also reference values" in {
         val l = AnyRefAccumulator.empty[String]
         l ++= List("s")
         l += "x"
