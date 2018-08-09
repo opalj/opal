@@ -40,7 +40,7 @@ class NonJavaBytecode(implicit hermes: HermesConfig) extends DefaultFeatureQuery
             method @ MethodWithBody(body) ← classFile.methods
             methodLocation = MethodLocation(classFileLocation, method)
             pcAndInstruction ← body
-            if(pcAndInstruction.instruction.isInstanceOf[INVOKEINTERFACE])
+            if (pcAndInstruction.instruction.isInstanceOf[INVOKEINTERFACE])
         } {
             val INVOKEINTERFACE(declaringClass, name, desc) = pcAndInstruction.instruction
 
@@ -51,7 +51,9 @@ class NonJavaBytecode(implicit hermes: HermesConfig) extends DefaultFeatureQuery
                 val declIntf = invokedMethod.classFile
                 if (declIntf.isInterfaceDeclaration &&
                     classHierarchy.allSuperinterfacetypes(declaringClass).exists { sintf ⇒
-                        project.classFile(sintf).get.findMethod(name, desc).exists(_.isStatic) &&
+                        val sintfCfO = project.classFile(sintf)
+                        sintfCfO.isDefined &&
+                            sintfCfO.get.findMethod(name, desc).exists(_.isStatic) &&
                             classHierarchy.allSuperinterfacetypes(sintf).contains(declIntf.thisType)
                     }) {
 
