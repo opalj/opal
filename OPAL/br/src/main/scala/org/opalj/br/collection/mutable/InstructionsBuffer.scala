@@ -6,6 +6,7 @@ package mutable
 
 import org.opalj.br.instructions.Instruction
 import org.opalj.br.instructions.ConstantLengthInstruction
+import org.opalj.collection.mutable.AnyRefArrayBuffer
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -15,7 +16,8 @@ import scala.collection.mutable.ArrayBuffer
  * @author Dominik Helm
  */
 class InstructionsBuffer(val initialSize: Int) {
-    private val buffer: ArrayBuffer[Instruction] = new ArrayBuffer(initialSize)
+    private val buffer: AnyRefArrayBuffer[Instruction] =
+        AnyRefArrayBuffer.withInitialSize(initialSize)
 
     def ++=(value: Instruction, slots: Int): Unit = {
         buffer += value
@@ -31,9 +33,7 @@ class InstructionsBuffer(val initialSize: Int) {
     }
 
     def ++=(instructions: Array[Instruction]): Unit = {
-        control.foreachValue(instructions) { (_, inst) ⇒
-            buffer += inst
-        }
+        buffer ++= instructions
     }
 
     def toArray: Array[Instruction] = buffer.toArray

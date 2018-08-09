@@ -617,16 +617,16 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
         val methodName = cp(methodNameIndex).asString
         val methodDescriptor = cp(methodDescriptorIndex).asMethodDescriptor
 
-        val methodToRewrite = classFile.findMethod(methodName, methodDescriptor)
+        val methodToRewrite = classFile.findMethod(methodName, methodDescriptor).get
 
         val code = Code(4, 1, body.toArray, IndexedSeq.empty, Seq.empty)
 
         val rewrittenMethod =
-            Method(methodToRewrite.get.accessFlags, methodName, methodDescriptor, Seq(code))
+            Method(methodToRewrite.accessFlags, methodName, methodDescriptor, Seq(code))
 
         classFile.copy(
             methods =
-                classFile.methods.filter(_ ne methodToRewrite.get).map(_.copy()) :+ rewrittenMethod
+            classFile.methods.filter(_ ne methodToRewrite).map(_.copy()) :+ rewrittenMethod
         )
     }
 
@@ -918,8 +918,7 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
         // Creates forwarding method for private method `m` that can be accessed by the proxy class.
         def createForwardingMethod(
             m:          Method,
-            name:       String,
-            descriptor: MethodDescriptor
+            name:       String
         ): MethodTemplate = {
 
             // Access flags for the forwarder are the same as the target method but without private
@@ -931,10 +930,10 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
 
             // Instructions to push the parameters onto the stack
             val forwardParameters = ClassFileFactory.parameterForwardingInstructions(
-                descriptor, descriptor, 1, Seq.empty, classFile.thisType
+                m.descriptor, m.descriptor, 1, Seq.empty, classFile.thisType
             )
 
-            val body = new InstructionsBuffer(7 + forwardParameters.length) // TODO
+            val body = new InstructionsBuffer(7 + forwardParameters.length)
 
             // if the receiver method is not static, we need to push the receiver object
             // onto the stack by an ALOAD_0 unless we have a method reference where the receiver
@@ -943,31 +942,28 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
 
             body ++= forwardParameters
 
-            val recType = implMethod.receiverType.asObjectType
+            val recType = classFile.thisType
 
             // The call instruction itself
             (invocationInstruction: @switch) match {
                 case INVOKESPECIAL.opcode ⇒
                     body ++= INVOKESPECIAL(recType, receiverIsInterface, m.name, m.descriptor)
 
-                case INVOKEINTERFACE.opcode ⇒
-                    body ++= INVOKEINTERFACE(recType, m.name, m.descriptor)
-
-                case INVOKEVIRTUAL.opcode ⇒
-                    body ++= INVOKEVIRTUAL(implMethod.receiverType, m.name, m.descriptor)
+                case INVOKEVIRTUAL.opcode ⇒ // TODO check if this is required for Java 11
+                    body ++= INVOKEVIRTUAL(recType, m.name, m.descriptor)
             }
 
             // The return instruction matching the return type
-            body ++= ReturnInstruction(descriptor.returnType)
+            body ++= ReturnInstruction(m.descriptor.returnType)
 
-            val parametersStackSize = implMethod.methodDescriptor.requiredRegisters
+            val parametersStackSize = m.descriptor.requiredRegisters
 
-            val maxStack = 2 + parametersStackSize
-            val maxLocals = 1 + parametersStackSize
+            val maxLocals = 1 + parametersStackSize // parameters + `this`
+            val maxStack = math.max(maxLocals, m.descriptor.returnType.operandSize)
 
             val code = Code(maxStack, maxLocals, body.toArray, IndexedSeq.empty, Seq.empty)
 
-            Method(accessFlags, name, descriptor, Seq(code))
+            Method(accessFlags, name, m.descriptor, Seq(code))
         }
 
         // If the target method is private, we have to generate a forwarding method that is
@@ -1023,7 +1019,7 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
 
                 val forwarderO = classFile.findMethod(forwardingName, m.descriptor)
                 if (forwarderO.isEmpty) {
-                    val forwarder = createForwardingMethod(m, forwardingName, m.descriptor)
+                    val forwarder = createForwardingMethod(m, forwardingName)
                     classFile.copy(methods = liftMethods(classFile.methods) :+ forwarder)
                 } else classFile
             } else if (liftTargetMethod || deserializeLambda.isDefined) {
