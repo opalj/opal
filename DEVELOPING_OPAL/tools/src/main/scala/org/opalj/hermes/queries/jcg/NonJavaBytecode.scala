@@ -40,7 +40,7 @@ class NonJavaBytecode(implicit hermes: HermesConfig) extends DefaultFeatureQuery
             method @ MethodWithBody(body) ← classFile.methods
             methodLocation = MethodLocation(classFileLocation, method)
             pcAndInstruction ← body
-            if (pcAndInstruction.instruction.opcode == INVOKEINTERFACE.opcode
+            if pcAndInstruction.instruction.opcode == INVOKEINTERFACE.opcode
         } {
             val INVOKEINTERFACE(declaringClass, name, desc) = pcAndInstruction.instruction
 
