@@ -116,7 +116,7 @@ class Serialization(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
 
             val invocation = stmts(pcToIndex(pc))
 
-            if (invocation.isInstanceOf[VirtualMethodCall[V]]) {
+            if (invocation.astID == VirtualMethodCall.ASTID) {
                 if (invocation.asVirtualMethodCall.name == "writeObject")
                     handleWriteObject(
                         invocation.asVirtualMethodCall,
@@ -172,7 +172,7 @@ class Serialization(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
         if (paramVar.definedBy.exists { defSite ⇒
             if (defSite >= 0) {
                 val expr = stmts(defSite).asAssignment.expr
-                expr.isInstanceOf[Invokedynamic[V]] && isLambdaMetafactoryCall(expr.asInvokedynamic)
+                expr.astID == Invokedynamic.ASTID && isLambdaMetafactoryCall(expr.asInvokedynamic)
             } else false
         }) {
             locations(12) += l
@@ -246,7 +246,7 @@ class Serialization(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
         val ret = invocation.targetVar
 
         val castTypes = ret.usedBy.iterator.collect {
-            case index if stmts(index).isInstanceOf[Checkcast[V]] ⇒ stmts(index).asCheckcast.cmpTpe
+            case index if stmts(index).astID == Checkcast.ASTID ⇒ stmts(index).asCheckcast.cmpTpe
         }.toSeq
 
         if (castTypes.isEmpty) {
