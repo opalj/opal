@@ -358,9 +358,9 @@ trait HermesCore extends HermesConfig {
                     case PackageLocation(source, packageName) ⇒
                         writeEntry(source, packageName)
                     case ClassFileLocation(source, classFileFQN) ⇒
-                        writeEntry(source, "", s"L$classFileFQN;")
+                        writeEntry(source, "", s"L${classFileFQN.replace(".", "/")};")
                     case ml @ MethodLocation(cfl, _, _) ⇒
-                        val jvmTypeName = s"L${ml.classFileFQN};"
+                        val jvmTypeName = s"L${ml.classFileFQN.replace(".", "/")};"
                         writeEntry(
                             cfl.source,
                             "",
@@ -369,7 +369,7 @@ trait HermesCore extends HermesConfig {
                             ml.methodDescriptor.toJVMDescriptor
                         )
                     case InstructionLocation(ml, pc) ⇒
-                        val jvmTypeName = s"L${ml.classFileFQN};"
+                        val jvmTypeName = s"L${ml.classFileFQN.replace(".", "/")};"
                         writeEntry(
                             ml.source,
                             "",
@@ -380,7 +380,7 @@ trait HermesCore extends HermesConfig {
                         )
                     case FieldLocation(cfl, fieldName, fieldType) ⇒
                         val fieldEntry = s"$fieldName : ${fieldType.toJava}"
-                        val jvmTypeName = s"L${cfl.classFileFQN};"
+                        val jvmTypeName = s"L${cfl.classFileFQN.replace(".", "/")};"
                         writeEntry(
                             cfl.source,
                             "",
