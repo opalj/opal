@@ -1,9 +1,12 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 
+import scala.reflect.ClassTag
+
 import java.util.function.IntFunction
 
 import scala.collection.mutable.ArrayStack
+
 import org.opalj.collection.IntIterator
 import org.opalj.collection.mutable.IntArrayStack
 import org.opalj.collection.mutable.AnyRefArrayStack
@@ -169,7 +172,7 @@ package object graphs {
     //
     // ---------------------------------------------------------------------------------------
 
-    final def closedSCCs[N >: Null <: AnyRef](g: Graph[N]): List[Iterable[N]] = {
+    final def closedSCCs[N >: Null <: AnyRef: ClassTag](g: Graph[N]): List[Iterable[N]] = {
         closedSCCs(g.vertices, g.asTraversable)
     }
 
@@ -191,7 +194,7 @@ package object graphs {
      * @param  es A function that, given a node, returns all successor nodes. Basically, the edges
      *         of the graph.
      */
-    def closedSCCs[N >: Null <: AnyRef](
+    def closedSCCs[N >: Null <: AnyRef: ClassTag](
         ns: Traversable[N],
         es: N ⇒ Traversable[N] // TODO Improve(?) N => Iterator[N]
     ): List[Iterable[N]] = {
@@ -206,7 +209,7 @@ package object graphs {
         val PathSegmentSeparator: Null = null
 
         val workstack = new AnyRefArrayStack[N](8) //mutable.ArrayStack.empty[N]
-        val path = new AnyRefArrayBuffer[N](16)
+        val path = AnyRefArrayBuffer.withInitialSize[N](16)
 
         var cSCCs = List.empty[Iterable[N]]
 

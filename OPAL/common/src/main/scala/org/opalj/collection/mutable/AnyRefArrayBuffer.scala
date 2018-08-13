@@ -19,16 +19,14 @@ import scala.reflect.ClassTag
  * @author Michael Eichberg
  */
 final class AnyRefArrayBuffer[N >: Null <: AnyRef] private (
-        private var data:  Array[AnyRef],
+        private var data:  Array[N],
         private var size0: Int
 ) { buffer ⇒
-
-    def this(initialSize: Int = 4) { this(new Array[AnyRef](initialSize), 0) }
 
     /**
      * Resets the size of the buffer, but does not clear the underlying array; hence,
      * the array may prevent the garbage collection of the still referenced values.
-     * This is generally not a problem, if the array is only used locally and the
+     * This is generally not a problem if the array is only used locally and the
      * referenced (dead) objects outlive the lifetime of the buffer!
      */
     def resetSize(): Unit = size0 = 0
@@ -49,6 +47,17 @@ final class AnyRefArrayBuffer[N >: Null <: AnyRef] private (
         val target = new Array[T](size0)
         System.arraycopy(data, 0, target, 0, size0)
         target
+    }
+
+    /**
+     * Returns a reference to the underlying mutable array if it is (by chance) completely
+     * full; otherwise a new array which just contains the valid entries is returned.
+     */
+    def unsafeToArray: Array[N] = {
+        if (size0 == data.length)
+            data
+        else
+            java.util.Arrays.copyOf[N](data, size0)
     }
 
     def toSet[T >: N]: Set[T] = {
@@ -76,10 +85,8 @@ final class AnyRefArrayBuffer[N >: Null <: AnyRef] private (
     def ++=(other: AnyRefArrayBuffer[N]): this.type = {
         if (data.length - size0 >= other.data.length) {
             System.arraycopy(other.data, 0, this.data, size0, other.data.length)
-
         } else {
-            val newData = new Array[AnyRef](this.size0 + other.size0 + 8)
-            System.arraycopy(data, 0, newData, 0, size0)
+            val newData = java.util.Arrays.copyOf(data, this.size0 + other.size0 + 8)
             System.arraycopy(other.data, 0, newData, this.size0, other.size0)
             data = newData
             this.data = newData
@@ -88,12 +95,27 @@ final class AnyRefArrayBuffer[N >: Null <: AnyRef] private (
         this
     }
 
+    /**
+     * Copies all values from the given array to this buffer in one step.
+     */
+    def ++=(other: Array[N]): this.type = {
+        if (data.length - size0 >= other.length) {
+            System.arraycopy(other, 0, this.data, size0, other.length)
+        } else {
+            val newData = java.util.Arrays.copyOf(data, this.size0 + other.length + 8)
+            System.arraycopy(other, 0, newData, this.size0, other.length)
+            data = newData
+            this.data = newData
+        }
+        this.size0 = this.size0 + other.length
+        this
+    }
+
     def +=(i: N): this.type = {
         val size0 = this.size0
         var data = this.data
         if (data.length == size0) {
-            val newData = new Array[AnyRef]((size0 + 1) * 2)
-            System.arraycopy(data, 0, newData, 0, size0)
+            val newData = java.util.Arrays.copyOf(data, (size0 + 1) * 2)
             data = newData
             this.data = newData
         }
@@ -169,3 +191,12 @@ final class AnyRefArrayBuffer[N >: Null <: AnyRef] private (
     }
 }
 
+object AnyRefArrayBuffer {
+
+    def empty[N >: Null <: AnyRef: ClassTag]: AnyRefArrayBuffer[N] = withInitialSize[N](4)
+
+    def withInitialSize[N >: Null <: AnyRef: ClassTag](initialSize: Int): AnyRefArrayBuffer[N] = {
+        new AnyRefArrayBuffer[N](new Array[N](initialSize), 0)
+    }
+
+}

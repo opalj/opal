@@ -18,7 +18,8 @@ class LoadConstantInstructionTest extends FunSpec with Matchers {
 
     describe("putting constant integer values on the stack") {
 
-        it("[0..5] should be put on the stack using iconst instructions") {
+        it("[-1..5] should be put on the stack using iconst instructions") {
+            LoadConstantInstruction(-1) should be(ICONST_M1)
             LoadConstantInstruction(0) should be(ICONST_0)
             LoadConstantInstruction(1) should be(ICONST_1)
             LoadConstantInstruction(2) should be(ICONST_2)
@@ -30,7 +31,6 @@ class LoadConstantInstructionTest extends FunSpec with Matchers {
         it("byte values should use bipush") {
             Seq(
                 Byte.MinValue.toInt,
-                -1,
                 6,
                 Byte.MaxValue.toInt / 2,
                 Byte.MaxValue.toInt

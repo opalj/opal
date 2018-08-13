@@ -1,3 +1,4 @@
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.br.analyses.fixtures.declared_methods.base;
 
 import org.opalj.br.analyses.fixtures.declared_methods.sub.Sub;
