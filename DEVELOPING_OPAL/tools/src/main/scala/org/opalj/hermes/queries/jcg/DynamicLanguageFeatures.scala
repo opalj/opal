@@ -46,7 +46,7 @@ class DynamicLanguageFeatures(
                 case dynInv: INVOKEDYNAMIC   ⇒ dynInv
                 case intInv: INVOKEINTERFACE ⇒ intInv
             }
-        } yield {
+        } {
 
             val pc = pcAndInvocation.pc
             val l = InstructionLocation(project.source(m.classFile).get, m, pc)
@@ -72,7 +72,7 @@ class DynamicLanguageFeatures(
                                         if (callee.isSynthetic) {
                                             7 /* Lambda1 */
                                         } else {
-                                            if (callee.parameterTypes.size == 0) {
+                                            if (callee.parameterTypes.isEmpty) {
                                                 3 /* MR4 */
                                             } else {
                                                 4 /* MR 5 */
