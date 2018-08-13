@@ -101,18 +101,19 @@ class DynamicLanguageFeatures(
                         }
                     }
 
-                    //                case intInv: INVOKEINTERFACE ⇒ {
-                    //                    val declCls = intInv.declaringClass
-                    //                    val declCf = project.classFile(declCls)
-                    //
-                    //                    if (declCf.isDefined) {
-                    //                        val cf = declCf.get
-                    //
-                    //                    }
-                    //
-                    //                    -1 /* We are not interested in this interface invocation */
-                    //                }
+                case _: INVOKEINTERFACE ⇒
                     -1
+                //                    val declCls = intInv.declaringClass
+                //                    val declCf = project.classFile(declCls)
+                //
+                //                    if (declCf.isDefined) {
+                //                        val cf = declCf.get
+                //
+                //                    }
+                //
+                //                    -1 /* We are not interested in this interface invocation */
+                //                }
+                //-1
             }
 
             if (testCaseId > 0 && testCaseId < featureIDs.size) {
