@@ -80,7 +80,7 @@ object HermesCLI {
                 Hermes.exportStatistics(theStatisticsFile, !noProjectStatistics)
                 println("Wrote statistics: "+theStatisticsFile)
 
-                if(locationsDir ne null) {
+                if (locationsDir ne null) {
                     val theLocationsDir = Directory(new File(locationsDir))
                     Hermes.exportLocations(theLocationsDir)
                     println("Wrote locations: "+theLocationsDir)
