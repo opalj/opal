@@ -46,7 +46,7 @@ class DynamicLanguageFeatures(
                 case dynInv: INVOKEDYNAMIC   ⇒ dynInv
                 case intInv: INVOKEINTERFACE ⇒ intInv
             }
-        } yield {
+        } {
 
             val pc = pcAndInvocation.pc
             val l = InstructionLocation(project.source(m.classFile).get, m, pc)
@@ -72,7 +72,7 @@ class DynamicLanguageFeatures(
                                         if (callee.isSynthetic) {
                                             7 /* Lambda1 */
                                         } else {
-                                            if (callee.parameterTypes.size == 0) {
+                                            if (callee.parameterTypes.isEmpty) {
                                                 3 /* MR4 */
                                             } else {
                                                 4 /* MR 5 */
@@ -101,18 +101,19 @@ class DynamicLanguageFeatures(
                         }
                     }
 
-                    //                case intInv: INVOKEINTERFACE ⇒ {
-                    //                    val declCls = intInv.declaringClass
-                    //                    val declCf = project.classFile(declCls)
-                    //
-                    //                    if (declCf.isDefined) {
-                    //                        val cf = declCf.get
-                    //
-                    //                    }
-                    //
-                    //                    -1 /* We are not interested in this interface invocation */
-                    //                }
+                case _: INVOKEINTERFACE ⇒
                     -1
+                //                    val declCls = intInv.declaringClass
+                //                    val declCf = project.classFile(declCls)
+                //
+                //                    if (declCf.isDefined) {
+                //                        val cf = declCf.get
+                //
+                //                    }
+                //
+                //                    -1 /* We are not interested in this interface invocation */
+                //                }
+                //-1
             }
 
             if (testCaseId > 0 && testCaseId < featureIDs.size) {
