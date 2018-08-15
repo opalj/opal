@@ -122,6 +122,7 @@ class Reflection(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
                 case i: LoadClass_W ⇒ i
                 case i @ INVOKEVIRTUAL(MethodT, "invoke", Invoke) ⇒ i
                 case i @ INVOKEVIRTUAL(ClassT, "getMethod", GetMethodMD) ⇒ i
+                case i @ INVOKEVIRTUAL(ClassT, "getDeclaredMethod", GetMethodMD) ⇒ i
                 case i @ INVOKEVIRTUAL(ClassT, "newInstance", JustReturnsObject) ⇒ i
                 case i @ INVOKEVIRTUAL(ConstructorT, "newInstance", NewInstanceMD) ⇒ i
                 case i @ INVOKEVIRTUAL(ClassT, "getDeclaredField", GetFieldMD) ⇒ i
@@ -156,6 +157,11 @@ class Reflection(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
                                     if (stmt.astID == Assignment.ASTID &&
                                         methodUsedForInvocation(index, stmt.asAssignment)) {
                                         locations(3 /* getMethod */ ) += l // invoke called directly
+                                        handleParameterSources(call, l)
+                                    }
+                                case "getDeclaredMethod" ⇒
+                                    if (stmt.astID == Assignment.ASTID &&
+                                        methodUsedForInvocation(index, stmt.asAssignment)) {
                                         handleParameterSources(call, l)
                                     }
                                 case "newInstance" ⇒ locations(6 /* Class.newInstance */ ) += l
