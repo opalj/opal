@@ -243,6 +243,14 @@ trait ConfigurationEntryPointsFinder extends EntryPointFinder {
 }
 
 /**
+ * The ConfigurationEntryPointsFinder considers only configured entry points.
+ *
+ * @author Dominik Helm
+ */
+object ConfigurationEntryPointsFinder
+    extends ConfigurationEntryPointsFinder
+
+/**
  * The ApplicationEntryPointsFinder considers all main methods plus additionally configured entry points.
  *
  * @author Michael Reif
