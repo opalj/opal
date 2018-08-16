@@ -4,7 +4,6 @@ package fpcf
 package analyses
 package cg
 
-import org.opalj.br.ClassHierarchy
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
 import org.opalj.br.ObjectType
@@ -35,7 +34,7 @@ class LoadedClassesAnalysis(
         val project: SomeProject
 ) extends FPCFAnalysis {
     private val tacaiProvider = project.get(SimpleTACAIKey)
-    private val declaredMethods = project.get(DeclaredMethodsKey)
+    private val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
 
     /**
      * Each time a method gets reachable in the computation of the call graph
@@ -161,17 +160,23 @@ class LoadedClassesAnalysis(
         if (isNewLoadedClass(methodDCT)) {
             // todo only for interfaces with default methods
             newLoadedClasses ++= ch.allSupertypes(methodDCT)
-            LoadedClassesAnalysis.retrieveStaticInitializers(methodDCT).foreach(newCLInits += _)
+            LoadedClassesAnalysis.retrieveStaticInitializers(
+                methodDCT, declaredMethods, project
+            ).foreach(newCLInits += _)
         }
 
         if (method.body.isDefined) {
             for (stmt ← tacaiProvider(method).stmts) {
                 stmt match {
                     case PutStatic(_, dc, _, _, _) if isNewLoadedClass(dc) ⇒
-                        LoadedClassesAnalysis.retrieveStaticInitializers(dc).foreach(newCLInits += _)
+                        LoadedClassesAnalysis.retrieveStaticInitializers(
+                            dc, declaredMethods, project
+                        ).foreach(newCLInits += _)
                         newLoadedClasses += dc
                     case Assignment(_, _, GetField(_, dc, _, _, _)) if isNewLoadedClass(dc) ⇒
-                        LoadedClassesAnalysis.retrieveStaticInitializers(dc).foreach(newCLInits += _)
+                        LoadedClassesAnalysis.retrieveStaticInitializers(
+                            dc, declaredMethods, project
+                        ).foreach(newCLInits += _)
                         newLoadedClasses += dc
                     case _ ⇒
                 }
@@ -187,8 +192,8 @@ object LoadedClassesAnalysis {
      * Retrieves the static initializer of the given type if present.
      */
     def retrieveStaticInitializers(
-        declaringClassType: ObjectType
-    )(implicit declaredMethods: DeclaredMethods, project: SomeProject): Set[DefinedMethod] = {
+        declaringClassType: ObjectType, declaredMethods: DeclaredMethods, project: SomeProject
+    ): Set[DefinedMethod] = {
         // todo only for interfaces with default methods
         project.classHierarchy.allSupertypes(declaringClassType, reflexive = true) flatMap { t ⇒
             project.classFile(t) flatMap { cf ⇒
