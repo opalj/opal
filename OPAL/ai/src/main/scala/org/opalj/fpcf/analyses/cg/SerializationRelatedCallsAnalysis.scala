@@ -80,7 +80,6 @@ class SerializationRelatedCallsAnalysis private[analyses] (
             return NoResult;
 
         // the set of types that are definitely initialized at this point in time
-        // in case the instantiatedTypes are not finally computed, we depend on them
         val instantiatedTypesEOptP = propertyStore(project, InstantiatedTypes.key)
 
         // the upper bound for type instantiations, seen so far
