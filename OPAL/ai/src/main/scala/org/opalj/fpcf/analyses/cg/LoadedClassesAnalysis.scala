@@ -4,9 +4,11 @@ package fpcf
 package analyses
 package cg
 
+import org.opalj.br.ClassHierarchy
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
 import org.opalj.br.ObjectType
+import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.collection.immutable.UIDSet
@@ -154,21 +156,22 @@ class LoadedClassesAnalysis(
         @inline def isNewLoadedClass(dc: ObjectType): Boolean = {
             !currentLoadedClasses.contains(dc) && !newLoadedClasses.contains(dc)
         }
-        //
-        retrieveStaticInitializers(methodDCT).foreach(newCLInits += _)
 
         // whenever a method is called the first time, its declaring class gets loaded
-        if (isNewLoadedClass(methodDCT))
-            newLoadedClasses += methodDCT
+        if (isNewLoadedClass(methodDCT)) {
+            // todo only for interfaces with default methods
+            newLoadedClasses ++= ch.allSupertypes(methodDCT)
+            LoadedClassesAnalysis.retrieveStaticInitializers(methodDCT).foreach(newCLInits += _)
+        }
 
         if (method.body.isDefined) {
             for (stmt ← tacaiProvider(method).stmts) {
                 stmt match {
                     case PutStatic(_, dc, _, _, _) if isNewLoadedClass(dc) ⇒
-                        retrieveStaticInitializers(dc).foreach(newCLInits += _)
+                        LoadedClassesAnalysis.retrieveStaticInitializers(dc).foreach(newCLInits += _)
                         newLoadedClasses += dc
                     case Assignment(_, _, GetField(_, dc, _, _, _)) if isNewLoadedClass(dc) ⇒
-                        retrieveStaticInitializers(dc).foreach(newCLInits += _)
+                        LoadedClassesAnalysis.retrieveStaticInitializers(dc).foreach(newCLInits += _)
                         newLoadedClasses += dc
                     case _ ⇒
                 }
@@ -177,12 +180,17 @@ class LoadedClassesAnalysis(
 
         (newCLInits, newLoadedClasses)
     }
+}
 
+object LoadedClassesAnalysis {
     /**
      * Retrieves the static initializer of the given type if present.
      */
-    def retrieveStaticInitializers(declaringClassType: ObjectType): Set[DefinedMethod] = {
-        classHierarchy.allSupertypes(declaringClassType, reflexive = true) flatMap { t ⇒
+    def retrieveStaticInitializers(
+        declaringClassType: ObjectType
+    )(implicit declaredMethods: DeclaredMethods, project: SomeProject): Set[DefinedMethod] = {
+        // todo only for interfaces with default methods
+        project.classHierarchy.allSupertypes(declaringClassType, reflexive = true) flatMap { t ⇒
             project.classFile(t) flatMap { cf ⇒
                 cf.staticInitializer map { clInit ⇒
                     // IMPROVE: Only return the static initializer if it is not already present
@@ -202,7 +210,9 @@ object EagerLoadedClassesAnalysis extends FPCFEagerAnalysisScheduler {
         propertyStore:         PropertyStore,
         loadedClassesAnalysis: LoadedClassesAnalysis
     ): FPCFAnalysis = {
-        propertyStore.scheduleEagerComputationsForEntities(List(project))(loadedClassesAnalysis.doAnalyze)
+        propertyStore.scheduleEagerComputationsForEntities(List(project))(
+            loadedClassesAnalysis.doAnalyze
+        )
         loadedClassesAnalysis
     }
 
