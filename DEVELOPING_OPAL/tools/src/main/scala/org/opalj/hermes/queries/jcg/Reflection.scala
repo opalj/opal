@@ -92,8 +92,8 @@ class Reflection(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
             "TR10", /* 9 -- Class.forName */
             "LRR1", /* 10 - multiple constants for param */
             "LRR2", /* 11 - constant(s) from StringBuilder for param */
-            "CSR2", /* 12 - value from unknown source for param */
-            "CSS3" /* 13 -- value from field for param */
+            "CSR1+CSR2", /* 12 - value from unknown source for param */
+            "LRR3+CSS3" /* 13 -- value from field for param */
         )
     }
 
