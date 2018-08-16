@@ -15,13 +15,13 @@ import scala.collection.immutable.IntMap
  * @author Florian Kuebler
  */
 sealed trait ThreadRelatedCalleesPropertyMetaInformation
-        extends CalleesLikePropertyMetaInformation {
+    extends CalleesLikePropertyMetaInformation {
 
     final type Self = ThreadRelatedCallees
 }
 
 sealed trait ThreadRelatedCallees extends CalleesLike
-        with ThreadRelatedCalleesPropertyMetaInformation {
+    with ThreadRelatedCalleesPropertyMetaInformation {
 
     override def toString: String = {
         s"ThreadRelatedCallees(size=${this.size})"

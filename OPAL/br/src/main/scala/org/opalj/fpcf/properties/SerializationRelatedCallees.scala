@@ -15,13 +15,13 @@ import scala.collection.immutable.IntMap
  * @author Florian Kuebler
  */
 sealed trait SerializationRelatedCalleesPropertyMetaInformation
-        extends CalleesLikePropertyMetaInformation {
+    extends CalleesLikePropertyMetaInformation {
 
     final type Self = SerializationRelatedCallees
 }
 
 sealed trait SerializationRelatedCallees extends CalleesLike
-        with SerializationRelatedCalleesPropertyMetaInformation {
+    with SerializationRelatedCalleesPropertyMetaInformation {
 
     override def toString: String = {
         s"SerializationRelatedCallees(size=${this.size})"
@@ -47,7 +47,7 @@ sealed class SerializationRelatedCalleesImplementation(
 }
 
 object LowerBoundSerializationRelatedCallees extends SerializationRelatedCallees
-        with CalleesLikeLowerBound {
+    with CalleesLikeLowerBound {
     override def updated(
         pc: Int, callee: DeclaredMethod
     )(implicit declaredMethods: DeclaredMethods): SerializationRelatedCallees = this
