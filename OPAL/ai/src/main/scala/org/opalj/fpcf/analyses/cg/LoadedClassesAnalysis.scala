@@ -89,7 +89,9 @@ class LoadedClassesAnalysis(
                 if (newLoadedClasses.nonEmpty) {
                     val lcResult = PartialResult[SomeProject, LoadedClasses](project, LoadedClasses.key, {
                         case EPK(p, _) ⇒
-                            Some(EPS(p, LoadedClassesLowerBound, new LoadedClasses(UIDSet.empty)))
+                            Some(
+                                EPS(p, LoadedClassesLowerBound, new LoadedClasses(newLoadedClasses))
+                            )
                         case EPS(p, lb, ub) ⇒
                             val newUb = ub.classes ++ newLoadedClasses
                             // due to monotonicity:
