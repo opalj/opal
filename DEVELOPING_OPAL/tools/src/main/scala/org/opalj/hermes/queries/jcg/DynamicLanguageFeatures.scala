@@ -2,16 +2,25 @@
 package org.opalj.hermes.queries.jcg
 
 import org.opalj.da
+import org.opalj.ai.InterruptableAI
+import org.opalj.ai.Domain
+import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
+import org.opalj.bi.REF_invokeInterface
+import org.opalj.bi.REF_invokeSpecial
+import org.opalj.bi.REF_invokeStatic
+import org.opalj.bi.REF_invokeVirtual
+import org.opalj.bi.REF_newInvokeSpecial
 import org.opalj.br.MethodWithBody
-import org.opalj.br.InvokeStaticMethodHandle
-import org.opalj.br.InvokeInterfaceMethodHandle
-import org.opalj.br.InvokeVirtualMethodHandle
-import org.opalj.br.NewInvokeSpecialMethodHandle
 import org.opalj.br.InvokeSpecialMethodHandle
 import org.opalj.br.MethodCallMethodHandle
+import org.opalj.br.MethodDescriptor
+import org.opalj.br.InvokeStaticMethodHandle
+import org.opalj.br.Method
 import org.opalj.br.analyses.Project
 import org.opalj.br.instructions.INVOKEDYNAMIC
-import org.opalj.br.instructions.INVOKEINTERFACE
+import org.opalj.br.ObjectType.LambdaMetafactory
+import org.opalj.br.instructions.ARETURN
+import org.opalj.br.instructions.AASTORE
 import org.opalj.hermes.HermesConfig
 import org.opalj.hermes.InstructionLocation
 import org.opalj.hermes.ProjectConfiguration
@@ -30,21 +39,27 @@ class DynamicLanguageFeatures(
 ) extends DefaultFeatureQuery {
 
     override def featureIDs: Seq[String] =
-        /* There are 16 test cases, 8 pertaining to method references and 8 pertaining to lambdas */
-        (1 to 7).map(num ⇒ s"MR$num") ++ (1 to 8).map(num ⇒ s"Lambda$num")
+        /* There are 11 test cases, 7 pertaining to method references and 4 pertaining to lambdas */
+        /*
+        * Lambda5 = Java10 string concat
+        * Lambda6 = Scala serialization
+        * Lambda7 = Scala symbols
+        * */
+        (1 to 7).map(num ⇒ s"MR$num") ++ (1 to 7).map(num ⇒ s"Lambda$num")
 
     def evaluate[S](
         projectConfiguration: ProjectConfiguration,
         project:              Project[S],
         rawClassFiles:        Traversable[(da.ClassFile, S)]
     ): IndexedSeq[LocationsContainer[S]] = {
+        import org.opalj.br.reader.InvokedynamicRewriting._
+
         val locations = Array.fill(featureIDs.size)(new LocationsContainer[S])
 
         for {
             m @ MethodWithBody(code) ← project.allMethodsWithBody
             pcAndInvocation ← code collect {
-                case dynInv: INVOKEDYNAMIC   ⇒ dynInv
-                case intInv: INVOKEINTERFACE ⇒ intInv
+                case dynInv: INVOKEDYNAMIC ⇒ dynInv
             }
         } {
 
@@ -54,74 +69,98 @@ class DynamicLanguageFeatures(
             val testCaseId = pcAndInvocation.value match {
                 case invDyn: INVOKEDYNAMIC ⇒
                     {
-                        val bm = invDyn.bootstrapMethod
 
-                        assert(bm.arguments.size == 2)
+                        if (isJava10StringConcatInvokedynamic(invDyn)) {
+                            11 /* Lambda5 */
+                        } else if (isScalaLambdaDeserializeExpression(invDyn)) {
+                            12 /* Lambda6 */
+                        } else if (isScalaSymbolExpression(invDyn)) {
+                            13 /* Lambda7 */
+                        } else if (isJava8LikeLambdaExpression(invDyn)) {
+                            val bm = invDyn.bootstrapMethod
+                            val handle = bm.arguments(1).asInstanceOf[MethodCallMethodHandle]
 
-                        val handle = bm.arguments(1).asInstanceOf[MethodCallMethodHandle]
-                        handle match {
-                            case InvokeStaticMethodHandle(_, _, name, descriptor) ⇒ {
-                                // this just the called method is defined in the same class..
-                                // if there is a method in the same class with the same name and descriptor,
-                                // this check is tricked.
-                                val localMethod = m.classFile.findMethod(name, descriptor)
-                                val isLocal = localMethod.isDefined
-                                if (isLocal) {
-                                    val callee = localMethod.get
-                                    if (callee.isStatic) {
-                                        if (callee.isSynthetic) {
-                                            7 /* Lambda1 */
-                                        } else {
-                                            if (callee.parameterTypes.isEmpty) {
-                                                3 /* MR4 */
-                                            } else {
-                                                4 /* MR 5 */
-                                            }
-                                        }
-                                    } else {
-                                        /* something unexpected */ 14
+                            if (bm.handle.isInvokeStaticMethodHandle) {
+                                val InvokeStaticMethodHandle(LambdaMetafactory, false, name, descriptor) = bm.handle
+                                if (descriptor == MethodDescriptor.LambdaAltMetafactoryDescriptor &&
+                                    name == "altMetafactory") {
+                                    10
+                                } else if (code.pcOfNextInstruction(pc) != -1) {
+                                    val nextPC = code.pcOfNextInstruction(pc)
+                                    if (code.instructions(nextPC).opcode == ARETURN.opcode)
+                                        8
+                                    else {
+                                        val ai = new InterruptableAI[Domain]
+                                        val domain = new DefaultDomainWithCFGAndDefUse(project, m)
+                                        val result = ai(m, domain)
+                                        val instructions = result.domain.code.instructions
+                                        val users = result.domain.usedBy(pc)
+                                        if (users.exists(instructions(_).opcode == AASTORE.opcode))
+                                            9
+                                        else
+                                            handleJava8InvokeDynamic(m, handle)
                                     }
-                                } else {
-                                    /* something unexpected */ 14
-                                }
-                            }
-                            case InvokeSpecialMethodHandle(_, isInterface, name, methodDescriptor) ⇒ {
-                                val localMethod = m.classFile.findMethod(name, methodDescriptor)
-                                val isLocal = localMethod.isDefined
-                                if (isLocal) {
-                                    val callee = localMethod.get
-                                    if (callee.isSynthetic) 2 /* MR3  */ else 1 /* MR2 */
-                                } else /* something unexpected */ 14
-                            }
-                            case InvokeInterfaceMethodHandle(_, _, _)  ⇒ 0
-                            case InvokeVirtualMethodHandle(_, _, _)    ⇒ 6
-                            case NewInvokeSpecialMethodHandle(_, _, _) ⇒ 5
-                            case _ ⇒
-                                throw new RuntimeException("Unexpected handle Kind.")
+                                } else
+                                    handleJava8InvokeDynamic(m, handle)
+                            } else
+                                handleJava8InvokeDynamic(m, handle)
+                        } else {
+                            //throw new RuntimeException("Unexpected handle Kind." + invDyn)
+                            -1
                         }
                     }
-
-                case _: INVOKEINTERFACE ⇒
-                    -1
-                //                    val declCls = intInv.declaringClass
-                //                    val declCf = project.classFile(declCls)
-                //
-                //                    if (declCf.isDefined) {
-                //                        val cf = declCf.get
-                //
-                //                    }
-                //
-                //                    -1 /* We are not interested in this interface invocation */
-                //                }
-                //-1
             }
 
-            if (testCaseId > 0 && testCaseId < featureIDs.size) {
+            if (testCaseId >= 0 && testCaseId < featureIDs.size) {
                 locations(testCaseId) += l
             }
         }
 
         locations
+    }
+
+    private def handleJava8InvokeDynamic[S](m: Method, handle: MethodCallMethodHandle) = {
+        handle.referenceKind match {
+            case REF_invokeInterface ⇒ 0
+            case REF_invokeStatic ⇒ {
+                val InvokeStaticMethodHandle(_, _, name, descriptor) = handle
+                // this just the called method is defined in the same class..
+                // if there is a method in the same class with the same name and descriptor,
+                // this check is tricked.
+                val localMethod = m.classFile.findMethod(name, descriptor)
+                val isLocal = localMethod.isDefined
+                if (isLocal) {
+                    val callee = localMethod.get
+                    if (callee.isStatic) {
+                        if (callee.isSynthetic) {
+                            7 /* Lambda1 */
+                        } else {
+                            if (callee.parameterTypes.isEmpty) {
+                                3 /* MR4 */
+                            } else {
+                                4 /* MR 5 */
+                            }
+                        }
+                    } else {
+                        /* something unexpected */ -1
+                    }
+                } else {
+                    8 /* Lambda2 */
+                }
+            }
+            case REF_invokeSpecial ⇒ {
+                val InvokeSpecialMethodHandle(_, isInterface, name, methodDescriptor) = handle
+                val localMethod = m.classFile.findMethod(name, methodDescriptor)
+                val isLocal = localMethod.isDefined
+                if (isLocal) {
+                    val callee = localMethod.get
+                    if (callee.isSynthetic) 2 /* MR3  */ else 1 /* MR2 */
+                } else /* something unexpected */ 10
+            }
+            case REF_invokeVirtual    ⇒ 6
+            case REF_newInvokeSpecial ⇒ 5
+            case hk                   ⇒ throw new RuntimeException("Unexpected handle Kind."+hk)
+        }
     }
 }
 
