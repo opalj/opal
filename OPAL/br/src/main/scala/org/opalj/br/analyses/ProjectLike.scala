@@ -651,11 +651,31 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
      *           - `Empty`.
      */
     def specialCall(
-        declaringClassType: ObjectType, // an interface or class type to be precise
-        isInterface:        Boolean,
-        name:               String, // an interface or class type to be precise
-        descriptor:         MethodDescriptor
+        callerClassType:           ObjectType,
+        initialDeclaringClassType: ObjectType, // an interface or class type to be precise
+        isInterface:               Boolean,
+        name:                      String, // an interface or class type to be precise
+        descriptor:                MethodDescriptor
     ): Result[Method] = {
+        /* FROM THE SPEC
+            If all of the following are true, let C be the direct superclass of the current class:
+            • The resolved method is not an instance initialization method (§2.9.1).
+            • If the symbolic reference names a class (not an interface), then that class is a
+              superclass of the current class.
+            • The ACC_SUPER flag is set for the class file (§4.1).
+            Otherwise, let C be the class or interface named by the symbolic reference.
+         */
+        val declaringClassType =
+            if (name != "<init>" &&
+                (callerClassType ne initialDeclaringClassType) && // <= handles private calls
+                classHierarchy.isInterface(declaringClassType).isNo) {
+                // Let's select the direct superclass (if it is available; otherwise we use the
+                // declared class as a fallback.)
+                classHierarchy.superclassType(callerClassType).getOrElse(initialDeclaringClassType)
+            } else {
+                initialDeclaringClassType
+            }
+
         // ...  default methods cannot override methods from java.lang.Object
         // ...  in case of super method calls (not initializers), we can use
         //      "instanceMethods" to find the method, because the method has to
@@ -663,7 +683,6 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
         // ...  the receiver type of super initializer calls is always explicitly given
         classFile(declaringClassType) match {
             case Some(classFile) ⇒
-                // TODO Java9 or Java10 Do we have to remove this check?
                 if (classFile.isInterfaceDeclaration != isInterface)
                     Failure
                 else {
