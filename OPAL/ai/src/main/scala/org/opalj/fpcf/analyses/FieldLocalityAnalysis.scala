@@ -352,7 +352,7 @@ class FieldLocalityAnalysis private[analyses] (
                 handleConcreteCall(callee)
 
             case Assignment(_, _, NonVirtualFunctionCall(_, dc, isI, name, desc, _, _)) ⇒
-                val callee = project.specialCall(dc, isI, name, desc)
+                val callee = project.specialCall(caller.classFile.thisType, dc, isI, name, desc)
                 handleConcreteCall(callee)
 
             case Assignment(_, _, VirtualFunctionCall(_, rcvrType, _, name, desc, receiver, _)) ⇒

@@ -242,7 +242,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
                 val call = stmt.asNonVirtualMethodCall
                 if (!isDomainSpecificCall(call, Some(call.receiver))) {
                     val NonVirtualMethodCall(_, declClass, _, name, descr, rcvr, params) = stmt
-                    val callee = stmt.asNonVirtualMethodCall.resolveCallTarget
+                    val callee = stmt.asNonVirtualMethodCall.resolveCallTarget(state.declClass)
                     checkPurityOfCall(declClass, name, descr, rcvr +: params, callee)
                 } else true
             case VirtualMethodCall.ASTID ⇒
@@ -332,7 +332,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
                 val call = expr.asNonVirtualFunctionCall
                 if (!isDomainSpecificCall(call, Some(call.receiver))) {
                     val NonVirtualFunctionCall(_, declClass, _, name, descr, rcvr, params) = expr
-                    val callee = call.resolveCallTarget
+                    val callee = call.resolveCallTarget(state.declClass)
                     checkPurityOfCall(declClass, name, descr, rcvr +: params, callee)
                 } else true
             case VirtualFunctionCall.ASTID ⇒

@@ -5,6 +5,7 @@ package analyses
 package escape
 
 import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.br.ObjectType
 import org.opalj.br.Method
 import org.opalj.br.analyses.VirtualFormalParameters
 import org.opalj.br.cfg.CFG
@@ -30,6 +31,8 @@ trait AbstractEscapeAnalysisContext {
     val defSite: ValueOrigin
     val targetMethod: Method
     val code: Array[Stmt[V]]
+
+    def targetMethodDeclaringClassType: ObjectType = targetMethod.classFile.thisType
 
     /**
      * Checks whether the expression is a use of the defSite.

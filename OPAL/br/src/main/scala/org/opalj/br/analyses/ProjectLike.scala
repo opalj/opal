@@ -624,13 +624,13 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
         }
     }
 
-    def specialCall(i: INVOKESPECIAL): Result[Method] = {
-        specialCall(i.declaringClass, i.isInterface, i.name, i.methodDescriptor)
+    def specialCall(callerClassType: ObjectType, i: INVOKESPECIAL): Result[Method] = {
+        specialCall(callerClassType, i.declaringClass, i.isInterface, i.name, i.methodDescriptor)
     }
 
-    def nonVirtualCall(i: NonVirtualMethodInvocationInstruction): Result[Method] = {
+    def nonVirtualCall(callerClassType: ObjectType, i: NonVirtualMethodInvocationInstruction): Result[Method] = {
         if (i.opcode == INVOKESPECIAL.opcode) {
-            specialCall(i.asINVOKESPECIAL)
+            specialCall(callerClassType, i.asINVOKESPECIAL)
         } else { // i.opcode == INVOKESTATIC.opcode
             staticCall(i.asINVOKESTATIC)
         }
@@ -668,7 +668,7 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
         val declaringClassType =
             if (name != "<init>" &&
                 (callerClassType ne initialDeclaringClassType) && // <= handles private calls
-                classHierarchy.isInterface(declaringClassType).isNo) {
+                classHierarchy.isInterface(initialDeclaringClassType).isNo) {
                 // Let's select the direct superclass (if it is available; otherwise we use the
                 // declared class as a fallback.)
                 classHierarchy.superclassType(callerClassType).getOrElse(initialDeclaringClassType)

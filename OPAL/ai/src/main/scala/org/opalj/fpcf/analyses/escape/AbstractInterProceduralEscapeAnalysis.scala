@@ -34,7 +34,7 @@ import org.opalj.tac.VirtualMethodCall
  *
  * Parameter of non-virtual methods are represented as [[org.opalj.br.analyses.VirtualFormalParameter]]
  *
- * @author Florian Kuebler
+ * @author Florian Kübler
  */
 trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
 
@@ -44,19 +44,32 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
 
     protected[this] override def handleStaticMethodCall(
         call: StaticMethodCall[V]
-    )(implicit context: AnalysisContext, state: AnalysisState): Unit = {
+    )(
+        implicit
+        context: AnalysisContext,
+        state:   AnalysisState
+    ): Unit = {
         checkParams(call.resolveCallTarget, call.params, hasAssignment = false)
     }
 
     protected[this] override def handleStaticFunctionCall(
-        call: StaticFunctionCall[V], hasAssignment: Boolean
-    )(implicit context: AnalysisContext, state: AnalysisState): Unit = {
+        call:          StaticFunctionCall[V],
+        hasAssignment: Boolean
+    )(
+        implicit
+        context: AnalysisContext,
+        state:   AnalysisState
+    ): Unit = {
         checkParams(call.resolveCallTarget, call.params, hasAssignment)
     }
 
     protected[this] override def handleVirtualMethodCall(
         call: VirtualMethodCall[V]
-    )(implicit context: AnalysisContext, state: AnalysisState): Unit = {
+    )(
+        implicit
+        context: AnalysisContext,
+        state:   AnalysisState
+    ): Unit = {
         handleVirtualCall(
             call.declaringClass,
             call.isInterface,
@@ -69,8 +82,13 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
     }
 
     protected[this] override def handleVirtualFunctionCall(
-        call: VirtualFunctionCall[V], hasAssignment: Boolean
-    )(implicit context: AnalysisContext, state: AnalysisState): Unit = {
+        call:          VirtualFunctionCall[V],
+        hasAssignment: Boolean
+    )(
+        implicit
+        context: AnalysisContext,
+        state:   AnalysisState
+    ): Unit = {
         handleVirtualCall(
             call.declaringClass,
             call.isInterface,
@@ -84,23 +102,40 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
 
     protected[this] override def handleParameterOfConstructor(
         call: NonVirtualMethodCall[V]
-    )(implicit context: AnalysisContext, state: AnalysisState): Unit = {
-        checkParams(call.resolveCallTarget, call.params, hasAssignment = false)
+    )(
+        implicit
+        context: AnalysisContext,
+        state:   AnalysisState
+    ): Unit = {
+        checkParams(
+            call.resolveCallTarget(context.targetMethodDeclaringClassType),
+            call.params,
+            hasAssignment = false
+        )
     }
 
     protected[this] override def handleNonVirtualAndNonConstructorCall(
         call: NonVirtualMethodCall[V]
-    )(implicit context: AnalysisContext, state: AnalysisState): Unit = {
-        val methodO = call.resolveCallTarget
+    )(
+        implicit
+        context: AnalysisContext,
+        state:   AnalysisState
+    ): Unit = {
+        val methodO = call.resolveCallTarget(context.targetMethodDeclaringClassType)
         checkParams(methodO, call.params, hasAssignment = false)
         if (context.usesDefSite(call.receiver))
             handleCall(methodO, param = 0, hasAssignment = false)
     }
 
     protected[this] override def handleNonVirtualFunctionCall(
-        call: NonVirtualFunctionCall[V], hasAssignment: Boolean
-    )(implicit context: AnalysisContext, state: AnalysisState): Unit = {
-        val methodO = call.resolveCallTarget
+        call:          NonVirtualFunctionCall[V],
+        hasAssignment: Boolean
+    )(
+        implicit
+        context: AnalysisContext,
+        state:   AnalysisState
+    ): Unit = {
+        val methodO = call.resolveCallTarget(context.targetMethodDeclaringClassType)
         checkParams(methodO, call.params, hasAssignment)
         if (context.usesDefSite(call.receiver))
             handleCall(methodO, param = 0, hasAssignment = hasAssignment)
@@ -187,7 +222,9 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
     }
 
     private[this] def checkParams(
-        methodO: org.opalj.Result[Method], params: Seq[Expr[V]], hasAssignment: Boolean
+        methodO:       org.opalj.Result[Method],
+        params:        Seq[Expr[V]],
+        hasAssignment: Boolean
     )(implicit context: AnalysisContext, state: AnalysisState): Unit = {
         for (i ← params.indices) {
             if (context.usesDefSite(params(i)))
@@ -196,7 +233,9 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
     }
 
     private[this] def handleCall(
-        methodO: org.opalj.Result[Method], param: Int, hasAssignment: Boolean
+        methodO:       org.opalj.Result[Method],
+        param:         Int,
+        hasAssignment: Boolean
     )(implicit context: AnalysisContext, state: AnalysisState): Unit = {
         // we definitively escape into to callee
         state.meetMostRestrictive(EscapeInCallee)
@@ -219,8 +258,14 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
     }
 
     private[this] def handleEscapeState(
-        fp: VirtualFormalParameter, hasAssignment: Boolean, isConcreteMethod: Boolean
-    )(implicit context: AnalysisContext, state: AnalysisState): Unit = {
+        fp:               VirtualFormalParameter,
+        hasAssignment:    Boolean,
+        isConcreteMethod: Boolean
+    )(
+        implicit
+        context: AnalysisContext,
+        state:   AnalysisState
+    ): Unit = {
         /* This is crucial for the analysis. the dependees set is not allowed to
          * contain duplicates. Due to very long target methods it could be the case
          * that multiple queries to the property store result in either an EP or an
@@ -237,8 +282,12 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
     }
 
     private[this] def caseConditionalNoEscape(
-        ep: EOptionP[Entity, Property], hasAssignment: Boolean
-    )(implicit state: AnalysisState): Unit = {
+        ep:            EOptionP[Entity, Property],
+        hasAssignment: Boolean
+    )(
+        implicit
+        state: AnalysisState
+    ): Unit = {
         state.meetMostRestrictive(EscapeInCallee)
 
         if (hasAssignment)
@@ -248,8 +297,12 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
     }
 
     private[this] def handleEscapeState(
-        escapeState: EOptionP[Entity, Property], hasAssignment: Boolean
-    )(implicit state: AnalysisState): Unit = {
+        escapeState:   EOptionP[Entity, Property],
+        hasAssignment: Boolean
+    )(
+        implicit
+        state: AnalysisState
+    ): Unit = {
         assert(escapeState.e.isInstanceOf[VirtualFormalParameter])
 
         val e = escapeState.e.asInstanceOf[VirtualFormalParameter]
@@ -318,7 +371,11 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
 
     abstract override protected[this] def continuation(
         someEPS: SomeEPS
-    )(implicit context: AnalysisContext, state: AnalysisState): PropertyComputationResult = {
+    )(
+        implicit
+        context: AnalysisContext,
+        state:   AnalysisState
+    ): PropertyComputationResult = {
 
         someEPS.e match {
             case VirtualFormalParameter(DefinedMethod(_, m), -1) if m.isConstructor ⇒

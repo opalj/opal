@@ -124,7 +124,7 @@ object UnusedResults extends DefaultOneStepAnalysis {
                 val callee = call.resolveCallTarget
                 handleCall(method, callee, call.pc)
             case ExprStmt(_, call: NonVirtualFunctionCall[V]) ⇒
-                val callee = call.resolveCallTarget
+                val callee = call.resolveCallTarget(method.classFile.thisType)
                 handleCall(method, callee, call.pc)
             case ExprStmt(_, call: VirtualFunctionCall[V]) ⇒
                 handleVirtualCall(call, method)
