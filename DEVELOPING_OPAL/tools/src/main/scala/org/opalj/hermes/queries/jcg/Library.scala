@@ -48,6 +48,7 @@ class Library(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
 
         val projectIndex = project.get(ProjectIndexKey)
         var cbsCache = Map.empty[String, Set[Method]]
+        //val declaredMethods = project.get(DeclaredMethodsKey)
 
         for {
             (classFile, source) ← project.projectClassFilesWithSources
@@ -99,7 +100,7 @@ class Library(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
 
                         var publicTarget = false
                         var packagePrivateTarget = false
-//                        var subclassTarget = false
+                        var subclassTarget = false
 
                         val itr = targets.iterator
                         while(itr.hasNext
@@ -110,13 +111,8 @@ class Library(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
 
                             publicTarget |= declClass.isPublic
                             packagePrivateTarget |= declClass.isPackageVisible
-//                            subclassTarget |= declClass.superclassType.map{ ot =>
-//                                val cf = project.classFile(ot).map{ cf =>
-//
-//                            }
-//                                ot..find(target.name, target.descriptor)
-//                                false
-//                            }.getOrElse(false)
+                            // this is a compiler dependent approximation
+                            subclassTarget |=  target.isSynthetic && target.isBridge
                         }
 
                         if(publicTarget)
