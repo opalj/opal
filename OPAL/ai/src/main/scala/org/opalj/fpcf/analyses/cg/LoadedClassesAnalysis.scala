@@ -18,7 +18,8 @@ import org.opalj.fpcf.properties.LowerBoundCallers
 import org.opalj.fpcf.properties.NoCallers
 import org.opalj.fpcf.properties.OnlyVMLevelCallers
 import org.opalj.tac.Assignment
-import org.opalj.tac.GetField
+import org.opalj.tac.ExprStmt
+import org.opalj.tac.GetStatic
 import org.opalj.tac.PutStatic
 import org.opalj.tac.SimpleTACAIKey
 
@@ -167,19 +168,22 @@ class LoadedClassesAnalysis(
             ).foreach(newCLInits += _)
         }
 
+        @inline def loadClass(objectType: ObjectType): Unit = {
+            LoadedClassesAnalysis.retrieveStaticInitializers(
+                objectType, declaredMethods, project
+            ).foreach(newCLInits += _)
+            newLoadedClasses += objectType
+        }
+
         if (method.body.isDefined) {
             for (stmt ← tacaiProvider(method).stmts) {
                 stmt match {
                     case PutStatic(_, dc, _, _, _) if isNewLoadedClass(dc) ⇒
-                        LoadedClassesAnalysis.retrieveStaticInitializers(
-                            dc, declaredMethods, project
-                        ).foreach(newCLInits += _)
-                        newLoadedClasses += dc
-                    case Assignment(_, _, GetField(_, dc, _, _, _)) if isNewLoadedClass(dc) ⇒
-                        LoadedClassesAnalysis.retrieveStaticInitializers(
-                            dc, declaredMethods, project
-                        ).foreach(newCLInits += _)
-                        newLoadedClasses += dc
+                        loadClass(dc)
+                    case Assignment(_, _, GetStatic(_, dc, _, _)) if isNewLoadedClass(dc) ⇒
+                        loadClass(dc)
+                    case ExprStmt(_, GetStatic(_, dc, _, _)) if isNewLoadedClass(dc) ⇒
+                        loadClass(dc)
                     case _ ⇒
                 }
             }
