@@ -62,7 +62,10 @@ object InstantiatedTypes extends InstantiatedTypesPropertyMetaInformation {
     final val key: PropertyKey[InstantiatedTypes] = {
         PropertyKey.create[ProjectLike, InstantiatedTypes](
             "InstantiatedTypes",
-            (_: PropertyStore, _: FallbackReason, _: ProjectLike) ⇒ AllTypes,
+            (_: PropertyStore, reason: FallbackReason, _: ProjectLike) ⇒ reason match {
+                case PropertyIsNotDerivedByPreviouslyExecutedAnalysis ⇒ NoTypes
+                case PropertyIsNotComputedByAnyAnalysis               ⇒ AllTypes
+            },
             (_, eps: EPS[ProjectLike, InstantiatedTypes]) ⇒ eps.ub,
             (_: PropertyStore, _: ProjectLike) ⇒ None
         )
@@ -86,3 +89,5 @@ object AllTypes extends InstantiatedTypes(null, null) {
 
     override def numElements: Int = throw new UnsupportedOperationException()
 }
+
+object NoTypes extends InstantiatedTypes(List.empty, UIDSet.empty)
