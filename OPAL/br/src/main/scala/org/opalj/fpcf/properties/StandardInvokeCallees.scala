@@ -16,13 +16,13 @@ import scala.collection.immutable.IntMap
  * @author Florian Kuebler
  */
 sealed trait StandardInvokeCalleesPropertyMetaInformation
-        extends CalleesLikePropertyMetaInformation {
+    extends CalleesLikePropertyMetaInformation {
 
     final type Self = StandardInvokeCallees
 }
 
 sealed trait StandardInvokeCallees extends CalleesLike
-        with StandardInvokeCalleesPropertyMetaInformation {
+    with StandardInvokeCalleesPropertyMetaInformation {
 
     override def toString: String = {
         s"StandardInvokeCallees(size=${this.size})"
