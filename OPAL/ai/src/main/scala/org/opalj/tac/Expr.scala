@@ -84,7 +84,9 @@ trait Expr[+V <: Var[V]] extends ASTNode[V] {
     def asInstanceOf: InstanceOf[V] = throw new ClassCastException();
     def asCompare: Compare[V] = throw new ClassCastException();
     def asParam: Param = throw new ClassCastException();
+    def isMethodTypeConst: Boolean = false
     def asMethodTypeConst: MethodTypeConst = throw new ClassCastException();
+    def isMethodHandleConst: Boolean = false
     def asMethodHandleConst: MethodHandleConst = throw new ClassCastException();
     def isConst: Boolean = false
     def isIntConst: Boolean = false
@@ -105,18 +107,22 @@ trait Expr[+V <: Var[V]] extends ASTNode[V] {
     def asPrefixExpr: PrefixExpr[V] = throw new ClassCastException();
     def asPrimitiveTypeCastExpr: PrimitiveTypecastExpr[V] = throw new ClassCastException();
     def asNew: New = throw new ClassCastException();
+    def isNewArray: Boolean = false
     def asNewArray: NewArray[V] = throw new ClassCastException();
     def asArrayLoad: ArrayLoad[V] = throw new ClassCastException();
     def asArrayLength: ArrayLength[V] = throw new ClassCastException();
     def asFieldRead: FieldRead[V] = throw new ClassCastException();
     def isGetField: Boolean = false
     def asGetField: GetField[V] = throw new ClassCastException();
+    def isGetStatic: Boolean = false
     def asGetStatic: GetStatic = throw new ClassCastException();
     def asInvokedynamic: Invokedynamic[V] = throw new ClassCastException();
     def asFunctionCall: FunctionCall[V] = throw new ClassCastException();
+    def isStaticFunctionCall: Boolean = false
     def asStaticFunctionCall: StaticFunctionCall[V] = throw new ClassCastException();
     def asInstanceFunctionCall: InstanceFunctionCall[V] = throw new ClassCastException();
     def asNonVirtualFunctionCall: NonVirtualFunctionCall[V] = throw new ClassCastException();
+    def isVirtualFunctionCall: Boolean = false;
     def asVirtualFunctionCall: VirtualFunctionCall[V] = throw new ClassCastException();
 }
 
@@ -214,6 +220,7 @@ sealed abstract class Const extends ValueExpr[Nothing] {
 }
 
 case class MethodTypeConst(pc: PC, value: MethodDescriptor) extends Const {
+    final override def isMethodTypeConst: Boolean = true
     final override def asMethodTypeConst: this.type = this
     final override def astID: Int = MethodTypeConst.ASTID
     final override def tpe: Type = ObjectType.MethodType
@@ -223,6 +230,7 @@ case class MethodTypeConst(pc: PC, value: MethodDescriptor) extends Const {
 object MethodTypeConst { final val ASTID = -10 }
 
 case class MethodHandleConst(pc: PC, value: MethodHandle) extends Const {
+    final override def isMethodHandleConst: Boolean = true
     final override def asMethodHandleConst: this.type = this
     final override def astID: Int = MethodHandleConst.ASTID
     final override def tpe: Type = ObjectType.MethodHandle
@@ -437,6 +445,7 @@ trait ArrayExpr[+V <: Var[V]] extends Expr[V] {
  */
 case class NewArray[+V <: Var[V]](pc: PC, counts: Seq[Expr[V]], tpe: ArrayType) extends ArrayExpr[V] {
 
+    final override def isNewArray: Boolean = true
     final override def asNewArray: this.type = this
     final override def astID: Int = NewArray.ASTID
     final override def cTpe: ComputationalType = ComputationalTypeReference
@@ -577,6 +586,7 @@ case class GetStatic(
         declaredFieldType: FieldType
 ) extends FieldRead[Nothing] {
 
+    final override def isGetStatic: Boolean = true
     final override def asGetStatic: this.type = this
     final override def astID: Int = GetStatic.ASTID
     final override def isSideEffectFree: Boolean = true
@@ -735,16 +745,17 @@ case class NonVirtualFunctionCall[+V <: Var[V]](
 object NonVirtualFunctionCall { final val ASTID = -24 }
 
 case class VirtualFunctionCall[+V <: Var[V]](
-        pc:             PC,
-        declaringClass: ReferenceType,
-        isInterface:    Boolean,
-        name:           String,
-        descriptor:     MethodDescriptor,
-        receiver:       Expr[V],
-        params:         Seq[Expr[V]]
+    pc:             PC,
+    declaringClass: ReferenceType,
+    isInterface:    Boolean,
+    name:           String,
+    descriptor:     MethodDescriptor,
+    receiver:       Expr[V],
+    params:         Seq[Expr[V]]
 ) extends InstanceFunctionCall[V]
-    with VirtualCall[V] {
+        with VirtualCall[V] {
 
+    final override def isVirtualFunctionCall: Boolean = true
     final override def asVirtualFunctionCall: this.type = this
     final override def astID: Int = VirtualFunctionCall.ASTID
     final override def isSideEffectFree: Boolean = false
@@ -783,6 +794,7 @@ case class StaticFunctionCall[+V <: Var[V]](
         params:         Seq[Expr[V]]
 ) extends FunctionCall[V] {
 
+    final override def isStaticFunctionCall: Boolean = true
     final override def asStaticFunctionCall: this.type = this
     final override def astID: Int = StaticFunctionCall.ASTID
     final override def isSideEffectFree: Boolean = false
