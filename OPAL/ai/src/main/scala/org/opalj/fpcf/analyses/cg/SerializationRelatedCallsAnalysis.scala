@@ -146,50 +146,52 @@ class SerializationRelatedCallsAnalysis private[analyses] (
         for (rv ← param.allValues) {
             if (rv.isPrecise) {
                 val rt = rv.valueType.get
-                val paramType =
-                    if (rt.isArrayType)
-                        rt.asArrayType.elementType.asObjectType // todo this will crash
-                    else rt.asObjectType
+                if (rt.isObjectType || rt.asArrayType.elementType.isObjectType) {
+                    val paramType =
+                        if (rt.isArrayType)
+                            rt.asArrayType.elementType.asObjectType
+                        else rt.asObjectType
 
-                if (classHierarchy.isSubtypeOf(paramType, ObjectType.Serializable)) {
-                    if (classHierarchy.isSubtypeOf(paramType, ObjectType.Externalizable)) {
-                        val writeExternalMethod = project.instanceCall(
-                            paramType, paramType, "writeExternal", MethodDescriptor.JustTakes(ObjectType("java/io/ObjectOutput"))
+                    if (classHierarchy.isSubtypeOf(paramType, ObjectType.Serializable)) {
+                        if (classHierarchy.isSubtypeOf(paramType, ObjectType.Externalizable)) {
+                            val writeExternalMethod = project.instanceCall(
+                                paramType, paramType, "writeExternal", MethodDescriptor.JustTakes(ObjectType("java/io/ObjectOutput"))
+                            )
+
+                            calleesAndCallers.updateWithCallOrFallback(
+                                definedMethod, writeExternalMethod, pc,
+                                ObjectType.Externalizable.packageName,
+                                ObjectType.Externalizable,
+                                "writeExternal",
+                                MethodDescriptor.JustTakes(ObjectType("java/io/ObjectOutput"))
+                            )
+                        } else {
+                            val writeObjectMethod = project.specialCall(
+                                paramType, paramType, false, "writeObject", WriteObjectDescriptor
+                            )
+                            calleesAndCallers.updateWithCallOrFallback(
+                                definedMethod,
+                                writeObjectMethod,
+                                pc,
+                                ObjectType.Object.packageName,
+                                ObjectType.Object,
+                                "writeObject",
+                                WriteObjectDescriptor
+                            )
+                        }
+
+                        val writeReplaceMethod = project.specialCall(
+                            paramType, paramType, false, "writeReplace", WriteObjectDescriptor
                         )
 
                         calleesAndCallers.updateWithCallOrFallback(
-                            definedMethod, writeExternalMethod, pc,
-                            ObjectType.Externalizable.packageName,
-                            ObjectType.Externalizable,
-                            "writeExternal",
-                            MethodDescriptor.JustTakes(ObjectType("java/io/ObjectOutput"))
-                        )
-                    } else {
-                        val writeObjectMethod = project.specialCall(
-                            paramType, paramType, false, "writeObject", WriteObjectDescriptor
-                        )
-                        calleesAndCallers.updateWithCallOrFallback(
-                            definedMethod,
-                            writeObjectMethod,
-                            pc,
+                            definedMethod, writeReplaceMethod, pc,
                             ObjectType.Object.packageName,
                             ObjectType.Object,
-                            "writeObject",
+                            "writeReplace",
                             WriteObjectDescriptor
                         )
                     }
-
-                    val writeReplaceMethod = project.specialCall(
-                        paramType, paramType, false, "writeReplace", WriteObjectDescriptor
-                    )
-
-                    calleesAndCallers.updateWithCallOrFallback(
-                        definedMethod, writeReplaceMethod, pc,
-                        ObjectType.Object.packageName,
-                        ObjectType.Object,
-                        "writeReplace",
-                        WriteObjectDescriptor
-                    )
                 }
 
             } else {
@@ -211,6 +213,7 @@ class SerializationRelatedCallsAnalysis private[analyses] (
         var foundCast = false
         for {
             Checkcast(_, _, cmpTpe) ← stmts
+            if cmpTpe.isObjectType || cmpTpe.asArrayType.elementType.isObjectType
         } {
             var castType = cmpTpe
 
@@ -218,9 +221,6 @@ class SerializationRelatedCallsAnalysis private[analyses] (
                 val elementType = cmpTpe.asArrayType.elementType
                 if (elementType.isObjectType)
                     castType = elementType.asObjectType
-                else {
-                    // todo we will crash later... we have to handle that case
-                }
             }
             foundCast = true
 
