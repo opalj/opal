@@ -61,9 +61,7 @@ class StaticDataUsageAnalysis private[analyses] ( final val project: SomeProject
      *
      * This function encapsulates the continuation.
      */
-    def determineUsage(
-        definedMethod: DefinedMethod
-    ): PropertyComputationResult = {
+    def determineUsage(definedMethod: DefinedMethod): PropertyComputationResult = {
 
         if (definedMethod.definedMethod.body.isEmpty)
             return Result(definedMethod, UsesVaryingData);
@@ -119,7 +117,7 @@ class StaticDataUsageAnalysis private[analyses] ( final val project: SomeProject
                     // Let's continue with the evaluation of the next instruction.
 
                     case mii: NonVirtualMethodInvocationInstruction ⇒
-                        nonVirtualCall(mii) match {
+                        nonVirtualCall(declaringClassType, mii) match {
                             case Success(callee) ⇒
                                 /* Recall that self-recursive calls are handled earlier! */
                                 val constantUsage =

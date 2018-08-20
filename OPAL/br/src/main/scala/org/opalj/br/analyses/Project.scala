@@ -1119,7 +1119,7 @@ object Project {
 
                             case INVOKESPECIAL.opcode ⇒
                                 val invokespecial = instruction.asInstanceOf[INVOKESPECIAL]
-                                project.specialCall(invokespecial) match {
+                                project.specialCall(cf.thisType, invokespecial) match {
                                     case _: Success[_] ⇒ /*OK*/
                                     case Empty         ⇒ /*OK - partial project*/
                                     case Failure ⇒

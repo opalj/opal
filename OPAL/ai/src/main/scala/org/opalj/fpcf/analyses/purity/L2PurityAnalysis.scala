@@ -392,7 +392,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                     true
                 } else false
             case NonVirtualFunctionCall.ASTID ⇒
-                val callee = rhs.asNonVirtualFunctionCall.resolveCallTarget(p)
+                val callee = rhs.asNonVirtualFunctionCall.resolveCallTarget(state.declClass)(p)
                 if (callee.hasValue) {
                     val rvf = propertyStore(declaredMethods(callee.value), ReturnValueFreshness.key)
                     val receiver = rhs.asNonVirtualFunctionCall.receiver

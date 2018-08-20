@@ -705,8 +705,8 @@ case class NonVirtualFunctionCall[+V <: Var[V]](
      *
      * @see [ProjectLike#specialCall] for further details.
      */
-    def resolveCallTarget(implicit p: ProjectLike): Result[Method] = {
-        p.specialCall(declaringClass, isInterface, name, descriptor)
+    def resolveCallTarget(callerClassType: ObjectType)(implicit p: ProjectLike): Result[Method] = {
+        p.specialCall(callerClassType, declaringClass, isInterface, name, descriptor)
     }
 
     final override def resolveCallTargets(
@@ -716,7 +716,7 @@ case class NonVirtualFunctionCall[+V <: Var[V]](
         p:  ProjectLike,
         ev: V <:< DUVar[KnownTypedValue]
     ): Set[Method] = {
-        resolveCallTarget(p).toSet
+        resolveCallTarget(callingContext)(p).toSet
     }
 
     private[tac] override def remapIndexes(

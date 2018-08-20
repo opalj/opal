@@ -39,7 +39,11 @@ trait ConstructorSensitiveEscapeAnalysis extends AbstractEscapeAnalysis {
 
     abstract protected[this] override def handleThisLocalOfConstructor(
         call: NonVirtualMethodCall[V]
-    )(implicit context: AnalysisContext, state: AnalysisState): Unit = {
+    )(
+        implicit
+        context: AnalysisContext,
+        state:   AnalysisState
+    ): Unit = {
         assert(call.name == "<init>", "method is not a constructor")
         assert(context.usesDefSite(call.receiver), "call receiver does not use def-site")
 
@@ -49,6 +53,7 @@ trait ConstructorSensitiveEscapeAnalysis extends AbstractEscapeAnalysis {
 
         // resolve the constructor
         val constructor = project.specialCall(
+            context.targetMethodDeclaringClassType,
             call.declaringClass, call.isInterface, name = "<init>", call.descriptor
         )
         constructor match {
