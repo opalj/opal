@@ -69,7 +69,7 @@ class DirectCalls(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
                 case invSpec @ INVOKESPECIAL(declaringClass, _, name, _) ⇒ {
                     if (name != "<init>") {
                         if (declType eq declaringClass) {
-                            if (project.specialCall(invSpec).value.isPrivate) {
+                            if (project.specialCall(classFile.thisType, invSpec).value.isPrivate) {
                                 val cf = project.classFile(declaringClass)
                                 if (cf.isEmpty)
                                     -1

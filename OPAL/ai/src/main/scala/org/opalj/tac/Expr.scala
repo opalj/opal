@@ -745,15 +745,15 @@ case class NonVirtualFunctionCall[+V <: Var[V]](
 object NonVirtualFunctionCall { final val ASTID = -24 }
 
 case class VirtualFunctionCall[+V <: Var[V]](
-    pc:             PC,
-    declaringClass: ReferenceType,
-    isInterface:    Boolean,
-    name:           String,
-    descriptor:     MethodDescriptor,
-    receiver:       Expr[V],
-    params:         Seq[Expr[V]]
+        pc:             PC,
+        declaringClass: ReferenceType,
+        isInterface:    Boolean,
+        name:           String,
+        descriptor:     MethodDescriptor,
+        receiver:       Expr[V],
+        params:         Seq[Expr[V]]
 ) extends InstanceFunctionCall[V]
-        with VirtualCall[V] {
+    with VirtualCall[V] {
 
     final override def isVirtualFunctionCall: Boolean = true
     final override def asVirtualFunctionCall: this.type = this

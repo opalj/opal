@@ -26,7 +26,6 @@ import org.opalj.tac.Stmt
 import org.opalj.tac.DUVar
 import org.opalj.tac.VirtualFunctionCall
 import org.opalj.tac.Expr
-import org.opalj.tac.NewArray
 import org.opalj.tac.ArrayStore
 import org.opalj.tac.VirtualMethodCall
 import org.opalj.tac.NonVirtualMethodCall
@@ -44,7 +43,6 @@ import org.opalj.tac.StaticMethodCall
 import org.opalj.tac.StaticFunctionCall
 import org.opalj.tac.NonVirtualFunctionCall
 import org.opalj.tac.Call
-import org.opalj.tac.GetStatic
 import org.opalj.tac.New
 import org.opalj.tac.TACMethodParameter
 import org.opalj.value.KnownTypedValue

@@ -166,7 +166,7 @@ class SerializationRelatedCallsAnalysis private[analyses] (
                         )
                     } else {
                         val writeObjectMethod = project.specialCall(
-                            paramType, false, "writeObject", WriteObjectDescriptor
+                            paramType, paramType, false, "writeObject", WriteObjectDescriptor
                         )
                         calleesAndCallers.updateWithCallOrFallback(
                             definedMethod,
@@ -180,7 +180,7 @@ class SerializationRelatedCallsAnalysis private[analyses] (
                     }
 
                     val writeReplaceMethod = project.specialCall(
-                        paramType, false, "writeReplace", WriteObjectDescriptor
+                        paramType, paramType, false, "writeReplace", WriteObjectDescriptor
                     )
 
                     calleesAndCallers.updateWithCallOrFallback(
@@ -264,7 +264,7 @@ class SerializationRelatedCallsAnalysis private[analyses] (
                 } else {
                     // call to `readObject`
                     val readObjectMethod = p.specialCall(
-                        t, isInterface = false, "readObject", ReadObjectDescriptor
+                        t, t, isInterface = false, "readObject", ReadObjectDescriptor
                     )
                     calleesAndCallers.updateWithCallOrFallback(
                         definedMethod, readObjectMethod, pc,
@@ -291,6 +291,7 @@ class SerializationRelatedCallsAnalysis private[analyses] (
 
                 // call to `readResolve`
                 val readResolve = p.specialCall(
+                    t,
                     t,
                     isInterface = false,
                     "readResolve",
