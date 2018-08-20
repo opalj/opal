@@ -80,20 +80,19 @@ class Reflection(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
 
     override def featureIDs: Seq[String] = {
         Seq(
-            "TR1", /* 0 --- loading of class constant */
-            "TR2", /* 1 --- invoke static method */
-            "TR3", /* 2 --- invoke instance method */
-            "TR4", /* 3 --- invoke instance method acquired by getMethod */
-            "TR5", /* 4 --- invoke method with parameters */
-            "TR6", /* 5 --- Constructor.newInstance */
-            "TR7", /* 6 --- Class.newInstance */
-            "TR8", /* 7 --- call on result of getDeclaredField */
-            "TR9", /* 8 --- call on result of getField */
-            "TR10", /* 9 -- Class.forName */
-            "LRR1", /* 10 - multiple constants for param */
-            "LRR2", /* 11 - constant(s) from StringBuilder for param */
-            "CSR1+CSR2", /* 12 - value from unknown source for param */
-            "LRR3+CSS3" /* 13 -- value from field for param */
+            "TR1", /* 0 --- invoke static method */
+            "TR2", /* 1 --- invoke instance method */
+            "TR3", /* 2 --- invoke instance method acquired by getMethod */
+            "TR4", /* 3 --- invoke method with parameters */
+            "TR5", /* 4 --- Constructor.newInstance */
+            "TR6", /* 5 --- Class.newInstance */
+            "TR7", /* 6 --- call on result of getDeclaredField */
+            "TR8", /* 7 --- call on result of getField */
+            "TR9", /* 8 -- Class.forName */
+            "LRR1", /* 9 - multiple constants for param */
+            "LRR2", /* 10 - constant(s) from StringBuilder for param */
+            "CSR1+CSR2", /* 11 - value from unknown source for param */
+            "LRR3+CSS3" /* 12 -- value from field for param */
         )
     }
 
@@ -142,9 +141,7 @@ class Reflection(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
             val pc = pcAndInstruction.pc
             val l = InstructionLocation(methodLocation, pc)
 
-            if (!pcAndInstruction.value.isMethodInvocationInstruction)
-                locations(0) += l
-            else {
+            if (pcAndInstruction.value.isMethodInvocationInstruction) {
                 implicit val body: Array[Stmt[V]] = stmts
 
                 val index = pcToIndex(pc)
@@ -157,13 +154,13 @@ class Reflection(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
 
                     call.declaringClass match {
                         case MethodT      ⇒ handleInvoke(call.asVirtualFunctionCall, l)
-                        case ConstructorT ⇒ locations(5 /* Constructor.newInstance */ ) += l
+                        case ConstructorT ⇒ locations(4 /* Constructor.newInstance */ ) += l
                         case ClassT ⇒
                             call.name match {
                                 case "getMethod" ⇒
                                     if (stmt.astID == Assignment.ASTID &&
                                         methodUsedForInvocation(index, stmt.asAssignment)) {
-                                        locations(3 /* getMethod */ ) += l // invoke called directly
+                                        locations(2 /* getMethod */ ) += l // invoke called directly
                                         handleParameterSources(call, l)
                                     }
                                 case "getDeclaredMethod" ⇒
@@ -171,7 +168,7 @@ class Reflection(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
                                         methodUsedForInvocation(index, stmt.asAssignment)) {
                                         handleParameterSources(call, l)
                                     }
-                                case "newInstance" ⇒ locations(6 /* Class.newInstance */ ) += l
+                                case "newInstance" ⇒ locations(5 /* Class.newInstance */ ) += l
                                 case "getDeclaredField" ⇒
                                     if (stmt.astID == Assignment.ASTID &&
                                         getFieldUsedForInvokation(index, stmt.asAssignment)) {
@@ -180,17 +177,17 @@ class Reflection(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
                                 case "getField" ⇒
                                     if (stmt.astID == Assignment.ASTID &&
                                         getFieldUsedForInvokation(index, stmt.asAssignment)) {
-                                        locations(8 /* getField */ ) += l
+                                        locations(7 /* getField */ ) += l
                                         handleParameterSources(call, l)
                                     }
                                 case "forName" ⇒
-                                    locations(9 /* Class.forName */ ) += l
+                                    locations(8 /* Class.forName */ ) += l
                                     handleParameterSources(call, l)
                             }
                         case FieldT ⇒
                             if (stmt.astID == Assignment.ASTID)
                                 if (fieldUsedForInvocation(index, stmt.asAssignment))
-                                    locations(7 /* Field.get */ ) += l
+                                    locations(6 /* Field.get */ ) += l
                         case _ ⇒ throw new UnknownError("will not happen")
                     }
                 }
@@ -205,15 +202,15 @@ class Reflection(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
         locations: Array[LocationsContainer[S]]
     ): Unit = {
         if (call.params.head.asVar.value.asReferenceValue.isNull.isYes)
-            locations(1 /* static invoke */ ) += l
+            locations(0 /* static invoke */ ) += l
         else
-            locations(2 /* instance invoke */ ) += l
+            locations(1 /* instance invoke */ ) += l
 
         val paramTypes = call.params(1).asVar.value
         if (paramTypes.asReferenceValue.allValues.exists { v ⇒
             v.isNull.isYesOrUnknown || v.asInstanceOf[ArrayValues#DomainArrayValue].length.contains(0)
         })
-            locations(4 /* method with parameters */ ) += l
+            locations(3 /* method with parameters */ ) += l
     }
 
     def handleParameterSources[S](call: Call[V], l: Location[S])(
@@ -263,22 +260,22 @@ class Reflection(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
         } else {
             definedBy.foreach { defSite ⇒
                 if (defSite < 0) {
-                    locations(12 /* string string */ ) += l
+                    locations(11 /* string string */ ) += l
                 } else {
                     val definition = stmts(defSite).asAssignment.expr
                     if (definition.isConst) {
-                        locations(10 /* multiple constants */ ) += l
+                        locations(9 /* multiple constants */ ) += l
                     } else if (definition.isGetField || definition.isGetStatic) {
-                        locations(13 /* field */ ) += l
+                        locations(12 /* field */ ) += l
                     } else definition match {
                         case VirtualFunctionCall(_, ObjectType.StringBuilder, false, "toString", MethodDescriptor.JustReturnsString, receiver, _) ⇒
                             val stringBuilder = simpleDefinition(receiver.asVar.definedBy)
                             if (stringBuilder.exists(isNonEscapingStringBuilder)) {
-                                locations(11 /* StringBuilder */ ) += l
+                                locations(10 /* StringBuilder */ ) += l
                             } else {
-                                locations(12 /* string unknown */ )
+                                locations(11 /* string unknown */ )
                             }
-                        case _ ⇒ locations(12 /* string unknown */ )
+                        case _ ⇒ locations(11 /* string unknown */ )
                     }
                 }
             }
