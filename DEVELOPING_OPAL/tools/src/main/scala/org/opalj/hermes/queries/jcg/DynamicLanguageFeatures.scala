@@ -44,8 +44,9 @@ class DynamicLanguageFeatures(
         * Lambda5 = Java10 string concat
         * Lambda6 = Scala serialization
         * Lambda7 = Scala symbols
+        * Lambda8 = Groovy invDyn - no test case available
         * */
-        (1 to 7).map(num ⇒ s"MR$num") ++ (1 to 7).map(num ⇒ s"Lambda$num")
+        (1 to 7).map(num ⇒ s"MR$num") ++ (1 to 8).map(num ⇒ s"Lambda$num")
 
     def evaluate[S](
         projectConfiguration: ProjectConfiguration,
@@ -76,7 +77,9 @@ class DynamicLanguageFeatures(
                             12 /* Lambda6 */
                         } else if (isScalaSymbolExpression(invDyn)) {
                             13 /* Lambda7 */
-                        } else if (isJava8LikeLambdaExpression(invDyn)) {
+                        } else if (isGroovyInvokedynamic(invDyn)) {
+                            14 /* Lambda8 */
+                        }else if (isJava8LikeLambdaExpression(invDyn)) {
                             val bm = invDyn.bootstrapMethod
                             val handle = bm.arguments(1).asInstanceOf[MethodCallMethodHandle]
 
