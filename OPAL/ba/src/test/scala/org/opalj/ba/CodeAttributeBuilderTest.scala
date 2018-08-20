@@ -67,11 +67,20 @@ class CodeAttributeBuilderTest extends FlatSpec {
                 val theSMT = theCode.stackMapTable.get
 
                 info(e.toString)
-                info(codeElements.mkString("Code Elements:\n\t\t", "\n\t\t", "\n\t"))
+                info(
+                    codeElements.
+                        zipWithIndex.
+                        map(_.swap).
+                        mkString("Code Elements:\n\t\t", "\n\t\t", "\n\t")
+                )
                 info(
                     theCode.
                         instructions.zipWithIndex.filter(_._1 != null).
-                        map(_.swap).mkString("Instructions:\n\t\t", "\n\t\t", "\n")
+                        map(_.swap).
+                        mkString("Instructions:\n\t\t", "\n\t\t", "\n")
+                )
+                info(
+                    theCode.exceptionHandlers.mkString("Exception Handlers:\n\t\t", "\n\t\t", "\n")
                 )
                 info(theSMT.pcs.mkString("Stack map table pcs: ", ", ", ""))
                 info(theSMT.stackMapFrames.mkString("Stack map table entries:\n\t\t", "\n\t\t", "\n"))
@@ -319,6 +328,12 @@ class CodeAttributeBuilderTest extends FlatSpec {
         val (brClassFile, _) = classBuilder.toBR()
         val brMethod = brClassFile.findMethod("takeLong").head
         val daClassFile = ba.toDA(brClassFile)
+        // org.opalj.io.writeAndOpen(
+        //    daClassFile.toXHTML(
+        //        Some("CodeAttributeBuilderTest.scala")),
+        //    "TheClass",
+        //    ".class.html"
+        // )
         val rawClassFile = Assembler(daClassFile)
 
         val loader = new InMemoryClassLoader(
