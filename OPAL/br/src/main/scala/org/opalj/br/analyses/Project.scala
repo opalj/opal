@@ -1036,6 +1036,7 @@ object Project {
     }
 
     def JavaClassFileReader(
+        implicit
         theLogContext: LogContext = GlobalLogContext,
         theConfig:     Config     = BaseConfig
     ): Java9FrameworkWithInvokedynamicSupportAndCaching = {
@@ -1119,7 +1120,7 @@ object Project {
 
                             case INVOKESPECIAL.opcode ⇒
                                 val invokespecial = instruction.asInstanceOf[INVOKESPECIAL]
-                                project.specialCall(invokespecial) match {
+                                project.specialCall(cf.thisType, invokespecial) match {
                                     case _: Success[_] ⇒ /*OK*/
                                     case Empty         ⇒ /*OK - partial project*/
                                     case Failure ⇒
@@ -1702,7 +1703,7 @@ object Project {
         project:                Project[Source],
         config:                 Config          = ConfigFactory.empty(),
         useOldConfigAsFallback: Boolean         = true
-    ) = {
+    ): Project[Source] = {
         apply(
             project.projectClassFilesWithSources,
             project.libraryClassFilesWithSources,

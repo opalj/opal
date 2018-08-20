@@ -621,8 +621,8 @@ case class NonVirtualMethodCall[+V <: Var[V]](
      *
      * @see [ProjectLike#specialCall] for further details.
      */
-    def resolveCallTarget(implicit p: ProjectLike): Result[Method] = {
-        p.specialCall(declaringClass, isInterface, name, descriptor)
+    def resolveCallTarget(callerClassType: ObjectType)(implicit p: ProjectLike): Result[Method] = {
+        p.specialCall(callerClassType, declaringClass, isInterface, name, descriptor)
     }
 
     // convenience method to enable Call to define a single method to handle all kinds of calls
@@ -633,7 +633,7 @@ case class NonVirtualMethodCall[+V <: Var[V]](
         p:  ProjectLike,
         ev: V <:< DUVar[KnownTypedValue]
     ): Set[Method] = {
-        resolveCallTarget(p).toSet
+        resolveCallTarget(callingContext)(p).toSet
     }
 
     override def toString: String = {

@@ -215,7 +215,9 @@ class ReturnValueFreshnessAnalysis private[analyses] (
                         handleConcreteCall(callee)
 
                     case NonVirtualFunctionCall.ASTID ⇒
-                        val callee = rhs.asNonVirtualFunctionCall.resolveCallTarget
+                        val callee = rhs.asNonVirtualFunctionCall.resolveCallTarget(
+                            dm.declaringClassType.asObjectType
+                        )
                         handleConcreteCall(callee)
 
                     case VirtualFunctionCall.ASTID ⇒

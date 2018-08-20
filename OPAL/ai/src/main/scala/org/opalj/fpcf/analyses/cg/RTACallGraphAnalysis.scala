@@ -278,12 +278,20 @@ class RTACallGraphAnalysis private[analyses] (
 
             case stmt @ NonVirtualFunctionCallStatement(call) ⇒
                 handleCall(
-                    method, call, stmt.pc, call.resolveCallTarget, calleesAndCallers
+                    method,
+                    call,
+                    stmt.pc,
+                    call.resolveCallTarget(method.declaringClassType.asObjectType),
+                    calleesAndCallers
                 )
 
             case call: NonVirtualMethodCall[V] ⇒
                 handleCall(
-                    method, call, call.pc, call.resolveCallTarget, calleesAndCallers
+                    method,
+                    call,
+                    call.pc,
+                    call.resolveCallTarget(method.declaringClassType.asObjectType),
+                    calleesAndCallers
                 )
 
             case VirtualFunctionCallStatement(call) ⇒

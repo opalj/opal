@@ -509,12 +509,12 @@ trait RecordCFG
      * by an instruction in its try block.
      */
     final def handlesException(exceptionHandler: ExceptionHandler): Boolean = {
+        val code = this.code
+        var currentPC = exceptionHandler.startPC
         val endPC = exceptionHandler.endPC
         val handlerPC = exceptionHandler.handlerPC
-        var currentPC = exceptionHandler.startPC
-        val code = this.code
-        while (currentPC <= endPC) {
-            if (exceptionHandlerSuccessorsOf(currentPC).exists(_ == handlerPC))
+        while (currentPC < endPC) {
+            if (exceptionHandlerSuccessorsOf(currentPC).contains(handlerPC))
                 return true;
             currentPC = code.pcOfNextInstruction(currentPC)
         }

@@ -115,7 +115,7 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
 
                     case mii: NonVirtualMethodInvocationInstruction ⇒
 
-                        nonVirtualCall(mii) match {
+                        nonVirtualCall(declaringClassType, mii) match {
 
                             case Success(callee) ⇒
                                 /* Recall that self-recursive calls are handled earlier! */

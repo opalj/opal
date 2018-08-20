@@ -4,6 +4,9 @@ package fpcf
 package analyses
 package escape
 
+import scala.annotation.switch
+
+import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.ai.common.DefinitionSiteLike
 import org.opalj.ai.ValueOrigin
 import org.opalj.br.Method
@@ -13,7 +16,6 @@ import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.cfg.CFG
-import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.properties.AtMost
 import org.opalj.fpcf.properties.EscapeViaReturn
 import org.opalj.fpcf.properties.EscapeViaStaticField
@@ -39,8 +41,6 @@ import org.opalj.tac.TACode
 import org.opalj.tac.Throw
 import org.opalj.tac.VirtualFunctionCall
 import org.opalj.tac.VirtualMethodCall
-
-import scala.annotation.switch
 
 /**
  * An abstract escape analysis for a [[org.opalj.ai.common.DefinitionSiteLike]] or a
@@ -130,7 +130,11 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
      */
     protected[this] def handlePutField(
         putField: PutField[V]
-    )(implicit context: AnalysisContext, state: AnalysisState): Unit
+    )(
+        implicit
+        context: AnalysisContext,
+        state:   AnalysisState
+    ): Unit
 
     /**
      * Same as [[handlePutField]].
@@ -179,7 +183,11 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
      */
     protected[this] def handleNonVirtualMethodCall(
         call: NonVirtualMethodCall[V]
-    )(implicit context: AnalysisContext, state: AnalysisState): Unit = {
+    )(
+        implicit
+        context: AnalysisContext,
+        state:   AnalysisState
+    ): Unit = {
         // we only allow special (inter-procedural) handling for constructors
         if (call.name == "<init>") {
             if (context.usesDefSite(call.receiver)) {
