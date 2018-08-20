@@ -19,6 +19,8 @@ import org.opalj.br.instructions.LoadClass
 import org.opalj.br.instructions.LoadClass_W
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.da.ClassFile
+import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger
 import org.opalj.tac.TACode
 import org.opalj.tac.DefaultTACAIKey
 import org.opalj.tac.Assignment
@@ -128,8 +130,15 @@ class Reflection(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
                 case i @ INVOKEVIRTUAL(FieldT, "get", FieldGetMD) ⇒ i
                 case i @ INVOKESTATIC(ClassT, false, "forName", ForName1MD | ForName3MD) ⇒ i
             }
-            TACode(_, stmts, pcToIndex, _, _, _) = tacai(method)
         } {
+            val TACode(_, stmts, pcToIndex, _, _, _) = try {
+                tacai(method)
+            } catch {
+                case e: Exception ⇒
+                    implicit val logContext: LogContext = p.logContext
+                    OPALLogger.error("analysis", s"unable to create 3-address code for: ${method.toJava}")
+                    throw e
+            }
             val pc = pcAndInstruction.pc
             val l = InstructionLocation(methodLocation, pc)
 
