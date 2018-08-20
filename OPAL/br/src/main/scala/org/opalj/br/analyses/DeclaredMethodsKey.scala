@@ -321,22 +321,29 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
                 packageName == that.packageName &&
                     methodName == that.methodName &&
                     descriptor == that.descriptor &&
-                    !project.instanceMethods(receiverType).exists { m ⇒
-                        methodName == m.name &&
-                            descriptor == m.descriptor &&
-                            (m.isPublic || m.method.isProtected)
-                    }
+                    !hasAccessibleMethod()
             case that: ShadowsPackagePrivateMethodContext ⇒
                 methodName == that.methodName &&
                     descriptor == that.descriptor &&
-                    project.instanceMethods(receiverType).exists { m ⇒
-                        methodName == m.name &&
-                            descriptor == m.descriptor &&
-                            (m.isPublic || m.method.isProtected)
-                    }
+                    hasAccessibleMethod()
             case that: MethodContext ⇒
                 methodName == that.methodName && descriptor == that.descriptor
             case _ ⇒ false
+        }
+
+        private def hasAccessibleMethod(): Boolean = {
+            if (project.classHierarchy.isInterface(receiverType).isYes) {
+                val method =
+                    project.resolveInterfaceMethodReference(receiverType, methodName, descriptor)
+                method.exists(m ⇒ m.isPublic || m.isProtected)
+            } else {
+                val method = project.resolveClassMethodReference(
+                    receiverType,
+                    methodName,
+                    descriptor
+                )
+                method.hasValue && (method.value.isPublic || method.value.isProtected)
+            }
         }
     }
 }
