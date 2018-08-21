@@ -22,7 +22,10 @@ trait Signature_attributeBinding
         cp:                   Constant_Pool,
         ap:                   AttributeParent,
         attribute_name_index: Constant_Pool_Index,
-        signature_index:      Constant_Pool_Index
+        signature_index:      Constant_Pool_Index,
+        // The scope in which the attribute is defined
+        as_name_index:       Constant_Pool_Index,
+        as_descriptor_index: Constant_Pool_Index
     ): Signature_attribute = {
         cp(signature_index).asSignature(ap)
     }

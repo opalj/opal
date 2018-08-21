@@ -54,6 +54,9 @@ trait Module_attributeReader extends AttributeReader {
     def Module_attribute(
         constant_pool:        Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
+        // The scope in which the attribute is defined
+        as_name_index:        Constant_Pool_Index,
+        as_descriptor_index:  Constant_Pool_Index,
         module_name_index:    Constant_Pool_Index, // CONSTANT_Module_info
         module_flags:         Int,
         module_version_index: Constant_Pool_Index, // Optional: CONSTANT_UTF8
@@ -161,6 +164,8 @@ trait Module_attributeReader extends AttributeReader {
      */
     private[this] def parserFactory() = (
         ap: AttributeParent,
+        as_name_index: Constant_Pool_Index,
+        as_descriptor_index: Constant_Pool_Index,
         cp: Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
         in: DataInputStream
@@ -232,6 +237,7 @@ trait Module_attributeReader extends AttributeReader {
         Module_attribute(
             cp,
             attribute_name_index,
+            as_name_index, as_descriptor_index,
             name_index, flags, version_index, requires, exports, opens, uses, provides
         )
     }: Attribute

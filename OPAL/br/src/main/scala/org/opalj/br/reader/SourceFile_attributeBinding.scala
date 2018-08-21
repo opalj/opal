@@ -20,7 +20,10 @@ trait SourceFile_attributeBinding
     def SourceFile_attribute(
         cp:                   Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
-        sourcefile_index:     Constant_Pool_Index
+        sourcefile_index:     Constant_Pool_Index,
+        // The scope in which the attribute is defined
+        as_name_index:       Constant_Pool_Index,
+        as_descriptor_index: Constant_Pool_Index
     ): SourceFile_attribute = {
         new SourceFile_attribute(cp(sourcefile_index).asString)
     }

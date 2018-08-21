@@ -43,6 +43,8 @@ trait Module_attributeBinding
     override def Module_attribute(
         cp:                   Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
+        as_name_index:        Constant_Pool_Index,
+        as_descriptor_index:  Constant_Pool_Index,
         module_name_index:    Constant_Pool_Index, // CONSTANT_Module_info
         module_flags:         Int,
         module_version_index: Constant_Pool_Index, // CONSTANT_UTF8

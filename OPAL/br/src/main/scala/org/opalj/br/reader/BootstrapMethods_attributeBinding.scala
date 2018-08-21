@@ -28,7 +28,10 @@ trait BootstrapMethods_attributeBinding
     def BootstrapMethods_attribute(
         cp:                 Constant_Pool,
         attributeNameIndex: Int,
-        bootstrapMethods:   BootstrapMethods
+        bootstrapMethods:   BootstrapMethods,
+        // The scope in which the attribute is defined
+        as_name_index:       Constant_Pool_Index,
+        as_descriptor_index: Constant_Pool_Index
     ): BootstrapMethods_attribute = {
         new BootstrapMethodTable(bootstrapMethods)
     }

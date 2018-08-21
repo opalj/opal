@@ -20,7 +20,10 @@ trait RuntimeInvisibleTypeAnnotations_attributeReader extends AttributeReader {
     protected def RuntimeInvisibleTypeAnnotations_attribute(
         constant_pool:        Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
-        annotations:          TypeAnnotations
+        annotations:          TypeAnnotations,
+        // The scope in which the attribute is defined
+        as_name_index:       Constant_Pool_Index,
+        as_descriptor_index: Constant_Pool_Index
     ): RuntimeInvisibleTypeAnnotations_attribute
 
     //
@@ -39,6 +42,8 @@ trait RuntimeInvisibleTypeAnnotations_attributeReader extends AttributeReader {
      */
     private[this] def parserFactory() = (
         ap: AttributeParent,
+        as_name_index: Constant_Pool_Index,
+        as_descriptor_index: Constant_Pool_Index,
         cp: Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
         in: DataInputStream
@@ -46,7 +51,9 @@ trait RuntimeInvisibleTypeAnnotations_attributeReader extends AttributeReader {
         /*val attribute_length =*/ in.readInt()
         val annotations = TypeAnnotations(cp, in)
         if (annotations.nonEmpty || reifyEmptyAttributes) {
-            RuntimeInvisibleTypeAnnotations_attribute(cp, attribute_name_index, annotations)
+            RuntimeInvisibleTypeAnnotations_attribute(
+                cp, attribute_name_index, annotations, as_name_index, as_descriptor_index
+            )
         } else {
             null
         }

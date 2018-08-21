@@ -19,7 +19,10 @@ trait Synthetic_attributeBinding
 
     def Synthetic_attribute(
         cp:                   Constant_Pool,
-        attribute_name_index: Constant_Pool_Index
+        attribute_name_index: Constant_Pool_Index,
+        // The scope in which the attribute is defined
+        as_name_index:       Constant_Pool_Index,
+        as_descriptor_index: Constant_Pool_Index
     ): br.Attribute = {
         br.Synthetic
     }

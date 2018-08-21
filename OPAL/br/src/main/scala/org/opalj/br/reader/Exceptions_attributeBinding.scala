@@ -23,7 +23,10 @@ trait Exceptions_attributeBinding
     def Exceptions_attribute(
         cp:                    Constant_Pool,
         attribute_name_index:  Constant_Pool_Index,
-        exception_index_table: ExceptionIndexTable
+        exception_index_table: ExceptionIndexTable,
+        // The scope in which the attribute is defined
+        as_name_index:       Constant_Pool_Index,
+        as_descriptor_index: Constant_Pool_Index
     ): Exceptions_attribute = {
         new Exceptions_attribute(
             exception_index_table.map(e_idx ⇒ cp(e_idx).asObjectType(cp))

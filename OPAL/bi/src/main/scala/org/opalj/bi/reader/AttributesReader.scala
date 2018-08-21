@@ -34,7 +34,10 @@ trait AttributesReader
      * If `null` is returned all information regarding this attribute are thrown away.
      */
     def Unknown_attribute(
-        ap:                   AttributeParent,
+        ap: AttributeParent,
+        // The scope in which the attribute is defined
+        as_name_index:        Constant_Pool_Index,
+        as_descriptor_index:  Constant_Pool_Index,
         cp:                   Constant_Pool,
         attribute_name_index: Int,
         in:                   DataInputStream
@@ -97,10 +100,10 @@ trait AttributesReader
      * The returned function is allowed to return null; in this case the attribute
      * will be discarded.
      */
-    private[this] var attributeReaders: Map[String, (AttributeParent, Constant_Pool, Constant_Pool_Index, DataInputStream) ⇒ Attribute] = Map()
+    private[this] var attributeReaders: Map[String, (AttributeParent, Constant_Pool_Index, Constant_Pool_Index, Constant_Pool, Constant_Pool_Index, DataInputStream) ⇒ Attribute] = Map()
 
     def registerAttributeReader(
-        reader: (String, (AttributeParent, Constant_Pool, Constant_Pool_Index, DataInputStream) ⇒ Attribute)
+        reader: (String, (AttributeParent, Constant_Pool_Index, Constant_Pool_Index, Constant_Pool, Constant_Pool_Index, DataInputStream) ⇒ Attribute)
     ): Unit = {
         attributeReaders += reader
     }
@@ -119,9 +122,16 @@ trait AttributesReader
         attributesPostProcessors = p :: attributesPostProcessors
     }
 
-    def Attributes(ap: AttributeParent, cp: Constant_Pool, in: DataInputStream): Attributes = {
+    def Attributes(
+        ap: AttributeParent,
+        // The scope in which the attribute is defined
+        as_name_index:       Constant_Pool_Index,
+        as_descriptor_index: Constant_Pool_Index,
+        cp:                  Constant_Pool,
+        in:                  DataInputStream
+    ): Attributes = {
         val attributes: Attributes = repeat(in.readUnsignedShort) {
-            Attribute(ap, cp, in)
+            Attribute(ap, as_name_index, as_descriptor_index, cp, in)
         } filter (_ != null) // lets remove the attributes we don't need or understand
 
         attributesPostProcessors.foldLeft(attributes)((a, p) ⇒ p(a))
@@ -129,13 +139,20 @@ trait AttributesReader
         //attributes
     }
 
-    def Attribute(ap: AttributeParent, cp: Constant_Pool, in: DataInputStream): Attribute = {
+    def Attribute(
+        ap: AttributeParent,
+        // The scope in which the attribute is defined
+        as_name_index:       Constant_Pool_Index,
+        as_descriptor_index: Constant_Pool_Index,
+        cp:                  Constant_Pool,
+        in:                  DataInputStream
+    ): Attribute = {
         val attribute_name_index = in.readUnsignedShort()
         val attribute_name = cp(attribute_name_index).asString
 
         attributeReaders.getOrElse(
             attribute_name,
             Unknown_attribute _ // this is a factory method
-        )(ap, cp, attribute_name_index, in)
+        )(ap, as_name_index, as_descriptor_index, cp, attribute_name_index, in)
     }
 }

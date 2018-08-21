@@ -22,7 +22,10 @@ trait MethodParameters_attributeReader extends AttributeReader {
     def MethodParameters_attribute(
         constant_pool:        Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
-        parameters:           MethodParameters
+        parameters:           MethodParameters,
+        // The scope in which the attribute is defined
+        as_name_index:       Constant_Pool_Index,
+        as_descriptor_index: Constant_Pool_Index
     ): MethodParameters_attribute
 
     def MethodParameter(
@@ -51,6 +54,8 @@ trait MethodParameters_attributeReader extends AttributeReader {
      */
     private[this] def parserFactory() = (
         ap: AttributeParent,
+        as_name_index: Constant_Pool_Index,
+        as_descriptor_index: Constant_Pool_Index,
         cp: Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
         in: DataInputStream
@@ -63,7 +68,9 @@ trait MethodParameters_attributeReader extends AttributeReader {
                 attribute_name_index,
                 repeat(parameters_count) {
                     MethodParameter(cp, in.readUnsignedShort, in.readUnsignedShort)
-                }
+                },
+                as_name_index,
+                as_descriptor_index
             )
         } else {
             null

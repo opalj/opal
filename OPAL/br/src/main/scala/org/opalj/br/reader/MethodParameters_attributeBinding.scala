@@ -25,7 +25,9 @@ trait MethodParameters_attributeBinding
     override def MethodParameters_attribute(
         cpconstant_pool:      Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
-        parameters:           MethodParameters
+        parameters:           MethodParameters,
+        as_name_index:        Constant_Pool_Index,
+        as_descriptor_index:  Constant_Pool_Index
     ): MethodParameters_attribute = {
         new MethodParameterTable(parameters)
     }

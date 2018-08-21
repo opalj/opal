@@ -18,7 +18,10 @@ trait ConstantValue_attributeBinding
     def ConstantValue_attribute(
         cp:                 Constant_Pool,
         attributeNameIndex: Constant_Pool_Index,
-        constantValueIndex: Constant_Pool_Index
+        constantValueIndex: Constant_Pool_Index,
+        // The scope in which the attribute is defined
+        as_name_index:       Constant_Pool_Index,
+        as_descriptor_index: Constant_Pool_Index
     ): ConstantValue_attribute = {
         cp(constantValueIndex).asConstantFieldValue(cp)
     }

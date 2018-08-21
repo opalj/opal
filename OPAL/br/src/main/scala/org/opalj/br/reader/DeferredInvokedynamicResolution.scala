@@ -41,11 +41,13 @@ trait DeferredInvokedynamicResolution extends ConstantPoolBinding with CodeBindi
      * @param   pc The program counter of the `invokedynamic` instruction.
      */
     protected def deferredInvokedynamicResolution(
-        classFile:         ClassFile,
-        cp:                Constant_Pool,
-        invokeDynamicInfo: CONSTANT_InvokeDynamic_info,
-        instructions:      Array[Instruction],
-        pc:                PC
+        classFile:           ClassFile,
+        cp:                  Constant_Pool,
+        invokeDynamicInfo:   CONSTANT_InvokeDynamic_info,
+        instructions:        Array[Instruction],
+        as_name_index:       Constant_Pool_Index,
+        as_descriptor_index: Constant_Pool_Index,
+        pc:                  PC
     ): ClassFile = {
 
         val bootstrapMethods = classFile.attributes collectFirst {

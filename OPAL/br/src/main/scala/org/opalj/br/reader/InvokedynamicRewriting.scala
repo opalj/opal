@@ -4,7 +4,6 @@ package br
 package reader
 
 import java.lang.invoke.LambdaMetafactory
-import java.util.concurrent.atomic.AtomicInteger
 
 import scala.annotation.switch
 import com.typesafe.config.Config
@@ -145,104 +144,132 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
     }
 
     /**
-     * Counter to ensure that the generated types have unique names.
-     */
-    private final val jreLikeLambdaTypeIdGenerator = new AtomicInteger(0)
-
-    /**
-     * Generates a new, internal name for a lambda expression found in the given
-     * `surroundingType`.
+     * Generates a new, internal name for the proxy class for a rewritten invokedynamic.
      *
-     * It follows the pattern: `{surroundingType.simpleName}Lambda${surroundingType.id}:{uniqueId}`,
-     * where `uniqueId` is simply a run-on counter. For example: `Lambda$17:4` would refer to
-     * the fourth Lambda INVOKEDYNAMIC parsed during the analysis of the project, which
-     * is defined in the [[ClassFile]] with the type id `17`.
+     * It follows the pattern:
+     * `{surroundingType.simpleName}${surroundingMethodName}{surroundingMethodDescriptor}:pc$Lambda`
+     * where surroundingMethodDescriptor is the JVM descriptor of the method sanitized to not
+     * contain characters illegal in type names (replacing /, [ and ; by $, ] and : respectively)
+     * and where pc is the pc of the invokedynamic that is rewritten.
+     * For example: `Foo$bar()I:5` would refer to the invokedynamic instruction at pc 5 of the
+     * method `bar` in class `Foo` that takes no parameters and returns an int.
      *
      * @param surroundingType the type in which the Lambda expression has been found
      */
-    private def newLambdaTypeName(surroundingType: ObjectType): String = {
-        val nextId = jreLikeLambdaTypeIdGenerator.getAndIncrement()
-        s"${surroundingType.packageName}/${surroundingType.simpleName}$$Lambda$$"+
-            s"${surroundingType.id.toHexString}:${nextId.toHexString}"
+    private def newLambdaTypeName(
+        surroundingType:             ObjectType,
+        surroundingMethodName:       String,
+        surroundingMethodDescriptor: MethodDescriptor,
+        pc:                          Int
+    ): String = {
+        val descriptor = surroundingMethodDescriptor.toJVMDescriptor
+        val sanitizedDescriptor = replaceChars(descriptor, "/[;", "$]:")
+        s"${surroundingType.packageName}/${surroundingType.simpleName}$$"+
+            s"$surroundingMethodName$sanitizedDescriptor:$pc$$Lambda"
     }
-
-    /**
-     * Counter to ensure that the generated methods have unique names.
-     */
-    private final val stringConcatIdGenerator = new AtomicInteger(0)
 
     /**
      * Generates a new, internal name for a string concatenation method.
      *
-     * It follows the pattern: `$string_concat${uniqueId}`, where `uniqueId` is simply a run-on
-     * counter. For example: `$concat$4` would refer to the fourth string concat INVOKEDYNAMIC
-     * parsed during the analysis of the project.
+     * It follows the pattern:
+     * `$string_concat${surroundingMethodName}{surroundingMethodDescriptor}:pc`, where
+     * surroundingMethodDescriptor is the JVM descriptor of the method sanitized to not contain
+     * characters illegal in method names (replacing /, [, ;, < and > by $, ], :, _ and _
+     * respectively) and where pc is the pc of the invokedynamic that is rewritten.
      */
-    private def newStringConcatName(): String = {
-        val nextId = stringConcatIdGenerator.getAndIncrement()
-        s"$$string_concat$$${nextId.toHexString}"
+    private def newStringConcatName(
+        surroundingMethodName:       String,
+        surroundingMethodDescriptor: MethodDescriptor,
+        pc:                          Int
+    ): String = {
+        val methodName =
+            if (surroundingMethodName == "<init>") "$constructor$"
+            else if (surroundingMethodName == "<clinit>") "$static_initializer$"
+            else surroundingMethodName
+        val descriptor = surroundingMethodDescriptor.toJVMDescriptor
+        val sanitizedDescriptor = replaceChars(descriptor, "/[;<>", "$]:__")
+        s"$$string_concat$$$methodName$sanitizedDescriptor:$pc"
+    }
+
+    /**
+     * Replaces each of several characters in a String with a given corresponding character.
+     */
+    private def replaceChars(in: String, oldChars: String, newChars: String): String = {
+        var result = in
+        for ((oldC, newC) ← oldChars.zip(newChars)) {
+            result = result.replace(oldC, newC)
+        }
+        result
     }
 
     override def deferredInvokedynamicResolution(
-        classFile:         ClassFile,
-        cp:                Constant_Pool,
-        invokeDynamicInfo: CONSTANT_InvokeDynamic_info,
-        instructions:      Array[Instruction],
-        pc:                PC
+        classFile:             ClassFile,
+        cp:                    Constant_Pool,
+        invokeDynamicInfo:     CONSTANT_InvokeDynamic_info,
+        instructions:          Array[Instruction],
+        methodNameIndex:       Constant_Pool_Index,
+        methodDescriptorIndex: Constant_Pool_Index,
+        pc:                    PC
     ): ClassFile = {
         // gather complete information about invokedynamic instructions from the bootstrap
         // method table
-        var updatedClassFile =
+        val updatedClassFile =
             super.deferredInvokedynamicResolution(
                 classFile,
                 cp,
                 invokeDynamicInfo,
                 instructions,
+                methodNameIndex,
+                methodDescriptorIndex,
                 pc
             )
 
         if (!performLambdaExpressionsRewriting)
             return updatedClassFile;
 
-        // We have to rewrite the synthetic lambda methods to be accessible from the same package.
-        // This is necessary, because the java / scala compiler introduces a private synthetic
-        // method which handles primitive type handling. Since the new proxyclass is a different
-        // class, we have to make the synthetic method accessible from the proxy class.
-        updatedClassFile = updatedClassFile.copy(
-            methods = classFile.methods.map { m ⇒
-                val name = m.name
-                if ((name.startsWith("lambda$") || name.equals("$deserializeLambda$")) &&
-                    m.hasFlags(AccessFlags.ACC_SYNTHETIC_STATIC_PRIVATE)) {
-                    val syntheticLambdaMethodAccessFlags =
-                        if (updatedClassFile.isInterfaceDeclaration) {
-                            // An interface method must have either ACC_PUBLIC or ACC_PRIVATE and
-                            // NOT have ACC_FINAL set. Since the lambda class is in a different
-                            // class in the same package, we have to declare the method as public.
-                            // For more information see:
-                            //   https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-4.html#jvms-4.6
-                            (m.accessFlags & ~ACC_PRIVATE.mask) | ACC_PUBLIC.mask
-                        } else {
-                            // Make the class package private if it is private, so the lambda can
-                            // access its methods.
-                            // Note: No access modifier means package private
-                            m.accessFlags & ~ACC_PRIVATE.mask
-                        }
-                    m.copy(accessFlags = syntheticLambdaMethodAccessFlags)
-                } else {
-                    m.copy()
-                }
-            }
-        )
-
         val invokedynamic = instructions(pc).asInstanceOf[INVOKEDYNAMIC]
         if (InvokedynamicRewriting.isJava8LikeLambdaExpression(invokedynamic)) {
-            java8LambdaResolution(updatedClassFile, instructions, pc, invokedynamic)
+            java8LambdaResolution(
+                updatedClassFile,
+                instructions,
+                pc,
+                invokedynamic,
+                cp,
+                methodNameIndex,
+                methodDescriptorIndex
+            )
         } else if (isJava10StringConcatInvokedynamic(invokedynamic)) {
-            java10StringConcatResolution(updatedClassFile, instructions, pc, invokedynamic)
+            java10StringConcatResolution(
+                updatedClassFile,
+                instructions,
+                pc,
+                invokedynamic,
+                cp,
+                methodNameIndex,
+                methodDescriptorIndex
+            )
         } else if (isScalaLambdaDeserializeExpression(invokedynamic)) {
-            scalaLambdaDeserializeResolution(updatedClassFile, instructions, pc, invokedynamic)
+            scalaLambdaDeserializeResolution(
+                updatedClassFile,
+                instructions,
+                pc,
+                invokedynamic,
+                cp,
+                methodNameIndex,
+                methodDescriptorIndex
+            )
         } else if (isScalaSymbolExpression(invokedynamic)) {
             scalaSymbolResolution(updatedClassFile, instructions, pc, invokedynamic)
+        } else if (isScalaStructuralCallSite(invokedynamic, instructions, pc)) {
+            scalaStructuralCallSiteResolution(
+                updatedClassFile,
+                instructions,
+                pc,
+                invokedynamic,
+                cp,
+                methodNameIndex,
+                methodDescriptorIndex
+            )
         } else if (isGroovyInvokedynamic(invokedynamic)) {
             if (logUnknownInvokeDynamics) {
                 OPALLogger.logOnce(StandardLogMessage(
@@ -274,10 +301,13 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
      * @return A classfile which has the INVOKEDYNAMIC instruction replaced.
      */
     private def java10StringConcatResolution(
-        classFile:     ClassFile,
-        instructions:  Array[Instruction],
-        pc:            PC,
-        invokedynamic: INVOKEDYNAMIC
+        classFile:             ClassFile,
+        instructions:          Array[Instruction],
+        pc:                    PC,
+        invokedynamic:         INVOKEDYNAMIC,
+        cp:                    Constant_Pool,
+        methodNameIndex:       Constant_Pool_Index,
+        methodDescriptorIndex: Constant_Pool_Index
     ): ClassFile = {
         val INVOKEDYNAMIC(bootstrapMethod, functionalInterfaceMethodName, factoryDescriptor) =
             invokedynamic
@@ -460,7 +490,10 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
             Method(accessFlags, name, descriptor, Seq(code))
         }
 
-        val concatName = newStringConcatName()
+        val methodName = cp(methodNameIndex).asString
+        val methodDescriptor = cp(methodDescriptorIndex).asMethodDescriptor
+
+        val concatName = newStringConcatName(methodName, methodDescriptor, pc)
         val concatMethod =
             createConcatMethod(concatName, factoryDescriptor, recipe, staticArgs)
 
@@ -529,7 +562,76 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
     }
 
     /**
-     * The scala compiler (and possibly other comilers targeting JVM bytecode) add a
+     * Remove invokedynamic instructions that use Scala's StructuralCallSite to implement caching
+     * of resolved methods.
+     *
+     * @param classFile The classfile to parse
+     * @param instructions The instructions of the method we are currently parsing
+     * @param pc The program counter of the current instuction
+     * @param invokedynamic The INVOKEDYNAMIC instruction we want to replace
+     * @return A classfile which has the INVOKEDYNAMIC instruction replaced
+     */
+    private def scalaStructuralCallSiteResolution(
+        classFile:             ClassFile,
+        instructions:          Array[Instruction],
+        pc:                    PC,
+        invokedynamic:         INVOKEDYNAMIC,
+        cp:                    Constant_Pool,
+        methodNameIndex:       Constant_Pool_Index,
+        methodDescriptorIndex: Constant_Pool_Index
+    ): ClassFile = {
+        val methodType = invokedynamic.bootstrapMethod.arguments.head.asInstanceOf[MethodDescriptor]
+
+        val body = new InstructionsBuffer(18)
+
+        body ++= GETSTATIC(
+            ObjectType("scala/runtime/ScalaRunTime$"),
+            "MODULE$",
+            ObjectType("scala/runtime/ScalaRunTime$")
+        )
+
+        body ++= ALOAD_0
+
+        body ++= instructions(22).asInstanceOf[LoadString]
+
+        // Using `LoadMethodType` instead of `LoadMethodType_W` is safe, as the removal of the
+        // bootstrapMethod will free one index in the constant pool where the method type can be
+        // moved on serialization of the class
+        body ++= LoadMethodType(methodType)
+        body ++= INVOKEVIRTUAL(
+            ObjectType.MethodType,
+            "parameterArray",
+            MethodDescriptor.withNoArgs(ArrayType(ObjectType.Class))
+        )
+
+        body ++= instructions(28).asMethodInvocationInstruction // .getMethod
+
+        body ++= instructions(31).asMethodInvocationInstruction // .ensureAccessible
+
+        body ++= ARETURN
+
+        if (logLambdaExpressionsRewrites) {
+            info("rewriting invokedynamic", s"Scala: Removed $invokedynamic")
+        }
+
+        val methodName = cp(methodNameIndex).asString
+        val methodDescriptor = cp(methodDescriptorIndex).asMethodDescriptor
+
+        val methodToRewrite = classFile.findMethod(methodName, methodDescriptor).get
+
+        val code = Code(4, 1, body.toArray, IndexedSeq.empty, Seq.empty)
+
+        val rewrittenMethod =
+            Method(methodToRewrite.accessFlags, methodName, methodDescriptor, Seq(code))
+
+        classFile.copy(
+            methods =
+            classFile.methods.filter(_ ne methodToRewrite).map(_.copy()) :+ rewrittenMethod
+        )
+    }
+
+    /**
+     * The scala compiler (and possibly other compilers targeting JVM bytecode) add a
      * `$deserializeLambda$`, which handles validation of lambda methods if the lambda is
      * Serializable. This method is called when the serialized lambda is deserialized.
      * For scala 2.12, it includes an INVOKEDYNAMIC instruction. This one has to be replaced with
@@ -556,10 +658,13 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
      * @return A classfile which has the INVOKEDYNAMIC instruction replaced
      */
     private def scalaLambdaDeserializeResolution(
-        classFile:     ClassFile,
-        instructions:  Array[Instruction],
-        pc:            PC,
-        invokedynamic: INVOKEDYNAMIC
+        classFile:             ClassFile,
+        instructions:          Array[Instruction],
+        pc:                    PC,
+        invokedynamic:         INVOKEDYNAMIC,
+        cp:                    Constant_Pool,
+        methodNameIndex:       Constant_Pool_Index,
+        methodDescriptorIndex: Constant_Pool_Index
     ): ClassFile = {
         val bootstrapArguments = invokedynamic.bootstrapMethod.arguments
 
@@ -569,8 +674,11 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
             "ensures that the test isScalaLambdaDeserialize was executed"
         )
 
+        val methodName = cp(methodNameIndex).asString
+        val methodDescriptor = cp(methodDescriptorIndex).asMethodDescriptor
+
         val typeDeclaration = TypeDeclaration(
-            ObjectType(newLambdaTypeName(classFile.thisType)),
+            ObjectType(newLambdaTypeName(classFile.thisType, methodName, methodDescriptor, pc)),
             isInterfaceType = false,
             Some(LambdaMetafactoryDescriptor.returnType.asObjectType), // we basically create a "CallSiteObject"
             UIDSet.empty
@@ -621,10 +729,13 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
      * @return A classfile which has the INVOKEDYNAMIC instruction replaced.
      */
     private def java8LambdaResolution(
-        classFile:     ClassFile,
-        instructions:  Array[Instruction],
-        pc:            PC,
-        invokedynamic: INVOKEDYNAMIC
+        classFile:             ClassFile,
+        instructions:          Array[Instruction],
+        pc:                    PC,
+        invokedynamic:         INVOKEDYNAMIC,
+        cp:                    Constant_Pool,
+        methodNameIndex:       Constant_Pool_Index,
+        methodDescriptorIndex: Constant_Pool_Index
     ): ClassFile = {
         val INVOKEDYNAMIC(
             bootstrapMethod, functionalInterfaceMethodName, factoryDescriptor
@@ -679,8 +790,11 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
             superInterfaceTypesBuilder += mi.asObjectType
         }
 
+        val methodName = cp(methodNameIndex).asString
+        val methodDescriptor = cp(methodDescriptorIndex).asMethodDescriptor
+
         val typeDeclaration = TypeDeclaration(
-            ObjectType(newLambdaTypeName(thisType)),
+            ObjectType(newLambdaTypeName(thisType, methodName, methodDescriptor, pc)),
             isInterfaceType = false,
             Some(ObjectType.Object), // we basically create a "CallSiteObject"
             superInterfaceTypesBuilder.result()
@@ -804,123 +918,115 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
         // Creates forwarding method for private method `m` that can be accessed by the proxy class.
         def createForwardingMethod(
             m:          Method,
-            name:       String,
-            descriptor: MethodDescriptor
+            name:       String
         ): MethodTemplate = {
 
             // Access flags for the forwarder are the same as the target method but without private
             // modifier. For interfaces, ACC_PUBLIC is required and constructors are forwarded by
             // a static method.
-            var accessFlags = m.accessFlags & ~ACC_PRIVATE.mask
-            if (receiverIsInterface) accessFlags |= ACC_PUBLIC.mask
-            if (m.isConstructor) accessFlags |= ACC_STATIC.mask
+            val accessFlags =
+                if (receiverIsInterface) (m.accessFlags & ~ACC_PRIVATE.mask) | ACC_PUBLIC.mask
+                else m.accessFlags & ~ACC_PRIVATE.mask
+
+            // Instructions to push the parameters onto the stack
+            val forwardParameters = ClassFileFactory.parameterForwardingInstructions(
+                m.descriptor, m.descriptor, 1, Seq.empty, classFile.thisType
+            )
+
+            val body = new InstructionsBuffer(7 + forwardParameters.length)
 
             // if the receiver method is not static, we need to push the receiver object
             // onto the stack by an ALOAD_0 unless we have a method reference where the receiver
             // will be explicitly provided
-            val loadReceiverObject: Array[Instruction] =
-                if (invocationInstruction == INVOKESTATIC.opcode) {
-                    Array()
-                } else if (m.isConstructor) {
-                    Array(NEW(receiverType), null, null, DUP)
-                } else {
-                    Array(ALOAD_0)
-                }
+            body ++= ALOAD_0
 
-            // If the forwarder is not static, `this` occupies variable 0.
-            val variableOffset = if ((accessFlags & ACC_STATIC.mask) != 0) 0 else 1
+            body ++= forwardParameters
 
-            // Instructions to push the parameters onto the stack
-            val forwardParameters = ClassFileFactory.parameterForwardingInstructions(
-                descriptor, descriptor, variableOffset, Seq.empty, classFile.thisType
-            )
-
-            val recType = implMethod.receiverType.asObjectType
+            val recType = classFile.thisType
 
             // The call instruction itself
-            val forwardCall: Array[Instruction] = (invocationInstruction: @switch) match {
-                case INVOKESTATIC.opcode ⇒
-                    val invoke = INVOKESTATIC(recType, receiverIsInterface, m.name, m.descriptor)
-                    Array(invoke, null, null)
-
+            (invocationInstruction: @switch) match {
                 case INVOKESPECIAL.opcode ⇒
-                    val invoke = INVOKESPECIAL(recType, receiverIsInterface, m.name, m.descriptor)
-                    Array(invoke, null, null)
+                    body ++= INVOKESPECIAL(recType, receiverIsInterface, m.name, m.descriptor)
 
-                case INVOKEINTERFACE.opcode ⇒
-                    val invoke = INVOKEINTERFACE(recType, m.name, m.descriptor)
-                    Array(invoke, null, null, null, null)
-
-                case INVOKEVIRTUAL.opcode ⇒
-                    val invoke = INVOKEVIRTUAL(implMethod.receiverType, m.name, m.descriptor)
-                    Array(invoke, null, null)
+                case INVOKEVIRTUAL.opcode ⇒ // TODO check if this is required for Java 11
+                    body ++= INVOKEVIRTUAL(recType, m.name, m.descriptor)
             }
 
             // The return instruction matching the return type
-            val returnInst = ReturnInstruction(descriptor.returnType)
+            body ++= ReturnInstruction(m.descriptor.returnType)
 
-            val bytecodeInsts = loadReceiverObject ++ forwardParameters ++ forwardCall :+ returnInst
+            val parametersStackSize = m.descriptor.requiredRegisters
 
-            val receiverObjectStackSize = if (invocationInstruction == INVOKESTATIC.opcode) 0 else 1
-            val parametersStackSize = implMethod.methodDescriptor.requiredRegisters
-            val returnValueStackSize = descriptor.returnType.operandSize
+            val maxLocals = 1 + parametersStackSize // parameters + `this`
+            val maxStack = math.max(maxLocals, m.descriptor.returnType.operandSize)
 
-            val maxStack =
-                1 + // Required if, e.g., we first have to create and initialize an object;
-                    // which is done by "dup"licating the new created, but not yet initialized
-                    // object reference on the stack.
-                    math.max(receiverObjectStackSize + parametersStackSize, returnValueStackSize)
+            val code = Code(maxStack, maxLocals, body.toArray, IndexedSeq.empty, Seq.empty)
 
-            val maxLocals = 1 + receiverObjectStackSize + parametersStackSize + returnValueStackSize
-
-            val code = Code(maxStack, maxLocals, bytecodeInsts, IndexedSeq.empty, Seq.empty)
-
-            Method(accessFlags, name, descriptor, Seq(code))
+            Method(accessFlags, name, m.descriptor, Seq(code))
         }
 
         // If the target method is private, we have to generate a forwarding method that is
-        // accessible by the proxy class, i.e. not private.
-        val privateTargetMethod = classFile.methods.find { m ⇒
+        // accessible by the proxy class, i.e. not private, or we have to lift the target method
+        // (only for static methods and constructors, where the lifted method can not interfere with
+        // inherited methods).
+        val targetMethod = classFile.methods.find { m ⇒
             m.isPrivate && m.name == targetMethodName && m.descriptor == targetMethodDescriptor
         }
+        val liftTargetMethod = targetMethod.exists(m ⇒ m.isStatic || m.isConstructor)
 
-        val updatedClassFile = privateTargetMethod match {
-            case Some(m) ⇒
-                val forwardingName =
-                    if (m.isConstructor) "$forward$initializer"
-                    else if (m.isStaticInitializer) "$forward$static_initializer"
-                    else "$forward$"+m.name
-                val descriptor =
-                    if (m.isConstructor) m.descriptor.copy(returnType = receiverType)
-                    else m.descriptor
-
-                val forwarderO = classFile.findMethod(forwardingName, descriptor)
-
-                val (forwarder, cf) = forwarderO match {
-                    case Some(f) ⇒ (f, classFile)
-                    case None ⇒
-                        val f = createForwardingMethod(m, forwardingName, descriptor)
-                        val cf = classFile.copy(methods = classFile.methods.map(_.copy()) :+ f)
-                        (f, cf)
+        val deserializeLambda =
+            if (serializable)
+                classFile.methods.find { m ⇒
+                    m.hasFlags(AccessFlags.ACC_SYNTHETIC_STATIC_PRIVATE) &&
+                        m.name == "$deserializeLambda$"
                 }
+            else None
 
-                val isInterface = classFile.isInterfaceDeclaration
+        val isInterface = classFile.isInterfaceDeclaration
+
+        def liftMethods(methods: br.Methods): IndexedSeq[MethodTemplate] = {
+            methods.map { m ⇒
+                if ((liftTargetMethod && m == targetMethod.get) || deserializeLambda.contains(m)) {
+                    val accessFlags =
+                        if (isInterface) {
+                            // Interface methods must be private or public => public so proxy can
+                            // access it
+                            (m.accessFlags & ~ACC_PRIVATE.mask) | ACC_PUBLIC.mask
+                        } else {
+                            m.accessFlags & ~ACC_PRIVATE.mask // Package private, i.e. no modifier
+                        }
+                    m.copy(accessFlags = accessFlags)
+                } else
+                    m.copy()
+            }
+        }
+
+        val updatedClassFile =
+            if (targetMethod.isDefined && !liftTargetMethod) {
+                val m = targetMethod.get
+                val forwardingName = "$forward$"+m.name
 
                 // Update the implMethod and other information to match the forwarder
-                implMethod = if (forwarder.isStatic) {
-                    InvokeStaticMethodHandle(thisType, isInterface, forwardingName, descriptor)
-                } else if (isInterface) {
-                    InvokeInterfaceMethodHandle(thisType, forwardingName, descriptor)
+                implMethod = if (isInterface) {
+                    InvokeInterfaceMethodHandle(thisType, forwardingName, m.descriptor)
                 } else {
-                    InvokeVirtualMethodHandle(thisType, forwardingName, descriptor)
+                    InvokeVirtualMethodHandle(thisType, forwardingName, m.descriptor)
                 }
                 invocationInstruction = implMethod.opcodeOfUnderlyingInstruction
                 receiverType = thisType
-                receiverIsInterface = classFile.isInterfaceDeclaration
+                receiverIsInterface = isInterface
 
-                cf
-            case None ⇒ classFile
-        }
+                val forwarderO = classFile.findMethod(forwardingName, m.descriptor)
+                if (forwarderO.isEmpty) {
+                    val forwarder = createForwardingMethod(m, forwardingName)
+                    classFile.copy(methods = liftMethods(classFile.methods) :+ forwarder)
+                } else classFile
+            } else if (liftTargetMethod || deserializeLambda.isDefined) {
+                classFile.copy(methods = liftMethods(classFile.methods))
+            } else {
+                classFile
+            }
 
         val needsBridgeMethod = samMethodType != instantiatedMethodType
 
@@ -1066,9 +1172,9 @@ object InvokedynamicRewriting {
 
     final val DefaultDeserializeLambdaStaticMethodName = "$deserializeLambda"
 
-    final val LambdaNameRegEx = "[a-zA-Z0-9\\/.$]*Lambda\\$[0-9a-f]+:[0-9a-f]+$"
+    final val LambdaNameRegEx = "[^.;\\[]*:[0-9]+\\$Lambda$"
 
-    final val StringConcatNameRegEx = "\\$string_concat\\$[0-9a-f]+$"
+    final val StringConcatNameRegEx = "\\$string_concat\\$[^.;\\[/<>]*:[0-9]+$"
 
     final val InvokedynamicKeyPrefix = {
         ClassFileReaderConfiguration.ConfigKeyPrefix+"Invokedynamic."
@@ -1121,6 +1227,38 @@ object InvokedynamicRewriting {
             case InvokeStaticMethodHandle(
                 ScalaSymbolLiteral, false, "bootstrap", ScalaSymbolLiteralDescriptor
                 ) ⇒ true
+            case _ ⇒ false
+        }
+    }
+
+    def isScalaStructuralCallSite(
+        invokedynamic: INVOKEDYNAMIC,
+        instructions:  Array[Instruction],
+        pc:            Int
+    ): Boolean = {
+        import MethodDescriptor.ScalaStructuralCallSiteDescriptor
+        import ObjectType.ScalaStructuralCallSite
+        invokedynamic.bootstrapMethod.handle match {
+            case InvokeStaticMethodHandle(
+                ScalaStructuralCallSite, false, "bootstrap", ScalaStructuralCallSiteDescriptor
+                ) ⇒
+                pc == 0 &&
+                    instructions.length == 44 &&
+                    instructions(22).isInstanceOf[LoadString] &&
+                    instructions(28) == INVOKEVIRTUAL(
+                        ObjectType.Class,
+                        "getMethod",
+                        MethodDescriptor(
+                            IndexedSeq(ObjectType.String, ArrayType(ObjectType.Class)),
+                            ObjectType.Method
+                        )
+                    ) &&
+                        instructions(31) == INVOKEVIRTUAL(
+                            ObjectType("scala/runtime/ScalaRunTime$"),
+                            "ensureAccessible",
+                            MethodDescriptor(ObjectType.Method, ObjectType.Method)
+                        )
+
             case _ ⇒ false
         }
     }

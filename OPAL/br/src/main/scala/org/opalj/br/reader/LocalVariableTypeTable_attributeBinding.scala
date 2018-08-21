@@ -42,7 +42,9 @@ trait LocalVariableTypeTable_attributeBinding
     def LocalVariableTypeTable_attribute(
         cp:                        Constant_Pool,
         attribute_name_index:      Constant_Pool_Index,
-        local_variable_type_table: LocalVariableTypes
+        local_variable_type_table: LocalVariableTypes,
+        as_name_index:             Constant_Pool_Index,
+        as_descriptor_index:       Constant_Pool_Index
     ) =
         new LocalVariableTypeTable(local_variable_type_table)
 }

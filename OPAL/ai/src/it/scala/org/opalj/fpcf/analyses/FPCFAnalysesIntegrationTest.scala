@@ -119,8 +119,6 @@ class FPCFAnalysesIntegrationTest extends FunSpec {
     }
 
     def isRecordedProperty(pk: SomePropertyKey, ep: SomeEPS): Boolean = {
-        // Lambda naming is not stable
-        !ep.e.toString.contains("Lambda$") &&
             // fallback properties may be set for different entities on different executions
             // because they are set lazily even for eager analyses
             ep.ub != PropertyKey.fallbackProperty(ps, PropertyIsNotComputedByAnyAnalysis, ep.e, pk) &&

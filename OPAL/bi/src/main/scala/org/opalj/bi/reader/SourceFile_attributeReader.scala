@@ -20,7 +20,10 @@ trait SourceFile_attributeReader extends AttributeReader {
     def SourceFile_attribute(
         constant_pool:        Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
-        sourcefile_index:     Constant_Pool_Index
+        sourcefile_index:     Constant_Pool_Index,
+        // The scope in which the attribute is defined
+        as_name_index:       Constant_Pool_Index,
+        as_descriptor_index: Constant_Pool_Index
     ): SourceFile_attribute
 
     //
@@ -41,12 +44,17 @@ trait SourceFile_attributeReader extends AttributeReader {
      */
     private[this] def parserFactory() = (
         ap: AttributeParent,
+        // The scope in which the attribute is defined
+        as_name_index: Constant_Pool_Index,
+        as_descriptor_index: Constant_Pool_Index,
         cp: Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
         in: DataInputStream
     ) ⇒ {
         /*val attribute_length =*/ in.readInt
-        SourceFile_attribute(cp, attribute_name_index, in.readUnsignedShort)
+        SourceFile_attribute(
+            cp, attribute_name_index, in.readUnsignedShort, as_name_index, as_descriptor_index
+        )
     }
 
     registerAttributeReader(SourceFileAttribute.Name → parserFactory())

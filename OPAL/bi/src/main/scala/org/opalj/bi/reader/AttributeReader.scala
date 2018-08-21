@@ -25,7 +25,7 @@ trait AttributeReader extends Constant_PoolAbstractions with AttributesAbstracti
      *  name and the parent of the attribute reads in the attribute and returns it.
      */
     def registerAttributeReader(
-        reader: (String, (AttributeParent, Constant_Pool, /* attribute_name_index */ Constant_Pool_Index, DataInputStream) ⇒ Attribute)
+        reader: (String, (AttributeParent, /* The scope in which the attribute is defined */ Constant_Pool_Index, Constant_Pool_Index, Constant_Pool, /* attribute_name_index */ Constant_Pool_Index, DataInputStream) ⇒ Attribute)
     ): Unit
 
     /**

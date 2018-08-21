@@ -33,7 +33,10 @@ trait LocalVariableTable_attributeReader extends AttributeReader {
     def LocalVariableTable_attribute(
         constant_pool:        Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
-        local_variable_table: LocalVariables
+        local_variable_table: LocalVariables,
+        // The scope in which the attribute is defined
+        as_name_index:       Constant_Pool_Index,
+        as_descriptor_index: Constant_Pool_Index
     ): LocalVariableTable_attribute
 
     //
@@ -59,6 +62,8 @@ trait LocalVariableTable_attributeReader extends AttributeReader {
      */
     private[this] def parserFactory() = (
         ap: AttributeParent,
+        as_name_index: Constant_Pool_Index,
+        as_descriptor_index: Constant_Pool_Index,
         cp: Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
         in: DataInputStream
@@ -80,7 +85,9 @@ trait LocalVariableTable_attributeReader extends AttributeReader {
                             in.readUnsignedShort
                         )
                     }
-                }
+                },
+                as_name_index,
+                as_descriptor_index
             )
         } else {
             null

@@ -25,7 +25,10 @@ trait TypeAnnotationAttributesBinding
     protected def RuntimeInvisibleTypeAnnotations_attribute(
         constant_pool:        Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
-        annotations:          TypeAnnotations
+        annotations:          TypeAnnotations,
+        // The scope in which the attribute is defined
+        as_name_index:       Constant_Pool_Index,
+        as_descriptor_index: Constant_Pool_Index
     ): RuntimeInvisibleTypeAnnotations_attribute = {
         new RuntimeInvisibleTypeAnnotationTable(annotations)
     }
@@ -33,7 +36,10 @@ trait TypeAnnotationAttributesBinding
     def RuntimeVisibleTypeAnnotations_attribute(
         constant_pool:        Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
-        annotations:          TypeAnnotations
+        annotations:          TypeAnnotations,
+        // The scope in which the attribute is defined
+        as_name_index:       Constant_Pool_Index,
+        as_descriptor_index: Constant_Pool_Index
     ): RuntimeVisibleTypeAnnotations_attribute = {
         new RuntimeVisibleTypeAnnotationTable(annotations)
     }

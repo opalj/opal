@@ -521,7 +521,7 @@ object MethodDescriptor {
     }
 
     /**
-     * Descriptor of the method `scala.runtime.LambdaDeserializer`.
+     * Descriptor of the method `scala.runtime.LambdaDeserializer.bootstrap`.
      */
     final val ScalaLambdaDeserializeDescriptor = {
         MethodDescriptor(
@@ -535,6 +535,9 @@ object MethodDescriptor {
         )
     }
 
+    /**
+     * Descriptor of the method `scala.runtime.SymbolLiteral.bootstrap`.
+     */
     final val ScalaSymbolLiteralDescriptor = {
         MethodDescriptor(
             IndexedSeq(
@@ -542,6 +545,21 @@ object MethodDescriptor {
                 ObjectType.String,
                 ObjectType.MethodType,
                 ObjectType.String
+            ),
+            ObjectType.CallSite
+        )
+    }
+
+    /**
+     * Descriptor of the method `scala.runtime.StructuralCallSite.bootstrap`.
+     */
+    final val ScalaStructuralCallSiteDescriptor = {
+        MethodDescriptor(
+            IndexedSeq(
+                ObjectType.MethodHandles$Lookup,
+                ObjectType.String,
+                ObjectType.MethodType,
+                ObjectType.MethodType
             ),
             ObjectType.CallSite
         )
