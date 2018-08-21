@@ -1123,6 +1123,10 @@ final class PKEParallelTasksPropertyStore private (
                         else
                             updateAndNotifyForRegularP(newEPS.e, newEPS.lb, newEPS.ub, pcrs = pcrs)
                     } else {
+                        if (tracer.isDefined) {
+                            val partialResult = r.asInstanceOf[SomePartialResult]
+                            tracer.get.uselessPartialResult(partialResult, eOptionP)
+                        }
                         uselessPartialResultComputationCounter += 1
                     }
 

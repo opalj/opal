@@ -68,6 +68,8 @@ package object fpcf {
 
     final type SomeFinalEP = FinalEP[_ <: Entity, _ <: Property]
 
+    final type SomePartialResult = PartialResult[_ >: Null <: Entity, _ >: Null <: Property]
+
     /**
      * A function that takes an entity and returns a result. The result maybe:
      *  - the final derived property,
