@@ -79,7 +79,7 @@ class DynamicLanguageFeatures(
                             13 /* Lambda7 */
                         } else if (isGroovyInvokedynamic(invDyn)) {
                             14 /* Lambda8 */
-                        }else if (isJava8LikeLambdaExpression(invDyn)) {
+                        } else if (isJava8LikeLambdaExpression(invDyn)) {
                             val bm = invDyn.bootstrapMethod
                             val handle = bm.arguments(1).asInstanceOf[MethodCallMethodHandle]
 

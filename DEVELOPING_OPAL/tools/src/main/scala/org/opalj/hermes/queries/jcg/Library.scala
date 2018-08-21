@@ -84,18 +84,18 @@ class Library(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
                 if (invokeKind.opcode == INVOKEINTERFACE.opcode) {
                     val INVOKEINTERFACE(declClass, name, descriptor) = invokeKind
                     val cfO = project.classFile(declClass)
-                    if(cfO.nonEmpty) {
+                    if (cfO.nonEmpty) {
                         val cf = cfO.get
                         val cacheKey = s"${cf.thisType.id}-$name-${descriptor.toJVMDescriptor}"
                         val targets = cbsCache.get(cacheKey) match {
-                            case None => {
+                            case None ⇒ {
                                 val newTargets = cf.findMethod(name, descriptor)
-                                    .map(getCBSTargets(projectIndex,project,_))
+                                    .map(getCBSTargets(projectIndex, project, _))
                                     .getOrElse(Set.empty[Method])
                                 cbsCache = cbsCache + ((cacheKey, newTargets))
                                 newTargets
                             }
-                            case Some(result) => result
+                            case Some(result) ⇒ result
                         }
 
                         var publicTarget = false
@@ -103,8 +103,8 @@ class Library(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
                         var subclassTarget = false
 
                         val itr = targets.iterator
-                        while(itr.hasNext
-                            && !(publicTarget && packagePrivateTarget && subclassTarget)){
+                        while (itr.hasNext
+                            && !(publicTarget && packagePrivateTarget && subclassTarget)) {
 
                             val target = itr.next()
                             val declClass = target.classFile
@@ -112,16 +112,16 @@ class Library(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
                             publicTarget |= declClass.isPublic
                             packagePrivateTarget |= declClass.isPackageVisible
                             // this is a compiler dependent approximation
-                            subclassTarget |=  target.isSynthetic && target.isBridge
+                            subclassTarget |= target.isSynthetic && target.isBridge
                         }
 
-                        if(publicTarget)
+                        if (publicTarget)
                             instructionLocations(2) += l
 
-                        if(packagePrivateTarget)
+                        if (packagePrivateTarget)
                             instructionLocations(3) += l
 
-                        if(subclassTarget)
+                        if (subclassTarget)
                             instructionLocations(4) += l
                     }
                 }
@@ -136,10 +136,10 @@ class Library(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
     }
 
     def getCBSTargets(
-           projectIndex:      ProjectIndex,
-           project: SomeProject,
-           method: Method
-       ): Set[Method] = {
+        projectIndex: ProjectIndex,
+        project:      SomeProject,
+        method:       Method
+    ): Set[Method] = {
 
         val methodName = method.name
         val methodDescriptor = method.descriptor
@@ -175,10 +175,11 @@ class Library(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
                 return ;
 
             if (project.classHierarchy.isSubtypeOf(
-                cbsCalleeDeclaringType, interfaceType))
+                cbsCalleeDeclaringType, interfaceType
+            ))
                 return ;
 
-            if (hasSubclassWhichInheritsFromInterface(cbsCalleeDeclaringType, interfaceType, methodName, methodDescriptor,project).isYes)
+            if (hasSubclassWhichInheritsFromInterface(cbsCalleeDeclaringType, interfaceType, methodName, methodDescriptor, project).isYes)
                 return ;
 
             cbsTargets += cbsCallee
@@ -195,12 +196,12 @@ class Library(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
     }
 
     private[this] def hasSubclassWhichInheritsFromInterface(
-               classType:        ObjectType,
-               interfaceType:    ObjectType,
-               methodName:       String,
-               methodDescriptor: MethodDescriptor,
-               project: SomeProject,
-           ): Answer = {
+        classType:        ObjectType,
+        interfaceType:    ObjectType,
+        methodName:       String,
+        methodDescriptor: MethodDescriptor,
+        project:          SomeProject
+    ): Answer = {
 
         val classHierarchy = project.classHierarchy
 
