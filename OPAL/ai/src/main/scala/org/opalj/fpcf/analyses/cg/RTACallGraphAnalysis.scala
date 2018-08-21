@@ -514,21 +514,17 @@ object RTACallGraphAnalysis {
         PartialResult[SomeProject, InstantiatedTypes](p, InstantiatedTypes.key,
             {
                 case EPS(_, lb, ub) ⇒
-                    if (newInstantiatedTypes.nonEmpty) {
-                        Some(EPS(
-                            p,
-                            lb,
-                            ub.updated(newInstantiatedTypes)
-                        ))
-                    } else {
-                        None
-                    }
+                    Some(EPS(
+                        p,
+                        lb,
+                        ub.updated(newInstantiatedTypes)
+                    ))
 
                 case _ ⇒
                     Some(EPS(
                         p,
                         AllTypes,
-                        InstantiatedTypes.initial(InstantiatedTypes.initialTypes ++ newInstantiatedTypes)
+                        InstantiatedTypes.initial(newInstantiatedTypes)
                     ))
             })
     }
