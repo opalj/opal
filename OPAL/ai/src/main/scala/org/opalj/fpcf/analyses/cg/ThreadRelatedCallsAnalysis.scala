@@ -40,7 +40,7 @@ class ThreadRelatedCallsAnalysis private[analyses] (
     implicit private[this] val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
     private[this] val tacai = project.get(SimpleTACAIKey)
 
-    private[this] val setDefaultUncaughtExceptionHandlerDescriptor = {
+    private[this] val setUncaughtExceptionHandlerDescriptor = {
         MethodDescriptor(ObjectType("java/lang/Thread$UncaughtExceptionHandler"), VoidType)
     }
 
@@ -92,8 +92,8 @@ class ThreadRelatedCallsAnalysis private[analyses] (
         } {
             if (name == "start" && descriptor == MethodDescriptor.NoArgsAndReturnVoid) {
                 handleStart(definedMethod, calleesAndCallers, stmts, pc, receiver)
-            } else if (name == "setDefaultUncaughtExceptionHandler" &&
-                descriptor == setDefaultUncaughtExceptionHandlerDescriptor) {
+            } else if (name == "setUncaughtExceptionHandler" &&
+                descriptor == setUncaughtExceptionHandlerDescriptor) {
 
                 handleUncaughtExceptionHandler(
                     definedMethod,
