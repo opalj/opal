@@ -116,6 +116,25 @@ class ThreadRelatedCallsAnalysis private[analyses] (
         pc:                UShort,
         receiver:          Expr[V]
     ): Unit = {
+        // a call to Thread.start will trigger the JVM to later on call Thread.exit()
+        val exitMethod = project.specialCall(
+            ObjectType.Thread,
+            ObjectType.Thread,
+            false,
+            "exit",
+            MethodDescriptor.NoArgsAndReturnVoid
+        )
+        addCall(
+            definedMethod,
+            exitMethod,
+            ObjectType.Thread,
+            "exit",
+            MethodDescriptor.NoArgsAndReturnVoid,
+            pc,
+            calleesAndCallers
+        )
+
+        // a call to Thread.start will trigger a call to the underlying run method
         val rvs = receiver.asVar.value.asReferenceValue.allValues
         for {
             rv ← rvs
