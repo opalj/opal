@@ -40,6 +40,7 @@ import org.opalj.tac.StaticFunctionCall
 import org.opalj.tac.NewArray
 import org.opalj.tac.TACStmts
 import org.opalj.tac.ArrayStore
+import org.opalj.tac.VirtualMethodCall
 
 /**
  * Finds calls and loaded classes that exist because of reflective calls that are easy to resolve.
@@ -127,7 +128,14 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
             stmt.astID match {
                 case Assignment.ASTID ⇒ handleExpr(definedMethod, stmt.pc, stmt.asAssignment.expr)
                 case ExprStmt.ASTID   ⇒ handleExpr(definedMethod, stmt.pc, stmt.asExprStmt.expr)
-                case _                ⇒
+                case VirtualMethodCall.ASTID ⇒
+                    val VirtualMethodCall(pc, declClass, _, name, _, receiver, _) = stmt
+                    // invoke(withArguments) returns Object, but by signature polymorphism the call
+                    // may still be a VirtualMethodCall if the return value is void or unused
+                    if (declClass == ObjectType.MethodHandle &&
+                        (name == "invoke" || name == "invokeWithArguments"))
+                        handleMethodHandleInvoke(definedMethod, pc, receiver, None)
+                case _ ⇒
 
             }
         }
