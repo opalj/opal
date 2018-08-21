@@ -5,7 +5,6 @@ package reader
 
 import java.lang.invoke.LambdaMetafactory
 
-import scala.annotation.switch
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory
@@ -626,7 +625,7 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
 
         classFile.copy(
             methods =
-            classFile.methods.filter(_ ne methodToRewrite).map(_.copy()) :+ rewrittenMethod
+                classFile.methods.filter(_ ne methodToRewrite).map(_.copy()) :+ rewrittenMethod
         )
     }
 
@@ -917,8 +916,8 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
 
         // Creates forwarding method for private method `m` that can be accessed by the proxy class.
         def createForwardingMethod(
-            m:          Method,
-            name:       String
+            m:    Method,
+            name: String
         ): MethodTemplate = {
 
             // Access flags for the forwarder are the same as the target method but without private
