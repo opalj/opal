@@ -161,6 +161,31 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
                                 (null, true, false) // Stop traversal on overridden method
                             }
                     }
+                } else if (m.isStatic && !m.isPrivate &&
+                    !m.isStaticInitializer && !cf.isInterfaceDeclaration) {
+                    // Static methods are inherited as well - they can be invoked on subtypes
+                    // this is not true for static initializers and static methods on interfaces
+                    p.classHierarchy.processSubtypes(classType)(initial = null) {
+                        (_: Null, subtype: ObjectType) ⇒
+                            val subClassFile = p.classFile(subtype).get
+                            val subtypeDms = result.computeIfAbsent(subtype, mapFactory)
+                            if (subClassFile.findMethod(m.name, m.descriptor).isEmpty) {
+                                val staticMethod = p.staticCall(
+                                    subtype,
+                                    isInterface = false,
+                                    m.name,
+                                    m.descriptor
+                                ).value
+                                insertDeclaredMethod(
+                                    subtypeDms,
+                                    MethodContext(p, subtype, staticMethod),
+                                    id ⇒ new DefinedMethod(subtype, staticMethod, id)
+                                )
+                                (null, false, false) // Continue traversal on non-overridden method
+                            } else {
+                                (null, true, false) // Stop traversal on overridden method
+                            }
+                    }
                 }
                 val context = MethodContext(p, classType, m)
                 insertDeclaredMethod(dms, context, id ⇒ new DefinedMethod(classType, m, id))
