@@ -944,14 +944,8 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
 
             val recType = classFile.thisType
 
-            // The call instruction itself
-            (invocationInstruction: @switch) match {
-                case INVOKESPECIAL.opcode ⇒
-                    body ++= INVOKESPECIAL(recType, receiverIsInterface, m.name, m.descriptor)
-
-                case INVOKEVIRTUAL.opcode ⇒ // TODO check if this is required for Java 11
-                    body ++= INVOKEVIRTUAL(recType, m.name, m.descriptor)
-            }
+            // The call instruction itself TODO what happens for nested classes?
+            body ++= INVOKESPECIAL(recType, receiverIsInterface, m.name, m.descriptor)
 
             // The return instruction matching the return type
             body ++= ReturnInstruction(m.descriptor.returnType)
