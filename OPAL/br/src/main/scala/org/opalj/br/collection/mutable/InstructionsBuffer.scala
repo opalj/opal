@@ -8,8 +8,6 @@ import org.opalj.br.instructions.Instruction
 import org.opalj.br.instructions.ConstantLengthInstruction
 import org.opalj.collection.mutable.AnyRefArrayBuffer
 
-import scala.collection.mutable.ArrayBuffer
-
 /**
  * A buffer for creating bytecode arrays that automatically adds the required null entries.
  *
