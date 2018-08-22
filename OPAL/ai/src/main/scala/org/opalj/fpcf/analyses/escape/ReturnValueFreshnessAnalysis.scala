@@ -318,7 +318,8 @@ class ReturnValueFreshnessAnalysis private[analyses] (
         state: ReturnValueFreshnessState
     ): Boolean = ep match {
         case FinalEP(_, NoEscape | EscapeInCallee) ⇒
-            throw new RuntimeException(s"unexpected result $ep for entity ${state.dm}")
+            //throw new RuntimeException(s"unexpected result $ep for entity ${state.dm}")
+            false // TODO this has happened - why?
 
         case FinalEP(_, EscapeViaReturn) ⇒ false
 
