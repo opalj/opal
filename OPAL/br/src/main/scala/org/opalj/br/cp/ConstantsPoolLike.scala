@@ -96,8 +96,8 @@ trait ConstantsPoolLike {
                         CPEMethodRef(receiverType, name, descriptor)
                 (7, methodRef)
 
-            case NewInvokeSpecialMethodHandle(receiverType, name, descriptor) ⇒
-                val cpMethodRef = CPEMethodRef(receiverType, name, descriptor)
+            case NewInvokeSpecialMethodHandle(receiverType, descriptor) ⇒
+                val cpMethodRef = CPEMethodRef(receiverType, "<init>", descriptor)
                 (8, cpMethodRef)
 
             case InvokeInterfaceMethodHandle(receiverType, name, descriptor) ⇒
