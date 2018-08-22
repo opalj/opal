@@ -11,6 +11,7 @@ import org.opalj.bc.Assembler
 import org.opalj.bi.ACC_PUBLIC
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
+import org.opalj.br.InvokeStaticMethodHandle
 import org.opalj.br.instructions._
 import org.opalj.util.InMemoryClassLoader
 
@@ -344,6 +345,52 @@ class CodeAttributeBuilderTest extends FlatSpec {
             val clazzInstance = clazz.getDeclaredConstructor().newInstance()
             val clazzMethod = clazz.getMethod("takeLong", classOf[Long])
             clazzMethod.invoke(clazzInstance, java.lang.Long.valueOf(1L))
+        }
+    }
+
+    it should "be able to generate code with an LDC for a MethodHandle" in {
+
+        val handle = new InvokeStaticMethodHandle(
+            ObjectType("Class"),
+            isInterface = false,
+            "targetMethod",
+            MethodDescriptor.JustReturnsInteger
+        )
+
+        val codeElements = Array[CodeElement[AnyRef]](
+            LoadMethodHandle(handle),
+            INVOKEVIRTUAL(
+                ObjectType.MethodHandle,
+                "invokeExact",
+                MethodDescriptor.JustReturnsInteger
+            ),
+            IRETURN
+        )
+
+        val classBuilder = CLASS(
+            version = org.opalj.bi.Java8Version,
+            accessModifiers = PUBLIC,
+            thisType = "Class",
+            methods = METHODS(
+                METHOD(
+                    PUBLIC.STATIC, "sourceMethod", "()I",
+                    CODE(codeElements) MAXSTACK 1 MAXLOCALS 1
+                ),
+                METHOD(PUBLIC.STATIC, "targetMethod", "()I", CODE[AnyRef](ICONST_3, IRETURN))
+            )
+        )
+        val (brClassFile, _) = classBuilder.toBR()
+        val brMethod = brClassFile.findMethod("sourceMethod").head
+        val daClassFile = ba.toDA(brClassFile)
+        val rawClassFile = Assembler(daClassFile)
+
+        val loader = new InMemoryClassLoader(
+            Map("Class" → rawClassFile), this.getClass.getClassLoader
+        )
+        val clazz = loader.loadClass("Class")
+        testEvaluation(codeElements, brClassFile, brMethod) {
+            val clazzMethod = clazz.getDeclaredMethod("sourceMethod")
+            clazzMethod.invoke(null)
         }
     }
 }
