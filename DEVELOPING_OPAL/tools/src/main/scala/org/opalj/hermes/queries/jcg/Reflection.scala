@@ -10,8 +10,6 @@ import org.opalj.br.MethodWithBody
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ArrayType
 import org.opalj.br.Method
-import org.opalj.br.VoidType
-import org.opalj.br.BaseType
 import org.opalj.br.analyses.Project
 import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.br.MethodDescriptor.JustReturnsObject
