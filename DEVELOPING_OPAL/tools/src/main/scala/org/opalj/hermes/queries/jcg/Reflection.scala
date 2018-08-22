@@ -10,6 +10,8 @@ import org.opalj.br.MethodWithBody
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ArrayType
 import org.opalj.br.Method
+import org.opalj.br.VoidType
+import org.opalj.br.BaseType
 import org.opalj.br.analyses.Project
 import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.br.MethodDescriptor.JustReturnsObject
@@ -475,22 +477,6 @@ class Reflection(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
                         defSite < 0 || stmts(defSite).astID != New.ASTID
                     }
                 }
-            }
-        }
-    }
-
-    def isConstant(uvar: V, allowArray: Boolean = true)(implicit stmts: Array[Stmt[V]]): Boolean = {
-        uvar.definedBy.forall { definition ⇒
-            if (definition < 0) false
-            else {
-                val assignment = stmts(definition).asAssignment
-                val expr = assignment.expr
-                expr.isConst || allowArray && expr.isNewArray &&
-                    assignment.targetVar.usedBy.forall { usesite ⇒
-                        val stmt = stmts(usesite)
-                        stmt.astID != ArrayStore.ASTID ||
-                            isConstant(stmt.asArrayStore.value.asVar, allowArray = false)
-                    }
             }
         }
     }
