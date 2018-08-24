@@ -92,7 +92,7 @@ class Reflection(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
             "LRR1", /* 9 - multiple constants for param */
             "LRR2", /* 10 - constant(s) from StringBuilder for param */
             "CSR1+CSR2", /* 11 - value from unknown source for param */
-            "LRR3+CSS3" /* 12 -- value from field for param */
+            "LRR3+CSR3" /* 12 -- value from field for param */
         )
     }
 
