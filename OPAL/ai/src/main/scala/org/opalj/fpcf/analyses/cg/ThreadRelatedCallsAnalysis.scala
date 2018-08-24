@@ -76,7 +76,7 @@ class ThreadRelatedCallsAnalysis private[analyses] (
         val method = declaredMethod.definedMethod
 
         // we only allow defined methods with declared type eq. to the class of the method
-        if (method.classFile.thisType ne declaredMethod.declaringClassType)
+        if (method.classFile.thisType != declaredMethod.declaringClassType)
             return NoResult;
 
         if (method.body.isEmpty)
