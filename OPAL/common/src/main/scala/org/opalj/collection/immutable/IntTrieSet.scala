@@ -54,7 +54,7 @@ sealed abstract class IntTrieSet
     /**
      * Tries to add the given method to this trie set by ''mutating the set if possible''.
      * Due to the internal organization, mutating the set is not always possible. In this case, a
-     * new set containing the new value is returned. Hence, the return value ''must not'' be
+     * new set containing the new value is returned. Hence, the return value ''does not have to'' be
      * ignored!
      */
     def +!(value: Int): IntTrieSet
