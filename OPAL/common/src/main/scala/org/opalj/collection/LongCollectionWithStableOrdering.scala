@@ -2,9 +2,8 @@
 package org.opalj.collection
 
 /**
- * Can be mixed in if the iteration order of the underlying data-structure is independent
- * of the insertion order. This is generally the case if the values are (pseudo-) sorted and
- * is never the case for, e.g., linked lists.
+ * Can be mixed in if the iteration order is always that same independent of the insertion order.
+ * This is typically the case if the values are (pseudo-)sorted.
  *
  * @author Michael Eichberg
  */
