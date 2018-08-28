@@ -202,7 +202,6 @@ trait IntIterator { self ⇒
         }
         !that.hasNext
     }
-
 }
 
 object IntIterator {
@@ -218,7 +217,7 @@ object IntIterator {
         private[this] var returned = false
         def hasNext: Boolean = !returned
         def next(): Int = { returned = true; i }
-        override def toArray: Array[Int] = { val as = new Array[Int](1); as(0) = i; as }
+        override def toArray: Array[Int] = Array(i)
         override def toSet: IntTrieSet = IntTrieSet1(i)
     }
 
@@ -226,12 +225,7 @@ object IntIterator {
         private[this] var next = 0
         def hasNext: Boolean = next < 2
         def next(): Int = { if (next == 0) { next = 1; i1 } else { next = 2; i2 } }
-        override def toArray: Array[Int] = {
-            val as = new Array[Int](2)
-            as(0) = i1
-            as(1) = i2
-            as
-        }
+        override def toArray: Array[Int] = Array(i1, i2)
         override def toSet: IntTrieSet = IntTrieSet(i1, i2)
     }
 
@@ -239,13 +233,7 @@ object IntIterator {
         private[this] var next: Int = 0
         def hasNext: Boolean = next < 3
         def next(): Int = { next += 1; if (next == 1) i1 else if (next == 2) i2 else i3 }
-        override def toArray: Array[Int] = {
-            val as = new Array[Int](3)
-            as(0) = i1
-            as(1) = i2
-            as(2) = i3
-            as
-        }
+        override def toArray: Array[Int] = Array(i1, i2, i3)
         override def toSet: IntTrieSet = IntTrieSet(i1, i2, i3)
     }
 
