@@ -629,7 +629,6 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
 
             // 2.1 load - in parallel - all ".class" files
             if (classFiles.nonEmpty) {
-                import scala.collection.JavaConverters._
                 val theClassFiles = new ConcurrentLinkedQueue[(ClassFile, URL)]
                 val parClassFiles = classFiles.par
                 parClassFiles.tasksupport = OPALExecutionContextTaskSupport
