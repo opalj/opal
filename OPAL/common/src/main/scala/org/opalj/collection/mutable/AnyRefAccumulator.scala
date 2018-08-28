@@ -3,8 +3,8 @@ package org.opalj.collection.mutable
 
 /**
  * A list based accumulator of values '''and''' collections of values where the collections
- * of values are not copied to the accumulator but only an iterator of those values. Hence,
- * the collections that are added to this must not be mutated after being added.
+ * of values are not copied to the accumulator but only an iterator of those values. '''Hence,
+ * the collections that are added to this accumulator must not be mutated after being added.'''
  *
  * @note This is not a general purpose data-structure due to the requirements on the immutability
  *       of added collections.
