@@ -173,7 +173,7 @@ object DominatorTree {
         val bucket = new Array[IntTrieSet](max)
 
         // helper data-structure to resolve recursive methods
-        val vertexStack = new IntArrayStack(initialSize = Math.max(2, (max / 4)))
+        val vertexStack = new IntArrayStack(initialSize = Math.max(2, max / 4))
 
         // Step 1 (assign dfsnum)
         vertexStack.push(startNode)
