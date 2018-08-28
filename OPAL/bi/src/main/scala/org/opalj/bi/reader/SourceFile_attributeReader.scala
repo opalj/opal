@@ -12,7 +12,7 @@ import java.io.DataInputStream
 trait SourceFile_attributeReader extends AttributeReader {
 
     //
-    // ABSTRACT DEFINITIONS
+    // TYPE DEFINITIONS AND FACTORY METHODS
     //
 
     type SourceFile_attribute <: Attribute

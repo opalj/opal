@@ -17,7 +17,7 @@ import org.opalj.control.repeat
 trait StackMapTable_attributeReader extends AttributeReader {
 
     //
-    // ABSTRACT DEFINITIONS
+    // TYPE DEFINITIONS AND FACTORY METHODS
     //
 
     type StackMapTable_attribute >: Null <: Attribute

@@ -20,6 +20,10 @@ trait Code_attributeReader extends AttributeReader {
 
     type ExceptionTableEntry
     implicit val ExceptionTableEntryManifest: ClassTag[ExceptionTableEntry]
+    //
+    // TYPE DEFINITIONS AND FACTORY METHODS
+    //
+
 
     type Instructions
 

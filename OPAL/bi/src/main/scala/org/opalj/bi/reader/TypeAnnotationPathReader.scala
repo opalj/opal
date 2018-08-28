@@ -16,7 +16,7 @@ import org.opalj.control.repeat
 trait TypeAnnotationPathReader extends Constant_PoolAbstractions {
 
     //
-    // ABSTRACT DEFINITIONS
+    // TYPE DEFINITIONS AND FACTORY METHODS
     //
 
     type TypeAnnotationPath

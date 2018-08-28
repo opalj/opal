@@ -14,6 +14,10 @@ import org.opalj.control.repeat
  */
 trait LineNumberTable_attributeReader extends AttributeReader {
 
+    //
+    // TYPE DEFINITIONS AND FACTORY METHODS
+    //
+
     type LineNumberTable_attribute >: Null <: Attribute
 
     type LineNumberTableEntry

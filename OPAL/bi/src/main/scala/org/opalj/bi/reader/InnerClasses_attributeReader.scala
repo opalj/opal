@@ -16,6 +16,10 @@ trait InnerClasses_attributeReader extends AttributeReader {
 
     type InnerClassesEntry
     implicit val InnerClassesEntryManifest: ClassTag[InnerClassesEntry]
+    //
+    // TYPE DEFINITIONS AND FACTORY METHODS
+    //
+
 
     type InnerClasses_attribute >: Null <: Attribute
 

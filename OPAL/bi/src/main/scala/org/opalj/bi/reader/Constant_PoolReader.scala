@@ -16,8 +16,9 @@ import org.opalj.bytecode.BytecodeProcessingFailedException
 trait Constant_PoolReader extends Constant_PoolAbstractions {
 
     //
-    // ABSTRACT DEFINITIONS
+    // TYPE DEFINITIONS AND FACTORY METHODS
     //
+
     type Constant_Pool_Entry <: ConstantPoolEntry
     implicit val Constant_Pool_EntryManifest: ClassTag[Constant_Pool_Entry]
 

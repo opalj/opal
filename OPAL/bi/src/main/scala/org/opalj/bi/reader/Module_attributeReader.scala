@@ -14,6 +14,10 @@ import org.opalj.control.repeat
  */
 trait Module_attributeReader extends AttributeReader {
 
+    //
+    // TYPE DEFINITIONS AND FACTORY METHODS
+    //
+
     type Module_attribute <: Attribute
 
     type RequiresEntry

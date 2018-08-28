@@ -12,7 +12,7 @@ import java.io.DataInputStream
 trait Unknown_attributeReader extends Constant_PoolAbstractions with Unknown_attributeAbstractions {
 
     //
-    // ABSTRACT DEFINITIONS
+    // TYPE DEFINITIONS AND FACTORY METHODS
     //
 
     def Unknown_attribute(

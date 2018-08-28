@@ -12,6 +12,9 @@ import java.io.DataInputStream
 trait AttributeReader extends Constant_PoolAbstractions with AttributesAbstractions {
 
     type Attribute >: Null
+    //
+    // General framework to read attributes.
+    //
 
     /**
      * Called (typically by subclasses) to register a reader for a concrete attribute.

@@ -15,6 +15,9 @@ import org.opalj.control.repeat
 trait ModulePackages_attributeReader extends AttributeReader {
 
     type ModulePackages_attribute >: Null <: Attribute
+    //
+    // TYPE DEFINITIONS AND FACTORY METHODS
+    //
 
     type PackageIndexTableEntry
     implicit val PackageIndexTableEntryManifest: ClassTag[PackageIndexTableEntry]

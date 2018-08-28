@@ -20,7 +20,7 @@ import org.opalj.control.repeat
 trait BootstrapMethods_attributeReader extends AttributeReader {
 
     //
-    // ABSTRACT DEFINITIONS
+    // TYPE DEFINITIONS AND FACTORY METHODS
     //
 
     type BootstrapMethods_attribute >: Null <: Attribute

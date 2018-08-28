@@ -15,7 +15,7 @@ import org.opalj.control.repeat
 trait MethodsReader extends Constant_PoolAbstractions {
 
     //
-    // ABSTRACT DEFINITIONS
+    // TYPE DEFINITIONS AND FACTORY METHODS
     //
 
     type Attributes

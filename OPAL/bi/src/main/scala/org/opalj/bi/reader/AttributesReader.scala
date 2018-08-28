@@ -16,7 +16,7 @@ trait AttributesReader
     with Unknown_attributeAbstractions {
 
     //
-    // ABSTRACT DEFINITIONS
+    // TYPE DEFINITIONS AND FACTORY METHODS
     //
 
     type Constant_Pool_Entry <: ConstantPoolEntry

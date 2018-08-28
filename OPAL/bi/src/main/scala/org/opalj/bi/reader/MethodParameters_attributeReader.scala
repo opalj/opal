@@ -14,6 +14,10 @@ import org.opalj.control.repeat
  */
 trait MethodParameters_attributeReader extends AttributeReader {
 
+    //
+    // TYPE DEFINITIONS AND FACTORY METHODS
+    //
+
     type MethodParameters_attribute >: Null <: Attribute
 
     type MethodParameter

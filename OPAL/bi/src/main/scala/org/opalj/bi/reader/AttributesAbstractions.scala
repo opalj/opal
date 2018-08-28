@@ -15,6 +15,9 @@ trait AttributesAbstractions {
      */
     type Attribute >: Null
     implicit val AttributeManifest: ClassTag[Attribute]
+    //
+    // TYPE DEFINITIONS AND FACTORY METHODS
+    //
 
     type Attributes = Seq[Attribute]
 

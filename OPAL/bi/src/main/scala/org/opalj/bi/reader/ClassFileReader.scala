@@ -58,7 +58,7 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
     import ClassFileReader.{ExceptionHandler, defaultExceptionHandler}
 
     //
-    // ABSTRACT DEFINITIONS
+    // TYPE DEFINITIONS AND FACTORY METHODS
     //
 
     /**

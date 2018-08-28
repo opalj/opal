@@ -15,7 +15,7 @@ import org.opalj.control.repeat
 trait AnnotationsReader extends AnnotationsAbstractions {
 
     //
-    // ABSTRACT DEFINITIONS
+    // TYPE DEFINITIONS AND FACTORY METHODS
     //
 
     implicit val AnnotationManifest: ClassTag[Annotation]

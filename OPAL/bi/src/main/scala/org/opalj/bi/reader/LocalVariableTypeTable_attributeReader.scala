@@ -14,8 +14,9 @@ import org.opalj.control.repeat
 trait LocalVariableTypeTable_attributeReader extends AttributeReader {
 
     //
-    // ABSTRACT DEFINITIONS
+    // TYPE DEFINITIONS AND FACTORY METHODS
     //
+
     type LocalVariableTypeTable_attribute >: Null <: Attribute
 
     type LocalVariableTypeTableEntry

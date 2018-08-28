@@ -8,7 +8,7 @@ import java.io.DataInputStream
 trait VerificationTypeInfoReader extends Constant_PoolAbstractions {
 
     //
-    // ABSTRACT DEFINITIONS
+    // TYPE DEFINITIONS AND FACTORY METHODS
     //
 
     type VerificationTypeInfo
