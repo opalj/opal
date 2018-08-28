@@ -41,7 +41,7 @@ trait AttributeReader extends Constant_PoolAbstractions with AttributesAbstracti
      *      [[org.opalj.br.reader.UnpackedLineNumberTable_attributeBinding]]
      *      for a concrete example.
      */
-    def registerAttributesPostProcessor(p: (Attributes) ⇒ Attributes): Unit
+    def registerAttributesPostProcessor(p: Attributes ⇒ Attributes): Unit
 
     /**
      * Controls whether empty attributes (e.g., a LocalVariableTypeTable with no entries)
