@@ -39,6 +39,7 @@ import org.opalj.io.process
 import org.opalj.concurrent.OPALExecutionContextTaskSupport
 import org.opalj.concurrent.NumberOfThreadsForIOBoundTasks
 import org.opalj.bytecode.BytecodeProcessingFailedException
+import org.opalj.collection.immutable.AnyRefArray
 
 /**
  * Implements the template method to read in a Java class file. Additionally,
@@ -166,7 +167,7 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
     // IMPLEMENTATION
     //
 
-    private[this] var classFilePostProcessors: List[List[ClassFile] ⇒ List[ClassFile]] = Nil
+    private[this] var classFilePostProcessors = AnyRefArray.empty[List[ClassFile] ⇒ List[ClassFile]]
 
     /**
      * Register a class file post processor. A class file post processor
@@ -178,7 +179,7 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
      * @note `PostProcessors` will be executed in last-in-first-out order.
      */
     def registerClassFilePostProcessor(p: List[ClassFile] ⇒ List[ClassFile]): Unit = {
-        classFilePostProcessors = p :: classFilePostProcessors
+        classFilePostProcessors :+= p
     }
 
     /**
