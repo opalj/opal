@@ -141,20 +141,6 @@ object LongTrieSetProperties extends Properties("LongTrieSet") {
         s == newS
     }
 
-    property("foreachPair") = forAll { s: IntArraySet ⇒
-        val its = EmptyLongTrieSet ++ s.iterator.map(_.toLong)
-        var itsPairs = Set.empty[(Long, Long)]
-        its foreachPair { (p1: Long, p2: Long) ⇒
-            if (p1 < p2)
-                itsPairs += ((p1, p2))
-            else
-                itsPairs += ((p2, p1))
-        }
-        var sPairs = Set.empty[(Long, Long)]
-        s foreachPair { (p1: Int, p2: Int) ⇒ sPairs += ((p1.toLong, p2.toLong)) }
-        (sPairs == itsPairs) :| s"$sPairs vs. $itsPairs"
-    }
-
     property("map") = forAll { s: IntArraySet ⇒
         val its = EmptyLongTrieSet ++ s.iterator.map(_.toLong)
         val mappedIts = its.map(_ * 2)
@@ -193,7 +179,7 @@ object LongTrieSetProperties extends Properties("LongTrieSet") {
         var its = EmptyLongTrieSet ++ s.iterator.map(_.toLong)
         var removed = Chain.empty[Long]
         while (its.nonEmpty) {
-            val LongHeadAndRestOfSet(v, newIts) = its.getAndRemove
+            val LongAnyRefPair(v, newIts) = its.getAndRemove
             removed :&:= v
             its = newIts
         }
@@ -322,9 +308,9 @@ object LongTrieSetProperties extends Properties("LongTrieSet") {
         !evaluated :| "not eagerly evaluated" &&
             news.forall(i ⇒ newits.exists(newi ⇒ newi == i)) :| "exists check" &&
             (news.forall(i ⇒ newits.contains(i.toLong)) && newits.forall(l ⇒ news.contains(l.toInt))) :| "contains check" &&
-            news.forall(i ⇒ newits.longIterator.contains(i.toLong)) :| s"LongIterator.contains $news vs. $newits" &&
-            newits.longIterator.forall(l ⇒ news.contains(l.toInt)) :| "LongIterator.forall" &&
-            news.forall(i ⇒ newits.iterator.contains(i)) && newits.iterator.forall(l ⇒ news.contains(l.toInt)) :| "Iterator[Long]"
+            news.forall(i ⇒ newits.iterator.contains(i.toLong)) :| s"iterator.contains $news vs. $newits" &&
+            newits.iterator.forall(l ⇒ news.contains(l.toInt)) :| "iterator.forall" &&
+            news.forall(i ⇒ newits.iterator.contains(i.toLong)) && newits.iterator.forall(l ⇒ news.contains(l.toInt)) :| "LongIterator"
     }
 
 }

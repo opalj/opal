@@ -2,12 +2,9 @@
 package org.opalj
 package graphs
 
-import java.util.function.IntFunction
-import java.util.function.IntConsumer
-import java.util.function.Consumer
-
 import scala.annotation.tailrec
 import org.opalj.collection.immutable.Chain
+import org.opalj.collection.immutable.IntArray
 
 /**
  * Representation of a (post) dominator tree of, for example, a control flow graph.
@@ -31,7 +28,7 @@ abstract class AbstractDominatorTree {
      *
      * Defined w.r.t. the (implicitly) augmented CFG.
      */
-    val foreachSuccessorOf: IntFunction[Consumer[IntConsumer]] //Int ⇒ ((Int ⇒ Unit) ⇒ Unit)
+    val foreachSuccessorOf: Int ⇒ ((Int ⇒ Unit) ⇒ Unit) // IntFunction[Consumer[IntConsumer]]
 
     // PROPERTIES OF THE TREE
     //
@@ -109,7 +106,7 @@ abstract class AbstractDominatorTree {
     /**
      * The array which stores the immediate dominator for each node.
      */
-    def immediateDominators: IndexedSeq[Int] = idom
+    def immediateDominators: IntArray = IntArray._UNSAFE_from(idom)
 
     /**
      * (Re-)computes the dominator tree's leaf nodes. Due to the way the graph is stored,

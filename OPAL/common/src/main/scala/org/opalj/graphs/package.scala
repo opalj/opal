@@ -3,8 +3,6 @@ package org.opalj
 
 import scala.reflect.ClassTag
 
-import java.util.function.IntFunction
-
 import scala.collection.mutable.ArrayStack
 
 import org.opalj.collection.IntIterator
@@ -133,7 +131,7 @@ package object graphs {
      * The first call, which will initialize the JavaScript engine, will take some time.
      * Afterwards, the tranformation is much faster.
      */
-    final lazy val dotToSVG: (String) ⇒ String = {
+    final lazy val dotToSVG: String ⇒ String = {
         import javax.script.Invocable
         import javax.script.ScriptEngine
         import javax.script.ScriptEngineManager
@@ -219,14 +217,14 @@ package object graphs {
 
             var initialDFSNum: Int = nextDFSNum
 
-            path.resetSize()
+            path._UNSAFE_resetSize()
 
             workstack.resetSize()
             workstack.push(initialN)
 
             def markPathAsProcessed(): Unit = {
                 path.foreach(n ⇒ setDFSNum(n, ProcessedNodeNum))
-                path.resetSize()
+                path._UNSAFE_resetSize()
             }
             def addToPath(n: N): Unit = {
                 if (path.isEmpty) {
@@ -257,7 +255,7 @@ package object graphs {
                             // This is the trivial case... obviously the end of the path is a
                             // closed SCC.
                             // ALTERNATIVE: val cSCC = path.dropWhile(n ⇒ dfsNum(n) != cSCCDFSNum)
-                            val cSCC = path.slice(startIndex = cSCCDFSNum - initialDFSNum)
+                            val cSCC = path.slice(from = cSCCDFSNum - initialDFSNum)
                             cSCCs ::= cSCC
                             markPathAsProcessed()
                         } else {
@@ -266,13 +264,13 @@ package object graphs {
                             // the cSCC...
                             // ALTERNATIVE CHECK:
                             //val cSCCandidate = path.iterator.drop(cSCCDFSNum - initialDFSNum)
-                            val cSCCandidate = path.iterator(startIndex = cSCCDFSNum - initialDFSNum)
+                            val cSCCandidate = path.iterator(from = cSCCDFSNum - initialDFSNum)
                             if (workstack.isEmpty ||
                                 cSCCandidate.forall(n ⇒
                                     es(n).forall(succN ⇒
                                         hasDFSNum(succN) /*&& dfsNum(succN) == cSCCDFSNum*/
                                     ))) {
-                                cSCCs ::= path.slice(startIndex = cSCCDFSNum - initialDFSNum)
+                                cSCCs ::= path.slice(from = cSCCDFSNum - initialDFSNum)
                                 markPathAsProcessed()
                             }
                         }
@@ -556,8 +554,8 @@ package object graphs {
      */
     def sccs(
         ns:               Int,
-        es:               IntFunction[IntIterator], // Int ⇒ IntIterator,
-        filterSingletons: Boolean                  = false
+        es:               Int ⇒ IntIterator,
+        filterSingletons: Boolean           = false
     ): Chain[Chain[Int]] = {
 
         /* TEXTBOOK DESCRIPTION

@@ -34,64 +34,59 @@ object IntIteratorProperties extends Properties("IntIterator") {
 
     property("exists") = forAll { (is: IntArraySet, v: Int) ⇒
         classify(is.contains(v), "v is in the set") {
-            is.intIterator.exists(_ == v) == is.iterator.exists(_ == v)
+            is.iterator.exists(_ == v) == is.iterator.exists(_ == v)
         }
     }
 
     property("forall") = forAll { (is: IntArraySet, v: Int) ⇒
         classify(is.contains(v), "v is in the set") {
-            is.intIterator.forall(_ != v) == is.iterator.forall(_ != v)
+            is.iterator.forall(_ != v) == is.iterator.forall(_ != v)
         }
     }
 
     property("contains") = forAll { (is: IntArraySet, values: IntArraySet) ⇒
         values.forall { v ⇒
-            is.intIterator.contains(v) == is.iterator.contains(v)
+            is.iterator.contains(v) == is.iterator.contains(v)
         }
     }
 
     property("foldLeft") = forAll { (is: IntArraySet) ⇒
-        is.intIterator.foldLeft(0)(_ + _) == is.iterator.foldLeft(0)(_ + _)
+        is.iterator.foldLeft(0)(_ + _) == is.iterator.foldLeft(0)(_ + _)
     }
 
     property("map") = forAll { (is: IntArraySet) ⇒
-        is.intIterator.map(_ + 1).toChain == is.map(_ + 1).toChain
+        is.iterator.map(_ + 1).toChain == is.map(_ + 1).toChain
     }
 
     property("foreach") = forAll { (is: IntArraySet) ⇒
         var c: Chain[Int] = Naught
-        is.intIterator.foreach { i ⇒ c = i :&: c }
+        is.iterator.foreach { i ⇒ c = i :&: c }
         c.reverse == is.toChain
     }
 
     property("filter") = forAll { (is: IntArraySet, values: IntArraySet) ⇒
-        (is.intIterator.filter(values.contains).forall(values.contains) :| "filter => forall") &&
-            is.intIterator.filter(values.contains).toChain == is.withFilter(values.contains).toChain
+        (is.iterator.filter(values.contains).forall(values.contains) :| "filter => forall") &&
+            is.iterator.filter(values.contains).toChain == is.withFilter(values.contains).toChain
     }
 
     property("withFilter") = forAll { (is: IntArraySet, values: IntArraySet) ⇒
-        is.intIterator.withFilter(values.contains).toChain == is.withFilter(values.contains).toChain
+        is.iterator.withFilter(values.contains).toChain == is.withFilter(values.contains).toChain
     }
 
     property("toArray") = forAll { (is: IntArraySet) ⇒
-        val itArray = is.intIterator.toArray
+        val itArray = is.iterator.toArray
         val isArray = is.toChain.toArray
         Arrays.equals(itArray, isArray) :| isArray.mkString(",")+" vs. "+itArray.mkString(",")
     }
 
     property("toChain") = forAll { (is: IntArraySet) ⇒
-        is.intIterator.toChain == is.toChain
+        is.iterator.toChain == is.toChain
     }
 
     property("mkString") = forAll { (is: IntArraySet) ⇒
-        is.intIterator.mkString("-", ";", "-!") == is.iterator.mkString("-", ";", "-!")
+        is.iterator.mkString("-", ";", "-!") == is.iterator.mkString("-", ";", "-!")
     }
 
-    property("iterator") = forAll { (is: IntArraySet) ⇒
-        val it = is.iterator
-        val intIt = is.intIterator.iterator
-        intIt.forall(i ⇒ it.next == i) && !it.hasNext
-    }
 }
 
 class IntIteratorTest extends FunSpec with Matchers {

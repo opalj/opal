@@ -1,9 +1,11 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 
-import scala.annotation.tailrec
 import scala.language.experimental.macros
+import scala.annotation.tailrec
 import scala.reflect.macros.blackbox.Context
+import org.opalj.collection.immutable.AnyRefArray
+import org.opalj.collection.immutable.IntArray
 
 /**
  * Defines common control abstractions.
@@ -69,11 +71,11 @@ package object control {
      *      times stored in an `IndexedSeq`. If `times` is zero an empty sequence is
      *      returned.
      */
-    def repeat[T](
+    def fillAnyRefArray[T <: AnyRef](
         times: Int
     )(
         f: ⇒ T
-    ): IndexedSeq[T] = macro ControlAbstractionsImplementation.repeat[T]
+    ): AnyRefArray[T] = macro ControlAbstractionsImplementation.fillAnyRefArray[T]
     // OLD IMPLEMENTATION USING HIGHER-ORDER FUNCTIONS
     // (DO NOT DELETE - TO DOCUMENT THE DESIGN DECISION FOR MACROS)
     //        def repeat[T](times: Int)(f: ⇒ T): IndexedSeq[T] = {
@@ -88,6 +90,38 @@ package object control {
     // The macro-based implementation has proven to be approx. 1,3 to 1,4 times faster
     // when the number of times that we repeat an operation is small (e.g., 1 to 15 times)
     // (which is very often the case when we read in Java class files)
+
+    /**
+     * Evaluates the given expression `f` the given number of
+     * `times` and stores the result in an [[IntArray]].
+     *
+     * ==Example Usage==
+     * {{{
+     * val result = fillIntArray(15) { System.in.readByte() }
+     * }}}
+     *
+     * @note '''This is a macro.'''
+     *
+     * @param times The number of times the expression `f` is evaluated. The `times`
+     *      expression is evaluated exactly once.
+     * @param f An expression that is evaluated the given number of times unless an
+     *      exception is thrown. Hence, even though `f` is not a by-name parameter,
+     *      it behaves in the same way.
+     * @return The result of the evaluation of the expression `f` the given number of
+     *      times stored in an `IndexedSeq`. If `times` is zero an empty sequence is
+     *      returned.
+     */
+    def fillIntArray(
+        times: Int
+    )(
+        f: Int
+    ): IntArray = macro ControlAbstractionsImplementation.fillIntArray
+
+    def fillArrayOfInt(
+        times: Int
+    )(
+        f: Int
+    ): Array[Int] = macro ControlAbstractionsImplementation.fillArrayOfInt
 
     /**
      * Iterates over the given range of integer values `[from,to]` and calls the given
@@ -118,7 +152,7 @@ package object control {
     /**
      * Runs the given function f the given number of times.
      */
-    def rerun(times: Int)(f: Unit): Unit = macro ControlAbstractionsImplementation.rerun
+    def repeat(times: Int)(f: Unit): Unit = macro ControlAbstractionsImplementation.repeat
 
     /**
      * Finds the value identified by the given comparator, if any.
@@ -234,25 +268,65 @@ package control {
             }
         }
 
-        def repeat[T: c.WeakTypeTag](
+        def fillAnyRefArray[T <: AnyRef: c.WeakTypeTag](
             c: Context
         )(
             times: c.Expr[Int]
         )(
             f: c.Expr[T]
-        ): c.Expr[IndexedSeq[T]] = {
+        ): c.Expr[AnyRefArray[T]] = {
             import c.universe._
 
             reify {
                 val size = times.splice // => times is evaluated only once
                 if (size == 0) {
-                    IndexedSeq.empty
+                    AnyRefArray.empty[T]
                 } else {
-                    val array = new scala.collection.mutable.ArrayBuffer[T](size)
+                    val array = new Array[AnyRef](size)
                     var i = 0
                     while (i < size) {
                         val value = f.splice // => we evaluate f the given number of times
-                        array += value
+                        array(i) = value
+                        i += 1
+                    }
+                    AnyRefArray._UNSAFE_from[T](array)
+                }
+            }
+        }
+
+        def fillIntArray(c: Context)(times: c.Expr[Int])(f: c.Expr[Int]): c.Expr[IntArray] = {
+            import c.universe._
+
+            reify {
+                val size = times.splice // => times is evaluated only once
+                if (size == 0) {
+                    IntArray.empty
+                } else {
+                    val array = new Array[Int](size)
+                    var i = 0
+                    while (i < size) {
+                        val value = f.splice // => we evaluate f the given number of times
+                        array(i) = value
+                        i += 1
+                    }
+                    IntArray._UNSAFE_from(array)
+                }
+            }
+        }
+
+        def fillArrayOfInt(c: Context)(times: c.Expr[Int])(f: c.Expr[Int]): c.Expr[Array[Int]] = {
+            import c.universe._
+
+            reify {
+                val size = times.splice // => times is evaluated only once
+                if (size == 0) {
+                    IntArray.EmptyArrayOfInt
+                } else {
+                    val array = new Array[Int](size)
+                    var i = 0
+                    while (i < size) {
+                        val value = f.splice // => we evaluate f the given number of times
+                        array(i) = value
                         i += 1
                     }
                     array
@@ -300,13 +374,7 @@ package control {
             }
         }
 
-        def rerun(
-            c: Context
-        )(
-            times: c.Expr[Int]
-        )(
-            f: c.Expr[Unit]
-        ): c.Expr[Unit] = {
+        def repeat(c: Context)(times: c.Expr[Int])(f: c.Expr[Unit]): c.Expr[Unit] = {
             import c.universe._
 
             reify {

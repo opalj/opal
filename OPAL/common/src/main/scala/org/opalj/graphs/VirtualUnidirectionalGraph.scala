@@ -2,8 +2,6 @@
 package org.opalj
 package graphs
 
-import java.util.function.IntFunction
-
 import org.opalj.collection.immutable.Chain
 import org.opalj.collection.IntIterator
 
@@ -32,14 +30,14 @@ import org.opalj.collection.IntIterator
  */
 class VirtualUnidirectionalGraph(
         val verticesCount: Int,
-        val successors:    IntFunction[IntIterator] // (Int ⇒ IntIterator)
+        val successors:    Int ⇒ IntIterator
 ) extends AbstractGraph[Int] {
 
-    def vertices: Range = (0 until this.verticesCount)
+    def vertices: Range = 0 until this.verticesCount
 
     override def nonEmpty: Boolean = verticesCount > 0
 
-    override def apply(s: Int): TraversableOnce[Int] = theSuccessors(s).iterator
+    override def apply(s: Int): TraversableOnce[Int] = theSuccessors(s)
 
     /**
      * Returns a node's successors.

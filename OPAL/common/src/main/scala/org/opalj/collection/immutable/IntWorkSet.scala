@@ -13,8 +13,6 @@ trait IntWorkSet[T <: IntWorkSet[T]] { intSet: T ⇒
     /**
      * Gets a value and returns the new set without that value.
      */
-    def getAndRemove: IntHeadAndRestOfSet[T]
+    def getAndRemove: IntAnyRefPair[T]
 
 }
-
-case class IntHeadAndRestOfSet[T <: IntWorkSet[T]](value: Int, set: T)

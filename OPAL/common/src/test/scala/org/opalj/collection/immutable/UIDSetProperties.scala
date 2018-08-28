@@ -183,12 +183,14 @@ object UIDSetProperties extends Properties("UIDSet") {
 
     property("idIterator") = forAll { (s: Set[Int]) ⇒
         val us = toSUIDSet(s)
-        us.idIterator.toSet.iterator.toSet == s
+        val usIdSet = us.idIterator.toSet
+        usIdSet.size == s.size && s.forall(usIdSet.contains)
     }
 
     property("idSet") = forAll { (s: Set[Int]) ⇒
         val us = toSUIDSet(s)
-        us.idSet.iterator.toSet == s
+        val usIdSet = us.idSet
+        usIdSet.size == s.size && s.forall(usIdSet.contains)
     }
 
     property("last") = forAll { (s: Set[Int]) ⇒

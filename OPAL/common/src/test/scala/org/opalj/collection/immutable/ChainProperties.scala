@@ -250,11 +250,6 @@ object ChainProperties extends Properties("Chain") {
         fl.isTraversableAgain
     }
 
-    property("seq") = forAll { l: List[String] ⇒
-        val fl = Chain(l: _*)
-        (fl.seq eq fl)
-    }
-
     property("head") = forAll { l: List[String] ⇒
         val fl = Chain(l: _*)
         (l.nonEmpty && l.head == fl.head) ||
@@ -571,12 +566,14 @@ object ChainProperties extends Properties("Chain") {
         fl == l
     }
     property("toIntTrieSet") = forAll { l: List[Int] ⇒
-        val fl = Chain(l: _*).toIntTrieSet.iterator.toSet
-        fl == l.toSet
+        val fl = Chain(l: _*).toIntTrieSet
+        val lSet = l.toSet
+        lSet.forall(fl.contains) && lSet.size == fl.size
     }
     property("toIntArraySet") = forAll { l: List[Int] ⇒
-        val fl = Chain(l: _*).toIntArraySet.iterator.toSet
-        fl == l.toSet
+        val fl = Chain(l: _*).toIntArraySet
+        val lSet = l.toSet
+        lSet.forall(fl.contains) && lSet.size == fl.size
     }
 
     property("toTraversable") = forAll { l: List[String] ⇒

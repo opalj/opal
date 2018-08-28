@@ -24,8 +24,8 @@ sealed abstract class BitArraySet extends BitSet { thisSet ⇒
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: BitArraySet ⇒ this.intIterator.sameValues(that.intIterator)
-            case _                 ⇒ false
+            case that: BitSet ⇒ this.iterator.sameValues(that.iterator)
+            case _            ⇒ false
         }
     }
 
@@ -33,7 +33,7 @@ sealed abstract class BitArraySet extends BitSet { thisSet ⇒
 
 }
 
-private[immutable] final object EmptyBitArraySet extends BitArraySet { thisSet ⇒
+private[immutable] object EmptyBitArraySet extends BitArraySet { thisSet ⇒
 
     override def isEmpty: Boolean = true
 
@@ -45,7 +45,7 @@ private[immutable] final object EmptyBitArraySet extends BitArraySet { thisSet �
 
     override def contains(i: Int): Boolean = false
 
-    override def intIterator: IntIterator = IntIterator.empty
+    override def iterator: IntIterator = IntIterator.empty
 
     override def equals(other: Any): Boolean = {
         other match {
@@ -118,7 +118,7 @@ private[immutable] final class BitArraySet64(val set: Long) extends BitArraySet 
             false
     }
 
-    override def intIterator: IntIterator = new IntIterator {
+    override def iterator: IntIterator = new IntIterator {
         private[this] var i: Int = -1
         private[this] def getNextValue(): Unit = {
             do { i += 1 } while (i < 64 && !thisSet.contains(i))
@@ -287,7 +287,7 @@ private[immutable] final class BitArraySetN(val set: Array[Long]) extends BitArr
         (set(bucket) & (1L << (i - 64 * bucket))) != 0L
     }
 
-    override def intIterator: IntIterator = new IntIterator {
+    override def iterator: IntIterator = new IntIterator {
         private[this] val max: Int = set.length * 64
         private[this] var i: Int = -1
         private[this] def getNextValue(): Unit = {

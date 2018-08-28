@@ -2,9 +2,11 @@
 package org.opalj
 package graphs
 
-import org.opalj.collection.mutable.FixedSizeBitSet
-import org.opalj.collection.immutable.{Chain, IntArraySet, IntHeadAndRestOfSet}
+import org.opalj.collection.immutable.Chain
+import org.opalj.collection.immutable.IntArraySet
 import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.collection.immutable.IntAnyRefPair
+import org.opalj.collection.mutable.FixedSizeBitSet
 import org.opalj.collection.mutable.IntArrayStack
 
 /**
@@ -13,7 +15,7 @@ import org.opalj.collection.mutable.IntArrayStack
  * @author Michael Eichberg
  */
 final class DominanceFrontiers private (
-        private final val dfs: Array[IntArraySet]
+        private val dfs: Array[IntArraySet] // IMPROVE Consider using an IntTrieSet (if it doesn't work, document it!)
 ) extends ControlDependencies {
 
     def apply(n: Int): IntArraySet = df(n)
@@ -31,15 +33,15 @@ final class DominanceFrontiers private (
             df
     }
 
-    final def transitiveDF(n: Int): IntTrieSet = {
-        var transitiveDF = IntTrieSet.empty ++ this.df(n).intIterator
+    def transitiveDF(n: Int): IntTrieSet = {
+        var transitiveDF = IntTrieSet.empty ++ this.df(n).iterator
         var nodesToVisit = transitiveDF - n
         while (nodesToVisit.nonEmpty) {
-            val IntHeadAndRestOfSet(nextN, newNodesToVisit) = nodesToVisit.getAndRemove
+            val IntAnyRefPair(nextN, newNodesToVisit) = nodesToVisit.getAndRemove
             nodesToVisit = newNodesToVisit
             val nextDF = this.df(nextN)
-            transitiveDF ++= nextDF.intIterator
-            nodesToVisit ++= nextDF.intIterator.filter(_ != nextN)
+            transitiveDF ++= nextDF.iterator
+            nodesToVisit ++= nextDF.iterator.filter(_ != nextN)
         }
         transitiveDF
     }
@@ -190,7 +192,7 @@ object DominanceFrontiers {
         @inline def dfLocal(n: Int): IntArraySet = {
             var s = IntArraySet.empty
             try {
-                foreachSuccessorOf(n) accept { y ⇒ if (dt.dom(y) != n) s = s + y }
+                foreachSuccessorOf(n) { y ⇒ if (dt.dom(y) != n) s = s + y }
             } catch {
                 case t: Throwable ⇒
                     throw new Throwable(s"failed iterating over successors of node $n", t)

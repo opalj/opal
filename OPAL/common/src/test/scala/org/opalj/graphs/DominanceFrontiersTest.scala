@@ -2,9 +2,6 @@
 package org.opalj
 package graphs
 
-import java.util.function.IntConsumer
-import java.util.function.Consumer
-
 import org.junit.runner.RunWith
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
@@ -56,12 +53,12 @@ class DominanceFrontiersTest extends FlatSpec with Matchers {
         val dominatorTree =
             DominatorTree(
                 startNode, startNodeHasPredecessors,
-                (n: Int) ⇒ { f: IntConsumer ⇒
-                    g.successors.getOrElse(n, List.empty).foreach[Unit](e ⇒ f.accept(e))
-                }: Consumer[IntConsumer],
-                (n: Int) ⇒ { f: IntConsumer ⇒
-                    g.predecessors.getOrElse(n, List.empty).foreach[Unit](e ⇒ f.accept(e))
-                }: Consumer[IntConsumer],
+                (n: Int) ⇒ { f: (Int ⇒ Unit) ⇒
+                    g.successors.getOrElse(n, List.empty).foreach[Unit](e ⇒ f(e))
+                },
+                (n: Int) ⇒ { f: (Int ⇒ Unit) ⇒
+                    g.predecessors.getOrElse(n, List.empty).foreach[Unit](e ⇒ f(e))
+                },
                 maxNode
             )
         try {

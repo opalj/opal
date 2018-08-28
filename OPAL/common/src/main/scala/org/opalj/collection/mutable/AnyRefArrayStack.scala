@@ -4,7 +4,6 @@ package mutable
 
 import scala.collection.mutable
 import scala.collection.generic
-import scala.collection.AbstractIterator
 
 /**
  * An array based implementation of a mutable stack of `ref` values which has a
@@ -184,18 +183,15 @@ final class AnyRefArrayStack[N >: Null <: AnyRef] private (
      * @note    The `next` method will throw an `IndexOutOfBoundsException`
      *          when all elements are already returned.
      */
-    override def iterator: Iterator[N] = {
-        new AbstractIterator[N] {
-            var currentIndex = stack.size0 - 1
-            def hasNext: Boolean = currentIndex >= 0
+    override def iterator: AnyRefIterator[N] = new AnyRefIterator[N] {
+        private[this] var currentIndex = stack.size0 - 1
+        def hasNext: Boolean = currentIndex >= 0
 
-            def next(): N = {
-                val currentIndex = this.currentIndex
-                val r = stack.data(currentIndex)
-                this.currentIndex = currentIndex - 1
-                r.asInstanceOf[N]
-            }
-
+        def next(): N = {
+            val currentIndex = this.currentIndex
+            val r = stack.data(currentIndex)
+            this.currentIndex = currentIndex - 1
+            r.asInstanceOf[N]
         }
     }
 

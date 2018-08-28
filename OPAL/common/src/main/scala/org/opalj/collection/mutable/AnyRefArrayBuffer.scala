@@ -1,9 +1,13 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.collection.mutable
 
-import scala.collection.AbstractIterator
-import scala.collection.mutable
 import scala.reflect.ClassTag
+
+import java.util.{Arrays ⇒ JArrays}
+
+import scala.collection.mutable.WrappedArray
+
+import org.opalj.collection.AnyRefIterator
 
 /**
  * An array based implementation of a mutable buffer. This implementation offers highly
@@ -29,7 +33,7 @@ final class AnyRefArrayBuffer[N >: Null <: AnyRef] private (
      * This is generally not a problem if the array is only used locally and the
      * referenced (dead) objects outlive the lifetime of the buffer!
      */
-    def resetSize(): Unit = size0 = 0
+    def _UNSAFE_resetSize(): Unit = size0 = 0
 
     def size: Int = size0
     def length: Int = size0
@@ -53,23 +57,28 @@ final class AnyRefArrayBuffer[N >: Null <: AnyRef] private (
      * Returns a reference to the underlying mutable array if it is (by chance) completely
      * full; otherwise a new array which just contains the valid entries is returned.
      */
-    def unsafeToArray: Array[N] = {
+    def _UNSAFE_toArray: Array[N] = {
         if (size0 == data.length)
             data
         else
-            java.util.Arrays.copyOf[N](data, size0)
+            JArrays.copyOf[N](data, size0)
     }
 
-    def toSet[T >: N]: Set[T] = {
+    def toSet[T >: N <: AnyRef]: Set[T] = {
         val b = Set.newBuilder[T]
         this.foreach(e ⇒ b += e)
         b.result()
     }
 
-    def slice(startIndex: Int, endIndex: Int = size0 - 1): IndexedSeq[N] = {
-        val r = new mutable.ArrayBuffer[N]((endIndex - startIndex) + 1)
-        iterator(startIndex, endIndex).foreach(e ⇒ r += e)
-        r
+    /**
+     * Extracts the slice of the given size.
+     *
+     * @param from the index of the first item (inclusive)
+     * @param until the index of the last item (exclusive)
+     * @return The slice, truncated or padded with null values if necessary.
+     */
+    def slice(from: Int, until: Int = size0): IndexedSeq[N] = {
+        new WrappedArray.ofRef(java.util.Arrays.copyOfRange(data, from, until))
     }
 
     def ++=(is: Traversable[N]): this.type = {
@@ -149,8 +158,15 @@ final class AnyRefArrayBuffer[N >: Null <: AnyRef] private (
         }
     }
 
-    def iteratorFrom(startIndex: Int): Iterator[N] = new AbstractIterator[N] {
-        var currentIndex = startIndex
+    /**
+     * Returns an iterator which iterates over the values starting with the value
+     * at the given `startIndex`.
+     * '''The iterator will not check for updates of the underlying collection.'''
+     *
+     * @param startIndex index of the first element that will be returned (inclusive)
+     */
+    def iteratorFrom(startIndex: Int): Iterator[N] = new AnyRefIterator[N] {
+        private[this] var currentIndex = startIndex
         override def hasNext: Boolean = currentIndex < size0
         override def next(): N = {
             val r = data(currentIndex)
@@ -161,28 +177,25 @@ final class AnyRefArrayBuffer[N >: Null <: AnyRef] private (
 
     /**
      * Returns an iterator which iterates over the values in the specified range.
+     * '''The iterator will not check for updates of the underlying collection.'''
      *
      * @note    The `next` method will throw an `IndexOutOfBoundsException`
      *          when all elements are already returned.
      *
-     * @param startIndex index of the first element that will be returned (inclusive)
-     * @param endIndex index of the last element that will be returned.
+     * @param from index of the first element that will be returned (inclusive)
+     * @param until index of the last element (exclusive)
      */
-    def iterator(startIndex: Int = 0, endIndex: Int = buffer.size0 - 1): Iterator[N] = {
-        val lastIndex = Math.min(endIndex, buffer.size0 - 1)
-        new AbstractIterator[N] {
-
-            var currentIndex = startIndex
-
-            def hasNext: Boolean = currentIndex <= lastIndex
-
+    def iterator(from: Int = 0, until: Int = buffer.size0): AnyRefIterator[N] = {
+        val lastIndex = Math.min(until, buffer.size0)
+        new AnyRefIterator[N] {
+            private[this] var currentIndex = from
+            def hasNext: Boolean = currentIndex < lastIndex
             def next(): N = {
                 val currentIndex = this.currentIndex
                 val r = buffer.data(currentIndex)
                 this.currentIndex = currentIndex + 1
                 r.asInstanceOf[N]
             }
-
         }
     }
 

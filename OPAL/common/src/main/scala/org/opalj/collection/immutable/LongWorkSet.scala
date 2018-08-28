@@ -11,8 +11,6 @@ trait LongWorkSet[T <: LongWorkSet[T]] { longSet: T ⇒
     /**
      * Gets a value and returns the new set without that value.
      */
-    def getAndRemove: LongHeadAndRestOfSet[T]
+    def getAndRemove: LongAnyRefPair[T]
 
 }
-
-case class LongHeadAndRestOfSet[T <: LongWorkSet[T]](value: Long, set: T)

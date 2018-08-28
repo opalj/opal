@@ -15,8 +15,8 @@ trait LongCollectionWithStableOrdering[T <: LongSet[T]] { longSet: T ⇒
         if (thisSize > otherSize)
             return false;
 
-        val thisIt = this.longIterator
-        val otherIt = other.longIterator
+        val thisIt = this.iterator
+        val otherIt = other.iterator
         while (thisIt.hasNext && otherIt.hasNext) {
             val thisV = thisIt.next()
             thisSize -= 1

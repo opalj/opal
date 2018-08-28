@@ -5,8 +5,6 @@ package mutable
 
 import scala.reflect.ClassTag
 
-import scala.collection.AbstractIterator
-
 /**
  * Conceptually, a map where the keys have to have unique hash codes that are spread over a
  * previously known range.
@@ -75,31 +73,19 @@ class FixedSizedHashIDMap[K <: AnyRef, V] private (
         }
     }
 
-    def keys: Iterator[K] = theKeys.iterator.filter(_ ne null)
+    def keys: AnyRefIterator[K] = AnyRefIterator.fromNonNullValues(theKeys)
 
-    def entries: Iterator[(K, V)] = new AbstractIterator[(K, V)] {
-
-        private[this] def getNextIndex(startIndex: Int): Int = {
+    def entries: AnyRefIterator[(K, V)] = new AnyRefIterator[(K, V)] {
+        private[this] def getNextIndex(lastIndex: Int): Int = {
             val keys = self.theKeys
             val max = keys.length
-            var i = startIndex
-            while (i + 1 < max) {
-                i = i + 1
-                if (keys(i) ne null)
-                    return i;
-            }
-            return max;
+            var i = lastIndex + 1
+            while (i < max) { if (keys(i) ne null) { return i; } else i += 1 }
+            max
         }
-
         private[this] var i = getNextIndex(-1)
-
         def hasNext: Boolean = i < theKeys.length
-
-        def next(): (K, V) = {
-            val r = (theKeys(i), theValues(i))
-            i = getNextIndex(i)
-            r
-        }
+        def next(): (K, V) = { val r = (theKeys(i), theValues(i)); i = getNextIndex(i); r }
     }
 
     def mkString(start: String, sep: String, end: String): String = {
