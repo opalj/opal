@@ -16,14 +16,14 @@ final class DominanceFrontiers private (
         private final val dfs: Array[IntArraySet]
 ) extends ControlDependencies {
 
-    final def apply(n: Int): IntArraySet = df(n)
+    def apply(n: Int): IntArraySet = df(n)
 
-    final def maxNode: Int = dfs.length - 1
+    def maxNode: Int = dfs.length - 1
 
     /**
      * Returns the nodes in the dominance frontier of the given node.
      */
-    final def df(n: Int): IntArraySet = {
+    def df(n: Int): IntArraySet = {
         val df = dfs(n)
         if (df eq null)
             IntArraySet.empty
