@@ -14,9 +14,9 @@ abstract class SimilarityTestConfiguration {
      */
     def compareFields(
         leftContext: ClassFile,
-        left:        Seq[JVMField],
-        right:       Seq[JVMField]
-    ): (Seq[JVMField], Seq[JVMField])
+        left:        Iterable[JVMField],
+        right:       Iterable[JVMField]
+    ): (Iterable[JVMField], Iterable[JVMField])
 
     /**
      * Selects those methods which should be compared. By default all methods are selected.
@@ -27,9 +27,9 @@ abstract class SimilarityTestConfiguration {
      */
     def compareMethods(
         leftContext: ClassFile,
-        left:        Seq[JVMMethod],
-        right:       Seq[JVMMethod]
-    ): (Seq[JVMMethod], Seq[JVMMethod])
+        left:        Iterable[JVMMethod],
+        right:       Iterable[JVMMethod]
+    ): (Iterable[JVMMethod], Iterable[JVMMethod])
 
     /**
      * Selects the attributes which should be compared.
@@ -52,17 +52,17 @@ class CompareAllConfiguration extends SimilarityTestConfiguration {
 
     override def compareFields(
         leftContext: ClassFile,
-        left:        Seq[JVMField],
-        right:       Seq[JVMField]
-    ): (Seq[JVMField], Seq[JVMField]) = {
+        left:        Iterable[JVMField],
+        right:       Iterable[JVMField]
+    ): (Iterable[JVMField], Iterable[JVMField]) = {
         (left, right)
     }
 
     override def compareMethods(
         leftContext: ClassFile,
-        left:        Seq[JVMMethod],
-        right:       Seq[JVMMethod]
-    ): (Seq[JVMMethod], Seq[JVMMethod]) = {
+        left:        Iterable[JVMMethod],
+        right:       Iterable[JVMMethod]
+    ): (Iterable[JVMMethod], Iterable[JVMMethod]) = {
         (left, right)
     }
 
