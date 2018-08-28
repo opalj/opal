@@ -670,7 +670,7 @@ package object graphs {
                 // the processed edge; if wsSuccessors is null, the stack just contains the id of
                 // the next node that should be processed.
                 do {
-                    val n = ws.pop
+                    val n = ws.pop()
                     var remainingSuccessors = wsSuccessors.pop
                     if (remainingSuccessors eq null) {
                         // ... we are processing the node n for the first time
@@ -682,13 +682,13 @@ package object graphs {
                         remainingSuccessors = es(n)
                     } else {
                         // we have visisted a successor node "w" and now continue with "n"
-                        val w = ws.pop
+                        val w = ws.pop()
                         nLowLink(n) = Math.min(nLowLink(n), nLowLink(w))
                     }
 
                     var continue = true
                     while (continue && remainingSuccessors.hasNext) {
-                        val w = remainingSuccessors.next
+                        val w = remainingSuccessors.next()
                         if (nIndex(w) == UndefinedIndex) {
                             // We basically simulate the recursive call by storing the current
                             // evaluation state for n: the current edge "n->w" and the "remaining
