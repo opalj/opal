@@ -62,8 +62,8 @@ package object collection {
     ): Map[K, Map[SubK, V]] = {
 
         map.entrySet.asScala.foldLeft(HashMap.empty[K, Map[SubK, V]]) { (c, n) ⇒
-            val key = n.getKey()
-            val values = n.getValue().entrySet.asScala
+            val key = n.getKey
+            val values = n.getValue.entrySet.asScala
             val entry = (
                 key,
                 values.foldLeft(HashMap.empty[SubK, V])((c, n) ⇒ c + ((n.getKey, n.getValue)))
