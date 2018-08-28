@@ -44,7 +44,7 @@ package object control {
     final def forFirstN[T <: AnyRef](
         l: List[T], n: Int
     )(
-        f: (T) ⇒ Unit
+        f: T ⇒ Unit
     ): Unit = macro ControlAbstractionsImplementation.forFirstN[T]
 
     /**

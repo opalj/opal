@@ -116,7 +116,7 @@ abstract class AbstractDominatorTree {
      * this method has a complexity of O(2n). Hence, if the leaves are required more than
      * once, storing/caching them should be considered.
      */
-    def leaves(isIndexValid: (Int) ⇒ Boolean = (i) ⇒ true): Chain[Int] = {
+    def leaves(isIndexValid: Int ⇒ Boolean = _ ⇒ true): Chain[Int] = {
         // A leaf is a node which does not dominate another node.
         var i = 0
         val max = idom.length
@@ -149,7 +149,7 @@ abstract class AbstractDominatorTree {
      *          specific index is actually identifying a node. This is particularly useful/
      *          required if the `idom` array given at initialization time is a sparse array.
      */
-    def toDot(isIndexValid: (Int) ⇒ Boolean = (i) ⇒ true): String = {
+    def toDot(isIndexValid: Int ⇒ Boolean = _ ⇒ true): String = {
         val g = Graph.empty[Int]
         idom.zipWithIndex.foreach { e ⇒
             val (t, s /*index*/ ) = e
