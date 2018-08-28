@@ -105,7 +105,7 @@ trait AttributesReader
         attributeReaders += reader
     }
 
-    private[this] var attributesPostProcessors: List[(Attributes) ⇒ Attributes] = List()
+    private[this] var attributesPostProcessors = AnyRefArray.empty[Attributes ⇒ Attributes]
 
     /**
      * Registers a new processor for the list of all attributes of a given class file
@@ -115,18 +115,18 @@ trait AttributesReader
      * `localvar_target` structure of the `Runtime(In)VisibleTypeAnnotations` attribute
      * has a reference in the local variable table attribute.
      */
-    def registerAttributesPostProcessor(p: (Attributes) ⇒ Attributes): Unit = {
-        attributesPostProcessors = p :: attributesPostProcessors
+    def registerAttributesPostProcessor(p: Attributes ⇒ Attributes): Unit = {
+        attributesPostProcessors :+= p
     }
 
     def Attributes(ap: AttributeParent, cp: Constant_Pool, in: DataInputStream): Attributes = {
-        val attributes: Attributes = repeat(in.readUnsignedShort) {
-            Attribute(ap, cp, in)
-        } filter (_ != null) // lets remove the attributes we don't need or understand
+        // IMPROVE Consider defining a macro fillAnyRefArrayWithNonNullValues to make the creation cheaper
+        val attributes: Attributes =
+            fillAnyRefArray(in.readUnsignedShort) {
+                Attribute(ap, cp, in)
+            }.filterNonNull // lets remove the attributes we don't need or understand
 
         attributesPostProcessors.foldLeft(attributes)((a, p) ⇒ p(a))
-        //attributesPostProcessors.foreach(p ⇒ attributes = p(attributes))
-        //attributes
     }
 
     def Attribute(ap: AttributeParent, cp: Constant_Pool, in: DataInputStream): Attribute = {
