@@ -127,7 +127,7 @@ object Answer {
  *
  * @author Michael Eichberg
  */
-final case object Yes extends Answer {
+case object Yes extends Answer {
     override def isYes: Boolean = true
     override def isNo: Boolean = false
     override def isUnknown: Boolean = false
@@ -154,7 +154,7 @@ final case object Yes extends Answer {
  *
  * @author Michael Eichberg
  */
-final case object No extends Answer {
+case object No extends Answer {
     override def isYes: Boolean = false
     override def isNo: Boolean = true
     override def isUnknown: Boolean = false
@@ -179,11 +179,11 @@ final case object No extends Answer {
 
 /**
  * Represents the answer to a question where the answer is either `Unknown`
- * or is actuaclly both; that is, `Yes` and `No`.
+ * or is actually both; that is, `Yes` and `No`.
  *
  * @author Michael Eichberg
  */
-final case object Unknown extends Answer {
+case object Unknown extends Answer {
     override def isYes: Boolean = false
     override def isNo: Boolean = false
     override def isUnknown: Boolean = true
