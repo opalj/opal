@@ -96,7 +96,7 @@ final class DominanceFrontiers private (
                 }
             }
         }
-        g.toDot(rankdir = "BT", dir = "forward", ranksep = "0.3")
+        g.toDot(rankdir = "BT", ranksep = "0.3")
     }
 }
 
