@@ -8,7 +8,7 @@ import java.io.DataInputStream
 /**
  * Annotation related definitions.
  */
-trait AnnotationAbstractions extends Constant_PoolAbstractions {
+trait AnnotationsAbstractions extends Constant_PoolAbstractions {
 
     //
     // TYPE DEFINITIONS AND FACTORY METHODS

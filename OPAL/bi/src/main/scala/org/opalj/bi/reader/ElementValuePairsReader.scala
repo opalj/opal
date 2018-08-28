@@ -11,10 +11,10 @@ import org.opalj.control.repeat
 /**
  * Generic parser for an annotation's element-value pairs.
  */
-trait ElementValuePairsReader extends AnnotationAbstractions {
+trait ElementValuePairsReader extends AnnotationsAbstractions {
 
     //
-    // ABSTRACT DEFINITIONS
+    // TYPE DEFINITIONS AND FACTORY METHODS
     //
 
     type ElementValue

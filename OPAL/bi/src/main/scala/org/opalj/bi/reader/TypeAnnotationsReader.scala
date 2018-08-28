@@ -15,10 +15,10 @@ import org.opalj.control.repeat
  *
  * @author Michael Eichberg
  */
-trait TypeAnnotationsReader extends AnnotationAbstractions {
+trait TypeAnnotationsReader extends AnnotationsAbstractions {
 
     //
-    // ABSTRACT DEFINITIONS
+    // TYPE DEFINITIONS AND FACTORY METHODS
     //
 
     type TypeAnnotationTarget

@@ -12,10 +12,10 @@ import org.opalj.control.repeat
 /**
  * Generic parser for a method parameter's visible or invisible annotations.
  */
-trait ParametersAnnotationsReader extends AnnotationAbstractions {
+trait ParametersAnnotationsReader extends AnnotationsAbstractions {
 
     //
-    // ABSTRACT DEFINITIONS
+    // TYPE DEFINITIONS AND FACTORY METHODS
     //
 
     implicit val AnnotationManifest: ClassTag[Annotation]

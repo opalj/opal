@@ -9,11 +9,10 @@ import java.io.DataInputStream
 import org.opalj.control.repeat
 
 /**
- * Generic parser to parse a list of annotations. This
- * reader is intended to be used in conjunction with the
- * Runtime(In)Visible(Parameter)Annotations_attributeReaders.
+ * Generic parser to parse a list of annotations. This reader is intended to be used in
+ * conjunction with the Runtime(In)Visible(Parameter)Annotations_attributeReaders.
  */
-trait AnnotationsReader extends AnnotationAbstractions {
+trait AnnotationsReader extends AnnotationsAbstractions {
 
     //
     // ABSTRACT DEFINITIONS

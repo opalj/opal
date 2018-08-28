@@ -5,7 +5,7 @@ package reader
 
 import scala.reflect.ClassTag
 
-import org.opalj.bi.reader.AnnotationAbstractions
+import org.opalj.bi.reader.AnnotationsAbstractions
 import org.opalj.bi.reader.ElementValuePairsReader
 
 /**
@@ -14,7 +14,7 @@ import org.opalj.bi.reader.ElementValuePairsReader
  * @author Michael Eichberg
  */
 trait AnnotationsBinding
-    extends AnnotationAbstractions
+    extends AnnotationsAbstractions
     with ElementValuePairsReader
     with ConstantPoolBinding {
 
