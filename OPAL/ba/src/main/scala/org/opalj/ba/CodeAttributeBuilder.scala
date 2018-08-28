@@ -356,7 +356,7 @@ object CodeAttributeBuilder {
                     from = localsCount - localsDiffCount,
                     until = localsCount
                 )
-                if (newLocals.forall(_ == TopVariableInfo)) {
+                if (newLocals.forall(_ == TopVariableInfo)) { // TODO use forallEquals
                     // just "appending" top is not necessary - this is implicitly the case!
                     fs(frameIndex) =
                         if (offsetDelta <= 63)
