@@ -2,18 +2,17 @@
 package org.opalj
 package da
 
-import scala.xml.Node
-import scala.xml.Text
-import scala.xml.NodeSeq
 import scala.io.Source
+import scala.xml.Node
+import scala.xml.NodeSeq
+import scala.xml.Text
+import scala.xml.Unparsed
+
 import org.opalj.io.process
 import org.opalj.bi.AccessFlags
 import org.opalj.bi.reader.Constant_PoolAbstractions
 import org.opalj.bi.ACC_PUBLIC
 import org.opalj.bi.ACC_SUPER
-
-import scala.xml.Text
-import scala.xml.Unparsed
 
 /**
  * @author Michael Eichberg
