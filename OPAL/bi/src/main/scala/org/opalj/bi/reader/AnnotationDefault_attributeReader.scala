@@ -11,7 +11,7 @@ import java.io.DataInputStream
 trait AnnotationDefault_attributeReader extends AttributeReader {
 
     //
-    // ABSTRACT DEFINITIONS
+    // TYPE DEFINITIONS AND FACTORY METHODS
     //
 
     type ElementValue
