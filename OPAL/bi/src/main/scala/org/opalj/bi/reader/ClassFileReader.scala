@@ -557,9 +557,7 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
         try {
             process(new ZipFile(file)) { zf ⇒ ClassFiles(zf, exceptionHandler) }
         } catch {
-            case e: Exception ⇒
-                exceptionHandler(file, e)
-                Nil
+            case e: Exception ⇒ { exceptionHandler(file, e); Nil }
         }
     }
 
@@ -572,9 +570,7 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
                 new DataInputStream(new BufferedInputStream(new FileInputStream(file)))
             ) { in ⇒ ClassFile(in).map(classFile ⇒ (classFile, file.toURI.toURL)) }
         } catch {
-            case e: Exception ⇒
-                exceptionHandler(file, e)
-                Nil
+            case e: Exception ⇒ { exceptionHandler(file, e); Nil }
         }
     }
 
