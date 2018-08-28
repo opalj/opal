@@ -1,5 +1,6 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.collection.mutable
+package org.opalj.collection
+package mutable
 
 import scala.collection.mutable
 import scala.collection.generic
