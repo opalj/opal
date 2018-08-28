@@ -10,9 +10,17 @@ import java.io.DataInputStream
  */
 trait CodeReader extends Constant_PoolAbstractions {
 
+    //
+    // TYPE DEFINITIONS AND FACTORY METHODS
+    //
+
     type Instructions
 
     def Instructions(cp: Constant_Pool, instructions: Array[Byte]): Instructions
+
+    //
+    // IMPLEMENTATION
+    //
 
     def Instructions(cp: Constant_Pool, in: DataInputStream): Instructions = {
         val code_length = in.readInt
