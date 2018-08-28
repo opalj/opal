@@ -30,6 +30,7 @@ import scala.concurrent.Future
 import scala.concurrent.ExecutionContext
 
 import org.apache.commons.text.similarity.LevenshteinDistance
+
 import org.opalj.log.OPALLogger.error
 import org.opalj.log.OPALLogger.info
 import org.opalj.log.GlobalLogContext
