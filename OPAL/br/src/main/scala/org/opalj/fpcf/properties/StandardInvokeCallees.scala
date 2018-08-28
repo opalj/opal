@@ -4,7 +4,6 @@ package fpcf
 package properties
 
 import org.opalj.br.DeclaredMethod
-import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.collection.immutable.IntTrieSet
 
 import scala.collection.immutable.IntMap
@@ -16,12 +15,12 @@ import scala.collection.immutable.IntMap
  * @author Florian Kuebler
  */
 sealed trait StandardInvokeCalleesPropertyMetaInformation
-    extends CalleesLikePropertyMetaInformation {
+    extends DirectCalleesPropertyMetaInformation {
 
     final type Self = StandardInvokeCallees
 }
 
-sealed trait StandardInvokeCallees extends CalleesLike
+sealed trait StandardInvokeCallees extends DirectCallees
     with StandardInvokeCalleesPropertyMetaInformation {
 
     override def toString: String = {
@@ -33,30 +32,14 @@ sealed trait StandardInvokeCallees extends CalleesLike
 
 sealed class StandardInvokeCalleesImplementation(
         private[properties] val calleesIds: IntMap[IntTrieSet]
-) extends StandardInvokeCallees with CalleesLikeImplementation {
-    override def updated(
-        pc: Int, callee: DeclaredMethod
-    )(implicit declaredMethods: DeclaredMethods): StandardInvokeCallees = {
-        if (calleesIds.contains(pc) && calleesIds(pc).contains(callee.id)) {
-            this
-        } else {
-            val old = calleesIds.getOrElse(pc, IntTrieSet.empty)
-            val newCalleesIds = calleesIds.updated(pc, old + callee.id)
-            new StandardInvokeCalleesImplementation(newCalleesIds)
-        }
-    }
-}
+) extends StandardInvokeCallees with DirectCalleesImplementation
 
-object LowerBoundStandardInvokeCallees extends StandardInvokeCallees with CalleesLikeLowerBound {
-    override def updated(
-        pc: Int, callee: DeclaredMethod
-    )(implicit declaredMethods: DeclaredMethods): StandardInvokeCallees = this
-}
+object LowerBoundStandardInvokeCallees extends StandardInvokeCallees with DirectCalleesLowerBound
 
 object NoStandardInvokeCallees extends StandardInvokeCalleesImplementation(IntMap.empty)
 
 object NoStandardInvokeCalleesDueToNotReachableMethod extends StandardInvokeCallees
-    with CalleesLikeNotReachable
+    with DirectCalleesNotReachable
 
 object StandardInvokeCallees extends StandardInvokeCalleesPropertyMetaInformation {
 

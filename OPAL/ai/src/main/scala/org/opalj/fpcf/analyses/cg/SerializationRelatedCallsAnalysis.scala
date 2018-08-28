@@ -14,7 +14,9 @@ import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.collection.immutable.UIDSet
+import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.properties.CallersProperty
 import org.opalj.fpcf.properties.InstantiatedTypes
 import org.opalj.fpcf.properties.NoCallers
@@ -31,9 +33,12 @@ import org.opalj.tac.VirtualFunctionCall
 import org.opalj.tac.VirtualMethodCall
 import org.opalj.value.IsReferenceValue
 
+import scala.collection.immutable.IntMap
+
 /**
  * todo
  * @author Florian Kuebler
+ * @author Dominik Helm
  */
 class SerializationRelatedCallsAnalysis private[analyses] (
         final val project: SomeProject
@@ -79,6 +84,29 @@ class SerializationRelatedCallsAnalysis private[analyses] (
             // happens in particular for native methods
             return NoResult;
 
+        var relevantPCs: IntMap[IntTrieSet] = IntMap.empty
+        val insts = method.body.get.instructions
+        var i = 0
+        val max = insts.length
+        while (i < max) {
+            val inst = insts(i)
+            if (inst != null)
+                inst.opcode match {
+                    case INVOKEVIRTUAL.opcode ⇒
+                        val call = inst.asMethodInvocationInstruction
+                        if (call.declaringClass == ObjectType.ObjectOutputStream
+                            && call.name == "writeObject" ||
+                            call.declaringClass == ObjectType.ObjectInputStream &&
+                            call.name == "readObject")
+                            relevantPCs += i → IntTrieSet.empty
+                    case _ ⇒
+                }
+            i += 1
+        }
+
+        if (relevantPCs.isEmpty)
+            return Result(declaredMethod, NoSerializationRelatedCallees);
+
         // the set of types that are definitely initialized at this point in time
         val instantiatedTypesEOptP = propertyStore(project, InstantiatedTypes.key)
 
@@ -90,18 +118,22 @@ class SerializationRelatedCallsAnalysis private[analyses] (
             case _              ⇒ InstantiatedTypes.initialTypes
         }
 
-        val calleesAndCallers = new CalleesAndCallers()
+        val calleesAndCallers = new CalleesAndCallers(relevantPCs)
 
-        val stmts = tacai(method).stmts
+        val tacode = tacai(method)
+        val stmts = tacode.stmts
+        val pcToIndex = tacode.pcToIndex
 
         var newInstantiatedTypes = UIDSet.empty[ObjectType]
-        for (stmt ← stmts) {
+        for (pc ← relevantPCs.keysIterator) {
+            val stmt = stmts(pcToIndex(pc))
             stmt match {
-                case VirtualMethodCall(pc, dc, _, "writeObject", md, _, params) if isOOSWriteObject(dc, md) ⇒
+                case VirtualMethodCall(_, dc, _, "writeObject", md, _, params) if isOOSWriteObject(dc, md) ⇒
                     val param = params.head.asVar.value.asReferenceValue
                     handleOOSWriteObject(definedMethod, param, pc, calleesAndCallers)
 
-                case Assignment(pc, targetVar, VirtualFunctionCall(_, dc, _, "readObject", md, _, _)) if isOISReadObject(dc, md) ⇒
+                case Assignment(_, targetVar, VirtualFunctionCall(_, dc, _, "readObject", md, _,
+                    _)) if isOISReadObject(dc, md) ⇒
                     newInstantiatedTypes = handleOISReadObject(
                         definedMethod,
                         targetVar.asVar,
@@ -112,7 +144,7 @@ class SerializationRelatedCallsAnalysis private[analyses] (
                         calleesAndCallers
                     )
 
-                case ExprStmt(_, VirtualFunctionCall(pc, dc, _, "readObject", md, _, _)) if isOISReadObject(dc, md) ⇒
+                case ExprStmt(_, VirtualFunctionCall(_, dc, _, "readObject", md, _, _)) if isOISReadObject(dc, md) ⇒
                     OPALLogger.warn("analysis", "missed call to readObject")
 
                 case _ ⇒

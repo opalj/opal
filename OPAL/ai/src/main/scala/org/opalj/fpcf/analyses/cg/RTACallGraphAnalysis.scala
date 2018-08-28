@@ -62,14 +62,12 @@ case class RTAState(
     private[cg] def callees: IntMap[IntTrieSet] = _callees
 }
 
-private[cg] class CalleesAndCallers {
-
-    private[this] var _calleees: IntMap[IntTrieSet] = IntMap.empty
+private[cg] class CalleesAndCallers(private[this] var _callees: IntMap[IntTrieSet] = IntMap.empty) {
 
     private[this] var _partialResultsForCallers: List[PartialResult[DeclaredMethod, CallersProperty]] =
         List.empty
 
-    private[cg] def callees: IntMap[IntTrieSet] = _calleees
+    private[cg] def callees: IntMap[IntTrieSet] = _callees
     private[cg] def partialResultsForCallers: List[PartialResult[DeclaredMethod, CallersProperty]] = {
         _partialResultsForCallers
     }
@@ -78,8 +76,8 @@ private[cg] class CalleesAndCallers {
         caller: DefinedMethod, callee: DeclaredMethod, pc: Int
     )(implicit declaredMethods: DeclaredMethods): Unit = {
         val calleeId = callee.id
-        if (!_calleees.contains(pc) || !_calleees(pc).contains(calleeId)) {
-            _calleees = _calleees.updated(pc, _calleees.getOrElse(pc, IntTrieSet.empty) + calleeId)
+        if (!_callees.contains(pc) || !_callees(pc).contains(calleeId)) {
+            _callees = _callees.updated(pc, _callees.getOrElse(pc, IntTrieSet.empty) + calleeId)
             _partialResultsForCallers ::= createPartialResultForCaller(caller, callee, pc)
         }
     }
@@ -361,7 +359,7 @@ class RTACallGraphAnalysis private[analyses] (
 
         var resVirtualCallSites = virtualCallSites
         val rvs = call.receiver.asVar.value.asReferenceValue.allValues
-        for (rv ← rvs) {
+        for (rv ← rvs) { //TODO filter duplicates
             // for null there is no call
             if (rv.isNull.isNoOrUnknown) {
                 // for precise types we can directly add the call edge here

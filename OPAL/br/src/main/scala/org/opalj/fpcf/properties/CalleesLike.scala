@@ -14,18 +14,19 @@ import scala.collection.immutable.IntMap
  * that are possible call targets.
  *
  * @author Florian Kuebler
+ * @author Dominik Helm
  */
 trait CalleesLike extends OrderedProperty with CalleesLikePropertyMetaInformation {
 
     def size: Int
 
-    def callees(pc: Int)(implicit declaredMethods: DeclaredMethods): Set[DeclaredMethod]
+    def callees(pc: Int)(implicit declaredMethods: DeclaredMethods): Option[Set[DeclaredMethod]]
 
-    def callees(implicit declaredMethods: DeclaredMethods): Iterator[(Int, Set[DeclaredMethod])]
+    def callsites(implicit declaredMethods: DeclaredMethods): Map[Int, Set[DeclaredMethod]]
 
     private[fpcf] /*todo better package*/ def encodedCallees: IntMap[IntTrieSet]
 
-    def updated(pc: Int, callee: DeclaredMethod)(implicit declaredMethods: DeclaredMethods): Self
+    //def updated(pc: Int, callee: DeclaredMethod)(implicit declaredMethods: DeclaredMethods): Self
 
     override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {
         if (other.size < size)
@@ -36,18 +37,17 @@ trait CalleesLike extends OrderedProperty with CalleesLikePropertyMetaInformatio
 trait CalleesLikeImplementation extends CalleesLike {
     private[properties] val calleesIds: IntMap[IntTrieSet]
 
-    override def callees(pc: Int)(implicit declaredMethods: DeclaredMethods): Set[DeclaredMethod] = {
-        calleesIds.getOrElse(pc, IntTrieSet.empty).mapToAny[DeclaredMethod](declaredMethods.apply)
+    override def callees(
+        pc: Int
+    )(implicit declaredMethods: DeclaredMethods): Option[Set[DeclaredMethod]] = {
+        calleesIds.get(pc).map(_.mapToAny[DeclaredMethod](declaredMethods.apply))
     }
 
-    override def callees(
+    override def callsites(
         implicit
         declaredMethods: DeclaredMethods
-    ): Iterator[(Int, Set[DeclaredMethod])] = {
-        calleesIds.iterator.map {
-            case (pc, x) ⇒
-                pc → x.mapToAny[DeclaredMethod](declaredMethods.apply)
-        }
+    ): Map[Int, Set[DeclaredMethod]] = {
+        calleesIds.mapValues(_.mapToAny[DeclaredMethod](declaredMethods.apply))
     }
 
     override val size: Int = {
@@ -64,14 +64,14 @@ trait CalleesLikeLowerBound extends CalleesLike {
 
     override def callees(
         pc: Int
-    )(implicit declaredMethods: DeclaredMethods): Set[DeclaredMethod] = {
+    )(implicit declaredMethods: DeclaredMethods): Option[Set[DeclaredMethod]] = {
         throw new UnsupportedOperationException()
     }
 
-    override def callees(
+    override def callsites(
         implicit
         declaredMethods: DeclaredMethods
-    ): Iterator[(UShort, Set[DeclaredMethod])] = throw new UnsupportedOperationException()
+    ): Map[Int, Set[DeclaredMethod]] = throw new UnsupportedOperationException()
 
     override private[fpcf] def encodedCallees: IntMap[IntTrieSet] = IntMap.empty
 }
@@ -79,27 +79,43 @@ trait CalleesLikeLowerBound extends CalleesLike {
 trait CalleesLikeNotReachable extends CalleesLike {
     override def size: Int = 0
 
-    override def callees(
+    override def callsites(
         implicit
         declaredMethods: DeclaredMethods
-    ): Iterator[(Int, Set[DeclaredMethod])] = {
-        Iterator.empty
-    }
+    ): Map[Int, Set[DeclaredMethod]] = Map.empty
 
     override def callees(
         pc: Int
-    )(implicit declaredMethods: DeclaredMethods): Set[DeclaredMethod] = {
-        Set.empty
-    }
+    )(implicit declaredMethods: DeclaredMethods): Option[Set[DeclaredMethod]] = None
 
     override private[fpcf] def encodedCallees: IntMap[IntTrieSet] = IntMap.empty
 
-    override def updated(
+    /* override def updated(
         pc: Int, callee: DeclaredMethod
-    )(implicit declaredMethods: DeclaredMethods): Self = throw new UnsupportedOperationException()
+    )(implicit declaredMethods: DeclaredMethods): Self = throw new UnsupportedOperationException()*/
 }
 
 trait CalleesLikePropertyMetaInformation extends PropertyMetaInformation {
 
     override type Self <: CalleesLike
+
+    val isIndirect: Boolean
+}
+
+trait DirectCallees extends CalleesLike
+trait DirectCalleesImplementation extends CalleesLikeImplementation
+trait DirectCalleesLowerBound extends CalleesLikeLowerBound
+trait DirectCalleesNotReachable extends CalleesLikeNotReachable
+trait DirectCalleesPropertyMetaInformation extends CalleesLikePropertyMetaInformation {
+    override type Self <: DirectCallees
+    final override val isIndirect = false
+}
+
+trait IndirectCallees extends CalleesLike
+trait IndirectCalleesImplementation extends CalleesLikeImplementation
+trait IndirectCalleesLowerBound extends CalleesLikeLowerBound
+trait IndirectCalleesNotReachable extends CalleesLikeNotReachable
+trait IndirectCalleesPropertyMetaInformation extends CalleesLikePropertyMetaInformation {
+    override type Self <: IndirectCallees
+    final override val isIndirect = true
 }

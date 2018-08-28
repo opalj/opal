@@ -4,7 +4,6 @@ package fpcf
 package properties
 
 import org.opalj.br.DeclaredMethod
-import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.collection.immutable.IntTrieSet
 
 import scala.collection.immutable.IntMap
@@ -15,12 +14,12 @@ import scala.collection.immutable.IntMap
  * @author Florian Kuebler
  */
 sealed trait SerializationRelatedCalleesPropertyMetaInformation
-    extends CalleesLikePropertyMetaInformation {
+    extends IndirectCalleesPropertyMetaInformation {
 
     final type Self = SerializationRelatedCallees
 }
 
-sealed trait SerializationRelatedCallees extends CalleesLike
+sealed trait SerializationRelatedCallees extends IndirectCallees
     with SerializationRelatedCalleesPropertyMetaInformation {
 
     override def toString: String = {
@@ -32,31 +31,15 @@ sealed trait SerializationRelatedCallees extends CalleesLike
 
 sealed class SerializationRelatedCalleesImplementation(
         private[properties] val calleesIds: IntMap[IntTrieSet]
-) extends SerializationRelatedCallees with CalleesLikeImplementation {
-    override def updated(
-        pc: Int, callee: DeclaredMethod
-    )(implicit declaredMethods: DeclaredMethods): SerializationRelatedCallees = {
-        if (calleesIds.contains(pc) && calleesIds(pc).contains(callee.id)) {
-            this
-        } else {
-            val old = calleesIds.getOrElse(pc, IntTrieSet.empty)
-            val newCalleesIds = calleesIds.updated(pc, old + callee.id)
-            new SerializationRelatedCalleesImplementation(newCalleesIds)
-        }
-    }
-}
+) extends SerializationRelatedCallees with IndirectCalleesImplementation
 
 object LowerBoundSerializationRelatedCallees extends SerializationRelatedCallees
-    with CalleesLikeLowerBound {
-    override def updated(
-        pc: Int, callee: DeclaredMethod
-    )(implicit declaredMethods: DeclaredMethods): SerializationRelatedCallees = this
-}
+    with IndirectCalleesLowerBound
 
 object NoSerializationRelatedCallees extends SerializationRelatedCalleesImplementation(IntMap.empty)
 
 object NoSerializationRelatedCalleesDueToNotReachableMethod extends SerializationRelatedCallees
-    with CalleesLikeNotReachable
+    with IndirectCalleesNotReachable
 
 object SerializationRelatedCallees extends SerializationRelatedCalleesPropertyMetaInformation {
 

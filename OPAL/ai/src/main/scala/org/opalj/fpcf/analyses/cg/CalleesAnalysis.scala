@@ -8,90 +8,109 @@ import org.opalj.br.DeclaredMethod
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.SomeProject
-import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.properties.Callees
 import org.opalj.fpcf.properties.CalleesImplementation
 import org.opalj.fpcf.properties.CalleesLike
 import org.opalj.fpcf.properties.CalleesLikeNotReachable
 import org.opalj.fpcf.properties.CalleesLikePropertyMetaInformation
 import org.opalj.fpcf.properties.LowerBoundCallees
-import org.opalj.fpcf.properties.NoCallees
 import org.opalj.fpcf.properties.NoCalleesDueToNotReachableMethod
-
-import scala.collection.immutable.IntMap
+import org.opalj.fpcf.properties.CalleesLikeLowerBound
 
 // todo the callees property could be collaborative (compute the complete set of callees on demand)
 class CalleesAnalysis private[analyses] (
-        final val project:   SomeProject,
-        calleesPropertyKeys: Set[PropertyKey[CalleesLike]]
+        final val project:           SomeProject,
+        directCalleesPropertyKeys:   Set[PropertyKey[CalleesLike]],
+        indirectCalleesPropertyKeys: Set[PropertyKey[CalleesLike]]
 ) extends FPCFAnalysis {
 
     implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
 
     def doAnalysis(dm: DeclaredMethod): PropertyComputationResult = {
-        var dependees = Set.empty[EOptionP[DeclaredMethod, CalleesLike]]
-        var allCallees: IntMap[IntTrieSet] = IntMap.empty[IntTrieSet]
+        var dependees: Set[EOptionP[DeclaredMethod, CalleesLike]] = Set.empty
         var isReachable = false
+        var directKeys = directCalleesPropertyKeys
+        var indirectKeys = indirectCalleesPropertyKeys
 
-        for (pk ← calleesPropertyKeys) {
-            val r = handleEOptP(propertyStore(dm, pk), dependees, allCallees)
-            dependees = r._1
-            allCallees = r._2
-            isReachable |= r._3
+        for (pk ← indirectCalleesPropertyKeys.iterator ++ directCalleesPropertyKeys.iterator) {
+            val r = handleEOptP(propertyStore(dm, pk), dependees, directKeys, indirectKeys)
+            isReachable |= r._1
+            dependees = r._2
+            directKeys = r._3
+            indirectKeys = r._4
         }
 
-        returnResult(dm, dependees, allCallees, isReachable)
+        returnResult(dm, dependees, directKeys, indirectKeys, isReachable)
 
     }
 
     @inline def handleEOptP(
-        eOptionP:   EOptionP[DeclaredMethod, CalleesLike],
-        dependees:  Set[EOptionP[DeclaredMethod, CalleesLike]],
-        allCallees: IntMap[IntTrieSet]
-    ): (Set[EOptionP[DeclaredMethod, CalleesLike]], IntMap[IntTrieSet], Boolean) = {
-        var resDependees = dependees
-        var resAllCallees = allCallees
+        eOptionP:     EOptionP[DeclaredMethod, CalleesLike],
+        dependees:    Set[EOptionP[DeclaredMethod, CalleesLike]],
+        directKeys:   Set[PropertyKey[CalleesLike]],
+        indirectKeys: Set[PropertyKey[CalleesLike]]
+    ): (Boolean, Set[EOptionP[DeclaredMethod, CalleesLike]], Set[PropertyKey[CalleesLike]], Set[PropertyKey[CalleesLike]]) = {
         eOptionP match {
-            case FinalEP(_, _: CalleesLikeNotReachable) ⇒
-                return (resDependees, resAllCallees, false);
-            case ep @ FinalEP(_, callees) ⇒
-                resDependees = removeDependee(ep, dependees)
-                resAllCallees = updateCallees(callees, resAllCallees)
+            case ep @ FinalEP(_, p: CalleesLikeNotReachable) ⇒
+                if (p.isIndirect)
+                    (false, updateDependee(ep, dependees), directKeys, indirectKeys - p.key)
+                else
+                    (false, updateDependee(ep, dependees), directKeys - p.key, indirectKeys)
+
+            case ep @ FinalEP(_, p: CalleesLikeLowerBound) ⇒
+                if (p.isIndirect)
+                    (true, updateDependee(ep, dependees), directKeys, indirectKeys - p.key)
+                else
+                    (true, updateDependee(ep, dependees), directKeys - p.key, indirectKeys)
 
             case EPS(_, _, _: CalleesLikeNotReachable) ⇒
                 throw new IllegalArgumentException("non reachable methods must have final property")
 
-            case ep @ EPS(_, _, callees) ⇒
-                resDependees = updateDependee(ep, dependees)
-                resAllCallees = updateCallees(callees, resAllCallees)
+            case ep @ EPS(_, _, _) ⇒
+                (true, updateDependee(ep, dependees), directKeys, indirectKeys)
+
             case epk: EPK[DeclaredMethod, CalleesLike] ⇒
-                resDependees = updateDependee(epk, dependees)
+                (true, dependees + epk, directKeys, indirectKeys)
         }
-        (resDependees, resAllCallees, true)
     }
 
     def continuation(
         declaredMethod: DeclaredMethod,
-        dependees:      Set[EOptionP[DeclaredMethod, CalleesLike]],
-        allCallees:     IntMap[IntTrieSet]
+        directKeys:     Set[PropertyKey[CalleesLike]],
+        indirectKeys:   Set[PropertyKey[CalleesLike]],
+        dependees:      Set[EOptionP[DeclaredMethod, CalleesLike]]
     )(eOptionP: SomeEPS): PropertyComputationResult = {
-        val (newDependees, newAllCallees, _) = handleEOptP(
-            eOptionP.asInstanceOf[EPS[DeclaredMethod, CalleesLike]], dependees, allCallees
+        val (_, newDependees, newDirectKeys, newIndirectKeys) =
+            handleEOptP(
+                eOptionP.asInstanceOf[EPS[DeclaredMethod, CalleesLike]],
+                dependees,
+                directKeys,
+                indirectKeys
+            )
+
+        returnResult(
+            declaredMethod,
+            newDependees,
+            newDirectKeys,
+            newIndirectKeys,
+            isReachable = true
         )
-        returnResult(declaredMethod, newDependees, newAllCallees, true)
     }
 
     @inline def returnResult(
         declaredMethod: DeclaredMethod,
         dependees:      Set[EOptionP[DeclaredMethod, CalleesLike]],
-        allCallees:     IntMap[IntTrieSet],
+        directKeys:     Set[PropertyKey[CalleesLike]],
+        indirectKeys:   Set[PropertyKey[CalleesLike]],
         isReachable:    Boolean
     ): PropertyComputationResult = {
         if (!isReachable) {
-            assert(allCallees.isEmpty)
+            assert(dependees.isEmpty)
             return Result(declaredMethod, NoCalleesDueToNotReachableMethod);
         }
-        val callees = if (allCallees.isEmpty) NoCallees else new CalleesImplementation(allCallees)
+
+        val callees = new CalleesImplementation(declaredMethod, directKeys, indirectKeys)
+
         if (dependees.isEmpty) {
             Result(declaredMethod, callees)
         } else {
@@ -100,40 +119,18 @@ class CalleesAnalysis private[analyses] (
                 LowerBoundCallees,
                 callees,
                 dependees,
-                continuation(declaredMethod, dependees, allCallees)
+                continuation(declaredMethod, directKeys, indirectKeys, dependees)
             )
         }
-    }
-
-    @inline def removeDependee(
-        eOptionP:  EOptionP[DeclaredMethod, CalleesLike],
-        dependees: Set[EOptionP[DeclaredMethod, CalleesLike]]
-    ): Set[EOptionP[DeclaredMethod, CalleesLike]] = {
-        val resDependees = dependees.filter { dependee ⇒
-            dependee.e != eOptionP.e && dependee.pk != eOptionP.pk
-        }
-        resDependees
     }
 
     @inline def updateDependee(
         eOptionP:  EOptionP[DeclaredMethod, CalleesLike],
         dependees: Set[EOptionP[DeclaredMethod, CalleesLike]]
     ): Set[EOptionP[DeclaredMethod, CalleesLike]] = {
-        var resDependees = removeDependee(eOptionP, dependees)
-        resDependees += eOptionP
-        resDependees
-    }
-
-    // todo: if this method is called from the continuation, this is incredibly slow
-    // IMPROVE: get IntTrieSet from CalleesLike
-    @inline def updateCallees(callees: CalleesLike, allCallees: IntMap[IntTrieSet]): IntMap[IntTrieSet] = {
-        var resAllCallees = allCallees
-        for ((pc, tgts) ← callees.encodedCallees) {
-            val old = resAllCallees.getOrElse(pc, IntTrieSet.empty)
-            resAllCallees = resAllCallees.updated(pc, old ++ tgts)
-        }
-
-        resAllCallees
+        val filtered = dependees.filter { d ⇒ d.e != eOptionP.e && d.pk != eOptionP.pk }
+        if (eOptionP.isRefinable) filtered + eOptionP
+        else filtered
     }
 
 }
@@ -153,7 +150,13 @@ class LazyCalleesAnalysis(calleesProperties: Set[CalleesLikePropertyMetaInformat
     override def startLazily(
         project: SomeProject, propertyStore: PropertyStore, unused: Null
     ): FPCFAnalysis = {
-        val analysis = new CalleesAnalysis(project, calleesProperties.map(_.key))
+        val (indirectCalleesProperties, directCalleesProperties) =
+            calleesProperties.partition(_.isIndirect)
+        val analysis = new CalleesAnalysis(
+            project,
+            directCalleesProperties.map(_.key),
+            indirectCalleesProperties.map(_.key)
+        )
         propertyStore.registerLazyPropertyComputation(Callees.key, analysis.doAnalysis)
         analysis
     }

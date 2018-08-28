@@ -16,9 +16,8 @@ import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.fpcf.properties.CallersProperty
 import org.opalj.fpcf.properties.NoCallers
-import org.opalj.fpcf.properties.NoThreadRelatedCallees
-import org.opalj.fpcf.properties.ThreadRelatedCallees
-import org.opalj.fpcf.properties.ThreadRelatedCalleesImplementation
+import org.opalj.fpcf.properties.OnlyVMLevelCallers
+import org.opalj.fpcf.properties.LowerBoundCallers
 import org.opalj.log.OPALLogger
 import org.opalj.tac.Assignment
 import org.opalj.tac.Expr
@@ -32,6 +31,7 @@ import org.opalj.value.IsReferenceValue
 /**
  *
  * @author Florian Kuebler
+ * @author Dominik Helm
  */
 class ThreadRelatedCallsAnalysis private[analyses] (
         final val project: SomeProject
@@ -83,55 +83,66 @@ class ThreadRelatedCallsAnalysis private[analyses] (
             // happens in particular for native methods
             return NoResult;
 
-        val calleesAndCallers = new CalleesAndCallers()
+        var threadRelatedMethods: Set[DeclaredMethod] = Set.empty
 
         val stmts = tacai(method).stmts
         for {
-            VirtualMethodCall(pc, dc, _, name, descriptor, receiver, params) ← stmts
+            VirtualMethodCall(_, dc, _, name, descriptor, receiver, params) ← stmts
             if classHierarchy.isSubtypeOf(dc, ObjectType.Thread)
         } {
             if (name == "start" && descriptor == MethodDescriptor.NoArgsAndReturnVoid) {
-                handleStart(definedMethod, calleesAndCallers, stmts, pc, receiver)
+                threadRelatedMethods =
+                    handleStart(definedMethod, threadRelatedMethods, stmts, receiver)
             } else if (name == "setUncaughtExceptionHandler" &&
                 descriptor == setUncaughtExceptionHandlerDescriptor) {
 
-                handleUncaughtExceptionHandler(
-                    definedMethod,
-                    params.head,
-                    "uncaughtException",
-                    uncaughtExceptionDescriptor,
-                    pc,
-                    calleesAndCallers
-                )
+                threadRelatedMethods =
+                    handleUncaughtExceptionHandler(
+                        definedMethod,
+                        params.head,
+                        "uncaughtException",
+                        uncaughtExceptionDescriptor,
+                        threadRelatedMethods
+                    )
             }
 
         }
-        returnResult(declaredMethod, calleesAndCallers)
+
+        Results(
+            threadRelatedMethods.map { method ⇒
+                PartialResult[DeclaredMethod, CallersProperty](method, CallersProperty.key, {
+                    case EPK(_, _) ⇒
+                        Some(EPS(method, LowerBoundCallers, OnlyVMLevelCallers))
+                    case EPS(_, lb, ub) if !ub.hasCallersWithUnknownContext ⇒
+                        Some(EPS(method, lb, ub.updatedWithVMLevelCall()))
+                    case _ ⇒ None
+                })
+            }
+        )
     }
 
     private[this] def handleStart(
-        definedMethod:     DefinedMethod,
-        calleesAndCallers: CalleesAndCallers,
-        stmts:             Array[Stmt[V]],
-        pc:                UShort,
-        receiver:          Expr[V]
-    ): Unit = {
+        definedMethod:        DefinedMethod,
+        threadRelatedMethods: Set[DeclaredMethod],
+        stmts:                Array[Stmt[V]],
+        receiver:             Expr[V]
+    ): Set[DeclaredMethod] = {
         // a call to Thread.start will trigger the JVM to later on call Thread.exit()
         val exitMethod = project.specialCall(
             ObjectType.Thread,
             ObjectType.Thread,
-            false,
+            isInterface = false,
             "exit",
             MethodDescriptor.NoArgsAndReturnVoid
         )
-        addCall(
+
+        var newThreadRelatedMethods = addMethod(
             definedMethod,
             exitMethod,
             ObjectType.Thread,
             "exit",
             MethodDescriptor.NoArgsAndReturnVoid,
-            pc,
-            calleesAndCallers
+            threadRelatedMethods
         )
 
         // a call to Thread.start will trigger a call to the underlying run method
@@ -146,26 +157,31 @@ class ThreadRelatedCallsAnalysis private[analyses] (
                     receiverType, receiverType, "run", MethodDescriptor.NoArgsAndReturnVoid
                 )
 
-                addCall(
+                newThreadRelatedMethods = addMethod(
                     definedMethod,
                     runMethod,
                     receiverType,
                     "run",
                     MethodDescriptor.NoArgsAndReturnVoid,
-                    pc,
-                    calleesAndCallers
+                    threadRelatedMethods
                 )
 
                 if (rv.valueType.get == ObjectType.Thread || (
                     runMethod.hasValue && runMethod.value.classFile.thisType == ObjectType.Thread
                 )) {
-                    handleThreadWithRunnable(definedMethod, calleesAndCallers, stmts, pc, receiver)
+                    newThreadRelatedMethods = handleThreadWithRunnable(
+                        definedMethod,
+                        stmts,
+                        receiver,
+                        threadRelatedMethods
+                    )
                 }
             } else {
                 OPALLogger.warn("analysis", "missed call to `run`")
             }
-
         }
+
+        newThreadRelatedMethods
     }
 
     def getConstructorCalls(expr: Expr[V], defSite: Int, stmts: Array[Stmt[V]]): Iterator[NonVirtualMethodCall[V]] = {
@@ -183,12 +199,13 @@ class ThreadRelatedCallsAnalysis private[analyses] (
     }
 
     private def handleThreadWithRunnable(
-        definedMethod:     DefinedMethod,
-        calleesAndCallers: CalleesAndCallers,
-        stmts:             Array[Stmt[V]],
-        pc:                Int,
-        receiver:          Expr[V]
-    ): Unit = {
+        definedMethod:        DefinedMethod,
+        stmts:                Array[Stmt[V]],
+        receiver:             Expr[V],
+        threadRelatedMethods: Set[DeclaredMethod]
+    ): Set[DeclaredMethod] = {
+        var newThreadRelatedMethods = threadRelatedMethods
+
         for {
             threadDefSite ← receiver.asVar.definedBy
         } {
@@ -209,13 +226,12 @@ class ThreadRelatedCallsAnalysis private[analyses] (
                             if (indexOfRunnableParameter != -1) {
                                 for (runnableValue ← params(indexOfRunnableParameter).asVar.value.asReferenceValue.allValues) {
                                     if (runnableValue.isPrecise) {
-                                        handlePrecise(
+                                        newThreadRelatedMethods = handlePrecise(
                                             definedMethod,
                                             runnableValue,
                                             "run",
                                             MethodDescriptor.NoArgsAndReturnVoid,
-                                            pc,
-                                            calleesAndCallers
+                                            newThreadRelatedMethods
                                         )
                                     } else {
 
@@ -230,26 +246,18 @@ class ThreadRelatedCallsAnalysis private[analyses] (
                 }
             }
         }
-    }
 
-    private[this] def returnResult(declaredMethod: DeclaredMethod, calleesAndCallers: CalleesAndCallers): PropertyComputationResult = {
-        val callees =
-            if (calleesAndCallers.callees.isEmpty)
-                NoThreadRelatedCallees
-            else
-                new ThreadRelatedCalleesImplementation(calleesAndCallers.callees)
-        val calleesResult = Result(declaredMethod, callees)
-        Results(calleesResult :: calleesAndCallers.partialResultsForCallers)
+        newThreadRelatedMethods
     }
 
     private[this] def handleUncaughtExceptionHandler(
-        definedMethod:     DefinedMethod,
-        receiver:          Expr[V],
-        name:              String,
-        descriptor:        MethodDescriptor,
-        pc:                Int,
-        calleesAndCallers: CalleesAndCallers
-    ): Unit = {
+        definedMethod:        DefinedMethod,
+        receiver:             Expr[V],
+        name:                 String,
+        descriptor:           MethodDescriptor,
+        threadRelatedMethods: Set[DeclaredMethod]
+    ): Set[DeclaredMethod] = {
+        var newThreadRelatedMethods = threadRelatedMethods
 
         val rvs = receiver.asVar.value.asReferenceValue.allValues
         for {
@@ -258,23 +266,24 @@ class ThreadRelatedCallsAnalysis private[analyses] (
         } {
             // for precise types we can directly add the call edge here
             if (rv.isPrecise) {
-                handlePrecise(definedMethod, rv, name, descriptor, pc, calleesAndCallers)
+                newThreadRelatedMethods =
+                    handlePrecise(definedMethod, rv, name, descriptor, threadRelatedMethods)
             } else {
                 OPALLogger.warn("analysis", "missed call to `uncaughtException`")
             }
         }
 
+        newThreadRelatedMethods
     }
 
     private[this] def handlePrecise(
-        definedMethod:     DefinedMethod,
-        receiver:          IsReferenceValue,
-        name:              String,
-        descriptor:        MethodDescriptor,
-        pc:                Int,
-        calleesAndCallers: CalleesAndCallers
+        definedMethod:        DefinedMethod,
+        receiver:             IsReferenceValue,
+        name:                 String,
+        descriptor:           MethodDescriptor,
+        threadRelatedMethods: Set[DeclaredMethod]
 
-    ): Unit = {
+    ): Set[DeclaredMethod] = {
         val thisType = definedMethod.declaringClassType.asObjectType
         val preciseType = receiver.valueType.get.asObjectType
         val tgt = project.instanceCall(
@@ -283,23 +292,19 @@ class ThreadRelatedCallsAnalysis private[analyses] (
             name,
             descriptor
         )
-        addCall(definedMethod, tgt, preciseType, name, descriptor, pc, calleesAndCallers)
+        addMethod(definedMethod, tgt, preciseType, name, descriptor, threadRelatedMethods)
     }
 
-    private[this] def addCall(
-        definedMethod:     DefinedMethod,
-        target:            org.opalj.Result[Method],
-        preciseType:       ObjectType,
-        name:              String,
-        descriptor:        MethodDescriptor,
-        pc:                Int,
-        calleesAndCallers: CalleesAndCallers
-    ): Unit = {
+    private[this] def addMethod(
+        definedMethod:        DefinedMethod,
+        target:               org.opalj.Result[Method],
+        preciseType:          ObjectType,
+        name:                 String,
+        descriptor:           MethodDescriptor,
+        threadRelatedMethods: Set[DeclaredMethod]
+    ): Set[DeclaredMethod] = {
         if (target.hasValue) {
-            val callee = declaredMethods(target.value)
-            calleesAndCallers.updateWithCall(
-                definedMethod, callee, pc
-            )
+            threadRelatedMethods + declaredMethods(target.value)
         } else {
             val declTgt = declaredMethods.apply(
                 preciseType,
@@ -309,11 +314,10 @@ class ThreadRelatedCallsAnalysis private[analyses] (
                 descriptor
             )
 
-            if (!declTgt.hasSingleDefinedMethod &&
-                !declTgt.hasMultipleDefinedMethods) {
-                calleesAndCallers.updateWithCall(
-                    definedMethod, declTgt, pc
-                )
+            if (declTgt.hasSingleDefinedMethod || declTgt.hasMultipleDefinedMethods) {
+                threadRelatedMethods
+            } else {
+                threadRelatedMethods + declTgt
             }
         }
     }
@@ -332,7 +336,7 @@ object EagerThreadRelatedCallsAnalysis extends FPCFEagerAnalysisScheduler {
 
     override def uses: Set[PropertyKind] = Set(CallersProperty)
 
-    override def derives: Set[PropertyKind] = Set(CallersProperty, ThreadRelatedCallees)
+    override def derives: Set[PropertyKind] = Set(CallersProperty)
 
     override def init(p: SomeProject, ps: PropertyStore): ThreadRelatedCallsAnalysis = {
         val analysis = new ThreadRelatedCallsAnalysis(p)

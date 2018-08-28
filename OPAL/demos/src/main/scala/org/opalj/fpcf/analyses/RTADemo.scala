@@ -19,7 +19,6 @@ import org.opalj.fpcf.analyses.cg.LazyCalleesAnalysis
 import org.opalj.fpcf.properties.Callees
 import org.opalj.fpcf.properties.SerializationRelatedCallees
 import org.opalj.fpcf.properties.StandardInvokeCallees
-import org.opalj.fpcf.properties.ThreadRelatedCallees
 //import org.opalj.fpcf.par.PKEParallelTasksPropertyStore
 //import org.opalj.fpcf.par.RecordAllPropertyStoreTracer
 import org.opalj.fpcf.properties.CallersProperty
@@ -72,7 +71,7 @@ object RTADemo extends DefaultOneStepAnalysis {
                 EagerThreadRelatedCallsAnalysis,
                 EagerSerializationRelatedCallsAnalysis,
                 new LazyCalleesAnalysis(
-                    Set(StandardInvokeCallees, ThreadRelatedCallees, SerializationRelatedCallees)
+                    Set(StandardInvokeCallees, SerializationRelatedCallees)
                 )
             )
         } { t ⇒ info("progress", s"constructing the call graph took ${t.toSeconds}") }

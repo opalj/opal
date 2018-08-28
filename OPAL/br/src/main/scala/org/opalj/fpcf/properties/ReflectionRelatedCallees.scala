@@ -4,7 +4,6 @@ package fpcf
 package properties
 
 import org.opalj.br.DeclaredMethod
-import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.collection.immutable.IntTrieSet
 
 import scala.collection.immutable.IntMap
@@ -15,12 +14,12 @@ import scala.collection.immutable.IntMap
  * @author Dominik Helm
  */
 sealed trait ReflectionRelatedCalleesPropertyMetaInformation
-    extends CalleesLikePropertyMetaInformation {
+    extends IndirectCalleesPropertyMetaInformation {
 
     final type Self = ReflectionRelatedCallees
 }
 
-sealed trait ReflectionRelatedCallees extends CalleesLike
+sealed trait ReflectionRelatedCallees extends IndirectCallees
     with ReflectionRelatedCalleesPropertyMetaInformation {
 
     override def toString: String = {
@@ -32,31 +31,15 @@ sealed trait ReflectionRelatedCallees extends CalleesLike
 
 sealed class ReflectionRelatedCalleesImplementation(
         private[properties] val calleesIds: IntMap[IntTrieSet]
-) extends ReflectionRelatedCallees with CalleesLikeImplementation {
-    override def updated(
-        pc: Int, callee: DeclaredMethod
-    )(implicit declaredMethods: DeclaredMethods): ReflectionRelatedCallees = {
-        if (calleesIds.contains(pc) && calleesIds(pc).contains(callee.id)) {
-            this
-        } else {
-            val old = calleesIds.getOrElse(pc, IntTrieSet.empty)
-            val newCalleesIds = calleesIds.updated(pc, old + callee.id)
-            new ReflectionRelatedCalleesImplementation(newCalleesIds)
-        }
-    }
-}
+) extends ReflectionRelatedCallees with IndirectCalleesImplementation
 
 object LowerBoundReflectionRelatedCallees extends ReflectionRelatedCallees
-    with CalleesLikeLowerBound {
-    override def updated(
-        pc: Int, callee: DeclaredMethod
-    )(implicit declaredMethods: DeclaredMethods): ReflectionRelatedCallees = this
-}
+    with IndirectCalleesLowerBound
 
 object NoReflectionRelatedCallees extends ReflectionRelatedCalleesImplementation(IntMap.empty)
 
 object NoReflectionRelatedCalleesDueToNotReachableMethod extends ReflectionRelatedCallees
-    with CalleesLikeNotReachable
+    with IndirectCalleesNotReachable
 
 object ReflectionRelatedCallees extends ReflectionRelatedCalleesPropertyMetaInformation {
 

@@ -24,8 +24,11 @@ import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.cfg.CFG
+import org.opalj.br.instructions.INVOKESTATIC
+import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.collection.immutable.IntArraySetBuilder
+import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.properties.CallersProperty
 import org.opalj.fpcf.properties.InstantiatedTypes
 import org.opalj.fpcf.properties.NoCallers
@@ -50,6 +53,8 @@ import org.opalj.tac.ArrayStore
 import org.opalj.tac.VirtualMethodCall
 import org.opalj.value.IsReferenceValue
 
+import scala.collection.immutable.IntMap
+
 /**
  * Finds calls and loaded classes that exist because of reflective calls that are easy to resolve.
  *
@@ -67,9 +72,9 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
             val cfg:                  CFG[Stmt[V], TACStmts[V]],
             val loadedClassesUB:      UIDSet[ObjectType],
             val instantiatedTypesUB:  UIDSet[ObjectType],
+            val calleesAndCallers:    CalleesAndCallers,
             var newLoadedClasses:     UIDSet[ObjectType]        = UIDSet.empty,
-            var newInstantiatedTypes: UIDSet[ObjectType]        = UIDSet.empty,
-            val calleesAndCallers:    CalleesAndCallers         = new CalleesAndCallers
+            var newInstantiatedTypes: UIDSet[ObjectType]        = UIDSet.empty
     )
 
     implicit private[this] val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
@@ -107,6 +112,40 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
             // happens in particular for native methods
             return NoResult;
 
+        var relevantPCs: IntMap[IntTrieSet] = IntMap.empty
+        val insts = method.body.get.instructions
+        var i = 0
+        val max = insts.length
+        while (i < max) {
+            val inst = insts(i)
+            if (inst != null)
+                inst.opcode match {
+                    case INVOKESTATIC.opcode ⇒
+                        val call = inst.asMethodInvocationInstruction
+                        if (call.declaringClass == ObjectType.Class && call.name == "forName")
+                            relevantPCs += i → IntTrieSet.empty
+                    case INVOKEVIRTUAL.opcode ⇒
+                        val call = inst.asMethodInvocationInstruction
+                        call.declaringClass match {
+                            case ObjectType.Class ⇒
+                                if (call.name == "newInstance") relevantPCs += i → IntTrieSet.empty
+                            case ConstructorT ⇒
+                                if (call.name == "newInstance") relevantPCs += i → IntTrieSet.empty
+                            case MethodT ⇒
+                                if (call.name == "invoke") relevantPCs += i → IntTrieSet.empty
+                            case ObjectType.MethodHandle ⇒
+                                if (call.name.startsWith("invoke"))
+                                    relevantPCs += i → IntTrieSet.empty
+                            case _ ⇒
+                        }
+                    case _ ⇒
+                }
+            i += 1
+        }
+
+        if (relevantPCs.isEmpty)
+            return Result(declaredMethod, NoReflectionRelatedCallees);
+
         // the set of classes that are definitely loaded at this point in time
         val loadedClassesEOptP = propertyStore(project, LoadedClasses.key)
 
@@ -129,10 +168,15 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         val tacode = tacai(method)
         val stmts = tacode.stmts
         val cfg = tacode.cfg
+        val pcToIndex = tacode.pcToIndex
 
-        implicit val state: State = new State(stmts, cfg, loadedClassesUB, instantiatedTypesUB)
+        val calleesAndCallers = new CalleesAndCallers(relevantPCs)
 
-        for (stmt ← stmts) {
+        implicit val state: State =
+            new State(stmts, cfg, loadedClassesUB, instantiatedTypesUB, calleesAndCallers)
+
+        for (pc ← relevantPCs.keysIterator) {
+            val stmt = stmts(pcToIndex(pc))
             stmt.astID match {
                 case Assignment.ASTID ⇒ handleExpr(definedMethod, stmt.pc, stmt.asAssignment.expr)
                 case ExprStmt.ASTID   ⇒ handleExpr(definedMethod, stmt.pc, stmt.asExprStmt.expr)
