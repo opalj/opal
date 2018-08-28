@@ -15,9 +15,9 @@ class AnyRefAppendChain[N >: Null <: AnyRef] private (
 
     def this() { this(null, null) }
 
-    def isEmpty = h == null
+    def isEmpty: Boolean = h == null
 
-    def nonEmpty = h != null
+    def nonEmpty: Boolean = h != null
 
     def take(): N = {
         val v = h.v
