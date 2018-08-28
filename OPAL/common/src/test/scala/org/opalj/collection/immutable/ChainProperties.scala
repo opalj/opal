@@ -663,7 +663,7 @@ object ChainProperties extends Properties("Chain") {
 
     property("forFirstN") = forAll { (l1: List[String]) ⇒
         val cl1 = Chain(l1: _*)
-        (0 until l1.size).forall { i ⇒
+        l1.indices.forall { i ⇒
             var result = ""
             cl1.forFirstN(i)(result += _)
             result == l1.take(i).foldLeft("")(_ + _)
