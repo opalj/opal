@@ -14,7 +14,8 @@ trait Constant_PoolAbstractions {
 
     type Constant_Pool_Entry
 
-    type Constant_Pool_Index = Int // IMPROVE(?) Replace by ValueType?
+
+    type Constant_Pool_Index = Int
 
     // The following definitions were introduced to enable the post transformation
     // of a class file after it was (successfully) loaded. In particular to resolve
