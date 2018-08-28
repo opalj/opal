@@ -88,7 +88,7 @@ trait IntSet[T <: IntSet[T]] { intSet: T ⇒
         val it = intIterator
         var hasNext = it.hasNext
         while (hasNext) {
-            sb.append(it.next.toString)
+            sb.append(it.next().toString)
             hasNext = it.hasNext
             if (hasNext) sb.append(in)
         }
