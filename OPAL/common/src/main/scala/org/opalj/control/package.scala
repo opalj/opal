@@ -134,10 +134,12 @@ package object control {
      *          If the comparator matches multiple values, the returned value is not
      *          precisely specified.
      */
+    // TODO Rename: binarySearch
     def find[T <: AnyRef](data: Array[T], comparator: Comparator[T]): Option[T] = {
         find(data)(comparator.evaluate)
     }
 
+    // TODO Rename: binarySearch
     def find[T <: AnyRef](data: Array[T])(evaluate: T ⇒ Int): Option[T] = {
         @tailrec @inline def find(low: Int, high: Int): Option[T] = {
             if (high < low)
