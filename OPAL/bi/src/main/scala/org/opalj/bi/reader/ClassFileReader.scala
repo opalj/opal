@@ -27,6 +27,8 @@ import scala.collection.JavaConverters._
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 import scala.concurrent.Future
+import scala.concurrent.ExecutionContext
+
 import org.apache.commons.text.similarity.LevenshteinDistance
 import org.opalj.log.OPALLogger.error
 import org.opalj.log.OPALLogger.info
@@ -36,8 +38,6 @@ import org.opalj.io.process
 import org.opalj.concurrent.OPALExecutionContextTaskSupport
 import org.opalj.concurrent.NumberOfThreadsForIOBoundTasks
 import org.opalj.bytecode.BytecodeProcessingFailedException
-
-import scala.concurrent.ExecutionContext
 
 /**
  * Implements the template method to read in a Java class file. Additionally,
