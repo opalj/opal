@@ -180,7 +180,7 @@ object ChainProperties extends Properties("Chain") {
 
     property("seq") = forAll { l: List[String] ⇒
         val fl = Chain(l: _*)
-        (fl.seq eq fl)
+        fl.seq eq fl
     }
 
     property("flatMap") = forAll(listOfListGen) { l: List[List[String]] ⇒
@@ -615,7 +615,7 @@ object ChainProperties extends Properties("Chain") {
         val cl1 = Chain(l1: _*)
         l2s.forall { l2 ⇒
             val cl2 = Chain(l2: _*)
-            (cl1.fuse[String](cl2, (x, y) ⇒ if (x == y) x else y)).mkString ==
+            cl1.fuse[String](cl2, (x, y) ⇒ if (x == y) x else y).mkString ==
                 l1.zip(l2).map(v ⇒ if (v._1 == v._2) v._1 else v._2).mkString
         }
     }
@@ -649,8 +649,8 @@ object ChainProperties extends Properties("Chain") {
         val cl1 = Chain(l1: _*)
         l2s.forall { l2 ⇒
             val cl2 = Chain(l2: _*)
-            (cl1.merge[String, String](cl2)((x, y) ⇒ if (x == y) x else y).mkString ==
-                l1.zip(l2).map(v ⇒ if (v._1 == v._2) v._1 else v._2).mkString)
+            cl1.merge[String, String](cl2)((x, y) ⇒ if (x == y) x else y).mkString ==
+                l1.zip(l2).map(v ⇒ if (v._1 == v._2) v._1 else v._2).mkString
         }
     }
 
