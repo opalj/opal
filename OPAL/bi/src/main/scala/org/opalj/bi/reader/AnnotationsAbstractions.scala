@@ -11,21 +11,21 @@ import java.io.DataInputStream
 trait AnnotationAbstractions extends Constant_PoolAbstractions {
 
     //
-    // ABSTRACT DEFINITIONS
+    // TYPE DEFINITIONS AND FACTORY METHODS
     //
-
-    type ElementValuePairs
-
-    def ElementValuePairs(cp: Constant_Pool, in: DataInputStream): ElementValuePairs
 
     // A TypeAnnotation's/an Annotation's element value can be an annotation.
     type Annotation
+
+    type ElementValuePairs
 
     def Annotation(
         constant_pool:       Constant_Pool,
         type_index:          Constant_Pool_Index,
         element_value_pairs: ElementValuePairs
     ): Annotation
+
+    def ElementValuePairs(cp: Constant_Pool, in: DataInputStream): ElementValuePairs
 
     //
     // IMPLEMENTATION
