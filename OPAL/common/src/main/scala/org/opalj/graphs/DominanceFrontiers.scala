@@ -84,7 +84,7 @@ final class DominanceFrontiers private (
      *          a valid node, then the default function, which always returns `true`,
      *          can be used.
      */
-    def toDot(isNodeValid: (Int) ⇒ Boolean = (i) ⇒ true): String = {
+    def toDot(isNodeValid: Int ⇒ Boolean = _ ⇒ true): String = {
         val g = Graph.empty[Int]
         dfs.zipWithIndex.foreach { e ⇒
             val (df, s /*index*/ ) = e
