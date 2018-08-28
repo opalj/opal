@@ -108,7 +108,7 @@ case class ClassFile(
     def cpToXHTML: Node = {
         val cpEntries =
             for {
-                cpIndex ← (1 until constant_pool.length)
+                cpIndex ← constant_pool.indices
                 cpNode = cp(cpIndex)
                 if cpNode != null /* <= need for constant_double/_long entries */
             } yield {
