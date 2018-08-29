@@ -20,6 +20,12 @@ abstract class AnyRefIterator[+T] extends AbstractIterator[T] { self ⇒
         def next(): X = if (self.hasNext) self.next() else that.next()
     }
 
+    def sum(f: T ⇒ Int): Int = {
+        var sum = 0
+        while (hasNext) sum += f(next())
+        sum
+    }
+
     def collect(pf: PartialFunction[T, Int]): IntIterator = {
         ???
     }
