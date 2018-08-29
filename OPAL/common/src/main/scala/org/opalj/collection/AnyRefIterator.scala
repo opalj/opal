@@ -28,6 +28,22 @@ abstract class AnyRefIterator[+T] extends AbstractIterator[T] { self ⇒
 
     def collect(pf: PartialFunction[T, Int]): IntIterator = {
         ???
+        /*
+        def collect[B <: AnyRef](f: PartialFunction[Instruction, B]): List[PCAndAnyRef[B]] = {
+            val max_pc = instructions.length
+            var pc = 0
+            var result: List[PCAndAnyRef[B]] = List.empty
+            while (pc < max_pc) {
+                val instruction = instructions(pc)
+                val r: Any = f.applyOrElse(instruction, AnyToAnyThis)
+                if (r.asInstanceOf[AnyRef] ne AnyToAnyThis) {
+                    result ::= PCAndAnyRef(pc, r.asInstanceOf[B])
+                }
+                pc = pcOfNextInstruction(pc)
+            }
+            result.reverse
+        }
+        */
     }
 
     def collect(pf: PartialFunction[T, Long]): LongIterator = {
