@@ -28,7 +28,7 @@ trait Module_attributeReader extends AttributeReader {
 
     // CONCEPTUALLY:
     // type ExportsToIndexEntry => type ExportsToIndexTable = <X>Array[ExportsToIndexEntry]
-    type ExportsToIndexTable = Array[Constant_Pool_Index] // CONSTANT_Module
+    type ExportsToIndexTable = Array[Constant_Pool_Index] // CONSTANT_Module_Index[]
 
     type OpensEntry <: AnyRef
     type Opens = AnyRefArray[OpensEntry]
@@ -39,14 +39,14 @@ trait Module_attributeReader extends AttributeReader {
 
     // CONCEPTUALLY:
     // type UsesEntry => type Uses = <X>Array[UsesEntry]
-    type Uses = Array[Constant_Pool_Index] // CONSTANT_Class[]
-
-    type ProvidesEntry <: AnyRef
-    type Provides = AnyRefArray[ProvidesEntry]
+    type Uses = Array[Constant_Pool_Index] // CONSTANT_Class_Index[]
 
     // CONCEPTUALLY:
     // type ProvidesWithIndexEntry => type ProvidesWithIndexTable = <X>Array[ProvidesWithIndexEntry]
     type ProvidesWithIndexTable = Array[Constant_Pool_Index] // CONSTANT_Class_Index[]
+
+    type ProvidesEntry <: AnyRef
+    type Provides = AnyRefArray[ProvidesEntry]
 
     //
     // IMPLEMENTATION

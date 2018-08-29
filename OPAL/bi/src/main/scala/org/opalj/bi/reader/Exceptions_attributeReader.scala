@@ -18,10 +18,12 @@ trait Exceptions_attributeReader extends AttributeReader {
 
     type Exceptions_attribute >: Null <: Attribute
 
+    type ExceptionIndexTable = Array[Constant_Pool_Index]
+
     def Exceptions_attribute(
         constant_pool:         Constant_Pool,
         attribute_name_index:  Constant_Pool_Index,
-        exception_index_table: Array[Constant_Pool_Index]
+        exception_index_table: ExceptionIndexTable
     ): Exceptions_attribute
 
     //
