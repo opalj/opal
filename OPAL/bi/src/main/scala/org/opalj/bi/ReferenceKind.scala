@@ -21,19 +21,18 @@ sealed abstract class ReferenceKind {
  */
 object ReferenceKind {
 
-    private val referenceKinds: Array[ReferenceKind] =
-        Array(
-            /* 0*/ null, // <=> Index 0 is not used
-            /* 1*/ REF_getField,
-            /* 2*/ REF_getStatic,
-            /* 3*/ REF_putField,
-            /* 4*/ REF_putStatic,
-            /* 5*/ REF_invokeVirtual,
-            /* 6*/ REF_invokeStatic,
-            /* 7*/ REF_invokeSpecial,
-            /* 8*/ REF_newInvokeSpecial,
-            /* 9*/ REF_invokeInterface
-        )
+    private[this] val referenceKinds: Array[ReferenceKind] = Array(
+        /* 0*/ null, // <=> Index 0 is not used
+        /* 1*/ REF_getField,
+        /* 2*/ REF_getStatic,
+        /* 3*/ REF_putField,
+        /* 4*/ REF_putStatic,
+        /* 5*/ REF_invokeVirtual,
+        /* 6*/ REF_invokeStatic,
+        /* 7*/ REF_invokeSpecial,
+        /* 8*/ REF_newInvokeSpecial,
+        /* 9*/ REF_invokeInterface
+    )
 
     def apply(referenceKindID: Int): ReferenceKind = referenceKinds(referenceKindID)
 }
