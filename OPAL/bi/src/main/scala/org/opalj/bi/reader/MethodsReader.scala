@@ -3,11 +3,10 @@ package org.opalj
 package bi
 package reader
 
-import scala.reflect.ClassTag
-
 import java.io.DataInputStream
 
-import org.opalj.control.repeat
+import org.opalj.control.fillAnyRefArray
+import org.opalj.collection.immutable.AnyRefArray
 
 /**
  * Defines a template method to read in a class file's Method_info structure.
@@ -18,6 +17,9 @@ trait MethodsReader extends Constant_PoolAbstractions {
     // TYPE DEFINITIONS AND FACTORY METHODS
     //
 
+    type Method_Info <: AnyRef
+    type Methods = AnyRefArray[Method_Info]
+
     type Attributes
 
     protected def Attributes(
@@ -25,9 +27,6 @@ trait MethodsReader extends Constant_PoolAbstractions {
         cp: Constant_Pool,
         in: DataInputStream
     ): Attributes
-
-    type Method_Info
-    implicit val Method_InfoManifest: ClassTag[Method_Info]
 
     def Method_Info(
         constant_pool:    Constant_Pool,
@@ -41,11 +40,9 @@ trait MethodsReader extends Constant_PoolAbstractions {
     // IMPLEMENTATION
     //
 
-    type Methods = IndexedSeq[Method_Info]
-
     def Methods(cp: Constant_Pool, in: DataInputStream): Methods = {
         val methods_count = in.readUnsignedShort
-        repeat(methods_count) {
+        fillAnyRefArray(methods_count) {
             Method_Info(cp, in)
         }
     }

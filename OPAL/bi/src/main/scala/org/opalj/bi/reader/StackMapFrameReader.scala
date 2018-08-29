@@ -3,11 +3,10 @@ package org.opalj
 package bi
 package reader
 
-import scala.reflect.ClassTag
-
 import java.io.DataInputStream
 
-import org.opalj.control.repeat
+import org.opalj.control.fillAnyRefArray
+import org.opalj.collection.immutable.AnyRefArray
 
 trait StackMapFrameReader extends Constant_PoolAbstractions {
 
@@ -15,9 +14,11 @@ trait StackMapFrameReader extends Constant_PoolAbstractions {
     // TYPE DEFINITIONS AND FACTORY METHODS
     //
 
-    type StackMapFrame
-    type VerificationTypeInfo
-    implicit val VerificationTypeInfoManifest: ClassTag[VerificationTypeInfo]
+    type StackMapFrame <: AnyRef
+
+    type VerificationTypeInfo <: AnyRef
+    type VerificationTypeInfoLocals = AnyRefArray[VerificationTypeInfo]
+    type VerificationTypeInfoStack = AnyRefArray[VerificationTypeInfo]
 
     def VerificationTypeInfo(cp: Constant_Pool, in: DataInputStream): VerificationTypeInfo
 
@@ -55,9 +56,6 @@ trait StackMapFrameReader extends Constant_PoolAbstractions {
     // IMPLEMENTATION
     //
 
-    type VerificationTypeInfoLocals = IndexedSeq[VerificationTypeInfo]
-    type VerificationTypeInfoStack = IndexedSeq[VerificationTypeInfo]
-
     def StackMapFrame(cp: Constant_Pool, in: DataInputStream): StackMapFrame = {
         val frame_type = in.readUnsignedByte
         if (frame_type < 64) {
@@ -81,16 +79,16 @@ trait StackMapFrameReader extends Constant_PoolAbstractions {
             AppendFrame(
                 frame_type,
                 in.readUnsignedShort,
-                repeat(frame_type - 251 /*number of entries*/ ) { VerificationTypeInfo(cp, in) }
+                fillAnyRefArray(frame_type - 251 /*#entries*/ ) { VerificationTypeInfo(cp, in) }
             )
         } else {
             FullFrame(
                 255,
                 in.readUnsignedShort,
-                repeat(in.readUnsignedShort /*number of entries*/ ) {
+                fillAnyRefArray(in.readUnsignedShort /*#entries*/ ) {
                     VerificationTypeInfo(cp, in) // ...locals
                 },
-                repeat(in.readUnsignedShort /*number of entries*/ ) {
+                fillAnyRefArray(in.readUnsignedShort /*#entries*/ ) {
                     VerificationTypeInfo(cp, in) // ...stack items
                 }
             )

@@ -5,24 +5,23 @@ package reader
 
 import java.io.DataInputStream
 
-import scala.reflect.ClassTag
-
-import org.opalj.control.repeat
+import org.opalj.control.fillArrayOfInt
 
 /**
  * Generic parser for a code block's ''exceptions'' attribute.
  */
 trait Exceptions_attributeReader extends AttributeReader {
 
-    type Exceptions_attribute >: Null <: Attribute
-    implicit val Exceptions_attributeManifest: ClassTag[Exceptions_attribute]
+    //
+    // TYPE DEFINITIONS AND FACTORY METHODS
+    //
 
-    type ExceptionIndexTable = IndexedSeq[Constant_Pool_Index]
+    type Exceptions_attribute >: Null <: Attribute
 
     def Exceptions_attribute(
         constant_pool:         Constant_Pool,
         attribute_name_index:  Constant_Pool_Index,
-        exception_index_table: ExceptionIndexTable
+        exception_index_table: Array[Constant_Pool_Index]
     ): Exceptions_attribute
 
     //
@@ -49,10 +48,11 @@ trait Exceptions_attributeReader extends AttributeReader {
         /*val attribute_length =*/ in.readInt()
         val number_of_exceptions = in.readUnsignedShort
         if (number_of_exceptions > 0 || reifyEmptyAttributes) {
-            val exceptions = repeat(number_of_exceptions) { in.readUnsignedShort }
+            val exceptions = fillArrayOfInt(number_of_exceptions) { in.readUnsignedShort }
             Exceptions_attribute(cp, attribute_name_index, exceptions)
-        } else
+        } else {
             null
+        }
     }
 
     registerAttributeReader(ExceptionsAttribute.Name → parserFactory())

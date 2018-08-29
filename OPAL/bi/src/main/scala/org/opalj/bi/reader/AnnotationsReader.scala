@@ -3,10 +3,10 @@ package org.opalj
 package bi
 package reader
 
-import scala.reflect.ClassTag
-
 import java.io.DataInputStream
-import org.opalj.control.repeat
+
+import org.opalj.collection.immutable.AnyRefArray
+import org.opalj.control.fillAnyRefArray
 
 /**
  * Generic parser to parse a list of annotations. This reader is intended to be used in
@@ -18,13 +18,13 @@ trait AnnotationsReader extends AnnotationsAbstractions {
     // TYPE DEFINITIONS AND FACTORY METHODS
     //
 
-    implicit val AnnotationManifest: ClassTag[Annotation]
+    // NONE...
 
     //
     // IMPLEMENTATION
     //
 
-    type Annotations = IndexedSeq[Annotation]
+    type Annotations = AnyRefArray[Annotation]
 
     /**
      * Reads the annotations of a annotations attributes.
@@ -41,7 +41,7 @@ trait AnnotationsReader extends AnnotationsAbstractions {
      * </pre>
      */
     def Annotations(cp: Constant_Pool, in: DataInputStream): Annotations = {
-        repeat(in.readUnsignedShort) {
+        fillAnyRefArray(in.readUnsignedShort) {
             Annotation(cp, in)
         }
     }

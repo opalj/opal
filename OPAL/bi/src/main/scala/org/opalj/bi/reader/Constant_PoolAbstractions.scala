@@ -3,19 +3,24 @@ package org.opalj
 package bi
 package reader
 
-import scala.collection.mutable.Buffer
+import scala.collection.mutable
 
 /**
  * Constant pool related type definitions.
  */
 trait Constant_PoolAbstractions {
 
-    type Constant_Pool
+    //
+    // TYPE DEFINITIONS AND FACTORY METHODS
+    //
 
-    type Constant_Pool_Entry
+    type Constant_Pool_Entry <: ConstantPoolEntry
 
+    type CONSTANT_Utf8_info <: Constant_Pool_Entry
 
-    type Constant_Pool_Index = Int
+    final type Constant_Pool = Array[Constant_Pool_Entry]
+
+    final type Constant_Pool_Index = Int
 
     // The following definitions were introduced to enable the post transformation
     // of a class file after it was (successfully) loaded. In particular to resolve
@@ -34,7 +39,7 @@ trait Constant_PoolAbstractions {
      * (The constant pool is the only structure that is passed around and hence it is the
      * only place where to store information/functions related to a specific class file).
      */
-    type DeferredActionsStore = Buffer[ClassFile ⇒ ClassFile] with Constant_Pool_Entry
+    type DeferredActionsStore = mutable.Buffer[ClassFile ⇒ ClassFile] with Constant_Pool_Entry
 
     /**
      * This method is called/needs to be called after the class file was completely

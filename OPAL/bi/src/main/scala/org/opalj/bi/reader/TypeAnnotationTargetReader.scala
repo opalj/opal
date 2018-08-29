@@ -3,8 +3,12 @@ package org.opalj
 package bi
 package reader
 
+import scala.annotation.switch
+
 import java.io.DataInputStream
-import org.opalj.control.repeat
+
+import org.opalj.collection.immutable.AnyRefArray
+import org.opalj.control.fillAnyRefArray
 
 /**
  * Generic parser for the `target_type` and `target_info` fields of type annotations.
@@ -17,7 +21,7 @@ trait TypeAnnotationTargetReader extends Constant_PoolAbstractions {
     // TYPE DEFINITIONS AND FACTORY METHODS
     //
 
-    type TypeAnnotationTarget
+    type TypeAnnotationTarget <: AnyRef
 
     //______________________________
     // type_parameter_target
@@ -69,8 +73,8 @@ trait TypeAnnotationTargetReader extends Constant_PoolAbstractions {
      * } table[table_length];
      * }}}
      */
-    type LocalvarTableEntry
-    type LocalvarTable = IndexedSeq[LocalvarTableEntry]
+    type LocalvarTableEntry <: AnyRef
+    type LocalvarTable = AnyRefArray[LocalvarTableEntry]
     /**
      * Factory method to create a `LocalvarTableEntry`. To completely resolve
      * such entries; i.e., to resolve the local_variable_table_index it may
@@ -125,7 +129,7 @@ trait TypeAnnotationTargetReader extends Constant_PoolAbstractions {
     //
 
     def LocalvarTable(in: DataInputStream): LocalvarTable = {
-        repeat(in.readUnsignedShort) {
+        fillAnyRefArray(in.readUnsignedShort) {
             LocalvarTableEntry(
                 in.readUnsignedShort(),
                 in.readUnsignedShort(),
@@ -153,7 +157,7 @@ trait TypeAnnotationTargetReader extends Constant_PoolAbstractions {
      */
     def TypeAnnotationTarget(in: DataInputStream): TypeAnnotationTarget = {
         val target_type = in.readUnsignedByte()
-        (target_type: @scala.annotation.switch) match {
+        (target_type: @switch) match {
             case 0x00 ⇒ ParameterDeclarationOfClassOrInterface(in.readUnsignedByte())
             case 0x01 ⇒ ParameterDeclarationOfMethodOrConstructor(in.readUnsignedByte())
             case 0x10 ⇒ SupertypeTarget(in.readUnsignedShort())

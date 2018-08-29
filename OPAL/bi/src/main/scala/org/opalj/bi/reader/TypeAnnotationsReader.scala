@@ -3,14 +3,13 @@ package org.opalj
 package bi
 package reader
 
-import scala.reflect.ClassTag
-
 import java.io.DataInputStream
-import org.opalj.control.repeat
+
+import org.opalj.collection.immutable.AnyRefArray
+import org.opalj.control.fillAnyRefArray
 
 /**
- * Generic parser for type annotations. This
- * reader is intended to be used in conjunction with the
+ * Generic parser for type annotations. This reader is intended to be used in conjunction with the
  * Runtime(In)VisibleTypeAnnotations_attributeReaders.
  *
  * @author Michael Eichberg
@@ -21,14 +20,16 @@ trait TypeAnnotationsReader extends AnnotationsAbstractions {
     // TYPE DEFINITIONS AND FACTORY METHODS
     //
 
-    type TypeAnnotationTarget
-    def TypeAnnotationTarget(in: DataInputStream): TypeAnnotationTarget
+    type TypeAnnotation <: AnyRef
+    type TypeAnnotations = AnyRefArray[TypeAnnotation]
 
-    type TypeAnnotationPath
+    type TypeAnnotationTarget <: AnyRef
+
+    type TypeAnnotationPath <: AnyRef
+
     def TypeAnnotationPath(in: DataInputStream): TypeAnnotationPath
 
-    type TypeAnnotation
-    implicit val TypeAnnotationManifest: ClassTag[TypeAnnotation]
+    def TypeAnnotationTarget(in: DataInputStream): TypeAnnotationTarget
 
     def TypeAnnotation(
         constant_pool:       Constant_Pool,
@@ -41,8 +42,6 @@ trait TypeAnnotationsReader extends AnnotationsAbstractions {
     //
     // IMPLEMENTATION
     //
-
-    type TypeAnnotations = IndexedSeq[TypeAnnotation]
 
     /**
      * Reads a Runtime(In)VisibleTypeAnnotations attribute.
@@ -72,7 +71,7 @@ trait TypeAnnotationsReader extends AnnotationsAbstractions {
      * </pre>
      */
     def TypeAnnotations(cp: Constant_Pool, in: DataInputStream): TypeAnnotations = {
-        repeat(in.readUnsignedShort) {
+        fillAnyRefArray(in.readUnsignedShort) {
             TypeAnnotation(cp, in)
         }
     }

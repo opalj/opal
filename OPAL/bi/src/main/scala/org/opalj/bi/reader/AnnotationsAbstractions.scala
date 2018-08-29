@@ -15,7 +15,7 @@ trait AnnotationsAbstractions extends Constant_PoolAbstractions {
     //
 
     // A TypeAnnotation's/an Annotation's element value can be an annotation.
-    type Annotation
+    type Annotation <: AnyRef
 
     type ElementValuePairs
 

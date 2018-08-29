@@ -3,22 +3,20 @@ package org.opalj
 package bi
 package reader
 
-import scala.reflect.ClassTag
+import org.opalj.collection.immutable.AnyRefArray
 
 /**
  * Defines common abstractions over class file attributes.
  */
 trait AttributesAbstractions {
 
-    /*
-     * Specifying a lower bound is necessary to implement a generic SkipAttributeMethod.
-     */
-    type Attribute >: Null
-    implicit val AttributeManifest: ClassTag[Attribute]
     //
     // TYPE DEFINITIONS AND FACTORY METHODS
     //
 
-    type Attributes = Seq[Attribute]
+    /** Specifying a lower bound is necessary to implement a generic `skipAttribute` method. */
+    type Attribute >: Null <: AnyRef
+
+    type Attributes = AnyRefArray[Attribute]
 
 }

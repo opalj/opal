@@ -10,6 +10,10 @@ import java.io.DataInputStream
  */
 trait Deprecated_attributeReader extends AttributeReader {
 
+    //
+    // TYPE DEFINITIONS AND FACTORY METHODS
+    //
+
     type Deprecated_attribute <: Attribute
 
     def Deprecated_attribute(

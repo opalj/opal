@@ -11,6 +11,10 @@ import java.io.DataInputStream
  */
 trait Synthetic_attributeReader extends AttributeReader {
 
+    //
+    // TYPE DEFINITIONS AND FACTORY METHODS
+    //
+
     type Synthetic_attribute <: Attribute
 
     def Synthetic_attribute(
@@ -18,6 +22,9 @@ trait Synthetic_attributeReader extends AttributeReader {
         attribute_name_index: Constant_Pool_Index
     ): Synthetic_attribute
 
+    //
+    // IMPLEMENTATION
+    //
     /**
      * <pre>
      * Synthetic_attribute {

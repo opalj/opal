@@ -90,8 +90,6 @@ trait Constant_PoolReader extends Constant_PoolAbstractions {
 
     import ConstantPoolTags._
 
-    type Constant_Pool = Array[Constant_Pool_Entry]
-
     def Constant_Pool(in: DataInputStream): Constant_Pool = {
 
         /*

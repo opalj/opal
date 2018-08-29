@@ -3,11 +3,10 @@ package org.opalj
 package bi
 package reader
 
-import scala.reflect.ClassTag
-
 import java.io.DataInputStream
 
-import org.opalj.control.repeat
+import org.opalj.collection.immutable.AnyRefArray
+import org.opalj.control.fillAnyRefArray
 
 /**
  * A generic reader for Java 8's `MethodParameters` attribute.
@@ -20,8 +19,8 @@ trait MethodParameters_attributeReader extends AttributeReader {
 
     type MethodParameters_attribute >: Null <: Attribute
 
-    type MethodParameter
-    implicit val MethodParameterManifest: ClassTag[MethodParameter]
+    type MethodParameter <: AnyRef
+    type MethodParameters = AnyRefArray[MethodParameter]
 
     def MethodParameters_attribute(
         constant_pool:        Constant_Pool,
@@ -38,8 +37,6 @@ trait MethodParameters_attributeReader extends AttributeReader {
     //
     // IMPLEMENTATION
     //
-
-    type MethodParameters = IndexedSeq[MethodParameter]
 
     /**
      * <pre>
@@ -65,7 +62,7 @@ trait MethodParameters_attributeReader extends AttributeReader {
             MethodParameters_attribute(
                 cp,
                 attribute_name_index,
-                repeat(parameters_count) {
+                fillAnyRefArray(parameters_count) {
                     MethodParameter(cp, in.readUnsignedShort, in.readUnsignedShort)
                 }
             )

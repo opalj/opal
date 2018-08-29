@@ -5,13 +5,19 @@ package reader
 
 import java.io.DataInputStream
 
+import scala.collection.GenTraversableOnce
+
 /**
  * Generic parser for `RuntimeVisibleParameterAnnotations` attributes.
  */
 trait RuntimeVisibleParameterAnnotations_attributeReader extends AttributeReader {
 
+    //
+    // TYPE DEFINITIONS AND FACTORY METHODS
+    //
+
     type ParameterAnnotations
-    type ParametersAnnotations <: Traversable[ParameterAnnotations]
+    type ParametersAnnotations <: GenTraversableOnce[ParameterAnnotations]
     /**
      * Method that delegates to another reader to parse the annotations of the parameters.
      */

@@ -62,11 +62,12 @@ sealed trait VisibilityModifier extends AccessFlag {
  */
 object VisibilityModifier {
 
-    final val mask = ACC_PRIVATE.mask | ACC_PUBLIC.mask | ACC_PROTECTED.mask
+    // partial mask: we can't define a mask w.r.t. default visibility
+    private[bi] final val mask = ACC_PRIVATE.mask | ACC_PUBLIC.mask | ACC_PROTECTED.mask
 
-    private val SOME_PUBLIC = Some(ACC_PUBLIC)
-    private val SOME_PRIVATE = Some(ACC_PRIVATE)
-    private val SOME_PROTECTED = Some(ACC_PROTECTED)
+    final val SOME_PUBLIC = Some(ACC_PUBLIC)
+    final val SOME_PRIVATE = Some(ACC_PRIVATE)
+    final val SOME_PROTECTED = Some(ACC_PROTECTED)
 
     /**
      * Returns the specified visibility modifier.

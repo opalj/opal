@@ -10,6 +10,10 @@ import java.io.DataInputStream
  */
 trait ModuleMainClass_attributeReader extends AttributeReader {
 
+    //
+    // TYPE DEFINITIONS AND FACTORY METHODS
+    //
+
     type ModuleMainClass_attribute <: Attribute
 
     /**
@@ -21,12 +25,15 @@ trait ModuleMainClass_attributeReader extends AttributeReader {
         main_class_index:     Constant_Pool_Index // CONSTANT_Class_info
     ): ModuleMainClass_attribute
 
+    //
+    // IMPLEMENTATION
+    //
+
     /**
      * <pre>
      * MainClass_attribute {
      *     u2 attribute_name_index;
      *     u4 attribute_length;
-     *
      *     u2 main_class_index;
      * }
      * </pre>

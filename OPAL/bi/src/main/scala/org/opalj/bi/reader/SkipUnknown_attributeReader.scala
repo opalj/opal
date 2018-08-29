@@ -6,14 +6,19 @@ package reader
 import java.io.DataInputStream
 
 import org.opalj.log.OPALLogger
-import org.opalj.log.GlobalLogContext
 
 /**
  * Template method to skip an unknown attribute. I.e., the information will
  * not be represented at runtime.
  */
-trait SkipUnknown_attributeReader extends Unknown_attributeAbstractions {
+trait SkipUnknown_attributeReader
+    extends Unknown_attributeAbstractions
+    with ClassFileReaderConfiguration {
     this: Constant_PoolReader ⇒
+
+    //
+    // TYPE DEFINITIONS AND FACTORY METHODS
+    //
 
     type Unknown_attribute = Null
 
@@ -37,7 +42,7 @@ trait SkipUnknown_attributeReader extends Unknown_attributeAbstractions {
                 OPALLogger.error(
                     "class file reader",
                     s"skipping over unknown attribute ${cp(attribute_name_index).asString} failed"
-                )(GlobalLogContext)
+                )
                 return null;
             }
         }

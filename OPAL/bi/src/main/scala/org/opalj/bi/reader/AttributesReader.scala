@@ -4,7 +4,9 @@ package bi
 package reader
 
 import java.io.DataInputStream
-import org.opalj.control.repeat
+
+import org.opalj.collection.immutable.AnyRefArray
+import org.opalj.control.fillAnyRefArray
 
 /**
  * Trait that implements a template method to read in the attributes of
@@ -18,12 +20,6 @@ trait AttributesReader
     //
     // TYPE DEFINITIONS AND FACTORY METHODS
     //
-
-    type Constant_Pool_Entry <: ConstantPoolEntry
-
-    type CONSTANT_Utf8_info <: Constant_Pool_Entry
-
-    override type Constant_Pool = Array[Constant_Pool_Entry]
 
     /**
      * This factory method is called if an attribute is encountered that is unknown.

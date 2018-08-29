@@ -33,8 +33,7 @@ import org.apache.commons.text.similarity.LevenshteinDistance
 
 import org.opalj.log.OPALLogger.error
 import org.opalj.log.OPALLogger.info
-import org.opalj.log.GlobalLogContext
-import org.opalj.control.repeat
+import org.opalj.control.fillArrayOfInt
 import org.opalj.io.process
 import org.opalj.concurrent.OPALExecutionContextTaskSupport
 import org.opalj.concurrent.NumberOfThreadsForIOBoundTasks
@@ -57,8 +56,6 @@ import org.opalj.collection.immutable.AnyRefArray
  */
 trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbstractions {
 
-    import ClassFileReader.{ExceptionHandler, defaultExceptionHandler}
-
     //
     // TYPE DEFINITIONS AND FACTORY METHODS
     //
@@ -67,6 +64,11 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
      * The type of the object that represents a Java class file.
      */
     type ClassFile
+
+    /**
+     * The inherited interfaces.
+     */
+    final type Interfaces = Array[Constant_Pool_Index]
 
     /**
      * The type of the object that represents the fields of a class.
@@ -157,7 +159,7 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
         access_flags:  Int,
         this_class:    Constant_Pool_Index,
         super_class:   Constant_Pool_Index,
-        interfaces:    IndexedSeq[Constant_Pool_Index],
+        interfaces:    Interfaces,
         fields:        Fields,
         methods:       Methods,
         attributes:    Attributes
@@ -166,6 +168,12 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
     //
     // IMPLEMENTATION
     //
+
+    import ClassFileReader.ExceptionHandler
+
+    final val defaultExceptionHandler: ExceptionHandler = (source, t) ⇒ {
+        error("class file reader", s"processing $source failed", t)
+    }
 
     private[this] var classFilePostProcessors = AnyRefArray.empty[List[ClassFile] ⇒ List[ClassFile]]
 
@@ -241,7 +249,7 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
         val super_class = in.readUnsignedShort
         val interfaces = {
             val interfaces_count = in.readUnsignedShort
-            repeat(interfaces_count) { in.readUnsignedShort }
+            fillArrayOfInt(interfaces_count) { in.readUnsignedShort }
         }
         val fields = Fields(cp, in)
         val methods = Methods(cp, in)
@@ -379,7 +387,7 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
         val Lock = new Object
         var classFiles: List[(ClassFile, URL)] = Nil
 
-        def addClassFile(cf: ClassFile, url: URL) = {
+        def addClassFile(cf: ClassFile, url: URL): Unit = {
             Lock.synchronized {
                 classFiles ::= ((cf, url))
             }
@@ -756,9 +764,5 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
 object ClassFileReader {
 
     type ExceptionHandler = (AnyRef, Throwable) ⇒ Unit
-
-    final val defaultExceptionHandler: ExceptionHandler = (source, t) ⇒ {
-        error("class file reader", s"processing $source failed", t)(GlobalLogContext)
-    }
 
 }
