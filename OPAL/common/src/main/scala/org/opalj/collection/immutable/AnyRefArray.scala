@@ -75,6 +75,20 @@ class AnyRefArray[+T /* "<: AnyRef" this constraint is ONLY enforced by the fact
         new AnyRefArray(data)
     }
 
+    /**
+     * Returns a new AnyRefArray where the values are sorted based on their natural ordering.
+     *
+     * @example
+     * {{{
+     *     AnyRefArray("c","a").sorted[String]
+     * }}}
+     */
+    def _UNSAFE_sorted[X >: T](implicit ev: T <:< Comparable[X]): this.type = {
+        ignore(ev) // <= HACK... should have no effect at runtime.
+        JArrays.parallelSort[AnyRef](data, null)
+        this
+    }
+
     def map[X <: AnyRef](f: T ⇒ X): AnyRefArray[X] = {
         val newData = new Array[AnyRef](data.length)
         var i = 0
