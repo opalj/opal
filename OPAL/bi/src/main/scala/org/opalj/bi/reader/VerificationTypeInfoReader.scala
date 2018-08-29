@@ -29,7 +29,7 @@ trait VerificationTypeInfoReader extends Constant_PoolAbstractions {
 
     /**
      * The Uninitialized_variable_info indicates that the location contains the
-     * veriﬁcation type uninitialized(offset). The offset item indicates the offset of
+     * verification type uninitialized(offset). The offset item indicates the offset of
      * the new instruction that created the object being stored in the location.
      */
     def UninitializedVariableInfo(offset: Int): VerificationTypeInfo
