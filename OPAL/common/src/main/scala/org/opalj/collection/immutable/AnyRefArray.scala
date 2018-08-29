@@ -135,8 +135,6 @@ class AnyRefArray[+T /* "<: AnyRef" this constraint is ONLY enforced by the fact
      *
      * @example
      * {{{
-     *     // the type parameter only needs to be specified if the ordering is defined
-     *     // w.r.t. a supertype of T.
      *     AnyRefArray("c","a").sorted[String]
      * }}}
      */
