@@ -81,7 +81,7 @@ trait IntSet[T <: IntSet[T]] { intSet: T ⇒
         val data = new Array[Int](size)
         val it = iterator
         var i = 0
-        while (i <= size) {
+        while (i < size) {
             data(i) = it.next()
             i += 1
         }
