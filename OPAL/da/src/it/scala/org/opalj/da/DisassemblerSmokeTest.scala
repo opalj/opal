@@ -48,7 +48,7 @@ class DisassemblerSmokeTest extends FunSpec with Matchers {
                         val classFiles = ClassFileReader.ClassFiles(file, exceptionHandler)
 
                         // Check that we have something to process...
-                        if (file.getName() != "Empty.jar" && classFiles.isEmpty) {
+                        if (file.getName != "Empty.jar" && classFiles.isEmpty) {
                             throw new UnknownError(s"the file/folder $file is empty")
                         }
 
@@ -93,7 +93,9 @@ class DisassemblerSmokeTest extends FunSpec with Matchers {
                                             classFile.toXHTML(None).label should be("html")
                                             transformationCounter.incrementAndGet()
                                         } catch {
-                                            case e: Exception ⇒ result = Some((url, e))
+                                            case e: Exception ⇒
+                                                e.printStackTrace()
+                                                result = Some((url, e))
                                         }
                                         result
                                     }
