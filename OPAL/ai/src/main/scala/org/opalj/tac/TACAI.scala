@@ -122,7 +122,7 @@ object TACAI {
                 if (a(i) ne null) return false;
                 i += 1
             }
-            return true;
+            true
         }
 
         import UnaryArithmeticOperators._
