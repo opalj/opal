@@ -45,7 +45,7 @@ object ChainProperties extends Properties("Chain") {
      */
     val listAndIndexGen = for {
         n ← Gen.choose(0, 20)
-        m ← Gen.listOfN(n, Arbitrary.arbitrary[String])
+        m ← Gen.listOfN(n, Arbitrary.arbString.arbitrary)
         i ← Gen.choose(0, n)
     } yield (m, i)
 
@@ -55,7 +55,7 @@ object ChainProperties extends Properties("Chain") {
     } yield m
 
     val smallListsGen = for {
-        m ← Gen.listOfN(5, Arbitrary.arbitrary[String])
+        m ← Gen.listOfN(5, Arbitrary.arbString.arbitrary)
     } yield (m)
 
     /**
@@ -63,7 +63,7 @@ object ChainProperties extends Properties("Chain") {
      */
     val listAndIntGen = for {
         n ← Gen.choose(0, 20)
-        m ← Gen.listOfN(n, Arbitrary.arbitrary[String])
+        m ← Gen.listOfN(n, Arbitrary.arbString.arbitrary)
         i ← Gen.choose(0, n + 2)
     } yield (m, i)
 
