@@ -550,7 +550,7 @@ case class Code(instructions: Array[Byte]) {
         cp: Constant_Pool
     ): Array[Array[Node]] = {
         val exceptions: Array[Array[Node]] = new Array(exceptionTable.size)
-        for { (exceptionHandler, index) ← exceptionTable.zipWithIndex } yield {
+        for { (exceptionHandler, index) ← exceptionTable.iterator.zipWithIndex } {
             val exceptionName =
                 (index + 1).toString()+": "+(
                     if (exceptionHandler.catch_type != 0)
