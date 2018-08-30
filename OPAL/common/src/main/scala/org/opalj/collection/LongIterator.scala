@@ -75,15 +75,20 @@ abstract class LongIterator extends AbstractIterator[Long] { self ⇒
 
     def flatMap(f: Long ⇒ LongIterator): LongIterator = {
         new LongIterator {
-            private[this] var it: LongIterator = _
-            private[this] def nextIt(): Unit = {
-                do {
-                    it = f(self.next())
-                } while (!it.hasNext && self.hasNext)
+            private[this] var it: LongIterator = LongIterator.empty
+            private[this] def advanceIterator(): Unit = {
+                while (!it.hasNext) {
+                    if (self.hasNext) {
+                        it = f(self.next())
+                    } else {
+                        it = null
+                        return ;
+                    }
+                }
             }
-
-            def hasNext: Boolean = (it != null && it.hasNext) || { nextIt(); it.hasNext }
-            def next(): Long = { if (it == null || !it.hasNext) nextIt(); it.next() }
+            advanceIterator()
+            def hasNext: Boolean = it != null
+            def next(): Long = { val e = it.next(); advanceIterator(); e }
         }
     }
 

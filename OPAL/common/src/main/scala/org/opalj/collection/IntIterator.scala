@@ -84,29 +84,38 @@ abstract class IntIterator extends AbstractIterator[Int] { self ⇒
 
     override def foreach[U](f: Int ⇒ U): Unit = while (this.hasNext) f(this.next())
 
-    def flatMap(f: Int ⇒ IntIterator): IntIterator = {
-        new IntIterator {
-            private[this] var it: IntIterator = null
-            private[this] def nextIt(): Unit = {
-                do {
+    def flatMap(f: Int ⇒ IntIterator): IntIterator = new IntIterator {
+        private[this] var it: IntIterator = IntIterator.empty
+        private[this] def advanceIterator(): Unit = {
+            while (!it.hasNext) {
+                if (self.hasNext) {
                     it = f(self.next())
-                } while (!it.hasNext && self.hasNext)
+                } else {
+                    it = null
+                    return ;
+                }
             }
-
-            def hasNext: Boolean = (it != null && it.hasNext) || { nextIt(); it.hasNext }
-            def next(): Int = { if (it == null || !it.hasNext) nextIt(); it.next() }
         }
+        advanceIterator()
+        def hasNext: Boolean = it != null
+        def next(): Int = { val e = it.next(); advanceIterator(); e }
     }
 
     def flatMap[T](f: Int ⇒ AnyRefIterator[T]): AnyRefIterator[T] = new AnyRefIterator[T] {
-        private[this] var it: AnyRefIterator[T] = null
-        private[this] def nextIt(): Unit = {
-            do {
-                it = f(self.next())
-            } while (!it.hasNext && self.hasNext)
+        private[this] var it: AnyRefIterator[T] = AnyRefIterator.empty
+        private[this] def advanceIterator(): Unit = {
+            while (!it.hasNext) {
+                if (self.hasNext) {
+                    it = f(self.next())
+                } else {
+                    it = null
+                    return ;
+                }
+            }
         }
-        def hasNext: Boolean = (it != null && it.hasNext) || { nextIt(); it.hasNext }
-        def next(): T = { if (it == null || !it.hasNext) nextIt(); it.next() }
+        advanceIterator()
+        def hasNext: Boolean = it != null
+        def next(): T = { val e = it.next(); advanceIterator(); e }
     }
 
     override def withFilter(p: Int ⇒ Boolean): IntIterator = new IntIterator {
