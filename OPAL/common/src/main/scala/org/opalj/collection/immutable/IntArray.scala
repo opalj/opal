@@ -181,7 +181,7 @@ class IntArray private (
     override def filterNot(f: Int ⇒ Boolean): IntArray = filter(e ⇒ !f(e))
 
     /**
-     * Creates a new `AnyRefArray` where the value at the given index is replaced by
+     * Creates a new `IntArray` where the value at the given index is replaced by
      * the given value.
      */
     def replaced(index: Int, e: Int): IntArray = {
