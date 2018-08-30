@@ -35,6 +35,19 @@ class AnyRefArray[+T /* "<: AnyRef" this constraint is ONLY enforced by the fact
         this.asInstanceOf[AnyRefArray[X]]
     }
 
+    def _UNSAFE_addAll[X >: T <: AnyRef](that: AnyRefArray[X]): AnyRefArray[X] = {
+        val newData = JArrays.copyOf(data, this.data.length + that.data.length)
+        System.arraycopy(that.data, 0, newData, this.data.length, that.data.length)
+        data = newData
+        this.asInstanceOf[AnyRefArray[X]]
+    }
+
+    def ++[X >: T <: AnyRef](that: AnyRefArray[X]): AnyRefArray[X] = {
+        val newData = JArrays.copyOf(data, this.data.length + that.data.length)
+        System.arraycopy(that.data, 0, newData, this.data.length, that.data.length)
+        new AnyRefArray(newData)
+    }
+
     /**
      * Directly performs the map operation on the underlying array and then creates a new
      * appropriately typed `AnyRefArray[X]` object which wraps the modified array.
@@ -349,6 +362,17 @@ class AnyRefArray[+T /* "<: AnyRef" this constraint is ONLY enforced by the fact
         val newData = JArrays.copyOf(data, data.length + 1)
         newData(insertionPoint) = e
         System.arraycopy(data, insertionPoint, newData, insertionPoint + 1, data.length - insertionPoint)
+        new AnyRefArray(newData)
+    }
+
+    def zipWithIndex: AnyRefArray[(T, Int)] = {
+        val max = data.length
+        val newData = new Array[AnyRef](max)
+        var i = 0
+        while (i < max) {
+            newData(i) = (data(i), i)
+            i += 1
+        }
         new AnyRefArray(newData)
     }
 
