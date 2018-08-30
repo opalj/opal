@@ -552,7 +552,7 @@ case class Code(instructions: Array[Byte]) {
         val exceptions: Array[Array[Node]] = new Array(exceptionTable.size)
         for { (exceptionHandler, index) ← exceptionTable.iterator.zipWithIndex } {
             val exceptionName =
-                (index + 1).toString()+": "+(
+                (index + 1).toString+": "+(
                     if (exceptionHandler.catch_type != 0)
                         cp(exceptionHandler.catch_type).toString
                     else
@@ -560,11 +560,11 @@ case class Code(instructions: Array[Byte]) {
                 )
             var exceptionPCLength = 0
             var exceptionPCStart = -1
-            exceptions(index) = new Array[Node](instructions.size)
+            exceptions(index) = new Array[Node](instructions.length)
 
             for {
-                i ← (exceptionHandler.start_pc to exceptionHandler.end_pc - 1)
-                if (instructions(i) ne null)
+                i ← exceptionHandler.start_pc until exceptionHandler.end_pc
+                if instructions(i) ne null
             } {
                 if (exceptionPCLength == 0)
                     exceptionPCStart = i
@@ -572,14 +572,14 @@ case class Code(instructions: Array[Byte]) {
             }
 
             for {
-                i ← (0 until exceptionHandler.start_pc)
+                i ← 0 until exceptionHandler.start_pc
                 if i != exceptionHandler.handler_pc
             } {
                 exceptions(index)(i) = <td class="exception_empty"></td>
             }
 
             for {
-                i ← (exceptionHandler.end_pc until instructions.size)
+                i ← exceptionHandler.end_pc until instructions.length
                 if i != exceptionHandler.handler_pc
             } {
                 exceptions(index)(i) = <td class="exception_empty"></td>
