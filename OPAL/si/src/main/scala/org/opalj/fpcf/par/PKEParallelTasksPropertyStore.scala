@@ -1407,7 +1407,7 @@ final class PKEParallelTasksPropertyStore private (
         if (currentComputedPropertyKinds != null) {
             currentComputedPropertyKinds.iterator.zipWithIndex foreach { e ⇒
                 val (isComputed, pkId) = e
-                previouslyComputedPropertyKinds(pkId) = isComputed
+                previouslyComputedPropertyKinds(pkId) |= isComputed
             }
         }
 
