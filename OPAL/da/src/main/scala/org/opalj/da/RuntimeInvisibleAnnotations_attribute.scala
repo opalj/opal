@@ -12,7 +12,7 @@ import scala.xml.Node
  */
 case class RuntimeInvisibleAnnotations_attribute(
         attribute_name_index: Constant_Pool_Index,
-        annotations:          IndexedSeq[Annotation]
+        annotations:          Annotations
 ) extends Annotations_attribute {
 
     final override def attribute_length: Int = annotations.foldLeft(2 /*count*/ )(_ + _.attribute_length)

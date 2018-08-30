@@ -13,7 +13,7 @@ import scala.xml.Node
  */
 case class StackMapTable_attribute(
         attribute_name_index: Constant_Pool_Index,
-        stack_map_frames:     IndexedSeq[StackMapFrame]
+        stack_map_frames:     StackMapFrames
 ) extends Attribute {
 
     final override def attribute_length: Int = {

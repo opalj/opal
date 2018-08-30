@@ -4,8 +4,10 @@ package org.opalj
 import scala.annotation.switch
 import scala.xml.Node
 import scala.xml.Text
-// import scala.xml.Text
 import scala.xml.NodeSeq
+
+import org.opalj.collection.immutable.AnyRefArray
+import org.opalj.collection.immutable.IntArray
 import org.opalj.bi.AccessFlags
 import org.opalj.bi.AccessFlagsContext
 import org.opalj.bi.VisibilityModifier
@@ -21,15 +23,51 @@ package object da {
     type Constant_Pool_Index = ClassFileReader.Constant_Pool_Index
     type Constant_Pool = ClassFileReader.Constant_Pool
 
-    type Interfaces = IndexedSeq[Constant_Pool_Index]
-    type Methods = IndexedSeq[Method_Info]
-    type Fields = IndexedSeq[Field_Info]
+    type Interfaces = IntArray // <=> Array of Constant_Pool_Index
+    def NoInterfaces: Interfaces = IntArray.empty
+
+    type Methods = AnyRefArray[Method_Info]
+    def NoMethods: Methods = AnyRefArray.empty
+
+    type MethodParameters = AnyRefArray[MethodParameter]
+
+    type Fields = AnyRefArray[Field_Info]
+    def NoFields: Fields = AnyRefArray.empty
+
+    type Attributes = AnyRefArray[Attribute]
+    def NoAttributes: Attributes = AnyRefArray.empty
+
+    type ExceptionIndexTable = IntArray // <=> Array of Constant_Pool_Indexes identifying the types of the method's thrown exceptions
+
+    type ExceptionTable = AnyRefArray[ExceptionTableEntry]
+    def NoExceptionTable: ExceptionTable = AnyRefArray.empty
+
+    type ElementValuePairs = AnyRefArray[ElementValuePair]
+    def NoElementValuePairs: ElementValuePairs = AnyRefArray.Empty
+
+    type Annotations = AnyRefArray[da.Annotation]
     type ParameterAnnotations = Annotations
     type ParametersAnnotations = AnyRefArray[ParameterAnnotations]
 
-    type Attributes = Seq[Attribute]
+    type TypeAnnotations = AnyRefArray[TypeAnnotation]
 
-    type ExceptionTable = IndexedSeq[ExceptionTableEntry]
+    type StackMapFrames = AnyRefArray[StackMapFrame]
+    type TypeAnnotationPathElementsTable = AnyRefArray[TypeAnnotationPathElement]
+
+    type LocalvarTable = AnyRefArray[LocalvarTableEntry]
+
+    type VerificationTypeInfos = AnyRefArray[VerificationTypeInfo]
+
+    type PackageIndexTable = IntArray // Array[Constant_Pool_Index]
+
+    type Requires = AnyRefArray[RequiresEntry]
+    type Exports = AnyRefArray[ExportsEntry]
+    type ExportsToIndexTable = IntArray // Array[CONSTANT_Module_Index]
+    type Opens = AnyRefArray[OpensEntry]
+    type OpensToIndexTable = IntArray // Array[CONSTANT_Module_Index]
+    type Uses = IntArray // Array[CONSTANT_Class_Index]
+    type Provides = AnyRefArray[ProvidesEntry]
+    type ProvidesWithIndexTable = IntArray // Array[CONSTANT_Class_Index]
 
     /**
      * A node representing the context's access flags and a string that can be used
@@ -65,13 +103,23 @@ package object da {
             asJavaObjectType(t)
     }
 
-    def asJavaObjectType(cpIndex: Int)(implicit cp: Constant_Pool): ObjectTypeInfo = {
+    def asJavaObjectType(
+        cpIndex: Constant_Pool_Index
+    )(
+        implicit
+        cp: Constant_Pool
+    ): ObjectTypeInfo = {
         asJavaObjectType(cp(cpIndex).toString(cp))
     }
 
     def asJavaObjectType(t: String): ObjectTypeInfo = ObjectTypeInfo(t.replace('/', '.'))
 
-    def returnTypeAsJavaType(type_index: Int)(implicit cp: Constant_Pool): TypeInfo = {
+    def returnTypeAsJavaType(
+        type_index: Constant_Pool_Index
+    )(
+        implicit
+        cp: Constant_Pool
+    ): TypeInfo = {
         parseReturnType(cp(type_index).toString)
     }
 
@@ -83,7 +131,12 @@ package object da {
      * Returns a string representation of the type and the information whether the (element) type
      * is a base type.
      */
-    def parseFieldType(type_index: Int)(implicit cp: Constant_Pool): FieldTypeInfo = {
+    def parseFieldType(
+        type_index: Constant_Pool_Index
+    )(
+        implicit
+        cp: Constant_Pool
+    ): FieldTypeInfo = {
         parseFieldType(cp(type_index).toString)
     }
 
@@ -136,7 +189,7 @@ package object da {
     def methodDescriptorAsInlineNode(
         methodName:       String,
         descriptor:       String,
-        methodParameters: Option[IndexedSeq[MethodParameter]]
+        methodParameters: Option[MethodParameters]
     )(
         implicit
         cp: Constant_Pool

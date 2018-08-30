@@ -209,7 +209,7 @@ case class TATThrows(throws_type_index: Int) extends TypeAnnotationTarget {
 
 case class LocalvarTableEntry(start_pc: Int, length: Int, index: Int) {
 
-    def toXHTML(): Node = {
+    def toXHTML: Node = {
         <span>(start pc: { start_pc }, length: { length }, variable index: { index })</span>
     }
 
@@ -224,24 +224,19 @@ trait TATLocalvar extends TypeAnnotationTarget {
      * variable indices over multiple live ranges. The start_pc, length, and index items in
      * each table entry specify the same information as a LocalVariableTable attribute."'''
      */
-    def localvarTable: IndexedSeq[LocalvarTableEntry]
+    def localvarTable: LocalvarTable
 
     final override def attribute_length: Int = 1 + 2 + localvarTable.size * 6
 
     def description: String
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span class="type_annotation_target">
-            <i>{ description }[0x{ tag.toHexString }]</i>
-            (local variable occurences:
-            { localvarTable.map(_.toXHTML()) }
-            )
-        </span>
+        <span class="type_annotation_target"><i>{ description }[0x{ tag.toHexString }]</i>(local variable occurences:{ localvarTable.map(_.toXHTML) })</span>
     }
 
 }
 
-case class TATLocalvarDecl(localvarTable: IndexedSeq[LocalvarTableEntry]) extends TATLocalvar {
+case class TATLocalvarDecl(localvarTable: LocalvarTable) extends TATLocalvar {
 
     final override def tag: Int = 0x40
 
@@ -249,7 +244,7 @@ case class TATLocalvarDecl(localvarTable: IndexedSeq[LocalvarTableEntry]) extend
 
 }
 
-case class TATResourcevarDecl(localvarTable: IndexedSeq[LocalvarTableEntry]) extends TATLocalvar {
+case class TATResourcevarDecl(localvarTable: LocalvarTable) extends TATLocalvar {
 
     final override def tag: Int = 0x41
 

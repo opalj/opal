@@ -23,7 +23,7 @@ case class Code(instructions: Array[Byte]) {
 
     def toXHTML(
         methodIndex:     Int,
-        exceptionTable:  IndexedSeq[ExceptionTableEntry],
+        exceptionTable:  ExceptionTable,
         lineNumberTable: Option[Seq[LineNumberTableEntry]]
     )(
         implicit
@@ -54,7 +54,10 @@ case class Code(instructions: Array[Byte]) {
                     pc ← (0 until instructions.length)
                     if instructions(pc) != null
                 } yield {
-                    val exceptionInfo = exceptions.foldRight(List[Node]())((a, b) ⇒ List(a(pc)) ++ b)
+                    val exceptionInfo =
+                        exceptions.foldRight(Seq.empty[Node]) { (a, b) ⇒
+                            Seq(a(pc)) ++ b
+                        }
                     createTableRowForInstruction(
                         methodIndex, instructions(pc), exceptionInfo, pc, lineNumberTable
                     )
@@ -66,7 +69,7 @@ case class Code(instructions: Array[Byte]) {
     private[this] def createTableRowForInstruction(
         methodIndex:     Int,
         instruction:     Node,
-        exceptions:      List[Node],
+        exceptions:      Seq[Node],
         pc:              Int,
         lineNumberTable: Option[Seq[LineNumberTableEntry]]
     ): Node = {
@@ -559,7 +562,7 @@ case class Code(instructions: Array[Byte]) {
 
     def ExceptionsToXHTMLTableElements(
         instructions:   Array[Node],
-        exceptionTable: IndexedSeq[ExceptionTableEntry]
+        exceptionTable: ExceptionTable
     )(
         implicit
         cp: Constant_Pool

@@ -3,6 +3,8 @@ package org.opalj
 package da
 
 import scala.xml.Node
+
+import org.opalj.collection.immutable.AnyRefArray
 import org.opalj.bi.AccessFlagsContexts.METHOD_PARAMETERS
 
 /**
@@ -13,10 +15,10 @@ import org.opalj.bi.AccessFlagsContexts.METHOD_PARAMETERS
  */
 case class MethodParameters_attribute(
         attribute_name_index: Constant_Pool_Index,
-        parameters:           IndexedSeq[MethodParameter]
+        parameters:           AnyRefArray[MethodParameter]
 ) extends Attribute {
 
-    final override def attribute_length = 1 /*parameters_count*/ + parameters.size * 4
+    final override def attribute_length: Int = 1 /*parameters_count*/ + parameters.size * 4
 
     // Primarily implemented to handle the case if the attribute is not found where expected.
     override def toXHTML(implicit cp: Constant_Pool): Node = {

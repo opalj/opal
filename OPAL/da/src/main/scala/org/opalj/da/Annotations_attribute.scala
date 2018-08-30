@@ -12,7 +12,7 @@ import scala.xml.Node
  */
 trait Annotations_attribute extends Attribute {
 
-    val annotations: IndexedSeq[Annotation]
+    val annotations: Annotations
 
     def annotationsToXHTML(implicit cp: Constant_Pool): Seq[Node] = annotations.map(_.toXHTML)
 
