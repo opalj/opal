@@ -24,6 +24,8 @@ package object da {
     type Interfaces = IndexedSeq[Constant_Pool_Index]
     type Methods = IndexedSeq[Method_Info]
     type Fields = IndexedSeq[Field_Info]
+    type ParameterAnnotations = Annotations
+    type ParametersAnnotations = AnyRefArray[ParameterAnnotations]
 
     type Attributes = Seq[Attribute]
 

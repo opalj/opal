@@ -19,10 +19,6 @@ trait ParametersAnnotations_attribute extends Attribute {
         }
     }
 
-    type ParameterAnnotations = IndexedSeq[da.Annotation]
-
-    type ParametersAnnotations = IndexedSeq[ParameterAnnotations]
-
     def parameters_annotations: ParametersAnnotations
 
     def parametersAnnotationstoXHTML(implicit cp: Constant_Pool): Node = {
