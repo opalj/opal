@@ -203,6 +203,18 @@ trait IntIterator { self ⇒
         !that.hasNext
     }
 
+    def ++(other: IntIterator): IntIterator = {
+        new IntIterator {
+            override def next(): Int =
+                if (IntIterator.this.hasNext)
+                    IntIterator.this.next()
+                else
+                    other.next()
+
+            override def hasNext: Boolean = IntIterator.this.hasNext || other.hasNext
+        }
+    }
+
 }
 
 object IntIterator {
