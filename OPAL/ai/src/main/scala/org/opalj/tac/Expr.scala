@@ -662,6 +662,7 @@ sealed abstract class FunctionCall[+V <: Var[V]] extends Expr[V] with Call[V] {
 sealed abstract class InstanceFunctionCall[+V <: Var[V]] extends FunctionCall[V] {
 
     final override def allParams: Seq[Expr[V]] = receiver +: params
+    final override def receiverOption: Option[Expr[V]] = Some(receiver)
 
     def receiver: Expr[V]
     final override def subExprCount: Int = params.size + 1
@@ -747,15 +748,15 @@ case class NonVirtualFunctionCall[+V <: Var[V]](
 object NonVirtualFunctionCall { final val ASTID = -24 }
 
 case class VirtualFunctionCall[+V <: Var[V]](
-    pc:             PC,
-    declaringClass: ReferenceType,
-    isInterface:    Boolean,
-    name:           String,
-    descriptor:     MethodDescriptor,
-    receiver:       Expr[V],
-    params:         Seq[Expr[V]]
+        pc:             PC,
+        declaringClass: ReferenceType,
+        isInterface:    Boolean,
+        name:           String,
+        descriptor:     MethodDescriptor,
+        receiver:       Expr[V],
+        params:         Seq[Expr[V]]
 ) extends InstanceFunctionCall[V]
-        with VirtualCall[V] {
+    with VirtualCall[V] {
 
     final override def isVirtualFunctionCall: Boolean = true
     final override def asVirtualFunctionCall: this.type = this
@@ -797,6 +798,7 @@ case class StaticFunctionCall[+V <: Var[V]](
 ) extends FunctionCall[V] {
 
     final override def allParams: Seq[Expr[V]] = params
+    final override def receiverOption: Option[Expr[V]] = None
 
     final override def isStaticFunctionCall: Boolean = true
     final override def asStaticFunctionCall: this.type = this

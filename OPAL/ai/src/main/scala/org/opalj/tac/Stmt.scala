@@ -574,6 +574,7 @@ sealed abstract class MethodCall[+V <: Var[V]] extends Stmt[V] with Call[V] {
 sealed abstract class InstanceMethodCall[+V <: Var[V]] extends MethodCall[V] {
 
     final override def allParams: Seq[Expr[V]] = receiver +: params
+    final override def receiverOption: Option[Expr[V]] = Some(receiver)
 
     def receiver: Expr[V]
     final override def asInstanceMethodCall: this.type = this
@@ -684,6 +685,7 @@ case class StaticMethodCall[+V <: Var[V]](
 ) extends MethodCall[V] {
 
     final override def allParams: Seq[Expr[V]] = params
+    final override def receiverOption: Option[Expr[V]] = None
 
     final override def asStaticMethodCall: this.type = this
     final override def astID: Int = StaticMethodCall.ASTID
