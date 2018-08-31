@@ -23,12 +23,12 @@ import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.Project.JavaClassFileReader
 import org.opalj.bytecode.JRELibraryFolder
 import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.fpcf.PropertyMetaInformation
 import org.opalj.fpcf.PropertyStoreKey
-import org.opalj.fpcf.PropertyKind
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.FPCFLazyAnalysisScheduler
 import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.ComputationSpecification
+import org.opalj.fpcf.FPCFAnalysesManagerKey
 import org.opalj.fpcf.analyses.purity.L1PurityAnalysis
 import org.opalj.fpcf.analyses.purity.L2PurityAnalysis
 import org.opalj.fpcf.analyses.LazyClassImmutabilityAnalysis
@@ -40,15 +40,24 @@ import org.opalj.fpcf.analyses.purity.LazyL1PurityAnalysis
 import org.opalj.fpcf.analyses.purity.LazyL2PurityAnalysis
 import org.opalj.fpcf.analyses.LazyTypeImmutabilityAnalysis
 import org.opalj.fpcf.analyses.LazyVirtualCallAggregatingEscapeAnalysis
-import org.opalj.fpcf.analyses.LazyVirtualMethodPurityAnalysis
 import org.opalj.fpcf.analyses.LazyVirtualReturnValueFreshnessAnalysis
 import org.opalj.fpcf.analyses.purity.SystemOutLoggingAllExceptionRater
 import org.opalj.fpcf.analyses.purity.DomainSpecificRater
 import org.opalj.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
 import org.opalj.fpcf.analyses.LazyStaticDataUsageAnalysis
 import org.opalj.fpcf.analyses.LazyVirtualMethodStaticDataUsageAnalysis
+import org.opalj.fpcf.analyses.cg.EagerThreadRelatedCallsAnalysis
+import org.opalj.fpcf.analyses.cg.EagerFinalizerAnalysisScheduler
+import org.opalj.fpcf.analyses.cg.EagerLoadedClassesAnalysis
+import org.opalj.fpcf.analyses.cg.EagerRTACallGraphAnalysisScheduler
+import org.opalj.fpcf.analyses.cg.EagerSerializationRelatedCallsAnalysis
+import org.opalj.fpcf.analyses.cg.EagerReflectionRelatedCallsAnalysis
+import org.opalj.fpcf.analyses.cg.LazyCalleesAnalysis
 import org.opalj.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
+import org.opalj.fpcf.cg.properties.StandardInvokeCallees
+import org.opalj.fpcf.cg.properties.ReflectionRelatedCallees
+import org.opalj.fpcf.cg.properties.SerializationRelatedCallees
 import org.opalj.fpcf.properties.ImpureByLackOfInformation
 import org.opalj.fpcf.properties.ContextuallyPure
 import org.opalj.fpcf.properties.ContextuallySideEffectFree
@@ -59,7 +68,6 @@ import org.opalj.fpcf.properties.DSideEffectFree
 import org.opalj.fpcf.properties.ImpureByAnalysis
 import org.opalj.fpcf.properties.Pure
 import org.opalj.fpcf.properties.SideEffectFree
-import org.opalj.fpcf.properties.VirtualMethodPurity
 import org.opalj.fpcf.properties.CompileTimePure
 import org.opalj.tac.DefaultTACAIKey
 import org.opalj.util.PerformanceEvaluation.time
@@ -91,17 +99,26 @@ object Purity {
     }
 
     val supportingAnalyses = IndexedSeq(
-        List[FPCFLazyAnalysisScheduler { type InitializationData = Null }](
+        Set[ComputationSpecification](
             LazyL0FieldMutabilityAnalysis,
             LazyClassImmutabilityAnalysis,
             LazyTypeImmutabilityAnalysis
         ),
-        List[FPCFLazyAnalysisScheduler { type InitializationData = Null }](
+        Set[ComputationSpecification](
             LazyL1FieldMutabilityAnalysis,
             LazyClassImmutabilityAnalysis,
-            LazyTypeImmutabilityAnalysis
+            LazyTypeImmutabilityAnalysis,
+            EagerRTACallGraphAnalysisScheduler,
+            EagerLoadedClassesAnalysis,
+            EagerFinalizerAnalysisScheduler,
+            EagerThreadRelatedCallsAnalysis,
+            EagerSerializationRelatedCallsAnalysis,
+            EagerReflectionRelatedCallsAnalysis,
+            new LazyCalleesAnalysis(
+                Set(StandardInvokeCallees, SerializationRelatedCallees, ReflectionRelatedCallees)
+            )
         ),
-        List[FPCFLazyAnalysisScheduler { type InitializationData = Null }](
+        Set[ComputationSpecification](
             LazyL0CompileTimeConstancyAnalysis,
             LazyStaticDataUsageAnalysis,
             LazyVirtualMethodStaticDataUsageAnalysis,
@@ -112,7 +129,16 @@ object Purity {
             LazyFieldLocalityAnalysis,
             LazyL1FieldMutabilityAnalysis,
             LazyClassImmutabilityAnalysis,
-            LazyTypeImmutabilityAnalysis
+            LazyTypeImmutabilityAnalysis,
+            EagerRTACallGraphAnalysisScheduler,
+            EagerLoadedClassesAnalysis,
+            EagerFinalizerAnalysisScheduler,
+            EagerThreadRelatedCallsAnalysis,
+            EagerSerializationRelatedCallsAnalysis,
+            EagerReflectionRelatedCallsAnalysis,
+            new LazyCalleesAnalysis(
+                Set(StandardInvokeCallees, SerializationRelatedCallees, ReflectionRelatedCallees)
+            )
         )
     )
 
@@ -196,27 +222,17 @@ object Purity {
         }
 
         val declaredMethods = project.get(DeclaredMethodsKey)
-        val projMethods = for (cf ← project.allProjectClassFiles; m ← cf.methodsWithBody)
-            yield declaredMethods(m)
+        val projMethods: Seq[DefinedMethod] =
+            for (cf ← project.allProjectClassFiles; m ← cf.methodsWithBody) yield declaredMethods(m)
 
         time {
-            val pks: Set[PropertyKind] = support.flatMap(
-                _.derives.map(_.asInstanceOf[PropertyMetaInformation].key)
-            ).toSet +
-                VirtualMethodPurity.key.asInstanceOf[PropertyKind] +
-                fpcf.properties.Purity.key.asInstanceOf[PropertyKind]
-            propertyStore.setupPhase(pks)
-
-            for (supportAnalysis ← support) {
-                supportAnalysis.startLazily(project, propertyStore, null)
-            }
-
-            LazyVirtualMethodPurityAnalysis.startLazily(project, propertyStore, null)
-            analysis.startLazily(project, propertyStore, null)
+            val manager = project.get(FPCFAnalysesManagerKey)
+            manager.runAll(support + analysis)
 
             projMethods.foreach { dm ⇒
                 propertyStore.force(dm, fpcf.properties.Purity.key)
             }
+
             propertyStore.waitOnPhaseCompletion()
         } { t ⇒ analysisTime = t.toSeconds }
         propertyStore.shutdown()

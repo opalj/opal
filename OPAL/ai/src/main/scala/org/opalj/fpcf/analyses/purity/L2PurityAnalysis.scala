@@ -4,6 +4,8 @@ package fpcf
 package analyses
 package purity
 
+import java.util.concurrent.ConcurrentHashMap
+
 import net.ceedubs.ficus.Ficus._
 import org.opalj.ai.isImmediateVMException
 import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
@@ -13,11 +15,11 @@ import org.opalj.br.DefinedMethod
 import org.opalj.br.Field
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
-import org.opalj.br.MethodDescriptor
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.collection.immutable.EmptyIntTrieSet
 import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.fpcf.cg.properties.Callees
 import org.opalj.fpcf.properties.ClassImmutability
 import org.opalj.fpcf.properties.ClassifiedImpure
 import org.opalj.fpcf.properties.ExtensibleGetter
@@ -43,7 +45,6 @@ import org.opalj.fpcf.properties.VFreshReturnValue
 import org.opalj.fpcf.properties.VGetter
 import org.opalj.fpcf.properties.VNoFreshReturnValue
 import org.opalj.fpcf.properties.VPrimitiveReturnValue
-import org.opalj.fpcf.properties.VirtualMethodPurity
 import org.opalj.fpcf.properties.VirtualMethodReturnValueFreshness
 import org.opalj.fpcf.properties.Pure
 import org.opalj.fpcf.properties.CompileTimePure
@@ -66,7 +67,6 @@ import org.opalj.tac.StaticFunctionCall
 import org.opalj.tac.Stmt
 import org.opalj.tac.TACode
 import org.opalj.tac.VirtualFunctionCall
-import org.opalj.tac.StaticMethodCall
 import org.opalj.tac.SelfReferenceParameter
 import org.opalj.tac.UVar
 
@@ -104,12 +104,13 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
      * @param code The code of the currently analyzed method
      */
     class State(
-            var lbPurity:      Purity,
-            var ubPurity:      Purity,
             val method:        Method,
             val definedMethod: DeclaredMethod,
             val declClass:     ObjectType,
-            val code:          Array[Stmt[V]]
+            val code:          Array[Stmt[V]],
+            val pcToIndex:     Array[Int],
+            var lbPurity:      Purity         = CompileTimePure,
+            var ubPurity:      Purity         = CompileTimePure
     ) extends AnalysisState {
         var fieldLocalityDependees: Map[Field, (EOptionP[Field, FieldLocality], Set[(Expr[V], Purity)])] = Map.empty
 
@@ -119,7 +120,8 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         var typeImmutabilityDependees: Map[ObjectType, (EOptionP[ObjectType, TypeImmutability], Set[Expr[V]])] = Map.empty
 
         var purityDependees: Map[DeclaredMethod, (EOptionP[DeclaredMethod, Purity], Set[Seq[Expr[V]]])] = Map.empty
-        var virtualPurityDependees: Map[DeclaredMethod, (EOptionP[DeclaredMethod, VirtualMethodPurity], Set[Seq[Expr[V]]])] = Map.empty
+
+        var calleesDependee: Option[EOptionP[DeclaredMethod, Callees]] = None
 
         var rvfDependees: Map[DeclaredMethod, (EOptionP[DeclaredMethod, ReturnValueFreshness], Set[(Option[Expr[V]], Purity)])] = Map.empty
         var virtualRVFDependees: Map[DeclaredMethod, (EOptionP[DeclaredMethod, VirtualMethodReturnValueFreshness], Set[(Option[Expr[V]], Purity)])] = Map.empty
@@ -132,7 +134,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                 classImmutabilityDependees.valuesIterator.map(_._1) ++
                 typeImmutabilityDependees.valuesIterator.map(_._1) ++
                 purityDependees.valuesIterator.map(_._1) ++
-                virtualPurityDependees.valuesIterator.map(_._1) ++
+                calleesDependee ++
                 rvfDependees.valuesIterator.map(_._1) ++
                 virtualRVFDependees.valuesIterator.map(_._1) ++
                 staticDataUsage).toTraversable
@@ -202,17 +204,8 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
             }
         }
 
-        def addVirtualPurityDependee(
-            dm:     DeclaredMethod,
-            eop:    EOptionP[DeclaredMethod, VirtualMethodPurity],
-            params: Seq[Expr[V]]
-        ): Unit = {
-            if (virtualPurityDependees.contains(dm)) {
-                val (_, oldParams) = virtualPurityDependees(dm)
-                virtualPurityDependees += ((dm, (eop, oldParams + params)))
-            } else {
-                virtualPurityDependees += ((dm, (eop, Set(params))))
-            }
+        def updateCalleesDependee(eps: Option[EOptionP[DeclaredMethod, Callees]]): Unit = {
+            calleesDependee = eps
         }
 
         def addRVFDependee(
@@ -246,7 +239,6 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         def removeClassImmutabilityDependee(t: ObjectType): Unit = classImmutabilityDependees -= t
         def removeTypeImmutabilityDependee(t: ObjectType): Unit = typeImmutabilityDependees -= t
         def removePurityDependee(dm: DeclaredMethod): Unit = purityDependees -= dm
-        def removeVirtualPurityDependee(dm: DeclaredMethod): Unit = virtualPurityDependees -= dm
         def removeRVFDependee(dm: DeclaredMethod): Unit = rvfDependees -= dm
         def removeVirtualRVFDependee(dm: DeclaredMethod): Unit = virtualRVFDependees -= dm
 
@@ -510,13 +502,6 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
      */
     override def checkPurityOfStmt(stmt: Stmt[V])(implicit state: State): Boolean =
         (stmt.astID: @switch) match {
-            case StaticMethodCall.ASTID ⇒
-                val call = stmt.asStaticMethodCall
-                if (!isDomainSpecificCall(call, None)) {
-                    val StaticMethodCall(_, declClass, _, name, descr, params) = stmt
-                    val callee = call.resolveCallTarget(p)
-                    checkPurityOfCall(declClass, name, descr, params, callee)
-                } else true
             // Synchronization on non-escaping local objects/arrays is pure (and useless...)
             case MonitorEnter.ASTID | MonitorExit.ASTID ⇒
                 val objRef = stmt.asSynchronizationStmt.objRef
@@ -554,39 +539,16 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
      * @note Adds dependendees when necessary.
      */
     def checkMethodPurity(
-        ep:     EOptionP[DeclaredMethod, Property],
+        ep:     EOptionP[DeclaredMethod, Purity],
         params: Seq[Expr[V]]
     )(implicit state: State): Boolean = ep match {
-        case EPS(_, _, _: ClassifiedImpure | VirtualMethodPurity(_: ClassifiedImpure)) ⇒
+        case EPS(_, _, _: ClassifiedImpure) ⇒
             atMost(ImpureByAnalysis)
             false
-        case eps @ EPS(_, lb: Purity, ub: Purity) ⇒
+        case eps @ EPS(_, lb, ub) ⇒
             if (eps.isRefinable && ((lb meet state.ubPurity) ne state.ubPurity)) {
                 // On conditional, keep dependence
-                state.addPurityDependee(
-                    ep.e,
-                    ep.asInstanceOf[EOptionP[DeclaredMethod, Purity]],
-                    params
-                )
-                reducePurityLB(lb)
-            }
-            // Contextual/external purity is handled below
-            atMost(ub.withoutContextual)
-            ub.modifiedParams.forall(param ⇒
-                isLocalInternal(
-                    params(param),
-                    ImpureByAnalysis,
-                    param ⇒ ContextuallyPure(IntTrieSet(param)),
-                    treatParamsAsFresh = true
-                ))
-        case eps @ EPS(_, VirtualMethodPurity(lb: Purity), VirtualMethodPurity(ub: Purity)) ⇒
-            if (eps.isRefinable && ((lb meet state.ubPurity) ne state.ubPurity)) {
-                // On conditional, keep dependence
-                state.addVirtualPurityDependee(
-                    ep.e,
-                    ep.asInstanceOf[EOptionP[DeclaredMethod, VirtualMethodPurity]],
-                    params
-                )
+                state.addPurityDependee(ep.e, ep, params)
                 reducePurityLB(lb)
             }
             // Contextual/external purity is handled below
@@ -600,18 +562,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                 ))
         case EOptionP(_, pk) ⇒
             reducePurityLB(ImpureByAnalysis)
-            if (pk == Purity.key)
-                state.addPurityDependee(
-                    ep.e,
-                    ep.asInstanceOf[EOptionP[DeclaredMethod, Purity]],
-                    params
-                )
-            else
-                state.addVirtualPurityDependee(
-                    ep.e,
-                    ep.asInstanceOf[EOptionP[DeclaredMethod, VirtualMethodPurity]],
-                    params
-                )
+            state.addPurityDependee(ep.e, ep, params)
             true
     }
 
@@ -706,65 +657,56 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                 newPurityDependees += ((dependee, eAndD))
         }
         state.purityDependees = newPurityDependees
-
-        var newVPurityDependees: Map[DeclaredMethod, (EOptionP[DeclaredMethod, VirtualMethodPurity], Set[Seq[Expr[V]]])] = Map.empty
-        for ((dependee, eAndD) ← state.virtualPurityDependees) {
-            if (eAndD._1.hasNoProperty ||
-                (eAndD._1.lb.individualProperty meet state.ubPurity ne state.ubPurity))
-                newVPurityDependees += ((dependee, eAndD))
-        }
-        state.virtualPurityDependees = newVPurityDependees
     }
 
     /**
      * Raises the lower bound on the purity whenever possible.
      */
     def adjustLowerBound()(implicit state: State): Unit = {
-        var newLowerBound = state.ubPurity
+        if (state.calleesDependee.isDefined) state.lbPurity = ImpureByAnalysis
+        else {
+            var newLowerBound = state.ubPurity
 
-        for ((eop, _) ← state.purityDependees.valuesIterator) {
-            eop match {
-                case EPS(_, lb, _) ⇒ newLowerBound = newLowerBound meet lb
-                case _             ⇒ return ; // Nothing to be done, lower bound is still LBImpure
+            for ((eop, _) ← state.purityDependees.valuesIterator) {
+                eop match {
+                    case EPS(_, lb, _) ⇒ newLowerBound = newLowerBound meet lb
+                    case _ ⇒
+                        state.lbPurity = ImpureByAnalysis
+                        return ;
+                }
             }
-        }
 
-        for ((eop, _) ← state.virtualPurityDependees.valuesIterator) {
-            eop match {
-                case EPS(_, lb, _) ⇒ newLowerBound = newLowerBound meet lb.individualProperty
-                case _             ⇒ return ; // Nothing to be done, lower bound is still LBImpure
+            if (state.staticDataUsage.isDefined) newLowerBound = newLowerBound meet Pure
+
+            if (state.fieldMutabilityDependees.nonEmpty ||
+                state.classImmutabilityDependees.nonEmpty ||
+                state.typeImmutabilityDependees.nonEmpty) {
+                newLowerBound = newLowerBound meet SideEffectFree
             }
+
+            for {
+                (_, data) ← state.fieldLocalityDependees.valuesIterator
+                (_, purity) ← data
+            } {
+                newLowerBound = newLowerBound meet purity
+            }
+
+            for {
+                (_, data) ← state.rvfDependees.valuesIterator
+                (_, purity) ← data
+            } {
+                newLowerBound = newLowerBound meet purity
+            }
+
+            for {
+                (_, data) ← state.virtualRVFDependees.valuesIterator
+                (_, purity) ← data
+            } {
+                newLowerBound = newLowerBound meet purity
+            }
+
+            state.lbPurity = newLowerBound
         }
-
-        if (state.staticDataUsage.isDefined) newLowerBound = newLowerBound meet Pure
-
-        if (state.fieldMutabilityDependees.nonEmpty || state.classImmutabilityDependees.nonEmpty ||
-            state.typeImmutabilityDependees.nonEmpty) {
-            newLowerBound = newLowerBound meet SideEffectFree
-        }
-
-        for {
-            (_, data) ← state.fieldLocalityDependees.valuesIterator
-            (_, purity) ← data
-        } {
-            newLowerBound = newLowerBound meet purity
-        }
-
-        for {
-            (_, data) ← state.rvfDependees.valuesIterator
-            (_, purity) ← data
-        } {
-            newLowerBound = newLowerBound meet purity
-        }
-
-        for {
-            (_, data) ← state.virtualRVFDependees.valuesIterator
-            (_, purity) ← data
-        } {
-            newLowerBound = newLowerBound meet purity
-        }
-
-        state.lbPurity = newLowerBound
     }
 
     /**
@@ -782,14 +724,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                 val dependees = state.purityDependees(e)
                 state.removePurityDependee(e)
                 dependees._2.foreach { e ⇒
-                    checkMethodPurity(eps.asInstanceOf[EOptionP[DeclaredMethod, Property]], e)
-                }
-            case VirtualMethodPurity.key ⇒
-                val e = eps.e.asInstanceOf[DeclaredMethod]
-                val dependees = state.virtualPurityDependees(e)
-                state.removeVirtualPurityDependee(e)
-                dependees._2.foreach { e ⇒
-                    checkMethodPurity(eps.asInstanceOf[EOptionP[DeclaredMethod, Property]], e)
+                    checkMethodPurity(eps.asInstanceOf[EOptionP[DeclaredMethod, Purity]], e)
                 }
             case FieldMutability.key ⇒
                 val e = eps.e.asInstanceOf[Field]
@@ -842,6 +777,8 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                 dependees._2.foreach { e ⇒
                     checkLocalityOfField(eps.asInstanceOf[EOptionP[Field, FieldLocality]], e)
                 }
+            case Callees.key ⇒
+                checkPurityOfCallees(eps.asInstanceOf[EOptionP[DeclaredMethod, Callees]])
             case StaticDataUsage.key ⇒
                 checkStaticDataUsage(eps.asInstanceOf[EOptionP[DeclaredMethod, StaticDataUsage]])
         }
@@ -864,6 +801,41 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         }
     }
 
+    var sizes: ConcurrentHashMap[Int, Int] = new ConcurrentHashMap()
+
+    def checkPurityOfCallees(
+        calleesEOptP: EOptionP[DeclaredMethod, Callees]
+    )(implicit state: StateType): Boolean = {
+        calleesEOptP match {
+            case ESimplePS(_, p, isFinal) ⇒
+                if (isFinal) state.updateCalleesDependee(None)
+                else state.updateCalleesDependee(Some(calleesEOptP))
+                val hasIncompleteCallSites =
+                    p.incompleteCallSites.exists { pc ⇒
+                        val call = getCall(state.code(state.pcToIndex(pc)))
+                        !isDomainSpecificCall(call, call.receiverOption)
+                    }
+                if (hasIncompleteCallSites)
+                    atMost(ImpureByAnalysis)
+
+                !hasIncompleteCallSites &&
+                    p.callSites(onlyEventualCallees = false).forall { callSite ⇒
+                        val pc = callSite._1
+                        sizes.compute(p.numCallees(pc), (_, a) ⇒ a + 1)
+                        callSite._2.forall { callee ⇒
+                            state.purityDependees.contains(callee) || {
+                                val call = getCall(state.code(state.pcToIndex(pc)))
+                                checkPurityOfMethod(callee, call.allParams)
+                            }
+                        }
+                    }
+
+            case _ ⇒
+                state.updateCalleesDependee(Some(calleesEOptP))
+                true
+        }
+    }
+
     /**
      * Determines the purity of the given method.
      *
@@ -878,10 +850,9 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         if (declClass ne definedMethod.declaringClassType)
             return baseMethodPurity(definedMethod.asDefinedMethod);
 
-        val TACode(_, code, _, cfg, _, _) = tacai(method)
+        val TACode(_, code, pcToIndex, cfg, _, _) = tacai(method)
 
-        implicit val state: State =
-            new State(CompileTimePure, CompileTimePure, method, definedMethod, declClass, code)
+        implicit val state: State = new State(method, definedMethod, declClass, code, pcToIndex)
 
         // Special case: The Throwable constructor is `LBSideEffectFree`, but subtype constructors
         // may not be because of overridable fillInStackTrace method
@@ -892,14 +863,9 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                     val d = new DefaultDomainWithCFGAndDefUse(p, method)
                     val selfReference =
                         UVar(d)(d.InitializedObjectValue(-1, declClass), SelfReferenceParameter)
-                    val impureFillInStackTrace = !checkPurityOfCall(
-                        declClass,
-                        "fillInStackTrace",
-                        MethodDescriptor("()Ljava/lang/Throwable;"),
-                        List(selfReference),
-                        Success(mdc.method)
-                    )
-                    if (impureFillInStackTrace) { // Early return for impure fillInStackTrace
+                    val fISTPurity = propertyStore(declaredMethods(mdc.method), Purity.key)
+                    if (!checkMethodPurity(fISTPurity, Seq(selfReference))) {
+                        // Early return for impure fillInStackTrace
                         return Result(definedMethod, state.ubPurity);
                     }
                 }
@@ -920,6 +886,10 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
             }
             s += 1
         }
+
+        val callees = propertyStore(definedMethod, Callees.key)
+        if (!checkPurityOfCallees(callees))
+            return Result(definedMethod, state.ubPurity)
 
         // Creating implicit exceptions is side-effect free (because of fillInStackTrace)
         // but it may be ignored as domain-specific
@@ -972,10 +942,10 @@ trait L2PurityAnalysisScheduler extends ComputationSpecification {
             FieldMutability,
             ClassImmutability,
             TypeImmutability,
-            VirtualMethodPurity,
             FieldLocality,
             ReturnValueFreshness,
-            VirtualMethodReturnValueFreshness
+            VirtualMethodReturnValueFreshness,
+            Callees
         )
     }
 

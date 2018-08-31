@@ -12,11 +12,11 @@ import org.opalj.br.DefinedMethod
 import org.opalj.br.Field
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
-import org.opalj.br.MethodDescriptor
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.collection.immutable.EmptyIntTrieSet
 import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.fpcf.cg.properties.Callees
 import org.opalj.fpcf.properties.ClassImmutability
 import org.opalj.fpcf.properties.ClassifiedImpure
 import org.opalj.fpcf.properties.FieldMutability
@@ -74,13 +74,14 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
      * @param code The code of the currently analyzed method
      */
     class State(
-            var lbPurity:      Purity,
-            var ubPurity:      Purity,
             var dependees:     Set[EOptionP[Entity, Property]],
             val method:        Method,
             val definedMethod: DeclaredMethod,
             val declClass:     ObjectType,
-            val code:          Array[Stmt[V]]
+            val code:          Array[Stmt[V]],
+            val pcToIndex:     Array[Int],
+            var lbPurity:      Purity                          = Pure,
+            var ubPurity:      Purity                          = Pure
     ) extends AnalysisState
 
     override type StateType = State
@@ -153,25 +154,13 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
      * @note Adds dependendies when necessary.
      */
     def checkMethodPurity(
-        ep:     EOptionP[DeclaredMethod, Property],
+        ep:     EOptionP[DeclaredMethod, Purity],
         params: Seq[Expr[V]]
     )(implicit state: State): Boolean = ep match {
-        case EPS(_, _, _: ClassifiedImpure | VirtualMethodPurity(_: ClassifiedImpure)) ⇒
+        case EPS(_, _, _: ClassifiedImpure) ⇒
             atMost(ImpureByAnalysis)
             false
-        case eps @ EPS(_, lb: Purity, ub: Purity) ⇒
-            if (ub.modifiesParameters) {
-                atMost(ImpureByAnalysis)
-                false
-            } else {
-                if (eps.isRefinable && ((lb meet state.ubPurity) ne state.ubPurity)) {
-                    state.dependees += ep // On Conditional, keep dependence
-                    reducePurityLB(lb)
-                }
-                atMost(ub)
-                true
-            }
-        case eps @ EPS(_, VirtualMethodPurity(lb: Purity), VirtualMethodPurity(ub: Purity)) ⇒
+        case eps @ EPS(_, lb, ub) ⇒
             if (ub.modifiesParameters) {
                 atMost(ImpureByAnalysis)
                 false
@@ -234,8 +223,8 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
 
         eps match {
             // Cases dealing with other purity values
-            case EPS(_, _, _: Purity | _: VirtualMethodPurity) ⇒
-                if (!checkMethodPurity(eps.asInstanceOf[EOptionP[DeclaredMethod, Property]]))
+            case EPS(_, _, _: Purity) ⇒
+                if (!checkMethodPurity(eps.asInstanceOf[EOptionP[DeclaredMethod, Purity]]))
                     return Result(state.definedMethod, ImpureByAnalysis)
 
             // Cases that are pure
@@ -266,6 +255,37 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         }
     }
 
+    def checkPurityOfCallees(
+        calleesEOptP: EOptionP[DeclaredMethod, Callees]
+    )(implicit state: StateType): Boolean = {
+        calleesEOptP match {
+            case ESimplePS(_, p, isFinal) ⇒
+                if (!isFinal) state.dependees += calleesEOptP
+                val hasIncompleteCallSites =
+                    p.incompleteCallSites.exists { pc ⇒
+                        val call = getCall(state.code(state.pcToIndex(pc)))
+                        !isDomainSpecificCall(call, call.receiverOption)
+                    }
+                if (hasIncompleteCallSites)
+                    atMost(ImpureByAnalysis)
+
+                hasIncompleteCallSites &&
+                    p.callSites(onlyEventualCallees = false).forall { callSite ⇒
+                        val pc = callSite._1
+                        callSite._2.forall { callee ⇒
+                            state.dependees.exists(_.e eq callee) || {
+                                val call = getCall(state.code(state.pcToIndex(pc)))
+                                checkPurityOfMethod(callee, call.allParams)
+                            }
+                        }
+                    }
+
+            case _ ⇒
+                state.dependees += calleesEOptP
+                true
+        }
+    }
+
     /**
      * Determines the purity of the given method.
      *
@@ -284,10 +304,10 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         if (method.isSynchronized)
             return Result(definedMethod, ImpureByAnalysis);
 
-        val TACode(_, code, _, cfg, _, _) = tacai(method)
+        val TACode(_, code, pcToIndex, cfg, _, _) = tacai(method)
 
         implicit val state: State =
-            new State(Pure, Pure, Set.empty, method, definedMethod, declClass, code)
+            new State(Set.empty, method, definedMethod, declClass, code, pcToIndex)
 
         // Special case: The Throwable constructor is `LBSideEffectFree`, but subtype constructors
         // may not be because of overridable fillInStackTrace method
@@ -295,14 +315,9 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
             project.instanceMethods(declClass).foreach { mdc ⇒
                 if (mdc.name == "fillInStackTrace" &&
                     mdc.method.classFile.thisType != ObjectType.Throwable) {
-                    val impureFillInStackTrace = !checkPurityOfCall(
-                        declClass,
-                        "fillInStackTrace",
-                        MethodDescriptor("()Ljava/lang/Throwable;"),
-                        List.empty,
-                        Success(mdc.method)
-                    )
-                    if (impureFillInStackTrace) { // Early return for impure statements
+                    val fISTPurity = propertyStore(declaredMethods(mdc.method), Purity.key)
+                    if (!checkMethodPurity(fISTPurity, Seq.empty)) {
+                        // Early return for impure fillInStackTrace
                         return Result(definedMethod, state.ubPurity);
                     }
                 }
@@ -368,7 +383,7 @@ trait L1PurityAnalysisScheduler extends ComputationSpecification {
     final override def derives: Set[PropertyKind] = Set(Purity)
 
     final override def uses: Set[PropertyKind] = {
-        Set(VirtualMethodPurity, FieldMutability, ClassImmutability, TypeImmutability)
+        Set(Callees, FieldMutability, ClassImmutability, TypeImmutability)
     }
 
     final override type InitializationData = Null
