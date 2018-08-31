@@ -10,12 +10,12 @@ import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.fpcf.properties.CallersProperty
-import org.opalj.fpcf.properties.InstantiatedTypes
-import org.opalj.fpcf.properties.LowerBoundCallers
-import org.opalj.fpcf.properties.OnlyVMLevelCallers
-import org.opalj.fpcf.properties.VMReachableFinalizers
-import org.opalj.fpcf.properties.VMReachableFinalizersFallback
+import org.opalj.fpcf.cg.properties.VMReachableFinalizersFallback
+import org.opalj.fpcf.cg.properties.InstantiatedTypes
+import org.opalj.fpcf.cg.properties.LowerBoundCallers
+import org.opalj.fpcf.cg.properties.CallersProperty
+import org.opalj.fpcf.cg.properties.VMReachableFinalizers
+import org.opalj.fpcf.cg.properties.OnlyVMLevelCallers
 
 /**
  * Computes the set of finalize methods that are being called by the VM during the execution of the

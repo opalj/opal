@@ -12,10 +12,9 @@ import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.Project
 import org.opalj.br.instructions.MethodInvocationInstruction
 import org.opalj.br.reader.Java8Framework.ClassFiles
-import org.opalj.fpcf.properties.Callees
-import org.opalj.fpcf.properties.CallersProperty
-import org.opalj.fpcf.properties.StandardInvokeCallees
-import org.opalj.fpcf.properties.ThreadRelatedCallees
+import org.opalj.fpcf.cg.properties.CallersProperty
+import org.opalj.fpcf.cg.properties.Callees
+import org.opalj.fpcf.cg.properties.StandardInvokeCallees
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
 import org.scalatest.junit.JUnitRunner
@@ -42,7 +41,7 @@ class RTAIntegrationTest extends FlatSpec with Matchers {
             libraryClassFilesAreInterfacesOnly = true
         )
 
-    val propertyStore: PropertyStore = project.get(PropertyStoreKey)
+    implicit val propertyStore: PropertyStore = project.get(PropertyStoreKey)
     //PropertyStore.updateDebug(true)
 
     val manager: FPCFAnalysesManager = project.get(FPCFAnalysesManagerKey)
@@ -51,14 +50,14 @@ class RTAIntegrationTest extends FlatSpec with Matchers {
         EagerLoadedClassesAnalysis,
         EagerFinalizerAnalysisScheduler,
         EagerThreadRelatedCallsAnalysis,
-        new LazyCalleesAnalysis(Set(StandardInvokeCallees, ThreadRelatedCallees))
+        new LazyCalleesAnalysis(Set(StandardInvokeCallees))
     )
     implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
     for (dm ← declaredMethods.declaredMethods) { propertyStore(dm, Callees.key) }
     propertyStore.waitOnPhaseCompletion()
 
     it should "have matching callers and callees" in {
-        checkBidirectionCallerCallee(propertyStore)
+        checkBidirectionCallerCallee()
     }
 
     it should "consists of calls that are also present in Soots CHA" in {
@@ -69,7 +68,7 @@ class RTAIntegrationTest extends FlatSpec with Matchers {
             m ← project.allMethodsWithBody
             dm = declaredMethods(m)
             computedCallees = propertyStore(dm, Callees.key).asFinal.p
-            (pc, computedTargets) ← computedCallees.callees
+            (pc, computedTargets) ← computedCallees.callSites(onlyEventualCallees = false)
         } {
             val body = m.body.get
             val instr = body.instructions(pc).asMethodInvocationInstruction
@@ -103,10 +102,11 @@ class RTAIntegrationTest extends FlatSpec with Matchers {
             methodRepresentation = convertMethod(dm)
             FinalEP(_, computedCallees) = propertyStore(dm, Callees.key).asFinal
             CallSite(declaredTgt, line, _, tgts) ← callSites.filter(_.method == methodRepresentation)
-            computedCallSites = computedCallees.callees.filter {
+            computedCallSites = computedCallees.callSites(onlyEventualCallees = false).filter {
                 case (pc, computedTgt) ⇒
                     m.body.get.lineNumber(pc).get == line &&
-                        computedTgt.nonEmpty && computedTgt.head.name == declaredTgt.name // todo also use retType + paramTypes
+                        computedTgt.nonEmpty && computedTgt.next.name == declaredTgt.name // todo
+                // also use retType + paramTypes
             }.toList
             tgt ← tgts
         } {
@@ -118,12 +118,14 @@ class RTAIntegrationTest extends FlatSpec with Matchers {
         }
     }
 
-    def checkBidirectionCallerCallee(
-        propertyStore: PropertyStore
-    )(implicit declaredMethods: DeclaredMethods): Unit = {
+    def checkBidirectionCallerCallee()(
+        implicit
+        propertyStore:   PropertyStore,
+        declaredMethods: DeclaredMethods
+    ): Unit = {
         for {
             FinalEP(dm: DeclaredMethod, callees) ← propertyStore.entities(Callees.key).map(_.asFinal)
-            (pc, tgts) ← callees.callees
+            (pc, tgts) ← callees.callSites(onlyEventualCallees = false)
             callee ← tgts
         } {
             val FinalEP(_, callersProperty) = propertyStore(callee, CallersProperty.key).asFinal
@@ -135,7 +137,7 @@ class RTAIntegrationTest extends FlatSpec with Matchers {
             (caller, pc) ← callers.callers
         } {
             val FinalEP(_, calleesProperty) = propertyStore(caller, Callees.key).asFinal
-            assert(calleesProperty.callees(pc).contains(dm))
+            assert(calleesProperty.callees(pc, onlyEventualCallees = false).contains(dm))
         }
     }
 

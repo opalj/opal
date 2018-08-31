@@ -11,12 +11,12 @@ import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.collection.immutable.UIDSet
-import org.opalj.fpcf.properties.CallersProperty
-import org.opalj.fpcf.properties.LoadedClasses
-import org.opalj.fpcf.properties.LoadedClassesLowerBound
-import org.opalj.fpcf.properties.LowerBoundCallers
-import org.opalj.fpcf.properties.NoCallers
-import org.opalj.fpcf.properties.OnlyVMLevelCallers
+import org.opalj.fpcf.cg.properties.CallersProperty
+import org.opalj.fpcf.cg.properties.LoadedClassesLowerBound
+import org.opalj.fpcf.cg.properties.LoadedClasses
+import org.opalj.fpcf.cg.properties.NoCallers
+import org.opalj.fpcf.cg.properties.LowerBoundCallers
+import org.opalj.fpcf.cg.properties.OnlyVMLevelCallers
 import org.opalj.tac.Assignment
 import org.opalj.tac.ExprStmt
 import org.opalj.tac.GetStatic
@@ -43,8 +43,8 @@ class LoadedClassesAnalysis(
      * (if not already done) by the VM. Furthermore, access to static fields yields the VM to load
      * a class. So for a new reachable method, we further check for such operations.
      * For newly loaded classes, the analysis triggers the computation of the call graph properties
-     * ([[org.opalj.fpcf.properties.StandardInvokeCallees]], [[org.opalj.fpcf.properties.CallersProperty]]) for
-     * the static initializer.
+     * ([[org.opalj.fpcf.cg.properties.StandardInvokeCallees]], [[CallersProperty]]) for the static
+     * initializer.
      *
      */
     def doAnalyze(project: SomeProject): PropertyComputationResult = {

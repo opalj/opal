@@ -1,8 +1,8 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package fpcf
+package cg
 package properties
-//TODO move to a better place
 
 import org.opalj.br._
 import org.opalj.br.analyses.SomeProject

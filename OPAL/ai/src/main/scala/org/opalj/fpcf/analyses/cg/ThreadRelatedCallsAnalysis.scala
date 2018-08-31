@@ -14,10 +14,10 @@ import org.opalj.br.VoidType
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.SomeProject
-import org.opalj.fpcf.properties.CallersProperty
-import org.opalj.fpcf.properties.NoCallers
-import org.opalj.fpcf.properties.OnlyVMLevelCallers
-import org.opalj.fpcf.properties.LowerBoundCallers
+import org.opalj.fpcf.cg.properties.OnlyVMLevelCallers
+import org.opalj.fpcf.cg.properties.CallersProperty
+import org.opalj.fpcf.cg.properties.NoCallers
+import org.opalj.fpcf.cg.properties.LowerBoundCallers
 import org.opalj.log.OPALLogger
 import org.opalj.tac.Assignment
 import org.opalj.tac.Expr

@@ -14,20 +14,20 @@ import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.InitialEntryPointsKey
+import org.opalj.br.analyses.cg.IsOverridableMethodKey
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.LongTrieSet
 import org.opalj.collection.immutable.UIDSet
-import org.opalj.fpcf.properties.AllTypes
-import org.opalj.fpcf.properties.StandardInvokeCallees
-import org.opalj.fpcf.properties.StandardInvokeCalleesImplementation
-import org.opalj.fpcf.properties.CallersOnlyWithConcreteCallers
-import org.opalj.fpcf.properties.CallersProperty
-import org.opalj.fpcf.properties.InstantiatedTypes
-import org.opalj.fpcf.properties.LowerBoundCallers
-import org.opalj.fpcf.properties.LowerBoundStandardInvokeCallees
-import org.opalj.fpcf.properties.NoCallers
-import org.opalj.fpcf.properties.NoStandardInvokeCallees
-import org.opalj.fpcf.properties.OnlyCallersWithUnknownContext
+import org.opalj.fpcf.cg.properties.StandardInvokeCallees
+import org.opalj.fpcf.cg.properties.CallersProperty
+import org.opalj.fpcf.cg.properties.InstantiatedTypes
+import org.opalj.fpcf.cg.properties.CallersOnlyWithConcreteCallers
+import org.opalj.fpcf.cg.properties.NoCallers
+import org.opalj.fpcf.cg.properties.OnlyCallersWithUnknownContext
+import org.opalj.fpcf.cg.properties.LowerBoundCallers
+import org.opalj.fpcf.cg.properties.AllTypes
+import org.opalj.fpcf.cg.properties.StandardInvokeCalleesImplementation
+import org.opalj.fpcf.cg.properties.NoStandardInvokeCallees
 import org.opalj.log.Error
 import org.opalj.log.OPALLogger
 import org.opalj.log.Warn
@@ -53,6 +53,7 @@ case class RTAState(
         private[cg] val method:            DefinedMethod,
         private[cg] val virtualCallSites:  Traversable[(Int /*PC*/ , ObjectType, String, MethodDescriptor)],
         private[cg] var _callees:          IntMap[IntTrieSet], // key = PC
+        private[cg] var incompleteCallsites:          IntTrieSet, // key = PC
         private[cg] var numTypesProcessed: Int
 ) {
     private[cg] def addCallEdge(pc: Int, targetMethodId: Int): Unit = {
@@ -62,7 +63,10 @@ case class RTAState(
     private[cg] def callees: IntMap[IntTrieSet] = _callees
 }
 
-private[cg] class CalleesAndCallers(private[this] var _callees: IntMap[IntTrieSet] = IntMap.empty) {
+private[cg] class CalleesAndCallers(
+        private[this] var _callees:             IntMap[IntTrieSet] = IntMap.empty,
+) {
+    private[this] var _incompleteCallsites: IntTrieSet         = IntTrieSet.empty
 
     private[this] var _partialResultsForCallers: List[PartialResult[DeclaredMethod, CallersProperty]] =
         List.empty
@@ -71,6 +75,9 @@ private[cg] class CalleesAndCallers(private[this] var _callees: IntMap[IntTrieSe
     private[cg] def partialResultsForCallers: List[PartialResult[DeclaredMethod, CallersProperty]] = {
         _partialResultsForCallers
     }
+
+    private[cg] def incompleteCallsites: IntTrieSet = _incompleteCallsites
+    private[cg] def addIncompleteCallsite(pc: Int): Unit = _incompleteCallsites += pc
 
     private[cg] def updateWithCall(
         caller: DefinedMethod, callee: DeclaredMethod, pc: Int
@@ -130,9 +137,9 @@ private[cg] class CalleesAndCallers(private[this] var _callees: IntMap[IntTrieSe
 
 /**
  * A rapid type call graph analysis (RTA). For a given [[Method]] it computes the set of outgoing
- * call edges ([[org.opalj.fpcf.properties.StandardInvokeCallees]]). Furthermore, it updates the types for which
- * allocations are present in the [[SomeProject]] ([[org.opalj.fpcf.properties.InstantiatedTypes]])
- * and updates the [[org.opalj.fpcf.properties.CallersProperty]].
+ * call edges ([[org.opalj.fpcf.cg.properties.StandardInvokeCallees]]). Furthermore, it updates the types for which
+ * allocations are present in the [[SomeProject]] ([[InstantiatedTypes]])
+ * and updates the [[CallersProperty]].
  *
  * This analysis does not handle features such as JVM calls to static initializers, finalize etc.
  * However, analyses for these features (e.g. [[org.opalj.fpcf.analyses.cg.FinalizerAnalysis]] or
@@ -145,10 +152,13 @@ class RTACallGraphAnalysis private[analyses] (
         final val project: SomeProject
 ) extends FPCFAnalysis {
 
+    // TODO maybe cache results for Object.toString, Iterator.hasNext, Iterator.next
+
     type V = DUVar[KnownTypedValue]
 
     private[this] val tacaiProvider = project.get(SimpleTACAIKey)
     private[this] implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
+    private[this] val isMethodOverridable: Method => Answer = project.get(IsOverridableMethodKey)
 
     /**
      * Computes the calls from the given method ([[StandardInvokeCallees]] property) and updates the
@@ -218,6 +228,7 @@ class RTACallGraphAnalysis private[analyses] (
             declaredMethod.asDefinedMethod,
             virtualCallSites,
             calleesAndCallers.callees,
+            calleesAndCallers.incompleteCallsites,
             numTypesProcessed
         )
 
@@ -302,7 +313,17 @@ class RTACallGraphAnalysis private[analyses] (
                     method, call, call.pc, calleesAndCallers, virtualCallSites
                 )
 
-            case Assignment(_, _, _: Invokedynamic[V]) | ExprStmt(_, _: Invokedynamic[V]) ⇒
+            case Assignment(_, _, idc: Invokedynamic[V])=>
+                calleesAndCallers.addIncompleteCallsite(idc.pc)
+                OPALLogger.logOnce(
+                    Warn(
+                        "analysis",
+                        s"unresolved invokedynamic ignored by call graph construction"
+                    )
+                )(p.logContext)
+
+            case ExprStmt(_, idc: Invokedynamic[V]) ⇒
+                calleesAndCallers.addIncompleteCallsite(idc.pc)
                 OPALLogger.logOnce(
                     Warn(
                         "analysis",
@@ -323,7 +344,6 @@ class RTACallGraphAnalysis private[analyses] (
         pc:                Int,
         calleesAndCallers: CalleesAndCallers
     ): Unit = {
-
         val declaringClassType = if (call.declaringClass.isArrayType)
             ObjectType.Object
         else
@@ -337,7 +357,10 @@ class RTACallGraphAnalysis private[analyses] (
             call.descriptor
         )
 
-        if (!declTgt.hasSingleDefinedMethod && !declTgt.hasMultipleDefinedMethods) {
+        if(declTgt.hasSingleDefinedMethod) {
+            if(isMethodOverridable(declTgt.definedMethod).isNotNo)
+                calleesAndCallers.addIncompleteCallsite(pc)
+        } else if (!declTgt.hasMultipleDefinedMethods) {
             calleesAndCallers.updateWithCall(method, declTgt, pc)
         }
     }
@@ -422,10 +445,10 @@ class RTACallGraphAnalysis private[analyses] (
             val tgtDM = declaredMethods(target.value)
             // add call edge to CG
             calleesAndCallers.updateWithCall(caller, tgtDM, pc)
+        } else {
+            val packageName = caller.definedMethod.classFile.thisType.packageName
+            unknownLibraryCall(caller, call, packageName, pc, calleesAndCallers)
         }
-
-        val packageName = caller.definedMethod.classFile.thisType.packageName
-        unknownLibraryCall(caller, call, packageName, pc, calleesAndCallers)
     }
 
     // modifies state and the calleesAndCallers
@@ -480,21 +503,18 @@ class RTACallGraphAnalysis private[analyses] (
         instantiatedTypesEOptP: SomeEOptionP, state: RTAState
     ): PropertyComputationResult = {
 
-        val calleesLB = LowerBoundStandardInvokeCallees
-
         // here we need a immutable copy of the current state
         val newCallees =
             if (state.callees.isEmpty)
                 NoStandardInvokeCallees
             else
-                new StandardInvokeCalleesImplementation(state.callees)
+                new StandardInvokeCalleesImplementation(state.callees, state.incompleteCallsites)
 
-        if (state.virtualCallSites.isEmpty || instantiatedTypesEOptP.isFinal || newCallees.size == calleesLB.size)
+        if (state.virtualCallSites.isEmpty || instantiatedTypesEOptP.isFinal)
             Result(state.method, newCallees)
         else {
-            IntermediateResult(
+            SimplePIntermediateResult(
                 state.method,
-                calleesLB,
                 newCallees,
                 Seq(instantiatedTypesEOptP),
                 continuation(state)

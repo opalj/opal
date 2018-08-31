@@ -11,6 +11,14 @@ import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.Project
 import org.opalj.br.reader.Java8Framework.ClassFiles
 import org.opalj.collection.immutable.LongTrieSet
+import org.opalj.fpcf.cg.properties.OnlyVMLevelCallers
+import org.opalj.fpcf.cg.properties.CallersProperty
+import org.opalj.fpcf.cg.properties.OnlyCallersWithUnknownContext
+import org.opalj.fpcf.cg.properties.OnlyVMCallersAndWithUnknownContext
+import org.opalj.fpcf.cg.properties.NoCallers
+import org.opalj.fpcf.cg.properties.CallersImplWithOtherCalls
+import org.opalj.fpcf.cg.properties.CallersOnlyWithConcreteCallers
+import org.opalj.fpcf.cg.properties.LowerBoundCallers
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
 import org.scalatest.junit.JUnitRunner

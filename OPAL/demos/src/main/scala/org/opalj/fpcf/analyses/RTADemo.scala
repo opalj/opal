@@ -16,15 +16,17 @@ import org.opalj.fpcf.analyses.cg.EagerRTACallGraphAnalysisScheduler
 import org.opalj.fpcf.analyses.cg.EagerSerializationRelatedCallsAnalysis
 import org.opalj.fpcf.analyses.cg.EagerThreadRelatedCallsAnalysis
 import org.opalj.fpcf.analyses.cg.LazyCalleesAnalysis
-import org.opalj.fpcf.properties.Callees
-import org.opalj.fpcf.properties.SerializationRelatedCallees
-import org.opalj.fpcf.properties.StandardInvokeCallees
+import org.opalj.fpcf.analyses.cg.EagerReflectionRelatedCallsAnalysis
+import org.opalj.fpcf.cg.properties.LoadedClasses
+import org.opalj.fpcf.cg.properties.CallersProperty
+import org.opalj.fpcf.cg.properties.InstantiatedTypes
+import org.opalj.fpcf.cg.properties.VMReachableFinalizers
+import org.opalj.fpcf.cg.properties.Callees
+import org.opalj.fpcf.cg.properties.StandardInvokeCallees
+import org.opalj.fpcf.cg.properties.SerializationRelatedCallees
+import org.opalj.fpcf.cg.properties.ReflectionRelatedCallees
 //import org.opalj.fpcf.par.PKEParallelTasksPropertyStore
 //import org.opalj.fpcf.par.RecordAllPropertyStoreTracer
-import org.opalj.fpcf.properties.CallersProperty
-import org.opalj.fpcf.properties.InstantiatedTypes
-import org.opalj.fpcf.properties.LoadedClasses
-import org.opalj.fpcf.properties.VMReachableFinalizers
 import org.opalj.log.OPALLogger.info
 import org.opalj.tac.SimpleTACAIKey
 import org.opalj.util.PerformanceEvaluation.time
@@ -70,8 +72,9 @@ object RTADemo extends DefaultOneStepAnalysis {
                 EagerFinalizerAnalysisScheduler,
                 EagerThreadRelatedCallsAnalysis,
                 EagerSerializationRelatedCallsAnalysis,
+                EagerReflectionRelatedCallsAnalysis,
                 new LazyCalleesAnalysis(
-                    Set(StandardInvokeCallees, SerializationRelatedCallees)
+                    Set(StandardInvokeCallees, SerializationRelatedCallees, ReflectionRelatedCallees)
                 )
             )
         } { t ⇒ info("progress", s"constructing the call graph took ${t.toSeconds}") }

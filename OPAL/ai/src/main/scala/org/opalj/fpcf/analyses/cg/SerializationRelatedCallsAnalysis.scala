@@ -17,13 +17,12 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.fpcf.properties.CallersProperty
-import org.opalj.fpcf.properties.InstantiatedTypes
-import org.opalj.fpcf.properties.NoCallers
-import org.opalj.fpcf.properties.NoSerializationRelatedCallees
-import org.opalj.fpcf.properties.SerializationRelatedCallees
-import org.opalj.fpcf.properties.SerializationRelatedCalleesImplementation
-import org.opalj.log.OPALLogger
+import org.opalj.fpcf.cg.properties.SerializationRelatedCalleesImplementation
+import org.opalj.fpcf.cg.properties.SerializationRelatedCallees
+import org.opalj.fpcf.cg.properties.NoCallers
+import org.opalj.fpcf.cg.properties.CallersProperty
+import org.opalj.fpcf.cg.properties.NoSerializationRelatedCallees
+import org.opalj.fpcf.cg.properties.InstantiatedTypes
 import org.opalj.tac.Assignment
 import org.opalj.tac.Checkcast
 import org.opalj.tac.ExprStmt
@@ -125,8 +124,12 @@ class SerializationRelatedCallsAnalysis private[analyses] (
         val pcToIndex = tacode.pcToIndex
 
         var newInstantiatedTypes = UIDSet.empty[ObjectType]
-        for (pc ← relevantPCs.keysIterator) {
-            val stmt = stmts(pcToIndex(pc))
+        for {
+            pc ← relevantPCs.keysIterator
+            index = pcToIndex(pc)
+            if index != -1
+            stmt = stmts(index)
+        } {
             stmt match {
                 case VirtualMethodCall(_, dc, _, "writeObject", md, _, params) if isOOSWriteObject(dc, md) ⇒
                     val param = params.head.asVar.value.asReferenceValue
@@ -145,7 +148,7 @@ class SerializationRelatedCallsAnalysis private[analyses] (
                     )
 
                 case ExprStmt(_, VirtualFunctionCall(_, dc, _, "readObject", md, _, _)) if isOISReadObject(dc, md) ⇒
-                    OPALLogger.warn("analysis", "missed call to readObject")
+                    calleesAndCallers.addIncompleteCallsite(pc)
 
                 case _ ⇒
 
@@ -225,9 +228,8 @@ class SerializationRelatedCallsAnalysis private[analyses] (
                         )
                     }
                 }
-
             } else {
-                OPALLogger.warn("analysis", "missed call to writeObject")
+                calleesAndCallers.addIncompleteCallsite(pc)
             }
         }
     }
@@ -354,7 +356,7 @@ class SerializationRelatedCallsAnalysis private[analyses] (
         }
 
         if (!foundCast) {
-            OPALLogger.warn("analysis", "missed call to readObject")
+            calleesAndCallers.addIncompleteCallsite(pc)
         }
         resNewInstantiatedTypes
     }
@@ -384,7 +386,10 @@ class SerializationRelatedCallsAnalysis private[analyses] (
             else
                 Result(
                     definedMethod,
-                    new SerializationRelatedCalleesImplementation(calleesAndCallers.callees)
+                    new SerializationRelatedCalleesImplementation(
+                        calleesAndCallers.callees,
+                        calleesAndCallers.incompleteCallsites
+                    )
                 )
 
         res ::= calleesResult

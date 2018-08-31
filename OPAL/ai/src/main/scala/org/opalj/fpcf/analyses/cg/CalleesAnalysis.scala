@@ -8,14 +8,16 @@ import org.opalj.br.DeclaredMethod
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.SomeProject
-import org.opalj.fpcf.properties.Callees
-import org.opalj.fpcf.properties.CalleesImplementation
-import org.opalj.fpcf.properties.CalleesLike
-import org.opalj.fpcf.properties.CalleesLikeNotReachable
-import org.opalj.fpcf.properties.CalleesLikePropertyMetaInformation
-import org.opalj.fpcf.properties.LowerBoundCallees
-import org.opalj.fpcf.properties.NoCalleesDueToNotReachableMethod
-import org.opalj.fpcf.properties.CalleesLikeLowerBound
+import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.fpcf.cg.properties.Callees
+import org.opalj.fpcf.cg.properties.CalleesLikeNotReachable
+import org.opalj.fpcf.cg.properties.CalleesLike
+import org.opalj.fpcf.cg.properties.CalleesLikePropertyMetaInformation
+import org.opalj.fpcf.cg.properties.IntermediateCallees
+import org.opalj.fpcf.cg.properties.NoCalleesDueToNotReachableMethod
+import org.opalj.fpcf.cg.properties.FinalCallees
+
+import scala.collection.immutable.IntMap
 
 // todo the callees property could be collaborative (compute the complete set of callees on demand)
 class CalleesAnalysis private[analyses] (
@@ -56,12 +58,6 @@ class CalleesAnalysis private[analyses] (
                     (false, updateDependee(ep, dependees), directKeys, indirectKeys - p.key)
                 else
                     (false, updateDependee(ep, dependees), directKeys - p.key, indirectKeys)
-
-            case ep @ FinalEP(_, p: CalleesLikeLowerBound) ⇒
-                if (p.isIndirect)
-                    (true, updateDependee(ep, dependees), directKeys, indirectKeys - p.key)
-                else
-                    (true, updateDependee(ep, dependees), directKeys - p.key, indirectKeys)
 
             case EPS(_, _, _: CalleesLikeNotReachable) ⇒
                 throw new IllegalArgumentException("non reachable methods must have final property")
@@ -109,15 +105,34 @@ class CalleesAnalysis private[analyses] (
             return Result(declaredMethod, NoCalleesDueToNotReachableMethod);
         }
 
-        val callees = new CalleesImplementation(declaredMethod, directKeys, indirectKeys)
-
         if (dependees.isEmpty) {
-            Result(declaredMethod, callees)
-        } else {
-            IntermediateResult(
+
+            var calleeIds: IntMap[IntTrieSet] = IntMap.empty
+            var eventualCalleeIds: IntMap[IntTrieSet] = IntMap.empty
+            var incompleteCallSites: IntTrieSet = IntTrieSet.empty
+
+            for (key ← (directKeys.toIterator ++ indirectKeys.toIterator)) {
+                val p = propertyStore(
+                    declaredMethod,
+                    key
+                ).asInstanceOf[FinalEP[DeclaredMethod, CalleesLike]].p
+                if (p.isIndirect) {
+                    calleeIds = calleeIds.unionWith(p.callSites, (_, l, r) ⇒ l ++ r)
+                } else {
+                    eventualCalleeIds =
+                        eventualCalleeIds.unionWith(p.callSites, (_, l, r) ⇒ l ++ r)
+                }
+                incompleteCallSites ++!= p.incompleteCallSites
+            }
+
+            Result(
                 declaredMethod,
-                LowerBoundCallees,
-                callees,
+                new FinalCallees(calleeIds, eventualCalleeIds, incompleteCallSites)
+            )
+        } else {
+            SimplePIntermediateResult(
+                declaredMethod,
+                new IntermediateCallees(declaredMethod, directKeys, indirectKeys),
                 dependees,
                 continuation(declaredMethod, directKeys, indirectKeys, dependees)
             )

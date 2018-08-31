@@ -29,17 +29,16 @@ import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.collection.immutable.IntArraySetBuilder
 import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.fpcf.properties.CallersProperty
-import org.opalj.fpcf.properties.InstantiatedTypes
-import org.opalj.fpcf.properties.NoCallers
-import org.opalj.fpcf.properties.NoReflectionRelatedCallees
-import org.opalj.fpcf.properties.ReflectionRelatedCallees
-import org.opalj.fpcf.properties.ReflectionRelatedCalleesImplementation
-import org.opalj.fpcf.properties.LoadedClasses
-import org.opalj.fpcf.properties.LoadedClassesLowerBound
-import org.opalj.fpcf.properties.LowerBoundCallers
-import org.opalj.fpcf.properties.OnlyVMLevelCallers
-import org.opalj.log.OPALLogger
+import org.opalj.fpcf.cg.properties.LoadedClasses
+import org.opalj.fpcf.cg.properties.LowerBoundCallers
+import org.opalj.fpcf.cg.properties.CallersProperty
+import org.opalj.fpcf.cg.properties.InstantiatedTypes
+import org.opalj.fpcf.cg.properties.ReflectionRelatedCallees
+import org.opalj.fpcf.cg.properties.NoCallers
+import org.opalj.fpcf.cg.properties.LoadedClassesLowerBound
+import org.opalj.fpcf.cg.properties.ReflectionRelatedCalleesImplementation
+import org.opalj.fpcf.cg.properties.NoReflectionRelatedCallees
+import org.opalj.fpcf.cg.properties.OnlyVMLevelCallers
 import org.opalj.tac.Assignment
 import org.opalj.tac.ExprStmt
 import org.opalj.tac.SimpleTACAIKey
@@ -68,13 +67,13 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
     val MethodT = ObjectType("java/lang/reflect/Method")
 
     class State(
-            val stmts:                Array[Stmt[V]],
-            val cfg:                  CFG[Stmt[V], TACStmts[V]],
-            val loadedClassesUB:      UIDSet[ObjectType],
-            val instantiatedTypesUB:  UIDSet[ObjectType],
-            val calleesAndCallers:    CalleesAndCallers,
-            var newLoadedClasses:     UIDSet[ObjectType]        = UIDSet.empty,
-            var newInstantiatedTypes: UIDSet[ObjectType]        = UIDSet.empty
+        val stmts:                Array[Stmt[V]],
+        val cfg:                  CFG[Stmt[V], TACStmts[V]],
+        val loadedClassesUB:      UIDSet[ObjectType],
+        val instantiatedTypesUB:  UIDSet[ObjectType],
+        val calleesAndCallers:    CalleesAndCallers,
+        var newLoadedClasses:     UIDSet[ObjectType]        = UIDSet.empty,
+        var newInstantiatedTypes: UIDSet[ObjectType]        = UIDSet.empty
     )
 
     implicit private[this] val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
@@ -113,6 +112,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
             return NoResult;
 
         var relevantPCs: IntMap[IntTrieSet] = IntMap.empty
+        var forNamePCs: IntMap[IntTrieSet] = IntMap.empty
         val insts = method.body.get.instructions
         var i = 0
         val max = insts.length
@@ -123,7 +123,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                     case INVOKESTATIC.opcode ⇒
                         val call = inst.asMethodInvocationInstruction
                         if (call.declaringClass == ObjectType.Class && call.name == "forName")
-                            relevantPCs += i → IntTrieSet.empty
+                            forNamePCs += i → IntTrieSet.empty
                     case INVOKEVIRTUAL.opcode ⇒
                         val call = inst.asMethodInvocationInstruction
                         call.declaringClass match {
@@ -175,7 +175,12 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         implicit val state: State =
             new State(stmts, cfg, loadedClassesUB, instantiatedTypesUB, calleesAndCallers)
 
-        for (pc ← relevantPCs.keysIterator) {
+        for {
+            pc ← forNamePCs.keysIterator ++ relevantPCs.keysIterator
+            index = pcToIndex(pc)
+            if index != -1
+            stmt = stmts(index)
+        } {
             val stmt = stmts(pcToIndex(pc))
             stmt.astID match {
                 case Assignment.ASTID ⇒ handleExpr(definedMethod, stmt.pc, stmt.asAssignment.expr)
@@ -225,7 +230,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
     }
 
     private[this] def handleForName(className: Expr[V])(implicit state: State): Unit = {
-        val loadedClasses = getPossibleForNameClasses(className) collect {
+        val loadedClasses = getPossibleForNameClasses(className, None) collect {
             case r: ObjectType                              ⇒ r
             case a: ArrayType if a.elementType.isObjectType ⇒ a.elementType.asObjectType
         }
@@ -247,7 +252,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         descriptor: Option[MethodDescriptor]
     )(implicit state: State): Unit = {
         val instantiatedTypes =
-            getPossibleTypes(receiver).asInstanceOf[Iterator[ObjectType]].toIterable
+            getPossibleTypes(receiver, pc).asInstanceOf[Iterator[ObjectType]].toIterable
         handleNewInstances(caller, pc, instantiatedTypes, descriptor)
     }
 
@@ -295,17 +300,16 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                 if (definition.isVirtualFunctionCall) {
                     definition.asVirtualFunctionCall match {
                         case VirtualFunctionCall(_, ObjectType.Class, _, "getConstructor", _, classes, params) ⇒
-                            val parameterTypes = getTypes(params.head)
+                            val parameterTypes = getTypes(params.head, pc)
                             val descriptor = parameterTypes.map(s ⇒ MethodDescriptor(s, VoidType))
                             handleNewInstance(caller, pc, classes, descriptor)
-                        case _ ⇒
-                            OPALLogger.warn("analysis", "missed invoke call, constructor unknown")
+                        case _ ⇒ state.calleesAndCallers.addIncompleteCallsite(pc)
                     }
                 } else {
-                    OPALLogger.warn("analysis", "missed invoke call, method unknown")
+                    state.calleesAndCallers.addIncompleteCallsite(pc)
                 }
             } else {
-                OPALLogger.warn("analysis", "missed invoke call, method unknown")
+                state.calleesAndCallers.addIncompleteCallsite(pc)
             }
         }
     }
@@ -322,9 +326,9 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                     definition.asVirtualFunctionCall match {
                         case VirtualFunctionCall(_, ObjectType.Class, _, "getDeclaredMethod" | "getMethod", _, receiver, params) ⇒
                             val types =
-                                getPossibleTypes(receiver).asInstanceOf[Iterator[ReferenceType]]
-                            val names = getPossibleStrings(params.head).toIterable
-                            val paramTypesO = getTypes(params(1))
+                                getPossibleTypes(receiver, pc).asInstanceOf[Iterator[ReferenceType]]
+                            val names = getPossibleStrings(params.head, Some(pc)).toIterable
+                            val paramTypesO = getTypes(params(1), pc)
                             if (paramTypesO.isDefined) {
                                 for {
                                     receiverType ← types
@@ -334,19 +338,20 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                                         receiverType,
                                         name,
                                         paramTypesO.get,
-                                        definition.asVirtualFunctionCall.name == "getMethod"
+                                        definition.asVirtualFunctionCall.name == "getMethod",
+                                        pc
                                     )
                                     for (callee ← callees)
                                         state.calleesAndCallers.updateWithCall(caller, callee, pc)
                                 }
                             }
-                        case _ ⇒ OPALLogger.warn("analysis", "missed invoke call, method unknown")
+                        case _ ⇒ state.calleesAndCallers.addIncompleteCallsite(pc)
                     }
                 } else {
-                    OPALLogger.warn("analysis", "missed invoke call, method unknown")
+                    state.calleesAndCallers.addIncompleteCallsite(pc)
                 }
             } else {
-                OPALLogger.warn("analysis", "missed invoke call, method unknown")
+                state.calleesAndCallers.addIncompleteCallsite(pc)
             }
         }
     }
@@ -356,14 +361,15 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         name:        String,
         paramTypes:  IndexedSeq[FieldType],
         recurse:     Boolean,
+        pc:          Int,
         allowStatic: Boolean               = true
-    ): Traversable[DeclaredMethod] = {
+    )(implicit state: State): Traversable[DeclaredMethod] = {
         if (classType.isArrayType && name == "clone") None
         else {
             val recType = if (classType.isArrayType) ObjectType.Object else classType.asObjectType
             val cfO = project.classFile(recType)
             if (cfO.isEmpty) {
-                OPALLogger.warn("analysis", "missed invoke call, class not found")
+                state.calleesAndCallers.addIncompleteCallsite(pc)
                 Traversable.empty
             } else {
                 val candidates = cfO.get.methods.filter { method ⇒
@@ -377,10 +383,18 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                 } else if (candidates.isEmpty) {
                     val superT = cfO.get.superclassType
                     if (!recurse || superT.isEmpty) {
-                        OPALLogger.warn("analysis", "missed invoke call, method not found")
+                        state.calleesAndCallers.addIncompleteCallsite(pc)
                         Traversable.empty
                     } else {
-                        resolveCallees(superT.get, name, paramTypes, recurse, allowStatic = false)
+                        resolveCallees(
+                            superT.get,
+                            name,
+                            paramTypes,
+                            recurse,
+                            pc,
+                            allowStatic =
+                            false
+                        )
                     }
                 } else if (candidates.exists(!_.returnType.isReferenceType)) {
                     candidates.map(declaredMethods(_))
@@ -459,27 +473,27 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                             )
                         case NewInvokeSpecialMethodHandle(receiver, desc) ⇒
                             handleNewInstances(caller, pc, Seq(receiver), Seq(desc))
-                        case _ ⇒ OPALLogger.warn("analysis", "missed invoke call, method unknown")
+                        case _ ⇒ state.calleesAndCallers.addIncompleteCallsite(pc)
                     }
                 } else if (definition.isVirtualFunctionCall) {
                     definition.asVirtualFunctionCall match {
                         case VirtualFunctionCall(_, ObjectType.MethodHandles$Lookup, _, "findStatic", _, _, params) ⇒
                             val types =
-                                getPossibleTypes(params.head).asInstanceOf[Iterator[ObjectType]]
-                            val names = getPossibleStrings(params(1)).toIterable
+                                getPossibleTypes(params.head, pc).asInstanceOf[Iterator[ObjectType]]
+                            val names = getPossibleStrings(params(1), Some(pc)).toIterable
                             val descriptors =
                                 if (descriptor.isDefined) descriptor.toIterable
-                                else getPossibleMethodTypes(params(2)).toIterable
+                                else getPossibleMethodTypes(params(2), pc).toIterable
                             handleInvokeStatic(caller, pc, types, names, descriptors)
                         case VirtualFunctionCall(_, ObjectType.MethodHandles$Lookup, _, "findVirtual", _, _, params) ⇒
-                            val staticTypes = getPossibleTypes(params.head)
-                            val names = getPossibleStrings(params(1)).toIterable
+                            val staticTypes = getPossibleTypes(params.head, pc)
+                            val names = getPossibleStrings(params(1), Some(pc)).toIterable
                             val descriptors =
                                 if (descriptor.isDefined) {
                                     val md = descriptor.get // Peel off receiver class
                                     Seq(MethodDescriptor(md.parameterTypes.tail, md.returnType))
                                 } else
-                                    getPossibleMethodTypes(params(2)).toIterable
+                                    getPossibleMethodTypes(params(2), pc).toIterable
                             handleInvokeVirtual(
                                 caller,
                                 pc,
@@ -490,15 +504,15 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                             )
                         case VirtualFunctionCall(_, ObjectType.MethodHandles$Lookup, _, "findSpecial", _, _, params) ⇒
                             val types =
-                                getPossibleTypes(params.head).asInstanceOf[Iterator[ObjectType]]
-                            val names = getPossibleStrings(params(1)).toIterable
+                                getPossibleTypes(params.head, pc).asInstanceOf[Iterator[ObjectType]]
+                            val names = getPossibleStrings(params(1), Some(pc)).toIterable
                             val descriptors =
                                 if (descriptor.isDefined) {
                                     val md = descriptor.get // Peel off receiver class
                                     Seq(MethodDescriptor(md.parameterTypes.tail, md.returnType))
                                 } else
-                                    getPossibleMethodTypes(params(2)).toIterable
-                            val specialCallers = getPossibleTypes(params(3)).toIterable
+                                    getPossibleMethodTypes(params(2), pc).toIterable
+                            val specialCallers = getPossibleTypes(params(3), pc).toIterable
                             handleInvokeSpecial(
                                 caller,
                                 pc,
@@ -509,22 +523,22 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                                 specialCallers.asInstanceOf[Iterable[ObjectType]]
                             )
                         case VirtualFunctionCall(_, ObjectType.MethodHandles$Lookup, _, "findConstructor", _, _, params) ⇒
-                            val classes = getPossibleTypes(params.head)
+                            val classes = getPossibleTypes(params.head, pc)
                             val types = classes.asInstanceOf[Iterator[ObjectType]].toIterable
                             val descriptors: Iterable[MethodDescriptor] =
                                 if (descriptor.isDefined) {
                                     val md = descriptor.get
                                     Seq(MethodDescriptor(md.parameterTypes, VoidType))
                                 } else
-                                    getPossibleMethodTypes(params(1)).toIterable
+                                    getPossibleMethodTypes(params(1), pc).toIterable
                             handleNewInstances(caller, pc, types, descriptors)
-                        case _ ⇒ OPALLogger.warn("analysis", "missed invoke call, method unknown")
+                        case _ ⇒ state.calleesAndCallers.addIncompleteCallsite(pc)
                     }
                 } else {
-                    OPALLogger.warn("analysis", "missed invoke call, method unknown")
+                    state.calleesAndCallers.addIncompleteCallsite(pc)
                 }
             } else {
-                OPALLogger.warn("analysis", "missed invoke call, method unknown")
+                state.calleesAndCallers.addIncompleteCallsite(pc)
             }
         }
     }
@@ -568,7 +582,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         invokeParams: Seq[Expr[V]]
     )(implicit state: State): Unit = {
         val actualReceiver = invokeParams.head.asVar.value.asReferenceValue
-        val dynamicTypes = getTypes(actualReceiver).toIterable
+        val dynamicTypes = getTypes(actualReceiver, pc).toIterable
         for {
             typeBound ← staticTypes
             receiverType ← dynamicTypes
@@ -629,38 +643,40 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
     }
 
     private[this] def getPossibleStrings(
-        value: Expr[V]
+        value: Expr[V],
+        pc:    Option[Int]
     )(implicit state: State): Iterator[String] = {
         value.asVar.definedBy.iterator filter { index ⇒
             val isStringConst = index >= 0 && state.stmts(index).asAssignment.expr.isStringConst
-            if (!isStringConst)
-                OPALLogger.warn("analysis", "missed reflective call, unknown string")
+            if (!isStringConst && pc.isDefined)
+                state.calleesAndCallers.addIncompleteCallsite(pc.get)
             isStringConst
         } map { index ⇒ state.stmts(index).asAssignment.expr.asStringConst.value }
     }
 
     private[this] def getPossibleTypes(
-        value: Expr[V]
+        value: Expr[V],
+        pc:    Int
     )(implicit state: State): Iterator[Type] = {
         value.asVar.definedBy.iterator.filter { index ⇒
             if (index < 0) {
-                OPALLogger.warn("analysis", "missed reflective call, unknown class")
+                state.calleesAndCallers.addIncompleteCallsite(pc)
                 false
             } else {
                 val expr = state.stmts(index).asAssignment.expr
                 val isResolvable =
                     expr.isClassConst || isForName(expr) || isBaseTypeLoad(expr) || isGetClass(expr)
                 if (!isResolvable)
-                    OPALLogger.warn("analysis", "missed reflective call, unknown class")
+                    state.calleesAndCallers.addIncompleteCallsite(pc)
                 isResolvable
             }
         } flatMap { index ⇒
             val expr = state.stmts(index).asAssignment.expr
             if (expr.isClassConst) Iterator(state.stmts(index).asAssignment.expr.asClassConst.value)
             else if (expr.isStaticFunctionCall)
-                getPossibleForNameClasses(expr.asStaticFunctionCall.params.head)
+                getPossibleForNameClasses(expr.asStaticFunctionCall.params.head, Some(pc))
             else if (expr.isVirtualFunctionCall) {
-                getTypes(expr.asVirtualFunctionCall.receiver.asVar.value.asReferenceValue)
+                getTypes(expr.asVirtualFunctionCall.receiver.asVar.value.asReferenceValue, pc)
             } else {
                 val declClass = expr.asGetStatic.declaringClass
                 if (declClass == VoidType.WrapperType) Iterator(VoidType)
@@ -669,12 +685,15 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         }
     }
 
-    private[this] def getTypes(value: IsReferenceValue): Iterator[ReferenceType] = {
+    private[this] def getTypes(
+        value: IsReferenceValue,
+        pc:    Int
+    )(implicit state: State): Iterator[ReferenceType] = {
         if (value.isPrecise) value.valueType.iterator
         else if (value.allValues.forall(_.isPrecise))
             value.allValues.toIterator.flatMap(_.valueType)
         else {
-            OPALLogger.warn("analysis", "missed reflective call, unknown class")
+            state.calleesAndCallers.addIncompleteCallsite(pc)
             Iterator.empty
         }
     }
@@ -699,24 +718,26 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
     }
 
     private[this] def getPossibleForNameClasses(
-        className: Expr[V]
+        className: Expr[V],
+        pc:        Option[Int]
     )(implicit state: State): Iterator[ReferenceType] = {
-        val classNames = getPossibleStrings(className)
+        val classNames = getPossibleStrings(className, pc)
         classNames.map(cls ⇒ ObjectType(cls.replace('.', '/')))
     }
 
     private[this] def getPossibleMethodTypes(
-        value: Expr[V]
+        value: Expr[V],
+        pc:    Int
     )(implicit state: State): Iterator[MethodDescriptor] = {
         value.asVar.definedBy.iterator.filter { index ⇒
             if (index < 0) {
-                OPALLogger.warn("analysis", "missed reflective call, unknown method type")
+                state.calleesAndCallers.addIncompleteCallsite(pc)
                 false
             } else {
                 val expr = state.stmts(index).asAssignment.expr
                 val isResolvable = expr.isMethodTypeConst || isMethodType(expr)
                 if (!isResolvable)
-                    OPALLogger.warn("analysis", "missed reflective call, unknown method type")
+                    state.calleesAndCallers.addIncompleteCallsite(pc)
                 isResolvable
             }
         } flatMap { index ⇒
@@ -725,21 +746,22 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                 Iterator(state.stmts(index).asAssignment.expr.asMethodTypeConst.value)
             else {
                 val call = expr.asStaticFunctionCall
-                getPossibleMethodTypes(call.params, call.descriptor)
+                getPossibleMethodTypes(call.params, call.descriptor, pc)
             }
         }
     }
 
     private[this] def getPossibleMethodTypes(
         params:     Seq[Expr[V]],
-        descriptor: MethodDescriptor
+        descriptor: MethodDescriptor,
+        pc:         Int
     )(implicit state: State): Iterator[MethodDescriptor] = {
-        val returnTypes = getPossibleTypes(params.head)
+        val returnTypes = getPossibleTypes(params.head, pc)
         if (params.size == 1) {
             returnTypes.map(MethodDescriptor.withNoArgs)
         } else if (params.size == 3) {
-            val firstParamTypes = getPossibleTypes(params(1)).asInstanceOf[Iterator[FieldType]]
-            val possibleOtherParamTypes = getTypes(params(2))
+            val firstParamTypes = getPossibleTypes(params(1), pc).asInstanceOf[Iterator[FieldType]]
+            val possibleOtherParamTypes = getTypes(params(2), pc)
             for {
                 returnType ← returnTypes
                 firstParamType ← firstParamTypes
@@ -748,19 +770,19 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         } else {
             val secondParamType = descriptor.parameterType(1)
             if (secondParamType.isArrayType) {
-                val possibleOtherParamTypes = getTypes(params(1))
+                val possibleOtherParamTypes = getTypes(params(1), pc)
                 for {
                     returnType ← returnTypes
                     otherParamTypes ← possibleOtherParamTypes
                 } yield MethodDescriptor(otherParamTypes, returnType)
             } else if (secondParamType == ObjectType.Class) {
-                val paramTypes = getPossibleTypes(params(1)).asInstanceOf[Iterator[FieldType]]
+                val paramTypes = getPossibleTypes(params(1), pc).asInstanceOf[Iterator[FieldType]]
                 for {
                     returnType ← returnTypes
                     paramType ← paramTypes
                 } yield MethodDescriptor(paramType, returnType)
             } else {
-                OPALLogger.warn("analysis", "missed reflective call, unknown parameter types")
+                state.calleesAndCallers.addIncompleteCallsite(pc)
                 Iterator.empty
             }
         }
@@ -773,11 +795,12 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
     }
 
     private[this] def getTypes(
-        expr: Expr[V]
+        expr: Expr[V],
+        pc:   Int
     )(implicit state: State): Option[IndexedSeq[FieldType]] = {
         val definitions = expr.asVar.definedBy
         if (!definitions.isSingletonSet || definitions.head < 0) {
-            OPALLogger.warn("analysis", "missed reflective call, unknown parameter types")
+            state.calleesAndCallers.addIncompleteCallsite(pc)
             None
         } else {
             val definition = state.stmts(definitions.head).asAssignment
@@ -810,7 +833,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                             }
                         }
                     } || types.contains(null)) {
-                        OPALLogger.warn("analysis", "missed reflective call, unknown parameter types")
+                        state.calleesAndCallers.addIncompleteCallsite(pc)
                         None
                     } else {
                         Some(types)
@@ -831,7 +854,10 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
             else
                 Result(
                     definedMethod,
-                    new ReflectionRelatedCalleesImplementation(state.calleesAndCallers.callees)
+                    new ReflectionRelatedCalleesImplementation(
+                        state.calleesAndCallers.callees,
+                        state.calleesAndCallers.incompleteCallsites
+                    )
                 )
 
         res ::= calleesResult
