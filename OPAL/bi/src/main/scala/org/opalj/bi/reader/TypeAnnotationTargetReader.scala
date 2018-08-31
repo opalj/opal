@@ -7,8 +7,8 @@ import scala.annotation.switch
 
 import java.io.DataInputStream
 
-import org.opalj.collection.immutable.AnyRefArray
-import org.opalj.control.fillAnyRefArray
+import org.opalj.collection.immutable.RefArray
+import org.opalj.control.fillRefArray
 
 /**
  * Generic parser for the `target_type` and `target_info` fields of type annotations.
@@ -74,7 +74,7 @@ trait TypeAnnotationTargetReader extends Constant_PoolAbstractions {
      * }}}
      */
     type LocalvarTableEntry <: AnyRef
-    type LocalvarTable = AnyRefArray[LocalvarTableEntry]
+    type LocalvarTable = RefArray[LocalvarTableEntry]
     /**
      * Factory method to create a `LocalvarTableEntry`. To completely resolve
      * such entries; i.e., to resolve the local_variable_table_index it may
@@ -129,7 +129,7 @@ trait TypeAnnotationTargetReader extends Constant_PoolAbstractions {
     //
 
     def LocalvarTable(in: DataInputStream): LocalvarTable = {
-        fillAnyRefArray(in.readUnsignedShort) {
+        fillRefArray(in.readUnsignedShort) {
             LocalvarTableEntry(
                 in.readUnsignedShort(),
                 in.readUnsignedShort(),

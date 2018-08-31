@@ -30,7 +30,7 @@ final class ConstCovariantArray[+T <: AnyRef] private (private[this] val data: A
 
     def binarySearch(comparator: T ⇒ Int): Option[T] = findInArray(data)(comparator)
 
-    def iterator: AnyRefIterator[T] = new AnyRefIterator[T] {
+    def iterator: RefIterator[T] = new RefIterator[T] {
         private[this] var i = 0
         override def hasNext: Boolean = i < data.length
         override def next(): T = { val e = data(i); i += 1; e }

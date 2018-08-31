@@ -528,7 +528,7 @@ trait RecordCFG
         var allReachable: IntTrieSet = IntTrieSet1(pc)
         var successorsToVisit = allSuccessorsOf(pc)
         while (successorsToVisit.nonEmpty) {
-            val IntHeadAndRestOfSet(succPC, newSuccessorsToVisit) = successorsToVisit.getAndRemove
+            val IntHeadAndRestOfSet(succPC, newSuccessorsToVisit) = successorsToVisit.headAndTail
             successorsToVisit = newSuccessorsToVisit
             if (!allReachable.contains(succPC)) {
                 allReachable +!= succPC

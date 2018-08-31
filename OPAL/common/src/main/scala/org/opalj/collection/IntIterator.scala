@@ -77,7 +77,7 @@ abstract class IntIterator extends AbstractIterator[Int] { self ⇒
         def next(): Long = f(self.next())
     }
 
-    override def map[T](f: Int ⇒ T): AnyRefIterator[T] = new AnyRefIterator[T] {
+    override def map[T](f: Int ⇒ T): RefIterator[T] = new RefIterator[T] {
         def hasNext: Boolean = self.hasNext
         def next(): T = f(self.next())
     }
@@ -101,8 +101,8 @@ abstract class IntIterator extends AbstractIterator[Int] { self ⇒
         def next(): Int = { val e = it.next(); advanceIterator(); e }
     }
 
-    def flatMap[T](f: Int ⇒ AnyRefIterator[T]): AnyRefIterator[T] = new AnyRefIterator[T] {
-        private[this] var it: AnyRefIterator[T] = AnyRefIterator.empty
+    def flatMap[T](f: Int ⇒ RefIterator[T]): RefIterator[T] = new RefIterator[T] {
+        private[this] var it: RefIterator[T] = RefIterator.empty
         private[this] def advanceIterator(): Unit = {
             while (!it.hasNext) {
                 if (self.hasNext) {
@@ -222,10 +222,27 @@ object IntIterator {
 
     final val empty: IntIterator = new IntIterator {
         override def hasNext: Boolean = false
-        override def next(): Nothing = throw new UnsupportedOperationException
+        override def next(): Nothing = throw new NoSuchElementException("next on empty iterator")
         override def toArray: Array[Int] = org.opalj.collection.immutable.IntArray.EmptyArrayOfInt
         override def toSet: IntTrieSet = IntTrieSet.empty
         override def toSortedSet: IntArraySet = IntArraySet.empty
+    }
+
+    /**
+     *
+     * @param from The first value (inclusive).
+     * @param to The last value (inclusive).
+     * @return
+     */
+    def inclusive(start: Int, end: Int): IntIterator = new IntIterator {
+        private[this] var i: Int = start
+        override def hasNext: Boolean = i <= end
+        override def next(): Int = {
+            if (i > end) IntIterator.empty.next(); // <= will throw the expected exception
+            val r = i
+            i += 1
+            r
+        }
     }
 
     def apply(i: Int): IntIterator = new IntIterator {

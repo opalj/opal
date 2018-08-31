@@ -7,8 +7,8 @@ import scala.collection.mutable.ArrayStack
 
 import org.opalj.collection.IntIterator
 import org.opalj.collection.mutable.IntArrayStack
-import org.opalj.collection.mutable.AnyRefArrayStack
-import org.opalj.collection.mutable.AnyRefArrayBuffer
+import org.opalj.collection.mutable.RefArrayStack
+import org.opalj.collection.mutable.RefArrayBuffer
 import org.opalj.collection.immutable.Chain
 import org.opalj.collection.immutable.Naught
 
@@ -206,8 +206,8 @@ package object graphs {
         val ProcessedNodeNum: Int = -1
         val PathSegmentSeparator: Null = null
 
-        val workstack = new AnyRefArrayStack[N](8) //mutable.ArrayStack.empty[N]
-        val path = AnyRefArrayBuffer.withInitialSize[N](16)
+        val workstack = new RefArrayStack[N](8) //mutable.ArrayStack.empty[N]
+        val path = RefArrayBuffer.withInitialSize[N](16)
 
         var cSCCs = List.empty[Iterable[N]]
 

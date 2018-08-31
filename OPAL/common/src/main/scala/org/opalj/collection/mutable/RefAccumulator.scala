@@ -13,7 +13,7 @@ package org.opalj.collection.mutable
  *
  * @author Michael Eichberg
  */
-final class AnyRefAccumulator[A <: AnyRef] private (
+final class RefAccumulator[A <: AnyRef] private (
         private var data: List[AnyRef] // either a value of type A or a non-empty iterator of A
 ) extends {
 
@@ -51,12 +51,12 @@ final class AnyRefAccumulator[A <: AnyRef] private (
 }
 
 /**
- * Factory to create [[AnyRefAccumulator]]s.
+ * Factory to create [[RefAccumulator]]s.
  */
-object AnyRefAccumulator {
+object RefAccumulator {
 
-    def empty[N >: Null <: AnyRef]: AnyRefAccumulator[N] = new AnyRefAccumulator[N](Nil)
+    def empty[N >: Null <: AnyRef]: RefAccumulator[N] = new RefAccumulator[N](Nil)
 
-    def apply[N >: Null <: AnyRef](e: N): AnyRefAccumulator[N] = new AnyRefAccumulator[N](List(e))
+    def apply[N >: Null <: AnyRef](e: N): RefAccumulator[N] = new RefAccumulator[N](List(e))
 }
 

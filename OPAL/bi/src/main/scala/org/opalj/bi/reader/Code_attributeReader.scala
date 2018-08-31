@@ -5,8 +5,8 @@ package reader
 
 import java.io.DataInputStream
 
-import org.opalj.collection.immutable.AnyRefArray
-import org.opalj.control.fillAnyRefArray
+import org.opalj.collection.immutable.RefArray
+import org.opalj.control.fillRefArray
 
 /**
  * Defines a template method to read in the code attribute.
@@ -22,7 +22,7 @@ trait Code_attributeReader extends AttributeReader {
     //
 
     type ExceptionTableEntry <: AnyRef
-    type ExceptionHandlers = AnyRefArray[ExceptionTableEntry]
+    type ExceptionHandlers = RefArray[ExceptionTableEntry]
 
     type Instructions
 
@@ -91,7 +91,7 @@ trait Code_attributeReader extends AttributeReader {
             in.readUnsignedShort(),
             in.readUnsignedShort(),
             Instructions(cp, in),
-            fillAnyRefArray(in.readUnsignedShort()) { // "exception_table_length" times
+            fillRefArray(in.readUnsignedShort()) { // "exception_table_length" times
                 ExceptionTableEntry(
                     cp,
                     in.readUnsignedShort, in.readUnsignedShort,

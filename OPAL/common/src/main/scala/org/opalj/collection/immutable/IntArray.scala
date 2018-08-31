@@ -10,7 +10,7 @@ import scala.collection.mutable.Builder
 
 /**
  * Wraps an array such that the underlying array is no longer directly accessible and
- * therefore also no longer mutable if `IntArray` is the sole owner.
+ * therefore also no longer mutable.
  *
  * @author Michael Eichberg
  */
@@ -18,11 +18,9 @@ class IntArray private (
         private val data: Array[Int]
 ) extends scala.collection.immutable.Seq[Int] {
 
-    def apply(idx: Int): Int = data(idx)
-
     /**
      * Directly performs the map operation on the underlying array and then creates a new
-     * appropriately typed `AnyRefArray[X]` object which wraps the modified array.
+     * appropriately typed `RefArray[X]` object which wraps the modified array.
      *
      * '''This method is only to be used if `this` instance is no longer used afterwards!'''
      */
@@ -39,7 +37,7 @@ class IntArray private (
 
     /**
      * Directly updates the value at the given index and then creates a new
-     * appropriately typed `AnyRefArray[X]` object which wraps the modified array.
+     * appropriately typed `RefArray[X]` object which wraps the modified array.
      *
      * '''This method is only to be used if `this` instance is no longer used afterwards!'''
      */
@@ -49,7 +47,9 @@ class IntArray private (
         this
     }
 
-    def map[X <: AnyRef](f: Int ⇒ X): AnyRefArray[X] = {
+    def apply(idx: Int): Int = data(idx)
+
+    def map[X <: AnyRef](f: Int ⇒ X): RefArray[X] = {
         val newData = new Array[AnyRef](data.length)
         var i = 0
         val max = data.length
@@ -57,7 +57,7 @@ class IntArray private (
             newData(i) = f(data(i))
             i += 1
         }
-        AnyRefArray._UNSAFE_from[X](newData)
+        RefArray._UNSAFE_from[X](newData)
     }
 
     def map(f: Int ⇒ Int): IntArray = {
@@ -71,8 +71,8 @@ class IntArray private (
         new IntArray(newData)
     }
 
-    def flatMap[X <: AnyRef](f: Int ⇒ TraversableOnce[X]): AnyRefArray[X] = {
-        val b = AnyRefArray.newBuilder[X]
+    def flatMap[X <: AnyRef](f: Int ⇒ TraversableOnce[X]): RefArray[X] = {
+        val b = RefArray.newBuilder[X]
         var i = 0
         val max = data.length
         b.sizeHint(max)
@@ -200,7 +200,7 @@ class IntArray private (
 
     override lazy val hashCode: Int = JArrays.hashCode(data) * 11
 
-    override def toString: String = data.mkString("AnyRefArray(", ", ", ")")
+    override def toString: String = data.mkString("RefArray(", ", ", ")")
 
 }
 
@@ -268,13 +268,13 @@ object IntArray {
     }
 
     /**
-     * Creates a new [[AnyRefArray]] from the given array. Hence, changes to the
+     * Creates a new [[RefArray]] from the given array. Hence, changes to the
      * underlying array would be reflected!
      *
      * '''Only use this factory method if you have full control over all
      * aliases to the given array to ensure that the underlying array is not mutated.'''
      */
-    // IMPROVE Use an ownership annotation to specify that AnyRefArray takes over the ownership of the array.
+    // IMPROVE Use an ownership annotation to specify that RefArray takes over the ownership of the array.
     def _UNSAFE_from(data: Array[Int]): IntArray = new IntArray(data)
 
 }

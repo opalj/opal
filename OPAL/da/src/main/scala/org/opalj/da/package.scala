@@ -6,7 +6,7 @@ import scala.xml.Node
 import scala.xml.Text
 import scala.xml.NodeSeq
 
-import org.opalj.collection.immutable.AnyRefArray
+import org.opalj.collection.immutable.RefArray
 import org.opalj.collection.immutable.IntArray
 import org.opalj.bi.AccessFlags
 import org.opalj.bi.AccessFlagsContext
@@ -26,47 +26,47 @@ package object da {
     type Interfaces = IntArray // <=> Array of Constant_Pool_Index
     def NoInterfaces: Interfaces = IntArray.empty
 
-    type Methods = AnyRefArray[Method_Info]
-    def NoMethods: Methods = AnyRefArray.empty
+    type Methods = RefArray[Method_Info]
+    def NoMethods: Methods = RefArray.empty
 
-    type MethodParameters = AnyRefArray[MethodParameter]
+    type MethodParameters = RefArray[MethodParameter]
 
-    type Fields = AnyRefArray[Field_Info]
-    def NoFields: Fields = AnyRefArray.empty
+    type Fields = RefArray[Field_Info]
+    def NoFields: Fields = RefArray.empty
 
-    type Attributes = AnyRefArray[Attribute]
-    def NoAttributes: Attributes = AnyRefArray.empty
+    type Attributes = RefArray[Attribute]
+    def NoAttributes: Attributes = RefArray.empty
 
     type ExceptionIndexTable = IntArray // <=> Array of Constant_Pool_Indexes identifying the types of the method's thrown exceptions
 
-    type ExceptionTable = AnyRefArray[ExceptionTableEntry]
-    def NoExceptionTable: ExceptionTable = AnyRefArray.empty
+    type ExceptionTable = RefArray[ExceptionTableEntry]
+    def NoExceptionTable: ExceptionTable = RefArray.empty
 
-    type ElementValuePairs = AnyRefArray[ElementValuePair]
-    def NoElementValuePairs: ElementValuePairs = AnyRefArray.Empty
+    type ElementValuePairs = RefArray[ElementValuePair]
+    def NoElementValuePairs: ElementValuePairs = RefArray.Empty
 
-    type Annotations = AnyRefArray[da.Annotation]
+    type Annotations = RefArray[da.Annotation]
     type ParameterAnnotations = Annotations
-    type ParametersAnnotations = AnyRefArray[ParameterAnnotations]
+    type ParametersAnnotations = RefArray[ParameterAnnotations]
 
-    type TypeAnnotations = AnyRefArray[TypeAnnotation]
+    type TypeAnnotations = RefArray[TypeAnnotation]
 
-    type StackMapFrames = AnyRefArray[StackMapFrame]
-    type TypeAnnotationPathElementsTable = AnyRefArray[TypeAnnotationPathElement]
+    type StackMapFrames = RefArray[StackMapFrame]
+    type TypeAnnotationPathElementsTable = RefArray[TypeAnnotationPathElement]
 
-    type LocalvarTable = AnyRefArray[LocalvarTableEntry]
+    type LocalvarTable = RefArray[LocalvarTableEntry]
 
-    type VerificationTypeInfos = AnyRefArray[VerificationTypeInfo]
+    type VerificationTypeInfos = RefArray[VerificationTypeInfo]
 
     type PackageIndexTable = IntArray // Array[Constant_Pool_Index]
 
-    type Requires = AnyRefArray[RequiresEntry]
-    type Exports = AnyRefArray[ExportsEntry]
+    type Requires = RefArray[RequiresEntry]
+    type Exports = RefArray[ExportsEntry]
     type ExportsToIndexTable = IntArray // Array[CONSTANT_Module_Index]
-    type Opens = AnyRefArray[OpensEntry]
+    type Opens = RefArray[OpensEntry]
     type OpensToIndexTable = IntArray // Array[CONSTANT_Module_Index]
     type Uses = IntArray // Array[CONSTANT_Class_Index]
-    type Provides = AnyRefArray[ProvidesEntry]
+    type Provides = RefArray[ProvidesEntry]
     type ProvidesWithIndexTable = IntArray // Array[CONSTANT_Class_Index]
 
     /**

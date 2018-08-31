@@ -175,11 +175,11 @@ object LongTrieSetProperties extends Properties("LongTrieSet") {
         its.foldLeft(0L)(_ + _) == s.foldLeft(0L)(_ + _)
     }
 
-    property("getAndRemove") = forAll { s: IntArraySet ⇒
+    property("headAndTail") = forAll { s: IntArraySet ⇒
         var its = EmptyLongTrieSet ++ s.iterator.map(_.toLong)
         var removed = Chain.empty[Long]
         while (its.nonEmpty) {
-            val LongAnyRefPair(v, newIts) = its.getAndRemove
+            val LongRefPair(v, newIts) = its.headAndTail
             removed :&:= v
             its = newIts
         }

@@ -4,7 +4,7 @@ package collection
 package immutable
 
 /**
- * A set of integers which supports (reasonable) efficient `getAndRemove` operations.
+ * A set of integers which supports (reasonable) efficient `headAndTail` operations.
  *
  * @author Michael Eichberg
  */
@@ -13,6 +13,6 @@ trait IntWorkSet[T <: IntWorkSet[T]] { intSet: T ⇒
     /**
      * Gets a value and returns the new set without that value.
      */
-    def getAndRemove: IntAnyRefPair[T]
+    def headAndTail: IntRefPair[T]
 
 }

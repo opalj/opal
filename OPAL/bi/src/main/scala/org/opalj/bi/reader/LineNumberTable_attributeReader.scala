@@ -5,8 +5,8 @@ package reader
 
 import java.io.DataInputStream
 
-import org.opalj.collection.immutable.AnyRefArray
-import org.opalj.control.fillAnyRefArray
+import org.opalj.collection.immutable.RefArray
+import org.opalj.control.fillRefArray
 
 /**
  * Generic parser for the ''LineNumberTable'' attribute.
@@ -20,7 +20,7 @@ trait LineNumberTable_attributeReader extends AttributeReader {
     type LineNumberTable_attribute >: Null <: Attribute
 
     type LineNumberTableEntry <: AnyRef
-    type LineNumbers = AnyRefArray[LineNumberTableEntry]
+    type LineNumbers = RefArray[LineNumberTableEntry]
 
     def LineNumberTable_attribute(
         constant_pool:        Constant_Pool,
@@ -58,7 +58,7 @@ trait LineNumberTable_attributeReader extends AttributeReader {
             LineNumberTable_attribute(
                 cp,
                 attribute_name_index,
-                fillAnyRefArray(line_number_table_length) {
+                fillRefArray(line_number_table_length) {
                     LineNumberTableEntry(in.readUnsignedShort, in.readUnsignedShort)
                 }
             )

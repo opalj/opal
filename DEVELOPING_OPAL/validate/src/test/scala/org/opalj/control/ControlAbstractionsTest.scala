@@ -51,26 +51,23 @@ class ControlAbstractionsTest extends FlatSpec with Matchers {
     // REPEAT
     //
 
-
     behavior of "the ControlAbstractions.repeat macro"
 
     it should "should do nothing if times is 0" in {
         var success = true
-            repeat(0) { success = false }
+        repeat(0) { success = false }
         assert(success)
     }
 
     it should "should execute the given function the given numeber of times" in {
         var index = 0
-        repeat(5) { index +=1 }
+        repeat(5) { index += 1 }
         assert(index == 5)
     }
-
 
     //
     // fill(Int|AnyRef)Array
     //
-
 
     behavior of "the ControlAbstractions.fill(Int|AnyRef)Array macro"
 
@@ -79,8 +76,8 @@ class ControlAbstractionsTest extends FlatSpec with Matchers {
         result.isEmpty should be(true)
     }
 
-    it should "return a empty AnyRefArray when the number of times is 0" in {
-        val result = fillAnyRefArray(0) { "X" }
+    it should "return a empty RefArray when the number of times is 0" in {
+        val result = fillRefArray(0) { "X" }
         result.isEmpty should be(true)
     }
 
@@ -89,21 +86,21 @@ class ControlAbstractionsTest extends FlatSpec with Matchers {
         result(0) should be("Hello")
     }
 
-    it should "return an AnyRefArray with one entry when the number of times is 1" in {
-        val result = fillAnyRefArray(1) { "Hello" }
+    it should "return an RefArray with one entry when the number of times is 1" in {
+        val result = fillRefArray(1) { "Hello" }
         result(0) should be("Hello")
     }
 
     it should "return an IntArray with five entries that are dynamically calculated when the number of times is 5" in {
         var index = 0
-        val result = fillIntArray(5) { index +=1; index }
+        val result = fillIntArray(5) { index += 1; index }
         result.length should be(5)
         result should be(Seq(1, 2, 3, 4, 5))
     }
 
-    it should "return an AnyRefArray with five entries that are dynamically calculated when the number of times is 5" in {
+    it should "return an RefArray with five entries that are dynamically calculated when the number of times is 5" in {
         var index = 0
-        val result = fillAnyRefArray(5) { index +=1; "value="+index }
+        val result = fillRefArray(5) { index += 1; "value="+index }
         result.length should be(5)
         result should be(Seq("value=1", "value=2", "value=3", "value=4", "value=5"))
     }

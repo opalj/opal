@@ -73,9 +73,9 @@ class FixedSizedHashIDMap[K <: AnyRef, V] private (
         }
     }
 
-    def keys: AnyRefIterator[K] = AnyRefIterator.fromNonNullValues(theKeys)
+    def keys: RefIterator[K] = RefIterator.fromNonNullValues(theKeys)
 
-    def entries: AnyRefIterator[(K, V)] = new AnyRefIterator[(K, V)] {
+    def entries: RefIterator[(K, V)] = new RefIterator[(K, V)] {
         private[this] def getNextIndex(lastIndex: Int): Int = {
             val keys = self.theKeys
             val max = keys.length

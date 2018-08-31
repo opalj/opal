@@ -32,7 +32,7 @@ import org.opalj.ai.AIResult
 import org.opalj.ai.Domain
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
-import org.opalj.collection.mutable.AnyRefAppendChain
+import org.opalj.collection.mutable.RefAppendChain
 
 /**
  * Factory to convert the bytecode of a method into a three address representation using the
@@ -200,7 +200,7 @@ object TACAI {
         // The list of bytecode instructions which were killed (=>NOP), and for which we now
         // have to clear the usages.
         // basically a mapping from a UseSite(PC) to a DefSite
-        val obsoleteUseSites: AnyRefAppendChain[PCAndAnyRef[IntTrieSet /*DefSites*/ ]] = new AnyRefAppendChain()
+        val obsoleteUseSites: RefAppendChain[PCAndAnyRef[IntTrieSet /*DefSites*/ ]] = new RefAppendChain()
 
         def killOperandBasedUsages(useSitePC: Int, valuesCount: Int): Unit = {
             // The value(s) is (are) not used and the expression is side effect free;

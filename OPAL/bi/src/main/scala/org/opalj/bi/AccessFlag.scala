@@ -65,6 +65,8 @@ object VisibilityModifier {
     // partial mask: we can't define a mask w.r.t. default visibility
     private[bi] final val mask = ACC_PRIVATE.mask | ACC_PUBLIC.mask | ACC_PROTECTED.mask
 
+    def hasDefaultVisibility(accessFlags: Int): Boolean = (accessFlags & mask) == 0
+
     final val SOME_PUBLIC = Some(ACC_PUBLIC)
     final val SOME_PRIVATE = Some(ACC_PRIVATE)
     final val SOME_PROTECTED = Some(ACC_PROTECTED)
@@ -77,7 +79,7 @@ object VisibilityModifier {
      *          element has default visibility.
      */
     def get(accessFlags: Int): Option[VisibilityModifier] = {
-        ((accessFlags & VisibilityModifier.mask): @switch) match {
+        ((accessFlags & mask): @switch) match {
             case ACC_PUBLIC.mask    ⇒ SOME_PUBLIC
             case ACC_PRIVATE.mask   ⇒ SOME_PRIVATE
             case ACC_PROTECTED.mask ⇒ SOME_PROTECTED

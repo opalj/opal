@@ -39,7 +39,7 @@ sealed abstract class IntTrieSet
     }
 
     /** Returns some value and removes it from this set. */
-    def getAndRemove: IntAnyRefPair[IntTrieSet]
+    def headAndTail: IntRefPair[IntTrieSet]
 
     def filter(p: Int ⇒ Boolean): IntTrieSet
     override def withFilter(p: Int ⇒ Boolean): IntTrieSet
@@ -113,7 +113,7 @@ final class FilteredIntTrieSet(
     override def isEmpty: Boolean = filtered.isEmpty
     override def size: Int = filtered.size
     override def head: Int = filtered.head
-    override def getAndRemove: IntAnyRefPair[IntTrieSet] = filtered.getAndRemove
+    override def headAndTail: IntRefPair[IntTrieSet] = filtered.headAndTail
     override def -(i: Int): IntTrieSet = filtered - i
     override def +(i: Int): IntTrieSet = filtered + i
     override def +!(value: Int): IntTrieSet = filtered +! value
@@ -150,8 +150,8 @@ case object EmptyIntTrieSet extends IntTrieSetL {
     override def isEmpty: Boolean = true
     override def size: Int = 0
     override def head: Int = throw new UnsupportedOperationException("empty")
-    override def getAndRemove: IntAnyRefPair[IntTrieSet] = {
-        throw new UnsupportedOperationException("getAndRemove")
+    override def headAndTail: IntRefPair[IntTrieSet] = {
+        throw new UnsupportedOperationException("headAndTail")
     }
     override def foreach[U](f: Int ⇒ U): Unit = {}
     override def foreachPair[U](f: (Int, Int) ⇒ U): Unit = {}
@@ -192,7 +192,7 @@ final case class IntTrieSet1 private (i: Int) extends IntTrieSetL {
     override def size: Int = 1
     override def foreach[U](f: Int ⇒ U): Unit = { f(i) }
     override def foreachPair[U](f: (Int, Int) ⇒ U): Unit = {}
-    override def getAndRemove: IntAnyRefPair[IntTrieSet] = IntAnyRefPair(i, IntTrieSet.empty)
+    override def headAndTail: IntRefPair[IntTrieSet] = IntRefPair(i, IntTrieSet.empty)
     override def filter(p: Int ⇒ Boolean): IntTrieSet = if (p(i)) this else EmptyIntTrieSet
     override def withFilter(p: Int ⇒ Boolean): IntTrieSet = new FilteredIntTrieSet(this, p)
     override def map(f: Int ⇒ Int): IntTrieSet = {
@@ -301,7 +301,7 @@ private[immutable] final class IntTrieSet2 private[immutable] (
     override def hasMultipleElements: Boolean = true
     override def size: Int = 2
     override def head: Int = i2
-    override def getAndRemove: IntAnyRefPair[IntTrieSet] = IntAnyRefPair(i2, IntTrieSet1(i1))
+    override def headAndTail: IntRefPair[IntTrieSet] = IntRefPair(i2, IntTrieSet1(i1))
     override def iterator: IntIterator = IntIterator(i1, i2)
     override def foreach[U](f: Int ⇒ U): Unit = { f(i1); f(i2) }
     override def foreachPair[U](f: (Int, Int) ⇒ U): Unit = { f(i1, i2) }
@@ -415,8 +415,8 @@ private[immutable] final class IntTrieSet3 private[immutable] (
     override def isSingletonSet: Boolean = false
     override def hasMultipleElements: Boolean = true
     override def size: Int = 3
-    override def getAndRemove: IntAnyRefPair[IntTrieSet] = {
-        IntAnyRefPair(i3, new IntTrieSet2(i1, i2))
+    override def headAndTail: IntRefPair[IntTrieSet] = {
+        IntRefPair(i3, new IntTrieSet2(i1, i2))
     }
     override def head: Int = i1
     override def flatMap(f: Int ⇒ IntTrieSet): IntTrieSet = f(i1) ++ f(i2) ++ f(i3)
@@ -747,7 +747,7 @@ private[immutable] final class IntTrieSetN private[immutable] (
         def next(): Int = { val v = it.next(); advanceIterator(); v }
     }
 
-    override def getAndRemove: IntAnyRefPair[IntTrieSet] = {
+    override def headAndTail: IntRefPair[IntTrieSet] = {
         // try to reduce the tree size by removing an element from the
         // bigger subtree
         val left = this.left
@@ -757,22 +757,22 @@ private[immutable] final class IntTrieSetN private[immutable] (
         if (leftSize > rightSize) {
             // => left has at least one element
             if (leftSize == 1) { // => right is empty!
-                IntAnyRefPair(left.head, EmptyIntTrieSet)
+                IntRefPair(left.head, EmptyIntTrieSet)
             } else {
-                val IntAnyRefPair(v, newLeft) = left.getAndRemove
+                val IntRefPair(v, newLeft) = left.headAndTail
                 val theNewLeft = if (leftSize == 2) newLeft.constringe() else newLeft
-                IntAnyRefPair(v, IntTrieSetN(theNewLeft, right, leftSize - 1 + rightSize))
+                IntRefPair(v, IntTrieSetN(theNewLeft, right, leftSize - 1 + rightSize))
             }
         } else {
             // ...leftSize <= right.size
             assert(right.nonEmpty)
             if (right.isSingletonSet) {
                 // left.size \in {0,1}
-                IntAnyRefPair(right.head, left.constringe())
+                IntRefPair(right.head, left.constringe())
             } else {
-                val IntAnyRefPair(v, newRight) = right.getAndRemove
+                val IntRefPair(v, newRight) = right.headAndTail
                 val theNewRight = if (rightSize == 2) newRight.constringe() else newRight
-                IntAnyRefPair(v, IntTrieSetN(left, theNewRight, size - 1))
+                IntRefPair(v, IntTrieSetN(left, theNewRight, size - 1))
             }
         }
     }
@@ -918,17 +918,17 @@ private[immutable] final class IntTrieSetNJustRight private[immutable] (
 
     def iterator: IntIterator = right.iterator
 
-    override def getAndRemove: IntAnyRefPair[IntTrieSet] = {
+    override def headAndTail: IntRefPair[IntTrieSet] = {
         // try to reduce the tree size by removing an element from the
         // bigger subtree
         val right = this.right
         val rightSize = right.size
         if (right.isSingletonSet) {
-            IntAnyRefPair(right.head, EmptyIntTrieSet)
+            IntRefPair(right.head, EmptyIntTrieSet)
         } else {
-            val IntAnyRefPair(v, newRight) = right.getAndRemove
+            val IntRefPair(v, newRight) = right.headAndTail
             val theNewRight = if (rightSize == 2) newRight.constringe() else newRight
-            IntAnyRefPair(v, new IntTrieSetNJustRight(theNewRight))
+            IntRefPair(v, new IntTrieSetNJustRight(theNewRight))
         }
 
     }
@@ -1045,17 +1045,17 @@ private[immutable] final class IntTrieSetNJustLeft private[immutable] (
 
     def iterator: IntIterator = left.iterator
 
-    override def getAndRemove: IntAnyRefPair[IntTrieSet] = {
+    override def headAndTail: IntRefPair[IntTrieSet] = {
         // try to reduce the tree size by removing an element from the
         // bigger subtree
         val left = this.left
         val leftSize = left.size
         if (leftSize == 1) { // => right is empty!
-            IntAnyRefPair(left.head, EmptyIntTrieSet)
+            IntRefPair(left.head, EmptyIntTrieSet)
         } else {
-            val IntAnyRefPair(v, newLeft) = left.getAndRemove
+            val IntRefPair(v, newLeft) = left.headAndTail
             val theNewLeft = if (leftSize == 2) newLeft.constringe() else newLeft
-            IntAnyRefPair(v, new IntTrieSetNJustLeft(theNewLeft))
+            IntRefPair(v, new IntTrieSetNJustLeft(theNewLeft))
         }
 
     }

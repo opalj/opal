@@ -5,7 +5,7 @@ package graphs
 import org.opalj.collection.immutable.Chain
 import org.opalj.collection.immutable.IntArraySet
 import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.collection.immutable.IntAnyRefPair
+import org.opalj.collection.immutable.IntRefPair
 import org.opalj.collection.mutable.FixedSizeBitSet
 import org.opalj.collection.mutable.IntArrayStack
 
@@ -37,7 +37,7 @@ final class DominanceFrontiers private (
         var transitiveDF = IntTrieSet.empty ++ this.df(n).iterator
         var nodesToVisit = transitiveDF - n
         while (nodesToVisit.nonEmpty) {
-            val IntAnyRefPair(nextN, newNodesToVisit) = nodesToVisit.getAndRemove
+            val IntRefPair(nextN, newNodesToVisit) = nodesToVisit.headAndTail
             nodesToVisit = newNodesToVisit
             val nextDF = this.df(nextN)
             transitiveDF ++= nextDF.iterator

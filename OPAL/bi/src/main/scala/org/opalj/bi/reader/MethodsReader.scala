@@ -5,8 +5,8 @@ package reader
 
 import java.io.DataInputStream
 
-import org.opalj.control.fillAnyRefArray
-import org.opalj.collection.immutable.AnyRefArray
+import org.opalj.control.fillRefArray
+import org.opalj.collection.immutable.RefArray
 
 /**
  * Defines a template method to read in a class file's Method_info structure.
@@ -18,7 +18,7 @@ trait MethodsReader extends Constant_PoolAbstractions {
     //
 
     type Method_Info <: AnyRef
-    type Methods = AnyRefArray[Method_Info]
+    type Methods = RefArray[Method_Info]
 
     type Attributes
 
@@ -42,7 +42,7 @@ trait MethodsReader extends Constant_PoolAbstractions {
 
     def Methods(cp: Constant_Pool, in: DataInputStream): Methods = {
         val methods_count = in.readUnsignedShort
-        fillAnyRefArray(methods_count) {
+        fillRefArray(methods_count) {
             Method_Info(cp, in)
         }
     }

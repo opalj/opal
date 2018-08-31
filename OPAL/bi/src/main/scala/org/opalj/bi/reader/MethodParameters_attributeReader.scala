@@ -5,8 +5,8 @@ package reader
 
 import java.io.DataInputStream
 
-import org.opalj.collection.immutable.AnyRefArray
-import org.opalj.control.fillAnyRefArray
+import org.opalj.collection.immutable.RefArray
+import org.opalj.control.fillRefArray
 
 /**
  * A generic reader for Java 8's `MethodParameters` attribute.
@@ -20,7 +20,7 @@ trait MethodParameters_attributeReader extends AttributeReader {
     type MethodParameters_attribute >: Null <: Attribute
 
     type MethodParameter <: AnyRef
-    type MethodParameters = AnyRefArray[MethodParameter]
+    type MethodParameters = RefArray[MethodParameter]
 
     def MethodParameters_attribute(
         constant_pool:        Constant_Pool,
@@ -62,7 +62,7 @@ trait MethodParameters_attributeReader extends AttributeReader {
             MethodParameters_attribute(
                 cp,
                 attribute_name_index,
-                fillAnyRefArray(parameters_count) {
+                fillRefArray(parameters_count) {
                     MethodParameter(cp, in.readUnsignedShort, in.readUnsignedShort)
                 }
             )

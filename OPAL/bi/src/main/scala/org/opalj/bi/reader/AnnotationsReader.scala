@@ -5,8 +5,8 @@ package reader
 
 import java.io.DataInputStream
 
-import org.opalj.collection.immutable.AnyRefArray
-import org.opalj.control.fillAnyRefArray
+import org.opalj.collection.immutable.RefArray
+import org.opalj.control.fillRefArray
 
 /**
  * Generic parser to parse a list of annotations. This reader is intended to be used in
@@ -24,7 +24,7 @@ trait AnnotationsReader extends AnnotationsAbstractions {
     // IMPLEMENTATION
     //
 
-    type Annotations = AnyRefArray[Annotation]
+    type Annotations = RefArray[Annotation]
 
     /**
      * Reads the annotations of a annotations attributes.
@@ -41,7 +41,7 @@ trait AnnotationsReader extends AnnotationsAbstractions {
      * </pre>
      */
     def Annotations(cp: Constant_Pool, in: DataInputStream): Annotations = {
-        fillAnyRefArray(in.readUnsignedShort) {
+        fillRefArray(in.readUnsignedShort) {
             Annotation(cp, in)
         }
     }

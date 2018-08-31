@@ -215,11 +215,11 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
         its.toChain.toIterator.toList.sorted == s.iterator.toList.sorted
     }
 
-    property("getAndRemove") = forAll { s: IntArraySet ⇒
+    property("headAndTail") = forAll { s: IntArraySet ⇒
         var its = EmptyIntTrieSet ++ s.iterator
         var removed = Chain.empty[Int]
         while (its.nonEmpty) {
-            val IntAnyRefPair(v, newIts) = its.getAndRemove
+            val IntRefPair(v, newIts) = its.headAndTail
             removed :&:= v
             its = newIts
         }

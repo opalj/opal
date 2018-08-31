@@ -17,12 +17,12 @@ import scala.collection.generic
  * @param size0 The number of stored values.
  * @author Michael Eichberg
  */
-final class AnyRefArrayStack[N >: Null <: AnyRef] private (
+final class RefArrayStack[N >: Null <: AnyRef] private (
         private var data:  Array[AnyRef],
         private var size0: Int
 ) extends mutable.IndexedSeq[N]
-    with mutable.IndexedSeqLike[N, AnyRefArrayStack[N]]
-    with mutable.Cloneable[AnyRefArrayStack[N]]
+    with mutable.IndexedSeqLike[N, RefArrayStack[N]]
+    with mutable.Cloneable[RefArrayStack[N]]
     with Serializable { stack ⇒
 
     def this(initialSize: Int = 4) { this(new Array[AnyRef](initialSize), 0) }
@@ -56,7 +56,7 @@ final class AnyRefArrayStack[N >: Null <: AnyRef] private (
 
     override def update(index: Int, v: N): Unit = data(size0 - 1 - index) = v
 
-    override def newBuilder: mutable.Builder[N, AnyRefArrayStack[N]] = AnyRefArrayStack.newBuilder[N]
+    override def newBuilder: mutable.Builder[N, RefArrayStack[N]] = RefArrayStack.newBuilder[N]
 
     /** The same as push but additionally returns `this`. */
     final def +=(i: N): this.type = {
@@ -91,7 +91,7 @@ final class AnyRefArrayStack[N >: Null <: AnyRef] private (
      *
      * @note In case of `++` the order of the values is reversed.
      */
-    def push(that: AnyRefArrayStack[N]): Unit = {
+    def push(that: RefArrayStack[N]): Unit = {
         val thatSize = that.size0
 
         if (thatSize == 0) {
@@ -183,7 +183,7 @@ final class AnyRefArrayStack[N >: Null <: AnyRef] private (
      * @note    The `next` method will throw an `IndexOutOfBoundsException`
      *          when all elements are already returned.
      */
-    override def iterator: AnyRefIterator[N] = new AnyRefIterator[N] {
+    override def iterator: RefIterator[N] = new RefIterator[N] {
         private[this] var currentIndex = stack.size0 - 1
         def hasNext: Boolean = currentIndex >= 0
 
@@ -195,26 +195,26 @@ final class AnyRefArrayStack[N >: Null <: AnyRef] private (
         }
     }
 
-    override def clone(): AnyRefArrayStack[N] = new AnyRefArrayStack(data.clone(), size0)
+    override def clone(): RefArrayStack[N] = new RefArrayStack(data.clone(), size0)
 
     override def toString: String = {
-        s"AnyRefArrayStack(/*size=$size0;*/data=${data.take(size0).mkString("[", ",", "→")})"
+        s"RefArrayStack(/*size=$size0;*/data=${data.take(size0).mkString("[", ",", "→")})"
     }
 }
 
 /**
- * Factory to create [[AnyRefArrayStack]]s.
+ * Factory to create [[RefArrayStack]]s.
  */
-object AnyRefArrayStack {
+object RefArrayStack {
 
-    implicit def canBuildFrom[N >: Null <: AnyRef]: generic.CanBuildFrom[AnyRefArrayStack[N], N, AnyRefArrayStack[N]] = {
-        new generic.CanBuildFrom[AnyRefArrayStack[N], N, AnyRefArrayStack[N]] {
-            def apply(): mutable.Builder[N, AnyRefArrayStack[N]] = newBuilder
-            def apply(from: AnyRefArrayStack[N]): mutable.Builder[N, AnyRefArrayStack[N]] = newBuilder
+    implicit def canBuildFrom[N >: Null <: AnyRef]: generic.CanBuildFrom[RefArrayStack[N], N, RefArrayStack[N]] = {
+        new generic.CanBuildFrom[RefArrayStack[N], N, RefArrayStack[N]] {
+            def apply(): mutable.Builder[N, RefArrayStack[N]] = newBuilder
+            def apply(from: RefArrayStack[N]): mutable.Builder[N, RefArrayStack[N]] = newBuilder
         }
     }
 
-    def newBuilder[N >: Null <: AnyRef]: mutable.Builder[N, AnyRefArrayStack[N]] = {
+    def newBuilder[N >: Null <: AnyRef]: mutable.Builder[N, RefArrayStack[N]] = {
         new mutable.ArrayBuffer[N] mapResult fromSeq
     }
 
@@ -222,10 +222,10 @@ object AnyRefArrayStack {
      * Creates a new stack based on a given sequence. The last value of the sequence will
      * be the top value of the stack.
      */
-    def fromSeq[N >: Null <: AnyRef](seq: TraversableOnce[N]): AnyRefArrayStack[N] = {
-        seq.foldLeft(new AnyRefArrayStack[N](8))(_ += _)
+    def fromSeq[N >: Null <: AnyRef](seq: TraversableOnce[N]): RefArrayStack[N] = {
+        seq.foldLeft(new RefArrayStack[N](8))(_ += _)
     }
 
-    def empty[N >: Null <: AnyRef]: AnyRefArrayStack[N] = new AnyRefArrayStack
+    def empty[N >: Null <: AnyRef]: RefArrayStack[N] = new RefArrayStack
 }
 

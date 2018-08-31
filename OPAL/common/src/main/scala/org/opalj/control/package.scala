@@ -4,7 +4,8 @@ package org.opalj
 import scala.language.experimental.macros
 import scala.annotation.tailrec
 import scala.reflect.macros.blackbox.Context
-import org.opalj.collection.immutable.AnyRefArray
+
+import org.opalj.collection.immutable.RefArray
 import org.opalj.collection.immutable.IntArray
 
 /**
@@ -71,11 +72,11 @@ package object control {
      *      times stored in an `IndexedSeq`. If `times` is zero an empty sequence is
      *      returned.
      */
-    def fillAnyRefArray[T <: AnyRef](
+    def fillRefArray[T <: AnyRef](
         times: Int
     )(
         f: ⇒ T
-    ): AnyRefArray[T] = macro ControlAbstractionsImplementation.fillAnyRefArray[T]
+    ): RefArray[T] = macro ControlAbstractionsImplementation.fillRefArray[T]
     // OLD IMPLEMENTATION USING HIGHER-ORDER FUNCTIONS
     // (DO NOT DELETE - TO DOCUMENT THE DESIGN DECISION FOR MACROS)
     //        def repeat[T](times: Int)(f: ⇒ T): IndexedSeq[T] = {
@@ -268,19 +269,19 @@ package control {
             }
         }
 
-        def fillAnyRefArray[T <: AnyRef: c.WeakTypeTag](
+        def fillRefArray[T <: AnyRef: c.WeakTypeTag](
             c: Context
         )(
             times: c.Expr[Int]
         )(
             f: c.Expr[T]
-        ): c.Expr[AnyRefArray[T]] = {
+        ): c.Expr[RefArray[T]] = {
             import c.universe._
 
             reify {
                 val size = times.splice // => times is evaluated only once
                 if (size == 0) {
-                    AnyRefArray.empty[T]
+                    RefArray.empty[T]
                 } else {
                     val array = new Array[AnyRef](size)
                     var i = 0
@@ -289,7 +290,7 @@ package control {
                         array(i) = value
                         i += 1
                     }
-                    AnyRefArray._UNSAFE_from[T](array)
+                    RefArray._UNSAFE_from[T](array)
                 }
             }
         }

@@ -66,7 +66,7 @@ abstract class LongIterator extends AbstractIterator[Long] { self ⇒
         def hasNext: Boolean = self.hasNext
         def next(): Int = f(self.next())
     }
-    override def map[X](m: Long ⇒ X): AnyRefIterator[X] = new AnyRefIterator[X] {
+    override def map[X](m: Long ⇒ X): RefIterator[X] = new RefIterator[X] {
         def hasNext: Boolean = self.hasNext
         def next: X = m(self.next())
     }

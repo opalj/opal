@@ -5,8 +5,8 @@ package reader
 
 import java.io.DataInputStream
 
-import org.opalj.control.fillAnyRefArray
-import org.opalj.collection.immutable.AnyRefArray
+import org.opalj.control.fillRefArray
+import org.opalj.collection.immutable.RefArray
 
 /**
  * Implementation of a template method to read in the StackMapTable attribute.
@@ -22,7 +22,7 @@ trait StackMapTable_attributeReader extends AttributeReader {
     type StackMapTable_attribute >: Null <: Attribute
 
     type StackMapFrame <: AnyRef
-    type StackMapFrames = AnyRefArray[StackMapFrame]
+    type StackMapFrames = RefArray[StackMapFrame]
 
     def StackMapFrame(cp: Constant_Pool, in: DataInputStream): StackMapFrame
 
@@ -55,7 +55,7 @@ trait StackMapTable_attributeReader extends AttributeReader {
         /*val attribute_length =*/ in.readInt()
         val number_of_entries = in.readUnsignedShort()
         if (number_of_entries > 0 || reifyEmptyAttributes) {
-            val frames = fillAnyRefArray(number_of_entries) { StackMapFrame(cp, in) }
+            val frames = fillRefArray(number_of_entries) { StackMapFrame(cp, in) }
             StackMapTable_attribute(cp, attribute_name_index, frames)
         } else {
             null

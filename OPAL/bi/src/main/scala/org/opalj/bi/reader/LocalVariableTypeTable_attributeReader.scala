@@ -5,8 +5,8 @@ package reader
 
 import java.io.DataInputStream
 
-import org.opalj.control.fillAnyRefArray
-import org.opalj.collection.immutable.AnyRefArray
+import org.opalj.control.fillRefArray
+import org.opalj.collection.immutable.RefArray
 
 /**
  * Generic parser for the local variable type table attribute.
@@ -20,7 +20,7 @@ trait LocalVariableTypeTable_attributeReader extends AttributeReader {
     type LocalVariableTypeTable_attribute >: Null <: Attribute
 
     type LocalVariableTypeTableEntry <: AnyRef
-    type LocalVariableTypes = AnyRefArray[LocalVariableTypeTableEntry]
+    type LocalVariableTypes = RefArray[LocalVariableTypeTableEntry]
 
     def LocalVariableTypeTable_attribute(
         constant_pool:             Constant_Pool,
@@ -69,7 +69,7 @@ trait LocalVariableTypeTable_attributeReader extends AttributeReader {
             LocalVariableTypeTable_attribute(
                 cp,
                 attribute_name_index,
-                fillAnyRefArray(entriesCount) {
+                fillRefArray(entriesCount) {
                     LocalVariableTypeTableEntry(
                         cp,
                         in.readUnsignedShort,

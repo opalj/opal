@@ -7,7 +7,7 @@ import java.util.{Arrays ⇒ JArrays}
 
 import scala.collection.mutable.WrappedArray
 
-import org.opalj.collection.AnyRefIterator
+import org.opalj.collection.RefIterator
 
 /**
  * An array based implementation of a mutable buffer. This implementation offers highly
@@ -22,7 +22,7 @@ import org.opalj.collection.AnyRefIterator
  * @param size0 The number of stored values.
  * @author Michael Eichberg
  */
-final class AnyRefArrayBuffer[N >: Null <: AnyRef] private (
+final class RefArrayBuffer[N >: Null <: AnyRef] private (
         private var data:  Array[N],
         private var size0: Int
 ) { buffer ⇒
@@ -57,6 +57,7 @@ final class AnyRefArrayBuffer[N >: Null <: AnyRef] private (
      * Returns a reference to the underlying mutable array if it is (by chance) completely
      * full; otherwise a new array which just contains the valid entries is returned.
      */
+    // IMPROVE Design an annotation|analysis that ensures that the buffer is no longer used afterwards!
     def _UNSAFE_toArray: Array[N] = {
         if (size0 == data.length)
             data
@@ -75,9 +76,11 @@ final class AnyRefArrayBuffer[N >: Null <: AnyRef] private (
      *
      * @param from the index of the first item (inclusive)
      * @param until the index of the last item (exclusive)
-     * @return The slice, truncated or padded with null values if necessary.
      */
     def slice(from: Int, until: Int = size0): IndexedSeq[N] = {
+        if (until > size0)
+            throw new IndexOutOfBoundsException(s"$until > $size0(size of buffer)")
+
         new WrappedArray.ofRef(java.util.Arrays.copyOfRange(data, from, until))
     }
 
@@ -91,7 +94,7 @@ final class AnyRefArrayBuffer[N >: Null <: AnyRef] private (
         this
     }
 
-    def ++=(other: AnyRefArrayBuffer[N]): this.type = {
+    def ++=(other: RefArrayBuffer[N]): this.type = {
         if (data.length - size0 >= other.data.length) {
             System.arraycopy(other.data, 0, this.data, size0, other.data.length)
         } else {
@@ -138,14 +141,14 @@ final class AnyRefArrayBuffer[N >: Null <: AnyRef] private (
         if (this.size0 == 0)
             throw new NoSuchElementException("the buffer is empty");
 
-        this.data(0).asInstanceOf[N]
+        this.data(0)
     }
 
     def last: N = {
         if (this.size0 == 0)
             throw new NoSuchElementException("the buffer is empty");
 
-        this.data(size0 - 1).asInstanceOf[N]
+        this.data(size0 - 1)
     }
 
     def foreach[U](f: N ⇒ U): Unit = {
@@ -153,7 +156,7 @@ final class AnyRefArrayBuffer[N >: Null <: AnyRef] private (
         val size = this.size0
         var i = 0
         while (i < size) {
-            f(data(i).asInstanceOf[N])
+            f(data(i))
             i += 1
         }
     }
@@ -165,12 +168,12 @@ final class AnyRefArrayBuffer[N >: Null <: AnyRef] private (
      *
      * @param startIndex index of the first element that will be returned (inclusive)
      */
-    def iteratorFrom(startIndex: Int): Iterator[N] = new AnyRefIterator[N] {
-        private[this] var currentIndex = startIndex
-        override def hasNext: Boolean = currentIndex < size0
+    def iteratorFrom(startIndex: Int): RefIterator[N] = new RefIterator[N] {
+        private[this] var index = startIndex
+        override def hasNext: Boolean = index < size0
         override def next(): N = {
-            val r = data(currentIndex)
-            currentIndex += 1
+            val r = data(index)
+            index += 1
             r.asInstanceOf[N]
         }
     }
@@ -185,31 +188,31 @@ final class AnyRefArrayBuffer[N >: Null <: AnyRef] private (
      * @param from index of the first element that will be returned (inclusive)
      * @param until index of the last element (exclusive)
      */
-    def iterator(from: Int = 0, until: Int = buffer.size0): AnyRefIterator[N] = {
+    def iterator(from: Int = 0, until: Int = buffer.size0): RefIterator[N] = {
         val lastIndex = Math.min(until, buffer.size0)
-        new AnyRefIterator[N] {
-            private[this] var currentIndex = from
-            def hasNext: Boolean = currentIndex < lastIndex
+        new RefIterator[N] {
+            private[this] var index = from
+            def hasNext: Boolean = index < lastIndex
             def next(): N = {
-                val currentIndex = this.currentIndex
+                val currentIndex = this.index
                 val r = buffer.data(currentIndex)
-                this.currentIndex = currentIndex + 1
+                this.index = currentIndex + 1
                 r.asInstanceOf[N]
             }
         }
     }
 
     override def toString: String = {
-        s"AnyRefArrayBuffer(size=$size0; data=${data.take(size0).mkString("[", ",", "]")})"
+        s"RefArrayBuffer(size=$size0; data=${data.take(size0).mkString("[", ",", "]")})"
     }
 }
 
-object AnyRefArrayBuffer {
+object RefArrayBuffer {
 
-    def empty[N >: Null <: AnyRef: ClassTag]: AnyRefArrayBuffer[N] = withInitialSize[N](4)
+    def empty[N >: Null <: AnyRef: ClassTag]: RefArrayBuffer[N] = withInitialSize[N](4)
 
-    def withInitialSize[N >: Null <: AnyRef: ClassTag](initialSize: Int): AnyRefArrayBuffer[N] = {
-        new AnyRefArrayBuffer[N](new Array[N](initialSize), 0)
+    def withInitialSize[N >: Null <: AnyRef: ClassTag](initialSize: Int): RefArrayBuffer[N] = {
+        new RefArrayBuffer[N](new Array[N](initialSize), 0)
     }
 
 }

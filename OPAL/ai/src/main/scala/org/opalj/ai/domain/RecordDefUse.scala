@@ -83,7 +83,6 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode with Th
 
     @inline final def ValueOrigins(vo: Int): ValueOrigins = IntTrieSet1(vo)
 
-
     // Stores the information where the value defined by an instruction is
     // used. The used array basically mirrors the instructions array, but has additional
     // space for storing the information about the usage of the parameters. The size
@@ -174,10 +173,10 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode with Th
     }
 
     /**
-      * Returns the instructions which use the value or the external exception identified by
-      * the given value origin. Basically, the same as `usedBy` except that an empty set of
-      * value origins is returned if the instruction with the given value origin is dead.
-      */
+     * Returns the instructions which use the value or the external exception identified by
+     * the given value origin. Basically, the same as `usedBy` except that an empty set of
+     * value origins is returned if the instruction with the given value origin is dead.
+     */
     def safeUsedBy(valueOrigin: ValueOrigin): ValueOrigins = {
         val usedBy = this.usedBy(valueOrigin)
         if (usedBy eq null)
@@ -187,9 +186,9 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode with Th
     }
 
     /**
-      * Returns the instructions which use the (external) exception raised by the instruction
-      * with the given ValueOrigin.
-      */
+     * Returns the instructions which use the (external) exception raised by the instruction
+     * with the given ValueOrigin.
+     */
     def safeExternalExceptionsUsedBy(pc: Int): ValueOrigins = {
         // There is no offset to subtract over here, because external exceptions are never parameters!
         val usedBy = usedExternalExceptions(pc)
@@ -234,7 +233,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode with Th
         unused
     }
 
-    private[this] def updateUsageInformation(usedValues: ValueOrigins,useSite: /*PC*/ Int): Unit = {
+    private[this] def updateUsageInformation(usedValues: ValueOrigins, useSite: /*PC*/ Int): Unit = {
         usedValues foreach { usedValue ⇒
             if (ai.isImplicitOrExternalException(usedValue)) {
                 // we have a usage of an implicit exception or a method external exception
@@ -267,7 +266,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode with Th
         cfJoins:       IntTrieSet,
         subroutinePCs: IntArraySet
     ): Boolean = {
-        if (cfJoins.contains(successorPC) && defLocals(successorPC) != null /*non-dead*/) {
+        if (cfJoins.contains(successorPC) && defLocals(successorPC) != null /*non-dead*/ ) {
             var forceScheduling = false
             // we now also have to perform a join...
             @tailrec def joinDefOps(

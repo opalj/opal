@@ -5,8 +5,8 @@ package reader
 
 import java.io.DataInputStream
 
-import org.opalj.collection.immutable.AnyRefArray
-import org.opalj.control.fillAnyRefArray
+import org.opalj.collection.immutable.RefArray
+import org.opalj.control.fillRefArray
 
 /**
  * Generic parser for type annotations. This reader is intended to be used in conjunction with the
@@ -21,7 +21,7 @@ trait TypeAnnotationsReader extends AnnotationsAbstractions {
     //
 
     type TypeAnnotation <: AnyRef
-    type TypeAnnotations = AnyRefArray[TypeAnnotation]
+    type TypeAnnotations = RefArray[TypeAnnotation]
 
     type TypeAnnotationTarget <: AnyRef
 
@@ -71,7 +71,7 @@ trait TypeAnnotationsReader extends AnnotationsAbstractions {
      * </pre>
      */
     def TypeAnnotations(cp: Constant_Pool, in: DataInputStream): TypeAnnotations = {
-        fillAnyRefArray(in.readUnsignedShort) {
+        fillRefArray(in.readUnsignedShort) {
             TypeAnnotation(cp, in)
         }
     }

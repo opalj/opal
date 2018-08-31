@@ -5,8 +5,8 @@ package reader
 
 import java.io.DataInputStream
 
-import org.opalj.collection.immutable.AnyRefArray
-import org.opalj.control.fillAnyRefArray
+import org.opalj.collection.immutable.RefArray
+import org.opalj.control.fillRefArray
 
 /**
  * Template method to read the (Java 7) ''BootstrapMethods'' attribute.
@@ -25,10 +25,10 @@ trait BootstrapMethods_attributeReader extends AttributeReader {
     type BootstrapMethods_attribute >: Null <: Attribute
 
     type BootstrapMethod <: AnyRef
-    type BootstrapMethods = AnyRefArray[BootstrapMethod]
+    type BootstrapMethods = RefArray[BootstrapMethod]
 
     type BootstrapArgument <: AnyRef
-    type BootstrapArguments = AnyRefArray[BootstrapArgument]
+    type BootstrapArguments = RefArray[BootstrapArgument]
 
     def BootstrapMethods_attribute(
         constant_pool:        Constant_Pool,
@@ -59,7 +59,7 @@ trait BootstrapMethods_attributeReader extends AttributeReader {
         BootstrapMethod(
             cp,
             in.readUnsignedShort,
-            fillAnyRefArray(in.readUnsignedShort) {
+            fillRefArray(in.readUnsignedShort) {
                 BootstrapArgument(cp, in)
             }
         )
@@ -90,7 +90,7 @@ trait BootstrapMethods_attributeReader extends AttributeReader {
             BootstrapMethods_attribute(
                 cp,
                 attribute_name_index,
-                fillAnyRefArray(num_bootstrap_methods) { BootstrapMethod(cp, in) }
+                fillRefArray(num_bootstrap_methods) { BootstrapMethod(cp, in) }
             )
         } else {
             null

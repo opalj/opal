@@ -24,8 +24,8 @@ private[immutable] class UIDArrayLinearProbingSet[+T <: UID] private[immutable] 
         private[this] val data: Array[UID]
 ) extends UIDLinearProbingSet[T] {
 
-    def iterator: AnyRefIterator[T] = {
-        AnyRefIterator.fromNonNullValues[UID](data).asInstanceOf[AnyRefIterator[T]]
+    def iterator: RefIterator[T] = {
+        RefIterator.fromNonNullValues[UID](data).asInstanceOf[RefIterator[T]]
     }
 
     def contains(t: UID): Boolean = containsId(t.id)

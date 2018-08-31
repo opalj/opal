@@ -358,7 +358,7 @@ object UIDSetProperties extends Properties("UIDSet") {
         classify(newA.size == 0, "new A is now empty") {
             classify(newA.size < a.size, "new A is smaller than a") {
                 newAUS.size == newA.size &&
-                    newAUS.iterator.map(_.id).toSet == newA
+                    newAUS.iterator.map[Int](_.id).toSet == newA
             }
         }
     }

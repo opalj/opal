@@ -7,27 +7,27 @@ import org.scalatest.junit.JUnitRunner
 import org.junit.runner.RunWith
 
 /**
- * Tests the AnyRefArrayBuffer
+ * Tests the RefArrayBuffer
  *
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class AnyRefArrayBufferTest extends FlatSpec with Matchers {
+class RefArrayBufferTest extends FlatSpec with Matchers {
 
-    behavior of "the AnyRefArrayBuffer data structure"
+    behavior of "the RefArrayBuffer data structure"
 
     it should "be empty if it is newly created" in {
-        val l1 = AnyRefArrayBuffer.withInitialSize[String](16)
+        val l1 = RefArrayBuffer.withInitialSize[String](16)
         l1 should be('empty)
         l1.nonEmpty should be(false)
 
-        val l2 = AnyRefArrayBuffer.empty[String]
+        val l2 = RefArrayBuffer.empty[String]
         l2 should be('empty)
         l2.nonEmpty should be(false)
     }
 
     it should "be possible to add values" in {
-        val l = AnyRefArrayBuffer.empty[String]
+        val l = RefArrayBuffer.empty[String]
         l ++= List("s")
         l ++= Iterator("d", "c")
         l should be('nonEmpty)
@@ -39,7 +39,7 @@ class AnyRefArrayBufferTest extends FlatSpec with Matchers {
     }
 
     it should "be possible to add null" in {
-        val l = AnyRefArrayBuffer.empty[String]
+        val l = RefArrayBuffer.empty[String]
         l += null
         l ++= Iterator("d")
         l += null
@@ -54,7 +54,7 @@ class AnyRefArrayBufferTest extends FlatSpec with Matchers {
     }
 
     it should "be possible to add arrays" in {
-        val l = AnyRefArrayBuffer.empty[String]
+        val l = RefArrayBuffer.empty[String]
         l ++= Array(null, "a")
         l ++= Array(null, "b")
 

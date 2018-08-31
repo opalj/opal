@@ -42,7 +42,7 @@ final class ConstArray[T <: AnyRef] private (
         }
     }
 
-    override def iterator: AnyRefIterator[T] = new AnyRefIterator[T] {
+    override def iterator: RefIterator[T] = new RefIterator[T] {
         private[this] var i = 0
         override def hasNext: Boolean = i < data.length
         override def next(): T = {

@@ -38,7 +38,7 @@ import org.opalj.io.process
 import org.opalj.concurrent.OPALExecutionContextTaskSupport
 import org.opalj.concurrent.NumberOfThreadsForIOBoundTasks
 import org.opalj.bytecode.BytecodeProcessingFailedException
-import org.opalj.collection.immutable.AnyRefArray
+import org.opalj.collection.immutable.RefArray
 
 /**
  * Implements the template method to read in a Java class file. Additionally,
@@ -175,7 +175,7 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
         error("class file reader", s"processing $source failed", t)
     }
 
-    private[this] var classFilePostProcessors = AnyRefArray.empty[List[ClassFile] ⇒ List[ClassFile]]
+    private[this] var classFilePostProcessors = RefArray.empty[List[ClassFile] ⇒ List[ClassFile]]
 
     /**
      * Register a class file post processor. A class file post processor
@@ -269,12 +269,9 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
         classFile = applyDeferredActions(cp, classFile)
 
         // Perform general transformations on class files.
-        var classFiles = List(classFile)
-        classFilePostProcessors foreach { postProcessor ⇒
-            classFiles = postProcessor(classFiles)
+        classFilePostProcessors.foldLeft(List(classFile)) { (classFiles, postProcessor) ⇒
+            postProcessor(classFiles)
         }
-
-        classFiles
     }
 
     //

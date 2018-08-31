@@ -5,8 +5,8 @@ package reader
 
 import java.io.DataInputStream
 
-import org.opalj.control.fillAnyRefArray
-import org.opalj.collection.immutable.AnyRefArray
+import org.opalj.control.fillRefArray
+import org.opalj.collection.immutable.RefArray
 
 /**
  * Generic parser for an annotation's element-value pairs.
@@ -18,10 +18,10 @@ trait ElementValuePairsReader extends AnnotationsAbstractions {
     //
 
     type ElementValue <: AnyRef
-    type ElementValues = AnyRefArray[ElementValue]
+    type ElementValues = RefArray[ElementValue]
 
     type ElementValuePair <: AnyRef
-    type ElementValuePairs = AnyRefArray[ElementValuePair]
+    type ElementValuePairs = RefArray[ElementValuePair]
 
     def ElementValuePair(
         constant_pool:      Constant_Pool,
@@ -100,7 +100,7 @@ trait ElementValuePairsReader extends AnnotationsAbstractions {
     //
 
     def ElementValuePairs(cp: Constant_Pool, in: DataInputStream): ElementValuePairs = {
-        fillAnyRefArray(in.readUnsignedShort) {
+        fillRefArray(in.readUnsignedShort) {
             ElementValuePair(cp, in)
         }
     }
@@ -151,7 +151,7 @@ trait ElementValuePairsReader extends AnnotationsAbstractions {
             case 'e' ⇒ EnumValue(cp, in.readUnsignedShort, in.readUnsignedShort)
             case 'c' ⇒ ClassValue(cp, in.readUnsignedShort)
             case '@' ⇒ AnnotationValue(cp, Annotation(cp, in))
-            case '[' ⇒ ArrayValue(cp, fillAnyRefArray(in.readUnsignedShort)(ElementValue(cp, in)))
+            case '[' ⇒ ArrayValue(cp, fillRefArray(in.readUnsignedShort)(ElementValue(cp, in)))
         }
     }
 }

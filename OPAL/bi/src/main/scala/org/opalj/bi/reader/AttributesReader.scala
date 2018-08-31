@@ -5,8 +5,8 @@ package reader
 
 import java.io.DataInputStream
 
-import org.opalj.collection.immutable.AnyRefArray
-import org.opalj.control.fillAnyRefArray
+import org.opalj.collection.immutable.RefArray
+import org.opalj.control.fillRefArray
 
 /**
  * Trait that implements a template method to read in the attributes of
@@ -101,7 +101,7 @@ trait AttributesReader
         attributeReaders += reader
     }
 
-    private[this] var attributesPostProcessors = AnyRefArray.empty[Attributes ⇒ Attributes]
+    private[this] var attributesPostProcessors = RefArray.empty[Attributes ⇒ Attributes]
 
     /**
      * Registers a new processor for the list of all attributes of a given class file
@@ -116,9 +116,9 @@ trait AttributesReader
     }
 
     def Attributes(ap: AttributeParent, cp: Constant_Pool, in: DataInputStream): Attributes = {
-        // IMPROVE Consider defining a macro fillAnyRefArrayWithNonNullValues to make the creation cheaper
+        // IMPROVE Consider defining a macro fillRefArrayWithNonNullValues to make the creation cheaper
         val attributes: Attributes =
-            fillAnyRefArray(in.readUnsignedShort) {
+            fillRefArray(in.readUnsignedShort) {
                 Attribute(ap, cp, in)
             }.filterNonNull // lets remove the attributes we don't need or understand
 

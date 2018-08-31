@@ -5,9 +5,9 @@ package reader
 
 import java.io.DataInputStream
 
-import org.opalj.control.fillAnyRefArray
+import org.opalj.control.fillRefArray
 import org.opalj.control.fillArrayOfInt
-import org.opalj.collection.immutable.AnyRefArray
+import org.opalj.collection.immutable.RefArray
 
 /**
  * Generic parser for the ''Module'' attribute (Java 9).
@@ -21,17 +21,17 @@ trait Module_attributeReader extends AttributeReader {
     type Module_attribute <: Attribute
 
     type RequiresEntry <: AnyRef
-    type Requires = AnyRefArray[RequiresEntry]
+    type Requires = RefArray[RequiresEntry]
 
     type ExportsEntry <: AnyRef
-    type Exports = AnyRefArray[ExportsEntry]
+    type Exports = RefArray[ExportsEntry]
 
     // CONCEPTUALLY:
     // type ExportsToIndexEntry => type ExportsToIndexTable = <X>Array[ExportsToIndexEntry]
     type ExportsToIndexTable = Array[Constant_Pool_Index] // CONSTANT_Module_Index[]
 
     type OpensEntry <: AnyRef
-    type Opens = AnyRefArray[OpensEntry]
+    type Opens = RefArray[OpensEntry]
 
     // CONCEPTUALLY:
     // type OpensToIndexEntry => type OpensToIndexTable = <X>Array[OpensToIndexEntry]
@@ -46,7 +46,7 @@ trait Module_attributeReader extends AttributeReader {
     type ProvidesWithIndexTable = Array[Constant_Pool_Index] // CONSTANT_Class_Index[]
 
     type ProvidesEntry <: AnyRef
-    type Provides = AnyRefArray[ProvidesEntry]
+    type Provides = RefArray[ProvidesEntry]
 
     //
     // IMPLEMENTATION
@@ -159,7 +159,7 @@ trait Module_attributeReader extends AttributeReader {
 
         val requiresCount = in.readUnsignedShort()
         val requires =
-            fillAnyRefArray(requiresCount) {
+            fillRefArray(requiresCount) {
                 RequiresEntry(
                     cp,
                     in.readUnsignedShort(),
@@ -170,7 +170,7 @@ trait Module_attributeReader extends AttributeReader {
 
         val exportsCount = in.readUnsignedShort()
         val exports =
-            fillAnyRefArray(exportsCount) {
+            fillRefArray(exportsCount) {
                 ExportsEntry(
                     cp,
                     in.readUnsignedShort(),
@@ -184,7 +184,7 @@ trait Module_attributeReader extends AttributeReader {
 
         val opensCount = in.readUnsignedShort()
         val opens =
-            fillAnyRefArray(opensCount) {
+            fillRefArray(opensCount) {
                 OpensEntry(
                     cp,
                     in.readUnsignedShort(),
@@ -201,7 +201,7 @@ trait Module_attributeReader extends AttributeReader {
 
         val providesCount = in.readUnsignedShort()
         val provides =
-            fillAnyRefArray(providesCount) {
+            fillRefArray(providesCount) {
                 ProvidesEntry(
                     cp,
                     in.readUnsignedShort(),

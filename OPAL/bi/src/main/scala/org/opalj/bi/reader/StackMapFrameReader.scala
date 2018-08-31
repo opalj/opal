@@ -5,8 +5,8 @@ package reader
 
 import java.io.DataInputStream
 
-import org.opalj.control.fillAnyRefArray
-import org.opalj.collection.immutable.AnyRefArray
+import org.opalj.control.fillRefArray
+import org.opalj.collection.immutable.RefArray
 
 trait StackMapFrameReader extends Constant_PoolAbstractions {
 
@@ -17,8 +17,8 @@ trait StackMapFrameReader extends Constant_PoolAbstractions {
     type StackMapFrame <: AnyRef
 
     type VerificationTypeInfo <: AnyRef
-    type VerificationTypeInfoLocals = AnyRefArray[VerificationTypeInfo]
-    type VerificationTypeInfoStack = AnyRefArray[VerificationTypeInfo]
+    type VerificationTypeInfoLocals = RefArray[VerificationTypeInfo]
+    type VerificationTypeInfoStack = RefArray[VerificationTypeInfo]
 
     def VerificationTypeInfo(cp: Constant_Pool, in: DataInputStream): VerificationTypeInfo
 
@@ -79,16 +79,16 @@ trait StackMapFrameReader extends Constant_PoolAbstractions {
             AppendFrame(
                 frame_type,
                 in.readUnsignedShort,
-                fillAnyRefArray(frame_type - 251 /*#entries*/ ) { VerificationTypeInfo(cp, in) }
+                fillRefArray(frame_type - 251 /*#entries*/ ) { VerificationTypeInfo(cp, in) }
             )
         } else {
             FullFrame(
                 255,
                 in.readUnsignedShort,
-                fillAnyRefArray(in.readUnsignedShort /*#entries*/ ) {
+                fillRefArray(in.readUnsignedShort /*#entries*/ ) {
                     VerificationTypeInfo(cp, in) // ...locals
                 },
-                fillAnyRefArray(in.readUnsignedShort /*#entries*/ ) {
+                fillRefArray(in.readUnsignedShort /*#entries*/ ) {
                     VerificationTypeInfo(cp, in) // ...stack items
                 }
             )
