@@ -4,10 +4,11 @@ package br
 
 import org.scalatest.FunSuite
 import org.scalatest.Matchers
-import scala.util.control.ControlThrowable
 
+import scala.util.control.ControlThrowable
 import org.opalj.collection.immutable.Naught
 import org.opalj.bi.TestResources.locateTestResources
+import org.opalj.collection.immutable.RefArray
 
 /**
  * @author Michael Eichberg
@@ -33,7 +34,7 @@ class ClassFileTest extends FunSuite with Matchers {
             immutableList.findMethod(
                 "<init>",
                 MethodDescriptor(
-                    IndexedSeq(ObjectType.Object, ObjectType("code/ImmutableList")), VoidType
+                    RefArray(ObjectType.Object, ObjectType("code/ImmutableList")), VoidType
                 )
             ).isDefined
         )
@@ -46,7 +47,7 @@ class ClassFileTest extends FunSuite with Matchers {
     test("test that it can find all other methods") {
         assert(
             immutableList.findMethod(
-                "getNext", MethodDescriptor(IndexedSeq(), ObjectType("code/ImmutableList"))
+                "getNext", MethodDescriptor(NoFieldTypes, ObjectType("code/ImmutableList"))
             ).isDefined
         )
 
@@ -58,17 +59,17 @@ class ClassFileTest extends FunSuite with Matchers {
 
         assert(
             immutableList.findMethod(
-                "getIterator", MethodDescriptor(IndexedSeq(), ObjectType("java/util/Iterator"))
+                "getIterator", MethodDescriptor(NoFieldTypes, ObjectType("java/util/Iterator"))
             ).isDefined
         )
 
         assert(
             immutableList.findMethod(
-                "get", MethodDescriptor(IndexedSeq(), ObjectType.Object)
+                "get", MethodDescriptor(NoFieldTypes, ObjectType.Object)
             ).isDefined
         )
 
-        assert(immutableList.instanceMethods.size.toInt == 4)
+        assert(immutableList.instanceMethods.size == 4)
     }
 
     test("that findField on a class without fields does not fail") {

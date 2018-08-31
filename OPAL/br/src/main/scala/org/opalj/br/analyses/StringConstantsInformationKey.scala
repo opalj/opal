@@ -66,7 +66,7 @@ object StringConstantsInformationKey
         var result: Map[String, ConstArray[PCInMethod]] = Map.empty
         map.asScala foreach { kv ⇒
             val (name, locations) = kv
-            result += ((name, ConstArray.from(locations.asScala.toArray)))
+            result += ((name, ConstArray._UNSAFE_from(locations.asScala.toArray)))
         }
         result
     }

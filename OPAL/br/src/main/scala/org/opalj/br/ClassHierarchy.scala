@@ -5,7 +5,6 @@ package br
 import scala.annotation.tailrec
 import java.io.InputStream
 import java.util.concurrent.locks.ReentrantReadWriteLock
-import java.util.function.IntFunction
 
 import it.unimi.dsi.fastutil.ints.Int2IntArrayMap
 
@@ -3064,7 +3063,7 @@ object ClassHierarchy {
                         // 1. Do we have a cycle in the extracted type information ?
                         {
                             val ns = knownTypesMap.length
-                            val es: IntFunction[IntIterator] = (oid: Int) ⇒ {
+                            val es: Int ⇒ IntIterator = (oid: Int) ⇒ {
                                 if (knownTypesMap(oid) ne null) {
                                     val it =
                                         subinterfaceTypesMap(oid).map(_.id).iterator ++

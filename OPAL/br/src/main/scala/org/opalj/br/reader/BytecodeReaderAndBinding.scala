@@ -5,9 +5,11 @@ package reader
 
 import scala.annotation.switch
 
-import org.opalj.control.repeat
+import org.opalj.control.fillRefArray
+import org.opalj.control.fillIntArray
 import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.br.instructions._
+import org.opalj.collection.immutable.IntIntPair
 
 /**
  * Defines a method to parse an array of bytes (containing Java bytecode instructions) and
@@ -34,13 +36,14 @@ trait BytecodeReaderAndBinding extends InstructionsDeserializer {
 
         var wide: Boolean = false
 
-        def lvIndex(): Int =
+        def lvIndex(): Int = {
             if (wide) {
                 wide = false
                 in.readUnsignedShort
             } else {
                 in.readUnsignedByte
             }
+        }
 
         while (in.available > 0) {
             val index = codeLength - in.available
@@ -263,10 +266,7 @@ trait BytecodeReaderAndBinding extends InstructionsDeserializer {
                     in.skip((3 - (index % 4)).toLong) // skip padding bytes
                     val defaultOffset = in.readInt
                     val npairsCount = in.readInt
-                    val npairs: IndexedSeq[(Int, Int)] =
-                        repeat(npairsCount) {
-                            (in.readInt, in.readInt)
-                        }
+                    val npairs = fillRefArray(npairsCount) { IntIntPair(in.readInt, in.readInt) }
                     LOOKUPSWITCH(defaultOffset, npairs)
                 case 129 ⇒ LOR
                 case 113 ⇒ LREM
@@ -322,7 +322,7 @@ trait BytecodeReaderAndBinding extends InstructionsDeserializer {
                     val defaultOffset = in.readInt
                     val low = in.readInt
                     val high = in.readInt
-                    val jumpOffsets: IndexedSeq[Int] = repeat(high - low + 1) { in.readInt }
+                    val jumpOffsets = fillIntArray(high - low + 1) { in.readInt }
                     TABLESWITCH(defaultOffset, low, high, jumpOffsets)
                 case 196 ⇒
                     wide = true

@@ -2,6 +2,8 @@
 package org.opalj.br.instructions
 
 import org.junit.runner.RunWith
+import org.opalj.collection.immutable.RefArray
+import org.opalj.collection.immutable.IntArray
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.{FlatSpec, Matchers}
 
@@ -82,8 +84,8 @@ class LabeledInstructionsTest extends FlatSpec with Matchers {
             assert(JSR_W(label).resolveJumpTargets(2, Map(label → 44)).branchoffset == 42)
         }
 
-    val table = IndexedSeq(InstructionLabel('two), InstructionLabel('three))
-    val lookupTable = ((2 to 3) zip table)
+    val table = RefArray(InstructionLabel('two), InstructionLabel('three))
+    val lookupTable = RefArray.from[(Int, InstructionLabel)](take = 2, (2 to 3).iterator zip table.iterator)
     val labelsMap = Map[InstructionLabel, Int](
         label → 43,
         InstructionLabel('two) → 44,
@@ -105,14 +107,14 @@ class LabeledInstructionsTest extends FlatSpec with Matchers {
             )
             assert(resolvedLOOKUPSWITCH.defaultOffset == 42)
             assert(resolvedLOOKUPSWITCH.jumpOffsets == IndexedSeq(43, 44))
-            assert(resolvedLOOKUPSWITCH.caseValues == IndexedSeq(2, 3))
+            assert(resolvedLOOKUPSWITCH.caseValues.toIndexedSeq == IndexedSeq(2, 3))
 
             val resolvedTABLESWITCH = TABLESWITCH(label, 2, 3, table).resolveJumpTargets(
                 1,
                 labelsMap
             )
             assert(resolvedTABLESWITCH.defaultOffset == 42)
-            assert(resolvedTABLESWITCH.jumpOffsets == IndexedSeq(43, 44))
+            assert(resolvedTABLESWITCH.jumpOffsets == IntArray(43, 44))
         }
 
 }

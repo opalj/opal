@@ -13,13 +13,13 @@ trait CommonSourceElementAttributes extends CommonAttributes {
     def runtimeVisibleAnnotations: Annotations =
         attributes collectFirst { case RuntimeVisibleAnnotationTable(vas) ⇒ vas } match {
             case Some(annotations) ⇒ annotations
-            case None              ⇒ IndexedSeq.empty
+            case None              ⇒ NoAnnotations
         }
 
     def runtimeInvisibleAnnotations: Annotations =
         attributes collectFirst { case RuntimeInvisibleAnnotationTable(ias) ⇒ ias } match {
             case Some(annotations) ⇒ annotations
-            case None              ⇒ IndexedSeq.empty
+            case None              ⇒ NoAnnotations
         }
 
     /**

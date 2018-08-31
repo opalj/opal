@@ -6,11 +6,10 @@ import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
-
 import org.opalj.bi.TestResources.locateTestResources
-
 import org.opalj.br.reader.Java8Framework.ClassFiles
 import org.opalj.br.analyses.Project
+import org.opalj.collection.immutable.RefArray
 
 /**
  * Tests that type annotations can be read.
@@ -32,7 +31,7 @@ class TypeAnnotationsTest extends FlatSpec with Matchers {
                 TAOfSupertype(1),
                 TADirectlyOnType,
                 aTA,
-                IndexedSeq(ElementValuePair("value", StringValue("superinterface")))
+                RefArray(ElementValuePair("value", StringValue("superinterface")))
             )
         )
     }
@@ -42,9 +41,9 @@ class TypeAnnotationsTest extends FlatSpec with Matchers {
         typeAnnotations should contain(
             TypeAnnotation(
                 TAOfSupertype(0),
-                TAOnNestedType(IndexedSeq(TAOnTypeArgument(0))),
+                TAOnNestedType(RefArray(TAOnTypeArgument(0))),
                 aTA,
-                IndexedSeq.empty
+                RefArray.empty
             )
         )
     }

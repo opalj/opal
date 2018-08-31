@@ -23,7 +23,7 @@ trait ClassMember extends ConcreteSourceElement {
 
     final def isPrivate: Boolean = (ACC_PRIVATE.mask & accessFlags) != 0
 
-    final def hasDefaultVisibility: Boolean = (VisibilityModifier.mask & accessFlags) == 0
+    final def hasDefaultVisibility: Boolean = VisibilityModifier.hasDefaultVisibility(accessFlags)
 
     final def isPackagePrivate: Boolean = hasDefaultVisibility
 

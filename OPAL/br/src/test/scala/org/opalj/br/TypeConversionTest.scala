@@ -136,7 +136,7 @@ class TypeConversionTest extends FunSpec with Matchers {
                     val instructions = t.WrapperType.unboxValue
                     instructions should be(Array(
                         INVOKEVIRTUAL(t.WrapperType, s"${t.toJava}Value",
-                            MethodDescriptor(IndexedSeq.empty, t)),
+                            MethodDescriptor(NoFieldTypes, t)),
                         null,
                         null
                     ))

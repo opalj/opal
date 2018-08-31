@@ -3,8 +3,6 @@ package org.opalj
 package br
 package reader
 
-import scala.reflect.ClassTag
-
 import org.opalj.bi.reader.FieldsReader
 
 /**
@@ -14,7 +12,6 @@ import org.opalj.bi.reader.FieldsReader
 trait FieldsBinding extends FieldsReader { this: ConstantPoolBinding with AttributeBinding ⇒
 
     type Field_Info = br.Field
-    val Field_InfoManifest: ClassTag[Field_Info] = implicitly
 
     def Field_Info(
         cp:               Constant_Pool,

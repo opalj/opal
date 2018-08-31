@@ -3,13 +3,15 @@ package org.opalj
 package br
 package reader
 
+import scala.annotation.switch
+
 import java.lang.invoke.LambdaMetafactory
 import java.util.concurrent.atomic.AtomicInteger
 
-import scala.annotation.switch
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory
+
 import org.opalj.bi.AccessFlags
 import org.opalj.bi.ACC_PRIVATE
 import org.opalj.bi.ACC_PUBLIC
@@ -27,6 +29,7 @@ import org.opalj.br.collection.mutable.InstructionsBuffer
 import org.opalj.br.instructions._
 import org.opalj.br.instructions.ClassFileFactory.DefaultFactoryMethodName
 import org.opalj.br.instructions.ClassFileFactory.AlternativeFactoryMethodName
+import org.opalj.collection.immutable.RefArray
 
 /**
  * Provides support for rewriting Java 8/Scala lambda or method reference expressions that
@@ -209,7 +212,7 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
         // method which handles primitive type handling. Since the new proxyclass is a different
         // class, we have to make the synthetic method accessible from the proxy class.
         updatedClassFile = updatedClassFile.copy(
-            methods = classFile.methods.map { m ⇒
+            methods = classFile.methods._UNSAFE_mapped { m ⇒
                 val name = m.name
                 if ((name.startsWith("lambda$") || name.equals("$deserializeLambda$")) &&
                     m.hasFlags(AccessFlags.ACC_SYNTHETIC_STATIC_PRIVATE)) {
@@ -302,7 +305,7 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
         ): MethodTemplate = {
             // A guess on the number of append operations required, need not be precise
             val numEntries =
-                (if (recipeO.isDefined) recipeO.get.value.length else descriptor.parametersCount)
+                if (recipeO.isDefined) recipeO.get.value.length else descriptor.parametersCount
             val body: InstructionsBuffer = new InstructionsBuffer(11 + 6 * numEntries)
 
             body ++= NEW(ObjectType.StringBuilder)
@@ -364,7 +367,7 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
                 body ++= INVOKEVIRTUAL(
                     ObjectType.String,
                     "substring",
-                    MethodDescriptor(IndexedSeq(IntegerType, IntegerType), ObjectType.String)
+                    MethodDescriptor(RefArray(IntegerType, IntegerType), ObjectType.String)
                 )
 
                 body ++= INVOKEVIRTUAL(
@@ -452,12 +455,12 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
 
             val maxLocals = descriptor.requiredRegisters
 
-            val code = Code(maxStack, maxLocals, body.toArray, IndexedSeq.empty, Seq.empty)
+            val code = Code(maxStack, maxLocals, body.toArray, NoExceptionHandlers, NoAttributes)
 
             // Access flags for the concat are `/* SYNTHETIC */ private static`
             val accessFlags = ACC_SYNTHETIC.mask | ACC_PRIVATE.mask | ACC_STATIC.mask
 
-            Method(accessFlags, name, descriptor, Seq(code))
+            Method(accessFlags, name, descriptor, RefArray(code))
         }
 
         val concatName = newStringConcatName()
@@ -465,7 +468,7 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
             createConcatMethod(concatName, factoryDescriptor, recipe, staticArgs)
 
         val updatedClassFile =
-            classFile.copy(methods = classFile.methods.map(_.copy()) :+ concatMethod)
+            classFile.unsafeAddMethod(concatMethod)
 
         val newInvokestatic = INVOKESTATIC(
             classFile.thisType,
@@ -515,7 +518,7 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
                 "apply",
                 // the invokedynamic's methodDescriptor (factoryDescriptor) determines
                 // the parameters that are actually pushed and popped from/to the stack
-                MethodDescriptor(IndexedSeq(ObjectType.String), ObjectType.ScalaSymbol)
+                MethodDescriptor(RefArray(ObjectType.String), ObjectType.ScalaSymbol)
             )
 
         if (logLambdaExpressionsRewrites) {
@@ -589,7 +592,7 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
             isInterface = false, // the created proxy class is always a concrete class
             factoryMethod.name,
             MethodDescriptor(
-                IndexedSeq(ObjectType.SerializedLambda),
+                RefArray(ObjectType.SerializedLambda),
                 ObjectType.Object
             )
         )
@@ -873,9 +876,9 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
 
             val maxLocals = 1 + receiverObjectStackSize + parametersStackSize + returnValueStackSize
 
-            val code = Code(maxStack, maxLocals, bytecodeInsts, IndexedSeq.empty, Seq.empty)
+            val code = Code(maxStack, maxLocals, bytecodeInsts, NoExceptionHandlers, NoAttributes)
 
-            Method(accessFlags, name, descriptor, Seq(code))
+            Method(accessFlags, name, descriptor, RefArray(code))
         }
 
         // If the target method is private, we have to generate a forwarding method that is
@@ -900,7 +903,7 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
                     case Some(f) ⇒ (f, classFile)
                     case None ⇒
                         val f = createForwardingMethod(m, forwardingName, descriptor)
-                        val cf = classFile.copy(methods = classFile.methods.map(_.copy()) :+ f)
+                        val cf = classFile.unsafeAddMethod(f)
                         (f, cf)
                 }
 
@@ -924,7 +927,7 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
 
         val needsBridgeMethod = samMethodType != instantiatedMethodType
 
-        val bridgeMethodDescriptorBuilder = IndexedSeq.newBuilder[MethodDescriptor]
+        val bridgeMethodDescriptorBuilder = RefArray.newBuilder[MethodDescriptor]
         if (needsBridgeMethod) {
             bridgeMethodDescriptorBuilder += samMethodType
         }
@@ -932,8 +935,8 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
         // samMethodType, they are already present in the proxy class. Do not add them again.
         // This happens in scala patternmatching for example.
         bridgeMethodDescriptorBuilder ++= bridges
-            .filterNot(_.equals(samMethodType))
-            .filterNot(_.equals(instantiatedMethodType))
+            .filterNot(_ == samMethodType)
+            .filterNot(_ == instantiatedMethodType)
         val bridgeMethodDescriptors = bridgeMethodDescriptorBuilder.result()
 
         val proxy: ClassFile = ClassFileFactory.Proxy(
@@ -1052,12 +1055,12 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
         classFile.synthesizedClassFiles match {
             case Some(scf @ SynthesizedClassFiles(cfs)) ⇒
                 val newScf = new SynthesizedClassFiles((proxy, reason) :: cfs)
-                val newAttrs = newScf +: classFile.attributes.filter(_ ne scf)
-                classFile.copy(attributes = newAttrs)
+                val newAttributes = classFile.attributes.filter(_ ne scf) :+ newScf
+                classFile._UNSAFE_replaceAttributes(newAttributes)
             case None ⇒
                 val attributes = classFile.attributes
-                val newAttrs = new SynthesizedClassFiles(List((proxy, reason))) +: attributes
-                classFile.copy(attributes = newAttrs)
+                val newAttributes = attributes :+ new SynthesizedClassFiles(List((proxy, reason)))
+                classFile._UNSAFE_replaceAttributes(newAttributes)
         }
     }
 }
