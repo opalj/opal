@@ -1,13 +1,18 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
-package bc
+package test
+package fixtures
+package mr
 
 import java.nio.file.Files
 import java.nio.file.Paths
 
+import org.opalj.bc.Assembler
 import org.opalj.bi.ACC_PUBLIC
 import org.opalj.bi.ACC_ABSTRACT
 import org.opalj.bi.ACC_INTERFACE
+import org.opalj.collection.immutable.RefArray
+import org.opalj.collection.immutable.IntArray
 import org.opalj.da.ClassFile
 import org.opalj.da.Method_Info
 import org.opalj.da.Constant_Pool_Entry
@@ -56,9 +61,9 @@ object MaximallySpecificInterfaceMethods extends App {
             ),
             minor_version = 0, major_version = 52, access_flags = InterfaceAccessFlags,
             this_class = 1, super_class = 3 /*extends java.lang.Object*/ ,
-            methods = IndexedSeq(Method_Info(
+            methods = RefArray(Method_Info(
                 access_flags = ACC_PUBLIC.mask, name_index = 7, descriptor_index = 8,
-                attributes = IndexedSeq(Code_attribute(
+                attributes = RefArray(Code_attribute(
                     attribute_name_index = 9, max_stack = 1, max_locals = 1,
                     code = new Code(Array[Byte](
                         18, /* ldc*/ 10, /* #10*/
@@ -98,9 +103,9 @@ object MaximallySpecificInterfaceMethods extends App {
             ),
             minor_version = 0, major_version = 52, access_flags = InterfaceAccessFlags,
             this_class = 1, super_class = 3 /*extends java.lang.Object*/ ,
-            methods = IndexedSeq(Method_Info(
+            methods = RefArray(Method_Info(
                 access_flags = ACC_PUBLIC.mask, name_index = 7, descriptor_index = 8,
-                attributes = IndexedSeq(Code_attribute(
+                attributes = RefArray(Code_attribute(
                     attribute_name_index = 9, max_stack = 1, max_locals = 1,
                     code = new Code(Array[Byte](
                         18, /* ldc*/ 10, /* #10*/
@@ -130,8 +135,8 @@ object MaximallySpecificInterfaceMethods extends App {
                 /*  8 */ CONSTANT_Utf8("()V")
             ),
             minor_version = 0, major_version = 52, access_flags = InterfaceAccessFlags,
-            this_class = 1, super_class = 3 /*extends java.lang.Object*/ , interfaces = IndexedSeq(5),
-            methods = IndexedSeq(Method_Info(
+            this_class = 1, super_class = 3 /*extends java.lang.Object*/ , interfaces = IntArray(5),
+            methods = RefArray(Method_Info(
                 access_flags = ACC_PUBLIC.mask | ACC_ABSTRACT.mask,
                 name_index = 7, descriptor_index = 8
             ))
@@ -167,10 +172,10 @@ object MaximallySpecificInterfaceMethods extends App {
                 /* 19 */ CONSTANT_Utf8("mr/S0_2")
             ),
             minor_version = 0, major_version = 52, access_flags = InterfaceAccessFlags,
-            this_class = 1, super_class = 3 /*extends java.lang.Object*/ , interfaces = IndexedSeq(5, 18),
-            methods = IndexedSeq(Method_Info(
+            this_class = 1, super_class = 3 /*extends java.lang.Object*/ , interfaces = IntArray(5, 18),
+            methods = RefArray(Method_Info(
                 access_flags = ACC_PUBLIC.mask, name_index = 7, descriptor_index = 8,
-                attributes = IndexedSeq(Code_attribute(
+                attributes = RefArray(Code_attribute(
                     attribute_name_index = 9, max_stack = 1, max_locals = 1,
                     code = new Code(Array[Byte](
                         18, /* ldc*/ 10, /* #10*/
@@ -200,7 +205,7 @@ object MaximallySpecificInterfaceMethods extends App {
                 /*  8 */ CONSTANT_Utf8("mr/S1_c")
             ),
             minor_version = 0, major_version = 52, access_flags = InterfaceAccessFlags,
-            this_class = 1, super_class = 3 /*extends java.lang.Object*/ , interfaces = IndexedSeq(5, 7)
+            this_class = 1, super_class = 3 /*extends java.lang.Object*/ , interfaces = IntArray(5, 7)
         )
         val assembledS2_1 = Assembler(s2_1CF)
         val assembledS2_1Path = Paths.get("OPAL/bc/src/test/resources/MaximallySpecificInterfaceMethods/mr/S2_1.class")
@@ -220,7 +225,7 @@ object MaximallySpecificInterfaceMethods extends App {
                 /*  6 */ CONSTANT_Utf8("mr/S0_2")
             ),
             minor_version = 0, major_version = 52, access_flags = InterfaceAccessFlags,
-            this_class = 1, super_class = 3 /*extends java.lang.Object*/ , interfaces = IndexedSeq(5)
+            this_class = 1, super_class = 3 /*extends java.lang.Object*/ , interfaces = IntArray(5)
         )
         val assembledS2_2 = Assembler(s2_2CF)
         val assembledS2_2Path = Paths.get("OPAL/bc/src/test/resources/MaximallySpecificInterfaceMethods/mr/S2_2.class")
@@ -242,7 +247,7 @@ object MaximallySpecificInterfaceMethods extends App {
                 /*  8 */ CONSTANT_Utf8("mr/S2_2")
             ),
             minor_version = 0, major_version = 52, access_flags = InterfaceAccessFlags,
-            this_class = 1, super_class = 3 /*extends java.lang.Object*/ , interfaces = IndexedSeq(5, 7)
+            this_class = 1, super_class = 3 /*extends java.lang.Object*/ , interfaces = IntArray(5, 7)
         )
         val assembledIntf = Assembler(intfCF)
         val assembledIntfPath = Paths.get("OPAL/bc/src/test/resources/MaximallySpecificInterfaceMethods/mr/Intf.class")

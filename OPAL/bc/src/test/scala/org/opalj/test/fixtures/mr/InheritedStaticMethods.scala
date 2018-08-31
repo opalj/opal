@@ -1,10 +1,14 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
-package bc
+package test
+package fixtures
+package mr
 
 import java.nio.file.Files
 import java.nio.file.Paths
 
+import org.opalj.bc.Assembler
+import org.opalj.collection.immutable.RefArray
 import org.opalj.bi.ACC_PUBLIC
 import org.opalj.bi.ACC_STATIC
 import org.opalj.bi.ACC_SUPER
@@ -72,12 +76,12 @@ object InheritedStaticMethods extends App {
         super_class = 3 /*extends java.lang.Object*/ ,
         // Interfaces.empty,
         // Fields.empty,
-        methods = IndexedSeq(
+        methods = RefArray(
             // default constructor
             Method_Info(
                 access_flags = ACC_PUBLIC.mask,
                 name_index = 5, descriptor_index = 6,
-                attributes = IndexedSeq(
+                attributes = RefArray(
                     Code_attribute(
                         attribute_name_index = 7, max_stack = 1, max_locals = 1,
                         code =
@@ -91,7 +95,7 @@ object InheritedStaticMethods extends App {
                 access_flags = ACC_PUBLIC.mask | ACC_STATIC.mask,
                 name_index = 14,
                 descriptor_index = 15,
-                attributes = IndexedSeq(
+                attributes = RefArray(
                     Code_attribute(
                         attribute_name_index = 7, max_stack = 0, max_locals = 1,
                         code =
