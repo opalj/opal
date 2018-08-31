@@ -21,7 +21,7 @@ import org.opalj.control.{find ⇒ findInArray}
  */
 class RefArray[+T /* "<: AnyRef" this constraint is ONLY enforced by the factory methods to facilitate integration with the scala collection API */ ] private[collection] (
         private var data: Array[AnyRef]
-) extends scala.collection.immutable.Seq[T] { // TODO [Scala 2.13] make it extend IndexedSeq.
+) extends scala.collection.immutable.Seq[T] { self ⇒ // TODO [Scala 2.13] make it extend IndexedSeq.
 
     /**
      * Appends the given element to the underlying array; will cause havoc if this object
@@ -344,6 +344,24 @@ class RefArray[+T /* "<: AnyRef" this constraint is ONLY enforced by the factory
             i += 1
         }
         result
+    }
+
+    override def headOption: Option[T] = if (size > 0) Some(data(0).asInstanceOf[T]) else None
+
+    /**
+     * Creates a view which represents the slice with the elements with the indexes [from,until).
+     *
+     * @param from The first value (inclusive!)
+     * @param until The last value (exclusive!)
+     */
+    def slicedView(from: Int, until: Int = data.length): RefIndexedView[T] = new RefIndexedView[T] {
+        override def apply(index: Int): T = self.data(from + index).asInstanceOf[T]
+        override def isEmpty: Boolean = from == until
+        override def iterator: RefIterator[T] = new RefIterator[T] {
+            private[this] var index: Int = from
+            override def hasNext: Boolean = index < until
+            override def next(): T = { val e = data(index); index += 1; e.asInstanceOf[T] }
+        }
     }
 
     def filterNonNull: RefArray[T] = {
