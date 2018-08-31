@@ -45,10 +45,10 @@ class RefArray[+T /* "<: AnyRef" this constraint is ONLY enforced by the factory
 
     /**
      * Directly performs the map operation on the underlying array and then creates a new
-     * appropriately typed `RefArray[X]` object which wraps the modified array. The
-     * return value can be ignored, if `X == T`.
+     * appropriately typed `RefArray[X]` object which wraps the modified array. Hence, the return
+     * value can be ignored, if `X == T`.
      *
-     * '''This method is only to be used if `this` instance is no longer used afterwards!'''
+     * '''This method is only to be used if no aliases have been created that assume that this array is not mutated.'''
      */
     // IMPROVE Design annotation (+Analysis) that ensures that this operation is only performed if – after the usage of this method - the reference to this data-structure will not be used anymore.
     def _UNSAFE_mapped[X <: AnyRef](f: T ⇒ X): RefArray[X] = {
