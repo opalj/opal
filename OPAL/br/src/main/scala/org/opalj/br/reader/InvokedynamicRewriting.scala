@@ -4,14 +4,12 @@ package br
 package reader
 
 import scala.annotation.switch
-
 import java.lang.invoke.LambdaMetafactory
 import java.util.concurrent.atomic.AtomicInteger
 
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory
-
 import org.opalj.bi.AccessFlags
 import org.opalj.bi.ACC_PRIVATE
 import org.opalj.bi.ACC_PUBLIC
@@ -29,6 +27,7 @@ import org.opalj.br.collection.mutable.InstructionsBuffer
 import org.opalj.br.instructions._
 import org.opalj.br.instructions.ClassFileFactory.DefaultFactoryMethodName
 import org.opalj.br.instructions.ClassFileFactory.AlternativeFactoryMethodName
+import org.opalj.collection.RefIndexedView
 import org.opalj.collection.immutable.RefArray
 
 /**
@@ -290,18 +289,23 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
         // Extract the recipe and static arguments if present (if not, the dynamic arguments are
         // simply concatenated)
         val (recipe, staticArgs) =
-            if (args.isEmpty) (None, None)
-            else (
-                args.headOption.asInstanceOf[Option[ConstantString]],
-                Some(args.tail.asInstanceOf[IndexedSeq[ConstantValue[_]]])
-            )
+            if (args.isEmpty)
+                (
+                    None,
+                    RefIndexedView.empty
+                )
+            else
+                (
+                    args.headOption.asInstanceOf[Option[ConstantString]],
+                    args.slicedView(from = 1).asInstanceOf[RefIndexedView[ConstantValue[_]]]
+                )
 
         // Creates concat method
         def createConcatMethod(
             name:       String,
             descriptor: MethodDescriptor,
             recipeO:    Option[ConstantString],
-            constants:  Option[IndexedSeq[ConstantValue[_]]]
+            constants:  RefIndexedView[ConstantValue[_]]
         ): MethodTemplate = {
             // A guess on the number of append operations required, need not be precise
             val numEntries =
@@ -425,7 +429,7 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
                             nextParam = recipe.indexOf('\u0001', nextParam + 1)
                         } else {
                             assert(recipe.charAt(nextInsert) == '\u0002')
-                            val constant = constants.get(constantIndex)
+                            val constant = constants(constantIndex)
                             appendConstant(constant)
                             val opSize = constant.valueType.computationalType.operandSize
                             if (maxStack == 2 && opSize == 2) maxStack = 3
