@@ -4,24 +4,24 @@ package ai
 package domain
 
 import java.lang.ref.{SoftReference ⇒ SRef}
-import java.util.function.IntConsumer
-
-import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap
 
 import scala.collection.BitSet
 import scala.collection.mutable
 import scala.collection.JavaConverters._
+
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap
+
 import org.opalj.collection.mutable.IntArrayStack
 import org.opalj.collection.immutable.{Chain ⇒ List}
 import org.opalj.collection.immutable.{Naught ⇒ Nil}
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.IntTrieSet1
-import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.collection.immutable.IntHeadAndRestOfSet
+import org.opalj.collection.immutable.IntRefPair
 import org.opalj.graphs.DefaultMutableNode
 import org.opalj.graphs.DominatorTree
 import org.opalj.graphs.PostDominatorTree
 import org.opalj.graphs.DominanceFrontiers
+import org.opalj.br.PC
 import org.opalj.br.Code
 import org.opalj.br.ExceptionHandler
 import org.opalj.br.instructions.Instruction
@@ -30,7 +30,6 @@ import org.opalj.br.cfg.CFG
 import org.opalj.br.cfg.ExitNode
 import org.opalj.br.cfg.BasicBlock
 import org.opalj.br.cfg.CatchNode
-import org.opalj.collection.immutable.IntTrieSet1
 
 /**
  * Records the abstract interpretation time control-flow graph (CFG).
@@ -425,9 +424,9 @@ trait RecordCFG
         (exceptionHandlerSuccessors(pc) ne null) && (regularSuccessors(pc) eq null)
     }
 
-    def foreachSuccessorOf(pc: Int)(f: IntConsumer /*PC => Unit*/ ): Unit = {
-        regularSuccessorsOf(pc).foreach { f }
-        exceptionHandlerSuccessorsOf(pc).foreach { f }
+    def foreachSuccessorOf(pc: Int)(f: PC ⇒ Unit): Unit = {
+        regularSuccessorsOf(pc).foreach(f)
+        exceptionHandlerSuccessorsOf(pc).foreach(f)
     }
 
     /**
@@ -528,7 +527,7 @@ trait RecordCFG
         var allReachable: IntTrieSet = IntTrieSet1(pc)
         var successorsToVisit = allSuccessorsOf(pc)
         while (successorsToVisit.nonEmpty) {
-            val IntHeadAndRestOfSet(succPC, newSuccessorsToVisit) = successorsToVisit.headAndTail
+            val IntRefPair(succPC, newSuccessorsToVisit) = successorsToVisit.headAndTail
             successorsToVisit = newSuccessorsToVisit
             if (!allReachable.contains(succPC)) {
                 allReachable +!= succPC
@@ -634,7 +633,7 @@ trait RecordCFG
      */
     final def hasMultiplePredecessors(pc: Int): Boolean = predecessorsOf(pc).hasMultipleElements
 
-    final def foreachPredecessorOf(pc: Int)(f: IntConsumer /*PC ⇒ Unit*/ ): Unit = {
+    final def foreachPredecessorOf(pc: Int)(f: PC ⇒ Unit): Unit = {
         predecessorsOf(pc).foreach(f)
     }
 
@@ -652,12 +651,12 @@ trait RecordCFG
     def dominatorTree: DominatorTree = {
         getOrInitField[DominatorTree](
             () ⇒ this.theDominatorTree,
-            (dt) ⇒ this.theDominatorTree = dt,
+            dt ⇒ this.theDominatorTree = dt,
             regularSuccessors
         ) {
                 // We want to keep a non-soft reference and avoid any further useless synchronization.
                 val predecessors = this.predecessors
-                def foreachPredecessorOf(pc: Int)(f: IntConsumer /*PC => Unit*/ ): Unit = {
+                def foreachPredecessorOf(pc: Int)(f: PC ⇒ Unit): Unit = {
                     val s = predecessors(pc)
                     if (s ne null)
                         s.foreach(f)
@@ -934,7 +933,7 @@ trait RecordCFG
                 None
         // We want to keep a non-soft reference and avoid any further useless synchronization.
         val predecessors = this.predecessors
-        def foreachPredecessorOf(pc: Int)(f: IntConsumer /*PC ⇒ Unit*/ ): Unit = {
+        def foreachPredecessorOf(pc: Int)(f: PC ⇒ Unit): Unit = {
             val s = predecessors(pc)
             if (s ne null)
                 s.foreach(f)

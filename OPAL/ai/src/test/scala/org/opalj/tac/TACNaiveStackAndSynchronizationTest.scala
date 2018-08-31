@@ -4,9 +4,9 @@ package tac
 
 import org.scalatest.junit.JUnitRunner
 import org.junit.runner.RunWith
-
 import org.opalj.br._
 import org.opalj.br.TestSupport.biProject
+import org.opalj.collection.immutable.RefArray
 
 /**
  * @author Roberts Kolosovs
@@ -54,7 +54,7 @@ class TACNaiveStackAndSynchronizationTest extends TACNaiveTest {
                         1,
                         ObjectType("tactest/StackManipulationAndSynchronization"), false,
                         "returnInt",
-                        MethodDescriptor(IndexedSeq[FieldType](), IntegerType),
+                        MethodDescriptor(NoFieldTypes, IntegerType),
                         SimpleVar(0, ComputationalTypeReference),
                         List()
                     )
@@ -88,7 +88,7 @@ class TACNaiveStackAndSynchronizationTest extends TACNaiveTest {
                         ObjectType("tactest/StackManipulationAndSynchronization"),
                         false,
                         "returnDouble",
-                        MethodDescriptor(IndexedSeq[FieldType](), DoubleType),
+                        MethodDescriptor(NoFieldTypes, DoubleType),
                         SimpleVar(0, ComputationalTypeReference),
                         List()
                     )
@@ -115,7 +115,7 @@ class TACNaiveStackAndSynchronizationTest extends TACNaiveTest {
                 Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
                 Assignment(0, SimpleVar(0, ComputationalTypeReference), New(0, ObjectType.Object)),
                 Nop(3),
-                NonVirtualMethodCall(4, ObjectType.Object, false, "<init>", MethodDescriptor(IndexedSeq[FieldType](), VoidType), SimpleVar(0, ComputationalTypeReference), List()),
+                NonVirtualMethodCall(4, ObjectType.Object, false, "<init>", MethodDescriptor(NoFieldTypes, VoidType), SimpleVar(0, ComputationalTypeReference), List()),
                 Assignment(7, SimpleVar(-2, ComputationalTypeReference), SimpleVar(0, ComputationalTypeReference)),
                 Return(8)
             ))
@@ -185,7 +185,7 @@ class TACNaiveStackAndSynchronizationTest extends TACNaiveTest {
                         2,
                         ObjectType("tactest/StackManipulationAndSynchronization"), false,
                         "staticMethod",
-                        MethodDescriptor(IndexedSeq[FieldType](IntegerType, IntegerType), IntegerType),
+                        MethodDescriptor(RefArray(IntegerType, IntegerType), IntegerType),
                         List(SimpleVar(0, ComputationalTypeInt), SimpleVar(1, ComputationalTypeInt))
                     )
                 ),
@@ -212,12 +212,12 @@ class TACNaiveStackAndSynchronizationTest extends TACNaiveTest {
                 Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
                 Assignment(0, SimpleVar(0, ComputationalTypeReference), New(0, ObjectType("java/util/ArrayList"))),
                 Nop(3),
-                NonVirtualMethodCall(4, ObjectType("java/util/ArrayList"), false, "<init>", MethodDescriptor(IndexedSeq[FieldType](), VoidType), SimpleVar(0, ComputationalTypeReference), List()),
+                NonVirtualMethodCall(4, ObjectType("java/util/ArrayList"), false, "<init>", MethodDescriptor(NoFieldTypes, VoidType), SimpleVar(0, ComputationalTypeReference), List()),
                 Assignment(7, SimpleVar(-2, ComputationalTypeReference), SimpleVar(0, ComputationalTypeReference)),
                 Assignment(8, SimpleVar(0, ComputationalTypeReference), SimpleVar(-2, ComputationalTypeReference)),
                 Assignment(9, SimpleVar(1, ComputationalTypeReference), New(9, ObjectType.Object)),
                 Nop(12),
-                NonVirtualMethodCall(13, ObjectType.Object, false, "<init>", MethodDescriptor(IndexedSeq[FieldType](), VoidType), SimpleVar(1, ComputationalTypeReference), List()),
+                NonVirtualMethodCall(13, ObjectType.Object, false, "<init>", MethodDescriptor(NoFieldTypes, VoidType), SimpleVar(1, ComputationalTypeReference), List()),
                 Assignment(
                     16,
                     SimpleVar(0, ComputationalTypeInt),
@@ -226,7 +226,7 @@ class TACNaiveStackAndSynchronizationTest extends TACNaiveTest {
                         ObjectType("java/util/List"),
                         true,
                         "add",
-                        MethodDescriptor(IndexedSeq[FieldType](ObjectType.Object), BooleanType),
+                        MethodDescriptor(RefArray(ObjectType.Object), BooleanType),
                         SimpleVar(0, ComputationalTypeReference),
                         List(SimpleVar(1, ComputationalTypeReference))
                     )

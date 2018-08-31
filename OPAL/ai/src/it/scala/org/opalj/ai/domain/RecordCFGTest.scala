@@ -122,7 +122,7 @@ class RecordCFGTest extends FunSpec with Matchers {
                     }
                 }
 
-                evaluatedInstructions.intIterator.foreach { pc ⇒
+                evaluatedInstructions.iterator.foreach { pc ⇒
 
                     domain.foreachSuccessorOf(pc) { succPC ⇒
                         domain.predecessorsOf(succPC).contains(pc) should be(true)
@@ -149,7 +149,7 @@ class RecordCFGTest extends FunSpec with Matchers {
                         dTime('ControlDependencies) { domain.pdtBasedControlDependencies }
                     }
 
-                evaluatedInstructions.intIterator.foreach { pc ⇒
+                evaluatedInstructions.iterator.foreach { pc ⇒
                     if (pc != dt.startNode &&
                         (dt.dom(pc) != dt.startNode) &&
                         !evaluatedInstructions.contains(dt.dom(pc))) {

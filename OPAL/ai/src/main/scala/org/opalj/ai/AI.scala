@@ -3,17 +3,17 @@ package org.opalj
 package ai
 
 import scala.language.existentials
+
 import scala.annotation.switch
+
 import scala.util.control.ControlThrowable
 
+import org.opalj.control.foreachNonNullValue
+import org.opalj.log.LogContext
+import org.opalj.log.GlobalLogContext
 import org.opalj.log.Warn
 import org.opalj.log.OPALLogger
-import org.opalj.log.GlobalLogContext
-import org.opalj.control.foreachNonNullValue
-import org.opalj.bi.warnMissingLibrary
 import org.opalj.bytecode.BytecodeProcessingFailedException
-import org.opalj.br._
-import org.opalj.br.instructions._
 import org.opalj.collection.mutable.{Locals ⇒ Registers}
 import org.opalj.collection.mutable.IntArrayStack
 import org.opalj.collection.immutable.IntTrieSet
@@ -22,6 +22,10 @@ import org.opalj.collection.immutable.Chain
 import org.opalj.collection.immutable.Naught
 import org.opalj.collection.immutable.{Chain ⇒ List}
 import org.opalj.collection.immutable.{Naught ⇒ Nil}
+import org.opalj.collection.immutable.IntIntPair
+import org.opalj.bi.warnMissingLibrary
+import org.opalj.br._
+import org.opalj.br.instructions._
 import org.opalj.ai.util.removeFirstUnless
 import org.opalj.ai.util.containsInPrefix
 import org.opalj.ai.util.insertBefore
@@ -1145,7 +1149,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                         }
                     }
 
-                    val targets = retPCs mapToAny { retPC ⇒
+                    val targets = retPCs.map[(Int, theDomain.Operands, theDomain.Locals)] { retPC ⇒
                         if (tracer.isDefined) {
                             tracer.get.returnFromSubroutine(theDomain)(
                                 retPC,
@@ -1603,14 +1607,14 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                                             gotoExceptionHandler(pc, branchTarget, catchTypeOption)
                                             false
                                         } else {
-                                            implicit val logContext = theDomain match {
+                                            implicit val logContext: LogContext = theDomain match {
                                                 case ctx: LogContextProvider ⇒ ctx.logContext
                                                 case _                       ⇒ GlobalLogContext
                                             }
                                             warnMissingLibrary
                                             var exceptionTypeAsJava =
-                                                exceptionValue.upperTypeBound.
-                                                    iterator.map(_.toJava).
+                                                exceptionValue.upperTypeBound.iterator.
+                                                    map[String](_.toJava).
                                                     mkString(" & ")
                                             if (!exceptionValue.isPrecise)
                                                 exceptionTypeAsJava = "_ <: "+exceptionTypeAsJava
@@ -2045,7 +2049,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                             val npairs = switch.npairs
                             val firstKey = npairs(0)._1
                             var previousKey = firstKey
-                            for ((key, offset) ← npairs) {
+                            for (IntIntPair(key, offset) ← npairs) {
                                 if (!branchToDefaultRequired && (key - previousKey) > 1) {
                                     // there is a hole in the switch table...
                                     val nonCaseValue =

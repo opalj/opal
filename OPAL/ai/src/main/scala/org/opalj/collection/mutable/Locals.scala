@@ -1978,10 +1978,6 @@ object Locals {
                     new Locals3(data(0), data(1), data(2)),
                     new Locals4(data(3), data(4), data(5), data(6))
                 )
-            //                new Locals7(
-            //                    new Locals2(data(0), data(1)),
-            //                    new Locals2(data(2), data(3)),
-            //                    new Locals3(data(4), data(5), data(6)))
             case 8 ⇒
                 new Locals8(
                     new Locals2(data(0), data(1)),

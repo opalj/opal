@@ -72,7 +72,7 @@ class RecordDefUseTest extends FunSpec with Matchers {
         // (1) TEST
         // Tests if the dominator tree information is consistent
         //
-        liveInstructions.intIterator.foreach(pc ⇒ if (pc != 0) dt.dom(pc) should be < codeSize)
+        liveInstructions.iterator.foreach(pc ⇒ if (pc != 0) dt.dom(pc) should be < codeSize)
 
         val instructions = code.instructions
         val ehs = code.exceptionHandlers

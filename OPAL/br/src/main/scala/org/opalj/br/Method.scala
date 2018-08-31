@@ -408,7 +408,7 @@ final class Method private[br] (
         val attributes:                     Attributes
 ) extends JVMMethod {
 
-    // see ClassFile.unsafeReplaceMethod for THE usage!
+    // see ClassFile._UNSAFE_replaceMethod for THE usage!
     private[br] def detach(): this.type = { declaringClassFile = null; this }
 
     /**
