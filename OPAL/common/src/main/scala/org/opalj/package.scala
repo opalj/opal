@@ -5,6 +5,7 @@ import com.typesafe.config.ConfigFactory
 import com.typesafe.config.Config
 
 import org.opalj.log.GlobalLogContext
+import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 
 /**
@@ -48,8 +49,7 @@ import org.opalj.log.OPALLogger
  * After construction time, these data-structures are generally represented using
  * their generic interfaces (e.g., `scala.collection.{Set,Map}`). However, a downcast
  * (e.g., to add/remove elements) is always forbidden as it would effectively prevent
- * thread-safety. Furthermore, the concrete data-structure is always
- * considered an implementation detail and may change at any time.
+ * thread-safety.
  *
  * ===Assertions===
  * OPAL makes heavy use of Scala's '''Assertion Facility''' to facilitate writing correct
@@ -62,7 +62,7 @@ package object opalj {
 
     {
         // Log the information whether a production build or a development build is used.
-        implicit val logContext = GlobalLogContext
+        implicit val logContext: LogContext = GlobalLogContext
         import OPALLogger.info
         try {
             assert(false)
@@ -73,15 +73,15 @@ package object opalj {
         }
     }
 
-    val BaseConfig: Config = ConfigFactory.load(this.getClass.getClassLoader())
+    val BaseConfig: Config = ConfigFactory.load(this.getClass.getClassLoader)
 
     /** Non-elidable version of `assert`; only to be used in a guarded context. */
-    def check(condition: Boolean) = {
+    def check(condition: Boolean): Unit = {
         if (!condition) throw new AssertionError();
     }
 
     /** Non-elidable version of `assert`; only to be used in a guarded context. */
-    def check(condition: Boolean, message: ⇒ String) = {
+    def check(condition: Boolean, message: ⇒ String): Unit = {
         if (!condition) throw new AssertionError(message);
     }
 

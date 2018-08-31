@@ -4,6 +4,7 @@ package br
 
 import org.opalj.bi.AccessFlagsContexts
 import org.opalj.bi.AccessFlags
+import org.opalj.collection.immutable.RefArray
 
 /**
  * Definition of a Java 9 module.
@@ -14,11 +15,11 @@ case class Module(
         name:        String,
         moduleFlags: Int,
         versionInfo: Option[String],
-        requires:    IndexedSeq[Requires],
-        exports:     IndexedSeq[Exports],
-        opens:       IndexedSeq[Opens],
-        uses:        IndexedSeq[ObjectType],
-        provides:    IndexedSeq[Provides]
+        requires:    RefArray[Requires],
+        exports:     RefArray[Exports],
+        opens:       RefArray[Opens],
+        uses:        RefArray[ObjectType],
+        provides:    RefArray[Provides]
 ) extends Attribute {
 
     final override def kindId: Int = Module.KindId
@@ -53,7 +54,7 @@ case class Requires(requires: String, flags: Int, version: Option[String]) {
  * @param   exportsTo List of names of modules whose code can access the
  *          public types in this exported package (in internal form).
  */
-case class Exports(exports: String, flags: Int, exportsTo: IndexedSeq[String]) {
+case class Exports(exports: String, flags: Int, exportsTo: RefArray[String]) {
 
     def toJava: String = {
         var flags = AccessFlags.toString(this.flags, AccessFlagsContexts.MODULE)
@@ -68,7 +69,7 @@ case class Exports(exports: String, flags: Int, exportsTo: IndexedSeq[String]) {
 /**
  * @param opens The name of the package.
  */
-case class Opens(opens: String, flags: Int, toPackages: IndexedSeq[String]) {
+case class Opens(opens: String, flags: Int, toPackages: RefArray[String]) {
 
     def toJava: String = {
         val toPackages =
@@ -79,7 +80,7 @@ case class Opens(opens: String, flags: Int, toPackages: IndexedSeq[String]) {
 
 }
 
-case class Provides(provides: ObjectType, withInterfaces: IndexedSeq[ObjectType]) {
+case class Provides(provides: ObjectType, withInterfaces: RefArray[ObjectType]) {
 
     def toJava: String = {
         val withInterfaces =

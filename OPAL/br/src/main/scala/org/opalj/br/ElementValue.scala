@@ -238,7 +238,7 @@ object EnumValue {
 
 }
 
-case class ArrayValue(values: IndexedSeq[ElementValue]) extends ElementValue {
+case class ArrayValue(values: ElementValues) extends ElementValue {
 
     // by design/specification the first value determines the type of the Array
     final override def valueType = ArrayType(values(0).valueType)

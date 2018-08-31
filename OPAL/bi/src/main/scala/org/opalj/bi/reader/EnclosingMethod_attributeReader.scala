@@ -10,6 +10,10 @@ import java.io.DataInputStream
  */
 trait EnclosingMethod_attributeReader extends AttributeReader {
 
+    //
+    // TYPE DEFINITIONS AND FACTORY METHODS
+    //
+
     type EnclosingMethod_attribute <: Attribute
 
     def EnclosingMethod_attribute(

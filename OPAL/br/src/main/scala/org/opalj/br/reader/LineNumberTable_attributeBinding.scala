@@ -3,9 +3,8 @@ package org.opalj
 package br
 package reader
 
-import reflect.ClassTag
-
 import org.opalj.bi.reader.LineNumberTable_attributeReader
+import org.opalj.bi.reader.CompactLineNumberTable_attributeReader
 
 /**
  * Implements the factory methods to create line number tables and their entries.
@@ -18,7 +17,6 @@ trait UnpackedLineNumberTable_attributeBinding
     with AttributeBinding {
 
     type LineNumberTableEntry = br.LineNumber
-    val LineNumberTableEntryManifest: ClassTag[LineNumber] = implicitly
 
     type LineNumberTable_attribute = br.UnpackedLineNumberTable
 
@@ -37,8 +35,6 @@ trait UnpackedLineNumberTable_attributeBinding
     }
 
 }
-
-import org.opalj.bi.reader.CompactLineNumberTable_attributeReader
 
 /**
  * Implements the factory methods to create line number tables.
@@ -66,12 +62,7 @@ trait CompactLineNumberTable_attributeBinding
      * Merge all line number tables and create a single sorted line number table.
      */
     registerAttributesPostProcessor { attributes ⇒
-        val (lineNumberTables, _ /*otherAttributes*/ ) =
-            attributes partition {
-                case _: CompactLineNumberTable ⇒ true
-                case _                         ⇒ false
-            }
-        if (lineNumberTables.isEmpty || lineNumberTables.tail.isEmpty)
+        if (attributes.count(_.isInstanceOf[CompactLineNumberTable]) <= 1)
             // we have at most one line number table
             attributes
         else throw new UnsupportedOperationException(

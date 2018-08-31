@@ -2,10 +2,10 @@
 package org.opalj
 package ba
 
+import org.opalj.collection.immutable.UShortPair
 import org.opalj.br.MethodSignature
 import org.opalj.br.ClassHierarchy
 import org.opalj.br.ObjectType
-import org.opalj.collection.immutable.UShortPair
 
 /**
  * Builder for [[org.opalj.br.ClassFile]] objects.

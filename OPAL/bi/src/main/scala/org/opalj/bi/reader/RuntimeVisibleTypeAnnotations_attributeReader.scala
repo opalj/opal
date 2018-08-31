@@ -5,14 +5,20 @@ package reader
 
 import java.io.DataInputStream
 
+import scala.collection.GenTraversableOnce
+
 /**
  * Generic parser for Java 8's `RuntimeVisibleTypeAnnotations` attribute.
  */
 trait RuntimeVisibleTypeAnnotations_attributeReader extends AttributeReader {
 
+    //
+    // TYPE DEFINITIONS AND FACTORY METHODS
+    //
+
     type TypeAnnotation
 
-    type TypeAnnotations <: Traversable[TypeAnnotation]
+    type TypeAnnotations <: GenTraversableOnce[TypeAnnotation]
     def TypeAnnotations(cp: Constant_Pool, in: DataInputStream): TypeAnnotations
 
     type RuntimeVisibleTypeAnnotations_attribute >: Null <: Attribute

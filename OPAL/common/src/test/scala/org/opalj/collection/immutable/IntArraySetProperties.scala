@@ -178,8 +178,7 @@ object IntArraySetProperties extends Properties("IntArraySet") {
     property("intIterator") = forAll { s1: Set[Int] ⇒
         val fl1 = IntArraySetBuilder(s1).result
         val flIt = fl1.iterator
-        val flIntIt = fl1.intIterator
-        flIntIt.forall(i ⇒ flIt.next == i)
+        flIt.isInstanceOf[IntIterator]
     }
 
     property("toChain") = forAll { s1: Set[Int] ⇒

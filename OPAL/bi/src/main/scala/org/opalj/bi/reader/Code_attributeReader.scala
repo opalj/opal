@@ -3,11 +3,10 @@ package org.opalj
 package bi
 package reader
 
-import scala.reflect.ClassTag
-
 import java.io.DataInputStream
 
-import org.opalj.control.repeat
+import org.opalj.collection.immutable.RefArray
+import org.opalj.control.fillRefArray
 
 /**
  * Defines a template method to read in the code attribute.
@@ -18,14 +17,16 @@ import org.opalj.control.repeat
  */
 trait Code_attributeReader extends AttributeReader {
 
-    type ExceptionTableEntry
-    implicit val ExceptionTableEntryManifest: ClassTag[ExceptionTableEntry]
+    //
+    // TYPE DEFINITIONS AND FACTORY METHODS
+    //
+
+    type ExceptionTableEntry <: AnyRef
+    type ExceptionHandlers = RefArray[ExceptionTableEntry]
 
     type Instructions
 
     type Code_attribute <: Attribute
-
-    type Attributes
 
     def Instructions(
         as_name_index:       Constant_Pool_Index,
@@ -61,14 +62,12 @@ trait Code_attributeReader extends AttributeReader {
         start_pc:      Int,
         end_pc:        Int,
         handler_pc:    Int,
-        catch_type:    Int
+        catch_type:    Constant_Pool_Index // may be "0" in case of "finally"
     ): ExceptionTableEntry
 
     //
     // IMPLEMENTATION
     //
-
-    type ExceptionHandlers = IndexedSeq[ExceptionTableEntry]
 
     /**
      * '''From the Specification'''
@@ -105,7 +104,7 @@ trait Code_attributeReader extends AttributeReader {
             in.readUnsignedShort(),
             in.readUnsignedShort(),
             Instructions(as_name_index, as_descriptor_index, cp, in),
-            repeat(in.readUnsignedShort()) { // "exception_table_length" times
+            fillRefArray(in.readUnsignedShort()) { // "exception_table_length" times
                 ExceptionTableEntry(
                     cp,
                     in.readUnsignedShort, in.readUnsignedShort,

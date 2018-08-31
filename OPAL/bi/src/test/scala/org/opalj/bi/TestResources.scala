@@ -14,22 +14,24 @@ import org.opalj.util.ScalaMajorVersion
  */
 object TestResources {
 
-    val unmanagedResourcesFolder = "src/test/resources/"
-    val managedResourcesFolder = s"target/scala-$ScalaMajorVersion/resource_managed/test/"
+    final val unmanagedResourcesFolder = "src/test/resources/"
+    final val managedResourcesFolder = s"target/scala-$ScalaMajorVersion/resource_managed/test/"
 
-    private def pathPrefixCandidates(subProjectFolder: String) = Array[String ⇒ Option[String]](
+    private def pathPrefixCandidates(
+        subProjectFolder: String
+    ): Array[String ⇒ Option[String]] = Array(
         // if the current path is set to OPAL's root folder
-        (resourceFile) ⇒ { Some("OPAL/"+resourceFile) },
+        resourceFile ⇒ { Some("OPAL/"+resourceFile) },
         // if the current path is set to "<SUB-PROJECT>/<BIN>"
-        (resourceFile) ⇒ { Some("../../"+resourceFile) },
+        resourceFile ⇒ { Some("../../"+resourceFile) },
         // if the current path is set to "DEVELOPING_OPAL/<SUB-PROJECT>/<BIN>"
-        (resourceFile) ⇒ { Some("../../../OPAL/"+resourceFile) },
+        resourceFile ⇒ { Some("../../../OPAL/"+resourceFile) },
         // if we are in the sub-project's root folder
-        (resourceFile) ⇒ { Some("../"+subProjectFolder + resourceFile) },
+        resourceFile ⇒ { Some("../"+subProjectFolder + resourceFile) },
         // if we are in a "developing opal" sub-project's root folder
-        (resourceFile) ⇒ { Some("../../OPAL/"+resourceFile) },
+        resourceFile ⇒ { Some("../../OPAL/"+resourceFile) },
         // if the current path is set to "target/scala-.../classes"
-        (resourceFile) ⇒ {
+        resourceFile ⇒ {
             val userDir = System.getProperty("user.dir")
             if ("""target/scala\-[\w\.]+/classes$""".r.findFirstIn(userDir).isDefined) {
                 Some("../../../src/test/resources/"+resourceFile)
@@ -72,7 +74,7 @@ object TestResources {
      * Returns all JARs that are intended to be used by tests and which were compiled
      * using the test fixtures.
      */
-    def allManagedBITestJARs(): Traversable[File] = {
+    def allManagedBITestJARs(): Seq[File] = {
         for {
             pathFunction ← pathPrefixCandidates("bi")
             fCandidate = pathFunction(s"bi/$managedResourcesFolder")
@@ -87,7 +89,7 @@ object TestResources {
         }
     }
 
-    def allUnmanagedBITestJARs(): Traversable[File] = {
+    def allUnmanagedBITestJARs(): Seq[File] = {
         var allJARs: List[File] = Nil
         val f = locateTestResources("classfiles", "bi")
         if (f.exists && f.isDirectory && f.canRead) {
@@ -100,7 +102,7 @@ object TestResources {
      * Returns all folders in the `classfiles` folder.
      * @return
      */
-    def allBITestProjectFolders(): Traversable[File] = {
+    def allBITestProjectFolders(): Seq[File] = {
         val f = locateTestResources("classfiles", "bi")
         if (!f.exists || !f.isDirectory)
             return Nil;
@@ -119,6 +121,6 @@ object TestResources {
      *
      * @note This set never includes the JRE.
      */
-    def allBITestJARs(): Traversable[File] = allManagedBITestJARs() ++ allUnmanagedBITestJARs
+    def allBITestJARs(): Seq[File] = allManagedBITestJARs() ++ allUnmanagedBITestJARs
 
 }

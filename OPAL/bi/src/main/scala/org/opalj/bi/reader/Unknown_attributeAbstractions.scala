@@ -7,6 +7,10 @@ import java.io.DataInputStream
 
 trait Unknown_attributeAbstractions extends Constant_PoolAbstractions with AttributesAbstractions {
 
+    //
+    // TYPE DEFINITIONS AND FACTORY METHODS
+    //
+
     type Unknown_attribute <: Attribute
 
     def Unknown_attribute(

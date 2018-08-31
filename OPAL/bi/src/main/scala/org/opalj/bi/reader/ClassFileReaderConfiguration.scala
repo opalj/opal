@@ -11,7 +11,7 @@ import org.opalj.log.LogContext
 
 /**
  * Defines various settings related to reading/processing class files. To change
- * the default confiration, override the respective `val` using '''early initializers'''!
+ * the default configuration, override the respective `val` using '''early initializers'''!
  *
  * @example
  * {{{

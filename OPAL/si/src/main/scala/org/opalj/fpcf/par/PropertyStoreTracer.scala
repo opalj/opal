@@ -57,6 +57,11 @@ trait PropertyStoreTracer {
         epksWithNotYetNotifiedDependers: Set[SomeEPK]
     ): Unit
 
+    def uselessPartialResult(
+        r:           SomePartialResult,
+        oldEOptionP: SomeEOptionP
+    ): Unit
+
     def metaInformationDeleted(finalEP: SomeFinalEP): Unit
 
     def reachedQuiescence(): Unit
@@ -184,6 +189,20 @@ case class HandlingResult(
 
 }
 
+case class UselessPartialResult(
+        eventId:     Int,
+        r:           SomePartialResult,
+        oldEOptionP: SomeEOptionP
+) extends StoreEvent {
+
+    override def toTxt: String = {
+        val e = oldEOptionP.e
+        s"$eventId: UselessPartialResult($e@${System.identityHashCode(e).toHexString},"+
+            s"$r,old=$oldEOptionP)"
+    }
+
+}
+
 case class MetaInformationDeleted(
         eventId: Int,
         finalEP: SomeFinalEP
@@ -274,6 +293,14 @@ class RecordAllPropertyStoreTracer extends PropertyStoreTracer {
     ): Unit = {
         val eventId = eventCounter.incrementAndGet()
         events offer HandlingResult(eventId, r, forceEvaluation, epksWithNotYetNotifiedDependers)
+    }
+
+    def uselessPartialResult(
+        r:           SomePartialResult,
+        oldEOptionP: SomeEOptionP
+    ): Unit = {
+        val eventId = eventCounter.incrementAndGet()
+        events offer UselessPartialResult(eventId, r, oldEOptionP)
     }
 
     def metaInformationDeleted(finalEP: SomeFinalEP): Unit = {

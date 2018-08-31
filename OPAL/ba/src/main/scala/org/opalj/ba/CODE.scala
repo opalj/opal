@@ -220,7 +220,7 @@ object CODE {
             var markedInstructionAsLive = false
             while (markedAsLive.nonEmpty) {
                 // mark all code elements which can be executed subsequently as live
-                val IntHeadAndRestOfSet(nextIndex, newMarkedAsLive) = markedAsLive.getAndRemove
+                val IntHeadAndRestOfSet(nextIndex, newMarkedAsLive) = markedAsLive.headAndTail
                 markedAsLive = newMarkedAsLive
 
                 var currentIndex = nextIndex

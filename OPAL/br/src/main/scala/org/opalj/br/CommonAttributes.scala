@@ -15,14 +15,14 @@ trait CommonAttributes {
     def runtimeVisibleTypeAnnotations: TypeAnnotations = {
         attributes collectFirst { case RuntimeVisibleTypeAnnotationTable(vas) ⇒ vas } match {
             case Some(typeAnnotations) ⇒ typeAnnotations
-            case None                  ⇒ IndexedSeq.empty
+            case None                  ⇒ NoTypeAnnotations
         }
     }
 
     def runtimeInvisibleTypeAnnotations: TypeAnnotations = {
         attributes collectFirst { case RuntimeInvisibleTypeAnnotationTable(ias) ⇒ ias } match {
             case Some(typeAnnotations) ⇒ typeAnnotations
-            case None                  ⇒ IndexedSeq.empty
+            case None                  ⇒ NoTypeAnnotations
         }
     }
 
@@ -34,8 +34,8 @@ trait CommonAttributes {
     /**
      * Compares this element's attributes with the given one.
      *
-     * @return None, if both attribute lists are similar; Some(<description of the difference>)
-     *         otherwise.
+     * @return None, if both attribute lists are similar;
+     *         Some(&lt;description of the difference&gt;) otherwise.
      */
     protected[this] def compareAttributes(
         other:  Attributes,
@@ -45,7 +45,7 @@ trait CommonAttributes {
         if (thisAttributes.size != otherAttributes.size) {
             val message =
                 "number of (filtered) attributes differ: "+
-                    (thisAttributes.toSet.diff(otherAttributes.toSet).mkString("{", ",", "}"))
+                    thisAttributes.toSet.diff(otherAttributes.toSet).mkString("{", ",", "}")
             return Some((message, thisAttributes.size, otherAttributes.size));
         }
         // Recall that some attributes may be defined multiple times and therefore an easy

@@ -20,6 +20,7 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.bi.TestResources.{locateTestResources ⇒ locate}
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.instructions.MethodInvocationInstruction
+import org.opalj.collection.immutable.RefArray
 
 /**
  * Tests the rewriting of lambda expressions/method references using Java 8's infrastructure. I.e.,
@@ -47,8 +48,8 @@ class BasicLambdaExpressionsRewritingTest extends FunSpec with Matchers {
             body ← method.body
             factoryCall ← body.iterator.collect { case i: INVOKESTATIC ⇒ i }
             if factoryCall.declaringClass.fqn.matches(InvokedynamicRewriting.LambdaNameRegEx)
-            annotations = method.runtimeVisibleAnnotations
         } {
+            val annotations = method.runtimeVisibleAnnotations
             successFull = true
             implicit val MethodDeclarationEquality: Equality[Method] =
                 (a: Method, b: Any) ⇒ b match {
@@ -60,16 +61,31 @@ class BasicLambdaExpressionsRewritingTest extends FunSpec with Matchers {
                 }
 
             if (annotations.exists(_.annotationType == InvokedMethods)) {
-                val invokedTarget = annotations
-                    .filter(_.annotationType == InvokedMethods)
-                    .flatMap(_.elementValuePairs)
-                    .flatMap(_.value.asInstanceOf[ArrayValue].values)
-                    .filter { invokeMethod ⇒
-                        val innerAnnotation = IndexedSeq(invokeMethod.asInstanceOf[AnnotationValue].annotation)
-                        val expectedTarget = getInvokedMethod(project, classFile, innerAnnotation)
-                        val actualTarget = getCallTarget(project, factoryCall, expectedTarget.get.name)
-                        MethodDeclarationEquality.areEqual(expectedTarget.get, actualTarget.get)
-                    }
+                val invokedTarget = for {
+                    a ← annotations.iterator
+                    if a.annotationType == InvokedMethods
+                    evp ← a.elementValuePairs
+                    ArrayValue(values) = evp.value
+                    ev @ AnnotationValue(annotation) ← values
+                    innerAnnotation = RefArray(annotation)
+                    expectedTarget = getInvokedMethod(project, classFile, innerAnnotation)
+                    actualTarget = getCallTarget(project, factoryCall, expectedTarget.get.name)
+                    if MethodDeclarationEquality.areEqual(expectedTarget.get, actualTarget.get)
+                } yield {
+                    ev
+                }
+                /*
+                val invokedTarget =
+                    annotations.iterator
+                        .filter(_.annotationType == InvokedMethods)
+                        .flatMap[ElementValuePair](_.elementValuePairs)
+                        .flatMap[ElementValue](_.value.asInstanceOf[ArrayValue].values)
+                        .filter { invokeMethod ⇒
+                            val innerAnnotation = RefArray(invokeMethod.asInstanceOf[AnnotationValue].annotation)
+                            val expectedTarget = getInvokedMethod(project, classFile, innerAnnotation)
+                            val actualTarget = getCallTarget(project, factoryCall, expectedTarget.get.name)
+                            MethodDeclarationEquality.areEqual(expectedTarget.get, actualTarget.get)
+                        }*/
 
                 assert(
                     invokedTarget.nonEmpty,
@@ -195,7 +211,7 @@ class BasicLambdaExpressionsRewritingTest extends FunSpec with Matchers {
         classFile:      ClassFile,
         methodName:     String,
         receiverType:   String,
-        parameterTypes: Option[IndexedSeq[FieldType]]
+        parameterTypes: Option[FieldTypes]
     ): Method = {
         /**
          * Get the method definition recursively -> if the method isn't implemented in `classFile`, check if
@@ -223,9 +239,9 @@ class BasicLambdaExpressionsRewritingTest extends FunSpec with Matchers {
         findMethodRecursiveInner(classFile)
     }
 
-    private def getParameterTypes(pairs: ElementValuePairs): Option[IndexedSeq[FieldType]] = {
+    private def getParameterTypes(pairs: ElementValuePairs): Option[RefArray[FieldType]] = {
         pairs.find(_.name == "parameterTypes").map { p ⇒
-            p.value.asInstanceOf[ArrayValue].values.map {
+            p.value.asInstanceOf[ArrayValue].values.map[FieldType] {
                 case ClassValue(x: ArrayType)  ⇒ x
                 case ClassValue(x: ObjectType) ⇒ x
                 case ClassValue(x: BaseType)   ⇒ x

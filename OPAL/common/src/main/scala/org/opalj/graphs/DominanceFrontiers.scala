@@ -2,9 +2,11 @@
 package org.opalj
 package graphs
 
-import org.opalj.collection.mutable.FixedSizeBitSet
-import org.opalj.collection.immutable.{Chain, IntArraySet, IntHeadAndRestOfSet}
+import org.opalj.collection.immutable.Chain
+import org.opalj.collection.immutable.IntArraySet
 import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.collection.immutable.IntRefPair
+import org.opalj.collection.mutable.FixedSizeBitSet
 import org.opalj.collection.mutable.IntArrayStack
 
 /**
@@ -13,17 +15,17 @@ import org.opalj.collection.mutable.IntArrayStack
  * @author Michael Eichberg
  */
 final class DominanceFrontiers private (
-        private final val dfs: Array[IntArraySet]
+        private val dfs: Array[IntArraySet] // IMPROVE Consider using an IntTrieSet (if it doesn't work, document it!)
 ) extends ControlDependencies {
 
-    final def apply(n: Int): IntArraySet = df(n)
+    def apply(n: Int): IntArraySet = df(n)
 
-    final def maxNode: Int = dfs.length - 1
+    def maxNode: Int = dfs.length - 1
 
     /**
      * Returns the nodes in the dominance frontier of the given node.
      */
-    final def df(n: Int): IntArraySet = {
+    def df(n: Int): IntArraySet = {
         val df = dfs(n)
         if (df eq null)
             IntArraySet.empty
@@ -31,15 +33,15 @@ final class DominanceFrontiers private (
             df
     }
 
-    final def transitiveDF(n: Int): IntTrieSet = {
-        var transitiveDF = IntTrieSet.empty ++ this.df(n).intIterator
+    def transitiveDF(n: Int): IntTrieSet = {
+        var transitiveDF = IntTrieSet.empty ++ this.df(n).iterator
         var nodesToVisit = transitiveDF - n
         while (nodesToVisit.nonEmpty) {
-            val IntHeadAndRestOfSet(nextN, newNodesToVisit) = nodesToVisit.getAndRemove
+            val IntRefPair(nextN, newNodesToVisit) = nodesToVisit.headAndTail
             nodesToVisit = newNodesToVisit
             val nextDF = this.df(nextN)
-            transitiveDF ++= nextDF.intIterator
-            nodesToVisit ++= nextDF.intIterator.filter(_ != nextN)
+            transitiveDF ++= nextDF.iterator
+            nodesToVisit ++= nextDF.iterator.filter(_ != nextN)
         }
         transitiveDF
     }
@@ -84,7 +86,7 @@ final class DominanceFrontiers private (
      *          a valid node, then the default function, which always returns `true`,
      *          can be used.
      */
-    def toDot(isNodeValid: (Int) ⇒ Boolean = (i) ⇒ true): String = {
+    def toDot(isNodeValid: Int ⇒ Boolean = _ ⇒ true): String = {
         val g = Graph.empty[Int]
         dfs.zipWithIndex.foreach { e ⇒
             val (df, s /*index*/ ) = e
@@ -96,7 +98,7 @@ final class DominanceFrontiers private (
                 }
             }
         }
-        g.toDot(rankdir = "BT", dir = "forward", ranksep = "0.3")
+        g.toDot(rankdir = "BT", ranksep = "0.3")
     }
 }
 
@@ -190,7 +192,7 @@ object DominanceFrontiers {
         @inline def dfLocal(n: Int): IntArraySet = {
             var s = IntArraySet.empty
             try {
-                foreachSuccessorOf(n) accept { y ⇒ if (dt.dom(y) != n) s = s + y }
+                foreachSuccessorOf(n) { y ⇒ if (dt.dom(y) != n) s = s + y }
             } catch {
                 case t: Throwable ⇒
                     throw new Throwable(s"failed iterating over successors of node $n", t)

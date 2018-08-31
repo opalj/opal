@@ -22,11 +22,11 @@ trait TypeAnnotationTable extends CodeAttribute {
      */
     def typeAnnotations: TypeAnnotations
 
-    override def remapPCs(codeSize: Int, f: PC ⇒ PC): TypeAnnotationTable = {
-        copy(typeAnnotations.flatMap(_.remapPCs(codeSize, f)))
-    }
-
     def copy(typeAnnotations: TypeAnnotations): TypeAnnotationTable
+
+    override def remapPCs(codeSize: Int, f: PC ⇒ PC): TypeAnnotationTable = {
+        copy(typeAnnotations.flatMap[TypeAnnotation](_.remapPCs(codeSize, f)))
+    }
 
     override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = {
         other match {

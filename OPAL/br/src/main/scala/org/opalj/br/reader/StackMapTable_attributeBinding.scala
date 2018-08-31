@@ -3,8 +3,6 @@ package org.opalj
 package br
 package reader
 
-import scala.reflect.ClassTag
-
 import org.opalj.bi.reader.StackMapTable_attributeReader
 import org.opalj.bi.reader.StackMapFrameReader
 import org.opalj.bi.reader.VerificationTypeInfoReader
@@ -23,7 +21,6 @@ trait StackMapTable_attributeBinding
     with AttributeBinding {
 
     type VerificationTypeInfo = br.VerificationTypeInfo
-    val VerificationTypeInfoManifest: ClassTag[VerificationTypeInfo] = implicitly
     type StackMapTable_attribute = br.StackMapTable
     type StackMapFrame = br.StackMapFrame
     type FullFrame = br.FullFrame
@@ -43,8 +40,6 @@ trait StackMapTable_attributeBinding
     type DoubleVariableInfo = br.VerificationTypeInfo
     type NullVariableInfo = br.VerificationTypeInfo
     type UninitializedThisVariableInfo = br.VerificationTypeInfo
-
-    val StackMapFrameManifest: ClassTag[StackMapFrame] = implicitly
 
     def StackMapTable_attribute(
         cp:                   Constant_Pool,

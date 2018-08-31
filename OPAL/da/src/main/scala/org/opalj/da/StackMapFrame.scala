@@ -28,7 +28,7 @@ sealed abstract class StackMapFrame {
     ): (Node, Int /* new offset*/ )
 
     protected def verification_type_infos_toXHTML(
-        verification_type_infos: Seq[VerificationTypeInfo]
+        verification_type_infos: VerificationTypeInfos
     )(
         implicit
         cp: Constant_Pool
@@ -37,8 +37,10 @@ sealed abstract class StackMapFrame {
             if (verification_type_infos.isEmpty) {
                 List(<i>&lt;Empty&gt;</i>)
             } else {
-                val vtis = verification_type_infos.map(l ⇒ { l.toXHTML })
-                vtis.tail.foldLeft(List(vtis.head)) { (r, n) ⇒ r ++ List(Text(", "), n) }
+                val vtis = verification_type_infos.map(l ⇒ l.toXHTML)
+                val vtisIt = vtis.iterator
+                val head = vtisIt.next()
+                vtisIt.foldLeft(List(head)) { (r, n) ⇒ r ++ List(Text(", "), n) }
             }
         )
     }
@@ -186,7 +188,7 @@ case class SameFrameExtended(frame_type: Int = 251, offset_delta: Int) extends S
 case class AppendFrame(
         frame_type:                    Int,
         offset_delta:                  Int,
-        verification_type_info_locals: Seq[VerificationTypeInfo]
+        verification_type_info_locals: VerificationTypeInfos
 ) extends StackMapFrame {
 
     final override def attribute_length: Int = {
@@ -220,8 +222,8 @@ case class AppendFrame(
 case class FullFrame(
         frame_type:                    Int,
         offset_delta:                  Int,
-        verification_type_info_locals: IndexedSeq[VerificationTypeInfo],
-        verification_type_info_stack:  IndexedSeq[VerificationTypeInfo]
+        verification_type_info_locals: VerificationTypeInfos,
+        verification_type_info_stack:  VerificationTypeInfos
 ) extends StackMapFrame {
 
     final override def attribute_length: Int = {

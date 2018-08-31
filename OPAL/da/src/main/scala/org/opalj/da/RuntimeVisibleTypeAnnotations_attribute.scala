@@ -13,7 +13,7 @@ import scala.xml.Node
  */
 case class RuntimeVisibleTypeAnnotations_attribute(
         attribute_name_index: Constant_Pool_Index,
-        typeAnnotations:      IndexedSeq[TypeAnnotation]
+        typeAnnotations:      TypeAnnotations
 ) extends TypeAnnotations_attribute {
 
     final override def toXHTML(implicit cp: Constant_Pool): Node = {

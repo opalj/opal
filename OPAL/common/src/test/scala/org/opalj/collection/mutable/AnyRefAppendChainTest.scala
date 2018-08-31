@@ -7,32 +7,32 @@ import org.scalatest.junit.JUnitRunner
 import org.junit.runner.RunWith
 
 /**
- * Tests the AnyRefAppendChain
+ * Tests the RefAppendChain
  *
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class AnyRefAppendChainTest extends FlatSpec with Matchers {
+class RefAppendChainTest extends FlatSpec with Matchers {
 
-    behavior of "the AnyRefAppendChain data structure"
+    behavior of "the RefAppendChain data structure"
 
     it should ("be empty if it is newly created") in {
-        val l = new AnyRefAppendChain[AnyRef]()
+        val l = new RefAppendChain[AnyRef]()
         l should be('empty)
         l.nonEmpty should be(false)
 
     }
 
     it should ("throw an exception if head is called on an empy list") in {
-        assertThrows[NullPointerException](new AnyRefAppendChain[AnyRef]().head)
+        assertThrows[NullPointerException](new RefAppendChain[AnyRef]().head)
     }
 
     it should ("throw an exception if last is called on an empy list") in {
-        assertThrows[NullPointerException](new AnyRefAppendChain[AnyRef]().last)
+        assertThrows[NullPointerException](new RefAppendChain[AnyRef]().last)
     }
 
     it should ("return the prepended elements in reverse order") in {
-        val c = new AnyRefAppendChain[AnyRef]()
+        val c = new RefAppendChain[AnyRef]()
         c.prepend("a").prepend("b").prepend("c")
         c should be('nonEmpty)
 
@@ -47,12 +47,12 @@ class AnyRefAppendChainTest extends FlatSpec with Matchers {
         c.take() should be("a")
 
         c should be('empty)
-        assertThrows[NullPointerException](new AnyRefAppendChain[AnyRef]().head)
-        assertThrows[NullPointerException](new AnyRefAppendChain[AnyRef]().last)
+        assertThrows[NullPointerException](new RefAppendChain[AnyRef]().head)
+        assertThrows[NullPointerException](new RefAppendChain[AnyRef]().last)
     }
 
     it should ("return the appended elements in order") in {
-        val c = new AnyRefAppendChain[AnyRef]()
+        val c = new RefAppendChain[AnyRef]()
         c.append("a").append("b").append("c")
         c should be('nonEmpty)
 
@@ -67,12 +67,12 @@ class AnyRefAppendChainTest extends FlatSpec with Matchers {
         c.take() should be("c")
 
         c should be('empty)
-        assertThrows[NullPointerException](new AnyRefAppendChain[AnyRef]().head)
-        assertThrows[NullPointerException](new AnyRefAppendChain[AnyRef]().last)
+        assertThrows[NullPointerException](new RefAppendChain[AnyRef]().head)
+        assertThrows[NullPointerException](new RefAppendChain[AnyRef]().last)
     }
 
     it should ("after removing pre-/appended elements the list should be empty") in {
-        val c = new AnyRefAppendChain[AnyRef]()
+        val c = new RefAppendChain[AnyRef]()
         c.append("a").prepend("b").append("c")
         c.take() should be("b")
         c.take() should be("a")
@@ -80,7 +80,7 @@ class AnyRefAppendChainTest extends FlatSpec with Matchers {
 
         c should be('empty)
         c should not be ('nonEmpty)
-        assertThrows[NullPointerException](new AnyRefAppendChain[AnyRef]().head)
-        assertThrows[NullPointerException](new AnyRefAppendChain[AnyRef]().last)
+        assertThrows[NullPointerException](new RefAppendChain[AnyRef]().head)
+        assertThrows[NullPointerException](new RefAppendChain[AnyRef]().last)
     }
 }

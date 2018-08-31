@@ -3,8 +3,6 @@ package org.opalj
 package br
 package reader
 
-import scala.reflect.ClassTag
-
 import org.opalj.bi.reader.MethodParameters_attributeReader
 
 /**
@@ -18,7 +16,6 @@ trait MethodParameters_attributeBinding
     with AttributeBinding {
 
     type MethodParameter = br.MethodParameter
-    override val MethodParameterManifest: ClassTag[MethodParameter] = implicitly
 
     type MethodParameters_attribute = br.MethodParameterTable
 

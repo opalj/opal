@@ -6,7 +6,8 @@ import scala.math.Ordered
 
 /**
  * A `VirtualSourceElement` is the representation of some source element that may be
- * detached from the concrete source element that represents the implementation.
+ * detached from the concrete source element that represents the implementation; that is,
+ * the virtual source element may not have a reference to the concrete element.
  *
  * @author Michael Eichberg
  * @author Marco Torsello
@@ -15,7 +16,7 @@ sealed abstract class VirtualSourceElement
     extends SourceElement
     with Ordered[VirtualSourceElement] {
 
-    override def attributes = Nil
+    override def attributes: Attributes = NoAttributes
 
     final override def isVirtual = true
 

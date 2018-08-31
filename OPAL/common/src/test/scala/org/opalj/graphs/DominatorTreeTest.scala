@@ -2,10 +2,6 @@
 package org.opalj
 package graphs
 
-import java.util.function.IntConsumer
-import java.util.function.Consumer
-import java.util.function.IntFunction
-
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
@@ -24,11 +20,11 @@ class DominatorTreeTest extends FlatSpec with Matchers {
 
     "a graph with just one node" should "result in a dominator tree with a single node" in {
         val g = Graph.empty[Int] += 0
-        val foreachSuccessorOf: IntFunction[Consumer[IntConsumer]] = (n: Int) ⇒ {
-            f: IntConsumer ⇒ g.successors.getOrElse(n, Nil).foreach(e ⇒ f.accept(e))
+        val foreachSuccessorOf: Int ⇒ ((Int ⇒ Unit) ⇒ Unit) = (n: Int) ⇒ {
+            f: (Int ⇒ Unit) ⇒ g.successors.getOrElse(n, Nil).foreach(e ⇒ f(e))
         }
-        val foreachPredecessorOf: IntFunction[Consumer[IntConsumer]] = (n: Int) ⇒ {
-            f: IntConsumer ⇒ g.predecessors.getOrElse(n, Nil).foreach(e ⇒ f.accept(e))
+        val foreachPredecessorOf: Int ⇒ ((Int ⇒ Unit) ⇒ Unit) = (n: Int) ⇒ {
+            f: (Int ⇒ Unit) ⇒ g.predecessors.getOrElse(n, Nil).foreach(e ⇒ f(e))
         }
 
         val dt = time {
@@ -49,11 +45,11 @@ class DominatorTreeTest extends FlatSpec with Matchers {
 
     "a graph with one custom node" should "result in a dominator tree with a single node" in {
         val g = Graph.empty[Int] += 7
-        val foreachSuccessorOf: IntFunction[Consumer[IntConsumer]] = (n: Int) ⇒ {
-            f: IntConsumer ⇒ g.successors.getOrElse(n, Nil).foreach(e ⇒ f.accept(e))
+        val foreachSuccessorOf: Int ⇒ ((Int ⇒ Unit) ⇒ Unit) = (n: Int) ⇒ {
+            f: (Int ⇒ Unit) ⇒ g.successors.getOrElse(n, Nil).foreach(e ⇒ f(e))
         }
-        val foreachPredecessorOf: IntFunction[Consumer[IntConsumer]] = (n: Int) ⇒ {
-            f: IntConsumer ⇒ g.predecessors.getOrElse(n, Nil).foreach(e ⇒ f.accept(e))
+        val foreachPredecessorOf: Int ⇒ ((Int ⇒ Unit) ⇒ Unit) = (n: Int) ⇒ {
+            f: (Int ⇒ Unit) ⇒ g.predecessors.getOrElse(n, Nil).foreach(e ⇒ f(e))
         }
 
         val dt = time {
@@ -74,11 +70,11 @@ class DominatorTreeTest extends FlatSpec with Matchers {
 
     "a graph with two connected nodes" should "yield one node dominating the other" in {
         val g = Graph.empty[Int] += (0 → 1)
-        val foreachSuccessorOf: IntFunction[Consumer[IntConsumer]] = (n: Int) ⇒ {
-            f: IntConsumer ⇒ g.successors.getOrElse(n, Nil).foreach(e ⇒ f.accept(e))
+        val foreachSuccessorOf: Int ⇒ ((Int ⇒ Unit) ⇒ Unit) = (n: Int) ⇒ {
+            f: (Int ⇒ Unit) ⇒ g.successors.getOrElse(n, Nil).foreach(e ⇒ f(e))
         }
-        val foreachPredecessorOf: IntFunction[Consumer[IntConsumer]] = (n: Int) ⇒ {
-            f: IntConsumer ⇒ g.predecessors.getOrElse(n, Nil).foreach(e ⇒ f.accept(e))
+        val foreachPredecessorOf: Int ⇒ ((Int ⇒ Unit) ⇒ Unit) = (n: Int) ⇒ {
+            f: (Int ⇒ Unit) ⇒ g.predecessors.getOrElse(n, Nil).foreach(e ⇒ f(e))
         }
         val dt = time {
             DominatorTree(0, false, foreachSuccessorOf, foreachPredecessorOf, 4)
@@ -91,11 +87,11 @@ class DominatorTreeTest extends FlatSpec with Matchers {
 
     "a simple tree" should "result in a corresponding dominator tree" in {
         val g = Graph.empty[Int] += (0 → 1) += (1 → 2) += (1 → 3) += (1 → 4)
-        val foreachSuccessorOf: IntFunction[Consumer[IntConsumer]] = (n: Int) ⇒ {
-            f: IntConsumer ⇒ g.successors.getOrElse(n, Nil).foreach(e ⇒ f.accept(e))
+        val foreachSuccessorOf: Int ⇒ ((Int ⇒ Unit) ⇒ Unit) = (n: Int) ⇒ {
+            f: (Int ⇒ Unit) ⇒ g.successors.getOrElse(n, Nil).foreach(e ⇒ f(e))
         }
-        val foreachPredecessorOf: IntFunction[Consumer[IntConsumer]] = (n: Int) ⇒ {
-            f: IntConsumer ⇒ g.predecessors.getOrElse(n, Nil).foreach(e ⇒ f.accept(e))
+        val foreachPredecessorOf: Int ⇒ ((Int ⇒ Unit) ⇒ Unit) = (n: Int) ⇒ {
+            f: (Int ⇒ Unit) ⇒ g.predecessors.getOrElse(n, Nil).foreach(e ⇒ f(e))
         }
         val dt = time {
             DominatorTree(0, false, foreachSuccessorOf, foreachPredecessorOf, 4)
@@ -110,11 +106,11 @@ class DominatorTreeTest extends FlatSpec with Matchers {
 
     "a tree with a custom start node" should "result in a corresponding dominator tree" in {
         val g = Graph.empty[Int] += (5 → 0) += (0 → 1) += (1 → 2) += (1 → 3) += (2 → 4)
-        val foreachSuccessorOf: IntFunction[Consumer[IntConsumer]] = (n: Int) ⇒ {
-            f: IntConsumer ⇒ g.successors.getOrElse(n, Nil).foreach(e ⇒ f.accept(e))
+        val foreachSuccessorOf: Int ⇒ ((Int ⇒ Unit) ⇒ Unit) = (n: Int) ⇒ {
+            f: (Int ⇒ Unit) ⇒ g.successors.getOrElse(n, Nil).foreach(e ⇒ f(e))
         }
-        val foreachPredecessorOf: IntFunction[Consumer[IntConsumer]] = (n: Int) ⇒ {
-            f: IntConsumer ⇒ g.predecessors.getOrElse(n, Nil).foreach(e ⇒ f.accept(e))
+        val foreachPredecessorOf: Int ⇒ ((Int ⇒ Unit) ⇒ Unit) = (n: Int) ⇒ {
+            f: (Int ⇒ Unit) ⇒ g.predecessors.getOrElse(n, Nil).foreach(e ⇒ f(e))
         }
         val dt = time {
             DominatorTree(5, false, foreachSuccessorOf, foreachPredecessorOf, 5)
@@ -134,11 +130,11 @@ class DominatorTreeTest extends FlatSpec with Matchers {
 
     "a graph with a cycle" should "correctly be resolved" in {
         val g = Graph.empty[Int] += (0 → 1) += (1 → 2) += (1 → 3) += (0 → 4) += (2 → 1)
-        val foreachSuccessorOf: IntFunction[Consumer[IntConsumer]] = (n: Int) ⇒ {
-            f: IntConsumer ⇒ g.successors.getOrElse(n, Nil).foreach(e ⇒ f.accept(e))
+        val foreachSuccessorOf: Int ⇒ ((Int ⇒ Unit) ⇒ Unit) = (n: Int) ⇒ {
+            f: (Int ⇒ Unit) ⇒ g.successors.getOrElse(n, Nil).foreach(e ⇒ f(e))
         }
-        val foreachPredecessorOf: IntFunction[Consumer[IntConsumer]] = (n: Int) ⇒ {
-            f: IntConsumer ⇒ g.predecessors.getOrElse(n, Nil).foreach(e ⇒ f.accept(e))
+        val foreachPredecessorOf: Int ⇒ ((Int ⇒ Unit) ⇒ Unit) = (n: Int) ⇒ {
+            f: (Int ⇒ Unit) ⇒ g.predecessors.getOrElse(n, Nil).foreach(e ⇒ f(e))
         }
         val dt = time {
             DominatorTree(0, false, foreachSuccessorOf, foreachPredecessorOf, 4)
@@ -154,11 +150,11 @@ class DominatorTreeTest extends FlatSpec with Matchers {
 
     "a graph with a cycle and custom start node" should "correctly be resolved" in {
         val g = Graph.empty[Int] += (5 → 1) += (1 → 2) += (1 → 3) += (5 → 4) += (2 → 1)
-        val foreachSuccessorOf: IntFunction[Consumer[IntConsumer]] = (n: Int) ⇒ {
-            f: IntConsumer ⇒ g.successors.getOrElse(n, Nil).foreach(e ⇒ f.accept(e))
+        val foreachSuccessorOf: Int ⇒ ((Int ⇒ Unit) ⇒ Unit) = (n: Int) ⇒ {
+            f: (Int ⇒ Unit) ⇒ g.successors.getOrElse(n, Nil).foreach(e ⇒ f(e))
         }
-        val foreachPredecessorOf: IntFunction[Consumer[IntConsumer]] = (n: Int) ⇒ {
-            f: IntConsumer ⇒ g.predecessors.getOrElse(n, Nil).foreach(e ⇒ f.accept(e))
+        val foreachPredecessorOf: Int ⇒ ((Int ⇒ Unit) ⇒ Unit) = (n: Int) ⇒ {
+            f: (Int ⇒ Unit) ⇒ g.predecessors.getOrElse(n, Nil).foreach(e ⇒ f(e))
         }
         val dt = time {
             DominatorTree(5, false, foreachSuccessorOf, foreachPredecessorOf, 5)
@@ -174,11 +170,11 @@ class DominatorTreeTest extends FlatSpec with Matchers {
 
     "a graph with a cycle related to the root node" should "correctly be resolved" in {
         val g = Graph.empty[Int] += (0 → 1) += (1 → 0)
-        val foreachSuccessorOf: IntFunction[Consumer[IntConsumer]] = (n: Int) ⇒ {
-            f: IntConsumer ⇒ g.successors.getOrElse(n, Nil).foreach(e ⇒ f.accept(e))
+        val foreachSuccessorOf: Int ⇒ ((Int ⇒ Unit) ⇒ Unit) = (n: Int) ⇒ {
+            f: (Int ⇒ Unit) ⇒ g.successors.getOrElse(n, Nil).foreach(e ⇒ f(e))
         }
-        val foreachPredecessorOf: IntFunction[Consumer[IntConsumer]] = (n: Int) ⇒ {
-            f: IntConsumer ⇒ g.predecessors.getOrElse(n, Nil).foreach(e ⇒ f.accept(e))
+        val foreachPredecessorOf: Int ⇒ ((Int ⇒ Unit) ⇒ Unit) = (n: Int) ⇒ {
+            f: (Int ⇒ Unit) ⇒ g.predecessors.getOrElse(n, Nil).foreach(e ⇒ f(e))
         }
         val dt = time {
             DominatorTree(0, true, foreachSuccessorOf, foreachPredecessorOf, 4)
@@ -191,11 +187,11 @@ class DominatorTreeTest extends FlatSpec with Matchers {
 
     "a graph with a cycle related to a custom root node" should "correctly be resolved" in {
         val g = Graph.empty[Int] += (2 → 1) += (1 → 2)
-        val foreachSuccessorOf: IntFunction[Consumer[IntConsumer]] = (n: Int) ⇒ {
-            f: IntConsumer ⇒ g.successors.getOrElse(n, Nil).foreach(e ⇒ f.accept(e))
+        val foreachSuccessorOf: Int ⇒ ((Int ⇒ Unit) ⇒ Unit) = (n: Int) ⇒ {
+            f: (Int ⇒ Unit) ⇒ g.successors.getOrElse(n, Nil).foreach(e ⇒ f(e))
         }
-        val foreachPredecessorOf: IntFunction[Consumer[IntConsumer]] = (n: Int) ⇒ {
-            f: IntConsumer ⇒ g.predecessors.getOrElse(n, Nil).foreach(e ⇒ f.accept(e))
+        val foreachPredecessorOf: Int ⇒ ((Int ⇒ Unit) ⇒ Unit) = (n: Int) ⇒ {
+            f: (Int ⇒ Unit) ⇒ g.predecessors.getOrElse(n, Nil).foreach(e ⇒ f(e))
         }
         val dt = time {
             DominatorTree(2, true, foreachSuccessorOf, foreachPredecessorOf, 2)
@@ -208,11 +204,11 @@ class DominatorTreeTest extends FlatSpec with Matchers {
 
     "a sparse cyclic graph" should "result in a compact dominator tree" in {
         val g = Graph.empty[Int] += (0 → 8) += (8 → 20) += (8 → 3) += (0 → 4) += (20 → 8)
-        val foreachSuccessorOf: IntFunction[Consumer[IntConsumer]] = (n: Int) ⇒ {
-            f: IntConsumer ⇒ g.successors.getOrElse(n, Nil).foreach(e ⇒ f.accept(e))
+        val foreachSuccessorOf: Int ⇒ ((Int ⇒ Unit) ⇒ Unit) = (n: Int) ⇒ {
+            f: (Int ⇒ Unit) ⇒ g.successors.getOrElse(n, Nil).foreach(e ⇒ f(e))
         }
-        val foreachPredecessorOf: IntFunction[Consumer[IntConsumer]] = (n: Int) ⇒ {
-            f: IntConsumer ⇒ g.predecessors.getOrElse(n, Nil).foreach(e ⇒ f.accept(e))
+        val foreachPredecessorOf: Int ⇒ ((Int ⇒ Unit) ⇒ Unit) = (n: Int) ⇒ {
+            f: (Int ⇒ Unit) ⇒ g.predecessors.getOrElse(n, Nil).foreach(e ⇒ f(e))
         }
         val dt = time {
             DominatorTree(0, false, foreachSuccessorOf, foreachPredecessorOf, 20)
@@ -234,11 +230,11 @@ class DominatorTreeTest extends FlatSpec with Matchers {
         import scala.language.implicitConversions
         implicit def stringToInt(s: String): Int = s.charAt(0).toInt
         val g = Graph.empty[Int] += (0, "b") += ("b", "c") += ("b", "d") += (0, "e") += ("d", "f") += ("f", "b")
-        val foreachSuccessorOf: IntFunction[Consumer[IntConsumer]] = (n: Int) ⇒ {
-            f: IntConsumer ⇒ g.successors.getOrElse(n, Nil).foreach(e ⇒ f.accept(e))
+        val foreachSuccessorOf: Int ⇒ ((Int ⇒ Unit) ⇒ Unit) = (n: Int) ⇒ {
+            f: (Int ⇒ Unit) ⇒ g.successors.getOrElse(n, Nil).foreach(e ⇒ f(e))
         }
-        val foreachPredecessorOf: IntFunction[Consumer[IntConsumer]] = (n: Int) ⇒ {
-            f: IntConsumer ⇒ g.predecessors.getOrElse(n, Nil).foreach(e ⇒ f.accept(e))
+        val foreachPredecessorOf: Int ⇒ ((Int ⇒ Unit) ⇒ Unit) = (n: Int) ⇒ {
+            f: (Int ⇒ Unit) ⇒ g.predecessors.getOrElse(n, Nil).foreach(e ⇒ f(e))
         }
         val dt = time {
             DominatorTree(0, false, foreachSuccessorOf, foreachPredecessorOf, 128)
@@ -253,11 +249,11 @@ class DominatorTreeTest extends FlatSpec with Matchers {
 
     "a very large, degenerated graph (path)" should "be computed in due time and should not raise an exception (e.g. StackOverflowError)" in {
         val g = Graph.empty[Int]
-        val foreachSuccessorOf: IntFunction[Consumer[IntConsumer]] = (n: Int) ⇒ {
-            f: IntConsumer ⇒ g.successors.getOrElse(n, Nil).foreach(e ⇒ f.accept(e))
+        val foreachSuccessorOf: Int ⇒ ((Int ⇒ Unit) ⇒ Unit) = (n: Int) ⇒ {
+            f: (Int ⇒ Unit) ⇒ g.successors.getOrElse(n, Nil).foreach(e ⇒ f(e))
         }
-        val foreachPredecessorOf: IntFunction[Consumer[IntConsumer]] = (n: Int) ⇒ {
-            f: IntConsumer ⇒ g.predecessors.getOrElse(n, Nil).foreach(e ⇒ f.accept(e))
+        val foreachPredecessorOf: Int ⇒ ((Int ⇒ Unit) ⇒ Unit) = (n: Int) ⇒ {
+            f: (Int ⇒ Unit) ⇒ g.predecessors.getOrElse(n, Nil).foreach(e ⇒ f(e))
         }
         var lastI = 0
         for (i ← 1 to 65000) {

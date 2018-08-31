@@ -3,20 +3,19 @@ package org.opalj
 package bi
 package reader
 
-import scala.reflect.ClassTag
-
 import java.io.DataInputStream
 
-import org.opalj.control.repeat
+import org.opalj.control.fillRefArray
+import org.opalj.collection.immutable.RefArray
 
 trait FieldsReader extends Constant_PoolAbstractions {
 
     //
-    // ABSTRACT DEFINITIONS
+    // TYPE DEFINITIONS AND FACTORY METHODS
     //
 
-    type Field_Info
-    implicit val Field_InfoManifest: ClassTag[Field_Info]
+    type Field_Info <: AnyRef
+    type Fields = RefArray[Field_Info]
 
     type Attributes
 
@@ -41,12 +40,10 @@ trait FieldsReader extends Constant_PoolAbstractions {
     // IMPLEMENTATION
     //
 
-    type Fields = IndexedSeq[Field_Info]
-
     // We need the constant pool to look up the attributes' names and other information.
     def Fields(cp: Constant_Pool, in: DataInputStream): Fields = {
         val fields_count = in.readUnsignedShort
-        repeat(fields_count) {
+        fillRefArray(fields_count) {
             Field_Info(cp, in)
         }
     }

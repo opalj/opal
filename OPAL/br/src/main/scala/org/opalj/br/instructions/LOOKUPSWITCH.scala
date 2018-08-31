@@ -3,9 +3,12 @@ package org.opalj
 package br
 package instructions
 
+import org.opalj.collection.IntIterator
 import org.opalj.collection.immutable.IntArraySet
 import org.opalj.collection.immutable.IntArraySet1
 import org.opalj.collection.immutable.Chain
+import org.opalj.collection.immutable.IntIntPair
+import org.opalj.collection.immutable.RefArray
 
 /**
  * Access jump table by key match and jump.
@@ -39,20 +42,20 @@ trait LOOKUPSWITCHLike extends CompoundConditionalBranchInstructionLike {
  */
 case class LOOKUPSWITCH(
         defaultOffset: Int,
-        npairs:        IndexedSeq[(Int, Int)]
+        npairs:        RefArray[IntIntPair]
 ) extends CompoundConditionalBranchInstruction with LOOKUPSWITCHLike {
 
     final override def asLOOKUPSWITCH: this.type = this
 
     final override def indexOfNextInstruction(currentPC: Int)(implicit code: Code): Int = {
-        indexOfNextInstruction(currentPC, false)
+        indexOfNextInstruction(currentPC, modifiedByWide = false)
     }
 
     def toLabeledInstruction(currentPC: PC): LabeledInstruction = {
         LabeledLOOKUPSWITCH(
             InstructionLabel(currentPC + defaultOffset),
-            npairs.map { e ⇒
-                val (v, branchoffset) = e
+            npairs.map[(Int, InstructionLabel)] { e ⇒
+                val IntIntPair(v, branchoffset) = e
                 (v, InstructionLabel(currentPC + branchoffset))
             }
         )
@@ -69,7 +72,7 @@ case class LOOKUPSWITCH(
         )
     }
 
-    override def caseValues: Iterable[Int] = npairs.view.filter(_._2 != defaultOffset).map(_._1)
+    override def caseValues: IntIterator = npairs.iterator.filter(_._2 != defaultOffset).map(_._1)
 
     def nextInstructions(
         currentPC:             PC,
@@ -83,8 +86,8 @@ case class LOOKUPSWITCH(
         var pcs = Chain.singleton(defaultTarget)
         var seen: IntArraySet = new IntArraySet1(defaultTarget)
         npairs foreach { npair ⇒
-            val (_, offset) = npair
-            val nextTarget = (currentPC + offset)
+            val offset = npair.value
+            val nextTarget = currentPC + offset
             if (!seen.contains(nextTarget)) {
                 seen += nextTarget
                 pcs :&:= nextTarget
@@ -105,8 +108,8 @@ case class LOOKUPSWITCH(
                         val oIt = otherNpairs.iterator
                         var doesMatch = true
                         while (doesMatch && tIt.hasNext) {
-                            val (tKey, tOffset) = tIt.next()
-                            val (oKey, oOffset) = oIt.next()
+                            val IntIntPair(tKey, tOffset) = tIt.next()
+                            val IntIntPair(oKey, oOffset) = oIt.next()
                             doesMatch =
                                 tKey == oKey && (tOffset + paddingOffset) == oOffset
                         }
@@ -119,8 +122,11 @@ case class LOOKUPSWITCH(
 
     override def toString(pc: Int): String = {
         "LOOKUPSWITCH("+
-            npairs.map(p ⇒ p._1+"="+(pc + p._2) + (if (p._2 >= 0) "↓" else "↑")).mkString(",")+
-            "; ifNoMatch="+(defaultOffset + pc) + (if (defaultOffset >= 0) "↓" else "↑")+")"
+            npairs.iterator.
+            map[String](p ⇒ p._1+"="+(pc + p._2) + (if (p._2 >= 0) "↓" else "↑")).
+            mkString(",")+
+            "; ifNoMatch="+(defaultOffset + pc) + (if (defaultOffset >= 0) "↓" else "↑")+
+            ")"
     }
 }
 
@@ -141,7 +147,7 @@ object LOOKUPSWITCH {
      */
     def apply(
         defaultBranchTarget: InstructionLabel,
-        branchTargets:       IndexedSeq[(Int, InstructionLabel)]
+        branchTargets:       RefArray[(Int, InstructionLabel)]
     ): LabeledLOOKUPSWITCH = LabeledLOOKUPSWITCH(defaultBranchTarget, branchTargets)
 
 }
@@ -155,30 +161,23 @@ object LOOKUPSWITCH {
  */
 case class LabeledLOOKUPSWITCH(
         defaultBranchTarget: InstructionLabel,
-        npairs:              IndexedSeq[(Int, InstructionLabel)]
+        npairs:              RefArray[(Int, InstructionLabel)]
 ) extends LabeledInstruction with LOOKUPSWITCHLike {
 
-    override def tableSize = npairs.size
+    override def tableSize: Int = npairs.size
 
-    def caseValues: Iterable[Int] = npairs.view.filter(_._2 != defaultBranchTarget).map(_._1)
+    def caseValues: IntIterator = npairs.iterator.filter(_._2 != defaultBranchTarget).map(_._1)
 
-    override def branchTargets: Seq[InstructionLabel] = npairs.map(_._2)
-
-    def caseValueOfJumpTarget(jumpTarget: InstructionLabel): (Chain[Int], Boolean) = {
-        (
-            npairs.filter(_._2 == jumpTarget).map(_._1)(Chain.GenericSpecializedCBF),
-            jumpTarget == defaultBranchTarget
-        )
-    }
+    override def branchTargets: InstructionLabels = npairs.map[InstructionLabel](_._2)
 
     @throws[BranchoffsetOutOfBoundsException]("if the branchoffset is invalid")
     override def resolveJumpTargets(currentPC: PC, pcs: Map[InstructionLabel, PC]): LOOKUPSWITCH = {
         LOOKUPSWITCH(
             asShortBranchoffset(pcs(defaultBranchTarget) - currentPC),
-            npairs.map { pair ⇒
+            npairs map { pair ⇒
                 val (value, target) = pair
-                (value, asShortBranchoffset(pcs(target) - currentPC))
-            }.toIndexedSeq
+                IntIntPair(value, asShortBranchoffset(pcs(target) - currentPC))
+            }
         )
     }
 
@@ -188,7 +187,8 @@ case class LabeledLOOKUPSWITCH(
     }
 
     override def toString(pc: Int): String = {
-        npairs.map(p ⇒ p._1+"="+p._2).
+        npairs.iterator.
+            map(p ⇒ p._1+"="+p._2).
             mkString("LOOKUPSWITCH(", ",", s"; ifNoMatch=$defaultBranchTarget)")
     }
 }

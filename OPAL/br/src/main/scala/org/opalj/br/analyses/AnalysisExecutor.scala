@@ -272,13 +272,13 @@ trait AnalysisExecutor {
         val configuredConfig = projectTypeConfig.withFallback(fallbackConfiguration)
 
         OPALLogger.info("creating project", "reading project class files")
-        val JavaClassFileReader = Project.JavaClassFileReader(theConfig = configuredConfig)
+        val JavaClassFileReader = Project.JavaClassFileReader(initialLogContext, configuredConfig)
 
         val (classFiles, exceptions1) =
             reader.readClassFiles(
                 cpFiles,
                 JavaClassFileReader.ClassFiles,
-                (file) ⇒ OPALLogger.info("creating project", "\tfile: "+file)
+                file ⇒ OPALLogger.info("creating project", "\tfile: "+file)
             )
 
         val (libraryClassFiles, exceptions2) = {
@@ -291,7 +291,7 @@ trait AnalysisExecutor {
                     } else {
                         Java9LibraryFramework.ClassFiles
                     },
-                    (file) ⇒ OPALLogger.info("creating project", "\tfile: "+file)
+                    file ⇒ OPALLogger.info("creating project", "\tfile: "+file)
                 )
             } else {
                 (Iterable.empty[(ClassFile, URL)], List.empty[Throwable])

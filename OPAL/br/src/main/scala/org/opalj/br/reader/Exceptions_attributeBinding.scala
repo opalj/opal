@@ -3,9 +3,8 @@ package org.opalj
 package br
 package reader
 
-import scala.reflect.ClassTag
-
 import org.opalj.bi.reader.Exceptions_attributeReader
+import org.opalj.collection.immutable.RefArray
 
 /**
  * The factory method to create a method's exception attribute.
@@ -18,18 +17,17 @@ trait Exceptions_attributeBinding
     with AttributeBinding {
 
     type Exceptions_attribute = br.ExceptionTable
-    val Exceptions_attributeManifest: ClassTag[Exceptions_attribute] = implicitly
 
     def Exceptions_attribute(
         cp:                    Constant_Pool,
         attribute_name_index:  Constant_Pool_Index,
-        exception_index_table: ExceptionIndexTable,
+        exception_index_table: Array[Constant_Pool_Index],
         // The scope in which the attribute is defined
         as_name_index:       Constant_Pool_Index,
         as_descriptor_index: Constant_Pool_Index
     ): Exceptions_attribute = {
         new Exceptions_attribute(
-            exception_index_table.map(e_idx ⇒ cp(e_idx).asObjectType(cp))
+            RefArray.from(exception_index_table)(e_index ⇒ cp(e_index).asObjectType(cp))
         )
     }
 }

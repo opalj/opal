@@ -10,7 +10,7 @@ import java.util.Arrays
 import scala.collection.AbstractIterator
 
 /**
- * Conceptually, a map where the keys are positive `Int` values and the values are
+ * Conceptually, a map where the (implicit) keys are positive `Int` values and the values are
  * non-`null`; `null` values are not permitted!
  * The key values always have to be larger than or equal to 0 and are ideally continues
  * (0,1,2,3,...). The values are stored in a plain array to enable true O(1) retrieval.

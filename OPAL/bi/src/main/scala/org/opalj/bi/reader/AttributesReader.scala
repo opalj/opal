@@ -4,26 +4,22 @@ package bi
 package reader
 
 import java.io.DataInputStream
-import org.opalj.control.repeat
+
+import org.opalj.collection.immutable.RefArray
+import org.opalj.control.fillRefArray
 
 /**
  * Trait that implements a template method to read in the attributes of
  * a class, method_info, field_info or code_attribute structure.
  */
 trait AttributesReader
-    extends AttributesAbstractions
-    with Constant_PoolAbstractions
-    with Unknown_attributeAbstractions {
+        extends AttributesAbstractions
+        with Constant_PoolAbstractions
+        with Unknown_attributeAbstractions {
 
     //
-    // ABSTRACT DEFINITIONS
+    // TYPE DEFINITIONS AND FACTORY METHODS
     //
-
-    type Constant_Pool_Entry <: ConstantPoolEntry
-
-    type CONSTANT_Utf8_info <: Constant_Pool_Entry
-
-    override type Constant_Pool = Array[Constant_Pool_Entry]
 
     /**
      * This factory method is called if an attribute is encountered that is unknown.
@@ -108,7 +104,7 @@ trait AttributesReader
         attributeReaders += reader
     }
 
-    private[this] var attributesPostProcessors: List[(Attributes) ⇒ Attributes] = List()
+    private[this] var attributesPostProcessors = RefArray.empty[Attributes ⇒ Attributes]
 
     /**
      * Registers a new processor for the list of all attributes of a given class file
@@ -118,8 +114,8 @@ trait AttributesReader
      * `localvar_target` structure of the `Runtime(In)VisibleTypeAnnotations` attribute
      * has a reference in the local variable table attribute.
      */
-    def registerAttributesPostProcessor(p: (Attributes) ⇒ Attributes): Unit = {
-        attributesPostProcessors = p :: attributesPostProcessors
+    def registerAttributesPostProcessor(p: Attributes ⇒ Attributes): Unit = {
+        attributesPostProcessors :+= p
     }
 
     def Attributes(
@@ -130,13 +126,13 @@ trait AttributesReader
         cp:                  Constant_Pool,
         in:                  DataInputStream
     ): Attributes = {
-        val attributes: Attributes = repeat(in.readUnsignedShort) {
-            Attribute(ap, as_name_index, as_descriptor_index, cp, in)
-        } filter (_ != null) // lets remove the attributes we don't need or understand
+        // IMPROVE Consider defining a macro fillRefArrayWithNonNullValues to make the creation cheaper
+        val attributes: Attributes =
+            fillRefArray(in.readUnsignedShort) {
+                Attribute(ap, as_name_index, as_descriptor_index, cp, in)
+            }.filterNonNull // lets remove the attributes we don't need or understand
 
         attributesPostProcessors.foldLeft(attributes)((a, p) ⇒ p(a))
-        //attributesPostProcessors.foreach(p ⇒ attributes = p(attributes))
-        //attributes
     }
 
     def Attribute(

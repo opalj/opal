@@ -2,12 +2,9 @@
 package org.opalj
 package graphs
 
-import java.util.function.IntFunction
-import java.util.function.IntConsumer
-import java.util.function.Consumer
-
 import scala.annotation.tailrec
 import org.opalj.collection.immutable.Chain
+import org.opalj.collection.immutable.IntArray
 
 /**
  * Representation of a (post) dominator tree of, for example, a control flow graph.
@@ -31,7 +28,7 @@ abstract class AbstractDominatorTree {
      *
      * Defined w.r.t. the (implicitly) augmented CFG.
      */
-    val foreachSuccessorOf: IntFunction[Consumer[IntConsumer]] //Int ⇒ ((Int ⇒ Unit) ⇒ Unit)
+    val foreachSuccessorOf: Int ⇒ ((Int ⇒ Unit) ⇒ Unit) // IntFunction[Consumer[IntConsumer]]
 
     // PROPERTIES OF THE TREE
     //
@@ -109,14 +106,14 @@ abstract class AbstractDominatorTree {
     /**
      * The array which stores the immediate dominator for each node.
      */
-    def immediateDominators: IndexedSeq[Int] = idom
+    def immediateDominators: IntArray = IntArray._UNSAFE_from(idom)
 
     /**
      * (Re-)computes the dominator tree's leaf nodes. Due to the way the graph is stored,
      * this method has a complexity of O(2n). Hence, if the leaves are required more than
      * once, storing/caching them should be considered.
      */
-    def leaves(isIndexValid: (Int) ⇒ Boolean = (i) ⇒ true): Chain[Int] = {
+    def leaves(isIndexValid: Int ⇒ Boolean = _ ⇒ true): Chain[Int] = {
         // A leaf is a node which does not dominate another node.
         var i = 0
         val max = idom.length
@@ -149,7 +146,7 @@ abstract class AbstractDominatorTree {
      *          specific index is actually identifying a node. This is particularly useful/
      *          required if the `idom` array given at initialization time is a sparse array.
      */
-    def toDot(isIndexValid: (Int) ⇒ Boolean = (i) ⇒ true): String = {
+    def toDot(isIndexValid: Int ⇒ Boolean = _ ⇒ true): String = {
         val g = Graph.empty[Int]
         idom.zipWithIndex.foreach { e ⇒
             val (t, s /*index*/ ) = e

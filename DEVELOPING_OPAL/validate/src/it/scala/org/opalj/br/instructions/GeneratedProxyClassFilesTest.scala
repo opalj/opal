@@ -116,11 +116,12 @@ class GeneratedProxyClassFilesTest extends FunSpec with Matchers {
                     }
 
                     // the layout of the instructions array is correct
-                    for { pc ← 0 until instructions.size } {
-                        if (instructions(pc) != null) {
-                            val nextPc = instructions(pc).indexOfNextInstruction(pc, false)
-                            instructions.slice(pc + 1, nextPc).foreach(_ should be(null))
-                        }
+                    for {
+                        pc ← instructions.indices
+                        if instructions(pc) != null
+                    } {
+                        val nextPc = instructions(pc).indexOfNextInstruction(pc, false)
+                        instructions.slice(pc + 1, nextPc).foreach(_ should be(null))
                     }
                 }
 

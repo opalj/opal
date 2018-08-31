@@ -3,11 +3,10 @@ package org.opalj
 package br
 package reader
 
-import scala.reflect.ClassTag
-
 import org.opalj.bi.reader.TypeAnnotationsReader
 import org.opalj.bi.reader.TypeAnnotationTargetReader
 import org.opalj.bi.reader.TypeAnnotationPathReader
+import org.opalj.collection.immutable.RefArray
 
 /**
  * Factory methods to create representations of Java type annotations.
@@ -22,8 +21,6 @@ trait TypeAnnotationsBinding
     with AttributeBinding {
 
     type TypeAnnotation = br.TypeAnnotation
-
-    val TypeAnnotationManifest: ClassTag[TypeAnnotation] = implicitly
 
     type TypeAnnotationTarget = br.TypeAnnotationTarget
 
@@ -199,7 +196,9 @@ trait TypeAnnotationsBinding
     override def TypeAnnotationDirectlyOnType: TADirectlyOnType.type =
         TADirectlyOnType
 
-    override def TypeAnnotationPath(path: IndexedSeq[TypeAnnotationPathElement]): TAOnNestedType = {
+    override def TypeAnnotationPath(
+        path: RefArray[TypeAnnotationPathElement]
+    ): TAOnNestedType = {
         TAOnNestedType(path)
     }
 

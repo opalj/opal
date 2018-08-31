@@ -11,6 +11,10 @@ import java.io.DataInputStream
  */
 trait CompactLineNumberTable_attributeReader extends AttributeReader {
 
+    //
+    // TYPE DEFINITIONS AND FACTORY METHODS
+    //
+
     type LineNumberTable_attribute >: Null <: Attribute
 
     def LineNumberTable_attribute(

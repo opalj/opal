@@ -2,8 +2,6 @@
 package org.opalj
 package graphs
 
-import java.util.function.IntFunction
-
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
 import scala.collection.mutable.LinkedHashMap
@@ -94,7 +92,7 @@ class Graph[@specialized(Int) N: ClassTag] private (
             indexToN(index) = n
             nToIndex += e
         }
-        val es: IntFunction[IntIterator] = (index: Int) ⇒ {
+        val es: Int ⇒ IntIterator = (index: Int) ⇒ {
             successors.get(indexToN(index)) match {
                 case Some(successors) ⇒ successors.mapToIntIterator(nToIndex)
                 case None             ⇒ IntIterator.empty

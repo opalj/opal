@@ -17,8 +17,8 @@ case class Code_attribute(
         max_stack:            Int,
         max_locals:           Int,
         code:                 Code,
-        exceptionTable:       ExceptionTable      = IndexedSeq.empty,
-        attributes:           Attributes          = IndexedSeq.empty
+        exceptionTable:       ExceptionTable      = NoExceptionTable,
+        attributes:           Attributes          = NoAttributes
 ) extends Attribute {
 
     override def attribute_length: Int = {
@@ -38,7 +38,7 @@ case class Code_attribute(
     }
 
     def toXHTML(methodIndex: Int)(implicit cp: Constant_Pool): Node = {
-        val codeSize = code.instructions.size
+        val codeSize = code.instructions.length
         val methodBodyHeader =
             s"Method Body (Size: $codeSize bytes, Max Stack: $max_stack, Max Locals: $max_locals)"
         <details class="method_body">
@@ -47,7 +47,7 @@ case class Code_attribute(
                 code.toXHTML(
                     methodIndex,
                     exceptionTable,
-                    attributes.collectFirst { case LineNumberTable_attribute(_, lnt) ⇒ lnt }
+                    attributes collectFirst { case LineNumberTable_attribute(_, lnt) ⇒ lnt }
                 )
             }
             { exception_handlersAsXHTML }

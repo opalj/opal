@@ -10,6 +10,10 @@ import java.io.DataInputStream
  */
 trait RuntimeInvisibleParameterAnnotations_attributeReader extends AttributeReader {
 
+    //
+    // TYPE DEFINITIONS AND FACTORY METHODS
+    //
+
     type ParameterAnnotations
     type ParametersAnnotations <: Traversable[ParameterAnnotations]
     /**

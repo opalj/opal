@@ -115,7 +115,7 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
 
                     case mii: NonVirtualMethodInvocationInstruction ⇒
 
-                        nonVirtualCall(mii) match {
+                        nonVirtualCall(declaringClassType, mii) match {
 
                             case Success(callee) ⇒
                                 /* Recall that self-recursive calls are handled earlier! */
@@ -239,7 +239,7 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
 
         // All parameters either have to be base types or have to be immutable.
         // IMPROVE Use plain object type once we use ObjectType in the store!
-        var referenceTypes = method.parameterTypes.iterator.collect {
+        var referenceTypes = method.parameterTypes.iterator.collect[ObjectType] {
             case t: ObjectType ⇒ t
             case _: ArrayType  ⇒ return Result(definedMethod, ImpureByAnalysis);
         }

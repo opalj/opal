@@ -15,6 +15,9 @@ import org.opalj.io.process
  */
 package object bytecode {
 
+    /** The program counter of an instruction. A value in the range [0..65535]. */
+    final type PC = UShort
+
     /**
      * Returns the package definitions shared by both fully qualified type names.
      * If both types do not define a common package `None` is returned.

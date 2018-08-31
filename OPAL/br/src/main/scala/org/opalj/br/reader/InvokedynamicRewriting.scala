@@ -25,6 +25,8 @@ import org.opalj.br.collection.mutable.InstructionsBuffer
 import org.opalj.br.instructions._
 import org.opalj.br.instructions.ClassFileFactory.DefaultFactoryMethodName
 import org.opalj.br.instructions.ClassFileFactory.AlternativeFactoryMethodName
+import org.opalj.collection.RefIndexedView
+import org.opalj.collection.immutable.RefArray
 
 /**
  * Provides support for rewriting Java 8/Scala lambda or method reference expressions that
@@ -308,30 +310,34 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
         methodNameIndex:       Constant_Pool_Index,
         methodDescriptorIndex: Constant_Pool_Index
     ): ClassFile = {
-        val INVOKEDYNAMIC(bootstrapMethod, functionalInterfaceMethodName, factoryDescriptor) =
-            invokedynamic
+        val INVOKEDYNAMIC(bootstrapMethod, _, factoryDescriptor) = invokedynamic
 
         val args = bootstrapMethod.arguments
 
         // Extract the recipe and static arguments if present (if not, the dynamic arguments are
         // simply concatenated)
         val (recipe, staticArgs) =
-            if (args.isEmpty) (None, None)
-            else (
-                args.headOption.asInstanceOf[Option[ConstantString]],
-                Some(args.tail.asInstanceOf[IndexedSeq[ConstantValue[_]]])
-            )
+            if (args.isEmpty)
+                (
+                    None,
+                    RefIndexedView.empty
+                )
+            else
+                (
+                    args.headOption.asInstanceOf[Option[ConstantString]],
+                    args.slicedView(from = 1).asInstanceOf[RefIndexedView[ConstantValue[_]]]
+                )
 
         // Creates concat method
         def createConcatMethod(
             name:       String,
             descriptor: MethodDescriptor,
             recipeO:    Option[ConstantString],
-            constants:  Option[IndexedSeq[ConstantValue[_]]]
+            constants:  RefIndexedView[ConstantValue[_]]
         ): MethodTemplate = {
             // A guess on the number of append operations required, need not be precise
             val numEntries =
-                (if (recipeO.isDefined) recipeO.get.value.length else descriptor.parametersCount)
+                if (recipeO.isDefined) recipeO.get.value.length else descriptor.parametersCount
             val body: InstructionsBuffer = new InstructionsBuffer(11 + 6 * numEntries)
 
             body ++= NEW(ObjectType.StringBuilder)
@@ -393,7 +399,7 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
                 body ++= INVOKEVIRTUAL(
                     ObjectType.String,
                     "substring",
-                    MethodDescriptor(IndexedSeq(IntegerType, IntegerType), ObjectType.String)
+                    MethodDescriptor(RefArray(IntegerType, IntegerType), ObjectType.String)
                 )
 
                 body ++= INVOKEVIRTUAL(
@@ -451,7 +457,7 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
                             nextParam = recipe.indexOf('\u0001', nextParam + 1)
                         } else {
                             assert(recipe.charAt(nextInsert) == '\u0002')
-                            val constant = constants.get(constantIndex)
+                            val constant = constants(constantIndex)
                             appendConstant(constant)
                             val opSize = constant.valueType.computationalType.operandSize
                             if (maxStack == 2 && opSize == 2) maxStack = 3
@@ -481,12 +487,12 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
 
             val maxLocals = descriptor.requiredRegisters
 
-            val code = Code(maxStack, maxLocals, body.toArray, IndexedSeq.empty, Seq.empty)
+            val code = Code(maxStack, maxLocals, body.toArray, NoExceptionHandlers, NoAttributes)
 
             // Access flags for the concat are `/* SYNTHETIC */ private static`
             val accessFlags = ACC_SYNTHETIC.mask | ACC_PRIVATE.mask | ACC_STATIC.mask
 
-            Method(accessFlags, name, descriptor, Seq(code))
+            Method(accessFlags, name, descriptor, RefArray(code))
         }
 
         val methodName = cp(methodNameIndex).asString
@@ -497,7 +503,7 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
             createConcatMethod(concatName, factoryDescriptor, recipe, staticArgs)
 
         val updatedClassFile =
-            classFile.copy(methods = classFile.methods.map(_.copy()) :+ concatMethod)
+            classFile.unsafeAddMethod(concatMethod)
 
         val newInvokestatic = INVOKESTATIC(
             classFile.thisType,
@@ -547,7 +553,7 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
                 "apply",
                 // the invokedynamic's methodDescriptor (factoryDescriptor) determines
                 // the parameters that are actually pushed and popped from/to the stack
-                MethodDescriptor(IndexedSeq(ObjectType.String), ObjectType.ScalaSymbol)
+                MethodDescriptor(RefArray(ObjectType.String), ObjectType.ScalaSymbol)
             )
 
         if (logLambdaExpressionsRewrites) {
@@ -618,15 +624,12 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
 
         val methodToRewrite = classFile.findMethod(methodName, methodDescriptor).get
 
-        val code = Code(4, 1, body.toArray, IndexedSeq.empty, Seq.empty)
+        val code = Code(4, 1, body.toArray, NoExceptionHandlers, NoAttributes)
 
         val rewrittenMethod =
-            Method(methodToRewrite.accessFlags, methodName, methodDescriptor, Seq(code))
+            Method(methodToRewrite.accessFlags, methodName, methodDescriptor, RefArray(code))
 
-        classFile.copy(
-            methods =
-                classFile.methods.filter(_ ne methodToRewrite).map(_.copy()) :+ rewrittenMethod
-        )
+        classFile._UNSAFE_replaceMethod(methodToRewrite, rewrittenMethod)
     }
 
     /**
@@ -696,7 +699,7 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
             isInterface = false, // the created proxy class is always a concrete class
             factoryMethod.name,
             MethodDescriptor(
-                IndexedSeq(ObjectType.SerializedLambda),
+                RefArray(ObjectType.SerializedLambda),
                 ObjectType.Object
             )
         )
@@ -954,9 +957,23 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
             val maxLocals = 1 + parametersStackSize // parameters + `this`
             val maxStack = math.max(maxLocals, m.descriptor.returnType.operandSize)
 
-            val code = Code(maxStack, maxLocals, body.toArray, IndexedSeq.empty, Seq.empty)
+            val code = Code(maxStack, maxLocals, body.toArray, NoExceptionHandlers, NoAttributes)
 
-            Method(accessFlags, name, m.descriptor, Seq(code))
+            Method(accessFlags, name, m.descriptor, RefArray(code))
+        }
+
+        val isInterface = classFile.isInterfaceDeclaration
+
+        def lift(method: Method): MethodTemplate = {
+            val accessFlags =
+                if (isInterface) {
+                    // Interface methods must be private or public => public so proxy can
+                    // access it
+                    (method.accessFlags & ~ACC_PRIVATE.mask) | ACC_PUBLIC.mask
+                } else {
+                    method.accessFlags & ~ACC_PRIVATE.mask // Package private, i.e. no modifier
+                }
+            method.copy(accessFlags = accessFlags)
         }
 
         // If the target method is private, we have to generate a forwarding method that is
@@ -968,62 +985,47 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
         }
         val liftTargetMethod = targetMethod.exists(m ⇒ m.isStatic || m.isConstructor)
 
-        val deserializeLambda =
-            if (serializable)
-                classFile.methods.find { m ⇒
-                    m.hasFlags(AccessFlags.ACC_SYNTHETIC_STATIC_PRIVATE) &&
-                        m.name == "$deserializeLambda$"
-                }
-            else None
+        var updatedClassFile = classFile
 
-        val isInterface = classFile.isInterfaceDeclaration
+        if (liftTargetMethod) {
+            updatedClassFile =
+                classFile._UNSAFE_replaceMethod(targetMethod.get, lift(targetMethod.get))
+        }
 
-        def liftMethods(methods: br.Methods): IndexedSeq[MethodTemplate] = {
-            methods.map { m ⇒
-                if ((liftTargetMethod && m == targetMethod.get) || deserializeLambda.contains(m)) {
-                    val accessFlags =
-                        if (isInterface) {
-                            // Interface methods must be private or public => public so proxy can
-                            // access it
-                            (m.accessFlags & ~ACC_PRIVATE.mask) | ACC_PUBLIC.mask
-                        } else {
-                            m.accessFlags & ~ACC_PRIVATE.mask // Package private, i.e. no modifier
-                        }
-                    m.copy(accessFlags = accessFlags)
-                } else
-                    m.copy()
+        if (serializable) {
+            val deserialize = classFile.methods.find { m ⇒
+                m.hasFlags(AccessFlags.ACC_SYNTHETIC_STATIC_PRIVATE) &&
+                    m.name == "$deserializeLambda$"
+            }
+            if (deserialize.isDefined)
+                updatedClassFile =
+                    classFile._UNSAFE_replaceMethod(deserialize.get, lift(deserialize.get))
+        }
+
+        if (targetMethod.isDefined && !liftTargetMethod) {
+            val m = targetMethod.get
+            val forwardingName = "$forward$"+m.name
+
+            // Update the implMethod and other information to match the forwarder
+            implMethod = if (isInterface) {
+                InvokeInterfaceMethodHandle(thisType, forwardingName, m.descriptor)
+            } else {
+                InvokeVirtualMethodHandle(thisType, forwardingName, m.descriptor)
+            }
+            invocationInstruction = implMethod.opcodeOfUnderlyingInstruction
+            receiverType = thisType
+            receiverIsInterface = isInterface
+
+            val forwarderO = classFile.findMethod(forwardingName, m.descriptor)
+            if (forwarderO.isEmpty) {
+                val forwarder = createForwardingMethod(m, forwardingName)
+                updatedClassFile = updatedClassFile.unsafeAddMethod(forwarder)
             }
         }
 
-        val updatedClassFile =
-            if (targetMethod.isDefined && !liftTargetMethod) {
-                val m = targetMethod.get
-                val forwardingName = "$forward$"+m.name
-
-                // Update the implMethod and other information to match the forwarder
-                implMethod = if (isInterface) {
-                    InvokeInterfaceMethodHandle(thisType, forwardingName, m.descriptor)
-                } else {
-                    InvokeVirtualMethodHandle(thisType, forwardingName, m.descriptor)
-                }
-                invocationInstruction = implMethod.opcodeOfUnderlyingInstruction
-                receiverType = thisType
-                receiverIsInterface = isInterface
-
-                val forwarderO = classFile.findMethod(forwardingName, m.descriptor)
-                if (forwarderO.isEmpty) {
-                    val forwarder = createForwardingMethod(m, forwardingName)
-                    classFile.copy(methods = liftMethods(classFile.methods) :+ forwarder)
-                } else classFile
-            } else if (liftTargetMethod || deserializeLambda.isDefined) {
-                classFile.copy(methods = liftMethods(classFile.methods))
-            } else {
-                classFile
-            }
-
         val needsBridgeMethod = samMethodType != instantiatedMethodType
 
-        val bridgeMethodDescriptorBuilder = IndexedSeq.newBuilder[MethodDescriptor]
+        val bridgeMethodDescriptorBuilder = RefArray.newBuilder[MethodDescriptor]
         if (needsBridgeMethod) {
             bridgeMethodDescriptorBuilder += samMethodType
         }
@@ -1031,8 +1033,8 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
         // samMethodType, they are already present in the proxy class. Do not add them again.
         // This happens in scala patternmatching for example.
         bridgeMethodDescriptorBuilder ++= bridges
-            .filterNot(_.equals(samMethodType))
-            .filterNot(_.equals(instantiatedMethodType))
+            .filterNot(_ == samMethodType)
+            .filterNot(_ == instantiatedMethodType)
         val bridgeMethodDescriptors = bridgeMethodDescriptorBuilder.result()
 
         val proxy: ClassFile = ClassFileFactory.Proxy(
@@ -1151,12 +1153,12 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
         classFile.synthesizedClassFiles match {
             case Some(scf @ SynthesizedClassFiles(cfs)) ⇒
                 val newScf = new SynthesizedClassFiles((proxy, reason) :: cfs)
-                val newAttrs = newScf +: classFile.attributes.filter(_ ne scf)
-                classFile.copy(attributes = newAttrs)
+                val newAttributes = classFile.attributes.filter(_ ne scf) :+ newScf
+                classFile._UNSAFE_replaceAttributes(newAttributes)
             case None ⇒
                 val attributes = classFile.attributes
-                val newAttrs = new SynthesizedClassFiles(List((proxy, reason))) +: attributes
-                classFile.copy(attributes = newAttrs)
+                val newAttributes = attributes :+ new SynthesizedClassFiles(List((proxy, reason)))
+                classFile._UNSAFE_replaceAttributes(newAttributes)
         }
     }
 }
@@ -1242,7 +1244,7 @@ object InvokedynamicRewriting {
                         ObjectType.Class,
                         "getMethod",
                         MethodDescriptor(
-                            IndexedSeq(ObjectType.String, ArrayType(ObjectType.Class)),
+                            RefArray(ObjectType.String, ArrayType(ObjectType.Class)),
                             ObjectType.Method
                         )
                     ) &&

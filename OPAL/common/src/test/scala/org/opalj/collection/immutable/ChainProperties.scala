@@ -45,7 +45,7 @@ object ChainProperties extends Properties("Chain") {
      */
     val listAndIndexGen = for {
         n ← Gen.choose(0, 20)
-        m ← Gen.listOfN(n, Arbitrary.arbitrary[String])
+        m ← Gen.listOfN(n, Arbitrary.arbString.arbitrary)
         i ← Gen.choose(0, n)
     } yield (m, i)
 
@@ -55,7 +55,7 @@ object ChainProperties extends Properties("Chain") {
     } yield m
 
     val smallListsGen = for {
-        m ← Gen.listOfN(5, Arbitrary.arbitrary[String])
+        m ← Gen.listOfN(5, Arbitrary.arbString.arbitrary)
     } yield (m)
 
     /**
@@ -63,7 +63,7 @@ object ChainProperties extends Properties("Chain") {
      */
     val listAndIntGen = for {
         n ← Gen.choose(0, 20)
-        m ← Gen.listOfN(n, Arbitrary.arbitrary[String])
+        m ← Gen.listOfN(n, Arbitrary.arbString.arbitrary)
         i ← Gen.choose(0, n + 2)
     } yield (m, i)
 
@@ -180,7 +180,7 @@ object ChainProperties extends Properties("Chain") {
 
     property("seq") = forAll { l: List[String] ⇒
         val fl = Chain(l: _*)
-        (fl.seq eq fl)
+        fl.seq eq fl
     }
 
     property("flatMap") = forAll(listOfListGen) { l: List[List[String]] ⇒
@@ -248,11 +248,6 @@ object ChainProperties extends Properties("Chain") {
     property("isTraversableAgain") = forAll { l: List[String] ⇒
         val fl = Chain(l: _*)
         fl.isTraversableAgain
-    }
-
-    property("seq") = forAll { l: List[String] ⇒
-        val fl = Chain(l: _*)
-        (fl.seq eq fl)
     }
 
     property("head") = forAll { l: List[String] ⇒
@@ -571,12 +566,14 @@ object ChainProperties extends Properties("Chain") {
         fl == l
     }
     property("toIntTrieSet") = forAll { l: List[Int] ⇒
-        val fl = Chain(l: _*).toIntTrieSet.iterator.toSet
-        fl == l.toSet
+        val fl = Chain(l: _*).toIntTrieSet
+        val lSet = l.toSet
+        lSet.forall(fl.contains) && lSet.size == fl.size
     }
     property("toIntArraySet") = forAll { l: List[Int] ⇒
-        val fl = Chain(l: _*).toIntArraySet.iterator.toSet
-        fl == l.toSet
+        val fl = Chain(l: _*).toIntArraySet
+        val lSet = l.toSet
+        lSet.forall(fl.contains) && lSet.size == fl.size
     }
 
     property("toTraversable") = forAll { l: List[String] ⇒
@@ -615,7 +612,7 @@ object ChainProperties extends Properties("Chain") {
         val cl1 = Chain(l1: _*)
         l2s.forall { l2 ⇒
             val cl2 = Chain(l2: _*)
-            (cl1.fuse[String](cl2, (x, y) ⇒ if (x == y) x else y)).mkString ==
+            cl1.fuse[String](cl2, (x, y) ⇒ if (x == y) x else y).mkString ==
                 l1.zip(l2).map(v ⇒ if (v._1 == v._2) v._1 else v._2).mkString
         }
     }
@@ -649,8 +646,8 @@ object ChainProperties extends Properties("Chain") {
         val cl1 = Chain(l1: _*)
         l2s.forall { l2 ⇒
             val cl2 = Chain(l2: _*)
-            (cl1.merge[String, String](cl2)((x, y) ⇒ if (x == y) x else y).mkString ==
-                l1.zip(l2).map(v ⇒ if (v._1 == v._2) v._1 else v._2).mkString)
+            cl1.merge[String, String](cl2)((x, y) ⇒ if (x == y) x else y).mkString ==
+                l1.zip(l2).map(v ⇒ if (v._1 == v._2) v._1 else v._2).mkString
         }
     }
 
@@ -663,7 +660,7 @@ object ChainProperties extends Properties("Chain") {
 
     property("forFirstN") = forAll { (l1: List[String]) ⇒
         val cl1 = Chain(l1: _*)
-        (0 until l1.size).forall { i ⇒
+        l1.indices.forall { i ⇒
             var result = ""
             cl1.forFirstN(i)(result += _)
             result == l1.take(i).foldLeft("")(_ + _)

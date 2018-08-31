@@ -3,11 +3,14 @@
 ## Upcoming
  - Added support for instrumenting class files
  - support for Java 9
+ - support for Java 10
  - Hermes now has extended visualization capabilities to make it even easiere to comprehend the differences between projects
  - The overall performance has been improved (in particular on multi-core systems with 4 or more cores)
  - Moved to sbt 1.1.x
- - Fixed issues in some test which open a huge number of files
+ - Fixed issues in some tests which open a huge number of files
  - Fixed a rare issue in the identification of closed strongly connected components
+ - Completely reimplemented the property store
+    - Added various analyses related to deriving the purity of methods, the immutabiliy of classes, escape information etc.
 
 
 ## 1.0.0 - Released Oct. 25th 2017
