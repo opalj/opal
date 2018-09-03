@@ -227,14 +227,18 @@ sealed class FinalCallees(
         propertyStore:   PropertyStore,
         declaredMethods: DeclaredMethods
     ): Iterator[DeclaredMethod] = {
-        if (onlyEventualCallees)
+        if (onlyEventualCallees) {
             if (eventualCalleeIds.contains(pc))
                 eventualCalleeIds(pc).intIterator.mapToAny(declaredMethods.apply)
             else
                 calleeIds.getOrElse(pc, IntTrieSet.empty).intIterator.mapToAny(declaredMethods.apply)
-        else
-            eventualCalleeIds(pc).intIterator.mapToAny(declaredMethods.apply) ++
+        } else {
+            val directCallees =
                 calleeIds.getOrElse(pc, IntTrieSet.empty).intIterator.mapToAny(declaredMethods.apply)
+            if (eventualCalleeIds.contains(pc))
+                eventualCalleeIds(pc).intIterator.mapToAny(declaredMethods.apply) ++ directCallees
+            else directCallees
+        }
     }
 
     override def numCallees(pc: Int)(implicit propertyStore: PropertyStore): Int = {
@@ -263,10 +267,13 @@ sealed class FinalCallees(
             }
         else
             for (pc ← calleeIds.keysIterator) {
+                val callees =
+                    if (eventualCalleeIds.contains(pc))
+                        eventualCalleeIds(pc).intIterator ++ calleeIds(pc).intIterator
+                    else
+                        calleeIds(pc).intIterator
                 res += pc →
-                    (eventualCalleeIds(pc).intIterator ++ calleeIds(pc).intIterator).mapToAny(
-                        declaredMethods.apply
-                    )
+                    callees.mapToAny(declaredMethods.apply)
             }
 
         res

@@ -392,8 +392,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                             paramTypes,
                             recurse,
                             pc,
-                            allowStatic =
-                            false
+                            allowStatic = false
                         )
                     }
                 } else if (candidates.exists(!_.returnType.isReferenceType)) {

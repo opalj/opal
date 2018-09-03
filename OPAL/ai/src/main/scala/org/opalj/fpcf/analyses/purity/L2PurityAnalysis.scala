@@ -4,8 +4,6 @@ package fpcf
 package analyses
 package purity
 
-import java.util.concurrent.ConcurrentHashMap
-
 import net.ceedubs.ficus.Ficus._
 import org.opalj.ai.isImmediateVMException
 import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
@@ -718,6 +716,8 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
      */
     def c(eps: SomeEPS)(implicit state: State): PropertyComputationResult = {
         val oldPurity = state.ubPurity
+        if (state.declClass.simpleName == "FileHistory" && state.method.name == "flush")
+            println()
         eps.ub.key match {
             case Purity.key ⇒
                 val e = eps.e.asInstanceOf[DeclaredMethod]
@@ -801,15 +801,16 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         }
     }
 
-    var sizes: ConcurrentHashMap[Int, Int] = new ConcurrentHashMap()
-
     def checkPurityOfCallees(
         calleesEOptP: EOptionP[DeclaredMethod, Callees]
     )(implicit state: StateType): Boolean = {
         calleesEOptP match {
             case ESimplePS(_, p, isFinal) ⇒
                 if (isFinal) state.updateCalleesDependee(None)
-                else state.updateCalleesDependee(Some(calleesEOptP))
+                else {
+                    state.updateCalleesDependee(Some(calleesEOptP))
+                    reducePurityLB(ImpureByAnalysis)
+                }
                 val hasIncompleteCallSites =
                     p.incompleteCallSites.exists { pc ⇒
                         val call = getCall(state.code(state.pcToIndex(pc)))
@@ -821,17 +822,18 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                 !hasIncompleteCallSites &&
                     p.callSites(onlyEventualCallees = false).forall { callSite ⇒
                         val pc = callSite._1
-                        sizes.compute(p.numCallees(pc), (_, a) ⇒ a + 1)
-                        callSite._2.forall { callee ⇒
-                            state.purityDependees.contains(callee) || {
-                                val call = getCall(state.code(state.pcToIndex(pc)))
-                                checkPurityOfMethod(callee, call.allParams)
+                        val call = getCall(state.code(state.pcToIndex(pc)))
+                        isDomainSpecificCall(call, call.receiverOption) ||
+                            callSite._2.forall { callee ⇒
+                                state.purityDependees.contains(callee) || {
+                                    checkPurityOfMethod(callee, call.allParams)
+                                }
                             }
-                        }
                     }
 
             case _ ⇒
                 state.updateCalleesDependee(Some(calleesEOptP))
+                reducePurityLB(ImpureByAnalysis)
                 true
         }
     }
@@ -853,6 +855,9 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         val TACode(_, code, pcToIndex, cfg, _, _) = tacai(method)
 
         implicit val state: State = new State(method, definedMethod, declClass, code, pcToIndex)
+
+        if (state.declClass.simpleName == "FileHistory" && state.method.name == "flush")
+            println()
 
         // Special case: The Throwable constructor is `LBSideEffectFree`, but subtype constructors
         // may not be because of overridable fillInStackTrace method
