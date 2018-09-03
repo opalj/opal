@@ -3,10 +3,13 @@ package org.opalj.av
 package checking
 
 import org.junit.runner.RunWith
-import org.opalj.av.checking.Specification._
+
 import org.scalatest._
 import org.scalatest.junit.JUnitRunner
+
 import scala.util.matching.Regex
+
+import org.opalj.av.checking.Specification._
 
 /**
  * Systematic tests created to check the behavior of the Specification package.
