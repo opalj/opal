@@ -34,10 +34,11 @@ import org.opalj.collection.immutable.Chain.ChainBuilder
  * Collects the definition/use information based on the abstract interpretation time cfg.
  * I.e., makes the information available which value is accessed where/where a used
  * value is defined.
- * In general, all local variables are identified using `Int`s
- * where the `Int` identifies the expression (by means of it's pc) which evaluated
- * to the respective value. In case of a parameter the `Int` value is equivalent to
- * the value `-parameterIndex`.
+ * In general, all local variables are identified using `Int`s where the `Int` identifies
+ * the expression (by means of it's pc) which evaluated to the respective value.
+ * In case of a parameter the `Int` value is `-parametersIndex corrected by computational type
+ * category` (see below for details).
+ *
  * '''In case of exception values the `Int` value identifies the instruction which ex-/implicitly
  * raised the exception.'''
  *
@@ -45,8 +46,8 @@ import org.opalj.collection.immutable.Chain.ChainBuilder
  *       the assumed type is narrowed.
  *
  * ==General Usage==
- * This trait finalizes the collection of the def/use information '''after the abstract
- * interpretation has successfully completed''' and the control-flow graph is available.
+ * This trait collects the def/use information '''after the abstract interpretation has
+ * successfully completed''' and the control-flow graph is available.
  * The information is automatically made available, when this plug-in is mixed in.
  *
  * ==Special Values==
@@ -80,8 +81,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode with Th
     // REGISTERS          0: -1     0: -1       0: -1        0: -1     0: 2       0: 1
     // USED(BY) "-1":{1}  "0": N/A  "1":{2}     "2":{3}      "3": N/A  "4": {5}   "5": N/A
 
-    @inline final def ValueOrigins(vo: Int): IntTrieSet = IntTrieSet1(vo)
-    final def NoValueOrigins: IntTrieSet = EmptyIntTrieSet
+    @inline final def ValueOrigins(vo: Int): ValueOrigins = IntTrieSet1(vo)
 
     // Stores the information where the value defined by an instruction is
     // used. The used array basically mirrors the instructions array, but has additional
@@ -163,7 +163,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode with Th
     /**
      * Returns the instructions which use the value or the external exception identified by
      * the given value origin. In case of external exceptions thrown by an instruction,
-     * the value origin's pc is `ai.underlyingPC(valueOrigin)`
+     * the pc of the value origin pc is `ai.underlyingPC(valueOrigin)`
      */
     def usedBy(valueOrigin: ValueOrigin): ValueOrigins = {
         if (valueOrigin > ImmediateVMExceptionsOriginOffset)
@@ -172,6 +172,11 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode with Th
             usedExternalExceptions(underlyingPC(valueOrigin))
     }
 
+    /**
+     * Returns the instructions which use the value or the external exception identified by
+     * the given value origin. Basically, the same as `usedBy` except that an empty set of
+     * value origins is returned if the instruction with the given value origin is dead.
+     */
     def safeUsedBy(valueOrigin: ValueOrigin): ValueOrigins = {
         val usedBy = this.usedBy(valueOrigin)
         if (usedBy eq null)
@@ -180,7 +185,12 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode with Th
             usedBy
     }
 
+    /**
+     * Returns the instructions which use the (external) exception raised by the instruction
+     * with the given ValueOrigin.
+     */
     def safeExternalExceptionsUsedBy(pc: Int): ValueOrigins = {
+        // There is no offset to subtract over here, because external exceptions are never parameters!
         val usedBy = usedExternalExceptions(pc)
         if (usedBy eq null)
             NoValueOrigins
@@ -192,7 +202,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode with Th
      * Returns the union of the set of unused parameters and the set of all instructions which
      * compute a value that is not used in the following.
      */
-    def unused(): ValueOrigins = {
+    def unused: ValueOrigins = {
         var unused = NoValueOrigins
 
         // 1. check if the parameters are used...
@@ -211,7 +221,8 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode with Th
         // 2. check instructions
         code iterate { (pc, instruction) ⇒
             if (instruction.opcode != CHECKCAST.opcode) {
-                // a checkcast instruction is already a use
+                // A checkcast instruction does not define a new local variable; hence,
+                // though it put a value on the stack, we don't have a new def-site.
                 instruction.expressionResult match {
                     case NoExpression        ⇒ // nothing to do
                     case Stack | Register(_) ⇒ if (usedBy(pc) eq null) { unused += pc }
@@ -222,13 +233,10 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode with Th
         unused
     }
 
-    private[this] def updateUsageInformation(
-        usedValues: ValueOrigins,
-        useSite: /*PC*/ Int
-    ): Unit = {
+    private[this] def updateUsageInformation(usedValues: ValueOrigins, useSite: /*PC*/ Int): Unit = {
         usedValues foreach { usedValue ⇒
             if (ai.isImplicitOrExternalException(usedValue)) {
-                // we have a usage of an implicit exception or method external exception
+                // we have a usage of an implicit exception or a method external exception
                 val usedIndex = ai.underlyingPC(usedValue)
                 val oldUsedExternalExceptions: ValueOrigins = usedExternalExceptions(usedIndex)
                 if (oldUsedExternalExceptions eq null) {
@@ -258,7 +266,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode with Th
         cfJoins:       IntTrieSet,
         subroutinePCs: IntArraySet
     ): Boolean = {
-        if (cfJoins.contains(successorPC) && (defLocals(successorPC) ne null /*non-dead*/ )) {
+        if (cfJoins.contains(successorPC) && defLocals(successorPC) != null /*non-dead*/ ) {
             var forceScheduling = false
             // we now also have to perform a join...
             @tailrec def joinDefOps(

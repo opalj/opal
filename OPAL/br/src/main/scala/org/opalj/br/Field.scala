@@ -8,6 +8,7 @@ import org.opalj.bi.ACC_PUBLIC
 import org.opalj.bi.ACC_VOLATILE
 import org.opalj.bi.AccessFlagsContexts
 import org.opalj.bi.AccessFlags
+import org.opalj.collection.immutable.RefArray
 
 /**
  * Represents a single field declaration/definition.
@@ -57,7 +58,7 @@ sealed abstract class JVMField extends ClassMember with Ordered[JVMField] {
 
     // This method is only to be called by ..br.ClassFile to associate this method
     // with the respective class file.
-    private[br] def prepareClassFileAttachement: Field = {
+    private[br] def prepareClassFileAttachement(): Field = {
         new Field(
             null /*will be set by class file*/ ,
             accessFlags, name, fieldType, attributes
@@ -176,21 +177,24 @@ final class FieldTemplate private[br] (
 }
 
 final class Field private[br] (
-        private[br] var declaringClassFile: ClassFile, // unfortunately, Scala forces us to use this ugly approach to initialize the data structure
+        private[br] var declaringClassFile: ClassFile, // the back-link can be updated to enable efficient load-time transformations
         val accessFlags:                    Int,
         val name:                           String, // the name is interned to enable reference comparisons!
         val fieldType:                      FieldType,
         val attributes:                     Attributes
 ) extends JVMField {
 
-    final override def isField: Boolean = true
+    // see ClassFile.unsafeReplaceMethod for THE usage!
+    private[br] def detach(): this.type = { declaringClassFile = null; this }
 
-    final override def asField: Field = this
+    override def isField: Boolean = true
+
+    override def asField: Field = this
 
     /**
      * This method's class file.
      */
-    final def classFile: ClassFile = declaringClassFile
+    def classFile: ClassFile = declaringClassFile
 
     def toJava: String = s"${declaringClassFile.thisType.toJava}{ ${signatureToJava(true)} }"
 
@@ -212,7 +216,7 @@ object Field {
     ): FieldTemplate = {
         this(
             accessFlags, name, fieldType,
-            IndexedSeq(fieldAttributeBuilder(accessFlags, name, fieldType))
+            RefArray(fieldAttributeBuilder(accessFlags, name, fieldType))
         )
     }
 
@@ -220,17 +224,17 @@ object Field {
         accessFlags: Int        = ACC_PUBLIC.mask,
         name:        String,
         fieldType:   FieldType,
-        attributes:  Attributes = Seq.empty[Attribute]
+        attributes:  Attributes = RefArray.empty
     ): FieldTemplate = {
         new FieldTemplate(accessFlags, name.intern(), fieldType, attributes)
     }
 
-    // To be called only by the class file reader!
+    // Only to be called by the class file reader!
     protected[br] def unattached(
         accessFlags: Int        = ACC_PUBLIC.mask,
         name:        String,
         fieldType:   FieldType,
-        attributes:  Attributes = Seq.empty[Attribute]
+        attributes:  Attributes = RefArray.empty
     ): Field = {
         new Field(null, accessFlags, name.intern(), fieldType, attributes)
     }

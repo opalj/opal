@@ -3,7 +3,6 @@ package org.opalj
 package br
 
 import scala.math.Ordered
-
 import org.opalj.bi.ACC_ABSTRACT
 import org.opalj.bi.ACC_STRICT
 import org.opalj.bi.ACC_NATIVE
@@ -20,6 +19,7 @@ import org.opalj.br.instructions.ALOAD_0
 import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.instructions.RETURN
 import org.opalj.br.instructions.Instruction
+import org.opalj.collection.immutable.RefArray
 
 /**
  * Represents a single method.
@@ -76,7 +76,7 @@ sealed abstract class JVMMethod
 
     // This method is only to be called by ..br.ClassFile to associate this method
     // with the respective class file.
-    private[br] def prepareClassFileAttachement: Method = {
+    private[br] def prepareClassFileAttachement(): Method = {
         new Method(
             null /*will be set by class file*/ ,
             accessFlags, name, descriptor, body, attributes
@@ -198,19 +198,19 @@ sealed abstract class JVMMethod
     def runtimeVisibleParameterAnnotations: ParameterAnnotations = {
         attributes.collectFirst { case RuntimeVisibleParameterAnnotationTable(as) ⇒ as } match {
             case Some(annotations) ⇒ annotations
-            case None              ⇒ IndexedSeq.empty
+            case None              ⇒ NoParameterAnnotations
         }
     }
 
     def runtimeInvisibleParameterAnnotations: ParameterAnnotations = {
         attributes.collectFirst { case RuntimeInvisibleParameterAnnotationTable(as) ⇒ as } match {
             case Some(annotations) ⇒ annotations
-            case None              ⇒ IndexedSeq.empty
+            case None              ⇒ NoParameterAnnotations
         }
     }
 
-    def parameterAnnotations: ParameterAnnotations = {
-        runtimeVisibleParameterAnnotations ++ runtimeInvisibleParameterAnnotations
+    def parameterAnnotations: Iterator[Annotations] = {
+        runtimeVisibleParameterAnnotations.iterator ++ runtimeInvisibleParameterAnnotations.iterator
     }
 
     /**
@@ -303,7 +303,7 @@ sealed abstract class JVMMethod
 
     def returnType: Type = descriptor.returnType
 
-    def parameterTypes: IndexedSeq[FieldType] = descriptor.parameterTypes
+    def parameterTypes: FieldTypes = descriptor.parameterTypes
 
     /**
      * The number of explicit and implicit parameters of this method – that is,
@@ -359,7 +359,7 @@ sealed abstract class JVMMethod
     //
     //
 
-    override def toString(): String = {
+    override def toString: String = {
         import AccessFlagsContexts.METHOD
         val jAccessFlags = AccessFlags.toStrings(accessFlags, METHOD).mkString(" ")
         val method =
@@ -389,7 +389,7 @@ final class MethodTemplate private[br] (
 ) extends JVMMethod {
 
     /** This template is not (yet) a [[Method]] which is a [[SourceElement]].  */
-    final override def isMethod: Boolean = false
+    override def isMethod: Boolean = false
 
 }
 
@@ -400,7 +400,7 @@ final class MethodTemplate private[br] (
  * @param declaringClassFile The declaring class file.
  */
 final class Method private[br] (
-        private[br] var declaringClassFile: ClassFile, // unfortunately, Scala forces us to use this ugly approach to initialize the data structure
+        private[br] var declaringClassFile: ClassFile, // the back-link can be updated to enable efficient load-time transformations
         val accessFlags:                    Int,
         val name:                           String,
         val descriptor:                     MethodDescriptor,
@@ -408,15 +408,18 @@ final class Method private[br] (
         val attributes:                     Attributes
 ) extends JVMMethod {
 
+    // see ClassFile.unsafeReplaceMethod for THE usage!
+    private[br] def detach(): this.type = { declaringClassFile = null; this }
+
     /**
      * This method's class file.
      */
-    final def classFile: ClassFile = declaringClassFile
+    def classFile: ClassFile = declaringClassFile
 
     /**
      * @return This method as a [[VirtualMethod]].
      */
-    final def asVirtualMethod: VirtualMethod = asVirtualMethod(declaringClassFile.thisType)
+    def asVirtualMethod: VirtualMethod = asVirtualMethod(declaringClassFile.thisType)
 
     /**
      * This method as a virtual method belonging to the given declaring class type.
@@ -440,9 +443,9 @@ final class Method private[br] (
      */
     def fullyQualifiedSignature: String = descriptor.toJava(s"${classFile.thisType.toJava}.$name")
 
-    final override def isMethod: Boolean = true
+    override def isMethod: Boolean = true
 
-    final override def asMethod: this.type = this
+    override def asMethod: this.type = this
 }
 
 /**
@@ -452,7 +455,7 @@ final class Method private[br] (
  */
 object Method {
 
-    @inline def isNativeAndVarargs(accessFlags: Int) = {
+    @inline def isNativeAndVarargs(accessFlags: Int): Boolean = {
         import AccessFlags.ACC_NATIVE_VARARGS
         (accessFlags & ACC_NATIVE_VARARGS) == ACC_NATIVE_VARARGS
     }
@@ -541,19 +544,19 @@ object Method {
         attributes:  Attributes
     ): MethodTemplate = {
 
-        val (bodySeq, remainingAttributes) = attributes partition { _.isInstanceOf[Code] }
-        val theBody = bodySeq.headOption.asInstanceOf[Option[Code]]
+        val (bodies, remainingAttributes) = attributes partitionByType classOf[Code]
+        val body = bodies.headOption
 
         new MethodTemplate(
             accessFlags,
             name.intern(),
             descriptor,
-            theBody,
+            body,
             remainingAttributes
         )
     }
 
-    // To be called only by the class file reader!
+    // Only to be called by the class file reader!
     protected[br] def unattached(
         accessFlags: Int,
         name:        String,
@@ -561,15 +564,15 @@ object Method {
         attributes:  Attributes
     ): Method = {
 
-        val (bodySeq, remainingAttributes) = attributes partition { _.isInstanceOf[Code] }
-        val theBody = bodySeq.headOption.asInstanceOf[Option[Code]]
+        val (bodies, remainingAttributes) = attributes partitionByType classOf[Code]
+        val body = bodies.headOption
 
         new Method(
             null,
             accessFlags,
             name.intern(),
             descriptor,
-            theBody,
+            body,
             remainingAttributes
         )
     }
@@ -584,11 +587,11 @@ object Method {
      *          }}}
      */
     def apply(
-        accessFlags:    Int                   = ACC_ABSTRACT.mask | ACC_PUBLIC.mask,
+        accessFlags:    Int        = ACC_ABSTRACT.mask | ACC_PUBLIC.mask,
         name:           String,
-        parameterTypes: IndexedSeq[FieldType] = IndexedSeq.empty,
-        returnType:     Type                  = VoidType,
-        attributes:     Attributes            = Seq.empty[Attribute]
+        parameterTypes: FieldTypes = NoFieldTypes,
+        returnType:     Type       = VoidType,
+        attributes:     Attributes = RefArray.empty
     ): MethodTemplate = {
         Method(accessFlags, name, MethodDescriptor(parameterTypes, returnType), attributes)
     }
@@ -599,7 +602,7 @@ object Method {
 
     def defaultConstructor(superclassType: ObjectType = ObjectType.Object): MethodTemplate = {
         import MethodDescriptor.NoArgsAndReturnVoid
-        val theBody = Some(Code(
+        val body = Some(Code(
             maxStack = 1,
             maxLocals = 1,
             instructions = Array(
@@ -611,6 +614,6 @@ object Method {
             )
         ))
         val accessFlags = ACC_PUBLIC.mask
-        new MethodTemplate(accessFlags, "<init>", NoArgsAndReturnVoid, theBody, IndexedSeq.empty)
+        new MethodTemplate(accessFlags, "<init>", NoArgsAndReturnVoid, body, RefArray.empty)
     }
 }

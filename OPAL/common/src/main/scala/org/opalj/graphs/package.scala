@@ -3,14 +3,12 @@ package org.opalj
 
 import scala.reflect.ClassTag
 
-import java.util.function.IntFunction
-
 import scala.collection.mutable.ArrayStack
 
 import org.opalj.collection.IntIterator
 import org.opalj.collection.mutable.IntArrayStack
-import org.opalj.collection.mutable.AnyRefArrayStack
-import org.opalj.collection.mutable.AnyRefArrayBuffer
+import org.opalj.collection.mutable.RefArrayStack
+import org.opalj.collection.mutable.RefArrayBuffer
 import org.opalj.collection.immutable.Chain
 import org.opalj.collection.immutable.Naught
 
@@ -133,7 +131,7 @@ package object graphs {
      * The first call, which will initialize the JavaScript engine, will take some time.
      * Afterwards, the tranformation is much faster.
      */
-    final lazy val dotToSVG: (String) ⇒ String = {
+    final lazy val dotToSVG: String ⇒ String = {
         import javax.script.Invocable
         import javax.script.ScriptEngine
         import javax.script.ScriptEngineManager
@@ -208,8 +206,8 @@ package object graphs {
         val ProcessedNodeNum: Int = -1
         val PathSegmentSeparator: Null = null
 
-        val workstack = new AnyRefArrayStack[N](8) //mutable.ArrayStack.empty[N]
-        val path = AnyRefArrayBuffer.withInitialSize[N](16)
+        val workstack = new RefArrayStack[N](8) //mutable.ArrayStack.empty[N]
+        val path = RefArrayBuffer.withInitialSize[N](16)
 
         var cSCCs = List.empty[Iterable[N]]
 
@@ -219,14 +217,14 @@ package object graphs {
 
             var initialDFSNum: Int = nextDFSNum
 
-            path.resetSize()
+            path._UNSAFE_resetSize()
 
             workstack.resetSize()
             workstack.push(initialN)
 
             def markPathAsProcessed(): Unit = {
                 path.foreach(n ⇒ setDFSNum(n, ProcessedNodeNum))
-                path.resetSize()
+                path._UNSAFE_resetSize()
             }
             def addToPath(n: N): Unit = {
                 if (path.isEmpty) {
@@ -257,7 +255,7 @@ package object graphs {
                             // This is the trivial case... obviously the end of the path is a
                             // closed SCC.
                             // ALTERNATIVE: val cSCC = path.dropWhile(n ⇒ dfsNum(n) != cSCCDFSNum)
-                            val cSCC = path.slice(startIndex = cSCCDFSNum - initialDFSNum)
+                            val cSCC = path.slice(from = cSCCDFSNum - initialDFSNum)
                             cSCCs ::= cSCC
                             markPathAsProcessed()
                         } else {
@@ -266,13 +264,13 @@ package object graphs {
                             // the cSCC...
                             // ALTERNATIVE CHECK:
                             //val cSCCandidate = path.iterator.drop(cSCCDFSNum - initialDFSNum)
-                            val cSCCandidate = path.iterator(startIndex = cSCCDFSNum - initialDFSNum)
+                            val cSCCandidate = path.iterator(from = cSCCDFSNum - initialDFSNum)
                             if (workstack.isEmpty ||
                                 cSCCandidate.forall(n ⇒
                                     es(n).forall(succN ⇒
                                         hasDFSNum(succN) /*&& dfsNum(succN) == cSCCDFSNum*/
                                     ))) {
-                                cSCCs ::= path.slice(startIndex = cSCCDFSNum - initialDFSNum)
+                                cSCCs ::= path.slice(from = cSCCDFSNum - initialDFSNum)
                                 markPathAsProcessed()
                             }
                         }
@@ -556,8 +554,8 @@ package object graphs {
      */
     def sccs(
         ns:               Int,
-        es:               IntFunction[IntIterator], // Int ⇒ IntIterator,
-        filterSingletons: Boolean                  = false
+        es:               Int ⇒ IntIterator,
+        filterSingletons: Boolean           = false
     ): Chain[Chain[Int]] = {
 
         /* TEXTBOOK DESCRIPTION
@@ -670,7 +668,7 @@ package object graphs {
                 // the processed edge; if wsSuccessors is null, the stack just contains the id of
                 // the next node that should be processed.
                 do {
-                    val n = ws.pop
+                    val n = ws.pop()
                     var remainingSuccessors = wsSuccessors.pop
                     if (remainingSuccessors eq null) {
                         // ... we are processing the node n for the first time
@@ -682,13 +680,13 @@ package object graphs {
                         remainingSuccessors = es(n)
                     } else {
                         // we have visisted a successor node "w" and now continue with "n"
-                        val w = ws.pop
+                        val w = ws.pop()
                         nLowLink(n) = Math.min(nLowLink(n), nLowLink(w))
                     }
 
                     var continue = true
                     while (continue && remainingSuccessors.hasNext) {
-                        val w = remainingSuccessors.next
+                        val w = remainingSuccessors.next()
                         if (nIndex(w) == UndefinedIndex) {
                             // We basically simulate the recursive call by storing the current
                             // evaluation state for n: the current edge "n->w" and the "remaining

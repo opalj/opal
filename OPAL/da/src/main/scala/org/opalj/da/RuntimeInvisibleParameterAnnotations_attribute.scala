@@ -13,7 +13,7 @@ import scala.xml.Node
  */
 case class RuntimeInvisibleParameterAnnotations_attribute(
         attribute_name_index:   Constant_Pool_Index,
-        parameters_annotations: IndexedSeq[IndexedSeq[Annotation]]
+        parameters_annotations: ParametersAnnotations
 ) extends ParametersAnnotations_attribute {
 
     final override def toXHTML(implicit cp: Constant_Pool): Node = {

@@ -3,8 +3,6 @@ package org.opalj
 package br
 package reader
 
-import scala.reflect.ClassTag
-
 import org.opalj.bi.reader.MethodsReader
 
 /**
@@ -13,7 +11,6 @@ import org.opalj.bi.reader.MethodsReader
 trait MethodsBinding extends MethodsReader { this: ConstantPoolBinding with AttributeBinding ⇒
 
     type Method_Info = br.Method
-    val Method_InfoManifest: ClassTag[Method_Info] = implicitly
 
     def Method_Info(
         cp:               Constant_Pool,

@@ -2,8 +2,6 @@
 package org.opalj
 package collection
 
-import scala.collection.AbstractIterator
-
 /**
  * Common interface of all BitSets provided by OPAL.
  *
@@ -15,20 +13,10 @@ trait BitSet { thisSet ⇒
 
     def contains(i: Int): Boolean
 
-    def intIterator: IntIterator
-
-    /**
-     * Standard Scala iterator provided for interoperability purposes only;
-     * if possible use `intIterator`.
-     */
-    final def iterator: Iterator[Int] = new AbstractIterator[Int] {
-        private[this] val it = thisSet.intIterator
-        def hasNext: Boolean = it.hasNext
-        def next(): Int = it.next()
-    }
+    def iterator: IntIterator
 
     final def mkString(pre: String, in: String, post: String): String = {
-        intIterator.mkString(pre, in, post)
+        iterator.mkString(pre, in, post)
     }
 
     // + equals and hashCode

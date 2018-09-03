@@ -4,7 +4,9 @@ package bi
 package reader
 
 import java.io.DataInputStream
-import org.opalj.control.repeat
+
+import org.opalj.control.fillRefArray
+import org.opalj.collection.immutable.RefArray
 
 /**
  * Generic parser for the `type_path` field of type annotations. This
@@ -16,19 +18,20 @@ import org.opalj.control.repeat
 trait TypeAnnotationPathReader extends Constant_PoolAbstractions {
 
     //
-    // ABSTRACT DEFINITIONS
+    // TYPE DEFINITIONS AND FACTORY METHODS
     //
 
-    type TypeAnnotationPath
+    type TypeAnnotationPath <: AnyRef
 
     /**
      * The path's length was `0`.
      */
     def TypeAnnotationDirectlyOnType: TypeAnnotationPath
 
-    type TypeAnnotationPathElement
+    type TypeAnnotationPathElement <: AnyRef
+    type TypeAnnotationPathElementsTable = RefArray[TypeAnnotationPathElement]
 
-    def TypeAnnotationPath(path: IndexedSeq[TypeAnnotationPathElement]): TypeAnnotationPath
+    def TypeAnnotationPath(path: TypeAnnotationPathElementsTable): TypeAnnotationPath
 
     /**
      * The `type_path_kind` was `0` (and the type_argument_index was also `0`).
@@ -59,7 +62,7 @@ trait TypeAnnotationPathReader extends Constant_PoolAbstractions {
             TypeAnnotationDirectlyOnType
         } else {
             TypeAnnotationPath(
-                repeat(path_length) {
+                fillRefArray(path_length) {
                     val type_path_kind = in.readUnsignedByte()
                     (type_path_kind: @scala.annotation.switch) match {
                         // FROM THE JVM SPEC:

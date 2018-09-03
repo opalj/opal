@@ -59,7 +59,7 @@ trait SimpleFieldAwareEscapeAnalysis extends AbstractEscapeAnalysis {
         var seen: IntTrieSet = EmptyIntTrieSet
 
         while (workset.nonEmpty) {
-            val IntHeadAndRestOfSet(referenceDefSite, newWorklist) = workset.getAndRemove
+            val IntHeadAndRestOfSet(referenceDefSite, newWorklist) = workset.headAndTail
             workset = newWorklist
             seen += referenceDefSite
 

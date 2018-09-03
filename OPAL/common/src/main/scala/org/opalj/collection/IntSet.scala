@@ -2,9 +2,6 @@
 package org.opalj
 package collection
 
-import java.util.function.IntConsumer
-import java.util.function.IntFunction
-
 import scala.collection.mutable.Builder
 import org.opalj.collection.immutable.Chain
 
@@ -28,22 +25,15 @@ trait IntSet[T <: IntSet[T]] { intSet: T ⇒
      */
     def size: Int
 
-    def foreach(f: IntConsumer): Unit
-    def withFilter(p: (Int) ⇒ Boolean): T
+    def foreach[U](f: Int ⇒ U): Unit
+    def withFilter(p: Int ⇒ Boolean): T
     def map(f: Int ⇒ Int): T
     /**
      * Uses the keys of this set to map them to the value found in
      * the given array at the respective index.
      */
     def map(map: Array[Int]): T
-    def mapToAny[A](f: IntFunction[A]): Set[A] = {
-        var r = Set.empty[A]
-        foreach { v ⇒ r += f(v) }
-        r
-    }
-    def mapToAnyUsingBuilder[A](growable: A ⇒ Unit, f: IntFunction[A]): Unit = {
-        foreach { v ⇒ growable(f(v)) }
-    }
+    def map[A <: AnyRef](f: Int ⇒ A): Set[A] = foldLeft(Set.empty[A])(_ + f(_))
     def flatMap(f: Int ⇒ T): T
 
     def foldLeft[B](z: B)(f: (B, Int) ⇒ B): B
@@ -78,20 +68,32 @@ trait IntSet[T <: IntSet[T]] { intSet: T ⇒
 
     final def ++(that: IntIterator): T = that.foldLeft(this)(_ + _)
 
-    def iterator: Iterator[Int]
-    def intIterator: IntIterator
+    def iterator: IntIterator
+
     def toChain: Chain[Int]
+
     final def transform[B, To](f: Int ⇒ B, b: Builder[B, To]): To = {
         foreach(i ⇒ b += f(i))
         b.result()
     }
+    def toArray: Array[Int] = {
+        val size = this.size
+        val data = new Array[Int](size)
+        val it = iterator
+        var i = 0
+        while (i < size) {
+            data(i) = it.next()
+            i += 1
+        }
+        data
+    }
 
     final def mkString(pre: String, in: String, post: String): String = {
         val sb = new StringBuilder(pre)
-        val it = intIterator
+        val it = iterator
         var hasNext = it.hasNext
         while (hasNext) {
-            sb.append(it.next.toString)
+            sb.append(it.next().toString)
             hasNext = it.hasNext
             if (hasNext) sb.append(in)
         }

@@ -232,7 +232,7 @@ case class Switch[+V <: Var[V]](
         pc:                        PC,
         private var defaultTarget: PC,
         index:                     Expr[V],
-        private var npairs:        IndexedSeq[(Int, PC)] // IMPROVE use IntPair
+        private var npairs:        IndexedSeq[(Int, PC)] // IMPROVE use IntIntPair
 ) extends Stmt[V] {
 
     final override def asSwitch: this.type = this

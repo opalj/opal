@@ -11,9 +11,13 @@ trait LineNumberTable extends CodeAttribute {
 
     def lineNumbers: LineNumbers
 
-    def lookupLineNumber(pc: PC): Option[Int] // IMPROVE [L2] Define and use IntOption
+    def lookupLineNumber(pc: PC): Option[Int]
 
-    def firstLineNumber(): Option[Int] // IMPROVE [L2] Define and use IntOption
+    def firstLineNumber(): Option[Int]
+
+    override def remapPCs(codeSize: PC, f: PC ⇒ PC): LineNumberTable = {
+        UnpackedLineNumberTable(lineNumbers.flatMap[LineNumber](ln ⇒ ln.remapPCs(codeSize, f)))
+    }
 
     override def kindId: Int = LineNumberTable.KindId
 
@@ -28,18 +32,9 @@ trait LineNumberTable extends CodeAttribute {
         val thisLineNumbers = this.lineNumbers
         val otherLineNumbers = other.lineNumbers
         // the order of two line number tables need to be identical
-        thisLineNumbers.size == otherLineNumbers.size &&
-            thisLineNumbers == otherLineNumbers
+        thisLineNumbers.size == otherLineNumbers.size && thisLineNumbers == otherLineNumbers
     }
 
-    override def remapPCs(codeSize: PC, f: PC ⇒ PC): LineNumberTable = {
-        val newLineNumbers = List.newBuilder[LineNumber]
-        lineNumbers.foreach { ln ⇒
-            val newLNOption = ln.remapPCs(codeSize, f)
-            if (newLNOption.isDefined) newLineNumbers += newLNOption.get
-        }
-        UnpackedLineNumberTable(newLineNumbers.result())
-    }
 }
 
 object LineNumberTable {

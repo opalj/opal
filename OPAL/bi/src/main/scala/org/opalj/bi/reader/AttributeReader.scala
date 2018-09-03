@@ -11,7 +11,9 @@ import java.io.DataInputStream
  */
 trait AttributeReader extends Constant_PoolAbstractions with AttributesAbstractions {
 
-    type Attribute >: Null
+    //
+    // General framework to read attributes.
+    //
 
     /**
      * Called (typically by subclasses) to register a reader for a concrete attribute.
@@ -38,7 +40,7 @@ trait AttributeReader extends Constant_PoolAbstractions with AttributesAbstracti
      *      [[org.opalj.br.reader.UnpackedLineNumberTable_attributeBinding]]
      *      for a concrete example.
      */
-    def registerAttributesPostProcessor(p: (Attributes) ⇒ Attributes): Unit
+    def registerAttributesPostProcessor(p: Attributes ⇒ Attributes): Unit
 
     /**
      * Controls whether empty attributes (e.g., a LocalVariableTypeTable with no entries)

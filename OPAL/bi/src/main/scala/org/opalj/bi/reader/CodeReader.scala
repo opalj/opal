@@ -10,6 +10,10 @@ import java.io.DataInputStream
  */
 trait CodeReader extends Constant_PoolAbstractions {
 
+    //
+    // TYPE DEFINITIONS AND FACTORY METHODS
+    //
+
     type Instructions
 
     def Instructions(
@@ -18,6 +22,10 @@ trait CodeReader extends Constant_PoolAbstractions {
         cp:                  Constant_Pool,
         instructions:        Array[Byte]
     ): Instructions
+
+    //
+    // IMPLEMENTATION
+    //
 
     def Instructions(
         as_name_index:       Constant_Pool_Index,

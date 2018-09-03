@@ -3,11 +3,10 @@ package org.opalj
 package bi
 package reader
 
-import scala.reflect.ClassTag
-
 import java.io.DataInputStream
 
-import org.opalj.control.repeat
+import org.opalj.collection.immutable.RefArray
+import org.opalj.control.fillRefArray
 
 /**
  * Template method to read the (Java 7) ''BootstrapMethods'' attribute.
@@ -20,16 +19,16 @@ import org.opalj.control.repeat
 trait BootstrapMethods_attributeReader extends AttributeReader {
 
     //
-    // ABSTRACT DEFINITIONS
+    // TYPE DEFINITIONS AND FACTORY METHODS
     //
 
     type BootstrapMethods_attribute >: Null <: Attribute
 
-    type BootstrapMethod
-    implicit val BootstrapMethodManifest: ClassTag[BootstrapMethod]
+    type BootstrapMethod <: AnyRef
+    type BootstrapMethods = RefArray[BootstrapMethod]
 
-    type BootstrapArgument
-    implicit val BootstrapArgumentManifest: ClassTag[BootstrapArgument]
+    type BootstrapArgument <: AnyRef
+    type BootstrapArguments = RefArray[BootstrapArgument]
 
     def BootstrapMethods_attribute(
         constant_pool:        Constant_Pool,
@@ -55,10 +54,6 @@ trait BootstrapMethods_attributeReader extends AttributeReader {
     // IMPLEMENTATION
     //
 
-    type BootstrapMethods = IndexedSeq[BootstrapMethod]
-
-    type BootstrapArguments = IndexedSeq[BootstrapArgument]
-
     def BootstrapArgument(cp: Constant_Pool, in: DataInputStream): BootstrapArgument = {
         BootstrapArgument(cp, in.readUnsignedShort)
     }
@@ -67,7 +62,7 @@ trait BootstrapMethods_attributeReader extends AttributeReader {
         BootstrapMethod(
             cp,
             in.readUnsignedShort,
-            repeat(in.readUnsignedShort) {
+            fillRefArray(in.readUnsignedShort) {
                 BootstrapArgument(cp, in)
             }
         )
@@ -100,12 +95,13 @@ trait BootstrapMethods_attributeReader extends AttributeReader {
             BootstrapMethods_attribute(
                 cp,
                 attribute_name_index,
-                repeat(num_bootstrap_methods) { BootstrapMethod(cp, in) },
+                fillRefArray(num_bootstrap_methods) { BootstrapMethod(cp, in) },
                 as_name_index,
                 as_descriptor_index
             )
-        } else
+        } else {
             null
+        }
     }
 
     registerAttributeReader(BootstrapMethodsAttribute.Name → parserFactory())

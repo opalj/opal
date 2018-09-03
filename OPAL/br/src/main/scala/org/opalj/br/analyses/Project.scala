@@ -49,7 +49,7 @@ import org.opalj.br.instructions.Instruction
 import org.opalj.br.instructions.NEW
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.instructions.INVOKESPECIAL
-import org.opalj.collection.mutable.AnyRefArrayBuffer
+import org.opalj.collection.mutable.RefArrayBuffer
 
 /**
  * Primary abstraction of a Java project; i.e., a set of classes that constitute a
@@ -235,10 +235,10 @@ class Project[Source] private (
 
     final val MethodHandleClassFile: Option[ClassFile] = classFile(ObjectType.MethodHandle)
 
-    final val allMethodsWithBody: ConstArray[Method] = ConstArray.from(this.methodsWithBody)
+    final val allMethodsWithBody: ConstArray[Method] = ConstArray._UNSAFE_from(this.methodsWithBody)
 
     final val allMethodsWithBodyWithContext: ConstArray[MethodInfo[Source]] = {
-        ConstArray.from(this.methodsWithBodyAndContext)
+        ConstArray._UNSAFE_from(this.methodsWithBodyAndContext)
     }
 
     /**
@@ -247,12 +247,12 @@ class Project[Source] private (
     // TODO Consider extracting to a ProjectInformationKey
     // TODO Java 9+
     final val classesPerPackage: Map[String, immutable.Set[ClassFile]] = {
-        var classesPerPackage = Map.empty[String, AnyRefArrayBuffer[ClassFile]]
+        var classesPerPackage = Map.empty[String, RefArrayBuffer[ClassFile]]
         allClassFiles foreach { cf ⇒
             val packageName = cf.thisType.packageName
             val buffer =
                 classesPerPackage.getOrElse(packageName, {
-                    val buffer = AnyRefArrayBuffer.empty[ClassFile]
+                    val buffer = RefArrayBuffer.empty[ClassFile]
                     classesPerPackage = classesPerPackage.updated(packageName, buffer)
                     buffer
                 })
@@ -1409,7 +1409,7 @@ object Project {
         val result = methods.mapValuesNow { mdcs ⇒
             val sortedMethods = mdcs.toArray
             sortArray(sortedMethods, MethodDeclarationContextOrdering)
-            ConstArray.from(sortedMethods)
+            ConstArray._UNSAFE_from(sortedMethods)
         }
         result.repack
         result
@@ -2002,9 +2002,9 @@ object Project {
 
             val fieldsCount: Int = projectFieldsCount + libraryFieldsCount
 
-            val allProjectClassFiles: ConstArray[ClassFile] = ConstArray.from(projectClassFilesArray)
+            val allProjectClassFiles: ConstArray[ClassFile] = ConstArray._UNSAFE_from(projectClassFilesArray)
 
-            val allLibraryClassFiles: ConstArray[ClassFile] = ConstArray.from(libraryClassFilesArray)
+            val allLibraryClassFiles: ConstArray[ClassFile] = ConstArray._UNSAFE_from(libraryClassFilesArray)
 
             val allClassFiles: Iterable[ClassFile] = {
                 new Iterable[ClassFile] {

@@ -3,21 +3,24 @@ package org.opalj
 package bi
 package reader
 
-import scala.reflect.ClassTag
-
 import java.io.DataInputStream
 
-import org.opalj.control.repeat
+import org.opalj.collection.immutable.RefArray
+import org.opalj.control.fillRefArray
 
 /**
  * Generic parser for the ''LineNumberTable'' attribute.
  */
 trait LineNumberTable_attributeReader extends AttributeReader {
 
+    //
+    // TYPE DEFINITIONS AND FACTORY METHODS
+    //
+
     type LineNumberTable_attribute >: Null <: Attribute
 
-    type LineNumberTableEntry
-    implicit val LineNumberTableEntryManifest: ClassTag[LineNumberTableEntry]
+    type LineNumberTableEntry <: AnyRef
+    type LineNumbers = RefArray[LineNumberTableEntry]
 
     def LineNumberTable_attribute(
         constant_pool:        Constant_Pool,
@@ -33,8 +36,6 @@ trait LineNumberTable_attributeReader extends AttributeReader {
     //
     // IMPLEMENTATION
     //
-
-    type LineNumbers = IndexedSeq[LineNumberTableEntry]
 
     /**
      * <pre>
@@ -62,7 +63,7 @@ trait LineNumberTable_attributeReader extends AttributeReader {
             LineNumberTable_attribute(
                 cp,
                 attribute_name_index,
-                repeat(line_number_table_length) {
+                fillRefArray(line_number_table_length) {
                     LineNumberTableEntry(in.readUnsignedShort, in.readUnsignedShort)
                 },
                 as_name_index,

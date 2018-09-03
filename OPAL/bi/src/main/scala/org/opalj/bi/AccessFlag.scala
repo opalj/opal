@@ -62,11 +62,14 @@ sealed trait VisibilityModifier extends AccessFlag {
  */
 object VisibilityModifier {
 
-    final val mask = ACC_PRIVATE.mask | ACC_PUBLIC.mask | ACC_PROTECTED.mask
+    // partial mask: we can't define a mask w.r.t. default visibility
+    private[bi] final val mask = ACC_PRIVATE.mask | ACC_PUBLIC.mask | ACC_PROTECTED.mask
 
-    private val SOME_PUBLIC = Some(ACC_PUBLIC)
-    private val SOME_PRIVATE = Some(ACC_PRIVATE)
-    private val SOME_PROTECTED = Some(ACC_PROTECTED)
+    def hasDefaultVisibility(accessFlags: Int): Boolean = (accessFlags & mask) == 0
+
+    final val SOME_PUBLIC = Some(ACC_PUBLIC)
+    final val SOME_PRIVATE = Some(ACC_PRIVATE)
+    final val SOME_PROTECTED = Some(ACC_PROTECTED)
 
     /**
      * Returns the specified visibility modifier.
@@ -76,11 +79,11 @@ object VisibilityModifier {
      *          element has default visibility.
      */
     def get(accessFlags: Int): Option[VisibilityModifier] = {
-        ((accessFlags & VisibilityModifier.mask): @switch) match {
-            case 1 /*ACC_PUBLIC.mask*/    ⇒ SOME_PUBLIC
-            case 2 /*ACC_PRIVATE.mask*/   ⇒ SOME_PRIVATE
-            case 4 /*ACC_PROTECTED.mask*/ ⇒ SOME_PROTECTED
-            case _                        ⇒ None /*DEFAULT VISIBILITY*/
+        ((accessFlags & mask): @switch) match {
+            case ACC_PUBLIC.mask    ⇒ SOME_PUBLIC
+            case ACC_PRIVATE.mask   ⇒ SOME_PRIVATE
+            case ACC_PROTECTED.mask ⇒ SOME_PROTECTED
+            case _                  ⇒ None /*DEFAULT VISIBILITY*/
         }
     }
 
@@ -101,10 +104,7 @@ object VisibilityModifier {
         }
     }
 
-    def isLessVisibleAs(
-        a: Option[VisibilityModifier],
-        b: Option[VisibilityModifier]
-    ): Boolean = {
+    def isLessVisibleAs(a: Option[VisibilityModifier], b: Option[VisibilityModifier]): Boolean = {
         !isAtLeastAsVisibleAs(b, a)
     }
 
@@ -113,19 +113,19 @@ object VisibilityModifier {
 
 object ACC_PUBLIC extends VisibilityModifier {
     final override val javaName: Some[String] = Some("public")
-    final override val mask: Int = 0x0001
+    final override val mask = 0x0001
     override def toString: String = "PUBLIC"
 }
 
 object ACC_PRIVATE extends VisibilityModifier {
     final override val javaName: Some[String] = Some("private")
-    final override val mask: Int = 0x0002
+    final override val mask = 0x0002
     override def toString: String = "PRIVATE"
 }
 
 object ACC_PROTECTED extends VisibilityModifier {
     final override val javaName: Some[String] = Some("protected")
-    final override val mask: Int = 0x0004
+    final override val mask = 0x0004
     override def toString: String = "PROTECTED"
 }
 
@@ -142,8 +142,8 @@ object ACC_FINAL extends AccessFlag {
 }
 
 object ACC_SUPER extends AccessFlag {
-    final val javaName: None.type = None
-    final val mask = 0x0020
+    final override val javaName: None.type = None
+    final override val mask = 0x0020
     override def toString: String = "SUPER"
 }
 
@@ -160,8 +160,8 @@ object ACC_VOLATILE extends AccessFlag {
 }
 
 object ACC_BRIDGE extends AccessFlag {
-    final val javaName: None.type = None
-    final val mask = 0x0040
+    final override val javaName: None.type = None
+    final override val mask = 0x0040
     override def toString: String = "BRIDGE"
 }
 
@@ -178,8 +178,8 @@ object ACC_VARARGS extends AccessFlag {
 }
 
 object ACC_NATIVE extends AccessFlag {
-    final val javaName: Some[String] = Some("native")
-    final val mask = 0x0100
+    final override val javaName: Some[String] = Some("native")
+    final override val mask = 0x0100
     override def toString: String = "NATIVE"
 }
 

@@ -7,12 +7,12 @@ package bi
  */
 object AttributesParent extends Enumeration {
 
-    val ClassFile = Value
+    final val ClassFile = Value
 
-    val Field = Value
+    final val Field = Value
 
-    val Method = Value
+    final val Method = Value
 
-    val Code = Value
+    final val Code = Value
 
 }

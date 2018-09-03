@@ -12,8 +12,6 @@ import org.opalj.br.instructions.DEFAULT_INVOKEDYNAMIC
  */
 trait DeferredInvokedynamicResolution extends ConstantPoolBinding with CodeBinding {
 
-    override type Constant_Pool = Array[Constant_Pool_Entry]
-
     /**
      * Resolves an [[org.opalj.br.instructions.INCOMPLETE_INVOKEDYNAMIC]] instruction using the
      * [[BootstrapMethodTable]] of the class.

@@ -5,9 +5,11 @@ package reader
 
 import scala.annotation.switch
 import scala.annotation.tailrec
+
 import net.ceedubs.ficus.Ficus._
-import org.opalj.log.OPALLogger.info
+
 import org.opalj.collection.immutable.IntTrieSet1
+import org.opalj.log.OPALLogger.info
 import org.opalj.br.instructions.Instruction
 import org.opalj.br.instructions.GotoInstruction
 import org.opalj.br.instructions.GOTO
@@ -40,7 +42,7 @@ import org.opalj.br.instructions.JSR_W
 
 /**
  * Performs some very basic, in-place control-flow simplifications to make the code more regular.
- * In particular to make it more likely that an if that is actually a loop's if actually
+ * In particular to make it more likely that an `if` that is actually a loop's `if` actually
  * jumps back.
  *
  * The following transformations are performed:
@@ -62,8 +64,8 @@ import org.opalj.br.instructions.JSR_W
  * of dead code.
  *
  * @note All transformation always only reduce the number of basic blocks and never create new
- *       basic blocks. The existing stack map table attributes are never effect and remain
- *       valid!
+ *       basic blocks. The existing stack map table attributes are never effected and remain
+ *       valid; they may just contain more entries than strictly necessary.
  *
  * @author Michael Eichberg
  */

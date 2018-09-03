@@ -2,18 +2,17 @@
 package org.opalj
 package da
 
-import scala.xml.Node
-import scala.xml.Text
-import scala.xml.NodeSeq
 import scala.io.Source
+import scala.xml.Node
+import scala.xml.NodeSeq
+import scala.xml.Text
+import scala.xml.Unparsed
+
 import org.opalj.io.process
 import org.opalj.bi.AccessFlags
 import org.opalj.bi.reader.Constant_PoolAbstractions
 import org.opalj.bi.ACC_PUBLIC
 import org.opalj.bi.ACC_SUPER
-
-import scala.xml.Text
-import scala.xml.Unparsed
 
 /**
  * @author Michael Eichberg
@@ -29,10 +28,10 @@ case class ClassFile(
         access_flags:  Int                 = ACC_PUBLIC.mask | ACC_SUPER.mask,
         this_class:    Constant_Pool_Index,
         super_class:   Constant_Pool_Index,
-        interfaces:    Interfaces          = IndexedSeq.empty,
-        fields:        Fields              = IndexedSeq.empty,
-        methods:       Methods             = IndexedSeq.empty,
-        attributes:    Attributes          = IndexedSeq.empty
+        interfaces:    Interfaces          = NoInterfaces,
+        fields:        Fields              = NoFields,
+        methods:       Methods             = NoMethods,
+        attributes:    Attributes          = NoAttributes
 ) {
 
     assert({
@@ -109,7 +108,7 @@ case class ClassFile(
     def cpToXHTML: Node = {
         val cpEntries =
             for {
-                cpIndex ← (1 until constant_pool.length)
+                cpIndex ← 1 until constant_pool.length
                 cpNode = cp(cpIndex)
                 if cpNode != null /* <= need for constant_double/_long entries */
             } yield {
@@ -126,10 +125,10 @@ case class ClassFile(
         }
     }
 
-    def fieldsToXHTML: Seq[Node] = fields.map { field ⇒ field.toXHTML }
+    def fieldsToXHTML: Iterator[Node] = fields.iterator.map { field ⇒ field.toXHTML }
 
-    def methodsToXHTML: Seq[Node] = {
-        methods.zipWithIndex.map { mi ⇒ val (method, index) = mi; method.toXHTML(index) }
+    def methodsToXHTML: Iterator[Node] = {
+        methods.iterator.zipWithIndex.map { mi ⇒ val (method, index) = mi; method.toXHTML(index) }
     }
 
     protected def accessFlags: Node = {
@@ -213,9 +212,9 @@ case class ClassFile(
     private[this] def classFileToXHTML(source: Option[AnyRef], withMethodsFilter: Boolean): Node = {
 
         val (sourceFileAttributes, attributes0) =
-            attributes.partition(_.isInstanceOf[SourceFile_attribute])
+            attributes.partitionByType(classOf[SourceFile_attribute])
         val (signatureAttributes, attributes1) =
-            attributes0.partition(_.isInstanceOf[Signature_attribute])
+            attributes0.partitionByType(classOf[Signature_attribute])
 
         <div class="class_file">
             { if (source.isDefined) <div id="source">{ source.get }</div> }
@@ -225,8 +224,7 @@ case class ClassFile(
                 { superTypes }
                 {
                     if (signatureAttributes.nonEmpty) {
-                        val signatureAttribute = signatureAttributes.head.asInstanceOf[Signature_attribute]
-                        Seq(<br/>, signatureAttribute.signatureSpan)
+                        Seq(<br/>, signatureAttributes.head.signatureSpan)
                     }
                 }
                 <br/>
@@ -234,7 +232,7 @@ case class ClassFile(
                     sourceFileAttributes.headOption.map { a ⇒
                         Seq(
                             Text("Source file: "),
-                            <span class="source_file">{ a.asInstanceOf[SourceFile_attribute].sourceFile } </span>,
+                            <span class="source_file">{ a.sourceFile } </span>,
                             Unparsed("&nbsp; &mdash; &nbsp;")
                         )
                     }.getOrElse(NodeSeq.Empty)
@@ -254,7 +252,8 @@ case class ClassFile(
                     if (attributes1.nonEmpty)
                         <div class="attributes">
                             <details>
-                                <summary>Attributes</summary>{ attributes1.map(attributeToXHTML) }
+                                <summary>Attributes</summary>
+                                { attributes1.map[Node](attributeToXHTML) }
                             </details>
                         </div>
                 }{
@@ -270,7 +269,9 @@ case class ClassFile(
                     if (methods.nonEmpty) {
                         <div class="methods">
                             <details open="">
-                                <summary>Methods</summary>{ if (withMethodsFilter) filter else NodeSeq.Empty }{ methodsToXHTML }
+                                <summary>Methods</summary>
+                                { if (withMethodsFilter) filter else NodeSeq.Empty }
+                                { methodsToXHTML }
                             </details>
                         </div>
                     }
@@ -284,7 +285,7 @@ case class ClassFile(
 object ClassFile {
 
     private def loadResource(js: String): String = {
-        process(this.getClass().getResourceAsStream(js))(Source.fromInputStream(_).mkString)
+        process(this.getClass.getResourceAsStream(js))(Source.fromInputStream(_).mkString)
     }
 
     final val ResetCSS: String = loadResource("reset.css")

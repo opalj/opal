@@ -3,10 +3,10 @@ package org.opalj
 package bi
 package reader
 
-import scala.reflect.ClassTag
-
 import java.io.DataInputStream
-import org.opalj.control.repeat
+
+import org.opalj.collection.immutable.RefArray
+import org.opalj.control.fillRefArray
 
 /**
  * Generic parser for the ''local variable table'' attribute.
@@ -14,12 +14,13 @@ import org.opalj.control.repeat
 trait LocalVariableTable_attributeReader extends AttributeReader {
 
     //
-    // ABSTRACT DEFINITIONS
+    // TYPE DEFINITIONS AND FACTORY METHODS
     //
+
     type LocalVariableTable_attribute >: Null <: Attribute
 
-    type LocalVariableTableEntry
-    implicit val LocalVariableTableEntryManifest: ClassTag[LocalVariableTableEntry]
+    type LocalVariableTableEntry <: AnyRef
+    type LocalVariables = RefArray[LocalVariableTableEntry]
 
     def LocalVariableTableEntry(
         constant_pool:    Constant_Pool,
@@ -42,8 +43,6 @@ trait LocalVariableTable_attributeReader extends AttributeReader {
     //
     // IMPLEMENTATION
     //
-
-    type LocalVariables = IndexedSeq[LocalVariableTableEntry]
 
     /**
      * <pre>
@@ -75,7 +74,7 @@ trait LocalVariableTable_attributeReader extends AttributeReader {
                 cp,
                 attribute_name_index,
                 {
-                    repeat(entriesCount) {
+                    fillRefArray(entriesCount) {
                         LocalVariableTableEntry(
                             cp,
                             in.readUnsignedShort,

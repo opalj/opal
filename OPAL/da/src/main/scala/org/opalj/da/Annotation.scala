@@ -12,7 +12,7 @@ import scala.xml.Node
  */
 case class Annotation(
         type_index:          Constant_Pool_Index,
-        element_value_pairs: IndexedSeq[ElementValuePair] = IndexedSeq.empty
+        element_value_pairs: ElementValuePairs   = NoElementValuePairs
 ) extends AbstractAnnotation {
 
     final def attribute_length: Int = {

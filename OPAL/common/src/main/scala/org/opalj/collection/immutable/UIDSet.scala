@@ -3,11 +3,11 @@ package org.opalj
 package collection
 package immutable
 
-import scala.collection.AbstractIterator
+import scala.reflect.ClassTag
+
 import scala.collection.generic.CanBuildFrom
 import scala.collection.mutable.Builder
 import scala.collection.mutable.ArrayStack
-import scala.reflect.ClassTag
 
 /**
  * An '''unordered''' trie-set based on the unique ids of the stored [[UID]] objects. I.e.,
@@ -50,6 +50,8 @@ sealed abstract class UIDSet[T <: UID]
 
     /** Iterator over all ids. */
     def idIterator: IntIterator
+
+    override def iterator: RefIterator[T]
 
     def idSet: IntTrieSet
 
@@ -97,6 +99,9 @@ sealed abstract class UIDSet[T <: UID]
         } else
             UncomparableSets
     }
+
+    def toRefArray: RefArray[T] = new RefArray(toArray[AnyRef])
+
 }
 
 /**
@@ -112,7 +117,7 @@ object UIDSet0 extends UIDSet[UID] {
     override def exists(p: UID ⇒ Boolean): Boolean = false
     override def forall(p: UID ⇒ Boolean): Boolean = true
     override def foreach[U](f: UID ⇒ U): Unit = {}
-    override def iterator: Iterator[UID] = Iterator.empty
+    override def iterator: RefIterator[Nothing] = RefIterator.empty
     override def head: UID = throw new NoSuchElementException
     override def last: UID = throw new NoSuchElementException
     override def headOption: Option[UID] = None
@@ -157,7 +162,7 @@ final case class UIDSet1[T <: UID](value: T) extends NonEmptyUIDSet[T] {
     override def head: T = value
     override def last: T = value
     override def tail: UIDSet[T] = empty
-    override def iterator: Iterator[T] = Iterator.single(value)
+    override def iterator: RefIterator[T] = RefIterator(value)
     override def filter(p: T ⇒ Boolean): UIDSet[T] = if (p(value)) this else empty
     override def filterNot(p: T ⇒ Boolean): UIDSet[T] = if (p(value)) empty else this
 
@@ -213,7 +218,7 @@ final class UIDSet2[T <: UID](value1: T, value2: T) extends NonEmptyUIDSet[T] {
     override def exists(p: T ⇒ Boolean): Boolean = p(value1) || p(value2)
     override def forall(p: T ⇒ Boolean): Boolean = p(value1) && p(value2)
     override def foreach[U](f: T ⇒ U): Unit = { f(value1); f(value2) }
-    override def iterator: Iterator[T] = Iterator(value1, value2)
+    override def iterator: RefIterator[T] = RefIterator(value1, value2)
     override def head: T = value1
     override def last: T = value2
     override def tail: UIDSet[T] = new UIDSet1(value2)
@@ -331,7 +336,7 @@ final class UIDSet3[T <: UID](value1: T, value2: T, value3: T) extends NonEmptyU
     override def exists(p: T ⇒ Boolean): Boolean = p(value1) || p(value2) || p(value3)
     override def forall(p: T ⇒ Boolean): Boolean = p(value1) && p(value2) && p(value3)
     override def foreach[U](f: T ⇒ U): Unit = { f(value1); f(value2); f(value3) }
-    override def iterator: Iterator[T] = Iterator(value1, value2, value3)
+    override def iterator: RefIterator[T] = RefIterator(value1, value2, value3)
     override def head: T = value1
     override def last: T = value3
     override def tail: UIDSet[T] = new UIDSet2(value2, value3)
@@ -501,21 +506,16 @@ sealed private[immutable] abstract class UIDTrieSetNodeLike[T <: UID] extends No
         val right = this.right; if (right ne null) right.foreach(f)
     }
 
-    def iterator: Iterator[T] = {
-        new AbstractIterator[T] {
-
-            private[this] val nextNodes = ArrayStack[UIDTrieSetNodeLike[T]](self)
-
-            def hasNext: Boolean = nextNodes.nonEmpty
-
-            def next: T = {
-                val currentNode = nextNodes.pop
-                val nextRight = currentNode.right
-                val nextLeft = currentNode.left
-                if (nextRight ne null) nextNodes.push(nextRight)
-                if (nextLeft ne null) nextNodes.push(nextLeft)
-                currentNode.value
-            }
+    def iterator: RefIterator[T] = new RefIterator[T] {
+        private[this] val nextNodes = ArrayStack[UIDTrieSetNodeLike[T]](self)
+        def hasNext: Boolean = nextNodes.nonEmpty
+        def next: T = {
+            val currentNode = nextNodes.pop
+            val nextRight = currentNode.right
+            val nextLeft = currentNode.left
+            if (nextRight ne null) nextNodes.push(nextRight)
+            if (nextLeft ne null) nextNodes.push(nextLeft)
+            currentNode.value
         }
     }
 
@@ -917,7 +917,7 @@ final class UIDTrieSetLeaf[T <: UID] private[immutable] (
     override def exists(p: T ⇒ Boolean): Boolean = p(value)
     override def forall(p: T ⇒ Boolean): Boolean = p(value)
     override def foreach[U](f: T ⇒ U): Unit = f(value)
-    override def iterator: Iterator[T] = Iterator.single(value)
+    override def iterator: RefIterator[T] = RefIterator(value)
     override def find(p: T ⇒ Boolean): Option[T] = if (p(value)) Some(value) else None
     override def findById(id: Int): Option[T] = if (value.id == id) Some(value) else None
 
@@ -955,7 +955,7 @@ final class UIDTrieSetInnerNode[T <: UID] private[immutable] (
         protected var right:   UIDTrieSetNodeLike[T]
 ) extends UIDTrieSetNodeLike[T] {
 
-    final override def size: Int = theSize
+    override def size: Int = theSize
 
     override def last: T = {
         if (right ne null)
@@ -987,7 +987,12 @@ final class UIDTrieSetInnerNode[T <: UID] private[immutable] (
         this
     }
 
-    private[immutable] def +!(e: T, eId: Int, shiftedEId: Int, level: Int): UIDTrieSetNodeLike[T] = {
+    private[immutable] def +!(
+        e:          T,
+        eId:        Int,
+        shiftedEId: Int,
+        level:      Int
+    ): UIDTrieSetNodeLike[T] = {
         val value = this.value
         val valueId = value.id
         if (eId == valueId)

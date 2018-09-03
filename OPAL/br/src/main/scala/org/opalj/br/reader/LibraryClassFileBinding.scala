@@ -18,7 +18,7 @@ trait LibraryClassFileBinding extends ClassFileBinding {
         access_flags:      Int,
         this_class_index:  Constant_Pool_Index,
         super_class_index: Constant_Pool_Index,
-        interfaces:        IndexedSeq[Constant_Pool_Index],
+        interfaces:        Interfaces,
         fields:            Fields,
         methods:           Methods,
         attributes:        Attributes

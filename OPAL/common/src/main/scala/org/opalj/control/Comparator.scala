@@ -21,7 +21,7 @@ trait Comparator[T] {
 }
 object Comparator {
 
-    def apply[T](f: (T) ⇒ Int): Comparator[T] = {
+    def apply[T](f: T ⇒ Int): Comparator[T] = {
         new Comparator[T] { def evaluate(t: T): Int = f(t) }
     }
 

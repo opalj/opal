@@ -522,21 +522,13 @@ trait RecordCFG
     }
 
     /**
-     * Computes the transitive hull of all instructions reachable from the given set of
-     * instructions.
-     */
-    def allReachable(pcs: IntTrieSet): IntTrieSet = {
-        pcs.foldLeft(IntTrieSet.empty) { (c, pc) ⇒ c ++! allReachable(pc) }
-    }
-
-    /**
      * Computes the transitive hull of all instructions reachable from the given instruction.
      */
     def allReachable(pc: Int): IntTrieSet = {
         var allReachable: IntTrieSet = IntTrieSet1(pc)
         var successorsToVisit = allSuccessorsOf(pc)
         while (successorsToVisit.nonEmpty) {
-            val IntHeadAndRestOfSet(succPC, newSuccessorsToVisit) = successorsToVisit.getAndRemove
+            val IntHeadAndRestOfSet(succPC, newSuccessorsToVisit) = successorsToVisit.headAndTail
             successorsToVisit = newSuccessorsToVisit
             if (!allReachable.contains(succPC)) {
                 allReachable +!= succPC
@@ -544,6 +536,14 @@ trait RecordCFG
             }
         }
         allReachable
+    }
+
+    /**
+     * Computes the transitive hull of all instructions reachable from the given set of
+     * instructions.
+     */
+    def allReachable(pcs: IntTrieSet): IntTrieSet = {
+        pcs.foldLeft(IntTrieSet.empty) { (c, pc) ⇒ c ++! allReachable(pc) }
     }
 
     // ==================== METHODS WHICH COMPUTE DERIVED DATA-STRUCTURES ==========================
@@ -758,10 +758,8 @@ trait RecordCFG
 
     def bbCFG: CFG[Instruction, Code] = {
         getOrInitField[CFG[Instruction, Code]](
-            () ⇒ theBBCFG, (cfg) ⇒ theBBCFG = cfg, exceptionHandlerSuccessors
-        ) {
-                computeBBCFG
-            }
+            () ⇒ theBBCFG, cfg ⇒ theBBCFG = cfg, exceptionHandlerSuccessors
+        ) { computeBBCFG }
     }
 
     /**
@@ -784,7 +782,7 @@ trait RecordCFG
         val bbs = new Array[BasicBlock](codeSize)
 
         // OLD val exceptionHandlers = mutable.HashMap.empty[Int, CatchNode]
-        val exceptionHandlers = new Int2ObjectOpenHashMap[CatchNode]
+        val exceptionHandlers = new Int2ObjectOpenHashMap[CatchNode](code.exceptionHandlers.size)
         for {
             (exceptionHandler, index) ← code.exceptionHandlers.iterator.zipWithIndex
         } {
@@ -818,7 +816,7 @@ trait RecordCFG
         var runningBB: BasicBlock = null
         val pcIt = code.programCounters
         while (pcIt.hasNext) {
-            val pc = pcIt.next
+            val pc = pcIt.next()
             if (runningBB eq null) {
                 runningBB = bbs(pc)
                 if (runningBB eq null) {

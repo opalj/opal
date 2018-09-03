@@ -3,6 +3,7 @@ package org.opalj
 package br
 package instructions
 
+import org.opalj.collection.IntIterator
 import org.opalj.collection.immutable.Chain
 
 /**
@@ -20,7 +21,7 @@ trait CompoundConditionalBranchInstructionLike extends ConditionalBranchInstruct
     /**
      * Returns all case values that are '''not related to the default branch'''.
      */
-    def caseValues: Iterable[Int]
+    def caseValues: IntIterator
 
 }
 

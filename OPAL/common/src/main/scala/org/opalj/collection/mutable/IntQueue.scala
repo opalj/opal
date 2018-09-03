@@ -85,7 +85,7 @@ protected[opalj] final class IntQueue private (
 private[mutable] class QueueNode(val value: Int, var next: QueueNode)
 
 /**
- * Factory to create [[IntArrayStack]]s.
+ * Factory to create [[IntQueue]]s.
  */
 object IntQueue {
 

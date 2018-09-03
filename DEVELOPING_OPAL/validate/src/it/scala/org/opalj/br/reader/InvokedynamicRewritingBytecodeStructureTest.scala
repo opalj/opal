@@ -52,7 +52,10 @@ class InvokedynamicRewritingBytecodeStructureTest extends FunSpec with Matchers 
             // the abstract interpretation succeed
             result should not be 'wasAborted
             // the layout of the instructions array is correct
-            for { pc ← instructions.indices; if instructions(pc) != null } {
+            for {
+                pc ← instructions.indices
+                if instructions(pc) != null
+            } {
                 val modifiedByWide = pc != 0 && instructions(pc) == WIDE
                 val nextPc = instructions(pc).indexOfNextInstruction(pc, modifiedByWide)
                 instructions.slice(pc + 1, nextPc).foreach(_ should be(null))

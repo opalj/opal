@@ -13,6 +13,10 @@ import java.io.DataInputStream
  */
 trait SourceDebugExtension_attributeReader extends AttributeReader {
 
+    //
+    // TYPE DEFINITIONS AND FACTORY METHODS
+    //
+
     type SourceDebugExtension_attribute <: Attribute
 
     def SourceDebugExtension_attribute(
@@ -23,6 +27,10 @@ trait SourceDebugExtension_attributeReader extends AttributeReader {
         as_name_index:       Constant_Pool_Index,
         as_descriptor_index: Constant_Pool_Index
     ): SourceDebugExtension_attribute
+
+    //
+    // IMPLEMENTATION
+    //
 
     /**
      * The SourceDebugExtension attribute is an optional attribute in the

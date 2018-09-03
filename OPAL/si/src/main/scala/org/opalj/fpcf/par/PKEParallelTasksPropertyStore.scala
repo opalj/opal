@@ -19,7 +19,7 @@ import scala.collection.{Map ⇒ SomeMap}
 
 import org.opalj.control.foreachValue
 import org.opalj.graphs
-import org.opalj.collection.mutable.AnyRefAccumulator
+import org.opalj.collection.mutable.RefAccumulator
 import org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.info
@@ -795,7 +795,7 @@ final class PKEParallelTasksPropertyStore private (
 
     private[this] def notifyDependers(
         newEPS: SomeEPS,
-        pcrs:   AnyRefAccumulator[PropertyComputationResult]
+        pcrs:   RefAccumulator[PropertyComputationResult]
     ): Unit = {
         val e = newEPS.e
         val pkId = newEPS.pk.id
@@ -853,7 +853,7 @@ final class PKEParallelTasksPropertyStore private (
         newEPS:                              SomeEPS,
         isFinal:                             Boolean,
         notifyDependersAboutNonFinalUpdates: Boolean,
-        pcrs:                                AnyRefAccumulator[PropertyComputationResult]
+        pcrs:                                RefAccumulator[PropertyComputationResult]
     ): UpdateAndNotifyState = {
 
         // 3. handle relevant updates
@@ -908,8 +908,8 @@ final class PKEParallelTasksPropertyStore private (
         e:                                   Entity,
         lb:                                  Property,
         ub:                                  Property,
-        notifyDependersAboutNonFinalUpdates: Boolean                                      = true,
-        pcrs:                                AnyRefAccumulator[PropertyComputationResult]
+        notifyDependersAboutNonFinalUpdates: Boolean                                   = true,
+        pcrs:                                RefAccumulator[PropertyComputationResult]
     ): UpdateAndNotifyState = {
         updatesCounter += 1
         assert(
@@ -954,8 +954,8 @@ final class PKEParallelTasksPropertyStore private (
         e:                                   Entity,
         ub:                                  Property,
         isFinal:                             Boolean,
-        notifyDependersAboutNonFinalUpdates: Boolean                                      = true,
-        pcrs:                                AnyRefAccumulator[PropertyComputationResult]
+        notifyDependersAboutNonFinalUpdates: Boolean                                   = true,
+        pcrs:                                RefAccumulator[PropertyComputationResult]
     ): UpdateAndNotifyState = {
         updatesCounter += 1
         assert(
@@ -991,7 +991,7 @@ final class PKEParallelTasksPropertyStore private (
     private[this] def finalUpdate(
         e:    Entity,
         p:    Property,
-        pcrs: AnyRefAccumulator[PropertyComputationResult]
+        pcrs: RefAccumulator[PropertyComputationResult]
     ): UpdateAndNotifyState = {
         if (isPropertyKeyForSimplePropertyBasedOnPKId(p.key.id)) {
             updateAndNotifyForSimpleP(e, p, isFinal = true, true /*actually irrelevant*/ , pcrs)
@@ -1021,7 +1021,7 @@ final class PKEParallelTasksPropertyStore private (
     ): Unit = {
 
         // Used to store immediate results, which need to be handled immediately
-        val pcrs: AnyRefAccumulator[PropertyComputationResult] = AnyRefAccumulator(r)
+        val pcrs: RefAccumulator[PropertyComputationResult] = RefAccumulator(r)
         var forceDependersNotifications = initialForceDependersNotifications
 
         def processResult(r: PropertyComputationResult): Unit = {

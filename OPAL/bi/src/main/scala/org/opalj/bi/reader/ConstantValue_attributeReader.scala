@@ -23,6 +23,10 @@ import java.io.DataInputStream
  */
 trait ConstantValue_attributeReader extends AttributeReader {
 
+    //
+    // TYPE DEFINITIONS AND FACTORY METHODS
+    //
+
     type ConstantValue_attribute <: Attribute
 
     def ConstantValue_attribute(
