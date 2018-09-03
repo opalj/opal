@@ -27,7 +27,7 @@ trait Exceptions_attributeBinding
         as_descriptor_index: Constant_Pool_Index
     ): Exceptions_attribute = {
         new Exceptions_attribute(
-            RefArray.from(exception_index_table)(e_index ⇒ cp(e_index).asObjectType(cp))
+            RefArray.mapFrom(exception_index_table)(e_index ⇒ cp(e_index).asObjectType(cp))
         )
     }
 }

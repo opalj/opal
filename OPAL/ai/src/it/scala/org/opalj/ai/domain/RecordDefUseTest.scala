@@ -3,24 +3,27 @@ package org.opalj
 package ai
 package domain
 
+import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.Matchers
 import org.scalatest.FunSpec
-import org.junit.runner.RunWith
+
 import java.net.URL
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.ConcurrentLinkedQueue
 
 import scala.collection.JavaConverters._
+
 import org.opalj.util.PerformanceEvaluation
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.br.analyses.Project
 import org.opalj.br.TestSupport.createJREProject
 import org.opalj.br.Method
-import org.opalj.br.reader.{BytecodeInstructionsCache, Java8FrameworkWithCaching}
+import org.opalj.br.reader.BytecodeInstructionsCache
+import org.opalj.br.reader.Java8FrameworkWithCaching
 
 /**
- * Tests if we are able to useful self-consistent collect def/use information for the entire
+ * Tests if we are able to collect useful and self-consistent def/use information for the entire
  * test suite.
  *
  * @author Michael Eichberg
@@ -72,7 +75,7 @@ class RecordDefUseTest extends FunSpec with Matchers {
         // (1) TEST
         // Tests if the dominator tree information is consistent
         //
-        liveInstructions.intIterator.foreach(pc ⇒ if (pc != 0) dt.dom(pc) should be < codeSize)
+        liveInstructions.iterator.foreach(pc ⇒ if (pc != 0) dt.dom(pc) should be < codeSize)
 
         val instructions = code.instructions
         val ehs = code.exceptionHandlers

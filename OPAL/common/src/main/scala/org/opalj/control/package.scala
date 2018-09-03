@@ -52,7 +52,7 @@ package object control {
 
     /**
      * Evaluates the given expression `f` with type `T` the given number of
-     * `times` and stores the result in an `IndexedSeq[T]`.
+     * `times` and stores the result in a [[org.opalj.collection.immutable.RefArray]].
      *
      * ==Example Usage==
      * {{{
@@ -63,7 +63,7 @@ package object control {
      *
      * @note '''This is a macro.'''
      *
-     * @param times The number of times the expression `f` is evaluated. The `times`
+     * @param times The number of times the expression f` is evaluated. The `times`
      *      expression is evaluated exactly once.
      * @param f An expression that is evaluated the given number of times unless an
      *      exception is thrown. Hence, even though `f` is not a by-name parameter,
@@ -94,7 +94,7 @@ package object control {
 
     /**
      * Evaluates the given expression `f` the given number of
-     * `times` and stores the result in an [[IntArray]].
+     * `times` and stores the result in an [[org.opalj.collection.immutable.IntArray]].
      *
      * ==Example Usage==
      * {{{

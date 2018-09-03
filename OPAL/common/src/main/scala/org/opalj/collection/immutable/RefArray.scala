@@ -5,8 +5,8 @@ package immutable
 
 import java.util.{Arrays ⇒ JArrays}
 
+import scala.collection.Map
 import scala.collection.mutable.Builder
-
 import org.opalj.collection.mutable.RefArrayBuffer
 import org.opalj.control.{find ⇒ findInArray}
 
@@ -22,6 +22,12 @@ import org.opalj.control.{find ⇒ findInArray}
 class RefArray[+T /* "<: AnyRef" this constraint is ONLY enforced by the factory methods to facilitate integration with the scala collection API */ ] private[collection] (
         private var data: Array[AnyRef]
 ) extends scala.collection.immutable.Seq[T] { self ⇒ // TODO [Scala 2.13] make it extend IndexedSeq.
+
+    //
+    //
+    // UNSAFE OPERATIONS THAT SHOULD ONLY BE USED AT CONSTRUCTION TIME
+    //
+    //
 
     /**
      * Appends the given element to the underlying array; will cause havoc if this object
@@ -45,10 +51,10 @@ class RefArray[+T /* "<: AnyRef" this constraint is ONLY enforced by the factory
 
     /**
      * Directly performs the map operation on the underlying array and then creates a new
-     * appropriately typed `RefArray[X]` object which wraps the modified array. The
-     * return value can be ignored, if `X == T`.
+     * appropriately typed `RefArray[X]` object which wraps the modified array. Hence, the return
+     * value can be ignored, if `X == T`.
      *
-     * '''This method is only to be used if `this` instance is no longer used afterwards!'''
+     * '''This method is only to be used if no aliases have been created that assume that this array is not mutated.'''
      */
     // IMPROVE Design annotation (+Analysis) that ensures that this operation is only performed if – after the usage of this method - the reference to this data-structure will not be used anymore.
     def _UNSAFE_mapped[X <: AnyRef](f: T ⇒ X): RefArray[X] = {
@@ -67,8 +73,11 @@ class RefArray[+T /* "<: AnyRef" this constraint is ONLY enforced by the factory
      * '''This method is only to be used if `this` instance is no longer used afterwards!'''
      */
     // IMPROVE Design annotation (+Analysis) that ensures that this operation is only performed if – after the usage of this method - the reference to this data-structure will not be used anymore.
-    def _UNSAFE_sortedWith(compare: (AnyRef, AnyRef) ⇒ Boolean): this.type = {
-        JArrays.parallelSort[AnyRef](data, Ordering.fromLessThan(compare))
+    def _UNSAFE_sortedWith(compare: (T, T) ⇒ Boolean): this.type = {
+        JArrays.parallelSort[AnyRef](
+            data,
+            Ordering.fromLessThan(compare).asInstanceOf[java.util.Comparator[AnyRef]]
+        )
         this
     }
 
@@ -101,9 +110,22 @@ class RefArray[+T /* "<: AnyRef" this constraint is ONLY enforced by the factory
 
     //
     //
-    // SAFE OPERATIONS, THAT DO NOT MANIPULATE THE DATA-STRUCTURE IN PLACE
+    // SAFE OPERATIONS THAT DO NOT MANIPULATE THE DATA-STRUCTURE IN PLACE
     //
     //
+
+    /*
+    class WithFilter {
+        def withFilter(p: T ⇒ Boolean): WithFilter
+        def map
+        def flatMap
+        def foreach
+    }
+
+    def withFilter(p: T ⇒ Boolean): WithFilter = {
+        ???
+    }
+    */
 
     override def dropRight(n: Int): RefArray[T] = {
         if (n == 0)
@@ -236,10 +258,11 @@ class RefArray[+T /* "<: AnyRef" this constraint is ONLY enforced by the factory
     def length: Int = data.length
 
     override def head: T = {
-        if (nonEmpty)
+        if (nonEmpty) {
             data(0).asInstanceOf[T]
-        else
+        } else {
             throw new NoSuchElementException
+        }
     }
 
     /**
@@ -357,6 +380,7 @@ class RefArray[+T /* "<: AnyRef" this constraint is ONLY enforced by the factory
     def slicedView(from: Int, until: Int = data.length): RefIndexedView[T] = new RefIndexedView[T] {
         override def apply(index: Int): T = self.data(from + index).asInstanceOf[T]
         override def isEmpty: Boolean = from == until
+        override def size: Int = until - from
         override def iterator: RefIterator[T] = new RefIterator[T] {
             private[this] var index: Int = from
             override def hasNext: Boolean = index < until
@@ -554,14 +578,21 @@ object RefArray {
         new RefArray(data)
     }
 
-    def from[T, X <: AnyRef](data: IndexedSeq[T])(f: T ⇒ X): RefArray[X] = {
+    def from[X <: AnyRef, Y <: AnyRef](map: Map[X, Y]): RefArray[(X, Y)] = {
+        val b = newBuilder[(X, Y)]
+        b.sizeHint(map.size)
+        map.foreach(b.+=)
+        b.result()
+    }
+
+    def mapFrom[T, X <: AnyRef](data: Seq[T])(f: T ⇒ X): RefArray[X] = {
         val max = data.size
         val newData = new Array[AnyRef](max)
         var i = 0; while (i < max) { newData(i) = f(data(i)); i += 1 }
         new RefArray[X](newData)
     }
 
-    def from[T <: AnyRef](data: Array[Int])(f: Int ⇒ T): RefArray[T] = {
+    def mapFrom[T <: AnyRef](data: Array[Int])(f: Int ⇒ T): RefArray[T] = {
         val max = data.length
         val newData = new Array[AnyRef](max)
         var i = 0; while (i < max) { newData(i) = f(data(i)); i += 1 }

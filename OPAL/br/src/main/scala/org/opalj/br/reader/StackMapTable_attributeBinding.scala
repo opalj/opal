@@ -89,19 +89,21 @@ trait StackMapTable_attributeBinding
         br.FullFrame(offset_delta, verification_type_info_locals, verification_type_info_stack)
     }
 
-    def TopVariableInfo() = br.TopVariableInfo
+    def TopVariableInfo(): br.TopVariableInfo.type = br.TopVariableInfo
 
-    def IntegerVariableInfo() = br.IntegerVariableInfo
+    def IntegerVariableInfo(): br.IntegerVariableInfo.type = br.IntegerVariableInfo
 
-    def FloatVariableInfo() = br.FloatVariableInfo
+    def FloatVariableInfo(): br.FloatVariableInfo.type = br.FloatVariableInfo
 
-    def LongVariableInfo() = br.LongVariableInfo
+    def LongVariableInfo(): br.LongVariableInfo.type = br.LongVariableInfo
 
-    def DoubleVariableInfo() = br.DoubleVariableInfo
+    def DoubleVariableInfo(): br.DoubleVariableInfo.type = br.DoubleVariableInfo
 
-    def NullVariableInfo() = br.NullVariableInfo
+    def NullVariableInfo(): br.NullVariableInfo.type = br.NullVariableInfo
 
-    def UninitializedThisVariableInfo() = br.UninitializedThisVariableInfo
+    def UninitializedThisVariableInfo(): br.UninitializedThisVariableInfo.type = {
+        br.UninitializedThisVariableInfo
+    }
 
     def UninitializedVariableInfo(offset: Int) = new UninitializedVariableInfo(offset)
 

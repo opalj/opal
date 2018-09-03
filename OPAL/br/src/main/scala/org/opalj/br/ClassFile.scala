@@ -249,6 +249,8 @@ final class ClassFile private (
         newPreparedMethod.declaringClassFile = this
         this.methods._UNSAFE_replaced(index, newPreparedMethod)
 
+        oldMethod.detach(); // TO BE SURE THAT THE OLD METHOD NO LONGER REFERENCES THIS CLASS FILE
+
         this
     }
 

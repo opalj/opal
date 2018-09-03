@@ -37,7 +37,7 @@ class DisassemblerSmokeTest extends FunSpec with Matchers {
 
                 val classFiles: List[(ClassFile, URL)] = {
                     var exceptions: List[(AnyRef, Throwable)] = Nil
-                    var seconds : Seconds = Seconds.None
+                    var seconds: Seconds = Seconds.None
                     val classFiles = PerformanceEvaluation.time {
                         val Lock = new Object
                         val exceptionHandler = (source: AnyRef, throwable: Throwable) ⇒ {
@@ -101,8 +101,8 @@ class DisassemblerSmokeTest extends FunSpec with Matchers {
                                 ).seq.flatten
                             } { t ⇒
                                 info(
-                                s"transformation of ${transformationCounter.get} class files "+
-                                s"in $packageName (parallelized) took ${t.toSeconds}"
+                                    s"transformation of ${transformationCounter.get} class files "+
+                                        s"in $packageName (parallelized) took ${t.toSeconds}"
                                 )
                             }
                         }).flatten

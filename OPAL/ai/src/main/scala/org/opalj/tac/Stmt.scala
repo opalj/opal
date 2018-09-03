@@ -5,6 +5,8 @@ package tac
 import org.opalj.br._
 import org.opalj.br.analyses.ProjectLike
 import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.collection.immutable.RefArray
+import org.opalj.collection.immutable.IntArray
 import org.opalj.value.KnownTypedValue
 
 /**
@@ -232,7 +234,7 @@ case class Switch[+V <: Var[V]](
         pc:                        PC,
         private var defaultTarget: PC,
         index:                     Expr[V],
-        private var npairs:        IndexedSeq[(Int, PC)] // IMPROVE use IntIntPair
+        private var npairs:        RefArray[(Int, PC)] // IMPROVE use IntIntPair
 ) extends Stmt[V] {
 
     final override def asSwitch: this.type = this
@@ -245,7 +247,7 @@ case class Switch[+V <: Var[V]](
         pcToIndex:                    Array[Int],
         isIndexOfCaughtExceptionStmt: Int ⇒ Boolean
     ): Unit = {
-        npairs = npairs.map { x ⇒ (x._1, pcToIndex(x._2)) }
+        npairs._UNSAFE_mapped(x ⇒ (x._1, pcToIndex(x._2)))
         defaultTarget = pcToIndex(defaultTarget)
         index.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt)
     }
@@ -255,9 +257,9 @@ case class Switch[+V <: Var[V]](
         true
     }
 
-    // Calling this method is only supported after the quadruples representation
+    // Calling this method is only supported after the three-address code representation
     // is created and the remapping of pcs to instruction indexes has happened!
-    def caseStmts: IndexedSeq[Int] = npairs.map(x ⇒ x._2)
+    def caseStmts: IntArray = npairs.map(x ⇒ x._2)
 
     // Calling this method is only supported after the quadruples representation
     // is created and the remapping of pcs to instruction indexes has happened!

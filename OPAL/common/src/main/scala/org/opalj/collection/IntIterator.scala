@@ -11,10 +11,11 @@ import org.opalj.collection.immutable.IntArraySet
 import scala.collection.AbstractIterator
 
 /**
- * Iterator over a collection of ints; basically overrides all inherited methods to avoid (un)boxing.
+ * Iterator over a collection of primitive int value; basically overrides all inherited methods
+ * to avoid (un)boxing.
  *
- * @note No guarantee is given what will happen if `next` is called after `hasNext` would return
- *       false.
+ * @note   No guarantee is given what will happen if `next` is called after `hasNext` would return
+ *         false.
  *
  * @author Michael Eichberg
  */
@@ -23,7 +24,7 @@ abstract class IntIterator extends AbstractIterator[Int] { self ⇒
     /**
      * Returns the next value if `hasNext` has returned `true`; if hasNext has returned `false`
      * and `next` is called, the result is undefined. The method may throw any exception, e.g., an
-     * `UnsupportedOperationException`, or just return the last value; however, the behavior
+     * `NullPointerException`, or just return the last value; however, the behavior
      * is undefined and subject to change without notice!
      */
     override def next(): Int

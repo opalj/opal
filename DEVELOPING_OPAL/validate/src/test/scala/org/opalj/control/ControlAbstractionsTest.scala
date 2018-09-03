@@ -3,6 +3,7 @@ package org.opalj
 package control
 
 import org.junit.runner.RunWith
+import org.opalj.collection.immutable.IntArray
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
@@ -83,7 +84,9 @@ class ControlAbstractionsTest extends FlatSpec with Matchers {
 
     it should "return an IntArray with one entry when the number of times is 1" in {
         val result = fillIntArray(1) { 1 }
-        result(0) should be("Hello")
+        result should be(IntArray(1))
+        result(0) should be(1)
+        result.length should be(1)
     }
 
     it should "return an RefArray with one entry when the number of times is 1" in {
@@ -95,14 +98,14 @@ class ControlAbstractionsTest extends FlatSpec with Matchers {
         var index = 0
         val result = fillIntArray(5) { index += 1; index }
         result.length should be(5)
-        result should be(Seq(1, 2, 3, 4, 5))
+        result.toList should be(List(1, 2, 3, 4, 5))
     }
 
     it should "return an RefArray with five entries that are dynamically calculated when the number of times is 5" in {
         var index = 0
         val result = fillRefArray(5) { index += 1; "value="+index }
         result.length should be(5)
-        result should be(Seq("value=1", "value=2", "value=3", "value=4", "value=5"))
+        result.toList should be(List("value=1", "value=2", "value=3", "value=4", "value=5"))
     }
 
     it should "work when the number of times is calculated at runtime" in {
@@ -116,7 +119,7 @@ class ControlAbstractionsTest extends FlatSpec with Matchers {
         var index = 0
         val result = fillIntArray({ times = times + 1; times }) { index += 1; index };
         times should be(1)
-        result should be(Seq(1))
+        result.toList should be(List(1))
     }
 
     //

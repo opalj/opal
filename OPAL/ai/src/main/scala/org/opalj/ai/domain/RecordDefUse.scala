@@ -20,7 +20,6 @@ import org.opalj.collection.immutable.Chain
 import org.opalj.collection.immutable.Naught
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.IntTrieSet1
-import org.opalj.collection.immutable.EmptyIntTrieSet
 import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.br.Code
 import org.opalj.br.ComputationalTypeCategory
@@ -1180,7 +1179,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode with Th
 
         <div>
             <h1>Unused</h1>
-            { unused().mkString("", ", ", "") }
+            { unused.mkString("", ", ", "") }
             <h1>Overview</h1>
             <table>
                 <tr>

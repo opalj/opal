@@ -5,8 +5,8 @@ package analyses
 package escape
 
 import org.opalj.collection.immutable.EmptyIntTrieSet
-import org.opalj.collection.immutable.IntHeadAndRestOfSet
 import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.collection.immutable.IntRefPair
 import org.opalj.fpcf.properties.AtMost
 import org.opalj.fpcf.properties.EscapeViaHeapObject
 import org.opalj.fpcf.properties.EscapeViaParameter
@@ -59,7 +59,7 @@ trait SimpleFieldAwareEscapeAnalysis extends AbstractEscapeAnalysis {
         var seen: IntTrieSet = EmptyIntTrieSet
 
         while (workset.nonEmpty) {
-            val IntHeadAndRestOfSet(referenceDefSite, newWorklist) = workset.headAndTail
+            val IntRefPair(referenceDefSite, newWorklist) = workset.headAndTail
             workset = newWorklist
             seen += referenceDefSite
 

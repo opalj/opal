@@ -32,6 +32,7 @@ import org.opalj.ai.AIResult
 import org.opalj.ai.Domain
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
+import org.opalj.collection.immutable.IntIntPair
 import org.opalj.collection.mutable.RefAppendChain
 
 /**
@@ -813,7 +814,8 @@ object TACAI {
                     val tableSwitch = as[TABLESWITCH](instruction)
                     val defaultTarget = pc + tableSwitch.defaultOffset
                     var caseValue = tableSwitch.low
-                    val npairs = tableSwitch.jumpOffsets map { jo ⇒
+                    // IMPROVE Use IntIntPair
+                    val npairs = tableSwitch.jumpOffsets.map[(Int, Int)] { jo ⇒
                         val caseTarget = pc + jo
                         val npair = (caseValue, caseTarget)
                         caseValue += 1
@@ -825,8 +827,8 @@ object TACAI {
                     val index = operandUse(0)
                     val lookupSwitch = as[LOOKUPSWITCH](instruction)
                     val defaultTarget = pc + lookupSwitch.defaultOffset
-                    val npairs = lookupSwitch.npairs.map { npair ⇒
-                        val (caseValue, branchOffset) = npair
+                    val npairs = lookupSwitch.npairs.map[(Int, Int)] { npair ⇒
+                        val IntIntPair(caseValue, branchOffset) = npair
                         val caseTarget = pc + branchOffset
                         (caseValue, caseTarget)
                     }

@@ -2,17 +2,20 @@
 package org.opalj
 package ba
 
-import scala.collection.mutable.ArrayBuffer
 import org.opalj.collection.immutable.UShortPair
+import org.opalj.collection.mutable.Locals
+import org.opalj.collection.immutable.RefArray
+import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.ai.BaseAI
 import org.opalj.ai.domain.l0.TypeCheckingDomain
 import org.opalj.bi.ACC_STATIC
 import org.opalj.br.StackMapTable
 import org.opalj.br.ClassHierarchy
 import org.opalj.br.Method
+import org.opalj.br.Methods
+import org.opalj.br.Attributes
 import org.opalj.br.ClassFile
 import org.opalj.br.ObjectType
-import org.opalj.br.StackMapFrame
 import org.opalj.br.FullFrame
 import org.opalj.br.ChopFrame
 import org.opalj.br.AppendFrame
@@ -23,8 +26,6 @@ import org.opalj.br.SameFrameExtended
 import org.opalj.br.VerificationTypeInfo
 import org.opalj.br.TopVariableInfo
 import org.opalj.br.instructions.Instruction
-import org.opalj.bytecode.BytecodeProcessingFailedException
-import org.opalj.collection.mutable.Locals
 
 /**
  * Builder for the [[org.opalj.br.Code]] attribute with all its properties. The ''Builder'' is
@@ -181,7 +182,7 @@ class CodeAttributeBuilder[T] private[ba] (
             val cf = ClassFile(
                 majorVersion = classFileVersion.major,
                 thisType = declaringClassType,
-                methods = IndexedSeq(Method(accessFlags, name, descriptor, IndexedSeq(code)))
+                methods = Methods(Method(accessFlags, name, descriptor, Attributes(code)))
             )
             val m = cf.methods.head
             val newAttributes = this.attributes :+ CodeAttributeBuilder.computeStackMapTable(m)
@@ -216,7 +217,7 @@ object CodeAttributeBuilder {
         implicit
         classHierarchy: ClassHierarchy
     ): StackMapTable = {
-        type VerificationTypeInfos = IndexedSeq[VerificationTypeInfo]
+        type VerificationTypeInfos = RefArray[VerificationTypeInfo]
 
         val c = m.body.get
 
@@ -232,9 +233,10 @@ object CodeAttributeBuilder {
         ): VerificationTypeInfos = {
             val lastLocalsIndex = locals.indexOfLastNonNullValue
             var index = 0
-            val ls = new ArrayBuffer[VerificationTypeInfo](lastLocalsIndex + 1)
+            val b = RefArray.newBuilder[VerificationTypeInfo]
+            b.sizeHint(lastLocalsIndex + 1)
             while (index <= lastLocalsIndex) {
-                ls += (
+                b += (
                     locals(index) match {
                         case null | r.domain.TheIllegalValue ⇒
                             index += 1
@@ -255,17 +257,17 @@ object CodeAttributeBuilder {
                     }
                 )
             }
-            ls
+            b.result()
         }
 
         var lastPC = -1 // -1 === initial stack map frame
         var lastVerificationTypeInfoLocals: VerificationTypeInfos =
             computeLocalsVerificationTypeInfo(ils)
         var lastverificationTypeInfoStack: VerificationTypeInfos =
-            IndexedSeq.empty // has to be empty...
+            RefArray.empty // has to be empty...
 
         val framePCs = c.stackMapTablePCs(classHierarchy)
-        val fs = new Array[StackMapFrame](framePCs.size)
+        val fs = new Array[AnyRef /*actually StackMapFrame*/ ](framePCs.size)
         var frameIndex = 0
         framePCs.foreach { pc ⇒
             val verificationTypeInfoLocals: VerificationTypeInfos = {
@@ -292,16 +294,16 @@ object CodeAttributeBuilder {
                 var operands = r.operandsArray(pc)
                 var operandIndex = operands.size
                 if (operandIndex == 0) {
-                    IndexedSeq.empty // an empty stack is a VERY common case...
+                    RefArray.empty // an empty stack is a VERY common case...
                 } else {
-                    val os = new Array[VerificationTypeInfo](operandIndex /*HERE == operands.size*/ )
+                    val os = new Array[AnyRef /*VerificationTypeInfo*/ ](operandIndex /*HERE == operands.size*/ )
                     operandIndex -= 1
                     do {
                         os(operandIndex) = operands.head.verificationTypeInfo
                         operands = operands.tail
                         operandIndex -= 1
                     } while (operandIndex >= 0)
-                    os
+                    RefArray._UNSAFE_from[VerificationTypeInfo](os)
                 }
             }
 
@@ -381,6 +383,6 @@ object CodeAttributeBuilder {
             frameIndex += 1
             lastPC = pc
         }
-        StackMapTable(fs)
+        StackMapTable(RefArray._UNSAFE_from(fs))
     }
 }

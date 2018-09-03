@@ -1,6 +1,8 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf
 
+import org.opalj.br.Type
+import org.opalj.br.AnnotationLike
 import org.opalj.fpcf.analyses.EagerVirtualMethodAllocationFreenessAnalysis
 import org.opalj.fpcf.analyses.EagerL1ThrownExceptionsAnalysis
 import org.opalj.fpcf.properties.ThrownExceptions
@@ -15,17 +17,15 @@ import org.opalj.fpcf.properties.ThrownExceptions
 class ThrownExceptionsAnalysisTests extends PropertiesTest {
 
     object DummyProperty {
-        final val Key: PropertyKey[DummyProperty] =
-            PropertyKey.create[Entity, DummyProperty](
-                "DummyProperty",
-                new DummyProperty
-            )
+        final val Key: PropertyKey[DummyProperty] = {
+            PropertyKey.create[Entity, DummyProperty]("DummyProperty", new DummyProperty)
+        }
     }
 
     sealed class DummyProperty extends Property {
         override type Self = DummyProperty
 
-        override def key = DummyProperty.Key
+        override def key: PropertyKey[DummyProperty] = DummyProperty.Key
     }
 
     describe("no analysis is scheduled and fallback is used") {
@@ -36,7 +36,7 @@ class ThrownExceptionsAnalysisTests extends PropertiesTest {
         ps.setupPhase(Set.empty, Set.empty)
         for {
             (e, _, annotations) ← methodsWithAnnotations(as.project)
-            if annotations.flatMap(getPropertyMatcher(p, pk)).nonEmpty
+            if annotations.flatMap[(AnnotationLike, String, Type)](a ⇒ getPropertyMatcher(p, pk)(a).toSeq).nonEmpty
         } {
             val epk = EPK(e, ThrownExceptions.key)
             ps.scheduleEagerComputationForEntity(e) { e ⇒

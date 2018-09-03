@@ -121,7 +121,7 @@ package object issues {
             "accessFlags" → methodAccessFlagsToString(accessFlags),
             "name" → name,
             "returnType" → typeToIDL(descriptor.returnType),
-            "parameters" → descriptor.parameterTypes.map(typeToIDL)
+            "parameters" → descriptor.parameterTypes.map[JsValue](typeToIDL)
         )
     }
 

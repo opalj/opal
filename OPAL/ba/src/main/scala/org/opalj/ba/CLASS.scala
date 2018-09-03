@@ -6,6 +6,8 @@ import org.opalj.collection.immutable.UShortPair
 import org.opalj.br.MethodSignature
 import org.opalj.br.ClassHierarchy
 import org.opalj.br.ObjectType
+import org.opalj.br.MethodTemplate
+import org.opalj.collection.immutable.RefArray
 
 /**
  * Builder for [[org.opalj.br.ClassFile]] objects.
@@ -18,10 +20,10 @@ class CLASS[T](
         accessModifiers: AccessModifier,
         thisType:        String,
         superclassType:  Option[String],
-        interfaceTypes:  Seq[String],
+        interfaceTypes:  RefArray[String],
         fields:          FIELDS,
         methods:         METHODS[T],
-        attributes:      Seq[br.ClassFileAttributeBuilder]
+        attributes:      RefArray[br.ClassFileAttributeBuilder]
 ) {
 
     /**
@@ -49,18 +51,20 @@ class CLASS[T](
         val accessFlags = accessModifiers.accessFlags
         val thisType: ObjectType = br.ObjectType(this.thisType)
         val superclassType: Option[ObjectType] = this.superclassType.map(br.ObjectType.apply)
-        val interfaceTypes: Seq[ObjectType] = this.interfaceTypes.map(br.ObjectType.apply)
+        val interfaceTypes: RefArray[ObjectType] = this.interfaceTypes.map[br.ObjectType](br.ObjectType.apply)
         val brFields = fields.result()
 
-        val brAnnotatedMethods: IndexedSeq[(br.MethodTemplate, Option[T])] = {
+        val brAnnotatedMethods: RefArray[(br.MethodTemplate, Option[T])] = {
             methods.result(version, thisType)
         }
         val annotationsMap: Map[MethodSignature, Option[T]] =
-            brAnnotatedMethods.map { mt ⇒ val (m, t) = mt; (m.signature, t) }.toMap
+            Map.empty ++
+                brAnnotatedMethods.iterator.map[(MethodSignature, Option[T])](mt ⇒
+                    { val (m, t) = mt; (m.signature, t) })
 
         assert(annotationsMap.size == brAnnotatedMethods.size, "duplicate method signatures found")
 
-        var brMethods = brAnnotatedMethods.map(m ⇒ m._1)
+        var brMethods = brAnnotatedMethods.map[MethodTemplate](m ⇒ m._1)
         if (!(
             bi.ACC_INTERFACE.isSet(accessFlags) ||
             brMethods.exists(_.isConstructor) ||
@@ -70,10 +74,10 @@ class CLASS[T](
             // know the target!
             superclassType.isEmpty
         )) {
-            brMethods = brMethods :+ br.Method.defaultConstructor(superclassType.get)
+            brMethods :+= br.Method.defaultConstructor(superclassType.get)
         }
 
-        val attributes = this.attributes map { attributeBuilder ⇒
+        val attributes = this.attributes.map[br.Attribute] { attributeBuilder ⇒
             attributeBuilder(
                 version,
                 accessFlags, thisType, superclassType, interfaceTypes,
@@ -97,8 +101,7 @@ class CLASS[T](
         val brAnnotations: Seq[(br.Method, T)] =
             for {
                 m ← classFile.methods
-                ms = m.signature
-                Some(a) ← annotationsMap.get(ms)
+                Some(a) ← annotationsMap.get(m.signature).toSeq
             } yield {
                 (m, a: T @unchecked)
             }
@@ -134,14 +137,14 @@ object CLASS {
     final val DefaultVersion = UShortPair(DefaultMinorVersion, DefaultMajorVersion)
 
     def apply[T](
-        version:         UShortPair                        = CLASS.DefaultVersion,
-        accessModifiers: AccessModifier                    = SUPER,
+        version:         UShortPair                             = CLASS.DefaultVersion,
+        accessModifiers: AccessModifier                         = SUPER,
         thisType:        String,
-        superclassType:  Option[String]                    = Some("java/lang/Object"),
-        interfaceTypes:  Seq[String]                       = Seq.empty,
-        fields:          FIELDS                            = FIELDS(),
-        methods:         METHODS[T]                        = METHODS[T](),
-        attributes:      Seq[br.ClassFileAttributeBuilder] = Seq.empty
+        superclassType:  Option[String]                         = Some("java/lang/Object"),
+        interfaceTypes:  RefArray[String]                       = RefArray.empty,
+        fields:          FIELDS                                 = FIELDS(),
+        methods:         METHODS[T]                             = METHODS[T](),
+        attributes:      RefArray[br.ClassFileAttributeBuilder] = RefArray.empty
     ): CLASS[T] = {
         new CLASS(
             version, accessModifiers,

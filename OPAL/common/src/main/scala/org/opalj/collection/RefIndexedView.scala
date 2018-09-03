@@ -9,19 +9,17 @@ package org.opalj.collection
  * @author Michael Eichberg
  */
 trait RefIndexedView[+T] {
-
     def isEmpty: Boolean
-
+    def size: Int
     def apply(index: Int): T
-
     def iterator: RefIterator[T]
-
 }
 
 object RefIndexedView {
 
     final val Empty = new RefIndexedView[Nothing] {
         override def isEmpty: Boolean = true
+        override def size: Int = 0
         override def apply(index: Int): Nothing = throw new IndexOutOfBoundsException("empty view")
         override def iterator: RefIterator[Nothing] = RefIterator.empty
     }

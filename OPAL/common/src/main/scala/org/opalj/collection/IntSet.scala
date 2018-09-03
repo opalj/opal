@@ -33,7 +33,7 @@ trait IntSet[T <: IntSet[T]] { intSet: T ⇒
      * the given array at the respective index.
      */
     def map(map: Array[Int]): T
-    def map[A <: AnyRef](f: Int ⇒ A): Set[A] = foldLeft(Set.empty[A])(_ + f(_))
+    def map[A <: AnyRef](f: Int ⇒ A): Set[A] = foldLeft(Set.empty[A])(_ + f(_)) // IMPROVE Consider using SetBuilder to set the initial "expected" (maximum) size
     def flatMap(f: Int ⇒ T): T
 
     def foldLeft[B](z: B)(f: (B, Int) ⇒ B): B

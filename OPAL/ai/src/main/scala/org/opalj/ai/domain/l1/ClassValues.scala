@@ -5,7 +5,6 @@ package domain
 package l1
 
 import scala.reflect.ClassTag
-
 import org.opalj.br.Type
 import org.opalj.br.BooleanType
 import org.opalj.br.ByteType
@@ -19,6 +18,7 @@ import org.opalj.br.ReferenceType
 import org.opalj.br.ObjectType
 import org.opalj.br.FieldType
 import org.opalj.br.MethodDescriptor
+import org.opalj.collection.immutable.RefArray
 
 /**
  * Enables the tracking of concrete `Class` values.
@@ -223,7 +223,7 @@ private object ClassValues {
 
     final val forName_String_boolean_ClassLoader = {
         MethodDescriptor(
-            IndexedSeq(ObjectType.String, BooleanType, ObjectType("java/lang/ClassLoader")),
+            RefArray(ObjectType.String, BooleanType, ObjectType("java/lang/ClassLoader")),
             ObjectType.Class
         )
     }

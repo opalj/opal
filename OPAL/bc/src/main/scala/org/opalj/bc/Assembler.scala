@@ -608,9 +608,7 @@ object Assembler {
                         writeShort(e.exports_index)
                         writeShort(e.exports_flags)
                         writeShort(e.exports_to_index_table.length)
-                        e.exports_to_index_table foreach { et ⇒
-                            writeShort(et.exports_to_index)
-                        }
+                        e.exports_to_index_table.foreach(writeShort)
                     }
 
                     writeShort(a.opens.length)
@@ -618,21 +616,17 @@ object Assembler {
                         writeShort(o.opens_index)
                         writeShort(o.opens_flags)
                         writeShort(o.opens_to_index_table.length)
-                        o.opens_to_index_table foreach { ot ⇒
-                            writeShort(ot.opens_to_index)
-                        }
+                        o.opens_to_index_table.foreach(writeShort)
                     }
 
                     writeShort(a.uses.length)
-                    a.uses foreach { u ⇒ writeShort(u.uses_index) }
+                    a.uses.foreach(writeShort)
 
                     writeShort(a.provides.length)
                     a.provides foreach { p ⇒
                         writeShort(p.provides_index)
                         writeShort(p.provides_with_index_table.length)
-                        p.provides_with_index_table foreach { pw ⇒
-                            writeShort(pw.provides_with_index)
-                        }
+                        p.provides_with_index_table.foreach(writeShort)
                     }
 
                 case a: ModuleMainClass_attribute ⇒
@@ -691,7 +685,7 @@ object Assembler {
         ): Unit = {
             import classFile._
             import out._
-            implicit val cp = classFile.constant_pool
+            implicit val cp: Constant_Pool = classFile.constant_pool
             writeInt(org.opalj.bi.ClassFileMagic)
             writeShort(minor_version)
             writeShort(major_version)

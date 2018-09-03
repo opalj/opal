@@ -54,7 +54,7 @@ class CFGsSmokeTest extends AbstractCFGTest {
 
     def doAnalyzeProject(project: SomeProject): Unit = {
 
-        implicit val classHierarchy : ClassHierarchy= project.classHierarchy
+        implicit val classHierarchy: ClassHierarchy = project.classHierarchy
 
         val methodsWithBodyCount = project.allMethodsWithBody.size
         val methodsCount = new AtomicInteger(0)
@@ -62,12 +62,12 @@ class CFGsSmokeTest extends AbstractCFGTest {
 
         project.parForeachMethodWithBody() { mi ⇒
             val method = mi.method
-            implicit val code : Code = method.body.get
+            implicit val code: Code = method.body.get
 
             val cfg = time { CFGFactory(code) } { t ⇒ executionTime.addAndGet(t.timeSpan) }
 
             // check that each instruction is associated with a basic block
-            code.programCounters foreach { pc =>
+            code.programCounters foreach { pc ⇒
                 if (cfg.bb(pc) == null) {
                     fail(method.toJava(s"instruction $pc is not associated with a basic block"))
                 }

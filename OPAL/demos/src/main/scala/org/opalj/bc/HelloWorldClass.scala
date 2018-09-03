@@ -20,6 +20,8 @@ import org.opalj.da.Code
 import java.nio.file.Files
 import java.nio.file.Paths
 
+import org.opalj.collection.immutable.RefArray
+
 /**
  * Demonstrates how to create a "HelloWorld" class which basically has the following code:
  * {{{
@@ -151,12 +153,12 @@ object HelloWorldClass extends App {
         super_class = 3 /*extends java.lang.Object*/ ,
         // Interfaces.empty,
         // Fields.empty,
-        methods = IndexedSeq(
+        methods = RefArray(
             Method_Info(
                 access_flags = ACC_PUBLIC.mask,
                 name_index = 5,
                 descriptor_index = 6,
-                attributes = IndexedSeq(
+                attributes = RefArray(
                     Code_attribute(
                         attribute_name_index = 7,
                         max_stack = 1,
@@ -178,7 +180,7 @@ object HelloWorldClass extends App {
                 access_flags = ACC_PUBLIC.mask | ACC_STATIC.mask,
                 name_index = 14,
                 descriptor_index = 15,
-                attributes = IndexedSeq(
+                attributes = RefArray(
                     Code_attribute(
                         attribute_name_index = 7,
                         max_stack = 2,
@@ -201,7 +203,7 @@ object HelloWorldClass extends App {
                 )
             )
         ),
-        attributes = IndexedSeq(SourceFile_attribute(32, 33))
+        attributes = RefArray(SourceFile_attribute(32, 33))
     )
 
     println("Created class file: "+Files.write(Paths.get("Test.class"), Assembler(cf)).toAbsolutePath())

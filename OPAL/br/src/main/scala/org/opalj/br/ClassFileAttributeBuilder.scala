@@ -3,6 +3,7 @@ package org.opalj
 package br
 
 import org.opalj.collection.immutable.UShortPair
+import org.opalj.collection.immutable.RefArray
 
 /**
  * Given a class files' main elements the attribute is build.
@@ -18,9 +19,9 @@ trait ClassFileAttributeBuilder {
         accessFlags:    Int,
         thisType:       ObjectType,
         superclassType: Option[ObjectType],
-        interfaceTypes: Seq[ObjectType], // TODO Use a UIDSet over here and in the class hierarchy!
-        fields:         Seq[FieldTemplate],
-        methods:        Seq[MethodTemplate]
+        interfaceTypes: RefArray[ObjectType],
+        fields:         RefArray[FieldTemplate],
+        methods:        RefArray[MethodTemplate]
     ): Attribute
 
 }
