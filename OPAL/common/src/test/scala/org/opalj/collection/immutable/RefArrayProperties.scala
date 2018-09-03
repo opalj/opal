@@ -1,4 +1,4 @@
-/* BSD 2-Clause License - seeOPAL/LICENSE for details. */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.collection
 package immutable
 
