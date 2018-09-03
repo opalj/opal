@@ -51,7 +51,7 @@ trait Module_attributeBinding
             requires,
             exports,
             opens,
-            RefArray.from(uses)(cp(_).asObjectType(cp)),
+            RefArray.mapFrom(uses)(cp(_).asObjectType(cp)),
             provides
         )
     }
@@ -78,7 +78,7 @@ trait Module_attributeBinding
         br.Exports(
             cp(exports_index).asPackageIdentifier(cp),
             exports_flags,
-            RefArray.from(exports_to_index_table)(cp(_).asModuleIdentifier(cp))
+            RefArray.mapFrom(exports_to_index_table)(cp(_).asModuleIdentifier(cp))
         )
     }
 
@@ -91,7 +91,7 @@ trait Module_attributeBinding
         br.Opens(
             cp(opens_index).asPackageIdentifier(cp),
             opens_flags,
-            RefArray.from(opens_to_index_table)(cp(_).asModuleIdentifier(cp))
+            RefArray.mapFrom(opens_to_index_table)(cp(_).asModuleIdentifier(cp))
         )
     }
 
@@ -102,7 +102,7 @@ trait Module_attributeBinding
     ): ProvidesEntry = {
         br.Provides(
             cp(provides_index).asObjectType(cp),
-            RefArray.from(provides_with_index_table)(cp(_).asObjectType(cp))
+            RefArray.mapFrom(provides_with_index_table)(cp(_).asObjectType(cp))
         )
     }
 

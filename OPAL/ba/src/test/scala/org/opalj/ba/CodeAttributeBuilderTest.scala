@@ -2,17 +2,20 @@
 package org.opalj
 package ba
 
+import org.junit.runner.RunWith
+
 import org.scalatest.FlatSpec
 import org.scalatest.junit.JUnitRunner
-import org.junit.runner.RunWith
-import org.opalj.ai.domain.l0.TypeCheckingDomain
-import org.opalj.ai.util.XHTML
-import org.opalj.bc.Assembler
+
+import org.opalj.collection.immutable.RefArray
+import org.opalj.util.InMemoryClassLoader
 import org.opalj.bi.ACC_PUBLIC
+import org.opalj.bc.Assembler
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
 import org.opalj.br.instructions._
-import org.opalj.util.InMemoryClassLoader
+import org.opalj.ai.domain.l0.TypeCheckingDomain
+import org.opalj.ai.util.XHTML
 
 /**
  * Tests the require statements and warnings of a CodeAttributeBuilder.
@@ -47,10 +50,10 @@ class CodeAttributeBuilderTest extends FlatSpec {
     it should "fail with unresolvable labels in branch instructions" in {
         assertThrows[java.util.NoSuchElementException](CODE(IFGE('label)))
         assertThrows[java.util.NoSuchElementException](
-            CODE('default, LOOKUPSWITCH('default, IndexedSeq((0, 'label))))
+            CODE('default, LOOKUPSWITCH('default, RefArray((0, 'label))))
         )
         assertThrows[java.util.NoSuchElementException](
-            CODE('default, 'label1, LOOKUPSWITCH('default, IndexedSeq((0, 'label1), (0, 'label2))))
+            CODE('default, 'label1, LOOKUPSWITCH('default, RefArray((0, 'label1), (0, 'label2))))
         )
     }
 

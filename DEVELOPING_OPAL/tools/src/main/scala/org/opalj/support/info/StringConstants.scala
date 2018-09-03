@@ -9,7 +9,6 @@ import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.StringConstantsInformationKey
 import org.opalj.br.analyses.BasicReport
-import org.opalj.collection.immutable.ConstArray
 
 /**
  * Prints out all string constants found in the bytecode.
@@ -31,7 +30,7 @@ object StringConstants extends DefaultOneStepAnalysis {
     ): BasicReport = {
 
         val data = project.get(StringConstantsInformationKey)
-        val mappedData: ConstArray[String] = data.map { kv ⇒
+        val mappedData: Iterable[String] = data.map { kv ⇒
             val (string, locations) = kv
             val escapedString = string.
                 replace("\u001b", "\\u001b").

@@ -71,7 +71,7 @@ trait ClassFileBinding extends ClassFileReader {
                 else
                     Some(cp(super_class_index).asObjectType(cp))
             },
-            RefArray.from(interfaces)(cp(_).asObjectType(cp)),
+            RefArray.mapFrom(interfaces)(cp(_).asObjectType(cp)),
             fields,
             methods,
             attributes

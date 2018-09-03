@@ -58,11 +58,12 @@ package object br {
     type LiveVariables = Array[BitArraySet]
 
     type Attributes = RefArray[Attribute]
-    val Attributes = RefArray
+    val Attributes: RefArray.type = RefArray
     final def NoAttributes: Attributes = RefArray.empty
 
     type ElementValues = RefArray[ElementValue]
     type ElementValuePairs = RefArray[ElementValuePair]
+    val ElementValuePairs: RefArray.type = RefArray
     final def NoElementValuePairs: ElementValuePairs = RefArray.empty
 
     type Annotations = RefArray[Annotation]
@@ -76,7 +77,7 @@ package object br {
     final def NoInterfaces: Interfaces = RefArray.empty
 
     type Methods = RefArray[Method]
-    val Methods = RefArray
+    val Methods: RefArray.type = RefArray
     final def NoMethods: Methods = RefArray.empty
     type MethodTemplates = RefArray[MethodTemplate]
     final def NoMethodTemplates: MethodTemplates = RefArray.empty
@@ -110,14 +111,16 @@ package object br {
     type InstructionLabels = RefArray[instructions.InstructionLabel]
 
     type ObjectTypes = RefArray[ObjectType]
-    val ObjectTypes = RefArray
+    val ObjectTypes: RefArray.type = RefArray
 
     type FieldTypes = RefArray[FieldType]
-    val FieldTypes = RefArray
+    val FieldTypes: RefArray.type = RefArray
     final def NoFieldTypes: FieldTypes = RefArray.empty
     final def newFieldTypesBuilder(): Builder[FieldType, RefArray[FieldType]] = {
         RefArray.newBuilder[FieldType]
     }
+
+    type Packages = RefArray[String]
 
     final type SourceElementID = Int
 

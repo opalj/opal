@@ -5,6 +5,7 @@ package ba
 import org.opalj.br.ClassHierarchy
 import org.opalj.br.ObjectType
 import org.opalj.collection.immutable.UShortPair
+import org.opalj.collection.immutable.RefArray
 
 /**
  * Builder for a [[org.opalj.br.MethodTemplate]].
@@ -17,7 +18,7 @@ class METHOD[T](
         name:            String,
         descriptor:      String,
         code:            Option[br.CodeAttributeBuilder[T]],
-        attributes:      Seq[br.MethodAttributeBuilder]
+        attributes:      RefArray[br.MethodAttributeBuilder]
 ) {
 
     /**
@@ -33,7 +34,7 @@ class METHOD[T](
         val descriptor = br.MethodDescriptor(this.descriptor)
         val accessFlags = accessModifiers.accessFlags
 
-        val attributes = this.attributes.map(attributeBuilder ⇒
+        val attributes = this.attributes.map[br.Attribute](attributeBuilder ⇒
             attributeBuilder(accessFlags, name, descriptor))
 
         if (code.isDefined) {
@@ -56,7 +57,7 @@ object METHOD {
         name:            String,
         descriptor:      String,
         code:            Option[br.CodeAttributeBuilder[T]],
-        attributes:      Seq[br.MethodAttributeBuilder]
+        attributes:      RefArray[br.MethodAttributeBuilder]
     ): METHOD[T] = {
         new METHOD(accessModifiers, name, descriptor, code, attributes)
     }
@@ -66,7 +67,7 @@ object METHOD {
         name:            String,
         descriptor:      String,
         code:            br.CodeAttributeBuilder[T],
-        attributes:      Seq[br.MethodAttributeBuilder] = Seq.empty
+        attributes:      RefArray[br.MethodAttributeBuilder] = RefArray.empty
     ): METHOD[T] = {
         new METHOD(accessModifiers, name, descriptor, Some(code), attributes)
     }

@@ -2,12 +2,14 @@
 package org.opalj
 package ba
 
+import org.opalj.collection.immutable.RefArray
+
 import scala.collection.mutable
 
 private[ba] class ExceptionHandlerBuilder(
-        var startPC:   br.PC                 = -1,
-        var endPC:     br.PC                 = -1,
-        var handlerPC: br.PC                 = -1,
+        var startPC:   Int                   = -1, // -1 is illegal and used to identify missing labels
+        var endPC:     Int                   = -1, // -1 is illegal and used to identify missing labels
+        var handlerPC: Int                   = -1, // -1 is illegal and used to identify missing labels
         var catchType: Option[br.ObjectType] = None
 )
 
@@ -57,6 +59,22 @@ class ExceptionHandlerGenerator {
      * for a single id was added.
      */
     def result(): br.ExceptionHandlers = {
+        // TODO Clarify why the exception handlers are sorted... this may prevent some legal specifications, doesn't it?
+        RefArray.from(map).
+            _UNSAFE_sortedWith((left, right) ⇒ sortByLastNumber(left._1, right._1)).
+            map[br.ExceptionHandler] { e ⇒
+                val (id, ehBuilder) = e
+                val errorMsg = s"invalid exception handler ($id): %s"
+                require(ehBuilder.startPC >= 0, errorMsg.format(s"startPC = ${ehBuilder.startPC}"))
+                require(ehBuilder.endPC >= 0, errorMsg.format(s"endPC = ${ehBuilder.endPC}"))
+                require(ehBuilder.handlerPC >= 0, errorMsg.format(s"handlerPC = ${ehBuilder.handlerPC}"))
+                require(ehBuilder.startPC < ehBuilder.endPC, errorMsg.format("empty sequence"))
+                br.ExceptionHandler(
+                    ehBuilder.startPC, ehBuilder.endPC, ehBuilder.handlerPC,
+                    ehBuilder.catchType
+                )
+            }
+        /*
         map.toIndexedSeq.sortWith((left, right) ⇒ sortByLastNumber(left._1, right._1)).map { e ⇒
             val (id, ehBuilder) = e
             val errorMsg = s"invalid exception handler ($id): %s"
@@ -69,5 +87,6 @@ class ExceptionHandlerGenerator {
                 ehBuilder.catchType
             )
         }
+        */
     }
 }

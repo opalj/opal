@@ -4,21 +4,22 @@ package ba
 
 import java.util.NoSuchElementException
 
+import scala.collection.mutable.ArrayBuffer
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import it.unimi.dsi.fastutil.ints.Int2IntArrayMap
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap
-
-import scala.collection.mutable.ArrayBuffer
-import org.opalj.control.rerun
+import org.opalj.control.repeat
 import org.opalj.control.iterateUntil
+import org.opalj.log.LogContext
+import org.opalj.log.GlobalLogContext
+import org.opalj.log.OPALLogger.info
 import org.opalj.br.instructions.Instruction
 import org.opalj.br.instructions.WIDE
 import org.opalj.br.instructions.LabeledInstruction
 import org.opalj.br.instructions.InstructionLabel
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.IntArraySet
-import org.opalj.collection.immutable.IntHeadAndRestOfSet
 import org.opalj.collection.immutable.IntTrieSet1
 import org.opalj.br.instructions.LabeledJSR
 import org.opalj.br.instructions.LabeledJSR_W
@@ -30,9 +31,7 @@ import org.opalj.br.instructions.LabeledGOTO_W
 import org.opalj.br.instructions.RewriteLabel
 import org.opalj.br.instructions.LabeledTABLESWITCH
 import org.opalj.br.instructions.LabeledLOOKUPSWITCH
-import org.opalj.log.LogContext
-import org.opalj.log.GlobalLogContext
-import org.opalj.log.OPALLogger.info
+import org.opalj.collection.immutable.IntRefPair
 
 /**
  * Factory to create an initial [[CodeAttributeBuilder]].
@@ -220,7 +219,7 @@ object CODE {
             var markedInstructionAsLive = false
             while (markedAsLive.nonEmpty) {
                 // mark all code elements which can be executed subsequently as live
-                val IntHeadAndRestOfSet(nextIndex, newMarkedAsLive) = markedAsLive.headAndTail
+                val IntRefPair(nextIndex, newMarkedAsLive) = markedAsLive.headAndTail
                 markedAsLive = newMarkedAsLive
 
                 var currentIndex = nextIndex
@@ -461,7 +460,7 @@ object CODE {
                     if (ile.isAnnotated) annotations += ((currentPC, ile.annotation))
                     instructionLikes.append(i)
                     pcToCodeElementIndex.put(currentPC, index)
-                    rerun((nextPC - currentPC) - 1) {
+                    repeat((nextPC - currentPC) - 1) {
                         instructionLikes.append(null)
                     }
 

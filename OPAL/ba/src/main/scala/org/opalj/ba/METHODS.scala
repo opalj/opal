@@ -5,6 +5,7 @@ package ba
 import org.opalj.collection.immutable.UShortPair
 import org.opalj.br.ClassHierarchy
 import org.opalj.br.ObjectType
+import org.opalj.collection.immutable.RefArray
 
 /**
  * Builder for a list of [[org.opalj.br.MethodTemplate]]s.
@@ -12,10 +13,10 @@ import org.opalj.br.ObjectType
  * @author Malte Limmeroth
  * @author Michael Eichberg
  */
-class METHODS[T](private[this] var methods: Seq[METHOD[T]]) {
+case class METHODS[T](methods: RefArray[METHOD[T]]) {
 
     /**
-     * Returns the build [[org.opalj.br.MethodTemplate]] and its code annotations.
+     * Returns the build [[org.opalj.br.MethodTemplate]]s and their code annotations.
      */
     def result(
         classFileVersion:   UShortPair,
@@ -23,14 +24,17 @@ class METHODS[T](private[this] var methods: Seq[METHOD[T]]) {
     )(
         implicit
         classHierarchy: ClassHierarchy = br.ClassHierarchy.PreInitializedClassHierarchy
-    ): IndexedSeq[(br.MethodTemplate, Option[T])] = {
-        IndexedSeq.empty ++ methods.iterator.map(m ⇒ m.result(classFileVersion, declaringClassType))
+    ): RefArray[(br.MethodTemplate, Option[T])] = {
+        methods.map[(br.MethodTemplate, Option[T])](m ⇒
+            m.result(classFileVersion, declaringClassType))
     }
 
 }
 
 object METHODS {
 
-    def apply[T](methods: METHOD[T]*): METHODS[T] = new METHODS(methods)
+    def apply[T](methods: METHOD[T]*): METHODS[T] = {
+        new METHODS(RefArray._UNSAFE_from(methods.toArray))
+    }
 
 }

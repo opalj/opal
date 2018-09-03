@@ -6,7 +6,26 @@ import scala.collection.immutable.HashMap
 import scala.collection.JavaConverters._
 
 /**
- * Defines helper methods related to Scala's and OPAL's collections APIs.
+ * ==Design Goals==
+ * OPAL's collection library is primarily designed with high performance in mind. I.e., all methods
+ * provided by the collection library are reasonably optimized. However, providing a very large
+ * number of methods is a non-goal. Overall, OPAL's collection library provides:
+ *  - collection classes that are manually specialized for primitive data-types.
+ *  - collection classes that are optimized for particularly small collections of values.
+ *  - collection classes that target special use cases such as using a collection as a
+ *    workset/worklist.
+ *  - collection classes that offer special methods that minimize the number of steps when
+ *    compared to general purpose methods.
+ *
+ * ==Integration With Scala's Collection Library==
+ * Hence, OPAL's collection library complements Scala's default collection library and is not
+ * intended to replace it. Integration with Scala's collection library is primarily provided
+ * by means of iterators (OPAL's `Iterator`s inherit from Scala's `Iterator`s). Furthermore
+ * the companion object of each of OPAL's collection classes generally provides factory methods
+ * that facilitate the conversion from Scala collection classes to OPAL collection classes.
+ *
+ * ==Status==
+ * The collection library is growing. Nevertheless, the existing classes are production ready.
  *
  * @author Michael Eichberg
  */

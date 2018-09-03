@@ -3,6 +3,7 @@ package org.opalj.ba
 
 import scala.collection.mutable.ArrayBuffer
 import it.unimi.dsi.fastutil.ints.Int2IntAVLTreeMap
+import org.opalj.br
 import org.opalj.br.PC
 import org.opalj.br.Code
 import org.opalj.br.StackMapTable
@@ -12,8 +13,7 @@ import org.opalj.br.CodeAttribute
 import org.opalj.br.UnpackedLineNumberTable
 import org.opalj.br.instructions.InstructionLabel
 import org.opalj.br.instructions.PCLabel
-
-import scala.collection.mutable.ArrayBuffer
+import org.opalj.collection.immutable.RefArray
 
 /**
  * Mutable container for some labeled code.
@@ -196,7 +196,7 @@ class LabeledCode(
         val oldAttributes = originalCode.attributes.filter { a ⇒ a.kindId != StackMapTable.KindId }
 
         initialCodeAttributeBuilder.copy(
-            oldAttributes.map {
+            oldAttributes.map[br.Attribute] {
 
                 case lnt: LineNumberTable ⇒
                     val oldRemappedLNT =
@@ -215,13 +215,13 @@ class LabeledCode(
                                 newLNs.put(ln.startPC, ln.lineNumber)
                             }
                             explicitLNs.foreach(ln ⇒ newLNs.put(ln.startPC, ln.lineNumber))
-                            val finalLNs = new Array[LineNumber](newLNs.size)
+                            val finalLNs = new Array[AnyRef](newLNs.size)
                             var index = 0
                             newLNs.int2IntEntrySet().iterator().forEachRemaining { e ⇒
                                 finalLNs(index) = LineNumber(e.getIntKey, e.getIntValue)
                                 index += 1
                             }
-                            UnpackedLineNumberTable(finalLNs)
+                            UnpackedLineNumberTable(RefArray._UNSAFE_from[LineNumber](finalLNs))
                     }
 
                 case ca: CodeAttribute ⇒ ca.remapPCs(codeSize, initialCodeAttributeBuilder.pcMapping)

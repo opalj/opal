@@ -55,7 +55,7 @@ package object reader {
         var exceptions: List[Throwable] = Nil
         def handleException(source: Source, t: Throwable): Unit = {
             val e = new RuntimeException(s"exception while processing: $source", t)
-            exceptionsMutex.synchronized { exceptions = e :: exceptions }
+            exceptionsMutex.synchronized { exceptions ::= e }
         }
 
         val allClassFiles = for (file ← files.par) yield {
