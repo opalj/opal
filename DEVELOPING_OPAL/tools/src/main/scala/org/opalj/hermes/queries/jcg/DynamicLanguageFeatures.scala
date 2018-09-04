@@ -99,7 +99,7 @@ class DynamicLanguageFeatures(
                                         val instructions = result.domain.code.instructions
                                         val users = result.domain.usedBy(pc)
                                         if (users.exists(instructions(_).opcode == AASTORE.opcode))
-                                            9
+                                            9 /* Lambda3 */
                                         else
                                             handleJava8InvokeDynamic(m, handle)
                                     }
@@ -160,118 +160,9 @@ class DynamicLanguageFeatures(
                     if (callee.isSynthetic) 2 /* MR3  */ else 1 /* MR2 */
                 } else /* something unexpected */ 10
             }
-            case REF_invokeVirtual    ⇒ 6
-            case REF_newInvokeSpecial ⇒ 5
+            case REF_invokeVirtual    ⇒ 6 /* MR 7 */
+            case REF_newInvokeSpecial ⇒ 5 /* MR 6 */
             case hk                   ⇒ throw new RuntimeException("Unexpected handle Kind."+hk)
         }
     }
 }
-
-/*
-=========
-== MR1 ==
-=========
-NVOKEDYNAMIC get(Lmr1/Interface;)Lmr1/Class$FIBoolean; [
-  // handle kind 0x6 : INVOKESTATIC
-  java/lang/invoke/LambdaMetafactory.metafactory(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;
-  // arguments:
-  ()Z,
-  // handle kind 0x9 : INVOKEINTERFACE
-  mr1/Interface.method()Z,
-  ()Z
-]
-
-=========
-== MR2 ==
-=========
-
-INVOKEDYNAMIC get(Lmr2/Class;)Ljava/util/function/Supplier; [
-  // handle kind 0x6 : INVOKESTATIC
-  java/lang/invoke/LambdaMetafactory.metafactory(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;
-  // arguments:
-  ()Ljava/lang/Object;,
-  // handle kind 0x7 : INVOKESPECIAL
-  mr2/Class.getTypeName()Ljava/lang/String;,
-  ()Ljava/lang/String;
-]
-
-=========
-== MR3 ==
-=========
-
-INVOKEDYNAMIC get(Lmr3/Class;)Ljava/util/function/Supplier; [
-      // handle kind 0x6 : INVOKESTATIC
-      java/lang/invoke/LambdaMetafactory.metafactory(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;
-      // arguments:
-      ()Ljava/lang/Object;,
-      // handle kind 0x7 : INVOKESPECIAL
-      mr3/Class.lambda$callViaMethodReference$0()Ljava/lang/String;,
-      ()Ljava/lang/String;
-    ]
-
-=========
-== MR4 ==
-=========INVOKEDYNAMIC get()Ljava/util/function/Supplier; [
-      // handle kind 0x6 : INVOKESTATIC
-      java/lang/invoke/LambdaMetafactory.metafactory(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;
-      // arguments:
-      ()Ljava/lang/Object;,
-      // handle kind 0x6 : INVOKESTATIC
-      mr4/Class.getTypeName()Ljava/lang/String;,
-      ()Ljava/lang/String;
-    ]
-
-=========
-== MR5 ==
-=========
-INVOKEDYNAMIC apply()Lmr5/Class$FIDoubleDouble; [
-      // handle kind 0x6 : INVOKESTATIC
-      java/lang/invoke/LambdaMetafactory.metafactory(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;
-      // arguments:
-      (DD)D,
-      // handle kind 0x6 : INVOKESTATIC
-      mr5/Class.sum(DD)D,
-      (DD)D
-    ]
-
-=========
-== MR6 ==
-=========
-
-INVOKEDYNAMIC get()Ljava/util/function/Supplier; [
-      // handle kind 0x6 : INVOKESTATIC
-      java/lang/invoke/LambdaMetafactory.metafactory(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;
-      // arguments:
-      ()Ljava/lang/Object;,
-      // handle kind 0x8 : NEWINVOKESPECIAL
-      mr6/Class.<init>()V,
-      ()Lmr6/Class;
-    ]
-=========
-== MR7 ==
-=========
-
-INVOKEDYNAMIC get(Lmr7/Class;)Ljava/util/function/Supplier; [
-      // handle kind 0x6 : INVOKESTATIC
-      java/lang/invoke/LambdaMetafactory.metafactory(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;
-      // arguments:
-      ()Ljava/lang/Object;,
-      // handle kind 0x5 : INVOKEVIRTUAL
-      mr7/SuperClass.version()Ljava/lang/String;,
-      ()Ljava/lang/String;
-    ]
-=============
-== Lambda1 ==
-=============
-
-*  INVOKEDYNAMIC apply()Ljava/util/function/Function; [
-      // handle kind 0x6 : INVOKESTATIC
-      java/lang/invoke/LambdaMetafactory.metafactory(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;
-      // arguments:
-      (Ljava/lang/Object;)Ljava/lang/Object;,
-      // handle kind 0x6 : INVOKESTATIC
-      lambda1/Class.lambda$main$0(Ljava/lang/Integer;)Ljava/lang/Boolean;,
-      (Ljava/lang/Integer;)Ljava/lang/Boolean;
-    ]
-*
-* */ 
