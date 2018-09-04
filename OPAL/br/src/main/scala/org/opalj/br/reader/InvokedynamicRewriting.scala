@@ -21,7 +21,8 @@ import org.opalj.log.OPALLogger
 import org.opalj.log.StandardLogMessage
 import org.opalj.br.MethodDescriptor.LambdaMetafactoryDescriptor
 import org.opalj.br.MethodDescriptor.LambdaAltMetafactoryDescriptor
-import org.opalj.br.collection.mutable.InstructionsBuffer
+import org.opalj.br.MethodDescriptor.JustReturnsString
+import org.opalj.br.collection.mutable.InstructionsBuilder
 import org.opalj.br.instructions._
 import org.opalj.br.instructions.ClassFileFactory.DefaultFactoryMethodName
 import org.opalj.br.instructions.ClassFileFactory.AlternativeFactoryMethodName
@@ -144,6 +145,8 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
         logUnknownInvokeDynamics
     }
 
+    val ScalaRuntimeObject = ObjectType("scala/runtime/ScalaRunTime$")
+
     /**
      * Generates a new, internal name for the proxy class for a rewritten invokedynamic.
      *
@@ -206,10 +209,10 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
     override def deferredInvokedynamicResolution(
         classFile:             ClassFile,
         cp:                    Constant_Pool,
-        invokeDynamicInfo:     CONSTANT_InvokeDynamic_info,
-        instructions:          Array[Instruction],
         methodNameIndex:       Constant_Pool_Index,
         methodDescriptorIndex: Constant_Pool_Index,
+        invokeDynamicInfo:     CONSTANT_InvokeDynamic_info,
+        instructions:          Array[Instruction],
         pc:                    PC
     ): ClassFile = {
         // gather complete information about invokedynamic instructions from the bootstrap
@@ -218,10 +221,10 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
             super.deferredInvokedynamicResolution(
                 classFile,
                 cp,
-                invokeDynamicInfo,
-                instructions,
                 methodNameIndex,
                 methodDescriptorIndex,
+                invokeDynamicInfo,
+                instructions,
                 pc
             )
 
@@ -231,33 +234,33 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
         val invokedynamic = instructions(pc).asInstanceOf[INVOKEDYNAMIC]
         if (InvokedynamicRewriting.isJava8LikeLambdaExpression(invokedynamic)) {
             java8LambdaResolution(
+                cp: Constant_Pool,
+                methodNameIndex: Constant_Pool_Index,
+                methodDescriptorIndex: Constant_Pool_Index,
                 updatedClassFile,
                 instructions,
                 pc,
-                invokedynamic,
-                cp,
-                methodNameIndex,
-                methodDescriptorIndex
+                invokedynamic
             )
         } else if (isJava10StringConcatInvokedynamic(invokedynamic)) {
             java10StringConcatResolution(
+                cp: Constant_Pool,
+                methodNameIndex: Constant_Pool_Index,
+                methodDescriptorIndex: Constant_Pool_Index,
                 updatedClassFile,
                 instructions,
                 pc,
-                invokedynamic,
-                cp,
-                methodNameIndex,
-                methodDescriptorIndex
+                invokedynamic
             )
         } else if (isScalaLambdaDeserializeExpression(invokedynamic)) {
             scalaLambdaDeserializeResolution(
+                cp: Constant_Pool,
+                methodNameIndex: Constant_Pool_Index,
+                methodDescriptorIndex: Constant_Pool_Index,
                 updatedClassFile,
                 instructions,
                 pc,
-                invokedynamic,
-                cp,
-                methodNameIndex,
-                methodDescriptorIndex
+                invokedynamic
             )
         } else if (isScalaSymbolExpression(invokedynamic)) {
             scalaSymbolResolution(updatedClassFile, instructions, pc, invokedynamic)
@@ -302,13 +305,13 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
      * @return A classfile which has the INVOKEDYNAMIC instruction replaced.
      */
     private def java10StringConcatResolution(
+        cp:                    Constant_Pool,
+        methodNameIndex:       Constant_Pool_Index,
+        methodDescriptorIndex: Constant_Pool_Index,
         classFile:             ClassFile,
         instructions:          Array[Instruction],
         pc:                    PC,
-        invokedynamic:         INVOKEDYNAMIC,
-        cp:                    Constant_Pool,
-        methodNameIndex:       Constant_Pool_Index,
-        methodDescriptorIndex: Constant_Pool_Index
+        invokedynamic:         INVOKEDYNAMIC
     ): ClassFile = {
         val INVOKEDYNAMIC(bootstrapMethod, _, factoryDescriptor) = invokedynamic
 
@@ -338,7 +341,7 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
             // A guess on the number of append operations required, need not be precise
             val numEntries =
                 if (recipeO.isDefined) recipeO.get.value.length else descriptor.parametersCount
-            val body: InstructionsBuffer = new InstructionsBuffer(11 + 6 * numEntries)
+            val body: InstructionsBuilder = new InstructionsBuilder(11 + 6 * numEntries)
 
             body ++= NEW(ObjectType.StringBuilder)
             body ++= DUP
@@ -478,16 +481,12 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
             }
 
             // Finally, turn StringBuilder to String
-            body ++= INVOKEVIRTUAL(
-                ObjectType.StringBuilder,
-                "toString",
-                MethodDescriptor.JustReturnsString
-            )
+            body ++= INVOKEVIRTUAL(ObjectType.StringBuilder, "toString", JustReturnsString)
             body ++= ARETURN
 
             val maxLocals = descriptor.requiredRegisters
 
-            val code = Code(maxStack, maxLocals, body.toArray, NoExceptionHandlers, NoAttributes)
+            val code = Code(maxStack, maxLocals, body.result(), NoExceptionHandlers, NoAttributes)
 
             // Access flags for the concat are `/* SYNTHETIC */ private static`
             val accessFlags = ACC_SYNTHETIC.mask | ACC_PRIVATE.mask | ACC_STATIC.mask
@@ -587,13 +586,9 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
     ): ClassFile = {
         val methodType = invokedynamic.bootstrapMethod.arguments.head.asInstanceOf[MethodDescriptor]
 
-        val body = new InstructionsBuffer(18)
+        val body = new InstructionsBuilder(18)
 
-        body ++= GETSTATIC(
-            ObjectType("scala/runtime/ScalaRunTime$"),
-            "MODULE$",
-            ObjectType("scala/runtime/ScalaRunTime$")
-        )
+        body ++= GETSTATIC(ScalaRuntimeObject, "MODULE$", ScalaRuntimeObject)
 
         body ++= ALOAD_0
 
@@ -624,7 +619,7 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
 
         val methodToRewrite = classFile.findMethod(methodName, methodDescriptor).get
 
-        val code = Code(4, 1, body.toArray, NoExceptionHandlers, NoAttributes)
+        val code = Code(4, 1, body.result(), NoExceptionHandlers, NoAttributes)
 
         val rewrittenMethod =
             Method(methodToRewrite.accessFlags, methodName, methodDescriptor, RefArray(code))
@@ -660,13 +655,13 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
      * @return A classfile which has the INVOKEDYNAMIC instruction replaced
      */
     private def scalaLambdaDeserializeResolution(
+        cp:                    Constant_Pool,
+        methodNameIndex:       Constant_Pool_Index,
+        methodDescriptorIndex: Constant_Pool_Index,
         classFile:             ClassFile,
         instructions:          Array[Instruction],
         pc:                    PC,
-        invokedynamic:         INVOKEDYNAMIC,
-        cp:                    Constant_Pool,
-        methodNameIndex:       Constant_Pool_Index,
-        methodDescriptorIndex: Constant_Pool_Index
+        invokedynamic:         INVOKEDYNAMIC
     ): ClassFile = {
         val bootstrapArguments = invokedynamic.bootstrapMethod.arguments
 
@@ -731,13 +726,13 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
      * @return A classfile which has the INVOKEDYNAMIC instruction replaced.
      */
     private def java8LambdaResolution(
+        cp:                    Constant_Pool,
+        methodNameIndex:       Constant_Pool_Index,
+        methodDescriptorIndex: Constant_Pool_Index,
         classFile:             ClassFile,
         instructions:          Array[Instruction],
         pc:                    PC,
-        invokedynamic:         INVOKEDYNAMIC,
-        cp:                    Constant_Pool,
-        methodNameIndex:       Constant_Pool_Index,
-        methodDescriptorIndex: Constant_Pool_Index
+        invokedynamic:         INVOKEDYNAMIC
     ): ClassFile = {
         val INVOKEDYNAMIC(
             bootstrapMethod, functionalInterfaceMethodName, factoryDescriptor
@@ -935,7 +930,7 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
                 m.descriptor, m.descriptor, 1, Seq.empty, classFile.thisType
             )
 
-            val body = new InstructionsBuffer(7 + forwardParameters.length)
+            val body = new InstructionsBuilder(7 + forwardParameters.length)
 
             // if the receiver method is not static, we need to push the receiver object
             // onto the stack by an ALOAD_0 unless we have a method reference where the receiver
@@ -957,7 +952,7 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
             val maxLocals = 1 + parametersStackSize // parameters + `this`
             val maxStack = math.max(maxLocals, m.descriptor.returnType.operandSize)
 
-            val code = Code(maxStack, maxLocals, body.toArray, NoExceptionHandlers, NoAttributes)
+            val code = Code(maxStack, maxLocals, body.result(), NoExceptionHandlers, NoAttributes)
 
             Method(accessFlags, name, m.descriptor, RefArray(code))
         }

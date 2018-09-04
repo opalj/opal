@@ -23,11 +23,10 @@ trait MethodsReader extends Constant_PoolAbstractions {
     type Attributes
 
     protected def Attributes(
-        ap: AttributeParent,
-        // The scope in which the attribute is defined
-        as_name_index:       Constant_Pool_Index,
-        as_descriptor_index: Constant_Pool_Index, // -1 if no descriptor is available; i.e., the parent is the class file
         cp:                  Constant_Pool,
+        ap:                  AttributeParent,
+        ap_name_index:       Constant_Pool_Index,
+        ap_descriptor_index: Constant_Pool_Index, // -1 if no descriptor is available; i.e., the parent is the class file
         in:                  DataInputStream
     ): Attributes
 
@@ -59,7 +58,7 @@ trait MethodsReader extends Constant_PoolAbstractions {
             accessFlags,
             name_index,
             descriptor_index,
-            Attributes(AttributesParent.Method, name_index, descriptor_index, cp, in)
+            Attributes(cp, AttributesParent.Method, name_index, descriptor_index, in)
         )
     }
 }

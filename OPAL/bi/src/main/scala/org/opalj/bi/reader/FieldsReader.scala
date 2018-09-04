@@ -20,16 +20,15 @@ trait FieldsReader extends Constant_PoolAbstractions {
     type Attributes
 
     protected def Attributes(
-        ap: AttributeParent,
-        // The scope in which the attribute is defined
-        as_name_index:       Constant_Pool_Index,
-        as_descriptor_index: Constant_Pool_Index,
         cp:                  Constant_Pool,
+        ap:                  AttributeParent,
+        ap_name_index:       Constant_Pool_Index,
+        ap_descriptor_index: Constant_Pool_Index,
         in:                  DataInputStream
     ): Attributes
 
     def Field_Info(
-        constant_pool:    Constant_Pool,
+        cp:               Constant_Pool,
         access_flags:     Int,
         name_index:       Constant_Pool_Index,
         descriptor_index: Constant_Pool_Index,
@@ -57,7 +56,7 @@ trait FieldsReader extends Constant_PoolAbstractions {
             accessFlags,
             name_index,
             descriptor_index,
-            Attributes(AttributesParent.Field, name_index, descriptor_index, cp, in)
+            Attributes(cp, AttributesParent.Field, name_index, descriptor_index, in)
         )
     }
 

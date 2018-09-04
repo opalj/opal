@@ -80,22 +80,19 @@ trait ComputationSpecification {
      * This enables further initialization of the computations that will eventually be executed.
      * For example to initialize global configuration information.
      *
-     * If an [[AnalysisScenario]] is used to compute a schedule and execute it later on, `init`
-     * will be called before any analysis is scheduled – independent of the batch in which it
-     * will run.
+     * If an [[org.opalj.fpcf.AnalysisScenario]] is used to compute a schedule and to execute
+     * it later on, `init` will be called before any analysis is scheduled – independent of
+     * the batch in which it will run.
      *
      * A computation specification MUST NOT call any methods of the property store that
      * may trigger or schedule computations; i.e., it must – in particular – not call
      * the methods `apply`, `schedule*`, `register*` or `waitOnPhaseCompletion`.
-     *
-     * @note This method is intended to be overwritten by sub classes. The default implementation
-     *       does nothing.
      */
     def init(ps: PropertyStore): InitializationData
 
     /**
      * Called directly before the analysis is scheduled. I.e., after phase setup, but potentially
-     * after analysis are already scheduled.
+     * after other analyses are already scheduled.
      */
     def beforeSchedule(ps: PropertyStore): Unit
 

@@ -182,14 +182,14 @@ class CFGsSmokeTest extends AbstractCFGTest {
     // Configuration of the tested projects ...
     //
 
-    describe("computing the cfg") {
+    describe("using a method's code") {
 
-        it(s"it should be possible for all methods of the JDK ($JRELibraryFolder)") {
+        it(s"it should be possible to compute the CFG for all methods of the JDK ($JRELibraryFolder)") {
             analyzeProject(TestSupport.createJREProject)
         }
 
         allBITestJARs() foreach { jarFile ⇒
-            it(s"it should be possible for all methods of ${jarFile.getName}") {
+            it(s"it should be possible to compute the CFG for all methods of ${jarFile.getName}") {
                 analyzeProject(Project(jarFile))
             }
         }

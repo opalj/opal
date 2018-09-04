@@ -18,10 +18,9 @@ trait Deprecated_attributeReader extends AttributeReader {
 
     def Deprecated_attribute(
         cp:                   Constant_Pool,
-        attribute_name_index: Constant_Pool_Index,
-        // The scope in which the attribute is defined
-        as_name_index:       Constant_Pool_Index,
-        as_descriptor_index: Constant_Pool_Index
+        ap_name_index:        Constant_Pool_Index,
+        ap_descriptor_index:  Constant_Pool_Index,
+        attribute_name_index: Constant_Pool_Index
     ): Deprecated_attribute
 
     //
@@ -37,15 +36,15 @@ trait Deprecated_attributeReader extends AttributeReader {
      * </pre>
      */
     private[this] def parserFactory() = (
-        ap: AttributeParent,
-        as_name_index: Constant_Pool_Index,
-        as_descriptor_index: Constant_Pool_Index,
         cp: Constant_Pool,
+        ap: AttributeParent,
+        ap_name_index: Constant_Pool_Index,
+        ap_descriptor_index: Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         in: DataInputStream
     ) ⇒ {
         /*val attribute_length =*/ in.readInt
-        Deprecated_attribute(cp, attribute_name_index, as_name_index, as_descriptor_index)
+        Deprecated_attribute(cp, ap_name_index, ap_descriptor_index, attribute_name_index)
     }
 
     registerAttributeReader(DeprecatedAttribute.Name → parserFactory())

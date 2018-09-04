@@ -23,16 +23,15 @@ trait InnerClasses_attributeReader extends AttributeReader {
     type InnerClasses_attribute >: Null <: Attribute
 
     def InnerClasses_attribute(
-        constant_pool:        Constant_Pool,
+        cp:                   Constant_Pool,
+        ap_name_index:        Constant_Pool_Index,
+        ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
-        inner_classes:        InnerClasses,
-        // The scope in which the attribute is defined
-        as_name_index:       Constant_Pool_Index,
-        as_descriptor_index: Constant_Pool_Index
+        inner_classes:        InnerClasses
     ): InnerClasses_attribute
 
     def InnerClassesEntry(
-        constant_pool:            Constant_Pool,
+        cp:                       Constant_Pool,
         inner_class_info_index:   Constant_Pool_Index,
         outer_class_info_index:   Constant_Pool_Index,
         inner_name_index:         Constant_Pool_Index,
@@ -58,10 +57,10 @@ trait InnerClasses_attributeReader extends AttributeReader {
      * </pre>
      */
     private[this] def parserFactory() = (
-        ap: AttributeParent,
-        as_name_index: Constant_Pool_Index,
-        as_descriptor_index: Constant_Pool_Index,
         cp: Constant_Pool,
+        ap: AttributeParent,
+        ap_name_index: Constant_Pool_Index,
+        ap_descriptor_index: Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         in: DataInputStream
     ) ⇒ {
@@ -70,6 +69,8 @@ trait InnerClasses_attributeReader extends AttributeReader {
         if (number_of_classes > 0 || reifyEmptyAttributes) {
             InnerClasses_attribute(
                 cp,
+                ap_name_index,
+                ap_descriptor_index,
                 attribute_name_index,
                 fillRefArray(number_of_classes) {
                     InnerClassesEntry(
@@ -77,9 +78,7 @@ trait InnerClasses_attributeReader extends AttributeReader {
                         in.readUnsignedShort, in.readUnsignedShort,
                         in.readUnsignedShort, in.readUnsignedShort
                     )
-                },
-                as_name_index,
-                as_descriptor_index
+                }
             )
         } else {
             null

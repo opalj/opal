@@ -23,12 +23,11 @@ trait LocalVariableTypeTable_attributeReader extends AttributeReader {
     type LocalVariableTypes = RefArray[LocalVariableTypeTableEntry]
 
     def LocalVariableTypeTable_attribute(
-        constant_pool:             Constant_Pool,
+        cp:                        Constant_Pool,
+        ap_name_index:             Constant_Pool_Index,
+        ap_descriptor_index:       Constant_Pool_Index,
         attribute_name_index:      Constant_Pool_Index,
-        local_variable_type_table: LocalVariableTypes,
-        // The scope in which the attribute is defined
-        as_name_index:       Constant_Pool_Index,
-        as_descriptor_index: Constant_Pool_Index
+        local_variable_type_table: LocalVariableTypes
     ): LocalVariableTypeTable_attribute
 
     def LocalVariableTypeTableEntry(
@@ -60,10 +59,10 @@ trait LocalVariableTypeTable_attributeReader extends AttributeReader {
      * </pre>
      */
     private[this] def parserFactory() = (
-        ap: AttributeParent,
-        as_name_index: Constant_Pool_Index,
-        as_descriptor_index: Constant_Pool_Index,
         cp: Constant_Pool,
+        ap: AttributeParent,
+        ap_name_index: Constant_Pool_Index,
+        ap_descriptor_index: Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         in: DataInputStream
     ) ⇒ {
@@ -73,6 +72,8 @@ trait LocalVariableTypeTable_attributeReader extends AttributeReader {
         if (entriesCount > 0 || reifyEmptyAttributes) {
             LocalVariableTypeTable_attribute(
                 cp,
+                ap_name_index,
+                ap_descriptor_index,
                 attribute_name_index,
                 fillRefArray(entriesCount) {
                     LocalVariableTypeTableEntry(
@@ -83,9 +84,7 @@ trait LocalVariableTypeTable_attributeReader extends AttributeReader {
                         in.readUnsignedShort,
                         in.readUnsignedShort
                     )
-                },
-                as_name_index,
-                as_descriptor_index
+                }
             )
         } else {
             null

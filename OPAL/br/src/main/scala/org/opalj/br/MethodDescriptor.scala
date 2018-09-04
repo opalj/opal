@@ -560,7 +560,7 @@ object MethodDescriptor {
      */
     final val ScalaStructuralCallSiteDescriptor = {
         MethodDescriptor(
-            IndexedSeq(
+            RefArray(
                 ObjectType.MethodHandles$Lookup,
                 ObjectType.String,
                 ObjectType.MethodType,

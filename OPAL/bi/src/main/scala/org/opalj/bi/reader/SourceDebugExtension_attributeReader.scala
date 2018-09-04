@@ -20,12 +20,11 @@ trait SourceDebugExtension_attributeReader extends AttributeReader {
     type SourceDebugExtension_attribute <: Attribute
 
     def SourceDebugExtension_attribute(
-        constant_pool:        Constant_Pool,
+        cp:                   Constant_Pool,
+        ap_name_index:        Constant_Pool_Index,
+        ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
-        debug_extension:      Array[Byte],
-        // The scope in which the attribute is defined
-        as_name_index:       Constant_Pool_Index,
-        as_descriptor_index: Constant_Pool_Index
+        debug_extension:      Array[Byte]
     ): SourceDebugExtension_attribute
 
     //
@@ -48,10 +47,10 @@ trait SourceDebugExtension_attributeReader extends AttributeReader {
      * </pre>
      */
     private[this] def parserFactory() = (
-        ap: AttributeParent,
-        as_name_index: Constant_Pool_Index,
-        as_descriptor_index: Constant_Pool_Index,
         cp: Constant_Pool,
+        ap: AttributeParent,
+        ap_name_index: Constant_Pool_Index,
+        ap_descriptor_index: Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         in: DataInputStream
     ) ⇒ {
@@ -60,7 +59,7 @@ trait SourceDebugExtension_attributeReader extends AttributeReader {
         in.readFully(data)
 
         SourceDebugExtension_attribute(
-            cp, attribute_name_index, data, as_name_index, as_descriptor_index
+            cp, ap_name_index, ap_descriptor_index, attribute_name_index, data
         )
     }
 

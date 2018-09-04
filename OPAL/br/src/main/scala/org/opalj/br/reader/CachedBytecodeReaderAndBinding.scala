@@ -30,9 +30,9 @@ trait CachedBytecodeReaderAndBinding extends InstructionsDeserializer {
      * [[org.opalj.br.instructions.Instruction]]s.
      */
     def Instructions(
-        as_name_index:       Constant_Pool_Index,
-        as_descriptor_index: Constant_Pool_Index,
         cp:                  Constant_Pool,
+        ap_name_index:       Constant_Pool_Index,
+        ap_descriptor_index: Constant_Pool_Index,
         source:              Array[Byte]
     ): Instructions = {
         import java.io.DataInputStream
@@ -215,10 +215,10 @@ trait CachedBytecodeReaderAndBinding extends InstructionsDeserializer {
                         deferredInvokedynamicResolution(
                             classFile,
                             cp,
+                            ap_name_index,
+                            ap_descriptor_index,
                             cpEntry,
                             instructions,
-                            as_name_index,
-                            as_descriptor_index,
                             index
                         )
                     }

@@ -40,6 +40,9 @@ temp
 /ensime.sbt
 .vscode/settings.json
 /project/eclipse.sbt
+/DEVELOPING_OPAL/tools/mapping.hermes.txt
+/DEVELOPING_OPAL/tools/results.hermes.txt
+/OPAL/bi/src/test/fixtures-java/rt-jar-stubs-1.8.0-works.jar
 
 # Exclude .jvmopts as this specifies custom sbt launching options
 .jvmopts
@@ -50,4 +53,4 @@ scalac.options.local
 # Contains additional, machine-local settings which do not conflict with
 # settings from the build file
 local.sbt
-/OPAL/bi/src/test/fixtures-java/rt-jar-stubs-1.8.0-works.jar
+

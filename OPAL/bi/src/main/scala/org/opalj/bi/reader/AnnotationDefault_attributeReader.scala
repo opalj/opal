@@ -24,12 +24,11 @@ trait AnnotationDefault_attributeReader extends AttributeReader {
     type AnnotationDefault_attribute <: Attribute
 
     def AnnotationDefault_attribute(
-        constant_pool:        Constant_Pool,
+        cp:                   Constant_Pool,
+        ap_name_index:        Constant_Pool_Index,
+        ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
-        element_value:        ElementValue,
-        // The scope in which the attribute is defined
-        as_name_index:       Constant_Pool_Index,
-        as_descriptor_index: Constant_Pool_Index
+        element_value:        ElementValue
     ): AnnotationDefault_attribute
 
     //
@@ -46,20 +45,20 @@ trait AnnotationDefault_attributeReader extends AttributeReader {
      * </pre>
      */
     private[this] def parserFactory() = (
-        ap: AttributeParent,
-        as_name_index: Constant_Pool_Index,
-        as_descriptor_index: Constant_Pool_Index, // -1 if no descriptor is available; i.e., the parent is the class file
         cp: Constant_Pool,
+        ap: AttributeParent,
+        ap_name_index: Constant_Pool_Index,
+        ap_descriptor_index: Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         in: DataInputStream
     ) ⇒ {
         /* val attributeLength = */ in.readInt()
         AnnotationDefault_attribute(
             cp,
+            ap_name_index,
+            ap_descriptor_index,
             attribute_name_index,
-            ElementValue(cp, in),
-            as_name_index,
-            as_descriptor_index
+            ElementValue(cp, in)
         )
     }
 

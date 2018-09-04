@@ -5,7 +5,7 @@ package queries
 
 import org.opalj.collection.mutable.ArrayMap
 import org.opalj.collection.immutable.Naught
-import org.opalj.bi.Java10MajorVersion
+import org.opalj.bi.LatestSupportedJavaMajorVersion
 import org.opalj.bi.Java5MajorVersion
 import org.opalj.bi.Java1MajorVersion
 import org.opalj.bi.jdkVersion
@@ -18,11 +18,11 @@ import org.opalj.br.analyses.Project
  */
 class ClassFileVersion(implicit hermes: HermesConfig) extends FeatureQuery {
 
-    def featureId(majorVersion: Int) = s"Class File\n${jdkVersion(majorVersion)}"
+    def featureId(majorVersion: Int) = s"${jdkVersion(majorVersion)} Class File"
 
     override val featureIDs: Seq[String] = {
         featureId(Java1MajorVersion) +: (
-            for (majorVersion ← (Java5MajorVersion to Java10MajorVersion))
+            for (majorVersion ← Java5MajorVersion to LatestSupportedJavaMajorVersion)
                 yield featureId(majorVersion)
         )
     }
@@ -33,7 +33,7 @@ class ClassFileVersion(implicit hermes: HermesConfig) extends FeatureQuery {
         rawClassFiles:        Traversable[(da.ClassFile, S)]
     ): TraversableOnce[Feature[S]] = {
 
-        val data = ArrayMap[LocationsContainer[S]](Java10MajorVersion)
+        val data = ArrayMap[LocationsContainer[S]](LatestSupportedJavaMajorVersion)
 
         for {
             (classFile, source) ← project.projectClassFilesWithSources
@@ -57,7 +57,7 @@ class ClassFileVersion(implicit hermes: HermesConfig) extends FeatureQuery {
             else
                 Feature[S](java1MajorVersionFeatureId, extensions.size, extensions)
         } +: (
-            for (majorVersion ← (Java5MajorVersion to Java10MajorVersion)) yield {
+            for (majorVersion ← Java5MajorVersion to LatestSupportedJavaMajorVersion) yield {
                 val featureId = this.featureId(majorVersion)
                 val extensions = data(majorVersion)
                 if (extensions ne null) {

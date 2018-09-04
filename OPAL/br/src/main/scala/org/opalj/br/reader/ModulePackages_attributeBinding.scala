@@ -20,6 +20,8 @@ trait ModulePackages_attributeBinding
 
     def ModulePackages_attribute(
         cp:                   Constant_Pool,
+        ap_name_index:        Constant_Pool_Index,
+        ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         package_index_table:  PackageIndexTable
     ): ModulePackages_attribute = {

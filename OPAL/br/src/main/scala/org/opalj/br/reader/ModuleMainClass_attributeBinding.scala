@@ -22,6 +22,8 @@ trait ModuleMainClass_attributeBinding
      */
     def ModuleMainClass_attribute(
         cp:                   Constant_Pool,
+        ap_name_index:        Constant_Pool_Index,
+        ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         main_class_index:     Constant_Pool_Index, // CONSTANT_Class_info
         as_name_index:        Constant_Pool_Index,

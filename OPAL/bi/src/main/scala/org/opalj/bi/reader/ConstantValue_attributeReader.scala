@@ -31,10 +31,10 @@ trait ConstantValue_attributeReader extends AttributeReader {
 
     def ConstantValue_attribute(
         constant_pool:        Constant_Pool,
+        ap_name_index:        Constant_Pool_Index,
+        ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
-        constantvalue_index:  Constant_Pool_Index,
-        as_name_index:        Constant_Pool_Index,
-        as_descriptor_index:  Constant_Pool_Index
+        constant_value_index: Constant_Pool_Index
     ): ConstantValue_attribute
 
     //
@@ -42,21 +42,20 @@ trait ConstantValue_attributeReader extends AttributeReader {
     //
 
     private[this] def parserFactory() = (
-        ap: AttributeParent,
-        // The scope in which the attribute is defined
-        as_name_index: Constant_Pool_Index,
-        as_descriptor_index: Constant_Pool_Index,
         cp: Constant_Pool,
+        ap: AttributeParent,
+        ap_name_index: Constant_Pool_Index,
+        ap_descriptor_index: Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         in: DataInputStream
     ) ⇒ {
         /*val attribute_length =*/ in.readInt
         ConstantValue_attribute(
             cp,
+            ap_name_index,
+            ap_descriptor_index,
             attribute_name_index,
-            in.readUnsignedShort,
-            as_name_index,
-            as_descriptor_index
+            in.readUnsignedShort
         )
     }
 

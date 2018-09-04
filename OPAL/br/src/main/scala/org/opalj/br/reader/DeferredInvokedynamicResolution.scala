@@ -41,10 +41,10 @@ trait DeferredInvokedynamicResolution extends ConstantPoolBinding with CodeBindi
     protected def deferredInvokedynamicResolution(
         classFile:           ClassFile,
         cp:                  Constant_Pool,
+        ap_name_index:       Constant_Pool_Index,
+        ap_descriptor_index: Constant_Pool_Index,
         invokeDynamicInfo:   CONSTANT_InvokeDynamic_info,
         instructions:        Array[Instruction],
-        as_name_index:       Constant_Pool_Index,
-        as_descriptor_index: Constant_Pool_Index,
         pc:                  PC
     ): ClassFile = {
 

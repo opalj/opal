@@ -48,11 +48,10 @@ trait Signature_attributeReader extends AttributeReader with ClassFileReaderConf
     def Signature_attribute(
         constant_pool:        Constant_Pool,
         ap:                   AttributeParent,
+        ap_name_index:        Constant_Pool_Index,
+        ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
-        signature_index:      Constant_Pool_Index,
-        // The scope in which the attribute is defined
-        as_name_index:       Constant_Pool_Index,
-        as_descriptor_index: Constant_Pool_Index
+        signature_index:      Constant_Pool_Index
     ): Signature_attribute
 
     //
@@ -77,11 +76,10 @@ trait Signature_attributeReader extends AttributeReader with ClassFileReaderConf
      * is skipped.
      */
     private[this] def parser(
-        ap: AttributeParent,
-        // The scope in which the attribute is defined
-        as_name_index:        Constant_Pool_Index,
-        as_descriptor_index:  Constant_Pool_Index,
         cp:                   Constant_Pool,
+        ap:                   AttributeParent,
+        ap_name_index:        Constant_Pool_Index,
+        ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         in:                   DataInputStream
     ): Signature_attribute = {
@@ -89,7 +87,7 @@ trait Signature_attributeReader extends AttributeReader with ClassFileReaderConf
         val signature_index = in.readUnsignedShort
         try {
             Signature_attribute(
-                cp, ap, attribute_name_index, signature_index, as_name_index, as_descriptor_index
+                cp, ap, ap_name_index, ap_descriptor_index, attribute_name_index, signature_index
             )
         } catch {
             case iae: IllegalArgumentException ⇒

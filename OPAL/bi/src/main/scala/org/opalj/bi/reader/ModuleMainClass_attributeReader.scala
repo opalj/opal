@@ -20,12 +20,11 @@ trait ModuleMainClass_attributeReader extends AttributeReader {
      * @param main_class_index Reference to a CONSTANT_Class_info.
      */
     def ModuleMainClass_attribute(
-        constant_pool:        Constant_Pool,
+        cp:                   Constant_Pool,
+        ap_name_index:        Constant_Pool_Index,
+        ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
-        main_class_index:     Constant_Pool_Index, // CONSTANT_Class_info
-        // The scope in which the attribute is defined
-        as_name_index:       Constant_Pool_Index,
-        as_descriptor_index: Constant_Pool_Index
+        main_class_index:     Constant_Pool_Index // CONSTANT_Class_info
     ): ModuleMainClass_attribute
 
     //
@@ -42,20 +41,20 @@ trait ModuleMainClass_attributeReader extends AttributeReader {
      * </pre>
      */
     private[this] def parserFactory() = (
-        ap: AttributeParent,
-        as_name_index: Constant_Pool_Index,
-        as_descriptor_index: Constant_Pool_Index,
         cp: Constant_Pool,
+        ap: AttributeParent,
+        ap_name_index: Constant_Pool_Index,
+        ap_descriptor_index: Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         in: DataInputStream
     ) ⇒ {
         /*val attribute_length =*/ in.readInt
         ModuleMainClass_attribute(
             cp,
+            ap_name_index,
+            ap_descriptor_index,
             attribute_name_index,
-            in.readUnsignedShort(),
-            as_name_index,
-            as_descriptor_index
+            in.readUnsignedShort()
         )
     }
 

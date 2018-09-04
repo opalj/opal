@@ -21,7 +21,9 @@ trait UnpackedLineNumberTable_attributeBinding
     type LineNumberTable_attribute = br.UnpackedLineNumberTable
 
     override def LineNumberTable_attribute(
-        constant_pool:        Constant_Pool,
+        cp:                   Constant_Pool,
+        ap_name_index:        Constant_Pool_Index,
+        ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         line_number_table:    LineNumbers,
         as_name_index:        Constant_Pool_Index,
@@ -49,7 +51,9 @@ trait CompactLineNumberTable_attributeBinding
     type LineNumberTable_attribute = br.CompactLineNumberTable
 
     override def LineNumberTable_attribute(
-        constant_pool:        Constant_Pool,
+        cp:                   Constant_Pool,
+        ap_name_index:        Constant_Pool_Index,
+        ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         line_number_table:    Array[Byte],
         as_name_index:        Constant_Pool_Index,

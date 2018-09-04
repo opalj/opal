@@ -43,6 +43,8 @@ trait StackMapTable_attributeBinding
 
     def StackMapTable_attribute(
         cp:                   Constant_Pool,
+        ap_name_index:        Constant_Pool_Index,
+        ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         stack_map_frames:     StackMapFrames,
         // The scope in which the attribute is defined

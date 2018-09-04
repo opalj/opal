@@ -40,6 +40,8 @@ trait AnnotationAttributesBinding
 
     def AnnotationDefault_attribute(
         cp:                   Constant_Pool,
+        ap_name_index:        Constant_Pool_Index,
+        ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         element_value:        ElementValue,
         // The scope in which the attribute is defined
@@ -51,6 +53,8 @@ trait AnnotationAttributesBinding
 
     def RuntimeVisibleAnnotations_attribute(
         cp:                   Constant_Pool,
+        ap_name_index:        Constant_Pool_Index,
+        ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         annotations:          Annotations,
         // The scope in which the attribute is defined
@@ -62,6 +66,8 @@ trait AnnotationAttributesBinding
 
     def RuntimeInvisibleAnnotations_attribute(
         cp:                   Constant_Pool,
+        ap_name_index:        Constant_Pool_Index,
+        ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         annotations:          Annotations,
         // The scope in which the attribute is defined
@@ -73,6 +79,8 @@ trait AnnotationAttributesBinding
 
     def RuntimeVisibleParameterAnnotations_attribute(
         cp:                     Constant_Pool,
+        ap_name_index:          Constant_Pool_Index,
+        ap_descriptor_index:    Constant_Pool_Index,
         attribute_name_index:   Constant_Pool_Index,
         parameters_annotations: ParametersAnnotations,
         // The scope in which the attribute is defined
@@ -84,6 +92,8 @@ trait AnnotationAttributesBinding
 
     def RuntimeInvisibleParameterAnnotations_attribute(
         cp:                     Constant_Pool,
+        ap_name_index:          Constant_Pool_Index,
+        ap_descriptor_index:    Constant_Pool_Index,
         attribute_name_index:   Constant_Pool_Index,
         parameters_annotations: ParametersAnnotations,
         // The scope in which the attribute is defined

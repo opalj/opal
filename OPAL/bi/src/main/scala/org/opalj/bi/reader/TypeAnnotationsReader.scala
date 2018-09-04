@@ -32,7 +32,7 @@ trait TypeAnnotationsReader extends AnnotationsAbstractions {
     def TypeAnnotationTarget(in: DataInputStream): TypeAnnotationTarget
 
     def TypeAnnotation(
-        constant_pool:       Constant_Pool,
+        cp:                  Constant_Pool,
         target:              TypeAnnotationTarget,
         path:                TypeAnnotationPath,
         type_index:          Constant_Pool_Index,
