@@ -67,13 +67,13 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
     val MethodT = ObjectType("java/lang/reflect/Method")
 
     class State(
-        val stmts:                Array[Stmt[V]],
-        val cfg:                  CFG[Stmt[V], TACStmts[V]],
-        val loadedClassesUB:      UIDSet[ObjectType],
-        val instantiatedTypesUB:  UIDSet[ObjectType],
-        val calleesAndCallers:    CalleesAndCallers,
-        var newLoadedClasses:     UIDSet[ObjectType]        = UIDSet.empty,
-        var newInstantiatedTypes: UIDSet[ObjectType]        = UIDSet.empty
+            val stmts:                Array[Stmt[V]],
+            val cfg:                  CFG[Stmt[V], TACStmts[V]],
+            val loadedClassesUB:      UIDSet[ObjectType],
+            val instantiatedTypesUB:  UIDSet[ObjectType],
+            val calleesAndCallers:    CalleesAndCallers,
+            var newLoadedClasses:     UIDSet[ObjectType]        = UIDSet.empty,
+            var newInstantiatedTypes: UIDSet[ObjectType]        = UIDSet.empty
     )
 
     implicit private[this] val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
