@@ -20,6 +20,8 @@ trait Exceptions_attributeBinding
 
     def Exceptions_attribute(
         cp:                    Constant_Pool,
+        ap_name_index:         Constant_Pool_Index,
+        ap_descriptor_index:   Constant_Pool_Index,
         attribute_name_index:  Constant_Pool_Index,
         exception_index_table: Array[Constant_Pool_Index]
     ): Exceptions_attribute = {

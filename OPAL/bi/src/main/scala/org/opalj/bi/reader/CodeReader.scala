@@ -16,17 +16,27 @@ trait CodeReader extends Constant_PoolAbstractions {
 
     type Instructions
 
-    def Instructions(cp: Constant_Pool, instructions: Array[Byte]): Instructions
+    def Instructions(
+        cp:                  Constant_Pool,
+        ap_name_index:       Constant_Pool_Index,
+        ap_descriptor_index: Constant_Pool_Index,
+        instructions:        Array[Byte]
+    ): Instructions
 
     //
     // IMPLEMENTATION
     //
 
-    def Instructions(cp: Constant_Pool, in: DataInputStream): Instructions = {
+    def Instructions(
+        cp:                  Constant_Pool,
+        ap_name_index:       Constant_Pool_Index,
+        ap_descriptor_index: Constant_Pool_Index,
+        in:                  DataInputStream
+    ): Instructions = {
         val code_length = in.readInt
         val the_code = new Array[Byte](code_length)
         in.readFully(the_code)
 
-        Instructions(cp, the_code)
+        Instructions(cp, ap_name_index, ap_descriptor_index, the_code)
     }
 }

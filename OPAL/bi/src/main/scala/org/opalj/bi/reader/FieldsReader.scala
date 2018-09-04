@@ -20,13 +20,15 @@ trait FieldsReader extends Constant_PoolAbstractions {
     type Attributes
 
     protected def Attributes(
-        ap: AttributeParent,
-        cp: Constant_Pool,
-        in: DataInputStream
+        cp:                  Constant_Pool,
+        ap:                  AttributeParent,
+        ap_name_index:       Constant_Pool_Index,
+        ap_descriptor_index: Constant_Pool_Index,
+        in:                  DataInputStream
     ): Attributes
 
     def Field_Info(
-        constant_pool:    Constant_Pool,
+        cp:               Constant_Pool,
         access_flags:     Int,
         name_index:       Constant_Pool_Index,
         descriptor_index: Constant_Pool_Index,
@@ -46,12 +48,15 @@ trait FieldsReader extends Constant_PoolAbstractions {
     }
 
     private def Field_Info(cp: Constant_Pool, in: DataInputStream): Field_Info = {
+        val accessFlags = in.readUnsignedShort
+        val name_index = in.readUnsignedShort
+        val descriptor_index = in.readUnsignedShort
         Field_Info(
             cp,
-            in.readUnsignedShort,
-            in.readUnsignedShort,
-            in.readUnsignedShort,
-            Attributes(AttributesParent.Field, cp, in)
+            accessFlags,
+            name_index,
+            descriptor_index,
+            Attributes(cp, AttributesParent.Field, name_index, descriptor_index, in)
         )
     }
 

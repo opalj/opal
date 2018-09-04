@@ -21,6 +21,8 @@ trait MethodParameters_attributeBinding
 
     override def MethodParameters_attribute(
         cp:                   Constant_Pool,
+        ap_name_index:        Constant_Pool_Index,
+        ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         parameters:           MethodParameters
     ): MethodParameters_attribute = {

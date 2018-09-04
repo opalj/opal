@@ -58,7 +58,9 @@ trait Module_attributeReader extends AttributeReader {
      *                          which is NOT in internal form. (I.e., "." are used!)
      */
     def Module_attribute(
-        constant_pool:        Constant_Pool,
+        cp:                   Constant_Pool,
+        ap_name_index:        Constant_Pool_Index,
+        ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         module_name_index:    Constant_Pool_Index, // CONSTANT_Module_info
         module_flags:         Int,
@@ -71,28 +73,28 @@ trait Module_attributeReader extends AttributeReader {
     ): Module_attribute
 
     def RequiresEntry(
-        constant_pool:         Constant_Pool,
+        cp:                    Constant_Pool,
         module_index:          Constant_Pool_Index, // CONSTANT_Module_info
         requires_flags:        Int,
         require_version_index: Constant_Pool_Index // Optional: CONSTANT_UTF8
     ): RequiresEntry
 
     def ExportsEntry(
-        constant_pool:          Constant_Pool,
+        cp:                     Constant_Pool,
         module_index:           Constant_Pool_Index, // CONSTANT_Package_info
         exports_flags:          Int,
         exports_to_index_table: ExportsToIndexTable // CONSTANT_Module_info[]
     ): ExportsEntry
 
     def OpensEntry(
-        constant_pool:        Constant_Pool,
+        cp:                   Constant_Pool,
         opens_index:          Constant_Pool_Index, // CONSTANT_Package_info
         opens_flags:          Int,
         opens_to_index_table: OpensToIndexTable // CONSTANT_Module_info[]
     ): OpensEntry
 
     def ProvidesEntry(
-        constant_pool:             Constant_Pool,
+        cp:                        Constant_Pool,
         provides_index:            Constant_Pool_Index, // CONSTANT_Class
         provides_with_index_table: ProvidesWithIndexTable // CONSTANT_Class[]
     ): ProvidesEntry
@@ -146,8 +148,10 @@ trait Module_attributeReader extends AttributeReader {
      * </pre>
      */
     private[this] def parserFactory() = (
-        ap: AttributeParent,
         cp: Constant_Pool,
+        ap: AttributeParent,
+        ap_name_index: Constant_Pool_Index,
+        ap_descriptor_index: Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         in: DataInputStream
     ) ⇒ {
@@ -214,6 +218,7 @@ trait Module_attributeReader extends AttributeReader {
 
         Module_attribute(
             cp,
+            ap_name_index, ap_descriptor_index,
             attribute_name_index,
             name_index, flags, version_index, requires, exports, opens, uses, provides
         )

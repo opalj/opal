@@ -1177,6 +1177,8 @@ object ObjectType {
     final val SerializedLambda = ObjectType("java/lang/invoke/SerializedLambda")
     final val ScalaSymbolLiteral = ObjectType("scala/runtime/SymbolLiteral")
     final val ScalaSymbol = ObjectType("scala/Symbol")
+    final val ScalaStructuralCallSite = ObjectType("scala/runtime/StructuralCallSite")
+    final val Method = ObjectType("java/lang/reflect/Method")
 
     // Exceptions and errors that may be thrown by the JVM (i.e., instances of these
     // exceptions may be created at runtime by the JVM)

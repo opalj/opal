@@ -109,6 +109,8 @@ object ClassFileReader
     type SourceFile_attribute = da.SourceFile_attribute
     def SourceFile_attribute(
         cp:                   Constant_Pool,
+        ap_name_index:        Constant_Pool_Index,
+        ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         sourceFile_index:     Constant_Pool_Index
     ): SourceFile_attribute = {
@@ -117,30 +119,43 @@ object ClassFileReader
 
     type Signature_attribute = da.Signature_attribute
     def Signature_attribute(
-        cp: Constant_Pool, ap: AttributeParent, attribute_name_index: Int,
-        signature_index: Int
+        cp:                   Constant_Pool,
+        ap:                   AttributeParent,
+        ap_name_index:        Constant_Pool_Index,
+        ap_descriptor_index:  Constant_Pool_Index,
+        attribute_name_index: Int,
+        signature_index:      Int
     ): Signature_attribute = {
         new Signature_attribute(attribute_name_index, signature_index)
     }
 
     type ConstantValue_attribute = da.ConstantValue_attribute
     def ConstantValue_attribute(
-        cp: Constant_Pool, attribute_name_index: Int,
-        constantvalue_index: Int
+        cp:                   Constant_Pool,
+        ap_name_index:        Constant_Pool_Index,
+        ap_descriptor_index:  Constant_Pool_Index,
+        attribute_name_index: Int,
+        constant_value_index: Int
     ): ConstantValue_attribute = {
-        new ConstantValue_attribute(attribute_name_index, constantvalue_index)
+        new ConstantValue_attribute(attribute_name_index, constant_value_index)
     }
 
     type Synthetic_attribute = da.Synthetic_attribute
     def Synthetic_attribute(
-        cp: Constant_Pool, attribute_name_index: Constant_Pool_Index
+        cp:                   Constant_Pool,
+        ap_name_index:        Constant_Pool_Index,
+        ap_descriptor_index:  Constant_Pool_Index,
+        attribute_name_index: Constant_Pool_Index
     ): Synthetic_attribute = {
         new Synthetic_attribute(attribute_name_index)
     }
 
     type Deprecated_attribute = da.Deprecated_attribute
     def Deprecated_attribute(
-        cp: Constant_Pool, attribute_name_index: Constant_Pool_Index
+        cp:                   Constant_Pool,
+        ap_name_index:        Constant_Pool_Index,
+        ap_descriptor_index:  Constant_Pool_Index,
+        attribute_name_index: Constant_Pool_Index
     ): Deprecated_attribute = {
         new Deprecated_attribute(attribute_name_index)
     }
@@ -148,6 +163,8 @@ object ClassFileReader
     type SourceDebugExtension_attribute = da.SourceDebugExtension_attribute
     def SourceDebugExtension_attribute(
         cp:                   Constant_Pool,
+        ap_name_index:        Constant_Pool_Index,
+        ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         debug_extension:      Array[Byte]
     ): SourceDebugExtension_attribute = {
@@ -162,6 +179,8 @@ object ClassFileReader
 
     def BootstrapMethods_attribute(
         constant_pool:        Constant_Pool,
+        ap_name_index:        Constant_Pool_Index,
+        ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         bootstrap_methods:    BootstrapMethods
     ): BootstrapMethods_attribute = {
@@ -182,8 +201,11 @@ object ClassFileReader
 
     type InnerClasses_attribute = da.InnerClasses_attribute
     def InnerClasses_attribute(
-        cp: Constant_Pool, attribute_name_index: Constant_Pool_Index,
-        classes: InnerClasses
+        cp:                   Constant_Pool,
+        ap_name_index:        Constant_Pool_Index,
+        ap_descriptor_index:  Constant_Pool_Index,
+        attribute_name_index: Constant_Pool_Index,
+        classes:              InnerClasses
     ): InnerClasses_attribute = {
         new InnerClasses_attribute(attribute_name_index, classes)
     }
@@ -206,6 +228,8 @@ object ClassFileReader
     type Exceptions_attribute = da.Exceptions_attribute
     def Exceptions_attribute(
         cp:                    Constant_Pool,
+        ap_name_index:         Constant_Pool_Index,
+        ap_descriptor_index:   Constant_Pool_Index,
         attribute_name_index:  Constant_Pool_Index,
         exception_index_table: ExceptionIndexTable
     ): Exceptions_attribute = {
@@ -213,7 +237,12 @@ object ClassFileReader
     }
 
     type Instructions = da.Code
-    def Instructions(cp: Constant_Pool, instructions: Array[Byte]): Instructions = {
+    def Instructions(
+        cp:                  Constant_Pool,
+        ap_name_index:       Constant_Pool_Index,
+        ap_descriptor_index: Constant_Pool_Index,
+        instructions:        Array[Byte]
+    ): Instructions = {
         new Instructions(instructions)
     }
 
@@ -231,6 +260,8 @@ object ClassFileReader
     type Code_attribute = da.Code_attribute
     def Code_attribute(
         cp:                   Constant_Pool,
+        ap_name_index:        Constant_Pool_Index,
+        ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         max_stack:            Int,
         max_locals:           Int,
@@ -251,7 +282,9 @@ object ClassFileReader
 
     type Unknown_attribute = da.Unknown_attribute
     def Unknown_attribute(
-        constant_pool:        Constant_Pool,
+        cp:                   Constant_Pool,
+        ap_name_index:        Constant_Pool_Index,
+        ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         info:                 Array[Byte]
     ): Unknown_attribute = {
@@ -260,9 +293,12 @@ object ClassFileReader
 
     type EnclosingMethod_attribute = da.EnclosingMethod_attribute
     def EnclosingMethod_attribute(
-        cp: Constant_Pool, attribute_name_index: Constant_Pool_Index,
-        class_index:  Constant_Pool_Index,
-        method_index: Constant_Pool_Index
+        cp:                   Constant_Pool,
+        ap_name_index:        Constant_Pool_Index,
+        ap_descriptor_index:  Constant_Pool_Index,
+        attribute_name_index: Constant_Pool_Index,
+        class_index:          Constant_Pool_Index,
+        method_index:         Constant_Pool_Index
     ): EnclosingMethod_attribute = {
         new EnclosingMethod_attribute(attribute_name_index, class_index, method_index)
     }
@@ -270,6 +306,8 @@ object ClassFileReader
     type LineNumberTable_attribute = da.LineNumberTable_attribute
     def LineNumberTable_attribute(
         cp:                   Constant_Pool,
+        ap_name_index:        Constant_Pool_Index,
+        ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         line_number_table:    LineNumbers
     ): LineNumberTable_attribute = {
@@ -283,7 +321,10 @@ object ClassFileReader
 
     type LocalVariableTable_attribute = da.LocalVariableTable_attribute
     def LocalVariableTable_attribute(
-        cp: Constant_Pool, attribute_name_index: Constant_Pool_Index,
+        cp:                   Constant_Pool,
+        ap_name_index:        Constant_Pool_Index,
+        ap_descriptor_index:  Constant_Pool_Index,
+        attribute_name_index: Constant_Pool_Index,
         local_variable_table: LocalVariables
     ): LocalVariableTable_attribute = {
         new LocalVariableTable_attribute(attribute_name_index, local_variable_table)
@@ -303,7 +344,10 @@ object ClassFileReader
 
     type LocalVariableTypeTable_attribute = da.LocalVariableTypeTable_attribute
     def LocalVariableTypeTable_attribute(
-        cp: Constant_Pool, attribute_name_index: Constant_Pool_Index,
+        cp:                        Constant_Pool,
+        ap_name_index:             Constant_Pool_Index,
+        ap_descriptor_index:       Constant_Pool_Index,
+        attribute_name_index:      Constant_Pool_Index,
         local_variable_type_table: LocalVariableTypes
     ): LocalVariableTypeTable_attribute = {
         new LocalVariableTypeTable_attribute(
@@ -334,35 +378,45 @@ object ClassFileReader
         new ElementValuePair(element_name_index, element_value)
     }
 
-    def ByteValue(cp: Constant_Pool, const_value_index: Constant_Pool_Index): ElementValue =
+    def ByteValue(cp: Constant_Pool, const_value_index: Constant_Pool_Index): ElementValue = {
         new ByteValue(const_value_index)
+    }
 
-    def CharValue(cp: Constant_Pool, const_value_index: Constant_Pool_Index): ElementValue =
+    def CharValue(cp: Constant_Pool, const_value_index: Constant_Pool_Index): ElementValue = {
         new CharValue(const_value_index)
+    }
 
-    def DoubleValue(cp: Constant_Pool, const_value_index: Constant_Pool_Index): ElementValue =
+    def DoubleValue(cp: Constant_Pool, const_value_index: Constant_Pool_Index): ElementValue = {
         new DoubleValue(const_value_index)
+    }
 
-    def FloatValue(cp: Constant_Pool, const_value_index: Constant_Pool_Index): ElementValue =
+    def FloatValue(cp: Constant_Pool, const_value_index: Constant_Pool_Index): ElementValue = {
         new FloatValue(const_value_index)
+    }
 
-    def IntValue(cp: Constant_Pool, const_value_index: Constant_Pool_Index): ElementValue =
+    def IntValue(cp: Constant_Pool, const_value_index: Constant_Pool_Index): ElementValue = {
         new IntValue(const_value_index)
+    }
 
-    def LongValue(cp: Constant_Pool, const_value_index: Constant_Pool_Index): ElementValue =
+    def LongValue(cp: Constant_Pool, const_value_index: Constant_Pool_Index): ElementValue = {
         new LongValue(const_value_index)
+    }
 
-    def ShortValue(cp: Constant_Pool, const_value_index: Constant_Pool_Index): ElementValue =
+    def ShortValue(cp: Constant_Pool, const_value_index: Constant_Pool_Index): ElementValue = {
         new ShortValue(const_value_index)
+    }
 
-    def BooleanValue(cp: Constant_Pool, const_value_index: Constant_Pool_Index): ElementValue =
+    def BooleanValue(cp: Constant_Pool, const_value_index: Constant_Pool_Index): ElementValue = {
         new BooleanValue(const_value_index)
+    }
 
-    def StringValue(cp: Constant_Pool, const_value_index: Constant_Pool_Index): ElementValue =
+    def StringValue(cp: Constant_Pool, const_value_index: Constant_Pool_Index): ElementValue = {
         new StringValue(const_value_index)
+    }
 
-    def ClassValue(cp: Constant_Pool, const_value_index: Constant_Pool_Index): ElementValue =
+    def ClassValue(cp: Constant_Pool, const_value_index: Constant_Pool_Index): ElementValue = {
         new ClassValue(const_value_index)
+    }
 
     def EnumValue(
         cp:               Constant_Pool,
@@ -389,31 +443,43 @@ object ClassFileReader
 
     type AnnotationDefault_attribute = da.AnnotationDefault_attribute
     def AnnotationDefault_attribute(
-        cp: Constant_Pool, attribute_name_index: Constant_Pool_Index,
-        element_value: ElementValue
+        cp:                   Constant_Pool,
+        ap_name_index:        Constant_Pool_Index,
+        ap_descriptor_index:  Constant_Pool_Index,
+        attribute_name_index: Constant_Pool_Index,
+        element_value:        ElementValue
     ): AnnotationDefault_attribute = {
         new AnnotationDefault_attribute(attribute_name_index, element_value)
     }
 
     type RuntimeVisibleAnnotations_attribute = da.RuntimeVisibleAnnotations_attribute
     def RuntimeVisibleAnnotations_attribute(
-        cp: Constant_Pool, attribute_name_index: Constant_Pool_Index,
-        annotations: Annotations
+        cp:                   Constant_Pool,
+        ap_name_index:        Constant_Pool_Index,
+        ap_descriptor_index:  Constant_Pool_Index,
+        attribute_name_index: Constant_Pool_Index,
+        annotations:          Annotations
     ): RuntimeVisibleAnnotations_attribute = {
         new RuntimeVisibleAnnotations_attribute(attribute_name_index, annotations)
     }
 
     type RuntimeInvisibleAnnotations_attribute = da.RuntimeInvisibleAnnotations_attribute
     def RuntimeInvisibleAnnotations_attribute(
-        cp: Constant_Pool, attribute_name_index: Constant_Pool_Index,
-        annotations: Annotations
+        cp:                   Constant_Pool,
+        ap_name_index:        Constant_Pool_Index,
+        ap_descriptor_index:  Constant_Pool_Index,
+        attribute_name_index: Constant_Pool_Index,
+        annotations:          Annotations
     ): RuntimeInvisibleAnnotations_attribute = {
         new RuntimeInvisibleAnnotations_attribute(attribute_name_index, annotations)
     }
 
     type RuntimeVisibleParameterAnnotations_attribute = da.RuntimeVisibleParameterAnnotations_attribute
     def RuntimeVisibleParameterAnnotations_attribute(
-        cp: Constant_Pool, attribute_name_index: Constant_Pool_Index,
+        cp:                     Constant_Pool,
+        ap_name_index:          Constant_Pool_Index,
+        ap_descriptor_index:    Constant_Pool_Index,
+        attribute_name_index:   Constant_Pool_Index,
         parameters_annotations: ParametersAnnotations
     ): RuntimeVisibleParameterAnnotations_attribute = {
         new RuntimeVisibleParameterAnnotations_attribute(
@@ -423,7 +489,10 @@ object ClassFileReader
 
     type RuntimeInvisibleParameterAnnotations_attribute = da.RuntimeInvisibleParameterAnnotations_attribute
     def RuntimeInvisibleParameterAnnotations_attribute(
-        cp: Constant_Pool, attribute_name_index: Constant_Pool_Index,
+        cp:                     Constant_Pool,
+        ap_name_index:          Constant_Pool_Index,
+        ap_descriptor_index:    Constant_Pool_Index,
+        attribute_name_index:   Constant_Pool_Index,
         parameters_annotations: ParametersAnnotations
     ): RuntimeInvisibleParameterAnnotations_attribute = {
         new RuntimeInvisibleParameterAnnotations_attribute(
@@ -434,8 +503,11 @@ object ClassFileReader
     type StackMapFrame = da.StackMapFrame
     type StackMapTable_attribute = da.StackMapTable_attribute
     def StackMapTable_attribute(
-        cp: Constant_Pool, attribute_name_index: Constant_Pool_Index,
-        stack_map_frames: StackMapFrames
+        cp:                   Constant_Pool,
+        ap_name_index:        Constant_Pool_Index,
+        ap_descriptor_index:  Constant_Pool_Index,
+        attribute_name_index: Constant_Pool_Index,
+        stack_map_frames:     StackMapFrames
     ): StackMapTable_attribute = {
         new StackMapTable_attribute(attribute_name_index, stack_map_frames)
     }
@@ -522,6 +594,8 @@ object ClassFileReader
     type MethodParameters_attribute = da.MethodParameters_attribute
     def MethodParameters_attribute(
         cp:                   Constant_Pool,
+        ap_name_index:        Constant_Pool_Index,
+        ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         parameters:           MethodParameters
     ): MethodParameters_attribute = {
@@ -691,6 +765,8 @@ object ClassFileReader
     type RuntimeInvisibleTypeAnnotations_attribute = da.RuntimeInvisibleTypeAnnotations_attribute
     def RuntimeInvisibleTypeAnnotations_attribute(
         cp:                   Constant_Pool,
+        ap_name_index:        Constant_Pool_Index,
+        ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         annotations:          TypeAnnotations
     ): RuntimeInvisibleTypeAnnotations_attribute = {
@@ -700,6 +776,8 @@ object ClassFileReader
     type RuntimeVisibleTypeAnnotations_attribute = da.RuntimeVisibleTypeAnnotations_attribute
     def RuntimeVisibleTypeAnnotations_attribute(
         cp:                   Constant_Pool,
+        ap_name_index:        Constant_Pool_Index,
+        ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         annotations:          TypeAnnotations
     ): RuntimeVisibleTypeAnnotations_attribute = {
@@ -722,6 +800,8 @@ object ClassFileReader
 
     def Module_attribute(
         constant_pool:        Constant_Pool,
+        ap_name_index:        Constant_Pool_Index,
+        ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         module_name_index:    Constant_Pool_Index, // CONSTANT_Module_info
         module_flags:         Int,
@@ -781,6 +861,8 @@ object ClassFileReader
     type ModulePackages_attribute = da.ModulePackages_attribute
     def ModulePackages_attribute(
         cp:                   Constant_Pool,
+        ap_name_index:        Constant_Pool_Index,
+        ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         package_index_table:  PackageIndexTable
     ): ModulePackages_attribute = {
@@ -792,6 +874,8 @@ object ClassFileReader
     type ModuleMainClass_attribute = da.ModuleMainClass_attribute
     def ModuleMainClass_attribute(
         cp:                   Constant_Pool,
+        ap_name_index:        Constant_Pool_Index,
+        ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         main_class_index:     Constant_Pool_Index
     ): ModuleMainClass_attribute = {

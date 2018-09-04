@@ -27,7 +27,7 @@ trait FPCFEagerAnalysisScheduler extends AbstractFPCFAnalysisScheduler {
 
     /**
      * Starts the analysis for the given `project`. This method is typically implicitly
-     * called by the [[FPCFAnalysesManager]].
+     * called by the [[org.opalj.fpcf.FPCFAnalysesManager]].
      */
     def start(p: SomeProject, ps: PropertyStore, i: InitializationData): FPCFAnalysis
 }

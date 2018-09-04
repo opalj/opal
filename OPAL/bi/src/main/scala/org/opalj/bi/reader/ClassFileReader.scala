@@ -137,9 +137,11 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
      * and RuntimeInvisibleTypeAnnotations attributes.
      */
     protected def Attributes(
-        ap: AttributeParent,
-        cp: Constant_Pool,
-        in: DataInputStream
+        cp:                  Constant_Pool,
+        ap:                  AttributeParent,
+        ap_name_index:       Constant_Pool_Index,
+        ap_descriptor_index: Constant_Pool_Index,
+        in:                  DataInputStream
     ): Attributes
 
     /**
@@ -253,7 +255,7 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
         }
         val fields = Fields(cp, in)
         val methods = Methods(cp, in)
-        val attributes = Attributes(AttributesParent.ClassFile, cp, in)
+        val attributes = Attributes(cp, AttributesParent.ClassFile, this_class, -1, in)
 
         var classFile = ClassFile(
             cp,

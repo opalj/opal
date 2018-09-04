@@ -19,12 +19,7 @@ class ScalaInvokedynamicRewritingTest extends InvokedynamicRewritingTest {
 
         val invokedynamics = project.allMethodsWithBody.par.flatMap { method ⇒
             method.body.get.collect {
-                case i: INVOKEDYNAMIC if (
-                    InvokedynamicRewriting.isJava8LikeLambdaExpression(i) ||
-                    InvokedynamicRewriting.isJava10StringConcatInvokedynamic(i) ||
-                    InvokedynamicRewriting.isScalaLambdaDeserializeExpression(i) ||
-                    InvokedynamicRewriting.isScalaSymbolExpression(i)
-                ) ⇒ i
+                case i: INVOKEDYNAMIC ⇒ i
             }
         }
 

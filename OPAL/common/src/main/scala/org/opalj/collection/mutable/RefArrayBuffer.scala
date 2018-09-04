@@ -2,12 +2,10 @@
 package org.opalj.collection.mutable
 
 import scala.reflect.ClassTag
-
 import java.util.{Arrays ⇒ JArrays}
 
-import scala.collection.mutable.WrappedArray
-
 import org.opalj.collection.RefIterator
+import org.opalj.collection.immutable.RefArray
 
 /**
  * An array based implementation of a mutable buffer. This implementation offers highly
@@ -39,6 +37,13 @@ final class RefArrayBuffer[N >: Null <: AnyRef] private (
     def length: Int = size0
     def isEmpty: Boolean = size0 == 0
     def nonEmpty: Boolean = size0 > 0
+
+    def ensureAdditionalCapacity(capacity: Int): Unit = {
+        assert(capacity >= 1)
+        if (size0 + capacity >= data.length) {
+            data = JArrays.copyOf[N](data, (data.length + capacity) * 3 / 2)
+        }
+    }
 
     def apply(index: Int): N = {
         if (index < 0 || index >= size0)
@@ -77,11 +82,11 @@ final class RefArrayBuffer[N >: Null <: AnyRef] private (
      * @param from the index of the first item (inclusive)
      * @param until the index of the last item (exclusive)
      */
-    def slice(from: Int, until: Int = size0): IndexedSeq[N] = {
+    def slice(from: Int, until: Int = size0): RefArray[N] = { // TODO Use RefArray
         if (until > size0)
             throw new IndexOutOfBoundsException(s"$until > $size0(size of buffer)")
 
-        new WrappedArray.ofRef(java.util.Arrays.copyOfRange(data, from, until))
+        RefArray._UNSAFE_from[N](JArrays.copyOfRange(data, from, until, classOf[Array[AnyRef]]))
     }
 
     def ++=(is: Traversable[N]): this.type = {
@@ -212,7 +217,8 @@ object RefArrayBuffer {
     def empty[N >: Null <: AnyRef: ClassTag]: RefArrayBuffer[N] = withInitialSize[N](4)
 
     def withInitialSize[N >: Null <: AnyRef: ClassTag](initialSize: Int): RefArrayBuffer[N] = {
-        new RefArrayBuffer[N](new Array[N](initialSize), 0)
+
+        new RefArrayBuffer[N](new Array[N](Math.max(initialSize, 1)), 0)
     }
 
 }

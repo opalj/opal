@@ -24,7 +24,9 @@ trait ModulePackages_attributeReader extends AttributeReader {
     type PackageIndexTable = Array[Constant_Pool_Index]
 
     def ModulePackages_attribute(
-        constant_pool:        Constant_Pool,
+        cp:                   Constant_Pool,
+        ap_name_index:        Constant_Pool_Index,
+        ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         package_index_table:  PackageIndexTable // CONSTANT_Package_info[]
     ): ModulePackages_attribute
@@ -34,8 +36,10 @@ trait ModulePackages_attributeReader extends AttributeReader {
     //
 
     private[this] def parserFactory() = (
-        ap: AttributeParent,
         cp: Constant_Pool,
+        ap: AttributeParent,
+        ap_name_index: Constant_Pool_Index,
+        ap_descriptor_index: Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         in: DataInputStream
     ) ⇒ {
@@ -43,7 +47,13 @@ trait ModulePackages_attributeReader extends AttributeReader {
         val packageCount = in.readUnsignedShort()
         if (packageCount > 0 || reifyEmptyAttributes) {
             val packageIndexTable = fillArrayOfInt(packageCount) { in.readUnsignedShort() }
-            ModulePackages_attribute(cp, attribute_name_index, packageIndexTable)
+            ModulePackages_attribute(
+                cp,
+                ap_name_index,
+                ap_descriptor_index,
+                attribute_name_index,
+                packageIndexTable
+            )
         } else {
             null
         }

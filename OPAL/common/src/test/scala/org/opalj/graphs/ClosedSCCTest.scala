@@ -3,6 +3,7 @@ package org.opalj
 package graphs
 
 import org.junit.runner.RunWith
+import org.opalj.collection.immutable.RefArray
 import org.opalj.util.PerformanceEvaluation
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
@@ -241,7 +242,7 @@ class ClosedSCCTest extends FlatSpec with Matchers {
                 val g = aPermutation.foldLeft(Graph.empty[String])(_ += _)
                 g.vertices.size should be(4)
                 val cSCCs = closedSCCs(g)
-                val expected = List(List("d"))
+                val expected = List(RefArray("d"))
                 if (cSCCs != expected) {
                     fail(s"the graph $g contains one closed SCCs $expected, but found $cSCCs")
                 }

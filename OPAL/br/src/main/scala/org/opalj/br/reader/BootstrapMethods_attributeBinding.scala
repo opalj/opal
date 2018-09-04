@@ -22,9 +22,11 @@ trait BootstrapMethods_attributeBinding
     type BootstrapArgument = br.BootstrapArgument
 
     def BootstrapMethods_attribute(
-        cp:                 Constant_Pool,
-        attributeNameIndex: Int,
-        bootstrapMethods:   BootstrapMethods
+        cp:                  Constant_Pool,
+        ap_name_index:       Constant_Pool_Index,
+        ap_descriptor_index: Constant_Pool_Index,
+        attributeNameIndex:  Int,
+        bootstrapMethods:    BootstrapMethods
     ): BootstrapMethods_attribute = {
         new BootstrapMethodTable(bootstrapMethods)
     }

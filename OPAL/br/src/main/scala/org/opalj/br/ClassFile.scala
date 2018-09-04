@@ -265,7 +265,7 @@ final class ClassFile private (
      *
      * @note This method is primarily intended to be used to perform load-time transformations!
      */
-    def unsafeAddMethod(methodTemplate: MethodTemplate): ClassFile = {
+    def _UNSAFE_addMethod(methodTemplate: MethodTemplate): ClassFile = {
         val newMethod = methodTemplate.prepareClassFileAttachement
 
         assert(this.findMethod(newMethod.name, newMethod.descriptor).isEmpty)

@@ -21,7 +21,9 @@ trait Exceptions_attributeReader extends AttributeReader {
     type ExceptionIndexTable = Array[Constant_Pool_Index]
 
     def Exceptions_attribute(
-        constant_pool:         Constant_Pool,
+        cp:                    Constant_Pool,
+        ap_name_index:         Constant_Pool_Index,
+        ap_descriptor_index:   Constant_Pool_Index,
         attribute_name_index:  Constant_Pool_Index,
         exception_index_table: ExceptionIndexTable
     ): Exceptions_attribute
@@ -42,8 +44,10 @@ trait Exceptions_attributeReader extends AttributeReader {
      * </pre>
      */
     private[this] def parserFactory() = (
-        ap: AttributeParent,
         cp: Constant_Pool,
+        ap: AttributeParent,
+        ap_name_index: Constant_Pool_Index,
+        ap_descriptor_index: Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         in: DataInputStream
     ) ⇒ {
@@ -51,7 +55,13 @@ trait Exceptions_attributeReader extends AttributeReader {
         val number_of_exceptions = in.readUnsignedShort
         if (number_of_exceptions > 0 || reifyEmptyAttributes) {
             val exceptions = fillArrayOfInt(number_of_exceptions) { in.readUnsignedShort }
-            Exceptions_attribute(cp, attribute_name_index, exceptions)
+            Exceptions_attribute(
+                cp,
+                ap_name_index,
+                ap_descriptor_index,
+                attribute_name_index,
+                exceptions
+            )
         } else {
             null
         }

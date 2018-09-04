@@ -28,16 +28,25 @@ trait Code_attributeReader extends AttributeReader {
 
     type Code_attribute <: Attribute
 
-    def Instructions(cp: Constant_Pool, in: DataInputStream): Instructions
+    def Instructions(
+        cp:                  Constant_Pool,
+        ap_name_index:       Constant_Pool_Index,
+        ap_descriptor_index: Constant_Pool_Index,
+        in:                  DataInputStream
+    ): Instructions
 
     protected def Attributes(
-        ap: AttributeParent,
-        cp: Constant_Pool,
-        in: DataInputStream
+        cp:                  Constant_Pool,
+        ap:                  AttributeParent,
+        ap_name_index:       Constant_Pool_Index,
+        ap_descriptor_index: Constant_Pool_Index,
+        in:                  DataInputStream
     ): Attributes
 
     def Code_attribute(
-        constant_pool:        Constant_Pool,
+        cp:                   Constant_Pool,
+        ap_name_index:        Constant_Pool_Index,
+        ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         max_stack:            Int,
         max_locals:           Int,
@@ -79,18 +88,22 @@ trait Code_attributeReader extends AttributeReader {
      * </pre>
      */
     private[this] def parserFactory() = (
-        ap: AttributeParent,
         cp: Constant_Pool,
+        ap: AttributeParent,
+        ap_name_index: Constant_Pool_Index,
+        ap_descriptor_index: Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         in: DataInputStream
     ) ⇒ {
         /*val attribute_length = */ in.readInt()
         Code_attribute(
             cp,
+            ap_name_index,
+            ap_descriptor_index,
             attribute_name_index,
             in.readUnsignedShort(),
             in.readUnsignedShort(),
-            Instructions(cp, in),
+            Instructions(cp, ap_name_index, ap_descriptor_index, in),
             fillRefArray(in.readUnsignedShort()) { // "exception_table_length" times
                 ExceptionTableEntry(
                     cp,
@@ -98,7 +111,7 @@ trait Code_attributeReader extends AttributeReader {
                     in.readUnsignedShort, in.readUnsignedShort
                 )
             },
-            Attributes(AttributesParent.Code, cp, in)
+            Attributes(cp, AttributesParent.Code, ap_name_index, ap_descriptor_index, in)
         )
     }
 

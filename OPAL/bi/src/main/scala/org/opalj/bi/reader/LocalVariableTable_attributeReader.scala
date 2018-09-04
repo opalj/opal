@@ -23,7 +23,7 @@ trait LocalVariableTable_attributeReader extends AttributeReader {
     type LocalVariables = RefArray[LocalVariableTableEntry]
 
     def LocalVariableTableEntry(
-        constant_pool:    Constant_Pool,
+        cp:               Constant_Pool,
         start_pc:         Int,
         length:           Int,
         name_index:       Constant_Pool_Index,
@@ -32,7 +32,9 @@ trait LocalVariableTable_attributeReader extends AttributeReader {
     ): LocalVariableTableEntry
 
     def LocalVariableTable_attribute(
-        constant_pool:        Constant_Pool,
+        cp:                   Constant_Pool,
+        ap_name_index:        Constant_Pool_Index,
+        ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         local_variable_table: LocalVariables
     ): LocalVariableTable_attribute
@@ -57,8 +59,10 @@ trait LocalVariableTable_attributeReader extends AttributeReader {
      * </pre>
      */
     private[this] def parserFactory() = (
-        ap: AttributeParent,
         cp: Constant_Pool,
+        ap: AttributeParent,
+        ap_name_index: Constant_Pool_Index,
+        ap_descriptor_index: Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         in: DataInputStream
     ) ⇒ {
@@ -67,6 +71,8 @@ trait LocalVariableTable_attributeReader extends AttributeReader {
         if (entriesCount > 0 || reifyEmptyAttributes) {
             LocalVariableTable_attribute(
                 cp,
+                ap_name_index,
+                ap_descriptor_index,
                 attribute_name_index,
                 {
                     fillRefArray(entriesCount) {

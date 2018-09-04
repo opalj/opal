@@ -30,8 +30,10 @@ trait AttributesReader
      * If `null` is returned all information regarding this attribute are thrown away.
      */
     def Unknown_attribute(
-        ap:                   AttributeParent,
         cp:                   Constant_Pool,
+        ap:                   AttributeParent,
+        ap_name_index:        Constant_Pool_Index,
+        ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Int,
         in:                   DataInputStream
     ): Unknown_attribute
@@ -93,10 +95,13 @@ trait AttributesReader
      * The returned function is allowed to return null; in this case the attribute
      * will be discarded.
      */
-    private[this] var attributeReaders: Map[String, (AttributeParent, Constant_Pool, Constant_Pool_Index, DataInputStream) ⇒ Attribute] = Map()
+    private[this] var attributeReaders: Map[String, (Constant_Pool, AttributeParent, Constant_Pool_Index, Constant_Pool_Index, Constant_Pool_Index, DataInputStream) ⇒ Attribute] = Map()
 
+    /**
+     * See `AttributeReader.registerAttributeReader` for details.
+     */
     def registerAttributeReader(
-        reader: (String, (AttributeParent, Constant_Pool, Constant_Pool_Index, DataInputStream) ⇒ Attribute)
+        reader: (String, (Constant_Pool, AttributeParent, Constant_Pool_Index, Constant_Pool_Index, Constant_Pool_Index, DataInputStream) ⇒ Attribute)
     ): Unit = {
         attributeReaders += reader
     }
@@ -115,23 +120,34 @@ trait AttributesReader
         attributesPostProcessors :+= p
     }
 
-    def Attributes(ap: AttributeParent, cp: Constant_Pool, in: DataInputStream): Attributes = {
-        // IMPROVE Consider defining a macro fillRefArrayWithNonNullValues to make the creation cheaper
+    def Attributes(
+        cp:                  Constant_Pool,
+        ap:                  AttributeParent,
+        ap_name_index:       Constant_Pool_Index,
+        ap_descriptor_index: Constant_Pool_Index,
+        in:                  DataInputStream
+    ): Attributes = {
         val attributes: Attributes =
             fillRefArray(in.readUnsignedShort) {
-                Attribute(ap, cp, in)
+                Attribute(cp, ap, ap_name_index, ap_descriptor_index, in)
             }.filterNonNull // lets remove the attributes we don't need or understand
 
         attributesPostProcessors.foldLeft(attributes)((a, p) ⇒ p(a))
     }
 
-    def Attribute(ap: AttributeParent, cp: Constant_Pool, in: DataInputStream): Attribute = {
+    def Attribute(
+        cp:                  Constant_Pool,
+        ap:                  AttributeParent,
+        ap_name_index:       Constant_Pool_Index,
+        ap_descriptor_index: Constant_Pool_Index,
+        in:                  DataInputStream
+    ): Attribute = {
         val attribute_name_index = in.readUnsignedShort()
         val attribute_name = cp(attribute_name_index).asString
 
         attributeReaders.getOrElse(
             attribute_name,
             Unknown_attribute _ // this is a factory method
-        )(ap, cp, attribute_name_index, in)
+        )(cp, ap, ap_name_index, ap_descriptor_index, attribute_name_index, in)
     }
 }

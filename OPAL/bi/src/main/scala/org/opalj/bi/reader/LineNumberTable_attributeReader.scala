@@ -23,7 +23,9 @@ trait LineNumberTable_attributeReader extends AttributeReader {
     type LineNumbers = RefArray[LineNumberTableEntry]
 
     def LineNumberTable_attribute(
-        constant_pool:        Constant_Pool,
+        cp:                   Constant_Pool,
+        ap_name_index:        Constant_Pool_Index,
+        ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         line_number_table:    LineNumbers
     ): LineNumberTable_attribute
@@ -47,8 +49,10 @@ trait LineNumberTable_attributeReader extends AttributeReader {
      * </pre>
      */
     private[this] def parserFactory() = (
-        ap: AttributeParent,
         cp: Constant_Pool,
+        ap: AttributeParent,
+        ap_name_index: Constant_Pool_Index,
+        ap_descriptor_index: Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         in: DataInputStream
     ) ⇒ {
@@ -57,6 +61,8 @@ trait LineNumberTable_attributeReader extends AttributeReader {
         if (line_number_table_length > 0 || reifyEmptyAttributes) {
             LineNumberTable_attribute(
                 cp,
+                ap_name_index,
+                ap_descriptor_index,
                 attribute_name_index,
                 fillRefArray(line_number_table_length) {
                     LineNumberTableEntry(in.readUnsignedShort, in.readUnsignedShort)

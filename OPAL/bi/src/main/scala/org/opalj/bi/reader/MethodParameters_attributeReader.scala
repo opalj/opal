@@ -23,7 +23,9 @@ trait MethodParameters_attributeReader extends AttributeReader {
     type MethodParameters = RefArray[MethodParameter]
 
     def MethodParameters_attribute(
-        constant_pool:        Constant_Pool,
+        cp:                   Constant_Pool,
+        ap_name_index:        Constant_Pool_Index,
+        ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         parameters:           MethodParameters
     ): MethodParameters_attribute
@@ -51,8 +53,10 @@ trait MethodParameters_attributeReader extends AttributeReader {
      * </pre>
      */
     private[this] def parserFactory() = (
-        ap: AttributeParent,
         cp: Constant_Pool,
+        ap: AttributeParent,
+        ap_name_index: Constant_Pool_Index,
+        ap_descriptor_index: Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         in: DataInputStream
     ) ⇒ {
@@ -61,6 +65,8 @@ trait MethodParameters_attributeReader extends AttributeReader {
         if (parameters_count > 0 || reifyEmptyAttributes) {
             MethodParameters_attribute(
                 cp,
+                ap_name_index,
+                ap_descriptor_index,
                 attribute_name_index,
                 fillRefArray(parameters_count) {
                     MethodParameter(cp, in.readUnsignedShort, in.readUnsignedShort)

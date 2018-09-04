@@ -16,7 +16,9 @@ trait Unknown_attributeReader extends Constant_PoolAbstractions with Unknown_att
     //
 
     def Unknown_attribute(
-        constant_pool:        Constant_Pool,
+        cp:                   Constant_Pool,
+        ap_name_index:        Constant_Pool_Index,
+        ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         info:                 Array[Byte]
     ): Unknown_attribute
@@ -26,14 +28,16 @@ trait Unknown_attributeReader extends Constant_PoolAbstractions with Unknown_att
     //
 
     def Unknown_attribute(
-        ap:                   AttributeParent,
         cp:                   Constant_Pool,
+        ap:                   AttributeParent,
+        ap_name_index:        Constant_Pool_Index,
+        ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         in:                   DataInputStream
     ): Unknown_attribute = {
         val info = new Array[Byte](in.readInt)
         in.readFully(info)
 
-        Unknown_attribute(cp, attribute_name_index, info)
+        Unknown_attribute(cp, ap_name_index, ap_descriptor_index, attribute_name_index, info)
     }
 }

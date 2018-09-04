@@ -29,7 +29,12 @@ trait CachedBytecodeReaderAndBinding extends InstructionsDeserializer {
      * Transforms an array of bytes into an array of
      * [[org.opalj.br.instructions.Instruction]]s.
      */
-    def Instructions(cp: Constant_Pool, source: Array[Byte]): Instructions = {
+    def Instructions(
+        cp:                  Constant_Pool,
+        ap_name_index:       Constant_Pool_Index,
+        ap_descriptor_index: Constant_Pool_Index,
+        source:              Array[Byte]
+    ): Instructions = {
         import java.io.DataInputStream
         import java.io.ByteArrayInputStream
 
@@ -207,7 +212,15 @@ trait CachedBytecodeReaderAndBinding extends InstructionsDeserializer {
                     in.readByte // ignored; fixed value
                     in.readByte // ignored; fixed value
                     registerDeferredAction(cp) { classFile ⇒
-                        deferredInvokedynamicResolution(classFile, cp, cpEntry, instructions, index)
+                        deferredInvokedynamicResolution(
+                            classFile,
+                            cp,
+                            ap_name_index,
+                            ap_descriptor_index,
+                            cpEntry,
+                            instructions,
+                            index
+                        )
                     }
                     //INVOKEDYNAMIC(cpe.bootstrapMethodAttributeIndex, cpe.methodName, cpe.methodDescriptor)
                     INCOMPLETE_INVOKEDYNAMIC

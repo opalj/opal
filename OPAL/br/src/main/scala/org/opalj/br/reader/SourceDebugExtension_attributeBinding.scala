@@ -18,7 +18,9 @@ trait SourceDebugExtension_attributeBinding
     type SourceDebugExtension_attribute = br.SourceDebugExtension
 
     def SourceDebugExtension_attribute(
-        constant_pool:        Constant_Pool,
+        cp:                   Constant_Pool,
+        ap_name_index:        Constant_Pool_Index,
+        ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         debug_extension:      Array[Byte]
     ): SourceDebugExtension_attribute = {
