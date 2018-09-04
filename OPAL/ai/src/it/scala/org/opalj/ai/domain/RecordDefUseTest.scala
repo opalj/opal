@@ -244,12 +244,12 @@ class RecordDefUseTest extends FunSpec with Matchers {
     // TEST DRIVER
     //
 
-    describe("computing def/use information") {
+    describe("using the DefUseDomain") {
 
         val reader = new Java8FrameworkWithCaching(new BytecodeInstructionsCache)
 
         def evaluateProject(projectName: String, projectFactory: () ⇒ Project[URL]): Unit = {
-            it(s"should be possible for all methods of $projectName") {
+            it(s"should be possible to compute def/use information for all methods of $projectName") {
                 DominatorsPerformanceEvaluation.resetAll()
                 val project = projectFactory()
                 time {
