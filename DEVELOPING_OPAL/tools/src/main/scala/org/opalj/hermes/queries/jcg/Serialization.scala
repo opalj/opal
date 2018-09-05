@@ -18,6 +18,7 @@ import org.opalj.br.MethodDescriptor.WriteObjectDescriptor
 import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.br.MethodDescriptor.ReadObjectDescriptor
 import org.opalj.br.MethodDescriptor.JustReturnsObject
+import org.opalj.collection.immutable.RefArray
 import org.opalj.da.ClassFile
 import org.opalj.tac.DefaultTACAIKey
 import org.opalj.tac.TACode
@@ -51,7 +52,7 @@ class Serialization(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
 
     val OOSwriteObject = MethodDescriptor.JustTakes(ObjectType.Object)
     val OISregisterValidation = MethodDescriptor(
-        IndexedSeq(ObjectType("java/io/ObjectInputValidation"), IntegerType),
+        RefArray(ObjectType("java/io/ObjectInputValidation"), IntegerType),
         VoidType
     )
     val writeExternal = MethodDescriptor.JustTakes(ObjectType("java/io/ObjectOutput"))

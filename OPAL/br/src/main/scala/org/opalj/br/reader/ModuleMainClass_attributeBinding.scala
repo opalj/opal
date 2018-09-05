@@ -25,9 +25,7 @@ trait ModuleMainClass_attributeBinding
         ap_name_index:        Constant_Pool_Index,
         ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
-        main_class_index:     Constant_Pool_Index, // CONSTANT_Class_info
-        as_name_index:        Constant_Pool_Index,
-        as_descriptor_index:  Constant_Pool_Index
+        main_class_index:     Constant_Pool_Index // CONSTANT_Class_info
     ): ModuleMainClass_attribute = {
         new ModuleMainClass(cp(main_class_index).asObjectType(cp))
     }

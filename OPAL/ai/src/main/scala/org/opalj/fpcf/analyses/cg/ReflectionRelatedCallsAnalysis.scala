@@ -20,6 +20,7 @@ import org.opalj.br.InvokeVirtualMethodHandle
 import org.opalj.br.InvokeInterfaceMethodHandle
 import org.opalj.br.InvokeSpecialMethodHandle
 import org.opalj.br.NewInvokeSpecialMethodHandle
+import org.opalj.br.FieldTypes
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.SomeProject
@@ -29,6 +30,7 @@ import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.collection.immutable.IntArraySetBuilder
 import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.collection.immutable.RefArray
 import org.opalj.fpcf.cg.properties.LoadedClasses
 import org.opalj.fpcf.cg.properties.LowerBoundCallers
 import org.opalj.fpcf.cg.properties.CallersProperty
@@ -58,6 +60,7 @@ import scala.collection.immutable.IntMap
  * Finds calls and loaded classes that exist because of reflective calls that are easy to resolve.
  *
  * @author Dominik Helm
+ * @author Michael Reif
  */
 class ReflectionRelatedCallsAnalysis private[analyses] (
         final val project: SomeProject
@@ -301,6 +304,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                     definition.asVirtualFunctionCall match {
                         case VirtualFunctionCall(_, ObjectType.Class, _, "getConstructor", _, classes, params) ⇒
                             val parameterTypes = getTypes(params.head, pc)
+
                             val descriptor = parameterTypes.map(s ⇒ MethodDescriptor(s, VoidType))
                             handleNewInstance(caller, pc, classes, descriptor)
                         case _ ⇒ state.calleesAndCallers.addIncompleteCallsite(pc)
@@ -359,10 +363,10 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
     private[this] def resolveCallees(
         classType:   ReferenceType,
         name:        String,
-        paramTypes:  IndexedSeq[FieldType],
+        paramTypes:  FieldTypes,
         recurse:     Boolean,
         pc:          Int,
-        allowStatic: Boolean               = true
+        allowStatic: Boolean       = true
     )(implicit state: State): Traversable[DeclaredMethod] = {
         if (classType.isArrayType && name == "clone") None
         else {
@@ -396,9 +400,9 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                         )
                     }
                 } else if (candidates.exists(!_.returnType.isReferenceType)) {
-                    candidates.map(declaredMethods(_))
+                    candidates.map[DeclaredMethod](declaredMethods(_))
                 } else {
-                    val returnTypes = candidates.tail.map(_.returnType.asReferenceType)
+                    val returnTypes = candidates.tail.map[ReferenceType](_.returnType.asReferenceType)
                     val first: Option[ReferenceType] = Some(returnTypes.head)
                     val foundType = returnTypes.tail.foldLeft(first) { (mostSpecific, current) ⇒
                         if (mostSpecific.isEmpty) None
@@ -411,7 +415,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                         }
                     }
                     if (foundType.isEmpty) {
-                        candidates.map(declaredMethods(_))
+                        candidates.map[DeclaredMethod](declaredMethods(_))
                     } else {
                         Traversable(
                             declaredMethods(candidates.find(_.returnType eq foundType.get).get)
@@ -476,6 +480,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                     }
                 } else if (definition.isVirtualFunctionCall) {
                     definition.asVirtualFunctionCall match {
+
                         case VirtualFunctionCall(_, ObjectType.MethodHandles$Lookup, _, "findStatic", _, _, params) ⇒
                             val types =
                                 getPossibleTypes(params.head, pc).asInstanceOf[Iterator[ObjectType]]
@@ -484,6 +489,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                                 if (descriptor.isDefined) descriptor.toIterable
                                 else getPossibleMethodTypes(params(2), pc).toIterable
                             handleInvokeStatic(caller, pc, types, names, descriptors)
+
                         case VirtualFunctionCall(_, ObjectType.MethodHandles$Lookup, _, "findVirtual", _, _, params) ⇒
                             val staticTypes = getPossibleTypes(params.head, pc)
                             val names = getPossibleStrings(params(1), Some(pc)).toIterable
@@ -501,6 +507,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                                 descriptors,
                                 invokeParams
                             )
+
                         case VirtualFunctionCall(_, ObjectType.MethodHandles$Lookup, _, "findSpecial", _, _, params) ⇒
                             val types =
                                 getPossibleTypes(params.head, pc).asInstanceOf[Iterator[ObjectType]]
@@ -646,11 +653,12 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         pc:    Option[Int]
     )(implicit state: State): Iterator[String] = {
         value.asVar.definedBy.iterator filter { index ⇒
-            val isStringConst = index >= 0 && state.stmts(index).asAssignment.expr.isStringConst
-            if (!isStringConst && pc.isDefined)
+            val isStringConst: Boolean = index >= 0 && state.stmts(index).asAssignment.expr.isStringConst
+            if (!isStringConst && pc.isDefined) {
                 state.calleesAndCallers.addIncompleteCallsite(pc.get)
+            }
             isStringConst
-        } map { index ⇒ state.stmts(index).asAssignment.expr.asStringConst.value }
+        } map { (index: Int) ⇒ state.stmts(index).asAssignment.expr.asStringConst.value }
     }
 
     private[this] def getPossibleTypes(
@@ -669,7 +677,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                     state.calleesAndCallers.addIncompleteCallsite(pc)
                 isResolvable
             }
-        } flatMap { index ⇒
+        } flatMap { (index: Int) ⇒
             val expr = state.stmts(index).asAssignment.expr
             if (expr.isClassConst) Iterator(state.stmts(index).asAssignment.expr.asClassConst.value)
             else if (expr.isStaticFunctionCall)
@@ -739,7 +747,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                     state.calleesAndCallers.addIncompleteCallsite(pc)
                 isResolvable
             }
-        } flatMap { index ⇒
+        } flatMap { (index: Int) ⇒
             val expr = state.stmts(index).asAssignment.expr
             if (expr.isMethodTypeConst)
                 Iterator(state.stmts(index).asAssignment.expr.asMethodTypeConst.value)
@@ -796,7 +804,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
     private[this] def getTypes(
         expr: Expr[V],
         pc:   Int
-    )(implicit state: State): Option[IndexedSeq[FieldType]] = {
+    )(implicit state: State): Option[FieldTypes] = {
         val definitions = expr.asVar.definedBy
         if (!definitions.isSingletonSet || definitions.head < 0) {
             state.calleesAndCallers.addIncompleteCallsite(pc)
@@ -809,7 +817,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                 if (state.cfg.bb(uses.head) != state.cfg.bb(uses.last)) None
                 else if (state.stmts(uses.last).astID != Assignment.ASTID) None
                 else {
-                    val types: Array[FieldType] = new Array(uses.size - 1)
+                    var types: RefArray[FieldType] = RefArray.withSize(uses.size - 1)
                     if (!uses.forall { useSite ⇒
                         if (useSite == uses.last) true
                         else {
@@ -825,7 +833,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                                     val index = state.stmts(indices.head).asAssignment.expr
                                     if (!typeDef.isClassConst || !index.isIntConst) false
                                     else {
-                                        types(index.asIntConst.value) = typeDef.asClassConst.value
+                                        types = types.updated(index.asIntConst.value, typeDef.asClassConst.value)
                                         true
                                     }
                                 }

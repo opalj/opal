@@ -46,10 +46,7 @@ trait StackMapTable_attributeBinding
         ap_name_index:        Constant_Pool_Index,
         ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
-        stack_map_frames:     StackMapFrames,
-        // The scope in which the attribute is defined
-        as_name_index:       Constant_Pool_Index,
-        as_descriptor_index: Constant_Pool_Index
+        stack_map_frames:     StackMapFrames
     ): StackMapTable_attribute = StackMapTable(stack_map_frames)
 
     def SameFrame(frame_type: Int): StackMapFrame = br.SameFrame(frame_type)

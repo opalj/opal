@@ -37,8 +37,6 @@ trait Module_attributeBinding
         ap_name_index:        Constant_Pool_Index,
         ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
-        as_name_index:        Constant_Pool_Index,
-        as_descriptor_index:  Constant_Pool_Index,
         module_name_index:    Constant_Pool_Index, // CONSTANT_Module_info
         module_flags:         Int,
         module_version_index: Constant_Pool_Index, // CONSTANT_UTF8

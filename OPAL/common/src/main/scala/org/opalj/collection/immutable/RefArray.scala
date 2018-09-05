@@ -277,6 +277,10 @@ class RefArray[+T /* "<: AnyRef" this constraint is ONLY enforced by the factory
         new RefArray(JArrays.copyOfRange(data, from, until))
     }
 
+    override def tail: RefArray[T] = {
+        new RefArray(JArrays.copyOfRange(data, 1, data.length))
+    }
+
     override def foreach[U](f: T ⇒ U): Unit = {
         val data = this.data
         val max = data.length

@@ -23,10 +23,7 @@ trait Exceptions_attributeBinding
         ap_name_index:         Constant_Pool_Index,
         ap_descriptor_index:   Constant_Pool_Index,
         attribute_name_index:  Constant_Pool_Index,
-        exception_index_table: Array[Constant_Pool_Index],
-        // The scope in which the attribute is defined
-        as_name_index:       Constant_Pool_Index,
-        as_descriptor_index: Constant_Pool_Index
+        exception_index_table: Array[Constant_Pool_Index]
     ): Exceptions_attribute = {
         new Exceptions_attribute(
             RefArray.mapFrom(exception_index_table)(e_index ⇒ cp(e_index).asObjectType(cp))

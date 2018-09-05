@@ -25,9 +25,7 @@ trait UnpackedLineNumberTable_attributeBinding
         ap_name_index:        Constant_Pool_Index,
         ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
-        line_number_table:    LineNumbers,
-        as_name_index:        Constant_Pool_Index,
-        as_descriptor_index:  Constant_Pool_Index
+        line_number_table:    LineNumbers
     ): UnpackedLineNumberTable = {
         new UnpackedLineNumberTable(line_number_table)
     }
@@ -55,9 +53,7 @@ trait CompactLineNumberTable_attributeBinding
         ap_name_index:        Constant_Pool_Index,
         ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
-        line_number_table:    Array[Byte],
-        as_name_index:        Constant_Pool_Index,
-        as_descriptor_index:  Constant_Pool_Index
+        line_number_table:    Array[Byte]
     ): CompactLineNumberTable = {
         new CompactLineNumberTable(line_number_table)
     }

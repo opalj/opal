@@ -89,7 +89,7 @@ sealed class IntermediateCallees(
     override def incompleteCallSites(implicit propertyStore: PropertyStore): IntIterator = {
         (directKeys.toIterator ++ indirectKeys.toIterator).foldLeft(IntIterator.empty) { (it, key) ⇒
             propertyStore(declaredMethod, key) match {
-                case ESimplePS(_, ub, _) ⇒ it ++ ub.incompleteCallSites.intIterator
+                case ESimplePS(_, ub, _) ⇒ it ++ ub.incompleteCallSites.iterator
                 case _                   ⇒ IntIterator.empty
             }
         }
@@ -119,7 +119,7 @@ sealed class IntermediateCallees(
             propertyStore(declaredMethod, key) match {
                 case ESimplePS(_, ub, _) ⇒
                     for (callees ← ub.callees(pc)) {
-                        res ++= callees.intIterator.mapToAny(declaredMethods.apply)
+                        res ++= callees.iterator.map[org.opalj.br.DeclaredMethod](declaredMethods.apply)
                         hasIndirectCallees = true
                     }
                 case _ ⇒ hasIndirectCallees = true
@@ -130,7 +130,7 @@ sealed class IntermediateCallees(
                 propertyStore(declaredMethod, key) match {
                     case ESimplePS(_, ub, _) ⇒
                         for (callees ← ub.callees(pc)) {
-                            res ++= callees.intIterator.mapToAny(declaredMethods.apply)
+                            res ++= callees.iterator.map[org.opalj.br.DeclaredMethod](declaredMethods.apply)
                         }
                     case _ ⇒
                 }
@@ -179,7 +179,7 @@ sealed class IntermediateCallees(
                         res = res.updated(
                             k,
                             res.getOrElse(k, Iterator.empty) ++
-                                v.intIterator.mapToAny(declaredMethods.apply)
+                                v.iterator.map[org.opalj.br.DeclaredMethod](declaredMethods.apply)
                         )
                 case _ ⇒
             }
@@ -192,7 +192,7 @@ sealed class IntermediateCallees(
                         res = res.updated(
                             k,
                             res.getOrElse(k, Iterator.empty) ++
-                                v.intIterator.mapToAny(declaredMethods.apply)
+                                v.iterator.map[org.opalj.br.DeclaredMethod](declaredMethods.apply)
                         )
                 case _ ⇒
             }
@@ -212,7 +212,7 @@ sealed class FinalCallees(
 ) extends Callees {
 
     override def incompleteCallSites(implicit propertyStore: PropertyStore): IntIterator = {
-        _incompleteCallSites.intIterator
+        _incompleteCallSites.iterator
     }
 
     override def isIncompleteCallSite(pc: Int)(implicit propertyStore: PropertyStore): Boolean = {
@@ -229,14 +229,14 @@ sealed class FinalCallees(
     ): Iterator[DeclaredMethod] = {
         if (onlyEventualCallees) {
             if (eventualCalleeIds.contains(pc))
-                eventualCalleeIds(pc).intIterator.mapToAny(declaredMethods.apply)
+                eventualCalleeIds(pc).iterator.map[org.opalj.br.DeclaredMethod](declaredMethods.apply)
             else
-                calleeIds.getOrElse(pc, IntTrieSet.empty).intIterator.mapToAny(declaredMethods.apply)
+                calleeIds.getOrElse(pc, IntTrieSet.empty).iterator.map[org.opalj.br.DeclaredMethod](declaredMethods.apply)
         } else {
             val directCallees =
-                calleeIds.getOrElse(pc, IntTrieSet.empty).intIterator.mapToAny(declaredMethods.apply)
+                calleeIds.getOrElse(pc, IntTrieSet.empty).iterator.map[org.opalj.br.DeclaredMethod](declaredMethods.apply)
             if (eventualCalleeIds.contains(pc))
-                eventualCalleeIds(pc).intIterator.mapToAny(declaredMethods.apply) ++ directCallees
+                eventualCalleeIds(pc).iterator.map[org.opalj.br.DeclaredMethod](declaredMethods.apply) ++ directCallees
             else directCallees
         }
     }
@@ -261,19 +261,19 @@ sealed class FinalCallees(
         if (onlyEventualCallees)
             for (pc ← calleeIds.keysIterator) {
                 if (eventualCalleeIds.contains(pc))
-                    res += pc → eventualCalleeIds(pc).intIterator.mapToAny(declaredMethods.apply)
+                    res += pc → eventualCalleeIds(pc).iterator.map[org.opalj.br.DeclaredMethod](declaredMethods.apply)
                 else
-                    res += pc → calleeIds(pc).intIterator.mapToAny(declaredMethods.apply)
+                    res += pc → calleeIds(pc).iterator.map[org.opalj.br.DeclaredMethod](declaredMethods.apply)
             }
         else
             for (pc ← calleeIds.keysIterator) {
                 val callees =
                     if (eventualCalleeIds.contains(pc))
-                        eventualCalleeIds(pc).intIterator ++ calleeIds(pc).intIterator
+                        eventualCalleeIds(pc).iterator ++ calleeIds(pc).iterator
                     else
-                        calleeIds(pc).intIterator
+                        calleeIds(pc).iterator
                 res += pc →
-                    callees.mapToAny(declaredMethods.apply)
+                    callees.map[org.opalj.br.DeclaredMethod](declaredMethods.apply)
             }
 
         res

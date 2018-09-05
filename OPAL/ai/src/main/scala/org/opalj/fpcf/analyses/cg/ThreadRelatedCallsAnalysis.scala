@@ -14,6 +14,7 @@ import org.opalj.br.VoidType
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.SomeProject
+import org.opalj.collection.immutable.RefArray
 import org.opalj.fpcf.cg.properties.OnlyVMLevelCallers
 import org.opalj.fpcf.cg.properties.CallersProperty
 import org.opalj.fpcf.cg.properties.NoCallers
@@ -32,6 +33,7 @@ import org.opalj.value.IsReferenceValue
  *
  * @author Florian Kuebler
  * @author Dominik Helm
+ * @author Michael Reif
  */
 class ThreadRelatedCallsAnalysis private[analyses] (
         final val project: SomeProject
@@ -46,7 +48,7 @@ class ThreadRelatedCallsAnalysis private[analyses] (
 
     private[this] val uncaughtExceptionDescriptor = {
         MethodDescriptor(
-            Array(ObjectType.Thread.asInstanceOf[FieldType], ObjectType.Throwable), VoidType
+            RefArray(ObjectType.Thread.asInstanceOf[FieldType], ObjectType.Throwable), VoidType
         )
     }
 

@@ -27,10 +27,7 @@ trait TypeAnnotationAttributesBinding
         ap_name_index:        Constant_Pool_Index,
         ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
-        annotations:          TypeAnnotations,
-        // The scope in which the attribute is defined
-        as_name_index:       Constant_Pool_Index,
-        as_descriptor_index: Constant_Pool_Index
+        annotations:          TypeAnnotations
     ): RuntimeInvisibleTypeAnnotations_attribute = {
         new RuntimeInvisibleTypeAnnotationTable(annotations)
     }
@@ -40,10 +37,7 @@ trait TypeAnnotationAttributesBinding
         ap_name_index:        Constant_Pool_Index,
         ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
-        annotations:          TypeAnnotations,
-        // The scope in which the attribute is defined
-        as_name_index:       Constant_Pool_Index,
-        as_descriptor_index: Constant_Pool_Index
+        annotations:          TypeAnnotations
     ): RuntimeVisibleTypeAnnotations_attribute = {
         new RuntimeVisibleTypeAnnotationTable(annotations)
     }

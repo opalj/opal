@@ -22,10 +22,7 @@ trait SourceFile_attributeBinding
         ap_name_index:        Constant_Pool_Index,
         ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
-        sourcefile_index:     Constant_Pool_Index,
-        // The scope in which the attribute is defined
-        as_name_index:       Constant_Pool_Index,
-        as_descriptor_index: Constant_Pool_Index
+        sourcefile_index:     Constant_Pool_Index
     ): SourceFile_attribute = {
         new SourceFile_attribute(cp(sourcefile_index).asString)
     }

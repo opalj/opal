@@ -18,6 +18,7 @@ import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.instructions.LoadClass
 import org.opalj.br.instructions.LoadClass_W
 import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.collection.immutable.RefArray
 import org.opalj.da.ClassFile
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
@@ -67,10 +68,10 @@ class Reflection(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
     val FieldT = ObjectType("java/lang/reflect/Field")
 
     val Invoke = MethodDescriptor(
-        IndexedSeq(ObjectType.Object, ArrayType(ObjectType.Object)),
+        RefArray(ObjectType.Object, ArrayType(ObjectType.Object)),
         ObjectType.Object
     )
-    val GetMethodMD = MethodDescriptor(IndexedSeq(ObjectType.String, ArrayType(ClassT)), MethodT)
+    val GetMethodMD = MethodDescriptor(RefArray(ObjectType.String, ArrayType(ClassT)), MethodT)
     val NewInstanceMD = MethodDescriptor(ArrayType(ObjectType.Object), ObjectType.Object)
     val GetFieldMD = MethodDescriptor(ObjectType.String, FieldT)
     val FieldGetMD = MethodDescriptor(ObjectType.Object, ObjectType.Object)
