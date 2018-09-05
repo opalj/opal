@@ -5,13 +5,16 @@ package domain
 
 import scala.annotation.tailrec
 import scala.annotation.switch
+
 import java.io.ByteArrayOutputStream
 import java.io.PrintStream
 
 import scala.xml.Node
 import scala.collection.JavaConverters._
+
 import it.unimi.dsi.fastutil.ints.IntLinkedOpenHashSet
 import it.unimi.dsi.fastutil.ints.Int2IntLinkedOpenHashMap
+
 import org.opalj.graphs.DefaultMutableNode
 import org.opalj.collection.immutable.IntArraySet
 import org.opalj.collection.mutable.{Locals ⇒ Registers}
@@ -20,14 +23,15 @@ import org.opalj.collection.immutable.Chain
 import org.opalj.collection.immutable.Naught
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.IntTrieSet1
+import org.opalj.collection.immutable.Chain.ChainBuilder
 import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.br.Code
+import org.opalj.br.PC
+import org.opalj.br.ObjectType
 import org.opalj.br.ComputationalTypeCategory
 import org.opalj.br.instructions._
 import org.opalj.br.analyses.AnalysisException
 import org.opalj.ai.util.XHTML
-import org.opalj.br.ObjectType
-import org.opalj.collection.immutable.Chain.ChainBuilder
 
 /**
  * Collects the definition/use information based on the abstract interpretation time cfg.
