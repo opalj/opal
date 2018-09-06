@@ -1098,7 +1098,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                         trace = trace.tail
                     }
                      */
-                    val traceIterator = evaluatedPCs.intIterator
+                    val traceIterator = evaluatedPCs.iterator
                     traceIterator.next()
                     import traceIterator.foreachWhile
                     foreachWhile(pc ⇒ pc != SUBROUTINE_START || subroutineLevel != 0) { pc ⇒
