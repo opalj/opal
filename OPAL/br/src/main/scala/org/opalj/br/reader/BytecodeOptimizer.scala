@@ -124,7 +124,7 @@ trait BytecodeOptimizer extends MethodsBinding {
 
         // This is the set of instructions which are effectively jumped to by if, switch, goto, and
         // jsr/ret instructions and exception handlers.
-        // It contains those instrutions which are definitive jump targets AFTER simplification.
+        // It contains those instructions which are definitive jump targets AFTER simplification.
         var jumpTargetInstructions =
             exceptionsHandlers.foldLeft(NoPCs) { (c, eh) ⇒ c + eh.handlerPC }
 
@@ -208,7 +208,7 @@ trait BytecodeOptimizer extends MethodsBinding {
                         instructions(pc + 1) = NOP
                         instructions(pc + 2) = NOP
                         simplified = true
-                        // IMPROVE log the removal of the totally USELESS IF instruction
+                        // TODO log the removal of the totally USELESS IF instruction
                     } else {
                         val jumpTargetInstruction = instructions(jumpTargetPC)
                         val nextInstruction = instructions(nextPC)
@@ -230,7 +230,7 @@ trait BytecodeOptimizer extends MethodsBinding {
                                 instructions(pc + 4) = NOP
                                 instructions(pc + 5) = NOP
                                 simplified = true
-                                // IMPROVE log the removal of the totally USELESS IF instruction
+                                // TODO log the removal of the totally USELESS IF instruction
                             } else if (jumpTargetInstruction.isGotoInstruction) {
                                 totallyConfusedIfs += pc
                             } else {
@@ -241,6 +241,7 @@ trait BytecodeOptimizer extends MethodsBinding {
                             val newBranchoffset = nextGoto.branchoffset + branchoffset
                             if (newBranchoffset >= Short.MinValue && newBranchoffset <= Short.MaxValue) {
                                 // Let's use the goto target as the if's target
+                                // IMPROVE Consider using +!=
                                 jumpTargetInstructions += pc + newBranchoffset
                                 instructions(pc) = ifInstruction.copy(newBranchoffset)
                                 simplified = true
@@ -262,6 +263,7 @@ trait BytecodeOptimizer extends MethodsBinding {
                         if (newBranchoffset != branchoffset &&
                             newBranchoffset >= Short.MinValue && newBranchoffset <= Short.MaxValue) {
                             // let's replace the original jump
+                            // IMPROVE Consider using +!=
                             jumpTargetInstructions += pc + newBranchoffset
                             instructions(pc) = GOTO(newBranchoffset)
                             simplified = true
@@ -284,6 +286,7 @@ trait BytecodeOptimizer extends MethodsBinding {
                     } else {
                         val newBranchoffset = finalJumpTarget(IntTrieSet1(pc), jumpTargetPC, branchoffset)
                         if (newBranchoffset != branchoffset) {
+                            // IMPROVE Consider using +!=
                             jumpTargetInstructions += pc + newBranchoffset
                             if (newBranchoffset >= Short.MinValue &&
                                 newBranchoffset <= Short.MaxValue) {
@@ -316,6 +319,7 @@ trait BytecodeOptimizer extends MethodsBinding {
                             // This switch is basically just a goto... we will add
                             // the goto at the end of this section of the bytecode
                             // array; however, the original target remains valid...
+                            // IMPROVE Consider using +!=
                             jumpTargetInstructions += pc + defaultOffset
                             instructions(pc) = POP
                             i = pc + 1
@@ -351,9 +355,10 @@ trait BytecodeOptimizer extends MethodsBinding {
 
                         while (i < newNextPC) { instructions(i) = NOP; i += 1 }
                         simplified = true
-                        // IMPROVE log the removal of the USELESS SWITCH instruction
+                        // TODO log the removal of the USELESS SWITCH instruction
                     } else {
-                        // IMPROVE optimize goto chains
+                        // IMPROVE Optimize goto chains by directly jumping to the final target
+                        // IMPROVE Consider using +!=
                         jumpTargetInstructions += pc + defaultOffset
                         switchInstruction.jumpOffsets foreach { branchoffset ⇒
                             jumpTargetInstructions += pc + branchoffset
@@ -365,6 +370,7 @@ trait BytecodeOptimizer extends MethodsBinding {
                     // right away... it is the instruction succeeding the jsr instruction.
                     val JSRInstruction(branchoffset) = instruction
 
+                    // IMPROVE Consider using +!=
                     jumpTargetInstructions += pc + branchoffset
                     jumpTargetInstructions += nextPC
 
