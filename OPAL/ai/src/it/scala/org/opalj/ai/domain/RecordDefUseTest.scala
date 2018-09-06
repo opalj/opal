@@ -231,9 +231,8 @@ class RecordDefUseTest extends FunSpec with Matchers {
                     }
                 }
                 val containsJSR =
-                    m.body.get.find(i =>
-                    i.opcode == JSR.opcode || i.opcode == JSR_W.opcode
-                )
+                    m.body.get.find(i ⇒
+                        i.opcode == JSR.opcode || i.opcode == JSR_W.opcode)
                 s"${m.toJava}[containsJSR=$containsJSR; ${root.getClass.getSimpleName}: ${root.getMessage}; location: $location]"
             }
 
