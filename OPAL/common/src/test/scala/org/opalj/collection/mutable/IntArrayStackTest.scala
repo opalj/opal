@@ -103,16 +103,16 @@ class IntArrayStackTest extends FlatSpec with Matchers {
 
     it should ("iterator overall values using intIterator") in {
         val stack = new IntArrayStack()
-        stack.intIterator.hasNext should be(false)
+        stack.iterator.hasNext should be(false)
 
         stack.push(2)
-        var it = stack.intIterator
+        var it = stack.iterator
         it.hasNext should be(true)
         it.next() should be(2)
         it.hasNext should be(false)
 
         stack.push(3)
-        it = stack.intIterator
+        it = stack.iterator
         it.hasNext should be(true)
         it.next() should be(3)
         it.hasNext should be(true)
