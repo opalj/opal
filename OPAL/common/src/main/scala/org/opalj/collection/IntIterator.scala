@@ -56,7 +56,7 @@ abstract class IntIterator extends AbstractIterator[Int] { self ⇒
         c
     }
 
-    def foreachWhile[U](p: Int ⇒ Boolean)(f: (Int) ⇒ U): Unit = {
+    def foreachWhile[U](p: Int ⇒ Boolean)(f: Int ⇒ U): Unit = {
         while (this.hasNext && {
             val c = this.next()
             if (p(c)) {
