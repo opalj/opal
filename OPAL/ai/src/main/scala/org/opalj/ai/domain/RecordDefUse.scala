@@ -26,7 +26,7 @@ import org.opalj.collection.immutable.IntTrieSet1
 import org.opalj.collection.immutable.Chain.ChainBuilder
 import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.br.Code
-import org.opalj.br.PC
+//import org.opalj.br.PC
 import org.opalj.br.ObjectType
 import org.opalj.br.ComputationalTypeCategory
 import org.opalj.br.instructions._
