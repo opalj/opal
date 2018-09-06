@@ -46,6 +46,17 @@ final class IntArrayStack private (
 
     override def newBuilder: mutable.Builder[Int, IntArrayStack] = IntArrayStack.newBuilder
 
+    override def reverse: IntArrayStack = {
+        val newData = new Array[Int](size0)
+        val max = size0 - 1
+        var i = 0
+        while (i <= max) {
+            newData(max - i) = data(i)
+            i += 1
+        }
+        new IntArrayStack(newData, size0)
+    }
+
     /** The same as push but additionally returns `this`. */
     def +=(i: Int): this.type = {
         push(i)
