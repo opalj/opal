@@ -85,6 +85,14 @@
                                 <ul class="alt">
                                     <li><a href="https://www.openhub.net/p/OPAL-Project">OPAL on OpenHub</a></li>
                                 </ul>
+                                <h3>Supported By</h3>
+                                <ul class="alt">
+                                    <li><a href="https://www.yourkit.com/"><img src="images/yklogo.png" width="139", height="33"></a><br>
+                                        YourKit supports open source projects with its full-featured Java Profiler.
+                                        YourKit, LLC is the creator of <a href="https://www.yourkit.com/java/profiler/">YourKit Java Profiler</a>
+                                        an innovative and intelligent tool for profiling Java applications.
+                                    </li>
+                                </ul>
                             </div>
                             <div class="6u">
                                 <h3>Core Papers</h3>
