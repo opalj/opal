@@ -24,12 +24,41 @@ final public class Demo extends Object {
             throw new IllegalArgumentException();
     }
 
+    private static final void check(Object i) throws IllegalArgumentException {
+        if (i == null) {
+            throw new IllegalArgumentException();
+        }
+    }
+
     private static final void log(Throwable t) {
         System.err.println(t);
     }
 
     private static final void doIt() throws InterruptedException {
         Thread.sleep(1000);
+    }
+
+    public static final int m0(int j) throws Exception {
+        int r = 0;
+        try {
+            try {
+                check(j);
+            } finally {
+                try {
+                    check( j * 100);
+                } finally {
+                    // terminates inner subroutine
+                    if(j*100 == System.currentTimeMillis())
+                        throw new Throwable();
+                    r = 100;
+                }
+                return 100 / j;
+            }
+        } catch (Throwable t) {
+            check(t);
+        }
+        check(r);
+        return r;
     }
 
     public static final int m1(int j) throws Exception {
@@ -284,7 +313,7 @@ final public class Demo extends Object {
         }
     }
 
-    public static int[] implicitAndExplicitTryCatchFinall(int i) throws Exception {
+    public static int[] implicitAndExplicitTryCatchFinally(int i) throws Exception {
         synchronized(Demo.get()) {
             String s = "";
             if(i == -1) throw new RuntimeException();
