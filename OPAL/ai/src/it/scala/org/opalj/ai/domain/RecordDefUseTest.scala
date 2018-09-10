@@ -169,14 +169,22 @@ class RecordDefUseTest extends FunSpec with Matchers {
                 // expected to pop-up in the def-sites... and only if the instruction
                 // is a relevant use-site
                 if (opIndex < usedOperands &&
-                    // we already tested: !instruction.isStackManagementInstruciton
+                    // we already tested: !instruction.isStackManagementInstruction
                     !instruction.isStoreLocalVariableInstruction) {
-                    defUseOrigins foreach { duo ⇒
-                        val useSites = d.usedBy(duo)
-                        if (!useSites.contains(pc)) {
+                    defUseOrigins foreach { defUseOrigin ⇒ // the origins of a value...
+                        val useSites = d.usedBy(defUseOrigin)
+                        if(useSites == null) {
                             fail(
-                                s"a def site $duo(${instructions(duo)}) does not "+
-                                    s"contain use site: $pc(${instructions(pc)})"
+                                s"$pc: uses sites of ($defUseOrigin) is null (origins=$defUseOrigins)"
+                            )
+                        }else                         if (!useSites.contains(pc)) {
+                            // Recall that the current instruction is not a stack management
+                            // instruction...
+                            val i = instructions(underlyingPC(defUseOrigin))
+                            fail(
+                                s"$pc: the use sites of the operand with the origin "+
+                                    s"$defUseOrigin($i) does not list "+
+                                    s"this instruction ${instructions(pc)} as a use site"
                             )
                         }
                     }
@@ -219,21 +227,26 @@ class RecordDefUseTest extends FunSpec with Matchers {
         if (failures.size > 0) {
             val failureMessages = for { (m, exception) ← failures.asScala } yield {
                 var root: Throwable = exception
-                while (root.getCause != null) root = root.getCause
-                val location = {
-                    val st = root.getStackTrace
-                    if (st != null && st.length > 0) {
-                        st.take(5).map { ste ⇒
-                            s"${ste.getClassName}{ ${ste.getMethodName}:${ste.getLineNumber}}"
-                        }.mkString("; ")
-                    } else {
-                        "<location unavailable>"
+                var location : String = ""
+                do {
+                    location += {
+                        val st = root.getStackTrace
+                        if (st != null && st.length > 0) {
+                            st.take(5).map { ste ⇒
+                                s"${ste.getClassName}{ ${ste.getMethodName}:${ste.getLineNumber}}"
+                            }.mkString("; ")
+                        } else {
+                            "<location unavailable>"
+                        }
                     }
-                }
+                    root = root.getCause
+                    if (root != null)
+                        location += "\n- next cause -\n"
+                } while (root != null)
                 val containsJSR =
-                    m.body.get.find(i ⇒
-                        i.opcode == JSR.opcode || i.opcode == JSR_W.opcode)
-                s"${m.toJava}[containsJSR=$containsJSR; ${root.getClass.getSimpleName}: ${root.getMessage}; location: $location]"
+                    m.body.get.find(i ⇒ i.opcode == JSR.opcode || i.opcode == JSR_W.opcode)
+                s"${m.toJava}[containsJSR=$containsJSR; "+
+                    s"${exception.getClass.getSimpleName}: ${exception.getMessage}; location: $location]"
             }
 
             val errorMessageHeader = s"${failures.size} exceptions occured ($baseMessage) in:\n"
