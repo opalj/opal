@@ -73,7 +73,10 @@ object XHTML {
     }
 
     def valueToString(value: AnyRef)(implicit ids: Option[AnyRef ⇒ Int]): String = {
-        value.toString + ids.map("@"+_.apply(value)).getOrElse("")
+        if (value != null)
+            value.toString + ids.map("@"+_.apply(value)).getOrElse("")
+        else
+            "null@<N/A-value>"
     }
 
     def throwableToXHTML(throwable: Throwable): scala.xml.Node = {
