@@ -20,7 +20,7 @@ import org.opalj.collection.immutable.IntTrieSet1
 import org.opalj.collection.immutable.Chain.ChainBuilder
 import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.br.Code
-//import org.opalj.br.PC
+import org.opalj.br.PC
 import org.opalj.br.ObjectType
 import org.opalj.br.ComputationalTypeCategory
 import org.opalj.br.instructions._
@@ -1241,9 +1241,28 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode with Th
         subroutinePCs.foreach { pc ⇒
             defOps(pc) = subroutineDefOps(pc)
             defLocals(pc) = subroutineDefLocals(pc)
-            usedExternalExceptions(pc) = subroutineUsedExternalExceptions(pc)
+
+            // NOTE: we may have usages at the root level of values created in the subroutines!
+            val oldUsedExternalExceptions = usedExternalExceptions(pc)
+            val allSubroutineUsedExternalExceptions = subroutineUsedExternalExceptions(pc)
+            if (allSubroutineUsedExternalExceptions != null) {
+                usedExternalExceptions(pc) =
+                    if (oldUsedExternalExceptions == null)
+                        allSubroutineUsedExternalExceptions
+                    else
+                        oldUsedExternalExceptions ++ allSubroutineUsedExternalExceptions
+            }
+
             val usedPC = pc + parametersOffset
-            used(usedPC) = subroutineUsed(usedPC)
+            val oldUsedPC = used(usedPC)
+            val allSubroutineUsed = subroutineUsed(usedPC)
+            if (allSubroutineUsed != null) {
+                used(usedPC) =
+                    if (oldUsedPC == null)
+                        allSubroutineUsed
+                    else
+                        oldUsedPC ++ allSubroutineUsed
+            }
         }
     }
 

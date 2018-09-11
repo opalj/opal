@@ -172,19 +172,34 @@ class RecordDefUseTest extends FunSpec with Matchers {
                     // we already tested: !instruction.isStackManagementInstruction
                     !instruction.isStoreLocalVariableInstruction) {
                     defUseOrigins foreach { defUseOrigin ⇒ // the origins of a value...
-                        val useSites = d.usedBy(defUseOrigin)
-                        if(useSites == null) {
+                        val defUseUseSites = d.usedBy(defUseOrigin)
+                        if(defUseUseSites == null) {
+                            val belongsToSubroutine = code.belongsToSubroutine()
+                            val defSiteBelongsToSubroutine =
+                                belongsToSubroutine(underlyingPC(defUseOrigin))
+                            val useSiteBelongsToSubroutine =
+                                belongsToSubroutine(pc)
                             fail(
-                                s"$pc: uses sites of ($defUseOrigin) is null (origins=$defUseOrigins)"
+                                s"$pc(belongs to subroutine $useSiteBelongsToSubroutine): "+
+                                    s"uses sites of $defUseOrigin (belongs to subroutine "+
+                                    s"$defSiteBelongsToSubroutine) is null"
                             )
-                        }else                         if (!useSites.contains(pc)) {
+                        }else                         if (!defUseUseSites.contains(pc)) {
                             // Recall that the current instruction is not a stack management
                             // instruction...
                             val i = instructions(underlyingPC(defUseOrigin))
+                            val belongsToSubroutine = code.belongsToSubroutine()
+                            val defSiteBelongsToSubroutine =
+                                belongsToSubroutine(underlyingPC(defUseOrigin))
+                            val useSiteBelongsToSubroutine =
+                                belongsToSubroutine(pc)
                             fail(
-                                s"$pc: the use sites of the operand with the origin "+
-                                    s"$defUseOrigin($i) does not list "+
-                                    s"this instruction ${instructions(pc)} as a use site"
+                                s"${underlyingPC(defUseOrigin)}@$i: the use sites of " +
+                                    s"the value with the origin $defUseOrigin (belongs to "+
+                                    s"subroutine $defSiteBelongsToSubroutine) does not list "+
+                                    s"the instruction\n$pc@${instructions(pc)}"+
+                                    s"(belongs to subroutine: $useSiteBelongsToSubroutine) "+
+                                    s"as a use site (use sites=$defUseUseSites)"
                             )
                         }
                     }
@@ -245,8 +260,9 @@ class RecordDefUseTest extends FunSpec with Matchers {
                 } while (root != null)
                 val containsJSR =
                     m.body.get.find(i ⇒ i.opcode == JSR.opcode || i.opcode == JSR_W.opcode)
-                s"${m.toJava}[containsJSR=$containsJSR; "+
-                    s"${exception.getClass.getSimpleName}: ${exception.getMessage}; location: $location]"
+                val details = exception.getMessage.replace("\n","\n\t")
+                s"${m.toJava}[containsJSR=$containsJSR;\n\t"+
+                    s"${exception.getClass.getSimpleName}:\n\t$details;\n\tlocation: $location]"
             }
 
             val errorMessageHeader = s"${failures.size} exceptions occured ($baseMessage) in:\n"
