@@ -91,7 +91,6 @@ trait LibraryEntryPointsFinder extends EntryPointFinder {
         val eps = ArrayBuffer.empty[Method]
 
         project.allMethodsWithBody.foreach { method ⇒
-            println(method.toJava)
             if (isEntryPoint(method))
                 eps.append(method)
         }
