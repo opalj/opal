@@ -5,10 +5,13 @@ package ba
 import java.util.NoSuchElementException
 
 import scala.collection.mutable.ArrayBuffer
+
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
+
 import it.unimi.dsi.fastutil.ints.Int2IntArrayMap
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap
+
 import org.opalj.control.repeat
 import org.opalj.control.iterateUntil
 import org.opalj.log.LogContext
@@ -52,7 +55,7 @@ object CODE {
     @volatile private[this] var logDeadCode: Boolean = true
     @volatile private[this] var logCodeRewriting: Boolean = true
 
-    def setBaseConfig(config: Config) = {
+    def setBaseConfig(config: Config): Unit = {
         logDeadCodeRemoval = config.getBoolean(LogDeadCodeRemovalConfigKey)
         info("code generation", s"compile-time dead code removal is logged: $logDeadCodeRemoval")
         logDeadCode = config.getBoolean(LogDeadCodeConfigKey)
@@ -61,7 +64,7 @@ object CODE {
         info("code generation", s"code rewritings are logged: $logCodeRewriting")
     }
 
-    setBaseConfig(ConfigFactory.load(this.getClass.getClassLoader()))
+    setBaseConfig(ConfigFactory.load(this.getClass.getClassLoader))
 
     /**
      * Removes (compile-time) dead (pseudo) instructions from the given code by
@@ -141,7 +144,7 @@ object CODE {
                     }
                     tryEndLabelsToIndexes.put(label, index)
 
-                case CATCH(label, _) ⇒
+                case CATCH(label, _, _) ⇒
                     if (catchLabelsToIndexes.containsKey(label)) {
                         throw new IllegalArgumentException(s"catch '${label.name} is already used")
                     }
@@ -443,7 +446,7 @@ object CODE {
 
         var labels = Map.empty[InstructionLabel, br.PC]
         var annotations = Map.empty[br.PC, T]
-        val exceptionHandlerBuilder = new ExceptionHandlerGenerator()
+        val exceptionHandlerTableBuilder = new ExceptionHandlerTableBuilder()
         val lineNumberTableBuilder = new LineNumberTableBuilder()
         var hasControlTransferInstructions = false
         val pcMapping = new PCMapping(initialSize = codeElements.length) // created based on `PCLabel`s
@@ -474,7 +477,7 @@ object CODE {
                     }
                     labels += (label → nextPC)
 
-                case e: ExceptionHandlerElement ⇒ exceptionHandlerBuilder.add(e, nextPC)
+                case e: ExceptionHandlerElement ⇒ exceptionHandlerTableBuilder.add(e, nextPC)
 
                 case l: LINENUMBER              ⇒ lineNumberTableBuilder.add(l, nextPC)
             }
@@ -482,7 +485,7 @@ object CODE {
 
         val codeSize = instructionLikes.size
         require(codeSize > 0, "no code found")
-        val exceptionHandlers = exceptionHandlerBuilder.result()
+        val exceptionHandlers = exceptionHandlerTableBuilder.result()
         val attributes = lineNumberTableBuilder.result()
 
         val instructions = new Array[Instruction](codeSize)

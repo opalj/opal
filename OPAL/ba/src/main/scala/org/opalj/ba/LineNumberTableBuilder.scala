@@ -13,8 +13,9 @@ class LineNumberTableBuilder {
 
     private[this] var lineNumbers: br.LineNumbers = RefArray.empty
 
-    def add(element: LINENUMBER, pc: br.PC) = {
+    def add(element: LINENUMBER, pc: br.PC): this.type = {
         lineNumbers :+= br.LineNumber(pc, element.lineNumber)
+        this
     }
 
     def result(): RefArray[br.UnpackedLineNumberTable] = {
