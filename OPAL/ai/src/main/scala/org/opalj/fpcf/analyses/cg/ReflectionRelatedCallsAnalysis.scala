@@ -146,7 +146,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
             i += 1
         }
 
-        if (relevantPCs.isEmpty)
+        if (relevantPCs.isEmpty && forNamePCs.isEmpty)
             return Result(declaredMethod, NoReflectionRelatedCallees);
 
         // the set of classes that are definitely loaded at this point in time
