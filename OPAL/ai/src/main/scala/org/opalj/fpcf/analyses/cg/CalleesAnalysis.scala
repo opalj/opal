@@ -107,27 +107,27 @@ class CalleesAnalysis private[analyses] (
 
         if (dependees.isEmpty) {
 
-            var calleeIds: IntMap[IntTrieSet] = IntMap.empty
-            var eventualCalleeIds: IntMap[IntTrieSet] = IntMap.empty
+            var directCalleeIds: IntMap[IntTrieSet] = IntMap.empty
+            var indirectCalleeIds: IntMap[IntTrieSet] = IntMap.empty
             var incompleteCallSites: IntTrieSet = IntTrieSet.empty
 
-            for (key ← (directKeys.toIterator ++ indirectKeys.toIterator)) {
+            for (key ← directKeys.toIterator ++ indirectKeys.toIterator) {
                 val p = propertyStore(
                     declaredMethod,
                     key
                 ).asInstanceOf[FinalEP[DeclaredMethod, CalleesLike]].p
                 if (p.isIndirect) {
-                    calleeIds = calleeIds.unionWith(p.callSites, (_, l, r) ⇒ l ++ r)
+                    directCalleeIds = directCalleeIds.unionWith(p.callSites, (_, l, r) ⇒ l ++ r)
                 } else {
-                    eventualCalleeIds =
-                        eventualCalleeIds.unionWith(p.callSites, (_, l, r) ⇒ l ++ r)
+                    indirectCalleeIds =
+                        indirectCalleeIds.unionWith(p.callSites, (_, l, r) ⇒ l ++ r)
                 }
                 incompleteCallSites ++!= p.incompleteCallSites
             }
 
             Result(
                 declaredMethod,
-                new FinalCallees(calleeIds, eventualCalleeIds, incompleteCallSites)
+                new FinalCallees(directCalleeIds, indirectCalleeIds, incompleteCallSites)
             )
         } else {
             SimplePIntermediateResult(

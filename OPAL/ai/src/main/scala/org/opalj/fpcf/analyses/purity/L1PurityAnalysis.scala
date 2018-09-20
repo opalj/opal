@@ -270,7 +270,7 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                     atMost(ImpureByAnalysis)
 
                 hasIncompleteCallSites &&
-                    p.callSites(onlyEventualCallees = false).forall { callSite ⇒
+                    p.callSites(onlyIndirectCallees = false).forall { callSite ⇒
                         val pc = callSite._1
                         callSite._2.forall { callee ⇒
                             state.dependees.exists(_.e eq callee) || {

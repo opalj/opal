@@ -820,7 +820,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                     atMost(ImpureByAnalysis)
 
                 !hasIncompleteCallSites &&
-                    p.callSites(onlyEventualCallees = false).forall { callSite ⇒
+                    p.callSites(onlyIndirectCallees = false).forall { callSite ⇒
                         val pc = callSite._1
                         val call = getCall(state.code(state.pcToIndex(pc)))
                         isDomainSpecificCall(call, call.receiverOption) ||
