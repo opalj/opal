@@ -4,57 +4,55 @@ package fpcf
 package analyses
 package cg
 
-import scala.language.existentials
-import org.opalj.br.DeclaredMethod
-import org.opalj.br.DefinedMethod
-import org.opalj.br.MethodDescriptor
-import org.opalj.br.ObjectType
-import org.opalj.br.ReferenceType
-import org.opalj.br.FieldType
-import org.opalj.br.VoidType
 import org.opalj.br.ArrayType
 import org.opalj.br.BaseType
-import org.opalj.br.Type
-import org.opalj.br.InvokeStaticMethodHandle
-import org.opalj.br.InvokeVirtualMethodHandle
+import org.opalj.br.DeclaredMethod
+import org.opalj.br.DefinedMethod
+import org.opalj.br.FieldType
+import org.opalj.br.FieldTypes
 import org.opalj.br.InvokeInterfaceMethodHandle
 import org.opalj.br.InvokeSpecialMethodHandle
+import org.opalj.br.InvokeStaticMethodHandle
+import org.opalj.br.InvokeVirtualMethodHandle
+import org.opalj.br.MethodDescriptor
 import org.opalj.br.NewInvokeSpecialMethodHandle
-import org.opalj.br.FieldTypes
+import org.opalj.br.ObjectType
+import org.opalj.br.ReferenceType
+import org.opalj.br.Type
+import org.opalj.br.VoidType
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.cfg.CFG
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.instructions.INVOKEVIRTUAL
-import org.opalj.collection.immutable.UIDSet
 import org.opalj.collection.immutable.IntArraySetBuilder
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.RefArray
-import org.opalj.fpcf.cg.properties.LoadedClasses
-import org.opalj.fpcf.cg.properties.LowerBoundCallers
+import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.cg.properties.CallersProperty
 import org.opalj.fpcf.cg.properties.InstantiatedTypes
-import org.opalj.fpcf.cg.properties.ReflectionRelatedCallees
+import org.opalj.fpcf.cg.properties.LoadedClasses
 import org.opalj.fpcf.cg.properties.NoCallers
-import org.opalj.fpcf.cg.properties.LoadedClassesLowerBound
-import org.opalj.fpcf.cg.properties.ReflectionRelatedCalleesImplementation
 import org.opalj.fpcf.cg.properties.NoReflectionRelatedCallees
 import org.opalj.fpcf.cg.properties.OnlyVMLevelCallers
-import org.opalj.tac.Assignment
-import org.opalj.tac.ExprStmt
-import org.opalj.tac.SimpleTACAIKey
-import org.opalj.tac.Stmt
-import org.opalj.tac.VirtualFunctionCall
-import org.opalj.tac.Expr
-import org.opalj.tac.StaticFunctionCall
-import org.opalj.tac.NewArray
-import org.opalj.tac.TACStmts
+import org.opalj.fpcf.cg.properties.ReflectionRelatedCallees
+import org.opalj.fpcf.cg.properties.ReflectionRelatedCalleesImplementation
 import org.opalj.tac.ArrayStore
+import org.opalj.tac.Assignment
+import org.opalj.tac.Expr
+import org.opalj.tac.ExprStmt
+import org.opalj.tac.NewArray
+import org.opalj.tac.SimpleTACAIKey
+import org.opalj.tac.StaticFunctionCall
+import org.opalj.tac.Stmt
+import org.opalj.tac.TACStmts
+import org.opalj.tac.VirtualFunctionCall
 import org.opalj.tac.VirtualMethodCall
 import org.opalj.value.IsReferenceValue
 
 import scala.collection.immutable.IntMap
+import scala.language.existentials
 
 /**
  * Finds calls and loaded classes that exist because of reflective calls that are easy to resolve.
@@ -871,28 +869,36 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
 
         if (state.newLoadedClasses.nonEmpty) {
             res ::= PartialResult[SomeProject, LoadedClasses](project, LoadedClasses.key, {
-                case EPK(p, _) ⇒
-                    Some(EPS(p, LoadedClassesLowerBound, new LoadedClasses(state.newLoadedClasses)))
-                case EPS(p, lb, ub) ⇒
+                case IntermediateESimpleP(p, ub) ⇒
                     val newUb = ub.classes ++ state.newLoadedClasses
                     // due to monotonicity:
                     // the size check sufficiently replaces the subset check
                     if (newUb.size > ub.classes.size)
-                        Some(EPS(p, lb, new LoadedClasses(newUb)))
+                        Some(IntermediateESimpleP(p, new LoadedClasses(newUb)))
                     else
                         None
 
+                case EPK(p, _) ⇒
+                    Some(IntermediateESimpleP(p, new LoadedClasses(state.newLoadedClasses)))
+
+                case r ⇒ throw new IllegalStateException(s"unexpected previous result $r")
             })
             state.newLoadedClasses flatMap { loaded ⇒
                 LoadedClassesAnalysis.retrieveStaticInitializers(loaded, declaredMethods, project)
             } foreach { clInit ⇒
                 res ::=
                     PartialResult[DeclaredMethod, CallersProperty](clInit, CallersProperty.key, {
-                        case EPK(_, _) ⇒
-                            Some(EPS(clInit, LowerBoundCallers, OnlyVMLevelCallers))
-                        case EPS(_, lb, ub) if !ub.hasCallersWithUnknownContext ⇒
-                            Some(EPS(clInit, lb, ub.updatedWithVMLevelCall()))
-                        case _ ⇒ None
+                        case _: EPK[_, _] ⇒
+                            Some(IntermediateESimpleP(clInit, OnlyVMLevelCallers))
+
+                        case IntermediateESimpleP(_, ub) if !ub.hasCallersWithUnknownContext ⇒
+                            Some(IntermediateESimpleP(clInit, ub.updatedWithVMLevelCall()))
+
+                        case _: IntermediateESimpleP[_, _] ⇒
+                            None
+
+                        case r ⇒
+                            throw new IllegalStateException(s"unexpected previous result $r")
                     })
             }
         }

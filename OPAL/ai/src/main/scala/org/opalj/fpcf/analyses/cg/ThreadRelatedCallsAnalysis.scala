@@ -15,10 +15,9 @@ import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.collection.immutable.RefArray
-import org.opalj.fpcf.cg.properties.OnlyVMLevelCallers
 import org.opalj.fpcf.cg.properties.CallersProperty
 import org.opalj.fpcf.cg.properties.NoCallers
-import org.opalj.fpcf.cg.properties.LowerBoundCallers
+import org.opalj.fpcf.cg.properties.OnlyVMLevelCallers
 import org.opalj.log.OPALLogger
 import org.opalj.tac.Assignment
 import org.opalj.tac.Expr
@@ -113,11 +112,16 @@ class ThreadRelatedCallsAnalysis private[analyses] (
         Results(
             threadRelatedMethods.map { method ⇒
                 PartialResult[DeclaredMethod, CallersProperty](method, CallersProperty.key, {
-                    case EPK(_, _) ⇒
-                        Some(EPS(method, LowerBoundCallers, OnlyVMLevelCallers))
-                    case EPS(_, lb, ub) if !ub.hasCallersWithUnknownContext ⇒
-                        Some(EPS(method, lb, ub.updatedWithVMLevelCall()))
-                    case _ ⇒ None
+                    case IntermediateESimpleP(_, ub) if !ub.hasCallersWithUnknownContext ⇒
+                        Some(IntermediateESimpleP(method, ub.updatedWithVMLevelCall()))
+
+                    case _: IntermediateESimpleP[_, _] ⇒ None
+
+                    case _: EPK[_, _] ⇒
+                        Some(IntermediateESimpleP(method, OnlyVMLevelCallers))
+
+                    case r ⇒
+                        throw new IllegalStateException(s"unexpected previous result $r")
                 })
             }
         )

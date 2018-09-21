@@ -12,10 +12,8 @@ import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.cg.properties.CallersProperty
-import org.opalj.fpcf.cg.properties.LoadedClassesLowerBound
 import org.opalj.fpcf.cg.properties.LoadedClasses
 import org.opalj.fpcf.cg.properties.NoCallers
-import org.opalj.fpcf.cg.properties.LowerBoundCallers
 import org.opalj.fpcf.cg.properties.OnlyVMLevelCallers
 import org.opalj.tac.Assignment
 import org.opalj.tac.ExprStmt
@@ -50,7 +48,7 @@ class LoadedClassesAnalysis(
     def doAnalyze(project: SomeProject): PropertyComputationResult = {
 
         PartialResult[SomeProject, LoadedClasses](project, LoadedClasses.key, {
-            case EPK(p, _) ⇒ Some(EPS(p, LoadedClassesLowerBound, new LoadedClasses(UIDSet.empty)))
+            case EPK(p, _) ⇒ Some(IntermediateESimpleP(p, new LoadedClasses(UIDSet.empty)))
             case _         ⇒ None
         })
     }
@@ -76,45 +74,53 @@ class LoadedClassesAnalysis(
             case FinalEP(_, NoCallers) ⇒
                 // nothing to do, since there is no caller
                 NoResult
+
             case _: EPK[_, _] ⇒
                 throw new IllegalStateException("unexpected state")
-            case EPS(_, _, NoCallers) ⇒
+
+            case IntermediateESimpleP(_, NoCallers) ⇒
                 // we can not create a dependency here, so the analysis is not allowed to create
                 // such a result
                 throw new IllegalStateException("illegal immediate result for callers")
-            case _: EPS[_, _] ⇒
 
+            case _: EPS[_, _] ⇒
                 // the method has callers. we have to analyze it
                 val (newCLInits, newLoadedClasses) = handleNewReachableMethod(callersOfMethod.e)
 
                 if (newLoadedClasses.nonEmpty) {
                     val lcResult = PartialResult[SomeProject, LoadedClasses](project, LoadedClasses.key, {
-                        case EPK(p, _) ⇒
-                            Some(
-                                EPS(p, LoadedClassesLowerBound, new LoadedClasses(newLoadedClasses))
-                            )
-                        case EPS(p, lb, ub) ⇒
+                        case IntermediateESimpleP(p, ub) ⇒
                             val newUb = ub.classes ++ newLoadedClasses
                             // due to monotonicity:
                             // the size check sufficiently replaces the subset check
                             if (newUb.size > ub.classes.size)
-                                Some(EPS(p, lb, new LoadedClasses(newUb)))
+                                Some(IntermediateESimpleP(p, new LoadedClasses(newUb)))
                             else
                                 None
+
+                        case EPK(p, _) ⇒
+                            Some(
+                                IntermediateESimpleP(p, new LoadedClasses(newLoadedClasses))
+                            )
+
+                        case r ⇒
+                            throw new IllegalStateException(s"unexpected previous result $r")
 
                     })
 
                     val callersResult = newCLInits map { clInit ⇒
                         PartialResult[DeclaredMethod, CallersProperty](clInit, CallersProperty.key, {
-                            case EPK(_, _) ⇒
-                                Some(EPS(
-                                    clInit,
-                                    LowerBoundCallers,
-                                    OnlyVMLevelCallers
-                                ))
-                            case EPS(_, lb, ub) if !ub.hasCallersWithUnknownContext ⇒
-                                Some(EPS(clInit, lb, ub.updatedWithVMLevelCall()))
-                            case _ ⇒ None
+                            case IntermediateESimpleP(_, ub) if !ub.hasCallersWithUnknownContext ⇒
+                                Some(IntermediateESimpleP(clInit, ub.updatedWithVMLevelCall()))
+
+                            case _: IntermediateESimpleP[_, _] ⇒
+                                None
+
+                            case _: EPK[_, _] ⇒
+                                Some(IntermediateESimpleP(clInit, OnlyVMLevelCallers))
+
+                            case r ⇒
+                                throw new IllegalStateException(s"unexpected previous result $r")
                         })
                     }
                     Results(Seq(lcResult) ++ callersResult)
@@ -151,8 +157,8 @@ class LoadedClassesAnalysis(
             propertyStore(project, LoadedClasses.key)
 
         val currentLoadedClasses = currentLoadedClassesEPS match {
-            case _: EPK[_, _]  ⇒ UIDSet.empty[ObjectType]
-            case EPS(_, _, ub) ⇒ ub.classes
+            case _: EPK[_, _] ⇒ UIDSet.empty[ObjectType]
+            case p: EPS[_, _] ⇒ p.ub.classes
         }
 
         @inline def isNewLoadedClass(dc: ObjectType): Boolean = {

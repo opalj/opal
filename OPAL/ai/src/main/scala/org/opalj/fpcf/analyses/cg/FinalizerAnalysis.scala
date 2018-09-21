@@ -10,12 +10,10 @@ import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.fpcf.cg.properties.VMReachableFinalizersFallback
-import org.opalj.fpcf.cg.properties.InstantiatedTypes
-import org.opalj.fpcf.cg.properties.LowerBoundCallers
 import org.opalj.fpcf.cg.properties.CallersProperty
-import org.opalj.fpcf.cg.properties.VMReachableFinalizers
+import org.opalj.fpcf.cg.properties.InstantiatedTypes
 import org.opalj.fpcf.cg.properties.OnlyVMLevelCallers
+import org.opalj.fpcf.cg.properties.VMReachableFinalizers
 
 /**
  * Computes the set of finalize methods that are being called by the VM during the execution of the
@@ -62,7 +60,7 @@ class FinalizerAnalysis private[analyses] (
         val (newFinalizers, results) = eps match {
             case FinalEP(_, instantiatedTypes: InstantiatedTypes) ⇒
                 handleNewInstantiatedTypes(instantiatedTypes)
-            case eps @ IntermediateEP(_, _, ub: InstantiatedTypes) ⇒
+            case eps @ IntermediateESimpleP(_, ub: InstantiatedTypes) ⇒
                 instantiatedTypesDependee = Some(eps)
                 handleNewInstantiatedTypes(ub)
         }
@@ -71,9 +69,8 @@ class FinalizerAnalysis private[analyses] (
 
         val result = if (instantiatedTypesDependee.isEmpty)
             Result(p, new VMReachableFinalizers(state.vmReachableFinalizers))
-        else IntermediateResult(
+        else SimplePIntermediateResult(
             p,
-            VMReachableFinalizersFallback,
             new VMReachableFinalizers(state.vmReachableFinalizers),
             instantiatedTypesDependee, handleInstantiatedTypesUpdate
         )
@@ -102,13 +99,16 @@ class FinalizerAnalysis private[analyses] (
 
                         val finalizer = declaredMethods(finalizers.head)
                         val result = PartialResult[DeclaredMethod, CallersProperty](finalizer, CallersProperty.key, {
-                            case EPK(e, _) ⇒ Some(
-                                EPS(e, LowerBoundCallers, OnlyVMLevelCallers)
-                            )
-                            case EPS(e, lb, ub) if !ub.hasVMLevelCallers ⇒
-                                Some(EPS(e, lb, ub.updatedWithVMLevelCall()))
+                            case IntermediateESimpleP(e, ub) if !ub.hasVMLevelCallers ⇒
+                                Some(IntermediateESimpleP(e, ub.updatedWithVMLevelCall()))
 
-                            case _ ⇒ None
+                            case _: IntermediateESimpleP[_, _] ⇒ None
+
+                            case EPK(e, _) ⇒ Some(
+                                IntermediateESimpleP(e, OnlyVMLevelCallers)
+                            )
+
+                            case r ⇒ throw new IllegalStateException(s"unexpected previous result $r")
                         })
 
                         (finalizersR + finalizer.id) → (result +: resultsR)

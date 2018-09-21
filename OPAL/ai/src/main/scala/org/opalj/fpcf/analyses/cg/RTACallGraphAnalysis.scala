@@ -4,7 +4,6 @@ package fpcf
 package analyses
 package cg
 
-import scala.language.existentials
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
@@ -18,16 +17,14 @@ import org.opalj.br.analyses.cg.IsOverridableMethodKey
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.LongTrieSet
 import org.opalj.collection.immutable.UIDSet
-import org.opalj.fpcf.cg.properties.StandardInvokeCallees
+import org.opalj.fpcf.cg.properties.CallersOnlyWithConcreteCallers
 import org.opalj.fpcf.cg.properties.CallersProperty
 import org.opalj.fpcf.cg.properties.InstantiatedTypes
-import org.opalj.fpcf.cg.properties.CallersOnlyWithConcreteCallers
 import org.opalj.fpcf.cg.properties.NoCallers
-import org.opalj.fpcf.cg.properties.OnlyCallersWithUnknownContext
-import org.opalj.fpcf.cg.properties.LowerBoundCallers
-import org.opalj.fpcf.cg.properties.AllTypes
-import org.opalj.fpcf.cg.properties.StandardInvokeCalleesImplementation
 import org.opalj.fpcf.cg.properties.NoStandardInvokeCallees
+import org.opalj.fpcf.cg.properties.OnlyCallersWithUnknownContext
+import org.opalj.fpcf.cg.properties.StandardInvokeCallees
+import org.opalj.fpcf.cg.properties.StandardInvokeCalleesImplementation
 import org.opalj.log.Error
 import org.opalj.log.OPALLogger
 import org.opalj.log.Warn
@@ -48,13 +45,14 @@ import org.opalj.tac.VirtualMethodCall
 import org.opalj.value.KnownTypedValue
 
 import scala.collection.immutable.IntMap
+import scala.language.existentials
 
 case class RTAState(
-        private[cg] val method:            DefinedMethod,
-        private[cg] val virtualCallSites:  Traversable[(Int /*PC*/ , ObjectType, String, MethodDescriptor)],
-        private[cg] var _callees:          IntMap[IntTrieSet], // key = PC
-        private[cg] var incompleteCallsites:          IntTrieSet, // key = PC
-        private[cg] var numTypesProcessed: Int
+        private[cg] val method:              DefinedMethod,
+        private[cg] val virtualCallSites:    Traversable[(Int /*PC*/ , ObjectType, String, MethodDescriptor)],
+        private[cg] var _callees:            IntMap[IntTrieSet], // key = PC
+        private[cg] var incompleteCallsites: IntTrieSet, // key = PC
+        private[cg] var numTypesProcessed:   Int
 ) {
     private[cg] def addCallEdge(pc: Int, targetMethodId: Int): Unit = {
         _callees = _callees.updated(pc, _callees.getOrElse(pc, IntTrieSet.empty) + targetMethodId)
@@ -64,19 +62,21 @@ case class RTAState(
 }
 
 private[cg] class CalleesAndCallers(
-        private[this] var _callees:             IntMap[IntTrieSet] = IntMap.empty,
+        private[this] var _callees: IntMap[IntTrieSet] = IntMap.empty
 ) {
-    private[this] var _incompleteCallsites: IntTrieSet         = IntTrieSet.empty
+    private[this] var _incompleteCallsites: IntTrieSet = IntTrieSet.empty
 
     private[this] var _partialResultsForCallers: List[PartialResult[DeclaredMethod, CallersProperty]] =
         List.empty
 
     private[cg] def callees: IntMap[IntTrieSet] = _callees
+
     private[cg] def partialResultsForCallers: List[PartialResult[DeclaredMethod, CallersProperty]] = {
         _partialResultsForCallers
     }
 
     private[cg] def incompleteCallsites: IntTrieSet = _incompleteCallsites
+
     private[cg] def addIncompleteCallsite(pc: Int): Unit = _incompleteCallsites += pc
 
     private[cg] def updateWithCall(
@@ -117,20 +117,23 @@ private[cg] class CalleesAndCallers(
         caller: DefinedMethod, callee: DeclaredMethod, pc: Int
     )(implicit declaredMethods: DeclaredMethods): PartialResult[DeclaredMethod, CallersProperty] = {
         PartialResult[DeclaredMethod, CallersProperty](callee, CallersProperty.key, {
-            case EPS(_, lb, ub) ⇒
+            case IntermediateESimpleP(_, ub) ⇒
                 val newCallers = ub.updated(caller, pc)
                 // here we assert that update returns the identity if there is no change
                 if (ub ne newCallers)
-                    Some(EPS(callee, lb, newCallers))
+                    Some(IntermediateESimpleP(callee, newCallers))
                 else
                     None
+
             case _: EPK[_, _] ⇒
                 val set = LongTrieSet(CallersProperty.toLong(caller.id, pc))
-                Some(EPS(
+                Some(IntermediateESimpleP(
                     callee,
-                    LowerBoundCallers,
                     new CallersOnlyWithConcreteCallers(set)
                 ))
+
+            case r ⇒
+                throw new IllegalStateException(s"unexpected previous result $r")
         })
     }
 }
@@ -158,7 +161,7 @@ class RTACallGraphAnalysis private[analyses] (
 
     private[this] val tacaiProvider = project.get(SimpleTACAIKey)
     private[this] implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
-    private[this] val isMethodOverridable: Method => Answer = project.get(IsOverridableMethodKey)
+    private[this] val isMethodOverridable: Method ⇒ Answer = project.get(IsOverridableMethodKey)
 
     /**
      * Computes the calls from the given method ([[StandardInvokeCallees]] property) and updates the
@@ -313,7 +316,7 @@ class RTACallGraphAnalysis private[analyses] (
                     method, call, call.pc, calleesAndCallers, virtualCallSites
                 )
 
-            case Assignment(_, _, idc: Invokedynamic[V])=>
+            case Assignment(_, _, idc: Invokedynamic[V]) ⇒
                 calleesAndCallers.addIncompleteCallsite(idc.pc)
                 OPALLogger.logOnce(
                     Warn(
@@ -357,8 +360,8 @@ class RTACallGraphAnalysis private[analyses] (
             call.descriptor
         )
 
-        if(declTgt.hasSingleDefinedMethod) {
-            if(isMethodOverridable(declTgt.definedMethod).isNotNo)
+        if (declTgt.hasSingleDefinedMethod) {
+            if (isMethodOverridable(declTgt.definedMethod).isNotNo)
                 calleesAndCallers.addIncompleteCallsite(pc)
         } else if (!declTgt.hasMultipleDefinedMethods) {
             calleesAndCallers.updateWithCall(method, declTgt, pc)
@@ -479,11 +482,18 @@ class RTACallGraphAnalysis private[analyses] (
     ): PropertyComputationResult = {
         // find the new types, that should be processed
         val newInstantiatedTypes = instantiatedTypesEOptP match {
-            case EPS(_, _, ub: InstantiatedTypes) ⇒
+            case IntermediateESimpleP(_, ub: InstantiatedTypes) ⇒
                 val toBeDropped = state.numTypesProcessed
                 state.numTypesProcessed = ub.numElements
                 ub.getNewTypes(toBeDropped)
-            case _ ⇒ Iterator.empty // the initial types are already processed
+
+            case FinalEP(_, ub: InstantiatedTypes) ⇒
+                val toBeDropped = state.numTypesProcessed
+                state.numTypesProcessed = ub.numElements
+                ub.getNewTypes(toBeDropped)
+
+            case _ ⇒
+                Iterator.empty // the initial types are already processed
         }
 
         val calleesAndCallers = new CalleesAndCallers
@@ -530,19 +540,16 @@ object RTACallGraphAnalysis {
     ): PartialResult[SomeProject, InstantiatedTypes] = {
         PartialResult[SomeProject, InstantiatedTypes](p, InstantiatedTypes.key,
             {
-                case EPS(_, lb, ub) ⇒
-                    Some(EPS(
+                case IntermediateESimpleP(_, ub) ⇒
+                    Some(IntermediateESimpleP(
                         p,
-                        lb,
                         ub.updated(newInstantiatedTypes)
                     ))
 
-                case _ ⇒
-                    Some(EPS(
-                        p,
-                        AllTypes,
-                        InstantiatedTypes.initial(newInstantiatedTypes)
-                    ))
+                case _: EPK[_, _] ⇒
+                    Some(IntermediateESimpleP(p, InstantiatedTypes.initial(newInstantiatedTypes)))
+
+                case r ⇒ throw new IllegalStateException(s"unexpected previous result $r")
             })
     }
 }
@@ -583,14 +590,13 @@ object EagerRTACallGraphAnalysisScheduler extends FPCFEagerAnalysisScheduler {
         entryPoints.foreach { ep ⇒
             ps.handleResult(
                 PartialResult[DeclaredMethod, CallersProperty](ep, CallersProperty.key, {
-                    case EPK(_, _) ⇒ Some(EPS(
+                    case EPK(_, _) ⇒ Some(IntermediateESimpleP(
                         ep,
-                        LowerBoundCallers,
                         OnlyCallersWithUnknownContext
                     ))
-                    case EPS(_, lb, ub) ⇒
-                        Some(EPS(ep, lb, ub.updatedWithUnknownContext()))
-                    case _ ⇒ None
+                    case IntermediateESimpleP(_, ub) ⇒
+                        Some(IntermediateESimpleP(ep, ub.updatedWithUnknownContext()))
+                    case r ⇒ throw new IllegalStateException(s"unexpected previous result $r")
                 })
             )
         }

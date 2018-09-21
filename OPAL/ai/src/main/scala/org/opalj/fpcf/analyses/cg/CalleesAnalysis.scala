@@ -20,6 +20,11 @@ import org.opalj.fpcf.cg.properties.FinalCallees
 import scala.collection.immutable.IntMap
 
 // todo the callees property could be collaborative (compute the complete set of callees on demand)
+/**
+  *
+  * @author Florian Kuebler
+  * @author Dominik Helm
+  */
 class CalleesAnalysis private[analyses] (
         final val project:           SomeProject,
         directCalleesPropertyKeys:   Set[PropertyKey[CalleesLike]],
@@ -59,10 +64,10 @@ class CalleesAnalysis private[analyses] (
                 else
                     (false, updateDependee(ep, dependees), directKeys - p.key, indirectKeys)
 
-            case EPS(_, _, _: CalleesLikeNotReachable) ⇒
+            case IntermediateESimpleP(_, _: CalleesLikeNotReachable) ⇒
                 throw new IllegalArgumentException("non reachable methods must have final property")
 
-            case ep @ EPS(_, _, _) ⇒
+            case ep: EPS[_, _] ⇒
                 (true, updateDependee(ep, dependees), directKeys, indirectKeys)
 
             case epk: EPK[DeclaredMethod, CalleesLike] ⇒
