@@ -1118,7 +1118,7 @@ final class PKEParallelTasksPropertyStore private (
                             )
                         }
                         forceDependersNotifications -= epk
-                        if (isPropertyKeyForSimplePropertyBasedOnPKId(pk.id))
+                        if (newEPS.isInstanceOf[IntermediateESimpleP[E, P]])// todo if (isPropertyKeyForSimplePropertyBasedOnPKId(pk.id))
                             updateAndNotifyForSimpleP(newEPS.e, newEPS.ub, isFinal = false, pcrs = pcrs)
                         else
                             updateAndNotifyForRegularP(newEPS.e, newEPS.lb, newEPS.ub, pcrs = pcrs)
