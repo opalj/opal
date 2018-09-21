@@ -73,6 +73,7 @@ object RTADemo extends DefaultOneStepAnalysis {
                 EagerThreadRelatedCallsAnalysis,
                 EagerSerializationRelatedCallsAnalysis,
                 EagerReflectionRelatedCallsAnalysis,
+                SystemPropertiesAnalysis,
                 new LazyCalleesAnalysis(
                     Set(StandardInvokeCallees, SerializationRelatedCallees, ReflectionRelatedCallees)
                 )
