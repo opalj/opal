@@ -1002,7 +1002,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode with Th
                 // if the current subroutine level (root = 0) is smaller than the
                 // high of the stack then we have a nested subroutine call
                 currentSubroutineLevel < jsrPCs.size) {
-                val IntRefPair(jsrPC, newJSRPCs) = jsrPCs.pop.headAndTail
+                val IntRefPair(jsrPC, newJSRPCs) = jsrPCs.pop().headAndTail
                 jsrPCs.push(newJSRPCs)
                 val jsrInstruction = instructions(jsrPC).asSimpleBranchInstruction
                 retTargetPCs :&:= jsrInstruction.indexOfNextInstruction(jsrPC)(code)
@@ -1114,11 +1114,13 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode with Th
                     defOps(pc) = null
                 }
 
+                // required, because "didRet || schedule..()" is not identified as tail recursive
                 if (didRet)
                     true
                 else
                     scheduleNextSubroutine()
             } else {
+                // we don't have subroutines at all..
                 false
             }
         }
@@ -1203,19 +1205,20 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode with Th
                             nextPCs.push(nextPCs.pop() + successorPC)
                         }
                     } else {
-                        // the instruction with the current pc and the one with the successor pc
+                        // The instruction with the current pc and the one with the successor pc
                         // (obviously a handler...) do not belong to the same subroutine.
                         // Hence, we have to schedule the target instruction in the correct context
                         // to avoid that we accidentally reset the state related to the instruction.
-
+                        // In this case, the handler instruction has to be considered a "join"
+                        // instruction, because it may be reached by different subroutine calls.
                         val targetSubroutineID = belongsToSubroutine(successorPC)
                         val droppedSubroutines = subroutineIDs.count(_ != targetSubroutineID)
                         // println(s"currentPC: $currentPC does not belong to the same subroutine (sid=${belongsToSubroutine(currentPC)}) as its successor: $successorPC (sid=$targetSubroutineID) => dropped subroutines $droppedSubroutines")
-                        nextPCs.update(
+                        nextJoinPCs.update(
                             droppedSubroutines,
                             nextJoinPCs(droppedSubroutines) + successorPC
                         )
-                        // println(nextPCs.zipWithIndex.map(_.swap).mkString("new nextPCs:\n\t", "\n\t", "\n"))
+                        // println(nextJoinPCs.zipWithIndex.map(_.swap).mkString("new nextJoinPCs:\n\t", "\n\t", "\n"))
                     }
                 }
             }
@@ -1225,7 +1228,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode with Th
 
             val currentExceptionHandlerSuccessors = exceptionHandlerSuccessorsOf(currentPC)
             currentExceptionHandlerSuccessors foreach { successorPC ⇒
-                handleSuccessor(true)(successorPC)
+                handleSuccessor(isExceptionalControlFlow = true)(successorPC)
             }
             if (currentSuccessors.isEmpty && currentExceptionHandlerSuccessors.isEmpty) {
                 // e.g., athrow, return or any instruction which potentially leads to an abnormal
@@ -1236,6 +1239,9 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode with Th
                 defOps(currentPC).forFirstN(usedValues)(op ⇒ updateUsageInformation(op, currentPC))
             }
         }
+
+        assert(nextPCs.tail.isEmpty)
+        assert(nextJoinPCs.tail.isEmpty)
 
         // Integrate the accumulated subroutine information (if available)
         subroutinePCs.foreach { pc ⇒
