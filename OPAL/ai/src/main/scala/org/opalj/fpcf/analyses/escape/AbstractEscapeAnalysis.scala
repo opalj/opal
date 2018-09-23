@@ -5,7 +5,6 @@ package analyses
 package escape
 
 import scala.annotation.switch
-
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.ai.common.DefinitionSiteLike
 import org.opalj.ai.ValueOrigin
@@ -26,7 +25,6 @@ import org.opalj.tac.Assignment
 import org.opalj.tac.DefaultTACAIKey
 import org.opalj.tac.Expr
 import org.opalj.tac.ExprStmt
-import org.opalj.tac.Invokedynamic
 import org.opalj.tac.NonVirtualFunctionCall
 import org.opalj.tac.NonVirtualMethodCall
 import org.opalj.tac.PutField
@@ -41,6 +39,8 @@ import org.opalj.tac.TACode
 import org.opalj.tac.Throw
 import org.opalj.tac.VirtualFunctionCall
 import org.opalj.tac.VirtualMethodCall
+import org.opalj.tac.InvokedynamicFunctionCall
+import org.opalj.tac.InvokedynamicMethodCall
 
 /**
  * An abstract escape analysis for a [[org.opalj.ai.common.DefinitionSiteLike]] or a
@@ -111,6 +111,9 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
 
             case NonVirtualMethodCall.ASTID ⇒
                 handleNonVirtualMethodCall(stmt.asNonVirtualMethodCall)
+
+            case InvokedynamicMethodCall.ASTID ⇒
+                handleInvokedynamicMethodCall(stmt.asInvokedynamicMethodCall)
 
             case ExprStmt.ASTID ⇒
                 handleExprStmt(stmt.asExprStmt)
@@ -202,6 +205,14 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
         }
     }
 
+    protected[this] def handleInvokedynamicMethodCall(
+        call: InvokedynamicMethodCall[V]
+    )(
+        implicit
+        context: AnalysisContext,
+        state:   AnalysisState
+    ): Unit
+
     protected[this] def handleThisLocalOfConstructor(
         call: NonVirtualMethodCall[V]
     )(implicit context: AnalysisContext, state: AnalysisState): Unit
@@ -248,8 +259,8 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
                 handleVirtualFunctionCall(expr.asVirtualFunctionCall, hasAssignment)
             case StaticFunctionCall.ASTID ⇒
                 handleStaticFunctionCall(expr.asStaticFunctionCall, hasAssignment)
-            case Invokedynamic.ASTID ⇒
-                handleInvokeDynamic(expr.asInvokedynamic, hasAssignment)
+            case InvokedynamicFunctionCall.ASTID ⇒
+                handleInvokedynamicFunctionCall(expr.asInvokedynamicFunctionCall, hasAssignment)
 
             case _ ⇒ handleOtherKindsOfExpressions(expr)
         }
@@ -291,9 +302,14 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
      *
      * $JustIntraProcedural
      */
-    protected[this] def handleInvokeDynamic(
-        call: Invokedynamic[V], hasAssignment: Boolean
-    )(implicit context: AnalysisContext, state: AnalysisState): Unit
+    protected[this] def handleInvokedynamicFunctionCall(
+        call:          InvokedynamicFunctionCall[V],
+        hasAssignment: Boolean
+    )(
+        implicit
+        context: AnalysisContext,
+        state:   AnalysisState
+    ): Unit
 
     /**
      * All basic analyses only care about function calls for [[org.opalj.tac.Assignment]] or

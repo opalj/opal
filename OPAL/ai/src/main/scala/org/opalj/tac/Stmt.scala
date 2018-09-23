@@ -65,6 +65,7 @@ sealed abstract class Stmt[+V <: Var[V]] extends ASTNode[V] {
     def asNonVirtualMethodCall: NonVirtualMethodCall[V] = throw new ClassCastException();
     def asVirtualMethodCall: VirtualMethodCall[V] = throw new ClassCastException();
     def asStaticMethodCall: StaticMethodCall[V] = throw new ClassCastException();
+    def asInvokedynamicMethodCall: InvokedynamicMethodCall[V] = throw new ClassCastException();
     def asExprStmt: ExprStmt[V] = throw new ClassCastException();
     def asCaughtException: CaughtException[V] = throw new ClassCastException();
     def asCheckcast: Checkcast[V] = throw new ClassCastException();
@@ -727,6 +728,51 @@ object StaticMethodCall {
     final val ASTID = 17
 }
 
+/**
+ * Representation of an `invokedynamic` instruction where the return type of the finally called
+ * method is `void`.
+ *
+ * @tparam V The type of the [[Var]]s.
+ */
+case class InvokedynamicMethodCall[+V <: Var[V]](
+        pc:              PC,
+        bootstrapMethod: BootstrapMethod,
+        name:            String,
+        descriptor:      MethodDescriptor,
+        params:          Seq[Expr[V]]
+) extends Stmt[V] {
+
+    final override def astID: Int = InvokedynamicMethodCall.ASTID
+    final override def asInvokedynamicMethodCall: this.type = this
+    // IMPROVE [FUTURE] Use some analysis to determine if a method call is side effect free
+    final override def isSideEffectFree: Boolean = false
+    final override def forallSubExpressions[W >: V <: Var[W]](p: Expr[W] ⇒ Boolean): Boolean = {
+        params.forall(param ⇒ p(param))
+    }
+
+    private[tac] override def remapIndexes(
+        pcToIndex:                    Array[Int],
+        isIndexOfCaughtExceptionStmt: Int ⇒ Boolean
+    ): Unit = {
+        params.foreach { p ⇒ p.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt) }
+    }
+
+    override def hashCode(): Int = {
+        (((InvokedynamicMethodCall.ASTID * 1171 +
+            pc) * 31 +
+            bootstrapMethod.hashCode) * 31 +
+            name.hashCode) * 31 +
+            descriptor.hashCode
+    }
+
+    override def toString: String = {
+        val sig = descriptor.toJava(name)
+        val params = this.params.mkString("(", ",", ")")
+        s"InvokedynamicMethodCall(pc=$pc,$bootstrapMethod,$sig,$params)"
+    }
+}
+object InvokedynamicMethodCall { final val ASTID = 18 }
+
 /** An expression where the value is not further used. */
 case class ExprStmt[+V <: Var[V]](pc: Int, expr: Expr[V]) extends Stmt[V] {
 
@@ -757,7 +803,7 @@ case class ExprStmt[+V <: Var[V]](pc: Int, expr: Expr[V]) extends Stmt[V] {
 
 }
 object ExprStmt {
-    final val ASTID = 18
+    final val ASTID = 19
 }
 
 /**
@@ -874,7 +920,7 @@ case class CaughtException[+V <: Var[V]](
 
 object CaughtException {
 
-    final val ASTID = 19
+    final val ASTID = 20
 
 }
 
@@ -909,5 +955,5 @@ case class Checkcast[+V <: Var[V]](pc: PC, value: Expr[V], cmpTpe: ReferenceType
 
 }
 object Checkcast {
-    final val ASTID = 20
+    final val ASTID = 21
 }
