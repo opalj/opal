@@ -28,7 +28,7 @@ import org.opalj.tac.Assignment
 import org.opalj.tac.Stmt
 import org.opalj.tac.Checkcast
 import org.opalj.tac.ExprStmt
-import org.opalj.tac.Invokedynamic
+import org.opalj.tac.InvokedynamicFunctionCall
 import org.opalj.value.KnownTypedValue
 
 /**
@@ -173,7 +173,7 @@ class Serialization(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
         if (paramVar.definedBy.exists { defSite ⇒
             if (defSite >= 0) {
                 val expr = stmts(defSite).asAssignment.expr
-                expr.astID == Invokedynamic.ASTID && isLambdaMetafactoryCall(expr.asInvokedynamic)
+                expr.astID == InvokedynamicFunctionCall.ASTID && isLambdaMetafactoryCall(expr.asInvokedynamicFunctionCall)
             } else false
         }) {
             locations(12) += l
@@ -225,7 +225,7 @@ class Serialization(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
         }
     }
 
-    def isLambdaMetafactoryCall(invokedynamic: Invokedynamic[V]): Boolean = {
+    def isLambdaMetafactoryCall(invokedynamic: InvokedynamicFunctionCall[V]): Boolean = {
         val handle = invokedynamic.bootstrapMethod.handle
         handle.isInstanceOf[MethodCallMethodHandle] &&
             handle.asInstanceOf[MethodCallMethodHandle].receiverType == ObjectType.LambdaMetafactory
