@@ -285,7 +285,7 @@ lazy val `OPAL-DeveloperTools` = (project in file("DEVELOPING_OPAL/tools"))
     scalacOptions in(Compile, console) := Seq("-deprecation"),
     //library dependencies
     libraryDependencies ++= Dependencies.developertools,
-    assemblyJarName in assembly := "OPALLambdaRectifier.jar",
+    assemblyJarName in assembly := "OPALInvokedynamicRectifier.jar",
     mainClass in assembly := Some("org.opalj.support.tools.ProjectSerializer"),
     // Required by Java/ScalaFX
     fork := true

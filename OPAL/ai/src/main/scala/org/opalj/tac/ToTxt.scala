@@ -75,7 +75,7 @@ object ToTxt {
                         ("[]" * (dimensions - initializedDimensions))
                 s"new ${arrayType.drop(initializedDimensions).toJava}$initializer"
 
-            case Invokedynamic(_, bootstrapMethod, name, _ /*descriptor*/ , params) ⇒
+            case InvokedynamicFunctionCall(_, bootstrapMethod, name, _ /*descriptor*/ , params) ⇒
                 s"invokedynamic[${bootstrapMethod.toJava}]${callToTxt(name, params)}"
 
             case StaticFunctionCall(_, declClass, _, name, _ /*descriptor*/ , params) ⇒
@@ -174,6 +174,10 @@ object ToTxt {
                 val NonVirtualMethodCall(_, declClass, _, name, _ /*desc.*/ , rec, params) = stmt
                 val call = callToTxt(name, params)
                 s"$pc ${toTxtExpr(rec)}/*(non-virtual) ${declClass.toJava}*/$call"
+
+            case InvokedynamicMethodCall.ASTID ⇒
+                val InvokedynamicMethodCall(_, bootstrapMethod, name, _ /*desc.*/ , params) = stmt
+                s"$pc invokedynamic[${bootstrapMethod.toJava}]${callToTxt(name, params)}"
 
             case Checkcast.ASTID ⇒
                 val Checkcast(_, value, tpe) = stmt

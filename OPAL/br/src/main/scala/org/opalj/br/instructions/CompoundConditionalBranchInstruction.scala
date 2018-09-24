@@ -34,8 +34,10 @@ trait CompoundConditionalBranchInstruction
 
     def defaultOffset: Int
 
+    // IMPROVE Use IntIterable or IntIterator for the return value.
     def jumpOffsets: Iterable[Int]
 
+    // IMPROVE Use IntIterable or IntIterator for the return value.
     final override def jumpTargets(
         currentPC: PC
     )(

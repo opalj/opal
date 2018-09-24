@@ -45,6 +45,9 @@ final class RefArrayStack[N >: Null <: AnyRef] private (
     override def isEmpty: Boolean = size0 == 0
     override def nonEmpty: Boolean = size0 > 0
 
+    /**
+     * Returns the n-th value of the stack; where n = 0 identifies the top level value!
+     */
     override def apply(index: Int): N = {
         val size0 = this.size0
         val valueIndex = size0 - 1 - index
@@ -52,6 +55,15 @@ final class RefArrayStack[N >: Null <: AnyRef] private (
             throw new IndexOutOfBoundsException(s"$index (size: $size0)");
 
         data(valueIndex).asInstanceOf[N]
+    }
+
+    /**
+     * Returns the n-th value of the stack; where n = 0 identifies the bottom value!
+     */
+    def fromBottom(index: Int): N = {
+        if (index < 0 || index >= this.size0)
+            throw new IndexOutOfBoundsException(s"$index (from bottom) (size: $size0)");
+        data(index).asInstanceOf[N]
     }
 
     override def update(index: Int, v: N): Unit = data(size0 - 1 - index) = v

@@ -7,18 +7,18 @@ import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.Matchers
 import org.scalatest.FunSpec
-
 import java.net.URL
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.ConcurrentLinkedQueue
 
 import scala.collection.JavaConverters._
-
 import org.opalj.util.PerformanceEvaluation
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.br.analyses.Project
 import org.opalj.br.TestSupport.createJREProject
 import org.opalj.br.Method
+import org.opalj.br.instructions.JSR
+import org.opalj.br.instructions.JSR_W
 import org.opalj.br.reader.BytecodeInstructionsCache
 import org.opalj.br.reader.Java8FrameworkWithCaching
 
@@ -171,12 +171,35 @@ class RecordDefUseTest extends FunSpec with Matchers {
                 if (opIndex < usedOperands &&
                     // we already tested: !instruction.isStackManagementInstruction
                     !instruction.isStoreLocalVariableInstruction) {
-                    defUseOrigins foreach { duo ⇒
-                        val useSites = d.usedBy(duo)
-                        if (!useSites.contains(pc)) {
+                    defUseOrigins foreach { defUseOrigin ⇒ // the origins of a value...
+                        val defUseUseSites = d.usedBy(defUseOrigin)
+                        if(defUseUseSites == null) {
+                            val belongsToSubroutine = code.belongsToSubroutine()
+                            val defSiteBelongsToSubroutine =
+                                belongsToSubroutine(underlyingPC(defUseOrigin))
+                            val useSiteBelongsToSubroutine =
+                                belongsToSubroutine(pc)
                             fail(
-                                s"a def site $duo(${instructions(duo)}) does not "+
-                                    s"contain use site: $pc(${instructions(pc)})"
+                                s"$pc(belongs to subroutine $useSiteBelongsToSubroutine): "+
+                                    s"uses sites of $defUseOrigin (belongs to subroutine "+
+                                    s"$defSiteBelongsToSubroutine) is null"
+                            )
+                        }else                         if (!defUseUseSites.contains(pc)) {
+                            // Recall that the current instruction is not a stack management
+                            // instruction...
+                            val i = instructions(underlyingPC(defUseOrigin))
+                            val belongsToSubroutine = code.belongsToSubroutine()
+                            val defSiteBelongsToSubroutine =
+                                belongsToSubroutine(underlyingPC(defUseOrigin))
+                            val useSiteBelongsToSubroutine =
+                                belongsToSubroutine(pc)
+                            fail(
+                                s"${underlyingPC(defUseOrigin)}@$i: the use sites of " +
+                                    s"the value with the origin $defUseOrigin (belongs to "+
+                                    s"subroutine $defSiteBelongsToSubroutine) does not list "+
+                                    s"the instruction\n$pc@${instructions(pc)}"+
+                                    s"(belongs to subroutine: $useSiteBelongsToSubroutine) "+
+                                    s"as a use site (use sites=$defUseUseSites)"
                             )
                         }
                     }
@@ -189,7 +212,7 @@ class RecordDefUseTest extends FunSpec with Matchers {
         info(s"$name contains ${project.methodsCount} methods")
 
         val identicalOrigins = new AtomicLong(0)
-        val failures = new ConcurrentLinkedQueue[(String, Throwable)]
+        val failures = new ConcurrentLinkedQueue[(Method, Throwable)]
 
         time {
             project.parForeachMethodWithBody() { methodInfo ⇒
@@ -198,7 +221,7 @@ class RecordDefUseTest extends FunSpec with Matchers {
                     val aiResult = BaseAI(m, new DefUseDomain(m, project))
                     analyzeDefUse(m, aiResult, identicalOrigins, refinedDefUseInformation = false)
                 } catch {
-                    case t: Throwable ⇒ failures.add((m.toJava, t.fillInStackTrace))
+                    case t: Throwable ⇒ failures.add((m, t.fillInStackTrace))
                 }
             }
         } { t ⇒ info(s"using the record def use origin information took ${t.toSeconds}") }
@@ -210,27 +233,36 @@ class RecordDefUseTest extends FunSpec with Matchers {
                     val aiResult = BaseAI(m, new RefinedDefUseDomain(m, project))
                     analyzeDefUse(m, aiResult, identicalOrigins, refinedDefUseInformation = true)
                 } catch {
-                    case t: Throwable ⇒ failures.add((m.toJava, t.fillInStackTrace))
+                    case t: Throwable ⇒ failures.add((m, t.fillInStackTrace))
                 }
             }
         } { t ⇒ info(s"using the reference domain's origin information took ${t.toSeconds}") }
 
         val baseMessage = s"origin information of ${identicalOrigins.get} values is identical"
         if (failures.size > 0) {
-            val failureMessages = for { (failure, exception) ← failures.asScala } yield {
+            val failureMessages = for { (m, exception) ← failures.asScala } yield {
                 var root: Throwable = exception
-                while (root.getCause != null) root = root.getCause
-                val location = {
-                    val st = root.getStackTrace
-                    if (st != null && st.length > 0) {
-                        st.take(5).map { ste ⇒
-                            s"${ste.getClassName}{ ${ste.getMethodName}:${ste.getLineNumber}}"
-                        }.mkString("; ")
-                    } else {
-                        "<location unavailable>"
+                var location : String = ""
+                do {
+                    location += {
+                        val st = root.getStackTrace
+                        if (st != null && st.length > 0) {
+                            st.take(5).map { ste ⇒
+                                s"${ste.getClassName}{ ${ste.getMethodName}:${ste.getLineNumber}}"
+                            }.mkString("; ")
+                        } else {
+                            "<location unavailable>"
+                        }
                     }
-                }
-                s"$failure[${root.getClass.getSimpleName}: ${root.getMessage}; location: $location]"
+                    root = root.getCause
+                    if (root != null)
+                        location += "\n- next cause -\n"
+                } while (root != null)
+                val containsJSR =
+                    m.body.get.find(i ⇒ i.opcode == JSR.opcode || i.opcode == JSR_W.opcode)
+                val details = exception.getMessage.replace("\n","\n\t")
+                s"${m.toJava}[containsJSR=$containsJSR;\n\t"+
+                    s"${exception.getClass.getSimpleName}:\n\t$details;\n\tlocation: $location]"
             }
 
             val errorMessageHeader = s"${failures.size} exceptions occured ($baseMessage) in:\n"

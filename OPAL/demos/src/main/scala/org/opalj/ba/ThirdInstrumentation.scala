@@ -44,9 +44,9 @@ import org.opalj.br.PCAndInstruction
 object ThirdInstrumentation extends App {
 
     val PrintStreamType = ObjectType("java/io/PrintStream")
-    val SystemType = ObjectType("java/lang/System")
+    val SystemType = ObjectType.System
     val CollectionType = ObjectType("java/util/Collection")
-    val RuntimeExceptionType = ObjectType("java/lang/RuntimeException")
+    val RuntimeExceptionType = ObjectType.RuntimeException
     val PrintlnDescriptor = JustTakes(ObjectType.Object)
 
     val TheType = ObjectType("org/opalj/ba/SimpleInstrumentationDemo")
@@ -91,7 +91,12 @@ object ThirdInstrumentation extends App {
                         lCode.insert(pc, InsertionPosition.After, Seq(
                             NEW(RuntimeExceptionType),
                             DUP,
-                            INVOKESPECIAL(RuntimeExceptionType, false, "<init>", MethodDescriptor.NoArgsAndReturnVoid),
+                            INVOKESPECIAL(
+                                RuntimeExceptionType,
+                                isInterface = false,
+                                "<init>",
+                                MethodDescriptor.NoArgsAndReturnVoid
+                            ),
                             ATHROW
                         ))
                     }

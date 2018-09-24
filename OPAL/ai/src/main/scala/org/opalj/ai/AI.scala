@@ -487,7 +487,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
         code: Code, cfJoins: IntTrieSet, liveVariables: LiveVariables,
         theDomain: D
     )(
-        initialWorkList:                     List[Int /*PC*/ ],
+        initialWorkList:                     List[PC],
         alreadyEvaluatedPCs:                 IntArrayStack,
         subroutinesWereEvaluated:            Boolean,
         theOperandsArray:                    theDomain.OperandsArray,
@@ -552,7 +552,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
          * The first PC of each element of the list is the pc of the first instruction of
          * the subroutine <=> the subroutine id
          */
-        type SubroutineMemoryLayouts = List[(Int /*PC*/ , theDomain.OperandsArray, theDomain.LocalsArray)]
+        type SubroutineMemoryLayouts = List[(PC, theDomain.OperandsArray, theDomain.LocalsArray)]
         // The entire state of the computation is (from the perspective of the AI)
         // encapsulated by the following data-structures:
         /* 1 */ var operandsArray = theOperandsArray
@@ -586,7 +586,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                     // In this case the subroutine and the normal functionality are overlapping.
                     // In this case, the "normal" operands/locals array already contains the
                     // combined state.
-                    if ((operandsArray(pc) eq null) /* && (localsArray(pc) eq null)*/ ) {
+                    if (operandsArray(pc) eq null /* && (localsArray(pc) eq null)*/ ) {
                         val subroutineOperands = subroutinesOperandsArray(pc)
                         val subroutineLocals = subroutinesLocalsArray(pc)
                         operandsArray(pc) = subroutineOperands
@@ -732,11 +732,11 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                 // all active real subroutines) now let's remove the elements of those
                 // subroutines from the worklist, schedule the instruction (if necessary)
                 // and re-add the child subroutines.
-                var header: List[Int /*PC*/ ] = Nil
-                var remainingWorklist: List[Int /*PC*/ ] = worklist
+                var header: List[PC] = Nil
+                var remainingWorklist: List[PC] = worklist
                 while (subroutinesToTerminate > 0) {
                     val pc = remainingWorklist.head
-                    header = pc :&: header
+                    header :&:= pc
                     remainingWorklist = remainingWorklist.tail
                     if (pc == SUBROUTINE) {
                         subroutinesToTerminate -= 1
@@ -1098,7 +1098,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                         trace = trace.tail
                     }
                      */
-                    val traceIterator = evaluatedPCs.intIterator
+                    val traceIterator = evaluatedPCs.iterator
                     traceIterator.next()
                     import traceIterator.foreachWhile
                     foreachWhile(pc ⇒ pc != SUBROUTINE_START || subroutineLevel != 0) { pc ⇒
@@ -2367,7 +2367,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                                 operands.take(argsCount)
                             )
                         val newOperands = operands.drop(argsCount)
-                        computationWithReturnValueAndExceptions(computation, newOperands)
+                        computationWithOptionalReturnValueAndExceptions(computation, newOperands)
 
                     case 185 /*invokeinterface*/ ⇒
                         val invoke = instruction.asInstanceOf[INVOKEINTERFACE]

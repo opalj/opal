@@ -11,7 +11,6 @@ import org.opalj.tac.ArrayStore
 import org.opalj.tac.Assignment
 import org.opalj.tac.Expr
 import org.opalj.tac.ExprStmt
-import org.opalj.tac.Invokedynamic
 import org.opalj.tac.NonVirtualFunctionCall
 import org.opalj.tac.NonVirtualMethodCall
 import org.opalj.tac.PutField
@@ -20,6 +19,8 @@ import org.opalj.tac.StaticMethodCall
 import org.opalj.tac.Throw
 import org.opalj.tac.VirtualFunctionCall
 import org.opalj.tac.VirtualMethodCall
+import org.opalj.tac.InvokedynamicFunctionCall
+import org.opalj.tac.InvokedynamicMethodCall
 
 /**
  * A safe default implementation of the [[AbstractEscapeAnalysis]] that uses fallback values.
@@ -119,9 +120,25 @@ trait DefaultEscapeAnalysis extends AbstractEscapeAnalysis {
             state.meetMostRestrictive(AtMost(EscapeInCallee))
     }
 
-    protected[this] override def handleInvokeDynamic(
-        call: Invokedynamic[V], hasAssignment: Boolean
-    )(implicit context: AnalysisContext, state: AnalysisState): Unit = {
+    protected[this] override def handleInvokedynamicFunctionCall(
+        call:          InvokedynamicFunctionCall[V],
+        hasAssignment: Boolean
+    )(
+        implicit
+        context: AnalysisContext,
+        state:   AnalysisState
+    ): Unit = {
+        if (context.anyParameterUsesDefSite(call.params))
+            state.meetMostRestrictive(AtMost(EscapeInCallee))
+    }
+
+    protected[this] override def handleInvokedynamicMethodCall(
+        call: InvokedynamicMethodCall[V]
+    )(
+        implicit
+        context: AnalysisContext,
+        state:   AnalysisState
+    ): Unit = {
         if (context.anyParameterUsesDefSite(call.params))
             state.meetMostRestrictive(AtMost(EscapeInCallee))
     }
