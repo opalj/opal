@@ -231,11 +231,13 @@ object LongTrieSetProperties extends Properties("LongTrieSet") {
     property("subsetOf (similar)") = forAll { (s1: IntArraySet, i: Long) ⇒
         val its1 = s1.foldLeft(LongTrieSet.empty)(_ +! _.toLong)
         val its2 = s1.foldLeft(LongTrieSet.empty)(_ +! _.toLong) +! i
+        val setSubsetOf = its1.subsetOf(its2)
+        val iteratorSubsetOf = its1.iterator.toSet.subsetOf(its2.iterator.toSet)
         classify(its1.size == 0, "its1 is empty") {
             classify(its1.size == 1, "its1.size == 1") {
                 classify(its1.size == 2, "its1.size == 2") {
                     classify(its1.size == its2.size, "its1 == its2") {
-                        its1.subsetOf(its2) == its1.iterator.toSet.subsetOf(its2.iterator.toSet)
+                        (setSubsetOf == iteratorSubsetOf) :| s"$setSubsetOf == $iteratorSubsetOf"
                     }
                 }
             }
@@ -617,7 +619,7 @@ class LongTrieSetTest extends FunSpec with Matchers {
         }
     }
 
-    describe("filtering an LongTrieSet where the values share a very long prefix path") {
+    describe("filtering a LongTrieSet where the values share a very long prefix path") {
 
         it("should create the canonical representation as soon as we just have two values left") {
             val its = LongTrieSet(8192, 2048, 8192 + 2048 + 16384, 8192 + 2048) + (8192 + 16384)
@@ -641,15 +643,29 @@ class LongTrieSetTest extends FunSpec with Matchers {
         }
     }
 
-    describe("an identity mapping of a small LongTrieSet results in the same set") {
-        val is0 = LongTrieSet.empty
-        val is1 = LongTrieSet(1)
-        val is2 = LongTrieSet(3, 4)
-        val is3 = LongTrieSet(256, 512, 1037)
+    describe("an identity mapping of a small LongTrieSet") {
+        it("should results in the same set") {
+            val is0 = LongTrieSet.empty
+            val is1 = LongTrieSet(1)
+            val is2 = LongTrieSet(3, 4)
+            val is3 = LongTrieSet(256, 512, 1037)
 
-        assert(is0.map(i ⇒ i) eq is0)
-        assert(is1.map(i ⇒ i) eq is1)
-        assert(is2.map(i ⇒ i) eq is2)
-        assert(is3.map(i ⇒ i) eq is3)
+            assert(is0.map(i ⇒ i) eq is0)
+            assert(is1.map(i ⇒ i) eq is1)
+            assert(is2.map(i ⇒ i) eq is2)
+            assert(is3.map(i ⇒ i) eq is3)
+        }
+    }
+
+    describe("creation of a set via an iterator") {
+        it("should result in sets comparable using subset of") {
+            val s1 = IntArraySet(-147701, -141111, -7075) + 24133
+            val its1 = s1.foldLeft(LongTrieSet.empty)(_ +! _.toLong)
+            val its2 = s1.foldLeft(LongTrieSet.empty)(_ +! _.toLong) +! 0
+            assert(its1.subsetOf(its2))
+            val its1ItSet = its1.iterator.toSet
+            val its2ItSet = its2.iterator.toSet
+            assert(its1ItSet.subsetOf(its2ItSet))
+        }
     }
 }
