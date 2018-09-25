@@ -70,15 +70,16 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
     val MethodT = ObjectType("java/lang/reflect/Method")
 
     class State(
-            val definedMethod:        DefinedMethod,
-            val stmts:                Array[Stmt[V]],
-            val cfg:                  CFG[Stmt[V], TACStmts[V]],
-            val loadedClassesUB:      UIDSet[ObjectType],
-            val instantiatedTypesUB:  UIDSet[ObjectType],
-            val calleesAndCallers:    CalleesAndCallers,
-            var newLoadedClasses:     UIDSet[ObjectType]                              = UIDSet.empty,
-            var newInstantiatedTypes: UIDSet[ObjectType]                              = UIDSet.empty,
-            var dependee:             Option[EOptionP[SomeProject, SystemProperties]] = None
+        val definedMethod:        DefinedMethod,
+        val stmts:                Array[Stmt[V]],
+        val cfg:                  CFG[Stmt[V], TACStmts[V]],
+        val pcToIndex:            Array[Int],
+        val loadedClassesUB:      UIDSet[ObjectType],
+        val instantiatedTypesUB:  UIDSet[ObjectType],
+        val calleesAndCallers:    CalleesAndCallers,
+        var newLoadedClasses:     UIDSet[ObjectType]                              = UIDSet.empty,
+        var newInstantiatedTypes: UIDSet[ObjectType]                              = UIDSet.empty,
+        var dependee:             Option[EOptionP[SomeProject, SystemProperties]] = None
     )
 
     implicit private[this] val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
@@ -182,34 +183,51 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                 definedMethod,
                 stmts,
                 cfg,
+                pcToIndex,
                 loadedClassesUB,
                 instantiatedTypesUB,
                 calleesAndCallers
             )
 
         for {
-            pc ← forNamePCs.keysIterator ++ relevantPCs.keysIterator
+            pc ← forNamePCs.keysIterator
             index = pcToIndex(pc)
-            if index != -1
+            if index >= 0
             stmt = stmts(index)
         } {
-            val stmt = stmts(pcToIndex(pc))
+            val expr = if (stmt.astID == Assignment.ASTID) stmt.asAssignment.expr
+            else stmt.asExprStmt.expr
+            handleForName(expr.asStaticFunctionCall.params.head)
+        }
+
+        analyzePCs(relevantPCs)
+
+        returnResult()
+    }
+
+    private[this] def analyzePCs(relevantPCs: IntMap[IntTrieSet])(implicit state: State): Unit = {
+        for {
+            pc ← relevantPCs.keysIterator
+            index = state.pcToIndex(pc)
+            if index >= 0
+            stmt = state.stmts(index)
+        } {
             stmt.astID match {
-                case Assignment.ASTID ⇒ handleExpr(definedMethod, stmt.pc, stmt.asAssignment.expr)
-                case ExprStmt.ASTID   ⇒ handleExpr(definedMethod, stmt.pc, stmt.asExprStmt.expr)
+                case Assignment.ASTID ⇒
+                    handleExpr(state.definedMethod, stmt.pc, stmt.asAssignment.expr)
+                case ExprStmt.ASTID ⇒
+                    handleExpr(state.definedMethod, stmt.pc, stmt.asExprStmt.expr)
                 case VirtualMethodCall.ASTID ⇒
                     val VirtualMethodCall(pc, declClass, _, name, _, receiver, params) = stmt
                     // invoke(withArguments) returns Object, but by signature polymorphism the call
                     // may still be a VirtualMethodCall if the return value is void or unused
                     if (declClass == ObjectType.MethodHandle &&
                         (name == "invoke" || name == "invokeWithArguments"))
-                        handleMethodHandleInvoke(definedMethod, pc, receiver, params, None)
+                        handleMethodHandleInvoke(state.definedMethod, pc, receiver, params, None)
                 case _ ⇒
 
             }
         }
-
-        returnResult(definedMethod)
     }
 
     private[this] def handleExpr(
@@ -217,12 +235,6 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         pc:     Int,
         expr:   Expr[V]
     )(implicit state: State): Unit = expr.astID match {
-        case StaticFunctionCall.ASTID ⇒
-            expr.asStaticFunctionCall match {
-                case StaticFunctionCall(_, ObjectType.Class, _, "forName", _, params) ⇒
-                    handleForName(params.head)
-                case _ ⇒
-            }
         case VirtualFunctionCall.ASTID ⇒
             expr.asVirtualFunctionCall match {
                 case VirtualFunctionCall(_, ObjectType.Class, _, "newInstance", _, receiver, _) ⇒
@@ -907,12 +919,13 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
     }
 
     private[this] def continuation(eps: SomeEPS)(implicit state: State): PropertyComputationResult = eps match {
-        case ESimplePS(_, _: SystemProperties, _) ⇒ analyze(state.definedMethod)
+        case ESimplePS(_, _: SystemProperties, _) ⇒
+            state.dependee = None
+            analyzePCs(state.calleesAndCallers.callees)
+            returnResult()
     }
 
-    @inline private[this] def returnResult(
-        definedMethod: DefinedMethod
-    )(implicit state: State): PropertyComputationResult = {
+    @inline private[this] def returnResult()(implicit state: State): PropertyComputationResult = {
         var res: List[PropertyComputationResult] = state.calleesAndCallers.partialResultsForCallers
 
         val calleeUB = if (state.calleesAndCallers.callees.isEmpty)
@@ -924,18 +937,24 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
             )
 
         val calleesResult =
-            if (state.dependee.isEmpty) {
-                Result(definedMethod, calleeUB)
+            if (state.dependee.isEmpty || state.dependee.get.isFinal) {
+                Result(state.definedMethod, calleeUB)
             } else {
-                SimplePIntermediateResult(definedMethod, calleeUB, state.dependee, continuation)
+                SimplePIntermediateResult(
+                    state.definedMethod,
+                    calleeUB,
+                    state.dependee,
+                    continuation
+                )
             }
 
         res ::= calleesResult
 
         if (state.newLoadedClasses.nonEmpty) {
+            val newlyLoadedClasses = state.newLoadedClasses
             res ::= PartialResult[SomeProject, LoadedClasses](project, LoadedClasses.key, {
                 case IntermediateESimpleP(p, ub) ⇒
-                    val newUb = ub.classes ++ state.newLoadedClasses
+                    val newUb = ub.classes ++ newlyLoadedClasses
                     // due to monotonicity:
                     // the size check sufficiently replaces the subset check
                     if (newUb.size > ub.classes.size)
@@ -944,7 +963,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                         None
 
                 case EPK(p, _) ⇒
-                    Some(IntermediateESimpleP(p, new LoadedClasses(state.newLoadedClasses)))
+                    Some(IntermediateESimpleP(p, new LoadedClasses(newlyLoadedClasses)))
 
                 case r ⇒ throw new IllegalStateException(s"unexpected previous result $r")
             })
@@ -966,6 +985,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                             throw new IllegalStateException(s"unexpected previous result $r")
                     })
             }
+            state.newLoadedClasses = UIDSet.empty
         }
 
         if (state.newInstantiatedTypes.nonEmpty)
@@ -988,9 +1008,11 @@ object EagerReflectionRelatedCallsAnalysis extends FPCFEagerAnalysisScheduler {
         analysis
     }
 
-    override def uses: Set[PropertyKind] = Set(CallersProperty, SystemProperties)
+    override def uses: Set[PropertyKind] =
+        Set(CallersProperty, SystemProperties, LoadedClasses, InstantiatedTypes)
 
-    override def derives: Set[PropertyKind] = Set(CallersProperty, ReflectionRelatedCallees)
+    override def derives: Set[PropertyKind] =
+        Set(CallersProperty, ReflectionRelatedCallees, LoadedClasses, InstantiatedTypes)
 
     override def init(p: SomeProject, ps: PropertyStore): ReflectionRelatedCallsAnalysis = {
         val analysis = new ReflectionRelatedCallsAnalysis(p)

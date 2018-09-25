@@ -117,10 +117,17 @@ class CalleesAnalysis private[analyses] (
             var incompleteCallSites: IntTrieSet = IntTrieSet.empty
 
             for (key ← directKeys.toIterator ++ indirectKeys.toIterator) {
-                val p = propertyStore(
+                val p1 = propertyStore(
                     declaredMethod,
                     key
-                ).asInstanceOf[FinalEP[DeclaredMethod, CalleesLike]].p
+                )
+                if(!p1.isInstanceOf[FinalEP[DeclaredMethod, CalleesLike]]){
+                    propertyStore(
+                        declaredMethod,
+                        key
+                    )
+                }
+                val p = p1.asInstanceOf[FinalEP[DeclaredMethod, CalleesLike]].p
                 if (p.isIndirect) {
                     directCalleeIds = directCalleeIds.unionWith(p.callSites, (_, l, r) ⇒ l ++ r)
                 } else {
