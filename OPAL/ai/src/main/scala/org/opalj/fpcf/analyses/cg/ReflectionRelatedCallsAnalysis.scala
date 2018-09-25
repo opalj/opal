@@ -51,7 +51,6 @@ import org.opalj.tac.StringConst
 import org.opalj.tac.TACStmts
 import org.opalj.tac.VirtualFunctionCall
 import org.opalj.tac.VirtualMethodCall
-import org.opalj.value.IsReferenceValue
 
 import scala.collection.immutable.IntMap
 import scala.language.existentials
@@ -68,6 +67,12 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
 
     val ConstructorT = ObjectType("java/lang/reflect/Constructor")
     val MethodT = ObjectType("java/lang/reflect/Method")
+
+    val PropertiesT = ObjectType("java/util/Properties")
+
+    val GetPropertyDescriptor = MethodDescriptor(ObjectType.String, ObjectType.String)
+    val GetOrDefaultPropertyDescriptor = MethodDescriptor(RefArray(ObjectType.String, ObjectType.String), ObjectType.String)
+    val GetDescriptor = MethodDescriptor(ObjectType.Object, ObjectType.Object)
 
     class State(
         val definedMethod:        DefinedMethod,
@@ -307,7 +312,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                 if (definition.isVirtualFunctionCall) {
                     definition.asVirtualFunctionCall match {
                         case VirtualFunctionCall(_, ObjectType.Class, _, "getConstructor", _, classes, params) ⇒
-                            val parameterTypes = getTypes(params.head, pc)
+                            val parameterTypes = getTypesFromVararg(params.head, pc)
 
                             val descriptor = parameterTypes.map(s ⇒ MethodDescriptor(s, VoidType))
                             handleNewInstance(caller, pc, classes, descriptor)
@@ -336,7 +341,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                             val types =
                                 getPossibleTypes(receiver, pc).asInstanceOf[Iterator[ReferenceType]]
                             val names = getPossibleStrings(params.head, Some(pc)).toIterable
-                            val paramTypesO = getTypes(params(1), pc)
+                            val paramTypesO = getTypesFromVararg(params(1), pc)
                             if (paramTypesO.isDefined) {
                                 for {
                                     receiverType ← types
@@ -591,8 +596,8 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         descriptors:  Iterable[MethodDescriptor],
         invokeParams: Seq[Expr[V]]
     )(implicit state: State): Unit = {
-        val actualReceiver = invokeParams.head.asVar.value.asReferenceValue
-        val dynamicTypes = getTypes(actualReceiver, pc).toIterable
+        val actualReceiver = invokeParams.head.asVar
+        val dynamicTypes = getTypesOfVar(actualReceiver, pc).toIterable
         for {
             typeBound ← staticTypes
             receiverType ← dynamicTypes
@@ -652,12 +657,6 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         }
     }
 
-    val GetPropertyDescriptor = MethodDescriptor(ObjectType.String, ObjectType.String)
-    val GetOrDefaultPropertyDescriptor = MethodDescriptor(RefArray(ObjectType.String, ObjectType.String), ObjectType.String)
-    val PropertiesT = ObjectType("java/util/Properties")
-    val HashtableT = ObjectType("java/util/Hashtable")
-
-    val GetDescriptor = MethodDescriptor(ObjectType.Object, ObjectType.Object)
     private[this] def getPossibleStrings(
         value:            Expr[V],
         pc:               Option[Int],
@@ -669,14 +668,14 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                 expr match {
                     case StringConst(_, v) ⇒ Iterator(v)
                     case StaticFunctionCall(_, ObjectType.System, _, "getProperty", GetPropertyDescriptor, params) if !onlyStringConsts ⇒
-                        getPossibleStrings1(params.head, pc)
+                        getStringConstsForSystemPropertiesKey(params.head, pc)
                     case VirtualFunctionCall(_, dc, _, "getProperty", GetPropertyDescriptor, _, params) if !onlyStringConsts && ch.isSubtypeOf(dc, PropertiesT) ⇒
-                        getPossibleStrings1(params.head, pc)
+                        getStringConstsForSystemPropertiesKey(params.head, pc)
                     case VirtualFunctionCall(_, dc, _, "getProperty", GetOrDefaultPropertyDescriptor, _, params) if !onlyStringConsts && ch.isSubtypeOf(dc, PropertiesT) ⇒
-                        getPossibleStrings1(params.head, pc) ++
+                        getStringConstsForSystemPropertiesKey(params.head, pc) ++
                             getPossibleStrings(params(1), None, onlyStringConsts = true)
-                    case VirtualFunctionCall(_, dc, _, "get", GetDescriptor, _, params) if !onlyStringConsts && ch.isSubtypeOf(dc, HashtableT) ⇒
-                        getPossibleStrings1(params.head, pc)
+                    case VirtualFunctionCall(_, dc, _, "get", GetDescriptor, _, params) if !onlyStringConsts && ch.isSubtypeOf(dc, PropertiesT) ⇒
+                        getStringConstsForSystemPropertiesKey(params.head, pc)
                     case _ ⇒
                         if (pc.isDefined) {
                             state.calleesAndCallers.addIncompleteCallsite(pc.get)
@@ -692,8 +691,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         }.flatten
     }
 
-    // todo name
-    private[this] def getPossibleStrings1(
+    private[this] def getStringConstsForSystemPropertiesKey(
         value: Expr[V], pc: Option[Int]
     )(implicit state: State): Iterator[String] = {
         if (state.dependee.isEmpty) {
@@ -734,7 +732,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
             else if (expr.isStaticFunctionCall)
                 getPossibleForNameClasses(expr.asStaticFunctionCall.params.head, Some(pc))
             else if (expr.isVirtualFunctionCall) {
-                getTypes(expr.asVirtualFunctionCall.receiver.asVar.value.asReferenceValue, pc)
+                getTypesOfVar(expr.asVirtualFunctionCall.receiver.asVar, pc)
             } else {
                 val declClass = expr.asGetStatic.declaringClass
                 if (declClass == VoidType.WrapperType) Iterator(VoidType)
@@ -743,10 +741,11 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         }
     }
 
-    private[this] def getTypes(
-        value: IsReferenceValue,
-        pc:    Int
+    private[this] def getTypesOfVar(
+        uvar: V,
+        pc:   Int
     )(implicit state: State): Iterator[ReferenceType] = {
+        val value = uvar.value.asReferenceValue
         if (value.isPrecise) value.valueType.iterator
         else if (value.allValues.forall(_.isPrecise))
             value.allValues.toIterator.flatMap(_.valueType)
@@ -819,7 +818,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
             returnTypes.map(MethodDescriptor.withNoArgs)
         } else if (params.size == 3) {
             val firstParamTypes = getPossibleTypes(params(1), pc).asInstanceOf[Iterator[FieldType]]
-            val possibleOtherParamTypes = getTypes(params(2), pc)
+            val possibleOtherParamTypes = getTypesFromVararg(params(2), pc)
             for {
                 returnType ← returnTypes
                 firstParamType ← firstParamTypes
@@ -828,7 +827,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         } else {
             val secondParamType = descriptor.parameterType(1)
             if (secondParamType.isArrayType) {
-                val possibleOtherParamTypes = getTypes(params(1), pc)
+                val possibleOtherParamTypes = getTypesFromVararg(params(1), pc)
                 for {
                     returnType ← returnTypes
                     otherParamTypes ← possibleOtherParamTypes
@@ -852,7 +851,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
             expr.asStaticFunctionCall.name == "methodType"
     }
 
-    private[this] def getTypes(
+    private[this] def getTypesFromVararg(
         expr: Expr[V],
         pc:   Int
     )(implicit state: State): Option[FieldTypes] = {
