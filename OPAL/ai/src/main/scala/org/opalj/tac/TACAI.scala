@@ -717,14 +717,21 @@ object TACAI {
                     }
 
                 case INVOKEDYNAMIC.opcode ⇒
-                    val INVOKEDYNAMIC(bootstrapMethod, name, methodDescriptor) = instruction
-                    val parametersCount = methodDescriptor.parametersCount
+                    val INVOKEDYNAMIC(bootstrapMethod, name, descriptor) = instruction
+                    val parametersCount = descriptor.parametersCount
                     val params = useOperands(parametersCount).reverse
-                    val expr = Invokedynamic(pc, bootstrapMethod, name, methodDescriptor, params)
-                    if (wasExecuted(nextPC)) {
-                        addInitLocalValStmt(pc, operandsArray(nextPC).head, expr)
+                    if (descriptor.returnType.isVoidType) {
+                        val indyMethodCall =
+                            InvokedynamicMethodCall(pc, bootstrapMethod, name, descriptor, params)
+                        addStmt(indyMethodCall)
                     } else {
-                        addStmt(ExprStmt(pc, expr))
+                        val indyFunctionCall =
+                            InvokedynamicFunctionCall(pc, bootstrapMethod, name, descriptor, params)
+                        if (wasExecuted(nextPC)) {
+                            addInitLocalValStmt(pc, operandsArray(nextPC).head, indyFunctionCall)
+                        } else {
+                            addStmt(ExprStmt(pc, indyFunctionCall))
+                        }
                     }
 
                 case PUTSTATIC.opcode ⇒

@@ -11,6 +11,7 @@ import org.opalj.collection.mutable.FixedSizeBitSet
 import org.opalj.collection.BitSet
 import org.opalj.br.Code
 import org.opalj.br.LiveVariables
+import org.opalj.br.PC
 import org.opalj.collection.mutable.IntArrayStack
 
 /**
@@ -54,7 +55,7 @@ sealed abstract class AIResult {
      * The list of instructions that need to be interpreted next. This list is empty
      * if the abstract interpretation succeed.
      */
-    val worklist: List[Int /*PC*/ ]
+    val worklist: List[PC]
 
     /**
      * The list of evaluated instructions ordered by the evaluation time; subroutines

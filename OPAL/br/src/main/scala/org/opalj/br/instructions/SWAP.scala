@@ -16,7 +16,7 @@ case object SWAP extends StackManagementInstruction {
 
     final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 2
 
-    final def numberOfPushedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 0
+    final def numberOfPushedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 2
 
     final def stackSlotsChange: Int = 0
 }

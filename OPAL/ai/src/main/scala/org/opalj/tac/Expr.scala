@@ -116,7 +116,7 @@ trait Expr[+V <: Var[V]] extends ASTNode[V] {
     def asGetField: GetField[V] = throw new ClassCastException();
     def isGetStatic: Boolean = false
     def asGetStatic: GetStatic = throw new ClassCastException();
-    def asInvokedynamic: Invokedynamic[V] = throw new ClassCastException();
+    def asInvokedynamicFunctionCall: InvokedynamicFunctionCall[V] = throw new ClassCastException();
     def asFunctionCall: FunctionCall[V] = throw new ClassCastException();
     def isStaticFunctionCall: Boolean = false
     def asStaticFunctionCall: StaticFunctionCall[V] = throw new ClassCastException();
@@ -607,7 +607,13 @@ case class GetStatic(
 }
 object GetStatic { final val ASTID = -22 }
 
-case class Invokedynamic[+V <: Var[V]](
+/**
+ * Representation of an `invokedynamic` instruction where the finally called method returns some
+ * value.
+ *
+ * @tparam V The type of the [[Var]]s.
+ */
+case class InvokedynamicFunctionCall[+V <: Var[V]](
         pc:              PC,
         bootstrapMethod: BootstrapMethod,
         name:            String,
@@ -615,10 +621,10 @@ case class Invokedynamic[+V <: Var[V]](
         params:          Seq[Expr[V]]
 ) extends Expr[V] {
 
-    final override def asInvokedynamic: this.type = this
+    final override def asInvokedynamicFunctionCall: this.type = this
     final override def isValueExpression: Boolean = false
     final override def isVar: Boolean = false
-    final override def astID: Int = Invokedynamic.ASTID
+    final override def astID: Int = InvokedynamicFunctionCall.ASTID
     final override def cTpe: ComputationalType = descriptor.returnType.computationalType
     // IMPROVE [FUTURE] Use some analysis to determine if a method call is side effect free
     final override def isSideEffectFree: Boolean = false
@@ -636,7 +642,7 @@ case class Invokedynamic[+V <: Var[V]](
     }
 
     override def hashCode(): Int = {
-        (((Invokedynamic.ASTID * 1171 +
+        (((InvokedynamicFunctionCall.ASTID * 1171 +
             pc) * 31 +
             bootstrapMethod.hashCode) * 31 +
             name.hashCode) * 31 +
@@ -646,10 +652,10 @@ case class Invokedynamic[+V <: Var[V]](
     override def toString: String = {
         val sig = descriptor.toJava(name)
         val params = this.params.mkString("(", ",", ")")
-        s"Invokedynamic(pc=$pc,$bootstrapMethod,$sig,$params)"
+        s"InvokedynamicFunctionCall(pc=$pc,$bootstrapMethod,$sig,$params)"
     }
 }
-object Invokedynamic { final val ASTID = -23 }
+object InvokedynamicFunctionCall { final val ASTID = -23 }
 
 sealed abstract class FunctionCall[+V <: Var[V]] extends Expr[V] with Call[V] {
 

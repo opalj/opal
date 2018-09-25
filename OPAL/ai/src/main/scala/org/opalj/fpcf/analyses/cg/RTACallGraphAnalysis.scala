@@ -32,7 +32,8 @@ import org.opalj.tac.Assignment
 import org.opalj.tac.Call
 import org.opalj.tac.DUVar
 import org.opalj.tac.ExprStmt
-import org.opalj.tac.Invokedynamic
+import org.opalj.tac.InvokedynamicFunctionCall
+import org.opalj.tac.InvokedynamicMethodCall
 import org.opalj.tac.New
 import org.opalj.tac.NonVirtualFunctionCallStatement
 import org.opalj.tac.NonVirtualMethodCall
@@ -316,7 +317,7 @@ class RTACallGraphAnalysis private[analyses] (
                     method, call, call.pc, calleesAndCallers, virtualCallSites
                 )
 
-            case Assignment(_, _, idc: Invokedynamic[V]) ⇒
+            case Assignment(_, _, idc: InvokedynamicFunctionCall[V]) ⇒
                 calleesAndCallers.addIncompleteCallsite(idc.pc)
                 OPALLogger.logOnce(
                     Warn(
@@ -325,8 +326,17 @@ class RTACallGraphAnalysis private[analyses] (
                     )
                 )(p.logContext)
 
-            case ExprStmt(_, idc: Invokedynamic[V]) ⇒
+            case ExprStmt(_, idc: InvokedynamicFunctionCall[V]) ⇒
                 calleesAndCallers.addIncompleteCallsite(idc.pc)
+                OPALLogger.logOnce(
+                    Warn(
+                        "analysis",
+                        s"unresolved invokedynamic ignored by call graph construction"
+                    )
+                )(p.logContext)
+
+            case InvokedynamicMethodCall(pc, _, _, _, _) ⇒
+                calleesAndCallers.addIncompleteCallsite(pc)
                 OPALLogger.logOnce(
                     Warn(
                         "analysis",

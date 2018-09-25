@@ -111,8 +111,8 @@ import org.opalj.collection.mutable.RefArrayBuffer
  *                         source elements consists of (in this order): all methods + all fields
  *                         + all class files.
  *
- * @param libraryClassFilesAreInterfacesOnly If `true` then only the public interface
- *         of the methods of the library's classes is available.
+ * @param libraryClassFilesAreInterfacesOnly If `true` then only the public interfaces
+ *         of the methods of the library's classes are available.
  *
  * @author Michael Eichberg
  * @author Marco Torsello
@@ -1726,9 +1726,9 @@ object Project {
      *      the libraries used by the project that will be analyzed.
      *      [Thread Safety] The underlying data structure has to support concurrent access.
      *
-     * @param libraryClassFilesAreInterfacesOnly If `true` then only the public interface
-     *      and no private METHODS or method implementations are available. Otherwise,
-     *      the libraries are completely loaded.
+     * @param libraryClassFilesAreInterfacesOnly If `true` then only the non-private interface of
+     *         of the classes belonging to the library was loaded. I.e., this setting just reflects
+     *         the way how the class files were loaded; it does not change the classes!
      *
      * @param virtualClassFiles A list of virtual class files that have no direct
      *      representation in the project.

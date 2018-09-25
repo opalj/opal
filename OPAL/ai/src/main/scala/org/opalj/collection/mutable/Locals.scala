@@ -61,7 +61,7 @@ sealed trait Locals[T >: Null <: AnyRef] {
      *
      * @note For those values which are not yet set, `null` is passed to `f`.
      */
-    /* ABSTRACT */ def update(f: (T) ⇒ T): Unit
+    /* ABSTRACT */ def update(f: T ⇒ T): Unit
 
     /**
      * Creates a new Locals object where the value stored at the given index is
@@ -248,8 +248,8 @@ sealed trait Locals[T >: Null <: AnyRef] {
 
     def iterator: Iterator[T] = new Iterator[T] {
         var index = 0
-        def hasNext = index < Locals.this.size
-        def next = {
+        def hasNext: Boolean = index < Locals.this.size
+        def next: T = {
             val currentValue = Locals.this.apply(index)
             index += 1
             currentValue
@@ -301,7 +301,7 @@ private[mutable] final object Locals0 extends Locals[Null] {
     override def set(index: Int, value: Null): Unit =
         throw new IndexOutOfBoundsException("there are no locals")
 
-    override def update(f: (Null) ⇒ Null): Unit = { /*nothing to do*/ }
+    override def update(f: Null ⇒ Null): Unit = { /*nothing to do*/ }
 
     override def updated(index: Int, newValue: Null): Nothing =
         throw new IndexOutOfBoundsException("there are no locals")
@@ -393,7 +393,7 @@ private[mutable] final class Locals1[T >: Null <: AnyRef](
         this.v = value
     }
 
-    override def update(f: (T) ⇒ T): Unit = {
+    override def update(f: T ⇒ T): Unit = {
         this.v = f(this.v)
     }
 
@@ -986,18 +986,18 @@ private[mutable] final class Locals5[T >: Null <: AnyRef](
 
     override def foreach(f: T ⇒ Unit): Unit = { vs1.foreach(f); vs2.foreach(f) }
 
-    final override def foreachReverse(f: T ⇒ Unit): Unit = {
+    override def foreachReverse(f: T ⇒ Unit): Unit = {
         vs2.foreachReverse(f)
         vs1.foreachReverse(f)
     }
 }
 
 private[mutable] final class Locals6[T >: Null <: AnyRef](
-        final val vs1: Locals3[T] = new Locals3[T],
-        final val vs2: Locals3[T] = new Locals3[T]
+        val vs1: Locals3[T] = new Locals3[T],
+        val vs2: Locals3[T] = new Locals3[T]
 ) extends LocalsX[T] {
 
-    final def size: Int = 6
+    def size: Int = 6
 
     override def apply(index: Int): T = {
         if (index < 3) vs1(index) else vs2(index - 3)
@@ -1010,7 +1010,7 @@ private[mutable] final class Locals6[T >: Null <: AnyRef](
         if (index < 3) vs1.set(index, newValue) else vs2.set(index - 3, newValue)
     }
 
-    override def update(f: (T) ⇒ T): Unit = {
+    override def update(f: T ⇒ T): Unit = {
         vs1.update(f)
         vs2.update(f)
     }
@@ -1032,7 +1032,7 @@ private[mutable] final class Locals6[T >: Null <: AnyRef](
 
     override def foreach(f: T ⇒ Unit): Unit = { vs1.foreach(f); vs2.foreach(f) }
 
-    final override def foreachReverse(f: T ⇒ Unit): Unit = {
+    override def foreachReverse(f: T ⇒ Unit): Unit = {
         vs2.foreachReverse(f)
         vs1.foreachReverse(f)
     }
@@ -1097,11 +1097,11 @@ private[mutable] final class Locals6[T >: Null <: AnyRef](
 }
 
 private[mutable] final class Locals7[T >: Null <: AnyRef](
-        final val vs1: Locals3[T] = new Locals3[T],
-        final val vs2: Locals4[T] = new Locals4[T]
+        val vs1: Locals3[T] = new Locals3[T],
+        val vs2: Locals4[T] = new Locals4[T]
 ) extends LocalsX[T] {
 
-    final def size: Int = 7
+    def size: Int = 7
 
     override def apply(index: Int): T = {
         if (index < 3) vs1(index) else vs2(index - 3)
@@ -1114,7 +1114,7 @@ private[mutable] final class Locals7[T >: Null <: AnyRef](
         if (index < 3) vs1.set(index, newValue) else vs2.set(index - 3, newValue)
     }
 
-    override def update(f: (T) ⇒ T): Unit = {
+    override def update(f: T ⇒ T): Unit = {
         vs1.update(f)
         vs2.update(f)
     }
@@ -1136,7 +1136,7 @@ private[mutable] final class Locals7[T >: Null <: AnyRef](
 
     override def foreach(f: T ⇒ Unit): Unit = { vs1.foreach(f); vs2.foreach(f) }
 
-    final override def foreachReverse(f: T ⇒ Unit): Unit = {
+    override def foreachReverse(f: T ⇒ Unit): Unit = {
         vs2.foreachReverse(f)
         vs1.foreachReverse(f)
     }
@@ -1201,12 +1201,12 @@ private[mutable] final class Locals7[T >: Null <: AnyRef](
 }
 
 private[mutable] final class Locals8[T >: Null <: AnyRef](
-        final val vs1: Locals2[T] = new Locals2[T],
-        final val vs2: Locals3[T] = new Locals3[T],
-        final val vs3: Locals3[T] = new Locals3[T]
+        val vs1: Locals2[T] = new Locals2[T],
+        val vs2: Locals3[T] = new Locals3[T],
+        val vs3: Locals3[T] = new Locals3[T]
 ) extends LocalsX[T] {
 
-    final def size: Int = 8
+    def size: Int = 8
 
     override def apply(index: Int): T = {
         (index: @scala.annotation.switch) match {
@@ -1347,12 +1347,12 @@ private[mutable] final class Locals8[T >: Null <: AnyRef](
 }
 
 private[mutable] final class Locals9[T >: Null <: AnyRef](
-        final val vs1: Locals3[T] = new Locals3[T],
-        final val vs2: Locals3[T] = new Locals3[T],
-        final val vs3: Locals3[T] = new Locals3[T]
+        val vs1: Locals3[T] = new Locals3[T],
+        val vs2: Locals3[T] = new Locals3[T],
+        val vs3: Locals3[T] = new Locals3[T]
 ) extends LocalsX[T] {
 
-    final def size: Int = 9
+    def size: Int = 9
 
     override def apply(index: Int): T = {
         (index: @scala.annotation.switch) match {
@@ -1409,7 +1409,7 @@ private[mutable] final class Locals9[T >: Null <: AnyRef](
         vs1.foreach(f); vs2.foreach(f); vs3.foreach(f)
     }
 
-    final override def foreachReverse(f: T ⇒ Unit): Unit = {
+    override def foreachReverse(f: T ⇒ Unit): Unit = {
         vs3.foreachReverse(f)
         vs2.foreachReverse(f)
         vs1.foreachReverse(f)
@@ -1493,12 +1493,12 @@ private[mutable] final class Locals9[T >: Null <: AnyRef](
 }
 
 private[mutable] final class Locals10[T >: Null <: AnyRef](
-        final val vs1: Locals4[T] = new Locals4[T],
-        final val vs2: Locals3[T] = new Locals3[T],
-        final val vs3: Locals3[T] = new Locals3[T]
+        val vs1: Locals4[T] = new Locals4[T],
+        val vs2: Locals3[T] = new Locals3[T],
+        val vs3: Locals3[T] = new Locals3[T]
 ) extends LocalsX[T] {
 
-    final def size: Int = 10
+    def size: Int = 10
 
     override def apply(index: Int): T = {
         (index: @scala.annotation.switch) match {
@@ -1555,7 +1555,7 @@ private[mutable] final class Locals10[T >: Null <: AnyRef](
         vs1.foreach(f); vs2.foreach(f); vs3.foreach(f)
     }
 
-    final override def foreachReverse(f: T ⇒ Unit): Unit = {
+    override def foreachReverse(f: T ⇒ Unit): Unit = {
         vs3.foreachReverse(f)
         vs2.foreachReverse(f)
         vs1.foreachReverse(f)
@@ -1636,12 +1636,12 @@ private[mutable] final class Locals10[T >: Null <: AnyRef](
 }
 
 private[mutable] final class Locals11[T >: Null <: AnyRef](
-        final val vs1: Locals4[T] = new Locals4[T],
-        final val vs2: Locals3[T] = new Locals3[T],
-        final val vs3: Locals4[T] = new Locals4[T]
+        val vs1: Locals4[T] = new Locals4[T],
+        val vs2: Locals3[T] = new Locals3[T],
+        val vs3: Locals4[T] = new Locals4[T]
 ) extends LocalsX[T] {
 
-    final def size: Int = 11
+    def size: Int = 11
 
     override def apply(index: Int): T = {
         (index: @scala.annotation.switch) match {

@@ -259,7 +259,7 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
 
     property("equals") = forAll { s: IntTrieSet ⇒
         val i = { var i = 0; while (s.contains(i)) i += 1; i }
-        val newS = (s + i - i)
+        val newS = s + i - i
         s == newS && s.hashCode == newS.hashCode
     }
 
@@ -308,7 +308,7 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
         }
     }
 
-    property("-") = forAll { (ps: (IntArraySet, IntArraySet)) ⇒
+    property("-") = forAll { ps: (IntArraySet, IntArraySet) ⇒
         val (s, other) = ps
         val its = s.foldLeft(IntTrieSet.empty)(_ + _)
         val newits = other.foldLeft(its)(_ - _)
@@ -319,7 +319,7 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
         }
     }
 
-    property("intersect") = forAll { (ps: (IntArraySet, IntArraySet)) ⇒
+    property("intersect") = forAll { ps: (IntArraySet, IntArraySet) ⇒
         val (ias1, ias2) = ps
         val s1 = ias1.foldLeft(IntTrieSet.empty)(_ + _)
         val s2 = ias2.foldLeft(IntTrieSet.empty)(_ + _)
@@ -335,12 +335,12 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
             newits == EmptyIntTrieSet
     }
 
-    property("filter (all elements)") = forAll { (s: IntArraySet) ⇒
+    property("filter (all elements)") = forAll { s: IntArraySet ⇒
         val its = s.foldLeft(IntTrieSet.empty)(_ + _)
         its.filter(i ⇒ false) eq EmptyIntTrieSet
     }
 
-    property("withFilter") = forAll { (ss: (IntArraySet, IntArraySet)) ⇒
+    property("withFilter") = forAll { ss: (IntArraySet, IntArraySet) ⇒
         val (s1: IntArraySet, s2: IntArraySet) = ss
         val its1 = s1.foldLeft(IntTrieSet.empty)(_ + _)
         val its2 = s2.foldLeft(IntTrieSet.empty)(_ + _)

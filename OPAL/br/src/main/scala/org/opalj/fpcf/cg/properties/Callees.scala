@@ -339,7 +339,16 @@ object Callees extends CalleesPropertyMetaInformation {
     final val key: PropertyKey[Callees] = {
         PropertyKey.create(
             "Callees",
-            NoCalleesDueToNotReachableMethod
+            (_: PropertyStore, r: FallbackReason, _: DeclaredMethod) ⇒ {
+                r match {
+                    case PropertyIsNotComputedByAnyAnalysis ⇒
+                        throw new IllegalStateException("No call graph analysis was scheduled")
+                    case PropertyIsNotDerivedByPreviouslyExecutedAnalysis ⇒
+                        NoCalleesDueToNotReachableMethod
+                }
+            },
+            (_: PropertyStore, eps: EPS[DeclaredMethod, Callees]) ⇒ eps.ub,
+            (_: PropertyStore, _: DeclaredMethod) ⇒ None
         )
     }
 }

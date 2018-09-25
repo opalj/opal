@@ -255,7 +255,7 @@ object LabeledCode {
         // switches which now require more/less bytes very elegantly.
         code.iterate { (pc, i) ⇒
             // IMPROVE [L1] use while loop
-            code.exceptionHandlers.iterator.zipWithIndex.foreach { (ehIndex) ⇒
+            code.exceptionHandlers.iterator.zipWithIndex.foreach { ehIndex ⇒
                 val (eh, index) = ehIndex
                 // Recall that endPC is exclusive while TRYEND is inclusive... Hence,
                 // we have to add it before the next instruction...
@@ -264,7 +264,7 @@ object LabeledCode {
                 if (eh.startPC == pc)
                     labeledInstructions += TRY(Symbol(s"eh$index"))
                 if (eh.handlerPC == pc)
-                    labeledInstructions += CATCH(Symbol(s"eh$index"), eh.catchType)
+                    labeledInstructions += CATCH(Symbol(s"eh$index"), index, eh.catchType)
 
             }
             labeledInstructions += LabelElement(PCLabel(pc))

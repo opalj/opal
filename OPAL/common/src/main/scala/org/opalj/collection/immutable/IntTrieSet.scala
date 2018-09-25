@@ -30,7 +30,7 @@ sealed abstract class IntTrieSet
         var r = smallerSet
         val it = smallerSet.iterator
         while (it.hasNext) {
-            val n = it.next
+            val n = it.next()
             if (!largerSet.contains(n)) {
                 r -= n
             }
@@ -62,6 +62,20 @@ sealed abstract class IntTrieSet
     final def ++!(that: IntTrieSet): IntTrieSet = {
         that.foldLeft(this)(_ +! _) // We have to expand `this`!
     }
+
+    /**
+     * Merges the values of this and the given set into the set that is larger. If both sets
+     * have equal sizes, then the given one is merged into this one.
+     *
+     * @see `+!(Int)` for details!
+     */
+    final def !++!(that: IntTrieSet): IntTrieSet = {
+        if (this.size < that.size)
+            that.++!(this)
+        else
+            this.++!(that)
+    }
+
     //
     // IMPLEMENTATION "INTERNAL" METHODS
     //
@@ -181,7 +195,7 @@ case object EmptyIntTrieSet extends IntTrieSetL {
     override def hashCode: Int = 0 // compatible to Arrays.hashCode
 
     private[immutable] override def +(i: Int, level: Int): IntTrieSet = this.+(i)
-    private[immutable] override def +!(i: Int, level: Int): IntTrieSet = this.+!(i)
+    private[immutable] override def +!(i: Int, level: Int /* irrelevant */ ): IntTrieSet = this.+!(i)
     private[immutable] override def subsetOf(other: IntTrieSet, level: Int): Boolean = true
 }
 
@@ -234,7 +248,7 @@ final case class IntTrieSet1 private (i: Int) extends IntTrieSetL {
     override def hashCode: Int = 31 + i // compatible to Arrays.hashCode
 
     override private[immutable] def +(i: Int, level: Int): IntTrieSet = this.+(i)
-    override private[immutable] def +!(i: Int, level: Int): IntTrieSet = this.+!(i)
+    override private[immutable] def +!(i: Int, level: Int /* irrelevant */ ): IntTrieSet = this.+!(i)
     override private[immutable] def subsetOf(other: IntTrieSet, level: Int): Boolean = {
         other.contains(i, i >>> level)
     }
@@ -401,7 +415,7 @@ private[immutable] final class IntTrieSet2 private[immutable] (
     override def hashCode: Int = 31 * (31 + i1) + i2 // compatible to Arrays.hashCode
 
     override private[immutable] def +(i: Int, level: Int): IntTrieSet = this.+(i)
-    override private[immutable] def +!(i: Int, level: Int): IntTrieSet = this.+!(i)
+    override private[immutable] def +!(i: Int, level: Int /* irrelevant */ ): IntTrieSet = this.+!(i)
 }
 
 /**
@@ -543,7 +557,7 @@ private[immutable] abstract class IntTrieSetNN extends IntTrieSet {
         foldLeft(EmptyIntTrieSet: IntTrieSet)(_ ++! f(_))
     }
 
-    final override def withFilter(p: (Int) ⇒ Boolean): IntTrieSet = new FilteredIntTrieSet(this, p)
+    final override def withFilter(p: Int ⇒ Boolean): IntTrieSet = new FilteredIntTrieSet(this, p)
 
     final override def toChain: Chain[Int] = {
         val cb = new Chain.ChainBuilder[Int]()
