@@ -38,6 +38,7 @@ import org.opalj.fpcf.cg.properties.NoReflectionRelatedCallees
 import org.opalj.fpcf.cg.properties.OnlyVMLevelCallers
 import org.opalj.fpcf.cg.properties.ReflectionRelatedCallees
 import org.opalj.fpcf.cg.properties.ReflectionRelatedCalleesImplementation
+import org.opalj.fpcf.properties.SystemProperties
 import org.opalj.tac.ArrayStore
 import org.opalj.tac.Assignment
 import org.opalj.tac.Expr
@@ -46,6 +47,7 @@ import org.opalj.tac.NewArray
 import org.opalj.tac.SimpleTACAIKey
 import org.opalj.tac.StaticFunctionCall
 import org.opalj.tac.Stmt
+import org.opalj.tac.StringConst
 import org.opalj.tac.TACStmts
 import org.opalj.tac.VirtualFunctionCall
 import org.opalj.tac.VirtualMethodCall
@@ -68,13 +70,15 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
     val MethodT = ObjectType("java/lang/reflect/Method")
 
     class State(
+        val definedMethod:        DefinedMethod,
         val stmts:                Array[Stmt[V]],
         val cfg:                  CFG[Stmt[V], TACStmts[V]],
         val loadedClassesUB:      UIDSet[ObjectType],
         val instantiatedTypesUB:  UIDSet[ObjectType],
         val calleesAndCallers:    CalleesAndCallers,
-        var newLoadedClasses:     UIDSet[ObjectType]        = UIDSet.empty,
-        var newInstantiatedTypes: UIDSet[ObjectType]        = UIDSet.empty
+        var newLoadedClasses:     UIDSet[ObjectType]                              = UIDSet.empty,
+        var newInstantiatedTypes: UIDSet[ObjectType]                              = UIDSet.empty,
+        var dependee:             Option[EOptionP[SomeProject, SystemProperties]] = None
     )
 
     implicit private[this] val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
@@ -174,7 +178,14 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         val calleesAndCallers = new CalleesAndCallers(relevantPCs)
 
         implicit val state: State =
-            new State(stmts, cfg, loadedClassesUB, instantiatedTypesUB, calleesAndCallers)
+            new State(
+                definedMethod,
+                stmts,
+                cfg,
+                loadedClassesUB,
+                instantiatedTypesUB,
+                calleesAndCallers
+            )
 
         for {
             pc ← forNamePCs.keysIterator ++ relevantPCs.keysIterator
@@ -646,17 +657,64 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         }
     }
 
+    val GetPropertyDescriptor = MethodDescriptor(ObjectType.String, ObjectType.String)
+    val GetOrDefaultPropertyDescriptor = MethodDescriptor(RefArray(ObjectType.String, ObjectType.String), ObjectType.String)
+    val PropertiesT = ObjectType("java/util/Properties")
+    val HashtableT = ObjectType("java/util/Hashtable")
+
+    val GetDescriptor = MethodDescriptor(ObjectType.Object, ObjectType.Object)
     private[this] def getPossibleStrings(
-        value: Expr[V],
-        pc:    Option[Int]
+        value:            Expr[V],
+        pc:               Option[Int],
+        onlyStringConsts: Boolean     = false
     )(implicit state: State): Iterator[String] = {
-        value.asVar.definedBy.iterator filter { index ⇒
-            val isStringConst: Boolean = index >= 0 && state.stmts(index).asAssignment.expr.isStringConst
-            if (!isStringConst && pc.isDefined) {
-                state.calleesAndCallers.addIncompleteCallsite(pc.get)
+        value.asVar.definedBy.iterator.map[Iterator[String]] { index ⇒
+            if (index >= 0) {
+                val expr = state.stmts(index).asAssignment.expr
+                expr match {
+                    case StringConst(_, v) ⇒ Iterator(v)
+                    case StaticFunctionCall(_, ObjectType.System, _, "getProperty", GetPropertyDescriptor, params) if !onlyStringConsts ⇒
+                        getPossibleStrings1(params.head, pc)
+                    case VirtualFunctionCall(_, dc, _, "getProperty", GetPropertyDescriptor, _, params) if !onlyStringConsts && ch.isSubtypeOf(dc, PropertiesT) ⇒
+                        getPossibleStrings1(params.head, pc)
+                    case VirtualFunctionCall(_, dc, _, "getProperty", GetOrDefaultPropertyDescriptor, _, params) if !onlyStringConsts && ch.isSubtypeOf(dc, PropertiesT) ⇒
+                        getPossibleStrings1(params.head, pc) ++
+                            getPossibleStrings(params(1), None, onlyStringConsts = true)
+                    case VirtualFunctionCall(_, dc, _, "get", GetDescriptor, _, params) if !onlyStringConsts && ch.isSubtypeOf(dc, HashtableT) ⇒
+                        getPossibleStrings1(params.head, pc)
+                    case _ ⇒
+                        if (pc.isDefined) {
+                            state.calleesAndCallers.addIncompleteCallsite(pc.get)
+                        }
+                        Iterator.empty
+                }
+            } else {
+                if (pc.isDefined) {
+                    state.calleesAndCallers.addIncompleteCallsite(pc.get)
+                }
+                Iterator.empty
             }
-            isStringConst
-        } map { (index: Int) ⇒ state.stmts(index).asAssignment.expr.asStringConst.value }
+        }.flatten
+    }
+
+    // todo name
+    private[this] def getPossibleStrings1(
+        value: Expr[V], pc: Option[Int]
+    )(implicit state: State): Iterator[String] = {
+        if (state.dependee.isEmpty) {
+            state.dependee = Some(propertyStore(project, SystemProperties.key))
+        }
+        if (pc.isDefined) {
+            state.calleesAndCallers.addIncompleteCallsite(pc.get)
+        }
+        if (state.dependee.get.isInstanceOf[SomeEPK]) {
+            Iterator.empty
+        } else {
+            val keys = getPossibleStrings(value, None, onlyStringConsts = true)
+            keys.flatMap { key ⇒
+                state.dependee.get.ub.properties.getOrElse(key, Set.empty[String])
+            }
+        }
     }
 
     private[this] def getPossibleTypes(
@@ -848,22 +906,29 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         }
     }
 
+    private[this] def continuation(eps: SomeEPS)(implicit state: State): PropertyComputationResult = eps match {
+        case ESimplePS(_, _: SystemProperties, _) ⇒ analyze(state.definedMethod)
+    }
+
     @inline private[this] def returnResult(
         definedMethod: DefinedMethod
     )(implicit state: State): PropertyComputationResult = {
         var res: List[PropertyComputationResult] = state.calleesAndCallers.partialResultsForCallers
 
+        val calleeUB = if (state.calleesAndCallers.callees.isEmpty)
+            NoReflectionRelatedCallees
+        else
+            new ReflectionRelatedCalleesImplementation(
+                state.calleesAndCallers.callees,
+                state.calleesAndCallers.incompleteCallsites
+            )
+
         val calleesResult =
-            if (state.calleesAndCallers.callees.isEmpty)
-                Result(definedMethod, NoReflectionRelatedCallees)
-            else
-                Result(
-                    definedMethod,
-                    new ReflectionRelatedCalleesImplementation(
-                        state.calleesAndCallers.callees,
-                        state.calleesAndCallers.incompleteCallsites
-                    )
-                )
+            if (state.dependee.isEmpty) {
+                Result(definedMethod, calleeUB)
+            } else {
+                SimplePIntermediateResult(definedMethod, calleeUB, state.dependee, continuation)
+            }
 
         res ::= calleesResult
 
@@ -923,7 +988,7 @@ object EagerReflectionRelatedCallsAnalysis extends FPCFEagerAnalysisScheduler {
         analysis
     }
 
-    override def uses: Set[PropertyKind] = Set(CallersProperty)
+    override def uses: Set[PropertyKind] = Set(CallersProperty, SystemProperties)
 
     override def derives: Set[PropertyKind] = Set(CallersProperty, ReflectionRelatedCallees)
 
