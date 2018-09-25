@@ -18,16 +18,15 @@ import org.opalj.da.ClassFile
  *
  * @author Michael Reif
  */
-class DirectCalls(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
+class NonVirtualCalls(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
 
     override def featureIDs: Seq[String] = {
         Seq(
-            "DC1", /* 0 --- static method call */
-            "DC2", /* 1 --- constructor call */
-            "DC3", /* 2 --- call on super */
-            "DC4", /* 3 --- private method call */
-            "DC5", /* 4 --- static call to an interface (private or not) */
-            "DC6" /* 5 --- private method call with interface receiver */
+            "NVC1", /* 0 --- static method call */
+            "NVC2", /* 1 --- constructor call */
+            "NVC3", /* 2 --- private method call */
+            "NVC4", /* 3 --- super call on a transitive super method */
+            "NVC5", /* 4 --- super call on a direct superclass' target */
         )
     }
 
@@ -68,8 +67,9 @@ class DirectCalls(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
                 }
                 case invSpec @ INVOKESPECIAL(declaringClass, _, name, _) ⇒ {
                     if (name != "<init>") {
+                        val callTarget = project.specialCall(classFile.thisType, invSpec).value
                         if (declType eq declaringClass) {
-                            if (project.specialCall(classFile.thisType, invSpec).value.isPrivate) {
+                            if (callTarget.isPrivate) {
                                 val cf = project.classFile(declaringClass)
                                 if (cf.isEmpty)
                                     -1
@@ -81,8 +81,11 @@ class DirectCalls(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
                                 -1
                             }
                         } else {
-                            // call on super
-                            3
+                            if(callTarget.classFile.thisType eq classFile.superclassType.get) {
+                                4 /* call to direct super class */
+                            } else {
+                                3 /* call to transitive super class */
+                            }
                         }
                     } else {
                         val superTypes = project.classHierarchy.directSupertypes(declType)
