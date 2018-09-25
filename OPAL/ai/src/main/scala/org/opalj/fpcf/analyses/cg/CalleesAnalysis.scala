@@ -21,10 +21,10 @@ import scala.collection.immutable.IntMap
 
 // todo the callees property could be collaborative (compute the complete set of callees on demand)
 /**
-  *
-  * @author Florian Kuebler
-  * @author Dominik Helm
-  */
+ *
+ * @author Florian Kuebler
+ * @author Dominik Helm
+ */
 class CalleesAnalysis private[analyses] (
         final val project:           SomeProject,
         directCalleesPropertyKeys:   Set[PropertyKey[CalleesLike]],

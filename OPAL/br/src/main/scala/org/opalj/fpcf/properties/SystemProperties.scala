@@ -5,15 +5,15 @@ package properties
 
 /**
  * TODO Documentation
-  *
-  * @author Florian Kuebler
+ *
+ * @author Florian Kuebler
  */
 sealed trait SystemPropertiesPropertyMetaInformation extends PropertyMetaInformation {
     type Self = SystemProperties
 }
 
 class SystemProperties(val properties: Map[String, Set[String]])
-        extends Property with SystemPropertiesPropertyMetaInformation {
+    extends Property with SystemPropertiesPropertyMetaInformation {
     final def key: PropertyKey[SystemProperties] = SystemProperties.key
 }
 
@@ -23,9 +23,9 @@ object SystemProperties extends SystemPropertiesPropertyMetaInformation {
     final val key: PropertyKey[SystemProperties] = {
         PropertyKey.create(
             PropertyKeyName,
-            null//: FallbackPropertyComputation[SomeProject, SystemProperties],
-            //(_: PropertyStore, eps: EPS[SomeProject, SystemProperties]) ⇒ eps.ub,
-            //(_: PropertyStore, _: Entity) ⇒ None
+            null //: FallbackPropertyComputation[SomeProject, SystemProperties],
+        //(_: PropertyStore, eps: EPS[SomeProject, SystemProperties]) ⇒ eps.ub,
+        //(_: PropertyStore, _: Entity) ⇒ None
         )
     }
 }
