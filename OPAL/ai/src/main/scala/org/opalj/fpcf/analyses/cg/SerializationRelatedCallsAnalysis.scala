@@ -413,7 +413,7 @@ object EagerSerializationRelatedCallsAnalysis extends FPCFEagerAnalysisScheduler
         analysis
     }
 
-    override def uses: Set[PropertyKind] = Set(CallersProperty)
+    override def uses: Set[PropertyKind] = Set(CallersProperty, InstantiatedTypes)
 
     override def derives: Set[PropertyKind] = Set(CallersProperty, SerializationRelatedCallees)
 
