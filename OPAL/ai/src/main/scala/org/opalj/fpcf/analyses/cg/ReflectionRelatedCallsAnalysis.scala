@@ -152,24 +152,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         if (relevantPCs.isEmpty && forNamePCs.isEmpty)
             return Result(declaredMethod, NoReflectionRelatedCallees);
 
-        // the set of classes that are definitely loaded at this point in time
-        val loadedClassesEOptP = propertyStore(project, LoadedClasses.key)
-
-        // the upper bound for loaded classes, seen so far
-        val loadedClassesUB: UIDSet[ObjectType] = loadedClassesEOptP match {
-            case eps: EPS[_, _] ⇒ eps.ub.classes
-            case _              ⇒ UIDSet.empty
-        }
-
-        // the set of types that are definitely initialized at this point in time
-        val instantiatedTypesEOptP = propertyStore(project, InstantiatedTypes.key)
-
-        // the upper bound for type instantiations, seen so far
-        // in case they are not yet computed, we use the initialTypes
-        val instantiatedTypesUB: UIDSet[ObjectType] = instantiatedTypesEOptP match {
-            case eps: EPS[_, _] ⇒ eps.ub.types
-            case _              ⇒ InstantiatedTypes.initialTypes
-        }
+        val (loadedClassesUB, instantiatedTypesUB) = getLoadedClassesAndInstantiatedTypes()
 
         val tacode = tacai(method)
         val stmts = tacode.stmts
@@ -200,14 +183,14 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
             handleForName(expr.asStaticFunctionCall.params.head)
         }
 
-        analyzePCs(relevantPCs)
+        analyzeInvocations()
 
         returnResult()
     }
 
-    private[this] def analyzePCs(relevantPCs: IntMap[IntTrieSet])(implicit state: State): Unit = {
+    private[this] def analyzeInvocations()(implicit state: State): Unit = {
         for {
-            pc ← relevantPCs.keysIterator
+            pc ← state.calleesAndCallers.callees.keysIterator
             index = state.pcToIndex(pc)
             if index >= 0
             stmt = state.stmts(index)
@@ -745,7 +728,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                     state.calleesAndCallers.addIncompleteCallsite(pc)
                 isResolvable
             }
-        } flatMap { (index: Int) ⇒
+        } flatMap { index: Int ⇒
             val expr = state.stmts(index).asAssignment.expr
             if (expr.isClassConst) Iterator(state.stmts(index).asAssignment.expr.asClassConst.value)
             else if (expr.isStaticFunctionCall)
@@ -815,7 +798,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                     state.calleesAndCallers.addIncompleteCallsite(pc)
                 isResolvable
             }
-        } flatMap { (index: Int) ⇒
+        } flatMap { index: Int ⇒
             val expr = state.stmts(index).asAssignment.expr
             if (expr.isMethodTypeConst)
                 Iterator(state.stmts(index).asAssignment.expr.asMethodTypeConst.value)
@@ -920,9 +903,44 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
 
     private[this] def continuation(eps: SomeEPS)(implicit state: State): PropertyComputationResult = eps match {
         case ESimplePS(_, _: SystemProperties, _) ⇒
-            state.dependee = None
-            analyzePCs(state.calleesAndCallers.callees)
-            returnResult()
+            // Create new state that reflects changes that may have happened in the meantime
+            val (loadedClassesUB, instantiatedTypesUB) = getLoadedClassesAndInstantiatedTypes()
+            val newState: State = new State(
+                state.definedMethod,
+                state.stmts,
+                state.cfg,
+                state.pcToIndex,
+                loadedClassesUB,
+                instantiatedTypesUB,
+                new CalleesAndCallers(state.calleesAndCallers.callees)
+            )
+
+            // Re-analyze invocations with the new state
+            analyzeInvocations()(newState)
+            returnResult()(newState)
+    }
+
+    private[this] def getLoadedClassesAndInstantiatedTypes(): (UIDSet[ObjectType], UIDSet[ObjectType]) = {
+        // the set of classes that are definitely loaded at this point in time
+        val loadedClassesEOptP = propertyStore(project, LoadedClasses.key)
+
+        // the upper bound for loaded classes, seen so far
+        val loadedClassesUB: UIDSet[ObjectType] = loadedClassesEOptP match {
+            case eps: EPS[_, _] ⇒ eps.ub.classes
+            case _              ⇒ UIDSet.empty
+        }
+
+        // the set of types that are definitely initialized at this point in time
+        val instantiatedTypesEOptP = propertyStore(project, InstantiatedTypes.key)
+
+        // the upper bound for type instantiations, seen so far
+        // in case they are not yet computed, we use the initialTypes
+        val instantiatedTypesUB: UIDSet[ObjectType] = instantiatedTypesEOptP match {
+            case eps: EPS[_, _] ⇒ eps.ub.types
+            case _              ⇒ InstantiatedTypes.initialTypes
+        }
+
+        (loadedClassesUB, instantiatedTypesUB)
     }
 
     @inline private[this] def returnResult()(implicit state: State): PropertyComputationResult = {
@@ -951,10 +969,9 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         res ::= calleesResult
 
         if (state.newLoadedClasses.nonEmpty) {
-            val newlyLoadedClasses = state.newLoadedClasses
             res ::= PartialResult[SomeProject, LoadedClasses](project, LoadedClasses.key, {
                 case IntermediateESimpleP(p, ub) ⇒
-                    val newUb = ub.classes ++ newlyLoadedClasses
+                    val newUb = ub.classes ++ state.newLoadedClasses
                     // due to monotonicity:
                     // the size check sufficiently replaces the subset check
                     if (newUb.size > ub.classes.size)
@@ -963,7 +980,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                         None
 
                 case EPK(p, _) ⇒
-                    Some(IntermediateESimpleP(p, new LoadedClasses(newlyLoadedClasses)))
+                    Some(IntermediateESimpleP(p, new LoadedClasses(state.newLoadedClasses)))
 
                 case r ⇒ throw new IllegalStateException(s"unexpected previous result $r")
             })
@@ -985,7 +1002,6 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                             throw new IllegalStateException(s"unexpected previous result $r")
                     })
             }
-            state.newLoadedClasses = UIDSet.empty
         }
 
         if (state.newInstantiatedTypes.nonEmpty)
