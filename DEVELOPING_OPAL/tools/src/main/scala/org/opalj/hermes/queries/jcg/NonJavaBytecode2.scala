@@ -65,18 +65,16 @@ class NonJavaBytecode2(implicit hermes: HermesConfig) extends DefaultFeatureQuer
             classFileLocation = ClassFileLocation(source, classFile)
         } {
             val methodMap = mutable.Map.empty[String, Int]
-            classFile.methods.foreach { m ⇒
+            classFile.methods.filterNot(_.isSynthetic).foreach { m ⇒
                 val jvmDescriptor = m.descriptor.toJVMDescriptor
                 val mdWithoutReturn = jvmDescriptor.substring(0, jvmDescriptor.lastIndexOf(')') + 1)
                 val key = m.name + mdWithoutReturn
 
                 val prev = methodMap.getOrElse(key, 0)
                 methodMap.put(key, prev + 1)
-
-                println(s"$jvmDescriptor -> $key")
             }
 
-            val hasCase = methodMap.values.exists(_ >=2)
+            val hasCase = methodMap.values.exists(_ >= 2)
 
             if (hasCase)
                 instructionsLocations(0) += classFileLocation
