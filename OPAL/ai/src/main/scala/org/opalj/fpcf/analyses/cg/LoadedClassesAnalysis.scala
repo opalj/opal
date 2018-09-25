@@ -233,7 +233,7 @@ object EagerLoadedClassesAnalysis extends FPCFEagerAnalysisScheduler {
         loadedClassesAnalysis
     }
 
-    override def uses: Set[PropertyKind] = Set(CallersProperty)
+    override def uses: Set[PropertyKind] = Set(LoadedClasses, CallersProperty)
 
     override def derives: Set[PropertyKind] = Set(LoadedClasses, CallersProperty)
 

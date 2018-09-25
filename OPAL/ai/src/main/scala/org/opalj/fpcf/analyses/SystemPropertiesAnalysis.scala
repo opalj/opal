@@ -60,7 +60,7 @@ class SystemPropertiesAnalysis private[analyses] (
         for (stmt ← stmts) stmt match {
             case VirtualFunctionCallStatement(call) if (call.name == "setProperty" || call.name == "put") && classHierarchy.isSubtypeOf(call.declaringClass, ObjectType("java/util/Properties")) ⇒
                 propertyMap = computeProperties(propertyMap, call.params, stmts)
-            case StaticMethodCall(_, dc, _, "setProperty", _, params) if dc == ObjectType("java/lang/System") ⇒
+            case StaticMethodCall(_, ObjectType.System, _, "setProperty", _, params) ⇒
                 propertyMap = computeProperties(propertyMap, params, stmts)
             case _ ⇒
         }
