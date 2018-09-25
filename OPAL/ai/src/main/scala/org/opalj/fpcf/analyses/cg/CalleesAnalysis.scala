@@ -121,7 +121,7 @@ class CalleesAnalysis private[analyses] (
                     declaredMethod,
                     key
                 )
-                if(!p1.isInstanceOf[FinalEP[DeclaredMethod, CalleesLike]]){
+                if (!p1.isInstanceOf[FinalEP[DeclaredMethod, CalleesLike]]) {
                     propertyStore(
                         declaredMethod,
                         key

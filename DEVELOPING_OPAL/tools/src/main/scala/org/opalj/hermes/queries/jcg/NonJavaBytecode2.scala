@@ -76,7 +76,7 @@ class NonJavaBytecode2(implicit hermes: HermesConfig) extends DefaultFeatureQuer
                 println(s"$jvmDescriptor -> $key")
             }
 
-            val hasCase = methodMap.values.exists(_ >=2)
+            val hasCase = methodMap.values.exists(_ >= 2)
 
             if (hasCase)
                 instructionsLocations(0) += classFileLocation
