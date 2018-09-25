@@ -10,9 +10,10 @@ import org.opalj.br.instructions.VirtualMethodInvocationInstruction
 import org.opalj.da.ClassFile
 
 /**
- * Groups test case features that perform a direct method call.
+ * Groups test case features for features that explicitly must be modeled to imitate the JVM's
+ * behaviour, i.e., callbacks that are registered and then (potentially) called from the JVM.
  *
- * @note The features represent the __DirectCalls__ test cases from the Call Graph Test Project (JCG).
+ * @note The features represent the __JVMCalls__ test cases from the Call Graph Test Project (JCG).
  *
  * @author Michael Reif
  */
