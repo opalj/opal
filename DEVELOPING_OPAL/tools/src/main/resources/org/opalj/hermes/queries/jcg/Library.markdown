@@ -30,11 +30,11 @@ construction must assume that the parameter ```type``` can hold all possible sub
 // lib1/Demo.java
 package lib1;
 
-import lib.annotations.callgraph.CallSite;
+import lib.annotations.callgraph.DirectCall;
 
 public class Demo {
     
-    @CallSite(name = "method", line = 10, resolvedTargets = {"Llib1/Type;", "Llib1/Subtype;"}, 
+    @DirectCall(name = "method", line = 10, resolvedTargets = {"Llib1/Type;", "Llib1/Subtype;"}, 
     prohibitedTargets = "Llib1/SomeType;")
     public void libraryEntryPoint(Type type){
         type.method();
@@ -92,13 +92,13 @@ construction must assume that all possible subtypes of ```Type``` can be assigne
 // lib2/Demo.java
 package lib2;
 
-import lib.annotations.callgraph.CallSite;
+import lib.annotations.callgraph.DirectCall;
 
 public class Demo {
     
     public Type field = new Subtype();
     
-    @CallSite(name = "method", line = 12, resolvedTargets = {"Llib2/Type;", "Llib2/Subtype;"}, 
+    @DirectCall(name = "method", line = 12, resolvedTargets = {"Llib2/Type;", "Llib2/Subtype;"}, 
     prohibitedTargets = "Llib2/SomeType;")
     public void callOnField(){
         field.method();
@@ -151,11 +151,11 @@ Tests library interface invocation for CBS edges under the following circumstanc
 // lib3/Demo.java
 package lib3;
 
-import lib.annotations.callgraph.CallSite;
+import lib.annotations.callgraph.DirectCall;
 
 public class Demo {
     
-    @CallSite(name = "method", line = 10, resolvedTargets = "Llib3/PotentialSuperclass;",
+    @DirectCall(name = "method", line = 10, resolvedTargets = "Llib3/PotentialSuperclass;",
     prohibitedTargets = "Llib3/DismissedSuperlass;")
     public static void libraryCallSite(Interface i){
         i.method();
@@ -208,11 +208,11 @@ inherited from a class within the same package, i.e. when a new class is added t
 // lib4/collude/Demo.java
 package lib4.collude;
 
-import lib.annotations.callgraph.CallSite;
+import lib.annotations.callgraph.DirectCall;
 
 public class Demo {
     
-    @CallSite(name = "method", line = 10, resolvedTargets = "Llib4/collude/PotentialSuperclass;", 
+    @DirectCall(name = "method", line = 10, resolvedTargets = "Llib4/collude/PotentialSuperclass;", 
     prohibitedTargets = "Llib4/internal/InternalClass;")
     public static void interfaceCallSite(PotentialInterface pi){
         pi.method();
@@ -265,11 +265,11 @@ inherited from and, therefore, provides the method ```public void method()``` fr
 // lib5/collude/Demo.java
 package lib5.collude;
 
-import lib.annotations.callgraph.CallSite;
+import lib.annotations.callgraph.DirectCall;
 
 public class Demo {
     
-    @CallSite(name = "method", line = 9, resolvedTargets = "Llib5/internal/InternalClass;")
+    @DirectCall(name = "method", line = 9, resolvedTargets = "Llib5/internal/InternalClass;")
     public static void interfaceCallSite(PotentialInterface pi){
         pi.method();
     }
