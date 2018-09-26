@@ -67,6 +67,8 @@ class Reflection(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
     val ConstructorT = ObjectType("java/lang/reflect/Constructor")
     val FieldT = ObjectType("java/lang/reflect/Field")
 
+    val PropertiesT = ObjectType("java/util/Properties")
+
     val Invoke = MethodDescriptor(
         RefArray(ObjectType.Object, ArrayType(ObjectType.Object)),
         ObjectType.Object
@@ -79,6 +81,11 @@ class Reflection(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
     val ForName3MD =
         MethodDescriptor("(Ljava/lang/String;ZLjava/lang/ClassLoader;)Ljava/lang/Class;")
 
+    val GetProperty1MD = MethodDescriptor(ObjectType.String, ObjectType.String)
+    val GetProperty2MD =
+        MethodDescriptor(RefArray(ObjectType.String, ObjectType.String), ObjectType.String)
+    val GetMD = MethodDescriptor(ObjectType.Object, ObjectType.Object)
+
     override def featureIDs: Seq[String] = {
         Seq(
             "TR1", /* 0 --- invoke static method */
@@ -89,11 +96,12 @@ class Reflection(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
             "TR6", /* 5 --- Class.newInstance */
             "TR7", /* 6 --- call on result of getDeclaredField */
             "TR8", /* 7 --- call on result of getField */
-            "TR9", /* 8 -- Class.forName */
-            "LRR1", /* 9 - multiple constants for param */
+            "TR9", /* 8 --- Class.forName */
+            "LRR1", /* 9 -- multiple constants for param */
             "LRR2", /* 10 - constant(s) from StringBuilder for param */
             "CSR1+CSR2", /* 11 - value from unknown source for param */
-            "LRR3+CSR3" /* 12 -- value from field for param */
+            "LRR3+CSR3", /* 12 -- value from field for param */
+            "CSR4" /* 13 -- value from Properties */
         )
     }
 
@@ -216,6 +224,7 @@ class Reflection(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
 
     def handleParameterSources[S](call: Call[V], l: Location[S])(
         implicit
+        project:   SomeProject,
         locations: Array[LocationsContainer[S]],
         stmts:     Array[Stmt[V]]
     ): Unit = {
@@ -259,6 +268,7 @@ class Reflection(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
         if (simpleDefinition(definedBy).exists(_.expr.isConst)) {
             /* nothing to do, trivial string constant */
         } else {
+            val ch = project.classHierarchy
             definedBy.foreach { defSite ⇒
                 if (defSite < 0) {
                     locations(11 /* string string */ ) += l
@@ -274,9 +284,17 @@ class Reflection(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
                             if (stringBuilder.exists(isNonEscapingStringBuilder)) {
                                 locations(10 /* StringBuilder */ ) += l
                             } else {
-                                locations(11 /* string unknown */ )
+                                locations(11 /* string unknown */ ) += l
                             }
-                        case _ ⇒ locations(11 /* string unknown */ )
+                        case StaticFunctionCall(_, ObjectType.System, _, "getProperty", GetProperty1MD, params) ⇒
+                            locations(13 /* string from Properties */ ) += l
+                        case VirtualFunctionCall(_, dc, _, "getProperty", GetProperty1MD, _, params) if ch.isSubtypeOf(dc, PropertiesT) ⇒
+                            locations(13 /* string from Properties */ ) += l
+                        case VirtualFunctionCall(_, dc, _, "getProperty", GetProperty2MD, _, params) if ch.isSubtypeOf(dc, PropertiesT) ⇒
+                            locations(13 /* string from Properties */ ) += l
+                        case VirtualFunctionCall(_, dc, _, "get", GetMD, _, params) if ch.isSubtypeOf(dc, PropertiesT) ⇒
+                            locations(13 /* string from Properties */ ) += l
+                        case _ ⇒ locations(11 /* string unknown */ ) += l
                     }
                 }
             }
