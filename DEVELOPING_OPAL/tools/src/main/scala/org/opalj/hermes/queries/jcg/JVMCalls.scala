@@ -38,7 +38,7 @@ class JVMCalls(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
         rawClassFiles:        Traversable[(ClassFile, S)]
     ): IndexedSeq[LocationsContainer[S]] = {
 
-        val locations = Array.fill(5)(new LocationsContainer[S])
+        val locations = Array.fill(featureIDs.size)(new LocationsContainer[S])
 
         // Setup possible types
 
