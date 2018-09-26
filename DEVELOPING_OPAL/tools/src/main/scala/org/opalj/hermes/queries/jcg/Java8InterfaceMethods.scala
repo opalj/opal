@@ -35,7 +35,7 @@ class Java8InterfaceMethods(implicit hermes: HermesConfig) extends DefaultFeatur
             "J8DIM4", /* 3 --- call on class type which must be resolved to an IDM */
             "J8DIM5", /* 4 --- call that's dispatched to IDM where the class inherits from multiple interfaces with that idm (sig. wise) */
             "J8SIM1" /* 5 --- call to static interface method */ ,
-            "J8SIM2" /* 6 --- call to a private static interface method (from Java 10) */
+            "J10SIM2" /* 6 --- call to a private static interface method (from Java 10) */
         )
     }
 

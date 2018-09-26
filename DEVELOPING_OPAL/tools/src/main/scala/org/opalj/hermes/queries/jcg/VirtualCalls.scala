@@ -17,14 +17,14 @@ import org.opalj.da.ClassFile
  *
  * @author Michael Reif
  */
-class PolymorphicCalls(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
+class VirtualCalls(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
 
     override def featureIDs: Seq[String] = {
         Seq(
-            "BPC1", /* 0 --- virtual call with single target */
-            "BPC2", /* 1 --- virtual call with multiple possible targets */
-            "BPC3", /* 2 --- interface call with single target */
-            "BPC4" /* 3 --- interface call with multiple targets */
+            "VC1", /* 0 --- virtual call with single target */
+            "VC2", /* 1 --- virtual call with multiple possible targets */
+            "VC3", /* 2 --- interface call with single target */
+            "VC4" /* 3 --- interface call with multiple targets */
         )
     }
 

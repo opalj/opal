@@ -31,12 +31,12 @@ class Types(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
 
     override def featureIDs: Seq[String] = {
         Seq(
-            "SimpleCast", /* 0 --- checkcast (instr.) */
-            "CastClassAPI", /* 1 --- virutal invocation of java.lang.Class.cast that's not followed by a checkcast instr. */
-            "ClassEQ", /* 2 --- equality check between two objects of type java.lang.Class */
-            "InstanceOf", /* 3 --- instanceof (instr.) */
-            "InstanceOfClassAPI", /* 4 --- virutal invocation of java.lang.Class.isInstance */
-            "IsAssignable" /* 5 --- virutal invocation of java.lang.Class.isAssignableFrom */
+            "TC1", /* 0 --- checkcast (instr.) */
+            "TC2", /* 1 --- virutal invocation of java.lang.Class.cast that's not followed by a checkcast instr. */
+            "TC3", /* 2 --- equality check between two objects of type java.lang.Class */
+            "TC4", /* 3 --- instanceof (instr.) */
+            "TC5", /* 4 --- virutal invocation of java.lang.Class.isInstance */
+            "TC6" /* 5 --- virutal invocation of java.lang.Class.isAssignableFrom */
         )
     }
 
