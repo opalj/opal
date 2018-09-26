@@ -44,7 +44,7 @@ class Java8InterfaceMethods(implicit hermes: HermesConfig) extends DefaultFeatur
         project:              Project[S],
         rawClassFiles:        Traversable[(ClassFile, S)]
     ): IndexedSeq[LocationsContainer[S]] = {
-        val instructionsLocations = Array.fill(6)(new LocationsContainer[S])
+        val instructionsLocations = Array.fill(featureIDs.size)(new LocationsContainer[S])
 
         for {
             (classFile, source) ← project.projectClassFilesWithSources

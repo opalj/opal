@@ -27,6 +27,7 @@ class NonVirtualCalls(implicit hermes: HermesConfig) extends DefaultFeatureQuery
             "NVC3", /* 2 --- private method call */
             "NVC4", /* 3 --- super call on a transitive super method */
             "NVC5", /* 4 --- super call on a direct superclass' target */
+            "NVC6", /* 5 --- private method call within an interface */
         )
     }
 
@@ -36,7 +37,7 @@ class NonVirtualCalls(implicit hermes: HermesConfig) extends DefaultFeatureQuery
         rawClassFiles:        Traversable[(ClassFile, S)]
     ): IndexedSeq[LocationsContainer[S]] = {
 
-        val instructionsLocations = Array.fill(6)(new LocationsContainer[S])
+        val instructionsLocations = Array.fill(featureIDs.size)(new LocationsContainer[S])
 
         for {
             (classFile, source) ← project.projectClassFilesWithSources

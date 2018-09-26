@@ -44,7 +44,7 @@ class StaticInitializer(implicit hermes: HermesConfig) extends DefaultFeatureQue
         project:              Project[S],
         rawClassFiles:        Traversable[(ClassFile, S)]
     ): IndexedSeq[LocationsContainer[S]] = {
-        val classLocations = Array.fill(8)(new LocationsContainer[S])
+        val classLocations = Array.fill(featureIDs.size)(new LocationsContainer[S])
 
         for {
             (classFile, source) ← project.projectClassFilesWithSources
