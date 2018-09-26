@@ -60,20 +60,18 @@ class Serialization(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
 
     override def featureIDs: Seq[String] = {
         Seq(
-            "SC1", /* 0 --- Trivial writeObject */
-            "SC2", /* 1 --- Local non-trivial writeObject */
-            "SC3", /* 2 --- Non-local writeObject */
-            "SC4", /* 3 --- readObject without cast */
-            "SC5", /* 4 --- readObject with casts */
-            "SC6", /* 5 --- writeReplace */
-            "SC7", /* 6 --- readResolve */
-            "SC8", /* 7 --- registerValidation */
-            "SC9", /* 8 --- general deserialization of Serializiable (not Externalizable) classes */
-            "EC1", /* 9 --- writeExternal */
-            "EC2", /* 10 -- readExternal */ // TODO this is identical to the next one!
-            "EC3", /* 11 -- general deserialization of Externalizable classes */
-            "SerLam1", /* 12 --- serialization of Lambdas */
-            "SerLam2" /*  13 --- deserialization of Lambdas */ // TODO how to find these?
+            "Ser1", /* 0 --- Trivial writeObject */
+            "Ser2", /* 1 --- Local non-trivial writeObject */
+            "Ser3", /* 2 --- Non-local writeObject */
+            "Ser4", /* 3 --- readObject without cast */
+            "Ser5", /* 4 --- readObject with casts */
+            "Ser6", /* 5 --- writeReplace */
+            "Ser7", /* 6 --- readResolve */
+            "Ser8", /* 7 --- registerValidation */
+            "Ser9", /* 8 --- general deserialization of Serializiable (not Externalizable) classes */
+            "ExtSer1", /* 9 --- writeExternal */
+            "ExtSer2+ExtSer3", /* 10 -- readExternal & general deserialization of Externalizable classes */
+            "SerLam1+SerLam2", /* 11 --- (de-)serialization of Lambdas */
         )
     }
 
@@ -176,7 +174,7 @@ class Serialization(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
                 expr.astID == InvokedynamicFunctionCall.ASTID && isLambdaMetafactoryCall(expr.asInvokedynamicFunctionCall)
             } else false
         }) {
-            locations(12) += l
+            locations(11) += l
         } else if (param.isPrecise) {
             if (param.isNull.isNo &&
                 hasMethod(param.asReferenceType, "writeObject", WriteObjectDescriptor) &&
@@ -282,7 +280,6 @@ class Serialization(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
                     }
             }) {
                 locations(10) += l
-                locations(11) += l
             }
         }
     }
