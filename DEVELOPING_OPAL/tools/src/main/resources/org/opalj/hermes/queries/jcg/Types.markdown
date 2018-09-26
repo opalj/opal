@@ -1,63 +1,66 @@
-#TypeNarrowing
-Using local information to get better type information
-##SimpleCast
+#TypeCasts
+Using local information to get better type information. Even if those APIs and instructions do have
+no visible effect on the soundness they still must be supported by the frameworks. 
+##TC1
 [//]: # (MAIN: simplecast.Demo)
-Type narrowing due to previous cast.
-
+This case shows type narrowing due to previous cast. The method ```simplecast.Demo.castToTarget``` takes an
+object, casts it to ```simplecast.Target```, and then calls ```target``` on the casted object which
+rules out ```simplecast.Demo.target``` as receiver.
 ```java
 // simplecast/Demo.java
 package simplecast;
 
-import lib.annotations.callgraph.CallSite;
+import lib.annotations.callgraph.DirectCall;
 class Demo {
     public static void main(String[] args) throws Exception {
         if (args.length == 0) 
-          m(new Target());
+          castToTarget(new Target());
         else 
-          m(new Demo());
+          castToTarget(new Demo());
     }
 
-    @CallSite(
-        name = "toString", returnType = String.class, line = 18,
+    @DirectCall(
+        name = "target", returnType = String.class, line = 18,
         resolvedTargets = "Lsimplecast/Target;"
     )
-    static void m(Object o) {
+    static void castToTarget(Object o) {
         Target b = (Target) o;
-        b.toString();
+        b.target();
     }
 
-    public String toString() { return "Demo"; }
+    public String target() { return "Demo"; }
 }
 class Target {
-  public String toString() { return "Target"; }
+  public String target() { return "Target"; }
 }
-
 ```
 [//]: # (END)
 
-##CastClassAPI
+##TC2
 [//]: # (MAIN: castclassapi.Demo)
-Type narrowing due to previous cast using java class API.
-
+Type narrowing due to previous cast using Java's class API. The method ```castclassapi.Demo.castToTarget```
+takes a class object that is parameterized over the type the cast should be performed to and an object
+that will be casted within the method. It then casts it via ```Class.cast``` to ```castclassapi.Target```
+and then calls ```toString``` on the casted object which rules out ```castclassapi.Demo.toString``` as receiver.
 ```java
 // castclassapi/Demo.java
 package castclassapi;
 
-import lib.annotations.callgraph.CallSite;
+import lib.annotations.callgraph.DirectCall;
 class Demo {
     public static void main(String[] args) throws Exception {
         if (args.length == 0) 
-          m(new Target());
+          castToTarget(Target.class, new Target());
         else 
-          m(new Demo());
+          castToTarget(Demo.class, new Demo());
     }
 
-    @CallSite(
+    @DirectCall(
         name = "toString", returnType = String.class, line = 18,
         resolvedTargets = "Lcastclassapi/Target;"
     )
-    static void m(Object o) {
-        Target target = Target.class.cast(o);
+    static <T> void castToTarget(Class<T> cls,  Object o) {
+        T target = cls.cast(o);
         target.toString();
     }
 
@@ -77,29 +80,29 @@ public class Target {
 ```
 [//]: # (END)
 
-##ClassEQ
+##TC3
 [//]: # (MAIN: classeq.Demo)
-Type narrowing due to a class equality check. Within this branch it's known that that object ```o```
-must be of type ```Target```.
-
+Type narrowing due to a equality check of two ```java.lang.Class``` objects. Within the ```this```
+branch of ```classeq.Demo.callIfInstanceOfTarget``` it is thus known that the passed object ```o```
+must be of type ```Target```. Hence, ```o.toString``` must only be resolved to ```Target.toString```.
 ```java
 // classeq/Demo.java
 package classeq;
 
-import lib.annotations.callgraph.CallSite;
+import lib.annotations.callgraph.DirectCall;
 class Demo{ 
     public static void main(String[] args) throws Exception {
         if (args.length == 0) 
-          m(new Target());
+          callIfInstanceOfTarget(new Target());
         else 
-          m(new Demo());
+          callIfInstanceOfTarget(new Demo());
     }
 
-    @CallSite(
+    @DirectCall(
         name = "toString", returnType = String.class, line = 18,
         resolvedTargets = "Lclasseq/Target;"
     )
-    static void m(Object o) {
+    static void callIfInstanceOfTarget(Object o) {
       if (o.getClass() == Target.class)
         o.toString();
     }
@@ -114,28 +117,30 @@ class Target {
 [//]: # (END)
 
 
-##InstanceOf
+##TC4
 [//]: # (MAIN: instanceofcheck.Demo)
-Type narrowing due to previous instance of check.
-
+Type narrowing due to Java's built-in ```instanceof``` check of the given object ```o``` and the 
+```Target``` class. Within the ```this``` branch of ```Demo.callIfInstanceOfTarget``` it is thus
+known that the passed object ```o``` must be of type ```Target```. Hence, ```o.toString``` must only
+be resolved to ```Target.toString```.
 ```java
 // instanceofcheck/Demo.java
 package instanceofcheck;
 
-import lib.annotations.callgraph.CallSite;
+import lib.annotations.callgraph.DirectCall;
 class Demo{ 
     public static void main(String[] args) throws Exception {
         if (args.length == 0) 
-          m(new Target());
+          callIfInstanceOfTarget(new Target());
         else 
-          m(new Demo());
+          callIfInstanceOfTarget(new Demo());
     }
 
-    @CallSite(
+    @DirectCall(
         name = "toString", returnType = String.class, line = 18,
         resolvedTargets = "Linstanceofcheck/Target;"
     )
-    static void m(Object o) {
+    static void callIfInstanceOfTarget(Object o) {
       if (o instanceof Target)
         o.toString();
     }
@@ -149,28 +154,31 @@ class Target {
 ```
 [//]: # (END)
 
-##InstanceOfClassAPI
+##TC5
 [//]: # (MAIN: instanceofclassapi.Demo)
-Type narrowing due to previous instance of check.
-
+Type narrowing due to Java's ```java.lang.Class.isInstance``` API call that checks whether a given
+object (i.e. ```o```) is of the same type the class instance is parameterized over, i.e.,
+```Target.class``` is a shorthand notation for ```java.lang.Class<Target>```. Within the ```this```
+branch of ```Demo.callIfInstanceOfTarget``` it is thus known that the passed object ```o``` must be
+of type ```Target```. Hence, ```o.toString``` must only be resolved to ```Target.toString```.
 ```java
 // instanceofclassapi/Demo.java
 package instanceofclassapi;
 
-import lib.annotations.callgraph.CallSite;
+import lib.annotations.callgraph.DirectCall;
 class Demo{ 
     public static void main(String[] args) throws Exception {
         if (args.length == 0) 
-          m(new Target());
+          callIfInstanceOfTarget(new Target());
         else 
-          m(new Demo());
+          callIfInstanceOfTarget(new Demo());
     }
 
-    @CallSite(
+    @DirectCall(
         name = "toString", returnType = String.class, line = 18,
         resolvedTargets = "Linstanceofclassapi/Target;"
     )
-    static void m(Object o) {
+    static void callIfInstanceOfTarget(Object o) {
       if (Target.class.isInstance(o))
         o.toString();
     }
@@ -185,28 +193,31 @@ class Target {
 [//]: # (END)
 
 
-##IsAssignable
-[//]: # (MAIN: isssignable.Demo)
-Type narrowing due to previous is assignable.
-
+##TC6
+[//]: # (MAIN: tc.Demo)
+Type narrowing due to Java's ```java.lang.Class.isAssignableFrom``` API call that checks whether a given
+object (i.e. ```o```) can be assign to variable of the type the class instance is parameterized over, i.e.,
+```Target.class``` is a shorthand notation for ```java.lang.Class<Target>```. Within the ```this```
+branch of ```Demo.callIfInstanceOfTarget``` it is thus known that the passed object ```o``` must be
+a subtype of ```Target```. Hence, ```o.toString``` must only be resolved to ```Target.toString```.
 ```java
-// isssignable/Demo.java
-package isssignable;
+// tc/Demo.java
+package tc;
 
-import lib.annotations.callgraph.CallSite;
+import lib.annotations.callgraph.DirectCall;
 class Demo{ 
     public static void main(String[] args) throws Exception {
         if (args.length == 0) 
-          m(new Target());
+          callIfInstanceOfTarget(new Target());
         else 
-          m(new Demo());
+          callIfInstanceOfTarget(new Demo());
     }
 
-    @CallSite(
+    @DirectCall(
         name = "toString", returnType = String.class, line = 18,
-        resolvedTargets = "Lisssignable/Target;"
+        resolvedTargets = "Ltc/Target;"
     )
-    static void m(Object o) {
+    static void callIfInstanceOfTarget(Object o) {
       if (Target.class.isAssignableFrom(o.getClass()))
         o.toString();
     }
