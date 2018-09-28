@@ -779,7 +779,9 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         pc:        Option[Int]
     )(implicit state: State): Iterator[ReferenceType] = {
         val classNames = getPossibleStrings(className, pc)
-        classNames.map(cls ⇒ ObjectType(cls.replace('.', '/')))
+        classNames.map(cls ⇒
+            ObjectType(cls.replace('.', '/'))
+        ).filter(project.classFile(_).isDefined)
     }
 
     private[this] def getPossibleMethodTypes(
