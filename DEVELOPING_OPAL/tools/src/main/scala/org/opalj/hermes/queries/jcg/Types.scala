@@ -36,7 +36,7 @@ class Types(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
             "TC3", /* 2 --- equality check between two objects of type java.lang.Class */
             "TC4", /* 3 --- instanceof (instr.) */
             "TC5", /* 4 --- virutal invocation of java.lang.Class.isInstance */
-            "TC6"  /* 5 --- virutal invocation of java.lang.Class.isAssignableFrom */
+            "TC6" /* 5 --- virutal invocation of java.lang.Class.isAssignableFrom */
         )
     }
 
