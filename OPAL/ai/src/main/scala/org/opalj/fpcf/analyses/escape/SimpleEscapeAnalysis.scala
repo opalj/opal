@@ -27,8 +27,6 @@ class SimpleEscapeAnalysisContext(
         val defSite:                 ValueOrigin,
         val targetMethod:            Method,
         val uses:                    IntTrieSet,
-        val code:                    Array[Stmt[V]],
-        val cfg:                     CFG[Stmt[V], TACStmts[V]],
         val declaredMethods:         DeclaredMethods,
         val virtualFormalParameters: VirtualFormalParameters,
         val project:                 SomeProject,
@@ -37,7 +35,6 @@ class SimpleEscapeAnalysisContext(
     with PropertyStoreContainer
     with VirtualFormalParametersContainer
     with DeclaredMethodsContainer
-    with CFGContainer
 
 /**
  * A simple escape analysis that can handle [[org.opalj.ai.common.DefinitionSiteLike]]s and
@@ -79,16 +76,12 @@ class SimpleEscapeAnalysis( final val project: SomeProject)
         entity:       Entity,
         defSite:      ValueOrigin,
         targetMethod: Method,
-        uses:         IntTrieSet,
-        code:         Array[Stmt[V]],
-        cfg:          CFG[Stmt[V], TACStmts[V]]
+        uses:         IntTrieSet
     ): SimpleEscapeAnalysisContext = new SimpleEscapeAnalysisContext(
         entity,
         defSite,
         targetMethod,
         uses,
-        code,
-        cfg,
         declaredMethods,
         virtualFormalParameters,
         project,

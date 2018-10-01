@@ -41,6 +41,7 @@ import org.opalj.tac.VirtualFunctionCall
 import org.opalj.tac.VirtualMethodCall
 import org.opalj.tac.InvokedynamicFunctionCall
 import org.opalj.tac.InvokedynamicMethodCall
+import org.opalj.tac.fpcf.properties.TACAI
 
 /**
  * An abstract escape analysis for a [[org.opalj.ai.common.DefinitionSiteLike]] or a
@@ -68,11 +69,38 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
         context: AnalysisContext,
         state:   AnalysisState
     ): PropertyComputationResult = {
+        val tacai = getTACAI(context.targetMethod)
+        if(tacai.isEmpty)
+            return IntermediateResult(
+                context.entity,
+                GlobalEscape, NoEscape,
+                state.dependees, continuation
+            );
+        analyzeTAC(tacai.get)
+    }
+
+    def analyzeTAC(tac: TACode[TACMethodParameter, V])(
+        implicit
+        context: AnalysisContext,
+        state:   AnalysisState
+    ): PropertyComputationResult = {
         // for every use-site, check its escape state
         for (use ← context.uses) {
-            checkStmtForEscape(context.code(use))
+            checkStmtForEscape(tac.stmts(use))
         }
         returnResult
+    }
+
+    def getTACAI(
+        method: Method
+    )(implicit state: AnalysisState): Option[TACode[TACMethodParameter, V]] = {
+        val tacai = propertyStore(method, TACAI.key)
+
+        if (tacai.isRefinable)
+            state.addDependency(tacai)
+
+        if (tacai.hasProperty) tacai.ub.tac
+        else None
     }
 
     /**
@@ -357,7 +385,16 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
     )(
         implicit
         context: AnalysisContext, state: AnalysisState
-    ): PropertyComputationResult
+    ): PropertyComputationResult = {
+        someEPS match {
+            case EPS(_, _, ub: TACAI) =>
+                if(someEPS.isRefinable) {
+                    state.removeDependency(someEPS)
+                    state.addDependency(someEPS)
+                }
+                analyzeTAC(ub.tac.get)
+        }
+    }
 
     /**
      * Extracts information from the given entity and should call [[doDetermineEscape]] afterwards.
@@ -382,7 +419,7 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
         if (defSite == -1)
             Result(dsl, NoEscape)
         else {
-            val ctx = createContext(dsl, defSite, dsl.method, uses, tacai.stmts, tacai.cfg)
+            val ctx = createContext(dsl, defSite, dsl.method, uses)
             doDetermineEscape(ctx, createState)
         }
 
@@ -394,9 +431,7 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
         entity:       Entity,
         defSite:      ValueOrigin,
         targetMethod: Method,
-        uses:         IntTrieSet,
-        code:         Array[Stmt[V]],
-        cfg:          CFG[Stmt[V], TACStmts[V]]
+        uses:         IntTrieSet
     ): AnalysisContext
 
     def createState: AnalysisState

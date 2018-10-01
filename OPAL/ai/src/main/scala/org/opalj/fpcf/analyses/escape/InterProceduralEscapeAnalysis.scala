@@ -31,8 +31,6 @@ class InterProceduralEscapeAnalysisContext(
         val defSite:                 ValueOrigin,
         val targetMethod:            Method,
         val uses:                    IntTrieSet,
-        val code:                    Array[Stmt[V]],
-        val cfg:                     CFG[Stmt[V], TACStmts[V]],
         val declaredMethods:         DeclaredMethods,
         val virtualFormalParameters: VirtualFormalParameters,
         val project:                 SomeProject,
@@ -43,7 +41,6 @@ class InterProceduralEscapeAnalysisContext(
     with IsMethodOverridableContainer
     with VirtualFormalParametersContainer
     with DeclaredMethodsContainer
-    with CFGContainer
 
 class InterProceduralEscapeAnalysisState
     extends AbstractEscapeAnalysisState with DependeeCache with ReturnValueUseSites
@@ -119,16 +116,12 @@ class InterProceduralEscapeAnalysis private[analyses] (
         entity:       Entity,
         defSite:      ValueOrigin,
         targetMethod: Method,
-        uses:         IntTrieSet,
-        code:         Array[Stmt[V]],
-        cfg:          CFG[Stmt[V], TACStmts[V]]
+        uses:         IntTrieSet
     ): InterProceduralEscapeAnalysisContext = new InterProceduralEscapeAnalysisContext(
         entity,
         defSite,
         targetMethod,
         uses,
-        code,
-        cfg,
         declaredMethods,
         virtualFormalParameters,
         project,

@@ -519,7 +519,7 @@ case class PutStatic[+V <: Var[V]](
     }
 
     override def toString: String = {
-        s"PutStatic(pc=$pc,${declaringClass.toJava},name,${declaredFieldType.toJava},$value)"
+        s"PutStatic(pc=$pc,${declaringClass.toJava},$name,${declaredFieldType.toJava},$value)"
     }
 }
 object PutStatic {
@@ -559,7 +559,7 @@ case class PutField[+V <: Var[V]](
     }
 
     override def toString: String = {
-        s"PutField(pc=$pc,${declaringClass.toJava},name,${declaredFieldType.toJava},$objRef,$value)"
+        s"PutField(pc=$pc,${declaringClass.toJava},$name,${declaredFieldType.toJava},$objRef,$value)"
     }
 }
 object PutField {

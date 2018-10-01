@@ -30,7 +30,6 @@ trait AbstractEscapeAnalysisContext {
     val uses: IntTrieSet
     val defSite: ValueOrigin
     val targetMethod: Method
-    val code: Array[Stmt[V]]
 
     def targetMethodDeclaringClassType: ObjectType = targetMethod.classFile.thisType
 
@@ -52,10 +51,6 @@ trait AbstractEscapeAnalysisContext {
         assert(params.forall(_.isVar))
         params.exists { case UVar(_, defSites) ⇒ defSites.contains(defSite) }
     }
-}
-
-trait CFGContainer {
-    val cfg: CFG[Stmt[V], TACStmts[V]]
 }
 
 trait PropertyStoreContainer {

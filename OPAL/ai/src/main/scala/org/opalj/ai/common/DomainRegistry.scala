@@ -25,8 +25,8 @@ import org.opalj.br.analyses.SomeProject
 object DomainRegistry {
 
     case class DomainMetaInformation(
-            lessPreciseDomains: Set[Class[_ <: Domain]],
-            factory:            (SomeProject, Method) ⇒ Domain
+        lessPreciseDomains: Set[Class[_ <: Domain]],
+        factory:            (SomeProject, Method) ⇒ Domain
     )
 
     type ClassRegistry = Map[Class[_ <: Domain], DomainMetaInformation]
@@ -259,6 +259,18 @@ object DomainRegistry {
         ),
         (project: SomeProject, method: Method) ⇒ {
             new domain.l2.DefaultPerformInvocationsDomain(project, method)
+        }
+    )
+
+    register(
+        "performs simple method invocations additionally to performing int computations using intervals and; records the ai-time def-use information",
+        classOf[domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse[_]],
+        lessPreciseDomains = Set(
+            classOf[domain.l1.DefaultDomainWithCFGAndDefUse[_]],
+            classOf[domain.l2.DefaultPerformInvocationsDomain[_]]
+        ),
+        (project: SomeProject, method: Method) ⇒ {
+            new domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse(project, method)
         }
     )
 

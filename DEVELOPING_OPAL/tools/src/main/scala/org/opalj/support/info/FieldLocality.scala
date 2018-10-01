@@ -17,6 +17,7 @@ import org.opalj.fpcf.properties.ExtensibleLocalFieldWithGetter
 import org.opalj.fpcf.properties.LocalField
 import org.opalj.fpcf.properties.LocalFieldWithGetter
 import org.opalj.fpcf.properties.NoLocalField
+import org.opalj.tac.fpcf.analyses.LazyL0TACAIAnalysis
 
 /**
  * Computes the field locality; see [[org.opalj.fpcf.properties.FieldLocality]] for details.
@@ -38,6 +39,7 @@ object FieldLocality extends DefaultOneStepAnalysis {
     ): BasicReport = {
 
         val ps = project.get(FPCFAnalysesManagerKey).runAll(
+            LazyL0TACAIAnalysis,
             LazyInterProceduralEscapeAnalysis,
             LazyVirtualCallAggregatingEscapeAnalysis,
             LazyVirtualReturnValueFreshnessAnalysis,

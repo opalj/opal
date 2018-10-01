@@ -91,6 +91,7 @@ import org.opalj.tac.VirtualMethodCall
 import org.opalj.tac.FieldRead
 import org.opalj.tac.InvokedynamicFunctionCall
 import org.opalj.tac.InvokedynamicMethodCall
+import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.value.KnownTypedValue
 
 /**
@@ -118,7 +119,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
         var ubPurity: Purity
         val method: Method
         val declClass: ObjectType
-        val code: Array[Stmt[V]]
+        var code: Array[Stmt[V]]
     }
 
     type StateType <: AnalysisState
@@ -627,6 +628,11 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
     )(implicit state: StateType): Unit
 
     /**
+     * Handles what to do if the TACAI is not yet final.
+     */
+    def handleTACAI(ep: EOptionP[Method, TACAI])(implicit state: StateType): Unit
+
+    /**
      * Retrieves and commits the methods purity as calculated for its declaring class type for the
      * current DefinedMethod that represents the non-overwritten method in a subtype.
      */
@@ -664,6 +670,26 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
             case dm: DeclaredMethod ⇒ Result(dm, ImpureByLackOfInformation)
             case _ ⇒
                 throw new UnknownError("purity is only defined for declared methods")
+        }
+    }
+
+    /**
+     * Returns the TACode for a method if available, registering dependencies as necessary.
+     */
+    def getTACAI(
+        method: Method
+    )(implicit state: StateType): Option[TACode[TACMethodParameter, V]] = {
+        propertyStore(method, TACAI.key) match {
+            case finalEP: FinalEP[Method, TACAI] ⇒
+                finalEP.ub.tac
+            case eps: IntermediateEP[Method, TACAI] ⇒
+                reducePurityLB(ImpureByAnalysis)
+                handleTACAI(eps)
+                eps.ub.tac
+            case epk ⇒
+                reducePurityLB(ImpureByAnalysis)
+                handleTACAI(epk)
+                None
         }
     }
 
