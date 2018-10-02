@@ -63,6 +63,7 @@ case object NoUpdateType extends UpdateType {
 
 }
 
+// TODO Rename to HeapShapeUpdate
 sealed trait MetaInformationUpdateType extends UpdateType {
 
     override def apply[V](value: ⇒ V): Update[V] = MetaInformationUpdate(value)
