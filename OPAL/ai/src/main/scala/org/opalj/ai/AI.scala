@@ -2367,7 +2367,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                                 operands.take(argsCount)
                             )
                         val newOperands = operands.drop(argsCount)
-                        computationWithReturnValueAndExceptions(computation, newOperands)
+                        computationWithOptionalReturnValueAndExceptions(computation, newOperands)
 
                     case 185 /*invokeinterface*/ ⇒
                         val invoke = instruction.asInstanceOf[INVOKEINTERFACE]

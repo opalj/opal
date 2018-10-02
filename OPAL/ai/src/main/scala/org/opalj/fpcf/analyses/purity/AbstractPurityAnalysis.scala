@@ -5,7 +5,6 @@ package analyses
 package purity
 
 import scala.annotation.switch
-
 import org.opalj.ai.ValueOrigin
 import org.opalj.ai.isImmediateVMException
 import org.opalj.br.ComputationalTypeReference
@@ -58,7 +57,6 @@ import org.opalj.tac.Goto
 import org.opalj.tac.If
 import org.opalj.tac.InstanceOf
 import org.opalj.tac.IntConst
-import org.opalj.tac.Invokedynamic
 import org.opalj.tac.JSR
 import org.opalj.tac.LongConst
 import org.opalj.tac.MethodHandleConst
@@ -91,6 +89,8 @@ import org.opalj.tac.Var
 import org.opalj.tac.VirtualFunctionCall
 import org.opalj.tac.VirtualMethodCall
 import org.opalj.tac.FieldRead
+import org.opalj.tac.InvokedynamicFunctionCall
+import org.opalj.tac.InvokedynamicMethodCall
 import org.opalj.value.KnownTypedValue
 
 /**
@@ -253,6 +253,12 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
                     checkPurityOfVirtualCall(declClass, isInterface, name, rcvr +: params, descr)
                 } else true
 
+            // We don't handle unresolved Invokedynamics
+            // - either OPAL removes it or we forget about it
+            case InvokedynamicMethodCall.ASTID ⇒
+                atMost(ImpureByAnalysis)
+                false
+
             // Returning objects/arrays is pure, if the returned object/array is locally initialized
             // and non-escaping or the object is immutable
             case ReturnValue.ASTID ⇒
@@ -361,7 +367,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
 
             // We don't handle unresolved Invokedynamic
             // - either OPAL removes it or we forget about it
-            case Invokedynamic.ASTID ⇒
+            case InvokedynamicFunctionCall.ASTID ⇒
                 atMost(ImpureByAnalysis)
                 false
 

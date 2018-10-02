@@ -33,7 +33,7 @@ The following is a first example, where we create a class called `Test` which de
     val (daClassFile,codeAnnotations) = cb.toDA()
     val rawClassFile : Array[Byte] = org.opalj.bc.Assembler(daClassFile)
 
-The `rawClassFile` can then be written to the disk using, e.g., `java.nio.Files.write(<PATH>,rawClassFile)` or (e.g., for testing purposes) can be passed to an in memory class loader (`org.opalj.util.InMemoryClassLoader`) and immediately be instantiated and executed. The `codeAnnotations` can then be further processed arbitrarily.
+The `rawClassFile` can then be written to the disk using, e.g., `java.nio.file.Files.write(<PATH>,rawClassFile)` or (e.g., for testing purposes) can be passed to an in memory class loader (`org.opalj.util.InMemoryClassLoader`) and immediately be instantiated and executed. The `codeAnnotations` can then be further processed arbitrarily.
 
 > If your class file doesn't define a default constructor, the DSL will automatically add it when required. I.e., the default constructor is created, when you define a regular class - not an interface –, the supertype is specified and no other constructor exists.
 

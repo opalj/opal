@@ -630,7 +630,7 @@ private[immutable] final class LongTrieSetN private[immutable] (
 
     def -(i: Long): LongTrieSet = this.-(i, i)
 
-    def iterator: LongIterator = new LongIterator {
+    final def iterator: LongIterator = new LongIterator {
         private[this] var it: LongIterator = left.iterator
         private[this] var isRightIterator: Boolean = false
         private[this] def checkIterator(): Unit = {
@@ -812,7 +812,12 @@ private[immutable] final class LongTrieSetNJustRight private[immutable] (
 
     def -(i: Long): LongTrieSet = this.-(i, i)
 
-    def iterator: LongIterator = right.iterator
+    def iterator: LongIterator = new LongIterator {
+        private[this] var it: LongIterator = right.iterator
+        override def toSet: LongTrieSet = longSet
+        def hasNext: Boolean = it.hasNext
+        def next(): Long = it.next()
+    }
 
     override def headAndTail: LongRefPair[LongTrieSet] = {
         // try to reduce the tree size by removing an element from the bigger subtree
@@ -937,7 +942,12 @@ private[immutable] final class LongTrieSetNJustLeft private[immutable] (
 
     def -(i: Long): LongTrieSet = this.-(i, i)
 
-    def iterator: LongIterator = left.iterator
+    def iterator: LongIterator = new LongIterator {
+        private[this] var it: LongIterator = left.iterator
+        override def toSet: LongTrieSet = longSet
+        def hasNext: Boolean = it.hasNext
+        def next(): Long = it.next()
+    }
 
     override def headAndTail: LongRefPair[LongTrieSet] = {
         // try to reduce the tree size by removing an element from the

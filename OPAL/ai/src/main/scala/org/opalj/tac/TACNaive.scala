@@ -569,16 +569,23 @@ object TACNaive {
                     }
 
                 case INVOKEDYNAMIC.opcode ⇒
-                    val call @ INVOKEDYNAMIC(bootstrapMethod, name, methodDescriptor) = instruction
+                    val call @ INVOKEDYNAMIC(bootstrapMethod, name, descriptor) = instruction
                     val numOps = call.numberOfPoppedOperands(x ⇒ stack.drop(x).head.cTpe.category)
                     val (paramsInOperandsOrder, rest) = stack.splitAt(numOps)
                     val params = paramsInOperandsOrder.reverse
-
-                    val returnType = methodDescriptor.returnType
-                    val expr = Invokedynamic(pc, bootstrapMethod, name, methodDescriptor, params)
-                    val newVar = OperandVar(returnType.computationalType, rest)
-                    statements(pc) = List(Assignment(pc, newVar, expr))
-                    schedule(pcOfNextInstruction(pc), newVar :: rest)
+                    val returnType = descriptor.returnType
+                    if (returnType.isVoidType) {
+                        val indyMethodCall =
+                            InvokedynamicMethodCall(pc, bootstrapMethod, name, descriptor, params)
+                        statements(pc) = List(indyMethodCall)
+                        schedule(pcOfNextInstruction(pc), rest)
+                    } else {
+                        val indyFunctionCall =
+                            InvokedynamicFunctionCall(pc, bootstrapMethod, name, descriptor, params)
+                        val newVar = OperandVar(returnType.computationalType, rest)
+                        statements(pc) = List(Assignment(pc, newVar, indyFunctionCall))
+                        schedule(pcOfNextInstruction(pc), newVar :: rest)
+                    }
 
                 case PUTSTATIC.opcode ⇒
                     val value :: rest = stack
