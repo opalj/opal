@@ -8,16 +8,16 @@ import sbtunidoc.ScalaUnidocPlugin
 name := "OPAL Library"
 
 // SNAPSHOT
-//version in ThisBuild := "2.0.1-SNAPSHOT"
-version in ThisBuild := "2.0.0" // October 2nd, 2018
-// RELEASED version 		in ThisBuild := "1.0.0" // October 25th, 2017
-// RELEASED version 		in ThisBuild := "0.8.15" // September 7th, 2017
-// RELEASED version 		in ThisBuild := "0.8.14" // June 23rd, 2017
-// RELEASED version 		in ThisBuild := "0.8.13" // MAY 19th, 2017
-// RELEASED version 		in ThisBuild := "0.8.12" // April 28th, 2017
-// RELEASED version 		in ThisBuild := "0.8.11" // April 14th, 2017
-// RELEASED version 		in ThisBuild := "0.8.10"
-// RELEASED version 		in ThisBuild := "0.8.9"
+version in ThisBuild := "2.0.1-SNAPSHOT"
+// RELEASED version in ThisBuild := "2.0.0" // October 2nd, 2018
+// RELEASED version in ThisBuild := "1.0.0" // October 25th, 2017
+// RELEASED version in ThisBuild := "0.8.15" // September 7th, 2017
+// RELEASED version in ThisBuild := "0.8.14" // June 23rd, 2017
+// RELEASED version in ThisBuild := "0.8.13" // MAY 19th, 2017
+// RELEASED version in ThisBuild := "0.8.12" // April 28th, 2017
+// RELEASED version in ThisBuild := "0.8.11" // April 14th, 2017
+// RELEASED version in ThisBuild := "0.8.10"
+// RELEASED version in ThisBuild := "0.8.9"
 
 organization in ThisBuild := "de.opal-project"
 homepage in ThisBuild := Some(url("http://www.opal-project.de"))
