@@ -8,6 +8,7 @@ import java.lang.invoke.LambdaMetafactory
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory
+
 import org.opalj.bi.AccessFlags
 import org.opalj.bi.ACC_PRIVATE
 import org.opalj.bi.ACC_PUBLIC
@@ -280,6 +281,15 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
                     Info,
                     Some("load-time transformation"),
                     "Groovy's INVOKEDYNAMICs are not rewritten"
+                ))
+            }
+            updatedClassFile
+        } else if (isDynamoInvokedynamic(invokedynamic)) {
+            if (logUnknownInvokeDynamics) {
+                OPALLogger.logOnce(StandardLogMessage(
+                    Info,
+                    Some("load-time transformation"),
+                    "org.dynamo's INVOKEDYNAMICs are not rewritten"
                 ))
             }
             updatedClassFile
@@ -1258,6 +1268,14 @@ object InvokedynamicRewriting {
         invokedynamic.bootstrapMethod.handle match {
             case ismh: InvokeStaticMethodHandle if ismh.receiverType.isObjectType ⇒
                 ismh.receiverType.asObjectType.packageName.startsWith("org/codehaus/groovy")
+            case _ ⇒ false
+        }
+    }
+
+    def isDynamoInvokedynamic(invokedynamic: INVOKEDYNAMIC): Boolean = {
+        invokedynamic.bootstrapMethod.handle match {
+            case ismh: InvokeStaticMethodHandle if ismh.receiverType.isObjectType ⇒
+                ismh.receiverType.asObjectType.fqn == "org/dynamo/rt/DynamoBootstrap"
             case _ ⇒ false
         }
     }

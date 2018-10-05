@@ -702,7 +702,10 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode with Th
                     // val originOfReturnAddressValue = currentDefLocals(lvIndex)
                     // updateUsageInformation(originOfReturnAddressValue , currentPC)
                     // propagate(defOps(currentPC), currentDefLocals)
-                    retPCs = currentPC :&: retPCs.tail // at each level, we have at most one RET
+
+                    // Note that we have at most one RET at each level and initially it
+                    // is set to the fake value -1 and this value is now updated.
+                    retPCs = currentPC :&: retPCs.tail
                     false /*do not schedule the next instruction now - will be done later*/
 
                 case IF_ACMPEQ.opcode | IF_ACMPNE.opcode
@@ -1000,7 +1003,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode with Th
             if (jsrPCs.top.nonEmpty &&
                 // We have to check if we have a nested JSR call;
                 // if the current subroutine level (root = 0) is smaller than the
-                // high of the stack then we have a nested subroutine call
+                // high of the stack then we have a nested subroutine call.
                 currentSubroutineLevel < jsrPCs.size) {
                 val IntRefPair(jsrPC, newJSRPCs) = jsrPCs.pop().headAndTail
                 jsrPCs.push(newJSRPCs)
@@ -1067,7 +1070,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode with Th
                     }
 
                 // 1. Let's safe and reset the state related to the last subroutine
-                if (subroutineDefOps eq null) {
+                if (subroutineDefOps eq null) { // initialize the data-structures on demand
                     subroutineDefOps = new Array[Chain[ValueOrigins]](instructions.length)
                     subroutineDefLocals = new Array[Registers[ValueOrigins]](instructions.length)
                     subroutineUsed = new Array[ValueOrigins](instructions.length + parametersOffset)
