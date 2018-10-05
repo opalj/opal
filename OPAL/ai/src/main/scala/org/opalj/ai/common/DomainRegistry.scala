@@ -242,7 +242,7 @@ object DomainRegistry {
     )
 
     register(
-        "uses intervals for int values and track nullness and must alias information for reference types; records the ai-time def-use information",
+        "uses intervals for int values; tracks nullness and must alias information for reference types; records the ai-time def-use information",
         classOf[domain.l1.DefaultDomainWithCFGAndDefUse[_]],
         lessPreciseDomains = Set(classOf[domain.l0.PrimitiveTACAIDomain]),
         (project: SomeProject, method: Method) ⇒ {
@@ -251,7 +251,7 @@ object DomainRegistry {
     )
 
     register(
-        "performs simple method invocations additionally to performing int computations using intervals and ",
+        "uses intervals for int values; tracks nullness and must alias information for reference types; records the ai-time def-use information; performs simple method invocations",
         classOf[domain.l2.DefaultPerformInvocationsDomain[_]],
         lessPreciseDomains = Set(
             classOf[domain.l1.DefaultIntervalValuesDomain[_]],
