@@ -4,17 +4,14 @@ package fpcf
 package analyses
 package escape
 
-import scala.annotation.switch
-import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.ai.common.DefinitionSiteLike
 import org.opalj.ai.ValueOrigin
+import org.opalj.ai.common.DefinitionSiteLike
 import org.opalj.br.Method
+import org.opalj.br.analyses.DeclaredMethods
+import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.br.analyses.VirtualFormalParameters
 import org.opalj.br.analyses.VirtualFormalParametersKey
-import org.opalj.br.analyses.DeclaredMethods
-import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.cfg.CFG
 import org.opalj.fpcf.properties.AtMost
 import org.opalj.fpcf.properties.EscapeViaReturn
 import org.opalj.fpcf.properties.EscapeViaStaticField
@@ -22,9 +19,10 @@ import org.opalj.fpcf.properties.GlobalEscape
 import org.opalj.fpcf.properties.NoEscape
 import org.opalj.tac.ArrayStore
 import org.opalj.tac.Assignment
-import org.opalj.tac.DefaultTACAIKey
 import org.opalj.tac.Expr
 import org.opalj.tac.ExprStmt
+import org.opalj.tac.InvokedynamicFunctionCall
+import org.opalj.tac.InvokedynamicMethodCall
 import org.opalj.tac.NonVirtualFunctionCall
 import org.opalj.tac.NonVirtualMethodCall
 import org.opalj.tac.PutField
@@ -34,14 +32,13 @@ import org.opalj.tac.StaticFunctionCall
 import org.opalj.tac.StaticMethodCall
 import org.opalj.tac.Stmt
 import org.opalj.tac.TACMethodParameter
-import org.opalj.tac.TACStmts
 import org.opalj.tac.TACode
 import org.opalj.tac.Throw
 import org.opalj.tac.VirtualFunctionCall
 import org.opalj.tac.VirtualMethodCall
-import org.opalj.tac.InvokedynamicFunctionCall
-import org.opalj.tac.InvokedynamicMethodCall
 import org.opalj.tac.fpcf.properties.TACAI
+
+import scala.annotation.switch
 
 /**
  * An abstract escape analysis for a [[org.opalj.ai.common.DefinitionSiteLike]] or a
@@ -69,14 +66,16 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
         context: AnalysisContext,
         state:   AnalysisState
     ): PropertyComputationResult = {
-        val tacai = getTACAI(context.targetMethod)
-        if(tacai.isEmpty)
-            return IntermediateResult(
-                context.entity,
-                GlobalEscape, NoEscape,
-                state.dependees, continuation
-            );
-        analyzeTAC(tacai.get)
+        retrieveTAC(context.targetMethod)
+        state.tacai match {
+            case None ⇒
+                IntermediateResult(
+                    context.entity, GlobalEscape, NoEscape, state.dependees, continuation
+                )
+
+            case Some(tacai) ⇒
+                analyzeTAC(tacai)
+        }
     }
 
     def analyzeTAC(tac: TACode[TACMethodParameter, V])(
@@ -85,22 +84,24 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
         state:   AnalysisState
     ): PropertyComputationResult = {
         // for every use-site, check its escape state
-        for (use ← context.uses) {
+        for (use ← state.uses) {
             checkStmtForEscape(tac.stmts(use))
         }
         returnResult
     }
 
-    def getTACAI(
+    def retrieveTAC(
         method: Method
-    )(implicit state: AnalysisState): Option[TACode[TACMethodParameter, V]] = {
+    )(implicit context: AnalysisContext, state: AnalysisState): Unit = {
         val tacai = propertyStore(method, TACAI.key)
 
         if (tacai.isRefinable)
             state.addDependency(tacai)
 
-        if (tacai.hasProperty) tacai.ub.tac
-        else None
+        if (tacai.hasProperty) {
+            // todo is "get" safe here?
+            state.updateTACAI(tacai.ub.tac.get)
+        }
     }
 
     /**
@@ -114,12 +115,12 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
         (stmt.astID: @switch) match {
             case PutStatic.ASTID ⇒
                 val value = stmt.asPutStatic.value
-                if (context.usesDefSite(value)) {
+                if (state.usesDefSite(value)) {
                     state.meetMostRestrictive(EscapeViaStaticField)
                 }
 
             case ReturnValue.ASTID ⇒
-                if (context.usesDefSite(stmt.asReturnValue.expr))
+                if (state.usesDefSite(stmt.asReturnValue.expr))
                     state.meetMostRestrictive(EscapeViaReturn)
 
             case PutField.ASTID ⇒
@@ -221,7 +222,7 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
     ): Unit = {
         // we only allow special (inter-procedural) handling for constructors
         if (call.name == "<init>") {
-            if (context.usesDefSite(call.receiver)) {
+            if (state.usesDefSite(call.receiver)) {
                 handleThisLocalOfConstructor(call)
             } else {
                 // an object can't be a parameter and the receiver of a constructor call
@@ -372,7 +373,7 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
             IntermediateResult(
                 context.entity,
                 GlobalEscape, state.mostRestrictiveProperty,
-                state.dependees, continuation, CheapPropertyComputation
+                state.dependees, continuation
             )
         }
     }
@@ -387,12 +388,15 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
         context: AnalysisContext, state: AnalysisState
     ): PropertyComputationResult = {
         someEPS match {
-            case EPS(_, _, ub: TACAI) =>
-                if(someEPS.isRefinable) {
-                    state.removeDependency(someEPS)
+            case EPS(_, _, ub: TACAI) ⇒
+                state.removeDependency(someEPS)
+                if (someEPS.isRefinable) {
                     state.addDependency(someEPS)
                 }
+                state.updateTACAI(ub.tac.get)
                 analyzeTAC(ub.tac.get)
+            case _ ⇒
+                throw new UnknownError(s"unhandled escape property (${someEPS.ub} for ${someEPS.e}")
         }
     }
 
@@ -411,34 +415,20 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
     }
 
     def determineEscapeOfDS(dsl: DefinitionSiteLike): PropertyComputationResult = {
-        val tacai = tacaiProvider(dsl.method)
-        val uses = dsl.usedBy.map(tacai.pcToIndex(_))
-        val defSite = tacai.pcToIndex(dsl.pc)
-
-        // if the definition site is dead (-1), the object does not escape
-        if (defSite == -1)
-            Result(dsl, NoEscape)
-        else {
-            val ctx = createContext(dsl, defSite, dsl.method, uses)
-            doDetermineEscape(ctx, createState)
-        }
-
+        val ctx = createContext(dsl, dsl.pc, dsl.method)
+        doDetermineEscape(ctx, createState)
     }
 
     def determineEscapeOfFP(fp: VirtualFormalParameter): PropertyComputationResult
 
     def createContext(
         entity:       Entity,
-        defSite:      ValueOrigin,
-        targetMethod: Method,
-        uses:         IntTrieSet
+        defSitePC:    ValueOrigin,
+        targetMethod: Method
     ): AnalysisContext
 
     def createState: AnalysisState
 
-    protected[this] val tacaiProvider: (Method) ⇒ TACode[TACMethodParameter, V] = {
-        project.get(DefaultTACAIKey)
-    }
     protected[this] lazy val virtualFormalParameters: VirtualFormalParameters = {
         project.get(VirtualFormalParametersKey)
     }

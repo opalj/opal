@@ -1,12 +1,12 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf
 
-import org.opalj.ai.common.SimpleAIKey
 import org.opalj.ai.domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse
-import org.opalj.br.Method
+import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.fpcf.analyses.LazyVirtualCallAggregatingEscapeAnalysis
 import org.opalj.fpcf.analyses.escape.EagerInterProceduralEscapeAnalysis
 import org.opalj.fpcf.analyses.escape.EagerSimpleEscapeAnalysis
+import org.opalj.tac.fpcf.analyses.LazyL0TACAIAnalysis
 
 /**
  * Tests if the escape properties specified in the test project (the classes in the (sub-)package of
@@ -23,19 +23,23 @@ class EscapeAnalysisTests extends PropertiesTest {
     ): TestContext = {
         val p = FixtureProject.recreate()
 
-        p.getOrCreateProjectInformationKeyInitializationData(
-            SimpleAIKey,
-            (m: Method) ⇒ {
-                new DefaultPerformInvocationsDomainWithCFGAndDefUse(p, m)
-            }
+        val performInvocationsDomain = classOf[DefaultPerformInvocationsDomainWithCFGAndDefUse[_]]
+
+        p.updateProjectInformationKeyInitializationData(
+            AIDomainFactoryKey,
+            (i: Option[Set[Class[_ <: AnyRef]]]) ⇒ (i match {
+                case None               ⇒ Set(performInvocationsDomain)
+                case Some(requirements) ⇒ requirements + performInvocationsDomain
+            }): Set[Class[_ <: AnyRef]]
         )
         val ps = p.get(PropertyStoreKey)
 
-        ps.setupPhase((eagerAnalysisRunners ++ lazyAnalysisRunners).flatMap(
+        val lazyRunnersWithTACAI = lazyAnalysisRunners + LazyL0TACAIAnalysis
+        ps.setupPhase((eagerAnalysisRunners ++ lazyRunnersWithTACAI).flatMap(
             _.derives.map(_.asInstanceOf[PropertyMetaInformation].key)
         ))
 
-        lazyAnalysisRunners.foreach(_.startLazily(p, ps, null))
+        lazyRunnersWithTACAI.foreach(_.startLazily(p, ps, null))
         val as = eagerAnalysisRunners.map(ar ⇒ ar.start(p, ps, null))
         ps.waitOnPhaseCompletion()
         ps.shutdown()

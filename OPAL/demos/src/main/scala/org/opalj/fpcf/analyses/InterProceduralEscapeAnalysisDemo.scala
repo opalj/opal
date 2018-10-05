@@ -6,9 +6,8 @@ package analyses
 import java.net.URL
 
 import org.opalj.ai.common.DefinitionSite
-import org.opalj.ai.common.SimpleAIKey
 import org.opalj.ai.domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse
-import org.opalj.br.Method
+import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
@@ -29,7 +28,7 @@ import org.opalj.fpcf.properties.EscapeViaStaticField
 import org.opalj.fpcf.properties.GlobalEscape
 import org.opalj.fpcf.properties.NoEscape
 import org.opalj.log.OPALLogger.info
-import org.opalj.tac.DefaultTACAIKey
+import org.opalj.tac.fpcf.analyses.LazyL0TACAIAnalysis
 import org.opalj.util.PerformanceEvaluation.time
 
 /**
@@ -54,26 +53,23 @@ object InterProceduralEscapeAnalysisDemo extends DefaultOneStepAnalysis {
         implicit val logContext = project.logContext
 
         val propertyStore = time {
-            project.getOrCreateProjectInformationKeyInitializationData(
-                SimpleAIKey,
-                (m: Method) ⇒ {
-                    new DefaultPerformInvocationsDomainWithCFGAndDefUse(project, m) // new DefaultDomainWithCFGAndDefUse(project, m) // with org.opalj.ai.domain.l1.DefaultArrayValuesBinding //primitivetacidomain
-                }
+            val performInvocationsDomain = classOf[DefaultPerformInvocationsDomainWithCFGAndDefUse[_]]
+
+            project.updateProjectInformationKeyInitializationData(
+                AIDomainFactoryKey,
+                (i: Option[Set[Class[_ <: AnyRef]]]) ⇒ (i match {
+                    case None               ⇒ Set(performInvocationsDomain)
+                    case Some(requirements) ⇒ requirements + performInvocationsDomain
+                }): Set[Class[_ <: AnyRef]]
             )
             project.get(PropertyStoreKey)
         } { t ⇒ info("progress", s"initialization of property store took ${t.toSeconds}") }
-
-        // Get the TAC code for all methods to make it possible to measure the time for
-        // the analysis itself.
-        time {
-            val tac = project.get(DefaultTACAIKey)
-            project.parForeachMethodWithBody() { m ⇒ tac(m.method) }
-        } { t ⇒ info("progress", s"generating 3-address code took ${t.toSeconds}") }
 
         time {
             val manager = project.get(FPCFAnalysesManagerKey)
             manager.runAll(
                 LazyVirtualCallAggregatingEscapeAnalysis,
+                LazyL0TACAIAnalysis,
                 EagerInterProceduralEscapeAnalysis
             )
         } { t ⇒ info("progress", s"escape analysis took ${t.toSeconds}") }

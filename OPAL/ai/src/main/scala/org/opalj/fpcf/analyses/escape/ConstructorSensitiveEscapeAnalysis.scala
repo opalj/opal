@@ -45,7 +45,7 @@ trait ConstructorSensitiveEscapeAnalysis extends AbstractEscapeAnalysis {
         state:   AnalysisState
     ): Unit = {
         assert(call.name == "<init>", "method is not a constructor")
-        assert(context.usesDefSite(call.receiver), "call receiver does not use def-site")
+        assert(state.usesDefSite(call.receiver), "call receiver does not use def-site")
 
         // the object constructor will not escape the this local
         if (call.declaringClass eq ObjectType.Object)
@@ -144,6 +144,7 @@ trait ConstructorSensitiveEscapeAnalysis extends AbstractEscapeAnalysis {
                 state.removeDependency(someEPS)
                 handleEscapeState(someEPS)
                 returnResult
+
             case _ ⇒ super.continuation(someEPS)
         }
     }

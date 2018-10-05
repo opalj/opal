@@ -316,8 +316,7 @@ class FieldLocalityAnalysis private[analyses] (
                 if (checkFreshnessOfDef(stmt, method)) {
                     true
                 } else {
-                    val filteredUses = aiResult(method).domain.usedBy(stmt.pc) - putField
-                    val defSiteEntity = DefinitionSitesWithoutPutField(method, stmt.pc, filteredUses)
+                    val defSiteEntity = DefinitionSitesWithoutPutField(method, stmt.pc, putField)
                     val escape = propertyStore(defSiteEntity, EscapeProperty.key)
                     // does the value escape?
                     handleEscape(escape, isGetFieldOfReceiver = false)
@@ -646,8 +645,8 @@ object DefinitionSitesWithoutPutField {
         new ConcurrentHashMap[DefinitionSiteWithoutPutField, DefinitionSiteWithoutPutField]()
     }
 
-    def apply(method: Method, pc: Int, usedBy: IntTrieSet): DefinitionSiteWithoutPutField = {
-        val defSite = DefinitionSiteWithoutPutField(method, pc, usedBy)
+    def apply(method: Method, pc: Int, putFieldPC: Int): DefinitionSiteWithoutPutField = {
+        val defSite = DefinitionSiteWithoutPutField(method, pc, putFieldPC)
         val prev = defSites.putIfAbsent(defSite, defSite)
         if (prev == null) defSite else prev
     }
@@ -664,5 +663,18 @@ object DefinitionSitesWithoutPutField {
  * @author Florian Kuebler
  */
 final case class DefinitionSiteWithoutPutField(
-    method: Method, pc: Int, usedBy: IntTrieSet
-) extends DefinitionSiteLike
+        method: Method, pc: Int, putFieldPC: Int
+) extends DefinitionSiteLike {
+    override def usedBy[V <: KnownTypedValue](
+        tacode: TACode[TACMethodParameter, DUVar[V]]
+    ): IntTrieSet = {
+        val defSite = tacode.pcToIndex(pc)
+        if (defSite == -1) {
+            // the code is dead
+            IntTrieSet.empty
+        } else {
+            val Assignment(_, dvar, _) = tacode.stmts(defSite)
+            dvar.usedBy - putFieldPC
+        }
+    }
+}

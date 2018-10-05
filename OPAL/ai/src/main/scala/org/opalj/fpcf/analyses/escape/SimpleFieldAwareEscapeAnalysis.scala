@@ -34,14 +34,14 @@ trait SimpleFieldAwareEscapeAnalysis extends AbstractEscapeAnalysis {
     override protected[this] def handlePutField(
         putField: PutField[V]
     )(implicit context: AnalysisContext, state: AnalysisState): Unit = {
-        if (context.usesDefSite(putField.value))
+        if (state.usesDefSite(putField.value))
             handleFieldLike(putField.objRef.asVar.definedBy)
     }
 
     override protected[this] def handleArrayStore(
         arrayStore: ArrayStore[V]
     )(implicit context: AnalysisContext, state: AnalysisState): Unit = {
-        if (context.usesDefSite(arrayStore.value))
+        if (state.usesDefSite(arrayStore.value))
             handleFieldLike(arrayStore.arrayRef.asVar.definedBy)
     }
 
@@ -51,7 +51,7 @@ trait SimpleFieldAwareEscapeAnalysis extends AbstractEscapeAnalysis {
      */
     private[this] def handleFieldLike(
         referenceDefSites: IntTrieSet
-    )(implicit context: AnalysisContext, state: AnalysisState): Unit = {
+    )(implicit state: AnalysisState): Unit = {
         // the definition sites to handle
         var workset = referenceDefSites
 
@@ -65,10 +65,10 @@ trait SimpleFieldAwareEscapeAnalysis extends AbstractEscapeAnalysis {
 
             // do not check the escape state of the entity (defSite) whose escape state we are
             // currently computing to avoid endless loops
-            if (context.defSite != referenceDefSite) {
+            if (state.defSite != referenceDefSite) {
                 // is the object/array reference of the field a local
                 if (referenceDefSite >= 0) {
-                    context.code(referenceDefSite) match {
+                    state.tacai.get.stmts(referenceDefSite) match {
                         case Assignment(_, _, New(_, _) | NewArray(_, _, _)) ⇒
                             /* as may alias information are not easily available we cannot simply
                             check for escape information of the base object */
