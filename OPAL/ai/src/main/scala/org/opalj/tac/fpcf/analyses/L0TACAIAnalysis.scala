@@ -49,7 +49,10 @@ class L0TACAIAnalysis private[analyses] (val project: SomeProject) extends FPCFA
      * Computes the TAC for the given method.
      */
     private[analyses] def computeTAC(m: Method): PropertyComputationResult = {
-        val aiResult = BaseAIResult.computeAIResult(project, m).asInstanceOf[AIResult { val domain: Domain with RecordDefUse }]
+        val aiResult =
+            BaseAIResult.
+                computeAIResult(project, m).
+                asInstanceOf[AIResult { val domain: Domain with RecordDefUse }]
         val aiResultProperty = AnAIResult(aiResult)
         val taCode = TACAIFactory(m, p.classHierarchy, aiResult)(Nil)
         val tacaiProperty = TheTACAI(
