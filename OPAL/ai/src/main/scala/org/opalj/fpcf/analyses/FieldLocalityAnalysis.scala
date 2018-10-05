@@ -462,7 +462,8 @@ class FieldLocalityAnalysis private[analyses] (
         // that the field is overwritten before the method's exit, not before a potential escape
         // of the object.
         val escape = propertyStore(definitionSites(method, pc), EscapeProperty.key)
-        handleEscapeStateOfResultOfSuperClone(escape)
+        if (handleEscapeStateOfResultOfSuperClone(escape))
+            return true;
 
         var enqueuedBBs: Set[CFGNode] = Set(tacai.cfg.bb(defSite)) // All scheduled BBs
         var worklist: List[CFGNode] = List(tacai.cfg.bb(defSite)) // BBs we still have to visit
@@ -506,27 +507,25 @@ class FieldLocalityAnalysis private[analyses] (
      */
     private[this] def handleEscapeStateOfResultOfSuperClone(
         eOptionP: EOptionP[DefinitionSiteLike, EscapeProperty]
-    )(implicit state: FieldLocalityState): Boolean = {
-        eOptionP match {
-            case FinalEP(_, NoEscape | EscapeInCallee) ⇒ false
+    )(implicit state: FieldLocalityState): Boolean = eOptionP match {
+        case FinalEP(_, NoEscape | EscapeInCallee) ⇒ false
 
-            case IntermediateEP(_, _, NoEscape | EscapeInCallee) ⇒
-                state.addClonedDefinitionSiteDependee(eOptionP)
-                false
+        case IntermediateEP(_, _, NoEscape | EscapeInCallee) ⇒
+            state.addClonedDefinitionSiteDependee(eOptionP)
+            false
 
-            case FinalEP(_, EscapeViaReturn) ⇒ false
+        case FinalEP(_, EscapeViaReturn) ⇒ false
 
-            case IntermediateEP(_, _, EscapeViaReturn) ⇒
-                state.addClonedDefinitionSiteDependee(eOptionP)
-                false
+        case IntermediateEP(_, _, EscapeViaReturn) ⇒
+            state.addClonedDefinitionSiteDependee(eOptionP)
+            false
 
-            // The escape state is worse than [[org.opalj.fpcf.properties.EscapeViaReturn]]
-            case _: EPS[_, _] ⇒ true
+        // The escape state is worse than [[org.opalj.fpcf.properties.EscapeViaReturn]]
+        case _: EPS[_, _] ⇒ true
 
-            case _ ⇒
-                state.addClonedDefinitionSiteDependee(eOptionP)
-                false
-        }
+        case _ ⇒
+            state.addClonedDefinitionSiteDependee(eOptionP)
+            false
     }
 
     /**
