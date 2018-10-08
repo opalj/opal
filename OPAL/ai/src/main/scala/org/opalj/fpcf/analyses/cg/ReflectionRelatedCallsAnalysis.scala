@@ -71,20 +71,21 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
     val PropertiesT = ObjectType("java/util/Properties")
 
     val GetPropertyDescriptor = MethodDescriptor(ObjectType.String, ObjectType.String)
-    val GetOrDefaultPropertyDescriptor = MethodDescriptor(RefArray(ObjectType.String, ObjectType.String), ObjectType.String)
+    val GetOrDefaultPropertyDescriptor =
+        MethodDescriptor(RefArray(ObjectType.String, ObjectType.String), ObjectType.String)
     val GetDescriptor = MethodDescriptor(ObjectType.Object, ObjectType.Object)
 
     class State(
-            val definedMethod:        DefinedMethod,
-            val stmts:                Array[Stmt[V]],
-            val cfg:                  CFG[Stmt[V], TACStmts[V]],
-            val pcToIndex:            Array[Int],
-            val loadedClassesUB:      UIDSet[ObjectType],
-            val instantiatedTypesUB:  UIDSet[ObjectType],
-            val calleesAndCallers:    CalleesAndCallers,
-            var newLoadedClasses:     UIDSet[ObjectType]                              = UIDSet.empty,
-            var newInstantiatedTypes: UIDSet[ObjectType]                              = UIDSet.empty,
-            var dependee:             Option[EOptionP[SomeProject, SystemProperties]] = None
+        val definedMethod:        DefinedMethod,
+        val stmts:                Array[Stmt[V]],
+        val cfg:                  CFG[Stmt[V], TACStmts[V]],
+        val pcToIndex:            Array[Int],
+        val loadedClassesUB:      UIDSet[ObjectType],
+        val instantiatedTypesUB:  UIDSet[ObjectType],
+        val calleesAndCallers:    CalleesAndCallers,
+        var newLoadedClasses:     UIDSet[ObjectType]                              = UIDSet.empty,
+        var newInstantiatedTypes: UIDSet[ObjectType]                              = UIDSet.empty,
+        var dependee:             Option[EOptionP[SomeProject, SystemProperties]] = None
     )
 
     implicit private[this] val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
@@ -157,7 +158,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         if (relevantPCs.isEmpty && forNamePCs.isEmpty)
             return Result(declaredMethod, NoReflectionRelatedCallees);
 
-        val (loadedClassesUB, instantiatedTypesUB) = getLoadedClassesAndInstantiatedTypes()
+        val (loadedClassesUB, instantiatedTypesUB) = loadedClassesAndInstantiatedTypes()
 
         val tacode = tacai(method)
         val stmts = tacode.stmts
@@ -193,6 +194,10 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         returnResult()
     }
 
+    /**
+     * Analyzes all invocations via invoke, invokeExact, invokeWithArguments and newInstance
+     * methods.
+     */
     private[this] def analyzeInvocations()(implicit state: State): Unit = {
         for {
             pc ← state.calleesAndCallers.callees.keysIterator
@@ -218,6 +223,10 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         }
     }
 
+    /**
+     * Analyzes a single expression that is an invocation via on of the methods invoke,
+     * invokeExact, invokeWithArguments and newInstance.
+     */
     private[this] def handleExpr(
         caller: DefinedMethod,
         pc:     Int,
@@ -225,22 +234,26 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
     )(implicit state: State): Unit = expr.astID match {
         case VirtualFunctionCall.ASTID ⇒
             expr.asVirtualFunctionCall match {
-                case VirtualFunctionCall(_, ObjectType.Class, _, "newInstance", _, receiver, _) ⇒
-                    handleClassNewInstance(caller, pc, receiver)
-                case VirtualFunctionCall(_, ConstructorT, _, "newInstance", _, receiver, _) ⇒
-                    handleConstructorNewInstance(caller, pc, receiver)
-                case VirtualFunctionCall(_, MethodT, _, "invoke", _, receiver, _) ⇒
-                    handleMethodInvoke(caller, pc, receiver)
-                case VirtualFunctionCall(_, ObjectType.MethodHandle, _, "invokeExact", desc, receiver, params) ⇒
-                    handleMethodHandleInvoke(caller, pc, receiver, params, Some(desc))
+                case VirtualFunctionCall(_, ObjectType.Class, _, "newInstance", _, rcvr, _) ⇒
+                    handleNewInstance(caller, pc, rcvr, Some(MethodDescriptor.NoArgsAndReturnVoid))
+                case VirtualFunctionCall(_, ConstructorT, _, "newInstance", _, rcvr, _) ⇒
+                    handleConstructorNewInstance(caller, pc, rcvr)
+                case VirtualFunctionCall(_, MethodT, _, "invoke", _, rcvr, _) ⇒
+                    handleMethodInvoke(caller, pc, rcvr)
+                case VirtualFunctionCall(_, ObjectType.MethodHandle, _, "invokeExact", desc, rcvr, params) ⇒
+                    handleMethodHandleInvoke(caller, pc, rcvr, params, Some(desc))
                 case VirtualFunctionCall(_, ObjectType.MethodHandle, _, "invoke" |
-                    "invokeWithArguments", _, receiver, params) ⇒
-                    handleMethodHandleInvoke(caller, pc, receiver, params, None)
+                    "invokeWithArguments", _, rcvr, params) ⇒
+                    handleMethodHandleInvoke(caller, pc, rcvr, params, None)
                 case _ ⇒
             }
         case _ ⇒
     }
 
+    /**
+     * Adds classes that can be loaded by an invocation of Class.forName to the set of loaded
+     * classes.
+     */
     private[this] def handleForName(className: Expr[V])(implicit state: State): Unit = {
         val loadedClasses = getPossibleForNameClasses(className, None) collect {
             case r: ObjectType                              ⇒ r
@@ -249,14 +262,39 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         state.newLoadedClasses ++= loadedClasses.filter(!state.loadedClassesUB.contains(_))
     }
 
-    private[this] def handleClassNewInstance(
-        caller:  DefinedMethod,
-        pc:      Int,
-        classes: Expr[V]
+    /**
+     * Analyzes an invocation of Constructor.newInstance.
+     * Adds invocations of constructors as well as instantiated types if the Constructor instance
+     * was acquired via Class.getConstructor where the possible classes are (partially) known.
+     */
+    private[this] def handleConstructorNewInstance(
+        caller:      DefinedMethod,
+        pc:          Int,
+        constructor: Expr[V]
     )(implicit state: State): Unit = {
-        handleNewInstance(caller, pc, classes, Some(MethodDescriptor.NoArgsAndReturnVoid))
+        constructor.asVar.definedBy.foreach { index ⇒
+            if (index > 0) {
+                val definition = state.stmts(index).asAssignment.expr
+                if (definition.isVirtualFunctionCall) {
+                    definition.asVirtualFunctionCall match {
+                        case VirtualFunctionCall(_, ObjectType.Class, _, "getConstructor", _, classes, params) ⇒
+                            val parameterTypes = getTypesFromVararg(params.head, pc)
+                            val descriptor = parameterTypes.map(s ⇒ MethodDescriptor(s, VoidType))
+                            handleNewInstance(caller, pc, classes, descriptor)
+                        case _ ⇒ state.calleesAndCallers.addIncompleteCallsite(pc)
+                    }
+                } else {
+                    state.calleesAndCallers.addIncompleteCallsite(pc)
+                }
+            } else {
+                state.calleesAndCallers.addIncompleteCallsite(pc)
+            }
+        }
     }
 
+    /**
+     * Handles invocations of constructors for all classes that the receiver could represent.
+     */
     private[this] def handleNewInstance(
         caller:     DefinedMethod,
         pc:         Int,
@@ -268,6 +306,9 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         handleNewInstances(caller, pc, instantiatedTypes, descriptor)
     }
 
+    /**
+     * Handles invocations of constructors for the given types and constructor descriptors.
+     */
     private[this] def handleNewInstances(
         caller:            DefinedMethod,
         pc:                Int,
@@ -301,32 +342,11 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         }
     }
 
-    private[this] def handleConstructorNewInstance(
-        caller:      DefinedMethod,
-        pc:          Int,
-        constructor: Expr[V]
-    )(implicit state: State): Unit = {
-        constructor.asVar.definedBy.foreach { index ⇒
-            if (index > 0) {
-                val definition = state.stmts(index).asAssignment.expr
-                if (definition.isVirtualFunctionCall) {
-                    definition.asVirtualFunctionCall match {
-                        case VirtualFunctionCall(_, ObjectType.Class, _, "getConstructor", _, classes, params) ⇒
-                            val parameterTypes = getTypesFromVararg(params.head, pc)
-
-                            val descriptor = parameterTypes.map(s ⇒ MethodDescriptor(s, VoidType))
-                            handleNewInstance(caller, pc, classes, descriptor)
-                        case _ ⇒ state.calleesAndCallers.addIncompleteCallsite(pc)
-                    }
-                } else {
-                    state.calleesAndCallers.addIncompleteCallsite(pc)
-                }
-            } else {
-                state.calleesAndCallers.addIncompleteCallsite(pc)
-            }
-        }
-    }
-
+    /**
+     * Analyzes an invocation of Method.invoke.
+     * Adds calls to the potentially invoked methods if the Method instance was acquired via
+     * Class.getDeclaredMethod or Class.getMethod and the possible classes are (partially) known.
+     */
     private[this] def handleMethodInvoke(
         caller: DefinedMethod,
         pc:     Int,
@@ -369,6 +389,11 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         }
     }
 
+    /**
+     * Resolves a method as specified by Class.getDeclaredMethod and Class.getMethod.
+     * @param recurse True to resolve as specified by Class.getMethod (recursing to superclasses),
+     *                false to resolve as specified by Class.getDeclaredMethod (not recursing).
+     */
     private[this] def resolveCallees(
         classType:   ReferenceType,
         name:        String,
@@ -386,14 +411,16 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                 Traversable.empty
             } else {
                 val candidates = cfO.get.methods.filter { method ⇒
-                    (!recurse || method.isPublic) &&
+                    (!recurse || method.isPublic) /* getMethod only returns public methods */ &&
                         (allowStatic || !method.isStatic) &&
                         method.name == name &&
                         method.parameterTypes == paramTypes
                 }
                 if (candidates.size == 1) {
+                    // Single candidate is chosen
                     Traversable(declaredMethods(candidates.head))
                 } else if (candidates.isEmpty) {
+                    // No candidate => recurse to superclass if allowed, otherwise return no method
                     val superT = cfO.get.superclassType
                     if (!recurse || superT.isEmpty) {
                         state.calleesAndCallers.addIncompleteCallsite(pc)
@@ -405,12 +432,14 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                             paramTypes,
                             recurse,
                             pc,
-                            allowStatic = false
+                            allowStatic = false // Static methods are not resolved on superclasses
                         )
                     }
                 } else if (candidates.exists(!_.returnType.isReferenceType)) {
+                    // There is no most specific return type for primitive types.
                     candidates.map[DeclaredMethod](declaredMethods(_))
                 } else {
+                    // Resolve to the candidate with the most specific return type.
                     val returnTypes = candidates.tail.map[ReferenceType](_.returnType.asReferenceType)
                     val first: Option[ReferenceType] = Some(returnTypes.head)
                     val foundType = returnTypes.tail.foldLeft(first) { (mostSpecific, current) ⇒
@@ -424,6 +453,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                         }
                     }
                     if (foundType.isEmpty) {
+                        // No most specific return type found => any of the methods could be invoked
                         candidates.map[DeclaredMethod](declaredMethods(_))
                     } else {
                         Traversable(
@@ -435,6 +465,12 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         }
     }
 
+    /**
+     * Analyzes an invocation of MethodHandle.invoke.
+     * Adds calls to the potentially invoked methods if the MethodHandle instance is a MethodHandle
+     * constant or if it was required via a call to MethodHandles$Lookup.{findStatic, findVirtual,
+     * findSpecial, findConstructor}.
+     */
     private[this] def handleMethodHandleInvoke(
         caller:       DefinedMethod,
         pc:           Int,
@@ -558,6 +594,9 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         }
     }
 
+    /**
+     * Handles an invocation of a static method via MethodHandle.invoke.
+     */
     private[this] def handleInvokeStatic(
         caller:        DefinedMethod,
         pc:            Int,
@@ -588,6 +627,9 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         }
     }
 
+    /**
+     * Handles an invocation of a virtual/interface method via MethodHandle.invoke.
+     */
     private[this] def handleInvokeVirtual(
         caller:       DefinedMethod,
         pc:           Int,
@@ -623,6 +665,9 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         }
     }
 
+    /**
+     * Handles an invocation of a private/super method via MethodHandle.invoke.
+     */
     private[this] def handleInvokeSpecial(
         caller:         DefinedMethod,
         pc:             Int,
@@ -657,6 +702,10 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         }
     }
 
+    /**
+     * Returns Strings that a given expression may evaluate to.
+     * Identifies local use of String constants and Strings loaded from Properties objects.
+     */
     private[this] def getPossibleStrings(
         value:            Expr[V],
         pc:               Option[Int],
@@ -691,6 +740,10 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         }.flatten
     }
 
+    /**
+     * Returns Strings that ma be loaded from a Properties object if the key is a constant String
+     * that the given expression may evaluate to.
+     */
     private[this] def getStringConstsForSystemPropertiesKey(
         value: Expr[V], pc: Option[Int]
     )(implicit state: State): Iterator[String] = {
@@ -710,10 +763,27 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         }
     }
 
+    /**
+     * Returns types that a given expression potentially evaluates to.
+     * Identifies local uses of Class constants, class instances returned from Class.forName,
+     * by accesses to a primitive type's class as well as from Object.getClass.
+     */
     private[this] def getPossibleTypes(
         value: Expr[V],
         pc:    Int
     )(implicit state: State): Iterator[Type] = {
+
+        def isForName(expr: Expr[V]): Boolean = { // static call to Class.forName
+            expr.isStaticFunctionCall &&
+                (expr.asStaticFunctionCall.declaringClass eq ObjectType.Class) &&
+                expr.asStaticFunctionCall.name == "forName"
+        }
+
+        def isGetClass(expr: Expr[V]): Boolean = { // virtual call to Object.getClass
+            expr.isVirtualFunctionCall && expr.asVirtualFunctionCall.name == "getClass" &&
+                expr.asVirtualFunctionCall.descriptor == MethodDescriptor.withNoArgs(ObjectType.Class)
+        }
+
         value.asVar.definedBy.iterator.filter { index ⇒
             if (index < 0) {
                 state.calleesAndCallers.addIncompleteCallsite(pc)
@@ -728,19 +798,44 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
             }
         } flatMap { index: Int ⇒
             val expr = state.stmts(index).asAssignment.expr
-            if (expr.isClassConst) Iterator(state.stmts(index).asAssignment.expr.asClassConst.value)
-            else if (expr.isStaticFunctionCall)
+            if (expr.isClassConst) {
+                Iterator(state.stmts(index).asAssignment.expr.asClassConst.value)
+            } else if (expr.isStaticFunctionCall) {
                 getPossibleForNameClasses(expr.asStaticFunctionCall.params.head, Some(pc))
-            else if (expr.isVirtualFunctionCall) {
+            } else if (expr.isVirtualFunctionCall) {
                 getTypesOfVar(expr.asVirtualFunctionCall.receiver.asVar, pc)
             } else {
-                val declClass = expr.asGetStatic.declaringClass
-                if (declClass == VoidType.WrapperType) Iterator(VoidType)
-                else Iterator(BaseType.baseTypes.iterator.find(declClass == _.WrapperType).get)
+                Iterator(getBaseType(expr))
             }
         }
     }
 
+    /**
+     * Returns true if a given expression is a GetField instruction that retrieves the TYPE field of
+     * a primitive types wrapper class, i.e. the class for the primitive type.
+     */
+    private[this] def isBaseTypeLoad(expr: Expr[V]): Boolean = {
+        expr.isGetStatic && expr.asGetStatic.name == "TYPE" && {
+            val declClass = expr.asGetStatic.declaringClass
+            declClass == VoidType.WrapperType ||
+                BaseType.baseTypes.iterator.map(_.WrapperType).contains(declClass)
+        }
+    }
+
+    /**
+     * Returns the [org.opalj.br.Type] for a primitive type where the given expression is a
+     * GetStatic expression for the TYPE field of the primitive type's wrapper type.
+     */
+    private[this] def getBaseType(expr: Expr[V]): Type = {
+        val declClass = expr.asGetStatic.declaringClass
+        if (declClass == VoidType.WrapperType) VoidType
+        else BaseType.baseTypes.iterator.find(declClass == _.WrapperType).get
+    }
+
+    /**
+     * Retrieves the possible runtime types of a local variable if they are known precisely.
+     * Otherwise, the call site is marked as incomplete and an empty Iterator is returned.
+     */
     private[this] def getTypesOfVar(
         uvar: V,
         pc:   Int
@@ -755,37 +850,34 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         }
     }
 
-    private[this] def isForName(expr: Expr[V]): Boolean = {
-        expr.isStaticFunctionCall &&
-            (expr.asStaticFunctionCall.declaringClass eq ObjectType.Class) &&
-            expr.asStaticFunctionCall.name == "forName"
-    }
-
-    private[this] def isBaseTypeLoad(expr: Expr[V]): Boolean = {
-        expr.isGetStatic && expr.asGetStatic.name == "TYPE" && {
-            val declClass = expr.asGetStatic.declaringClass
-            declClass == VoidType.WrapperType ||
-                BaseType.baseTypes.iterator.map(_.WrapperType).contains(declClass)
-        }
-    }
-
-    private[this] def isGetClass(expr: Expr[V]): Boolean = {
-        expr.isVirtualFunctionCall && expr.asVirtualFunctionCall.name == "getClass" &&
-            expr.asVirtualFunctionCall.descriptor == MethodDescriptor.withNoArgs(ObjectType.Class)
-    }
-
+    /**
+     * Returns classes that may be loaded by an invocation of Class.forName.
+     */
     private[this] def getPossibleForNameClasses(
         className: Expr[V],
         pc:        Option[Int]
     )(implicit state: State): Iterator[ReferenceType] = {
         val classNames = getPossibleStrings(className, pc)
-        classNames.map(cls ⇒ ObjectType(cls.replace('.', '/')))
+        classNames.map(cls ⇒
+            ObjectType(cls.replace('.', '/'))).filter(project.classFile(_).isDefined)
     }
 
+    /**
+     * Returns method types (aka. descriptors) that a given expression potentially evaluates to.
+     * Identifies local use of MethodType constants as well as method types acquired from
+     * MethodType.methodType.
+     */
     private[this] def getPossibleMethodTypes(
         value: Expr[V],
         pc:    Int
     )(implicit state: State): Iterator[MethodDescriptor] = {
+
+        def isMethodType(expr: Expr[V]): Boolean = {
+            expr.isStaticFunctionCall &&
+                (expr.asStaticFunctionCall.declaringClass eq ObjectType.MethodType) &&
+                expr.asStaticFunctionCall.name == "methodType"
+        }
+
         value.asVar.definedBy.iterator.filter { index ⇒
             if (index < 0) {
                 state.calleesAndCallers.addIncompleteCallsite(pc)
@@ -808,15 +900,18 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         }
     }
 
+    /**
+     * Returns method types that a call to MethodType.methodType may return.
+     */
     private[this] def getPossibleMethodTypes(
         params:     Seq[Expr[V]],
         descriptor: MethodDescriptor,
         pc:         Int
     )(implicit state: State): Iterator[MethodDescriptor] = {
         val returnTypes = getPossibleTypes(params.head, pc)
-        if (params.size == 1) {
+        if (params.size == 1) { // methodType(T) => ()T
             returnTypes.map(MethodDescriptor.withNoArgs)
-        } else if (params.size == 3) {
+        } else if (params.size == 3) { // methodType(T1, T2, T3, ...) => (T2, T3, ...)T1
             val firstParamTypes = getPossibleTypes(params(1), pc).asInstanceOf[Iterator[FieldType]]
             val possibleOtherParamTypes = getTypesFromVararg(params(2), pc)
             for {
@@ -826,31 +921,29 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
             } yield MethodDescriptor(firstParamType +: otherParamTypes, returnType)
         } else {
             val secondParamType = descriptor.parameterType(1)
-            if (secondParamType.isArrayType) {
+            if (secondParamType.isArrayType) { // methodType(T1, Class[]{T2, ...}) => (T2, ...)T1
                 val possibleOtherParamTypes = getTypesFromVararg(params(1), pc)
                 for {
                     returnType ← returnTypes
                     otherParamTypes ← possibleOtherParamTypes
                 } yield MethodDescriptor(otherParamTypes, returnType)
-            } else if (secondParamType == ObjectType.Class) {
+            } else if (secondParamType == ObjectType.Class) { // methodType(T1, T2) => (T2)T2
                 val paramTypes = getPossibleTypes(params(1), pc).asInstanceOf[Iterator[FieldType]]
                 for {
                     returnType ← returnTypes
                     paramType ← paramTypes
                 } yield MethodDescriptor(paramType, returnType)
-            } else {
+            } else { // we don't handle methodType(T1, List(T2, ...)) and methodType(T1, MethodType)
                 state.calleesAndCallers.addIncompleteCallsite(pc)
                 Iterator.empty
             }
         }
     }
 
-    private[this] def isMethodType(expr: Expr[V]): Boolean = {
-        expr.isStaticFunctionCall &&
-            (expr.asStaticFunctionCall.declaringClass eq ObjectType.MethodType) &&
-            expr.asStaticFunctionCall.name == "methodType"
-    }
-
+    /**
+     * Returns the types that a varargs argument of type Class (i.e. Class<?>...) may evaluate to.
+     * Only handles the case of a simple array of class constants or primitive types' classes!
+     */
     private[this] def getTypesFromVararg(
         expr: Expr[V],
         pc:   Int
@@ -881,9 +974,15 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                                 else {
                                     val typeDef = state.stmts(typeDefs.head).asAssignment.expr
                                     val index = state.stmts(indices.head).asAssignment.expr
-                                    if (!typeDef.isClassConst || !index.isIntConst) false
-                                    else {
-                                        types = types.updated(index.asIntConst.value, typeDef.asClassConst.value)
+                                    if (!typeDef.isClassConst && !isBaseTypeLoad(typeDef))
+                                        false
+                                    else if (!index.isIntConst) {
+                                        false // we don't know the index in the array
+                                    } else {
+                                        val tpe =
+                                            if (typeDef.isClassConst) typeDef.asClassConst.value
+                                            else getBaseType(typeDef).asBaseType
+                                        types = types.updated(index.asIntConst.value, tpe)
                                         true
                                     }
                                 }
@@ -903,7 +1002,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
     private[this] def continuation(eps: SomeEPS)(implicit state: State): PropertyComputationResult = eps match {
         case ESimplePS(_, _: SystemProperties, _) ⇒
             // Create new state that reflects changes that may have happened in the meantime
-            val (loadedClassesUB, instantiatedTypesUB) = getLoadedClassesAndInstantiatedTypes()
+            val (loadedClassesUB, instantiatedTypesUB) = loadedClassesAndInstantiatedTypes()
             val newState: State = new State(
                 state.definedMethod,
                 state.stmts,
@@ -919,7 +1018,10 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
             returnResult()(newState)
     }
 
-    private[this] def getLoadedClassesAndInstantiatedTypes(): (UIDSet[ObjectType], UIDSet[ObjectType]) = {
+    /**
+     * Retrieves the current state of loaded classes and instantiated types from the property store.
+     */
+    private[this] def loadedClassesAndInstantiatedTypes(): (UIDSet[ObjectType], UIDSet[ObjectType]) = {
         // the set of classes that are definitely loaded at this point in time
         val loadedClassesEOptP = propertyStore(project, LoadedClasses.key)
 
