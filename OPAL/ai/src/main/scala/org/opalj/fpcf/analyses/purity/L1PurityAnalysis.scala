@@ -200,6 +200,15 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         if (!isLocal(expr, Pure)) state.dependees += ep
     }
 
+    /**
+     * If the callees property is not yet final, adds the necessary dependee.
+     */
+    override def handleCalleesUpdate(
+        callees: EOptionP[DeclaredMethod, Callees]
+    )(implicit state: StateType): Unit = {
+        if (!callees.isFinal) state.dependees += callees
+    }
+
     def cleanupDependees()(implicit state: State): Unit = {
         // Remove unnecessary dependees
         if (!state.ubPurity.isDeterministic) {
@@ -222,6 +231,10 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         val oldPurity = state.ubPurity
 
         eps match {
+            case EPS(_, _, _: Callees) ⇒
+                if (!checkPurityOfCallees(eps.asInstanceOf[EOptionP[DeclaredMethod, Callees]]))
+                    return Result(state.definedMethod, ImpureByAnalysis)
+
             // Cases dealing with other purity values
             case EPS(_, _, _: Purity) ⇒
                 if (!checkMethodPurity(eps.asInstanceOf[EOptionP[DeclaredMethod, Purity]]))
@@ -252,37 +265,6 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                 state.dependees,
                 continuation
             )
-        }
-    }
-
-    def checkPurityOfCallees(
-        calleesEOptP: EOptionP[DeclaredMethod, Callees]
-    )(implicit state: StateType): Boolean = {
-        calleesEOptP match {
-            case ESimplePS(_, p, isFinal) ⇒
-                if (!isFinal) state.dependees += calleesEOptP
-                val hasIncompleteCallSites =
-                    p.incompleteCallSites.exists { pc ⇒
-                        val call = getCall(state.code(state.pcToIndex(pc)))
-                        !isDomainSpecificCall(call, call.receiverOption)
-                    }
-                if (hasIncompleteCallSites)
-                    atMost(ImpureByAnalysis)
-
-                hasIncompleteCallSites &&
-                    p.callSites(onlyIndirectCallees = false).forall { callSite ⇒
-                        val pc = callSite._1
-                        callSite._2.forall { callee ⇒
-                            state.dependees.exists(_.e eq callee) || {
-                                val call = getCall(state.code(state.pcToIndex(pc)))
-                                checkPurityOfMethod(callee, call.allParams)
-                            }
-                        }
-                    }
-
-            case _ ⇒
-                state.dependees += calleesEOptP
-                true
         }
     }
 
@@ -330,6 +312,10 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                 return Result(definedMethod, state.ubPurity)
             s += 1
         }
+
+        val callees = propertyStore(definedMethod, Callees.key)
+        if (!checkPurityOfCallees(callees))
+            return Result(definedMethod, state.ubPurity)
 
         // Creating implicit exceptions is side-effect free (because of fillInStackTrace)
         // but it may be ignored as domain-specific

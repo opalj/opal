@@ -17,6 +17,7 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.fpcf.analyses.cg.SerializationRelatedCallsAnalysis.UnknownParam
 import org.opalj.fpcf.cg.properties.SerializationRelatedCalleesImplementation
 import org.opalj.fpcf.cg.properties.SerializationRelatedCallees
 import org.opalj.fpcf.cg.properties.NoCallers
@@ -30,7 +31,6 @@ import org.opalj.tac.SimpleTACAIKey
 import org.opalj.tac.Stmt
 import org.opalj.tac.VirtualFunctionCall
 import org.opalj.tac.VirtualMethodCall
-import org.opalj.value.IsReferenceValue
 
 import scala.collection.immutable.IntMap
 
@@ -117,10 +117,10 @@ class SerializationRelatedCallsAnalysis private[analyses] (
             case _              ⇒ InstantiatedTypes.initialTypes
         }
 
-        val calleesAndCallers = new CalleesAndCallers(relevantPCs)
+        val calleesAndCallers = new IndirectCalleesAndCallers()
 
         val tacode = tacai(method)
-        val stmts = tacode.stmts
+        implicit val stmts = tacode.stmts
         val pcToIndex = tacode.pcToIndex
 
         var newInstantiatedTypes = UIDSet.empty[ObjectType]
@@ -131,17 +131,21 @@ class SerializationRelatedCallsAnalysis private[analyses] (
             stmt = stmts(index)
         } {
             stmt match {
-                case VirtualMethodCall(_, dc, _, "writeObject", md, _, params) if isOOSWriteObject(dc, md) ⇒
-                    val param = params.head.asVar.value.asReferenceValue
-                    handleOOSWriteObject(definedMethod, param, pc, calleesAndCallers)
+                case VirtualMethodCall(_, dc, _, "writeObject", md, receiver, params) if isOOSWriteObject(dc, md) ⇒
+                    handleOOSWriteObject(
+                        definedMethod,
+                        receiver.asVar,
+                        params.head.asVar,
+                        pc,
+                        calleesAndCallers
+                    )
 
-                case Assignment(_, targetVar, VirtualFunctionCall(_, dc, _, "readObject", md, _,
-                    _)) if isOISReadObject(dc, md) ⇒
+                case Assignment(_, targetVar, VirtualFunctionCall(_, dc, _, "readObject", md, receiver, _)) if isOISReadObject(dc, md) ⇒
                     newInstantiatedTypes = handleOISReadObject(
                         definedMethod,
                         targetVar.asVar,
+                        receiver.asVar,
                         pc,
-                        stmts,
                         instantiatedTypesUB,
                         newInstantiatedTypes,
                         calleesAndCallers
@@ -174,11 +178,17 @@ class SerializationRelatedCallsAnalysis private[analyses] (
 
     @inline private[this] def handleOOSWriteObject(
         definedMethod:     DefinedMethod,
-        param:             IsReferenceValue,
+        outputStream:      V,
+        param:             V,
         pc:                Int,
-        calleesAndCallers: CalleesAndCallers
+        calleesAndCallers: IndirectCalleesAndCallers
+    )(
+        implicit
+        stmts: Array[Stmt[V]]
     ): Unit = {
-        for (rv ← param.allValues) {
+        val parameterList = Seq(persistentUVar(param), persistentUVar(outputStream))
+
+        for (rv ← param.value.asReferenceValue.allValues) {
             if (rv.isPrecise) {
                 val rt = rv.valueType.get
                 if (rt.isObjectType || rt.asArrayType.elementType.isObjectType) {
@@ -190,41 +200,55 @@ class SerializationRelatedCallsAnalysis private[analyses] (
                     if (classHierarchy.isSubtypeOf(paramType, ObjectType.Serializable)) {
                         if (classHierarchy.isSubtypeOf(paramType, ObjectType.Externalizable)) {
                             val writeExternalMethod = project.instanceCall(
-                                paramType, paramType, "writeExternal", MethodDescriptor.JustTakes(ObjectType("java/io/ObjectOutput"))
+                                paramType,
+                                paramType,
+                                "writeExternal",
+                                MethodDescriptor.JustTakes(ObjectType("java/io/ObjectOutput"))
                             )
 
-                            calleesAndCallers.updateWithCallOrFallback(
+                            calleesAndCallers.updateWithIndirectCallOrFallback(
                                 definedMethod, writeExternalMethod, pc,
                                 ObjectType.Externalizable.packageName,
                                 ObjectType.Externalizable,
                                 "writeExternal",
-                                MethodDescriptor.JustTakes(ObjectType("java/io/ObjectOutput"))
+                                MethodDescriptor.JustTakes(ObjectType("java/io/ObjectOutput")),
+                                parameterList
                             )
                         } else {
                             val writeObjectMethod = project.specialCall(
-                                paramType, paramType, false, "writeObject", WriteObjectDescriptor
+                                paramType,
+                                paramType,
+                                isInterface = false,
+                                "writeObject",
+                                WriteObjectDescriptor
                             )
-                            calleesAndCallers.updateWithCallOrFallback(
+                            calleesAndCallers.updateWithIndirectCallOrFallback(
                                 definedMethod,
                                 writeObjectMethod,
                                 pc,
                                 ObjectType.Object.packageName,
                                 ObjectType.Object,
                                 "writeObject",
-                                WriteObjectDescriptor
+                                WriteObjectDescriptor,
+                                parameterList
                             )
                         }
 
                         val writeReplaceMethod = project.specialCall(
-                            paramType, paramType, false, "writeReplace", WriteObjectDescriptor
+                            paramType,
+                            paramType,
+                            isInterface = false,
+                            "writeReplace",
+                            WriteObjectDescriptor
                         )
 
-                        calleesAndCallers.updateWithCallOrFallback(
+                        calleesAndCallers.updateWithIndirectCallOrFallback(
                             definedMethod, writeReplaceMethod, pc,
                             ObjectType.Object.packageName,
                             ObjectType.Object,
                             "writeReplace",
-                            WriteObjectDescriptor
+                            WriteObjectDescriptor,
+                            parameterList
                         )
                     }
                 }
@@ -237,14 +261,15 @@ class SerializationRelatedCallsAnalysis private[analyses] (
     private[this] def handleOISReadObject(
         definedMethod:        DefinedMethod,
         targetVar:            V,
+        inputStream:          V,
         pc:                   Int,
-        stmts:                Array[Stmt[V]],
         instantiatedTypesUB:  UIDSet[ObjectType],
         newInstantiatedTypes: UIDSet[ObjectType],
-        calleesAndCallers:    CalleesAndCallers
-    ): UIDSet[ObjectType] = {
+        calleesAndCallers:    IndirectCalleesAndCallers
+    )(implicit stmts: Array[Stmt[V]]): UIDSet[ObjectType] = {
         var resNewInstantiatedTypes = UIDSet.empty[ObjectType]
         var foundCast = false
+        val parameterList = Seq(None, persistentUVar(inputStream))
         for {
             Checkcast(_, _, cmpTpe) ← stmts
             if cmpTpe.isObjectType || cmpTpe.asArrayType.elementType.isObjectType
@@ -277,12 +302,13 @@ class SerializationRelatedCallsAnalysis private[analyses] (
                         MethodDescriptor.JustTakes(ObjectType("java/io/ObjectInput"))
                     )
 
-                    calleesAndCallers.updateWithCallOrFallback(
+                    calleesAndCallers.updateWithIndirectCallOrFallback(
                         definedMethod, readExternal, pc,
                         ObjectType.Externalizable.packageName,
                         ObjectType.Externalizable,
                         "readExternal",
-                        MethodDescriptor.JustTakes(ObjectType("java/io/ObjectInput"))
+                        MethodDescriptor.JustTakes(ObjectType("java/io/ObjectInput")),
+                        parameterList
                     )
 
                     // call to no-arg constructor
@@ -291,8 +317,8 @@ class SerializationRelatedCallsAnalysis private[analyses] (
                     }
                     // otherwise an exception will thrown at runtime
                     if (constructor.isDefined) {
-                        calleesAndCallers.updateWithCall(
-                            definedMethod, declaredMethods(constructor.get), pc
+                        calleesAndCallers.updateWithIndirectCall(
+                            definedMethod, declaredMethods(constructor.get), pc, UnknownParam
                         )
                     }
                 } else {
@@ -300,12 +326,13 @@ class SerializationRelatedCallsAnalysis private[analyses] (
                     val readObjectMethod = p.specialCall(
                         t, t, isInterface = false, "readObject", ReadObjectDescriptor
                     )
-                    calleesAndCallers.updateWithCallOrFallback(
+                    calleesAndCallers.updateWithIndirectCallOrFallback(
                         definedMethod, readObjectMethod, pc,
                         ObjectType.Object.packageName,
                         ObjectType.Object,
                         "readObject",
-                        ReadObjectDescriptor
+                        ReadObjectDescriptor,
+                        parameterList
                     )
 
                     // call to first super no-arg constructor
@@ -316,8 +343,8 @@ class SerializationRelatedCallsAnalysis private[analyses] (
                         }
                         // otherwise an exception will thrown at runtime
                         if (constructor.isDefined) {
-                            calleesAndCallers.updateWithCall(
-                                definedMethod, declaredMethods(constructor.get), pc
+                            calleesAndCallers.updateWithIndirectCall(
+                                definedMethod, declaredMethods(constructor.get), pc, UnknownParam
                             )
                         }
                     }
@@ -331,25 +358,27 @@ class SerializationRelatedCallsAnalysis private[analyses] (
                     "readResolve",
                     MethodDescriptor.JustReturnsObject
                 )
-                calleesAndCallers.updateWithCallOrFallback(
+                calleesAndCallers.updateWithIndirectCallOrFallback(
                     definedMethod, readResolve, pc,
                     ObjectType.Object.packageName,
                     ObjectType.Object,
                     "readResolve",
-                    MethodDescriptor.JustReturnsObject
+                    MethodDescriptor.JustReturnsObject,
+                    UnknownParam
                 )
 
                 // call to `validateObject`
                 if (ch.isSubtypeOf(t, ObjectType("java/io/ObjectInputValidation"))) {
-                    val readResolve = p.instanceCall(
+                    val validateObject = p.instanceCall(
                         t, t, "validateObject", MethodDescriptor.JustReturnsObject
                     )
-                    calleesAndCallers.updateWithCallOrFallback(
-                        definedMethod, readResolve, pc,
+                    calleesAndCallers.updateWithIndirectCallOrFallback(
+                        definedMethod, validateObject, pc,
                         ObjectType.Object.packageName,
                         ObjectType.Object,
-                        "readResolve",
-                        MethodDescriptor.JustReturnsObject
+                        "validateObject",
+                        MethodDescriptor.JustReturnsObject,
+                        UnknownParam
                     )
                 }
             }
@@ -375,7 +404,7 @@ class SerializationRelatedCallsAnalysis private[analyses] (
 
     @inline private[this] def returnResult(
         definedMethod:        DefinedMethod,
-        calleesAndCallers:    CalleesAndCallers,
+        calleesAndCallers:    IndirectCalleesAndCallers,
         newInstantiatedTypes: UIDSet[ObjectType]
     ): PropertyComputationResult = {
         var res: List[PropertyComputationResult] = calleesAndCallers.partialResultsForCallers
@@ -388,7 +417,8 @@ class SerializationRelatedCallsAnalysis private[analyses] (
                     definedMethod,
                     new SerializationRelatedCalleesImplementation(
                         calleesAndCallers.callees,
-                        calleesAndCallers.incompleteCallsites
+                        calleesAndCallers.incompleteCallsites,
+                        calleesAndCallers.parameters
                     )
                 )
 
@@ -399,6 +429,10 @@ class SerializationRelatedCallsAnalysis private[analyses] (
 
         Results(res)
     }
+}
+
+object SerializationRelatedCallsAnalysis {
+    final val UnknownParam = Seq(None)
 }
 
 object EagerSerializationRelatedCallsAnalysis extends FPCFEagerAnalysisScheduler {

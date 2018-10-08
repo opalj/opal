@@ -15,9 +15,7 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.InitialEntryPointsKey
 import org.opalj.br.analyses.cg.IsOverridableMethodKey
 import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.collection.immutable.LongTrieSet
 import org.opalj.collection.immutable.UIDSet
-import org.opalj.fpcf.cg.properties.CallersOnlyWithConcreteCallers
 import org.opalj.fpcf.cg.properties.CallersProperty
 import org.opalj.fpcf.cg.properties.InstantiatedTypes
 import org.opalj.fpcf.cg.properties.NoCallers
@@ -60,83 +58,6 @@ case class RTAState(
     }
 
     private[cg] def callees: IntMap[IntTrieSet] = _callees
-}
-
-private[cg] class CalleesAndCallers(
-        private[this] var _callees: IntMap[IntTrieSet] = IntMap.empty
-) {
-    private[this] var _incompleteCallsites: IntTrieSet = IntTrieSet.empty
-
-    private[this] var _partialResultsForCallers: List[PartialResult[DeclaredMethod, CallersProperty]] =
-        List.empty
-
-    private[cg] def callees: IntMap[IntTrieSet] = _callees
-
-    private[cg] def partialResultsForCallers: List[PartialResult[DeclaredMethod, CallersProperty]] = {
-        _partialResultsForCallers
-    }
-
-    private[cg] def incompleteCallsites: IntTrieSet = _incompleteCallsites
-
-    private[cg] def addIncompleteCallsite(pc: Int): Unit = _incompleteCallsites += pc
-
-    private[cg] def updateWithCall(
-        caller: DefinedMethod, callee: DeclaredMethod, pc: Int
-    )(implicit declaredMethods: DeclaredMethods): Unit = {
-        val calleeId = callee.id
-        if (!_callees.contains(pc) || !_callees(pc).contains(calleeId)) {
-            _callees = _callees.updated(pc, _callees.getOrElse(pc, IntTrieSet.empty) + calleeId)
-            _partialResultsForCallers ::= createPartialResultForCaller(caller, callee, pc)
-        }
-    }
-
-    def updateWithCallOrFallback(
-        caller:             DefinedMethod,
-        callee:             org.opalj.Result[Method],
-        pc:                 Int,
-        callerPackage:      String,
-        fallbackType:       ObjectType,
-        fallbackName:       String,
-        fallbackDescriptor: MethodDescriptor
-    )(implicit declaredMethods: DeclaredMethods): Unit = {
-        if (callee.hasValue) {
-            updateWithCall(caller, declaredMethods(callee.value), pc)
-        } else {
-            val fallbackCallee = declaredMethods(
-                fallbackType,
-                callerPackage,
-                fallbackType,
-                fallbackName,
-                fallbackDescriptor
-            )
-            updateWithCall(caller, fallbackCallee, pc)
-
-        }
-    }
-
-    private[this] def createPartialResultForCaller(
-        caller: DefinedMethod, callee: DeclaredMethod, pc: Int
-    )(implicit declaredMethods: DeclaredMethods): PartialResult[DeclaredMethod, CallersProperty] = {
-        PartialResult[DeclaredMethod, CallersProperty](callee, CallersProperty.key, {
-            case IntermediateESimpleP(_, ub) ⇒
-                val newCallers = ub.updated(caller, pc)
-                // here we assert that update returns the identity if there is no change
-                if (ub ne newCallers)
-                    Some(IntermediateESimpleP(callee, newCallers))
-                else
-                    None
-
-            case _: EPK[_, _] ⇒
-                val set = LongTrieSet(CallersProperty.toLong(caller.id, pc))
-                Some(IntermediateESimpleP(
-                    callee,
-                    new CallersOnlyWithConcreteCallers(set)
-                ))
-
-            case r ⇒
-                throw new IllegalStateException(s"unexpected previous result $r")
-        })
-    }
 }
 
 /**

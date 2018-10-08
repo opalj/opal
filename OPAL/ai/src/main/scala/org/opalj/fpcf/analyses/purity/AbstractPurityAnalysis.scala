@@ -20,6 +20,8 @@ import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.cg.IsOverridableMethodKey
 import org.opalj.collection.immutable.EmptyIntTrieSet
 import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.fpcf.analyses.cg.uVarForDefSites
+import org.opalj.fpcf.cg.properties.Callees
 import org.opalj.fpcf.properties.ClassImmutability
 import org.opalj.fpcf.properties.FieldMutability
 import org.opalj.fpcf.properties.FinalField
@@ -531,21 +533,25 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
         }
     }
 
+    /**
+     * Examines the effect that the mutability of a returned value's type has on the method's
+     * purity.
+     */
     def checkTypeMutability(
-        ep:   EOptionP[ObjectType, Property],
-        expr: Expr[V]
+        ep:          EOptionP[ObjectType, Property],
+        returnValue: Expr[V]
     )(implicit state: StateType): Boolean = ep match {
         // Returning immutable object is pure
         case EPS(_, ImmutableType | ImmutableObject, _) ⇒ true
         case FinalEP(_, _) ⇒
             atMost(Pure) // Can not be compile time pure if mutable object is returned
             if (state.ubPurity.isDeterministic)
-                isLocal(expr, SideEffectFree)
+                isLocal(returnValue, SideEffectFree)
             false // Return early if we are already side-effect free
         case _ ⇒
             reducePurityLB(SideEffectFree)
             if (state.ubPurity.isDeterministic)
-                handleUnknownTypeMutability(ep, expr)
+                handleUnknownTypeMutability(ep, returnValue)
             true
     }
 
@@ -556,6 +562,64 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
     def handleUnknownTypeMutability(
         ep:   EOptionP[ObjectType, Property],
         expr: Expr[V]
+    )(implicit state: StateType): Unit
+
+    /**
+     * Examines the effect that the purity of all potential callees has on the purity of the method.
+     */
+    def checkPurityOfCallees(
+        calleesEOptP: EOptionP[DeclaredMethod, Callees]
+    )(implicit state: StateType): Boolean = {
+        handleCalleesUpdate(calleesEOptP)
+        calleesEOptP match {
+            case ESimplePS(_, p, isFinal) ⇒
+                val hasIncompleteCallSites =
+                    p.incompleteCallSites.exists { pc ⇒
+                        val call = getCall(state.code(state.pcToIndex(pc)))
+                        !isDomainSpecificCall(call, call.receiverOption)
+                    }
+                if (hasIncompleteCallSites)
+                    atMost(ImpureByAnalysis)
+
+                !hasIncompleteCallSites &&
+                    p.directCallSites().forall {
+                        case (pc, callees) ⇒
+                            val index = state.pcToIndex(pc)
+                            if (index < 0)
+                                true // call will not be executed
+                            else {
+                                val call = getCall(state.code(index))
+                                isDomainSpecificCall(call, call.receiverOption) ||
+                                    callees.forall(checkPurityOfMethod(_, call.allParams))
+                            }
+                    } &&
+                    p.indirectCallSites().forall {
+                        case (pc, callees) ⇒
+                            val index = state.pcToIndex(pc)
+                            if (index < 0)
+                                true // call will not be executed
+                            else
+                                callees.forall { callee ⇒
+                                    checkPurityOfMethod(
+                                        callee,
+                                        p.indirectCallParameters(pc, callee).map { paramO ⇒
+                                            paramO.map(uVarForDefSites(_, state.pcToIndex)).orNull
+                                        }
+                                    )
+                                }
+                    }
+
+            case _ ⇒
+                true
+        }
+    }
+
+    /**
+     * Handles what to do when the set of potential callees changes.
+     * Analyses must implement this method with the behavior they need, e.g. registering dependees.
+     */
+    def handleCalleesUpdate(
+        callees: EOptionP[DeclaredMethod, Callees]
     )(implicit state: StateType): Unit
 
     /**

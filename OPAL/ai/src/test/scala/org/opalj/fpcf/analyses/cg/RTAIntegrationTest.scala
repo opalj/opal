@@ -68,7 +68,7 @@ class RTAIntegrationTest extends FlatSpec with Matchers {
             m ← project.allMethodsWithBody
             dm = declaredMethods(m)
             computedCallees = propertyStore(dm, Callees.key).asFinal.p
-            (pc, computedTargets) ← computedCallees.callSites(onlyIndirectCallees = false)
+            (pc, computedTargets) ← computedCallees.directCallSites()
         } {
             val body = m.body.get
             val instr = body.instructions(pc).asMethodInvocationInstruction
@@ -102,7 +102,7 @@ class RTAIntegrationTest extends FlatSpec with Matchers {
             methodRepresentation = convertMethod(dm)
             FinalEP(_, computedCallees) = propertyStore(dm, Callees.key).asFinal
             CallSite(declaredTgt, line, _, tgts) ← callSites.filter(_.method == methodRepresentation)
-            computedCallSites = computedCallees.callSites(onlyIndirectCallees = false).filter {
+            computedCallSites = computedCallees.directCallSites().filter {
                 case (pc, computedTgt) ⇒
                     m.body.get.lineNumber(pc).get == line &&
                         computedTgt.nonEmpty && computedTgt.next.name == declaredTgt.name // todo
@@ -125,7 +125,7 @@ class RTAIntegrationTest extends FlatSpec with Matchers {
     ): Unit = {
         for {
             FinalEP(dm: DeclaredMethod, callees) ← propertyStore.entities(Callees.key).map(_.asFinal)
-            (pc, tgts) ← callees.callSites(onlyIndirectCallees = false)
+            (pc, tgts) ← callees.callSites()
             callee ← tgts
         } {
             val FinalEP(_, callersProperty) = propertyStore(callee, CallersProperty.key).asFinal
@@ -137,7 +137,7 @@ class RTAIntegrationTest extends FlatSpec with Matchers {
             (caller, pc) ← callers.callers
         } {
             val FinalEP(_, calleesProperty) = propertyStore(caller, Callees.key).asFinal
-            assert(calleesProperty.callees(pc, onlyIndirectCallees = false).contains(dm))
+            assert(calleesProperty.callees(pc).contains(dm))
         }
     }
 

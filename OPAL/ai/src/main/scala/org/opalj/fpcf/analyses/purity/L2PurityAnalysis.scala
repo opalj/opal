@@ -296,6 +296,9 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         treatParamsAsFresh: Boolean,
         excludedDefSites:   IntTrieSet   = EmptyIntTrieSet
     )(implicit state: State): Boolean = {
+        if (expr eq null) // Expression is unknown due to an indirect call (e.g. reflection)
+            return false;
+
         if (expr.isConst)
             return true;
 
@@ -614,6 +617,19 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
     }
 
     /**
+     * Add or remove the dependee when the callees property changes.
+     */
+    override def handleCalleesUpdate(
+        callees: EOptionP[DeclaredMethod, Callees]
+    )(implicit state: State): Unit = {
+        if (callees.isFinal) state.updateCalleesDependee(None)
+        else {
+            state.updateCalleesDependee(Some(callees))
+            reducePurityLB(ImpureByAnalysis)
+        }
+    }
+
+    /**
      * Removes dependees that are known to not be needed anymore as they can not reduce the max
      * purity level further.
      */
@@ -716,8 +732,6 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
      */
     def c(eps: SomeEPS)(implicit state: State): PropertyComputationResult = {
         val oldPurity = state.ubPurity
-        if (state.declClass.simpleName == "FileHistory" && state.method.name == "flush")
-            println()
         eps.ub.key match {
             case Purity.key ⇒
                 val e = eps.e.asInstanceOf[DeclaredMethod]
@@ -801,43 +815,6 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         }
     }
 
-    def checkPurityOfCallees(
-        calleesEOptP: EOptionP[DeclaredMethod, Callees]
-    )(implicit state: StateType): Boolean = {
-        calleesEOptP match {
-            case ESimplePS(_, p, isFinal) ⇒
-                if (isFinal) state.updateCalleesDependee(None)
-                else {
-                    state.updateCalleesDependee(Some(calleesEOptP))
-                    reducePurityLB(ImpureByAnalysis)
-                }
-                val hasIncompleteCallSites =
-                    p.incompleteCallSites.exists { pc ⇒
-                        val call = getCall(state.code(state.pcToIndex(pc)))
-                        !isDomainSpecificCall(call, call.receiverOption)
-                    }
-                if (hasIncompleteCallSites)
-                    atMost(ImpureByAnalysis)
-
-                !hasIncompleteCallSites &&
-                    p.callSites(onlyIndirectCallees = false).forall { callSite ⇒
-                        val pc = callSite._1
-                        val call = getCall(state.code(state.pcToIndex(pc)))
-                        isDomainSpecificCall(call, call.receiverOption) ||
-                            callSite._2.forall { callee ⇒
-                                state.purityDependees.contains(callee) || {
-                                    checkPurityOfMethod(callee, call.allParams)
-                                }
-                            }
-                    }
-
-            case _ ⇒
-                state.updateCalleesDependee(Some(calleesEOptP))
-                reducePurityLB(ImpureByAnalysis)
-                true
-        }
-    }
-
     /**
      * Determines the purity of the given method.
      *
@@ -856,9 +833,6 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
 
         implicit val state: State = new State(method, definedMethod, declClass, code, pcToIndex)
 
-        if (state.declClass.simpleName == "FileHistory" && state.method.name == "flush")
-            println()
-
         // Special case: The Throwable constructor is `LBSideEffectFree`, but subtype constructors
         // may not be because of overridable fillInStackTrace method
         if (method.isConstructor && declClass.isSubtypeOf(ObjectType.Throwable))
@@ -867,7 +841,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                     mdc.method.classFile.thisType != ObjectType.Throwable) {
                     val d = new DefaultDomainWithCFGAndDefUse(p, method)
                     val selfReference =
-                        UVar(d)(d.InitializedObjectValue(-1, declClass), SelfReferenceParameter)
+                        UVar(d)(d.NonNullObjectValue(-1, declClass), SelfReferenceParameter)
                     val fISTPurity = propertyStore(declaredMethods(mdc.method), Purity.key)
                     if (!checkMethodPurity(fISTPurity, Seq(selfReference))) {
                         // Early return for impure fillInStackTrace

@@ -4,7 +4,9 @@ package fpcf
 package cg
 package properties
 
+import org.opalj.br.DeclaredMethod
 import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.value.KnownTypedValue
 
 import scala.collection.immutable.IntMap
 
@@ -19,7 +21,7 @@ sealed trait SerializationRelatedCalleesPropertyMetaInformation
     final type Self = SerializationRelatedCallees
 }
 
-sealed trait SerializationRelatedCallees extends CalleesLike
+sealed trait SerializationRelatedCallees extends IndirectCallees
     with SerializationRelatedCalleesPropertyMetaInformation {
 
     override def toString: String = {
@@ -31,19 +33,23 @@ sealed trait SerializationRelatedCallees extends CalleesLike
 
 sealed class SerializationRelatedCalleesImplementation(
         val calleesIds:          IntMap[IntTrieSet],
-        val incompleteCallsites: IntTrieSet
+        val incompleteCallsites: IntTrieSet,
+        val parameters:          IntMap[Map[DeclaredMethod, Seq[Option[(KnownTypedValue, IntTrieSet)]]]]
 ) extends AbstractCalleesLike with SerializationRelatedCallees
 
 object NoSerializationRelatedCallees
-    extends SerializationRelatedCalleesImplementation(IntMap.empty, IntTrieSet.empty)
+    extends SerializationRelatedCalleesImplementation(IntMap.empty, IntTrieSet.empty, IntMap.empty)
 
 object NoSerializationRelatedCalleesDueToNotReachableMethod
-    extends CalleesLikeNotReachable with SerializationRelatedCallees
+    extends CalleesLikeNotReachable with SerializationRelatedCallees {
+
+    override val parameters: IntMap[Map[DeclaredMethod, Seq[Option[(KnownTypedValue, IntTrieSet)]]]] = IntMap.empty
+}
 
 object SerializationRelatedCallees extends SerializationRelatedCalleesPropertyMetaInformation {
 
     final val key: PropertyKey[SerializationRelatedCallees] = {
-        PropertyKey.create(
+        PropertyKey.forSimpleProperty(
             "SerializationRelatedCallees",
             NoSerializationRelatedCalleesDueToNotReachableMethod
         )

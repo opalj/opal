@@ -76,16 +76,16 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
     val GetDescriptor = MethodDescriptor(ObjectType.Object, ObjectType.Object)
 
     class State(
-        val definedMethod:        DefinedMethod,
-        val stmts:                Array[Stmt[V]],
-        val cfg:                  CFG[Stmt[V], TACStmts[V]],
-        val pcToIndex:            Array[Int],
-        val loadedClassesUB:      UIDSet[ObjectType],
-        val instantiatedTypesUB:  UIDSet[ObjectType],
-        val calleesAndCallers:    CalleesAndCallers,
-        var newLoadedClasses:     UIDSet[ObjectType]                              = UIDSet.empty,
-        var newInstantiatedTypes: UIDSet[ObjectType]                              = UIDSet.empty,
-        var dependee:             Option[EOptionP[SomeProject, SystemProperties]] = None
+            val definedMethod:        DefinedMethod,
+            val stmts:                Array[Stmt[V]],
+            val cfg:                  CFG[Stmt[V], TACStmts[V]],
+            val pcToIndex:            Array[Int],
+            val loadedClassesUB:      UIDSet[ObjectType],
+            val instantiatedTypesUB:  UIDSet[ObjectType],
+            val calleesAndCallers:    IndirectCalleesAndCallers,
+            var newLoadedClasses:     UIDSet[ObjectType]                              = UIDSet.empty,
+            var newInstantiatedTypes: UIDSet[ObjectType]                              = UIDSet.empty,
+            var dependee:             Option[EOptionP[SomeProject, SystemProperties]] = None
     )
 
     implicit private[this] val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
@@ -165,7 +165,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         val cfg = tacode.cfg
         val pcToIndex = tacode.pcToIndex
 
-        val calleesAndCallers = new CalleesAndCallers(relevantPCs)
+        val calleesAndCallers = new IndirectCalleesAndCallers()
 
         implicit val state: State =
             new State(
@@ -216,7 +216,13 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                     // may still be a VirtualMethodCall if the return value is void or unused
                     if (declClass == ObjectType.MethodHandle &&
                         (name == "invoke" || name == "invokeWithArguments"))
-                        handleMethodHandleInvoke(state.definedMethod, pc, receiver, params, None)
+                        handleMethodHandleInvoke(
+                            state.definedMethod,
+                            pc,
+                            receiver,
+                            params.head,
+                            None
+                        )
                 case _ ⇒
 
             }
@@ -234,17 +240,23 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
     )(implicit state: State): Unit = expr.astID match {
         case VirtualFunctionCall.ASTID ⇒
             expr.asVirtualFunctionCall match {
-                case VirtualFunctionCall(_, ObjectType.Class, _, "newInstance", _, rcvr, _) ⇒
-                    handleNewInstance(caller, pc, rcvr, Some(MethodDescriptor.NoArgsAndReturnVoid))
-                case VirtualFunctionCall(_, ConstructorT, _, "newInstance", _, rcvr, _) ⇒
-                    handleConstructorNewInstance(caller, pc, rcvr)
-                case VirtualFunctionCall(_, MethodT, _, "invoke", _, rcvr, _) ⇒
-                    handleMethodInvoke(caller, pc, rcvr)
+                case VirtualFunctionCall(_, ObjectType.Class, _, "newInstance", _, rcvr, params) ⇒
+                    handleNewInstance(
+                        caller,
+                        pc,
+                        rcvr,
+                        Some(MethodDescriptor.NoArgsAndReturnVoid),
+                        getParamsFromVararg(params.head)
+                    )
+                case VirtualFunctionCall(_, ConstructorT, _, "newInstance", _, rcvr, params) ⇒
+                    handleConstructorNewInstance(caller, pc, rcvr, params.head)
+                case VirtualFunctionCall(_, MethodT, _, "invoke", _, rcvr, params) ⇒
+                    handleMethodInvoke(caller, pc, rcvr, params)
                 case VirtualFunctionCall(_, ObjectType.MethodHandle, _, "invokeExact", desc, rcvr, params) ⇒
-                    handleMethodHandleInvoke(caller, pc, rcvr, params, Some(desc))
+                    handleMethodHandleInvoke(caller, pc, rcvr, params.head, Some(desc))
                 case VirtualFunctionCall(_, ObjectType.MethodHandle, _, "invoke" |
                     "invokeWithArguments", _, rcvr, params) ⇒
-                    handleMethodHandleInvoke(caller, pc, rcvr, params, None)
+                    handleMethodHandleInvoke(caller, pc, rcvr, params.head, None)
                 case _ ⇒
             }
         case _ ⇒
@@ -268,10 +280,12 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
      * was acquired via Class.getConstructor where the possible classes are (partially) known.
      */
     private[this] def handleConstructorNewInstance(
-        caller:      DefinedMethod,
-        pc:          Int,
-        constructor: Expr[V]
+        caller:            DefinedMethod,
+        pc:                Int,
+        constructor:       Expr[V],
+        newInstanceParams: Expr[V]
     )(implicit state: State): Unit = {
+        val actualParams = getParamsFromVararg(newInstanceParams)
         constructor.asVar.definedBy.foreach { index ⇒
             if (index > 0) {
                 val definition = state.stmts(index).asAssignment.expr
@@ -280,7 +294,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                         case VirtualFunctionCall(_, ObjectType.Class, _, "getConstructor", _, classes, params) ⇒
                             val parameterTypes = getTypesFromVararg(params.head, pc)
                             val descriptor = parameterTypes.map(s ⇒ MethodDescriptor(s, VoidType))
-                            handleNewInstance(caller, pc, classes, descriptor)
+                            handleNewInstance(caller, pc, classes, descriptor, actualParams)
                         case _ ⇒ state.calleesAndCallers.addIncompleteCallsite(pc)
                     }
                 } else {
@@ -299,11 +313,12 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         caller:     DefinedMethod,
         pc:         Int,
         receiver:   Expr[V],
-        descriptor: Option[MethodDescriptor]
+        descriptor: Option[MethodDescriptor],
+        params:     Seq[V]
     )(implicit state: State): Unit = {
         val instantiatedTypes =
             getPossibleTypes(receiver, pc).asInstanceOf[Iterator[ObjectType]].toIterable
-        handleNewInstances(caller, pc, instantiatedTypes, descriptor)
+        handleNewInstances(caller, pc, instantiatedTypes, descriptor, params)
     }
 
     /**
@@ -313,10 +328,14 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         caller:            DefinedMethod,
         pc:                Int,
         instantiatedTypes: Iterable[ObjectType],
-        descriptor:        Iterable[MethodDescriptor]
+        descriptor:        Iterable[MethodDescriptor],
+        params:            Seq[V]
     )(implicit state: State): Unit = {
         val newInstantiatedTypes = instantiatedTypes.filter(!state.instantiatedTypesUB.contains(_))
         state.newInstantiatedTypes ++= newInstantiatedTypes
+
+        implicit val stmts: Array[Stmt[V]] = state.stmts
+        val actualParams = params.map(persistentUVar)
 
         for {
             descriptor ← descriptor
@@ -330,14 +349,15 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                 descriptor
             )
 
-            state.calleesAndCallers.updateWithCallOrFallback(
+            state.calleesAndCallers.updateWithIndirectCallOrFallback(
                 caller,
                 method,
                 pc,
                 caller.declaringClassType.asObjectType.packageName,
                 instantiatedType,
                 "<init>",
-                descriptor
+                descriptor,
+                actualParams
             )
         }
     }
@@ -348,10 +368,14 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
      * Class.getDeclaredMethod or Class.getMethod and the possible classes are (partially) known.
      */
     private[this] def handleMethodInvoke(
-        caller: DefinedMethod,
-        pc:     Int,
-        method: Expr[V]
+        caller:       DefinedMethod,
+        pc:           Int,
+        method:       Expr[V],
+        methodParams: Seq[Expr[V]]
     )(implicit state: State): Unit = {
+        implicit val stmts: Array[Stmt[V]] = state.stmts
+        val receiverDefinition = persistentUVar(methodParams.head.asVar)
+        val paramDefinitions = getParamsFromVararg(methodParams(1)).map(persistentUVar)
         method.asVar.definedBy.foreach { index ⇒
             if (index >= 0) {
                 val definition = state.stmts(index).asAssignment.expr
@@ -375,7 +399,13 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                                         pc
                                     )
                                     for (callee ← callees)
-                                        state.calleesAndCallers.updateWithCall(caller, callee, pc)
+                                        state.calleesAndCallers.updateWithIndirectCall(
+                                            caller,
+                                            callee,
+                                            pc,
+                                            if (callee.definedMethod.isStatic) paramDefinitions
+                                            else receiverDefinition +: paramDefinitions
+                                        )
                                 }
                             }
                         case _ ⇒ state.calleesAndCallers.addIncompleteCallsite(pc)
@@ -475,9 +505,10 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         caller:       DefinedMethod,
         pc:           Int,
         methodHandle: Expr[V],
-        invokeParams: Seq[Expr[V]],
+        invokeParams: Expr[V],
         descriptor:   Option[MethodDescriptor]
     )(implicit state: State): Unit = {
+        val actualInvokeParams = getParamsFromVararg(invokeParams)
         methodHandle.asVar.definedBy.foreach { index ⇒
             if (index >= 0) {
                 val definition = state.stmts(index).asAssignment.expr
@@ -489,7 +520,8 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                                 pc,
                                 Iterator(receiver.asObjectType),
                                 Seq(name),
-                                Seq(desc)
+                                Seq(desc),
+                                actualInvokeParams
                             )
                         case InvokeVirtualMethodHandle(receiver, name, desc) ⇒
                             handleInvokeVirtual(
@@ -498,7 +530,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                                 Iterator(receiver),
                                 Seq(name),
                                 Seq(desc),
-                                invokeParams
+                                actualInvokeParams
                             )
                         case InvokeInterfaceMethodHandle(receiver, name, desc) ⇒
                             handleInvokeVirtual(
@@ -507,7 +539,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                                 Iterator(receiver.asObjectType),
                                 Seq(name),
                                 Seq(desc),
-                                invokeParams
+                                actualInvokeParams
                             )
                         case InvokeSpecialMethodHandle(receiver, isInterface, name, desc) ⇒
                             handleInvokeSpecial(
@@ -517,10 +549,17 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                                 Some(isInterface),
                                 Seq(name),
                                 Seq(desc),
-                                Seq(caller.declaringClassType.asObjectType)
+                                Seq(caller.declaringClassType.asObjectType),
+                                actualInvokeParams
                             )
                         case NewInvokeSpecialMethodHandle(receiver, desc) ⇒
-                            handleNewInstances(caller, pc, Seq(receiver), Seq(desc))
+                            handleNewInstances(
+                                caller,
+                                pc,
+                                Seq(receiver),
+                                Seq(desc),
+                                actualInvokeParams
+                            )
                         case _ ⇒ state.calleesAndCallers.addIncompleteCallsite(pc)
                     }
                 } else if (definition.isVirtualFunctionCall) {
@@ -533,7 +572,14 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                             val descriptors =
                                 if (descriptor.isDefined) descriptor.toIterable
                                 else getPossibleMethodTypes(params(2), pc).toIterable
-                            handleInvokeStatic(caller, pc, types, names, descriptors)
+                            handleInvokeStatic(
+                                caller,
+                                pc,
+                                types,
+                                names,
+                                descriptors,
+                                actualInvokeParams
+                            )
 
                         case VirtualFunctionCall(_, ObjectType.MethodHandles$Lookup, _, "findVirtual", _, _, params) ⇒
                             val staticTypes = getPossibleTypes(params.head, pc)
@@ -550,7 +596,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                                 staticTypes.asInstanceOf[Iterator[ReferenceType]],
                                 names,
                                 descriptors,
-                                invokeParams
+                                actualInvokeParams
                             )
 
                         case VirtualFunctionCall(_, ObjectType.MethodHandles$Lookup, _, "findSpecial", _, _, params) ⇒
@@ -571,7 +617,8 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                                 None,
                                 names,
                                 descriptors,
-                                specialCallers.asInstanceOf[Iterable[ObjectType]]
+                                specialCallers.asInstanceOf[Iterable[ObjectType]],
+                                actualInvokeParams
                             )
                         case VirtualFunctionCall(_, ObjectType.MethodHandles$Lookup, _, "findConstructor", _, _, params) ⇒
                             val classes = getPossibleTypes(params.head, pc)
@@ -582,7 +629,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                                     Seq(MethodDescriptor(md.parameterTypes, VoidType))
                                 } else
                                     getPossibleMethodTypes(params(1), pc).toIterable
-                            handleNewInstances(caller, pc, types, descriptors)
+                            handleNewInstances(caller, pc, types, descriptors, actualInvokeParams)
                         case _ ⇒ state.calleesAndCallers.addIncompleteCallsite(pc)
                     }
                 } else {
@@ -602,8 +649,10 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         pc:            Int,
         receiverTypes: Iterator[ObjectType],
         names:         Iterable[String],
-        descriptors:   Iterable[MethodDescriptor]
+        descriptors:   Iterable[MethodDescriptor],
+        invokeParams:  Seq[V]
     )(implicit state: State): Unit = {
+        implicit val stmts: Array[Stmt[V]] = state.stmts
         for {
             receiverType ← receiverTypes
             name ← names
@@ -615,14 +664,15 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                 name,
                 desc
             )
-            state.calleesAndCallers.updateWithCallOrFallback(
+            state.calleesAndCallers.updateWithIndirectCallOrFallback(
                 caller,
                 callee,
                 pc,
                 caller.declaringClassType.asObjectType.packageName,
                 receiverType,
                 name,
-                desc
+                desc,
+                invokeParams.map(persistentUVar)
             )
         }
     }
@@ -636,10 +686,10 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         staticTypes:  Iterator[ReferenceType],
         names:        Iterable[String],
         descriptors:  Iterable[MethodDescriptor],
-        invokeParams: Seq[Expr[V]]
+        invokeParams: Seq[V]
     )(implicit state: State): Unit = {
-        val actualReceiver = invokeParams.head.asVar
-        val dynamicTypes = getTypesOfVar(actualReceiver, pc).toIterable
+        implicit val stmts: Array[Stmt[V]] = state.stmts
+        val dynamicTypes = getTypesOfVar(invokeParams.head, pc).toIterable
         for {
             typeBound ← staticTypes
             receiverType ← dynamicTypes
@@ -653,14 +703,15 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                 name,
                 desc
             )
-            state.calleesAndCallers.updateWithCallOrFallback(
+            state.calleesAndCallers.updateWithIndirectCallOrFallback(
                 caller,
                 callee,
                 pc,
                 caller.declaringClassType.asObjectType.packageName,
                 if (receiverType.isArrayType) ObjectType.Object else receiverType.asObjectType,
                 name,
-                desc
+                desc,
+                invokeParams.map(persistentUVar)
             )
         }
     }
@@ -675,8 +726,10 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         isInterface:    Option[Boolean],
         names:          Iterable[String],
         descriptors:    Iterable[MethodDescriptor],
-        specialCallers: Iterable[ObjectType]
+        specialCallers: Iterable[ObjectType],
+        invokeParams:   Seq[V]
     )(implicit state: State): Unit = {
+        implicit val stmts: Array[Stmt[V]] = state.stmts
         for {
             receiverType ← receiverTypes
             name ← names
@@ -690,14 +743,15 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                 name,
                 desc
             )
-            state.calleesAndCallers.updateWithCallOrFallback(
+            state.calleesAndCallers.updateWithIndirectCallOrFallback(
                 caller,
                 callee,
                 pc,
                 caller.declaringClassType.asObjectType.packageName,
                 receiverType,
                 name,
-                desc
+                desc,
+                invokeParams.map(persistentUVar)
             )
         }
     }
@@ -999,6 +1053,56 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         }
     }
 
+    /**
+     * Returns the origins of parameters that are contained in a varargs argument.
+     */
+    private[this] def getParamsFromVararg(
+        expr: Expr[V]
+    )(implicit state: State): Seq[V] = {
+        val definitions = expr.asVar.definedBy
+        if (!definitions.isSingletonSet || definitions.head < 0) {
+            Seq.empty
+        } else {
+            val definition = state.stmts(definitions.head).asAssignment
+            if (definition.expr.astID != NewArray.ASTID) Seq.empty
+            else {
+                val uses = IntArraySetBuilder(definition.targetVar.usedBy.toChain).result()
+                if (state.cfg.bb(uses.head) != state.cfg.bb(uses.last)) Seq.empty
+                else if (state.stmts(uses.last).astID != Assignment.ASTID) Seq.empty
+                else {
+                    var params: Seq[V] = RefArray.withSize(uses.size - 1)
+                    if (!uses.forall { useSite ⇒
+                        if (useSite == uses.last) true
+                        else {
+                            val use = state.stmts(useSite)
+                            if (use.astID != ArrayStore.ASTID) false
+                            else {
+                                val indices = use.asArrayStore.index.asVar.definedBy
+                                if (!indices.isSingletonSet || indices.head < 0) false
+                                else {
+                                    val index = state.stmts(indices.head).asAssignment.expr
+                                    if (!index.isIntConst) {
+                                        false // we don't know the index in the array
+                                    } else {
+                                        params = params.updated(
+                                            index.asIntConst.value,
+                                            use.asArrayStore.value.asVar
+                                        )
+                                        true
+                                    }
+                                }
+                            }
+                        }
+                    } || params.contains(null)) {
+                        Seq.empty
+                    } else {
+                        params
+                    }
+                }
+            }
+        }
+    }
+
     private[this] def continuation(eps: SomeEPS)(implicit state: State): PropertyComputationResult = eps match {
         case ESimplePS(_, _: SystemProperties, _) ⇒
             // Create new state that reflects changes that may have happened in the meantime
@@ -1010,7 +1114,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                 state.pcToIndex,
                 loadedClassesUB,
                 instantiatedTypesUB,
-                new CalleesAndCallers(state.calleesAndCallers.callees)
+                new IndirectCalleesAndCallers(state.calleesAndCallers.callees)
             )
 
             // Re-analyze invocations with the new state
@@ -1052,7 +1156,8 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         else
             new ReflectionRelatedCalleesImplementation(
                 state.calleesAndCallers.callees,
-                state.calleesAndCallers.incompleteCallsites
+                state.calleesAndCallers.incompleteCallsites,
+                state.calleesAndCallers.parameters
             )
 
         val calleesResult =

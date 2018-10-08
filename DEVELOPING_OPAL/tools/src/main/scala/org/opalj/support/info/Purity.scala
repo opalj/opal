@@ -46,6 +46,7 @@ import org.opalj.fpcf.analyses.purity.DomainSpecificRater
 import org.opalj.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
 import org.opalj.fpcf.analyses.LazyStaticDataUsageAnalysis
 import org.opalj.fpcf.analyses.LazyVirtualMethodStaticDataUsageAnalysis
+import org.opalj.fpcf.analyses.SystemPropertiesAnalysis
 import org.opalj.fpcf.analyses.cg.EagerThreadRelatedCallsAnalysis
 import org.opalj.fpcf.analyses.cg.EagerFinalizerAnalysisScheduler
 import org.opalj.fpcf.analyses.cg.EagerLoadedClassesAnalysis
@@ -114,6 +115,7 @@ object Purity {
             EagerThreadRelatedCallsAnalysis,
             EagerSerializationRelatedCallsAnalysis,
             EagerReflectionRelatedCallsAnalysis,
+            SystemPropertiesAnalysis,
             new LazyCalleesAnalysis(
                 Set(StandardInvokeCallees, SerializationRelatedCallees, ReflectionRelatedCallees)
             )
@@ -136,6 +138,7 @@ object Purity {
             EagerThreadRelatedCallsAnalysis,
             EagerSerializationRelatedCallsAnalysis,
             EagerReflectionRelatedCallsAnalysis,
+            SystemPropertiesAnalysis,
             new LazyCalleesAnalysis(
                 Set(StandardInvokeCallees, SerializationRelatedCallees, ReflectionRelatedCallees)
             )

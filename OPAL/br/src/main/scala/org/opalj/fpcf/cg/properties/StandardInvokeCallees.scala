@@ -44,7 +44,7 @@ object NoStandardInvokeCalleesDueToNotReachableMethod
 object StandardInvokeCallees extends StandardInvokeCalleesPropertyMetaInformation {
 
     final val key: PropertyKey[StandardInvokeCallees] = {
-        PropertyKey.create(
+        PropertyKey.forSimpleProperty(
             "StandardInvokeCallees",
             NoStandardInvokeCalleesDueToNotReachableMethod
         )

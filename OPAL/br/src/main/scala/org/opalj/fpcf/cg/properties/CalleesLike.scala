@@ -4,8 +4,10 @@ package fpcf
 package cg
 package properties
 
+import org.opalj.br.DeclaredMethod
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.value.KnownTypedValue
 
 import scala.collection.immutable.IntMap
 
@@ -33,8 +35,7 @@ trait CalleesLike extends OrderedProperty with CalleesLikePropertyMetaInformatio
     def callees(pc: Int): Option[IntTrieSet]
 
     /**
-     * PCs of all call sites resolved by the analysis. Analyses are required to anounce the
-     * complete set of call sites they handle with the first intermediate result.
+     * PCs of all call sites resolved by the analysis.
      */
     def callSitePCs: Iterator[Int]
 
@@ -92,6 +93,10 @@ trait CalleesLikeNotReachable extends CalleesLike {
         implicit
         declaredMethods: DeclaredMethods
     ): IntMap[IntTrieSet] = IntMap.empty
+}
+
+trait IndirectCallees extends CalleesLike {
+    val parameters: IntMap[Map[DeclaredMethod, Seq[Option[(KnownTypedValue, IntTrieSet)]]]]
 }
 
 trait CalleesLikePropertyMetaInformation extends PropertyMetaInformation {

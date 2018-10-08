@@ -8,6 +8,7 @@ import org.opalj.br.DeclaredMethod
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.collection.IntIterator
 import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.value.KnownTypedValue
 
 import scala.collection.immutable.IntMap
 
@@ -33,15 +34,37 @@ sealed trait Callees extends Property with CalleesPropertyMetaInformation {
     def isIncompleteCallSite(pc: Int)(implicit propertyStore: PropertyStore): Boolean
 
     /**
-     * Potential callees of the call site at `pc`.
-     *
-     * @param onlyIndirectCallees If true, only indirect target callees will be returned, e.g. the
-     *                            final targets of a reflective call, not the reflection method
-     *                            itself
+     * Potential callees of the call site at `pc`. The callees may not match the invocation
+     * instruction at the pc and a remapping of parameters using [[indirectCallParameters]] may be
+     * necessary.
      */
     def callees(
-        pc:                  Int,
-        onlyIndirectCallees: Boolean
+        pc: Int
+    )(
+        implicit
+        propertyStore:   PropertyStore,
+        declaredMethods: DeclaredMethods
+    ): Iterator[DeclaredMethod]
+
+    /**
+     * Potential callees of the call site at `pc`. The callees will match the invocation
+     * instruction at the pc.
+     */
+    def directCallees(
+        pc: Int
+    )(
+        implicit
+        propertyStore:   PropertyStore,
+        declaredMethods: DeclaredMethods
+    ): Iterator[DeclaredMethod]
+
+    /**
+     * Potential callees of the call site at `pc`. The callees will not match the invocation
+     * instruction at the pc and a remapping of parameters using [[indirectCallParameters]] may be
+     * necessary.
+     */
+    def indirectCallees(
+        pc: Int
     )(
         implicit
         propertyStore:   PropertyStore,
@@ -56,22 +79,50 @@ sealed trait Callees extends Property with CalleesPropertyMetaInformation {
     /**
      * PCs of all call sites in the method.
      */
-    def callSites(implicit propertyStore: PropertyStore): Iterator[Int] // TODO Use IntIterator once we have an IntMap
+    def callSitePCs(implicit propertyStore: PropertyStore): Iterator[Int] // TODO Use IntIterator once we have an IntMap
 
     /**
-     * Map of pc to potential callees of the call site at that pc.
-     *
-     * @param onlyIndirectCallees If true, only indirect target callees will be returned, e.g. the
-     *                            final targets of a reflective call, not the reflection method
-     *                            itself
+     * Map of pc to potential callees of the call site at that pc. The callees may not match the
+     * invocation instruction at the pc and a remapping of parameters using
+     * [[indirectCallParameters]] may be necessary.
      */
-    def callSites(
-        onlyIndirectCallees: Boolean
-    )(
+    def callSites()(
         implicit
         propertyStore:   PropertyStore,
         declaredMethods: DeclaredMethods
-    ): IntMap[Iterator[DeclaredMethod]]
+    ): Map[Int, Iterator[DeclaredMethod]]
+
+    /**
+     * Map of pc to potential direct callees of the call site at that pc. The callees will match the
+     * invocation instruction at the pc.
+     */
+    def directCallSites()(
+        implicit
+        propertyStore:   PropertyStore,
+        declaredMethods: DeclaredMethods
+    ): Map[Int, Iterator[DeclaredMethod]]
+
+    /**
+     * Map of pc to potential indirect callees of the call site at that pc. The callees will not
+     * match the invocation instruction at the pc and remapping of parameters using
+     * [[indirectCallParameters]] may be necessary.
+     */
+    def indirectCallSites()(
+        implicit
+        propertyStore:   PropertyStore,
+        declaredMethods: DeclaredMethods
+    ): Map[Int, Iterator[DeclaredMethod]]
+
+    /**
+     * Returns for a given call site pc and indirect target method the sequence of parameter
+     * sources. If a parameter source can not be determined, the Option will be empty, otherwise it
+     * will contain all PCs and the negative indices of parameters that may define the value of the
+     * corresponding actual parameter.
+     */
+    def indirectCallParameters(
+        pc:     Int,
+        method: DeclaredMethod
+    )(implicit propertyStore: PropertyStore): Seq[Option[(KnownTypedValue, IntTrieSet)]]
 
     final def key: PropertyKey[Callees] = Callees.key
 }
@@ -83,7 +134,7 @@ sealed trait Callees extends Property with CalleesPropertyMetaInformation {
 sealed class IntermediateCallees(
         private[this] val declaredMethod: DeclaredMethod,
         val directKeys:                   Traversable[PropertyKey[CalleesLike]],
-        val indirectKeys:                 Traversable[PropertyKey[CalleesLike]]
+        val indirectKeys:                 Traversable[PropertyKey[IndirectCallees]]
 ) extends Callees {
 
     override def incompleteCallSites(implicit propertyStore: PropertyStore): IntIterator = {
@@ -105,8 +156,17 @@ sealed class IntermediateCallees(
     }
 
     override def callees(
-        pc:                  Int,
-        onlyIndirectCallees: Boolean
+        pc: Int
+    )(
+        implicit
+        propertyStore:   PropertyStore,
+        declaredMethods: DeclaredMethods
+    ): Iterator[DeclaredMethod] = {
+        directCallees(pc) ++ indirectCallees(pc)
+    }
+
+    override def directCallees(
+        pc: Int
     )(
         implicit
         propertyStore:   PropertyStore,
@@ -114,26 +174,35 @@ sealed class IntermediateCallees(
     ): Iterator[DeclaredMethod] = {
         var res: Iterator[DeclaredMethod] = Iterator.empty
 
-        var hasIndirectCallees = false
+        directKeys foreach { key ⇒
+            propertyStore(declaredMethod, key) match {
+                case ESimplePS(_, ub, _) ⇒
+                    for (callees ← ub.callees(pc)) {
+                        res ++= callees.iterator.map[DeclaredMethod](declaredMethods.apply)
+                    }
+                case _ ⇒
+            }
+        }
+
+        res
+    }
+
+    override def indirectCallees(
+        pc: Int
+    )(
+        implicit
+        propertyStore:   PropertyStore,
+        declaredMethods: DeclaredMethods
+    ): Iterator[DeclaredMethod] = {
+        var res: Iterator[DeclaredMethod] = Iterator.empty
+
         indirectKeys foreach { key ⇒
             propertyStore(declaredMethod, key) match {
                 case ESimplePS(_, ub, _) ⇒
                     for (callees ← ub.callees(pc)) {
                         res ++= callees.iterator.map[DeclaredMethod](declaredMethods.apply)
-                        hasIndirectCallees = true
                     }
-                case _ ⇒ hasIndirectCallees = true
-            }
-        }
-        if (!onlyIndirectCallees || !hasIndirectCallees) {
-            directKeys foreach { key ⇒
-                propertyStore(declaredMethod, key) match {
-                    case ESimplePS(_, ub, _) ⇒
-                        for (callees ← ub.callees(pc)) {
-                            res ++= callees.iterator.map[DeclaredMethod](declaredMethods.apply)
-                        }
-                    case _ ⇒
-                }
+                case _ ⇒
             }
         }
 
@@ -150,7 +219,7 @@ sealed class IntermediateCallees(
         }
     }
 
-    override def callSites(implicit propertyStore: PropertyStore): Iterator[Int] = {
+    override def callSitePCs(implicit propertyStore: PropertyStore): Iterator[Int] = {
         (directKeys.toIterator ++ indirectKeys.toIterator).foldLeft(Iterator.empty: Iterator[Int]) {
             (it, key) ⇒
                 propertyStore(declaredMethod, key) match {
@@ -160,30 +229,23 @@ sealed class IntermediateCallees(
         }
     }
 
-    override def callSites(
-        onlyEventualCallees: Boolean
-    )(
+    override def callSites()(
+        implicit
+        propertyStore:   PropertyStore,
+        declaredMethods: DeclaredMethods
+    ): IntMap[Iterator[DeclaredMethod]] = {
+        directCallSites().unionWith(
+            indirectCallSites(),
+            (pc, direct, indirect) ⇒ direct ++ indirect
+        )
+    }
+
+    override def directCallSites()(
         implicit
         propertyStore:   PropertyStore,
         declaredMethods: DeclaredMethods
     ): IntMap[Iterator[DeclaredMethod]] = {
         var res: IntMap[Iterator[DeclaredMethod]] = IntMap.empty
-        var indirectPCs: IntTrieSet = IntTrieSet.empty
-
-        indirectKeys foreach { key ⇒
-            propertyStore(declaredMethod, key) match {
-                case ESimplePS(_, ub, _) ⇒
-                    val callSites = ub.callSites
-                    indirectPCs ++= callSites.keys
-                    for ((k, v) ← callSites)
-                        res = res.updated(
-                            k,
-                            res.getOrElse(k, Iterator.empty) ++
-                                v.iterator.map[DeclaredMethod](declaredMethods.apply)
-                        )
-                case _ ⇒
-            }
-        }
 
         directKeys foreach { key ⇒
             propertyStore(declaredMethod, key) match {
@@ -200,15 +262,58 @@ sealed class IntermediateCallees(
 
         res
     }
+
+    override def indirectCallSites()(
+        implicit
+        propertyStore:   PropertyStore,
+        declaredMethods: DeclaredMethods
+    ): IntMap[Iterator[DeclaredMethod]] = {
+        var res: IntMap[Iterator[DeclaredMethod]] = IntMap.empty
+
+        indirectKeys foreach { key ⇒
+            propertyStore(declaredMethod, key) match {
+                case ESimplePS(_, ub, _) ⇒
+                    for ((k, v) ← ub.callSites)
+                        res = res.updated(
+                            k,
+                            res.getOrElse(k, Iterator.empty) ++
+                                v.iterator.map[DeclaredMethod](declaredMethods.apply)
+                        )
+                case _ ⇒
+            }
+        }
+
+        res
+    }
+
+    override def indirectCallParameters(
+        pc:     Int,
+        method: DeclaredMethod
+    )(
+        implicit
+        propertyStore: PropertyStore
+    ): Seq[Option[(KnownTypedValue, IntTrieSet)]] = {
+        for (key ← indirectKeys) {
+            propertyStore(declaredMethod, key) match {
+                case ESimplePS(_, ub, _) ⇒
+                    val targets = ub.parameters(pc)
+                    if (targets.contains(method))
+                        return targets(method)
+                case _ ⇒
+            }
+        }
+        Seq.empty
+    }
 }
 
 /**
  * Callees class used for final results where the callees are already aggregated.
  */
 sealed class FinalCallees(
-        val directCalleeIds:      IntMap[IntTrieSet],
-        val indirectCalleesIds:   IntMap[IntTrieSet],
-        val _incompleteCallSites: IntTrieSet
+        val directCalleesIds:        IntMap[IntTrieSet],
+        val indirectCalleesIds:      IntMap[IntTrieSet],
+        val _incompleteCallSites:    IntTrieSet,
+        val _indirectCallParameters: IntMap[Map[DeclaredMethod, Seq[Option[(KnownTypedValue, IntTrieSet)]]]]
 ) extends Callees {
 
     override def incompleteCallSites(implicit propertyStore: PropertyStore): IntIterator = {
@@ -220,55 +325,85 @@ sealed class FinalCallees(
     }
 
     override def callees(
-        pc:                  Int,
-        onlyIndirectCallees: Boolean
+        pc: Int
     )(
         implicit
         propertyStore:   PropertyStore,
         declaredMethods: DeclaredMethods
     ): Iterator[DeclaredMethod] = {
-        val indirectCallees =
-            indirectCalleesIds.getOrElse(pc, IntTrieSet.empty).iterator.map[DeclaredMethod](declaredMethods.apply)
-
-        if (onlyIndirectCallees) {
-            indirectCallees
-        } else {
-            val directCallees =
-                directCalleeIds.getOrElse(pc, IntTrieSet.empty).iterator.map[DeclaredMethod](declaredMethods.apply)
-            indirectCallees ++ directCallees
-        }
+        directCallees(pc) ++ indirectCallees(pc)
     }
 
-    override def numCallees(pc: Int)(implicit propertyStore: PropertyStore): Int = {
-        directCalleeIds(pc).size + indirectCalleesIds.get(pc).map(_.size).getOrElse(0)
-    }
-
-    override def callSites(implicit propertyStore: PropertyStore): Iterator[Int] = {
-        directCalleeIds.keysIterator ++ indirectCalleesIds.keysIterator
-    }
-
-    override def callSites(
-        onlyIndirectCallees: Boolean
+    override def directCallees(
+        pc: Int
     )(
         implicit
         propertyStore:   PropertyStore,
         declaredMethods: DeclaredMethods
+    ): Iterator[DeclaredMethod] = {
+        directCalleesIds.getOrElse(pc, IntTrieSet.empty).iterator.map[DeclaredMethod](declaredMethods.apply)
+    }
+
+    override def indirectCallees(
+        pc: Int
+    )(
+        implicit
+        propertyStore:   PropertyStore,
+        declaredMethods: DeclaredMethods
+    ): Iterator[DeclaredMethod] = {
+        indirectCalleesIds.getOrElse(pc, IntTrieSet.empty).iterator.map[DeclaredMethod](declaredMethods.apply)
+    }
+
+    override def numCallees(pc: Int)(implicit propertyStore: PropertyStore): Int = {
+        directCalleesIds(pc).size + indirectCalleesIds.get(pc).map(_.size).getOrElse(0)
+    }
+
+    override def callSitePCs(implicit propertyStore: PropertyStore): Iterator[Int] = {
+        directCalleesIds.keysIterator ++ indirectCalleesIds.keysIterator
+    }
+
+    override def callSites()(
+        implicit
+        propertyStore:   PropertyStore,
+        declaredMethods: DeclaredMethods
     ): IntMap[Iterator[DeclaredMethod]] = {
-        var res: IntMap[Iterator[DeclaredMethod]] = IntMap.empty
+        var res = IntMap(directCallSites().toStream: _*)
 
-        for ((pc, calleeIds) ← indirectCalleesIds) {
-            res += pc → calleeIds.iterator.map[DeclaredMethod](declaredMethods.apply)
-        }
-
-        if (!onlyIndirectCallees) {
-            for ((pc, calleeIds) ← directCalleeIds) {
-                val directCallees = calleeIds.map[DeclaredMethod](declaredMethods.apply)
-                val indirectCallees = res.getOrElse(pc, Iterator.empty)
-                res = res.updated(pc, indirectCallees ++ directCallees)
-            }
+        for ((pc, indirect) ← indirectCallSites()) {
+            res = res.updateWith(pc, indirect, (direct, indirect) ⇒ direct ++ indirect)
         }
 
         res
+    }
+
+    override def directCallSites()(
+        implicit
+        propertyStore:   PropertyStore,
+        declaredMethods: DeclaredMethods
+    ): Map[Int, Iterator[DeclaredMethod]] = {
+        directCalleesIds.mapValues { calleeIds ⇒
+            calleeIds.iterator.map[DeclaredMethod](declaredMethods.apply)
+        }
+    }
+
+    override def indirectCallSites()(
+        implicit
+        propertyStore:   PropertyStore,
+        declaredMethods: DeclaredMethods
+    ): Map[Int, Iterator[DeclaredMethod]] = {
+        indirectCalleesIds.mapValues { calleeIds ⇒
+            calleeIds.iterator.map[DeclaredMethod](declaredMethods.apply)
+        }
+    }
+
+    override def indirectCallParameters(
+        pc:     Int,
+        method: DeclaredMethod
+    )(
+        implicit
+        propertyStore: PropertyStore
+    ): Seq[Option[(KnownTypedValue, IntTrieSet)]] = {
+        _indirectCallParameters(pc)(method)
     }
 }
 
@@ -280,10 +415,19 @@ object NoCallees extends Callees {
     override def isIncompleteCallSite(pc: Int)(implicit propertyStore: PropertyStore): Boolean =
         false
 
-    override def callees(
-        pc:               Int,
-        finalCalleesOnly: Boolean
-    )(
+    override def callees(pc: Int)(
+        implicit
+        propertyStore:   PropertyStore,
+        declaredMethods: DeclaredMethods
+    ): Iterator[DeclaredMethod] = Iterator.empty
+
+    override def directCallees(pc: Int)(
+        implicit
+        propertyStore:   PropertyStore,
+        declaredMethods: DeclaredMethods
+    ): Iterator[DeclaredMethod] = Iterator.empty
+
+    override def indirectCallees(pc: Int)(
         implicit
         propertyStore:   PropertyStore,
         declaredMethods: DeclaredMethods
@@ -291,15 +435,33 @@ object NoCallees extends Callees {
 
     override def numCallees(pc: Int)(implicit propertyStore: PropertyStore): Int = 0
 
-    override def callSites(implicit propertyStore: PropertyStore): Iterator[Int] = Iterator.empty
+    override def callSitePCs(implicit propertyStore: PropertyStore): Iterator[Int] = Iterator.empty
 
-    override def callSites(
-        finalCalleesOnly: Boolean
-    )(
+    override def callSites()(
         implicit
         propertyStore:   PropertyStore,
         declaredMethods: DeclaredMethods
     ): IntMap[Iterator[DeclaredMethod]] = IntMap.empty
+
+    override def directCallSites()(
+        implicit
+        propertyStore:   PropertyStore,
+        declaredMethods: DeclaredMethods
+    ): IntMap[Iterator[DeclaredMethod]] = IntMap.empty
+
+    override def indirectCallSites()(
+        implicit
+        propertyStore:   PropertyStore,
+        declaredMethods: DeclaredMethods
+    ): IntMap[Iterator[DeclaredMethod]] = IntMap.empty
+
+    override def indirectCallParameters(
+        pc:     Int,
+        method: DeclaredMethod
+    )(
+        implicit
+        propertyStore: PropertyStore
+    ): Seq[Option[(KnownTypedValue, IntTrieSet)]] = Seq.empty
 
 }
 
@@ -311,10 +473,19 @@ object NoCalleesDueToNotReachableMethod extends Callees {
     override def isIncompleteCallSite(pc: Int)(implicit propertyStore: PropertyStore): Boolean =
         false
 
-    override def callees(
-        pc:               Int,
-        finalCalleesOnly: Boolean
-    )(
+    override def callees(pc: Int)(
+        implicit
+        propertyStore:   PropertyStore,
+        declaredMethods: DeclaredMethods
+    ): Iterator[DeclaredMethod] = Iterator.empty
+
+    override def directCallees(pc: Int)(
+        implicit
+        propertyStore:   PropertyStore,
+        declaredMethods: DeclaredMethods
+    ): Iterator[DeclaredMethod] = Iterator.empty
+
+    override def indirectCallees(pc: Int)(
         implicit
         propertyStore:   PropertyStore,
         declaredMethods: DeclaredMethods
@@ -322,33 +493,42 @@ object NoCalleesDueToNotReachableMethod extends Callees {
 
     override def numCallees(pc: Int)(implicit propertyStore: PropertyStore): Int = 0
 
-    override def callSites(implicit propertyStore: PropertyStore): Iterator[Int] = Iterator.empty
+    override def callSitePCs(implicit propertyStore: PropertyStore): Iterator[Int] = Iterator.empty
 
-    override def callSites(
-        finalCalleesOnly: Boolean
-    )(
+    override def callSites()(
         implicit
         propertyStore:   PropertyStore,
         declaredMethods: DeclaredMethods
     ): IntMap[Iterator[DeclaredMethod]] = IntMap.empty
+
+    override def directCallSites()(
+        implicit
+        propertyStore:   PropertyStore,
+        declaredMethods: DeclaredMethods
+    ): IntMap[Iterator[DeclaredMethod]] = IntMap.empty
+
+    override def indirectCallSites()(
+        implicit
+        propertyStore:   PropertyStore,
+        declaredMethods: DeclaredMethods
+    ): IntMap[Iterator[DeclaredMethod]] = IntMap.empty
+
+    override def indirectCallParameters(
+        pc:     Int,
+        method: DeclaredMethod
+    )(
+        implicit
+        propertyStore: PropertyStore
+    ): Seq[Option[(KnownTypedValue, IntTrieSet)]] = Seq.empty
 
 }
 
 object Callees extends CalleesPropertyMetaInformation {
 
     final val key: PropertyKey[Callees] = {
-        PropertyKey.create(
+        PropertyKey.forSimpleProperty(
             "Callees",
-            (_: PropertyStore, r: FallbackReason, _: DeclaredMethod) ⇒ {
-                r match {
-                    case PropertyIsNotComputedByAnyAnalysis ⇒
-                        throw new IllegalStateException("No call graph analysis was scheduled")
-                    case PropertyIsNotDerivedByPreviouslyExecutedAnalysis ⇒
-                        NoCalleesDueToNotReachableMethod
-                }
-            },
-            (_: PropertyStore, eps: EPS[DeclaredMethod, Callees]) ⇒ eps.ub,
-            (_: PropertyStore, _: DeclaredMethod) ⇒ None
+            NoCalleesDueToNotReachableMethod
         )
     }
 }

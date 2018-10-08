@@ -21,9 +21,9 @@ object SystemProperties extends SystemPropertiesPropertyMetaInformation {
     final val PropertyKeyName = "SystemProperties"
 
     final val key: PropertyKey[SystemProperties] = {
-        PropertyKey.create(
+        PropertyKey.forSimpleProperty(
             PropertyKeyName,
-            null //: FallbackPropertyComputation[SomeProject, SystemProperties],
+            new SystemProperties(Map.empty) //: FallbackPropertyComputation[SomeProject, SystemProperties],
         //(_: PropertyStore, eps: EPS[SomeProject, SystemProperties]) ⇒ eps.ub,
         //(_: PropertyStore, _: Entity) ⇒ None
         )
