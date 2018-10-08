@@ -61,7 +61,7 @@ object BaseAIResult extends BaseAIResultPropertyMetaInformation {
      */
     def computeAIResult(p: SomeProject, m: Method): AIResult = {
         // we may still have requirements on the domain that we are going to use...
-        p.get(AIDomainFactoryKey)(p, m)
+        p.get(AIDomainFactoryKey)(m)
     }
 
     /**
