@@ -173,7 +173,7 @@ class RecordDefUseTest extends FunSpec with Matchers {
                     !instruction.isStoreLocalVariableInstruction) {
                     defUseOrigins foreach { defUseOrigin ⇒ // the origins of a value...
                         val defUseUseSites = d.usedBy(defUseOrigin)
-                        if(defUseUseSites == null) {
+                        if (defUseUseSites == null) {
                             val belongsToSubroutine = code.belongsToSubroutine()
                             val defSiteBelongsToSubroutine =
                                 belongsToSubroutine(underlyingPC(defUseOrigin))
@@ -184,7 +184,7 @@ class RecordDefUseTest extends FunSpec with Matchers {
                                     s"uses sites of $defUseOrigin (belongs to subroutine "+
                                     s"$defSiteBelongsToSubroutine) is null"
                             )
-                        }else                         if (!defUseUseSites.contains(pc)) {
+                        } else if (!defUseUseSites.contains(pc)) {
                             // Recall that the current instruction is not a stack management
                             // instruction...
                             val i = instructions(underlyingPC(defUseOrigin))
@@ -194,7 +194,7 @@ class RecordDefUseTest extends FunSpec with Matchers {
                             val useSiteBelongsToSubroutine =
                                 belongsToSubroutine(pc)
                             fail(
-                                s"${underlyingPC(defUseOrigin)}@$i: the use sites of " +
+                                s"${underlyingPC(defUseOrigin)}@$i: the use sites of "+
                                     s"the value with the origin $defUseOrigin (belongs to "+
                                     s"subroutine $defSiteBelongsToSubroutine) does not list "+
                                     s"the instruction\n$pc@${instructions(pc)}"+
@@ -242,7 +242,7 @@ class RecordDefUseTest extends FunSpec with Matchers {
         if (failures.size > 0) {
             val failureMessages = for { (m, exception) ← failures.asScala } yield {
                 var root: Throwable = exception
-                var location : String = ""
+                var location: String = ""
                 do {
                     location += {
                         val st = root.getStackTrace
@@ -260,7 +260,7 @@ class RecordDefUseTest extends FunSpec with Matchers {
                 } while (root != null)
                 val containsJSR =
                     m.body.get.find(i ⇒ i.opcode == JSR.opcode || i.opcode == JSR_W.opcode)
-                val details = exception.getMessage.replace("\n","\n\t")
+                val details = exception.getMessage.replace("\n", "\n\t")
                 s"${m.toJava}[containsJSR=$containsJSR;\n\t"+
                     s"${exception.getClass.getSimpleName}:\n\t$details;\n\tlocation: $location]"
             }

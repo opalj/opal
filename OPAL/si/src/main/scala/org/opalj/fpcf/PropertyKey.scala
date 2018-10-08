@@ -28,7 +28,7 @@ final class PropertyKey[+P] private[fpcf] (val id: Int) extends AnyVal with Prop
  */
 object PropertyKey {
 
-    // TODO pass the cycle to the cycle resolution strategy to enable decisions about the "correct" value
+    // TODO additionally pass the cycle to the cycle resolution strategy to enable decisions about the "correct" value
     type CycleResolutionStrategy[E <: Entity, P <: Property] = (PropertyStore, EPS[E, P]) ⇒ P
 
     private[this] val propertyKeyNames = new AtomicReferenceArray[String](SupportedPropertyKinds)
@@ -38,7 +38,9 @@ object PropertyKey {
      *       This fact is also used to distinguish these two property kinds.
      */
     private[this] val fallbackPropertyComputations = {
-        new AtomicReferenceArray[(PropertyStore, FallbackReason, Entity) ⇒ Property](SupportedPropertyKinds)
+        new AtomicReferenceArray[(PropertyStore, FallbackReason, Entity) ⇒ Property](
+            SupportedPropertyKinds
+        )
     }
 
     private[this] val notComputedProperties = {
@@ -49,14 +51,18 @@ object PropertyKey {
      * @note [[PropertyKey]]s of simple properties don't have fastrack property computations.
      */
     private[this] val fastTrackPropertyComputations = {
-        new AtomicReferenceArray[(PropertyStore, Entity) ⇒ Option[Property]](SupportedPropertyKinds)
+        new AtomicReferenceArray[(PropertyStore, Entity) ⇒ Option[Property]](
+            SupportedPropertyKinds
+        )
     }
 
     /*
      * @note [[PropertyKey]]s of simple properties don't have cycle resolution strategies.
      */
     private[this] val cycleResolutionStrategies = {
-        new AtomicReferenceArray[CycleResolutionStrategy[_ <: Entity, _ <: Property]](SupportedPropertyKinds)
+        new AtomicReferenceArray[CycleResolutionStrategy[_ <: Entity, _ <: Property]](
+            SupportedPropertyKinds
+        )
     }
 
     private[this] val lastKeyId = new AtomicInteger(-1)
@@ -87,7 +93,13 @@ object PropertyKey {
      *
      * Simple properties are only to be used for properties for which a (meaningful) lower bound
      * does not exists or is very hard to compute and is – in particular – never of interest for
-     * clients. Additionally, a basic analysis which derives the property has to exist.
+     * clients. Additionally, a basic analysis which derives the property has to exist; if no
+     * analysis is scheduled the client would not be able to distinguish between this case where
+     * no analysis is run and the case where an analysis does not derive a value for a specific
+     * entity (e.g., because the entity is unused).
+     *
+     * @param notComputedProperty This property is used as the "fallback" when the property is
+     *        not computed for a specific entity.
      */
     def forSimpleProperty[P <: Property](
         name:                String,
