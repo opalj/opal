@@ -3,6 +3,8 @@ package org.opalj
 package ai
 package common
 
+import com.typesafe.config.Config
+
 import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
 
@@ -43,8 +45,7 @@ object DomainRegistry {
      * @param  lessPreciseDomains The set of domains which are less precise/costly than this domain.
      *         This basically defines a partial order between the domains.
      * @param  domainClass The class of the domain.
-     * @param  factory The factory method that will be used to create instances of the
-     *      domain.
+     * @param  factory The factory method that will be used to create instances of the domain.
      */
     def register(
         domainDescription:  String,
@@ -140,6 +141,20 @@ object DomainRegistry {
         }
     }
 
+    final val configStrategySelectionKey = "org.opalj.ai.common.DomainRegistry.defaultStrategy"
+
+    def selectConfigured(
+        config:       Config,
+        requirements: Traversable[Class[_ <: AnyRef]]
+    ): Set[Class[_ <: Domain]] = {
+        config.getString(configStrategySelectionKey) match {
+            case "cheapest" ⇒ selectCheapest(requirements)
+            case "best"     ⇒ selectBest(requirements)
+            case s ⇒
+                throw new UnsupportedOperationException(s"the specified strategy is unkonwn: $s")
+        }
+    }
+
     /**
      * Returns an `Iterable` to make it possible to iterate over the descriptions of
      * the domain. Useful to show the (end-users) some meaningful descriptions.
@@ -184,8 +199,8 @@ object DomainRegistry {
         this.synchronized { classRegistry(domainClass).factory(project, method) }
     }
 
-    def domainFactory(domainClass: Class[_ <: Domain])(project: SomeProject, method: Method): Domain = {
-        this.synchronized { classRegistry(domainClass).factory(project, method) }
+    def domainMetaInformation(domainClass: Class[_ <: Domain]): DomainMetaInformation = {
+        this.synchronized { classRegistry(domainClass) }
     }
 
     // initialize the registry with the known default domains
@@ -242,7 +257,7 @@ object DomainRegistry {
     )
 
     register(
-        "uses intervals for int values and track nullness and must alias information for reference types; records the ai-time def-use information",
+        "uses intervals for int values; tracks nullness and must alias information for reference types; records the ai-time def-use information",
         classOf[domain.l1.DefaultDomainWithCFGAndDefUse[_]],
         lessPreciseDomains = Set(classOf[domain.l0.PrimitiveTACAIDomain]),
         (project: SomeProject, method: Method) ⇒ {
@@ -251,7 +266,7 @@ object DomainRegistry {
     )
 
     register(
-        "performs simple method invocations additionally to performing int computations using intervals and ",
+        "uses intervals for int values; tracks nullness and must alias information for reference types; records the ai-time def-use information; performs simple method invocations",
         classOf[domain.l2.DefaultPerformInvocationsDomain[_]],
         lessPreciseDomains = Set(
             classOf[domain.l1.DefaultIntervalValuesDomain[_]],

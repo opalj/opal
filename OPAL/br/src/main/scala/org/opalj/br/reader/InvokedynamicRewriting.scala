@@ -9,17 +9,19 @@ import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory
 
-import org.opalj.bi.AccessFlags
-import org.opalj.bi.ACC_PRIVATE
-import org.opalj.bi.ACC_PUBLIC
-import org.opalj.bi.ACC_STATIC
-import org.opalj.bi.ACC_SYNTHETIC
 import org.opalj.collection.immutable.UIDSet
+import org.opalj.collection.RefIndexedView
+import org.opalj.collection.immutable.RefArray
 import org.opalj.log.OPALLogger.info
 import org.opalj.log.Info
 import org.opalj.log.OPALLogger.error
 import org.opalj.log.OPALLogger
 import org.opalj.log.StandardLogMessage
+import org.opalj.bi.AccessFlags
+import org.opalj.bi.ACC_PRIVATE
+import org.opalj.bi.ACC_PUBLIC
+import org.opalj.bi.ACC_STATIC
+import org.opalj.bi.ACC_SYNTHETIC
 import org.opalj.br.MethodDescriptor.LambdaMetafactoryDescriptor
 import org.opalj.br.MethodDescriptor.LambdaAltMetafactoryDescriptor
 import org.opalj.br.MethodDescriptor.JustReturnsString
@@ -27,8 +29,6 @@ import org.opalj.br.collection.mutable.InstructionsBuilder
 import org.opalj.br.instructions._
 import org.opalj.br.instructions.ClassFileFactory.DefaultFactoryMethodName
 import org.opalj.br.instructions.ClassFileFactory.AlternativeFactoryMethodName
-import org.opalj.collection.RefIndexedView
-import org.opalj.collection.immutable.RefArray
 
 /**
  * Provides support for rewriting Java 8/Scala lambda or method reference expressions that
@@ -44,7 +44,7 @@ import org.opalj.collection.immutable.RefArray
  * be picked up later for inclusion in the project.
  *
  * @see [[https://mydailyjava.blogspot.de/2015/03/dismantling-invokedynamic.html DismantlingInvokeDynamic]]
- *      for furhter information.
+ *      for further information.
  *
  * @author Arne Lottmann
  * @author Michael Eichberg

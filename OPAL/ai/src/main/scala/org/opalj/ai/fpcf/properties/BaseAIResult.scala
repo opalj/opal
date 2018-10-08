@@ -38,7 +38,7 @@ sealed trait BaseAIResult extends Property with BaseAIResultPropertyMetaInformat
     /**
      * Returns the key used by all `BaseAIResult` properties.
      */
-    final def key = BaseAIResult.key
+    final def key: PropertyKey[BaseAIResult] = BaseAIResult.key
 
     def aiResult: Option[AIResult]
 }
@@ -52,7 +52,7 @@ case class AnAIResult(theAIResult: AIResult) extends BaseAIResult {
 }
 
 /**
- * Common constants use by all [[BaseAIResult]] properties associated with methods.
+ * Common constants used by all [[BaseAIResult]] properties associated with methods.
  */
 object BaseAIResult extends BaseAIResultPropertyMetaInformation {
 
@@ -61,7 +61,7 @@ object BaseAIResult extends BaseAIResultPropertyMetaInformation {
      */
     def computeAIResult(p: SomeProject, m: Method): AIResult = {
         // we may still have requirements on the domain that we are going to use...
-        p.get(AIDomainFactoryKey)(p, m)
+        p.get(AIDomainFactoryKey)(m)
     }
 
     /**
