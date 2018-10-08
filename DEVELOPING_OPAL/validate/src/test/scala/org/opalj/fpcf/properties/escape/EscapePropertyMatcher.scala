@@ -4,7 +4,10 @@ package fpcf
 package properties
 package escape
 import org.opalj.ai.common.DefinitionSite
+import org.opalj.ai.domain.l2.PerformInvocations
+import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.br.AnnotationLike
+import org.opalj.br.BooleanValue
 import org.opalj.br.DefinedMethod
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
@@ -23,9 +26,8 @@ abstract class EscapePropertyMatcher(val property: EscapeProperty) extends Abstr
         val analyses = analysesElementValues map { _.asClassValue.value.asObjectType }
         val analysisRelevant = analyses.exists(as.contains)
 
-        // todo check perform invokations
         // check whether the PerformInvokations domain or the ArrayValuesBinding domain are required
-        // val requiresPerformInvokationsDomain = getValue(p, a.annotationType.asObjectType, a.elementValuePairs, "performInvokationsDomain").asInstanceOf[BooleanValue].value
+        val requiresPerformInvokationsDomain = getValue(p, a.annotationType.asObjectType, a.elementValuePairs, "performInvokationsDomain").asInstanceOf[BooleanValue].value
         //val requiresArrayDomain = getValue(p, a.annotationType.asObjectType, a.elementValuePairs, "arrayDomain").asInstanceOf[BooleanValue].value
 
         // retrieve the current method and using this the domain used for the TAC
@@ -36,13 +38,15 @@ abstract class EscapePropertyMatcher(val property: EscapeProperty) extends Abstr
             case _ ⇒ throw new RuntimeException(s"unsuported entity $entity")
         }
         if (as.nonEmpty && m.body.isDefined) {
-            throw new UnsupportedOperationException("Currently we can not check whether perform invocations is set")
+            val domainClass = p.get(AIDomainFactoryKey).domainClass
+            val performInvocationsClass = classOf[PerformInvocations]
+            val isPerformInvocationsClass = performInvocationsClass.isAssignableFrom(domainClass)
 
-            /*val performInvokationDomainRelevant =
-                if (requiresPerformInvokationsDomain) domain.isInstanceOf[PerformInvocations]
-                else !domain.isInstanceOf[PerformInvocations]
+            val performInvokationDomainRelevant =
+                if (requiresPerformInvokationsDomain) isPerformInvocationsClass
+                else !isPerformInvocationsClass
 
-            analysisRelevant && performInvokationDomainRelevant*/
+            analysisRelevant && performInvokationDomainRelevant
         } else {
             analysisRelevant
         }
