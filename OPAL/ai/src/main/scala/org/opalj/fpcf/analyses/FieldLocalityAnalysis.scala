@@ -674,7 +674,7 @@ final case class DefinitionSiteWithoutPutField(
             IntTrieSet.empty
         } else {
             val Assignment(_, dvar, _) = tacode.stmts(defSite)
-            dvar.usedBy - putFieldPC
+            dvar.usedBy - tacode.pcToIndex(putFieldPC)
         }
     }
 }
