@@ -814,7 +814,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                     if (IdentifyDeadVariables && cfJoins.contains(targetPC)) {
                         var i = 0
                         val theLiveVariables = liveVariables(targetPC)
-                        val newLocals = locals.mapConserve { v: theDomain.DomainValue ⇒
+                        val newLocals = locals mapConserve { v: theDomain.DomainValue ⇒
                             val lvIndex = i
                             i += 1
                             if ((v eq null) || theLiveVariables.contains(lvIndex)) {
