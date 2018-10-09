@@ -14,6 +14,7 @@ import org.opalj.bc.Assembler
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
 import org.opalj.br.instructions._
+import org.opalj.br.ClassHierarchy
 import org.opalj.ai.domain.l0.TypeCheckingDomain
 import org.opalj.ai.util.XHTML
 
@@ -84,6 +85,11 @@ class CodeAttributeBuilderTest extends FlatSpec {
                 )
                 info(
                     theCode.exceptionHandlers.mkString("Exception Handlers:\n\t\t", "\n\t\t", "\n")
+                )
+                info(
+                    theCode.liveVariables(ClassHierarchy.PreInitializedClassHierarchy).
+                        zipWithIndex.filter(_._1 != null).map(_.swap).
+                        mkString("Live variables:\n\t\t", "\n\t\t", "\n")
                 )
                 info(theSMT.pcs.mkString("Stack map table pcs: ", ", ", ""))
                 info(theSMT.stackMapFrames.mkString("Stack map table entries:\n\t\t", "\n\t\t", "\n"))
