@@ -2561,8 +2561,10 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                         val value = instruction.asInstanceOf[BIPUSH].value.toByte
                         fallThrough(theDomain.ByteValue(pc, value) :&: operands)
 
-                    case 14 /*dconst_0*/ ⇒ fallThrough(theDomain.DoubleValue(pc, 0.0d) :&: operands)
-                    case 15 /*dconst_1*/ ⇒ fallThrough(theDomain.DoubleValue(pc, 1.0d) :&: operands)
+                    case 14 /*dconst_0*/ ⇒
+                        fallThrough(theDomain.DoubleValue(pc, 0.0d) :&: operands)
+                    case 15 /*dconst_1*/ ⇒
+                        fallThrough(theDomain.DoubleValue(pc, 1.0d) :&: operands)
 
                     case 11 /*fconst_0*/ ⇒ fallThrough(theDomain.FloatValue(pc, 0.0f) :&: operands)
                     case 12 /*fconst_1*/ ⇒ fallThrough(theDomain.FloatValue(pc, 1.0f) :&: operands)
