@@ -2613,7 +2613,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                         val lvIndex = as[StoreLocalVariableInstruction](instruction).lvIndex
                         val newLocals =
                             if (lvIndex > 0 && {
-                                val previousLocal = locals(0)
+                                val previousLocal = locals(lvIndex -1)
                                 previousLocal != null && {
                                     val verificationTypeInfo = previousLocal.verificationTypeInfo
                                     verificationTypeInfo == DoubleVariableInfo ||
