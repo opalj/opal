@@ -277,13 +277,18 @@ abstract class PropertiesTest extends FunSpec with Matchers {
         }
     }
 
+    def init(p: Project[URL]): Unit = {}
+
     def executeAnalyses(
-        eagerAnalysisRunners: Set[FPCFEagerAnalysisScheduler { type InitializationData = Null }],
-        lazyAnalysisRunners:  Set[FPCFLazyAnalysisScheduler { type InitializationData = Null }]  = Set.empty
+        eagerAnalysisRunners: Set[FPCFEagerAnalysisScheduler],
+        lazyAnalysisRunners:  Set[FPCFLazyAnalysisScheduler]  = Set.empty
     ): TestContext = {
         val p = FixtureProject.recreate { piKeyUnidueId ⇒
             piKeyUnidueId != PropertyStoreKey.uniqueId
         } // to ensure that this project is not "polluted"
+
+        init(p)
+
         p.getOrCreateProjectInformationKeyInitializationData(
             PropertyStoreKey,
             (context: List[PropertyStoreContext[AnyRef]]) ⇒ {
@@ -295,19 +300,34 @@ abstract class PropertiesTest extends FunSpec with Matchers {
                 ps
             }
         )
+
         val ps = p.get(PropertyStoreKey)
+
+        val initInfo = (eagerAnalysisRunners ++ lazyAnalysisRunners).map { cs ⇒
+            cs → cs.init(ps)
+        }.toMap
+
         ps.setupPhase((eagerAnalysisRunners ++ lazyAnalysisRunners).flatMap(
             _.derives.map(_.asInstanceOf[PropertyMetaInformation].key)
         ))
-        val las = lazyAnalysisRunners.map(ar ⇒ ar.startLazily(p, ps, null))
-        val as = eagerAnalysisRunners.map(ar ⇒ ar.start(p, ps, null))
+        val las = lazyAnalysisRunners.map { ar ⇒
+            ar.beforeSchedule(ps)
+            ar.startLazily(p, ps, initInfo(ar).asInstanceOf[ar.InitializationData])
+        }
+        val as = eagerAnalysisRunners.map { ar ⇒
+            ar.beforeSchedule(ps)
+            ar.start(p, ps, initInfo(ar).asInstanceOf[ar.InitializationData])
+        }
         ps.waitOnPhaseCompletion()
+
+        (eagerAnalysisRunners ++ lazyAnalysisRunners).foreach(_.afterPhaseCompletion(ps))
+
         TestContext(p, ps, as ++ las)
     }
 }
 
 case class TestContext(
-        project:       Project[URL],
-        propertyStore: PropertyStore,
-        analyses:      Set[FPCFAnalysis]
+    project:       Project[URL],
+    propertyStore: PropertyStore,
+    analyses:      Set[FPCFAnalysis]
 )

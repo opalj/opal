@@ -2,6 +2,11 @@
 package org.opalj
 package fpcf
 
+import java.net.URL
+
+import org.opalj.ai.domain.l1
+import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
+import org.opalj.br.analyses.Project
 import org.opalj.concurrent.ConcurrentExceptions
 import org.opalj.fpcf.analyses.EagerL0PurityAnalysis
 import org.opalj.fpcf.analyses.purity.EagerL1PurityAnalysis
@@ -22,6 +27,7 @@ import org.opalj.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
 import org.opalj.fpcf.analyses.LazyStaticDataUsageAnalysis
 import org.opalj.fpcf.analyses.LazyVirtualMethodStaticDataUsageAnalysis
 import org.opalj.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
+import org.opalj.tac.fpcf.analyses.LazyL0TACAIAnalysis
 
 /**
  * Tests if the properties specified in the test project (the classes in the (sub-)package of
@@ -33,6 +39,14 @@ import org.opalj.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 class PurityTests extends PropertiesTest {
 
     override def withRT = true
+
+    override def init(p: Project[URL]): Unit = {
+        p.updateProjectInformationKeyInitializationData(
+            AIDomainFactoryKey,
+            (_: Option[Set[Class[_ <: AnyRef]]]) =>
+                Set[Class[_ <: AnyRef]](classOf[l1.DefaultDomainWithCFGAndDefUse[URL]])
+        )
+    }
 
     describe("the org.opalj.fpcf.analyses.L0PurityAnalysis is executed") {
         val as = try {
@@ -58,6 +72,7 @@ class PurityTests extends PropertiesTest {
         val as = executeAnalyses(
             Set(EagerL1PurityAnalysis),
             Set(
+                LazyL0TACAIAnalysis,
                 LazyL1FieldMutabilityAnalysis,
                 LazyClassImmutabilityAnalysis,
                 LazyTypeImmutabilityAnalysis,
@@ -73,6 +88,7 @@ class PurityTests extends PropertiesTest {
         val as = executeAnalyses(
             Set(EagerL2PurityAnalysis),
             Set(
+                LazyL0TACAIAnalysis,
                 LazyL0CompileTimeConstancyAnalysis,
                 LazyStaticDataUsageAnalysis,
                 LazyVirtualMethodStaticDataUsageAnalysis,

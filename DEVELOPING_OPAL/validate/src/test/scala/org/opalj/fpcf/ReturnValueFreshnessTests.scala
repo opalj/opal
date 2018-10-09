@@ -7,6 +7,7 @@ import org.opalj.fpcf.analyses.LazyFieldLocalityAnalysis
 import org.opalj.fpcf.analyses.LazyVirtualCallAggregatingEscapeAnalysis
 import org.opalj.fpcf.analyses.LazyVirtualReturnValueFreshnessAnalysis
 import org.opalj.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
+import org.opalj.tac.fpcf.analyses.LazyL0TACAIAnalysis
 
 /**
  *  Tests if the return value freshness properties specified in the test project (the classes in the
@@ -17,7 +18,8 @@ import org.opalj.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
  */
 class ReturnValueFreshnessTests extends PropertiesTest {
 
-    val lazyAnalysisSchedulers = Set[FPCFLazyAnalysisScheduler { type InitializationData = Null }](
+    val lazyAnalysisSchedulers = Set[FPCFLazyAnalysisScheduler](
+        LazyL0TACAIAnalysis,
         LazyInterProceduralEscapeAnalysis,
         LazyVirtualCallAggregatingEscapeAnalysis,
         LazyVirtualReturnValueFreshnessAnalysis,
@@ -26,7 +28,7 @@ class ReturnValueFreshnessTests extends PropertiesTest {
 
     describe("return value freshness analysis is executed") {
         val as = executeAnalyses(
-            Set[FPCFEagerAnalysisScheduler { type InitializationData = Null }](EagerReturnValueFreshnessAnalysis),
+            Set(EagerReturnValueFreshnessAnalysis),
             lazyAnalysisSchedulers
         )
         as.propertyStore.shutdown()

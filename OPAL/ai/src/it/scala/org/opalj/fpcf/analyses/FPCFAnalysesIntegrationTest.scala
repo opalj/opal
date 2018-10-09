@@ -10,6 +10,8 @@ import java.util.zip.GZIPInputStream
 import scala.reflect.runtime.universe.runtimeMirror
 import scala.io.Source
 import org.junit.runner.RunWith
+import org.opalj.ai.domain.l1
+import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.br.DeclaredMethod
 import org.scalatest.FunSpec
 import org.opalj.util.PerformanceEvaluation.time
@@ -45,6 +47,16 @@ class FPCFAnalysesIntegrationTest extends FunSpec {
                         // project so they are available for more configurations on the same project
                         factory = projectFactory
                         p = projectFactory()
+
+                        p.updateProjectInformationKeyInitializationData(
+                            AIDomainFactoryKey,
+                            (i: Option[Set[Class[_ <: AnyRef]]]) ⇒ (i match {
+                                case None ⇒
+                                    Set(classOf[l1.DefaultDomainWithCFGAndDefUse[_]])
+                                case Some(requirements) ⇒
+                                    requirements + classOf[l1.DefaultDomainWithCFGAndDefUse[_]]
+                            }): Set[Class[_ <: AnyRef]]
+                        )
                     } else {
                         // Recreate project keeping all ProjectInformationKeys other than the
                         // PropertyStore as we are interested only in FPCF analysis results.

@@ -1,8 +1,11 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf
 
+import java.net.URL
+
 import org.opalj.ai.domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
+import org.opalj.br.analyses.Project
 import org.opalj.fpcf.analyses.LazyVirtualCallAggregatingEscapeAnalysis
 import org.opalj.fpcf.analyses.escape.EagerInterProceduralEscapeAnalysis
 import org.opalj.fpcf.analyses.escape.EagerSimpleEscapeAnalysis
@@ -17,12 +20,7 @@ import org.opalj.tac.fpcf.analyses.LazyL0TACAIAnalysis
  */
 class EscapeAnalysisTests extends PropertiesTest {
 
-    override def executeAnalyses(
-        eagerAnalysisRunners: Set[FPCFEagerAnalysisScheduler { type InitializationData = Null }],
-        lazyAnalysisRunners:  Set[FPCFLazyAnalysisScheduler { type InitializationData = Null }]
-    ): TestContext = {
-        val p = FixtureProject.recreate()
-
+    override def init(p: Project[URL]): Unit = {
         val performInvocationsDomain = classOf[DefaultPerformInvocationsDomainWithCFGAndDefUse[_]]
 
         p.updateProjectInformationKeyInitializationData(
@@ -32,18 +30,6 @@ class EscapeAnalysisTests extends PropertiesTest {
                 case Some(requirements) ⇒ requirements + performInvocationsDomain
             }): Set[Class[_ <: AnyRef]]
         )
-        val ps = p.get(PropertyStoreKey)
-
-        val lazyRunnersWithTACAI = lazyAnalysisRunners + LazyL0TACAIAnalysis
-        ps.setupPhase((eagerAnalysisRunners ++ lazyRunnersWithTACAI).flatMap(
-            _.derives.map(_.asInstanceOf[PropertyMetaInformation].key)
-        ))
-
-        lazyRunnersWithTACAI.foreach(_.startLazily(p, ps, null))
-        val as = eagerAnalysisRunners.map(ar ⇒ ar.start(p, ps, null))
-        ps.waitOnPhaseCompletion()
-        ps.shutdown()
-        TestContext(p, ps, as)
     }
 
     describe("no analysis is scheduled") {
@@ -58,7 +44,7 @@ class EscapeAnalysisTests extends PropertiesTest {
     }
 
     describe("the org.opalj.fpcf.analyses.escape.SimpleEscapeAnalysis is executed") {
-        val as = executeAnalyses(Set(EagerSimpleEscapeAnalysis))
+        val as = executeAnalyses(Set(EagerSimpleEscapeAnalysis), Set(LazyL0TACAIAnalysis))
         as.propertyStore.shutdown()
         validateProperties(
             as,
@@ -70,12 +56,8 @@ class EscapeAnalysisTests extends PropertiesTest {
 
     describe("the org.opalj.fpcf.analyses.escape.InterProceduralEscapeAnalysis is executed") {
         val as = executeAnalyses(
-            Set[FPCFEagerAnalysisScheduler { type InitializationData = Null }](
-                EagerInterProceduralEscapeAnalysis
-            ),
-            Set[FPCFLazyAnalysisScheduler { type InitializationData = Null }](
-                LazyVirtualCallAggregatingEscapeAnalysis
-            )
+            Set(EagerInterProceduralEscapeAnalysis),
+            Set(LazyL0TACAIAnalysis, LazyVirtualCallAggregatingEscapeAnalysis)
         )
         as.propertyStore.shutdown()
         validateProperties(
