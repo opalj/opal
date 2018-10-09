@@ -54,8 +54,8 @@ trait CalleesLike extends OrderedProperty with CalleesLikePropertyMetaInformatio
  * Base class for storing callees of a reachable method.
  */
 abstract class AbstractCalleesLike extends CalleesLike {
-    val calleesIds: IntMap[IntTrieSet]
-    val incompleteCallsites: IntTrieSet
+    protected[this] val calleesIds: IntMap[IntTrieSet]
+    protected[this] val incompleteCallsites: IntTrieSet
 
     override def incompleteCallSites: IntTrieSet =
         incompleteCallsites
@@ -96,7 +96,7 @@ trait CalleesLikeNotReachable extends CalleesLike {
 }
 
 trait IndirectCallees extends CalleesLike {
-    val parameters: IntMap[Map[DeclaredMethod, Seq[Option[(KnownTypedValue, IntTrieSet)]]]]
+    protected[this] val parameters: IntMap[Map[DeclaredMethod, Seq[Option[(KnownTypedValue, IntTrieSet)]]]]
 }
 
 trait CalleesLikePropertyMetaInformation extends PropertyMetaInformation {

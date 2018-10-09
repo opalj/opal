@@ -121,7 +121,7 @@ sealed trait Callees extends Property with CalleesPropertyMetaInformation {
      */
     def indirectCallParameters(
         pc:     Int,
-        method: DeclaredMethod
+        callee: DeclaredMethod
     )(implicit propertyStore: PropertyStore): Seq[Option[(KnownTypedValue, IntTrieSet)]]
 
     final def key: PropertyKey[Callees] = Callees.key
@@ -133,8 +133,8 @@ sealed trait Callees extends Property with CalleesPropertyMetaInformation {
  */
 sealed class IntermediateCallees(
         private[this] val declaredMethod: DeclaredMethod,
-        val directKeys:                   Traversable[PropertyKey[CalleesLike]],
-        val indirectKeys:                 Traversable[PropertyKey[IndirectCallees]]
+        private[this] val directKeys:     Traversable[PropertyKey[CalleesLike]],
+        private[this] val indirectKeys:   Traversable[PropertyKey[IndirectCallees]]
 ) extends Callees {
 
     override def incompleteCallSites(implicit propertyStore: PropertyStore): IntIterator = {
@@ -288,7 +288,7 @@ sealed class IntermediateCallees(
 
     override def indirectCallParameters(
         pc:     Int,
-        method: DeclaredMethod
+        callee: DeclaredMethod
     )(
         implicit
         propertyStore: PropertyStore
@@ -297,8 +297,8 @@ sealed class IntermediateCallees(
             propertyStore(declaredMethod, key) match {
                 case ESimplePS(_, ub, _) ⇒
                     val targets = ub.parameters(pc)
-                    if (targets.contains(method))
-                        return targets(method)
+                    if (targets.contains(callee))
+                        return targets(callee)
                 case _ ⇒
             }
         }
@@ -310,10 +310,10 @@ sealed class IntermediateCallees(
  * Callees class used for final results where the callees are already aggregated.
  */
 sealed class FinalCallees(
-        val directCalleesIds:        IntMap[IntTrieSet],
-        val indirectCalleesIds:      IntMap[IntTrieSet],
-        val _incompleteCallSites:    IntTrieSet,
-        val _indirectCallParameters: IntMap[Map[DeclaredMethod, Seq[Option[(KnownTypedValue, IntTrieSet)]]]]
+        private[this] val directCalleesIds:        IntMap[IntTrieSet],
+        private[this] val indirectCalleesIds:      IntMap[IntTrieSet],
+        private[this] val _incompleteCallSites:    IntTrieSet,
+        private[this] val _indirectCallParameters: IntMap[Map[DeclaredMethod, Seq[Option[(KnownTypedValue, IntTrieSet)]]]]
 ) extends Callees {
 
     override def incompleteCallSites(implicit propertyStore: PropertyStore): IntIterator = {
