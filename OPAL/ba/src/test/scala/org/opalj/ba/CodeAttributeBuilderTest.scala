@@ -332,10 +332,7 @@ class CodeAttributeBuilderTest extends FlatSpec {
         val brMethod = brClassFile.findMethod("takeLong").head
         val daClassFile = ba.toDA(brClassFile)
         // org.opalj.io.writeAndOpen(
-        //    daClassFile.toXHTML(
-        //        Some("CodeAttributeBuilderTest.scala")),
-        //    "TheClass",
-        //    ".class.html"
+        //    daClassFile.toXHTML(Some("CodeAttributeBuilderTest.scala")), "TheClass", ".class.html"
         // )
         val rawClassFile = Assembler(daClassFile)
 
