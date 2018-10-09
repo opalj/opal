@@ -14,6 +14,7 @@ import org.opalj.br.Method
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.cfg.CFG
 import org.opalj.collection.immutable.EmptyIntTrieSet
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.cg.properties.Callees
@@ -36,7 +37,8 @@ import org.opalj.tac.New
 import org.opalj.tac.NewArray
 import org.opalj.tac.OriginOfThis
 import org.opalj.tac.Stmt
-import org.opalj.tac.TACode
+import org.opalj.tac.TACStmts
+import org.opalj.tac.fpcf.properties.TACAI
 
 /**
  * An inter-procedural analysis to determine a method's purity.
@@ -74,14 +76,14 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
      * @param code The code of the currently analyzed method
      */
     class State(
-            var dependees:     Set[EOptionP[Entity, Property]],
-            val method:        Method,
-            val definedMethod: DeclaredMethod,
-            val declClass:     ObjectType,
-            val code:          Array[Stmt[V]],
-            val pcToIndex:     Array[Int],
-            var lbPurity:      Purity                          = Pure,
-            var ubPurity:      Purity                          = Pure
+        var dependees:     Set[EOptionP[Entity, Property]],
+        val method:        Method,
+        val definedMethod: DeclaredMethod,
+        val declClass:     ObjectType,
+        var pcToIndex:     Array[Int]                      = Array.empty,
+        var code:          Array[Stmt[V]]                  = Array.empty,
+        var lbPurity:      Purity                          = Pure,
+        var ubPurity:      Purity                          = Pure
     ) extends AnalysisState
 
     override type StateType = State
@@ -209,6 +211,19 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         if (!callees.isFinal) state.dependees += callees
     }
 
+    /**
+     * Handles what to do if the TACAI is not yet final.
+     */
+    override def handleTACAI(ep: EOptionP[Method, TACAI])(implicit state: State): Unit = {
+        if (ep.isRefinable)
+            state.dependees += ep
+        if (ep.hasProperty) {
+            val tac = ep.ub.tac.get
+            state.pcToIndex = tac.pcToIndex
+            state.code = tac.stmts
+        }
+    }
+
     def cleanupDependees()(implicit state: State): Unit = {
         // Remove unnecessary dependees
         if (!state.ubPurity.isDeterministic) {
@@ -234,6 +249,9 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
             case EPS(_, _, _: Callees) ⇒
                 if (!checkPurityOfCallees(eps.asInstanceOf[EOptionP[DeclaredMethod, Callees]]))
                     return Result(state.definedMethod, ImpureByAnalysis)
+            case EPS(_, _, tacai: TACAI) ⇒
+                handleTACAI(eps.asInstanceOf[EOptionP[Method, TACAI]])
+                return determineMethodPurity(tacai.tac.get.cfg);
 
             // Cases dealing with other purity values
             case EPS(_, _, _: Purity) ⇒
@@ -269,53 +287,35 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
     }
 
     /**
-     * Determines the purity of the given method.
-     *
-     * @param definedMethod a defined method with body.
+     * Determines the purity of a method once TACAI is available.
      */
-    def determinePurity(definedMethod: DefinedMethod): PropertyComputationResult = {
-        val method = definedMethod.definedMethod
-        val declClass = method.classFile.thisType
-
-        // If this is not the method's declaration, but a non-overwritten method in a subtype,
-        // don't re-analyze the code
-        if (declClass ne definedMethod.declaringClassType)
-            return baseMethodPurity(definedMethod);
-
-        // We treat all synchronized methods as impure
-        if (method.isSynchronized)
-            return Result(definedMethod, ImpureByAnalysis);
-
-        val TACode(_, code, pcToIndex, cfg, _, _) = tacai(method)
-
-        implicit val state: State =
-            new State(Set.empty, method, definedMethod, declClass, code, pcToIndex)
-
+    def determineMethodPurity(
+        cfg: CFG[Stmt[V], TACStmts[V]]
+    )(implicit state: State): PropertyComputationResult = {
         // Special case: The Throwable constructor is `LBSideEffectFree`, but subtype constructors
         // may not be because of overridable fillInStackTrace method
-        if (method.isConstructor && declClass.isSubtypeOf(ObjectType.Throwable))
-            project.instanceMethods(declClass).foreach { mdc ⇒
+        if (state.method.isConstructor && state.declClass.isSubtypeOf(ObjectType.Throwable))
+            project.instanceMethods(state.declClass).foreach { mdc ⇒
                 if (mdc.name == "fillInStackTrace" &&
                     mdc.method.classFile.thisType != ObjectType.Throwable) {
                     val fISTPurity = propertyStore(declaredMethods(mdc.method), Purity.key)
-                    if (!checkMethodPurity(fISTPurity, Seq.empty)) {
+                    if (!checkMethodPurity(fISTPurity, Seq.empty))
                         // Early return for impure fillInStackTrace
-                        return Result(definedMethod, state.ubPurity);
-                    }
+                        return Result(state.definedMethod, state.ubPurity);
                 }
             }
 
-        val stmtCount = code.length
+        val stmtCount = state.code.length
         var s = 0
         while (s < stmtCount) {
-            if (!checkPurityOfStmt(code(s))) // Early return for impure statements
-                return Result(definedMethod, state.ubPurity)
+            if (!checkPurityOfStmt(state.code(s))) // Early return for impure statements
+                return Result(state.definedMethod, state.ubPurity)
             s += 1
         }
 
-        val callees = propertyStore(definedMethod, Callees.key)
+        val callees = propertyStore(state.definedMethod, Callees.key)
         if (!checkPurityOfCallees(callees))
-            return Result(definedMethod, state.ubPurity)
+            return Result(state.definedMethod, state.ubPurity)
 
         // Creating implicit exceptions is side-effect free (because of fillInStackTrace)
         // but it may be ignored as domain-specific
@@ -337,10 +337,10 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         }
 
         if (state.dependees.isEmpty || (state.lbPurity == state.ubPurity)) {
-            Result(definedMethod, state.ubPurity)
+            Result(state.definedMethod, state.ubPurity)
         } else {
             IntermediateResult(
-                definedMethod,
+                state.definedMethod,
                 state.lbPurity,
                 state.ubPurity,
                 state.dependees,
@@ -349,6 +349,40 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         }
     }
 
+    /**
+     * Determines the purity of the given method.
+     *
+     * @param definedMethod a defined method with body.
+     */
+    def determinePurity(definedMethod: DefinedMethod): PropertyComputationResult = {
+        val method = definedMethod.definedMethod
+        val declClass = method.classFile.thisType
+
+        // If this is not the method's declaration, but a non-overwritten method in a subtype,
+        // don't re-analyze the code
+        if (declClass ne definedMethod.declaringClassType)
+            return baseMethodPurity(definedMethod);
+
+        // We treat all synchronized methods as impure
+        if (method.isSynchronized)
+            return Result(definedMethod, ImpureByAnalysis);
+
+        implicit val state: State =
+            new State(Set.empty, method, definedMethod, declClass)
+
+        val tacaiO = getTACAI(method)
+
+        if (tacaiO.isEmpty)
+            return IntermediateResult(
+                definedMethod,
+                ImpureByAnalysis,
+                Pure,
+                state.dependees,
+                continuation
+            );
+
+        determineMethodPurity(tacaiO.get.cfg)
+    }
 }
 
 object L1PurityAnalysis {
@@ -369,7 +403,7 @@ trait L1PurityAnalysisScheduler extends ComputationSpecification {
     final override def derives: Set[PropertyKind] = Set(Purity)
 
     final override def uses: Set[PropertyKind] = {
-        Set(Callees, FieldMutability, ClassImmutability, TypeImmutability)
+        Set(TACAI, Callees, FieldMutability, ClassImmutability, TypeImmutability)
     }
 
     final override type InitializationData = Null

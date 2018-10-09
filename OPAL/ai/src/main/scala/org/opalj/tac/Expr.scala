@@ -106,6 +106,7 @@ trait Expr[+V <: Var[V]] extends ASTNode[V] {
     def asBinaryExpr: BinaryExpr[V] = throw new ClassCastException();
     def asPrefixExpr: PrefixExpr[V] = throw new ClassCastException();
     def asPrimitiveTypeCastExpr: PrimitiveTypecastExpr[V] = throw new ClassCastException();
+    def isNew: Boolean = false
     def asNew: New = throw new ClassCastException();
     def isNewArray: Boolean = false
     def asNewArray: NewArray[V] = throw new ClassCastException();
@@ -417,6 +418,7 @@ case class New(pc: PC, tpe: ObjectType) extends Expr[Nothing] {
 
     final override def isValueExpression: Boolean = false
     final override def isVar: Boolean = false
+    final override def isNew: Boolean = true
     final override def asNew: this.type = this
     final override def astID: Int = New.ASTID
     final override def cTpe: ComputationalType = ComputationalTypeReference

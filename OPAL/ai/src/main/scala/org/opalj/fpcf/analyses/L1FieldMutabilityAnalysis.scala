@@ -3,8 +3,12 @@ package org.opalj
 package fpcf
 package analyses
 
+import org.opalj.ai.common.DefinitionSitesKey
+import org.opalj.ai.common.DefinitionSite
 import org.opalj.br.ClassFile
 import org.opalj.br.Field
+import org.opalj.br.Method
+import org.opalj.br.PCs
 import org.opalj.br.analyses.FieldAccessInformationKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.ClosedPackagesKey
@@ -14,11 +18,20 @@ import org.opalj.fpcf.properties.EffectivelyFinalField
 import org.opalj.fpcf.properties.FieldMutability
 import org.opalj.fpcf.properties.NonFinalFieldByAnalysis
 import org.opalj.fpcf.properties.NonFinalFieldByLackOfInformation
+import org.opalj.fpcf.properties.EscapeProperty
+import org.opalj.fpcf.properties.EscapeViaReturn
+import org.opalj.fpcf.properties.EscapeInCallee
+import org.opalj.fpcf.properties.AtMost
+import org.opalj.fpcf.properties.NoEscape
 import org.opalj.tac.DUVar
-import org.opalj.tac.DefaultTACAIKey
 import org.opalj.tac.PutField
 import org.opalj.tac.PutStatic
 import org.opalj.tac.SelfReferenceParameter
+import org.opalj.tac.Stmt
+import org.opalj.tac.TACode
+import org.opalj.tac.TACMethodParameter
+import org.opalj.tac.fpcf.properties.TACAI
+import org.opalj.value.KnownTypedValue
 
 /**
  * Simple analysis that checks if a private (static or instance) field is always initialized at
@@ -32,10 +45,18 @@ import org.opalj.tac.SelfReferenceParameter
  */
 class L1FieldMutabilityAnalysis private[analyses] (val project: SomeProject) extends FPCFAnalysis {
 
-    final val tacai = project.get(DefaultTACAIKey)
+    class State(
+            val field:           Field,
+            var tacDependees:    Map[Method, (EOptionP[Method, TACAI], PCs)]   = Map.empty,
+            var escapeDependees: Set[EOptionP[DefinitionSite, EscapeProperty]] = Set.empty
+    )
+
+    type V = DUVar[KnownTypedValue]
+
     final val typeExtensibility = project.get(TypeExtensibilityKey)
     final val closedPackages = project.get(ClosedPackagesKey)
     final val fieldAccessInformation = project.get(FieldAccessInformationKey)
+    final val definitionSites = project.get(DefinitionSitesKey)
 
     def doDetermineFieldMutability(entity: Entity): PropertyComputationResult = {
         entity match {
@@ -113,12 +134,30 @@ class L1FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
         //     }
         // }
 
+        implicit val state: State = new State(field)
+
         for {
             (method, pcs) ← fieldAccessInformation.writeAccesses(field)
-            taCode = tacai(method)
-            stmts = taCode.stmts
-            pc ← pcs
+            taCode ← getTACAI(method, pcs)
         } {
+            if (methodUpdatesField(method, taCode, pcs))
+                return Result(field, NonFinalFieldByAnalysis);
+        }
+
+        returnResult()
+    }
+
+    /**
+     * Analyzes field writes for a single method, returning false if the field may still be
+     * effectively final and true otherwise.
+     */
+    def methodUpdatesField(
+        method: Method,
+        taCode: TACode[TACMethodParameter, V],
+        pcs:    PCs
+    )(implicit state: State): Boolean = {
+        val stmts = taCode.stmts
+        for (pc ← pcs) {
             val index = taCode.pcToIndex(pc)
             if (index >= 0) {
                 val stmtCandidate = stmts(index)
@@ -126,20 +165,24 @@ class L1FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
                     stmtCandidate match {
                         case _: PutStatic[_] ⇒
                             if (!method.isStaticInitializer) {
-                                return Result(field, NonFinalFieldByAnalysis)
+                                return true;
                             };
-                        case stmt: PutField[DUVar[_]] ⇒
-                            val objRef = stmt.objRef
-                            if (!method.isConstructor ||
-                                objRef.asVar.definedBy != SelfReferenceParameter) {
+                        case stmt: PutField[V] ⇒
+                            val objRef = stmt.objRef.asVar
+                            if ((!method.isConstructor ||
+                                objRef.definedBy != SelfReferenceParameter) &&
+                                !referenceHasNotEscaped(objRef, stmts, method)) {
                                 // note that here we assume real three address code (flat hierarchy)
 
-                                // for instance fields it is okay if they are written in the constructor
-                                // (w.r.t. the currently initialized object!)
+                                // for instance fields it is okay if they are written in the
+                                // constructor (w.r.t. the currently initialized object!)
 
                                 // If the field that is written is not the one referred to by the
                                 // self reference, it is not effectively final.
-                                return Result(field, NonFinalFieldByAnalysis);
+
+                                // However, a method (e.g. clone) may instantiate a new object and
+                                // write the field as long as that new object did not yet escape.
+                                return true;
                             }
                         case _ ⇒ throw new RuntimeException("unexpected field access");
                     }
@@ -148,14 +191,125 @@ class L1FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
                 }
             }
         }
+        false
+    }
 
-        Result(field, EffectivelyFinalField)
+    /**
+     * Returns the TACode for a method if available, registering dependencies as necessary.
+     */
+    def getTACAI(
+        method: Method,
+        pcs:    PCs
+    )(implicit state: State): Option[TACode[TACMethodParameter, V]] = {
+        propertyStore(method, TACAI.key) match {
+            case finalEP: FinalEP[Method, TACAI] ⇒
+                finalEP.ub.tac
+            case eps: IntermediateEP[Method, TACAI] ⇒
+                state.tacDependees += method → ((eps, pcs))
+                eps.ub.tac
+            case epk ⇒
+                state.tacDependees += method → ((epk, pcs))
+                None
+        }
+    }
+
+    def returnResult()(implicit state: State): PropertyComputationResult = {
+        if (state.tacDependees.isEmpty && state.escapeDependees.isEmpty)
+            Result(state.field, EffectivelyFinalField)
+        else
+            IntermediateResult(
+                state.field,
+                NonFinalFieldByAnalysis,
+                EffectivelyFinalField,
+                state.escapeDependees ++ state.tacDependees.valuesIterator.map(_._1),
+                continuation,
+                if (state.tacDependees.isEmpty) CheapPropertyComputation
+                else DefaultPropertyComputation
+            )
+    }
+
+    def continuation(eps: SomeEPS)(implicit state: State): PropertyComputationResult = {
+        val isNonFinal = eps.e match {
+            case ds: DefinitionSite ⇒
+                val newEP = eps.asInstanceOf[EOptionP[DefinitionSite, EscapeProperty]]
+                state.escapeDependees = state.escapeDependees.filter(_.e ne ds)
+                handleEscapeProperty(newEP)
+            case method: Method ⇒
+                val newEP = eps.asInstanceOf[EOptionP[Method, TACAI]]
+                val pcs = state.tacDependees(method)._2
+                state.tacDependees -= method
+                if (eps.isRefinable)
+                    state.tacDependees += method → ((newEP, pcs))
+                methodUpdatesField(method, newEP.ub.tac.get, pcs)
+        }
+
+        if (isNonFinal)
+            Result(state.field, NonFinalFieldByAnalysis);
+        else
+            returnResult()
+    }
+
+    /**
+     * Checks whether the object reference of a PutField does not escape (except for being
+     * returned).
+     */
+    def referenceHasNotEscaped(
+        ref:    V,
+        stmts:  Array[Stmt[V]],
+        method: Method
+    )(implicit state: State): Boolean = {
+        ref.definedBy.forall { defSite ⇒
+            if (defSite < 0) false // Must be locally created
+            else {
+                val definition = stmts(defSite).asAssignment
+                // Must either be null or freshly allocated
+                if (definition.expr.isNullExpr) true
+                else if (!definition.expr.isNew) false
+                else {
+                    val escape =
+                        propertyStore(definitionSites(method, definition.pc), EscapeProperty.key)
+                    !handleEscapeProperty(escape)
+                }
+            }
+        }
+    }
+
+    /**
+     * Handles the influence of an escape property on the field mutability.
+     * @return true if the object - on which a field write occurred - escapes, false otherwise.
+     * @note (Re-)Adds dependees as necessary.
+     */
+    def handleEscapeProperty(
+        ep: EOptionP[DefinitionSite, EscapeProperty]
+    )(implicit state: State): Boolean = ep match {
+        case FinalEP(_, NoEscape | EscapeInCallee | EscapeViaReturn) ⇒
+            false
+
+        case FinalEP(_, AtMost(_)) ⇒
+            true
+
+        case FinalEP(_, _) ⇒
+            true // Escape state is worse than via return
+
+        case IntermediateEP(_, _, NoEscape | EscapeInCallee | EscapeViaReturn) ⇒
+            state.escapeDependees += ep
+            false
+
+        case IntermediateEP(_, _, AtMost(_)) ⇒
+            true
+
+        case IntermediateEP(_, _, _) ⇒
+            true // Escape state is worse than via return
+
+        case _ ⇒
+            state.escapeDependees += ep
+            false
     }
 }
 
 sealed trait L1FieldMutabilityAnalysisScheduler extends ComputationSpecification {
 
-    final override def uses: Set[PropertyKind] = Set.empty
+    final override def uses: Set[PropertyKind] = Set(TACAI, EscapeProperty)
 
     final override def derives: Set[PropertyKind] = Set(FieldMutability)
 

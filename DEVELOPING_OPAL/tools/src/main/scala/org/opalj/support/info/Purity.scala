@@ -15,10 +15,10 @@ import org.opalj.ai.domain
 import org.opalj.ai.Domain
 import org.opalj.ai.common.SimpleAIKey
 import org.opalj.ai.domain.RecordDefUse
+import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
 import org.opalj.br.analyses.Project
-import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.Project.JavaClassFileReader
 import org.opalj.bytecode.JRELibraryFolder
@@ -71,6 +71,7 @@ import org.opalj.fpcf.properties.Pure
 import org.opalj.fpcf.properties.SideEffectFree
 import org.opalj.fpcf.properties.CompileTimePure
 import org.opalj.tac.DefaultTACAIKey
+import org.opalj.tac.fpcf.analyses.LazyL0TACAIAnalysis
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
 
@@ -121,6 +122,7 @@ object Purity {
             )
         ),
         Set[ComputationSpecification](
+            LazyL0TACAIAnalysis,
             LazyL0CompileTimeConstancyAnalysis,
             LazyStaticDataUsageAnalysis,
             LazyVirtualMethodStaticDataUsageAnalysis,
@@ -150,7 +152,7 @@ object Purity {
         projectDir:            Option[String],
         libDir:                Option[String],
         analysis:              FPCFLazyAnalysisScheduler { type InitializationData = Null },
-        domain:                SomeProject ⇒ Method ⇒ Domain with RecordDefUse,
+        domain:                Class[_ <: Domain with RecordDefUse],
         rater:                 DomainSpecificRater,
         withoutJDK:            Boolean,
         individual:            Boolean,
@@ -197,7 +199,17 @@ object Purity {
             )
         } { t ⇒ projectTime = t.toSeconds }
 
-        project.getOrCreateProjectInformationKeyInitializationData(SimpleAIKey, domain(project))
+        val d: Method ⇒ Domain with RecordDefUse = (m: Method) ⇒
+            domain.getConstructor(classOf[Project[_]], classOf[Method]).newInstance(project, m)
+
+        project.getOrCreateProjectInformationKeyInitializationData(SimpleAIKey, d)
+        project.updateProjectInformationKeyInitializationData(
+            AIDomainFactoryKey,
+            (i: Option[Set[Class[_ <: AnyRef]]]) ⇒ (i match {
+                case None               ⇒ Set(domain)
+                case Some(requirements) ⇒ requirements + domain
+            }): Set[Class[_ <: AnyRef]]
+        )
 
         if (eagerTAC) {
             time {
@@ -450,15 +462,11 @@ object Purity {
                 return ;
         }
 
-        val d = (p: SomeProject) ⇒ (m: Method) ⇒
-            if (domainName.isEmpty) {
-                new domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse(p, m)
-            } else {
-                // ... "org.opalj.ai.domain.l0.BaseDomainWithDefUse"
-                Class.
-                    forName(raterName.get).asInstanceOf[Class[Domain with RecordDefUse]].
-                    getConstructor(classOf[Project[_]], classOf[Method]).
-                    newInstance(p, m)
+        val d =
+            if (domainName.isEmpty)
+                classOf[domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse[_]]
+            else {
+                Class.forName(raterName.get).asInstanceOf[Class[Domain with RecordDefUse]]
             }
 
         val rater = if (raterName.isEmpty) {

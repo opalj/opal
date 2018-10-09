@@ -278,6 +278,18 @@ object DomainRegistry {
     )
 
     register(
+        "performs simple method invocations additionally to performing int computations using intervals and; records the ai-time def-use information",
+        classOf[domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse[_]],
+        lessPreciseDomains = Set(
+            classOf[domain.l1.DefaultDomainWithCFGAndDefUse[_]],
+            classOf[domain.l2.DefaultPerformInvocationsDomain[_]]
+        ),
+        (project: SomeProject, method: Method) ⇒ {
+            new domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse(project, method)
+        }
+    )
+
+    register(
         "called methods are context-sensitively analyzed (up to two levels per default)",
         classOf[domain.l2.DefaultDomain[_]],
         lessPreciseDomains = Set(classOf[domain.l2.DefaultPerformInvocationsDomain[_]]),
