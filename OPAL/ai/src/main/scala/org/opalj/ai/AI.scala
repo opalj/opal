@@ -817,9 +817,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                         val newLocals = locals.mapConserve { v: theDomain.DomainValue ⇒
                             val lvIndex = i
                             i += 1
-                            if ((v eq null) ||
-                                (v eq theDomain.TheIllegalValue) ||
-                                theLiveVariables.contains(lvIndex)) {
+                            if ((v eq null) || theLiveVariables.contains(lvIndex)) {
                                 v
                             } else {
                                 theDomain.TheIllegalValue
