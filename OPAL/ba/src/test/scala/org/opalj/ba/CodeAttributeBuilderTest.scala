@@ -346,4 +346,88 @@ class CodeAttributeBuilderTest extends FlatSpec {
             clazzMethod.invoke(clazzInstance, java.lang.Long.valueOf(1L))
         }
     }
+
+    it should "generate the right stackmap for handlers with returns" in {
+        val thisName = "TestClass"
+        val PrintStreamType = ObjectType("java/io/PrintStream")
+
+        val otherMethod = METHOD(PUBLIC.STATIC, "otherMethod", "()Z", CODE[AnyRef](
+            ICONST_0,
+            IRETURN
+        ))
+        val returnWith = METHOD(PUBLIC.STATIC, "returnWith", "(I)V", CODE[AnyRef](
+            RETURN
+        ))
+
+        val codeElements = Array[CodeElement[AnyRef]](
+            TRY('eh1),
+            ALOAD_0,
+            ASTORE_1,
+            GETSTATIC("java/lang/System", "out", PrintStreamType.toJVMTypeName),
+            LoadString("bar"),
+            INVOKEVIRTUAL("java/io/PrintStream", "println", MethodDescriptor.JustTakes(ObjectType.String).toJVMDescriptor),
+            ALOAD_1,
+            POP,
+            INVOKESTATIC(thisName, false, "otherMethod", "()Z"),
+            POP,
+            TRYEND('eh1),
+            LabeledGOTO('handler),
+            CATCH('eh1, 0),
+            ASTORE_1,
+            ICONST_0,
+            DUP,
+            INVOKESTATIC(thisName, false, "returnWith", "(I)V"),
+            IRETURN,
+            'handler,
+            ICONST_1,
+            DUP,
+            INVOKESTATIC(thisName, false, "returnWith", "(I)V"),
+            IRETURN
+        )
+        val stackMapMethod = METHOD(PUBLIC, "stackMap", "()Z", CODE[AnyRef](codeElements))
+
+        val classBuilder = CLASS(
+            version = org.opalj.bi.Java8Version,
+            accessModifiers = PUBLIC,
+            thisType = thisName,
+            methods = METHODS(
+                METHOD(
+                    PUBLIC, "<init>", "()V",
+                    CODE[AnyRef](
+                        LINENUMBER(0),
+                        ALOAD_0,
+                        LINENUMBER(1),
+                        INVOKESPECIAL("java/lang/Object", false, "<init>", "()V"),
+                        'return,
+                        LINENUMBER(2),
+                        RETURN
+                    ) MAXSTACK 2 MAXLOCALS 3
+                ),
+                stackMapMethod,
+                otherMethod,
+                returnWith
+            )
+        )
+        val (brClassFile, _) = classBuilder.toBR()
+        val brMethod = brClassFile.findMethod("stackMap").head
+        val daClassFile = ba.toDA(brClassFile)
+        //        org.opalj.io.writeAndOpen(
+        //            daClassFile.toXHTML(
+        //                Some("CodeAttributeBuilderTest.scala")
+        //            ),
+        //            "TheClass",
+        //            ".class.html"
+        //        )
+        val rawClassFile = Assembler(daClassFile)
+
+        val loader = new InMemoryClassLoader(
+            Map(thisName → rawClassFile), this.getClass.getClassLoader
+        )
+        val clazz = loader.loadClass(thisName)
+        testEvaluation(codeElements, brClassFile, brMethod) {
+            val clazzInstance = clazz.getDeclaredConstructor().newInstance()
+            val clazzMethod = clazz.getMethod("stackMap")
+            clazzMethod.invoke(clazzInstance)
+        }
+    }
 }
