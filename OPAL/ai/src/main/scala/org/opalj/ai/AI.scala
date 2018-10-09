@@ -2500,56 +2500,154 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                         | 67 /*fstore_0*/
                         | 59 /*istore_0*/ ⇒
                         fallThrough(operands.tail, locals.updated(0, operands.head))
+
                     case 63 /*lstore_0*/
                         | 71 /*dstore_0*/ ⇒
-                        val newLocals = locals.
-                            updated(0, operands.head).
-                            updated(1, null) // the 2nd slot is used by the long/double value
+                        // ... the 2nd slot is used by the long/double value:
+                        val newLocals = locals.updated(0, operands.head, null)
                         fallThrough(operands.tail, newLocals)
 
                     case 76 /*astore_1*/
                         | 68 /*fstore_1*/
                         | 60 /*istore_1*/ ⇒
                         val previousLocal = locals(0)
-                        if (null != previousLocal && {
-                            val verificationTypeInfo = previousLocal.verificationTypeInfo
-                            verificationTypeInfo != DoubleVariableInfo &&
-                                verificationTypeInfo != LongVariableInfo
+                        if (previousLocal == null || {
+                            val vti = previousLocal.verificationTypeInfo
+                            vti != DoubleVariableInfo && vti != LongVariableInfo
                         }) {
                             fallThrough(operands.tail, locals.updated(1, operands.head))
                         } else {
+                            // ... the previous "long or double" is no longer valid!
                             fallThrough(
                                 operands.tail,
                                 locals.updated(0, theDomain.TheIllegalValue, operands.head)
                             )
                         }
+
                     case 72 /*dstore_1*/
                         | 64 /*lstore_1*/ ⇒
-                        fallThrough(operands.tail, locals.updated(1, operands.head, null))
+                        val previousLocal = locals(0)
+                        if (previousLocal != null && {
+                            val verificationTypeInfo = previousLocal.verificationTypeInfo
+                            verificationTypeInfo == DoubleVariableInfo ||
+                                verificationTypeInfo == LongVariableInfo
+                        }) {
+                            // ... the previous "long or double" is no longer valid!
+                            fallThrough(
+                                operands.tail,
+                                locals.updated(0, theDomain.TheIllegalValue, operands.head, null)
+                            )
+                        } else {
+                            fallThrough(operands.tail, locals.updated(1, operands.head, null))
+                        }
+
                     case 77 /*astore_2*/
                         | 69 /*fstore_2*/
                         | 61 /*istore_2*/ ⇒
-                        fallThrough(operands.tail, locals.updated(2, operands.head))
+                        val previousLocal = locals(1)
+                        val newLocals =
+                            if (previousLocal != null && {
+                                val verificationTypeInfo = previousLocal.verificationTypeInfo
+                                verificationTypeInfo == DoubleVariableInfo ||
+                                    verificationTypeInfo == LongVariableInfo
+                            }) {
+                                // ... the previous "long or double" is no longer valid!
+                                locals.updated(1, theDomain.TheIllegalValue, operands.head)
+                            } else {
+                                locals.updated(2, operands.head)
+                            }
+                        fallThrough(operands.tail, newLocals)
+
                     case 73 /*dstore_2*/
                         | 65 /*lstore_2*/ ⇒
-                        fallThrough(operands.tail, locals.updated(2, operands.head, null))
+                        val previousLocal = locals(1)
+                        val newLocals =
+                            if (previousLocal != null && {
+                                val verificationTypeInfo = previousLocal.verificationTypeInfo
+                                verificationTypeInfo == DoubleVariableInfo ||
+                                    verificationTypeInfo == LongVariableInfo
+                            }) {
+                                // ... the previous "long or double" is no longer valid!
+                                locals.updated(1, theDomain.TheIllegalValue, operands.head, null)
+                            } else {
+                                locals.updated(2, operands.head, null)
+                            }
+                        fallThrough(operands.tail, newLocals)
+
                     case 78 /*astore_3*/
                         | 70 /*fstore_3*/
                         | 62 /*istore_3*/ ⇒
-                        fallThrough(operands.tail, locals.updated(3, operands.head))
+                        val previousLocal = locals(2)
+                        val newLocals =
+                            if (previousLocal != null && {
+                                val verificationTypeInfo = previousLocal.verificationTypeInfo
+                                verificationTypeInfo == DoubleVariableInfo ||
+                                    verificationTypeInfo == LongVariableInfo
+                            }) {
+                                // ... the previous "long or double" is no longer valid!
+                                locals.updated(2, theDomain.TheIllegalValue, operands.head)
+                            } else {
+                                locals.updated(3, operands.head)
+                            }
+                        fallThrough(operands.tail, newLocals)
+
                     case 74 /*dstore_3*/
                         | 66 /*lstore_3*/ ⇒
-                        fallThrough(operands.tail, locals.updated(3, operands.head, null))
+                        val previousLocal = locals(2)
+                        val newLocals =
+                            if (previousLocal != null && {
+                                val verificationTypeInfo = previousLocal.verificationTypeInfo
+                                verificationTypeInfo == DoubleVariableInfo ||
+                                    verificationTypeInfo == LongVariableInfo
+                            }) {
+                                // ... the previous "long or double" is no longer valid!
+                                locals.updated(2, theDomain.TheIllegalValue, operands.head, null)
+                            } else {
+                                locals.updated(3, operands.head, null)
+                            }
+                        fallThrough(operands.tail, newLocals)
 
                     case 58 /*astore*/
                         | 56 /*fstore*/
                         | 54 /*istore*/ ⇒
                         val lvIndex = as[StoreLocalVariableInstruction](instruction).lvIndex
-                        fallThrough(operands.tail, locals.updated(lvIndex, operands.head))
+                        val newLocals =
+                            if (lvIndex > 0 && {
+                                val previousLocal = locals(lvIndex -1)
+                                previousLocal != null && {
+                                    val verificationTypeInfo = previousLocal.verificationTypeInfo
+                                    verificationTypeInfo == DoubleVariableInfo ||
+                                        verificationTypeInfo == LongVariableInfo
+                                }
+                            }) {
+                                // ... the previous "long or double" is no longer valid!
+                                locals.updated(lvIndex - 1, theDomain.TheIllegalValue, operands.head)
+                            } else {
+                                locals.updated(lvIndex, operands.head)
+                            }
+                        fallThrough(operands.tail, newLocals)
+
                     case 57 /*dstore*/
                         | 55 /*lstore*/ ⇒
                         val lvIndex = as[StoreLocalVariableInstruction](instruction).lvIndex
-                        fallThrough(operands.tail, locals.updated(lvIndex, operands.head, null))
+                        val newLocals =
+                            if (lvIndex > 0 && {
+                                val previousLocal = locals(lvIndex - 1)
+                                previousLocal != null && {
+                                    val verificationTypeInfo = previousLocal.verificationTypeInfo
+                                    verificationTypeInfo == DoubleVariableInfo ||
+                                        verificationTypeInfo == LongVariableInfo
+                                }
+                            }) {
+                                // ... the previous "long or double" is no longer valid!
+                                locals.updated(
+                                    lvIndex - 1,
+                                    theDomain.TheIllegalValue, operands.head, null
+                                )
+                            } else {
+                                locals.updated(lvIndex, operands.head, null)
+                            }
+                        fallThrough(operands.tail, newLocals)
 
                     //
                     // PUSH CONSTANT VALUE
@@ -2561,8 +2659,10 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                         val value = instruction.asInstanceOf[BIPUSH].value.toByte
                         fallThrough(theDomain.ByteValue(pc, value) :&: operands)
 
-                    case 14 /*dconst_0*/ ⇒ fallThrough(theDomain.DoubleValue(pc, 0.0d) :&: operands)
-                    case 15 /*dconst_1*/ ⇒ fallThrough(theDomain.DoubleValue(pc, 1.0d) :&: operands)
+                    case 14 /*dconst_0*/ ⇒
+                        fallThrough(theDomain.DoubleValue(pc, 0.0d) :&: operands)
+                    case 15 /*dconst_1*/ ⇒
+                        fallThrough(theDomain.DoubleValue(pc, 1.0d) :&: operands)
 
                     case 11 /*fconst_0*/ ⇒ fallThrough(theDomain.FloatValue(pc, 0.0f) :&: operands)
                     case 12 /*fconst_1*/ ⇒ fallThrough(theDomain.FloatValue(pc, 1.0f) :&: operands)

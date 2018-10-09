@@ -638,19 +638,25 @@ final class PKEParallelTasksPropertyStore private (
                             // it accessible later on.
                             //
                             // In case of a "simple property" the lookup of the fallback will
-                            // throw an appropriate exception.
+                            // throw an appropriate exception; hence, we have to handle this
+                            // case specifically!
                             val reason = {
                                 if (previouslyComputedPropertyKinds(pkId))
                                     PropertyIsNotDerivedByPreviouslyExecutedAnalysis
                                 else
                                     PropertyIsNotComputedByAnyAnalysis
                             }
-                            val p = fallbackPropertyBasedOnPKId(store, reason, e, pkId)
-                            fallbacksUsedCounter.incrementAndGet()
+                            val p =
+                                if (isPropertyKeyForSimplePropertyBasedOnPKId(pkId)) {
+                                    notComputedPropertyBasedOnPKId(pkId)
+                                } else {
+                                    fallbackPropertyBasedOnPKId(store, reason, e, pkId)
+                                }
                             if (traceFallbacks) {
                                 val message = s"used fallback $p (reason=$reason) for $e"
                                 trace("analysis progress", message)
                             }
+                            fallbacksUsedCounter.incrementAndGet()
                             val finalEP = FinalEP(e, p.asInstanceOf[P])
                             val r = IdempotentResult(finalEP)
                             appendStoreUpdate(queueId = 0, NewProperty(r))
