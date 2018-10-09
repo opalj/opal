@@ -311,7 +311,7 @@ class CodeAttributeBuilderTest extends FlatSpec {
         val classBuilder = CLASS(
             version = org.opalj.bi.Java8Version,
             accessModifiers = PUBLIC,
-            thisType = "CodeAttributeBuilderTestTheClass",
+            thisType = "CodeAttributeBuilderTestClass",
             methods = METHODS(
                 METHOD(
                     PUBLIC, "<init>", "()V",
@@ -337,9 +337,9 @@ class CodeAttributeBuilderTest extends FlatSpec {
         val rawClassFile = Assembler(daClassFile)
 
         val loader = new InMemoryClassLoader(
-            Map("CodeAttributeBuilderTestTheClass" → rawClassFile), this.getClass.getClassLoader
+            Map("CodeAttributeBuilderTestClass" → rawClassFile), this.getClass.getClassLoader
         )
-        val clazz = loader.loadClass("CodeAttributeBuilderTestTheClass")
+        val clazz = loader.loadClass("CodeAttributeBuilderTestClass")
         testEvaluation(codeElements, brClassFile, brMethod) {
             val clazzInstance = clazz.getDeclaredConstructor().newInstance()
             val clazzMethod = clazz.getMethod("takeLong", classOf[Long])
