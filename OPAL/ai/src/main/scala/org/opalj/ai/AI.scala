@@ -814,12 +814,10 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                     if (IdentifyDeadVariables && cfJoins.contains(targetPC)) {
                         var i = 0
                         val theLiveVariables = liveVariables(targetPC)
-                        val newLocals = locals.mapConserve { v: theDomain.DomainValue ⇒
+                        val newLocals = locals mapConserve { v: theDomain.DomainValue ⇒
                             val lvIndex = i
                             i += 1
-                            if ((v eq null) ||
-                                (v eq theDomain.TheIllegalValue) ||
-                                theLiveVariables.contains(lvIndex)) {
+                            if ((v eq null) || theLiveVariables.contains(lvIndex)) {
                                 v
                             } else {
                                 theDomain.TheIllegalValue
@@ -2613,7 +2611,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                         val lvIndex = as[StoreLocalVariableInstruction](instruction).lvIndex
                         val newLocals =
                             if (lvIndex > 0 && {
-                                val previousLocal = locals(lvIndex -1)
+                                val previousLocal = locals(lvIndex - 1)
                                 previousLocal != null && {
                                     val verificationTypeInfo = previousLocal.verificationTypeInfo
                                     verificationTypeInfo == DoubleVariableInfo ||
