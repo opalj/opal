@@ -31,8 +31,6 @@ import org.opalj.tac.ReturnValue
 import org.opalj.tac.StaticFunctionCall
 import org.opalj.tac.StaticMethodCall
 import org.opalj.tac.Stmt
-import org.opalj.tac.TACMethodParameter
-import org.opalj.tac.TACode
 import org.opalj.tac.Throw
 import org.opalj.tac.VirtualFunctionCall
 import org.opalj.tac.VirtualMethodCall
@@ -61,36 +59,48 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
     type AnalysisContext <: AbstractEscapeAnalysisContext
     type AnalysisState <: AbstractEscapeAnalysisState
 
-    def doDetermineEscape(
+    /**
+     * Retrieves the TAC and starts the analysis, if there is already a (intermediate) version of
+     * it. Otherwise, continue when a TAC is available.
+     */
+    protected[this] def doDetermineEscape(
         implicit
         context: AnalysisContext,
         state:   AnalysisState
     ): PropertyComputationResult = {
         retrieveTAC(context.targetMethod)
-        state.tacai match {
-            case None ⇒
-                IntermediateResult(
-                    context.entity, GlobalEscape, NoEscape, state.dependees, continuation
-                )
-
-            case Some(tacai) ⇒
-                analyzeTAC(tacai)
+        if (state.tacai.isDefined) {
+            analyzeTAC()
+        } else {
+            IntermediateResult(
+                context.entity, GlobalEscape, NoEscape, state.dependees, continuation
+            )
         }
     }
 
-    def analyzeTAC(tac: TACode[TACMethodParameter, V])(
+    /**
+     * Analyzes each TAC statement of the given method. This methods assumes that there is at least
+     * an intermediate result for the TAC present.
+     */
+    private def analyzeTAC()(
         implicit
         context: AnalysisContext,
         state:   AnalysisState
     ): PropertyComputationResult = {
+        assert(state.tacai.isDefined)
         // for every use-site, check its escape state
         for (use ← state.uses) {
-            checkStmtForEscape(tac.stmts(use))
+            checkStmtForEscape(state.tacai.get.stmts(use))
         }
         returnResult
     }
 
-    def retrieveTAC(
+    /**
+     * For the given method, retrieve the TAC from the property store.
+     * It sets the tacai option in the analysis `state`.
+     * If the TAC is non-final, a dependency to it will be added to the `state`.
+     */
+    private[this] def retrieveTAC(
         method: Method
     )(implicit context: AnalysisContext, state: AnalysisState): Unit = {
         val tacai = propertyStore(method, TACAI.key)
@@ -99,7 +109,6 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
             state.addDependency(tacai)
 
         if (tacai.hasProperty) {
-            // todo is "get" safe here?
             state.updateTACAI(tacai.ub.tac.get)
         }
     }
@@ -394,7 +403,7 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
                     state.addDependency(someEPS)
                 }
                 state.updateTACAI(ub.tac.get)
-                analyzeTAC(ub.tac.get)
+                analyzeTAC()
             case _ ⇒
                 throw new UnknownError(s"unhandled escape property (${someEPS.ub} for ${someEPS.e}")
         }
@@ -414,20 +423,14 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
         case _ ⇒ throw new RuntimeException(s"unsupported entity $e")
     }
 
-    def determineEscapeOfDS(dsl: DefinitionSiteLike): PropertyComputationResult = {
+    protected[this] def determineEscapeOfDS(dsl: DefinitionSiteLike): PropertyComputationResult = {
         val ctx = createContext(dsl, dsl.pc, dsl.method)
         doDetermineEscape(ctx, createState)
     }
 
-    def determineEscapeOfFP(fp: VirtualFormalParameter): PropertyComputationResult
+    protected[this] def determineEscapeOfFP(fp: VirtualFormalParameter): PropertyComputationResult
 
-    def createContext(
-        entity:       Entity,
-        defSitePC:    ValueOrigin,
-        targetMethod: Method
-    ): AnalysisContext
-
-    def createState: AnalysisState
+    protected[this] def createState: AnalysisState
 
     protected[this] lazy val virtualFormalParameters: VirtualFormalParameters = {
         project.get(VirtualFormalParametersKey)
@@ -435,4 +438,10 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
     protected[this] val declaredMethods: DeclaredMethods = {
         project.get(DeclaredMethodsKey)
     }
+
+    protected[this] def createContext(
+        entity:       Entity,
+        defSitePC:    ValueOrigin,
+        targetMethod: Method
+    ): AnalysisContext
 }
