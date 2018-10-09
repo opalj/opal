@@ -76,13 +76,13 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
      * @param code The code of the currently analyzed method
      */
     class State(
-        var lbPurity:      Purity,
-        var ubPurity:      Purity,
-        var dependees:     Set[EOptionP[Entity, Property]],
-        val method:        Method,
-        val definedMethod: DeclaredMethod,
-        val declClass:     ObjectType,
-        var code:          Array[Stmt[V]]                  = Array.empty
+            var lbPurity:      Purity,
+            var ubPurity:      Purity,
+            var dependees:     Set[EOptionP[Entity, Property]],
+            val method:        Method,
+            val definedMethod: DeclaredMethod,
+            val declClass:     ObjectType,
+            var code:          Array[Stmt[V]]                  = Array.empty
     ) extends AnalysisState
 
     override type StateType = State

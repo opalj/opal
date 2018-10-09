@@ -496,7 +496,7 @@ class ReturnValueFreshnessAnalysis private[analyses] (
                 state.ubRVF,
                 state.dependees,
                 continuation,
-                if(state.hasTacaiDependee) DefaultPropertyComputation else CheapPropertyComputation
+                if (state.hasTacaiDependee) DefaultPropertyComputation else CheapPropertyComputation
             )
         else
             Result(state.dm, state.ubRVF)
@@ -521,8 +521,8 @@ sealed trait ReturnValueFreshnessAnalysisScheduler extends ComputationSpecificat
 }
 
 object EagerReturnValueFreshnessAnalysis
-        extends ReturnValueFreshnessAnalysisScheduler
-        with FPCFEagerAnalysisScheduler {
+    extends ReturnValueFreshnessAnalysisScheduler
+    with FPCFEagerAnalysisScheduler {
 
     override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val declaredMethods =
@@ -534,8 +534,8 @@ object EagerReturnValueFreshnessAnalysis
 }
 
 object LazyReturnValueFreshnessAnalysis
-        extends ReturnValueFreshnessAnalysisScheduler
-        with FPCFLazyAnalysisScheduler {
+    extends ReturnValueFreshnessAnalysisScheduler
+    with FPCFLazyAnalysisScheduler {
 
     /**
      * Registers the analysis as a lazy computation, that is, the method

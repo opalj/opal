@@ -170,17 +170,12 @@ object Purity {
             )
         } { t ⇒ projectTime = t.toSeconds }
 
-        val d: Method => Domain with RecordDefUse = (m: Method) =>
+        val d: Method ⇒ Domain with RecordDefUse = (m: Method) ⇒
             domain.getConstructor(classOf[Project[_]], classOf[Method]).newInstance(project, m)
 
         project.getOrCreateProjectInformationKeyInitializationData(SimpleAIKey, d)
-        val key = AIDomainFactoryKey
-       /* project.updateProjectInformationKeyInitializationData(
-            key,
-            (_: Option[Set[Class[_ <: AnyRef]]]) ⇒ Set(domain): Set[Class[_ <: AnyRef]]
-        )*/
         project.updateProjectInformationKeyInitializationData(
-            key,
+            AIDomainFactoryKey,
             (i: Option[Set[Class[_ <: AnyRef]]]) ⇒ (i match {
                 case None               ⇒ Set(domain)
                 case Some(requirements) ⇒ requirements + domain
@@ -224,7 +219,7 @@ object Purity {
                 fpcf.properties.Purity.key.asInstanceOf[PropertyKind]
             propertyStore.setupPhase(pks)
 
-            for(supportAnalysis <- support) {
+            for (supportAnalysis ← support) {
                 supportAnalysis.init(propertyStore)
             }
 
@@ -453,7 +448,7 @@ object Purity {
         }
 
         val d =
-            if(domainName.isEmpty)
+            if (domainName.isEmpty)
                 classOf[domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse[_]]
             else {
                 Class.forName(raterName.get).asInstanceOf[Class[Domain with RecordDefUse]]

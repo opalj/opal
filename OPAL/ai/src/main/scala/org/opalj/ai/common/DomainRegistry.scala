@@ -27,8 +27,8 @@ import org.opalj.br.analyses.SomeProject
 object DomainRegistry {
 
     case class DomainMetaInformation(
-        lessPreciseDomains: Set[Class[_ <: Domain]],
-        factory:            (SomeProject, Method) ⇒ Domain
+            lessPreciseDomains: Set[Class[_ <: Domain]],
+            factory:            (SomeProject, Method) ⇒ Domain
     )
 
     type ClassRegistry = Map[Class[_ <: Domain], DomainMetaInformation]

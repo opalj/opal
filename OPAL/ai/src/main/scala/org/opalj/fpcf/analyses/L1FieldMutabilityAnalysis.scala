@@ -46,9 +46,9 @@ import org.opalj.value.KnownTypedValue
 class L1FieldMutabilityAnalysis private[analyses] (val project: SomeProject) extends FPCFAnalysis {
 
     class State(
-        val field:           Field,
-        var tacDependees:    Map[Method, (EOptionP[Method, TACAI], PCs)]   = Map.empty,
-        var escapeDependees: Set[EOptionP[DefinitionSite, EscapeProperty]] = Set.empty
+            val field:           Field,
+            var tacDependees:    Map[Method, (EOptionP[Method, TACAI], PCs)]   = Map.empty,
+            var escapeDependees: Set[EOptionP[DefinitionSite, EscapeProperty]] = Set.empty
     )
 
     type V = DUVar[KnownTypedValue]
@@ -326,8 +326,8 @@ sealed trait L1FieldMutabilityAnalysisScheduler extends ComputationSpecification
  * Executor for the field mutability analysis.
  */
 object EagerL1FieldMutabilityAnalysis
-        extends L1FieldMutabilityAnalysisScheduler
-        with FPCFEagerAnalysisScheduler {
+    extends L1FieldMutabilityAnalysisScheduler
+    with FPCFEagerAnalysisScheduler {
 
     final override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new L1FieldMutabilityAnalysis(p)
@@ -341,8 +341,8 @@ object EagerL1FieldMutabilityAnalysis
  * Executor for the lazy field mutability analysis.
  */
 object LazyL1FieldMutabilityAnalysis
-        extends L1FieldMutabilityAnalysisScheduler
-        with FPCFLazyAnalysisScheduler {
+    extends L1FieldMutabilityAnalysisScheduler
+    with FPCFLazyAnalysisScheduler {
 
     final override def startLazily(
         p:      SomeProject,
