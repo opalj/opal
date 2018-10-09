@@ -2,6 +2,8 @@
 package org.opalj
 package tac
 
+import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.value.KnownTypedValue
 import org.opalj.br.ComputationalType
 import org.opalj.br.ComputationalTypeReturnAddress
 import org.opalj.ai.ValueOrigin
@@ -9,8 +11,6 @@ import org.opalj.ai.isImmediateVMException
 import org.opalj.ai.isMethodExternalExceptionOrigin
 import org.opalj.ai.pcOfImmediateVMException
 import org.opalj.ai.pcOfMethodExternalException
-import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.value.KnownTypedValue
 
 /**
  * Identifies a variable which has a single static definition/initialization site.
