@@ -96,7 +96,7 @@ trait CalleesLikeNotReachable extends CalleesLike {
 }
 
 trait IndirectCallees extends CalleesLike {
-    protected[this] val parameters: IntMap[Map[DeclaredMethod, Seq[Option[(KnownTypedValue, IntTrieSet)]]]]
+    val parameters: IntMap[Map[DeclaredMethod, Seq[Option[(KnownTypedValue, IntTrieSet)]]]]
 }
 
 trait CalleesLikePropertyMetaInformation extends PropertyMetaInformation {
