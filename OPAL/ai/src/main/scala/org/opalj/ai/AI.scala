@@ -2540,44 +2540,34 @@ abstract class AI[D <: Domain](
                     case 76 /*astore_1*/
                         | 68 /*fstore_1*/
                         | 60 /*istore_1*/ ⇒
-                        handleRegisterStore {
-                            val previousLocal = locals(0)
-                            if (previousLocal == null || {
-                                val vti = previousLocal.verificationTypeInfo
-                                vti != DoubleVariableInfo && vti != LongVariableInfo
-                            }) {
-                                locals.updated(1, operands.head)
-                            } else {
-                                // ... the previous "long or double" is no longer valid!
+                        val local0 = locals(0)
+                        if (local0 != null && local0.hasCategory2ComputationalType) {
+                            // ... the previous "long or double" is no longer valid!
+                            handleRegisterStore(
                                 locals.updated(0, theDomain.TheIllegalValue, operands.head)
-                            }
+                            )
+                        } else {
+                            handleRegisterStore(locals.updated(1, operands.head))
                         }
 
                     case 72 /*dstore_1*/
                         | 64 /*lstore_1*/ ⇒
-                        handleRegisterStore {
-                            val previousLocal = locals(0)
-                            if (previousLocal != null && {
-                                val vti = previousLocal.verificationTypeInfo
-                                vti == DoubleVariableInfo || vti == LongVariableInfo
-                            }) {
-                                // ... the previous "long or double" is no longer valid!
+                        val local0 = locals(0)
+                        if (local0 != null && local0.hasCategory2ComputationalType) {
+                            // ... the previous "long or double" is no longer valid!
+                            handleRegisterStore(
                                 locals.updated(0, theDomain.TheIllegalValue, operands.head, null)
-                            } else {
-                                locals.updated(1, operands.head, null)
-                            }
+                            )
+                        } else {
+                            handleRegisterStore(locals.updated(1, operands.head, null))
                         }
 
                     case 77 /*astore_2*/
                         | 69 /*fstore_2*/
                         | 61 /*istore_2*/ ⇒
-                        val previousLocal = locals(1)
+                        val local1 = locals(1)
                         val newLocals =
-                            if (previousLocal != null && {
-                                val verificationTypeInfo = previousLocal.verificationTypeInfo
-                                verificationTypeInfo == DoubleVariableInfo ||
-                                    verificationTypeInfo == LongVariableInfo
-                            }) {
+                            if (local1 != null && local1.hasCategory2ComputationalType) {
                                 // ... the previous "long or double" is no longer valid!
                                 locals.updated(1, theDomain.TheIllegalValue, operands.head)
                             } else {
@@ -2587,13 +2577,9 @@ abstract class AI[D <: Domain](
 
                     case 73 /*dstore_2*/
                         | 65 /*lstore_2*/ ⇒
-                        val previousLocal = locals(1)
+                        val local1 = locals(1)
                         val newLocals =
-                            if (previousLocal != null && {
-                                val verificationTypeInfo = previousLocal.verificationTypeInfo
-                                verificationTypeInfo == DoubleVariableInfo ||
-                                    verificationTypeInfo == LongVariableInfo
-                            }) {
+                            if (local1 != null && local1.hasCategory2ComputationalType) {
                                 // ... the previous "long or double" is no longer valid!
                                 locals.updated(1, theDomain.TheIllegalValue, operands.head, null)
                             } else {
@@ -2604,13 +2590,9 @@ abstract class AI[D <: Domain](
                     case 78 /*astore_3*/
                         | 70 /*fstore_3*/
                         | 62 /*istore_3*/ ⇒
-                        val previousLocal = locals(2)
+                        val local2 = locals(2)
                         val newLocals =
-                            if (previousLocal != null && {
-                                val verificationTypeInfo = previousLocal.verificationTypeInfo
-                                verificationTypeInfo == DoubleVariableInfo ||
-                                    verificationTypeInfo == LongVariableInfo
-                            }) {
+                            if (local2 != null && local2.hasCategory2ComputationalType) {
                                 // ... the previous "long or double" is no longer valid!
                                 locals.updated(2, theDomain.TheIllegalValue, operands.head)
                             } else {
@@ -2620,13 +2602,9 @@ abstract class AI[D <: Domain](
 
                     case 74 /*dstore_3*/
                         | 66 /*lstore_3*/ ⇒
-                        val previousLocal = locals(2)
+                        val local2 = locals(2)
                         val newLocals =
-                            if (previousLocal != null && {
-                                val verificationTypeInfo = previousLocal.verificationTypeInfo
-                                verificationTypeInfo == DoubleVariableInfo ||
-                                    verificationTypeInfo == LongVariableInfo
-                            }) {
+                            if (local2 != null && local2.hasCategory2ComputationalType) {
                                 // ... the previous "long or double" is no longer valid!
                                 locals.updated(2, theDomain.TheIllegalValue, operands.head, null)
                             } else {
@@ -2640,12 +2618,9 @@ abstract class AI[D <: Domain](
                         val lvIndex = as[StoreLocalVariableInstruction](instruction).lvIndex
                         val newLocals =
                             if (lvIndex > 0 && {
-                                val previousLocal = locals(lvIndex - 1)
-                                previousLocal != null && {
-                                    val verificationTypeInfo = previousLocal.verificationTypeInfo
-                                    verificationTypeInfo == DoubleVariableInfo ||
-                                        verificationTypeInfo == LongVariableInfo
-                                }
+                                val lvIndexM1Local = locals(lvIndex - 1)
+                                lvIndexM1Local != null &&
+                                    lvIndexM1Local.hasCategory2ComputationalType
                             }) {
                                 // ... the previous "long or double" is no longer valid!
                                 locals.updated(lvIndex - 1, theDomain.TheIllegalValue, operands.head)
@@ -2659,12 +2634,9 @@ abstract class AI[D <: Domain](
                         val lvIndex = as[StoreLocalVariableInstruction](instruction).lvIndex
                         val newLocals =
                             if (lvIndex > 0 && {
-                                val previousLocal = locals(lvIndex - 1)
-                                previousLocal != null && {
-                                    val verificationTypeInfo = previousLocal.verificationTypeInfo
-                                    verificationTypeInfo == DoubleVariableInfo ||
-                                        verificationTypeInfo == LongVariableInfo
-                                }
+                                val lvIndexM1Local = locals(lvIndex - 1)
+                                lvIndexM1Local != null &&
+                                    lvIndexM1Local.hasCategory2ComputationalType
                             }) {
                                 // ... the previous "long or double" is no longer valid!
                                 locals.updated(

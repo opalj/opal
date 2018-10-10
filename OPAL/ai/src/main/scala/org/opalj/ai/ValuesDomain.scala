@@ -5,8 +5,6 @@ package ai
 import scala.language.higherKinds
 import scala.reflect.ClassTag
 
-import org.opalj.br.ComputationalType
-import org.opalj.br.ComputationalTypeReturnAddress
 import org.opalj.br.ReferenceType
 import org.opalj.br.Type
 import org.opalj.br.PC
@@ -16,6 +14,7 @@ import org.opalj.br.NullVariableInfo
 import org.opalj.br.ObjectVariableInfo
 import org.opalj.value.ValueInformation
 import org.opalj.value.IsReferenceValue
+import org.opalj.value.IsReturnAddressValue
 import org.opalj.value.UnknownValue
 import org.opalj.value.KnownTypedValue
 
@@ -441,6 +440,7 @@ trait ValuesDomain { domain ⇒
         final override def computationalType: Nothing = {
             throw DomainException("an IllegalValue has no computational type")
         }
+        final override def hasCategory2ComputationalType: Boolean = false
 
         final override def verificationTypeInfo: VerificationTypeInfo = TopVariableInfo
 
@@ -504,17 +504,11 @@ trait ValuesDomain { domain ⇒
     }
 
     // an implementation trait for return addresses
-    trait RETValue extends Value { this: DomainValue ⇒
-
-        final override def computationalType: ComputationalType = ComputationalTypeReturnAddress
+    trait RETValue extends Value with IsReturnAddressValue { this: DomainValue ⇒
 
         final override def verificationTypeInfo: VerificationTypeInfo = {
             throw new UnsupportedOperationException("see JVM Spec.: StackMapTableAttribute");
         }
-
-        def isPrimitiveValue: Boolean = false
-        def isReferenceValue: Boolean = false
-        def isVoid: Boolean = false
 
         @throws[DomainException]("summarize(...) is not supported by RETValue")
         override def summarize(pc: Int): DomainValue = {
@@ -526,7 +520,8 @@ trait ValuesDomain { domain ⇒
      * A collection of (not further stored) return address values. Primarily used when we
      * join the executions of subroutines.
      */
-    class ReturnAddressValues extends RETValue { this: DomainReturnAddressValues ⇒
+    class ReturnAddressValues extends RETValue {
+        this: DomainReturnAddressValues ⇒
 
         override protected def doJoin(pc: Int, other: DomainValue): Update[DomainValue] = {
             other match {
