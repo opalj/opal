@@ -442,10 +442,7 @@ class ReturnValueFreshnessAnalysis private[analyses] (
             false
 
         case _: EPS[_, _] ⇒
-            //TODO This currently happens because of a JSR/RET problem with the TAC
-            // - restore the exception once this is fixed!
-            //throw new RuntimeException(s"unexpected property $ep for entity ${state.dm}")
-            false
+            throw new RuntimeException(s"unexpected property $ep for entity ${state.dm}")
 
         case _ ⇒
             state.addMethodDependee(ep)

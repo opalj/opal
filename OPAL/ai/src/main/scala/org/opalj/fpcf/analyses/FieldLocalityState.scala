@@ -7,15 +7,22 @@ import org.opalj.br.DeclaredMethod
 import org.opalj.ai.common.DefinitionSiteLike
 import org.opalj.br.Field
 import org.opalj.br.Method
+import org.opalj.br.PCs
+import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.properties.EscapeProperty
 import org.opalj.fpcf.properties.FieldLocality
 import org.opalj.fpcf.properties.LocalField
 import org.opalj.tac.fpcf.properties.TACAI
 
-class FieldLocalityState(val field: Field) {
+class FieldLocalityState(val field: Field, val thisIsCloneable: Boolean) {
     private[this] var declaredMethodsDependees: Set[EOptionP[DeclaredMethod, Property]] = Set.empty
     private[this] var definitionSitesDependees: Map[DefinitionSiteLike, (EOptionP[DefinitionSiteLike, EscapeProperty], Boolean)] = Map.empty
     private[this] var tacDependees: Map[Method, EOptionP[Method, TACAI]] = Map.empty
+    var tacFieldAccessPCs: Map[Method, PCs] = Map.empty
+    var potentialCloneCallers: Set[Method] = Set.empty
+    var overridesClone: Boolean = true
+
+    val thisType = field.classFile.thisType
 
     private[this] var clonedDependees: Set[DefinitionSiteLike] = Set.empty
 
@@ -75,11 +82,18 @@ class FieldLocalityState(val field: Field) {
         addDefinitionSiteDependee(ep, getFieldOfReceiver)
     }
 
-    def addTACDependee(ep: EOptionP[Method, TACAI]): Unit =
-        tacDependees += ep.e -> ep
+    def addTACDependee(ep: EOptionP[Method, TACAI]): Unit = {
+        tacDependees += ep.e → ep
+    }
 
-    def removeTACDependee(ep: EOptionP[Method, TACAI]): Unit =
+    def addTACDependee(ep: EOptionP[Method, TACAI], pcs: PCs): Unit = {
+        tacDependees += ep.e → ep
+        tacFieldAccessPCs += ep.e → (tacFieldAccessPCs.getOrElse(ep.e, IntTrieSet.empty) ++ pcs)
+    }
+
+    def removeTACDependee(ep: EOptionP[Method, TACAI]): Unit = {
         tacDependees -= ep.e
+    }
 
     def updateWithMeet(f: FieldLocality): Unit = temporary = temporary.meet(f)
     def temporaryState: FieldLocality = temporary
