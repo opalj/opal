@@ -79,7 +79,6 @@ class FieldLocalityAnalysis private[analyses] (
     final val declaredMethods = project.get(DeclaredMethodsKey)
     final val typeExtensiblity = project.get(TypeExtensibilityKey)
     final val definitionSites = project.get(DefinitionSitesKey)
-    final val aiResult = project.get(SimpleAIKey)
     final val isOverridableMethod = project.get(IsOverridableMethodKey)
 
     /**
