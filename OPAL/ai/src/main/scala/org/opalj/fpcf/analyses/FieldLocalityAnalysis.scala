@@ -7,7 +7,6 @@ import java.util.concurrent.ConcurrentHashMap
 
 import org.opalj
 import org.opalj.ai.ValueOrigin
-import org.opalj.ai.common.SimpleAIKey
 import org.opalj.br.ClassFile
 import org.opalj.br.DeclaredMethod
 import org.opalj.ai.common.DefinitionSiteLike
