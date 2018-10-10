@@ -96,10 +96,10 @@ object PropertyKey {
      * clients. Additionally, a basic analysis which derives the property has to exist; if no
      * analysis is scheduled the client would not be able to distinguish between this case where
      * no analysis is run and the case where an analysis does not derive a value for a specific
-     * entity (e.g., because the entity is unused).
+     * entity (e.g., because the entity is unused/dead).
      *
      * @param notComputedProperty This property is used as the "fallback" when the property is
-     *        not computed for a specific entity.
+     *        not computed for a specific entity though an analysis is scheduled.
      */
     def forSimpleProperty[P <: Property](
         name:                String,

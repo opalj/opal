@@ -198,8 +198,16 @@ object CodeAttributeBuilder {
 
     final val warnMessage = s"%s: %s is too small %d < %d"
 
-    // the identifiocation of dead variable potentially leads to "bigger stack map tables"...
-    final val ai = new BaseAI(IdentifyDeadVariables = false)
+    // The identification of dead variables potentially leads to "bigger stack map tables"
+    // and may lead to the killing of local variables that are strictly not needed for the AI,
+    // because some instructions will never throw an exception and the respective variable is
+    // guaranteed to be initialized to a new appropriate value along the way. Unfortunately,
+    // the information may be required by the JVM to compute the stack map table.
+    // I.e., when we have a finally handler the JVM assumes that EVERY instruction may throw
+    // an exception and therefore the register information associated with the handler
+    // has to be compatible with all handlers... (see `AI.IdentifyDeadVariables` for further
+    // details!)
+    final val ai = new BaseAI(IdentifyDeadVariables = false, RegisterStoreMayThrowExceptions = true)
 
     /**
      * Computes the [[org.opalj.br.StackMapTable]] for the given method. (Requires that

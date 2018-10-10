@@ -2,7 +2,10 @@
 package org.opalj
 package value
 
+import scala.annotation.switch
+
 import org.opalj.collection.immutable.UIDSet
+import org.opalj.collection.immutable.UIDSet1
 import org.opalj.br.Type
 import org.opalj.br.BaseType
 import org.opalj.br.ReferenceType
@@ -18,9 +21,6 @@ import org.opalj.br.VoidType
 import org.opalj.br.ComputationalType
 import org.opalj.br.ComputationalTypeReference
 import org.opalj.br.ComputationalTypeReturnAddress
-import org.opalj.collection.immutable.UIDSet1
-
-import scala.annotation.switch
 
 /**
  * Encapsulates the available type information about a `DomainValue`.
@@ -122,11 +122,9 @@ trait KnownTypedValue extends KnownValue {
      */
     def computationalType: ComputationalType
 
+    def hasCategory2ComputationalType: Boolean
 }
 
-/**
- * The value has the primitive type.
- */
 trait IsReturnAddressValue extends KnownTypedValue {
 
     final override def isVoid: Boolean = false
@@ -136,6 +134,8 @@ trait IsReturnAddressValue extends KnownTypedValue {
     final override def isPrimitiveValue: Boolean = false
 
     final override def computationalType: ComputationalType = ComputationalTypeReturnAddress
+
+    final override def hasCategory2ComputationalType: Boolean = false
 
 }
 
@@ -161,28 +161,38 @@ object IsPrimitiveValue {
 }
 
 trait IsBooleanValue extends IsPrimitiveValue[BooleanType] {
-    final def primitiveType: BooleanType = BooleanType
+    final override def primitiveType: BooleanType = BooleanType
+    final override def hasCategory2ComputationalType: Boolean = false
+
 }
 case object ABooleanValue extends IsBooleanValue
 
 trait IsByteValue extends IsPrimitiveValue[ByteType] {
-    final def primitiveType: ByteType = ByteType
+    final override def primitiveType: ByteType = ByteType
+    final override def hasCategory2ComputationalType: Boolean = false
+
 }
 case object AByteValue extends IsByteValue
 
 trait IsCharValue extends IsPrimitiveValue[CharType] {
 
-    final def primitiveType: CharType = CharType
+    final override def primitiveType: CharType = CharType
+    final override def hasCategory2ComputationalType: Boolean = false
+
 }
 case object ACharValue extends IsCharValue
 
 trait IsShortValue extends IsPrimitiveValue[ShortType] {
-    final def primitiveType: ShortType = ShortType
+    final override def primitiveType: ShortType = ShortType
+    final override def hasCategory2ComputationalType: Boolean = false
+
 }
 case object AShortValue extends IsShortValue
 
 trait IsIntegerValue extends IsPrimitiveValue[IntegerType] {
-    final def primitiveType: IntegerType = IntegerType
+    final override def primitiveType: IntegerType = IntegerType
+    final override def hasCategory2ComputationalType: Boolean = false
+
     def lowerBound: Int
     def upperBound: Int
 }
@@ -192,17 +202,22 @@ case object AnIntegerValue extends IsIntegerValue {
 }
 
 trait IsFloatValue extends IsPrimitiveValue[FloatType] {
-    final def primitiveType: FloatType = FloatType
+    final override def primitiveType: FloatType = FloatType
+    final override def hasCategory2ComputationalType: Boolean = false
+
 }
 case object AFloaValue extends IsFloatValue
 
 trait IsLongValue extends IsPrimitiveValue[LongType] {
-    final def primitiveType: LongType = LongType
+    final override def primitiveType: LongType = LongType
+    final override def hasCategory2ComputationalType: Boolean = true
 }
 case object ALongValue extends IsLongValue
 
 trait IsDoubleValue extends IsPrimitiveValue[DoubleType] {
-    final def primitiveType: DoubleType = DoubleType
+    final override def primitiveType: DoubleType = DoubleType
+    final override def hasCategory2ComputationalType: Boolean = true
+
 }
 case object ADoubleValue extends IsDoubleValue
 
@@ -231,6 +246,7 @@ trait IsReferenceValue extends KnownTypedValue {
     final override def isPrimitiveValue: Boolean = false
 
     final override def computationalType: ComputationalType = ComputationalTypeReference
+    final override def hasCategory2ComputationalType: Boolean = false
 
     /**
      * The upper bound of the value's type. The upper bound is empty if this
