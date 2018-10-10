@@ -13,7 +13,11 @@ package ai
  *
  * @author Michael Eichberg
  */
-class BaseAI(IdentifyDeadVariables: Boolean = true) extends AI[Domain](IdentifyDeadVariables) {
+class BaseAI(
+        IdentifyDeadVariables:           Boolean = true,
+        RegisterStoreMayThrowExceptions: Boolean = false
+)
+    extends AI[Domain](IdentifyDeadVariables, RegisterStoreMayThrowExceptions) {
 
     override def isInterrupted: Boolean = Thread.interrupted()
 
@@ -22,4 +26,4 @@ class BaseAI(IdentifyDeadVariables: Boolean = true) extends AI[Domain](IdentifyD
 /**
  * Instance of the base abstract interpreter.
  */
-object BaseAI extends BaseAI(true)
+object BaseAI extends BaseAI(true, false)
