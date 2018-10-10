@@ -119,9 +119,30 @@ import org.opalj.ai.util.insertBeforeIfNew
  * Customization of the abstract interpreter is done by creating new subclasses that
  * override the relevant methods (in particular: [[AI#isInterrupted]] and [[AI#tracer]]).
  *
+ * @param IdentifyDeadVariables If `true` the results of a relatively cheap live variables
+ *         analysis are used to avoid the useless propagation and joining of variables that
+ *         are not used anymore. This setting is generally turned on. However, identification
+ *         of dead variables – in combination with the fact that we only consider instructions
+ *         as throwing exceptions that explicitly declare to do so – may lead to a situation
+ *         where a variable is correctly identified as dead (`IllegalValue`), but where the JVM –
+ *         when verifying the bytecode – still expects the variable to still be alive because it
+ *         considers more instructions as potentially throwing exceptions (e.g., pop,
+ *         <x>load|string,...).
+ *         (In `CodeAttributeBuilderTest` we have a corresponding test case.)
+ *         Hence, when the result of the abstract interpretation is used to compute stack map
+ *         tables, `IdentifyDeadVariables` should be `false`.
+ * @param  RegisterStoreMayThrowExceptions If `true` (default: `false`), the <x>Store instructions;
+ *         i.e., those potentially changing the shape of the registers w.r.t. the type information
+ *         relevant when verifying the bytecode are considered as throwing "some" exception.
+ *         This is required when using the result of the abstract interpretation for computing
+ *         stack map tables.
+ *
  * @author Michael Eichberg
  */
-abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true) {
+abstract class AI[D <: Domain](
+        final val IdentifyDeadVariables:           Boolean = true,
+        final val RegisterStoreMayThrowExceptions: Boolean = false
+) {
 
     type SomeLocals[V <: d.DomainValue forSome { val d: D }] = Option[IndexedSeq[V]]
 
@@ -1641,7 +1662,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                  * @param testForNullnessOfExceptionValue Required to avoid the meaningless
                  *        generation of "NullPointerExceptions" for exceptions thrown by the
                  *        JVM/outside the scope of the current method. In case of a domain
-                 *        which tracks nullness this issue is probably already implicitly handled
+                 *        which tracks null-ness this issue is probably already implicitly handled
                  *        by the domain;
                  *        if the domain does not track null-ness, this information is
                  *        explicitly required, otherwise, the assumption would be made that the
@@ -1730,6 +1751,18 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                         val exceptions = computation.exceptions
                         handleException(
                             exceptions, testForNullnessOfExceptionValue = false, forceJoin = false
+                        )
+                    }
+                }
+
+                def handleRegisterStore(newLocals: Locals): Unit = {
+                    fallThrough(operands.tail, newLocals)
+                    if (RegisterStoreMayThrowExceptions) {
+                        handleException(
+                            // theDomain.NonNullObjectValue(ValueOriginForImmediateVMException(pc), ObjectType.Throwable)
+                            theDomain.VMThrowable(pc),
+                            testForNullnessOfExceptionValue = false,
+                            forceJoin = false
                         )
                     }
                 }
@@ -2497,46 +2530,42 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                     case 75 /*astore_0*/
                         | 67 /*fstore_0*/
                         | 59 /*istore_0*/ ⇒
-                        fallThrough(operands.tail, locals.updated(0, operands.head))
+                        handleRegisterStore(locals.updated(0, operands.head))
 
                     case 63 /*lstore_0*/
                         | 71 /*dstore_0*/ ⇒
                         // ... the 2nd slot is used by the long/double value:
-                        val newLocals = locals.updated(0, operands.head, null)
-                        fallThrough(operands.tail, newLocals)
+                        handleRegisterStore(locals.updated(0, operands.head, null))
 
                     case 76 /*astore_1*/
                         | 68 /*fstore_1*/
                         | 60 /*istore_1*/ ⇒
-                        val previousLocal = locals(0)
-                        if (previousLocal == null || {
-                            val vti = previousLocal.verificationTypeInfo
-                            vti != DoubleVariableInfo && vti != LongVariableInfo
-                        }) {
-                            fallThrough(operands.tail, locals.updated(1, operands.head))
-                        } else {
-                            // ... the previous "long or double" is no longer valid!
-                            fallThrough(
-                                operands.tail,
+                        handleRegisterStore {
+                            val previousLocal = locals(0)
+                            if (previousLocal == null || {
+                                val vti = previousLocal.verificationTypeInfo
+                                vti != DoubleVariableInfo && vti != LongVariableInfo
+                            }) {
+                                locals.updated(1, operands.head)
+                            } else {
+                                // ... the previous "long or double" is no longer valid!
                                 locals.updated(0, theDomain.TheIllegalValue, operands.head)
-                            )
+                            }
                         }
 
                     case 72 /*dstore_1*/
                         | 64 /*lstore_1*/ ⇒
-                        val previousLocal = locals(0)
-                        if (previousLocal != null && {
-                            val verificationTypeInfo = previousLocal.verificationTypeInfo
-                            verificationTypeInfo == DoubleVariableInfo ||
-                                verificationTypeInfo == LongVariableInfo
-                        }) {
-                            // ... the previous "long or double" is no longer valid!
-                            fallThrough(
-                                operands.tail,
+                        handleRegisterStore {
+                            val previousLocal = locals(0)
+                            if (previousLocal != null && {
+                                val vti = previousLocal.verificationTypeInfo
+                                vti == DoubleVariableInfo || vti == LongVariableInfo
+                            }) {
+                                // ... the previous "long or double" is no longer valid!
                                 locals.updated(0, theDomain.TheIllegalValue, operands.head, null)
-                            )
-                        } else {
-                            fallThrough(operands.tail, locals.updated(1, operands.head, null))
+                            } else {
+                                locals.updated(1, operands.head, null)
+                            }
                         }
 
                     case 77 /*astore_2*/
@@ -2554,7 +2583,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                             } else {
                                 locals.updated(2, operands.head)
                             }
-                        fallThrough(operands.tail, newLocals)
+                        handleRegisterStore(newLocals)
 
                     case 73 /*dstore_2*/
                         | 65 /*lstore_2*/ ⇒
@@ -2570,7 +2599,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                             } else {
                                 locals.updated(2, operands.head, null)
                             }
-                        fallThrough(operands.tail, newLocals)
+                        handleRegisterStore(newLocals)
 
                     case 78 /*astore_3*/
                         | 70 /*fstore_3*/
@@ -2587,7 +2616,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                             } else {
                                 locals.updated(3, operands.head)
                             }
-                        fallThrough(operands.tail, newLocals)
+                        handleRegisterStore(newLocals)
 
                     case 74 /*dstore_3*/
                         | 66 /*lstore_3*/ ⇒
@@ -2603,7 +2632,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                             } else {
                                 locals.updated(3, operands.head, null)
                             }
-                        fallThrough(operands.tail, newLocals)
+                        handleRegisterStore(newLocals)
 
                     case 58 /*astore*/
                         | 56 /*fstore*/
@@ -2623,7 +2652,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                             } else {
                                 locals.updated(lvIndex, operands.head)
                             }
-                        fallThrough(operands.tail, newLocals)
+                        handleRegisterStore(newLocals)
 
                     case 57 /*dstore*/
                         | 55 /*lstore*/ ⇒
@@ -2645,7 +2674,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                             } else {
                                 locals.updated(lvIndex, operands.head, null)
                             }
-                        fallThrough(operands.tail, newLocals)
+                        handleRegisterStore(newLocals)
 
                     //
                     // PUSH CONSTANT VALUE
