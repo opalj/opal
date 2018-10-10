@@ -121,17 +121,10 @@ class CalleesAnalysis private[analyses] (
                 IntMap.empty
 
             for (key ← directKeys.toIterator ++ indirectKeys.toIterator) {
-                val p1 = propertyStore(
+                val p = propertyStore(
                     declaredMethod,
                     key
-                )
-                if (!p1.isInstanceOf[FinalEP[DeclaredMethod, CalleesLike]]) {
-                    propertyStore(
-                        declaredMethod,
-                        key
-                    )
-                }
-                val p = p1.asInstanceOf[FinalEP[DeclaredMethod, CalleesLike]].p
+                ).asFinal.p
                 if (p.isIndirect) {
                     indirectCalleeIds =
                         indirectCalleeIds.unionWith(p.callSites, (_, l, r) ⇒ l ++ r)
@@ -173,7 +166,7 @@ class CalleesAnalysis private[analyses] (
         eOptionP:  EOptionP[DeclaredMethod, CalleesLike],
         dependees: Set[EOptionP[DeclaredMethod, CalleesLike]]
     ): Set[EOptionP[DeclaredMethod, CalleesLike]] = {
-        val filtered = dependees.filter { d ⇒ d.e != eOptionP.e && d.pk != eOptionP.pk }
+        val filtered = dependees.filter { d ⇒ d.e != eOptionP.e || d.pk != eOptionP.pk }
         if (eOptionP.isRefinable) filtered + eOptionP
         else filtered
     }
