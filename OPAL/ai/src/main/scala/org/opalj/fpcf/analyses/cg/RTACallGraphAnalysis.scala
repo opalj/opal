@@ -135,7 +135,7 @@ class RTACallGraphAnalysis private[analyses] (
         val instantiatedTypesUB: UIDSet[ObjectType] = instantiatedTypesEOptP match {
             case eps: EPS[_, _] ⇒ eps.ub.types
 
-            case _              ⇒ InstantiatedTypes.initialTypes
+            case _              ⇒ UIDSet(InstantiatedTypes.initialTypes(project).toSeq: _*)
         }
 
         // process each stmt in the current method to compute:
@@ -478,7 +478,7 @@ object RTACallGraphAnalysis {
                     ))
 
                 case _: EPK[_, _] ⇒
-                    Some(IntermediateESimpleP(p, InstantiatedTypes.initial(newInstantiatedTypes)))
+                    Some(IntermediateESimpleP(p, InstantiatedTypes.initial(newInstantiatedTypes, p)))
 
                 case r ⇒ throw new IllegalStateException(s"unexpected previous result $r")
             })

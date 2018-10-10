@@ -76,16 +76,16 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
     val GetDescriptor = MethodDescriptor(ObjectType.Object, ObjectType.Object)
 
     class State(
-            val definedMethod:        DefinedMethod,
-            val stmts:                Array[Stmt[V]],
-            val cfg:                  CFG[Stmt[V], TACStmts[V]],
-            val pcToIndex:            Array[Int],
-            val loadedClassesUB:      UIDSet[ObjectType],
-            val instantiatedTypesUB:  UIDSet[ObjectType],
-            val calleesAndCallers:    IndirectCalleesAndCallers,
-            var newLoadedClasses:     UIDSet[ObjectType]                              = UIDSet.empty,
-            var newInstantiatedTypes: UIDSet[ObjectType]                              = UIDSet.empty,
-            var dependee:             Option[EOptionP[SomeProject, SystemProperties]] = None
+        val definedMethod:        DefinedMethod,
+        val stmts:                Array[Stmt[V]],
+        val cfg:                  CFG[Stmt[V], TACStmts[V]],
+        val pcToIndex:            Array[Int],
+        val loadedClassesUB:      UIDSet[ObjectType],
+        val instantiatedTypesUB:  UIDSet[ObjectType],
+        val calleesAndCallers:    IndirectCalleesAndCallers,
+        var newLoadedClasses:     UIDSet[ObjectType]                              = UIDSet.empty,
+        var newInstantiatedTypes: UIDSet[ObjectType]                              = UIDSet.empty,
+        var dependee:             Option[EOptionP[SomeProject, SystemProperties]] = None
     )
 
     implicit private[this] val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
@@ -1142,7 +1142,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         // in case they are not yet computed, we use the initialTypes
         val instantiatedTypesUB: UIDSet[ObjectType] = instantiatedTypesEOptP match {
             case eps: EPS[_, _] ⇒ eps.ub.types
-            case _              ⇒ InstantiatedTypes.initialTypes
+            case _              ⇒ UIDSet(InstantiatedTypes.initialTypes(project).toSeq: _*)
         }
 
         (loadedClassesUB, instantiatedTypesUB)

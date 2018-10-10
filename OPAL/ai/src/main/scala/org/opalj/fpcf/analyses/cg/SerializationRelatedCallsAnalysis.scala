@@ -114,7 +114,7 @@ class SerializationRelatedCallsAnalysis private[analyses] (
         val instantiatedTypesUB: UIDSet[ObjectType] = instantiatedTypesEOptP match {
             case eps: EPS[_, _] ⇒ eps.ub.types
 
-            case _              ⇒ InstantiatedTypes.initialTypes
+            case _              ⇒ UIDSet(InstantiatedTypes.initialTypes(project).toSeq: _*)
         }
 
         val calleesAndCallers = new IndirectCalleesAndCallers()
