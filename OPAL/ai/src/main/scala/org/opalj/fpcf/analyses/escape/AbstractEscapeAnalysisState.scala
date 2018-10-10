@@ -5,8 +5,10 @@ package analyses
 package escape
 
 import org.opalj.ai.common.DefinitionSiteLike
+import org.opalj.br.DeclaredMethod
 import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.fpcf.cg.properties.Callees
 import org.opalj.fpcf.properties.EscapeProperty
 import org.opalj.fpcf.properties.NoEscape
 import org.opalj.fpcf.properties.VirtualMethodEscapeProperty
@@ -50,6 +52,9 @@ trait AbstractEscapeAnalysisState {
      */
     @inline private[escape] final def addDependency(eOptionP: EOptionP[Entity, Property]): Unit = {
         _dependees += eOptionP
+        if (_dependees.count(epk ⇒ (epk.e eq eOptionP.e) && epk.pk == eOptionP.pk) > 1)
+            println()
+        assert(_dependees.count(epk ⇒ (epk.e eq eOptionP.e) && epk.pk == eOptionP.pk) <= 1)
     }
 
     /**
@@ -121,6 +126,9 @@ trait AbstractEscapeAnalysisState {
  * to the [[PropertyStore]].
  */
 trait DependeeCache {
+
+    private[escape] val calleesCache: mutable.Map[DeclaredMethod, EOptionP[Entity, Callees]] =
+        mutable.Map()
 
     private[escape] val dependeeCache: mutable.Map[VirtualFormalParameter, EOptionP[Entity, EscapeProperty]] =
         mutable.Map()
