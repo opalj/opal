@@ -5,7 +5,6 @@ package cg
 package properties
 
 import org.opalj.br.ObjectType
-import org.opalj.br.analyses.SomeProject
 import org.opalj.collection.immutable.UIDSet
 
 sealed trait LoadedClassesMetaInformation extends PropertyMetaInformation {
@@ -19,7 +18,7 @@ sealed trait LoadedClassesMetaInformation extends PropertyMetaInformation {
  * @author Florian Kuebler
  */
 sealed class LoadedClasses(val classes: UIDSet[ObjectType])
-    extends Property with OrderedProperty with LoadedClassesMetaInformation {
+        extends Property with OrderedProperty with LoadedClassesMetaInformation {
 
     override def checkIsEqualOrBetterThan(e: Entity, other: LoadedClasses): Unit = {
         if (other.classes != null && !classes.subsetOf(other.classes)) {
@@ -32,19 +31,10 @@ sealed class LoadedClasses(val classes: UIDSet[ObjectType])
     override def toString: String = s"LoadedClasses(${classes.size})"
 }
 
-object LoadedClassesLowerBound extends LoadedClasses(classes = null) {
-    override def checkIsEqualOrBetterThan(e: Entity, other: LoadedClasses): Unit = {}
-
-    override def toString: String = "LoadedClassesLowerBound"
-}
+object NoLoadedClasses extends LoadedClasses(classes = UIDSet.empty)
 
 object LoadedClasses extends LoadedClassesMetaInformation {
     final val key: PropertyKey[LoadedClasses] = {
-        PropertyKey.create(
-            "LoadedClasses",
-            (_: PropertyStore, _: FallbackReason, _: SomeProject) ⇒ LoadedClassesLowerBound,
-            (_: PropertyStore, eps: EPS[SomeProject, LoadedClasses]) ⇒ eps.ub,
-            (_: PropertyStore, _: SomeProject) ⇒ None
-        )
+        PropertyKey.forSimpleProperty("LoadedClasses", NoLoadedClasses)
     }
 }

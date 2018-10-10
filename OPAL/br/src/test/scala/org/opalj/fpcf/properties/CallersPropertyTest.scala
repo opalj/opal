@@ -18,7 +18,6 @@ import org.opalj.fpcf.cg.properties.OnlyVMCallersAndWithUnknownContext
 import org.opalj.fpcf.cg.properties.NoCallers
 import org.opalj.fpcf.cg.properties.CallersImplWithOtherCalls
 import org.opalj.fpcf.cg.properties.CallersOnlyWithConcreteCallers
-import org.opalj.fpcf.cg.properties.LowerBoundCallers
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
 import org.scalatest.junit.JUnitRunner
@@ -214,17 +213,4 @@ class CallersPropertyTest extends FlatSpec with Matchers {
         assert(withBoth.hasCallersWithUnknownContext)
         assert(withBoth.hasVMLevelCallers)
     }
-
-    behavior of "the lower bound callers"
-
-    it should "be a lower bound" in {
-        val lb = LowerBoundCallers
-        assert(lb.size == Int.MaxValue)
-        assert(lb.hasCallersWithUnknownContext)
-        assert(lb.hasVMLevelCallers)
-        assert(lb.updatedWithVMLevelCall() eq lb)
-        assert(lb.updatedWithUnknownContext() eq lb)
-        assert(lb.updated(declaredMethod, 0) eq lb)
-    }
-
 }

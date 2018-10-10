@@ -89,19 +89,19 @@ sealed trait EmptyConcreteCallers extends CallersProperty {
 }
 
 object NoCallers
-    extends EmptyConcreteCallers with CallersWithoutUnknownContext with CallersWithoutVMLevelCall {
+        extends EmptyConcreteCallers with CallersWithoutUnknownContext with CallersWithoutVMLevelCall {
     override def updatedWithVMLevelCall(): CallersWithVMLevelCall = OnlyVMLevelCallers
 
     override def updatedWithUnknownContext(): CallersWithUnknownContext = OnlyCallersWithUnknownContext
 }
 
 object OnlyCallersWithUnknownContext
-    extends EmptyConcreteCallers with CallersWithUnknownContext with CallersWithoutVMLevelCall {
+        extends EmptyConcreteCallers with CallersWithUnknownContext with CallersWithoutVMLevelCall {
     override def updatedWithVMLevelCall(): CallersWithVMLevelCall = OnlyVMCallersAndWithUnknownContext
 }
 
 object OnlyVMLevelCallers
-    extends EmptyConcreteCallers with CallersWithoutUnknownContext with CallersWithVMLevelCall {
+        extends EmptyConcreteCallers with CallersWithoutUnknownContext with CallersWithVMLevelCall {
     override def updatedWithUnknownContext(): CallersWithUnknownContext = OnlyVMCallersAndWithUnknownContext
 }
 
@@ -204,38 +204,10 @@ object CallersImplWithOtherCalls {
     }
 }
 
-object LowerBoundCallers extends CallersWithUnknownContext with CallersWithVMLevelCall {
-
-    override lazy val size: Int = {
-        Int.MaxValue
-    }
-
-    override def callers(
-        implicit
-        declaredMethods: DeclaredMethods
-    ): TraversableOnce[(DeclaredMethod, Int /*PC*/ )] = {
-        throw new UnsupportedOperationException()
-    }
-
-    override def updated(
-        caller: DeclaredMethod, pc: Int
-    )(implicit declaredMethods: DeclaredMethods): CallersProperty = this
-}
-
 object CallersProperty extends CallersPropertyMetaInformation {
 
     final val key: PropertyKey[CallersProperty] = {
-        PropertyKey.create(
-            "CallersProperty",
-            (ps: PropertyStore, reason: FallbackReason, m: DeclaredMethod) ⇒ reason match {
-                case PropertyIsNotComputedByAnyAnalysis ⇒
-                    LowerBoundCallers
-                case PropertyIsNotDerivedByPreviouslyExecutedAnalysis ⇒
-                    NoCallers
-            },
-            (_: PropertyStore, eps: EPS[DeclaredMethod, CallersProperty]) ⇒ eps.ub,
-            (_: PropertyStore, _: DeclaredMethod) ⇒ None
-        )
+        PropertyKey.forSimpleProperty("CallersProperty", NoCallers)
     }
 
     def toLong(methodId: Int, pc: Int): Long = {

@@ -4,7 +4,6 @@ package fpcf
 package cg
 package properties
 import org.opalj.br.ObjectType
-import org.opalj.br.analyses.ProjectLike
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.collection.immutable.UIDSet1
 
@@ -32,7 +31,7 @@ case class InstantiatedTypes private[properties] (
     override def toString: String = s"InstantiatedTypes(size=${types.size})"
 
     override def checkIsEqualOrBetterThan(e: Entity, other: InstantiatedTypes): Unit = {
-        if ((other ne AllTypes) && !types.subsetOf(other.types)) {
+        if (!types.subsetOf(other.types)) {
             throw new IllegalArgumentException(s"$e: illegal refinement of property $other to $this")
         }
     }
@@ -60,34 +59,13 @@ object InstantiatedTypes extends InstantiatedTypesPropertyMetaInformation {
     }
 
     final val key: PropertyKey[InstantiatedTypes] = {
-        PropertyKey.create[ProjectLike, InstantiatedTypes](
-            "InstantiatedTypes",
-            (_: PropertyStore, reason: FallbackReason, _: ProjectLike) ⇒ reason match {
-                case PropertyIsNotDerivedByPreviouslyExecutedAnalysis ⇒ NoTypes
-                case PropertyIsNotComputedByAnyAnalysis               ⇒ AllTypes
-            },
-            (_, eps: EPS[ProjectLike, InstantiatedTypes]) ⇒ eps.ub,
-            (_: PropertyStore, _: ProjectLike) ⇒ None
-        )
+        PropertyKey.forSimpleProperty("InstantiatedTypes", NoTypes)
     }
 
     def initialTypes: UIDSet[ObjectType] = {
         // TODO make this configurable
         UIDSet1(ObjectType.String)
     }
-}
-
-// todo we can not use null here, so we need special handling
-object AllTypes extends InstantiatedTypes(null, null) {
-    override def checkIsEqualOrBetterThan(e: Entity, other: InstantiatedTypes): Unit = {}
-
-    override def updated(newTypes: Set[ObjectType]): InstantiatedTypes = this
-
-    override def toString: String = "AllTypesInstantiated"
-
-    override def getNewTypes(index: Int): Iterator[ObjectType] = Iterator.empty
-
-    override def numElements: Int = throw new UnsupportedOperationException()
 }
 
 object NoTypes extends InstantiatedTypes(List.empty, UIDSet.empty)
