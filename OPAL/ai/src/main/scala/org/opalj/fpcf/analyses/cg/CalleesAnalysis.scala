@@ -13,7 +13,6 @@ import org.opalj.fpcf.cg.properties.Callees
 import org.opalj.fpcf.cg.properties.CalleesLikeNotReachable
 import org.opalj.fpcf.cg.properties.CalleesLike
 import org.opalj.fpcf.cg.properties.CalleesLikePropertyMetaInformation
-import org.opalj.fpcf.cg.properties.IntermediateCallees
 import org.opalj.fpcf.cg.properties.NoCalleesDueToNotReachableMethod
 import org.opalj.fpcf.cg.properties.FinalCallees
 import org.opalj.fpcf.cg.properties.IndirectCallees
@@ -112,50 +111,44 @@ class CalleesAnalysis private[analyses] (
             return Result(declaredMethod, NoCalleesDueToNotReachableMethod);
         }
 
-        if (dependees.isEmpty) {
+        var directCalleeIds: IntMap[IntTrieSet] = IntMap.empty
+        var indirectCalleeIds: IntMap[IntTrieSet] = IntMap.empty
+        var incompleteCallSites: IntTrieSet = IntTrieSet.empty
+        var indirectCallParameters: IntMap[Map[DeclaredMethod, Seq[Option[(KnownTypedValue, IntTrieSet)]]]] =
+            IntMap.empty
 
-            var directCalleeIds: IntMap[IntTrieSet] = IntMap.empty
-            var indirectCalleeIds: IntMap[IntTrieSet] = IntMap.empty
-            var incompleteCallSites: IntTrieSet = IntTrieSet.empty
-            var indirectCallParameters: IntMap[Map[DeclaredMethod, Seq[Option[(KnownTypedValue, IntTrieSet)]]]] =
-                IntMap.empty
-
-            for (key ← directKeys.toIterator ++ indirectKeys.toIterator) {
-                val p = propertyStore(
-                    declaredMethod,
-                    key
-                ).asFinal.p
-                if (p.isIndirect) {
-                    indirectCalleeIds =
-                        indirectCalleeIds.unionWith(p.callSites, (_, l, r) ⇒ l ++ r)
-                    indirectCallParameters = indirectCallParameters.unionWith(
-                        p.asInstanceOf[IndirectCallees].parameters,
-                        (_, l, r) ⇒
-                            throw new UnknownError("Indirect callee derived by two analyses")
-                    )
-                } else {
-                    directCalleeIds = directCalleeIds.unionWith(p.callSites, (_, l, r) ⇒ l ++ r)
-                }
-                incompleteCallSites ++!= p.incompleteCallSites
-            }
-
-            Result(
+        for (key ← directKeys.toIterator ++ indirectKeys.toIterator) {
+            val p = propertyStore(
                 declaredMethod,
-                new FinalCallees(
-                    directCalleeIds,
-                    indirectCalleeIds,
-                    incompleteCallSites,
-                    indirectCallParameters
+                key
+            ).asFinal.p
+            if (p.isIndirect) {
+                indirectCalleeIds =
+                    indirectCalleeIds.unionWith(p.callSites, (_, l, r) ⇒ l ++ r)
+                indirectCallParameters = indirectCallParameters.unionWith(
+                    p.asInstanceOf[IndirectCallees].parameters,
+                    (_, l, r) ⇒
+                        throw new UnknownError("Indirect callee derived by two analyses")
                 )
-            )
+            } else {
+                directCalleeIds = directCalleeIds.unionWith(p.callSites, (_, l, r) ⇒ l ++ r)
+            }
+            incompleteCallSites ++!= p.incompleteCallSites
+        }
+
+        val ub = new FinalCallees(
+            directCalleeIds,
+            indirectCalleeIds,
+            incompleteCallSites,
+            indirectCallParameters
+        )
+
+        if (dependees.isEmpty) {
+            Result(declaredMethod, ub)
         } else {
             SimplePIntermediateResult(
                 declaredMethod,
-                new IntermediateCallees(
-                    declaredMethod,
-                    directKeys,
-                    indirectKeys.asInstanceOf[Set[PropertyKey[IndirectCallees]]]
-                ),
+                ub,
                 dependees,
                 continuation(declaredMethod, directKeys, indirectKeys, dependees)
             )
