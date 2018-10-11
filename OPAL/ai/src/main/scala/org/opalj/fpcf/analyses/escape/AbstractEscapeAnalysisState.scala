@@ -61,7 +61,7 @@ trait AbstractEscapeAnalysisState {
      * Removes the entity property pair (or epk) that correspond to the given ep from the set of
      * dependees.
      */
-    @inline private[escape] final def removeDependency(ep: EPS[Entity, Property]): Unit = {
+    @inline private[escape] final def removeDependency(ep: EOptionP[Entity, Property]): Unit = {
         assert(_dependees.count(epk ⇒ (epk.e eq ep.e) && epk.pk == ep.pk) <= 1)
         _dependees = _dependees.filter(epk ⇒ (epk.e ne ep.e) || epk.pk != ep.pk)
     }
