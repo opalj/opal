@@ -4,6 +4,10 @@ package fpcf
 package analyses
 
 import org.junit.runner.RunWith
+import org.scalatest.FunSpec
+import org.scalatest.Matchers
+import org.scalatest.junit.JUnitRunner
+
 import org.opalj.br.TestSupport.allBIProjects
 import org.opalj.br.TestSupport.createJREProject
 import org.opalj.br.analyses.SomeProject
@@ -11,9 +15,6 @@ import org.opalj.fpcf.analyses.escape.EagerSimpleEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.LazyL0TACAIAnalysis
 import org.opalj.util.Nanoseconds
 import org.opalj.util.PerformanceEvaluation.time
-import org.scalatest.FunSpec
-import org.scalatest.Matchers
-import org.scalatest.junit.JUnitRunner
 
 /**
  * Tests that the [[EagerSimpleEscapeAnalysis]] does not throw exceptions.
