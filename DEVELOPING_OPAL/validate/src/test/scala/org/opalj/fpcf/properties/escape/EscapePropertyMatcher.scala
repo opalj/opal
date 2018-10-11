@@ -43,11 +43,11 @@ abstract class EscapePropertyMatcher(val property: EscapeProperty) extends Abstr
             val performInvocationsClass = classOf[PerformInvocations]
             val isPerformInvocationsClass = performInvocationsClass.isAssignableFrom(domainClass)
 
-            val performInvokationDomainRelevant =
+            val isPerformInvocationDomainRelevant =
                 if (requiresPerformInvokationsDomain) isPerformInvocationsClass
                 else !isPerformInvocationsClass
 
-            analysisRelevant && performInvokationDomainRelevant
+            analysisRelevant && isPerformInvocationDomainRelevant
         } else {
             analysisRelevant
         }
