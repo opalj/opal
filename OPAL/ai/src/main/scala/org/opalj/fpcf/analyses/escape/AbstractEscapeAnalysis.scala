@@ -90,9 +90,6 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
         assert(state.tacai.isDefined)
         // for every use-site, check its escape state
         for (use ← state.uses) {
-            if (context.entity.toString.equals("VirtualFormalParameter(org.opalj.fpcf.properties.purity.PurityMatcher{ boolean $anonfun$evaluateEP$6(int,java.lang.String,org.opalj.fpcf.PropertyStore,org.opalj.br.analyses.DeclaredMethods,org.opalj.br.Method) },origin=-3)")) {
-                println()
-            }
             checkStmtForEscape(state.tacai.get.stmts(use))
         }
         returnResult
