@@ -4,16 +4,16 @@ package ai
 package fpcf
 package properties
 
+import org.opalj.fpcf.EPS
+import org.opalj.fpcf.FallbackReason
+import org.opalj.fpcf.Property
+import org.opalj.fpcf.PropertyIsNotComputedByAnyAnalysis
+import org.opalj.fpcf.PropertyIsNotDerivedByPreviouslyExecutedAnalysis
+import org.opalj.fpcf.PropertyKey
+import org.opalj.fpcf.PropertyMetaInformation
+import org.opalj.fpcf.PropertyStore
 import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
-import org.opalj.fpcf.PropertyMetaInformation
-import org.opalj.fpcf.PropertyKey
-import org.opalj.fpcf.Property
-import org.opalj.fpcf.PropertyStore
-import org.opalj.fpcf.FallbackReason
-import org.opalj.fpcf.EPS
-import org.opalj.fpcf.PropertyIsNotDerivedByPreviouslyExecutedAnalysis
-import org.opalj.fpcf.PropertyIsNotComputedByAnyAnalysis
 
 sealed trait BaseAIResultPropertyMetaInformation extends PropertyMetaInformation {
 
