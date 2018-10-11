@@ -25,6 +25,7 @@
         <option value="org.opalj.concurrent" />
         <option value="org.opalj.fpcf" />
         <option value="org.opalj.bytecode" />
+        <option value="org.opalj.value" />
         <option value="org.opalj.bi" />
         <option value="org.opalj.da" />
         <option value="org.opalj.br" />
