@@ -1,11 +1,20 @@
 # Major Changes
 
-## Upcoming
+## upcomming
+ - fixed the toString of StaticMethodCall
+
+## 2.0.1 - Released Oct. 10th 2018
+ - fixed a bug in the identification of closed strongly connected components
+ - fixed a bug when computing the stackmap table when a register store instruction is found in a try block of a finally handler and therefore is considered to be throwing an exception by the VM when it tries to verify the bytecode
+ - fixed a bug when a simple property of an entity is queried in a later phase (after the analysis was run) and the analysis didn't compute a value  
+
+## 2.0.0 - Released Oct. 2nd 2018
  - Added support for instrumenting class files
  - support for Java 9
  - support for Java 10
+ - support for Java 11
  - rewriting StringConcatFactory based invokedynamics
- - support for analyzing Scala 2.12.6 invokedynamics
+ - support for analyzing Scala 2.12.6-7 invokedynamics
  - Hermes now has extended visualization capabilities to make it even easiere to comprehend the differences between projects
  - The overall performance has been improved (in particular on multi-core systems with 4 or more cores)
  - Moved to sbt 1.2.x
