@@ -4,10 +4,9 @@ package fpcf
 package analyses
 package cg
 
-import scala.language.existentials
-import scala.annotation.tailrec
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
+import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
@@ -15,24 +14,25 @@ import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.instructions.INVOKEVIRTUAL
-import org.opalj.collection.immutable.UIDSet
 import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.analyses.cg.SerializationRelatedCallsAnalysis.UnknownParam
-import org.opalj.fpcf.cg.properties.SerializationRelatedCalleesImplementation
-import org.opalj.fpcf.cg.properties.SerializationRelatedCallees
-import org.opalj.fpcf.cg.properties.NoCallers
 import org.opalj.fpcf.cg.properties.CallersProperty
-import org.opalj.fpcf.cg.properties.NoSerializationRelatedCallees
 import org.opalj.fpcf.cg.properties.InstantiatedTypes
+import org.opalj.fpcf.cg.properties.NoCallers
+import org.opalj.fpcf.cg.properties.NoSerializationRelatedCallees
+import org.opalj.fpcf.cg.properties.SerializationRelatedCallees
+import org.opalj.fpcf.cg.properties.SerializationRelatedCalleesImplementation
 import org.opalj.tac.Assignment
 import org.opalj.tac.Checkcast
 import org.opalj.tac.ExprStmt
-import org.opalj.tac.SimpleTACAIKey
 import org.opalj.tac.Stmt
 import org.opalj.tac.VirtualFunctionCall
 import org.opalj.tac.VirtualMethodCall
+import org.opalj.tac.fpcf.properties.TACAI
 
-import scala.collection.immutable.IntMap
+import scala.annotation.tailrec
+import scala.language.existentials
 
 /**
  * todo
@@ -44,7 +44,6 @@ class SerializationRelatedCallsAnalysis private[analyses] (
 ) extends FPCFAnalysis {
 
     implicit private[this] val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
-    private[this] val tacai = project.get(SimpleTACAIKey)
 
     private[this] val WriteObjectDescriptor =
         MethodDescriptor.JustTakes(ObjectType.ObjectOutputStream)
@@ -83,7 +82,8 @@ class SerializationRelatedCallsAnalysis private[analyses] (
             // happens in particular for native methods
             return NoResult;
 
-        var relevantPCs: IntMap[IntTrieSet] = IntMap.empty
+        // todo why is this a map?
+        var relevantPCs = IntTrieSet.empty
         val insts = method.body.get.instructions
         var i = 0
         val max = insts.length
@@ -97,7 +97,7 @@ class SerializationRelatedCallsAnalysis private[analyses] (
                             && call.name == "writeObject" ||
                             call.declaringClass == ObjectType.ObjectInputStream &&
                             call.name == "readObject")
-                            relevantPCs += i → IntTrieSet.empty
+                            relevantPCs += i
                     case _ ⇒
                 }
             i += 1
@@ -105,6 +105,25 @@ class SerializationRelatedCallsAnalysis private[analyses] (
 
         if (relevantPCs.isEmpty)
             return Result(declaredMethod, NoSerializationRelatedCallees);
+
+        val tacEP = propertyStore(method, TACAI.key)
+
+        if (tacEP.hasProperty) {
+            processMethod(definedMethod, relevantPCs, tacEP.asEPS)
+        } else {
+            SimplePIntermediateResult(
+                declaredMethod,
+                NoSerializationRelatedCallees,
+                Some(tacEP),
+                continuation(definedMethod, relevantPCs)
+            )
+        }
+    }
+
+    private[this] def processMethod(
+        definedMethod: DefinedMethod, relevantPCs: IntTrieSet, tacEP: EPS[Method, TACAI]
+    ): PropertyComputationResult = {
+        val tacode = tacEP.ub.tac.get
 
         // the set of types that are definitely initialized at this point in time
         val instantiatedTypesEOptP = propertyStore(project, InstantiatedTypes.key)
@@ -119,13 +138,12 @@ class SerializationRelatedCallsAnalysis private[analyses] (
 
         val calleesAndCallers = new IndirectCalleesAndCallers()
 
-        val tacode = tacai(method)
         implicit val stmts = tacode.stmts
         val pcToIndex = tacode.pcToIndex
 
         var newInstantiatedTypes = UIDSet.empty[ObjectType]
         for {
-            pc ← relevantPCs.keysIterator
+            pc ← relevantPCs
             index = pcToIndex(pc)
             if index != -1
             stmt = stmts(index)
@@ -159,7 +177,7 @@ class SerializationRelatedCallsAnalysis private[analyses] (
             }
         }
 
-        returnResult(definedMethod, calleesAndCallers, newInstantiatedTypes)
+        returnResult(definedMethod, relevantPCs, calleesAndCallers, newInstantiatedTypes, tacEP)
     }
 
     @inline private[this] def isOOSWriteObject(
@@ -404,23 +422,32 @@ class SerializationRelatedCallsAnalysis private[analyses] (
 
     @inline private[this] def returnResult(
         definedMethod:        DefinedMethod,
+        relevantPCs:          IntTrieSet,
         calleesAndCallers:    IndirectCalleesAndCallers,
-        newInstantiatedTypes: UIDSet[ObjectType]
+        newInstantiatedTypes: UIDSet[ObjectType],
+        tacaiEP:              EOptionP[Method, TACAI]
     ): PropertyComputationResult = {
         var res: List[PropertyComputationResult] = calleesAndCallers.partialResultsForCallers
 
-        val calleesResult =
-            if (calleesAndCallers.callees.isEmpty)
-                Result(definedMethod, NoSerializationRelatedCallees)
+        val tmpResult =
+            if (calleesAndCallers.callees.isEmpty) NoSerializationRelatedCallees
             else
-                Result(
-                    definedMethod,
-                    new SerializationRelatedCalleesImplementation(
-                        calleesAndCallers.callees,
-                        calleesAndCallers.incompleteCallsites,
-                        calleesAndCallers.parameters
-                    )
+                new SerializationRelatedCalleesImplementation(
+                    calleesAndCallers.callees,
+                    calleesAndCallers.incompleteCallsites,
+                    calleesAndCallers.parameters
                 )
+
+        val calleesResult =
+            if (tacaiEP.isRefinable)
+                SimplePIntermediateResult(
+                    definedMethod,
+                    tmpResult,
+                    Some(tacaiEP),
+                    continuation(definedMethod, relevantPCs)
+                )
+            else
+                Result(definedMethod, tmpResult)
 
         res ::= calleesResult
 
@@ -428,6 +455,14 @@ class SerializationRelatedCallsAnalysis private[analyses] (
             res ::= RTACallGraphAnalysis.partialResultForInstantiatedTypes(p, newInstantiatedTypes)
 
         Results(res)
+    }
+
+    private[this] def continuation(
+        definedMethod: DefinedMethod, relevantPCs: IntTrieSet
+    )(eps: SomeEPS): PropertyComputationResult = eps match {
+        case ESimplePS(_, _: TACAI, _) ⇒
+            processMethod(definedMethod, relevantPCs, eps.asInstanceOf[EPS[Method, TACAI]])
+        case _ ⇒ throw new IllegalStateException(s"unexpected update $eps")
     }
 }
 
@@ -447,7 +482,7 @@ object EagerSerializationRelatedCallsAnalysis extends FPCFEagerAnalysisScheduler
         analysis
     }
 
-    override def uses: Set[PropertyKind] = Set(CallersProperty, InstantiatedTypes)
+    override def uses: Set[PropertyKind] = Set(CallersProperty, InstantiatedTypes, TACAI)
 
     override def derives: Set[PropertyKind] = Set(CallersProperty, SerializationRelatedCallees)
 

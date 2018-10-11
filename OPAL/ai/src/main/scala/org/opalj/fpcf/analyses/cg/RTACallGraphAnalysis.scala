@@ -35,29 +35,149 @@ import org.opalj.tac.InvokedynamicMethodCall
 import org.opalj.tac.New
 import org.opalj.tac.NonVirtualFunctionCallStatement
 import org.opalj.tac.NonVirtualMethodCall
-import org.opalj.tac.SimpleTACAIKey
 import org.opalj.tac.StaticFunctionCallStatement
 import org.opalj.tac.StaticMethodCall
+import org.opalj.tac.TACMethodParameter
+import org.opalj.tac.TACode
 import org.opalj.tac.VirtualCall
 import org.opalj.tac.VirtualFunctionCallStatement
 import org.opalj.tac.VirtualMethodCall
+import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.value.KnownTypedValue
 
 import scala.collection.immutable.IntMap
 import scala.language.existentials
 
-case class RTAState(
-        private[cg] val method:              DefinedMethod,
-        private[cg] val virtualCallSites:    Traversable[(Int /*PC*/ , ObjectType, String, MethodDescriptor)],
-        private[cg] var _callees:            IntMap[IntTrieSet], // key = PC
-        private[cg] var incompleteCallsites: IntTrieSet, // key = PC
-        private[cg] var numTypesProcessed:   Int
+class RTAState private (
+        private[cg] val method:                       DefinedMethod,
+        private[cg] val virtualCallSites:             Traversable[(Int /*PC*/ , ObjectType, String, MethodDescriptor)],
+        private[cg] var incompleteCallSites:          IntTrieSet, // key = PC
+        private[cg] var numTypesProcessed:            Int,
+        private[this] var _callees:                   IntMap[IntTrieSet], // key = PC
+        private[this] var _tacDependee:               Option[EOptionP[Method, TACAI]],
+        private[this] var _tac:                       Option[TACode[TACMethodParameter, V]],
+        private[this] var _instantiatedTypesDependee: Option[EOptionP[SomeProject, InstantiatedTypes]]
 ) {
+    assert(_tacDependee.isEmpty || _tacDependee.get.isRefinable)
+    assert(_instantiatedTypesDependee.isEmpty || _instantiatedTypesDependee.get.isRefinable)
+
+    private[cg] def copy(
+        method:                    DefinedMethod                                                    = this.method,
+        virtualCallSites:          Traversable[(Int /*PC*/ , ObjectType, String, MethodDescriptor)] = this.virtualCallSites,
+        incompleteCallSites:       IntTrieSet                                                       = this.incompleteCallSites, // key = PC
+        numTypesProcessed:         Int                                                              = this.numTypesProcessed,
+        callees:                   IntMap[IntTrieSet]                                               = _callees, // key = PC
+        tacDependee:               Option[EOptionP[Method, TACAI]]                                  = _tacDependee,
+        tac:                       Option[TACode[TACMethodParameter, V]]                            = _tac,
+        instantiatedTypesDependee: Option[EOptionP[SomeProject, InstantiatedTypes]]                 = _instantiatedTypesDependee
+    ): RTAState = {
+        new RTAState(
+            method,
+            virtualCallSites,
+            incompleteCallSites,
+            numTypesProcessed,
+            callees,
+            tacDependee,
+            tac,
+            instantiatedTypesDependee
+        )
+    }
+
     private[cg] def addCallEdge(pc: Int, targetMethodId: Int): Unit = {
         _callees = _callees.updated(pc, _callees.getOrElse(pc, IntTrieSet.empty) + targetMethodId)
     }
 
     private[cg] def callees: IntMap[IntTrieSet] = _callees
+
+    private[cg] def removeTACDependee(): Unit = _tacDependee = None
+
+    private[cg] def addTACDependee(tacDependee: EOptionP[Method, TACAI]): Unit = {
+        assert(_tacDependee.isEmpty)
+
+        if (tacDependee.isRefinable) {
+            _tacDependee = Some(tacDependee)
+        }
+
+        if (tacDependee.hasProperty) {
+            _tac = tacDependee.ub.tac
+        }
+    }
+
+    private[cg] def updateTACDependee(tacDependee: EOptionP[Method, TACAI]): Unit = {
+        removeTACDependee()
+        addTACDependee(tacDependee)
+    }
+
+    private[cg] def tacDependee(): Option[EOptionP[Method, TACAI]] = {
+        _tacDependee
+    }
+
+    private[cg] def removeInstantiatedTypesDependee(): Unit = _instantiatedTypesDependee = None
+
+    private[cg] def addInstantiatedTypesDependee(
+        instantiatedTypesDependee: EOptionP[SomeProject, InstantiatedTypes]
+    ): Unit = {
+        assert(_instantiatedTypesDependee.isEmpty)
+        if (instantiatedTypesDependee.isRefinable)
+            _instantiatedTypesDependee = Some(instantiatedTypesDependee)
+    }
+
+    private[cg] def updateInstantiatedTypesDependee(
+        instantiatedTypesDependee: EOptionP[SomeProject, InstantiatedTypes]
+    ): Unit = {
+        removeInstantiatedTypesDependee()
+        addInstantiatedTypesDependee(instantiatedTypesDependee)
+    }
+
+    private[cg] def instantiatedTypesDependee(): Option[EOptionP[SomeProject, InstantiatedTypes]] = {
+        _instantiatedTypesDependee
+    }
+
+    private[cg] def hasOpenDependees(): Boolean = {
+        _tacDependee.isDefined || _instantiatedTypesDependee.isDefined
+    }
+
+    private[cg] def dependees(): Iterable[EOptionP[Entity, Property]] = {
+        _tacDependee ++ _instantiatedTypesDependee
+    }
+
+    private[cg] def tac(): Option[TACode[TACMethodParameter, V]] = _tac
+}
+
+object RTAState {
+    def apply(method: DefinedMethod, tacDependee: EOptionP[Method, TACAI]): RTAState = {
+        new RTAState(
+            method,
+            virtualCallSites = Traversable.empty,
+            incompleteCallSites = IntTrieSet.empty,
+            numTypesProcessed = 0,
+            _callees = IntMap.empty,
+            if (tacDependee.isFinal) None else Some(tacDependee),
+            if (tacDependee.hasProperty) tacDependee.ub.tac else None,
+            None
+        )
+    }
+    def apply(
+        method:                    DefinedMethod,
+        virtualCallSites:          Traversable[(Int /*PC*/ , ObjectType, String, MethodDescriptor)],
+        incompleteCallSites:       IntTrieSet, // key = PC
+        numTypesProcessed:         Int,
+        callees:                   IntMap[IntTrieSet], // key = PC
+        tacDependee:               Option[EOptionP[Method, TACAI]],
+        tac:                       Option[TACode[TACMethodParameter, V]],
+        instantiatedTypesDependee: EOptionP[SomeProject, InstantiatedTypes]
+    ): RTAState = {
+        new RTAState(
+            method,
+            virtualCallSites,
+            incompleteCallSites,
+            numTypesProcessed,
+            callees,
+            tacDependee,
+            tac,
+            if (instantiatedTypesDependee.isFinal) None else Some(instantiatedTypesDependee)
+        )
+    }
 }
 
 /**
@@ -81,7 +201,6 @@ class RTACallGraphAnalysis private[analyses] (
 
     type V = DUVar[KnownTypedValue]
 
-    private[this] val tacaiProvider = project.get(SimpleTACAIKey)
     private[this] implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
     private[this] val isMethodOverridable: Method ⇒ Answer = project.get(IsOverridableMethodKey)
 
@@ -94,7 +213,7 @@ class RTACallGraphAnalysis private[analyses] (
      * In case the method never becomes reachable, the fallback [[NoCallers]] will be used by the
      * framework and this method returns [[NoResult]].
      */
-    def processMethod(
+    def analyze(
         declaredMethod: DeclaredMethod
     ): PropertyComputationResult = {
 
@@ -126,6 +245,28 @@ class RTACallGraphAnalysis private[analyses] (
             // happens in particular for native methods
             return NoResult;
 
+        val tacEP = propertyStore(method, TACAI.key)
+
+        val state = RTAState(declaredMethod.asDefinedMethod, tacEP)
+
+        if (tacEP.hasProperty)
+            processMethod(state)
+        else {
+            SimplePIntermediateResult(
+                declaredMethod,
+                NoStandardInvokeCallees,
+                Seq(tacEP),
+                continuation(state)
+            )
+        }
+    }
+
+    private[this] def processMethod(
+        state: RTAState
+    ): PropertyComputationResult = {
+        assert(state.tac().isDefined)
+        val tac = state.tac().get
+
         // the set of types that are definitely initialized at this point in time
         // in case the instantiatedTypes are not finally computed, we depend on them
         val instantiatedTypesEOptP = propertyStore(project, InstantiatedTypes.key)
@@ -138,29 +279,33 @@ class RTACallGraphAnalysis private[analyses] (
             case _              ⇒ UIDSet(InstantiatedTypes.initialTypes(project).toSeq: _*)
         }
 
+        val instantiatedTypesDependee =
+            if (instantiatedTypesEOptP.isFinal) None else Some(instantiatedTypesEOptP)
+
         // process each stmt in the current method to compute:
         //  1. newly allocated types
         //  2. methods (+ pc) called by the current method
         //  3. compute the call sites of virtual calls, whose targets are not yet final
         val (newInstantiatedTypes, calleesAndCallers, virtualCallSites) = handleStmts(
-            declaredMethod.asDefinedMethod, instantiatedTypesUB
+            state.method, tac, instantiatedTypesUB
         )
 
         // the number of types, already seen by the analysis
         val numTypesProcessed = instantiatedTypesUB.size
 
-        val state = RTAState(
-            declaredMethod.asDefinedMethod,
-            virtualCallSites,
-            calleesAndCallers.callees,
-            calleesAndCallers.incompleteCallsites,
-            numTypesProcessed
+        val newState = state.copy(
+            virtualCallSites = virtualCallSites,
+            incompleteCallSites = calleesAndCallers.incompleteCallsites,
+            numTypesProcessed = numTypesProcessed,
+            callees = calleesAndCallers.callees,
+            instantiatedTypesDependee = instantiatedTypesDependee
+
         )
 
         // here we can ignore the return value, as the state also gets updated
-        handleVirtualCallSites(state, instantiatedTypesUB.iterator, calleesAndCallers)
+        handleVirtualCallSites(newState, instantiatedTypesUB.iterator, calleesAndCallers)
 
-        var results = resultForStandardInvokeCallees(instantiatedTypesEOptP, state) :: calleesAndCallers.partialResultsForCallers
+        var results = resultForStandardInvokeCallees(newState) :: calleesAndCallers.partialResultsForCallers
         if (newInstantiatedTypes.nonEmpty)
             results ::= RTACallGraphAnalysis.partialResultForInstantiatedTypes(
                 p, newInstantiatedTypes
@@ -171,6 +316,7 @@ class RTACallGraphAnalysis private[analyses] (
 
     def handleStmts(
         method:              DefinedMethod,
+        tac:                 TACode[TACMethodParameter, V],
         instantiatedTypesUB: UIDSet[ObjectType]
     // (new instantiated types, callees map, virtual call sites)
     ): (UIDSet[ObjectType], CalleesAndCallers, Traversable[(Int, ObjectType, String, MethodDescriptor)]) = {
@@ -185,11 +331,9 @@ class RTACallGraphAnalysis private[analyses] (
         // the set of types for which we find an allocation which was not present before
         var newInstantiatedTypes = UIDSet.empty[ObjectType]
 
-        val stmts = tacaiProvider(method.definedMethod).stmts
-
         // for allocation sites, add new types
         // for calls, add new edges
-        stmts.foreach {
+        tac.stmts.foreach {
             case Assignment(_, _, New(_, allocatedType)) ⇒
                 if (!instantiatedTypesUB.contains(allocatedType)) {
                     newInstantiatedTypes += allocatedType
@@ -409,39 +553,37 @@ class RTACallGraphAnalysis private[analyses] (
     private[this] def continuation(
         state: RTAState
     )(
-        instantiatedTypesEOptP: SomeEPS
+        eps: SomeEPS
     ): PropertyComputationResult = {
-        // find the new types, that should be processed
-        val newInstantiatedTypes = instantiatedTypesEOptP match {
-            case IntermediateESimpleP(_, ub: InstantiatedTypes) ⇒
+        eps match {
+            case ESimplePS(_, _: TACAI, _) ⇒
+                state.updateTACDependee(eps.asInstanceOf[EPS[Method, TACAI]])
+                processMethod(state)
+
+            case ESimplePS(_, ub: InstantiatedTypes, _) ⇒
+                state.updateInstantiatedTypesDependee(
+                    eps.asInstanceOf[EPS[SomeProject, InstantiatedTypes]]
+                )
                 val toBeDropped = state.numTypesProcessed
                 state.numTypesProcessed = ub.numElements
-                ub.getNewTypes(toBeDropped)
+                val newInstantiatedTypes = ub.getNewTypes(toBeDropped)
 
-            case FinalEP(_, ub: InstantiatedTypes) ⇒
-                val toBeDropped = state.numTypesProcessed
-                state.numTypesProcessed = ub.numElements
-                ub.getNewTypes(toBeDropped)
+                val calleesAndCallers = new CalleesAndCallers()
 
-            case _ ⇒
-                Iterator.empty // the initial types are already processed
+                // the new edges in the call graph due to the new types
+                handleVirtualCallSites(
+                    state, newInstantiatedTypes, calleesAndCallers
+                )
+
+                Results(
+                    resultForStandardInvokeCallees(state) :: calleesAndCallers.partialResultsForCallers
+                )
+
         }
-
-        val calleesAndCallers = new CalleesAndCallers
-
-        // the new edges in the call graph due to the new types
-        handleVirtualCallSites(
-            state, newInstantiatedTypes, calleesAndCallers
-        )
-
-        Results(
-            resultForStandardInvokeCallees(instantiatedTypesEOptP, state) :: calleesAndCallers.partialResultsForCallers
-        )
-
     }
 
     private[this] def resultForStandardInvokeCallees(
-        instantiatedTypesEOptP: SomeEOptionP, state: RTAState
+        state: RTAState
     ): PropertyComputationResult = {
 
         // here we need a immutable copy of the current state
@@ -449,15 +591,15 @@ class RTACallGraphAnalysis private[analyses] (
             if (state.callees.isEmpty)
                 NoStandardInvokeCallees
             else
-                new StandardInvokeCalleesImplementation(state.callees, state.incompleteCallsites)
+                new StandardInvokeCalleesImplementation(state.callees, state.incompleteCallSites)
 
-        if (state.virtualCallSites.isEmpty || instantiatedTypesEOptP.isFinal)
+        if (state.virtualCallSites.isEmpty || !state.hasOpenDependees())
             Result(state.method, newCallees)
         else {
             SimplePIntermediateResult(
                 state.method,
                 newCallees,
-                Seq(instantiatedTypesEOptP),
+                state.dependees(),
                 continuation(state)
             )
         }
@@ -489,7 +631,7 @@ object EagerRTACallGraphAnalysisScheduler extends FPCFEagerAnalysisScheduler {
 
     override type InitializationData = RTACallGraphAnalysis
 
-    override def uses: Set[PropertyKind] = Set(InstantiatedTypes)
+    override def uses: Set[PropertyKind] = Set(InstantiatedTypes, TACAI)
 
     override def derives: Set[PropertyKind] = Set(
         InstantiatedTypes, CallersProperty, StandardInvokeCallees
@@ -498,7 +640,7 @@ object EagerRTACallGraphAnalysisScheduler extends FPCFEagerAnalysisScheduler {
     override def init(p: SomeProject, ps: PropertyStore): RTACallGraphAnalysis = {
         val analysis = new RTACallGraphAnalysis(p)
         // register the analysis for initial values for callers (i.e. methods becoming reachable)
-        ps.registerTriggeredComputation(CallersProperty.key, analysis.processMethod)
+        ps.registerTriggeredComputation(CallersProperty.key, analysis.analyze)
         analysis
     }
 
