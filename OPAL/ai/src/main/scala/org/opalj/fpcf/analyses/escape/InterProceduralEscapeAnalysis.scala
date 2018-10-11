@@ -17,8 +17,10 @@ import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.br.analyses.VirtualFormalParameters
 import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.br.analyses.cg.IsOverridableMethodKey
+import org.opalj.fpcf.cg.properties.Callees
 import org.opalj.fpcf.properties._
 import org.opalj.tac.DUVar
+import org.opalj.tac.fpcf.properties.TACAI
 
 class InterProceduralEscapeAnalysisContext(
     val entity:                  Entity,
@@ -127,7 +129,7 @@ sealed trait InterProceduralEscapeAnalysisScheduler extends ComputationSpecifica
 
     final override def derives: Set[PropertyKind] = Set(EscapeProperty)
 
-    final override def uses: Set[PropertyKind] = Set(VirtualMethodEscapeProperty)
+    final override def uses: Set[PropertyKind] = Set(TACAI, Callees, EscapeProperty)
 
     final override type InitializationData = Null
     final def init(p: SomeProject, ps: PropertyStore): Null = null

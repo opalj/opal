@@ -16,6 +16,7 @@ import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.fpcf.properties.AtMost
 import org.opalj.fpcf.properties.EscapeProperty
 import org.opalj.fpcf.properties.NoEscape
+import org.opalj.tac.fpcf.properties.TACAI
 
 class SimpleEscapeAnalysisContext(
     val entity:                  Entity,
@@ -85,7 +86,7 @@ trait SimpleEscapeAnalysisScheduler extends ComputationSpecification {
 
     final override def derives: Set[PropertyKind] = Set(EscapeProperty)
 
-    final override def uses: Set[PropertyKind] = Set.empty
+    final override def uses: Set[PropertyKind] = Set(EscapeProperty, TACAI)
 
     final override type InitializationData = Null
     final def init(p: SomeProject, ps: PropertyStore): Null = null

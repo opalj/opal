@@ -28,10 +28,9 @@ import org.opalj.tac.VirtualMethodCall
 
 /**
  * Adds inter-procedural behavior to escape analyses.
- * Uses the results of the [[org.opalj.fpcf.analyses.VirtualCallAggregatingEscapeAnalysis]]
- * attached to the [[org.opalj.br.analyses.VirtualFormalParameter]] entities.
- *
- * Parameter of non-virtual methods are represented as [[org.opalj.br.analyses.VirtualFormalParameter]]
+ * Uses the call graph associated with the [[org.opalj.fpcf.cg.properties.Callees]] properties.
+ * It queries the escape state of the [[org.opalj.br.analyses.VirtualFormalParameter]] of the
+ * targets.
  *
  * @author Florian Kübler
  */
@@ -137,6 +136,7 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
         parameter:     Int,
         hasAssignment: Boolean
     )(implicit context: AnalysisContext, state: AnalysisState): Unit = {
+        state.meetMostRestrictive(EscapeInCallee)
         val dm = declaredMethods(context.targetMethod)
         val calleesEP = state.calleesCache.getOrElseUpdate(dm, propertyStore(dm, Callees.key))
         if (calleesEP.isRefinable) {
@@ -150,27 +150,30 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
             }
             for (callee ← callees.directCallees(pc)) {
                 val fps = context.virtualFormalParameters(callee)
-                // todo
+
+                // there is a call to a method out of the analysis' scope
                 if (fps == null)
                     state.meetMostRestrictive(AtMost(EscapeInCallee))
                 else
                     handleEscapeState(fps(parameter), hasAssignment)
             }
 
-            // todo document unsoundness for indirect calls
+            /* 
+             * For indirect callees, e.g. reflective calls, we only check whether any of the 
+             * actual parameters of the indirectly called method may be the current entity.
+             * Thus, we do not track arrays or fields here. This is currently sound, as we do not
+             * support any array or field, and handle them conservatively.
+             */
             for {
                 indirectCallee ← callees.indirectCallees(pc)
+                // parameters(0) is the param of the defSite
                 indirectCallParams = callees.indirectCallParameters(pc, indirectCallee)
-                // IMPROVE: This is a design flaw
-                hasThisParam = indirectCallParams.size != indirectCallee.descriptor.parametersCount
-                i ← indirectCallParams.indices
-                (value, defSites) ← indirectCallParams(i)
+                (Some((value, defSites)), i) ← indirectCallParams.zipWithIndex
                 indirectCallParam = UVar(value, defSites.map(x ⇒ state.tacai.get.pcToIndex(x)))
                 if state.usesDefSite(indirectCallParam)
             } {
                 val fps = context.virtualFormalParameters(indirectCallee)
-                val fp = if (hasThisParam) fps(i) else fps(i + 1)
-                handleEscapeState(fp, hasAssignment)
+                handleEscapeState(fps(i), hasAssignment)
             }
 
         }
