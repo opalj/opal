@@ -721,7 +721,7 @@ case class StaticMethodCall[+V <: Var[V]](
         val sig = descriptor.toJava(name)
         val declClass = declaringClass.toJava
         val params = this.params.mkString("(", ",", ")")
-        s"NonVirtualMethodCall(pc=$pc,$declClass,isInterface=$isInterface,$sig,$params)"
+        s"StaticMethodCall(pc=$pc,$declClass,isInterface=$isInterface,$sig,$params)"
     }
 }
 object StaticMethodCall {

@@ -1,17 +1,101 @@
-<code_scheme name="Java Conventions [maximum line width 90] copy">
+<code_scheme name="Java Conventions [maximum line width 100]" version="173">
   <option name="RIGHT_MARGIN" value="100" />
   <option name="FORMATTER_TAGS_ENABLED" value="true" />
   <JavaCodeStyleSettings>
     <option name="ANNOTATION_PARAMETER_WRAP" value="1" />
   </JavaCodeStyleSettings>
   <ScalaCodeStyleSettings>
-    <option name="classCountToUseImportOnDemand" value="64" />
+    <option name="classCountToUseImportOnDemand" value="32" />
     <option name="collectImports" value="false" />
     <option name="doNotChangeLocalImportsOnOptimize" value="false" />
+    <option name="importLayout">
+      <array>
+        <option value="scala.language" />
+        <option value="scala.annotation" />
+        <option value="_______ blank line _______" />
+        <option value="java" />
+        <option value="_______ blank line _______" />
+        <option value="scala" />
+        <option value="_______ blank line _______" />
+        <option value="all other imports" />
+        <option value="_______ blank line _______" />
+        <option value="org.opalj.log" />
+        <option value="org.opalj.util" />
+        <option value="org.opalj.collection" />
+        <option value="org.opalj.concurrent" />
+        <option value="org.opalj.fpcf" />
+        <option value="org.opalj.bytecode" />
+        <option value="org.opalj.value" />
+        <option value="org.opalj.bi" />
+        <option value="org.opalj.da" />
+        <option value="org.opalj.br" />
+        <option value="org.opalj.bc" />
+        <option value="org.opalj.ba" />
+        <option value="org.opalj.ai" />
+        <option value="org.opalj.de" />
+        <option value="org.opalj.av" />
+      </array>
+    </option>
     <option name="importShortestPathForAmbiguousReferences" value="false" />
+    <option name="importsWithPrefix">
+      <array>
+        <option value="exclude:scala.collection.mutable.ArrayBuffer" />
+        <option value="exclude:scala.collection.mutable.ListBuffer" />
+        <option value="java.util.AbstractCollection" />
+        <option value="java.util.AbstractList" />
+        <option value="java.util.AbstractMap" />
+        <option value="java.util.AbstractQueue" />
+        <option value="java.util.AbstractSequentialList" />
+        <option value="java.util.AbstractSet" />
+        <option value="java.util.ArrayDeque" />
+        <option value="java.util.ArrayList" />
+        <option value="java.util.Arrays" />
+        <option value="java.util.BitSet" />
+        <option value="java.util.Collection" />
+        <option value="java.util.Deque" />
+        <option value="java.util.EnumMap" />
+        <option value="java.util.EnumSet" />
+        <option value="java.util.Enumeration" />
+        <option value="java.util.HashMap" />
+        <option value="java.util.HashSet" />
+        <option value="java.util.Hashtable" />
+        <option value="java.util.IdentityHashMap" />
+        <option value="java.util.Iterator" />
+        <option value="java.util.LinkedHashMap" />
+        <option value="java.util.LinkedHashSet" />
+        <option value="java.util.LinkedList" />
+        <option value="java.util.List" />
+        <option value="java.util.ListIterator" />
+        <option value="java.util.Map" />
+        <option value="java.util.NavigableMap" />
+        <option value="java.util.NavigableSet" />
+        <option value="java.util.Queue" />
+        <option value="java.util.Set" />
+        <option value="java.util.SortedMap" />
+        <option value="java.util.SortedSet" />
+        <option value="java.util.Stack" />
+        <option value="java.util.SubList" />
+        <option value="java.util.TreeMap" />
+        <option value="java.util.TreeSet" />
+        <option value="java.util.Vector" />
+        <option value="java.util.WeakHashMap" />
+        <option value="org.scalatest.fixture._" />
+        <option value="org.scalatest.path._" />
+        <option value="scala.reflect.macros.blackbox.Context" />
+        <option value="scala.reflect.macros.whitebox.Context" />
+      </array>
+    </option>
     <option name="sortAsScalastyle" value="true" />
-    <option name="sortImports" value="false" />
     <option name="USE_SCALADOC2_FORMATTING" value="false" />
+    <option name="TYPE_ANNOTATION_EXCLUDE_MEMBER_OF_ANONYMOUS_CLASS" value="true" />
+    <option name="TYPE_ANNOTATION_EXCLUDE_MEMBER_OF_PRIVATE_CLASS" value="true" />
+    <option name="SD_BLANK_LINE_AFTER_PARAMETERS_COMMENTS" value="true" />
+    <option name="SD_BLANK_LINE_AFTER_RETURN_COMMENTS" value="true" />
+    <option name="SD_KEEP_BLANK_LINES_BETWEEN_TAGS" value="true" />
+    <option name="SD_PRESERVE_SPACES_IN_TAGS" value="true" />
+    <option name="REPLACE_CASE_ARROW_WITH_UNICODE_CHAR" value="true" />
+    <option name="REPLACE_MAP_ARROW_WITH_UNICODE_CHAR" value="true" />
+    <option name="REPLACE_FOR_GENERATOR_ARROW_WITH_UNICODE_CHAR" value="true" />
   </ScalaCodeStyleSettings>
   <codeStyleSettings language="JAVA">
     <option name="KEEP_FIRST_COLUMN_COMMENT" value="false" />
@@ -51,6 +135,7 @@
     </indentOptions>
   </codeStyleSettings>
   <codeStyleSettings language="Scala">
+    <option name="MODIFIER_LIST_WRAP" value="true" />
     <indentOptions>
       <option name="INDENT_SIZE" value="4" />
       <option name="CONTINUATION_INDENT_SIZE" value="4" />

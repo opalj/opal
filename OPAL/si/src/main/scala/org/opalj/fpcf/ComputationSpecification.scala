@@ -7,7 +7,7 @@ case class SpecificationViolation(message: String) extends Exception(message)
 /**
  * Specification of the properties and the life-cycle methods of a fixpoint computation
  * (FPC) that are relevant when computing the correct scheduling order and actually executing
- * the fixpoint computations.
+ * the fixpoint computation.
  *
  * @note The [[PropertyStore]] can be used without using [[ComputationSpecification]]s and
  *       [[AnalysisScenario]]s; both latter classes just provide convenience functionality
@@ -17,6 +17,10 @@ case class SpecificationViolation(message: String) extends Exception(message)
  */
 trait ComputationSpecification {
 
+    /**
+     * The type of the data used at initialization time.
+     * For analysis without special initialization requirements this type is `Null`.
+     */
     type InitializationData
 
     //
@@ -43,8 +47,7 @@ trait ComputationSpecification {
      *
      * @note   This set consists only of property kinds which are directly used by the analysis.
      *
-     * @note   Self usages don't have to be documented since the analysis will derive this
-     *         property during the computation.
+     * @note   Self usages should also be documented.
      */
     def uses: Set[PropertyKind]
 
@@ -56,19 +59,35 @@ trait ComputationSpecification {
     require(derives.nonEmpty, "the computation does not derive any information")
 
     /**
-     * Has to be true if a computation is performed lazily. This is used to check that we
-     * never schedule multiple lazy analyses which compute the same kind of property.
+     * Has to be true if a computation is performed lazily, that is, only if a property
+     * is queried for a specific entity, the analysis is actually executed.
+     * This information is used to check that we never schedule multiple lazy analyses
+     * which compute the same kind of property.
      *
      * @note Collaboratively computed properties can only be computed by eager analyses.
      */
     def isLazy: Boolean
+
+    /**
+     * Returns `true` if this analysis ''only'' refines the lower bound of a specific property,
+     * the default is `false`. Analyses which refine the lower bound cannot be run in parallel
+     * with analyses that use a property computed by `this` analysis and that refine upper bounds
+     * related to other property kinds.
+     *
+     * @note The lower bound generally models the set of all possible states that may be
+     *       conceivable. For example, the lower bound for an analyses which computes the set
+     *       of thrown exceptions is the set of all exception types. Therefore, a refinement –
+     *       w.r.t. a certain method – means that some exceptions are guaranteed to never be thrown
+     *       by that method.
+     */
+    def refinesLowerBound : Boolean = false
 
     override def toString: String = {
         val uses =
             this.uses.iterator.map(u ⇒ PropertyKey.name(u)).mkString("uses={", ", ", "}")
         val derives =
             this.derives.iterator.map(d ⇒ PropertyKey.name(d)).mkString("derives={", ", ", "}")
-        s"FPC(name=$name,lazy=$isLazy,$uses,$derives)"
+        s"ComputationSpecification(name=$name,lazy=$isLazy,$uses,$derives)"
     }
 
     //
@@ -76,7 +95,8 @@ trait ComputationSpecification {
     //
 
     /**
-     * Called before any analysis is called/scheduled that will be executed in the same phase.
+     * Called – at the latest – before any analysis is called/scheduled that will be executed in
+     * the same phase.
      * This enables further initialization of the computations that will eventually be executed.
      * For example to initialize global configuration information.
      *
@@ -84,9 +104,11 @@ trait ComputationSpecification {
      * it later on, `init` will be called before any analysis is scheduled – independent of
      * the batch in which it will run.
      *
-     * A computation specification MUST NOT call any methods of the property store that
+     * A computation specification does not have to call any methods of the property store that
      * may trigger or schedule computations; i.e., it must – in particular – not call
      * the methods `apply`, `schedule*`, `register*` or `waitOnPhaseCompletion`.
+     *
+     * @return The initialization data that is later on passed to schedule.
      */
     def init(ps: PropertyStore): InitializationData
 
