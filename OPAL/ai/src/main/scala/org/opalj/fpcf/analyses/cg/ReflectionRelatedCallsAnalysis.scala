@@ -220,8 +220,9 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                             state.definedMethod,
                             pc,
                             receiver,
-                            params.head,
-                            None
+                            params,
+                            None,
+                            isSignaturePolymorphic = name == "invoke"
                         )
                 case _ ⇒
 
@@ -253,10 +254,25 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                 case VirtualFunctionCall(_, MethodT, _, "invoke", _, rcvr, params) ⇒
                     handleMethodInvoke(caller, pc, rcvr, params)
                 case VirtualFunctionCall(_, ObjectType.MethodHandle, _, "invokeExact", desc, rcvr, params) ⇒
-                    handleMethodHandleInvoke(caller, pc, rcvr, params.head, Some(desc))
-                case VirtualFunctionCall(_, ObjectType.MethodHandle, _, "invoke" |
-                    "invokeWithArguments", _, rcvr, params) ⇒
-                    handleMethodHandleInvoke(caller, pc, rcvr, params.head, None)
+                    handleMethodHandleInvoke(
+                        caller,
+                        pc,
+                        rcvr,
+                        params,
+                        Some(desc),
+                        isSignaturePolymorphic = true
+                    )
+                case VirtualFunctionCall(_, ObjectType.MethodHandle, _, "invoke", _, rcvr, params) ⇒
+                    handleMethodHandleInvoke(
+                        caller,
+                        pc,
+                        rcvr,
+                        params,
+                        None,
+                        isSignaturePolymorphic = true
+                    )
+                case VirtualFunctionCall(_, ObjectType.MethodHandle, _, "invokeWithArguments", _, rcvr, params) ⇒
+                    handleMethodHandleInvoke(caller, pc, rcvr, params, None, isSignaturePolymorphic = false)
                 case _ ⇒
             }
         case _ ⇒
@@ -501,13 +517,16 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
      * findSpecial, findConstructor}.
      */
     private[this] def handleMethodHandleInvoke(
-        caller:       DefinedMethod,
-        pc:           Int,
-        methodHandle: Expr[V],
-        invokeParams: Expr[V],
-        descriptor:   Option[MethodDescriptor]
+        caller:                 DefinedMethod,
+        pc:                     Int,
+        methodHandle:           Expr[V],
+        invokeParams:           Seq[Expr[V]],
+        descriptor:             Option[MethodDescriptor],
+        isSignaturePolymorphic: Boolean
     )(implicit state: State): Unit = {
-        val actualInvokeParams = getParamsFromVararg(invokeParams)
+        val actualInvokeParams =
+            if (isSignaturePolymorphic) invokeParams.asInstanceOf[Seq[V]]
+            else getParamsFromVararg(invokeParams.head)
         methodHandle.asVar.definedBy.foreach { index ⇒
             if (index >= 0) {
                 val definition = state.stmts(index).asAssignment.expr

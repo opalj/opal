@@ -22,9 +22,10 @@ import org.opalj.tac.NonVirtualFunctionCall
 import org.opalj.tac.NonVirtualMethodCall
 import org.opalj.tac.StaticFunctionCall
 import org.opalj.tac.StaticMethodCall
-import org.opalj.tac.UVar
 import org.opalj.tac.VirtualFunctionCall
 import org.opalj.tac.VirtualMethodCall
+
+import org.opalj.fpcf.analyses.cg.uVarForDefSites
 
 /**
  * Adds inter-procedural behavior to escape analyses.
@@ -149,10 +150,16 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
                 state.meetMostRestrictive(AtMost(EscapeInCallee))
             }
             for (callee ← callees.directCallees(pc)) {
+                val method = callee.definedMethod
                 val fps = context.virtualFormalParameters(callee)
 
                 // there is a call to a method out of the analysis' scope
                 if (fps == null)
+                    state.meetMostRestrictive(AtMost(EscapeInCallee))
+                else if (project.isSignaturePolymorphic(method.classFile.thisType, method))
+                    // IMPROVE: Signature polymorphic methods like invoke(Exact) do not escape their
+                    // parameters directly and indirect effects are handled by the indirect callees
+                    // code below
                     state.meetMostRestrictive(AtMost(EscapeInCallee))
                 else
                     handleEscapeState(fps(parameter), hasAssignment)
@@ -168,12 +175,16 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
                 indirectCallee ← callees.indirectCallees(pc)
                 // parameters(0) is the param of the defSite
                 indirectCallParams = callees.indirectCallParameters(pc, indirectCallee)
-                (Some((value, defSites)), i) ← indirectCallParams.zipWithIndex
-                indirectCallParam = UVar(value, defSites.map(x ⇒ state.tacai.get.pcToIndex(x)))
+                (Some(uvar), i) ← indirectCallParams.zipWithIndex
+                indirectCallParam = uVarForDefSites(uvar, state.tacai.get.pcToIndex)
                 if state.usesDefSite(indirectCallParam)
             } {
                 val fps = context.virtualFormalParameters(indirectCallee)
-                handleEscapeState(fps(i), hasAssignment)
+                // there is a call to a method out of the analysis' scope
+                if (fps == null)
+                    state.meetMostRestrictive(AtMost(EscapeInCallee))
+                else
+                    handleEscapeState(fps(i), hasAssignment)
             }
 
         }

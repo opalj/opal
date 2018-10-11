@@ -246,9 +246,10 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         val oldPurity = state.ubPurity
 
         eps match {
-            case EPS(_, _, _: Callees) ⇒
+            case ESimplePS(_, _: Callees, _) ⇒
                 if (!checkPurityOfCallees(eps.asInstanceOf[EOptionP[DeclaredMethod, Callees]]))
                     return Result(state.definedMethod, ImpureByAnalysis)
+
             case EPS(_, _, tacai: TACAI) ⇒
                 handleTACAI(eps.asInstanceOf[EOptionP[Method, TACAI]])
                 return determineMethodPurity(tacai.tac.get.cfg);

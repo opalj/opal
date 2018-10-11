@@ -121,19 +121,23 @@ class CalleesAnalysis private[analyses] (
             val p = propertyStore(
                 declaredMethod,
                 key
-            ).asFinal.p
-            if (p.isIndirect) {
-                indirectCalleeIds =
-                    indirectCalleeIds.unionWith(p.callSites, (_, l, r) ⇒ l ++ r)
-                indirectCallParameters = indirectCallParameters.unionWith(
-                    p.asInstanceOf[IndirectCallees].parameters,
-                    (_, l, r) ⇒
-                        throw new UnknownError("Indirect callee derived by two analyses")
-                )
-            } else {
-                directCalleeIds = directCalleeIds.unionWith(p.callSites, (_, l, r) ⇒ l ++ r)
+            )
+            if (p.hasProperty) {
+                val callees = p.ub
+                if (callees.isIndirect) {
+                    indirectCalleeIds =
+                        indirectCalleeIds.unionWith(callees.callSites, (_, l, r) ⇒ l ++ r)
+                    indirectCallParameters = indirectCallParameters.unionWith(
+                        callees.asInstanceOf[IndirectCallees].parameters,
+                        (_, l, r) ⇒
+                            throw new UnknownError("Indirect callee derived by two analyses")
+                    )
+                } else {
+                    directCalleeIds =
+                        directCalleeIds.unionWith(callees.callSites, (_, l, r) ⇒ l ++ r)
+                }
+                incompleteCallSites ++!= callees.incompleteCallSites
             }
-            incompleteCallSites ++!= p.incompleteCallSites
         }
 
         val ub = new FinalCallees(
