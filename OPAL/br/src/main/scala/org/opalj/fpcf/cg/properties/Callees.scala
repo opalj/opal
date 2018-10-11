@@ -118,6 +118,8 @@ sealed trait Callees extends Property with CalleesPropertyMetaInformation {
      * sources. If a parameter source can not be determined, the Option will be empty, otherwise it
      * will contain all PCs and the negative indices of parameters that may define the value of the
      * corresponding actual parameter.
+     * The parameter at index 0 always corresponds to the *this* local and is `null` for static
+     * methods.
      */
     def indirectCallParameters(
         pc:     Int,
