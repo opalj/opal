@@ -107,6 +107,7 @@ object Purity {
             LazyTypeImmutabilityAnalysis
         ),
         Set[ComputationSpecification](
+            LazyL0TACAIAnalysis,
             LazyL1FieldMutabilityAnalysis,
             LazyClassImmutabilityAnalysis,
             LazyTypeImmutabilityAnalysis,

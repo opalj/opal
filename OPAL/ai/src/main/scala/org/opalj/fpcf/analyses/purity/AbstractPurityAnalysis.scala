@@ -596,7 +596,12 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
                             else {
                                 val call = getCall(state.code(index))
                                 isDomainSpecificCall(call, call.receiverOption) ||
-                                    callees.forall(checkPurityOfMethod(_, call.allParams))
+                                    callees.forall { callee ⇒
+                                        checkPurityOfMethod(
+                                            callee,
+                                            call.receiverOption.orNull +: call.params
+                                        )
+                                    }
                             }
                     } &&
                     p.indirectCallSites().forall {

@@ -403,8 +403,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                                             caller,
                                             callee,
                                             pc,
-                                            if (callee.definedMethod.isStatic) paramDefinitions
-                                            else receiverDefinition +: paramDefinitions
+                                            receiverDefinition +: paramDefinitions
                                         )
                                 }
                             }
@@ -672,7 +671,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                 receiverType,
                 name,
                 desc,
-                invokeParams.map(persistentUVar)
+                None +: invokeParams.map(persistentUVar)
             )
         }
     }

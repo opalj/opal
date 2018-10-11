@@ -379,7 +379,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         }
 
         if (defSite < 0) {
-            atMost(onParameter(-defSite - 1 - (if (state.method.isStatic) 1 else 0)))
+            atMost(onParameter(-defSite - 1))
             return treatParamsAsFresh;
         }
 
