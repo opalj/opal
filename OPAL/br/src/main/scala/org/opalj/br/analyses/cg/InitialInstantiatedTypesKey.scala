@@ -34,14 +34,13 @@ object InitialInstantiatedTypesKey extends ProjectInformationKey[Traversable[Obj
     override protected def compute(project: SomeProject): Traversable[ObjectType] = {
         val key = ConfigKeyPrefix+"analysis"
         val configuredAnalysis = project.config.as[Option[String]](key)
-        val entryPointFinder = configuredAnalysis
-        if (entryPointFinder.isEmpty) {
+        if (configuredAnalysis.isEmpty) {
             throw new IllegalArgumentException(
                 "No InitialInstantiatedTypesKey configuration available; Instantiated types cannot be computed!"
             )
         }
 
-        val fqn = entryPointFinder.get
+        val fqn = configuredAnalysis.get
         val itFinder = instantiatedTypesFinder(fqn)
         itFinder.collectInstantiatedTypes(project)
     }
