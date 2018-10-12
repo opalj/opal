@@ -18,14 +18,17 @@ import org.opalj.collection.immutable.RefArray
 import org.opalj.fpcf.cg.properties.CallersProperty
 import org.opalj.fpcf.cg.properties.NoCallers
 import org.opalj.fpcf.cg.properties.OnlyVMLevelCallers
+import org.opalj.fpcf.cg.properties.ThreadRelatedCalleesFakeProperty
+import org.opalj.fpcf.cg.properties.ThreadRelatedCalleesFinal
+import org.opalj.fpcf.cg.properties.ThreadRelatedCalleesNonFinal
 import org.opalj.log.OPALLogger
 import org.opalj.tac.Assignment
 import org.opalj.tac.Expr
 import org.opalj.tac.New
 import org.opalj.tac.NonVirtualMethodCall
-import org.opalj.tac.SimpleTACAIKey
 import org.opalj.tac.Stmt
 import org.opalj.tac.VirtualMethodCall
+import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.value.IsReferenceValue
 
 /**
@@ -39,7 +42,6 @@ class ThreadRelatedCallsAnalysis private[analyses] (
 ) extends FPCFAnalysis {
 
     implicit private[this] val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
-    private[this] val tacai = project.get(SimpleTACAIKey)
 
     private[this] val setUncaughtExceptionHandlerDescriptor = {
         MethodDescriptor(ObjectType("java/lang/Thread$UncaughtExceptionHandler"), VoidType)
@@ -84,9 +86,27 @@ class ThreadRelatedCallsAnalysis private[analyses] (
             // happens in particular for native methods
             return NoResult;
 
-        var threadRelatedMethods: Set[DeclaredMethod] = Set.empty
+        val tacaiEP = propertyStore(method, TACAI.key)
+        if (tacaiEP.hasProperty) {
+            processMethod(definedMethod, tacaiEP.asEPS)
+        } else {
+            SimplePIntermediateResult(
+                definedMethod,
+                ThreadRelatedCalleesNonFinal,
+                Some(tacaiEP),
+                continuation(definedMethod)
+            )
+        }
 
-        val stmts = tacai(method).stmts
+    }
+
+    def processMethod(
+        definedMethod: DefinedMethod, tacaiEPS: EPS[Method, TACAI]
+    ): PropertyComputationResult = {
+        assert(tacaiEPS.hasProperty)
+        val stmts = tacaiEPS.ub.tac.get.stmts
+
+        var threadRelatedMethods: Set[DeclaredMethod] = Set.empty
         for {
             VirtualMethodCall(_, dc, _, name, descriptor, receiver, params) ← stmts
             if classHierarchy.isSubtypeOf(dc, ObjectType.Thread)
@@ -109,22 +129,43 @@ class ThreadRelatedCallsAnalysis private[analyses] (
 
         }
 
+        val results: Iterator[PropertyComputationResult] = threadRelatedMethods.iterator.map { method ⇒
+            PartialResult[DeclaredMethod, CallersProperty](method, CallersProperty.key, {
+                case IntermediateESimpleP(_, ub) if !ub.hasCallersWithUnknownContext ⇒
+                    Some(IntermediateESimpleP(method, ub.updatedWithVMLevelCall()))
+
+                case _: IntermediateESimpleP[_, _] ⇒ None
+
+                case _: EPK[_, _] ⇒
+                    Some(IntermediateESimpleP(method, OnlyVMLevelCallers))
+
+                case r ⇒
+                    throw new IllegalStateException(s"unexpected previous result $r")
+            })
+        }
+
+        val fakeResult =
+            if (tacaiEPS.isFinal)
+                Result(definedMethod, ThreadRelatedCalleesFinal)
+            else SimplePIntermediateResult(
+                definedMethod,
+                ThreadRelatedCalleesNonFinal,
+                Some(tacaiEPS),
+                continuation(definedMethod)
+            )
+
         Results(
-            threadRelatedMethods.map { method ⇒
-                PartialResult[DeclaredMethod, CallersProperty](method, CallersProperty.key, {
-                    case IntermediateESimpleP(_, ub) if !ub.hasCallersWithUnknownContext ⇒
-                        Some(IntermediateESimpleP(method, ub.updatedWithVMLevelCall()))
-
-                    case _: IntermediateESimpleP[_, _] ⇒ None
-
-                    case _: EPK[_, _] ⇒
-                        Some(IntermediateESimpleP(method, OnlyVMLevelCallers))
-
-                    case r ⇒
-                        throw new IllegalStateException(s"unexpected previous result $r")
-                })
-            }
+            results ++ Iterator(fakeResult)
         )
+    }
+
+    private[this] def continuation(
+        method: DefinedMethod
+    )(eps: SomeEPS): PropertyComputationResult = {
+        eps match {
+            case ESimplePS(_, _: TACAI, _) ⇒
+                processMethod(method, eps.asInstanceOf[EPS[Method, TACAI]])
+        }
     }
 
     private[this] def handleStart(
@@ -340,9 +381,9 @@ object EagerThreadRelatedCallsAnalysis extends FPCFEagerAnalysisScheduler {
         analysis
     }
 
-    override def uses: Set[PropertyKind] = Set(CallersProperty)
+    override def uses: Set[PropertyKind] = Set(CallersProperty, TACAI)
 
-    override def derives: Set[PropertyKind] = Set(CallersProperty)
+    override def derives: Set[PropertyKind] = Set(CallersProperty, ThreadRelatedCalleesFakeProperty)
 
     override def init(p: SomeProject, ps: PropertyStore): ThreadRelatedCallsAnalysis = {
         val analysis = new ThreadRelatedCallsAnalysis(p)
