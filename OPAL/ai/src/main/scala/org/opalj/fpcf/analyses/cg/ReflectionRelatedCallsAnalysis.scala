@@ -4,6 +4,8 @@ package fpcf
 package analyses
 package cg
 
+import scala.language.existentials
+
 import org.opalj.br.ArrayType
 import org.opalj.br.BaseType
 import org.opalj.br.DeclaredMethod
@@ -14,6 +16,7 @@ import org.opalj.br.InvokeInterfaceMethodHandle
 import org.opalj.br.InvokeSpecialMethodHandle
 import org.opalj.br.InvokeStaticMethodHandle
 import org.opalj.br.InvokeVirtualMethodHandle
+import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.NewInvokeSpecialMethodHandle
 import org.opalj.br.ObjectType
@@ -23,7 +26,7 @@ import org.opalj.br.VoidType
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.cfg.CFG
+import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.collection.immutable.IntArraySetBuilder
@@ -44,23 +47,21 @@ import org.opalj.tac.Assignment
 import org.opalj.tac.Expr
 import org.opalj.tac.ExprStmt
 import org.opalj.tac.NewArray
-import org.opalj.tac.SimpleTACAIKey
 import org.opalj.tac.StaticFunctionCall
 import org.opalj.tac.Stmt
 import org.opalj.tac.StringConst
-import org.opalj.tac.TACStmts
+import org.opalj.tac.TACMethodParameter
+import org.opalj.tac.TACode
 import org.opalj.tac.VirtualFunctionCall
 import org.opalj.tac.VirtualMethodCall
-import scala.collection.immutable.IntMap
-import scala.language.existentials
-
-import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
+import org.opalj.tac.fpcf.properties.TACAI
 
 /**
  * Finds calls and loaded classes that exist because of reflective calls that are easy to resolve.
  *
  * @author Dominik Helm
  * @author Michael Reif
+ * @author Florian Kuebler
  */
 class ReflectionRelatedCallsAnalysis private[analyses] (
         final val project: SomeProject
@@ -77,20 +78,113 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
     val GetDescriptor = MethodDescriptor(ObjectType.Object, ObjectType.Object)
 
     class State(
-        val definedMethod:        DefinedMethod,
-        val stmts:                Array[Stmt[V]],
-        val cfg:                  CFG[Stmt[V], TACStmts[V]],
-        val pcToIndex:            Array[Int],
-        val loadedClassesUB:      UIDSet[ObjectType],
-        val instantiatedTypesUB:  UIDSet[ObjectType],
-        val calleesAndCallers:    IndirectCalleesAndCallers,
-        var newLoadedClasses:     UIDSet[ObjectType]                              = UIDSet.empty,
-        var newInstantiatedTypes: UIDSet[ObjectType]                              = UIDSet.empty,
-        var dependee:             Option[EOptionP[SomeProject, SystemProperties]] = None
-    )
+            val definedMethod:                           DefinedMethod,
+            val loadedClassesUB:                         UIDSet[ObjectType]                              = UIDSet.empty,
+            val instantiatedTypesUB:                     UIDSet[ObjectType]                              = UIDSet.empty,
+            val calleesAndCallers:                       IndirectCalleesAndCallers                       = new IndirectCalleesAndCallers(),
+            val forNamePCs:                              IntTrieSet                                      = IntTrieSet.empty,
+            private[this] var _newLoadedClasses:         UIDSet[ObjectType]                              = UIDSet.empty,
+            private[this] var _newInstantiatedTypes:     UIDSet[ObjectType]                              = UIDSet.empty,
+            private[this] var _tacode:                   Option[TACode[TACMethodParameter, V]]           = None,
+            private[this] var _tacaiDependee:            Option[EOptionP[Method, TACAI]]                 = None,
+            private[this] var _systemPropertiesDependee: Option[EOptionP[SomeProject, SystemProperties]] = None,
+            private[this] var _systemProperties:         Option[Map[String, Set[String]]]                = None
+    ) {
+
+        if (_tacaiDependee.isDefined && _tacaiDependee.get.hasProperty)
+            assert(_tacaiDependee.get.ub.tac == _tacode)
+
+        def copy(
+            definedMethod:            DefinedMethod                                   = this.definedMethod,
+            loadedClassesUB:          UIDSet[ObjectType]                              = this.loadedClassesUB,
+            instantiatedTypesUB:      UIDSet[ObjectType]                              = this.instantiatedTypesUB,
+            calleesAndCallers:        IndirectCalleesAndCallers                       = this.calleesAndCallers,
+            forNamePCs:               IntTrieSet                                      = this.forNamePCs,
+            newLoadedClasses:         UIDSet[ObjectType]                              = _newLoadedClasses,
+            newInstantiatedTypes:     UIDSet[ObjectType]                              = _newInstantiatedTypes,
+            tacode:                   Option[TACode[TACMethodParameter, V]]           = _tacode,
+            tacaiDependee:            Option[EOptionP[Method, TACAI]]                 = _tacaiDependee,
+            systemPropertiesDependee: Option[EOptionP[SomeProject, SystemProperties]] = _systemPropertiesDependee,
+            systemProperties:         Option[Map[String, Set[String]]]                = None
+        ): State = {
+            new State(
+                definedMethod,
+                loadedClassesUB,
+                instantiatedTypesUB,
+                calleesAndCallers,
+                forNamePCs,
+                newLoadedClasses,
+                newInstantiatedTypes,
+                tacode,
+                tacaiDependee,
+                systemPropertiesDependee,
+                systemProperties
+            )
+        }
+
+        def addNewLoadedClasses(newLoadedClasses: TraversableOnce[ObjectType]): Unit = {
+            _newLoadedClasses ++= newLoadedClasses
+        }
+
+        def addNewInstantiatedTypes(newInstantiatedTypes: TraversableOnce[ObjectType]): Unit = {
+            _newInstantiatedTypes ++= newInstantiatedTypes
+        }
+
+        def newLoadedClasses: UIDSet[ObjectType] = _newLoadedClasses
+
+        def newInstantiatedTypes: UIDSet[ObjectType] = _newInstantiatedTypes
+
+        def isTACDefined: Boolean = _tacode.isDefined
+
+        def tacode: TACode[TACMethodParameter, V] = _tacode.get
+
+        def removeTACDependee(): Unit = _tacode = None
+
+        def addTACDependee(ep: EOptionP[Method, TACAI]): Unit = {
+            assert(_tacaiDependee.isEmpty)
+            assert(ep.isRefinable)
+            _tacaiDependee = Some(ep)
+            if (ep.hasProperty) {
+                _tacode = ep.ub.tac
+            }
+        }
+
+        def hasTACDependee: Boolean = { _tacaiDependee.isDefined }
+
+        def tacaiDependee: Option[EOptionP[Method, TACAI]] = _tacaiDependee
+
+        def removeSystemPropertiesDependee(): Unit = {
+            _systemPropertiesDependee = None
+        }
+
+        def addSystemPropertiesDependee(ep: EOptionP[SomeProject, SystemProperties]): Unit = {
+            assert(_systemPropertiesDependee.isEmpty)
+            assert(ep.isRefinable)
+            _systemPropertiesDependee = Some(ep)
+            if (ep.hasProperty) {
+                _systemProperties = Some(ep.ub.properties)
+            }
+        }
+
+        def systemPropertiesDependee: Option[EOptionP[SomeProject, SystemProperties]] = {
+            _systemPropertiesDependee
+        }
+
+        def hasSystemPropertiesDependee: Boolean = {
+            _systemPropertiesDependee.isDefined
+        }
+
+        def systemProperties: Map[String, Set[String]] = _systemProperties.get
+
+        def hasSystemProperties: Boolean = _systemProperties.isDefined
+
+        def hasOpenDependee: Boolean = {
+            hasTACDependee || hasSystemPropertiesDependee
+        }
+
+    }
 
     implicit private[this] val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
-    private[this] val tacai = project.get(SimpleTACAIKey)
     private[this] val initialInstantiatedTypes: UIDSet[ObjectType] =
         UIDSet(project.get(InitialInstantiatedTypesKey).toSeq: _*)
 
@@ -126,8 +220,9 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
             // happens in particular for native methods
             return NoResult;
 
-        var relevantPCs: IntMap[IntTrieSet] = IntMap.empty
-        var forNamePCs: IntMap[IntTrieSet] = IntMap.empty
+        // todo use relevantPCs later on!
+        var relevantPCs = IntTrieSet.empty
+        var forNamePCs = IntTrieSet.empty
         val insts = method.body.get.instructions
         var i = 0
         val max = insts.length
@@ -138,19 +233,19 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                     case INVOKESTATIC.opcode ⇒
                         val call = inst.asMethodInvocationInstruction
                         if (call.declaringClass == ObjectType.Class && call.name == "forName")
-                            forNamePCs += i → IntTrieSet.empty
+                            forNamePCs += i
                     case INVOKEVIRTUAL.opcode ⇒
                         val call = inst.asMethodInvocationInstruction
                         call.declaringClass match {
                             case ObjectType.Class ⇒
-                                if (call.name == "newInstance") relevantPCs += i → IntTrieSet.empty
+                                if (call.name == "newInstance") relevantPCs += i
                             case ConstructorT ⇒
-                                if (call.name == "newInstance") relevantPCs += i → IntTrieSet.empty
+                                if (call.name == "newInstance") relevantPCs += i
                             case MethodT ⇒
-                                if (call.name == "invoke") relevantPCs += i → IntTrieSet.empty
+                                if (call.name == "invoke") relevantPCs += i
                             case ObjectType.MethodHandle ⇒
                                 if (call.name.startsWith("invoke"))
-                                    relevantPCs += i → IntTrieSet.empty
+                                    relevantPCs += i
                             case _ ⇒
                         }
                     case _ ⇒
@@ -161,28 +256,44 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         if (relevantPCs.isEmpty && forNamePCs.isEmpty)
             return Result(declaredMethod, NoReflectionRelatedCallees);
 
+        val tacEP = propertyStore(method, TACAI.key)
+        val tacEPOpt = if (tacEP.isFinal) None else Some(tacEP)
+
+        if (tacEP.hasProperty) {
+            implicit val state: State = new State(
+                definedMethod,
+                forNamePCs = forNamePCs,
+                _tacaiDependee = tacEPOpt,
+                _tacode = tacEP.ub.tac
+            )
+            processMethod(state)
+        } else {
+            implicit val state: State = new State(definedMethod, _tacaiDependee = Some(tacEP))
+            SimplePIntermediateResult(
+                definedMethod, NoReflectionRelatedCallees, tacEPOpt, continuation
+            )
+        }
+    }
+
+    private[this] def processMethod(
+        state: State
+    ): PropertyComputationResult = {
+        assert(state.isTACDefined)
         val (loadedClassesUB, instantiatedTypesUB) = loadedClassesAndInstantiatedTypes()
 
-        val tacode = tacai(method)
-        val stmts = tacode.stmts
-        val cfg = tacode.cfg
-        val pcToIndex = tacode.pcToIndex
+        val stmts = state.tacode.stmts
+        val pcToIndex = state.tacode.pcToIndex
 
         val calleesAndCallers = new IndirectCalleesAndCallers()
 
-        implicit val state: State =
-            new State(
-                definedMethod,
-                stmts,
-                cfg,
-                pcToIndex,
-                loadedClassesUB,
-                instantiatedTypesUB,
-                calleesAndCallers
-            )
+        implicit val newState: State = state.copy(
+            loadedClassesUB = loadedClassesUB,
+            instantiatedTypesUB = instantiatedTypesUB,
+            calleesAndCallers = calleesAndCallers
+        )
 
         for {
-            pc ← forNamePCs.keysIterator
+            pc ← state.forNamePCs
             index = pcToIndex(pc)
             if index >= 0
             stmt = stmts(index)
@@ -204,9 +315,9 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
     private[this] def analyzeInvocations()(implicit state: State): Unit = {
         for {
             pc ← state.calleesAndCallers.callees.keysIterator
-            index = state.pcToIndex(pc)
+            index = state.tacode.pcToIndex(pc)
             if index >= 0
-            stmt = state.stmts(index)
+            stmt = state.tacode.stmts(index)
         } {
             stmt.astID match {
                 case Assignment.ASTID ⇒
@@ -290,7 +401,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
             case r: ObjectType                              ⇒ r
             case a: ArrayType if a.elementType.isObjectType ⇒ a.elementType.asObjectType
         }
-        state.newLoadedClasses ++= loadedClasses.filter(!state.loadedClassesUB.contains(_))
+        state.addNewLoadedClasses(loadedClasses.filter(!state.loadedClassesUB.contains(_)))
     }
 
     /**
@@ -307,7 +418,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         val actualParams = getParamsFromVararg(newInstanceParams)
         constructor.asVar.definedBy.foreach { index ⇒
             if (index > 0) {
-                val definition = state.stmts(index).asAssignment.expr
+                val definition = state.tacode.stmts(index).asAssignment.expr
                 if (definition.isVirtualFunctionCall) {
                     definition.asVirtualFunctionCall match {
                         case VirtualFunctionCall(_, ObjectType.Class, _, "getConstructor", _, classes, params) ⇒
@@ -351,9 +462,9 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         params:            Seq[V]
     )(implicit state: State): Unit = {
         val newInstantiatedTypes = instantiatedTypes.filter(!state.instantiatedTypesUB.contains(_))
-        state.newInstantiatedTypes ++= newInstantiatedTypes
+        state.addNewInstantiatedTypes(newInstantiatedTypes)
 
-        implicit val stmts: Array[Stmt[V]] = state.stmts
+        implicit val stmts: Array[Stmt[V]] = state.tacode.stmts
         val actualParams = params.map(persistentUVar)
 
         for {
@@ -392,12 +503,12 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         method:       Expr[V],
         methodParams: Seq[Expr[V]]
     )(implicit state: State): Unit = {
-        implicit val stmts: Array[Stmt[V]] = state.stmts
+        implicit val stmts: Array[Stmt[V]] = state.tacode.stmts
         val receiverDefinition = persistentUVar(methodParams.head.asVar)
         val paramDefinitions = getParamsFromVararg(methodParams(1)).map(persistentUVar)
         method.asVar.definedBy.foreach { index ⇒
             if (index >= 0) {
-                val definition = state.stmts(index).asAssignment.expr
+                val definition = stmts(index).asAssignment.expr
                 if (definition.isVirtualFunctionCall) {
                     definition.asVirtualFunctionCall match {
                         case VirtualFunctionCall(_, ObjectType.Class, _, "getDeclaredMethod" | "getMethod", _, receiver, params) ⇒
@@ -532,7 +643,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
             else getParamsFromVararg(invokeParams.head)
         methodHandle.asVar.definedBy.foreach { index ⇒
             if (index >= 0) {
-                val definition = state.stmts(index).asAssignment.expr
+                val definition = state.tacode.stmts(index).asAssignment.expr
                 if (definition.isMethodHandleConst) {
                     definition.asMethodHandleConst.value match {
                         case InvokeStaticMethodHandle(receiver, _, name, desc) ⇒
@@ -673,7 +784,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         descriptors:   Iterable[MethodDescriptor],
         invokeParams:  Seq[V]
     )(implicit state: State): Unit = {
-        implicit val stmts: Array[Stmt[V]] = state.stmts
+        implicit val stmts: Array[Stmt[V]] = state.tacode.stmts
         for {
             receiverType ← receiverTypes
             name ← names
@@ -709,7 +820,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         descriptors:  Iterable[MethodDescriptor],
         invokeParams: Seq[V]
     )(implicit state: State): Unit = {
-        implicit val stmts: Array[Stmt[V]] = state.stmts
+        implicit val stmts: Array[Stmt[V]] = state.tacode.stmts
         val dynamicTypes = getTypesOfVar(invokeParams.head, pc).toIterable
         for {
             typeBound ← staticTypes
@@ -750,7 +861,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         specialCallers: Iterable[ObjectType],
         invokeParams:   Seq[V]
     )(implicit state: State): Unit = {
-        implicit val stmts: Array[Stmt[V]] = state.stmts
+        implicit val stmts: Array[Stmt[V]] = state.tacode.stmts
         for {
             receiverType ← receiverTypes
             name ← names
@@ -788,7 +899,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
     )(implicit state: State): Iterator[String] = {
         value.asVar.definedBy.iterator.map[Iterator[String]] { index ⇒
             if (index >= 0) {
-                val expr = state.stmts(index).asAssignment.expr
+                val expr = state.tacode.stmts(index).asAssignment.expr
                 expr match {
                     case StringConst(_, v) ⇒ Iterator(v)
                     case StaticFunctionCall(_, ObjectType.System, _, "getProperty", GetPropertyDescriptor, params) if !onlyStringConsts ⇒
@@ -822,18 +933,18 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
     private[this] def getStringConstsForSystemPropertiesKey(
         value: Expr[V], pc: Option[Int]
     )(implicit state: State): Iterator[String] = {
-        if (state.dependee.isEmpty) {
-            state.dependee = Some(propertyStore(project, SystemProperties.key))
+        if (!state.hasSystemPropertiesDependee) {
+            state.addSystemPropertiesDependee(propertyStore(project, SystemProperties.key))
         }
         if (pc.isDefined) {
             state.calleesAndCallers.addIncompleteCallsite(pc.get)
         }
-        if (state.dependee.get.isInstanceOf[SomeEPK]) {
+        if (state.hasSystemProperties) {
             Iterator.empty
         } else {
             val keys = getPossibleStrings(value, None, onlyStringConsts = true)
             keys.flatMap { key ⇒
-                state.dependee.get.ub.properties.getOrElse(key, Set.empty[String])
+                state.systemProperties.getOrElse(key, Set.empty[String])
             }
         }
     }
@@ -864,7 +975,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                 state.calleesAndCallers.addIncompleteCallsite(pc)
                 false
             } else {
-                val expr = state.stmts(index).asAssignment.expr
+                val expr = state.tacode.stmts(index).asAssignment.expr
                 val isResolvable =
                     expr.isClassConst || isForName(expr) || isBaseTypeLoad(expr) || isGetClass(expr)
                 if (!isResolvable)
@@ -872,9 +983,9 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                 isResolvable
             }
         } flatMap { index: Int ⇒
-            val expr = state.stmts(index).asAssignment.expr
+            val expr = state.tacode.stmts(index).asAssignment.expr
             if (expr.isClassConst) {
-                Iterator(state.stmts(index).asAssignment.expr.asClassConst.value)
+                Iterator(state.tacode.stmts(index).asAssignment.expr.asClassConst.value)
             } else if (expr.isStaticFunctionCall) {
                 getPossibleForNameClasses(expr.asStaticFunctionCall.params.head, Some(pc))
             } else if (expr.isVirtualFunctionCall) {
@@ -958,16 +1069,16 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                 state.calleesAndCallers.addIncompleteCallsite(pc)
                 false
             } else {
-                val expr = state.stmts(index).asAssignment.expr
+                val expr = state.tacode.stmts(index).asAssignment.expr
                 val isResolvable = expr.isMethodTypeConst || isMethodType(expr)
                 if (!isResolvable)
                     state.calleesAndCallers.addIncompleteCallsite(pc)
                 isResolvable
             }
         } flatMap { index: Int ⇒
-            val expr = state.stmts(index).asAssignment.expr
+            val expr = state.tacode.stmts(index).asAssignment.expr
             if (expr.isMethodTypeConst)
-                Iterator(state.stmts(index).asAssignment.expr.asMethodTypeConst.value)
+                Iterator(state.tacode.stmts(index).asAssignment.expr.asMethodTypeConst.value)
             else {
                 val call = expr.asStaticFunctionCall
                 getPossibleMethodTypes(call.params, call.descriptor, pc)
@@ -1028,18 +1139,18 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
             state.calleesAndCallers.addIncompleteCallsite(pc)
             None
         } else {
-            val definition = state.stmts(definitions.head).asAssignment
+            val definition = state.tacode.stmts(definitions.head).asAssignment
             if (definition.expr.astID != NewArray.ASTID) None
             else {
                 val uses = IntArraySetBuilder(definition.targetVar.usedBy.toChain).result()
-                if (state.cfg.bb(uses.head) != state.cfg.bb(uses.last)) None
-                else if (state.stmts(uses.last).astID != Assignment.ASTID) None
+                if (state.tacode.cfg.bb(uses.head) != state.tacode.cfg.bb(uses.last)) None
+                else if (state.tacode.stmts(uses.last).astID != Assignment.ASTID) None
                 else {
                     var types: RefArray[FieldType] = RefArray.withSize(uses.size - 1)
                     if (!uses.forall { useSite ⇒
                         if (useSite == uses.last) true
                         else {
-                            val use = state.stmts(useSite)
+                            val use = state.tacode.stmts(useSite)
                             if (use.astID != ArrayStore.ASTID) false
                             else {
                                 val typeDefs = use.asArrayStore.value.asVar.definedBy
@@ -1047,8 +1158,8 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                                 if (!typeDefs.isSingletonSet || typeDefs.head < 0 ||
                                     !indices.isSingletonSet || indices.head < 0) false
                                 else {
-                                    val typeDef = state.stmts(typeDefs.head).asAssignment.expr
-                                    val index = state.stmts(indices.head).asAssignment.expr
+                                    val typeDef = state.tacode.stmts(typeDefs.head).asAssignment.expr
+                                    val index = state.tacode.stmts(indices.head).asAssignment.expr
                                     if (!typeDef.isClassConst && !isBaseTypeLoad(typeDef))
                                         false
                                     else if (!index.isIntConst) {
@@ -1084,24 +1195,24 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         if (!definitions.isSingletonSet || definitions.head < 0) {
             Seq.empty
         } else {
-            val definition = state.stmts(definitions.head).asAssignment
+            val definition = state.tacode.stmts(definitions.head).asAssignment
             if (definition.expr.astID != NewArray.ASTID) Seq.empty
             else {
                 val uses = IntArraySetBuilder(definition.targetVar.usedBy.toChain).result()
-                if (state.cfg.bb(uses.head) != state.cfg.bb(uses.last)) Seq.empty
-                else if (state.stmts(uses.last).astID != Assignment.ASTID) Seq.empty
+                if (state.tacode.cfg.bb(uses.head) != state.tacode.cfg.bb(uses.last)) Seq.empty
+                else if (state.tacode.stmts(uses.last).astID != Assignment.ASTID) Seq.empty
                 else {
                     var params: Seq[V] = RefArray.withSize(uses.size - 1)
                     if (!uses.forall { useSite ⇒
                         if (useSite == uses.last) true
                         else {
-                            val use = state.stmts(useSite)
+                            val use = state.tacode.stmts(useSite)
                             if (use.astID != ArrayStore.ASTID) false
                             else {
                                 val indices = use.asArrayStore.index.asVar.definedBy
                                 if (!indices.isSingletonSet || indices.head < 0) false
                                 else {
-                                    val index = state.stmts(indices.head).asAssignment.expr
+                                    val index = state.tacode.stmts(indices.head).asAssignment.expr
                                     if (!index.isIntConst) {
                                         false // we don't know the index in the array
                                     } else {
@@ -1125,22 +1236,31 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
     }
 
     private[this] def continuation(eps: SomeEPS)(implicit state: State): PropertyComputationResult = eps match {
-        case ESimplePS(_, _: SystemProperties, _) ⇒
+        case ESimplePS(_, ub: SystemProperties, isFinal) ⇒
+            val newEPS =
+                if (isFinal) None else Some(eps.asInstanceOf[EPS[SomeProject, SystemProperties]])
             // Create new state that reflects changes that may have happened in the meantime
             val (loadedClassesUB, instantiatedTypesUB) = loadedClassesAndInstantiatedTypes()
-            val newState: State = new State(
-                state.definedMethod,
-                state.stmts,
-                state.cfg,
-                state.pcToIndex,
-                loadedClassesUB,
-                instantiatedTypesUB,
-                new IndirectCalleesAndCallers(state.calleesAndCallers.callees)
+            val newState = state.copy(
+                loadedClassesUB = loadedClassesUB,
+                instantiatedTypesUB = instantiatedTypesUB,
+                calleesAndCallers = new IndirectCalleesAndCallers(state.calleesAndCallers.callees),
+                systemPropertiesDependee = newEPS,
+                systemProperties = Some(ub.properties)
             )
 
             // Re-analyze invocations with the new state
             analyzeInvocations()(newState)
             returnResult()(newState)
+
+        case ESimplePS(_, _: TACAI, isFinal) ⇒
+            state.removeTACDependee()
+
+            if (!isFinal) {
+                state.addTACDependee(eps.asInstanceOf[EPS[Method, TACAI]])
+            }
+            processMethod(state)
+
     }
 
     /**
@@ -1182,15 +1302,15 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
             )
 
         val calleesResult =
-            if (state.dependee.isEmpty || state.dependee.get.isFinal) {
-                Result(state.definedMethod, calleeUB)
-            } else {
+            if (state.hasOpenDependee) {
                 SimplePIntermediateResult(
                     state.definedMethod,
                     calleeUB,
-                    state.dependee,
+                    state.systemPropertiesDependee ++ state.tacaiDependee,
                     continuation
                 )
+            } else {
+                Result(state.definedMethod, calleeUB)
             }
 
         res ::= calleesResult
@@ -1253,7 +1373,7 @@ object EagerReflectionRelatedCallsAnalysis extends FPCFEagerAnalysisScheduler {
     }
 
     override def uses: Set[PropertyKind] =
-        Set(CallersProperty, SystemProperties, LoadedClasses, InstantiatedTypes)
+        Set(CallersProperty, SystemProperties, LoadedClasses, InstantiatedTypes, TACAI)
 
     override def derives: Set[PropertyKind] =
         Set(CallersProperty, ReflectionRelatedCallees, LoadedClasses, InstantiatedTypes)
