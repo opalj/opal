@@ -30,9 +30,10 @@ import org.opalj.tac.Stmt
 import org.opalj.tac.VirtualFunctionCall
 import org.opalj.tac.VirtualMethodCall
 import org.opalj.tac.fpcf.properties.TACAI
-
 import scala.annotation.tailrec
 import scala.language.existentials
+
+import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
 
 /**
  * todo
@@ -44,6 +45,8 @@ class SerializationRelatedCallsAnalysis private[analyses] (
 ) extends FPCFAnalysis {
 
     implicit private[this] val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
+    private[this] val initialInstantiatedTypes: UIDSet[ObjectType] =
+        UIDSet(project.get(InitialInstantiatedTypesKey).toSeq: _*)
 
     private[this] val WriteObjectDescriptor =
         MethodDescriptor.JustTakes(ObjectType.ObjectOutputStream)
@@ -133,7 +136,7 @@ class SerializationRelatedCallsAnalysis private[analyses] (
         val instantiatedTypesUB: UIDSet[ObjectType] = instantiatedTypesEOptP match {
             case eps: EPS[_, _] ⇒ eps.ub.types
 
-            case _              ⇒ UIDSet(InstantiatedTypes.initialTypes(project).toSeq: _*)
+            case _              ⇒ initialInstantiatedTypes
         }
 
         val calleesAndCallers = new IndirectCalleesAndCallers()
@@ -452,7 +455,9 @@ class SerializationRelatedCallsAnalysis private[analyses] (
         res ::= calleesResult
 
         if (newInstantiatedTypes.nonEmpty)
-            res ::= RTACallGraphAnalysis.partialResultForInstantiatedTypes(p, newInstantiatedTypes)
+            res ::= RTACallGraphAnalysis.partialResultForInstantiatedTypes(
+                p, newInstantiatedTypes, initialInstantiatedTypes
+            )
 
         Results(res)
     }

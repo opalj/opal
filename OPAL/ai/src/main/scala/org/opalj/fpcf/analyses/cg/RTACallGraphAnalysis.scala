@@ -43,10 +43,12 @@ import org.opalj.tac.VirtualCall
 import org.opalj.tac.VirtualFunctionCallStatement
 import org.opalj.tac.VirtualMethodCall
 import org.opalj.tac.fpcf.properties.TACAI
-import org.opalj.value.KnownTypedValue
 
+import org.opalj.value.KnownTypedValue
 import scala.collection.immutable.IntMap
 import scala.language.existentials
+
+import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
 
 class RTAState private (
         private[cg] val method:                       DefinedMethod,
@@ -203,6 +205,8 @@ class RTACallGraphAnalysis private[analyses] (
 
     private[this] implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
     private[this] val isMethodOverridable: Method ⇒ Answer = project.get(IsOverridableMethodKey)
+    private[this] val initialInstantiatedTypes: UIDSet[ObjectType] =
+        UIDSet(project.get(InitialInstantiatedTypesKey).toSeq: _*)
 
     /**
      * Computes the calls from the given method ([[StandardInvokeCallees]] property) and updates the
@@ -276,7 +280,7 @@ class RTACallGraphAnalysis private[analyses] (
         val instantiatedTypesUB: UIDSet[ObjectType] = instantiatedTypesEOptP match {
             case eps: EPS[_, _] ⇒ eps.ub.types
 
-            case _              ⇒ UIDSet(InstantiatedTypes.initialTypes(project).toSeq: _*)
+            case _              ⇒ initialInstantiatedTypes
         }
 
         val instantiatedTypesDependee =
@@ -308,7 +312,7 @@ class RTACallGraphAnalysis private[analyses] (
         var results = resultForStandardInvokeCallees(newState) :: calleesAndCallers.partialResultsForCallers
         if (newInstantiatedTypes.nonEmpty)
             results ::= RTACallGraphAnalysis.partialResultForInstantiatedTypes(
-                p, newInstantiatedTypes
+                p, newInstantiatedTypes, initialInstantiatedTypes
             )
 
         Results(results)
@@ -608,8 +612,9 @@ class RTACallGraphAnalysis private[analyses] (
 
 object RTACallGraphAnalysis {
     def partialResultForInstantiatedTypes(
-        p:                    SomeProject,
-        newInstantiatedTypes: UIDSet[ObjectType]
+        p:                        SomeProject,
+        newInstantiatedTypes:     UIDSet[ObjectType],
+        initialInstantiatedTypes: UIDSet[ObjectType]
     ): PartialResult[SomeProject, InstantiatedTypes] = {
         PartialResult[SomeProject, InstantiatedTypes](p, InstantiatedTypes.key,
             {
@@ -620,7 +625,10 @@ object RTACallGraphAnalysis {
                     ))
 
                 case _: EPK[_, _] ⇒
-                    Some(IntermediateESimpleP(p, InstantiatedTypes.initial(newInstantiatedTypes, p)))
+                    Some(IntermediateESimpleP(
+                        p,
+                        InstantiatedTypes.initial(newInstantiatedTypes, initialInstantiatedTypes)
+                    ))
 
                 case r ⇒ throw new IllegalStateException(s"unexpected previous result $r")
             })

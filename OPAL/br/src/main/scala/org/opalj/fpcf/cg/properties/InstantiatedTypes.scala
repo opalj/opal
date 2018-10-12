@@ -4,8 +4,6 @@ package fpcf
 package cg
 package properties
 import org.opalj.br.ObjectType
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
 import org.opalj.collection.immutable.UIDSet
 
 import scala.collection.Set
@@ -55,19 +53,18 @@ case class InstantiatedTypes private[properties] (
 
 object InstantiatedTypes extends InstantiatedTypesPropertyMetaInformation {
 
-    def initial(types: UIDSet[ObjectType], project: SomeProject): InstantiatedTypes = {
+    def initial(
+        types:                    UIDSet[ObjectType],
+        initialInstantiatedTypes: UIDSet[ObjectType]
+    ): InstantiatedTypes = {
         new InstantiatedTypes(
-            types.toList ++ initialTypes(project).toList,
-            types ++ initialTypes(project)
+            types.toList ++ initialInstantiatedTypes.toList,
+            types ++ initialInstantiatedTypes
         )
     }
 
     final val key: PropertyKey[InstantiatedTypes] = {
         PropertyKey.forSimpleProperty("InstantiatedTypes", NoTypes)
-    }
-
-    def initialTypes(project: SomeProject): Traversable[ObjectType] = {
-        project.get(InitialInstantiatedTypesKey)
     }
 }
 

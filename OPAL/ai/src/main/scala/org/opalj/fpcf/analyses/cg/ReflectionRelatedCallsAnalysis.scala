@@ -51,9 +51,10 @@ import org.opalj.tac.StringConst
 import org.opalj.tac.TACStmts
 import org.opalj.tac.VirtualFunctionCall
 import org.opalj.tac.VirtualMethodCall
-
 import scala.collection.immutable.IntMap
 import scala.language.existentials
+
+import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
 
 /**
  * Finds calls and loaded classes that exist because of reflective calls that are easy to resolve.
@@ -90,6 +91,8 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
 
     implicit private[this] val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
     private[this] val tacai = project.get(SimpleTACAIKey)
+    private[this] val initialInstantiatedTypes: UIDSet[ObjectType] =
+        UIDSet(project.get(InitialInstantiatedTypesKey).toSeq: _*)
 
     def analyze(declaredMethod: DeclaredMethod): PropertyComputationResult = {
         // todo this is copy & past code from the RTACallGraphAnalysis -> refactor
@@ -1160,7 +1163,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         // in case they are not yet computed, we use the initialTypes
         val instantiatedTypesUB: UIDSet[ObjectType] = instantiatedTypesEOptP match {
             case eps: EPS[_, _] ⇒ eps.ub.types
-            case _              ⇒ UIDSet(InstantiatedTypes.initialTypes(project).toSeq: _*)
+            case _              ⇒ initialInstantiatedTypes
         }
 
         (loadedClassesUB, instantiatedTypesUB)
@@ -1229,8 +1232,9 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         }
 
         if (state.newInstantiatedTypes.nonEmpty)
-            res ::=
-                RTACallGraphAnalysis.partialResultForInstantiatedTypes(p, state.newInstantiatedTypes)
+            res ::= RTACallGraphAnalysis.partialResultForInstantiatedTypes(
+                p, state.newInstantiatedTypes, initialInstantiatedTypes
+            )
 
         Results(res)
     }
