@@ -4,24 +4,26 @@ package fpcf
 package analyses
 
 import org.opalj.br.DeclaredMethod
+import org.opalj.br.Method
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.fpcf.cg.properties.CallersProperty
 import org.opalj.fpcf.cg.properties.NoCallers
 import org.opalj.fpcf.properties.SystemProperties
+import org.opalj.fpcf.properties.SystemPropertiesFakeProperty
+import org.opalj.fpcf.properties.SystemPropertiesFakePropertyFinal
+import org.opalj.fpcf.properties.SystemPropertiesFakePropertyNonFinal
 import org.opalj.tac.DUVar
 import org.opalj.tac.Expr
-import org.opalj.tac.SimpleTACAIKey
 import org.opalj.tac.StaticMethodCall
 import org.opalj.tac.Stmt
 import org.opalj.tac.VirtualFunctionCallStatement
+import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.value.KnownTypedValue
 
 class SystemPropertiesAnalysis private[analyses] (
         final val project: SomeProject
 ) extends FPCFAnalysis {
-
-    private[this] val tacai = project.get(SimpleTACAIKey)
 
     def analyze(declaredMethod: DeclaredMethod): PropertyComputationResult = {
         // todo this is copy & past code from the RTACallGraphAnalysis -> refactor
@@ -53,7 +55,30 @@ class SystemPropertiesAnalysis private[analyses] (
             // happens in particular for native methods
             return NoResult;
 
-        val stmts = tacai(method).stmts
+        val tacaiEP = propertyStore(method, TACAI.key)
+        if (tacaiEP.hasProperty) {
+            processMethod(declaredMethod, tacaiEP.asEPS)
+        } else {
+            SimplePIntermediateResult(
+                declaredMethod,
+                SystemPropertiesFakePropertyNonFinal,
+                Some(tacaiEP),
+                continuation(declaredMethod)
+            )
+        }
+
+    }
+
+    def continuation(declaredMethod: DeclaredMethod)(eps: SomeEPS): PropertyComputationResult = {
+        eps match {
+            case ESimplePS(_, _: TACAI, _) ⇒
+                processMethod(declaredMethod, eps.asInstanceOf[EPS[Method, TACAI]])
+        }
+    }
+
+    def processMethod(declaredMethod: DeclaredMethod, tacaiEP: EPS[Method, TACAI]): PropertyComputationResult = {
+        assert(tacaiEP.hasProperty)
+        val stmts = tacaiEP.ub.tac.get.stmts
 
         var propertyMap: Map[String, Set[String]] = Map.empty
 
@@ -69,7 +94,7 @@ class SystemPropertiesAnalysis private[analyses] (
             return NoResult;
         }
 
-        PartialResult[SomeProject, SystemProperties](project, SystemProperties.key, {
+        val partialResult = PartialResult[SomeProject, SystemProperties](project, SystemProperties.key, {
             case ESimplePS(_, ub, _) ⇒
                 var oldProperties = ub.properties
                 val noNewProperty = propertyMap.forall {
@@ -91,6 +116,20 @@ class SystemPropertiesAnalysis private[analyses] (
                 }
             case _: EPK[_, _] ⇒ Some(IntermediateESimpleP(project, new SystemProperties(propertyMap)))
         })
+
+        val fakeResult =
+            if (tacaiEP.isFinal) {
+                Result(declaredMethod, SystemPropertiesFakePropertyFinal)
+            } else {
+                SimplePIntermediateResult(
+                    declaredMethod,
+                    SystemPropertiesFakePropertyNonFinal,
+                    Some(tacaiEP),
+                    continuation(declaredMethod)
+                )
+            }
+
+        Results(partialResult, fakeResult)
     }
 
     def computeProperties(
@@ -133,9 +172,9 @@ object SystemPropertiesAnalysis extends FPCFEagerAnalysisScheduler {
         analysis
     }
 
-    override def uses: Set[PropertyKind] = Set(CallersProperty)
+    override def uses: Set[PropertyKind] = Set(CallersProperty, TACAI)
 
-    override def derives: Set[PropertyKind] = Set(SystemProperties)
+    override def derives: Set[PropertyKind] = Set(SystemProperties, SystemPropertiesFakeProperty)
 
     override def init(p: SomeProject, ps: PropertyStore): SystemPropertiesAnalysis = {
         val analysis = new SystemPropertiesAnalysis(p)
