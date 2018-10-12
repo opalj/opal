@@ -1369,7 +1369,7 @@ object EagerReflectionRelatedCallsAnalysis extends FPCFEagerAnalysisScheduler {
     }
 
     override def uses: Set[PropertyKind] =
-        Set(CallersProperty, SystemProperties, LoadedClasses, InstantiatedTypes)
+        Set(CallersProperty, SystemProperties, LoadedClasses, InstantiatedTypes, TACAI)
 
     override def derives: Set[PropertyKind] =
         Set(CallersProperty, ReflectionRelatedCallees, LoadedClasses, InstantiatedTypes)
