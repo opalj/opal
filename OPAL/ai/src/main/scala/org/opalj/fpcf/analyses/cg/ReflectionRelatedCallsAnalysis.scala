@@ -77,7 +77,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         MethodDescriptor(RefArray(ObjectType.String, ObjectType.String), ObjectType.String)
     val GetDescriptor = MethodDescriptor(ObjectType.Object, ObjectType.Object)
 
-    class State(
+    final class State(
             val definedMethod:                           DefinedMethod,
             val loadedClassesUB:                         UIDSet[ObjectType]                              = UIDSet.empty,
             val instantiatedTypesUB:                     UIDSet[ObjectType]                              = UIDSet.empty,
@@ -94,7 +94,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         if (_tacaiDependee.isDefined && _tacaiDependee.get.hasProperty)
             assert(_tacaiDependee.get.ub.tac == _tacode)
 
-        def copy(
+        private[cg] def copy(
             definedMethod:            DefinedMethod                                   = this.definedMethod,
             loadedClassesUB:          UIDSet[ObjectType]                              = this.loadedClassesUB,
             instantiatedTypesUB:      UIDSet[ObjectType]                              = this.instantiatedTypesUB,
@@ -122,25 +122,25 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
             )
         }
 
-        def addNewLoadedClasses(newLoadedClasses: TraversableOnce[ObjectType]): Unit = {
+        private[cg]def addNewLoadedClasses(newLoadedClasses: TraversableOnce[ObjectType]): Unit = {
             _newLoadedClasses ++= newLoadedClasses
         }
 
-        def addNewInstantiatedTypes(newInstantiatedTypes: TraversableOnce[ObjectType]): Unit = {
+        private[cg]def addNewInstantiatedTypes(newInstantiatedTypes: TraversableOnce[ObjectType]): Unit = {
             _newInstantiatedTypes ++= newInstantiatedTypes
         }
 
-        def newLoadedClasses: UIDSet[ObjectType] = _newLoadedClasses
+        private[cg]def newLoadedClasses: UIDSet[ObjectType] = _newLoadedClasses
 
-        def newInstantiatedTypes: UIDSet[ObjectType] = _newInstantiatedTypes
+        private[cg]def newInstantiatedTypes: UIDSet[ObjectType] = _newInstantiatedTypes
 
-        def isTACDefined: Boolean = _tacode.isDefined
+        private[cg]def isTACDefined: Boolean = _tacode.isDefined
 
-        def tacode: TACode[TACMethodParameter, V] = _tacode.get
+        private[cg]def tacode: TACode[TACMethodParameter, V] = _tacode.get
 
-        def removeTACDependee(): Unit = _tacode = None
+        private[cg]def removeTACDependee(): Unit = _tacode = None
 
-        def addTACDependee(ep: EOptionP[Method, TACAI]): Unit = {
+        private[cg]def addTACDependee(ep: EOptionP[Method, TACAI]): Unit = {
             assert(_tacaiDependee.isEmpty)
             assert(ep.isRefinable)
             _tacaiDependee = Some(ep)
@@ -149,15 +149,15 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
             }
         }
 
-        def hasTACDependee: Boolean = { _tacaiDependee.isDefined }
+        private[cg]def hasTACDependee: Boolean = { _tacaiDependee.isDefined }
 
-        def tacaiDependee: Option[EOptionP[Method, TACAI]] = _tacaiDependee
+        private[cg]def tacaiDependee: Option[EOptionP[Method, TACAI]] = _tacaiDependee
 
-        def removeSystemPropertiesDependee(): Unit = {
+        private[cg]def removeSystemPropertiesDependee(): Unit = {
             _systemPropertiesDependee = None
         }
 
-        def addSystemPropertiesDependee(ep: EOptionP[SomeProject, SystemProperties]): Unit = {
+        private[cg]def addSystemPropertiesDependee(ep: EOptionP[SomeProject, SystemProperties]): Unit = {
             assert(_systemPropertiesDependee.isEmpty)
             assert(ep.isRefinable)
             _systemPropertiesDependee = Some(ep)
@@ -166,22 +166,21 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
             }
         }
 
-        def systemPropertiesDependee: Option[EOptionP[SomeProject, SystemProperties]] = {
+        private[cg]def systemPropertiesDependee: Option[EOptionP[SomeProject, SystemProperties]] = {
             _systemPropertiesDependee
         }
 
-        def hasSystemPropertiesDependee: Boolean = {
+        private[cg]def hasSystemPropertiesDependee: Boolean = {
             _systemPropertiesDependee.isDefined
         }
 
-        def systemProperties: Map[String, Set[String]] = _systemProperties.get
+        private[cg]def systemProperties: Map[String, Set[String]] = _systemProperties.get
 
-        def hasSystemProperties: Boolean = _systemProperties.isDefined
+        private[cg]def hasSystemProperties: Boolean = _systemProperties.isDefined
 
-        def hasOpenDependee: Boolean = {
+        private[cg]def hasOpenDependee: Boolean = {
             hasTACDependee || hasSystemPropertiesDependee
         }
-
     }
 
     implicit private[this] val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
