@@ -4,25 +4,25 @@ package tac
 package fpcf
 package analyses
 
-import org.opalj.br.Method
-import org.opalj.br.analyses.SomeProject
-import org.opalj.value.KnownTypedValue
-import org.opalj.fpcf.FPCFAnalysis
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.PropertyKind
-import org.opalj.fpcf.PropertyComputationResult
-import org.opalj.fpcf.MultiResult
 import org.opalj.fpcf.ComputationSpecification
-import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.FinalEP
+import org.opalj.fpcf.FPCFAnalysis
 import org.opalj.fpcf.FPCFEagerAnalysisScheduler
 import org.opalj.fpcf.FPCFLazyAnalysisScheduler
-import org.opalj.fpcf.FinalEP
-import org.opalj.ai.Domain
+import org.opalj.fpcf.MultiResult
+import org.opalj.fpcf.PropertyComputationResult
+import org.opalj.fpcf.PropertyKind
+import org.opalj.fpcf.PropertyStore
+import org.opalj.value.KnownTypedValue
+import org.opalj.br.Method
+import org.opalj.br.analyses.SomeProject
 import org.opalj.ai.AIResult
+import org.opalj.ai.Domain
 import org.opalj.ai.domain.RecordDefUse
-import org.opalj.ai.fpcf.properties.BaseAIResult
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.ai.fpcf.properties.AnAIResult
+import org.opalj.ai.fpcf.properties.BaseAIResult
 import org.opalj.tac.{TACAI ⇒ TACAIFactory}
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.TheTACAI
@@ -34,6 +34,8 @@ import org.opalj.tac.fpcf.properties.TheTACAI
  * @author Michael Eichberg
  */
 class L0TACAIAnalysis private[analyses] (val project: SomeProject) extends FPCFAnalysis {
+
+    final val aiFactory = project.get(AIDomainFactoryKey)
 
     def computeTAC(entity: Entity): PropertyComputationResult = {
         entity match {
@@ -49,10 +51,7 @@ class L0TACAIAnalysis private[analyses] (val project: SomeProject) extends FPCFA
      * Computes the TAC for the given method.
      */
     private[analyses] def computeTAC(m: Method): PropertyComputationResult = {
-        val aiResult =
-            BaseAIResult.
-                computeAIResult(project, m).
-                asInstanceOf[AIResult { val domain: Domain with RecordDefUse }]
+        val aiResult = aiFactory(m).asInstanceOf[AIResult { val domain: Domain with RecordDefUse }]
         val aiResultProperty = AnAIResult(aiResult)
         val taCode = TACAIFactory(m, p.classHierarchy, aiResult)(Nil)
         val tacaiProperty = TheTACAI(
