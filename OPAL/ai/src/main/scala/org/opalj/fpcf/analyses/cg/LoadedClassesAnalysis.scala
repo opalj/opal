@@ -6,6 +6,7 @@ package cg
 
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
+import org.opalj.br.Method
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
@@ -13,13 +14,17 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.cg.properties.CallersProperty
 import org.opalj.fpcf.cg.properties.LoadedClasses
+import org.opalj.fpcf.cg.properties.LoadedClassesFakeProperty
+import org.opalj.fpcf.cg.properties.LoadedClassesFakePropertyFinal
+import org.opalj.fpcf.cg.properties.LoadedClassesFakePropertyNonFinal
 import org.opalj.fpcf.cg.properties.NoCallers
 import org.opalj.fpcf.cg.properties.OnlyVMLevelCallers
 import org.opalj.tac.Assignment
 import org.opalj.tac.ExprStmt
 import org.opalj.tac.GetStatic
 import org.opalj.tac.PutStatic
-import org.opalj.tac.SimpleTACAIKey
+import org.opalj.tac.Stmt
+import org.opalj.tac.fpcf.properties.TACAI
 
 /**
  * Computes the set of classes that are being loaded by the VM during the execution of the
@@ -32,26 +37,7 @@ import org.opalj.tac.SimpleTACAIKey
 class LoadedClassesAnalysis(
         val project: SomeProject
 ) extends FPCFAnalysis {
-    private val tacaiProvider = project.get(SimpleTACAIKey)
     private val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
-
-    /**
-     * Each time a method gets reachable in the computation of the call graph
-     * (callers are added/it is an entry point [[CallersProperty]]) the declaring class gets loaded
-     * (if not already done) by the VM. Furthermore, access to static fields yields the VM to load
-     * a class. So for a new reachable method, we further check for such operations.
-     * For newly loaded classes, the analysis triggers the computation of the call graph properties
-     * ([[org.opalj.fpcf.cg.properties.StandardInvokeCallees]], [[CallersProperty]]) for the static
-     * initializer.
-     *
-     */
-    def doAnalyze(project: SomeProject): PropertyComputationResult = {
-
-        PartialResult[SomeProject, LoadedClasses](project, LoadedClasses.key, {
-            case EPK(p, _) ⇒ Some(IntermediateESimpleP(p, new LoadedClasses(UIDSet.empty)))
-            case _         ⇒ None
-        })
-    }
 
     /**
      * If the method in `callersOfMethod` has no callers ([[NoCallers]]), it is not reachable, and
@@ -84,49 +70,86 @@ class LoadedClassesAnalysis(
                 throw new IllegalStateException("illegal immediate result for callers")
 
             case _: EPS[_, _] ⇒
-                // the method has callers. we have to analyze it
-                val (newCLInits, newLoadedClasses) = handleNewReachableMethod(callersOfMethod.e)
+                if (!declaredMethod.hasSingleDefinedMethod)
+                    return NoResult;
 
-                if (newLoadedClasses.nonEmpty) {
-                    val lcResult = PartialResult[SomeProject, LoadedClasses](project, LoadedClasses.key, {
-                        case IntermediateESimpleP(p, ub) ⇒
-                            val newUb = ub.classes ++ newLoadedClasses
-                            // due to monotonicity:
-                            // the size check sufficiently replaces the subset check
-                            if (newUb.size > ub.classes.size)
-                                Some(IntermediateESimpleP(p, new LoadedClasses(newUb)))
-                            else
-                                None
+                val method = declaredMethod.definedMethod
 
-                        case EPK(p, _) ⇒
-                            Some(
-                                IntermediateESimpleP(p, new LoadedClasses(newLoadedClasses))
-                            )
+                if (declaredMethod.declaringClassType ne method.classFile.thisType)
+                    return NoResult;
 
-                        case r ⇒
-                            throw new IllegalStateException(s"unexpected previous result $r")
-
-                    })
-
-                    val callersResult = newCLInits map { clInit ⇒
-                        PartialResult[DeclaredMethod, CallersProperty](clInit, CallersProperty.key, {
-                            case IntermediateESimpleP(_, ub) if !ub.hasCallersWithUnknownContext ⇒
-                                Some(IntermediateESimpleP(clInit, ub.updatedWithVMLevelCall()))
-
-                            case _: IntermediateESimpleP[_, _] ⇒
-                                None
-
-                            case _: EPK[_, _] ⇒
-                                Some(IntermediateESimpleP(clInit, OnlyVMLevelCallers))
-
-                            case r ⇒
-                                throw new IllegalStateException(s"unexpected previous result $r")
-                        })
-                    }
-                    Results(Seq(lcResult) ++ callersResult)
+                val tacaiEP = propertyStore(method, TACAI.key)
+                if (tacaiEP.hasProperty) {
+                    processMethod(declaredMethod, tacaiEP.asEPS)
                 } else {
-                    NoResult
+                    SimplePIntermediateResult(declaredMethod, LoadedClassesFakePropertyNonFinal, Some(tacaiEP), continuation(declaredMethod))
                 }
+        }
+    }
+
+    private[this] def processMethod(
+        declaredMethod: DeclaredMethod, tacaiEP: EPS[Method, TACAI]
+    ): PropertyComputationResult = {
+        assert(tacaiEP.hasProperty)
+
+        // the method has callers. we have to analyze it
+        val (newCLInits, newLoadedClasses) =
+            handleNewReachableMethod(declaredMethod, tacaiEP.ub.tac.get.stmts)
+
+        val fakeResult =
+            if (tacaiEP.isFinal)
+                Result(declaredMethod, LoadedClassesFakePropertyFinal)
+            else
+                SimplePIntermediateResult(declaredMethod, LoadedClassesFakePropertyNonFinal, Some(tacaiEP), continuation(declaredMethod))
+
+        if (newLoadedClasses.nonEmpty) {
+            val lcResult = PartialResult[SomeProject, LoadedClasses](project, LoadedClasses.key, {
+                case IntermediateESimpleP(p, ub) ⇒
+                    val newUb = ub.classes ++ newLoadedClasses
+                    // due to monotonicity:
+                    // the size check sufficiently replaces the subset check
+                    if (newUb.size > ub.classes.size)
+                        Some(IntermediateESimpleP(p, new LoadedClasses(newUb)))
+                    else
+                        None
+
+                case EPK(p, _) ⇒
+                    Some(
+                        IntermediateESimpleP(p, new LoadedClasses(newLoadedClasses))
+                    )
+
+                case r ⇒
+                    throw new IllegalStateException(s"unexpected previous result $r")
+
+            })
+
+            val callersResult = newCLInits.iterator map { clInit ⇒
+                PartialResult[DeclaredMethod, CallersProperty](clInit, CallersProperty.key, {
+                    case IntermediateESimpleP(_, ub) if !ub.hasCallersWithUnknownContext ⇒
+                        Some(IntermediateESimpleP(clInit, ub.updatedWithVMLevelCall()))
+
+                    case _: IntermediateESimpleP[_, _] ⇒
+                        None
+
+                    case _: EPK[_, _] ⇒
+                        Some(IntermediateESimpleP(clInit, OnlyVMLevelCallers))
+
+                    case r ⇒
+                        throw new IllegalStateException(s"unexpected previous result $r")
+                })
+            }
+            Results(Iterator(lcResult) ++ callersResult ++ Iterator(fakeResult))
+        } else if (tacaiEP.isRefinable) {
+            fakeResult
+        } else {
+            NoResult
+        }
+    }
+
+    def continuation(method: DeclaredMethod)(eps: SomeEPS): PropertyComputationResult = {
+        eps match {
+            case ESimplePS(_, _: TACAI, _) ⇒
+                processMethod(method, eps.asInstanceOf[EPS[Method, TACAI]])
         }
     }
 
@@ -141,11 +164,8 @@ class LoadedClassesAnalysis(
      *
      */
     def handleNewReachableMethod(
-        dm: DeclaredMethod
+        dm: DeclaredMethod, stmts: Array[Stmt[V]]
     ): (Set[DeclaredMethod], UIDSet[ObjectType]) = {
-        if (!dm.hasSingleDefinedMethod)
-            return (Set.empty, UIDSet.empty)
-
         val method = dm.definedMethod
         val methodDCT = method.classFile.thisType
         assert(dm.declaringClassType eq methodDCT)
@@ -182,7 +202,7 @@ class LoadedClassesAnalysis(
         }
 
         if (method.body.isDefined) {
-            for (stmt ← tacaiProvider(method).stmts) {
+            for (stmt ← stmts) {
                 stmt match {
                     case PutStatic(_, dc, _, _, _) if isNewLoadedClass(dc) ⇒
                         loadClass(dc)
@@ -227,15 +247,12 @@ object EagerLoadedClassesAnalysis extends FPCFEagerAnalysisScheduler {
         propertyStore:         PropertyStore,
         loadedClassesAnalysis: LoadedClassesAnalysis
     ): FPCFAnalysis = {
-        propertyStore.scheduleEagerComputationsForEntities(List(project))(
-            loadedClassesAnalysis.doAnalyze
-        )
         loadedClassesAnalysis
     }
 
-    override def uses: Set[PropertyKind] = Set(LoadedClasses, CallersProperty)
+    override def uses: Set[PropertyKind] = Set(LoadedClasses, CallersProperty, TACAI)
 
-    override def derives: Set[PropertyKind] = Set(LoadedClasses, CallersProperty)
+    override def derives: Set[PropertyKind] = Set(LoadedClasses, CallersProperty, LoadedClassesFakeProperty)
 
     override def init(p: SomeProject, ps: PropertyStore): LoadedClassesAnalysis = {
         val analysis = new LoadedClassesAnalysis(p)
