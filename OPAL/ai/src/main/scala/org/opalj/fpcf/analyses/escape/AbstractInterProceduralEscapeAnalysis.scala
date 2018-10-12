@@ -150,18 +150,20 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
                 state.meetMostRestrictive(AtMost(EscapeInCallee))
             }
             for (callee ← callees.directCallees(pc)) {
-                val method = callee.definedMethod
                 val fps = context.virtualFormalParameters(callee)
 
                 // there is a call to a method out of the analysis' scope
-                if (fps == null)
+                if (fps == null) {
                     state.meetMostRestrictive(AtMost(EscapeInCallee))
-                else if (project.isSignaturePolymorphic(method.classFile.thisType, method))
+                } else if (project.isSignaturePolymorphic(
+                    callee.definedMethod.classFile.thisType,
+                    callee.definedMethod
+                )) {
                     // IMPROVE: Signature polymorphic methods like invoke(Exact) do not escape their
                     // parameters directly and indirect effects are handled by the indirect callees
                     // code below
                     state.meetMostRestrictive(AtMost(EscapeInCallee))
-                else {
+                } else {
                     val fp = fps(parameter)
                     if (fp != context.entity)
                         handleEscapeState(fp, hasAssignment)
