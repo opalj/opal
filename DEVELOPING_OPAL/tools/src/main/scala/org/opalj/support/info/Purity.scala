@@ -8,9 +8,9 @@ import java.io.FileOutputStream
 import java.io.PrintWriter
 import java.util.Calendar
 
-import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory
 import com.typesafe.config.Config
+
 import org.opalj.ai.domain
 import org.opalj.ai.Domain
 import org.opalj.ai.common.SimpleAIKey
@@ -72,8 +72,13 @@ import org.opalj.fpcf.properties.SideEffectFree
 import org.opalj.fpcf.properties.CompileTimePure
 import org.opalj.tac.DefaultTACAIKey
 import org.opalj.tac.fpcf.analyses.LazyL0TACAIAnalysis
+import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
+import org.opalj.fpcf.PropertyKind
+import org.opalj.fpcf.PropertyMetaInformation
+import org.opalj.fpcf.cg.properties.CallersProperty
+import org.opalj.br.DeclaredMethod
 
 /**
  * Executes a purity analysis (L2 by default) along with necessary supporting analysis.
@@ -100,30 +105,31 @@ object Purity {
             "Example:\n\tjava …PurityAnalysisEvaluation -JDK -individual -closedWorld"
     }
 
+    val cgAnalyses = Set[ComputationSpecification](
+        EagerRTACallGraphAnalysisScheduler,
+        EagerLoadedClassesAnalysis,
+        EagerFinalizerAnalysisScheduler,
+        EagerThreadRelatedCallsAnalysis,
+        EagerSerializationRelatedCallsAnalysis,
+        EagerReflectionRelatedCallsAnalysis,
+        SystemPropertiesAnalysis
+    )
+
     val supportingAnalyses = IndexedSeq(
-        Set[ComputationSpecification](
+        Set[FPCFLazyAnalysisScheduler](
             LazyL0FieldMutabilityAnalysis,
             LazyClassImmutabilityAnalysis,
             LazyTypeImmutabilityAnalysis
         ),
-        Set[ComputationSpecification](
-            LazyL0TACAIAnalysis,
+        Set[FPCFLazyAnalysisScheduler](
             LazyL1FieldMutabilityAnalysis,
             LazyClassImmutabilityAnalysis,
             LazyTypeImmutabilityAnalysis,
-            EagerRTACallGraphAnalysisScheduler,
-            EagerLoadedClassesAnalysis,
-            EagerFinalizerAnalysisScheduler,
-            EagerThreadRelatedCallsAnalysis,
-            EagerSerializationRelatedCallsAnalysis,
-            EagerReflectionRelatedCallsAnalysis,
-            SystemPropertiesAnalysis,
             new LazyCalleesAnalysis(
                 Set(StandardInvokeCallees, SerializationRelatedCallees, ReflectionRelatedCallees)
             )
         ),
-        Set[ComputationSpecification](
-            LazyL0TACAIAnalysis,
+        Set[FPCFLazyAnalysisScheduler](
             LazyL0CompileTimeConstancyAnalysis,
             LazyStaticDataUsageAnalysis,
             LazyVirtualMethodStaticDataUsageAnalysis,
@@ -135,13 +141,6 @@ object Purity {
             LazyL1FieldMutabilityAnalysis,
             LazyClassImmutabilityAnalysis,
             LazyTypeImmutabilityAnalysis,
-            EagerRTACallGraphAnalysisScheduler,
-            EagerLoadedClassesAnalysis,
-            EagerFinalizerAnalysisScheduler,
-            EagerThreadRelatedCallsAnalysis,
-            EagerSerializationRelatedCallsAnalysis,
-            EagerReflectionRelatedCallsAnalysis,
-            SystemPropertiesAnalysis,
             new LazyCalleesAnalysis(
                 Set(StandardInvokeCallees, SerializationRelatedCallees, ReflectionRelatedCallees)
             )
@@ -152,7 +151,7 @@ object Purity {
         cp:                    File,
         projectDir:            Option[String],
         libDir:                Option[String],
-        analysis:              FPCFLazyAnalysisScheduler { type InitializationData = Null },
+        analysis:              FPCFLazyAnalysisScheduler,
         domain:                Class[_ <: Domain with RecordDefUse],
         rater:                 DomainSpecificRater,
         withoutJDK:            Boolean,
@@ -184,11 +183,19 @@ object Purity {
         var propertyStoreTime: Seconds = Seconds.None
         var analysisTime: Seconds = Seconds.None
 
-        val baseConfig = ConfigFactory.load()
-        implicit val config: Config = if (closedWorldAssumption) baseConfig.withValue(
+        val baseConfig = if (closedWorldAssumption) BaseConfig.withValue(
             "org.opalj.br.analyses.cg.ClassExtensibilityKey.analysis",
             ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.ClassHierarchyIsNotExtensible")
         )
+        else BaseConfig
+
+        implicit val config: Config = if (cp eq JRELibraryFolder) baseConfig.withValue(
+            "org.opalj.br.analyses.cg.InitialEntryPointsKey.analysis",
+            ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.LibraryEntryPointsFinder")
+        ).withValue(
+                "org.opalj.br.analyses.cg.InitialInstantiatedTypesKey.analysis",
+                ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.LibraryInstantiatedTypesFinder")
+            )
         else baseConfig
 
         val project = time {
@@ -240,12 +247,35 @@ object Purity {
         val declaredMethods = project.get(DeclaredMethodsKey)
         val projMethods: Seq[DefinedMethod] =
             for (cf ← project.allProjectClassFiles; m ← cf.methodsWithBody) yield declaredMethods(m)
+        var analyzedMethods: Seq[DeclaredMethod] = null
 
         time {
             val manager = project.get(FPCFAnalysesManagerKey)
-            manager.runAll(support + analysis)
 
-            projMethods.foreach { dm ⇒
+            manager.runAll(cgAnalyses + LazyL0TACAIAnalysis)
+
+            val reachableMethods = propertyStore.entities(CallersProperty.key).map(
+                _.e.asInstanceOf[DeclaredMethod]
+            ).toSet
+
+            analyzedMethods = projMethods.filter(reachableMethods.contains)
+
+            val analyses = support + analysis
+
+            val pks: Set[PropertyKind] = analyses.flatMap(
+                _.derives.map(_.asInstanceOf[PropertyMetaInformation].key)
+            )
+
+            propertyStore.setupPhase(pks + TACAI.key)
+
+            val initData =
+                analyses.map((a: ComputationSpecification) ⇒ a → a.init(propertyStore)).toMap
+
+            analyses.foreach { a ⇒
+                a.startLazily(project, propertyStore, initData(a).asInstanceOf[a.InitializationData])
+            }
+
+            analyzedMethods.foreach { dm ⇒
                 propertyStore.force(dm, fpcf.properties.Purity.key)
             }
 
@@ -268,7 +298,7 @@ object Purity {
             }
         }
 
-        val purityEs = propertyStore(projMethods, fpcf.properties.Purity.key).filter {
+        val purityEs = propertyStore(analyzedMethods, fpcf.properties.Purity.key).filter {
             case FinalEP(_, p) ⇒ p ne ImpureByLackOfInformation
             case ep            ⇒ throw new RuntimeException(s"non final purity result $ep")
         }

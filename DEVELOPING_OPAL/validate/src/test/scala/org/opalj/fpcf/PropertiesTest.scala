@@ -7,6 +7,9 @@ import org.scalatest.FunSpec
 import java.net.URL
 import java.io.File
 
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigValueFactory
+
 import org.opalj.ai.common.DefinitionSite
 import org.opalj.ai.common.DefinitionSitesKey
 import org.opalj.br.DefinedMethod
@@ -68,11 +71,20 @@ abstract class PropertiesTest extends FunSpec with Matchers {
 
         val libraryClassFiles = (if (withRT) ClassFiles(RTJar) else List()) ++ propertiesClassFiles
 
+        implicit val config: Config = BaseConfig.withValue(
+            "org.opalj.br.analyses.cg.InitialEntryPointsKey.analysis",
+            ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.LibraryEntryPointsFinder")
+        ).withValue(
+            "org.opalj.br.analyses.cg.InitialInstantiatedTypesKey.analysis",
+            ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.LibraryInstantiatedTypesFinder")
+        )
+
         info(s"the test fixture project consists of ${projectClassFiles.size} class files")
         Project(
             projectClassFiles,
             libraryClassFiles,
-            libraryClassFilesAreInterfacesOnly = false
+            libraryClassFilesAreInterfacesOnly = false,
+            virtualClassFiles = Traversable.empty
         )
     }
 
