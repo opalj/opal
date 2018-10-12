@@ -161,8 +161,11 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
                     // parameters directly and indirect effects are handled by the indirect callees
                     // code below
                     state.meetMostRestrictive(AtMost(EscapeInCallee))
-                else
-                    handleEscapeState(fps(parameter), hasAssignment)
+                else {
+                    val fp = fps(parameter)
+                    if (fp != context.entity)
+                        handleEscapeState(fp, hasAssignment)
+                }
             }
 
             /* 
@@ -183,8 +186,11 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
                 // there is a call to a method out of the analysis' scope
                 if (fps == null)
                     state.meetMostRestrictive(AtMost(EscapeInCallee))
-                else
-                    handleEscapeState(fps(i), hasAssignment)
+                else {
+                    val fp = fps(i)
+                    if (fp != context.entity)
+                        handleEscapeState(fp, hasAssignment)
+                }
             }
 
         }

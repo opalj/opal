@@ -119,6 +119,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
         var lbPurity: Purity
         var ubPurity: Purity
         val method: Method
+        val definedMethod: DeclaredMethod
         val declClass: ObjectType
         var pcToIndex: Array[Int]
         var code: Array[Stmt[V]]
@@ -597,10 +598,11 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
                                 val call = getCall(state.code(index))
                                 isDomainSpecificCall(call, call.receiverOption) ||
                                     callees.forall { callee ⇒
-                                        checkPurityOfMethod(
-                                            callee,
-                                            call.receiverOption.orNull +: call.params
-                                        )
+                                        (callee eq state.definedMethod) ||
+                                            checkPurityOfMethod(
+                                                callee,
+                                                call.receiverOption.orNull +: call.params
+                                            )
                                     }
                             }
                     } &&
@@ -611,12 +613,13 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
                                 true // call will not be executed
                             else
                                 callees.forall { callee ⇒
-                                    checkPurityOfMethod(
-                                        callee,
-                                        p.indirectCallParameters(pc, callee).map { paramO ⇒
-                                            paramO.map(uVarForDefSites(_, state.pcToIndex)).orNull
-                                        }
-                                    )
+                                    (callee eq state.definedMethod) ||
+                                        checkPurityOfMethod(
+                                            callee,
+                                            p.indirectCallParameters(pc, callee).map { paramO ⇒
+                                                paramO.map(uVarForDefSites(_, state.pcToIndex)).orNull
+                                            }
+                                        )
                                 }
                     }
 
