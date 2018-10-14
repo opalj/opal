@@ -10,7 +10,7 @@ import org.opalj.value.KnownTypedValue
 trait IFDSPropertyMetaInformation[DataFlowFact] extends PropertyMetaInformation
 
 abstract class IFDSProperty[DataFlowFact] extends Property
-        with IFDSPropertyMetaInformation[DataFlowFact] {
+    with IFDSPropertyMetaInformation[DataFlowFact] {
 
     /** The type of the TAC domain. */
     type V = DUVar[KnownTypedValue]

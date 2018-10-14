@@ -27,6 +27,8 @@ object Dependencies {
         val jacksonDF = "2.9.7"
         val chocosolver = "4.0.9"
         val fastutil = "8.2.2"
+
+        val reactiveasync = "0.2.1-SNAPSHOT"
     }
 
     object library {
@@ -55,6 +57,9 @@ object Dependencies {
         val jacksonDF = "com.fasterxml.jackson.dataformat" % "jackson-dataformat-csv" % version.jacksonDF withJavadoc ()
         val chocosolver = "org.choco-solver" % "choco-solver" % version.chocosolver withSources () withJavadoc ()
         val fastutil = "it.unimi.dsi" % "fastutil" % version.fastutil withSources () withJavadoc ()
+
+        // other
+        val reactiveasync = "com.phaller" % "reactive-async_2.12" % version.reactiveasync
     }
 
     import library._
@@ -62,8 +67,8 @@ object Dependencies {
     val testlibs: Seq[ModuleID] = Seq(junit, scalatest, scalacheck)
 
     def common(scalaVersion: String) = Seq(reflect(scalaVersion), scalaxml, playjson, ficus, fastutil)
-    
-    val si = Seq()
+
+    val si = Seq(reactiveasync)
     val bi = Seq(commonstext)
     val br = Seq(scalaparsercombinators, scalaxml)
     val developerTools = Seq(scalafx, controlsfx, txtmark, jacksonDF, chocosolver)
