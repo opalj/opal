@@ -56,13 +56,12 @@ class ConfiguredPurity(
                 }.map(declaredMethods(_))
             } else {
                 val classType = ObjectType(className)
-                val cfo = project.classFile(classType)
 
                 mdo match {
                     case Some(md) ⇒ Seq(
                         declaredMethods(classType, classType.packageName, classType, methodName, md)
                     )
-                    case None ⇒ cfo.map { cf ⇒
+                    case None ⇒ project.classFile(classType).map { cf ⇒
                         cf.findMethod(methodName).map(declaredMethods(_)).toIterable
                     }.getOrElse(Seq.empty)
 

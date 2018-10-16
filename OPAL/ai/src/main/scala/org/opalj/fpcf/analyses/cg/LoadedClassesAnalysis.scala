@@ -78,6 +78,9 @@ class LoadedClassesAnalysis(
                 if (declaredMethod.declaringClassType ne method.classFile.thisType)
                     return NoResult;
 
+                if (method.body.isEmpty)
+                    return NoResult; // we don't analyze native methods
+
                 val tacaiEP = propertyStore(method, TACAI.key)
                 if (tacaiEP.hasProperty) {
                     processMethod(declaredMethod, tacaiEP.asEPS)

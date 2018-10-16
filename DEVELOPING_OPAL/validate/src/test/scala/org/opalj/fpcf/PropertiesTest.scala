@@ -75,9 +75,9 @@ abstract class PropertiesTest extends FunSpec with Matchers {
             "org.opalj.br.analyses.cg.InitialEntryPointsKey.analysis",
             ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.LibraryEntryPointsFinder")
         ).withValue(
-            "org.opalj.br.analyses.cg.InitialInstantiatedTypesKey.analysis",
-            ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.LibraryInstantiatedTypesFinder")
-        )
+                "org.opalj.br.analyses.cg.InitialInstantiatedTypesKey.analysis",
+                ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.LibraryInstantiatedTypesFinder")
+            )
 
         info(s"the test fixture project consists of ${projectClassFiles.size} class files")
         Project(
