@@ -71,7 +71,7 @@ object BaseAIResult extends BaseAIResultPropertyMetaInformation {
                     // we may still have requirements on the domain that we are going to use...
                     val p = ps.context(classOf[SomeProject])
                     // IMPROVE Find an efficient solution that does not require recurring lookups.
-                    AnAIResult( p.get(AIDomainFactoryKey)(m))
+                    AnAIResult(p.get(AIDomainFactoryKey)(m))
             }
         }: BaseAIResult,
         // cycle resolution strategy...

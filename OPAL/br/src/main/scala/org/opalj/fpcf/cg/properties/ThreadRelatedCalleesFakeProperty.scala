@@ -15,7 +15,7 @@ sealed trait ThreadRelatedCalleesFakePropertyMetaInformation extends PropertyMet
  * @author Florian Kuebler
  */
 sealed abstract class ThreadRelatedCalleesFakeProperty
-        extends Property with OrderedProperty with ThreadRelatedCalleesFakePropertyMetaInformation {
+    extends Property with OrderedProperty with ThreadRelatedCalleesFakePropertyMetaInformation {
 
     override def key: PropertyKey[ThreadRelatedCalleesFakeProperty] = ThreadRelatedCalleesFakeProperty.key
 }

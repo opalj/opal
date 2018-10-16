@@ -122,25 +122,25 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
             )
         }
 
-        private[cg]def addNewLoadedClasses(newLoadedClasses: TraversableOnce[ObjectType]): Unit = {
+        private[cg] def addNewLoadedClasses(newLoadedClasses: TraversableOnce[ObjectType]): Unit = {
             _newLoadedClasses ++= newLoadedClasses
         }
 
-        private[cg]def addNewInstantiatedTypes(newInstantiatedTypes: TraversableOnce[ObjectType]): Unit = {
+        private[cg] def addNewInstantiatedTypes(newInstantiatedTypes: TraversableOnce[ObjectType]): Unit = {
             _newInstantiatedTypes ++= newInstantiatedTypes
         }
 
-        private[cg]def newLoadedClasses: UIDSet[ObjectType] = _newLoadedClasses
+        private[cg] def newLoadedClasses: UIDSet[ObjectType] = _newLoadedClasses
 
-        private[cg]def newInstantiatedTypes: UIDSet[ObjectType] = _newInstantiatedTypes
+        private[cg] def newInstantiatedTypes: UIDSet[ObjectType] = _newInstantiatedTypes
 
-        private[cg]def isTACDefined: Boolean = _tacode.isDefined
+        private[cg] def isTACDefined: Boolean = _tacode.isDefined
 
-        private[cg]def tacode: TACode[TACMethodParameter, V] = _tacode.get
+        private[cg] def tacode: TACode[TACMethodParameter, V] = _tacode.get
 
-        private[cg]def removeTACDependee(): Unit = _tacode = None
+        private[cg] def removeTACDependee(): Unit = _tacode = None
 
-        private[cg]def addTACDependee(ep: EOptionP[Method, TACAI]): Unit = {
+        private[cg] def addTACDependee(ep: EOptionP[Method, TACAI]): Unit = {
             assert(_tacaiDependee.isEmpty)
             assert(ep.isRefinable)
             _tacaiDependee = Some(ep)
@@ -149,15 +149,15 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
             }
         }
 
-        private[cg]def hasTACDependee: Boolean = { _tacaiDependee.isDefined }
+        private[cg] def hasTACDependee: Boolean = { _tacaiDependee.isDefined }
 
-        private[cg]def tacaiDependee: Option[EOptionP[Method, TACAI]] = _tacaiDependee
+        private[cg] def tacaiDependee: Option[EOptionP[Method, TACAI]] = _tacaiDependee
 
-        private[cg]def removeSystemPropertiesDependee(): Unit = {
+        private[cg] def removeSystemPropertiesDependee(): Unit = {
             _systemPropertiesDependee = None
         }
 
-        private[cg]def addSystemPropertiesDependee(ep: EOptionP[SomeProject, SystemProperties]): Unit = {
+        private[cg] def addSystemPropertiesDependee(ep: EOptionP[SomeProject, SystemProperties]): Unit = {
             assert(_systemPropertiesDependee.isEmpty)
             assert(ep.isRefinable)
             _systemPropertiesDependee = Some(ep)
@@ -166,19 +166,19 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
             }
         }
 
-        private[cg]def systemPropertiesDependee: Option[EOptionP[SomeProject, SystemProperties]] = {
+        private[cg] def systemPropertiesDependee: Option[EOptionP[SomeProject, SystemProperties]] = {
             _systemPropertiesDependee
         }
 
-        private[cg]def hasSystemPropertiesDependee: Boolean = {
+        private[cg] def hasSystemPropertiesDependee: Boolean = {
             _systemPropertiesDependee.isDefined
         }
 
-        private[cg]def systemProperties: Map[String, Set[String]] = _systemProperties.get
+        private[cg] def systemProperties: Map[String, Set[String]] = _systemProperties.get
 
-        private[cg]def hasSystemProperties: Boolean = _systemProperties.isDefined
+        private[cg] def hasSystemProperties: Boolean = _systemProperties.isDefined
 
-        private[cg]def hasOpenDependee: Boolean = {
+        private[cg] def hasOpenDependee: Boolean = {
             hasTACDependee || hasSystemPropertiesDependee
         }
     }

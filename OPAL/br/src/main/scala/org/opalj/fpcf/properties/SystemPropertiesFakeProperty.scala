@@ -18,7 +18,7 @@ sealed trait SystemPropertiesFakePropertyMetaInformation extends PropertyMetaInf
  * @author Florian Kuebler
  */
 sealed abstract class SystemPropertiesFakeProperty
-        extends Property with OrderedProperty with SystemPropertiesFakePropertyMetaInformation {
+    extends Property with OrderedProperty with SystemPropertiesFakePropertyMetaInformation {
 
     override def key: PropertyKey[SystemPropertiesFakeProperty] = SystemPropertiesFakeProperty.key
 }
