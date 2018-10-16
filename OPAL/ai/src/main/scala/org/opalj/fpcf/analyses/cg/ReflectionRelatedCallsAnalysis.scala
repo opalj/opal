@@ -355,13 +355,13 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
     )(implicit state: State): Unit = expr.astID match {
         case VirtualFunctionCall.ASTID ⇒
             expr.asVirtualFunctionCall match {
-                case VirtualFunctionCall(_, ObjectType.Class, _, "newInstance", _, rcvr, params) ⇒
+                case VirtualFunctionCall(_, ObjectType.Class, _, "newInstance", _, rcvr, _) ⇒
                     handleNewInstance(
                         caller,
                         pc,
                         rcvr,
                         Some(MethodDescriptor.NoArgsAndReturnVoid),
-                        getParamsFromVararg(params.head)
+                        Seq.empty // invokes default constructor, i.e. no arguments
                     )
                 case VirtualFunctionCall(_, ConstructorT, _, "newInstance", _, rcvr, params) ⇒
                     handleConstructorNewInstance(caller, pc, rcvr, params.head)
@@ -465,7 +465,8 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         state.addNewInstantiatedTypes(newInstantiatedTypes)
 
         implicit val stmts: Array[Stmt[V]] = state.tacode.stmts
-        val actualParams = params.map(persistentUVar)
+        // We don't have access to the receiver here!
+        val actualParams = None +: params.map(persistentUVar)
 
         for {
             descriptor ← descriptor
