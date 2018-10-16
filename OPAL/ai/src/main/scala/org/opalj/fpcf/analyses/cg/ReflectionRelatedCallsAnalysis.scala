@@ -83,6 +83,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
             val instantiatedTypesUB:                     UIDSet[ObjectType]                              = UIDSet.empty,
             val calleesAndCallers:                       IndirectCalleesAndCallers                       = new IndirectCalleesAndCallers(),
             val forNamePCs:                              IntTrieSet                                      = IntTrieSet.empty,
+            val invocationPCs:                           IntTrieSet                                      = IntTrieSet.empty,
             private[this] var _newLoadedClasses:         UIDSet[ObjectType]                              = UIDSet.empty,
             private[this] var _newInstantiatedTypes:     UIDSet[ObjectType]                              = UIDSet.empty,
             private[this] var _tacode:                   Option[TACode[TACMethodParameter, V]]           = None,
@@ -100,6 +101,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
             instantiatedTypesUB:      UIDSet[ObjectType]                              = this.instantiatedTypesUB,
             calleesAndCallers:        IndirectCalleesAndCallers                       = this.calleesAndCallers,
             forNamePCs:               IntTrieSet                                      = this.forNamePCs,
+            invocationPCs:            IntTrieSet                                      = this.invocationPCs,
             newLoadedClasses:         UIDSet[ObjectType]                              = _newLoadedClasses,
             newInstantiatedTypes:     UIDSet[ObjectType]                              = _newInstantiatedTypes,
             tacode:                   Option[TACode[TACMethodParameter, V]]           = _tacode,
@@ -113,6 +115,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                 instantiatedTypesUB,
                 calleesAndCallers,
                 forNamePCs,
+                invocationPCs,
                 newLoadedClasses,
                 newInstantiatedTypes,
                 tacode,
@@ -122,42 +125,43 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
             )
         }
 
-        private[cg]def addNewLoadedClasses(newLoadedClasses: TraversableOnce[ObjectType]): Unit = {
+        private[cg] def addNewLoadedClasses(newLoadedClasses: TraversableOnce[ObjectType]): Unit = {
             _newLoadedClasses ++= newLoadedClasses
         }
 
-        private[cg]def addNewInstantiatedTypes(newInstantiatedTypes: TraversableOnce[ObjectType]): Unit = {
+        private[cg] def addNewInstantiatedTypes(newInstantiatedTypes: TraversableOnce[ObjectType]): Unit = {
             _newInstantiatedTypes ++= newInstantiatedTypes
         }
 
-        private[cg]def newLoadedClasses: UIDSet[ObjectType] = _newLoadedClasses
+        private[cg] def newLoadedClasses: UIDSet[ObjectType] = _newLoadedClasses
 
-        private[cg]def newInstantiatedTypes: UIDSet[ObjectType] = _newInstantiatedTypes
+        private[cg] def newInstantiatedTypes: UIDSet[ObjectType] = _newInstantiatedTypes
 
-        private[cg]def isTACDefined: Boolean = _tacode.isDefined
+        private[cg] def isTACDefined: Boolean = _tacode.isDefined
 
-        private[cg]def tacode: TACode[TACMethodParameter, V] = _tacode.get
+        private[cg] def tacode: TACode[TACMethodParameter, V] = _tacode.get
 
-        private[cg]def removeTACDependee(): Unit = _tacode = None
+        private[cg] def removeTACDependee(): Unit = _tacaiDependee = None
 
-        private[cg]def addTACDependee(ep: EOptionP[Method, TACAI]): Unit = {
+        private[cg] def addTACDependee(ep: EOptionP[Method, TACAI]): Unit = {
             assert(_tacaiDependee.isEmpty)
-            assert(ep.isRefinable)
-            _tacaiDependee = Some(ep)
+            if (ep.isRefinable) {
+                _tacaiDependee = Some(ep)
+            }
             if (ep.hasProperty) {
                 _tacode = ep.ub.tac
             }
         }
 
-        private[cg]def hasTACDependee: Boolean = { _tacaiDependee.isDefined }
+        private[cg] def hasTACDependee: Boolean = { _tacaiDependee.isDefined }
 
-        private[cg]def tacaiDependee: Option[EOptionP[Method, TACAI]] = _tacaiDependee
+        private[cg] def tacaiDependee: Option[EOptionP[Method, TACAI]] = _tacaiDependee
 
-        private[cg]def removeSystemPropertiesDependee(): Unit = {
+        private[cg] def removeSystemPropertiesDependee(): Unit = {
             _systemPropertiesDependee = None
         }
 
-        private[cg]def addSystemPropertiesDependee(ep: EOptionP[SomeProject, SystemProperties]): Unit = {
+        private[cg] def addSystemPropertiesDependee(ep: EOptionP[SomeProject, SystemProperties]): Unit = {
             assert(_systemPropertiesDependee.isEmpty)
             assert(ep.isRefinable)
             _systemPropertiesDependee = Some(ep)
@@ -166,19 +170,19 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
             }
         }
 
-        private[cg]def systemPropertiesDependee: Option[EOptionP[SomeProject, SystemProperties]] = {
+        private[cg] def systemPropertiesDependee: Option[EOptionP[SomeProject, SystemProperties]] = {
             _systemPropertiesDependee
         }
 
-        private[cg]def hasSystemPropertiesDependee: Boolean = {
+        private[cg] def hasSystemPropertiesDependee: Boolean = {
             _systemPropertiesDependee.isDefined
         }
 
-        private[cg]def systemProperties: Map[String, Set[String]] = _systemProperties.get
+        private[cg] def systemProperties: Map[String, Set[String]] = _systemProperties.get
 
-        private[cg]def hasSystemProperties: Boolean = _systemProperties.isDefined
+        private[cg] def hasSystemProperties: Boolean = _systemProperties.isDefined
 
-        private[cg]def hasOpenDependee: Boolean = {
+        private[cg] def hasOpenDependee: Boolean = {
             hasTACDependee || hasSystemPropertiesDependee
         }
     }
@@ -219,8 +223,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
             // happens in particular for native methods
             return NoResult;
 
-        // todo use relevantPCs later on!
-        var relevantPCs = IntTrieSet.empty
+        var invocationPCs = IntTrieSet.empty
         var forNamePCs = IntTrieSet.empty
         val insts = method.body.get.instructions
         var i = 0
@@ -237,14 +240,14 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                         val call = inst.asMethodInvocationInstruction
                         call.declaringClass match {
                             case ObjectType.Class ⇒
-                                if (call.name == "newInstance") relevantPCs += i
+                                if (call.name == "newInstance") invocationPCs += i
                             case ConstructorT ⇒
-                                if (call.name == "newInstance") relevantPCs += i
+                                if (call.name == "newInstance") invocationPCs += i
                             case MethodT ⇒
-                                if (call.name == "invoke") relevantPCs += i
+                                if (call.name == "invoke") invocationPCs += i
                             case ObjectType.MethodHandle ⇒
                                 if (call.name.startsWith("invoke"))
-                                    relevantPCs += i
+                                    invocationPCs += i
                             case _ ⇒
                         }
                     case _ ⇒
@@ -252,7 +255,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
             i += 1
         }
 
-        if (relevantPCs.isEmpty && forNamePCs.isEmpty)
+        if (invocationPCs.isEmpty && forNamePCs.isEmpty)
             return Result(declaredMethod, NoReflectionRelatedCallees);
 
         val tacEP = propertyStore(method, TACAI.key)
@@ -262,6 +265,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
             implicit val state: State = new State(
                 definedMethod,
                 forNamePCs = forNamePCs,
+                invocationPCs = invocationPCs,
                 _tacaiDependee = tacEPOpt,
                 _tacode = tacEP.ub.tac
             )
@@ -280,9 +284,6 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         assert(state.isTACDefined)
         val (loadedClassesUB, instantiatedTypesUB) = loadedClassesAndInstantiatedTypes()
 
-        val stmts = state.tacode.stmts
-        val pcToIndex = state.tacode.pcToIndex
-
         val calleesAndCallers = new IndirectCalleesAndCallers()
 
         implicit val newState: State = state.copy(
@@ -291,29 +292,29 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
             calleesAndCallers = calleesAndCallers
         )
 
+        analyzeMethod()
+
+        returnResult()
+    }
+
+    /**
+     * Analyzes all Class.forName calls and all invocations via invoke, invokeExact,
+     * invokeWithArguments and newInstance methods.
+     */
+    private[this] def analyzeMethod()(implicit state: State): Unit = {
         for {
             pc ← state.forNamePCs
-            index = pcToIndex(pc)
+            index = state.tacode.pcToIndex(pc)
             if index >= 0
-            stmt = stmts(index)
+            stmt = state.tacode.stmts(index)
         } {
             val expr = if (stmt.astID == Assignment.ASTID) stmt.asAssignment.expr
             else stmt.asExprStmt.expr
             handleForName(expr.asStaticFunctionCall.params.head)
         }
 
-        analyzeInvocations()
-
-        returnResult()
-    }
-
-    /**
-     * Analyzes all invocations via invoke, invokeExact, invokeWithArguments and newInstance
-     * methods.
-     */
-    private[this] def analyzeInvocations()(implicit state: State): Unit = {
         for {
-            pc ← state.calleesAndCallers.callees.keysIterator
+            pc ← state.invocationPCs
             index = state.tacode.pcToIndex(pc)
             if index >= 0
             stmt = state.tacode.stmts(index)
@@ -1249,15 +1250,12 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
             )
 
             // Re-analyze invocations with the new state
-            analyzeInvocations()(newState)
+            analyzeMethod()(newState)
             returnResult()(newState)
 
         case ESimplePS(_, _: TACAI, isFinal) ⇒
             state.removeTACDependee()
-
-            if (!isFinal) {
-                state.addTACDependee(eps.asInstanceOf[EPS[Method, TACAI]])
-            }
+            state.addTACDependee(eps.asInstanceOf[EPS[Method, TACAI]])
             processMethod(state)
 
     }
