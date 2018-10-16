@@ -59,10 +59,10 @@ class CodeAttributeBuilderTest extends FlatSpec {
     }
 
     def testEvaluation(
-                          codeElements:   Array[CodeElement[AnyRef]],
-                          theBRClassFile: br.ClassFile,
-                          theBRMethod:    br.Method
-                      )(f: ⇒ Unit): Unit = {
+        codeElements:   Array[CodeElement[AnyRef]],
+        theBRClassFile: br.ClassFile,
+        theBRMethod:    br.Method
+    )(f: ⇒ Unit): Unit = {
         try {
             f
         } catch {

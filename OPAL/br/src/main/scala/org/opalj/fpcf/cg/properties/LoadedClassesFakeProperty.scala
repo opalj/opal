@@ -15,7 +15,7 @@ sealed trait LoadedClassesFakePropertyMetaInformation extends PropertyMetaInform
  * @author Florian Kuebler
  */
 sealed abstract class LoadedClassesFakeProperty
-        extends Property with OrderedProperty with LoadedClassesFakePropertyMetaInformation {
+    extends Property with OrderedProperty with LoadedClassesFakePropertyMetaInformation {
 
     override def key: PropertyKey[LoadedClassesFakeProperty] = LoadedClassesFakeProperty.key
 }

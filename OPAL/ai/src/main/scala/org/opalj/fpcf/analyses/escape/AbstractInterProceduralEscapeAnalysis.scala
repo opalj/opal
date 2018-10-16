@@ -170,8 +170,8 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
                 }
             }
 
-            /* 
-             * For indirect callees, e.g. reflective calls, we only check whether any of the 
+            /*
+             * For indirect callees, e.g. reflective calls, we only check whether any of the
              * actual parameters of the indirectly called method may be the current entity.
              * Thus, we do not track arrays or fields here. This is currently sound, as we do not
              * support any array or field, and handle them conservatively.
