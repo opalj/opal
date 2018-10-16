@@ -40,7 +40,7 @@ private[cg] class CalleesAndCallers(
     private[cg] def addIncompleteCallsite(pc: Int): Unit = _incompleteCallsites += pc
 
     private[cg] def updateWithCall(
-        caller: DefinedMethod, callee: DeclaredMethod, pc: Int
+        caller: DeclaredMethod, callee: DeclaredMethod, pc: Int
     )(implicit declaredMethods: DeclaredMethods): Unit = {
         val calleeId = callee.id
         if (!_callees.contains(pc) || !_callees(pc).contains(calleeId)) {
@@ -50,7 +50,7 @@ private[cg] class CalleesAndCallers(
     }
 
     def updateWithCallOrFallback(
-        caller:             DefinedMethod,
+        caller:             DeclaredMethod,
         callee:             org.opalj.Result[Method],
         pc:                 Int,
         callerPackage:      String,
@@ -74,7 +74,7 @@ private[cg] class CalleesAndCallers(
     }
 
     private[this] def createPartialResultForCaller(
-        caller: DefinedMethod, callee: DeclaredMethod, pc: Int
+        caller: DeclaredMethod, callee: DeclaredMethod, pc: Int
     )(implicit declaredMethods: DeclaredMethods): PartialResult[DeclaredMethod, CallersProperty] = {
         PartialResult[DeclaredMethod, CallersProperty](callee, CallersProperty.key, {
             case IntermediateESimpleP(_, ub) ⇒
@@ -106,7 +106,7 @@ private[cg] class IndirectCalleesAndCallers(
         _parameters
 
     private[cg] override def updateWithCall(
-        caller: DefinedMethod, callee: DeclaredMethod, pc: Int
+        caller: DeclaredMethod, callee: DeclaredMethod, pc: Int
     )(implicit declaredMethods: DeclaredMethods): Unit = {
         throw new UnsupportedOperationException("Use updateWithIndirectCall instead!")
     }

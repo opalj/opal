@@ -4,6 +4,13 @@ package fpcf
 package analyses
 package cg
 
+import scala.language.existentials
+
+import scala.collection.immutable.IntMap
+
+import net.ceedubs.ficus.Ficus._
+import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
@@ -13,9 +20,11 @@ import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.InitialEntryPointsKey
+import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
 import org.opalj.br.analyses.cg.IsOverridableMethodKey
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.UIDSet
+import org.opalj.value.KnownTypedValue
 import org.opalj.fpcf.cg.properties.CallersProperty
 import org.opalj.fpcf.cg.properties.InstantiatedTypes
 import org.opalj.fpcf.cg.properties.NoCallers
@@ -44,11 +53,7 @@ import org.opalj.tac.VirtualFunctionCallStatement
 import org.opalj.tac.VirtualMethodCall
 import org.opalj.tac.fpcf.properties.TACAI
 
-import org.opalj.value.KnownTypedValue
-import scala.collection.immutable.IntMap
-import scala.language.existentials
-
-import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
+import org.opalj.fpcf.cg.properties.LoadedClasses
 
 class RTAState private (
         private[cg] val method:                       DefinedMethod,
@@ -245,8 +250,11 @@ class RTACallGraphAnalysis private[analyses] (
         if (method.classFile.thisType != declaredMethod.declaringClassType)
             return NoResult;
 
+        if (method.isNative)
+            return handleNativeMethod(declaredMethod, method);
+
         if (method.body.isEmpty)
-            // happens in particular for native methods
+            // happens in particular for native methods TODO does it happen for non-native methods?
             return NoResult;
 
         val tacEP = propertyStore(method, TACAI.key)
@@ -272,16 +280,11 @@ class RTACallGraphAnalysis private[analyses] (
         val tac = state.tac().get
 
         // the set of types that are definitely initialized at this point in time
-        // in case the instantiatedTypes are not finally computed, we depend on them
         val instantiatedTypesEOptP = propertyStore(project, InstantiatedTypes.key)
 
         // the upper bound for type instantiations, seen so far
         // in case they are not yet computed, we use the initialTypes
-        val instantiatedTypesUB: UIDSet[ObjectType] = instantiatedTypesEOptP match {
-            case eps: EPS[_, _] ⇒ eps.ub.types
-
-            case _              ⇒ initialInstantiatedTypes
-        }
+        val instantiatedTypesUB: UIDSet[ObjectType] = getInstantiatedTypesUB(instantiatedTypesEOptP)
 
         val instantiatedTypesDependee =
             if (instantiatedTypesEOptP.isFinal) None else Some(instantiatedTypesEOptP)
@@ -316,6 +319,15 @@ class RTACallGraphAnalysis private[analyses] (
             )
 
         Results(results)
+    }
+
+    def getInstantiatedTypesUB(
+        instantiatedTypesEOptP: EOptionP[SomeProject, InstantiatedTypes]
+    ): UIDSet[ObjectType] = {
+        instantiatedTypesEOptP match {
+            case eps: EPS[_, _] ⇒ eps.ub.types
+            case _              ⇒ initialInstantiatedTypes
+        }
     }
 
     def handleStmts(
@@ -608,9 +620,98 @@ class RTACallGraphAnalysis private[analyses] (
             )
         }
     }
+
+    private case class ImplicitAction(
+            cf:                String,
+            m:                 String,
+            desc:              String,
+            instantiatedTypes: Option[Seq[String]],
+            reachableMethods:  Option[Seq[ReachableMethod]]
+    )
+    private case class ReachableMethod(cf: String, m: String, desc: String)
+
+    private val actions: Map[(String, String, String), (Option[Seq[String]], Option[Seq[ReachableMethod]])] =
+        project.config.as[Iterator[ImplicitAction]](
+            "org.opalj.fpcf.analysis.RTACallGraphAnalysis.implicitActions"
+        ).map { action ⇒
+                (action.cf, action.m, action.desc) →
+                    ((action.instantiatedTypes, action.reachableMethods))
+            }.toMap
+
+    def handleNativeMethod(
+        declaredMethod: DeclaredMethod,
+        m:              Method
+    ): PropertyComputationResult = {
+        val actionsO =
+            actions.get((m.classFile.thisType.fqn, m.name, m.descriptor.toJVMDescriptor))
+
+        if (actionsO.isEmpty)
+            return NoResult;
+
+        val (instantiatedTypesO, reachableMethodsO) = actionsO.get
+
+        val instantiatedTypesResults = instantiatedTypesO.map { fqns ⇒
+            val instantiatedTypesUB =
+                getInstantiatedTypesUB(propertyStore(project, InstantiatedTypes.key))
+
+            val newInstantiatedTypes =
+                UIDSet(fqns.map(ObjectType(_)).filterNot(instantiatedTypesUB.contains): _*)
+
+            val instantiatedTypesResultList =
+                List(RTACallGraphAnalysis.partialResultForInstantiatedTypes(
+                    p, newInstantiatedTypes, initialInstantiatedTypes
+                ))
+
+            val loadedClassesUB = propertyStore(project, LoadedClasses.key) match {
+                case eps: EPS[_, _] ⇒ eps.ub.classes
+                case _              ⇒ UIDSet.empty[ObjectType]
+            }
+
+            val newLoadedClasses = newInstantiatedTypes.filterNot(loadedClassesUB.contains)
+
+            val loadedClassesResult =
+                PartialResult[SomeProject, LoadedClasses](project, LoadedClasses.key, {
+                    case IntermediateESimpleP(p, ub) ⇒
+                        val newUb = ub.classes ++ newLoadedClasses
+                        // due to monotonicity:
+                        // the size check sufficiently replaces the subset check
+                        if (newUb.size > ub.classes.size)
+                            Some(IntermediateESimpleP(p, new LoadedClasses(newUb)))
+                        else
+                            None
+
+                    case EPK(p, _) ⇒
+                        Some(IntermediateESimpleP(p, new LoadedClasses(newLoadedClasses)))
+
+                    case r ⇒ throw new IllegalStateException(s"unexpected previous result $r")
+                })
+
+            if (newInstantiatedTypes.isEmpty) List.empty
+            else if (newLoadedClasses.isEmpty) instantiatedTypesResultList
+            else loadedClassesResult :: instantiatedTypesResultList
+        }.getOrElse(List.empty)
+
+        val callResults = reachableMethodsO.map { reachableMethods ⇒
+            val calleesAndCallers = new CalleesAndCallers()
+            for (reachableMethod ← reachableMethods.iterator) {
+                val classType = ObjectType(reachableMethod.cf)
+                val name = reachableMethod.m
+                val descriptor = MethodDescriptor(reachableMethod.desc)
+                val callee =
+                    declaredMethods(classType, classType.packageName, classType, name, descriptor)
+                calleesAndCallers.updateWithCall(declaredMethod, callee, 0)
+            }
+            val callees =
+                new StandardInvokeCalleesImplementation(calleesAndCallers.callees, IntTrieSet.empty)
+            Result(declaredMethod, callees) :: calleesAndCallers.partialResultsForCallers
+        }.getOrElse(List.empty)
+
+        Results(instantiatedTypesResults ::: callResults)
+    }
 }
 
 object RTACallGraphAnalysis {
+
     def partialResultForInstantiatedTypes(
         p:                        SomeProject,
         newInstantiatedTypes:     UIDSet[ObjectType],
@@ -642,7 +743,7 @@ object EagerRTACallGraphAnalysisScheduler extends FPCFEagerAnalysisScheduler {
     override def uses: Set[PropertyKind] = Set(InstantiatedTypes, TACAI)
 
     override def derives: Set[PropertyKind] = Set(
-        InstantiatedTypes, CallersProperty, StandardInvokeCallees
+        LoadedClasses, InstantiatedTypes, CallersProperty, StandardInvokeCallees
     )
 
     override def init(p: SomeProject, ps: PropertyStore): RTACallGraphAnalysis = {
