@@ -15,27 +15,14 @@ sealed trait ThreadRelatedCalleesFakePropertyMetaInformation extends PropertyMet
  * @author Florian Kuebler
  */
 sealed abstract class ThreadRelatedCalleesFakeProperty
-    extends Property with OrderedProperty with ThreadRelatedCalleesFakePropertyMetaInformation {
+    extends Property with ThreadRelatedCalleesFakePropertyMetaInformation {
 
     override def key: PropertyKey[ThreadRelatedCalleesFakeProperty] = ThreadRelatedCalleesFakeProperty.key
 }
 
-object ThreadRelatedCalleesFinal extends ThreadRelatedCalleesFakeProperty {
+object ThreadRelatedCalleesFinal extends ThreadRelatedCalleesFakeProperty
 
-    override def checkIsEqualOrBetterThan(
-        e: Entity, other: ThreadRelatedCalleesFakeProperty
-    ): Unit = {}
-}
-object ThreadRelatedCalleesNonFinal extends ThreadRelatedCalleesFakeProperty {
-
-    override def checkIsEqualOrBetterThan(
-        e: Entity, other: ThreadRelatedCalleesFakeProperty
-    ): Unit = {
-        if (other eq ThreadRelatedCalleesFinal) {
-            throw new IllegalArgumentException(s"$e: illegal refinement of property $other to $this")
-        }
-    }
-}
+object ThreadRelatedCalleesNonFinal extends ThreadRelatedCalleesFakeProperty
 
 object ThreadRelatedCalleesFakeProperty extends ThreadRelatedCalleesFakePropertyMetaInformation {
     final val key: PropertyKey[ThreadRelatedCalleesFakeProperty] = {

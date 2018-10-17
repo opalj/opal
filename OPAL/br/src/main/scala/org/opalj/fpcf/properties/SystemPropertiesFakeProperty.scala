@@ -1,11 +1,7 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.fpcf.properties
-
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.OrderedProperty
-import org.opalj.fpcf.Property
-import org.opalj.fpcf.PropertyKey
-import org.opalj.fpcf.PropertyMetaInformation
+package org.opalj
+package fpcf
+package properties
 
 sealed trait SystemPropertiesFakePropertyMetaInformation extends PropertyMetaInformation {
     final type Self = SystemPropertiesFakeProperty
@@ -18,27 +14,14 @@ sealed trait SystemPropertiesFakePropertyMetaInformation extends PropertyMetaInf
  * @author Florian Kuebler
  */
 sealed abstract class SystemPropertiesFakeProperty
-    extends Property with OrderedProperty with SystemPropertiesFakePropertyMetaInformation {
+    extends Property with SystemPropertiesFakePropertyMetaInformation {
 
     override def key: PropertyKey[SystemPropertiesFakeProperty] = SystemPropertiesFakeProperty.key
 }
 
-object SystemPropertiesFakePropertyFinal extends SystemPropertiesFakeProperty {
+object SystemPropertiesFakePropertyFinal extends SystemPropertiesFakeProperty
 
-    override def checkIsEqualOrBetterThan(
-        e: Entity, other: SystemPropertiesFakeProperty
-    ): Unit = {}
-}
-object SystemPropertiesFakePropertyNonFinal extends SystemPropertiesFakeProperty {
-
-    override def checkIsEqualOrBetterThan(
-        e: Entity, other: SystemPropertiesFakeProperty
-    ): Unit = {
-        if (other eq SystemPropertiesFakePropertyFinal) {
-            throw new IllegalArgumentException(s"$e: illegal refinement of property $other to $this")
-        }
-    }
-}
+object SystemPropertiesFakePropertyNonFinal extends SystemPropertiesFakeProperty
 
 object SystemPropertiesFakeProperty extends SystemPropertiesFakePropertyMetaInformation {
     final val key: PropertyKey[SystemPropertiesFakeProperty] = {

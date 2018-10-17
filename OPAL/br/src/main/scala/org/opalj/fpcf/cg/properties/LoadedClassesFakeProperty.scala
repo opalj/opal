@@ -15,27 +15,14 @@ sealed trait LoadedClassesFakePropertyMetaInformation extends PropertyMetaInform
  * @author Florian Kuebler
  */
 sealed abstract class LoadedClassesFakeProperty
-    extends Property with OrderedProperty with LoadedClassesFakePropertyMetaInformation {
+    extends Property with LoadedClassesFakePropertyMetaInformation {
 
     override def key: PropertyKey[LoadedClassesFakeProperty] = LoadedClassesFakeProperty.key
 }
 
-object LoadedClassesFakePropertyFinal extends LoadedClassesFakeProperty {
+object LoadedClassesFakePropertyFinal extends LoadedClassesFakeProperty
 
-    override def checkIsEqualOrBetterThan(
-        e: Entity, other: LoadedClassesFakeProperty
-    ): Unit = {}
-}
-object LoadedClassesFakePropertyNonFinal extends LoadedClassesFakeProperty {
-
-    override def checkIsEqualOrBetterThan(
-        e: Entity, other: LoadedClassesFakeProperty
-    ): Unit = {
-        if (other eq LoadedClassesFakePropertyFinal) {
-            throw new IllegalArgumentException(s"$e: illegal refinement of property $other to $this")
-        }
-    }
-}
+object LoadedClassesFakePropertyNonFinal extends LoadedClassesFakeProperty
 
 object LoadedClassesFakeProperty extends LoadedClassesFakePropertyMetaInformation {
     final val key: PropertyKey[LoadedClassesFakeProperty] = {
