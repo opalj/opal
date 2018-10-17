@@ -163,8 +163,9 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
 
         private[cg] def addSystemPropertiesDependee(ep: EOptionP[SomeProject, SystemProperties]): Unit = {
             assert(_systemPropertiesDependee.isEmpty)
-            assert(ep.isRefinable)
-            _systemPropertiesDependee = Some(ep)
+            if (ep.isRefinable) {
+                _systemPropertiesDependee = Some(ep)
+            }
             if (ep.hasProperty) {
                 _systemProperties = Some(ep.ub.properties)
             }
