@@ -27,7 +27,7 @@ class NonVirtualCalls(implicit hermes: HermesConfig) extends DefaultFeatureQuery
             "NVC3", /* 2 --- private method call */
             "NVC4", /* 3 --- super call on a transitive super method */
             "NVC5", /* 4 --- super call on a direct superclass' target */
-            "NVC6", /* 5 --- private method call within an interface */
+            "NVC6" /* 5 --- private method call within an interface */
         )
     }
 
@@ -68,31 +68,36 @@ class NonVirtualCalls(implicit hermes: HermesConfig) extends DefaultFeatureQuery
                 }
                 case invSpec @ INVOKESPECIAL(declaringClass, _, name, _) ⇒ {
                     if (name != "<init>") {
-                        val callTarget = project.specialCall(classFile.thisType, invSpec).value
-                        if (declType eq declaringClass) {
-                            if (callTarget.isPrivate) {
-                                val cf = project.classFile(declaringClass)
-                                if (cf.isEmpty)
-                                    -1
-                                else if (cf.get.isInterfaceDeclaration)
-                                    5
-                                else
-                                    2
-                            } else {
-                                -1
-                            }
+                        val callTargetResult = project.specialCall(classFile.thisType, invSpec)
+                        if (callTargetResult.isEmpty) {
+                            -1
                         } else {
-                            if(callTarget.classFile.thisType eq classFile.superclassType.get) {
-                                4 /* call to direct super class */
+                            val callTarget = callTargetResult.value
+                            if (declType eq declaringClass) {
+                                if (callTarget.isPrivate) {
+                                    val cf = project.classFile(declaringClass)
+                                    if (cf.isEmpty)
+                                        -1
+                                    else if (cf.get.isInterfaceDeclaration)
+                                        5 /* private interface method call */
+                                    else
+                                        2 /* private method call */
+                                } else {
+                                    -1
+                                }
                             } else {
-                                3 /* call to transitive super class */
+                                if (callTarget.classFile.thisType eq classFile.superclassType.get) {
+                                    4 /* call to direct super class */
+                                } else {
+                                    3 /* call to transitive super class */
+                                }
                             }
                         }
                     } else {
                         val superTypes = project.classHierarchy.directSupertypes(declType)
                         val isSuperConstructor = superTypes.contains(declaringClass)
                         if ((declaringClass ne ObjectType.Object) && !isSuperConstructor) {
-                            1
+                            1 /* constructor call */
                         } else -1
                     }
                 }
