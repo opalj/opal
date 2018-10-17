@@ -10,15 +10,13 @@ package cg
  */
 sealed trait InstantiatedTypesFinder {
 
-    def collectInstantiatedTypes(project: SomeProject): Traversable[ObjectType]
+    def collectInstantiatedTypes(project: SomeProject): Traversable[ObjectType] = Traversable.empty
 }
-
-//TODO we probably have to call super.collectInstantiatedTypes...
 
 trait ApplicationInstantiatedTypesFinder extends InstantiatedTypesFinder {
 
     override def collectInstantiatedTypes(project: SomeProject): Traversable[ObjectType] = {
-        Traversable(ObjectType.String)
+        Traversable(ObjectType.String) ++ super.collectInstantiatedTypes(project)
     }
 }
 
@@ -31,14 +29,14 @@ trait LibraryInstantiatedTypesFinder extends InstantiatedTypesFinder {
                     ctor.isPublic ||
                         !ctor.isPrivate && !closedPackages.isClosed(cf.thisType.packageName)
                 }
-        }.map(_.thisType).toTraversable
+        }.map(_.thisType).toTraversable ++ super.collectInstantiatedTypes(project)
     }
 }
 
 trait ConfigurationInstantiatedTypesFinder extends InstantiatedTypesFinder {
     override def collectInstantiatedTypes(project: SomeProject): Traversable[ObjectType] = {
         // todo
-        Traversable.empty
+        super.collectInstantiatedTypes(project)
     }
 }
 
