@@ -16,7 +16,7 @@ import org.opalj.fpcf.analyses.cg.EagerSerializationRelatedCallsAnalysis
 import org.opalj.fpcf.analyses.cg.EagerThreadRelatedCallsAnalysis
 import org.opalj.fpcf.analyses.cg.LazyCalleesAnalysis
 import org.opalj.fpcf.analyses.escape.EagerInterProceduralEscapeAnalysis
-//import org.opalj.fpcf.analyses.escape.EagerSimpleEscapeAnalysis
+import org.opalj.fpcf.analyses.escape.EagerSimpleEscapeAnalysis
 import org.opalj.fpcf.cg.properties.ReflectionRelatedCallees
 import org.opalj.fpcf.cg.properties.SerializationRelatedCallees
 import org.opalj.fpcf.cg.properties.StandardInvokeCallees
@@ -60,7 +60,7 @@ class EscapeAnalysisTests extends PropertiesTest {
         )
     }
 
-    /*describe("no analysis is scheduled") {
+    describe("no analysis is scheduled") {
         val as = executeAnalyses(Set.empty)
         as.propertyStore.shutdown()
         validateProperties(
@@ -80,7 +80,7 @@ class EscapeAnalysisTests extends PropertiesTest {
                 explicitFormalParametersWithAnnotations(as.project),
             Set("EscapeProperty")
         )
-    }*/
+    }
 
     describe("the org.opalj.fpcf.analyses.escape.InterProceduralEscapeAnalysis is executed") {
         val as = executeAnalyses(
