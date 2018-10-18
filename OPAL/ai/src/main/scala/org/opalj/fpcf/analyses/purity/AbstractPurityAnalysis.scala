@@ -575,6 +575,8 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
         handleCalleesUpdate(calleesEOptP)
         calleesEOptP match {
             case ESimplePS(_, p, isFinal) ⇒
+                if (!isFinal) reducePurityLB(ImpureByAnalysis)
+
                 val hasIncompleteCallSites =
                     p.incompleteCallSites.exists { pc ⇒
                         val index = state.pcToIndex(pc)
@@ -624,6 +626,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
                     }
 
             case _ ⇒
+                reducePurityLB(ImpureByAnalysis)
                 true
         }
     }

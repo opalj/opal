@@ -76,14 +76,14 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
      * @param code The code of the currently analyzed method
      */
     class State(
-            var dependees:     Set[EOptionP[Entity, Property]],
-            val method:        Method,
-            val definedMethod: DeclaredMethod,
-            val declClass:     ObjectType,
-            var pcToIndex:     Array[Int]                      = Array.empty,
-            var code:          Array[Stmt[V]]                  = Array.empty,
-            var lbPurity:      Purity                          = Pure,
-            var ubPurity:      Purity                          = Pure
+        var dependees:     Set[EOptionP[Entity, Property]],
+        val method:        Method,
+        val definedMethod: DeclaredMethod,
+        val declClass:     ObjectType,
+        var pcToIndex:     Array[Int]                      = Array.empty,
+        var code:          Array[Stmt[V]]                  = Array.empty,
+        var lbPurity:      Purity                          = Pure,
+        var ubPurity:      Purity                          = Pure
     ) extends AnalysisState
 
     override type StateType = State
@@ -228,7 +228,8 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         // Remove unnecessary dependees
         if (!state.ubPurity.isDeterministic) {
             state.dependees = state.dependees.filter { ep ⇒
-                ep.pk == Purity.key || ep.pk == VirtualMethodPurity.key
+                ep.pk == Purity.key || ep.pk == VirtualMethodPurity.key || ep.pk == Callees.key ||
+                    ep.pk == TACAI.key
             }
         }
         //IMPROVE: We could filter Purity/VPurity dependees with an lb not less than maxPurity
