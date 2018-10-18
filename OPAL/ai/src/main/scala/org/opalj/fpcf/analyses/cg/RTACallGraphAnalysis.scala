@@ -630,11 +630,11 @@ class RTACallGraphAnalysis private[analyses] (
     }
 
     private case class NativeMethodData(
-        cf:                String,
-        m:                 String,
-        desc:              String,
-        instantiatedTypes: Option[Seq[String]],
-        reachableMethods:  Option[Seq[ReachableMethod]]
+            cf:                String,
+            m:                 String,
+            desc:              String,
+            instantiatedTypes: Option[Seq[String]],
+            reachableMethods:  Option[Seq[ReachableMethod]]
     )
     private case class ReachableMethod(cf: String, m: String, desc: String)
 
@@ -726,13 +726,13 @@ class RTACallGraphAnalysis private[analyses] (
 
         val (instantiatedTypesO, reachableMethodsO) = methodDataO.get
 
-        if(reachableMethodsO.isDefined) {
+        if (reachableMethodsO.isDefined) {
             val callResults = calleesResults(reachableMethodsO.get)
-            if(instantiatedTypesO.isDefined){
+            if (instantiatedTypesO.isDefined) {
                 val typesResult = instantiatedTypesResults(instantiatedTypesO.get)
                 Results(typesResult ::: callResults)
             } else Results(callResults)
-        } else if(instantiatedTypesO.isDefined){
+        } else if (instantiatedTypesO.isDefined) {
             Results(instantiatedTypesResults(instantiatedTypesO.get))
         } else {
             NoResult
