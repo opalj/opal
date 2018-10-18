@@ -54,6 +54,7 @@ import org.opalj.tac.VirtualMethodCall
 import org.opalj.tac.fpcf.properties.TACAI
 
 import org.opalj.fpcf.cg.properties.LoadedClasses
+import org.opalj.br.ReferenceType
 
 class RTAState private (
         private[cg] val method:                       DefinedMethod,
@@ -432,21 +433,27 @@ class RTACallGraphAnalysis private[analyses] (
     }
 
     private[this] def unknownLibraryCall(
-        method:            DefinedMethod,
-        call:              Call[V],
-        packageName:       String,
-        pc:                Int,
-        calleesAndCallers: CalleesAndCallers
+        method:              DefinedMethod,
+        call:                Call[V],
+        runtimeReceiverType: ReferenceType,
+        packageName:         String,
+        pc:                  Int,
+        calleesAndCallers:   CalleesAndCallers
     ): Unit = {
         val declaringClassType = if (call.declaringClass.isArrayType)
             ObjectType.Object
         else
             call.declaringClass.asObjectType
 
+        val runtimeType = if (runtimeReceiverType.isArrayType)
+            ObjectType.Object
+        else
+            runtimeReceiverType.asObjectType
+
         val declTgt = declaredMethods.apply(
             declaringClassType,
             packageName,
-            declaringClassType,
+            runtimeType,
             call.name,
             call.descriptor
         )
@@ -466,13 +473,13 @@ class RTACallGraphAnalysis private[analyses] (
      * type bounds for the receiver.
      */
     private[this] def handleVirtualCall(
-        method:            DefinedMethod,
+        caller:            DefinedMethod,
         call:              Call[V] with VirtualCall[V],
         pc:                Int,
         calleesAndCallers: CalleesAndCallers,
         virtualCallSites:  List[(Int /*PC*/ , ObjectType, String, MethodDescriptor)]
     ): List[(Int /*PC*/ , ObjectType, String, MethodDescriptor)] = {
-        val thisType = method.definedMethod.classFile.thisType
+        val callerType = caller.definedMethod.classFile.thisType
 
         var resVirtualCallSites = virtualCallSites
         val rvs = call.receiver.asVar.value.asReferenceValue.allValues
@@ -482,12 +489,12 @@ class RTACallGraphAnalysis private[analyses] (
                 // for precise types we can directly add the call edge here
                 if (rv.isPrecise) {
                     val tgt = project.instanceCall(
-                        thisType,
+                        callerType,
                         rv.valueType.get,
                         call.name,
                         call.descriptor
                     )
-                    handleCall(method, call, pc, tgt, calleesAndCallers)
+                    handleCall(caller, call, pc, tgt, calleesAndCallers)
                 } else {
                     val typeBound =
                         project.classHierarchy.joinReferenceTypesUntilSingleUpperBound(
@@ -501,17 +508,18 @@ class RTACallGraphAnalysis private[analyses] (
 
                     if (receiverType.isArrayType) {
                         val tgt = project.instanceCall(
-                            thisType, receiverType, call.name, call.descriptor
+                            callerType, receiverType, call.name, call.descriptor
                         )
-                        handleCall(method, call, pc, tgt, calleesAndCallers)
+                        handleCall(caller, call, pc, tgt, calleesAndCallers)
                     } else {
                         val receiverObjectType = receiverType.asObjectType
                         resVirtualCallSites ::= ((pc, receiverObjectType, call.name, call.descriptor))
 
                         unknownLibraryCall(
-                            method,
+                            caller,
                             call,
-                            thisType.packageName,
+                            receiverObjectType,
+                            callerType.packageName,
                             pc,
                             calleesAndCallers
                         )
@@ -541,7 +549,7 @@ class RTACallGraphAnalysis private[analyses] (
             calleesAndCallers.updateWithCall(caller, tgtDM, pc)
         } else {
             val packageName = caller.definedMethod.classFile.thisType.packageName
-            unknownLibraryCall(caller, call, packageName, pc, calleesAndCallers)
+            unknownLibraryCall(caller, call, call.declaringClass, packageName, pc, calleesAndCallers)
         }
     }
 
@@ -622,11 +630,11 @@ class RTACallGraphAnalysis private[analyses] (
     }
 
     private case class ImplicitAction(
-            cf:                String,
-            m:                 String,
-            desc:              String,
-            instantiatedTypes: Option[Seq[String]],
-            reachableMethods:  Option[Seq[ReachableMethod]]
+        cf:                String,
+        m:                 String,
+        desc:              String,
+        instantiatedTypes: Option[Seq[String]],
+        reachableMethods:  Option[Seq[ReachableMethod]]
     )
     private case class ReachableMethod(cf: String, m: String, desc: String)
 
