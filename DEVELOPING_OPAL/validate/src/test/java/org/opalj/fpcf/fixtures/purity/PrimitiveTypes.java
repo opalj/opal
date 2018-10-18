@@ -66,7 +66,7 @@ class PrimitiveTypes {
         nonFinalField = newValue;
     }
 
-    @ContextuallyPure(value = "Only modifies field of parameter", modifies = {0})
+    @ContextuallyPure(value = "Only modifies field of parameter", modifies = {1})
     @Impure(value="Modifies field of different instance",
             analyses = { L0PurityAnalysis.class, L1PurityAnalysis.class })
     public static void setNonFinalFieldStatic(PrimitiveTypes other, int newValue) {

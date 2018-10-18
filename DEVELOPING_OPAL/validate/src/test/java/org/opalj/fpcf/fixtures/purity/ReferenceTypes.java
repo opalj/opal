@@ -271,7 +271,7 @@ final public class ReferenceTypes {
     }
 
     @DomainSpecificContextuallyPure(
-            value = "Modifies parameter, array could be null or index out bounds", modifies = {0})
+            value = "Modifies parameter, array could be null or index out bounds", modifies = {1})
     @Impure(value = "Modifies array entry",
             analyses = {L0PurityAnalysis.class, L1PurityAnalysis.class})
     public static void setArrayEntryStatic(int[] arr, int index, int value) {
