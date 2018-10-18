@@ -4,6 +4,8 @@ package br
 package analyses
 package cg
 
+import net.ceedubs.ficus.Ficus._
+
 /**
  *
  * @author Florian Kuebler
@@ -50,3 +52,17 @@ object ApplicationInstantiatedTypesFinder
 object LibraryInstantiatedTypesFinder
     extends LibraryInstantiatedTypesFinder
     with ConfigurationInstantiatedTypesFinder
+
+/**
+ * The AllInstantiatedTypesFinder considers all class files' types as instantiated. It can be
+ * configured to consider only project class files instead of project and library class files.
+ */
+object AllInstantiatedTypesFinder extends InstantiatedTypesFinder {
+    override def collectInstantiatedTypes(project: SomeProject): Traversable[ObjectType] = {
+        val projectMethodsOnlyConfigKey = InitialInstantiatedTypesKey.ConfigKeyPrefix+
+            "AllInstantiatedTypesFinder.projectClassesOnly"
+        if (project.config.as[Boolean](projectMethodsOnlyConfigKey))
+            project.allProjectClassFiles.map(_.thisType)
+        else project.allClassFiles.map(_.thisType)
+    }
+}

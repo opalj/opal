@@ -35,6 +35,8 @@ import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.fpcf.par.PKEParallelTasksPropertyStore
 import org.opalj.fpcf.par.RecordAllPropertyStoreTracer
 import org.opalj.fpcf.properties.PropertyMatcher
+import org.opalj.br.analyses.cg.InitialEntryPointsKey
+import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
 
 /**
  * Framework to test if the properties specified in the test project (the classes in the
@@ -71,12 +73,21 @@ abstract class PropertiesTest extends FunSpec with Matchers {
 
         val libraryClassFiles = (if (withRT) ClassFiles(RTJar) else List()) ++ propertiesClassFiles
 
-        implicit val config: Config = BaseConfig.withValue(
-            "org.opalj.br.analyses.cg.InitialEntryPointsKey.analysis",
-            ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.LibraryEntryPointsFinder")
+        val configForEntryPoints = BaseConfig.withValue(
+            InitialEntryPointsKey.ConfigKeyPrefix+"analysis",
+            ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.AllEntryPointsFinder")
         ).withValue(
-                "org.opalj.br.analyses.cg.InitialInstantiatedTypesKey.analysis",
-                ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.LibraryInstantiatedTypesFinder")
+                InitialEntryPointsKey.ConfigKeyPrefix+"AllEntryPointsFinder.projectMethodsOnly",
+                ConfigValueFactory.fromAnyRef(true)
+            )
+
+        implicit val config: Config = configForEntryPoints.withValue(
+            InitialInstantiatedTypesKey.ConfigKeyPrefix+"analysis",
+            ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.AllInstantiatedTypesFinder")
+        ).withValue(
+                InitialInstantiatedTypesKey.ConfigKeyPrefix+
+                    "AllInstantiatedTypesFinder.projectClassesOnly",
+                ConfigValueFactory.fromAnyRef(true)
             )
 
         info(s"the test fixture project consists of ${projectClassFiles.size} class files")

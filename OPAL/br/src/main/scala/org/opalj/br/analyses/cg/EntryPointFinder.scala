@@ -8,7 +8,6 @@ import scala.collection.mutable.ArrayBuffer
 import org.opalj.collection.immutable.Chain
 import org.opalj.log.OPALLogger
 import net.ceedubs.ficus.Ficus._
-import org.opalj.br.ObjectType
 
 /**
  * The EntryPointFinder trait is a common trait for all analyses that can derive an programs entry
@@ -276,3 +275,17 @@ object MetaEntryPointsFinder
     extends ApplicationEntryPointsFinder
     with LibraryEntryPointsFinder
     with ConfigurationEntryPointsFinder
+
+/**
+ * The AllEntryPointsFinder considers all methods as entry points. It can be configured to consider
+ * only project methods as entry points instead of project and library methods.
+ */
+object AllEntryPointsFinder extends EntryPointFinder {
+    override def collectEntryPoints(project: SomeProject): Traversable[Method] = {
+        val projectMethodsOnlyConfigKey =
+            InitialEntryPointsKey.ConfigKeyPrefix+"AllEntryPointsFinder.projectMethodsOnly"
+        if (project.config.as[Boolean](projectMethodsOnlyConfigKey))
+            project.allProjectClassFiles.flatMap(_.methodsWithBody)
+        else project.allMethodsWithBody
+    }
+}
