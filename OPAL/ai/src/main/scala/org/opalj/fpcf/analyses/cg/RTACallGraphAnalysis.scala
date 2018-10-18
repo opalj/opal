@@ -629,7 +629,7 @@ class RTACallGraphAnalysis private[analyses] (
         }
     }
 
-    private case class ImplicitAction(
+    private case class NativeMethodData(
         cf:                String,
         m:                 String,
         desc:              String,
@@ -638,27 +638,26 @@ class RTACallGraphAnalysis private[analyses] (
     )
     private case class ReachableMethod(cf: String, m: String, desc: String)
 
-    private val actions: Map[(String, String, String), (Option[Seq[String]], Option[Seq[ReachableMethod]])] =
-        project.config.as[Iterator[ImplicitAction]](
-            "org.opalj.fpcf.analysis.RTACallGraphAnalysis.implicitActions"
+    private val nativeMethodData: Map[(String, String, String), (Option[Seq[String]], Option[Seq[ReachableMethod]])] =
+        project.config.as[Iterator[NativeMethodData]](
+            "org.opalj.fpcf.analysis.RTACallGraphAnalysis.nativeMethods"
         ).map { action ⇒
                 (action.cf, action.m, action.desc) →
                     ((action.instantiatedTypes, action.reachableMethods))
             }.toMap
 
+    /**
+     * Handles configured calls and instantiations for a native method.
+     */
     def handleNativeMethod(
         declaredMethod: DeclaredMethod,
         m:              Method
     ): PropertyComputationResult = {
-        val actionsO =
-            actions.get((m.classFile.thisType.fqn, m.name, m.descriptor.toJVMDescriptor))
 
-        if (actionsO.isEmpty)
-            return NoResult;
-
-        val (instantiatedTypesO, reachableMethodsO) = actionsO.get
-
-        val instantiatedTypesResults = instantiatedTypesO.map { fqns ⇒
+        /**
+         * Creates partial results for instantiated types and loaded classes given by their FQNs.
+         */
+        def instantiatedTypesResults(fqns: Seq[String]): List[PropertyComputationResult] = {
             val instantiatedTypesUB =
                 getInstantiatedTypesUB(propertyStore(project, InstantiatedTypes.key))
 
@@ -697,9 +696,14 @@ class RTACallGraphAnalysis private[analyses] (
             if (newInstantiatedTypes.isEmpty) List.empty
             else if (newLoadedClasses.isEmpty) instantiatedTypesResultList
             else loadedClassesResult :: instantiatedTypesResultList
-        }.getOrElse(List.empty)
+        }
 
-        val callResults = reachableMethodsO.map { reachableMethods ⇒
+        /**
+         * Creates the results for callees and callers properties for the given methods.
+         */
+        def calleesResults(
+            reachableMethods: Seq[ReachableMethod]
+        ): List[PropertyComputationResult] = {
             val calleesAndCallers = new CalleesAndCallers()
             for (reachableMethod ← reachableMethods.iterator) {
                 val classType = ObjectType(reachableMethod.cf)
@@ -712,9 +716,27 @@ class RTACallGraphAnalysis private[analyses] (
             val callees =
                 new StandardInvokeCalleesImplementation(calleesAndCallers.callees, IntTrieSet.empty)
             Result(declaredMethod, callees) :: calleesAndCallers.partialResultsForCallers
-        }.getOrElse(List.empty)
+        }
 
-        Results(instantiatedTypesResults ::: callResults)
+        val methodDataO =
+            nativeMethodData.get((m.classFile.thisType.fqn, m.name, m.descriptor.toJVMDescriptor))
+
+        if (methodDataO.isEmpty)
+            return NoResult;
+
+        val (instantiatedTypesO, reachableMethodsO) = methodDataO.get
+
+        if(reachableMethodsO.isDefined) {
+            val callResults = calleesResults(reachableMethodsO.get)
+            if(instantiatedTypesO.isDefined){
+                val typesResult = instantiatedTypesResults(instantiatedTypesO.get)
+                Results(typesResult ::: callResults)
+            } else Results(callResults)
+        } else if(instantiatedTypesO.isDefined){
+            Results(instantiatedTypesResults(instantiatedTypesO.get))
+        } else {
+            NoResult
+        }
     }
 }
 
