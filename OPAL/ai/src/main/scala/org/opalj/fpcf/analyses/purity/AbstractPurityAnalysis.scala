@@ -47,7 +47,6 @@ import org.opalj.tac.Checkcast
 import org.opalj.tac.ClassConst
 import org.opalj.tac.Compare
 import org.opalj.tac.DUVar
-import org.opalj.tac.DefaultTACAIKey
 import org.opalj.tac.DoubleConst
 import org.opalj.tac.Expr
 import org.opalj.tac.ExprStmt
@@ -130,10 +129,6 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
     protected[this] def raterFqn: String
 
     val rater: DomainSpecificRater
-
-    protected[this] val tacai: Method ⇒ TACode[TACMethodParameter, V] = {
-        project.get(DefaultTACAIKey)
-    }
 
     protected[this] val isMethodOverridable: Method ⇒ Answer = project.get(IsOverridableMethodKey)
     protected[this] implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
