@@ -8,50 +8,50 @@ import java.util.concurrent.ConcurrentLinkedQueue
 
 import scala.collection.JavaConverters._
 
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.Method
-import org.opalj.br.PC
-import org.opalj.br.ObjectType
-import org.opalj.br.analyses.DefaultOneStepAnalysis
-import org.opalj.br.analyses.Project
-import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.DeclaredMethods
-import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.analyses.cg.IsOverridableMethodKey
-import org.opalj.value.KnownTypedValue
-import org.opalj.fpcf.PropertyStoreKey
 import org.opalj.fpcf.FinalEP
-import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.FPCFAnalysesManagerKey
-import org.opalj.fpcf.analyses.LazyStaticDataUsageAnalysis
-import org.opalj.fpcf.analyses.LazyVirtualMethodStaticDataUsageAnalysis
-import org.opalj.fpcf.analyses.LazyVirtualCallAggregatingEscapeAnalysis
-import org.opalj.fpcf.analyses.LazyL1FieldMutabilityAnalysis
-import org.opalj.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
-import org.opalj.fpcf.analyses.LazyFieldLocalityAnalysis
-import org.opalj.fpcf.analyses.LazyTypeImmutabilityAnalysis
-import org.opalj.fpcf.analyses.LazyVirtualReturnValueFreshnessAnalysis
-import org.opalj.fpcf.analyses.LazyClassImmutabilityAnalysis
+import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.PropertyStoreKey
 import org.opalj.fpcf.analyses.EagerVirtualMethodPurityAnalysis
+import org.opalj.fpcf.analyses.LazyClassImmutabilityAnalysis
+import org.opalj.fpcf.analyses.LazyFieldLocalityAnalysis
+import org.opalj.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
+import org.opalj.fpcf.analyses.LazyL1FieldMutabilityAnalysis
+import org.opalj.fpcf.analyses.LazyStaticDataUsageAnalysis
+import org.opalj.fpcf.analyses.LazyTypeImmutabilityAnalysis
+import org.opalj.fpcf.analyses.LazyVirtualCallAggregatingEscapeAnalysis
+import org.opalj.fpcf.analyses.LazyVirtualMethodStaticDataUsageAnalysis
+import org.opalj.fpcf.analyses.LazyVirtualReturnValueFreshnessAnalysis
 import org.opalj.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
 import org.opalj.fpcf.analyses.purity.EagerL2PurityAnalysis
 import org.opalj.fpcf.properties.{Purity ⇒ PurityProperty}
-import org.opalj.fpcf.properties.Pure
-import org.opalj.fpcf.properties.VirtualMethodPurity
-import org.opalj.fpcf.properties.SideEffectFree
 import org.opalj.fpcf.properties.CompileTimePure
+import org.opalj.fpcf.properties.Pure
+import org.opalj.fpcf.properties.SideEffectFree
+import org.opalj.fpcf.properties.VirtualMethodPurity
+import org.opalj.fpcf.properties.VirtualMethodPurity.VCompileTimePure
 import org.opalj.fpcf.properties.VirtualMethodPurity.VPure
 import org.opalj.fpcf.properties.VirtualMethodPurity.VSideEffectFree
-import org.opalj.fpcf.properties.VirtualMethodPurity.VCompileTimePure
+import org.opalj.value.ValueInformation
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.Method
+import org.opalj.br.ObjectType
+import org.opalj.br.PC
+import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.DeclaredMethods
+import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.DefaultOneStepAnalysis
+import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.cg.IsOverridableMethodKey
 import org.opalj.tac.DefaultTACAIKey
+import org.opalj.tac.DUVar
 import org.opalj.tac.ExprStmt
-import org.opalj.tac.StaticFunctionCall
 import org.opalj.tac.NonVirtualFunctionCall
-import org.opalj.tac.VirtualFunctionCall
+import org.opalj.tac.StaticFunctionCall
 import org.opalj.tac.TACMethodParameter
 import org.opalj.tac.TACode
-import org.opalj.tac.DUVar
+import org.opalj.tac.VirtualFunctionCall
 
 /**
  * Identifies calls to pure/side-effect free methods where the results are not used subsequently.
@@ -61,7 +61,7 @@ import org.opalj.tac.DUVar
 object UnusedResults extends DefaultOneStepAnalysis {
 
     /** The type of the TAC domain. */
-    type V = DUVar[KnownTypedValue]
+    type V = DUVar[ValueInformation]
 
     override def title: String = "Unused Results Analysis"
 
@@ -167,7 +167,7 @@ object UnusedResults extends DefaultOneStepAnalysis {
         val VirtualFunctionCall(_, dc, _, name, descr, receiver, _) = call
 
         val value = receiver.asVar.value.asReferenceValue
-        val receiverType = value.valueType
+        val receiverType = value.leastUpperType
 
         if (receiverType.isEmpty) {
             None // Receiver is null, call will never be executed

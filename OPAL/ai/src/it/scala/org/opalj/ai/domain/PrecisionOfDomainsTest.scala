@@ -50,7 +50,7 @@ class PrecisionOfDomainsTest extends FunSpec with Matchers {
                 with TheMethod
                 with DefaultHandlingOfMethodResults
                 with IgnoreSynchronization
-                with DefaultDomainValueBinding
+                with DefaultSpecialDomainValuesBinding
                 with ThrowAllPotentialExceptionsConfiguration
                 with l0.DefaultReferenceValuesBinding
                 with l0.DefaultTypeLevelIntegerValues

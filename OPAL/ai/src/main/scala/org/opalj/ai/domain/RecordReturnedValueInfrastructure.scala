@@ -21,7 +21,6 @@ trait RecordReturnedValueInfrastructure extends RecordReturnedValuesInfrastructu
 
     /**
      *  A method that always throws an exception or returns "void" will never return a value.
-     *
      */
     def returnedValue: Option[DomainValue] // = Option(theReturnedValue)
 

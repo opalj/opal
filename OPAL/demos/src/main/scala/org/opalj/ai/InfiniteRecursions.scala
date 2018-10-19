@@ -188,7 +188,7 @@ object InfiniteRecursions extends DefaultOneStepAnalysis {
 
 class InfiniteRecursionsDomain(val project: SomeProject, val method: Method)
     extends Domain
-    with domain.DefaultDomainValueBinding
+    with domain.DefaultSpecialDomainValuesBinding
     with domain.ThrowAllPotentialExceptionsConfiguration
     with domain.l0.DefaultTypeLevelFloatValues
     with domain.l0.DefaultTypeLevelDoubleValues

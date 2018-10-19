@@ -4,10 +4,8 @@ package ai
 package domain
 package l1
 
-import org.opalj.br.LongType
-import org.opalj.br.VerificationTypeInfo
-import org.opalj.br.LongVariableInfo
 import org.opalj.value.IsLongValue
+import org.opalj.br.LongType
 
 /**
  * Foundation for domains that trace specific long values.
@@ -33,9 +31,8 @@ trait LongValues extends LongValuesDomain with ConcreteLongValues {
     sealed trait LongValue extends TypedValue[LongType] with IsLongValue {
         this: DomainTypedValue[LongType] ⇒
 
-        final override def valueType: Option[LongType] = Some(LongType)
+        final override def leastUpperType: Option[LongType] = Some(LongType)
 
-        final override def verificationTypeInfo: VerificationTypeInfo = LongVariableInfo
     }
 
     /**

@@ -3,31 +3,34 @@ package org.opalj
 package ai
 package domain
 
-import scala.annotation.tailrec
 import scala.annotation.switch
+import scala.annotation.tailrec
+
 import java.io.ByteArrayOutputStream
 import java.io.PrintStream
 
 import scala.xml.Node
+
 import org.opalj.graphs.DefaultMutableNode
+
 import org.opalj.collection.immutable.IntArraySet
-import org.opalj.collection.mutable.{Locals ⇒ Registers}
 import org.opalj.collection.immutable.:&:
 import org.opalj.collection.immutable.Chain
-import org.opalj.collection.immutable.Naught
+import org.opalj.collection.immutable.Chain.ChainBuilder
+import org.opalj.collection.immutable.IntRefPair
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.IntTrieSet1
-import org.opalj.collection.immutable.Chain.ChainBuilder
+import org.opalj.collection.immutable.Naught
+import org.opalj.collection.mutable.{Locals ⇒ Registers}
+import org.opalj.collection.mutable.RefArrayStack
 import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.br.Code
-import org.opalj.br.PC
-import org.opalj.br.ObjectType
 import org.opalj.br.ComputationalTypeCategory
-import org.opalj.br.instructions._
+import org.opalj.br.ObjectType
+import org.opalj.br.PC
 import org.opalj.br.analyses.AnalysisException
+import org.opalj.br.instructions._
 import org.opalj.ai.util.XHTML
-import org.opalj.collection.immutable.IntRefPair
-import org.opalj.collection.mutable.RefArrayStack
 
 /**
  * Collects the definition/use information based on the abstract interpretation time cfg.
@@ -69,7 +72,7 @@ import org.opalj.collection.mutable.RefArrayStack
  *
  * @author Michael Eichberg
  */
-trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode with TheClassHierarchy ⇒
+trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
 
     // IDEA:
     // EACH LOCAL VARIABLE IS BASICALLY NAMED USING THE PC OF THE INSTRUCTION THAT INITIALIZES IT.

@@ -42,7 +42,7 @@ class BaseFieldValuesAnalysisDomain(
 ) extends Domain
     with domain.TheProject
     with domain.TheCode
-    with domain.DefaultDomainValueBinding
+    with domain.DefaultSpecialDomainValuesBinding
     with domain.ThrowAllPotentialExceptionsConfiguration
     with domain.l0.DefaultTypeLevelIntegerValues
     with domain.l0.DefaultTypeLevelLongValues

@@ -31,7 +31,7 @@ import org.opalj.tac.Stmt
 import org.opalj.tac.TACode
 import org.opalj.tac.TACMethodParameter
 import org.opalj.tac.fpcf.properties.TACAI
-import org.opalj.value.KnownTypedValue
+import org.opalj.value.ValueInformation
 
 /**
  * Simple analysis that checks if a private (static or instance) field is always initialized at
@@ -51,7 +51,7 @@ class L1FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
             var escapeDependees: Set[EOptionP[DefinitionSite, EscapeProperty]] = Set.empty
     )
 
-    type V = DUVar[KnownTypedValue]
+    type V = DUVar[ValueInformation]
 
     final val typeExtensibility = project.get(TypeExtensibilityKey)
     final val closedPackages = project.get(ClosedPackagesKey)

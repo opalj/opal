@@ -5,15 +5,15 @@ package domain
 package l2
 
 import org.junit.runner.RunWith
-import org.scalatest.Matchers
 import org.scalatest.FlatSpec
+import org.scalatest.Matchers
 import org.scalatest.junit.JUnitRunner
+
 import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br.ClassFile
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
-import org.opalj.ai.domain.DefaultRecordMethodCallResults
 
 /**
  *
@@ -169,7 +169,7 @@ object PerformInvocationsTestFixture {
 
     trait L1Domain
         extends CorrelationalDomain
-        with DefaultDomainValueBinding
+        with DefaultSpecialDomainValuesBinding
         with TheProject
         with l0.DefaultTypeLevelFloatValues
         with l0.DefaultTypeLevelDoubleValues
@@ -183,7 +183,7 @@ object PerformInvocationsTestFixture {
 
     trait LiDomain
         extends CorrelationalDomain
-        with DefaultDomainValueBinding
+        with DefaultSpecialDomainValuesBinding
         with TheProject
         with l0.DefaultTypeLevelFloatValues
         with l0.DefaultTypeLevelDoubleValues
@@ -205,7 +205,7 @@ object PerformInvocationsTestFixture {
         with IgnoreSynchronization
         with l0.DefaultTypeLevelHandlingOfMethodResults
         with DefaultRecordMethodCallResults {
-        domain: ValuesFactory with TheClassHierarchy with Configuration with TheProject with TheMethod ⇒
+        domain: ValuesFactory with Configuration with TheProject with TheMethod ⇒
 
         override def throwExceptionsOnMethodCall: ExceptionsRaisedByCalledMethod = {
             ExceptionsRaisedByCalledMethods.AllExplicitlyHandled

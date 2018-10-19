@@ -8,10 +8,7 @@ import scala.Int.{MinValue ⇒ MinInt}
 import scala.Int.{MaxValue ⇒ MaxInt}
 
 import org.opalj.value.IsIntegerValue
-
 import org.opalj.br.CTIntType
-import org.opalj.br.VerificationTypeInfo
-import org.opalj.br.IntegerVariableInfo
 
 /**
  * This domain represents integer values using ranges.
@@ -123,9 +120,7 @@ trait IntegerRangeValues
         with IsIntegerValue {
         this: DomainTypedValue[CTIntType] ⇒
 
-        final override def valueType: Option[CTIntType] = Some(CTIntType)
-
-        final override def verificationTypeInfo: VerificationTypeInfo = IntegerVariableInfo
+        final override def leastUpperType: Option[CTIntType] = Some(CTIntType)
 
         def newInstance: DomainValue
     }
@@ -137,8 +132,9 @@ trait IntegerRangeValues
      */
     trait AnIntegerValue extends IntegerLikeValue {
         this: DomainTypedValue[CTIntType] ⇒
-        def lowerBound: Int = Int.MinValue
-        def upperBound: Int = Int.MaxValue
+        final override def lowerBound: Int = Int.MinValue
+        final override def upperBound: Int = Int.MaxValue
+        final override def constantValue: Option[ValueOrigin] = None
     }
 
     /**
@@ -821,7 +817,7 @@ trait IntegerRangeValues
                 } else {
                     // both values are positive (lbs are >= 0) and at least one
                     // value is not just 0.
-                    import Integer.{numberOfLeadingZeros ⇒ nlz}
+                    import java.lang.Integer.{numberOfLeadingZeros ⇒ nlz}
                     val max = Math.max(rub, lub)
                     val nlzMax = nlz(max)
                     val ub =

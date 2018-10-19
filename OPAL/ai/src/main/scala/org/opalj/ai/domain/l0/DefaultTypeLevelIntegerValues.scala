@@ -24,7 +24,7 @@ import org.opalj.br.ComputationalTypeInt
  * @author Michael Eichberg
  */
 trait DefaultTypeLevelIntegerValues
-    extends DefaultDomainValueBinding
+    extends DefaultSpecialDomainValuesBinding
     with TypeLevelIntegerValues {
     this: Configuration ⇒
 
@@ -47,6 +47,7 @@ trait DefaultTypeLevelIntegerValues
 
         override def abstractsOver(other: DomainValue): Boolean = other eq this
 
+        override def constantValue: Option[Boolean] = None
     }
 
     case object AByteValue extends super.ByteValue {
@@ -57,8 +58,11 @@ trait DefaultTypeLevelIntegerValues
                 case _                          ⇒ StructuralUpdate(AnIntegerValue)
             }
 
-        override def abstractsOver(other: DomainValue): Boolean =
+        override def abstractsOver(other: DomainValue): Boolean = {
             (other eq this) || (other eq ABooleanValue)
+        }
+
+        override def constantValue: Option[Byte] = None
 
     }
 
@@ -72,8 +76,11 @@ trait DefaultTypeLevelIntegerValues
                     StructuralUpdate(AnIntegerValue)
             }
 
-        override def abstractsOver(other: DomainValue): Boolean =
+        override def abstractsOver(other: DomainValue): Boolean = {
             (other eq this) || (other eq ABooleanValue) || (other eq AByteValue)
+        }
+
+        override def constantValue: Option[Short] = None
     }
 
     case object ACharValue extends super.CharValue {
@@ -84,8 +91,11 @@ trait DefaultTypeLevelIntegerValues
                 case _                          ⇒ StructuralUpdate(AnIntegerValue)
             }
 
-        override def abstractsOver(other: DomainValue): Boolean =
+        override def abstractsOver(other: DomainValue): Boolean = {
             (other eq this) || (other eq ABooleanValue)
+        }
+
+        override def constantValue: Option[Char] = None
     }
 
     case object AnIntegerValue extends super.IntegerValue {
@@ -95,9 +105,12 @@ trait DefaultTypeLevelIntegerValues
             NoUpdate
         }
 
-        override def abstractsOver(other: DomainValue): Boolean =
+        override def abstractsOver(other: DomainValue): Boolean = {
             (other ne TheIllegalValue) &&
                 other.computationalType == ComputationalTypeInt
+        }
+
+        override def constantValue: Option[Int] = None
     }
 
     override def BooleanValue(valueOrigin: ValueOrigin): ABooleanValue.type = ABooleanValue

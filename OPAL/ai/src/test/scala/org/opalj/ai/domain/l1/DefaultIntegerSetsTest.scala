@@ -16,7 +16,7 @@ import org.opalj.br.ArrayType
 import org.opalj.br.IntegerType
 import org.opalj.br.ObjectType
 import org.opalj.ai.NoUpdate
-import org.opalj.ai.domain.DefaultDomainValueBinding
+import org.opalj.ai.domain.DefaultSpecialDomainValuesBinding
 import org.opalj.ai.domain.DefaultHandlingOfMethodResults
 import org.opalj.ai.domain.IgnoreSynchronization
 import org.opalj.ai.domain.PredefinedClassHierarchy
@@ -38,7 +38,7 @@ class DefaultIntegerSetsTest extends FunSpec with Matchers {
     class IntegerSetsTestDomain(
             override val maxCardinalityOfIntegerSets: Int = 126 // <= MAX SUPPORTED VALUE
     ) extends CorrelationalDomain
-        with DefaultDomainValueBinding
+        with DefaultSpecialDomainValuesBinding
         with ThrowAllPotentialExceptionsConfiguration
         with l0.DefaultTypeLevelLongValues
         with l0.DefaultTypeLevelFloatValues

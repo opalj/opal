@@ -3,7 +3,7 @@ package org.opalj
 package tac
 
 import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.value.KnownTypedValue
+import org.opalj.value.ValueInformation
 import org.opalj.br.ComputationalType
 import org.opalj.br.ComputationalTypeReturnAddress
 import org.opalj.ai.ValueOrigin
@@ -15,7 +15,7 @@ import org.opalj.ai.pcOfMethodExternalException
 /**
  * Identifies a variable which has a single static definition/initialization site.
  */
-abstract class DUVar[+Value <: KnownTypedValue] extends Var[DUVar[Value]] {
+abstract class DUVar[+Value <: ValueInformation] extends Var[DUVar[Value]] {
 
     /**
      * The information about the variable that were derived by the underlying data-flow analysis.
@@ -92,7 +92,7 @@ object DefSites {
  * @param value The value information.
  *
  */
-class DVar[+Value <: KnownTypedValue /*org.opalj.ai.ValuesDomain#DomainValue*/ ] private (
+class DVar[+Value <: ValueInformation /*org.opalj.ai.ValuesDomain#DomainValue*/ ] private (
         private[tac] var origin:   ValueOrigin,
         val value:                 Value,
         private[tac] var useSites: IntTrieSet
@@ -100,7 +100,7 @@ class DVar[+Value <: KnownTypedValue /*org.opalj.ai.ValuesDomain#DomainValue*/ ]
 
     assert(origin >= 0)
 
-    def copy[V >: Value <: KnownTypedValue /*org.opalj.ai.ValuesDomain#DomainValue*/ ](
+    def copy[V >: Value <: ValueInformation /*org.opalj.ai.ValuesDomain#DomainValue*/ ](
         origin:   ValueOrigin = this.origin,
         value:    V           = this.value,
         useSites: IntTrieSet  = this.useSites
@@ -180,7 +180,7 @@ object DVar {
         new DVar[d.DomainValue](origin, value, useSites)
     }
 
-    def unapply[Value <: KnownTypedValue /* org.opalj.ai.ValuesDomain#DomainValue*/ ](
+    def unapply[Value <: ValueInformation /* org.opalj.ai.ValuesDomain#DomainValue*/ ](
         d: DVar[Value]
     ): Some[(Value, IntTrieSet)] = {
         Some((d.value, d.useSites))
@@ -188,7 +188,7 @@ object DVar {
 
 }
 
-class UVar[+Value <: KnownTypedValue /*org.opalj.ai.ValuesDomain#DomainValue*/ ] private (
+class UVar[+Value <: ValueInformation /*org.opalj.ai.ValuesDomain#DomainValue*/ ] private (
         val value:                 Value,
         private[tac] var defSites: IntTrieSet
 ) extends DUVar[Value] {
@@ -253,11 +253,11 @@ object UVar {
         new UVar[d.DomainValue](value, defSites)
     }
 
-    def apply(value: KnownTypedValue, defSites: IntTrieSet): UVar[KnownTypedValue] = {
+    def apply(value: ValueInformation, defSites: IntTrieSet): UVar[ValueInformation] = {
         new UVar(value, defSites)
     }
 
-    def unapply[Value <: KnownTypedValue /* org.opalj.ai.ValuesDomain#DomainValue*/ ](
+    def unapply[Value <: ValueInformation /* org.opalj.ai.ValuesDomain#DomainValue*/ ](
         u: UVar[Value]
     ): Some[(Value, IntTrieSet)] = {
         Some((u.value, u.defSites))

@@ -4,10 +4,8 @@ package ai
 package domain
 package l1
 
-import org.opalj.br.CTIntType
-import org.opalj.br.VerificationTypeInfo
-import org.opalj.br.IntegerVariableInfo
 import org.opalj.value.IsIntegerValue
+import org.opalj.br.CTIntType
 
 /**
  * This domain enables the tracking of an integer value (a constant);
@@ -40,9 +38,7 @@ trait IntegerValues extends IntegerValuesDomain with ConcreteIntegerValues {
         with IsIntegerValue {
         this: DomainTypedValue[CTIntType] ⇒
 
-        final override def valueType: Option[CTIntType] = Some(CTIntType)
-
-        final override def verificationTypeInfo: VerificationTypeInfo = IntegerVariableInfo
+        final override def leastUpperType: Option[CTIntType] = Some(CTIntType)
 
     }
 
@@ -52,9 +48,9 @@ trait IntegerValues extends IntegerValuesDomain with ConcreteIntegerValues {
      * Models the top value of this domain's lattice.
      */
     trait AnIntegerValue extends IntegerLikeValue { this: DomainTypedValue[CTIntType] ⇒
-
         final override def lowerBound: Int = Int.MinValue
         final override def upperBound: Int = Int.MaxValue
+        final override def constantValue: Option[Int] = None
     }
 
     /**

@@ -18,7 +18,7 @@ class DefaultDomain[Source](
 ) extends CorrelationalDomain
     with TheProject
     with TheMethod
-    with DefaultDomainValueBinding
+    with DefaultSpecialDomainValuesBinding
     with ThrowAllPotentialExceptionsConfiguration
     with IgnoreSynchronization
     with l0.DefaultTypeLevelHandlingOfMethodResults

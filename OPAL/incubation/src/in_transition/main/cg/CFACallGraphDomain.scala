@@ -11,7 +11,7 @@ import org.opalj.br.analyses.Project
 import org.opalj.br.Method
 import org.opalj.br.MethodSignature
 import org.opalj.br.analyses.Project
-import org.opalj.ai.domain.DefaultDomainValueBinding
+import org.opalj.ai.domain.DefaultSpecialDomainValuesBinding
 import org.opalj.ai.domain.DefaultHandlingOfMethodResults
 import org.opalj.ai.domain.IgnoreSynchronization
 import org.opalj.ai.domain.TheMethod
@@ -42,7 +42,7 @@ class CFACallGraphDomain[Source](
         val method:                       Method,
         val calledMethods:                Set[Method]                                  = Set.empty
 ) extends CorrelationalDomain
-    with DefaultDomainValueBinding
+    with DefaultSpecialDomainValuesBinding
     with ThrowAllPotentialExceptionsConfiguration
     with TheProject
     with TheMethod

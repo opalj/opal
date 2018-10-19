@@ -3,33 +3,33 @@ package org.opalj
 package ai
 
 import scala.language.existentials
-
 import scala.annotation.switch
 
 import scala.util.control.ControlThrowable
 
 import org.opalj.control.foreachNonNullValue
-import org.opalj.log.LogContext
+
 import org.opalj.log.GlobalLogContext
-import org.opalj.log.Warn
+import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
-import org.opalj.bytecode.BytecodeProcessingFailedException
-import org.opalj.collection.mutable.{Locals ⇒ Registers}
-import org.opalj.collection.mutable.IntArrayStack
+import org.opalj.log.Warn
+import org.opalj.collection.immutable.{Chain ⇒ List}
+import org.opalj.collection.immutable.{Naught ⇒ Nil}
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.:&:
 import org.opalj.collection.immutable.Chain
-import org.opalj.collection.immutable.Naught
-import org.opalj.collection.immutable.{Chain ⇒ List}
-import org.opalj.collection.immutable.{Naught ⇒ Nil}
 import org.opalj.collection.immutable.IntIntPair
+import org.opalj.collection.immutable.Naught
+import org.opalj.collection.mutable.{Locals ⇒ Registers}
+import org.opalj.collection.mutable.IntArrayStack
+import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.bi.warnMissingLibrary
 import org.opalj.br._
 import org.opalj.br.instructions._
-import org.opalj.ai.util.removeFirstUnless
 import org.opalj.ai.util.containsInPrefix
 import org.opalj.ai.util.insertBefore
 import org.opalj.ai.util.insertBeforeIfNew
+import org.opalj.ai.util.removeFirstUnless
 
 /**
  * A highly-configurable framework for the (abstract) interpretation of Java bytecode.
@@ -377,14 +377,7 @@ abstract class AI[D <: Domain](
         theOperandsArray:         theDomain.OperandsArray,
         theLocalsArray:           theDomain.LocalsArray
     ): AIResult { val domain: theDomain.type } = {
-        val classHierarchy: ClassHierarchy =
-            theDomain match {
-                case domainWithClassHierarchy: TheClassHierarchy ⇒
-                    domainWithClassHierarchy.classHierarchy
-                case _ ⇒
-                    ClassHierarchy.PreInitializedClassHierarchy
-            }
-        val (predecessorPCs, finalPCs, cfJoins) = code.predecessorPCs(classHierarchy)
+        val (predecessorPCs, finalPCs, cfJoins) = code.predecessorPCs(theDomain.classHierarchy)
         val liveVariables = code.liveVariables(predecessorPCs, finalPCs, cfJoins)
         continueInterpretation(
             code, cfJoins, liveVariables,
@@ -539,25 +532,40 @@ abstract class AI[D <: Domain](
             )
         }
 
-        import theDomain.{DomainValue, ExceptionValue, ExceptionValues, Operands, Locals}
+        import theDomain.DomainValue
+        import theDomain.ExceptionValue
+        import theDomain.ExceptionValues
+        import theDomain.Locals
+        import theDomain.Operands
 
         // import reference values related functionality
-        import theDomain.{refAreEqual, refAreNotEqual}
-        import theDomain.{refIsNonNull, refIsNull}
-        import theDomain.{refEstablishAreEqual, refEstablishAreNotEqual}
-        import theDomain.{refEstablishIsNonNull, refEstablishIsNull}
+        import theDomain.refAreEqual
+        import theDomain.refAreNotEqual
+        import theDomain.refEstablishAreEqual
+        import theDomain.refEstablishAreNotEqual
+        import theDomain.refEstablishIsNonNull
+        import theDomain.refEstablishIsNull
+        import theDomain.refIsNonNull
+        import theDomain.refIsNull
 
         // import int values related functionality
-        import theDomain.{intAreEqual, intAreNotEqual}
-        import theDomain.{intIs0, intIsNot0}
-        import theDomain.{intIsLessThan, intIsLessThan0}
-        import theDomain.{intIsLessThanOrEqualTo, intIsLessThanOrEqualTo0}
-        import theDomain.{intIsGreaterThan, intIsGreaterThan0}
-        import theDomain.{intIsGreaterThanOrEqualTo, intIsGreaterThanOrEqualTo0}
-
+        import theDomain.intAreEqual
+        import theDomain.intAreNotEqual
+        import theDomain.intEstablishAreEqual
+        import theDomain.intEstablishAreNotEqual
+        import theDomain.intEstablishIsLessThan
+        import theDomain.intEstablishIsLessThanOrEqualTo
+        import theDomain.intIs0
+        import theDomain.intIsGreaterThan
+        import theDomain.intIsGreaterThan0
+        import theDomain.intIsGreaterThanOrEqualTo
+        import theDomain.intIsGreaterThanOrEqualTo0
+        import theDomain.intIsLessThan
+        import theDomain.intIsLessThan0
+        import theDomain.intIsLessThanOrEqualTo
+        import theDomain.intIsLessThanOrEqualTo0
+        import theDomain.intIsNot0
         import theDomain.IntegerConstant0
-        import theDomain.{intEstablishAreEqual, intEstablishAreNotEqual}
-        import theDomain.{intEstablishIsLessThanOrEqualTo, intEstablishIsLessThan}
 
         val instructions: Array[Instruction] = code.instructions
 
@@ -1675,7 +1683,7 @@ abstract class AI[D <: Domain](
                 ): Unit = {
                     // Iterating over the individual exceptions is potentially
                     // more precise than just iterating over the "abstraction".
-                    val baseValues = exceptionValue.baseValues
+                    val baseValues: Traversable[theDomain.DomainReferenceValue] = exceptionValue.baseValues
                     if (baseValues.isEmpty) {
                         if (testForNullnessOfExceptionValue) {
                             exceptionValue.isNull match {

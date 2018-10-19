@@ -6,15 +6,6 @@ package escape
 
 import scala.annotation.switch
 import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.br.DeclaredMethod
-import org.opalj.br.DefinedMethod
-import org.opalj.br.Field
-import org.opalj.br.Method
-import org.opalj.br.MethodDescriptor
-import org.opalj.br.ObjectType
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.analyses.cg.IsOverridableMethodKey
 import org.opalj.fpcf.properties.AtMost
 import org.opalj.fpcf.properties.EscapeInCallee
 import org.opalj.fpcf.properties.EscapeProperty
@@ -35,8 +26,17 @@ import org.opalj.fpcf.properties.ReturnValueFreshness
 import org.opalj.fpcf.properties.VExtensibleGetter
 import org.opalj.fpcf.properties.VFreshReturnValue
 import org.opalj.fpcf.properties.VGetter
-import org.opalj.fpcf.properties.VNoFreshReturnValue
 import org.opalj.fpcf.properties.VirtualMethodReturnValueFreshness
+import org.opalj.fpcf.properties.VNoFreshReturnValue
+import org.opalj.br.DeclaredMethod
+import org.opalj.br.DefinedMethod
+import org.opalj.br.Field
+import org.opalj.br.Method
+import org.opalj.br.MethodDescriptor
+import org.opalj.br.ObjectType
+import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.cg.IsOverridableMethodKey
 import org.opalj.ai.common.DefinitionSite
 import org.opalj.ai.common.DefinitionSitesKey
 import org.opalj.tac.Assignment
@@ -290,9 +290,9 @@ class ReturnValueFreshnessAnalysis private[analyses] (
         val m = dm.definedMethod
         val thisType = m.classFile.thisType
 
-        val receiverType = value.valueType
+        val receiverType = value.leastUpperType
 
-        if (receiverType.isEmpty) {
+        if (value.isNull.isYes /*receiverType.isEmpty*/ ) {
             false // Receiver is null, call will never be executed
         } else if (receiverType.get.isArrayType) {
             val callee = project.instanceCall(ObjectType.Object, ObjectType.Object, name, desc)
