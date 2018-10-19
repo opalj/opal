@@ -73,10 +73,12 @@ import org.opalj.fpcf.properties.CompileTimePure
 import org.opalj.tac.DefaultTACAIKey
 import org.opalj.tac.fpcf.analyses.LazyL0TACAIAnalysis
 import org.opalj.tac.fpcf.properties.TACAI
+
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
 import org.opalj.fpcf.PropertyKind
 import org.opalj.fpcf.PropertyMetaInformation
+import org.opalj.fpcf.analyses.cg.EagerLibraryEntryPointsAnalysis
 import org.opalj.fpcf.cg.properties.CallersProperty
 import org.opalj.br.DeclaredMethod
 
@@ -178,10 +180,13 @@ object Purity {
         val projectEvalDir = evaluationDir.map(new File(_, dirName))
         if (projectEvalDir.isDefined && !projectEvalDir.get.exists()) projectEvalDir.get.mkdir()
 
+        val isLibrary = cp eq JRELibraryFolder // TODO make configurable
+
         var projectTime: Seconds = Seconds.None
         var tacTime: Seconds = Seconds.None
         var propertyStoreTime: Seconds = Seconds.None
         var analysisTime: Seconds = Seconds.None
+        var callGraphTime: Seconds = Seconds.None
 
         val baseConfig = if (closedWorldAssumption) BaseConfig.withValue(
             "org.opalj.br.analyses.cg.ClassExtensibilityKey.analysis",
@@ -189,7 +194,7 @@ object Purity {
         )
         else BaseConfig
 
-        implicit val config: Config = if (cp eq JRELibraryFolder) baseConfig.withValue(
+        implicit val config: Config = if (isLibrary) baseConfig.withValue(
             "org.opalj.br.analyses.cg.InitialEntryPointsKey.analysis",
             ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.LibraryEntryPointsFinder")
         ).withValue(
@@ -252,14 +257,29 @@ object Purity {
         time {
             val manager = project.get(FPCFAnalysesManagerKey)
 
-            manager.runAll(cgAnalyses + LazyL0TACAIAnalysis)
+            if (isLibrary) {
+                manager.runAll(cgAnalyses + EagerLibraryEntryPointsAnalysis + LazyL0TACAIAnalysis)
+            } else {
+                manager.runAll(cgAnalyses + LazyL0TACAIAnalysis)
+            }
 
-            val reachableMethods = propertyStore.entities(CallersProperty.key).map(
-                _.e.asInstanceOf[DeclaredMethod]
-            ).toSet
+            val reachableMethods =
+                propertyStore.entities(CallersProperty.key).map(
+                    _.e.asInstanceOf[DeclaredMethod]
+                ).toSet
 
             analyzedMethods = projMethods.filter(reachableMethods.contains)
+        } { t ⇒ callGraphTime = t.toSeconds }
 
+        val unreachableMethods = projMethods.filterNot(analyzedMethods.contains)
+        val (uMP, uMNP) = unreachableMethods.partition(m ⇒ m.definedMethod.isPrivate)
+        println("#####################################################################")
+        uMP.foreach(m ⇒ println(m.toJava))
+        println("#####################################################################")
+        uMNP.foreach(m ⇒ println(m.toJava))
+        println("#####################################################################")
+
+        time {
             val analyses = support + analysis
 
             val pks: Set[PropertyKind] = analyses.flatMap(
@@ -290,9 +310,9 @@ object Purity {
             try {
                 if (runtimeNew) {
                     runtime.createNewFile()
-                    runtimeWriter.println("project;tac;propertyStore;analysis")
+                    runtimeWriter.println("project;tac;propertyStore;callGraph;analysis")
                 }
-                runtimeWriter.println(s"$projectTime;$tacTime;$propertyStoreTime;$analysisTime")
+                runtimeWriter.println(s"$projectTime;$tacTime;$propertyStoreTime;$callGraphTime;$analysisTime")
             } finally {
                 if (runtimeWriter != null) runtimeWriter.close()
             }
@@ -417,6 +437,7 @@ object Purity {
                     "\nImpure:                                "+lbImpure.size+
                     "\nTotal:                                 "+purityEs.size
             Console.println(result)
+            Console.println(s"Call-graph time: $callGraphTime")
             Console.println(s"Analysis time: $analysisTime")
         }
     }
