@@ -66,21 +66,36 @@ trait LibraryEntryPointsFinder extends EntryPointFinder {
     override def collectEntryPoints(project: SomeProject): Traversable[Method] = {
         val isClosedPackage = project.get(ClosedPackagesKey).isClosed _
         val isExtensible = project.get(TypeExtensibilityKey)
-        val isOverridable = project.get(IsOverridableMethodKey)
+        val classHierarchy = project.classHierarchy
 
         @inline def isEntryPoint(method: Method): Boolean = {
             val classFile = method.classFile
             val ot = classFile.thisType
 
             if (isClosedPackage(ot.packageName)) {
-                if (method.isStatic) {
-                    (classFile.isPublic && method.isPublic) ||
-                        (method.isProtected && isExtensible(ot).isYesOrUnknown)
-                } else if (method.isFinal) {
-                    classFile.isPublic && method.isPublic
-                } else {
-                    isOverridable(method).isYesOrUnknown
-                }
+                if (method.isPublic) {
+                    classHierarchy.allSubtypes(ot, reflexive = true).exists { st ⇒
+                        val subtypeCFOption = project.classFile(st)
+                        // Class file must be public to access it
+                        subtypeCFOption.forall(_.isPublic) &&
+                            // Method must be static or class instantiable
+                            (method.isStatic ||
+                                // Note: This is not enough to ensure that the type is instantiable
+                                // (supertype might have no accessible constructor),
+                                // but it soundly overapproximates
+                                subtypeCFOption.forall(_.constructors.exists { c ⇒
+                                    c.isPublic || (c.isProtected && isExtensible(st).isYesOrUnknown)
+                                }))
+                    }
+                } else if (method.isProtected) {
+                    isExtensible(ot).isYesOrUnknown &&
+                        (method.isStatic ||
+                            classHierarchy.allSubtypes(ot, reflexive = true).exists { st ⇒
+                                project.classFile(st).forall(_.constructors.exists { c ⇒
+                                    c.isPublic || c.isProtected
+                                })
+                            })
+                } else false
             } else {
                 // all methods in an open package are accessible
                 !method.isPrivate
@@ -234,9 +249,9 @@ trait ConfigurationEntryPointsFinder extends EntryPointFinder {
 
     /* Required by Ficus' `ArbitraryTypeReader`*/
     private case class EntryPointContainer(
-            declaringClass: String,
-            name:           String,
-            descriptor:     Option[String]
+        declaringClass: String,
+        name:           String,
+        descriptor:     Option[String]
     )
 }
 
