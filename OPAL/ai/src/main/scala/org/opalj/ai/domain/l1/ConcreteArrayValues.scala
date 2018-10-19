@@ -8,8 +8,8 @@ import scala.reflect.ClassTag
 
 import org.opalj.log.OPALLogger
 import org.opalj.log.Warn
-import org.opalj.br.ObjectType
 import org.opalj.br.ArrayType
+import org.opalj.br.ObjectType
 
 /**
  * Enables the tracking of various properties related to arrays.
@@ -39,7 +39,7 @@ trait ConcreteArrayValues
     extends l1.ArrayValues
     with PerInstructionPostProcessing
     with PostEvaluationMemoryManagement {
-    domain: CorrelationalDomain with ConcreteIntegerValues with TheClassHierarchy with LogContextProvider ⇒
+    domain: CorrelationalDomain with ConcreteIntegerValues with LogContextProvider ⇒
 
     private[this] val debug: Boolean = false
 
@@ -124,15 +124,24 @@ trait ConcreteArrayValues
     // NOTE THAT WE DO NOT SUPPORT THE CASE WHERE THE ARRAY STORES CONCRETE MUTABLE VALUES!
     // In that case it may be possible to load a value from the array and manipulate
     // it which could lead to a new domain value which is not referred to by the array!
+    /*
     protected class ConcreteArrayValue(
             origin:     ValueOrigin,
             theType:    ArrayType,
             val values: Array[DomainValue],
             refId:      RefId
-    ) extends ArrayValue(origin, isNull = No, isPrecise = true, theType, refId) {
-        this: DomainConcreteArrayValue ⇒
+    ) extends ArrayValue(origin, isNull = No, isPrecise = true, theType, refId) { ... }
+    */
 
-        override def length: Some[Int] = Some(values.length)
+    protected trait ConcreteArrayValue extends ArrayValue { this: DomainConcreteArrayValue ⇒
+
+        def values: Array[DomainValue]
+
+        final override def isNull: No.type = No
+
+        final override def isPrecise: Boolean = true
+
+        final override def length: Some[Int] = Some(values.length)
 
         override def doLoad(
             loadPC:              Int,
@@ -175,7 +184,7 @@ trait ConcreteArrayValues
                 // However, if some exception may be thrown, then we certainly
                 // do not have enough information about the value/the index and
                 // we are no longer able to track the array's content.
-                val abstractValue = InitializedArrayValue(origin, theType, values.length, refId)
+                val abstractValue = InitializedArrayValue(origin, theUpperTypeBound, values.length, refId)
                 updateAfterEvaluation(this, abstractValue)
                 return ComputationWithSideEffectOrException(potentialExceptions);
             }
@@ -185,7 +194,7 @@ trait ConcreteArrayValues
             intValue[ArrayStoreResult](index) { index ⇒
                 // let's check if we need to do anything
                 if (values(index) ne value) {
-                    val updatedValue = ArrayValue(origin, theType, values.updated(index, value), refId)
+                    val updatedValue = ArrayValue(origin, theUpperTypeBound, values.updated(index, value), refId)
                     updateAfterEvaluation(this, updatedValue)
                 }
                 ComputationWithSideEffectOnly
@@ -193,7 +202,7 @@ trait ConcreteArrayValues
                 // This handles the case that the index is not precise, but is still
                 // known to be valid. In this case we have to resort to the
                 // abstract representation of the array.
-                val abstractValue = InitializedArrayValue(origin, theType, values.length, refId)
+                val abstractValue = InitializedArrayValue(origin, theUpperTypeBound, values.length, refId)
                 updateAfterEvaluation(this, abstractValue)
                 ComputationWithSideEffectOnly
             }
@@ -233,7 +242,7 @@ trait ConcreteArrayValues
                             if (isOther) {
                                 update(other)
                             } else {
-                                update(ArrayValue(origin, theType, newValues))
+                                update(ArrayValue(origin, theUpperTypeBound, newValues))
                             }
                     }
 
@@ -245,7 +254,7 @@ trait ConcreteArrayValues
                         // => This array and the other array have a corresponding
                         //    abstract representation (w.r.t. the next abstraction level!)
                         //    but we still need to drop the concrete information
-                        val abstractValue = ArrayValue(origin, No, true, theType, nextRefId)
+                        val abstractValue = ArrayValue(origin, No, true, theUpperTypeBound, nextRefId)
                         StructuralUpdate(abstractValue)
                     } else {
                         answer
@@ -305,7 +314,7 @@ trait ConcreteArrayValues
 
         override def toString: String = {
             val valuesAsString = values.mkString("«", ", ", "»")
-            s"${theType.toJava}[@$origin;length=${values.size};refId=$refId,$valuesAsString]"
+            s"${theUpperTypeBound.toJava}[@$origin;length=${values.size};refId=$refId,$valuesAsString]"
         }
     }
 

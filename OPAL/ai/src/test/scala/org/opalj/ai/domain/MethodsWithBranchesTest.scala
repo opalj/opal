@@ -29,7 +29,7 @@ class MethodsWithBranchesTest extends FlatSpec with Matchers {
 
     class TestDomain(val name: String)
         extends Domain
-        with DefaultDomainValueBinding
+        with DefaultSpecialDomainValuesBinding
         with DefaultReferenceValuesBinding
         with DefaultTypeLevelIntegerValues
         with DefaultTypeLevelLongValues

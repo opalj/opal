@@ -3,7 +3,8 @@ package org.opalj
 package ai
 package domain
 
-import org.opalj.br.{ObjectType, FieldType}
+import org.opalj.br.FieldType
+import org.opalj.br.ObjectType
 
 /**
  * Resolves references to final static fields that have simple constant values.
@@ -14,7 +15,7 @@ import org.opalj.br.{ObjectType, FieldType}
  *
  * @author Michael Eichberg
  */
-trait ConstantFieldValuesResolution extends Domain { domain: TheProject with TheClassHierarchy ⇒
+trait ConstantFieldValuesResolution extends Domain { domain: TheProject ⇒
 
     abstract override def getstatic(
         pc:        Int,

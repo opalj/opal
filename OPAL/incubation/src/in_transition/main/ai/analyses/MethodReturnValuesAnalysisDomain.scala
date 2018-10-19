@@ -28,7 +28,7 @@ class BaseMethodReturnValuesAnalysisDomain(
 ) extends CorrelationalDomain
     with TheProject
     with TheMethod
-    with DefaultDomainValueBinding
+    with DefaultSpecialDomainValuesBinding
     with ThrowAllPotentialExceptionsConfiguration
     with l0.DefaultTypeLevelIntegerValues
     // with l1.DefaultIntegerRangeValues

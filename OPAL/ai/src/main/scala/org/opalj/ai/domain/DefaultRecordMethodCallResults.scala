@@ -14,6 +14,6 @@ trait DefaultRecordMethodCallResults
     extends RecordMethodCallResults
     with RecordLastReturnedValues
     with RecordAllThrownExceptions {
-    this: Domain with TheClassHierarchy ⇒
+    this: Domain ⇒
 
 }

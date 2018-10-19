@@ -15,10 +15,9 @@ import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.br.analyses.cg.IsOverridableMethodKey
 import org.opalj.br.cfg.CFG
 import org.opalj.fpcf.properties._
-import org.opalj.ai.Domain
+import org.opalj.value.ValueInformation
 import org.opalj.ai.ValueOrigin
 import org.opalj.ai.common.DefinitionSitesKey
-import org.opalj.ai.domain.RecordDefUse
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.tac.DUVar
 import org.opalj.tac.DefaultTACAIKey
@@ -157,7 +156,7 @@ sealed trait InterProceduralEscapeAnalysisScheduler extends ComputationSpecifica
 object EagerInterProceduralEscapeAnalysis
     extends InterProceduralEscapeAnalysisScheduler
     with FPCFEagerAnalysisScheduler {
-    type V = DUVar[(Domain with RecordDefUse)#DomainValue]
+    type V = DUVar[ValueInformation]
 
     override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new InterProceduralEscapeAnalysis(p)

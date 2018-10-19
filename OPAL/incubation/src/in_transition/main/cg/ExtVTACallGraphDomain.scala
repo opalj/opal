@@ -12,7 +12,7 @@ import org.opalj.br.MethodSignature
 import org.opalj.ai.domain.ThrowAllPotentialExceptionsConfiguration
 import org.opalj.ai.domain.DefaultHandlingOfMethodResults
 import org.opalj.ai.domain.TheMethod
-import org.opalj.ai.domain.DefaultDomainValueBinding
+import org.opalj.ai.domain.DefaultSpecialDomainValuesBinding
 import org.opalj.ai.domain.TheProject
 import org.opalj.ai.domain.IgnoreSynchronization
 import org.opalj.ai.domain.SpecialMethodsHandling
@@ -34,7 +34,7 @@ class ExtVTACallGraphDomain[Source](
         val cache:                        CallGraphCache[MethodSignature, Set[Method]],
         val method:                       Method
 ) extends CorrelationalDomain
-    with DefaultDomainValueBinding
+    with DefaultSpecialDomainValuesBinding
     with ThrowAllPotentialExceptionsConfiguration
     with TheProject
     with TheMethod

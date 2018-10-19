@@ -6,15 +6,15 @@ package l1
 
 import java.lang.Math.abs
 
-import org.opalj.br.CTIntType
 import org.opalj.br.ComputationalTypeInt
+import org.opalj.br.CTIntType
 
 /**
  * This domain implements the tracking of integer values at the level of ranges.
  *
  * @author Michael Eichberg
  */
-trait DefaultIntegerRangeValues extends DefaultDomainValueBinding with IntegerRangeValues {
+trait DefaultIntegerRangeValues extends DefaultSpecialDomainValuesBinding with IntegerRangeValues {
     domain: CorrelationalDomainSupport with Configuration with ExceptionsFactory ⇒
 
     /**
@@ -178,7 +178,14 @@ trait DefaultIntegerRangeValues extends DefaultDomainValueBinding with IntegerRa
 
         override def newInstance: IntegerRange = IntegerRange(lowerBound, upperBound)
 
-        override def hashCode = this.lowerBound * 13 + this.upperBound
+        override def constantValue: Option[ValueOrigin] = {
+            if (lowerBound == upperBound)
+                Some(lowerBound)
+            else
+                None
+        }
+
+        override def hashCode: Int = this.lowerBound * 13 + this.upperBound
 
         override def equals(other: Any): Boolean = {
             other match {
@@ -196,7 +203,6 @@ trait DefaultIntegerRangeValues extends DefaultDomainValueBinding with IntegerRa
                 "int = "+lowerBound
             else
                 s"int ∈ [$lowerBound,$upperBound]"
-
         }
     }
 

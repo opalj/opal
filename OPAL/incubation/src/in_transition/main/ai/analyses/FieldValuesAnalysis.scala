@@ -50,7 +50,7 @@ import org.opalj.br.Field
  *  - [OK - LEGACY CODE?] com.sun.media.sound.SoftSynthesizer{ testline:null }
  *  - [OK - LEGACY CODE?] com.sun.org.apache.xerces.internal.impl.xs.XMLSchemaLoader{ fSymbolTable:null }
  *  - [OK - LEGACY CODE] com.sun.org.apache.xalan.internal.xsltc.trax.TransformerFactoryImpl{ _piParams:null }
- *  - [OK - RSERVED FOR FUTURE USAGE?] com.sun.org.apache.xml.internal.dtm.ref.DTMDefaultBase{ m_namespaceLists:null }
+ *  - [OK - RESERVED FOR FUTURE USAGE?] com.sun.org.apache.xml.internal.dtm.ref.DTMDefaultBase{ m_namespaceLists:null }
  *  - [OK - LEGACY CODE?] sun.awt.motif.MFontConfiguration{ fontConfig:null }
  *  - [OK - LEGACY CODE?] sun.print.PSStreamPrintJob{ reader:null }
  *

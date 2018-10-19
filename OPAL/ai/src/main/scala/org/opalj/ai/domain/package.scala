@@ -25,15 +25,13 @@ import org.opalj.br.ReferenceType
  *      origin of a value should consider to implement.
  *      - [[TheProject]] defines a standard mechanism how a domain can access the
  *      ''current'' project.
- *      - [[TheClassHierarchy]] defines a standard mechanism how to get the project's
- *      class hierarchy.
  *      - ...
  *
  *  - Domains That Provide a Default Implementation
  *      - [[Origin]] defines the functionality to return a value's origin if the value
  *      supports that.
- *      - [[org.opalj.ai.domain.TheProject]] default implementation of the [[TheClassHierarchy]]
- *      trait that uses the project's class hierarchy.
+ *      - [[org.opalj.ai.domain.TheProject]] default implementation of the class hierarchy related
+ *      methods using the project's class hierarchy.
  *      - [[org.opalj.ai.domain.DefaultHandlingOfMethodResults]] basically implements a Domain's methods
  *      related to return instructions an uncaught exceptions.
  *      - ...
@@ -62,7 +60,7 @@ package object domain {
 
     /**
      * Tries to determine the name of the method/class that is analyzed;
-     * the result depends on the mixed-in domain.
+     * the result depends on the mixed-in domain(s).
      */
     def analyzedEntity(domain: Domain): String = {
         domain match {

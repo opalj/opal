@@ -57,7 +57,7 @@ object AIDomainFactoryKey
      * instantiated using the desired domain.
      */
     override protected def compute(project: SomeProject): ProjectSpecificAIExecutor = {
-        implicit val logContext : LogContext = project.logContext
+        implicit val logContext: LogContext = project.logContext
 
         val domainFactoryRequirements = project.
             getProjectInformationKeyInitializationData(this).

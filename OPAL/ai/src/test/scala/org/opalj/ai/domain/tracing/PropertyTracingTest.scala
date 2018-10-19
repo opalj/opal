@@ -26,7 +26,7 @@ class PropertyTracingTest extends FlatSpec with Matchers {
 
     class AnalysisDomain(val method: Method)
         extends CorrelationalDomain
-        with DefaultDomainValueBinding
+        with DefaultSpecialDomainValuesBinding
         with ThrowAllPotentialExceptionsConfiguration
         with DefaultHandlingOfMethodResults
         with IgnoreSynchronization

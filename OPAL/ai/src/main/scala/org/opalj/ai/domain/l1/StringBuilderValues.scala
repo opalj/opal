@@ -4,8 +4,9 @@ package ai
 package domain
 package l1
 
-import org.opalj.br.ObjectType
 import java.lang.{StringBuilder ⇒ JStringBuilder}
+
+import org.opalj.br.ObjectType
 
 /**
  * Enables the tracing of `StringBuilders`.
@@ -37,20 +38,25 @@ import java.lang.{StringBuilder ⇒ JStringBuilder}
  * @author Michael Eichberg
  */
 trait StringBuilderValues extends StringValues {
-    domain: Domain with CorrelationalDomainSupport with Configuration with IntegerValuesDomain with TypedValuesFactory with TheClassHierarchy ⇒
+    domain: Domain with CorrelationalDomainSupport with Configuration with IntegerValuesDomain with TypedValuesFactory ⇒
 
-    import StringBuilderValues._
+    import StringBuilderValues.JavaStringBuffer
 
+    // TODO Move concrete class to DefaultBindingClass...
     protected class StringBuilderValue(
-            origin:          ValueOrigin,
+            val origin:      ValueOrigin,
             val builderType: ObjectType /*either StringBuilder oder StringBuffer*/ ,
             val builder:     JStringBuilder,
-            refId:           RefId
-    ) extends SObjectValue(origin, No, true, builderType, refId) {
+            val refId:       RefId
+    ) extends SObjectValue {
         this: DomainStringValue ⇒
 
         assert(builder != null)
         assert((builderType eq JavaStringBuffer) || (builderType eq ObjectType.StringBuilder))
+
+        final override def isNull: No.type = No
+        final override def isPrecise: Boolean = true
+        final override def theUpperTypeBound: ObjectType = builderType
 
         override def doJoinWithNonNullValueWithSameOrigin(
             joinPC: Int,
@@ -118,7 +124,7 @@ trait StringBuilderValues extends StringValues {
 
         override def hashCode: Int = super.hashCode * 71 + value.hashCode()
 
-        override def toString(): String = {
+        override def toString: String = {
             s"""${this.builderType.toJava}(origin=$origin;builder="$builder";refId=$refId)"""
         }
 
@@ -143,5 +149,7 @@ trait StringBuilderValues extends StringValues {
 }
 
 object StringBuilderValues {
+
     val JavaStringBuffer = ObjectType("java/lang/StringBuffer")
+
 }

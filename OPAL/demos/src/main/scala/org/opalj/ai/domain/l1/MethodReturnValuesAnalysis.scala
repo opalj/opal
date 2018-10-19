@@ -37,7 +37,7 @@ object MethodReturnValuesAnalysis extends DefaultOneStepAnalysis {
             val ai:               InterruptableAI[_],
             val method:           Method
     ) extends CorrelationalDomain
-        with domain.DefaultDomainValueBinding
+        with domain.DefaultSpecialDomainValuesBinding
         with domain.ThrowAllPotentialExceptionsConfiguration
         with domain.l0.DefaultTypeLevelIntegerValues
         with domain.l0.DefaultTypeLevelLongValues

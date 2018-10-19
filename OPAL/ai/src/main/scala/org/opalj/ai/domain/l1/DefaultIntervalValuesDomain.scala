@@ -19,7 +19,7 @@ class DefaultIntervalValuesDomain[Source](
 ) extends CorrelationalDomain
     with TheProject
     with TheMethod
-    with DefaultDomainValueBinding
+    with DefaultSpecialDomainValuesBinding
     with ThrowAllPotentialExceptionsConfiguration
     with DefaultHandlingOfMethodResults
     with IgnoreSynchronization

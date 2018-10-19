@@ -28,7 +28,7 @@ class MethodsWithExceptionsTest extends FlatSpec with Matchers {
 
     class DefaultRecordingDomain(val id: String)
         extends CorrelationalDomain
-        with DefaultDomainValueBinding
+        with DefaultSpecialDomainValuesBinding
         with ThrowAllPotentialExceptionsConfiguration
         with PredefinedClassHierarchy
         with DefaultHandlingOfMethodResults

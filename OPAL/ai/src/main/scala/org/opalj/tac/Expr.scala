@@ -25,7 +25,7 @@ import org.opalj.br.MethodHandle
 import org.opalj.br.Method
 import org.opalj.br.PC
 import org.opalj.br.analyses.ProjectLike
-import org.opalj.value.KnownTypedValue
+import org.opalj.value.ValueInformation
 
 /**
  * Represents an expression. In general, every expression should be a simple expression, where
@@ -710,7 +710,7 @@ case class NonVirtualFunctionCall[+V <: Var[V]](
     )(
         implicit
         p:  ProjectLike,
-        ev: V <:< DUVar[KnownTypedValue]
+        ev: V <:< DUVar[ValueInformation]
     ): Set[Method] = {
         resolveCallTarget(callingContext)(p).toSet
     }
@@ -812,7 +812,7 @@ case class StaticFunctionCall[+V <: Var[V]](
     )(
         implicit
         p:  ProjectLike,
-        ev: V <:< DUVar[KnownTypedValue]
+        ev: V <:< DUVar[ValueInformation]
     ): Set[Method] = {
         resolveCallTarget(p).toSet
     }

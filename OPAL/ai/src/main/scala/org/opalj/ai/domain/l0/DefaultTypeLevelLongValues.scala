@@ -12,7 +12,7 @@ package l0
  * @author Michael Eichberg
  */
 trait DefaultTypeLevelLongValues
-    extends DefaultDomainValueBinding
+    extends DefaultSpecialDomainValuesBinding
     with TypeLevelLongValues {
     this: PrimitiveValuesFactory with ExceptionsFactory with Configuration ⇒
 
@@ -27,6 +27,8 @@ trait DefaultTypeLevelLongValues
         override def adapt(target: TargetDomain, pc: Int): target.DomainValue = {
             target.LongValue(pc)
         }
+
+        override def constantValue: Option[Long] = None
     }
 
     override def LongValue(valueOrigin: ValueOrigin): LongValue = ALongValue

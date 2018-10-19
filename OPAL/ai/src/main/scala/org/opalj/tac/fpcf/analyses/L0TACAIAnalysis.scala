@@ -14,7 +14,7 @@ import org.opalj.fpcf.MultiResult
 import org.opalj.fpcf.PropertyComputationResult
 import org.opalj.fpcf.PropertyKind
 import org.opalj.fpcf.PropertyStore
-import org.opalj.value.KnownTypedValue
+import org.opalj.value.ValueInformation
 import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
 import org.opalj.ai.AIResult
@@ -57,7 +57,7 @@ class L0TACAIAnalysis private[analyses] (val project: SomeProject) extends FPCFA
         val tacaiProperty = TheTACAI(
             // the following cast is safe - see TACode for details
             // IMPROVE Get rid of nasty type checks/casts related to TACode once we use ConstCovariantArray in TACode.. (here and elsewhere)
-            taCode.asInstanceOf[TACode[TACMethodParameter, DUVar[KnownTypedValue]]]
+            taCode.asInstanceOf[TACode[TACMethodParameter, DUVar[ValueInformation]]]
         )
         MultiResult(List(FinalEP(m, aiResultProperty), FinalEP(m, tacaiProperty)))
     }

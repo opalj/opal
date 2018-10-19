@@ -27,7 +27,7 @@ trait RecordMethodCallResults
     extends MethodCallResults
     with RecordReturnedValues
     with RecordThrownExceptions {
-    this: Domain with TheClassHierarchy ⇒
+    this: Domain ⇒
 
     type ThrownException <: Set[this.ExceptionValue]
 

@@ -12,7 +12,7 @@ import org.opalj.br.analyses.Project
  */
 trait SharedValuesDomain[Source]
     extends CorrelationalDomain
-    with DefaultDomainValueBinding
+    with DefaultSpecialDomainValuesBinding
     with TheProject
     with l0.DefaultTypeLevelFloatValues
     with l0.DefaultTypeLevelDoubleValues

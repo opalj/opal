@@ -45,9 +45,7 @@ trait LongSetValues extends LongValuesDomain with ConcreteLongValues {
     sealed trait LongValue extends TypedValue[LongType] with IsLongValue {
         this: DomainTypedValue[LongType] ⇒
 
-        final override def valueType: Option[LongType] = Some(LongType)
-
-        final override def verificationTypeInfo: VerificationTypeInfo = LongVariableInfo
+        final override def leastUpperType: Option[LongType] = Some(LongType)
 
     }
 

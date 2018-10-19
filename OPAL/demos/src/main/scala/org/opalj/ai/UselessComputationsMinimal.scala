@@ -23,7 +23,7 @@ object UselessComputationsMinimal extends DefaultOneStepAnalysis {
 
     class AnalysisDomain(val project: Project[URL], val method: Method)
         extends CorrelationalDomain
-        with domain.DefaultDomainValueBinding
+        with domain.DefaultSpecialDomainValuesBinding
         with domain.DefaultHandlingOfMethodResults
         with domain.IgnoreSynchronization
         with domain.ThrowAllPotentialExceptionsConfiguration

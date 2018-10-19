@@ -242,11 +242,18 @@ class DefaultConcreteArraysTest extends FunSpec with Matchers {
 
                 arraylength(returnIndex, varray) should be(ComputedValue(IntegerRange(4)))
 
-                arrayload(returnIndex, IntegerValue(5, 0), varray) should be(ComputedValue(StringValue(6, "A1")))
-                arrayload(returnIndex, IntegerValue(10, 1), varray) should be(ComputedValue(StringValue(11, "B2")))
-                arrayload(returnIndex, IntegerValue(15, 2), varray) should be(ComputedValue(StringValue(16, "C3")))
-                arrayload(returnIndex, IntegerValue(20, 3), varray) should be(ComputedValue(StringValue(21, "D4")))
-
+                arrayload(returnIndex, IntegerValue(5, 0), varray) should be(
+                    ComputedValue(StringValue(6, "A1"))
+                )
+                arrayload(returnIndex, IntegerValue(10, 1), varray) should be(
+                    ComputedValue(StringValue(11, "B2"))
+                )
+                arrayload(returnIndex, IntegerValue(15, 2), varray) should be(
+                    ComputedValue(StringValue(16, "C3"))
+                )
+                arrayload(returnIndex, IntegerValue(20, 3), varray) should be(
+                    ComputedValue(StringValue(21, "D4"))
+                )
             }
         }
 
@@ -582,7 +589,7 @@ class DefaultConcreteArraysTestDomain(
         override val maxCardinalityOfIntegerRanges: Long = -(Int.MinValue.toLong) + Int.MaxValue
 ) extends CorrelationalDomain
     with GlobalLogContextProvider
-    with DefaultDomainValueBinding
+    with DefaultSpecialDomainValuesBinding
     with ThrowAllPotentialExceptionsConfiguration
     with l0.SimpleTypeLevelInvokeInstructions
     with l0.TypeLevelFieldAccessInstructions
