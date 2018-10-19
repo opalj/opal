@@ -32,35 +32,35 @@ trait DefaultEscapeAnalysis extends AbstractEscapeAnalysis {
     protected[this] override def handlePutField(
         putField: PutField[V]
     )(implicit context: AnalysisContext, state: AnalysisState): Unit = {
-        if (context.usesDefSite(putField.value))
+        if (state.usesDefSite(putField.value))
             state.meetMostRestrictive(AtMost(NoEscape))
     }
 
     protected[this] override def handleArrayStore(
         arrayStore: ArrayStore[V]
     )(implicit context: AnalysisContext, state: AnalysisState): Unit = {
-        if (context.usesDefSite(arrayStore.value))
+        if (state.usesDefSite(arrayStore.value))
             state.meetMostRestrictive(AtMost(NoEscape))
     }
 
     protected[this] override def handleThrow(
         aThrow: Throw[V]
     )(implicit context: AnalysisContext, state: AnalysisState): Unit = {
-        if (context.usesDefSite(aThrow.exception))
+        if (state.usesDefSite(aThrow.exception))
             state.meetMostRestrictive(AtMost(NoEscape))
     }
 
     protected[this] override def handleStaticMethodCall(
         call: StaticMethodCall[V]
     )(implicit context: AnalysisContext, state: AnalysisState): Unit = {
-        if (context.anyParameterUsesDefSite(call.params))
+        if (state.anyParameterUsesDefSite(call.params))
             state.meetMostRestrictive(AtMost(EscapeInCallee))
     }
 
     protected[this] override def handleVirtualMethodCall(
         call: VirtualMethodCall[V]
     )(implicit context: AnalysisContext, state: AnalysisState): Unit = {
-        if (context.usesDefSite(call.receiver) || context.anyParameterUsesDefSite(call.params))
+        if (state.usesDefSite(call.receiver) || state.anyParameterUsesDefSite(call.params))
             state.meetMostRestrictive(AtMost(EscapeInCallee))
     }
 
@@ -80,14 +80,14 @@ trait DefaultEscapeAnalysis extends AbstractEscapeAnalysis {
         call: NonVirtualMethodCall[V]
     )(implicit context: AnalysisContext, state: AnalysisState): Unit = {
         assert(call.name == "<init>")
-        if (context.usesDefSite(call.receiver))
+        if (state.usesDefSite(call.receiver))
             state.meetMostRestrictive(AtMost(NoEscape))
     }
 
     protected[this] override def handleParameterOfConstructor(
         call: NonVirtualMethodCall[V]
     )(implicit context: AnalysisContext, state: AnalysisState): Unit = {
-        if (context.anyParameterUsesDefSite(call.params))
+        if (state.anyParameterUsesDefSite(call.params))
             state.meetMostRestrictive(AtMost(EscapeInCallee))
     }
 
@@ -95,28 +95,28 @@ trait DefaultEscapeAnalysis extends AbstractEscapeAnalysis {
         call: NonVirtualMethodCall[V]
     )(implicit context: AnalysisContext, state: AnalysisState): Unit = {
         assert(call.name != "<init>")
-        if (context.usesDefSite(call.receiver) || context.anyParameterUsesDefSite(call.params))
+        if (state.usesDefSite(call.receiver) || state.anyParameterUsesDefSite(call.params))
             state.meetMostRestrictive(AtMost(EscapeInCallee))
     }
 
     protected[this] override def handleVirtualFunctionCall(
         call: VirtualFunctionCall[V], hasAssignment: Boolean
     )(implicit context: AnalysisContext, state: AnalysisState): Unit = {
-        if (context.usesDefSite(call.receiver) || context.anyParameterUsesDefSite(call.params))
+        if (state.usesDefSite(call.receiver) || state.anyParameterUsesDefSite(call.params))
             state.meetMostRestrictive(AtMost(EscapeInCallee))
     }
 
     protected[this] override def handleNonVirtualFunctionCall(
         call: NonVirtualFunctionCall[V], hasAssignment: Boolean
     )(implicit context: AnalysisContext, state: AnalysisState): Unit = {
-        if (context.usesDefSite(call.receiver) || context.anyParameterUsesDefSite(call.params))
+        if (state.usesDefSite(call.receiver) || state.anyParameterUsesDefSite(call.params))
             state.meetMostRestrictive(AtMost(EscapeInCallee))
     }
 
     protected[this] override def handleStaticFunctionCall(
         call: StaticFunctionCall[V], hasAssignment: Boolean
     )(implicit context: AnalysisContext, state: AnalysisState): Unit = {
-        if (context.anyParameterUsesDefSite(call.params))
+        if (state.anyParameterUsesDefSite(call.params))
             state.meetMostRestrictive(AtMost(EscapeInCallee))
     }
 
@@ -128,7 +128,7 @@ trait DefaultEscapeAnalysis extends AbstractEscapeAnalysis {
         context: AnalysisContext,
         state:   AnalysisState
     ): Unit = {
-        if (context.anyParameterUsesDefSite(call.params))
+        if (state.anyParameterUsesDefSite(call.params))
             state.meetMostRestrictive(AtMost(EscapeInCallee))
     }
 
@@ -139,17 +139,11 @@ trait DefaultEscapeAnalysis extends AbstractEscapeAnalysis {
         context: AnalysisContext,
         state:   AnalysisState
     ): Unit = {
-        if (context.anyParameterUsesDefSite(call.params))
+        if (state.anyParameterUsesDefSite(call.params))
             state.meetMostRestrictive(AtMost(EscapeInCallee))
     }
 
     protected[this] override def handleOtherKindsOfExpressions(
         expr: Expr[V]
     )(implicit context: AnalysisContext, state: AnalysisState): Unit = {}
-
-    protected[this] override def continuation(
-        someEPS: SomeEPS
-    )(implicit context: AnalysisContext, state: AnalysisState): PropertyComputationResult = {
-        throw new UnknownError(s"unhandled escape property (${someEPS.ub} for ${someEPS.e}")
-    }
 }

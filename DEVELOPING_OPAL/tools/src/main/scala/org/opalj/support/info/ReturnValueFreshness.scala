@@ -24,6 +24,7 @@ import org.opalj.fpcf.properties.VFreshReturnValue
 import org.opalj.fpcf.properties.VGetter
 import org.opalj.fpcf.properties.VNoFreshReturnValue
 import org.opalj.fpcf.properties.VPrimitiveReturnValue
+import org.opalj.tac.fpcf.analyses.LazyL0TACAIAnalysis
 
 /**
  * Computes return value freshness information; see
@@ -47,6 +48,7 @@ object ReturnValueFreshness extends DefaultOneStepAnalysis {
     ): BasicReport = {
 
         val ps = project.get(FPCFAnalysesManagerKey).runAll(
+            LazyL0TACAIAnalysis,
             LazyInterProceduralEscapeAnalysis,
             LazyFieldLocalityAnalysis,
             LazyVirtualCallAggregatingEscapeAnalysis,
