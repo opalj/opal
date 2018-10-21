@@ -697,7 +697,10 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
         }
 
         def doRefineUpperTypeBound(supertype: ReferenceType): DomainSingleOriginReferenceValue = {
-            assert(!isPrecise)
+            // Please note, that an "assert(!isPrecise)" is not possible, it may be the
+            // case that a developer performs a deliberate "upcast" of a type, but that
+            // the type hierarchy is not known to OPAL. In this case, we will definitively
+            // perform the upcast - even if the type is precise.
 
             ArrayValue(origin, isNull, isPrecise = false, supertype.asArrayType, refId)
         }
