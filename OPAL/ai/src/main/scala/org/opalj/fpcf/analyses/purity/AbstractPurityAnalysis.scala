@@ -30,9 +30,7 @@ import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
 import org.opalj.br.Field
 import org.opalj.br.Method
-import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
-import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.cg.IsOverridableMethodKey
@@ -367,48 +365,6 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
         case VirtualMethodCall.ASTID    ⇒ stmt.asVirtualMethodCall
         case Assignment.ASTID           ⇒ stmt.asAssignment.expr.asFunctionCall
         case ExprStmt.ASTID             ⇒ stmt.asExprStmt.expr.asFunctionCall
-    }
-
-    def onVirtualMethod(
-        receiverType: ReferenceType,
-        interface:    Boolean,
-        name:         String,
-        receiver:     Expr[V],
-        descr:        MethodDescriptor,
-        onPrecise:    org.opalj.Result[Method] ⇒ Boolean,
-        onMultiple:   DeclaredMethod ⇒ Boolean,
-        onUnknown:    () ⇒ Boolean
-    )(implicit state: StateType): Boolean = {
-        val rcvrValue = receiver.asVar.value.asReferenceValue
-        val rcvrType = if (receiver.isVar) rcvrValue.leastUpperType else Some(receiverType)
-
-        if (rcvrType.isEmpty) {
-            // IMPROVE Just use the CFG to check if we have a normal successor
-            true // We don't have to examine calls that will result in an NPE
-        } else if (rcvrType.get.isArrayType) {
-            val callee = project.instanceCall(state.declClass, ObjectType.Object, name, descr)
-            onPrecise(callee)
-        } else if (rcvrValue.isPrecise) {
-            // The receiver could refer to further expressions in a non-flat representation.
-            // To avoid special handling, we just fallback to the general case of virtual/interface
-            // calls here as the analysis is intended to be used on flat representations anyway.
-            val callee = project.instanceCall(state.declClass, rcvrType.get, name, descr)
-            onPrecise(callee)
-        } else {
-            val callee = declaredMethods(
-                receiverType.asObjectType,
-                state.declClass.packageName,
-                rcvrType.get.asObjectType,
-                name,
-                descr
-            )
-
-            if (!callee.hasSingleDefinedMethod || isMethodOverridable(callee.definedMethod).isNotNo) {
-                onUnknown() // We don't know all overrides
-            } else {
-                onMultiple(callee)
-            }
-        }
     }
 
     /**

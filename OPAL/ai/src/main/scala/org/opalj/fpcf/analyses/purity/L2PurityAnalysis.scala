@@ -6,6 +6,8 @@ package purity
 
 import scala.annotation.switch
 
+import scala.collection.immutable.IntMap
+
 import net.ceedubs.ficus.Ficus._
 
 import org.opalj.collection.immutable.EmptyIntTrieSet
@@ -124,7 +126,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         var calleesDependee: Option[EOptionP[DeclaredMethod, Callees]] = None
 
         var rvfDependees: Map[DeclaredMethod, (EOptionP[DeclaredMethod, ReturnValueFreshness], Set[(Option[Expr[V]], Purity)])] = Map.empty
-        var virtualRVFDependees: Map[DeclaredMethod, (EOptionP[DeclaredMethod, VirtualMethodReturnValueFreshness], Set[(Option[Expr[V]], Purity)])] = Map.empty
+        var rvfCallSites: IntMap[(Option[Expr[V]], Purity)] = IntMap.empty
 
         var staticDataUsage: Option[EOptionP[DeclaredMethod, StaticDataUsage]] = None
 
@@ -138,7 +140,6 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                 purityDependees.valuesIterator.map(_._1) ++
                 calleesDependee ++
                 rvfDependees.valuesIterator.map(_._1) ++
-                virtualRVFDependees.valuesIterator.map(_._1) ++
                 staticDataUsage ++
                 tacai).toTraversable
 
@@ -224,26 +225,12 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
             }
         }
 
-        def addVirtualRVFDependee(
-            dm:   DeclaredMethod,
-            eop:  EOptionP[DeclaredMethod, VirtualMethodReturnValueFreshness],
-            data: (Option[Expr[V]], Purity)
-        ): Unit = {
-            if (virtualRVFDependees.contains(dm)) {
-                val (_, oldValues) = virtualRVFDependees(dm)
-                virtualRVFDependees += ((dm, (eop, oldValues + data)))
-            } else {
-                virtualRVFDependees += ((dm, (eop, Set(data))))
-            }
-        }
-
         def removeFieldLocalityDependee(f: Field): Unit = fieldLocalityDependees -= f
         def removeFieldMutabilityDependee(f: Field): Unit = fieldMutabilityDependees -= f
         def removeClassImmutabilityDependee(t: ObjectType): Unit = classImmutabilityDependees -= t
         def removeTypeImmutabilityDependee(t: ObjectType): Unit = typeImmutabilityDependees -= t
         def removePurityDependee(dm: DeclaredMethod): Unit = purityDependees -= dm
         def removeRVFDependee(dm: DeclaredMethod): Unit = rvfDependees -= dm
-        def removeVirtualRVFDependee(dm: DeclaredMethod): Unit = virtualRVFDependees -= dm
 
         def updateStaticDataUsage(eps: Option[EOptionP[DeclaredMethod, StaticDataUsage]]): Unit = {
             staticDataUsage = eps
@@ -394,36 +381,13 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
 
         (rhs.astID: @switch) match {
             case New.ASTID | NewArray.ASTID ⇒ true
-            case StaticFunctionCall.ASTID ⇒
-                val callee = rhs.asStaticFunctionCall.resolveCallTarget(p)
-                if (callee.hasValue) {
-                    val rvf = propertyStore(declaredMethods(callee.value), ReturnValueFreshness.key)
-                    checkLocalityOfReturn(rvf, (None, otherwise))
-                    true
-                } else false
-            case NonVirtualFunctionCall.ASTID ⇒
-                val callee = rhs.asNonVirtualFunctionCall.resolveCallTarget(state.declClass)(p)
-                if (callee.hasValue) {
-                    val rvf = propertyStore(declaredMethods(callee.value), ReturnValueFreshness.key)
-                    val receiver = rhs.asNonVirtualFunctionCall.receiver
-                    checkLocalityOfReturn(rvf, (Some(receiver), otherwise))
-                    true
-                } else false
-            case VirtualFunctionCall.ASTID ⇒
-                val VirtualFunctionCall(_, declClass, interface, name, descr, rcvr, _) = rhs
-                onVirtualMethod(declClass, interface, name, rcvr, descr,
-                    callee ⇒ if (callee.hasValue) {
-                        val dm = declaredMethods(callee.value)
-                        val rvf = propertyStore(dm, ReturnValueFreshness.key)
-                        checkLocalityOfReturn(rvf, (Some(rcvr), otherwise))
-                        true
-                    } else false,
-                    dm ⇒ {
-                        val rvf = propertyStore(dm, VirtualMethodReturnValueFreshness.key)
-                        checkLocalityOfReturn(rvf, (Some(rcvr), otherwise))
-                        true
-                    },
-                    () ⇒ false)
+            case StaticFunctionCall.ASTID | NonVirtualFunctionCall.ASTID |
+                VirtualFunctionCall.ASTID ⇒
+                val oldPurityLevel =
+                    state.rvfCallSites.get(stmt.pc).map(_._2).getOrElse(CompileTimePure)
+                state.rvfCallSites +=
+                    stmt.pc → ((rhs.asFunctionCall.receiverOption, otherwise meet oldPurityLevel))
+                true
             case GetField.ASTID ⇒
                 val GetField(_, declClass, name, fieldType, objRef) = rhs
                 project.resolveFieldReference(declClass, name, fieldType) match {
@@ -498,19 +462,22 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
             case EOptionP(e, pk) ⇒
                 reducePurityLB(data._2)
                 if (data._2 meet state.ubPurity ne state.ubPurity) {
-                    if (pk == ReturnValueFreshness.key)
-                        state.addRVFDependee(
-                            e,
-                            ep.asInstanceOf[EOptionP[DeclaredMethod, ReturnValueFreshness]],
-                            data
-                        )
-                    else
-                        state.addVirtualRVFDependee(
-                            e,
-                            ep.asInstanceOf[EOptionP[DeclaredMethod, VirtualMethodReturnValueFreshness]],
-                            data
-                        )
+                    state.addRVFDependee(
+                        e,
+                        ep.asInstanceOf[EOptionP[DeclaredMethod, ReturnValueFreshness]],
+                        data
+                    )
                 }
+        }
+    }
+
+    def checkFreshnessOfReturn(
+        pc:      Int,
+        data:    (Option[Expr[V]], Purity),
+        callees: Callees
+    )(implicit state: State): Unit = {
+        callees.callees(pc).foreach { callee ⇒
+            checkLocalityOfReturn(propertyStore(callee, ReturnValueFreshness.key), data)
         }
     }
 
@@ -682,13 +649,6 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         }
         state.rvfDependees = newRVFDependees
 
-        var newVRVFDependees: Map[DeclaredMethod, (EOptionP[DeclaredMethod, VirtualMethodReturnValueFreshness], Set[(Option[Expr[V]], Purity)])] = Map.empty
-        for ((dependee, (eop, data)) ← state.virtualRVFDependees) {
-            val newData = data.filter(_._2 meet state.ubPurity ne state.ubPurity)
-            if (newData.nonEmpty) newVRVFDependees += ((dependee, (eop, newData)))
-        }
-        state.virtualRVFDependees = newVRVFDependees
-
         var newPurityDependees: Map[DeclaredMethod, (EOptionP[DeclaredMethod, Purity], Set[Seq[Expr[V]]])] = Map.empty
         for ((dependee, eAndD) ← state.purityDependees) {
             if (eAndD._1.hasNoProperty || (eAndD._1.lb meet state.ubPurity ne state.ubPurity))
@@ -733,13 +693,6 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
 
         for {
             (_, data) ← state.rvfDependees.valuesIterator
-            (_, purity) ← data
-        } {
-            newLowerBound = newLowerBound meet purity
-        }
-
-        for {
-            (_, data) ← state.virtualRVFDependees.valuesIterator
             (_, purity) ← data
         } {
             newLowerBound = newLowerBound meet purity
@@ -799,16 +752,6 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                         e
                     )
                 }
-            case VirtualMethodReturnValueFreshness.key ⇒
-                val e = eps.e.asInstanceOf[DeclaredMethod]
-                val dependees = state.virtualRVFDependees(e)
-                state.removeVirtualRVFDependee(e)
-                dependees._2.foreach { e ⇒
-                    checkLocalityOfReturn(
-                        eps.asInstanceOf[EOptionP[DeclaredMethod, VirtualMethodReturnValueFreshness]],
-                        e
-                    )
-                }
             case FieldLocality.key ⇒
                 val e = eps.e.asInstanceOf[Field]
                 val dependees = state.fieldLocalityDependees(e)
@@ -818,12 +761,19 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                 }
             case Callees.key ⇒
                 checkPurityOfCallees(eps.asInstanceOf[EOptionP[DeclaredMethod, Callees]])
+                state.rvfCallSites.foreach {
+                    case (pc, data) ⇒
+                        checkFreshnessOfReturn(pc, data, eps.ub.asInstanceOf[Callees])
+                }
             case StaticDataUsage.key ⇒
                 checkStaticDataUsage(eps.asInstanceOf[EOptionP[DeclaredMethod, StaticDataUsage]])
             case TACAI.key ⇒
                 state.updateTacai(eps.asInstanceOf[EOptionP[Method, TACAI]])
                 return determineMethodPurity(eps.ub.asInstanceOf[TACAI].tac.get.cfg);
         }
+
+        if (state.ubPurity eq ImpureByAnalysis)
+            return Result(state.definedMethod, ImpureByAnalysis);
 
         if (state.ubPurity ne oldPurity)
             cleanupDependees() // Remove dependees that we don't need anymore.
@@ -885,6 +835,11 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         val callees = propertyStore(state.definedMethod, Callees.key)
         if (!checkPurityOfCallees(callees))
             return Result(state.definedMethod, state.ubPurity)
+
+        if(callees.hasProperty)
+            state.rvfCallSites.foreach { case (pc, data) ⇒
+                checkFreshnessOfReturn(pc, data, callees.ub)
+            }
 
         // Creating implicit exceptions is side-effect free (because of fillInStackTrace)
         // but it may be ignored as domain-specific

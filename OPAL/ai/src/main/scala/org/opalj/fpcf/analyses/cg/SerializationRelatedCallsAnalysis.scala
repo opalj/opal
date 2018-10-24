@@ -489,7 +489,8 @@ object EagerSerializationRelatedCallsAnalysis extends FPCFEagerAnalysisScheduler
 
     override def uses: Set[PropertyKind] = Set(CallersProperty, InstantiatedTypes, TACAI)
 
-    override def derives: Set[PropertyKind] = Set(CallersProperty, SerializationRelatedCallees)
+    override def derives: Set[PropertyKind] =
+        Set(CallersProperty, InstantiatedTypes, SerializationRelatedCallees)
 
     override def init(p: SomeProject, ps: PropertyStore): SerializationRelatedCallsAnalysis = {
         val analysis = new SerializationRelatedCallsAnalysis(p)

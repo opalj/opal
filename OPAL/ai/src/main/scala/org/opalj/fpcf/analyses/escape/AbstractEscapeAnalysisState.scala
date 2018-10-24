@@ -125,7 +125,7 @@ trait AbstractEscapeAnalysisState {
  * to the [[PropertyStore]].
  */
 trait DependeeCache {
-
+    // TODO There is only ever one key in this map, the current method, so an Option should suffice
     private[escape] val calleesCache: mutable.Map[DeclaredMethod, EOptionP[Entity, Callees]] =
         mutable.Map()
 

@@ -6,6 +6,7 @@ package analyses
 import java.util.concurrent.ConcurrentHashMap
 
 import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.fpcf.cg.properties.Callees
 import org.opalj.fpcf.properties.EscapeInCallee
 import org.opalj.fpcf.properties.EscapeProperty
 import org.opalj.fpcf.properties.EscapeViaReturn
@@ -21,12 +22,6 @@ import org.opalj.fpcf.properties.NoFreshReturnValue
 import org.opalj.fpcf.properties.NoLocalField
 import org.opalj.fpcf.properties.PrimitiveReturnValue
 import org.opalj.fpcf.properties.ReturnValueFreshness
-import org.opalj.fpcf.properties.VExtensibleGetter
-import org.opalj.fpcf.properties.VFreshReturnValue
-import org.opalj.fpcf.properties.VGetter
-import org.opalj.fpcf.properties.VirtualMethodReturnValueFreshness
-import org.opalj.fpcf.properties.VNoFreshReturnValue
-import org.opalj.fpcf.properties.VPrimitiveReturnValue
 import org.opalj.value.ValueInformation
 import org.opalj.br.ClassFile
 import org.opalj.br.DeclaredMethod
@@ -35,8 +30,8 @@ import org.opalj.br.Method
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.cg.ClosedPackagesKey
-import org.opalj.br.analyses.cg.IsOverridableMethodKey
 import org.opalj.br.analyses.cg.TypeExtensibilityKey
 import org.opalj.br.cfg.BasicBlock
 import org.opalj.br.cfg.CFGNode
@@ -74,10 +69,9 @@ class FieldLocalityAnalysis private[analyses] (
 
     type V = DUVar[ValueInformation]
 
-    final val declaredMethods = project.get(DeclaredMethodsKey)
+    final implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
     final val typeExtensiblity = project.get(TypeExtensibilityKey)
     final val definitionSites = project.get(DefinitionSitesKey)
-    final val isOverridableMethod = project.get(IsOverridableMethodKey)
 
     /**
      * Checks if the field locality can be determined trivially.
@@ -335,48 +329,8 @@ class FieldLocalityAnalysis private[analyses] (
             case Assignment(_, _, New(_, _) | NewArray(_, _, _)) ⇒
                 false // fresh by definition
 
-            case Assignment(_, _, StaticFunctionCall(_, dc, isI, name, desc, _)) ⇒
-                val callee = project.staticCall(dc, isI, name, desc)
-                handleConcreteCall(callee)
-
-            case Assignment(_, _, NonVirtualFunctionCall(_, dc, isI, name, desc, _, _)) ⇒
-                val callee = project.specialCall(caller.classFile.thisType, dc, isI, name, desc)
-                handleConcreteCall(callee)
-
-            case Assignment(_, _, VirtualFunctionCall(_, rcvrType, _, name, desc, receiver, _)) ⇒
-                val callerType = caller.classFile.thisType
-                val value = receiver.asVar.value.asReferenceValue
-                val mostPreciseType = value.leastUpperType
-
-                if (mostPreciseType.isEmpty) {
-                    false // Receiver is null, call will never be executed
-                } else if (mostPreciseType.get.isArrayType) {
-                    val callee =
-                        project.instanceCall(ObjectType.Object, ObjectType.Object, name, desc)
-                    handleConcreteCall(callee)
-
-                } else if (value.isPrecise) {
-                    val callee = project.instanceCall(callerType, mostPreciseType.get, name, desc)
-                    handleConcreteCall(callee)
-
-                } else {
-                    val packageName = callerType.packageName
-                    val callee = declaredMethods(
-                        rcvrType.asObjectType,
-                        packageName,
-                        mostPreciseType.get.asObjectType,
-                        name,
-                        desc
-                    )
-
-                    if (!callee.hasSingleDefinedMethod ||
-                        isOverridableMethod(callee.definedMethod).isNotNo) {
-                        true // We don't know all overrides
-                    } else {
-                        val rvf = propertyStore(callee, VirtualMethodReturnValueFreshness.key)
-                        handleReturnValueFreshness(rvf)
-                    }
-                }
+            case Assignment(pc, _, _: StaticFunctionCall[V] | _: NonVirtualFunctionCall[V] | _: VirtualFunctionCall[V]) ⇒
+                handleCallSite(declaredMethods(caller), pc)
 
             case Assignment(_, _, _: Const) ⇒
                 false
@@ -388,21 +342,37 @@ class FieldLocalityAnalysis private[analyses] (
     }
 
     /**
-     * Handles the influence of a monomorphic call on the field locality.
+     * Handles the influence of a call site on the field locality.
      * @return false if the field may still be local, true otherwise.
      * @note Adds dependees as necessary.
      */
-    def handleConcreteCall(
-        callee: org.opalj.Result[Method]
-    )(
+    def handleCallSite(caller: DeclaredMethod, pc: Int)(
         implicit
         state: FieldLocalityState
     ): Boolean = {
-        if (callee.isEmpty) { // Unknown method, not found in the scope of the current project
-            true
+        val calleesEP =
+            if (state.calleeDependees.contains(caller)) {
+                val (ep, pcs) = state.calleeDependees(caller)
+                if (!pcs.contains(pc))
+                    state.calleeDependees.update(caller, (ep, pcs + pc))
+                ep
+            } else {
+                val ep = propertyStore(caller, Callees.key)
+                state.calleeDependees.put(caller, (ep, IntTrieSet(pc)))
+                ep
+            }
+        if (calleesEP.hasNoProperty) {
+            false
         } else {
-            val dm = declaredMethods(callee.value)
-            handleReturnValueFreshness(propertyStore(dm, ReturnValueFreshness.key))
+            val callees = calleesEP.ub
+
+            if (callees.isIncompleteCallSite(pc)) {
+                true
+            } else {
+                callees.callees(pc).exists { callee ⇒
+                    handleReturnValueFreshness(propertyStore(callee, ReturnValueFreshness.key))
+                }
+            }
         }
     }
 
@@ -412,22 +382,22 @@ class FieldLocalityAnalysis private[analyses] (
      * @note Adds dependees as necessary.
      */
     private[this] def handleReturnValueFreshness(
-        eOptionP: EOptionP[DeclaredMethod, Property]
+        eOptionP: EOptionP[DeclaredMethod, ReturnValueFreshness]
     )(implicit state: FieldLocalityState): Boolean = eOptionP match {
-        case EPS(_, _, NoFreshReturnValue | VNoFreshReturnValue) ⇒
+        case EPS(_, _, NoFreshReturnValue) ⇒
             true
 
         //IMPROVE - we might treat values returned from a getter as fresh in some cases
         // e.g. if the method's receiver is the same as the analyzed field's owning instance.
-        case EPS(_, _, Getter | VGetter) ⇒
+        case EPS(_, _, Getter) ⇒
             true
 
-        case EPS(_, _, ExtensibleGetter | VExtensibleGetter) ⇒
+        case EPS(_, _, ExtensibleGetter) ⇒
             true
 
-        case FinalEP(_, FreshReturnValue | VFreshReturnValue) ⇒ false
+        case FinalEP(_, FreshReturnValue) ⇒ false
 
-        case FinalEP(_, PrimitiveReturnValue | VPrimitiveReturnValue) ⇒
+        case FinalEP(_, PrimitiveReturnValue) ⇒
             throw new RuntimeException(s"unexpected property $eOptionP for entity ${state.field}")
 
         case epkOrCnd ⇒
@@ -542,26 +512,32 @@ class FieldLocalityAnalysis private[analyses] (
     private[this] def continuation(
         someEPS: SomeEPS
     )(implicit state: FieldLocalityState): PropertyComputationResult = {
-        val isNotLocal = someEPS.e match {
-            case _: DeclaredMethod ⇒
-                val newEP = someEPS.asInstanceOf[EOptionP[DeclaredMethod, Property]]
+        val isNotLocal = someEPS.pk match {
+            case ReturnValueFreshness.key ⇒
+                val newEP = someEPS.asInstanceOf[EOptionP[DeclaredMethod, ReturnValueFreshness]]
                 state.removeMethodDependee(newEP)
                 handleReturnValueFreshness(newEP)
 
-            case e: DefinitionSiteLike ⇒
+            case EscapeProperty.key ⇒
                 val newEP = someEPS.asInstanceOf[EOptionP[DefinitionSiteLike, EscapeProperty]]
-                val isGetFieldOfReceiver = state.isGetFieldOfReceiver(e)
+                val isGetFieldOfReceiver = state.isGetFieldOfReceiver(newEP.e)
                 state.removeDefinitionSiteDependee(newEP)
-                if (state.isDefinitionSiteOfClone(e))
+                if (state.isDefinitionSiteOfClone(newEP.e))
                     handleEscapeStateOfResultOfSuperClone(newEP)
                 else
                     handleEscape(newEP, isGetFieldOfReceiver)
 
-            case m: Method ⇒
+            case TACAI.key ⇒
                 val newEP = someEPS.asInstanceOf[EOptionP[Method, TACAI]]
                 state.removeTACDependee(newEP)
                 if (newEP.isRefinable) state.addTACDependee(newEP)
-                !isLocalForMethod(m, newEP.ub.tac.get)
+                !isLocalForMethod(newEP.e, newEP.ub.tac.get)
+
+            case Callees.key ⇒
+                val newEP = someEPS.asInstanceOf[EOptionP[DeclaredMethod, Callees]]
+                val pcs = state.calleeDependees(newEP.e)._2
+                state.calleeDependees.update(newEP.e, (newEP, pcs))
+                pcs.exists(pc ⇒ handleCallSite(newEP.e, pc))
         }
         if (isNotLocal) {
             Result(state.field, NoLocalField)
@@ -589,7 +565,7 @@ sealed trait FieldLocalityAnalysisScheduler extends ComputationSpecification {
     final override def derives: Set[PropertyKind] = Set(FieldLocality)
 
     final override def uses: Set[PropertyKind] = {
-        Set(TACAI, ReturnValueFreshness, VirtualMethodReturnValueFreshness)
+        Set(TACAI, EscapeProperty, ReturnValueFreshness, Callees)
     }
 
     final override type InitializationData = Null
@@ -601,8 +577,8 @@ sealed trait FieldLocalityAnalysisScheduler extends ComputationSpecification {
 }
 
 object EagerFieldLocalityAnalysis
-    extends FieldLocalityAnalysisScheduler
-    with FPCFEagerAnalysisScheduler {
+        extends FieldLocalityAnalysisScheduler
+        with FPCFEagerAnalysisScheduler {
 
     final override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val allFields = p.allFields
@@ -613,8 +589,8 @@ object EagerFieldLocalityAnalysis
 }
 
 object LazyFieldLocalityAnalysis
-    extends FieldLocalityAnalysisScheduler
-    with FPCFLazyAnalysisScheduler {
+        extends FieldLocalityAnalysisScheduler
+        with FPCFLazyAnalysisScheduler {
 
     /**
      * Registers the analysis as a lazy computation, that is, the method

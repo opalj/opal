@@ -3,19 +3,24 @@ package org.opalj
 package fpcf
 package analyses
 
-import org.opalj.br.DeclaredMethod
-import org.opalj.ai.common.DefinitionSiteLike
-import org.opalj.br.Field
-import org.opalj.br.Method
+import scala.collection.mutable
+
+import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.fpcf.cg.properties.Callees
 import org.opalj.fpcf.properties.EscapeProperty
 import org.opalj.fpcf.properties.FieldLocality
 import org.opalj.fpcf.properties.LocalField
+import org.opalj.br.DeclaredMethod
+import org.opalj.br.Field
+import org.opalj.br.Method
+import org.opalj.ai.common.DefinitionSiteLike
 import org.opalj.tac.fpcf.properties.TACAI
 
 class FieldLocalityState(val field: Field) {
     private[this] var declaredMethodsDependees: Set[EOptionP[DeclaredMethod, Property]] = Set.empty
     private[this] var definitionSitesDependees: Map[DefinitionSiteLike, (EOptionP[DefinitionSiteLike, EscapeProperty], Boolean)] = Map.empty
     private[this] var tacDependees: Map[Method, EOptionP[Method, TACAI]] = Map.empty
+    var calleeDependees: mutable.Map[DeclaredMethod, (EOptionP[DeclaredMethod, Callees], IntTrieSet)] = mutable.Map()
 
     private[this] var clonedDependees: Set[DefinitionSiteLike] = Set.empty
 
@@ -24,13 +29,15 @@ class FieldLocalityState(val field: Field) {
     def dependees: Traversable[EOptionP[Entity, Property]] = {
         (declaredMethodsDependees.iterator ++
             definitionSitesDependees.valuesIterator.map(_._1) ++
-            tacDependees.valuesIterator).toTraversable
+            tacDependees.valuesIterator ++
+            calleeDependees.valuesIterator.map(_._1).filter(_.isRefinable)).toTraversable
     }
 
     def hasNoDependees: Boolean = {
         tacDependees.isEmpty &&
             declaredMethodsDependees.isEmpty &&
-            definitionSitesDependees.isEmpty
+            definitionSitesDependees.isEmpty &&
+            calleeDependees.valuesIterator.forall(_._1.isFinal)
     }
 
     def hasTacDependees: Boolean = tacDependees.nonEmpty
@@ -76,7 +83,7 @@ class FieldLocalityState(val field: Field) {
     }
 
     def addTACDependee(ep: EOptionP[Method, TACAI]): Unit =
-        tacDependees += ep.e -> ep
+        tacDependees += ep.e → ep
 
     def removeTACDependee(ep: EOptionP[Method, TACAI]): Unit =
         tacDependees -= ep.e
