@@ -141,7 +141,7 @@ class SerializationRelatedCallsAnalysis private[analyses] (
 
         val calleesAndCallers = new IndirectCalleesAndCallers()
 
-        implicit val stmts = tacode.stmts
+        implicit val stmts: Array[Stmt[V]] = tacode.stmts
         val pcToIndex = tacode.pcToIndex
 
         var newInstantiatedTypes = UIDSet.empty[ObjectType]
@@ -211,7 +211,7 @@ class SerializationRelatedCallsAnalysis private[analyses] (
 
         for (rv ← param.value.asReferenceValue.allValues) {
             if (rv.isPrecise) {
-                val rt = rv.valueType.get
+                val rt = rv.leastUpperType.get
                 if (rt.isObjectType || rt.asArrayType.elementType.isObjectType) {
                     val paramType =
                         if (rt.isArrayType)

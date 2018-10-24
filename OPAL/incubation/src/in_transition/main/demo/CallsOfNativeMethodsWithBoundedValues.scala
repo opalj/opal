@@ -22,7 +22,7 @@ object CallsOfNativeMethodsWithBoundedValues extends DefaultOneStepAnalysis {
             override val project: Project[java.net.URL],
             val method:           Method
     ) extends CorrelationalDomain
-        with domain.DefaultDomainValueBinding
+        with domain.DefaultSpecialDomainValuesBinding
         with domain.ThrowAllPotentialExceptionsConfiguration
         with domain.l1.DefaultIntegerRangeValues
         with domain.l0.DefaultTypeLevelLongValues

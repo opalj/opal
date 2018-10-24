@@ -11,20 +11,11 @@ import scala.collection.immutable.IntMap
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 
-import org.opalj.br.DeclaredMethod
-import org.opalj.br.DefinedMethod
-import org.opalj.br.Method
-import org.opalj.br.MethodDescriptor
-import org.opalj.br.ObjectType
-import org.opalj.br.analyses.DeclaredMethods
-import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.cg.InitialEntryPointsKey
-import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
-import org.opalj.br.analyses.cg.IsOverridableMethodKey
+import org.opalj.log.Error
+import org.opalj.log.OPALLogger
+import org.opalj.log.Warn
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.UIDSet
-import org.opalj.value.KnownTypedValue
 import org.opalj.fpcf.cg.properties.CallersProperty
 import org.opalj.fpcf.cg.properties.InstantiatedTypes
 import org.opalj.fpcf.cg.properties.NoCallers
@@ -32,9 +23,20 @@ import org.opalj.fpcf.cg.properties.NoStandardInvokeCallees
 import org.opalj.fpcf.cg.properties.OnlyCallersWithUnknownContext
 import org.opalj.fpcf.cg.properties.StandardInvokeCallees
 import org.opalj.fpcf.cg.properties.StandardInvokeCalleesImplementation
-import org.opalj.log.Error
-import org.opalj.log.OPALLogger
-import org.opalj.log.Warn
+import org.opalj.fpcf.cg.properties.LoadedClasses
+import org.opalj.value.ValueInformation
+import org.opalj.br.DeclaredMethod
+import org.opalj.br.DefinedMethod
+import org.opalj.br.Method
+import org.opalj.br.MethodDescriptor
+import org.opalj.br.ObjectType
+import org.opalj.br.ReferenceType
+import org.opalj.br.analyses.DeclaredMethods
+import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.cg.InitialEntryPointsKey
+import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
+import org.opalj.br.analyses.cg.IsOverridableMethodKey
 import org.opalj.tac.Assignment
 import org.opalj.tac.Call
 import org.opalj.tac.DUVar
@@ -52,9 +54,6 @@ import org.opalj.tac.VirtualCall
 import org.opalj.tac.VirtualFunctionCallStatement
 import org.opalj.tac.VirtualMethodCall
 import org.opalj.tac.fpcf.properties.TACAI
-
-import org.opalj.fpcf.cg.properties.LoadedClasses
-import org.opalj.br.ReferenceType
 
 class RTAState private (
         private[cg] val method:                       DefinedMethod,
@@ -207,7 +206,7 @@ class RTACallGraphAnalysis private[analyses] (
 
     // TODO maybe cache results for Object.toString, Iterator.hasNext, Iterator.next
 
-    type V = DUVar[KnownTypedValue]
+    type V = DUVar[ValueInformation]
 
     private[this] implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
     private[this] val isMethodOverridable: Method ⇒ Answer = project.get(IsOverridableMethodKey)
@@ -490,7 +489,7 @@ class RTACallGraphAnalysis private[analyses] (
                 if (rv.isPrecise) {
                     val tgt = project.instanceCall(
                         callerType,
-                        rv.valueType.get,
+                        rv.leastUpperType.get,
                         call.name,
                         call.descriptor
                     )
@@ -630,11 +629,11 @@ class RTACallGraphAnalysis private[analyses] (
     }
 
     private case class NativeMethodData(
-            cf:                String,
-            m:                 String,
-            desc:              String,
-            instantiatedTypes: Option[Seq[String]],
-            reachableMethods:  Option[Seq[ReachableMethod]]
+        cf:                String,
+        m:                 String,
+        desc:              String,
+        instantiatedTypes: Option[Seq[String]],
+        reachableMethods:  Option[Seq[ReachableMethod]]
     )
     private case class ReachableMethod(cf: String, m: String, desc: String)
 

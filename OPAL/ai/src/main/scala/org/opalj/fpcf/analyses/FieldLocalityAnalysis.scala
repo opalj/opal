@@ -5,23 +5,6 @@ package analyses
 
 import java.util.concurrent.ConcurrentHashMap
 
-import org.opalj
-import org.opalj.ai.ValueOrigin
-import org.opalj.br.ClassFile
-import org.opalj.br.DeclaredMethod
-import org.opalj.ai.common.DefinitionSiteLike
-import org.opalj.ai.common.DefinitionSitesKey
-import org.opalj.br.Field
-import org.opalj.br.Method
-import org.opalj.br.ObjectType
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.analyses.cg.ClosedPackagesKey
-import org.opalj.br.analyses.cg.IsOverridableMethodKey
-import org.opalj.br.analyses.cg.TypeExtensibilityKey
-import org.opalj.br.cfg.BasicBlock
-import org.opalj.br.cfg.CFGNode
-import org.opalj.br.cfg.ExitNode
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.properties.EscapeInCallee
 import org.opalj.fpcf.properties.EscapeProperty
@@ -41,9 +24,26 @@ import org.opalj.fpcf.properties.ReturnValueFreshness
 import org.opalj.fpcf.properties.VExtensibleGetter
 import org.opalj.fpcf.properties.VFreshReturnValue
 import org.opalj.fpcf.properties.VGetter
+import org.opalj.fpcf.properties.VirtualMethodReturnValueFreshness
 import org.opalj.fpcf.properties.VNoFreshReturnValue
 import org.opalj.fpcf.properties.VPrimitiveReturnValue
-import org.opalj.fpcf.properties.VirtualMethodReturnValueFreshness
+import org.opalj.value.ValueInformation
+import org.opalj.br.ClassFile
+import org.opalj.br.DeclaredMethod
+import org.opalj.br.Field
+import org.opalj.br.Method
+import org.opalj.br.ObjectType
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.cg.ClosedPackagesKey
+import org.opalj.br.analyses.cg.IsOverridableMethodKey
+import org.opalj.br.analyses.cg.TypeExtensibilityKey
+import org.opalj.br.cfg.BasicBlock
+import org.opalj.br.cfg.CFGNode
+import org.opalj.br.cfg.ExitNode
+import org.opalj.ai.ValueOrigin
+import org.opalj.ai.common.DefinitionSiteLike
+import org.opalj.ai.common.DefinitionSitesKey
 import org.opalj.tac.Assignment
 import org.opalj.tac.Const
 import org.opalj.tac.DUVar
@@ -59,7 +59,6 @@ import org.opalj.tac.TACMethodParameter
 import org.opalj.tac.TACode
 import org.opalj.tac.VirtualFunctionCall
 import org.opalj.tac.fpcf.properties.TACAI
-import org.opalj.value.KnownTypedValue
 
 /**
  * Determines whether the lifetime of a reference type field is the same as that of its owning
@@ -73,7 +72,7 @@ class FieldLocalityAnalysis private[analyses] (
         final val project: SomeProject
 ) extends FPCFAnalysis {
 
-    type V = DUVar[KnownTypedValue]
+    type V = DUVar[ValueInformation]
 
     final val declaredMethods = project.get(DeclaredMethodsKey)
     final val typeExtensiblity = project.get(TypeExtensibilityKey)
@@ -347,7 +346,7 @@ class FieldLocalityAnalysis private[analyses] (
             case Assignment(_, _, VirtualFunctionCall(_, rcvrType, _, name, desc, receiver, _)) ⇒
                 val callerType = caller.classFile.thisType
                 val value = receiver.asVar.value.asReferenceValue
-                val mostPreciseType = value.valueType
+                val mostPreciseType = value.leastUpperType
 
                 if (mostPreciseType.isEmpty) {
                     false // Receiver is null, call will never be executed
@@ -394,7 +393,7 @@ class FieldLocalityAnalysis private[analyses] (
      * @note Adds dependees as necessary.
      */
     def handleConcreteCall(
-        callee: opalj.Result[Method]
+        callee: org.opalj.Result[Method]
     )(
         implicit
         state: FieldLocalityState
@@ -663,7 +662,7 @@ object DefinitionSitesWithoutPutField {
 final case class DefinitionSiteWithoutPutField(
         method: Method, pc: Int, putFieldPC: Int
 ) extends DefinitionSiteLike {
-    override def usedBy[V <: KnownTypedValue](
+    override def usedBy[V <: ValueInformation](
         tacode: TACode[TACMethodParameter, DUVar[V]]
     ): IntTrieSet = {
         val defSite = tacode.pcToIndex(pc)

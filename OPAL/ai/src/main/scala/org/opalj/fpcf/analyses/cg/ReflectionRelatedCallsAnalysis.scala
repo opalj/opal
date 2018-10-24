@@ -1029,9 +1029,9 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         pc:   Int
     )(implicit state: State): Iterator[ReferenceType] = {
         val value = uvar.value.asReferenceValue
-        if (value.isPrecise) value.valueType.iterator
+        if (value.isPrecise) value.leastUpperType.iterator
         else if (value.allValues.forall(_.isPrecise))
-            value.allValues.toIterator.flatMap(_.valueType)
+            value.allValues.toIterator.flatMap(_.leastUpperType)
         else {
             state.calleesAndCallers.addIncompleteCallsite(pc)
             Iterator.empty

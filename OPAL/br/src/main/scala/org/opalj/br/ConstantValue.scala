@@ -23,7 +23,7 @@ trait ConstantValue[T >: Nothing] extends BootstrapArgument {
     /**
      * The (runtime) type of the concrete value.
      */
-    def valueType: Type
+    def runtimeValueType: Type
 
     /**
      * A string representation of the concrete value; used for debugging purposes.
@@ -91,6 +91,6 @@ trait ConstantValue[T >: Nothing] extends BootstrapArgument {
 object ConstantValue {
 
     def unapply[T](constantValue: ConstantValue[T]): Some[(T, Type)] = {
-        Some((constantValue.value, constantValue.valueType))
+        Some((constantValue.value, constantValue.runtimeValueType))
     }
 }

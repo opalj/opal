@@ -7,8 +7,7 @@ package properties
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.value.KnownTypedValue
-
+import org.opalj.value.ValueInformation
 import scala.collection.immutable.IntMap
 
 /**
@@ -96,7 +95,7 @@ trait CalleesLikeNotReachable extends CalleesLike {
 }
 
 trait IndirectCallees extends CalleesLike {
-    val parameters: IntMap[Map[DeclaredMethod, Seq[Option[(KnownTypedValue, IntTrieSet)]]]]
+    val parameters: IntMap[Map[DeclaredMethod, Seq[Option[(ValueInformation, IntTrieSet)]]]]
 }
 
 trait CalleesLikePropertyMetaInformation extends PropertyMetaInformation {

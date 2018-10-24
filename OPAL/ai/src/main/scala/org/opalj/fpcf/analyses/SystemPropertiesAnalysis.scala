@@ -3,23 +3,23 @@ package org.opalj
 package fpcf
 package analyses
 
-import org.opalj.br.DeclaredMethod
-import org.opalj.br.Method
-import org.opalj.br.ObjectType
-import org.opalj.br.analyses.SomeProject
 import org.opalj.fpcf.cg.properties.CallersProperty
 import org.opalj.fpcf.cg.properties.NoCallers
 import org.opalj.fpcf.properties.SystemProperties
 import org.opalj.fpcf.properties.SystemPropertiesFakeProperty
 import org.opalj.fpcf.properties.SystemPropertiesFakePropertyFinal
 import org.opalj.fpcf.properties.SystemPropertiesFakePropertyNonFinal
+import org.opalj.value.ValueInformation
+import org.opalj.br.DeclaredMethod
+import org.opalj.br.Method
+import org.opalj.br.ObjectType
+import org.opalj.br.analyses.SomeProject
 import org.opalj.tac.DUVar
 import org.opalj.tac.Expr
 import org.opalj.tac.StaticMethodCall
 import org.opalj.tac.Stmt
 import org.opalj.tac.VirtualFunctionCallStatement
 import org.opalj.tac.fpcf.properties.TACAI
-import org.opalj.value.KnownTypedValue
 
 class SystemPropertiesAnalysis private[analyses] (
         final val project: SomeProject
@@ -134,13 +134,13 @@ class SystemPropertiesAnalysis private[analyses] (
 
     def computeProperties(
         propertyMap: Map[String, Set[String]],
-        params:      Seq[Expr[DUVar[KnownTypedValue]]],
-        stmts:       Array[Stmt[DUVar[KnownTypedValue]]]
+        params:      Seq[Expr[DUVar[ValueInformation]]],
+        stmts:       Array[Stmt[DUVar[ValueInformation]]]
     ): Map[String, Set[String]] = {
         var res = propertyMap
 
         assert(params.size == 2)
-        val possibleKeys = getPossibleStrings(params(0), stmts)
+        val possibleKeys = getPossibleStrings(params.head, stmts)
         val possibleValues = getPossibleStrings(params(1), stmts)
 
         for (key ← possibleKeys) {
@@ -152,7 +152,7 @@ class SystemPropertiesAnalysis private[analyses] (
     }
 
     def getPossibleStrings(
-        value: Expr[DUVar[KnownTypedValue]], stmts: Array[Stmt[DUVar[KnownTypedValue]]]
+        value: Expr[DUVar[ValueInformation]], stmts: Array[Stmt[DUVar[ValueInformation]]]
     ): Set[String] = {
         value.asVar.definedBy filter { index ⇒
             index >= 0 && stmts(index).asAssignment.expr.isStringConst

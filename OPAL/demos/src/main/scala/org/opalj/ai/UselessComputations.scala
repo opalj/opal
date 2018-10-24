@@ -23,7 +23,7 @@ object UselessComputations extends DefaultOneStepAnalysis {
 
     class AnalysisDomain(val project: Project[java.net.URL], val method: Method)
         extends CorrelationalDomain
-        with domain.DefaultDomainValueBinding
+        with domain.DefaultSpecialDomainValuesBinding
         with domain.TheProject
         with domain.TheMethod
         with domain.DefaultHandlingOfMethodResults

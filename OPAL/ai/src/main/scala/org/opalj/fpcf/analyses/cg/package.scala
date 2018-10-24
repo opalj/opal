@@ -3,6 +3,10 @@ package org.opalj
 package fpcf
 package analyses
 
+import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.collection.immutable.IntTrieSetBuilder
+import org.opalj.value.ValueInformation
+import org.opalj.br.PCs
 import org.opalj.ai.ValueOrigin
 import org.opalj.ai.pcOfImmediateVMException
 import org.opalj.ai.pcOfMethodExternalException
@@ -12,23 +16,19 @@ import org.opalj.ai.MethodExternalExceptionsOriginOffset
 import org.opalj.ai.ImmediateVMExceptionsOriginOffset
 import org.opalj.ai.isMethodExternalExceptionOrigin
 import org.opalj.ai.isImmediateVMException
-import org.opalj.br.PCs
-import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.collection.immutable.IntTrieSetBuilder
 import org.opalj.tac.DUVar
 import org.opalj.tac.Stmt
 import org.opalj.tac.UVar
-import org.opalj.value.KnownTypedValue
 
 package object cg {
-    type V = DUVar[KnownTypedValue]
+    type V = DUVar[ValueInformation]
 
     /**
      * A persisten representation (using pcs instead of TAC value origins) for a UVar.
      */
     final def persistentUVar(
         value: V
-    )(implicit stmts: Array[Stmt[V]]): Some[(KnownTypedValue, IntTrieSet)] = {
+    )(implicit stmts: Array[Stmt[V]]): Some[(ValueInformation, IntTrieSet)] = {
         Some((value.value, value.definedBy.map(pcOfDefSite _)))
     }
 
@@ -58,7 +58,10 @@ package object cg {
         origins.result()
     }
 
-    final def uVarForDefSites(defSites: (KnownTypedValue, IntTrieSet), pcToIndex: Array[Int]): V = {
+    final def uVarForDefSites(
+        defSites:  (ValueInformation, IntTrieSet),
+        pcToIndex: Array[Int]
+    ): V = {
         UVar(defSites._1, valueOriginOfPCs(defSites._2, pcToIndex))
     }
 }

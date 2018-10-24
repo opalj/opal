@@ -4,9 +4,45 @@ package fpcf
 package analyses
 package purity
 
+import scala.annotation.switch
+
 import net.ceedubs.ficus.Ficus._
-import org.opalj.ai.isImmediateVMException
-import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
+
+import org.opalj.collection.immutable.EmptyIntTrieSet
+import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.fpcf.cg.properties.Callees
+import org.opalj.fpcf.properties.ClassifiedImpure
+import org.opalj.fpcf.properties.ClassImmutability
+import org.opalj.fpcf.properties.CompileTimePure
+import org.opalj.fpcf.properties.ContextuallyPure
+import org.opalj.fpcf.properties.ExtensibleGetter
+import org.opalj.fpcf.properties.ExtensibleLocalField
+import org.opalj.fpcf.properties.ExtensibleLocalFieldWithGetter
+import org.opalj.fpcf.properties.FieldLocality
+import org.opalj.fpcf.properties.FieldMutability
+import org.opalj.fpcf.properties.FreshReturnValue
+import org.opalj.fpcf.properties.Getter
+import org.opalj.fpcf.properties.ImpureByAnalysis
+import org.opalj.fpcf.properties.LocalField
+import org.opalj.fpcf.properties.LocalFieldWithGetter
+import org.opalj.fpcf.properties.NoFreshReturnValue
+import org.opalj.fpcf.properties.NoLocalField
+import org.opalj.fpcf.properties.PrimitiveReturnValue
+import org.opalj.fpcf.properties.Pure
+import org.opalj.fpcf.properties.Purity
+import org.opalj.fpcf.properties.ReturnValueFreshness
+import org.opalj.fpcf.properties.SideEffectFree
+import org.opalj.fpcf.properties.StaticDataUsage
+import org.opalj.fpcf.properties.TypeImmutability
+import org.opalj.fpcf.properties.UsesConstantDataOnly
+import org.opalj.fpcf.properties.UsesNoStaticData
+import org.opalj.fpcf.properties.UsesVaryingData
+import org.opalj.fpcf.properties.VExtensibleGetter
+import org.opalj.fpcf.properties.VFreshReturnValue
+import org.opalj.fpcf.properties.VGetter
+import org.opalj.fpcf.properties.VirtualMethodReturnValueFreshness
+import org.opalj.fpcf.properties.VNoFreshReturnValue
+import org.opalj.fpcf.properties.VPrimitiveReturnValue
 import org.opalj.br.ComputationalTypeReference
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
@@ -16,41 +52,7 @@ import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.cfg.CFG
-import org.opalj.collection.immutable.EmptyIntTrieSet
-import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.fpcf.cg.properties.Callees
-import org.opalj.fpcf.properties.ClassImmutability
-import org.opalj.fpcf.properties.ClassifiedImpure
-import org.opalj.fpcf.properties.ExtensibleGetter
-import org.opalj.fpcf.properties.ExtensibleLocalField
-import org.opalj.fpcf.properties.ExtensibleLocalFieldWithGetter
-import org.opalj.fpcf.properties.FieldLocality
-import org.opalj.fpcf.properties.FieldMutability
-import org.opalj.fpcf.properties.FreshReturnValue
-import org.opalj.fpcf.properties.Getter
-import org.opalj.fpcf.properties.ContextuallyPure
-import org.opalj.fpcf.properties.ImpureByAnalysis
-import org.opalj.fpcf.properties.SideEffectFree
-import org.opalj.fpcf.properties.LocalField
-import org.opalj.fpcf.properties.LocalFieldWithGetter
-import org.opalj.fpcf.properties.NoFreshReturnValue
-import org.opalj.fpcf.properties.NoLocalField
-import org.opalj.fpcf.properties.PrimitiveReturnValue
-import org.opalj.fpcf.properties.Purity
-import org.opalj.fpcf.properties.ReturnValueFreshness
-import org.opalj.fpcf.properties.TypeImmutability
-import org.opalj.fpcf.properties.VExtensibleGetter
-import org.opalj.fpcf.properties.VFreshReturnValue
-import org.opalj.fpcf.properties.VGetter
-import org.opalj.fpcf.properties.VNoFreshReturnValue
-import org.opalj.fpcf.properties.VPrimitiveReturnValue
-import org.opalj.fpcf.properties.VirtualMethodReturnValueFreshness
-import org.opalj.fpcf.properties.Pure
-import org.opalj.fpcf.properties.CompileTimePure
-import org.opalj.fpcf.properties.StaticDataUsage
-import org.opalj.fpcf.properties.UsesNoStaticData
-import org.opalj.fpcf.properties.UsesConstantDataOnly
-import org.opalj.fpcf.properties.UsesVaryingData
+import org.opalj.ai.isImmediateVMException
 import org.opalj.tac.ArrayStore
 import org.opalj.tac.Assignment
 import org.opalj.tac.Expr
@@ -62,15 +64,13 @@ import org.opalj.tac.NewArray
 import org.opalj.tac.NonVirtualFunctionCall
 import org.opalj.tac.OriginOfThis
 import org.opalj.tac.PutField
+import org.opalj.tac.SelfReferenceParameter
 import org.opalj.tac.StaticFunctionCall
 import org.opalj.tac.Stmt
-import org.opalj.tac.VirtualFunctionCall
-import org.opalj.tac.SelfReferenceParameter
-import org.opalj.tac.UVar
 import org.opalj.tac.TACStmts
+import org.opalj.tac.UVar
+import org.opalj.tac.VirtualFunctionCall
 import org.opalj.tac.fpcf.properties.TACAI
-
-import scala.annotation.switch
 
 /**
  * An inter-procedural analysis to determine a method's purity.
@@ -327,7 +327,9 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         }
 
         // Primitive values are always local (required for parameters of contextually pure calls)
-        if (expr.asVar.value.computationalType ne ComputationalTypeReference)
+        // TODO (value is null for the self reference of a throwable constructor...)
+        if (expr.asVar.value != null &&
+            (expr.asVar.value.computationalType ne ComputationalTypeReference))
             return true;
 
         val defSites = expr.asVar.definedBy -- excludedDefSites
@@ -853,9 +855,9 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
             project.instanceMethods(state.declClass).foreach { mdc ⇒
                 if (mdc.name == "fillInStackTrace" &&
                     mdc.method.classFile.thisType != ObjectType.Throwable) {
-                    val d = new DefaultDomainWithCFGAndDefUse(p, state.method)
-                    val selfReference =
-                        UVar(d)(d.NonNullObjectValue(-1, state.declClass), SelfReferenceParameter)
+                    // "The value" is actually not used at all - hence, we can use "null"
+                    // over here.
+                    val selfReference = UVar(null, SelfReferenceParameter)
                     val fISTPurity = propertyStore(declaredMethods(mdc.method), Purity.key)
                     if (!checkMethodPurity(fISTPurity, Seq(selfReference))) {
                         // Early return for impure fillInStackTrace

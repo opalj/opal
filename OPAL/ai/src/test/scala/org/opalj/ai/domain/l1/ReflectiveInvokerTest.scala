@@ -27,7 +27,7 @@ class ReflectiveInvokerTest extends FlatSpec with Matchers {
     class ReflectiveInvokerTestDomain
         extends CorrelationalDomain
         with GlobalLogContextProvider
-        with DefaultDomainValueBinding
+        with DefaultSpecialDomainValuesBinding
         with ThrowAllPotentialExceptionsConfiguration
         with l0.DefaultTypeLevelLongValues
         with l0.DefaultTypeLevelFloatValues

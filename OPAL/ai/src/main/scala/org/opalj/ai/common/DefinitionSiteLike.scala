@@ -5,10 +5,11 @@ package common
 
 import org.opalj.br.Method
 import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.tac.DUVar
 import org.opalj.tac.TACMethodParameter
 import org.opalj.tac.TACode
-import org.opalj.value.KnownTypedValue
+import org.opalj.tac.DUVar
+
+import org.opalj.value.ValueInformation
 
 /**
  * Identifies a definition site object in a method in the bytecode using its program counter.
@@ -28,5 +29,5 @@ trait DefinitionSiteLike {
 
     val method: Method
 
-    def usedBy[V <: KnownTypedValue](tacode: TACode[TACMethodParameter, DUVar[V]]): IntTrieSet
+    def usedBy[V <: ValueInformation](tacode: TACode[TACMethodParameter, DUVar[V]]): IntTrieSet
 }

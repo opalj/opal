@@ -4,22 +4,19 @@ package fpcf
 package analyses
 package cg
 
-import org.opalj.br.Method
-import org.opalj.br.MethodDescriptor
+import scala.collection.immutable.IntMap
+
 import org.opalj.collection.immutable.LongTrieSet
 import org.opalj.collection.immutable.IntTrieSet
-
-import scala.collection.immutable.IntMap
 import org.opalj.fpcf.cg.properties.CallersOnlyWithConcreteCallers
-import org.opalj.fpcf.EPK
 import org.opalj.fpcf.cg.properties.CallersProperty
-import org.opalj.fpcf.IntermediateESimpleP
-import org.opalj.fpcf.PartialResult
-import org.opalj.br.analyses.DeclaredMethods
+import org.opalj.value.ValueInformation
+import org.opalj.br.Method
+import org.opalj.br.MethodDescriptor
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
 import org.opalj.br.ObjectType
-import org.opalj.value.KnownTypedValue
+import org.opalj.br.analyses.DeclaredMethods
 
 private[cg] class CalleesAndCallers(
         private[this] var _callees: IntMap[IntTrieSet] = IntMap.empty
@@ -99,10 +96,10 @@ private[cg] class CalleesAndCallers(
 }
 
 private[cg] class IndirectCalleesAndCallers(
-        _callees:                      IntMap[IntTrieSet]                                                      = IntMap.empty,
-        private[this] var _parameters: IntMap[Map[DeclaredMethod, Seq[Option[(KnownTypedValue, IntTrieSet)]]]] = IntMap.empty
+        _callees:                      IntMap[IntTrieSet]                                                       = IntMap.empty,
+        private[this] var _parameters: IntMap[Map[DeclaredMethod, Seq[Option[(ValueInformation, IntTrieSet)]]]] = IntMap.empty
 ) extends CalleesAndCallers(_callees) {
-    private[cg] def parameters: IntMap[Map[DeclaredMethod, Seq[Option[(KnownTypedValue, IntTrieSet)]]]] =
+    private[cg] def parameters: IntMap[Map[DeclaredMethod, Seq[Option[(ValueInformation, IntTrieSet)]]]] =
         _parameters
 
     private[cg] override def updateWithCall(
@@ -115,7 +112,7 @@ private[cg] class IndirectCalleesAndCallers(
         caller:     DefinedMethod,
         callee:     DeclaredMethod,
         pc:         Int,
-        parameters: Seq[Option[(KnownTypedValue, IntTrieSet)]]
+        parameters: Seq[Option[(ValueInformation, IntTrieSet)]]
     )(implicit declaredMethods: DeclaredMethods): Unit = {
         super.updateWithCall(caller, callee, pc)
         _parameters = _parameters.updated(
@@ -132,7 +129,7 @@ private[cg] class IndirectCalleesAndCallers(
         fallbackType:       ObjectType,
         fallbackName:       String,
         fallbackDescriptor: MethodDescriptor,
-        parameters:         Seq[Option[(KnownTypedValue, IntTrieSet)]]
+        parameters:         Seq[Option[(ValueInformation, IntTrieSet)]]
     )(implicit declaredMethods: DeclaredMethods): Unit = {
         if (callee.hasValue) {
             updateWithIndirectCall(caller, declaredMethods(callee.value), pc, parameters)

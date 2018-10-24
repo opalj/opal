@@ -5,9 +5,12 @@ package domain
 package l1
 
 import scala.reflect.ClassTag
+
+import org.opalj.value.IsStringValue
+import org.opalj.value.TheStringValue
+import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
 import org.opalj.br.VoidType
-import org.opalj.br.MethodDescriptor
 
 /**
  * Enables the tracing of concrete string values and can, e.g., be used to
@@ -20,20 +23,21 @@ trait StringValues
     with DefaultJavaObjectToDomainValueConversion
     with MethodCallsDomain
     with PostEvaluationMemoryManagement {
-    domain: CorrelationalDomainSupport with IntegerValuesDomain with TypedValuesFactory with Configuration with TheClassHierarchy ⇒
+    domain: CorrelationalDomainSupport with IntegerValuesDomain with TypedValuesFactory with Configuration ⇒
 
     type DomainStringValue <: StringValue with DomainObjectValue
     val DomainStringValueTag: ClassTag[DomainStringValue]
 
-    /**
-     * @param value `null` if and only if the StringValue is not yet completely initialized!
-     */
-    protected class StringValue(
-            origin:    ValueOrigin,
-            val value: String,
-            refId:     RefId
-    ) extends SObjectValue(origin, No, true, ObjectType.String, refId) {
+    protected trait StringValue extends SObjectValue with IsStringValue {
         this: DomainStringValue ⇒
+
+        /**
+         * The represented string. `value` will be `null` if and only if the [[StringValue]] is not
+         * yet completely initialized!
+         */
+        def value: String
+
+        override def constantValue: Option[String] = Some(value)
 
         override def doJoinWithNonNullValueWithSameOrigin(
             joinPC: Int,
@@ -55,7 +59,8 @@ trait StringValues
                         // We have to drop the concrete information...
                         // Given that the values are different we are no longer able to
                         // derive the concrete value.
-                        val newValue = ObjectValue(origin, No, true, ObjectType.String, nextRefId())
+                        val newRefId = nextRefId()
+                        val newValue = ObjectValue(origin, No, true, ObjectType.String, newRefId)
                         StructuralUpdate(newValue)
                     }
 
@@ -88,6 +93,8 @@ trait StringValues
             target.StringValue(vo, this.value)
         }
 
+        override def toCanonicalForm: IsStringValue = TheStringValue(value)
+
         override def equals(other: Any): Boolean = {
             other match {
                 case that: StringValue ⇒ that.value == this.value && super.equals(other)
@@ -103,7 +110,7 @@ trait StringValues
             super.hashCode * 41 + (if (value eq null) 0 else value.hashCode())
         }
 
-        override def toString(): String = {
+        override def toString: String = {
             if (value eq null)
                 s"""String(<initialization incomplete>)[@$origin;refId=$refId]"""
             else
@@ -166,7 +173,7 @@ trait StringValues
             if (newStringKindValue.isInstanceOf[StringValue]) {
                 // we need to filter inter-constructor calls (i.e., we don't
                 // want to analyze calls between the constructors of the class
-                // java.lang.String
+                // java.lang.String)
                 val newStringValue = newStringKindValue.asInstanceOf[StringValue]
 
                 if (methodDescriptor == MethodDescriptor.NoArgsAndReturnVoid) {

@@ -171,7 +171,7 @@ object UsageKind extends Enumeration {
 
 class ExceptionUsageAnalysisDomain(val project: Project[java.net.URL], val method: Method)
     extends CorrelationalDomain
-    with domain.DefaultDomainValueBinding
+    with domain.DefaultSpecialDomainValuesBinding
     with domain.l0.TypeLevelPrimitiveValuesConversions
     with domain.l0.DefaultTypeLevelFloatValues
     with domain.l0.DefaultTypeLevelDoubleValues

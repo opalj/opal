@@ -49,7 +49,7 @@ class DomainIndependenceTest extends FlatSpec with Matchers {
         extends Domain
         with DefaultHandlingOfMethodResults
         with IgnoreSynchronization
-        with DefaultDomainValueBinding
+        with DefaultSpecialDomainValuesBinding
         with ThrowAllPotentialExceptionsConfiguration
         with l0.DefaultReferenceValuesBinding
         with l0.DefaultTypeLevelIntegerValues
@@ -71,7 +71,7 @@ class DomainIndependenceTest extends FlatSpec with Matchers {
         with l0.TypeLevelInvokeInstructions
         with l0.TypeLevelFieldAccessInstructions
         with PredefinedClassHierarchy
-        with DefaultDomainValueBinding
+        with DefaultSpecialDomainValuesBinding
         with l0.DefaultTypeLevelDoubleValues
         with l0.DefaultTypeLevelIntegerValues
         with l0.DefaultReferenceValuesBinding

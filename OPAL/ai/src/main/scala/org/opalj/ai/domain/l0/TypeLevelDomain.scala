@@ -17,7 +17,7 @@ package l0
  */
 trait TypeLevelDomain
     extends Domain
-    with DefaultDomainValueBinding
+    with DefaultSpecialDomainValuesBinding
     with DefaultReferenceValuesBinding
     with DefaultTypeLevelIntegerValues
     with DefaultTypeLevelLongValues
@@ -27,5 +27,5 @@ trait TypeLevelDomain
     with DefaultTypeLevelDoubleValues
     with TypeLevelFieldAccessInstructions
     with TypeLevelInvokeInstructions {
-    this: Configuration with TheClassHierarchy with TheCode ⇒
+    this: Configuration with TheCode ⇒
 }

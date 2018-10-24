@@ -199,7 +199,7 @@ class ThreadRelatedCallsAnalysis private[analyses] (
             if rv.isNull.isNoOrUnknown
         } {
             if (rv.isPrecise) {
-                val receiverType = rv.valueType.get.asObjectType
+                val receiverType = rv.leastUpperType.get.asObjectType
                 val runMethod = project.instanceCall(
                     receiverType, receiverType, "run", MethodDescriptor.NoArgsAndReturnVoid
                 )
@@ -213,7 +213,7 @@ class ThreadRelatedCallsAnalysis private[analyses] (
                     threadRelatedMethods
                 )
 
-                if (rv.valueType.get == ObjectType.Thread || (
+                if (rv.leastUpperType.get == ObjectType.Thread || (
                     runMethod.hasValue && runMethod.value.classFile.thisType == ObjectType.Thread
                 )) {
                     newThreadRelatedMethods = handleThreadWithRunnable(
@@ -332,7 +332,7 @@ class ThreadRelatedCallsAnalysis private[analyses] (
 
     ): Set[DeclaredMethod] = {
         val thisType = definedMethod.declaringClassType.asObjectType
-        val preciseType = receiver.valueType.get.asObjectType
+        val preciseType = receiver.leastUpperType.get.asObjectType
         val tgt = project.instanceCall(
             thisType,
             preciseType,

@@ -8,8 +8,7 @@ import org.opalj.br.DeclaredMethod
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.collection.IntIterator
 import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.value.KnownTypedValue
-
+import org.opalj.value.ValueInformation
 import scala.collection.immutable.IntMap
 
 sealed trait CalleesPropertyMetaInformation extends PropertyMetaInformation {
@@ -124,7 +123,7 @@ sealed trait Callees extends Property with CalleesPropertyMetaInformation {
     def indirectCallParameters(
         pc:     Int,
         callee: DeclaredMethod
-    )(implicit propertyStore: PropertyStore): Seq[Option[(KnownTypedValue, IntTrieSet)]]
+    )(implicit propertyStore: PropertyStore): Seq[Option[(ValueInformation, IntTrieSet)]]
 
     final def key: PropertyKey[Callees] = Callees.key
 }
@@ -136,7 +135,7 @@ sealed class FinalCallees(
         private[this] val directCalleesIds:        IntMap[IntTrieSet],
         private[this] val indirectCalleesIds:      IntMap[IntTrieSet],
         private[this] val _incompleteCallSites:    IntTrieSet,
-        private[this] val _indirectCallParameters: IntMap[Map[DeclaredMethod, Seq[Option[(KnownTypedValue, IntTrieSet)]]]]
+        private[this] val _indirectCallParameters: IntMap[Map[DeclaredMethod, Seq[Option[(ValueInformation, IntTrieSet)]]]]
 ) extends Callees {
 
     override def incompleteCallSites(implicit propertyStore: PropertyStore): IntIterator = {
@@ -225,7 +224,7 @@ sealed class FinalCallees(
     )(
         implicit
         propertyStore: PropertyStore
-    ): Seq[Option[(KnownTypedValue, IntTrieSet)]] = {
+    ): Seq[Option[(ValueInformation, IntTrieSet)]] = {
         _indirectCallParameters(pc)(method)
     }
 }
@@ -284,7 +283,7 @@ object NoCallees extends Callees {
     )(
         implicit
         propertyStore: PropertyStore
-    ): Seq[Option[(KnownTypedValue, IntTrieSet)]] = Seq.empty
+    ): Seq[Option[(ValueInformation, IntTrieSet)]] = Seq.empty
 
 }
 
@@ -342,7 +341,7 @@ object NoCalleesDueToNotReachableMethod extends Callees {
     )(
         implicit
         propertyStore: PropertyStore
-    ): Seq[Option[(KnownTypedValue, IntTrieSet)]] = Seq.empty
+    ): Seq[Option[(ValueInformation, IntTrieSet)]] = Seq.empty
 
 }
 

@@ -21,7 +21,7 @@ import org.opalj.ai.BaseAI
 import org.opalj.ai.Domain
 import org.opalj.ai.CorrelationalDomain
 import org.opalj.ai.project.OptionalReport
-import org.opalj.ai.domain.DefaultDomainValueBinding
+import org.opalj.ai.domain.DefaultSpecialDomainValuesBinding
 import org.opalj.ai.domain.DomainId
 import org.opalj.ai.domain.DomainValues
 import org.opalj.ai.project.AIProject
@@ -215,7 +215,7 @@ trait TaintAnalysisDomain[Source]
     with IgnoreSynchronization
     with TypeLevelLongValuesShiftOperators
     with TypeLevelPrimitiveValuesConversions
-    with DefaultDomainValueBinding
+    with DefaultSpecialDomainValuesBinding
     with TypeLevelInvokeInstructions
     with TypeLevelFieldAccessInstructions
     with DefaultTypeLevelLongValues

@@ -6,8 +6,6 @@ package l0
 
 import org.opalj.value.IsFloatValue
 import org.opalj.br.FloatType
-import org.opalj.br.FloatVariableInfo
-import org.opalj.br.VerificationTypeInfo
 
 /**
  * This partial `Domain` performs all computations related to primitive float
@@ -33,9 +31,7 @@ trait TypeLevelFloatValues extends FloatValuesDomain {
     trait FloatValue extends TypedValue[FloatType] with IsFloatValue {
         this: DomainTypedValue[FloatType] ⇒
 
-        final override def valueType: Option[FloatType] = Some(FloatType)
-
-        final override def verificationTypeInfo: VerificationTypeInfo = FloatVariableInfo
+        final override def leastUpperType: Option[FloatType] = Some(FloatType)
 
     }
 

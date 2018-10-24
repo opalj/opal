@@ -4,9 +4,7 @@ package fpcf
 package analyses
 package escape
 
-import org.opalj.br.DeclaredMethod
-import org.opalj.br.DefinedMethod
-import org.opalj.br.analyses.VirtualFormalParameter
+import org.opalj.fpcf.analyses.cg.uVarForDefSites
 import org.opalj.fpcf.cg.properties.Callees
 import org.opalj.fpcf.properties.AtMost
 import org.opalj.fpcf.properties.EscapeInCallee
@@ -17,6 +15,9 @@ import org.opalj.fpcf.properties.EscapeViaStaticField
 import org.opalj.fpcf.properties.GlobalEscape
 import org.opalj.fpcf.properties.NoEscape
 import org.opalj.fpcf.properties.VirtualMethodEscapeProperty
+import org.opalj.br.DeclaredMethod
+import org.opalj.br.DefinedMethod
+import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.tac.Expr
 import org.opalj.tac.NonVirtualFunctionCall
 import org.opalj.tac.NonVirtualMethodCall
@@ -24,8 +25,6 @@ import org.opalj.tac.StaticFunctionCall
 import org.opalj.tac.StaticMethodCall
 import org.opalj.tac.VirtualFunctionCall
 import org.opalj.tac.VirtualMethodCall
-
-import org.opalj.fpcf.analyses.cg.uVarForDefSites
 
 /**
  * Adds inter-procedural behavior to escape analyses.

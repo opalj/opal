@@ -26,7 +26,7 @@ class DefaultLongSetsTest extends FunSpec with Matchers {
     class LongSetsTestDomain(
             override val maxCardinalityOfLongSets: Int = Int.MaxValue
     ) extends CorrelationalDomain
-        with DefaultDomainValueBinding
+        with DefaultSpecialDomainValuesBinding
         with ThrowAllPotentialExceptionsConfiguration
         with l0.DefaultTypeLevelFloatValues
         with l1.DefaultIntegerRangeValues // <---- Required to test the shift operators

@@ -14,13 +14,15 @@ import org.opalj.br.ComputationalTypeLong
  * @author Riadh Chtara
  * @author David Becker
  */
-trait DefaultLongValues extends DefaultDomainValueBinding with LongValues {
+trait DefaultLongValues extends DefaultSpecialDomainValuesBinding with LongValues {
     domain: IntegerValuesFactory with ExceptionsFactory with Configuration ⇒
 
     /**
      * Represents an unspecific, unknown long value.
      */
     case object ALongValue extends super.ALongValue {
+
+        override def constantValue: Option[Long] = None
 
         override def doJoin(pc: Int, other: DomainValue): Update[DomainValue] = NoUpdate
 
@@ -40,6 +42,8 @@ trait DefaultLongValues extends DefaultDomainValueBinding with LongValues {
      * Represents a concrete long value.
      */
     class TheLongValue(override val value: Long) extends super.TheLongValue {
+
+        override def constantValue: Option[Long] = Some(value)
 
         override def doJoin(pc: Int, other: DomainValue): Update[DomainValue] = {
             other match {

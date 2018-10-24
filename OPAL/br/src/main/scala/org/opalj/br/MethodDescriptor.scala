@@ -2,10 +2,10 @@
 package org.opalj
 package br
 
-import org.opalj.collection.immutable.RefArray
-
 import scala.collection.Seq
 import scala.math.Ordered
+
+import org.opalj.collection.immutable.RefArray
 
 /**
  * A method descriptor represents the parameters that the method takes and
@@ -57,7 +57,7 @@ sealed abstract class MethodDescriptor
 
     def value: this.type = this
 
-    def valueType: ObjectType = ObjectType.MethodType
+    override def runtimeValueType: ObjectType = ObjectType.MethodType
 
     def valueToString: String = toUMLNotation
 

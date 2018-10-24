@@ -4,7 +4,12 @@ package hermes
 package queries
 package jcg
 
-import org.opalj.ai.domain.l1.ArrayValues
+import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger
+import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.collection.immutable.RefArray
+import org.opalj.value.ValueInformation
+import org.opalj.da.ClassFile
 import org.opalj.br.ObjectType
 import org.opalj.br.MethodWithBody
 import org.opalj.br.MethodDescriptor
@@ -17,11 +22,7 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.instructions.LoadClass
 import org.opalj.br.instructions.LoadClass_W
-import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.collection.immutable.RefArray
-import org.opalj.da.ClassFile
-import org.opalj.log.LogContext
-import org.opalj.log.OPALLogger
+import org.opalj.ai.domain.l1.ArrayValues
 import org.opalj.tac.TACode
 import org.opalj.tac.DefaultTACAIKey
 import org.opalj.tac.Assignment
@@ -48,7 +49,6 @@ import org.opalj.tac.NonVirtualFunctionCall
 import org.opalj.tac.Call
 import org.opalj.tac.New
 import org.opalj.tac.TACMethodParameter
-import org.opalj.value.KnownTypedValue
 
 /**
  * Groups features that use the java reflection API.
@@ -60,7 +60,7 @@ import org.opalj.value.KnownTypedValue
  */
 class Reflection(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
 
-    type V = DUVar[KnownTypedValue]
+    type V = DUVar[ValueInformation]
 
     val ClassT = ObjectType.Class
     val MethodT = ObjectType("java/lang/reflect/Method")
@@ -116,7 +116,7 @@ class Reflection(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
 
         implicit val p: SomeProject = project
 
-        implicit val tacai: Method ⇒ TACode[TACMethodParameter, DUVar[KnownTypedValue]] =
+        implicit val tacai: Method ⇒ TACode[TACMethodParameter, V] =
             project.get(DefaultTACAIKey)
 
         for {
@@ -257,7 +257,7 @@ class Reflection(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
 
             stmt match {
                 case Assignment(_, sb, _: New) ⇒ isNonEscaping(sb)
-                case Assignment(_, sb, VirtualFunctionCall(_, ObjectType.StringBuilder, false, "append", _, receiver, params)) ⇒
+                case Assignment(_, sb, VirtualFunctionCall(_, ObjectType.StringBuilder, false, "append", _, receiver, _)) ⇒
                     val stringBuilder = simpleDefinition(receiver.asVar.definedBy)
                     stringBuilder.exists(isNonEscapingStringBuilder) && isNonEscaping(sb)
                 case _ ⇒ false
@@ -286,13 +286,13 @@ class Reflection(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
                             } else {
                                 locations(11 /* string unknown */ ) += l
                             }
-                        case StaticFunctionCall(_, ObjectType.System, _, "getProperty", GetProperty1MD, params) ⇒
+                        case StaticFunctionCall(_, ObjectType.System, _, "getProperty", GetProperty1MD, _) ⇒
                             locations(13 /* string from Properties */ ) += l
-                        case VirtualFunctionCall(_, dc, _, "getProperty", GetProperty1MD, _, params) if ch.isSubtypeOf(dc, PropertiesT) ⇒
+                        case VirtualFunctionCall(_, dc, _, "getProperty", GetProperty1MD, _, _) if ch.isSubtypeOf(dc, PropertiesT) ⇒
                             locations(13 /* string from Properties */ ) += l
-                        case VirtualFunctionCall(_, dc, _, "getProperty", GetProperty2MD, _, params) if ch.isSubtypeOf(dc, PropertiesT) ⇒
+                        case VirtualFunctionCall(_, dc, _, "getProperty", GetProperty2MD, _, _) if ch.isSubtypeOf(dc, PropertiesT) ⇒
                             locations(13 /* string from Properties */ ) += l
-                        case VirtualFunctionCall(_, dc, _, "get", GetMD, _, params) if ch.isSubtypeOf(dc, PropertiesT) ⇒
+                        case VirtualFunctionCall(_, dc, _, "get", GetMD, _, _) if ch.isSubtypeOf(dc, PropertiesT) ⇒
                             locations(13 /* string from Properties */ ) += l
                         case _ ⇒ locations(11 /* string unknown */ ) += l
                     }
@@ -307,7 +307,7 @@ class Reflection(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
     )(
         implicit
         project: SomeProject,
-        tacai:   Method ⇒ TACode[TACMethodParameter, DUVar[KnownTypedValue]],
+        tacai:   Method ⇒ TACode[TACMethodParameter, V],
         stmts:   Array[Stmt[V]]
     ): Boolean = {
         if (stmt.targetVar.usedBy.exists { useSite ⇒
@@ -409,7 +409,7 @@ class Reflection(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
     )(
         implicit
         project: SomeProject,
-        tacai:   Method ⇒ TACode[TACMethodParameter, DUVar[KnownTypedValue]],
+        tacai:   Method ⇒ TACode[TACMethodParameter, V],
         stmts:   Array[Stmt[V]]
     ): Boolean = {
         if (stmt.targetVar.usedBy.exists { useSite ⇒
@@ -473,7 +473,7 @@ class Reflection(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
     )(
         implicit
         project: SomeProject,
-        tacai:   Method ⇒ TACode[TACMethodParameter, DUVar[KnownTypedValue]]
+        tacai:   Method ⇒ TACode[TACMethodParameter, V]
     ): Boolean = {
         project.allMethodsWithBody.exists { method ⇒
             val invokes = method.body.get.collect {

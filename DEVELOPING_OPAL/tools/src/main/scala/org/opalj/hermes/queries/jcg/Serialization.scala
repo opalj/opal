@@ -4,6 +4,9 @@ package hermes
 package queries
 package jcg
 
+import org.opalj.collection.immutable.RefArray
+import org.opalj.value.ValueInformation
+import org.opalj.da.ClassFile
 import org.opalj.br.ObjectType
 import org.opalj.br.MethodWithBody
 import org.opalj.br.ReferenceType
@@ -18,8 +21,6 @@ import org.opalj.br.MethodDescriptor.WriteObjectDescriptor
 import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.br.MethodDescriptor.ReadObjectDescriptor
 import org.opalj.br.MethodDescriptor.JustReturnsObject
-import org.opalj.collection.immutable.RefArray
-import org.opalj.da.ClassFile
 import org.opalj.tac.DefaultTACAIKey
 import org.opalj.tac.TACode
 import org.opalj.tac.VirtualMethodCall
@@ -29,7 +30,6 @@ import org.opalj.tac.Stmt
 import org.opalj.tac.Checkcast
 import org.opalj.tac.ExprStmt
 import org.opalj.tac.InvokedynamicFunctionCall
-import org.opalj.value.KnownTypedValue
 
 /**
  * Groups test case features that perform serialization.
@@ -43,7 +43,7 @@ class Serialization(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
 
     // TODO Add Serialization.md from JCG to resources once it is fixed
 
-    type V = DUVar[KnownTypedValue]
+    type V = DUVar[ValueInformation]
 
     // required types and descriptors
     val OOS = ObjectType("java/io/ObjectOutputStream")
@@ -86,8 +86,8 @@ class Serialization(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
 
         val tacai = project.get(DefaultTACAIKey)
 
-        implicit val p = project
-        implicit val classHierarchy = project.classHierarchy
+        implicit val p: Project[_] = project
+        implicit val classHierarchy: ClassHierarchy = project.classHierarchy
 
         val serializableTypes: Set[ObjectType] =
             classHierarchy.allSubtypes(ObjectType.Serializable, reflexive = false)

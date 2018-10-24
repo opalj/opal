@@ -16,9 +16,9 @@ import org.opalj.fpcf.cg.properties.CalleesLikePropertyMetaInformation
 import org.opalj.fpcf.cg.properties.NoCalleesDueToNotReachableMethod
 import org.opalj.fpcf.cg.properties.FinalCallees
 import org.opalj.fpcf.cg.properties.IndirectCallees
-import org.opalj.value.KnownTypedValue
-
 import scala.collection.immutable.IntMap
+
+import org.opalj.value.ValueInformation
 
 // todo the callees property could be collaborative (compute the complete set of callees on demand)
 /**
@@ -114,7 +114,7 @@ class CalleesAnalysis private[analyses] (
         var directCalleeIds: IntMap[IntTrieSet] = IntMap.empty
         var indirectCalleeIds: IntMap[IntTrieSet] = IntMap.empty
         var incompleteCallSites: IntTrieSet = IntTrieSet.empty
-        var indirectCallParameters: IntMap[Map[DeclaredMethod, Seq[Option[(KnownTypedValue, IntTrieSet)]]]] =
+        var indirectCallParameters: IntMap[Map[DeclaredMethod, Seq[Option[(ValueInformation, IntTrieSet)]]]] =
             IntMap.empty
 
         for (key ← directKeys.toIterator ++ indirectKeys.toIterator) {

@@ -5,8 +5,26 @@ package analyses
 package purity
 
 import scala.annotation.switch
-import org.opalj.ai.ValueOrigin
-import org.opalj.ai.isImmediateVMException
+
+import org.opalj.log.GlobalLogContext
+import org.opalj.log.OPALLogger
+import org.opalj.collection.immutable.EmptyIntTrieSet
+import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.fpcf.analyses.cg.uVarForDefSites
+import org.opalj.fpcf.cg.properties.Callees
+import org.opalj.fpcf.properties.ClassImmutability
+import org.opalj.fpcf.properties.CompileTimePure
+import org.opalj.fpcf.properties.FieldMutability
+import org.opalj.fpcf.properties.FinalField
+import org.opalj.fpcf.properties.ImmutableObject
+import org.opalj.fpcf.properties.ImmutableType
+import org.opalj.fpcf.properties.ImpureByAnalysis
+import org.opalj.fpcf.properties.ImpureByLackOfInformation
+import org.opalj.fpcf.properties.Pure
+import org.opalj.fpcf.properties.Purity
+import org.opalj.fpcf.properties.SideEffectFree
+import org.opalj.fpcf.properties.TypeImmutability
+import org.opalj.value.ValueInformation
 import org.opalj.br.ComputationalTypeReference
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
@@ -18,24 +36,8 @@ import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.cg.IsOverridableMethodKey
-import org.opalj.collection.immutable.EmptyIntTrieSet
-import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.fpcf.analyses.cg.uVarForDefSites
-import org.opalj.fpcf.cg.properties.Callees
-import org.opalj.fpcf.properties.ClassImmutability
-import org.opalj.fpcf.properties.FieldMutability
-import org.opalj.fpcf.properties.FinalField
-import org.opalj.fpcf.properties.ImmutableObject
-import org.opalj.fpcf.properties.ImmutableType
-import org.opalj.fpcf.properties.ImpureByLackOfInformation
-import org.opalj.fpcf.properties.ImpureByAnalysis
-import org.opalj.fpcf.properties.SideEffectFree
-import org.opalj.fpcf.properties.Purity
-import org.opalj.fpcf.properties.TypeImmutability
-import org.opalj.fpcf.properties.Pure
-import org.opalj.fpcf.properties.CompileTimePure
-import org.opalj.log.GlobalLogContext
-import org.opalj.log.OPALLogger
+import org.opalj.ai.ValueOrigin
+import org.opalj.ai.isImmediateVMException
 import org.opalj.tac.ArrayLength
 import org.opalj.tac.ArrayLoad
 import org.opalj.tac.ArrayStore
@@ -46,10 +48,11 @@ import org.opalj.tac.CaughtException
 import org.opalj.tac.Checkcast
 import org.opalj.tac.ClassConst
 import org.opalj.tac.Compare
-import org.opalj.tac.DUVar
 import org.opalj.tac.DoubleConst
+import org.opalj.tac.DUVar
 import org.opalj.tac.Expr
 import org.opalj.tac.ExprStmt
+import org.opalj.tac.FieldRead
 import org.opalj.tac.FloatConst
 import org.opalj.tac.GetField
 import org.opalj.tac.GetStatic
@@ -57,6 +60,8 @@ import org.opalj.tac.Goto
 import org.opalj.tac.If
 import org.opalj.tac.InstanceOf
 import org.opalj.tac.IntConst
+import org.opalj.tac.InvokedynamicFunctionCall
+import org.opalj.tac.InvokedynamicMethodCall
 import org.opalj.tac.JSR
 import org.opalj.tac.LongConst
 import org.opalj.tac.MethodHandleConst
@@ -88,11 +93,7 @@ import org.opalj.tac.Throw
 import org.opalj.tac.Var
 import org.opalj.tac.VirtualFunctionCall
 import org.opalj.tac.VirtualMethodCall
-import org.opalj.tac.FieldRead
-import org.opalj.tac.InvokedynamicFunctionCall
-import org.opalj.tac.InvokedynamicMethodCall
 import org.opalj.tac.fpcf.properties.TACAI
-import org.opalj.value.KnownTypedValue
 
 /**
  * Base trait for analyses that analyze the purity of methods.
@@ -102,7 +103,7 @@ import org.opalj.value.KnownTypedValue
 trait AbstractPurityAnalysis extends FPCFAnalysis {
 
     /** The type of the TAC domain. */
-    type V = DUVar[KnownTypedValue]
+    type V = DUVar[ValueInformation]
 
     /**
      * The state of the analysis.
@@ -379,7 +380,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
         onUnknown:    () ⇒ Boolean
     )(implicit state: StateType): Boolean = {
         val rcvrValue = receiver.asVar.value.asReferenceValue
-        val rcvrType = if (receiver.isVar) rcvrValue.valueType else Some(receiverType)
+        val rcvrType = if (receiver.isVar) rcvrValue.leastUpperType else Some(receiverType)
 
         if (rcvrType.isEmpty) {
             // IMPROVE Just use the CFG to check if we have a normal successor

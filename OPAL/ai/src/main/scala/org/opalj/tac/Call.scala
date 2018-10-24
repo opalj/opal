@@ -9,7 +9,7 @@ import org.opalj.br.MethodDescriptor
 import org.opalj.br.ReferenceType
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.ProjectLike
-import org.opalj.value.KnownTypedValue
+import org.opalj.value.ValueInformation
 
 /**
  * Common supertrait of statements and expressions calling a method.
@@ -49,7 +49,7 @@ trait Call[+V <: Var[V]] {
     )(
         implicit
         p:  ProjectLike,
-        ev: V <:< DUVar[KnownTypedValue]
+        ev: V <:< DUVar[ValueInformation]
     ): Set[Method]
 }
 

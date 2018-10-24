@@ -2,16 +2,16 @@
 package org.opalj
 package br
 
-import org.opalj.bi.ReferenceKind
 import org.opalj.bi.REF_getField
 import org.opalj.bi.REF_getStatic
+import org.opalj.bi.REF_invokeInterface
+import org.opalj.bi.REF_invokeSpecial
+import org.opalj.bi.REF_invokeStatic
+import org.opalj.bi.REF_invokeVirtual
+import org.opalj.bi.REF_newInvokeSpecial
 import org.opalj.bi.REF_putField
 import org.opalj.bi.REF_putStatic
-import org.opalj.bi.REF_invokeVirtual
-import org.opalj.bi.REF_invokeStatic
-import org.opalj.bi.REF_invokeSpecial
-import org.opalj.bi.REF_newInvokeSpecial
-import org.opalj.bi.REF_invokeInterface
+import org.opalj.bi.ReferenceKind
 
 /**
  * A method handle.
@@ -26,7 +26,7 @@ sealed abstract class MethodHandle extends ConstantValue[MethodHandle] {
      * Returns `ObjectType.MethodHandle`;
      * the type of the value pushed onto the stack by an ldc(_w) instruction.
      */
-    override def valueType: ObjectType = ObjectType.MethodHandle
+    override def runtimeValueType: ObjectType = ObjectType.MethodHandle
 
     def isInvokeStaticMethodHandle: Boolean = false
 
