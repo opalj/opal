@@ -654,7 +654,7 @@ class RTACallGraphAnalysis private[analyses] (
     ): PropertyComputationResult = {
 
         /**
-         * Creates partial results for instantiated types and loaded classes given by their FQNs.
+         * Creates partial results for instantiated types given by their FQNs.
          */
         def instantiatedTypesResults(fqns: Seq[String]): List[PropertyComputationResult] = {
             val instantiatedTypesUB =
@@ -668,33 +668,8 @@ class RTACallGraphAnalysis private[analyses] (
                     p, newInstantiatedTypes, initialInstantiatedTypes
                 ))
 
-            val loadedClassesUB = propertyStore(project, LoadedClasses.key) match {
-                case eps: EPS[_, _] ⇒ eps.ub.classes
-                case _              ⇒ UIDSet.empty[ObjectType]
-            }
-
-            val newLoadedClasses = newInstantiatedTypes.filterNot(loadedClassesUB.contains)
-
-            val loadedClassesResult =
-                PartialResult[SomeProject, LoadedClasses](project, LoadedClasses.key, {
-                    case IntermediateESimpleP(p, ub) ⇒
-                        val newUb = ub.classes ++ newLoadedClasses
-                        // due to monotonicity:
-                        // the size check sufficiently replaces the subset check
-                        if (newUb.size > ub.classes.size)
-                            Some(IntermediateESimpleP(p, new LoadedClasses(newUb)))
-                        else
-                            None
-
-                    case EPK(p, _) ⇒
-                        Some(IntermediateESimpleP(p, new LoadedClasses(newLoadedClasses)))
-
-                    case r ⇒ throw new IllegalStateException(s"unexpected previous result $r")
-                })
-
             if (newInstantiatedTypes.isEmpty) List.empty
-            else if (newLoadedClasses.isEmpty) instantiatedTypesResultList
-            else loadedClassesResult :: instantiatedTypesResultList
+            else instantiatedTypesResultList
         }
 
         /**

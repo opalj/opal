@@ -38,7 +38,6 @@ import org.opalj.fpcf.cg.properties.InstantiatedTypes
 import org.opalj.fpcf.cg.properties.LoadedClasses
 import org.opalj.fpcf.cg.properties.NoCallers
 import org.opalj.fpcf.cg.properties.NoReflectionRelatedCallees
-import org.opalj.fpcf.cg.properties.OnlyVMLevelCallers
 import org.opalj.fpcf.cg.properties.ReflectionRelatedCallees
 import org.opalj.fpcf.cg.properties.ReflectionRelatedCalleesImplementation
 import org.opalj.fpcf.properties.SystemProperties
@@ -287,9 +286,12 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
 
         val calleesAndCallers = new IndirectCalleesAndCallers()
 
+        // todo maybe move clearing to returnResult (newLoadedClasses/newInstantiatedTypes)
         implicit val newState: State = state.copy(
             loadedClassesUB = loadedClassesUB,
+            newLoadedClasses = UIDSet.empty,
             instantiatedTypesUB = instantiatedTypesUB,
+            newInstantiatedTypes = UIDSet.empty,
             calleesAndCallers = calleesAndCallers
         )
 
@@ -1243,9 +1245,12 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                 if (isFinal) None else Some(eps.asInstanceOf[EPS[SomeProject, SystemProperties]])
             // Create new state that reflects changes that may have happened in the meantime
             val (loadedClassesUB, instantiatedTypesUB) = loadedClassesAndInstantiatedTypes()
+            // todo maybe move clearing to returnResult (newLoadedClasses/newInstantiatedTypes)
             val newState = state.copy(
                 loadedClassesUB = loadedClassesUB,
+                newLoadedClasses = UIDSet.empty,
                 instantiatedTypesUB = instantiatedTypesUB,
+                newInstantiatedTypes = UIDSet.empty,
                 calleesAndCallers = new IndirectCalleesAndCallers(state.calleesAndCallers.callees),
                 systemPropertiesDependee = newEPS,
                 systemProperties = Some(ub.properties)
@@ -1314,40 +1319,26 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
 
         res ::= calleesResult
 
+        // todo here we should compare to the current loaded classes ub
         if (state.newLoadedClasses.nonEmpty) {
+            val stackTrace = Thread.currentThread().getStackTrace
             res ::= PartialResult[SomeProject, LoadedClasses](project, LoadedClasses.key, {
                 case IntermediateESimpleP(p, ub) ⇒
                     val newUb = ub.classes ++ state.newLoadedClasses
                     // due to monotonicity:
                     // the size check sufficiently replaces the subset check
                     if (newUb.size > ub.classes.size)
-                        Some(IntermediateESimpleP(p, new LoadedClasses(newUb)))
+                        Some(IntermediateESimpleP(p, ub.updated(state.newLoadedClasses)))
                     else
                         None
 
                 case EPK(p, _) ⇒
-                    Some(IntermediateESimpleP(p, new LoadedClasses(state.newLoadedClasses)))
+                    Some(IntermediateESimpleP(p, LoadedClasses.initial(state.newLoadedClasses)))
 
-                case r ⇒ throw new IllegalStateException(s"unexpected previous result $r")
+                case r ⇒
+                    println(stackTrace)
+                    throw new IllegalStateException(s"unexpected previous result $r")
             })
-            state.newLoadedClasses flatMap { loaded ⇒
-                LoadedClassesAnalysis.retrieveStaticInitializers(loaded, declaredMethods, project)
-            } foreach { clInit ⇒
-                res ::=
-                    PartialResult[DeclaredMethod, CallersProperty](clInit, CallersProperty.key, {
-                        case _: EPK[_, _] ⇒
-                            Some(IntermediateESimpleP(clInit, OnlyVMLevelCallers))
-
-                        case IntermediateESimpleP(_, ub) if !ub.hasCallersWithUnknownContext ⇒
-                            Some(IntermediateESimpleP(clInit, ub.updatedWithVMLevelCall()))
-
-                        case _: IntermediateESimpleP[_, _] ⇒
-                            None
-
-                        case r ⇒
-                            throw new IllegalStateException(s"unexpected previous result $r")
-                    })
-            }
         }
 
         if (state.newInstantiatedTypes.nonEmpty)
