@@ -1321,7 +1321,6 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
 
         // todo here we should compare to the current loaded classes ub
         if (state.newLoadedClasses.nonEmpty) {
-            val stackTrace = Thread.currentThread().getStackTrace
             res ::= PartialResult[SomeProject, LoadedClasses](project, LoadedClasses.key, {
                 case IntermediateESimpleP(p, ub) ⇒
                     val newUb = ub.classes ++ state.newLoadedClasses
@@ -1335,9 +1334,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                 case EPK(p, _) ⇒
                     Some(IntermediateESimpleP(p, LoadedClasses.initial(state.newLoadedClasses)))
 
-                case r ⇒
-                    println(stackTrace)
-                    throw new IllegalStateException(s"unexpected previous result $r")
+                case r ⇒ throw new IllegalStateException(s"unexpected previous result $r")
             })
         }
 
