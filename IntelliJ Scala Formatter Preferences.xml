@@ -33,6 +33,7 @@
         <option value="org.opalj.bc" />
         <option value="org.opalj.ba" />
         <option value="org.opalj.ai" />
+        <option value="org.opalj.tac" />
         <option value="org.opalj.de" />
         <option value="org.opalj.av" />
       </array>
