@@ -127,27 +127,6 @@ abstract class RefIterator[+T] extends AbstractIterator[T] { self ⇒
         }
     }
 
-    /*
-    def flatMap[X](f: T ⇒ RefIterator[X]): RefIterator[X] = {
-        new RefIterator[X] {
-            private[this] var it: Iterator[X] = Iterator.empty
-            private[this] def advanceIterator(): Unit = {
-                while (!it.hasNext) {
-                    if (self.hasNext) {
-                        it = f(self.next()).toIterator
-                    } else {
-                        it = null
-                        return ;
-                    }
-                }
-            }
-            advanceIterator()
-            def hasNext: Boolean = it != null
-            def next(): X = { val e = it.next(); advanceIterator(); e }
-        }
-    }
-    */
-
     def flatMap(f: T ⇒ IntIterator): IntIterator = new IntIterator {
         private[this] var it: IntIterator = IntIterator.empty
         private[this] def advanceIterator(): Unit = {
