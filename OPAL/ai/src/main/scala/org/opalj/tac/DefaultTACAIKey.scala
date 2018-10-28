@@ -51,7 +51,7 @@ object DefaultTACAIKey extends TACAIKey {
             val code = TACAI(m, project.classHierarchy, aiResult)(Nil)
             // well... the following cast is safe, because the underlying
             // data structure is actually (at least conceptually) immutable
-            code.asInstanceOf[TACode[TACMethodParameter, DUVar[KnownTypedValue]]]
+            code.asInstanceOf[TACode[TACMethodParameter, DUVar[ValueInformation]]]
         })
 
         /*
