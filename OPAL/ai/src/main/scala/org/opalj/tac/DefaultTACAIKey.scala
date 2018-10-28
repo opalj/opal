@@ -46,6 +46,15 @@ object DefaultTACAIKey extends TACAIKey {
         val aiResults = project.get(SimpleAIKey)
         val taCodes = TrieMap.empty[Method, TACode[TACMethodParameter, DUVar[KnownTypedValue]]]
 
+        (m: Method) ⇒ taCodes.getOrElseUpdate(m, {
+            val aiResult = aiResults(m)
+            val code = TACAI(m, project.classHierarchy, aiResult)(Nil)
+            // well... the following cast is safe, because the underlying
+            // data structure is actually (at least conceptually) immutable
+            code.asInstanceOf[TACode[TACMethodParameter, DUVar[KnownTypedValue]]]
+        })
+
+        /*
         def computeAndCacheTAC(m: Method) = { // never executed concurrently
             val aiResult = aiResults(m)
             val code = TACAI(m, project.classHierarchy, aiResult)(Nil)
@@ -55,8 +64,7 @@ object DefaultTACAIKey extends TACAIKey {
             taCodes.put(m, taCode)
             taCode
         }
-
-        (m: Method) ⇒ taCodes.get(m) match {
+         (m: Method) ⇒ taCodes.get(m) match {
             case Some(taCode) ⇒ taCode
             case None ⇒
                 val brCode = m.body.get
@@ -69,5 +77,6 @@ object DefaultTACAIKey extends TACAIKey {
                     }
                 }
         }
+        */
     }
 }
