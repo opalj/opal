@@ -14,7 +14,7 @@ import org.opalj.br.ComputationalTypeInt
  *         domain does not support the identification of values that may be equal.
  * @author Michael Eichberg
  */
-trait DefaultIntegerValues extends DefaultDomainValueBinding with IntegerValues {
+trait DefaultIntegerValues extends DefaultSpecialDomainValuesBinding with IntegerValues {
     domain: Configuration with ExceptionsFactory ⇒
 
     /**
@@ -57,6 +57,8 @@ trait DefaultIntegerValues extends DefaultDomainValueBinding with IntegerValues 
      * Represents a specific integer value in the range [`lowerBound`,`upperBound`].
      */
     class TheIntegerValue(val value: Int) extends super.TheIntegerValue {
+
+        override def constantValue: Option[Int] = Some(value)
 
         override def doJoin(pc: Int, other: DomainValue): Update[DomainValue] = {
             other match {

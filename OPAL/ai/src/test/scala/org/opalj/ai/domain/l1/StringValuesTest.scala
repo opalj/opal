@@ -23,7 +23,7 @@ class StringValuesTest extends FlatSpec with Matchers {
 
     object AnalysisDomain
         extends CorrelationalDomain
-        with DefaultDomainValueBinding
+        with DefaultSpecialDomainValuesBinding
         with ThrowAllPotentialExceptionsConfiguration
         with PredefinedClassHierarchy
         with DefaultHandlingOfMethodResults

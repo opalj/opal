@@ -15,7 +15,7 @@ import org.opalj.fpcf.EPS
 import org.opalj.fpcf.PropertyIsNotDerivedByPreviouslyExecutedAnalysis
 import org.opalj.fpcf.PropertyIsNotComputedByAnyAnalysis
 import org.opalj.ai.domain.l0.PrimitiveTACAIDomain
-import org.opalj.value.KnownTypedValue
+import org.opalj.value.ValueInformation
 import org.opalj.tac.{TACAI ⇒ TACAIFactory}
 
 sealed trait TACAIPropertyMetaInformation extends PropertyMetaInformation {
@@ -42,7 +42,7 @@ sealed trait TACAI extends Property with TACAIPropertyMetaInformation {
     /**
      * @return The three-address code if the method is reachable; `None` otherwise.
      */
-    def tac: Option[TACode[TACMethodParameter, DUVar[KnownTypedValue]]]
+    def tac: Option[TACode[TACMethodParameter, DUVar[ValueInformation]]]
 }
 
 /**
@@ -50,13 +50,13 @@ sealed trait TACAI extends Property with TACAIPropertyMetaInformation {
  * the computation of a call graph.
  */
 case object NoTACAI extends TACAI {
-    def tac: Option[TACode[TACMethodParameter, DUVar[KnownTypedValue]]] = None
+    def tac: Option[TACode[TACMethodParameter, DUVar[ValueInformation]]] = None
 }
 
 case class TheTACAI(
-        theTAC: TACode[TACMethodParameter, DUVar[KnownTypedValue]]
+        theTAC: TACode[TACMethodParameter, DUVar[ValueInformation]]
 ) extends TACAI {
-    def tac: Option[TACode[TACMethodParameter, DUVar[KnownTypedValue]]] = Some(theTAC)
+    def tac: Option[TACode[TACMethodParameter, DUVar[ValueInformation]]] = Some(theTAC)
 }
 
 /**
@@ -82,7 +82,7 @@ object TACAI extends TACAIPropertyMetaInformation {
                     TheTACAI(
                         // the following cast is safe - see TACode for details
                         // IMPROVE Get rid of nasty type checks/casts related to TACode once we use ConstCovariantArray in TACode.. (here and elsewhere)
-                        taCode.asInstanceOf[TACode[TACMethodParameter, DUVar[KnownTypedValue]]]
+                        taCode.asInstanceOf[TACode[TACMethodParameter, DUVar[ValueInformation]]]
                     )
             }
         }: TACAI,

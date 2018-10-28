@@ -4,35 +4,25 @@ package fpcf
 package analyses
 package escape
 
-import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.ai.ValueOrigin
+import org.opalj.ai.common.DefinitionSitesKey
 import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
 import org.opalj.br.VirtualDeclaredMethod
+import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.br.analyses.VirtualFormalParameters
 import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.br.analyses.cg.IsOverridableMethodKey
-import org.opalj.br.cfg.CFG
 import org.opalj.fpcf.properties._
-import org.opalj.ai.Domain
-import org.opalj.ai.ValueOrigin
-import org.opalj.ai.common.DefinitionSitesKey
-import org.opalj.ai.domain.RecordDefUse
-import org.opalj.br.analyses.DeclaredMethods
+import org.opalj.value.ValueInformation
 import org.opalj.tac.DUVar
-import org.opalj.tac.DefaultTACAIKey
-import org.opalj.tac.Stmt
-import org.opalj.tac.TACode
-import org.opalj.tac.TACStmts
 
 class InterProceduralEscapeAnalysisContext(
         val entity:                  Entity,
-        val defSite:                 ValueOrigin,
+        val defSitePC:               ValueOrigin,
         val targetMethod:            Method,
-        val uses:                    IntTrieSet,
-        val code:                    Array[Stmt[V]],
-        val cfg:                     CFG[Stmt[V], TACStmts[V]],
         val declaredMethods:         DeclaredMethods,
         val virtualFormalParameters: VirtualFormalParameters,
         val project:                 SomeProject,
@@ -43,7 +33,6 @@ class InterProceduralEscapeAnalysisContext(
     with IsMethodOverridableContainer
     with VirtualFormalParametersContainer
     with DeclaredMethodsContainer
-    with CFGContainer
 
 class InterProceduralEscapeAnalysisState
     extends AbstractEscapeAnalysisState with DependeeCache with ReturnValueUseSites
@@ -105,9 +94,7 @@ class InterProceduralEscapeAnalysis private[analyses] (
                 Result(fp, AtMost(NoEscape))
 
             case VirtualFormalParameter(DefinedMethod(_, m), i) ⇒
-                val TACode(params, code, _, cfg, _, _) = project.get(DefaultTACAIKey)(m)
-                val param = params.parameter(i)
-                val ctx = createContext(fp, param.origin, m, param.useSites, code, cfg)
+                val ctx = createContext(fp, i, m)
                 doDetermineEscape(ctx, createState)
 
             case VirtualFormalParameter(VirtualDeclaredMethod(_, _, _), _) ⇒
@@ -117,18 +104,12 @@ class InterProceduralEscapeAnalysis private[analyses] (
 
     override def createContext(
         entity:       Entity,
-        defSite:      ValueOrigin,
-        targetMethod: Method,
-        uses:         IntTrieSet,
-        code:         Array[Stmt[V]],
-        cfg:          CFG[Stmt[V], TACStmts[V]]
+        defSitePC:    ValueOrigin,
+        targetMethod: Method
     ): InterProceduralEscapeAnalysisContext = new InterProceduralEscapeAnalysisContext(
         entity,
-        defSite,
+        defSitePC,
         targetMethod,
-        uses,
-        code,
-        cfg,
         declaredMethods,
         virtualFormalParameters,
         project,
@@ -157,7 +138,7 @@ sealed trait InterProceduralEscapeAnalysisScheduler extends ComputationSpecifica
 object EagerInterProceduralEscapeAnalysis
     extends InterProceduralEscapeAnalysisScheduler
     with FPCFEagerAnalysisScheduler {
-    type V = DUVar[(Domain with RecordDefUse)#DomainValue]
+    type V = DUVar[ValueInformation]
 
     override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new InterProceduralEscapeAnalysis(p)

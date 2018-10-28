@@ -242,8 +242,8 @@ package object graphs {
                 if (n == PathSegmentSeparator) {
                     // We have visited all child elements of the "previous element";
                     // we can now report a path, if we have one (note that we eagerly kill
-                    // non-cSCC paths and hence every path that still exists, is a valid path...
-                    // however, we have to ensure that we have visited _all_ successors belonging
+                    // non-cSCC paths and hence every path that still exists, is a valid path.
+                    // However, we have to ensure that we have visited _all_ successors belonging
                     // to the current candidate cSCC)
                     val n = workstack.pop()
                     if (path.nonEmpty) {
@@ -268,7 +268,8 @@ package object graphs {
                             if (workstack.isEmpty ||
                                 cSCCandidate.forall(n ⇒
                                     es(n).forall(succN ⇒
-                                        hasDFSNum(succN) /*&& dfsNum(succN) == cSCCDFSNum*/
+                                        hasDFSNum(succN) &&
+                                            dfsNum(succN) == cSCCDFSNum // <= prevents premature cscc identifications
                                     ))) {
                                 cSCCs ::= path.slice(from = cSCCDFSNum - initialDFSNum)
                                 markPathAsProcessed()
@@ -290,7 +291,7 @@ package object graphs {
                         // all nodes as belonging to the cycle.
                         val startPathIndex = nDFSNum - initialDFSNum // the (start) index of the cycle
                         var pathIndex = path.length - 1
-                        if (dfsNum(path(pathIndex)) != nDFSNum) { // test if the node are already correctly marked
+                        if (dfsNum(path(pathIndex)) != nDFSNum) { // test if the node is already correctly marked
                             while (pathIndex >= startPathIndex) {
                                 setDFSNum(path(pathIndex), nDFSNum)
                                 pathIndex -= 1
@@ -400,7 +401,7 @@ package object graphs {
             var nextDFSNum = thisPathFirstDFSNum
             var nextCSCCId = 1
             val path = mutable.ArrayBuffer.empty[N]
-            val worklist = mutable.ArrayStack.empty[N]
+            val worklist = mutable.(Ref?)ArrayStack.empty[N]
 
             // HELPER METHODS
             def addToPath(n: N): Int = {

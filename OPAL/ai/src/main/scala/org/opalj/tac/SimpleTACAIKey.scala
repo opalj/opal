@@ -8,7 +8,7 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.ProjectInformationKey
 import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
 import org.opalj.ai.BaseAI
-import org.opalj.value.KnownTypedValue
+import org.opalj.value.ValueInformation
 
 /**
  * ''Key'' to get the 3-address based code of a method computed using the configured
@@ -40,12 +40,12 @@ object SimpleTACAIKey extends TACAIKey {
      */
     override protected def compute(
         project: SomeProject
-    ): Method ⇒ TACode[TACMethodParameter, DUVar[KnownTypedValue]] = {
+    ): Method ⇒ TACode[TACMethodParameter, DUVar[ValueInformation]] = {
         val domainFactory = project.
             getProjectInformationKeyInitializationData(this).
             getOrElse((m: Method) ⇒ new DefaultDomainWithCFGAndDefUse(project, m))
 
-        val taCodes = TrieMap.empty[Method, TACode[TACMethodParameter, DUVar[KnownTypedValue]]]
+        val taCodes = TrieMap.empty[Method, TACode[TACMethodParameter, DUVar[ValueInformation]]]
 
         def computeAndCacheTAC(m: Method) = {
             val domain = domainFactory(m)
@@ -53,7 +53,7 @@ object SimpleTACAIKey extends TACAIKey {
             val code = TACAI(m, project.classHierarchy, aiResult)(Nil)
             // well... the following cast safe is safe, because the underlying
             // datastructure is actually, conceptually immutable
-            val taCode = code.asInstanceOf[TACode[TACMethodParameter, DUVar[KnownTypedValue]]]
+            val taCode = code.asInstanceOf[TACode[TACMethodParameter, DUVar[ValueInformation]]]
             taCodes.put(m, taCode)
             taCode
         }

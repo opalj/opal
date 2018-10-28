@@ -98,7 +98,7 @@ object PlainClassesTest {
 
     class RecordingDomain
         extends CorrelationalDomain
-        with DefaultDomainValueBinding
+        with DefaultSpecialDomainValuesBinding
         with DefaultHandlingForReturnInstructions
         with DefaultHandlingOfVoidReturns
         with ThrowAllPotentialExceptionsConfiguration

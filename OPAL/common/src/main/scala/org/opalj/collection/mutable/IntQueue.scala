@@ -16,9 +16,7 @@ protected[opalj] final class IntQueue private (
         private var last:  QueueNode = null
 ) extends Serializable { queue ⇒
 
-    def this(value: Int) = {
-        this(new QueueNode(value, null))
-    }
+    def this(value: Int) = this(new QueueNode(value, null))
 
     def isEmpty: Boolean = first eq null
 
@@ -36,7 +34,7 @@ protected[opalj] final class IntQueue private (
 
     def head: Int = first.value
 
-    def tail: this.type = { first = first.next; this }
+    // FIXME ... we should generate a new instance def tail: this.type = { first = first.next; this }
 
     def foreach[U](f: Int ⇒ U): Unit = {
         var c = first
@@ -77,7 +75,7 @@ protected[opalj] final class IntQueue private (
                 c = c.next
             }
         }
-        sb.append(")")
+        sb.append(')')
         sb.toString
     }
 }

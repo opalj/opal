@@ -197,14 +197,27 @@ class MethodBuilderTest extends FlatSpec {
     }
 
     "the generated method `tryCatchFinallyTest`" should "execute as expected" in {
-        val attributeMethodClass = loader.loadClass("AttributeMethodClass")
-        val attributeTestInstance = attributeMethodClass.getDeclaredConstructor().newInstance()
-        val mirror = runtimeMirror(loader).reflect(attributeTestInstance)
-        val method = mirror.symbol.typeSignature.member(TermName("tryCatchFinallyTest")).asMethod
-
-        assert(mirror.reflectMethod(method)(-1) == 0)
-        assert(mirror.reflectMethod(method)(0) == 1)
-        assert(mirror.reflectMethod(method)(1) == 2)
+        try {
+            val attributeMethodClass = loader.loadClass("AttributeMethodClass")
+            val attributeTestInstance = attributeMethodClass.getDeclaredConstructor().newInstance()
+            val mirror = runtimeMirror(loader).reflect(attributeTestInstance)
+            val method = mirror.symbol.typeSignature.member(TermName("tryCatchFinallyTest")).asMethod
+            assert(mirror.reflectMethod(method)(-1) == 0)
+            assert(mirror.reflectMethod(method)(0) == 1)
+            assert(mirror.reflectMethod(method)(1) == 2)
+        } catch {
+            case t: Throwable ⇒
+                info(
+                    attributeBrClassFile.findMethod("tryCatchFinallyTest").head.toJava
+                )
+                org.opalj.io.writeAndOpen(
+                    attributeMethodClass.toXHTML(Some("AttributeMethodClass.scala")),
+                    "AttributeMethodClass",
+                    ".class.html"
+                )
+                info(t.getLocalizedMessage)
+                fail(t)
+        }
     }
 
     "removing dead code related to TRY/CATCH" should "work correctly with \"standard\" TRY/CATCH" in {

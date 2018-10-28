@@ -25,7 +25,7 @@ import org.opalj.br.MethodHandle
 import org.opalj.br.Method
 import org.opalj.br.PC
 import org.opalj.br.analyses.ProjectLike
-import org.opalj.value.KnownTypedValue
+import org.opalj.value.ValueInformation
 
 /**
  * Represents an expression. In general, every expression should be a simple expression, where
@@ -104,6 +104,7 @@ trait Expr[+V <: Var[V]] extends ASTNode[V] {
     def asBinaryExpr: BinaryExpr[V] = throw new ClassCastException();
     def asPrefixExpr: PrefixExpr[V] = throw new ClassCastException();
     def asPrimitiveTypeCastExpr: PrimitiveTypecastExpr[V] = throw new ClassCastException();
+    def isNew: Boolean = false
     def asNew: New = throw new ClassCastException();
     def asNewArray: NewArray[V] = throw new ClassCastException();
     def asArrayLoad: ArrayLoad[V] = throw new ClassCastException();
@@ -409,6 +410,7 @@ case class New(pc: PC, tpe: ObjectType) extends Expr[Nothing] {
 
     final override def isValueExpression: Boolean = false
     final override def isVar: Boolean = false
+    final override def isNew: Boolean = true
     final override def asNew: this.type = this
     final override def astID: Int = New.ASTID
     final override def cTpe: ComputationalType = ComputationalTypeReference
@@ -710,7 +712,7 @@ case class NonVirtualFunctionCall[+V <: Var[V]](
     )(
         implicit
         p:  ProjectLike,
-        ev: V <:< DUVar[KnownTypedValue]
+        ev: V <:< DUVar[ValueInformation]
     ): Set[Method] = {
         resolveCallTarget(callingContext)(p).toSet
     }
@@ -812,7 +814,7 @@ case class StaticFunctionCall[+V <: Var[V]](
     )(
         implicit
         p:  ProjectLike,
-        ev: V <:< DUVar[KnownTypedValue]
+        ev: V <:< DUVar[ValueInformation]
     ): Set[Method] = {
         resolveCallTarget(p).toSet
     }

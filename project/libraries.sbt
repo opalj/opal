@@ -4,5 +4,5 @@ libraryDependencies += "org.eclipse.jdt.core.compiler" % "ecj" % "4.6.1"  // <= 
 
 // Required to compile the website
 libraryDependencies += "org.scalatra.scalate" %% "scalate-core" % "1.9.0"
-libraryDependencies += "com.vladsch.flexmark" % "flexmark-all" % "0.34.24"
+libraryDependencies += "com.vladsch.flexmark" % "flexmark-all" % "0.34.48"
 libraryDependencies += "com.typesafe" % "config" % "1.3.3"

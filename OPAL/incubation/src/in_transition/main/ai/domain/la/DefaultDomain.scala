@@ -31,7 +31,7 @@ class DefaultDomain[Source](
         val project: Project[Source],
         val method:  Method
 ) extends CorrelationalDomain
-    with domain.DefaultDomainValueBinding
+    with domain.DefaultSpecialDomainValuesBinding
     with domain.ThrowAllPotentialExceptionsConfiguration
     with domain.l0.DefaultTypeLevelFloatValues
     with domain.l0.DefaultTypeLevelDoubleValues

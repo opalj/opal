@@ -4,12 +4,14 @@ package fpcf
 package analyses
 package escape
 
-import org.opalj.br.DefinedMethod
-import org.opalj.br.Method
-import org.opalj.br.MethodDescriptor
-import org.opalj.br.ObjectType
-import org.opalj.br.ReferenceType
-import org.opalj.br.analyses.VirtualFormalParameter
+import org.opalj.tac.Expr
+import org.opalj.tac.NonVirtualFunctionCall
+import org.opalj.tac.NonVirtualMethodCall
+import org.opalj.tac.StaticFunctionCall
+import org.opalj.tac.StaticMethodCall
+import org.opalj.tac.VirtualFunctionCall
+import org.opalj.tac.VirtualMethodCall
+
 import org.opalj.fpcf.properties.AtMost
 import org.opalj.fpcf.properties.EscapeInCallee
 import org.opalj.fpcf.properties.EscapeProperty
@@ -19,13 +21,12 @@ import org.opalj.fpcf.properties.EscapeViaStaticField
 import org.opalj.fpcf.properties.GlobalEscape
 import org.opalj.fpcf.properties.NoEscape
 import org.opalj.fpcf.properties.VirtualMethodEscapeProperty
-import org.opalj.tac.Expr
-import org.opalj.tac.NonVirtualFunctionCall
-import org.opalj.tac.NonVirtualMethodCall
-import org.opalj.tac.StaticFunctionCall
-import org.opalj.tac.StaticMethodCall
-import org.opalj.tac.VirtualFunctionCall
-import org.opalj.tac.VirtualMethodCall
+import org.opalj.br.DefinedMethod
+import org.opalj.br.Method
+import org.opalj.br.MethodDescriptor
+import org.opalj.br.ObjectType
+import org.opalj.br.ReferenceType
+import org.opalj.br.analyses.VirtualFormalParameter
 
 /**
  * Adds inter-procedural behavior to escape analyses.
@@ -123,7 +124,7 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
     ): Unit = {
         val methodO = call.resolveCallTarget(context.targetMethodDeclaringClassType)
         checkParams(methodO, call.params, hasAssignment = false)
-        if (context.usesDefSite(call.receiver))
+        if (state.usesDefSite(call.receiver))
             handleCall(methodO, param = 0, hasAssignment = false)
     }
 
@@ -137,7 +138,7 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
     ): Unit = {
         val methodO = call.resolveCallTarget(context.targetMethodDeclaringClassType)
         checkParams(methodO, call.params, hasAssignment)
-        if (context.usesDefSite(call.receiver))
+        if (state.usesDefSite(call.receiver))
             handleCall(methodO, param = 0, hasAssignment = hasAssignment)
     }
 
@@ -155,7 +156,7 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
         val callerType = targetMethod.classFile.thisType
         val value = receiver.asVar.value.asReferenceValue
 
-        val receiverType = value.valueType
+        val receiverType = value.leastUpperType
 
         if (receiverType.isEmpty) {
             // Nothing to do
@@ -165,7 +166,7 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
             // for arrays we know the concrete method which is defined by java.lang.Object
             val methodO = project.instanceCall(callerType, ObjectType.Object, name, descr)
             checkParams(methodO, params, hasAssignment)
-            if (context.usesDefSite(receiver))
+            if (state.usesDefSite(receiver))
                 handleCall(methodO, param = 0, hasAssignment = hasAssignment)
         } else if (value.isPrecise) {
 
@@ -173,7 +174,7 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
             val methodO = project.instanceCall(callerType, receiverType.get, name, descr)
 
             checkParams(methodO, params, hasAssignment)
-            if (context.usesDefSite(receiver))
+            if (state.usesDefSite(receiver))
                 handleCall(methodO, param = 0, hasAssignment = hasAssignment)
         } else /* non-null, not precise object type */ {
 
@@ -201,7 +202,7 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
                     state.meetMostRestrictive(AtMost(EscapeInCallee))
                 } else {
                     // handle the receiver
-                    if (context.usesDefSite(receiver)) {
+                    if (state.usesDefSite(receiver)) {
                         val fp = context.virtualFormalParameters(callee)
                         assert((fp ne null) && (fp(0) ne null))
                         handleEscapeState(fp(0), hasAssignment, isConcreteMethod = false)
@@ -210,7 +211,7 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
 
                     // handle the parameters
                     for (i ← params.indices) {
-                        if (context.usesDefSite(params(i))) {
+                        if (state.usesDefSite(params(i))) {
                             val fp = context.virtualFormalParameters(callee)
                             assert((fp ne null) && (fp(i + 1) ne null))
                             handleEscapeState(fp(i + 1), hasAssignment, isConcreteMethod = false)
@@ -227,7 +228,7 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
         hasAssignment: Boolean
     )(implicit context: AnalysisContext, state: AnalysisState): Unit = {
         for (i ← params.indices) {
-            if (context.usesDefSite(params(i)))
+            if (state.usesDefSite(params(i)))
                 handleCall(methodO, i + 1, hasAssignment)
         }
     }
@@ -376,7 +377,6 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
         context: AnalysisContext,
         state:   AnalysisState
     ): PropertyComputationResult = {
-
         someEPS.e match {
             case VirtualFormalParameter(DefinedMethod(_, m), -1) if m.isConstructor ⇒
                 throw new RuntimeException("can't handle the this-reference of the constructor")

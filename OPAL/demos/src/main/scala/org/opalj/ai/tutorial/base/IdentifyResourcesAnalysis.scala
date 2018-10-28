@@ -51,7 +51,7 @@ object IdentifyResourcesAnalysis extends DefaultOneStepAnalysis {
         ) extends CorrelationalDomain
             with domain.TheProject
             with domain.TheMethod
-            with domain.DefaultDomainValueBinding
+            with domain.DefaultSpecialDomainValuesBinding
             with domain.ThrowAllPotentialExceptionsConfiguration
             with domain.l0.DefaultTypeLevelIntegerValues
             with domain.l0.DefaultTypeLevelLongValues

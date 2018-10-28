@@ -56,7 +56,13 @@ trait Origin { domain: ValuesDomain ⇒
      * Should be mixed in by `DomainValue`s that have a single origin.
      */
     trait SingleOriginValue extends ValueWithOriginInformation {
+
+        /**
+         * The origin of the value (or the pseudo-origin (e.g., the index of
+         * the parameter) if the true origin is unknown.)
+         */
         def origin: ValueOrigin
+
         final def originsIterator: ValueOriginsIterator = IntIterator(origin)
         final def origins: ValueOrigins = IntTrieSet1(origin)
     }

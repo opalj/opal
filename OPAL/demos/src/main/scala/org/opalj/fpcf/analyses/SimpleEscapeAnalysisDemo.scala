@@ -6,10 +6,7 @@ package analyses
 import java.net.URL
 
 import org.opalj.ai.common.DefinitionSite
-import org.opalj.ai.common.SimpleAIKey
-import org.opalj.ai.domain.l0.PrimitiveTACAIDomain
 import org.opalj.br.DefinedMethod
-import org.opalj.br.Method
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
@@ -31,7 +28,7 @@ import org.opalj.fpcf.properties.GlobalEscape
 import org.opalj.fpcf.properties.NoEscape
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.info
-import org.opalj.tac.DefaultTACAIKey
+import org.opalj.tac.fpcf.analyses.LazyL0TACAIAnalysis
 import org.opalj.util.PerformanceEvaluation.time
 
 /**
@@ -56,27 +53,13 @@ object SimpleEscapeAnalysisDemo extends DefaultOneStepAnalysis {
         implicit val logContext: LogContext = project.logContext
 
         val propertyStore = time {
-
-            project.getOrCreateProjectInformationKeyInitializationData(
-                SimpleAIKey,
-                (m: Method) ⇒ {
-                    new PrimitiveTACAIDomain(project, m)
-                }
-            )
             project.get(PropertyStoreKey)
         } { t ⇒ info("progress", s"initialization of property store took ${t.toSeconds}") }
         PropertyStore.updateDebug(true)
 
-        // Get the TAC code for all methods to make it possible to measure the time for
-        // the analysis itself.
         time {
-            project.get(DefaultTACAIKey)
-            // parallelization is more efficient using parForeachMethodWithBody
-        } { t ⇒ info("progress", s"generating 3-address code took ${t.toSeconds}") }
-
-        time {
-            propertyStore.setupPhase(Set(EscapeProperty.key))
-            EagerSimpleEscapeAnalysis.start(project, null)
+            val manager = project.get(FPCFAnalysesManagerKey)
+            manager.runAll(EagerSimpleEscapeAnalysis, LazyL0TACAIAnalysis)
             propertyStore.waitOnPhaseCompletion()
         } { t ⇒ info("progress", s"escape analysis took ${t.toSeconds}") }
 

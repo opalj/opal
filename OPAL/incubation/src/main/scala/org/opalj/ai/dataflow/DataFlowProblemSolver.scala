@@ -20,7 +20,7 @@ trait DataFlowProblemSolver[Source, Params] extends DataFlowProblem[Source, Para
             override val domainValue: DomainValue
     ) extends super.TaintedValue with TaintInformation {
 
-        def valueInformation: ValueInformation = theDomain.typeOfValue(domainValue)
+        def valueInformation: ValueInformation = domainValue
 
     }
 

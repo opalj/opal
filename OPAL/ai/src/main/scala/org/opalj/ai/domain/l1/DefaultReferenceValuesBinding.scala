@@ -7,7 +7,6 @@ package l1
 import scala.reflect.ClassTag
 
 import org.opalj.collection.immutable.UIDSet
-
 import org.opalj.br.ArrayType
 import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
@@ -16,7 +15,7 @@ import org.opalj.br.ReferenceType
  * @author Michael Eichberg
  */
 trait DefaultReferenceValuesBinding extends l1.ReferenceValues with DefaultExceptionsFactory {
-    domain: CorrelationalDomainSupport with IntegerValuesDomain with TypedValuesFactory with Configuration with TheClassHierarchy ⇒
+    domain: CorrelationalDomainSupport with IntegerValuesDomain with TypedValuesFactory with Configuration ⇒
 
     // Let's fix the type hierarchy
 
@@ -41,8 +40,31 @@ trait DefaultReferenceValuesBinding extends l1.ReferenceValues with DefaultExcep
     final val DomainMultipleReferenceValuesTag: ClassTag[DomainMultipleReferenceValues] = implicitly
 
     //
-    // FACTORY METHODS
+    // CONCRETE CLASSES AND THEIR FACTORY METHODS
     //
+
+    protected case class DefaultSObjectValue(
+            origin:                 ValueOrigin,
+            isNull:                 Answer,
+            override val isPrecise: Boolean,
+            theUpperTypeBound:      ObjectType,
+            refId:                  RefId
+    ) extends SObjectValue
+
+    protected case class DefaultMObjectValue(
+            origin:              ValueOrigin,
+            override val isNull: Answer,
+            upperTypeBound:      UIDSet[ObjectType],
+            refId:               RefId
+    ) extends MObjectValue
+
+    private case class DefaultArrayValue(
+            origin:                 ValueOrigin,
+            isNull:                 Answer,
+            override val isPrecise: Boolean,
+            theUpperTypeBound:      ArrayType,
+            refId:                  RefId
+    ) extends ArrayValue
 
     override def NullValue(origin: ValueOrigin): DomainNullValue = new NullValue(origin)
 
@@ -53,7 +75,7 @@ trait DefaultReferenceValuesBinding extends l1.ReferenceValues with DefaultExcep
         theUpperTypeBound: ObjectType,
         refId:             RefId
     ): SObjectValue = {
-        new SObjectValue(
+        DefaultSObjectValue(
             origin,
             isNull,
             isPrecise || classHierarchy.isKnownToBeFinal(theUpperTypeBound),
@@ -70,7 +92,7 @@ trait DefaultReferenceValuesBinding extends l1.ReferenceValues with DefaultExcep
         if (upperTypeBound.isSingletonSet) {
             ObjectValue(origin, isNull, false, upperTypeBound.head, refId)
         } else
-            new MObjectValue(origin, isNull, upperTypeBound, refId)
+            DefaultMObjectValue(origin, isNull, upperTypeBound, refId)
     }
 
     override protected[domain] def ArrayValue(
@@ -80,7 +102,7 @@ trait DefaultReferenceValuesBinding extends l1.ReferenceValues with DefaultExcep
         theUpperTypeBound: ArrayType,
         t:                 RefId
     ): DomainArrayValue = {
-        new ArrayValue(
+        DefaultArrayValue(
             origin,
             isNull,
             isPrecise || classHierarchy.isKnownToBeFinal(theUpperTypeBound),

@@ -5,10 +5,11 @@ package domain
 package l1
 
 import scala.reflect.ClassTag
+
 import scala.collection.immutable.SortedSet
 
-import org.opalj.value.IsIntegerValue
 import org.opalj.collection.SingletonSet
+import org.opalj.value.IsIntegerValue
 import org.opalj.br._
 
 /**
@@ -43,7 +44,7 @@ trait IntegerSetValues
      */
     def maxCardinalityOfIntegerSets: Int = 8
 
-    assert(
+    require(
         maxCardinalityOfIntegerSets < 127,
         "larger sets are not supported" // we want to avoid overlaps with U7BitSet
     )
@@ -56,9 +57,7 @@ trait IntegerSetValues
         with IsIntegerValue {
         this: DomainTypedValue[CTIntType] ⇒
 
-        final override def valueType: Option[CTIntType] = Some(CTIntType)
-
-        final override def verificationTypeInfo: VerificationTypeInfo = IntegerVariableInfo
+        final override def leastUpperType: Option[CTIntType] = Some(CTIntType)
 
     }
 
@@ -72,6 +71,7 @@ trait IntegerSetValues
 
         final override def lowerBound: Int = Int.MinValue
         final override def upperBound: Int = Int.MaxValue
+        final override def constantValue: Option[Int] = None
     }
 
     /**
@@ -84,6 +84,9 @@ trait IntegerSetValues
 
         final override def lowerBound: Int = values.firstKey
         final override def upperBound: Int = values.lastKey
+        final override def constantValue: Option[Int] = {
+            if (values.size == 1) Some(values.head) else None
+        }
     }
 
     /**
@@ -112,8 +115,8 @@ trait IntegerSetValues
 
     abstract class U7BitSet extends BaseTypesBasedSet { this: DomainTypedValue[CTIntType] ⇒
 
-        final override def lowerBound = 0
-        final override def upperBound = Byte.MaxValue
+        final override def lowerBound: Int = 0
+        final override def upperBound: Int = Byte.MaxValue
 
         def fuse(pc: PC, other: BaseTypesBasedSet): domain.DomainValue = {
             assert(this ne other)
@@ -132,8 +135,8 @@ trait IntegerSetValues
 
     abstract class U15BitSet extends BaseTypesBasedSet { this: DomainTypedValue[CTIntType] ⇒
 
-        final override def lowerBound = 0
-        final override def upperBound = Short.MaxValue
+        final override def lowerBound: Int = 0
+        final override def upperBound: Int = Short.MaxValue
 
         def fuse(pc: PC, other: BaseTypesBasedSet): domain.DomainValue = {
             assert(this ne other)
@@ -149,8 +152,8 @@ trait IntegerSetValues
 
     abstract class CharSet extends BaseTypesBasedSet { this: DomainTypedValue[CTIntType] ⇒
 
-        final override def lowerBound = 0 // Char.MinValue
-        final override def upperBound = Char.MaxValue
+        final override def lowerBound: Int = 0 // Char.MinValue
+        final override def upperBound: Int = Char.MaxValue
 
         def fuse(pc: PC, other: BaseTypesBasedSet): domain.DomainValue = {
             assert(this ne other)
@@ -162,8 +165,8 @@ trait IntegerSetValues
     }
 
     abstract class ByteSet extends BaseTypesBasedSet { this: DomainTypedValue[CTIntType] ⇒
-        final override def lowerBound = Byte.MinValue
-        final override def upperBound = Byte.MaxValue
+        final override def lowerBound: Int = Byte.MinValue
+        final override def upperBound: Int = Byte.MaxValue
         def fuse(pc: PC, other: BaseTypesBasedSet): domain.DomainValue = {
             assert(this ne other)
             other match {
@@ -177,8 +180,8 @@ trait IntegerSetValues
     }
 
     abstract class ShortSet extends BaseTypesBasedSet { this: DomainTypedValue[CTIntType] ⇒
-        final override def lowerBound = Short.MinValue
-        final override def upperBound = Short.MaxValue
+        final override def lowerBound: Int = Short.MinValue
+        final override def upperBound: Int = Short.MaxValue
         def fuse(pc: PC, other: BaseTypesBasedSet): domain.DomainValue = {
             assert(this ne other)
             other match {
@@ -193,7 +196,8 @@ trait IntegerSetValues
 
     protected[this] def approximateSet(
         origin:     ValueOrigin,
-        lowerBound: Int, upperBound: Int
+        lowerBound: Int,
+        upperBound: Int
     ): DomainTypedValue[CTIntType] = {
         if (lowerBound >= 0) {
             if (upperBound <= Byte.MaxValue) U7BitSet()
@@ -688,7 +692,7 @@ trait IntegerSetValues
     //
     // UNARY EXPRESSIONS
     //
-    /*override*/ def ineg(pc: PC, value: DomainValue) = {
+    /*override*/ def ineg(pc: PC, value: DomainValue): DomainValue = {
         value match {
             case IntegerSet(SingletonSet(Int.MinValue)) ⇒ value
             case IntegerSet(values)                     ⇒ IntegerSet(pc, values.map(-_))

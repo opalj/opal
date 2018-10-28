@@ -92,7 +92,7 @@ object PerformInvocationsWithRecursionDetectionTestFixture {
     abstract class BaseDomain(val project: Project[java.net.URL])
         extends CorrelationalDomain
         with ValuesDomain
-        with DefaultDomainValueBinding
+        with DefaultSpecialDomainValuesBinding
         with TheProject
         with TypedValuesFactory
         with l0.DefaultTypeLevelLongValues

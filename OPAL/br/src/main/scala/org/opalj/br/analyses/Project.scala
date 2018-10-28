@@ -3,53 +3,55 @@ package org.opalj
 package br
 package analyses
 
-import java.net.URL
+import scala.annotation.switch
+
 import java.io.File
+import java.lang.ref.SoftReference
+import java.net.URL
 import java.util.Arrays.{sort ⇒ sortArray}
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicReferenceArray
-import java.lang.ref.SoftReference
 
-import scala.annotation.switch
-import scala.collection.Set
 import scala.collection.Map
+import scala.collection.Set
 import scala.collection.SortedMap
-import scala.collection.mutable.{AnyRefMap, OpenHashMap}
+import scala.collection.immutable
+import scala.collection.mutable.AnyRefMap
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.ArrayStack
 import scala.collection.mutable.Buffer
-import scala.collection.immutable
+import scala.collection.mutable.OpenHashMap
 
-import com.typesafe.config.ConfigFactory
 import com.typesafe.config.Config
+import com.typesafe.config.ConfigFactory
 import net.ceedubs.ficus.Ficus._
 
+import org.opalj.log.Error
+import org.opalj.log.GlobalLogContext
+import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger
+import org.opalj.log.OPALLogger.error
+import org.opalj.log.OPALLogger.info
+import org.opalj.log.StandardLogContext
 import org.opalj.util.PerformanceEvaluation.time
+import org.opalj.collection.immutable.Chain
+import org.opalj.collection.immutable.ConstArray
+import org.opalj.collection.immutable.Naught
+import org.opalj.collection.immutable.UIDSet
+import org.opalj.collection.mutable.RefArrayBuffer
 import org.opalj.concurrent.ConcurrentExceptions
-import org.opalj.concurrent.Tasks
 import org.opalj.concurrent.SequentialTasks
+import org.opalj.concurrent.Tasks
 import org.opalj.concurrent.defaultIsInterrupted
 import org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks
 import org.opalj.concurrent.parForeachArrayElement
-import org.opalj.log.LogContext
-import org.opalj.log.OPALLogger
-import org.opalj.log.OPALLogger.info
-import org.opalj.log.OPALLogger.error
-import org.opalj.log.StandardLogContext
-import org.opalj.log.Error
-import org.opalj.log.GlobalLogContext
-import org.opalj.collection.immutable.ConstArray
-import org.opalj.collection.immutable.Chain
-import org.opalj.collection.immutable.Naught
-import org.opalj.collection.immutable.UIDSet
+import org.opalj.br.instructions.Instruction
+import org.opalj.br.instructions.INVOKESPECIAL
+import org.opalj.br.instructions.INVOKESTATIC
+import org.opalj.br.instructions.NEW
 import org.opalj.br.reader.BytecodeInstructionsCache
 import org.opalj.br.reader.Java9FrameworkWithInvokedynamicSupportAndCaching
 import org.opalj.br.reader.Java9LibraryFramework
-import org.opalj.br.instructions.Instruction
-import org.opalj.br.instructions.NEW
-import org.opalj.br.instructions.INVOKESTATIC
-import org.opalj.br.instructions.INVOKESPECIAL
-import org.opalj.collection.mutable.RefArrayBuffer
 
 /**
  * Primary abstraction of a Java project; i.e., a set of classes that constitute a
@@ -1181,7 +1183,7 @@ object Project {
         logContext: LogContext
     ): Map[ObjectType, ConstArray[MethodDeclarationContext]] = time {
 
-        import ProjectLike.findMaximallySpecificSuperinterfaceMethods
+        import org.opalj.br.analyses.ProjectLike.findMaximallySpecificSuperinterfaceMethods
 
         // IDEA
         // Process the type hierarchy starting with the root type(s) to ensure that all method
@@ -1784,9 +1786,10 @@ object Project {
 
         try {
             import scala.collection.mutable.Set
-            import scala.concurrent.{Future, Await, ExecutionContext}
+            import scala.concurrent.Await
+            import scala.concurrent.Future
             import scala.concurrent.duration.Duration
-            import ExecutionContext.Implicits.{global ⇒ ScalaExecutionContext}
+            import scala.concurrent.ExecutionContext.Implicits.{global ⇒ ScalaExecutionContext}
 
             val classHierarchyFuture: Future[ClassHierarchy] = Future {
                 time {

@@ -8,26 +8,27 @@ import java.lang.invoke.LambdaMetafactory
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory
-import org.opalj.bi.AccessFlags
+
+import org.opalj.log.Info
+import org.opalj.log.OPALLogger
+import org.opalj.log.OPALLogger.error
+import org.opalj.log.OPALLogger.info
+import org.opalj.log.StandardLogMessage
+import org.opalj.collection.immutable.UIDSet
+import org.opalj.collection.RefIndexedView
+import org.opalj.collection.immutable.RefArray
 import org.opalj.bi.ACC_PRIVATE
 import org.opalj.bi.ACC_PUBLIC
 import org.opalj.bi.ACC_STATIC
 import org.opalj.bi.ACC_SYNTHETIC
-import org.opalj.collection.immutable.UIDSet
-import org.opalj.log.OPALLogger.info
-import org.opalj.log.Info
-import org.opalj.log.OPALLogger.error
-import org.opalj.log.OPALLogger
-import org.opalj.log.StandardLogMessage
-import org.opalj.br.MethodDescriptor.LambdaMetafactoryDescriptor
-import org.opalj.br.MethodDescriptor.LambdaAltMetafactoryDescriptor
+import org.opalj.bi.AccessFlags
 import org.opalj.br.MethodDescriptor.JustReturnsString
+import org.opalj.br.MethodDescriptor.LambdaAltMetafactoryDescriptor
+import org.opalj.br.MethodDescriptor.LambdaMetafactoryDescriptor
 import org.opalj.br.collection.mutable.InstructionsBuilder
 import org.opalj.br.instructions._
-import org.opalj.br.instructions.ClassFileFactory.DefaultFactoryMethodName
 import org.opalj.br.instructions.ClassFileFactory.AlternativeFactoryMethodName
-import org.opalj.collection.RefIndexedView
-import org.opalj.collection.immutable.RefArray
+import org.opalj.br.instructions.ClassFileFactory.DefaultFactoryMethodName
 
 /**
  * Provides support for rewriting Java 8/Scala lambda or method reference expressions that
@@ -43,7 +44,7 @@ import org.opalj.collection.immutable.RefArray
  * be picked up later for inclusion in the project.
  *
  * @see [[https://mydailyjava.blogspot.de/2015/03/dismantling-invokedynamic.html DismantlingInvokeDynamic]]
- *      for furhter information.
+ *      for further information.
  *
  * @author Arne Lottmann
  * @author Michael Eichberg
@@ -283,6 +284,15 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
                 ))
             }
             updatedClassFile
+        } else if (isDynamoInvokedynamic(invokedynamic)) {
+            if (logUnknownInvokeDynamics) {
+                OPALLogger.logOnce(StandardLogMessage(
+                    Info,
+                    Some("load-time transformation"),
+                    "org.dynamo's INVOKEDYNAMICs are not rewritten"
+                ))
+            }
+            updatedClassFile
         } else {
             if (logUnknownInvokeDynamics) {
                 val t = classFile.thisType.toJava
@@ -383,7 +393,10 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
                 body ++= INVOKEVIRTUAL(
                     ObjectType.StringBuilder,
                     "append",
-                    MethodDescriptor(appendType(constant.valueType), ObjectType.StringBuilder)
+                    MethodDescriptor(
+                        appendType(constant.runtimeValueType),
+                        ObjectType.StringBuilder
+                    )
                 )
             }
 
@@ -462,7 +475,7 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
                             assert(recipe.charAt(nextInsert) == '\u0002')
                             val constant = constants(constantIndex)
                             appendConstant(constant)
-                            val opSize = constant.valueType.computationalType.operandSize
+                            val opSize = constant.runtimeValueType.computationalType.operandSize
                             if (maxStack == 2 && opSize == 2) maxStack = 3
                             constantIndex += 1
                             nextConstant = recipe.indexOf('\u0002', nextConstant + 1)
@@ -1258,6 +1271,14 @@ object InvokedynamicRewriting {
         invokedynamic.bootstrapMethod.handle match {
             case ismh: InvokeStaticMethodHandle if ismh.receiverType.isObjectType ⇒
                 ismh.receiverType.asObjectType.packageName.startsWith("org/codehaus/groovy")
+            case _ ⇒ false
+        }
+    }
+
+    def isDynamoInvokedynamic(invokedynamic: INVOKEDYNAMIC): Boolean = {
+        invokedynamic.bootstrapMethod.handle match {
+            case ismh: InvokeStaticMethodHandle if ismh.receiverType.isObjectType ⇒
+                ismh.receiverType.asObjectType.fqn == "org/dynamo/rt/DynamoBootstrap"
             case _ ⇒ false
         }
     }

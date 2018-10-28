@@ -4,8 +4,8 @@ package ai
 package domain
 package l0
 
-import org.opalj.br.Method
 import org.opalj.br.ClassHierarchy
+import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
 
 /**
@@ -20,7 +20,6 @@ class PrimitiveTACAIDomain(
     with ThrowAllPotentialExceptionsConfiguration
     with IgnoreSynchronization
     with DefaultTypeLevelHandlingOfMethodResults
-    with TheClassHierarchy
     with TheMethod
     with RecordDefUse {
 

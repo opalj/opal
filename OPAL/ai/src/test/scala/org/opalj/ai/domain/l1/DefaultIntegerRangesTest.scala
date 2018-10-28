@@ -3632,7 +3632,7 @@ class DefaultIntegerRangesTestDomain(
         override val maxCardinalityOfIntegerRanges: Long = -(Int.MinValue.toLong) + Int.MaxValue
 )
     extends CorrelationalDomain
-    with DefaultDomainValueBinding
+    with DefaultSpecialDomainValuesBinding
     with ThrowAllPotentialExceptionsConfiguration
     with l0.DefaultTypeLevelLongValues
     with l0.DefaultTypeLevelFloatValues
@@ -3652,7 +3652,7 @@ class JoinResultsIntegerRangesTestDomain(
         override val maxCardinalityOfIntegerRanges: Long = -(Int.MinValue.toLong) + Int.MaxValue
 )
     extends CorrelationalDomain
-    with DefaultDomainValueBinding
+    with DefaultSpecialDomainValuesBinding
     with ThrowAllPotentialExceptionsConfiguration
     with l0.DefaultTypeLevelLongValues
     with l0.DefaultTypeLevelFloatValues

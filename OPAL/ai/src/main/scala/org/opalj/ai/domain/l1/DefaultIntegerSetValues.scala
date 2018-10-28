@@ -4,21 +4,22 @@ package ai
 package domain
 package l1
 
-import java.lang.Math.min
-import java.lang.Math.max
-
-import scala.collection.immutable.SortedSet
 import scala.reflect.ClassTag
 
-import org.opalj.br.CTIntType
+import java.lang.Math.max
+import java.lang.Math.min
+
+import scala.collection.immutable.SortedSet
+
 import org.opalj.value.IsIntegerValue
+import org.opalj.br.CTIntType
 
 /**
  * This domain implements the tracking of integer values using sets.
  *
  * @author Michael Eichberg
  */
-trait DefaultIntegerSetValues extends DefaultDomainValueBinding with IntegerSetValues {
+trait DefaultIntegerSetValues extends DefaultSpecialDomainValuesBinding with IntegerSetValues {
     domain: CorrelationalDomainSupport with Configuration with ExceptionsFactory ⇒
 
     class AnIntegerValue extends super.AnIntegerValue {
@@ -50,7 +51,7 @@ trait DefaultIntegerSetValues extends DefaultDomainValueBinding with IntegerSetV
 
     class IntegerSet(val values: SortedSet[Int]) extends super.IntegerSet {
 
-        assert(values.size > 0)
+        assert(values.nonEmpty)
 
         override def doJoin(pc: Int, other: DomainValue): Update[DomainValue] = {
             val result = other match {
@@ -115,7 +116,7 @@ trait DefaultIntegerSetValues extends DefaultDomainValueBinding with IntegerSetV
             }
         }
 
-        override def hashCode = this.values.hashCode * 13
+        override def hashCode: Int = this.values.hashCode * 13
 
         override def equals(other: Any): Boolean = {
             other match {
@@ -178,7 +179,7 @@ trait DefaultIntegerSetValues extends DefaultDomainValueBinding with IntegerSetV
 
         override def summarize(pc: Int): DomainValue = this
 
-        override def hashCode = upperBound
+        override def hashCode: Int = upperBound
 
         override def equals(other: Any): Boolean = {
             other match {
@@ -198,8 +199,8 @@ trait DefaultIntegerSetValues extends DefaultDomainValueBinding with IntegerSetV
     def U7BitSet(): DomainTypedValue[CTIntType] = new U7BitSet
 
     class U7BitSet extends super.U7BitSet with BaseTypesBasedSet { this: DomainValue ⇒
-        def name = "Unsigned7BitValue"
-        def newInstance = new U7BitSet
+        override def name = "Unsigned7BitValue"
+        override def newInstance = new U7BitSet
         override def adapt(target: TargetDomain, pc: Int): target.DomainValue = {
             val result = target match {
                 case isv: IntegerSetValues   ⇒ isv.U7BitSet()
@@ -208,13 +209,14 @@ trait DefaultIntegerSetValues extends DefaultDomainValueBinding with IntegerSetV
             }
             result.asInstanceOf[target.DomainValue]
         }
+        override def constantValue: Option[Int] = None
     }
 
     def U15BitSet(): DomainTypedValue[CTIntType] = new U15BitSet()
 
     class U15BitSet extends super.U15BitSet with BaseTypesBasedSet { this: DomainValue ⇒
-        def name = "Unsigned15BitValue"
-        def newInstance = new U15BitSet
+        override def name = "Unsigned15BitValue"
+        override def newInstance = new U15BitSet
         override def adapt(target: TargetDomain, pc: Int): target.DomainValue = {
             val result = target match {
                 case isv: IntegerSetValues   ⇒ isv.U15BitSet()
@@ -222,32 +224,35 @@ trait DefaultIntegerSetValues extends DefaultDomainValueBinding with IntegerSetV
                 case _                       ⇒ target.ByteValue(pc)
             }
             result.asInstanceOf[target.DomainValue]
-
         }
+        override def constantValue: Option[Int] = None
     }
 
     class ByteSet extends super.ByteSet with BaseTypesBasedSet {
-        def name = "ByteValue"
-        def newInstance = new ByteSet
+        override def name = "ByteValue"
+        override def newInstance = new ByteSet
         override def adapt(target: TargetDomain, pc: Int): target.DomainValue = {
             target.ByteValue(pc)
         }
+        override def constantValue: Option[Int] = None
     }
 
     class ShortSet extends super.ShortSet with BaseTypesBasedSet {
-        def name = "ShortValue"
-        def newInstance = new ShortSet
+        override def name = "ShortValue"
+        override def newInstance = new ShortSet
         override def adapt(target: TargetDomain, pc: Int): target.DomainValue = {
             target.ShortValue(pc)
         }
+        override def constantValue: Option[Int] = None
     }
 
     class CharSet extends super.CharSet with BaseTypesBasedSet {
-        def name = "CharValue"
-        def newInstance = new CharSet
+        override def name = "CharValue"
+        override def newInstance = new CharSet
         override def adapt(target: TargetDomain, pc: Int): target.DomainValue = {
             target.CharValue(pc)
         }
+        override def constantValue: Option[Int] = None
     }
 
     override def IntegerSet(values: SortedSet[Int]): IntegerSet = new IntegerSet(values)
@@ -264,15 +269,23 @@ trait DefaultIntegerSetValues extends DefaultDomainValueBinding with IntegerSetV
     }
 
     override def ByteValue(pc: Int): ByteSet = new ByteSet()
-    override def ByteValue(pc: Int, value: Byte): DomainTypedValue[CTIntType] = IntegerSet(value.toInt)
+    override def ByteValue(pc: Int, value: Byte): DomainTypedValue[CTIntType] = {
+        IntegerSet(value.toInt)
+    }
 
     override def ShortValue(pc: Int): ShortSet = new ShortSet()
-    override def ShortValue(pc: Int, value: Short): DomainTypedValue[CTIntType] = IntegerSet(value.toInt)
+    override def ShortValue(pc: Int, value: Short): DomainTypedValue[CTIntType] = {
+        IntegerSet(value.toInt)
+    }
 
     override def CharValue(pc: Int): CharSet = new CharSet()
-    override def CharValue(pc: Int, value: Char): DomainTypedValue[CTIntType] = IntegerSet(value.toInt)
+    override def CharValue(pc: Int, value: Char): DomainTypedValue[CTIntType] = {
+        IntegerSet(value.toInt)
+    }
 
     override def IntegerValue(pc: Int): AnIntegerValue = AnIntegerValue()
-    override def IntegerValue(pc: Int, value: Int): DomainTypedValue[CTIntType] = IntegerSet(value)
+    override def IntegerValue(pc: Int, value: Int): DomainTypedValue[CTIntType] = {
+        IntegerSet(value)
+    }
 
 }

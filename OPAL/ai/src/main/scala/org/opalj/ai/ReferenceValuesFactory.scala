@@ -65,7 +65,7 @@ trait ReferenceValuesFactory extends ExceptionsFactory { domain ⇒
      *
      * This method is used by the OPAL framework to create reference values that are normally
      * internally created by the JVM (in particular exceptions such as
-     * `NullPointExeception` and `ClassCastException`). However, it can generally
+     * `NullPointerException` and `ClassCastException`). However, it can generally
      * be used to create initialized objects/arrays.
      *
      * ==Summary==
@@ -114,7 +114,7 @@ trait ReferenceValuesFactory extends ExceptionsFactory { domain ⇒
 
     /**
      * Creates a new `DomainValue` that represents ''the `this` value of a constructor before the
-     * super constructor is called. Hence, the value origin is necessarily always -1.
+     * super constructor is called''. Hence, the value origin is necessarily always -1.
      *
      * OPAL calls this method when it creates the initial locals for constructors.
      *

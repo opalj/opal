@@ -1069,7 +1069,7 @@ private object MethodsPlainTest {
 
     class RecordingDomain
         extends Domain
-        with DefaultDomainValueBinding
+        with DefaultSpecialDomainValuesBinding
         with DefaultHandlingForReturnInstructions
         with DefaultHandlingOfVoidReturns
         with DefaultReferenceValuesBinding

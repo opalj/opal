@@ -2,10 +2,10 @@
 package org.opalj.fpcf.analyses
 
 import org.opalj.tac.DUVar
-import org.opalj.value.KnownTypedValue
+import org.opalj.value.ValueInformation
 
 package object escape {
 
-    type V = DUVar[KnownTypedValue]
+    type V = DUVar[ValueInformation]
 
 }

@@ -47,7 +47,7 @@ trait PerformInvocationsWithRecursionDetection extends PerformInvocations with T
 }
 
 trait ChildPerformInvocationsWithRecursionDetection extends PerformInvocationsWithRecursionDetection {
-    callingDomain: ValuesFactory with ReferenceValuesDomain with TheClassHierarchy with Configuration with TheProject with TheMethod ⇒
+    callingDomain: ValuesFactory with ReferenceValuesDomain with Configuration with TheProject with TheMethod ⇒
 
     val callerDomain: PerformInvocationsWithRecursionDetection
 

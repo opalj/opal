@@ -7,7 +7,7 @@ import org.opalj.br.analyses.ProjectLike
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.RefArray
 import org.opalj.collection.immutable.IntArray
-import org.opalj.value.KnownTypedValue
+import org.opalj.value.ValueInformation
 
 /**
  * Super trait of all three-address code/quadruple statements.
@@ -75,10 +75,10 @@ sealed abstract class Stmt[+V <: Var[V]] extends ASTNode[V] {
 /**
  * @param target Index in the statements array.
  * @param left The expression left to the relational operator. In general, this can be expected to
- *             be a Var. However, it is not expression to facilitate advanced use cases such as
+ *             be a Var. However, it is an expression to facilitate advanced use cases such as
  *             generating source code.
  * @param right The expression right to the relational operator. In general, this can be expected to
- *             be a Var. However, it is not expression to facilitate advanced use cases such as
+ *             be a Var. However, it is an expression to facilitate advanced use cases such as
  *             generating source code.
  *
  */
@@ -519,7 +519,7 @@ case class PutStatic[+V <: Var[V]](
     }
 
     override def toString: String = {
-        s"PutStatic(pc=$pc,${declaringClass.toJava},name,${declaredFieldType.toJava},$value)"
+        s"PutStatic(pc=$pc,${declaringClass.toJava},$name,${declaredFieldType.toJava},$value)"
     }
 }
 object PutStatic {
@@ -559,7 +559,7 @@ case class PutField[+V <: Var[V]](
     }
 
     override def toString: String = {
-        s"PutField(pc=$pc,${declaringClass.toJava},name,${declaredFieldType.toJava},$objRef,$value)"
+        s"PutField(pc=$pc,${declaringClass.toJava},$name,${declaredFieldType.toJava},$objRef,$value)"
     }
 }
 object PutField {
@@ -634,7 +634,7 @@ case class NonVirtualMethodCall[+V <: Var[V]](
     )(
         implicit
         p:  ProjectLike,
-        ev: V <:< DUVar[KnownTypedValue]
+        ev: V <:< DUVar[ValueInformation]
     ): Set[Method] = {
         resolveCallTarget(callingContext)(p).toSet
     }
@@ -705,7 +705,7 @@ case class StaticMethodCall[+V <: Var[V]](
     )(
         implicit
         p:  ProjectLike,
-        ev: V <:< DUVar[KnownTypedValue]
+        ev: V <:< DUVar[ValueInformation]
     ): Set[Method] = {
         resolveCallTarget(p).toSet
     }
@@ -721,7 +721,7 @@ case class StaticMethodCall[+V <: Var[V]](
         val sig = descriptor.toJava(name)
         val declClass = declaringClass.toJava
         val params = this.params.mkString("(", ",", ")")
-        s"NonVirtualMethodCall(pc=$pc,$declClass,isInterface=$isInterface,$sig,$params)"
+        s"StaticMethodCall(pc=$pc,$declClass,isInterface=$isInterface,$sig,$params)"
     }
 }
 object StaticMethodCall {
