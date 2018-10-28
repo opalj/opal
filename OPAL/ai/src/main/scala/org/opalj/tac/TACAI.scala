@@ -999,10 +999,10 @@ object TACAI {
                 singletonBBsExpander,
                 lastIndex = index - 1
             )
-        val taExceptionHanders = updateExceptionHandlers(pcToIndex)(aiResult)
+        val taExceptionHandlers = updateExceptionHandlers(pcToIndex)(aiResult)
         val lnt = code.lineNumberTable
         val initialTAC = TACode[TACMethodParameter, AIDUVar](
-            tacParams, tacStmts, pcToIndex, taCodeCFG, taExceptionHanders, lnt
+            tacParams, tacStmts, pcToIndex, taCodeCFG, taExceptionHandlers, lnt
         )
 
         // Potential Optimizations
