@@ -12,7 +12,7 @@ import java.io.PrintStream
 import scala.xml.Node
 
 import org.opalj.graphs.DefaultMutableNode
-
+import org.opalj.control.foreachNonNullValue
 import org.opalj.collection.immutable.IntArraySet
 import org.opalj.collection.immutable.:&:
 import org.opalj.collection.immutable.Chain
@@ -693,11 +693,11 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                     propagate(defOps(currentPC), defLocals(currentPC))
 
                 case JSR.opcode | JSR_W.opcode ⇒
-                    // Let's check if we have a JSR to the subroutine that we are currently executing...
-                    // This can be legal in very restricted settings...
+                    // Let's check if we have a JSR to the subroutine that we are
+                    // currently executing. This can be legal in very restricted settings...
                     if (currentSubroutinePCs.nonEmpty &&
                         currentSubroutinePCs.head.contains(successorPC)) {
-                        println(currentPC+": (RE)START OF A SUBROUTINE: "+successorPC)
+                        // println(currentPC+": (RE)START OF A SUBROUTINE: "+successorPC)
                         // In this case, we treat the JSR basically in the same way as a goto.
                         // We update the retTargetPC, because the calling JSR might be different...
                         val retTargetPC = currentInstruction.indexOfNextInstruction(currentPC)(code)
@@ -1267,30 +1267,48 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
         assert(nextJoinPCs.tail.isEmpty)
 
         // Integrate the accumulated subroutine information (if available)
-        subroutinePCs.foreach { pc ⇒
-            defOps(pc) = subroutineDefOps(pc)
-            defLocals(pc) = subroutineDefLocals(pc)
+        if (subroutinePCs.nonEmpty) {
+            foreachNonNullValue(subroutineDefOps) { (pc, subroutineDefOpsAtPC) ⇒
+                // When we reach this point, we have instructions that are executed
+                // as part of the subroutine, but also as part of a parent routine.
+                // Hence, we have to merge the results!
+                if (defOps(pc) == null) {
+                    defOps(pc) = subroutineDefOps(pc)
+                } else {
+                    defOps(pc) =
+                        (defOps(pc) zip subroutineDefOps(pc)).map(vos ⇒ vos._1 ++ vos._2)
+                }
+                if (defLocals(pc) == null) {
+                    defLocals(pc) = subroutineDefLocals(pc)
+                } else {
+                    defLocals(pc) =
+                        defLocals(pc).fuse(
+                            subroutineDefLocals(pc),
+                            (l, r) ⇒ if (l == null) r else if (r == null) null else l ++ r
+                        )
+                }
 
-            // NOTE: we may have usages at the root level of values created in the subroutines!
-            val oldUsedExternalExceptions = usedExternalExceptions(pc)
-            val allSubroutineUsedExternalExceptions = subroutineUsedExternalExceptions(pc)
-            if (allSubroutineUsedExternalExceptions != null) {
-                usedExternalExceptions(pc) =
-                    if (oldUsedExternalExceptions == null)
-                        allSubroutineUsedExternalExceptions
-                    else
-                        oldUsedExternalExceptions ++ allSubroutineUsedExternalExceptions
-            }
+                // NOTE: we may have usages at the root level of values created in the subroutines!
+                val oldUsedExternalExceptions = usedExternalExceptions(pc)
+                val allSubroutineUsedExternalExceptions = subroutineUsedExternalExceptions(pc)
+                if (allSubroutineUsedExternalExceptions != null) {
+                    usedExternalExceptions(pc) =
+                        if (oldUsedExternalExceptions == null)
+                            allSubroutineUsedExternalExceptions
+                        else
+                            oldUsedExternalExceptions ++ allSubroutineUsedExternalExceptions
+                }
 
-            val usedPC = pc + parametersOffset
-            val oldUsedPC = used(usedPC)
-            val allSubroutineUsed = subroutineUsed(usedPC)
-            if (allSubroutineUsed != null) {
-                used(usedPC) =
-                    if (oldUsedPC == null)
-                        allSubroutineUsed
-                    else
-                        oldUsedPC ++ allSubroutineUsed
+                val usedPC = pc + parametersOffset
+                val oldUsedPC = used(usedPC)
+                val allSubroutineUsed = subroutineUsed(usedPC)
+                if (allSubroutineUsed != null) {
+                    used(usedPC) =
+                        if (oldUsedPC == null)
+                            allSubroutineUsed
+                        else
+                            oldUsedPC ++ allSubroutineUsed
+                }
             }
         }
     }

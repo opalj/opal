@@ -24,8 +24,8 @@ class ProjectSpecificAIExecutor(
 }
 
 /**
- * Key to get the factory (meta-factory) to create the domains that are used to perform
- * abstract interpretations.
+ * Key to get the factory (actually this is a meta-factory) to create the domains that are
+ * used to perform abstract interpretations.
  * The domain that is going to be used is determined by getting the set of (partial)domains
  * that are required and then computing the cheapest domain;
  * see [[org.opalj.ai.common.DomainRegistry]] for further information.

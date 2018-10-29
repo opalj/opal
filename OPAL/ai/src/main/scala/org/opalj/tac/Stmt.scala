@@ -75,10 +75,10 @@ sealed abstract class Stmt[+V <: Var[V]] extends ASTNode[V] {
 /**
  * @param target Index in the statements array.
  * @param left The expression left to the relational operator. In general, this can be expected to
- *             be a Var. However, it is not expression to facilitate advanced use cases such as
+ *             be a Var. However, it is an expression to facilitate advanced use cases such as
  *             generating source code.
  * @param right The expression right to the relational operator. In general, this can be expected to
- *             be a Var. However, it is not expression to facilitate advanced use cases such as
+ *             be a Var. However, it is an expression to facilitate advanced use cases such as
  *             generating source code.
  *
  */

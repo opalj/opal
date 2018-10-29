@@ -8,6 +8,7 @@ package mutable
  *
  * @author Michael Eichberg
  */
+// TODO Rename to RefDeque - add methods from IntQueue
 class RefAppendChain[N >: Null <: AnyRef] private (
         private var h: RefAppendChainNode[N],
         private var l: RefAppendChainNode[N]

@@ -7,7 +7,7 @@ import scala.collection.AbstractIterator
 import scala.collection.GenTraversableOnce
 
 /**
- * Iterator over a collection of any ref values (RefIterator[Char] would be an iterator over
+ * Iterator over a collection of `AnyRef` values. (RefIterator[Char] would be an iterator over
  * the wrapper type).
  *
  * @note The type bound `T <: AnyRef` is expected to be ex-/implicitly enforced by subclasses.

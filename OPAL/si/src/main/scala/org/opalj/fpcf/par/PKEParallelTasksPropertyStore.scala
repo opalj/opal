@@ -1527,7 +1527,8 @@ final class PKEParallelTasksPropertyStore private (
                         dependersOfEntity.keys foreach { e ⇒
                             if (propertiesOfEntity.get(e) == null) {
                                 val reason = {
-                                    if (previouslyComputedPropertyKinds(pkId) || computedPropertyKinds(pkId))
+                                    if (previouslyComputedPropertyKinds(pkId) ||
+                                        computedPropertyKinds(pkId))
                                         PropertyIsNotDerivedByPreviouslyExecutedAnalysis
                                     else
                                         PropertyIsNotComputedByAnyAnalysis
