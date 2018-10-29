@@ -338,7 +338,8 @@ class LoadedClassesAnalysis(
         // todo what about resolution A <- B <- C: C::foo() and foo is def. in A.
         if (isNewLoadedClass(methodDCT)) {
             // todo only for interfaces with default methods
-            newLoadedClasses ++= ch.allSupertypes(methodDCT)
+            newLoadedClasses ++=
+                ch.allSupertypes(methodDCT).filterNot(currentLoadedClasses.contains)
         }
 
         if (method.body.isDefined) {
@@ -375,7 +376,8 @@ object EagerLoadedClassesAnalysis extends FPCFEagerAnalysisScheduler {
         loadedClassesAnalysis
     }
 
-    override def uses: Set[PropertyKind] = Set(LoadedClasses, InstantiatedTypes, CallersProperty, TACAI)
+    override def uses: Set[PropertyKind] =
+        Set(LoadedClasses, InstantiatedTypes, CallersProperty, TACAI)
 
     override def derives: Set[PropertyKind] =
         Set(LoadedClasses, CallersProperty, LoadedClassesFakeProperty)

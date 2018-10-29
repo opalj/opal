@@ -744,7 +744,7 @@ object EagerRTACallGraphAnalysisScheduler extends FPCFEagerAnalysisScheduler {
 
     override type InitializationData = RTACallGraphAnalysis
 
-    override def uses: Set[PropertyKind] = Set(InstantiatedTypes, TACAI)
+    override def uses: Set[PropertyKind] = Set(InstantiatedTypes, CallersProperty, TACAI)
 
     override def derives: Set[PropertyKind] = Set(
         LoadedClasses, InstantiatedTypes, CallersProperty, StandardInvokeCallees
