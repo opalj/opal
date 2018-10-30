@@ -1,18 +1,19 @@
 # Changes
 
 ## Upcoming (most likely 2.1.0)
- - fixed the toString method of StaticMethodCall
- - We now have a preliminary FPCF analysis which determines the type of values stored in fields
- - We now have a preliminary FPCF analysis which determines core properties of the values returned by methods
- - Renamed `DomainValue.valueType` to `leastUpperType`
- - Renamed `DefaultDomainValueBinding` to `DefaultSpecialDomainValuesBinding`
- - Removed `...ai...TheClassHierarchy` trait - every domain has to provide a class hierarchy
+ - fixed several issues related to the handling of methods with subroutines (JSR/RET)
+ - fixed the toString method of `StaticMethodCall`
+ - added a preliminary FPCF analysis which determines the type of values stored in fields
+ - added a preliminary FPCF analysis which determines core properties of the values returned by methods
+ - the FPCF framework now has proper support for analyses which refine lower bounds
+ - renamed `DomainValue.valueType` to `leastUpperType`
+ - renamed `DefaultDomainValueBinding` to `DefaultSpecialDomainValuesBinding`
+ - removed `...ai...TheClassHierarchy` trait - every domain has to provide a class hierarchy
  - `ValueInformation` now provides a more elaborate interface and should be usable wherever `KnownTypedValue` was used before
  - moved the `isValueASubtypeOf` methods to the _value framework (`org.opalj.value`)_ (i.e., the methods are moved up in the class hierarchy)
  - moved the `verificationTypeInfo` methods to the _value framework_ (i.e., they are moved up in the class hierarchy)
  - the domain classes (e.g., `org.opalj.ai.domain.l0.TypeLevelReferenceValue` or `...l1.ReferenceValues`) which define the framework for handling reference values now use traits instead of classes; the concrete classes are now found in the `...DefaultBinding...` classes
- - added analysis which refines the lower bound for field values
- - `java…Comparable|Cloneable|Serializable` now get fixed ObjectType ids
+  - `java…Comparable|Cloneable|Serializable` now get fixed ObjectType ids
 
 ## 2.0.1 - Released Oct. 10th 2018
  - fixed a bug in the identification of closed strongly connected components
@@ -27,12 +28,12 @@
  - rewriting StringConcatFactory based invokedynamics
  - support for analyzing Scala 2.12.6-7 invokedynamics
  - Hermes now has extended visualization capabilities to make it even easiere to comprehend the differences between projects
- - The overall performance has been improved (in particular on multi-core systems with 4 or more cores)
- - Moved to sbt 1.2.x
- - Fixed issues in some tests which open a huge number of files
- - Fixed a rare issue in the identification of closed strongly connected components
- - Completely reimplemented the property store
-    - Added various analyses related to deriving the purity of methods, the immutabiliy of classes, escape information etc.
+ - the overall performance has been improved (in particular on multi-core systems with 4 or more cores)
+ - moved to sbt 1.2.x
+ - fixed issues in some tests which open a huge number of files
+ - fixed a rare issue in the identification of closed strongly connected components
+ - completely reimplemented the property store
+    - added various analyses related to deriving the purity of methods, the immutabiliy of classes, escape information etc.
  - very much improved OPAL's collection library w.r.t. optimized data structures for Int values
 
 ## 1.0.0 - Released Oct. 25th 2017
