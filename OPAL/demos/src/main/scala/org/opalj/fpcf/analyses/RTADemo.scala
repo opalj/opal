@@ -25,10 +25,10 @@ import org.opalj.fpcf.cg.properties.Callees
 import org.opalj.fpcf.cg.properties.StandardInvokeCallees
 import org.opalj.fpcf.cg.properties.SerializationRelatedCallees
 import org.opalj.fpcf.cg.properties.ReflectionRelatedCallees
+import org.opalj.tac.fpcf.analyses.LazyL0TACAIAnalysis
 //import org.opalj.fpcf.par.PKEParallelTasksPropertyStore
 //import org.opalj.fpcf.par.RecordAllPropertyStoreTracer
 import org.opalj.log.OPALLogger.info
-import org.opalj.tac.SimpleTACAIKey
 import org.opalj.util.PerformanceEvaluation.time
 
 object RTADemo extends DefaultOneStepAnalysis {
@@ -58,13 +58,6 @@ object RTADemo extends DefaultOneStepAnalysis {
         // Get the TAC code for all methods to make it possible to measure the time for
         // the analysis itself.
         time {
-            val tac = project.get(SimpleTACAIKey)
-            project.parForeachMethodWithBody() { m ⇒ tac(m.method) }
-        } { t ⇒ info("progress", s"generating 3-address code took ${t.toSeconds}") }
-
-        // Get the TAC code for all methods to make it possible to measure the time for
-        // the analysis itself.
-        time {
             val manager = project.get(FPCFAnalysesManagerKey)
             manager.runAll(
                 EagerRTACallGraphAnalysisScheduler,
@@ -74,6 +67,7 @@ object RTADemo extends DefaultOneStepAnalysis {
                 EagerSerializationRelatedCallsAnalysis,
                 EagerReflectionRelatedCallsAnalysis,
                 SystemPropertiesAnalysis,
+                LazyL0TACAIAnalysis,
                 new LazyCalleesAnalysis(
                     Set(StandardInvokeCallees, SerializationRelatedCallees, ReflectionRelatedCallees)
                 )

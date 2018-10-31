@@ -313,7 +313,10 @@ class RTACallGraphAnalysis private[analyses] (
         handleVirtualCallSites(newState, instantiatedTypesUB.iterator, calleesAndCallers)
 
         var results = resultForStandardInvokeCallees(newState) :: calleesAndCallers.partialResultsForCallers
-        if (newInstantiatedTypes.nonEmpty)
+
+        // todo: move this e.g. fallback value?
+        if (newInstantiatedTypes.nonEmpty ||
+            (instantiatedTypesDependee.isDefined && instantiatedTypesDependee.get.hasNoProperty))
             results ::= RTACallGraphAnalysis.partialResultForInstantiatedTypes(
                 p, newInstantiatedTypes, initialInstantiatedTypes
             )
@@ -629,11 +632,11 @@ class RTACallGraphAnalysis private[analyses] (
     }
 
     private case class NativeMethodData(
-        cf:                String,
-        m:                 String,
-        desc:              String,
-        instantiatedTypes: Option[Seq[String]],
-        reachableMethods:  Option[Seq[ReachableMethod]]
+            cf:                String,
+            m:                 String,
+            desc:              String,
+            instantiatedTypes: Option[Seq[String]],
+            reachableMethods:  Option[Seq[ReachableMethod]]
     )
     private case class ReachableMethod(cf: String, m: String, desc: String)
 
