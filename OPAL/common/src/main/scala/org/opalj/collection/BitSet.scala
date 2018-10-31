@@ -7,7 +7,7 @@ package collection
  *
  * @author Michael Eichberg
  */
-trait BitSet { thisSet ⇒
+trait BitSet {
 
     def isEmpty: Boolean
 
