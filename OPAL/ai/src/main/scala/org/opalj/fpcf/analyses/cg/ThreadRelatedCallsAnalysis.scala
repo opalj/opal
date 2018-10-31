@@ -210,7 +210,7 @@ class ThreadRelatedCallsAnalysis private[analyses] (
                     receiverType,
                     "run",
                     MethodDescriptor.NoArgsAndReturnVoid,
-                    threadRelatedMethods
+                    newThreadRelatedMethods
                 )
 
                 if (rv.leastUpperType.get == ObjectType.Thread || (
@@ -220,7 +220,7 @@ class ThreadRelatedCallsAnalysis private[analyses] (
                         definedMethod,
                         stmts,
                         receiver,
-                        threadRelatedMethods
+                        newThreadRelatedMethods
                     )
                 }
             } else {
@@ -314,7 +314,7 @@ class ThreadRelatedCallsAnalysis private[analyses] (
             // for precise types we can directly add the call edge here
             if (rv.isPrecise) {
                 newThreadRelatedMethods =
-                    handlePrecise(definedMethod, rv, name, descriptor, threadRelatedMethods)
+                    handlePrecise(definedMethod, rv, name, descriptor, newThreadRelatedMethods)
             } else {
                 OPALLogger.warn("analysis", "missed call to `uncaughtException`")
             }
