@@ -15,7 +15,7 @@ sealed trait LibraryEntryPointsFakePropertyMetaInformation extends PropertyMetaI
  * @author Florian Kuebler
  */
 sealed abstract class LibraryEntryPointsFakeProperty
-        extends Property with LibraryEntryPointsFakePropertyMetaInformation {
+    extends Property with LibraryEntryPointsFakePropertyMetaInformation {
 
     override def key: PropertyKey[LibraryEntryPointsFakeProperty] =
         LibraryEntryPointsFakeProperty.key

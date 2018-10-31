@@ -249,9 +249,9 @@ trait ConfigurationEntryPointsFinder extends EntryPointFinder {
 
     /* Required by Ficus' `ArbitraryTypeReader`*/
     private case class EntryPointContainer(
-        declaringClass: String,
-        name:           String,
-        descriptor:     Option[String]
+            declaringClass: String,
+            name:           String,
+            descriptor:     Option[String]
     )
 }
 

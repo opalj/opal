@@ -836,9 +836,10 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         if (!checkPurityOfCallees(callees))
             return Result(state.definedMethod, state.ubPurity)
 
-        if(callees.hasProperty)
-            state.rvfCallSites.foreach { case (pc, data) ⇒
-                checkFreshnessOfReturn(pc, data, callees.ub)
+        if (callees.hasProperty)
+            state.rvfCallSites.foreach {
+                case (pc, data) ⇒
+                    checkFreshnessOfReturn(pc, data, callees.ub)
             }
 
         // Creating implicit exceptions is side-effect free (because of fillInStackTrace)

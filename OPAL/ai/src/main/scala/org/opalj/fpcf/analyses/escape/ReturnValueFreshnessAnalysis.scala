@@ -149,7 +149,7 @@ class ReturnValueFreshnessAnalysis private[analyses] (
                 propertyStore(declaredMethods(dm.definedMethod), ReturnValueFreshness.key)
             )
 
-        // We treat VirtualDeclaredMethods and MultipleDefinedMethods as NoFreshReturnValue for now 
+        // We treat VirtualDeclaredMethods and MultipleDefinedMethods as NoFreshReturnValue for now
         case dm: DeclaredMethod ⇒ Result(dm, NoFreshReturnValue)
 
         case _                  ⇒ throw new RuntimeException(s"Unsupported entity $e")
@@ -470,8 +470,8 @@ sealed trait ReturnValueFreshnessAnalysisScheduler extends ComputationSpecificat
 }
 
 object EagerReturnValueFreshnessAnalysis
-        extends ReturnValueFreshnessAnalysisScheduler
-        with FPCFEagerAnalysisScheduler {
+    extends ReturnValueFreshnessAnalysisScheduler
+    with FPCFEagerAnalysisScheduler {
 
     override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val declaredMethods =
@@ -483,8 +483,8 @@ object EagerReturnValueFreshnessAnalysis
 }
 
 object LazyReturnValueFreshnessAnalysis
-        extends ReturnValueFreshnessAnalysisScheduler
-        with FPCFLazyAnalysisScheduler {
+    extends ReturnValueFreshnessAnalysisScheduler
+    with FPCFLazyAnalysisScheduler {
 
     /**
      * Registers the analysis as a lazy computation, that is, the method

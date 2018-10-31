@@ -43,15 +43,15 @@ class LoadedClassesAnalysis(
     private val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
 
     private case class LCState(
-        // only present for non-final values
-        var lcDependee:      Option[EOptionP[SomeProject, LoadedClasses]],
-        var loadedClassesUB: Option[LoadedClasses],
-        var seenClasses:     Int,
+            // only present for non-final values
+            var lcDependee:      Option[EOptionP[SomeProject, LoadedClasses]],
+            var loadedClassesUB: Option[LoadedClasses],
+            var seenClasses:     Int,
 
-        // only present for non-final values
-        var itDependee:            Option[EOptionP[SomeProject, InstantiatedTypes]],
-        var instantiatedTypesUB:   Option[InstantiatedTypes],
-        var seenInstantiatedTypes: Int
+            // only present for non-final values
+            var itDependee:            Option[EOptionP[SomeProject, InstantiatedTypes]],
+            var instantiatedTypesUB:   Option[InstantiatedTypes],
+            var seenInstantiatedTypes: Int
     )
 
     /**
