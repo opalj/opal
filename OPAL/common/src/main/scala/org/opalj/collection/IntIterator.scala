@@ -230,10 +230,11 @@ object IntIterator {
     }
 
     /**
+     * Creates a new iterator to iterate over the values in the defined range.
      *
-     * @param from The first value (inclusive).
-     * @param to The last value (inclusive).
-     * @return
+     * @param start The first value (inclusive).
+     * @param end The last value (inclusive).
+     * @return An iterator over the given values.
      */
     def inclusive(start: Int, end: Int): IntIterator = new IntIterator {
         private[this] var i: Int = start
