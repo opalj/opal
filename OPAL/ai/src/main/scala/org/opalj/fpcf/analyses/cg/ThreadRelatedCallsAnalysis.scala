@@ -32,6 +32,9 @@ import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.value.IsReferenceValue
 
 /**
+ * This analysis handles implicit method invocations related to the `java.lang.Thread` API.
+ * As an example, a call to `Thread#start` eventual lead to an invocation of the `run` method of
+ * the corresponding `java.lang.Runnable` object.
  *
  * @author Florian Kuebler
  * @author Dominik Helm
@@ -53,6 +56,12 @@ class ThreadRelatedCallsAnalysis private[analyses] (
         )
     }
 
+    /**
+     * This method is triggered each time the property store has a first [[CallerProperty]] value
+     * for the `declaredMethod`. If the method is reachable, it is being checked for calls into the
+     * `Thead` API and add the corresponding implicit/evantual method call.
+     * It do so by calling `processMethod`.
+     */
     def analyze(declaredMethod: DeclaredMethod): PropertyComputationResult = {
 
         // todo this is copy & past code from the RTACallGraphAnalysis -> refactor
@@ -97,10 +106,26 @@ class ThreadRelatedCallsAnalysis private[analyses] (
                 continuation(definedMethod)
             )
         }
-
     }
 
-    def processMethod(
+    /**
+     * If there are updates on the [[TACAI]], we have to process the method again.
+     */
+    private[this] def continuation(
+        method: DefinedMethod
+    )(eps: SomeEPS): PropertyComputationResult = {
+        eps match {
+            case ESimplePS(_, _: TACAI, _) ⇒
+                processMethod(method, eps.asInstanceOf[EPS[Method, TACAI]])
+        }
+    }
+
+    /**
+     * Iterate over the statements of the method and search for calls to `start` and
+     * `setUncaughtExceptionHandler`. The corresponding, eventually called methods will be
+     * marked as VMLevelReachable.
+     */
+    private[this] def processMethod(
         definedMethod: DefinedMethod, tacaiEPS: EPS[Method, TACAI]
     ): PropertyComputationResult = {
         assert(tacaiEPS.hasProperty)
@@ -110,6 +135,7 @@ class ThreadRelatedCallsAnalysis private[analyses] (
         for {
             VirtualMethodCall(_, dc, _, name, descriptor, receiver, params) ← stmts
             if classHierarchy.isSubtypeOf(dc, ObjectType.Thread)
+            // todo handle Runnable#addShutdownHook
         } {
             if (name == "start" && descriptor == MethodDescriptor.NoArgsAndReturnVoid) {
                 threadRelatedMethods =
@@ -159,15 +185,12 @@ class ThreadRelatedCallsAnalysis private[analyses] (
         )
     }
 
-    private[this] def continuation(
-        method: DefinedMethod
-    )(eps: SomeEPS): PropertyComputationResult = {
-        eps match {
-            case ESimplePS(_, _: TACAI, _) ⇒
-                processMethod(method, eps.asInstanceOf[EPS[Method, TACAI]])
-        }
-    }
-
+    /**
+     * A call to `Thread#start` eventually leads to calls to `Thread#exit` and
+     * `ConcreteRunnable#run`. These methods will be returned by this method.
+     * Note, that if the concrete type of the runnable object is unknown, the corresponding
+     * `run` methods might be missing. Thus the resulting call graph may be unsound.
+     */
     private[this] def handleStart(
         definedMethod:        DefinedMethod,
         threadRelatedMethods: Set[DeclaredMethod],
@@ -231,7 +254,9 @@ class ThreadRelatedCallsAnalysis private[analyses] (
         newThreadRelatedMethods
     }
 
-    def getConstructorCalls(expr: Expr[V], defSite: Int, stmts: Array[Stmt[V]]): Iterator[NonVirtualMethodCall[V]] = {
+    private[this] def getConstructorCalls(
+        expr: Expr[V], defSite: Int, stmts: Array[Stmt[V]]
+    ): Iterator[NonVirtualMethodCall[V]] = {
         var r = List.empty[NonVirtualMethodCall[V]]
         expr.asVar.usedBy.foreach { use ⇒
             val stmt = stmts(use)
@@ -245,7 +270,7 @@ class ThreadRelatedCallsAnalysis private[analyses] (
         r.iterator
     }
 
-    private def handleThreadWithRunnable(
+    private[this] def handleThreadWithRunnable(
         definedMethod:        DefinedMethod,
         stmts:                Array[Stmt[V]],
         receiver:             Expr[V],
