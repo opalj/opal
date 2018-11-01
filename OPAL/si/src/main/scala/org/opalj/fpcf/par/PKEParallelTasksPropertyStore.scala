@@ -78,7 +78,9 @@ final class PKEParallelTasksPropertyStore private (
     def scheduledTasksCount: Int = scheduledTasksCounter.get
 
     private[this] val directInTaskThreadPropertyComputationsCounter: AtomicInteger = new AtomicInteger(0)
-    def directInTaskThreadPropertyComputationsCount: Int = directInTaskThreadPropertyComputationsCounter.get
+    def directInTaskThreadPropertyComputationsCount: Int = {
+        directInTaskThreadPropertyComputationsCounter.get
+    }
 
     // Fast-track properties are eagerly computed in the thread requiring the values
     // and are stored using idempotent results
@@ -144,7 +146,7 @@ final class PKEParallelTasksPropertyStore private (
 
             "scheduled reevaluation of dependees due to updated dependers" -> scheduledDependeeUpdatesCount,
 
-            "direct in task thread property computations (cheap property computation or tasks queue is full enough)" -> directInTaskThreadPropertyComputationsCount,
+            "direct in task-thread property computations (cheap property computation or tasks queue is full enough)" -> directInTaskThreadPropertyComputationsCount,
             "direct evaluation of dependers (cheap property computation)" -> directDependerOnUpdateComputationsCount,
             "direct reevaluations of dependee due to updated dependers (cheap property computation)" -> directDependeeUpdatesCount,
 
@@ -252,7 +254,7 @@ final class PKEParallelTasksPropertyStore private (
     private[this] final val DefaultTaskQueue = 0
     /**
      * Array of lists of scheduled (on update) property computations - they will be processed
-     * in parallel, giving lists in smaller arrays priority.
+     * in parallel, giving lists stored at the beginning of the tasks array priority.
      */
     private[this] val tasks = {
         Array.fill(TaskQueues)(new ConcurrentLinkedQueue[QualifiedTask[_ <: Entity]]())
@@ -1036,7 +1038,8 @@ final class PKEParallelTasksPropertyStore private (
                 "only to be called by the store updates processing thread"
             )
 
-            if (tracer.isDefined) tracer.get.handlingResult(r, forceEvaluation, forceDependersNotifications)
+            if (tracer.isDefined)
+                tracer.get.handlingResult(r, forceEvaluation, forceDependersNotifications)
 
             r.id match {
 
@@ -1328,7 +1331,9 @@ final class PKEParallelTasksPropertyStore private (
                             }
 
                             if (tracer.isDefined)
-                                tracer.get.immediateDependeeUpdate(e, pk, seenDependee, currentDependee, updateAndNotifyState)
+                                tracer.get.immediateDependeeUpdate(
+                                    e, pk, seenDependee, currentDependee, updateAndNotifyState
+                                )
 
                             if (onUpdateContinuationHint == CheapPropertyComputation) {
                                 directDependeeUpdatesCounter += 1
