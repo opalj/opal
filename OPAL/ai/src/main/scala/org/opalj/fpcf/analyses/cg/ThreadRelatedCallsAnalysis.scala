@@ -131,7 +131,7 @@ class ThreadRelatedCallsAnalysis private[analyses] (
 
         val results: Iterator[PropertyComputationResult] = threadRelatedMethods.iterator.map { method ⇒
             PartialResult[DeclaredMethod, CallersProperty](method, CallersProperty.key, {
-                case IntermediateESimpleP(_, ub) if !ub.hasCallersWithUnknownContext ⇒
+                case IntermediateESimpleP(_, ub) if !ub.hasVMLevelCallers ⇒
                     Some(IntermediateESimpleP(method, ub.updatedWithVMLevelCall()))
 
                 case _: IntermediateESimpleP[_, _] ⇒ None
