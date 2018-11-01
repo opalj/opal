@@ -95,6 +95,7 @@ class ThreadRelatedCallsAnalysis private[analyses] (
             // happens in particular for native methods
             return NoResult;
 
+        // if we have a tac already we can start the analysis. otherwise we wait for updates.
         val tacaiEP = propertyStore(method, TACAI.key)
         if (tacaiEP.hasProperty) {
             processMethod(definedMethod, tacaiEP.asEPS)
@@ -135,7 +136,7 @@ class ThreadRelatedCallsAnalysis private[analyses] (
         for {
             VirtualMethodCall(_, dc, _, name, descriptor, receiver, params) ← stmts
             if classHierarchy.isSubtypeOf(dc, ObjectType.Thread)
-            // todo handle Runnable#addShutdownHook
+            // TODO handle Runnable#addShutdownHook
         } {
             if (name == "start" && descriptor == MethodDescriptor.NoArgsAndReturnVoid) {
                 threadRelatedMethods =
@@ -147,7 +148,6 @@ class ThreadRelatedCallsAnalysis private[analyses] (
                     handleUncaughtExceptionHandler(
                         definedMethod,
                         params.head,
-                        "uncaughtException",
                         uncaughtExceptionDescriptor,
                         threadRelatedMethods
                     )
@@ -155,6 +155,7 @@ class ThreadRelatedCallsAnalysis private[analyses] (
 
         }
 
+        // partial results for all methods that should be made vm reachable
         val results: Iterator[PropertyComputationResult] = threadRelatedMethods.iterator.map { method ⇒
             PartialResult[DeclaredMethod, CallersProperty](method, CallersProperty.key, {
                 case IntermediateESimpleP(_, ub) if !ub.hasVMLevelCallers ⇒
@@ -170,6 +171,7 @@ class ThreadRelatedCallsAnalysis private[analyses] (
             })
         }
 
+        // do we still depend on the tac?
         val fakeResult =
             if (tacaiEPS.isFinal)
                 Result(definedMethod, ThreadRelatedCalleesFinal)
@@ -186,10 +188,47 @@ class ThreadRelatedCallsAnalysis private[analyses] (
     }
 
     /**
+     * A helper method, that add the given method to the set of `threadRelatedMethods`.
+     *
+     * Note: It takes the given `threadRelatedMethods`, add the relavant ones and returns the
+     * updated set.
+     */
+    private[this] def addMethod(
+        definedMethod:        DefinedMethod,
+        target:               org.opalj.Result[Method],
+        preciseType:          ObjectType,
+        name:                 String,
+        descriptor:           MethodDescriptor,
+        threadRelatedMethods: Set[DeclaredMethod]
+    ): Set[DeclaredMethod] = {
+        if (target.hasValue) {
+            threadRelatedMethods + declaredMethods(target.value)
+        } else {
+            val declTgt = declaredMethods.apply(
+                preciseType,
+                definedMethod.declaringClassType.asObjectType.packageName,
+                preciseType,
+                name,
+                descriptor
+            )
+
+            // also add calls to virtual declared methods (unpresent library methods)
+            if (declTgt.hasSingleDefinedMethod || declTgt.hasMultipleDefinedMethods) {
+                threadRelatedMethods
+            } else {
+                threadRelatedMethods + declTgt
+            }
+        }
+    }
+
+    /**
      * A call to `Thread#start` eventually leads to calls to `Thread#exit` and
      * `ConcreteRunnable#run`. These methods will be returned by this method.
      * Note, that if the concrete type of the runnable object is unknown, the corresponding
      * `run` methods might be missing. Thus the resulting call graph may be unsound.
+     *
+     * Note: It takes the given `threadRelatedMethods`, add the relavant ones and returns the
+     * updated set.
      */
     private[this] def handleStart(
         definedMethod:        DefinedMethod,
@@ -254,6 +293,9 @@ class ThreadRelatedCallsAnalysis private[analyses] (
         newThreadRelatedMethods
     }
 
+    /**
+     * For the given `expr`, it collects all calls to `<init>` on that expression.
+     */
     private[this] def getConstructorCalls(
         expr: Expr[V], defSite: Int, stmts: Array[Stmt[V]]
     ): Iterator[NonVirtualMethodCall[V]] = {
@@ -270,6 +312,13 @@ class ThreadRelatedCallsAnalysis private[analyses] (
         r.iterator
     }
 
+    /**
+     * Handles the case of a call to `run` of a thread object, that holds a instance of
+     * [[Runable]] (passed as an argument to the constructor).
+     *
+     * Note: It takes the given `threadRelatedMethods`, add the relavant ones and returns the
+     * updated set.
+     */
     private[this] def handleThreadWithRunnable(
         definedMethod:        DefinedMethod,
         stmts:                Array[Stmt[V]],
@@ -298,7 +347,7 @@ class ThreadRelatedCallsAnalysis private[analyses] (
                             if (indexOfRunnableParameter != -1) {
                                 for (runnableValue ← params(indexOfRunnableParameter).asVar.value.asReferenceValue.allValues) {
                                     if (runnableValue.isPrecise) {
-                                        newThreadRelatedMethods = handlePrecise(
+                                        newThreadRelatedMethods = handlePreciseUncaughtExceptionHandler(
                                             definedMethod,
                                             runnableValue,
                                             "run",
@@ -322,10 +371,17 @@ class ThreadRelatedCallsAnalysis private[analyses] (
         newThreadRelatedMethods
     }
 
+    /**
+     * Handles the case of a call to `setUncaughtExceptionHandler` by adding a call to
+     * `uncaughtException` if the runtime type is precisely known.
+     * Otherwise, we remain unsound.
+     *
+     * Note: It takes the given `threadRelatedMethods`, add the relavant ones and returns the
+     * updated set.
+     */
     private[this] def handleUncaughtExceptionHandler(
         definedMethod:        DefinedMethod,
         receiver:             Expr[V],
-        name:                 String,
         descriptor:           MethodDescriptor,
         threadRelatedMethods: Set[DeclaredMethod]
     ): Set[DeclaredMethod] = {
@@ -338,8 +394,9 @@ class ThreadRelatedCallsAnalysis private[analyses] (
         } {
             // for precise types we can directly add the call edge here
             if (rv.isPrecise) {
-                newThreadRelatedMethods =
-                    handlePrecise(definedMethod, rv, name, descriptor, newThreadRelatedMethods)
+                newThreadRelatedMethods = handlePreciseUncaughtExceptionHandler(
+                    definedMethod, rv, "uncaughtException", descriptor, newThreadRelatedMethods
+                )
             } else {
                 OPALLogger.warn("analysis", "missed call to `uncaughtException`")
             }
@@ -348,7 +405,7 @@ class ThreadRelatedCallsAnalysis private[analyses] (
         newThreadRelatedMethods
     }
 
-    private[this] def handlePrecise(
+    private[this] def handlePreciseUncaughtExceptionHandler(
         definedMethod:        DefinedMethod,
         receiver:             IsReferenceValue,
         name:                 String,
@@ -366,34 +423,6 @@ class ThreadRelatedCallsAnalysis private[analyses] (
         )
         addMethod(definedMethod, tgt, preciseType, name, descriptor, threadRelatedMethods)
     }
-
-    private[this] def addMethod(
-        definedMethod:        DefinedMethod,
-        target:               org.opalj.Result[Method],
-        preciseType:          ObjectType,
-        name:                 String,
-        descriptor:           MethodDescriptor,
-        threadRelatedMethods: Set[DeclaredMethod]
-    ): Set[DeclaredMethod] = {
-        if (target.hasValue) {
-            threadRelatedMethods + declaredMethods(target.value)
-        } else {
-            val declTgt = declaredMethods.apply(
-                preciseType,
-                definedMethod.declaringClassType.asObjectType.packageName,
-                preciseType,
-                name,
-                descriptor
-            )
-
-            if (declTgt.hasSingleDefinedMethod || declTgt.hasMultipleDefinedMethods) {
-                threadRelatedMethods
-            } else {
-                threadRelatedMethods + declTgt
-            }
-        }
-    }
-
 }
 
 object EagerThreadRelatedCallsAnalysis extends FPCFEagerAnalysisScheduler {
