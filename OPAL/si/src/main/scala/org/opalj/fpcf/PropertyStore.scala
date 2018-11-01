@@ -2,10 +2,12 @@
 package org.opalj
 package fpcf
 
-import org.opalj.collection.immutable.IntTrieSet
+import java.util.concurrent.ConcurrentHashMap
 
+import org.opalj.collection.immutable.IntTrieSet
 import scala.util.control.ControlThrowable
 import scala.collection.{Map ⇒ SomeMap}
+
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.info
@@ -97,9 +99,9 @@ import org.opalj.fpcf.PropertyKind.SupportedPropertyKinds
  * debugging (and assertions!) off to get the best performance.
  *
  * We will throw `IllegalArgumentException`'s iff a parameter is in itself invalid. E.g., the lower
- * and upper bound do not have the same [[PropertyKind]]. In all other cases `IllegalStateException`s
- * are thrown. All exceptions are either thrown immediately or eventually, when
- * [[PropertyStore#waitOnPhaseCompletion]] is called. In the latter case, the exceptions are
+ * and upper bound do not have the same [[PropertyKind]]. In all other cases
+ * `IllegalStateException`s are thrown. All exceptions are either thrown immediately or eventually,
+ * when [[PropertyStore#waitOnPhaseCompletion]] is called. In the latter case, the exceptions are
  * accumulated in the first thrown exception using suppressed exceptions.
  *
  * @author Michael Eichberg
@@ -107,6 +109,52 @@ import org.opalj.fpcf.PropertyKind.SupportedPropertyKinds
 abstract class PropertyStore {
 
     implicit val logContext: LogContext
+
+    //
+    //
+    // FUNCTIONALITY TO ASSOCIATE SOME INFORMATION WITH THE STORE THAT
+    // (TYPICALLY) HAS THE SAME AS THE PROPERTYSTORE
+    //
+    //
+
+    private[this] val externalInformation = new ConcurrentHashMap[AnyRef, AnyRef]()
+
+    /**
+     * Attaches or returns some information associated with the property store using a key object.
+     *
+     * This facility is in particular well suited to attach information with the property store
+     * which has the same life-time. For example, this mechanism is used to associate the
+     * property store specific cycle resolution strategies with the store.
+     *
+     * This method is thread-safe. However, the client which adds information to the store
+     * has to ensure that the overall process of adding/querying/removing is well defined and
+     * the ordered is ensured.
+     */
+    final def getOrCreateInformation[T <: AnyRef](key: AnyRef, f: ⇒ T): T = {
+        externalInformation.computeIfAbsent(key, _ ⇒ f).asInstanceOf[T]
+    }
+
+    /**
+     * Returns the information stored in the store, if any.
+     *
+     * This method is thread-safe. However, the client which adds information to the store
+     * has to ensure that the overall process of adding/querying/removing is well defined and
+     * the ordered is ensured.
+     */
+    final def getInformation[T <: AnyRef](key: AnyRef): Option[T] = {
+        Option(externalInformation.get(key).asInstanceOf[T])
+    }
+
+    /**
+     * Returns the information stored in the store and removes the key, if any.
+     *
+     * This method is thread-safe. However, the client which adds information to the store
+     * has to ensure that the overall process of adding/querying/removing is well defined and
+     * the ordered is ensured.
+     */
+    final def getAndClearInformation[T <: AnyRef](key: AnyRef): Option[T] = {
+        Option(externalInformation.remove(key).asInstanceOf[T])
+    }
 
     //
     //
