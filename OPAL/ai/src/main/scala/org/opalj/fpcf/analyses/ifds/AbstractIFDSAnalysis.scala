@@ -245,12 +245,12 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
 
         eps match {
             case FinalEP(e, _: IFDSProperty[_]) ⇒
-                state.ifdsDependees -= e.asInstanceOf[(DeclaredMethod, DataFlowFact)]
+                //state.ifdsDependees -= e.asInstanceOf[(DeclaredMethod, DataFlowFact)]
                 handleCallUpdate(e.asInstanceOf[(DeclaredMethod, DataFlowFact)])
             case IntermediateESimpleP(e, _: IFDSProperty[_]) ⇒
-                state.ifdsDependees -= e.asInstanceOf[(DeclaredMethod, DataFlowFact)]
-                state.ifdsDependees += e.asInstanceOf[(DeclaredMethod, DataFlowFact)] →
-                    eps.asInstanceOf[EOptionP[(DeclaredMethod, DataFlowFact), IFDSProperty[DataFlowFact]]]
+                //state.ifdsDependees -= e.asInstanceOf[(DeclaredMethod, DataFlowFact)]
+                //state.ifdsDependees += e.asInstanceOf[(DeclaredMethod, DataFlowFact)] →
+                    //eps.asInstanceOf[EOptionP[(DeclaredMethod, DataFlowFact), IFDSProperty[DataFlowFact]]]
                 handleCallUpdate(e.asInstanceOf[(DeclaredMethod, DataFlowFact)])
             case FinalEP(m: Method, tac: TACAI) ⇒
                 handleCallUpdate(m)
