@@ -3,6 +3,8 @@ package org.opalj
 package ai
 package domain
 
+import scala.collection.immutable.IntMap
+
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.br.Code
 
@@ -53,21 +55,21 @@ trait RecordReturnedValues extends RecordReturnedValuesInfrastructure with Custo
         value:                   DomainValue
     ): ReturnedValue
 
-    private[this] var returnedValues: Map[Int /*PC*/ , ReturnedValue] = _ // IMPROVE Use Int2ObjectMap
+    private[this] var returnedValues: IntMap[ReturnedValue] = _
 
     abstract override def initProperties(
         code:          Code,
         cfJoins:       IntTrieSet,
         initialLocals: Locals
     ): Unit = {
-        returnedValues = Map.empty
+        returnedValues = IntMap.empty
         super.initProperties(code, cfJoins, initialLocals)
     }
 
     /**
      * Returns the set of all returned values.
      */
-    def allReturnedValues: Map[Int /*PC */ , ReturnedValue] = returnedValues // IMPROVE Use Int2ObjectMap
+    def allReturnedValues: IntMap[ReturnedValue] = returnedValues
 
     protected[this] def doRecordReturnedValue(pc: Int, value: DomainValue): Unit = {
         returnedValues =
