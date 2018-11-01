@@ -189,6 +189,9 @@ class ThreadRelatedCallsAnalysis private[analyses] (
 
     /**
      * A helper method, that add the given method to the set of `threadRelatedMethods`.
+     * If `target` is defined, it simply adds the corresponding [[DeclaredMethod]].
+     * Otherwise, it will add the corresponding [[DeclaredMethod]] in case it is virtual (i.e.
+     * its definition is not available).
      *
      * Note: It takes the given `threadRelatedMethods`, add the relavant ones and returns the
      * updated set.
@@ -204,7 +207,7 @@ class ThreadRelatedCallsAnalysis private[analyses] (
         if (target.hasValue) {
             threadRelatedMethods + declaredMethods(target.value)
         } else {
-            val declTgt = declaredMethods.apply(
+            val declTgt = declaredMethods(
                 preciseType,
                 definedMethod.declaringClassType.asObjectType.packageName,
                 preciseType,
