@@ -44,18 +44,23 @@ abstract class IntIterator extends AbstractIterator[Int] { self ⇒
         false
     }
 
-    override def foldLeft[B](start: B)(f: (B, Int) ⇒ B): B = {
-        var c = start
-        while (this.hasNext) { c = f(c, next()) }
-        c
-    }
-
     def foldLeft(start: Int)(f: (Int, Int) ⇒ Int): Int = {
         var c = start
         while (this.hasNext) { c = f(c, next()) }
         c
     }
 
+    def foldLeft(start: Long)(f: (Long, Int) ⇒ Long): Long = {
+        var c = start
+        while (this.hasNext) { c = f(c, next()) }
+        c
+    }
+
+    override def foldLeft[T](start: T)(f: (T, Int) ⇒ T): T = {
+        var c = start
+        while (this.hasNext) { c = f(c, next()) }
+        c
+    }
     def foreachWhile[U](p: Int ⇒ Boolean)(f: Int ⇒ U): Unit = {
         while (this.hasNext && {
             val c = this.next()
