@@ -6,6 +6,7 @@ import scala.language.existentials
 import java.util.concurrent.atomic.AtomicReferenceArray
 import java.util.concurrent.atomic.AtomicInteger
 
+import org.opalj.log.OPALLogger
 import org.opalj.fpcf.PropertyKind.SupportedPropertyKinds
 
 /**
@@ -59,7 +60,7 @@ object PropertyKey {
     /*
      * @note [[PropertyKey]]s of simple properties don't have cycle resolution strategies.
      */
-    private[this] val cycleResolutionStrategies = {
+    private[this] val defaultCycleResolutionStrategies = {
         new AtomicReferenceArray[CycleResolutionStrategy[_ <: Entity, _ <: Property]](
             SupportedPropertyKinds
         )
@@ -154,7 +155,7 @@ object PropertyKey {
             thisKeyId,
             fastTrackPropertyComputation.asInstanceOf[(PropertyStore, Entity) ⇒ Option[Property]]
         )
-        cycleResolutionStrategies.set(
+        defaultCycleResolutionStrategies.set(
             thisKeyId,
             cycleResolutionStrategy.asInstanceOf[CycleResolutionStrategy[Entity, Property]]
         )
@@ -176,8 +177,10 @@ object PropertyKey {
         )
     }
 
+    private[this] final val CycleResolutionStrategyKeyObject = "CycleResolutionStrategy"
+
     /**
-     * Updates the (default) cycle resolution strategy associated with a specific kind of
+     * Updates the cycle resolution strategy associated with a specific kind of
      * property. Updating the strategy is typically done by analyses that require a different
      * strategy than the one defined by the property. For example, an analysis, which just
      * computes a lower bound, generally has to overwrite the default strategy which picks
@@ -187,11 +190,20 @@ object PropertyKey {
      */
     def updateCycleResolutionStrategy[E <: Entity, P <: Property](
         key:                     PropertyKey[P],
+        propertyStore:           PropertyStore,
         cycleResolutionStrategy: CycleResolutionStrategy[E, P]
-    ): CycleResolutionStrategy[E, P] = {
-        val oldStrategy = cycleResolutionStrategies.get(key.id)
-        cycleResolutionStrategies.set(key.id, cycleResolutionStrategy)
-        oldStrategy.asInstanceOf[CycleResolutionStrategy[E, P]]
+    ): Option[CycleResolutionStrategy[E, P]] = {
+        val propertyStoreSpecificStrategies =
+            propertyStore.getOrCreateInformation[AtomicReferenceArray[CycleResolutionStrategy[_ <: Entity, _ <: Property]]](
+                CycleResolutionStrategyKeyObject,
+                new AtomicReferenceArray[CycleResolutionStrategy[_ <: Entity, _ <: Property]](
+                    SupportedPropertyKinds
+                )
+            )
+
+        val oldStrategy = propertyStoreSpecificStrategies.get(key.id)
+        propertyStoreSpecificStrategies.set(key.id, cycleResolutionStrategy)
+        Option(oldStrategy.asInstanceOf[CycleResolutionStrategy[E, P]])
     }
 
     //
@@ -287,12 +299,37 @@ object PropertyKey {
      * @note This method is intended to be called by the framework.
      */
     def resolveCycle[E <: Entity, P <: Property](ps: PropertyStore, eps: EPS[E, P]): P = {
+        // We first check if we have a store specific strategy; if not, we will use the default
+        // strategy.
         val pkId = eps.pk.id
-        val cycleResolutionStrategy = cycleResolutionStrategies.get(pkId)
-        if (cycleResolutionStrategy == null)
-            throw new IllegalArgumentException(
-                "no cycle resolution strategy exists (for simple properties of kind): "+name(pkId)
+        val propertyStoreSpecificStrategies =
+            ps.getInformation[AtomicReferenceArray[CycleResolutionStrategy[_ <: Entity, _ <: Property]]](
+                CycleResolutionStrategyKeyObject
             )
+
+        var cycleResolutionStrategy = propertyStoreSpecificStrategies.map(_.get(pkId)).orNull
+        if (cycleResolutionStrategy == null) {
+            cycleResolutionStrategy = defaultCycleResolutionStrategies.get(pkId)
+            if (cycleResolutionStrategy == null) {
+                val k = name(pkId)
+                throw new IllegalArgumentException(
+                    "no cycle resolution strategy exists (for simple properties of kind): "+k
+                )
+            }
+            if (ps.traceCycleResolutions) {
+                OPALLogger.info(
+                    "property store",
+                    "cycle resolution is done using the default strategy"
+                )(ps.logContext)
+            }
+        } else {
+            if (ps.traceCycleResolutions) {
+                OPALLogger.info(
+                    "property store",
+                    "cycle resolution is done using the project specific strategy"
+                )(ps.logContext)
+            }
+        }
         cycleResolutionStrategy.asInstanceOf[CycleResolutionStrategy[E, P]](ps, eps)
     }
 
