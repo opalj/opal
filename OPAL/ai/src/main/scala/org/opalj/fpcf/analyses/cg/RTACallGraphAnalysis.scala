@@ -498,6 +498,7 @@ class RTACallGraphAnalysis private[analyses] (
                     )
                     handleCall(caller, call, pc, tgt, calleesAndCallers)
                 } else {
+                    // TODO Instead of joining, keep all type bounds here
                     val typeBound =
                         project.classHierarchy.joinReferenceTypesUntilSingleUpperBound(
                             rv.upperTypeBound
@@ -508,6 +509,7 @@ class RTACallGraphAnalysis private[analyses] (
                         else
                             call.declaringClass
 
+                    // TODO If the type bound is Serializable on Cloneable or both, this may also be an array, so callees must include the methods on Object
                     if (receiverType.isArrayType) {
                         val tgt = project.instanceCall(
                             callerType, receiverType, call.name, call.descriptor
@@ -564,7 +566,7 @@ class RTACallGraphAnalysis private[analyses] (
         for {
             instantiatedType ← newInstantiatedTypes // only iterate once!
             (pc, typeBound, name, descr) ← state.virtualCallSites
-            if classHierarchy.isSubtypeOf(instantiatedType, typeBound)
+            if classHierarchy.isSubtypeOf(instantiatedType, typeBound) // TODO once we collect all type bounds, check againts all of them
             tgt ← project.instanceCall(
                 state.method.definedMethod.classFile.thisType, instantiatedType, name, descr
             )
