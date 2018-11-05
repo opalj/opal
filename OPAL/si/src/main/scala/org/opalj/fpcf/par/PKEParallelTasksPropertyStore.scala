@@ -129,30 +129,25 @@ final class PKEParallelTasksPropertyStore private (
     def quiescenceCount: Int = quiescenceCounter
 
     def statistics: SomeMap[String, Int] = {
-        val statistics = mutable.LinkedHashMap(
-            "scheduled tasks" -> scheduledTasksCount,
-            "scheduled lazy tasks (fast track computations of lazy properties are not counted)" -> scheduledLazyTasksCount
-        )
-        if (debug)
-            statistics += "max tasks queue size" -> maxTasksQueueSize.get
+        val statistics = mutable.LinkedHashMap[String, Int]()
 
-        statistics ++= List(
-            "fast-track properties computations" -> fastTrackPropertiesCount,
-            "computations of fallback properties (queried but not computed properties)" -> fallbacksUsedCount,
-            "property store updates" -> updatesCounter,
-            "computations which in one step computed a final result" -> oneStepFinalUpdatesCounter,
-            "redundant fast-track/fallback property computations" -> redundantIdempotentResultsCount,
-            "useless partial result computations" -> uselessPartialResultComputationCount,
+        if (debug) statistics += "scheduled tasks" -> scheduledTasksCount
+        statistics += "scheduled lazy tasks (fast track computations of lazy properties are not counted)" -> scheduledLazyTasksCount
+        if (debug) statistics += "max tasks queue size" -> maxTasksQueueSize.get
+        if (debug) statistics += "fast-track properties computations" -> fastTrackPropertiesCount
+        if (debug) statistics += "computations of fallback properties (queried but not computed properties)" -> fallbacksUsedCount
+        statistics += "property store updates" -> updatesCounter
+        statistics += "computations which in one step computed a final result" -> oneStepFinalUpdatesCounter
+        statistics += "redundant fast-track/fallback property computations" -> redundantIdempotentResultsCount
+        statistics += "useless partial result computations" -> uselessPartialResultComputationCount
+        statistics += "scheduled reevaluation of dependees due to updated dependers" -> scheduledDependeeUpdatesCount
+        if (debug) statistics += "direct in task-thread property computations (cheap property computation or tasks queue is full enough)" -> directInTaskThreadPropertyComputationsCount
+        statistics += "direct evaluation of dependers (cheap property computation)" -> directDependerOnUpdateComputationsCount
+        statistics += "direct reevaluations of dependee due to updated dependers (cheap property computation)" -> directDependeeUpdatesCount
+        statistics += "number of times the store reached quiescence" -> quiescenceCount
+        statistics += "resolved cSCCs" -> resolvedCSCCsCount
 
-            "scheduled reevaluation of dependees due to updated dependers" -> scheduledDependeeUpdatesCount,
-
-            "direct in task-thread property computations (cheap property computation or tasks queue is full enough)" -> directInTaskThreadPropertyComputationsCount,
-            "direct evaluation of dependers (cheap property computation)" -> directDependerOnUpdateComputationsCount,
-            "direct reevaluations of dependee due to updated dependers (cheap property computation)" -> directDependeeUpdatesCount,
-
-            "number of times the store reached quiescence" -> quiescenceCount,
-            "resolved cSCCs" -> resolvedCSCCsCount
-        )
+        statistics
     }
 
     // --------------------------------------------------------------------------------------------
@@ -504,7 +499,7 @@ final class PKEParallelTasksPropertyStore private (
     ): Unit = {
         if (openJobs.get() > 0) {
             throw new IllegalStateException(
-                "triggered computations can only be registered as long as no analysis is scheduled"
+                "triggered computations can only be registered while no computations are running"
             )
         }
         val pkId = pk.id
@@ -601,7 +596,7 @@ final class PKEParallelTasksPropertyStore private (
         pc:              PropertyComputation[E],
         forceEvaluation: Boolean
     ): Unit = {
-        scheduledTasksCounter.incrementAndGet()
+        if (debug) scheduledTasksCounter.incrementAndGet()
         appendTask(new InitialPropertyComputationTask[E](this, e, pc, forceEvaluation))
     }
 
@@ -623,7 +618,7 @@ final class PKEParallelTasksPropertyStore private (
             (computedPropertyKinds(pkId) || delayedPropertyKinds(pkId))) {
             val p = fastTrackPropertyBasedOnPKId(this, e, pkId)
             if (p.isDefined) {
-                fastTrackPropertiesCounter.incrementAndGet()
+                if (debug) fastTrackPropertiesCounter.incrementAndGet()
                 val finalEP = FinalEP(e, p.get.asInstanceOf[P])
                 appendStoreUpdate(queueId = 0, NewProperty(IdempotentResult(finalEP)))
                 return finalEP;
@@ -680,7 +675,7 @@ final class PKEParallelTasksPropertyStore private (
                                 val message = s"used fallback $p (reason=$reason) for $e"
                                 trace("analysis progress", message)
                             }
-                            fallbacksUsedCounter.incrementAndGet()
+                            if (debug) fallbacksUsedCounter.incrementAndGet()
                             val finalEP = FinalEP(e, p.asInstanceOf[P])
                             val r = IdempotentResult(finalEP)
                             appendStoreUpdate(queueId = 0, NewProperty(r))
@@ -762,7 +757,8 @@ final class PKEParallelTasksPropertyStore private (
                 handleResult(ir, forceEvaluation, forceDependersNotifications)
                 if (propertyComputationsHint == CheapPropertyComputation) {
                     npcs /*: Traversable[(PropertyComputation[e],e)]*/ foreach { npc ⇒
-                        directInTaskThreadPropertyComputationsCounter.incrementAndGet()
+                        if (debug)
+                            directInTaskThreadPropertyComputationsCounter.incrementAndGet()
                         val (pc, e) = npc
                         handleResult(pc(e), forceEvaluation, Set.empty)
                     }
@@ -773,7 +769,8 @@ final class PKEParallelTasksPropertyStore private (
                         // this thread, because there is still enough to do for the other
                         // threads
                         if (tasksSemaphore.availablePermits() > NumberOfThreadsForProcessingPropertyComputations * 2) {
-                            directInTaskThreadPropertyComputationsCounter.incrementAndGet()
+                            if (debug)
+                                directInTaskThreadPropertyComputationsCounter.incrementAndGet()
                             val (pc, e) = npc
                             handleResult(pc(e), forceEvaluation, Set.empty)
                         } else {
