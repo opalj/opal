@@ -16,8 +16,8 @@ import org.opalj.br.Method
 import org.opalj.ai.fpcf.properties.MethodReturnValue
 
 /**
- * Computes for each method which returns a reference value an approximation
- * of the values that are potentially returned.
+ * Computes for each method, which returns object values, general information about the potentially
+ * returned values.
  *
  * @author Michael Eichberg
  */
