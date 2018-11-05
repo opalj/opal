@@ -223,8 +223,9 @@ class PropertyComputationsSchedulerTest extends FunSpec with Matchers with Befor
                 def force[E <: Entity, P <: Property](e: E, pk: PropertyKey[P]): Unit = ???
 
                 def registerLazyPropertyComputation[E <: Entity, P <: Property](
-                    pk: PropertyKey[P],
-                    pc: PropertyComputation[E]
+                    pk:       PropertyKey[P],
+                    pc:       PropertyComputation[E],
+                    finalEPs: TraversableOnce[FinalEP[E, P]]
                 ): Unit = {}
                 def registerTriggeredComputation[E <: Entity, P <: Property](
                     pk: PropertyKey[P],

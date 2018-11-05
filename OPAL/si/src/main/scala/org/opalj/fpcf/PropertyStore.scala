@@ -459,16 +459,18 @@ abstract class PropertyStore {
      * In general, the result can't be an `IncrementalResult` and `scheduleLazyPropertyComputation`
      * cannot be used for properties which should be computed by phased analyses.
      *
-     * '''A lazy computation must never return a [[NoResult]]; if the entity cannot be processed an
-     * exception has to be thrown or the bottom value has to be returned.'''
+     * ''A lazy computation must never return a [[NoResult]]; if the entity cannot be processed an
+     * exception has to be thrown or the bottom value has to be returned.''
      *
-     * Setting `scheduleLazyPropertyComputation` is only supported as long as the store is not
-     * queried. In general, this requires that lazy property computations are scheduled before
-     * any eager analysis that potentially reads the value.
+     * '''Calling `registerLazyPropertyComputation` is only supported as long as the store is not
+     * queried and no computations are already running.
+     * In general, this requires that lazy property computations are scheduled before any eager
+     * analysis that potentially reads the value.'''
      */
     def registerLazyPropertyComputation[E <: Entity, P <: Property](
-        pk: PropertyKey[P],
-        pc: PropertyComputation[E]
+        pk:       PropertyKey[P],
+        pc:       PropertyComputation[E],
+        finalEPs: TraversableOnce[FinalEP[E, P]] = Iterator.empty
     ): Unit
 
     private[fpcf] val simultaneouslyLazilyComputedPropertyKinds: Array[IntTrieSet /*Set[PKId]*/ ] = {

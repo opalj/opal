@@ -297,14 +297,16 @@ final class PKESequentialPropertyStore private (
     }
 
     override def registerLazyPropertyComputation[E <: Entity, P <: Property](
-        pk: PropertyKey[P],
-        pc: PropertyComputation[E]
+        pk:       PropertyKey[P],
+        pc:       PropertyComputation[E],
+        finalEPs: TraversableOnce[FinalEP[E, P]]
     ): Unit = {
         if (debug && !tasks.isEmpty) {
             throw new IllegalStateException(
-                "lazy computations should only be registered while no analysis is scheduled"
+                "lazy computations should only be registered while no computations are running"
             )
         }
+        finalEPs.foreach(finalEP ⇒ set(finalEP.e, finalEP.p))
         lazyComputations(pk.id) = pc
     }
 
@@ -314,7 +316,7 @@ final class PKESequentialPropertyStore private (
     ): Unit = {
         if (debug && !tasks.isEmpty) {
             throw new IllegalStateException(
-                "triggered computations should only be registered as long as no analysis is scheduled"
+                "triggered computations should only be registered while no computations are running"
             )
         }
         triggeredComputations(pk.id) += pc

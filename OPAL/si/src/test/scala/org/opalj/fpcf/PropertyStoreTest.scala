@@ -464,7 +464,12 @@ sealed abstract class PropertyStoreTest(
                         invocationCount.incrementAndGet()
                         val p = if (e.toString.reverse == e.toString) Palindrome else NoPalindrome
                         Result(e, p)
-                    }
+                    },
+                    // let's see if we can register some values...
+                    List(
+                        FinalEP("dummyymmud", Palindrome),
+                        FinalEP("dummyBADymmud", NoPalindrome)
+                    )
                 )
                 ps.registerLazyPropertyComputation(
                     sppk,
@@ -485,7 +490,12 @@ sealed abstract class PropertyStoreTest(
                             },
                             pch
                         )
-                    }
+                    },
+                    // let's see if we can register some values...
+                    List(
+                        FinalEP("dummyymmud", SuperPalindrome),
+                        FinalEP("dummyBADymmud", NoSuperPalindrome)
+                    )
                 )
                 ps.scheduleEagerComputationForEntity("e") { e: String ⇒
                     val initiallyExpectedEP = EPK("e", sppk)
@@ -523,6 +533,12 @@ sealed abstract class PropertyStoreTest(
                 ps("e", ppk) should be(FinalEP("e", Palindrome))
                 ps("e", sppk) should be(FinalEP("e", SuperPalindrome))
                 ps("e", Marker.MarkerKey) should be(FinalEP("e", Marker.IsMarked))
+
+                ps("dummyymmud", ppk) should be(FinalEP("dummyymmud", Palindrome))
+                ps("dummyBADymmud", ppk) should be(FinalEP("dummyBADymmud", NoPalindrome))
+
+                ps("dummyymmud", sppk) should be(FinalEP("dummyymmud", SuperPalindrome))
+                ps("dummyBADymmud", sppk) should be(FinalEP("dummyBADymmud", NoSuperPalindrome))
 
                 ps.shutdown()
             }

@@ -465,14 +465,36 @@ final class PKEParallelTasksPropertyStore private (
     // --------------------------------------------------------------------------------------------
 
     override def registerLazyPropertyComputation[E <: Entity, P <: Property](
-        pk: PropertyKey[P],
-        pc: PropertyComputation[E]
+        pk:       PropertyKey[P],
+        pc:       PropertyComputation[E],
+        finalEPs: TraversableOnce[FinalEP[E, P]]
     ): Unit = {
         if (openJobs.get() > 0) {
             throw new IllegalStateException(
-                "lazy computations can only be registered while no analyses are scheduled"
+                "lazy computations can only be registered while no computations are running"
             )
         }
+
+        // By contract, this method is never executed concurrently and no computations
+        // are running. Furthermore, the store is either newly created or waitOnPhaseCompletion
+        // was called and the happens-before relation w.r.t. "dependers" is established and
+        // we can check that we have no unexpected dependers
+
+        finalEPs.foreach { finalEP ⇒
+            val pkId = finalEP.pk.id
+            val e = finalEP.e
+            val theDependers = dependers(pkId).get(e)
+            if (theDependers.isDefined) {
+                throw new IllegalStateException(s"$e: unexpected dependers exists: $theDependers")
+            }
+            val oldP = properties(pkId).putIfAbsent(e, finalEP)
+            if (oldP != null) {
+                throw new IllegalArgumentException(
+                    s"$e: a property ($oldP) was already set; ignoring ${finalEP.p}"
+                )
+            }
+        }
+
         lazyComputations.set(pk.id, pc)
     }
 
