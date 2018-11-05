@@ -13,6 +13,7 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.Method
+import org.opalj.br.PC
 import org.opalj.ai.fpcf.properties.MethodReturnValue
 
 /**
