@@ -6,6 +6,7 @@ import scala.collection.mutable.ArrayBuffer
 
 import org.opalj.collection.mutable.FixedSizeBitSet
 import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.collection.immutable.IntIntPair
 import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.br._
 import org.opalj.br.instructions._
@@ -568,16 +569,23 @@ object TACNaive {
                     }
 
                 case INVOKEDYNAMIC.opcode ⇒
-                    val call @ INVOKEDYNAMIC(bootstrapMethod, name, methodDescriptor) = instruction
+                    val call @ INVOKEDYNAMIC(bootstrapMethod, name, descriptor) = instruction
                     val numOps = call.numberOfPoppedOperands(x ⇒ stack.drop(x).head.cTpe.category)
                     val (paramsInOperandsOrder, rest) = stack.splitAt(numOps)
                     val params = paramsInOperandsOrder.reverse
-
-                    val returnType = methodDescriptor.returnType
-                    val expr = Invokedynamic(pc, bootstrapMethod, name, methodDescriptor, params)
-                    val newVar = OperandVar(returnType.computationalType, rest)
-                    statements(pc) = List(Assignment(pc, newVar, expr))
-                    schedule(pcOfNextInstruction(pc), newVar :: rest)
+                    val returnType = descriptor.returnType
+                    if (returnType.isVoidType) {
+                        val indyMethodCall =
+                            InvokedynamicMethodCall(pc, bootstrapMethod, name, descriptor, params)
+                        statements(pc) = List(indyMethodCall)
+                        schedule(pcOfNextInstruction(pc), rest)
+                    } else {
+                        val indyFunctionCall =
+                            InvokedynamicFunctionCall(pc, bootstrapMethod, name, descriptor, params)
+                        val newVar = OperandVar(returnType.computationalType, rest)
+                        statements(pc) = List(Assignment(pc, newVar, indyFunctionCall))
+                        schedule(pcOfNextInstruction(pc), newVar :: rest)
+                    }
 
                 case PUTSTATIC.opcode ⇒
                     val value :: rest = stack
@@ -706,7 +714,7 @@ object TACNaive {
                     val tableSwitch = as[TABLESWITCH](instruction)
                     val defaultTarget = pc + tableSwitch.defaultOffset
                     var caseValue = tableSwitch.low
-                    val npairs = tableSwitch.jumpOffsets map { jo ⇒
+                    val npairs = tableSwitch.jumpOffsets.map[(Int, PC)] { jo ⇒
                         val caseTarget = pc + jo
                         val npair = (caseValue, caseTarget)
                         schedule(caseTarget, rest)
@@ -720,8 +728,8 @@ object TACNaive {
                     val index :: rest = stack
                     val lookupSwitch = as[LOOKUPSWITCH](instruction)
                     val defaultTarget = pc + lookupSwitch.defaultOffset
-                    val npairs = lookupSwitch.npairs.map { npair ⇒
-                        val (caseValue, branchOffset) = npair
+                    val npairs = lookupSwitch.npairs.map[(Int, PC)] { npair ⇒
+                        val IntIntPair(caseValue, branchOffset) = npair
                         val caseTarget = pc + branchOffset
                         schedule(caseTarget, rest)
                         (caseValue, caseTarget)

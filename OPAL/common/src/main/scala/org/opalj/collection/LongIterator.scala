@@ -5,20 +5,17 @@ import java.util.function.LongPredicate
 import java.util.function.LongConsumer
 
 import scala.collection.AbstractIterator
-import org.opalj.collection.immutable.Chain
 import org.opalj.collection.immutable.LongTrieSet
 import org.opalj.collection.immutable.LongTrieSet1
 import org.opalj.collection.immutable.EmptyLongTrieSet
 
 /**
- * Iterator over a collection of longs; guaranteed to avoid (un)boxing.
- *
- * Compared to a standard Java/Scala iterator, users of LongIterator cannot rely
- * on an exception if the iterator has reached its end.
+ * Iterator over a collection of longs; basically all methods are overridden to avoid
+ * (un)boxing operations.
  *
  * @author Michael Eichberg
  */
-trait LongIterator { self ⇒
+abstract class LongIterator extends AbstractIterator[Long] { self ⇒
 
     /**
      * Returns the next value if `hasNext` has returned `true`; if hasNext has returned `false`
@@ -27,25 +24,20 @@ trait LongIterator { self ⇒
      * is undefined and subject to change without notice!
      */
     def next(): Long
-    def hasNext: Boolean
 
-    def nonEmpty: Boolean = hasNext
-
-    def isEmpty: Boolean = !hasNext
-
-    def exists(p: Long ⇒ Boolean): Boolean = {
-        while (this.hasNext) { if (p(this.next)) return true; }
+    override def exists(p: Long ⇒ Boolean): Boolean = {
+        while (this.hasNext) { if (p(this.next())) return true; }
         false
     }
-    def forall(p: Long ⇒ Boolean): Boolean = {
-        while (this.hasNext) { if (!p(this.next)) return false; }
+    override def forall(p: Long ⇒ Boolean): Boolean = {
+        while (this.hasNext) { if (!p(this.next())) return false; }
         true
     }
     def contains(i: Long): Boolean = {
-        while (this.hasNext) { if (i == this.next) return true; }
+        while (this.hasNext) { if (i == this.next()) return true; }
         false
     }
-    def foldLeft[B](start: B)(f: (B, Long) ⇒ B): B = {
+    override def foldLeft[B](start: B)(f: (B, Long) ⇒ B): B = {
         var c = start
         while (this.hasNext) { c = f(c, next()) }
         c
@@ -58,61 +50,65 @@ trait LongIterator { self ⇒
                 f.accept(c)
                 true
             } else {
-                false;
+                false
             }
-        }) {}
+        }) { /*empty*/ }
     }
 
     def map(f: Long ⇒ Long): LongIterator = {
         new LongIterator {
             def hasNext: Boolean = self.hasNext
-            def next(): Long = f(self.next)
+            def next(): Long = f(self.next())
         }
     }
-
-    def mapToAny[A](m: Long ⇒ A): Iterator[A] = {
-        new AbstractIterator[A] {
-            def hasNext: Boolean = self.hasNext
-            def next: A = m(self.next())
-        }
+    def map(f: Long ⇒ Int): IntIterator = new IntIterator {
+        def hasNext: Boolean = self.hasNext
+        def next(): Int = f(self.next())
+    }
+    override def map[X](m: Long ⇒ X): RefIterator[X] = new RefIterator[X] {
+        def hasNext: Boolean = self.hasNext
+        def next: X = m(self.next())
     }
 
-    def foreach[U](f: Long ⇒ U): Unit = while (hasNext) f(next)
+    override def foreach[U](f: Long ⇒ U): Unit = while (hasNext) f(next())
 
     def flatMap(f: Long ⇒ LongIterator): LongIterator = {
         new LongIterator {
-            private[this] var it: LongIterator = null
-            private[this] def nextIt(): Unit = {
-                do {
-                    it = f(self.next)
-                } while (!it.hasNext && self.hasNext)
-            }
-
-            def hasNext: Boolean = (it != null && it.hasNext) || { nextIt(); it.hasNext }
-            def next(): Long = { if (it == null || !it.hasNext) nextIt(); it.next }
-        }
-    }
-
-    def withFilter(p: Long ⇒ Boolean): LongIterator = {
-        new LongIterator {
-            private[this] var hasNextValue: Boolean = true
-            private[this] var v: Long = 0
-            private[this] def goToNextValue(): Unit = {
-                while (self.hasNext) {
-                    v = self.next()
-                    if (p(v)) return ;
+            private[this] var it: LongIterator = LongIterator.empty
+            private[this] def advanceIterator(): Unit = {
+                while (!it.hasNext) {
+                    if (self.hasNext) {
+                        it = f(self.next())
+                    } else {
+                        it = null
+                        return ;
+                    }
                 }
-                hasNextValue = false
             }
-
-            goToNextValue()
-
-            def hasNext: Boolean = hasNextValue
-            def next(): Long = { val v = this.v; goToNextValue(); v }
+            advanceIterator()
+            def hasNext: Boolean = it != null
+            def next(): Long = { val e = it.next(); advanceIterator(); e }
         }
     }
 
-    def filter(p: Long ⇒ Boolean): LongIterator = withFilter(p)
+    override def withFilter(p: Long ⇒ Boolean): LongIterator = filter(p)
+
+    override def filter(p: Long ⇒ Boolean): LongIterator = new LongIterator {
+        private[this] var hasNextValue: Boolean = true
+        private[this] var v: Long = 0
+        private[this] def goToNextValue(): Unit = {
+            while (self.hasNext) {
+                v = self.next()
+                if (p(v)) return ;
+            }
+            hasNextValue = false
+        }
+
+        goToNextValue()
+
+        def hasNext: Boolean = hasNextValue
+        def next(): Long = { val v = this.v; goToNextValue(); v }
+    }
 
     def toArray: Array[Long] = {
         var asLength = 8
@@ -158,35 +154,6 @@ trait LongIterator { self ⇒
             i += 1
         }
         as
-    }
-
-    def toChain: Chain[Long] = {
-        val b = Chain.newBuilder[Long]
-        while (hasNext) b += next()
-        b.result()
-    }
-
-    def mkString(pre: String, in: String, post: String): String = {
-        val sb = new StringBuilder(pre)
-        var hasNext = this.hasNext
-        while (hasNext) {
-            sb.append(this.next().toString)
-            hasNext = this.hasNext
-            if (hasNext) sb.append(in)
-        }
-        sb.append(post)
-        sb.toString()
-    }
-
-    /**
-     * Converts this iterator to a Scala Iterator (which potentially will (un)box
-     * the returned values.)
-     */
-    def iterator: Iterator[Long] = {
-        new AbstractIterator[Long] {
-            def hasNext: Boolean = self.hasNext
-            def next: Long = self.next()
-        }
     }
 
     /**

@@ -23,7 +23,7 @@ class DefaultPerInstructionPostProcessingTest extends FlatSpec with Matchers {
     import MethodsWithExceptionsTest._
 
     class DefaultRecordingDomain(val id: String) extends CorrelationalDomain
-        with DefaultDomainValueBinding
+        with DefaultSpecialDomainValuesBinding
         with ThrowAllPotentialExceptionsConfiguration
         with PredefinedClassHierarchy
         with DefaultHandlingOfMethodResults

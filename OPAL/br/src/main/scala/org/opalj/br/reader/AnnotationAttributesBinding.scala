@@ -40,6 +40,8 @@ trait AnnotationAttributesBinding
 
     def AnnotationDefault_attribute(
         cp:                   Constant_Pool,
+        ap_name_index:        Constant_Pool_Index,
+        ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         element_value:        ElementValue
     ): AnnotationDefault_attribute = {
@@ -48,6 +50,8 @@ trait AnnotationAttributesBinding
 
     def RuntimeVisibleAnnotations_attribute(
         cp:                   Constant_Pool,
+        ap_name_index:        Constant_Pool_Index,
+        ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         annotations:          Annotations
     ): RuntimeVisibleAnnotations_attribute = {
@@ -56,6 +60,8 @@ trait AnnotationAttributesBinding
 
     def RuntimeInvisibleAnnotations_attribute(
         cp:                   Constant_Pool,
+        ap_name_index:        Constant_Pool_Index,
+        ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         annotations:          Annotations
     ): RuntimeInvisibleAnnotations_attribute = {
@@ -64,6 +70,8 @@ trait AnnotationAttributesBinding
 
     def RuntimeVisibleParameterAnnotations_attribute(
         cp:                     Constant_Pool,
+        ap_name_index:          Constant_Pool_Index,
+        ap_descriptor_index:    Constant_Pool_Index,
         attribute_name_index:   Constant_Pool_Index,
         parameters_annotations: ParametersAnnotations
     ): RuntimeVisibleParameterAnnotations_attribute = {
@@ -72,6 +80,8 @@ trait AnnotationAttributesBinding
 
     def RuntimeInvisibleParameterAnnotations_attribute(
         cp:                     Constant_Pool,
+        ap_name_index:          Constant_Pool_Index,
+        ap_descriptor_index:    Constant_Pool_Index,
         attribute_name_index:   Constant_Pool_Index,
         parameters_annotations: ParametersAnnotations
     ): RuntimeInvisibleParameterAnnotations_attribute = {

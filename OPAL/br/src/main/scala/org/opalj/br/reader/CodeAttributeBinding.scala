@@ -3,8 +3,6 @@ package org.opalj
 package br
 package reader
 
-import scala.reflect.ClassTag
-
 import org.opalj.bi.reader.Code_attributeReader
 
 /**
@@ -19,12 +17,13 @@ trait CodeAttributeBinding
     with AttributeBinding {
 
     type ExceptionTableEntry = br.ExceptionHandler
-    val ExceptionTableEntryManifest: ClassTag[ExceptionTableEntry] = implicitly
 
     type Code_attribute = br.Code
 
     def Code_attribute(
         cp:                   Constant_Pool,
+        ap_name_index:        Constant_Pool_Index,
+        ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         max_stack:            Int,
         max_locals:           Int,

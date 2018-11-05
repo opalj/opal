@@ -3,11 +3,10 @@ package org.opalj
 package bi
 package reader
 
-import scala.reflect.ClassTag
-
 import java.io.DataInputStream
 
-import org.opalj.control.repeat
+import org.opalj.control.fillRefArray
+import org.opalj.collection.immutable.RefArray
 
 /**
  * Implementation of a template method to read in the StackMapTable attribute.
@@ -17,13 +16,13 @@ import org.opalj.control.repeat
 trait StackMapTable_attributeReader extends AttributeReader {
 
     //
-    // ABSTRACT DEFINITIONS
+    // TYPE DEFINITIONS AND FACTORY METHODS
     //
 
     type StackMapTable_attribute >: Null <: Attribute
 
-    type StackMapFrame
-    implicit val StackMapFrameManifest: ClassTag[StackMapFrame]
+    type StackMapFrame <: AnyRef
+    type StackMapFrames = RefArray[StackMapFrame]
 
     def StackMapFrame(cp: Constant_Pool, in: DataInputStream): StackMapFrame
 
@@ -31,10 +30,10 @@ trait StackMapTable_attributeReader extends AttributeReader {
     // IMPLEMENTATION
     //
 
-    type StackMapFrames = IndexedSeq[StackMapFrame]
-
     def StackMapTable_attribute(
         constant_pool:        Constant_Pool,
+        ap_name_index:        Constant_Pool_Index,
+        ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         stack_map_frames:     StackMapFrames
     ): StackMapTable_attribute
@@ -50,16 +49,20 @@ trait StackMapTable_attributeReader extends AttributeReader {
      * </pre>
      */
     private[this] def parserFactory() = (
-        ap: AttributeParent,
         cp: Constant_Pool,
+        ap: AttributeParent,
+        ap_name_index: Constant_Pool_Index,
+        ap_descriptor_index: Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         in: DataInputStream
     ) ⇒ {
         /*val attribute_length =*/ in.readInt()
         val number_of_entries = in.readUnsignedShort()
         if (number_of_entries > 0 || reifyEmptyAttributes) {
-            val frames = repeat(number_of_entries) { StackMapFrame(cp, in) }
-            StackMapTable_attribute(cp, attribute_name_index, frames)
+            val frames = fillRefArray(number_of_entries) { StackMapFrame(cp, in) }
+            StackMapTable_attribute(
+                cp, ap_name_index, ap_descriptor_index, attribute_name_index, frames
+            )
         } else {
             null
         }

@@ -2,6 +2,9 @@
 package org.opalj
 package ba
 
+import org.opalj.br.ObjectType
+import org.opalj.collection.immutable.RefArray
+
 /**
  * Builder for the [[org.opalj.br.ExceptionTable]] attribute.
  *
@@ -14,7 +17,9 @@ case class EXCEPTIONS(exceptionTypes: String*) extends br.MethodAttributeBuilder
         name:        String,
         descriptor:  br.MethodDescriptor
     ): br.ExceptionTable = {
-        br.ExceptionTable(exceptionTypes.map(br.ObjectType.apply))
+        br.ExceptionTable(
+            RefArray.from(exceptionTypes.toArray[AnyRef])._UNSAFE_mapped(ObjectType.apply)
+        )
     }
 
 }

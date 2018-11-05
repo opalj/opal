@@ -5,15 +5,13 @@ package domain
 package l1
 
 import org.junit.runner.RunWith
-
 import org.scalatest.Matchers
 import org.scalatest.FlatSpec
-
 import org.scalatest.junit.JUnitRunner
-
 import br._
 import org.opalj.collection.immutable.Chain
 import org.opalj.collection.immutable.Naught
+import org.opalj.collection.immutable.RefArray
 
 /**
  * Tests the ReflectiveInvoker trait.
@@ -29,7 +27,7 @@ class ReflectiveInvokerTest extends FlatSpec with Matchers {
     class ReflectiveInvokerTestDomain
         extends CorrelationalDomain
         with GlobalLogContextProvider
-        with DefaultDomainValueBinding
+        with DefaultSpecialDomainValuesBinding
         with ThrowAllPotentialExceptionsConfiguration
         with l0.DefaultTypeLevelLongValues
         with l0.DefaultTypeLevelFloatValues
@@ -77,13 +75,13 @@ class ReflectiveInvokerTest extends FlatSpec with Matchers {
 
     behavior of "the RefleciveInvoker trait"
 
-    it should ("be able to call a static method") in {
+    it should "be able to call a static method" in {
         val domain = createDomain()
         import domain._
 
         val stringValue = StringValue(IrrelevantPC, "A")
         val declaringClass = ObjectType.String
-        val descriptor = MethodDescriptor(IndexedSeq(ObjectType.Object), ObjectType.String)
+        val descriptor = MethodDescriptor(FieldTypes(ObjectType.Object), ObjectType.String)
         val operands = Chain(stringValue)
 
         //static String String.valueOf(Object)
@@ -92,13 +90,13 @@ class ReflectiveInvokerTest extends FlatSpec with Matchers {
         javaResult should be("A")
     }
 
-    it should ("be able to call a static method with a primitve parameter") in {
+    it should "be able to call a static method with a primitve parameter" in {
         val domain = createDomain()
         import domain._
 
         val integerValue = IntegerValue(IrrelevantPC, 1)
         val declaringClass = ObjectType.String
-        val descriptor = MethodDescriptor(IndexedSeq(IntegerType), ObjectType.String)
+        val descriptor = MethodDescriptor(FieldTypes(IntegerType), ObjectType.String)
         val operands = Chain(integerValue)
 
         //static String String.valueOf(int)
@@ -107,13 +105,13 @@ class ReflectiveInvokerTest extends FlatSpec with Matchers {
         javaResult should be("1")
     }
 
-    it should ("be able to call a virtual method without parameters") in {
+    it should "be able to call a virtual method without parameters" in {
         val domain = createDomain()
         import domain._
 
         val stringValue = StringValue(IrrelevantPC, "Test")
         val declaringClass = ObjectType.String
-        val descriptor = MethodDescriptor(IndexedSeq(), IntegerType)
+        val descriptor = MethodDescriptor(FieldTypes.Empty, IntegerType)
         val operands = Chain(stringValue)
 
         //int String.length()
@@ -141,7 +139,7 @@ class ReflectiveInvokerTest extends FlatSpec with Matchers {
 
         val receiver = StringValue(IrrelevantPC, "Test")
         val declaringClass = ObjectType.String
-        val descriptor = MethodDescriptor(IndexedSeq(IntegerType, IntegerType), ObjectType.String)
+        val descriptor = MethodDescriptor(FieldTypes(IntegerType, IntegerType), ObjectType.String)
         val operands =
             /*p2=*/ IntegerValue(IrrelevantPC, 3) :&:
                 /*p1=*/ IntegerValue(IrrelevantPC, 1) :&:
@@ -159,7 +157,7 @@ class ReflectiveInvokerTest extends FlatSpec with Matchers {
         import domain._
 
         val declaringClass = ObjectType.StringBuilder
-        val descriptor = MethodDescriptor(IndexedSeq(IntegerType), VoidType)
+        val descriptor = MethodDescriptor(FieldTypes(IntegerType), VoidType)
         val operands =
             IntegerValue(IrrelevantPC, 1) :&:
                 TypedValue(IrrelevantPC, declaringClass) :&:
@@ -176,7 +174,7 @@ class ReflectiveInvokerTest extends FlatSpec with Matchers {
 
         val instanceValue = TypedValue(IrrelevantPC, ObjectType.String)
         val declaringClass = ObjectType.String
-        val descriptor = MethodDescriptor(IndexedSeq(), IntegerType)
+        val descriptor = MethodDescriptor(FieldTypes.Empty, IntegerType)
         val operands = Chain(instanceValue)
 
         //int String.length()
@@ -189,7 +187,7 @@ class ReflectiveInvokerTest extends FlatSpec with Matchers {
         import domain._
 
         val declaringClass = ObjectType.String
-        val descriptor = MethodDescriptor(IndexedSeq(IntegerType), ObjectType.String)
+        val descriptor = MethodDescriptor(FieldTypes(IntegerType), ObjectType.String)
         val operands = Chain(TypedValue(1, ObjectType.Object))
 
         //String String.valueOf(int)
@@ -202,7 +200,7 @@ class ReflectiveInvokerTest extends FlatSpec with Matchers {
         import domain._
 
         val declaringClass = ObjectType("ANonExistingClass")
-        val descriptor = MethodDescriptor(IndexedSeq(IntegerType), ObjectType.String)
+        val descriptor = MethodDescriptor(FieldTypes(IntegerType), ObjectType.String)
         val operands = Chain(StringValue(IrrelevantPC, "A"))
 
         val result = domain.invokeReflective(IrrelevantPC, declaringClass, "someMethod", descriptor, operands)
@@ -215,7 +213,7 @@ class ReflectiveInvokerTest extends FlatSpec with Matchers {
 
         val receiver = StringValue(IrrelevantPC, "A")
         val declaringClass = ObjectType.String
-        val descriptor = MethodDescriptor(IndexedSeq(ObjectType.Object), ObjectType.String)
+        val descriptor = MethodDescriptor(FieldTypes(ObjectType.Object), ObjectType.String)
         val operands = Chain(receiver)
         val result = domain.invokeReflective(IrrelevantPC, declaringClass, "someMethod", descriptor, operands)
         result should be(None)
@@ -227,7 +225,7 @@ class ReflectiveInvokerTest extends FlatSpec with Matchers {
 
         val receiver = NullValue(IrrelevantPC)
         val declaringClass = ObjectType.String
-        val descriptor = MethodDescriptor(IndexedSeq.empty, IntegerType)
+        val descriptor = MethodDescriptor(NoFieldTypes, IntegerType)
         val operands = Chain(receiver)
         val result = domain.invokeReflective(IrrelevantPC, declaringClass, "length", descriptor, operands)
         result should be(Some(ThrowsException(Seq(
@@ -241,7 +239,7 @@ class ReflectiveInvokerTest extends FlatSpec with Matchers {
 
         val receiver = StringValue(IrrelevantPC, "Test")
         val declaringClass = ObjectType.String
-        val descriptor = MethodDescriptor(IndexedSeq(IntegerType, IntegerType), ObjectType.String)
+        val descriptor = MethodDescriptor(RefArray(IntegerType, IntegerType), ObjectType.String)
         val operands =
             /*p2=*/ IntegerValue(IrrelevantPC, 1) :&:
                 /*p1=*/ IntegerValue(IrrelevantPC, 3) :&:

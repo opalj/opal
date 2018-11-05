@@ -114,6 +114,15 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
             its.iterator.toList.sorted == lWithoutDuplicates.sorted
     }
 
+    property("create IntTrieSet from Iterator (i.e., with duplicates)") = forAll { l: List[Int] ⇒
+        val its = EmptyIntTrieSet ++ l.iterator
+        val newits = its.iterator.toSet
+        its.size == newits.size &&
+            its == newits &&
+            its.forall(newits.contains) &&
+            newits.forall(its.contains)
+    }
+
     property("head") = forAll { s: IntArraySet ⇒
         s.nonEmpty ==> {
             val its = s.foldLeft(EmptyIntTrieSet: IntTrieSet)(_ + _)
@@ -206,11 +215,11 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
         its.toChain.toIterator.toList.sorted == s.iterator.toList.sorted
     }
 
-    property("getAndRemove") = forAll { s: IntArraySet ⇒
+    property("headAndTail") = forAll { s: IntArraySet ⇒
         var its = EmptyIntTrieSet ++ s.iterator
         var removed = Chain.empty[Int]
         while (its.nonEmpty) {
-            val IntHeadAndRestOfSet(v, newIts) = its.getAndRemove
+            val IntRefPair(v, newIts) = its.headAndTail
             removed :&:= v
             its = newIts
         }
@@ -250,7 +259,7 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
 
     property("equals") = forAll { s: IntTrieSet ⇒
         val i = { var i = 0; while (s.contains(i)) i += 1; i }
-        val newS = (s + i - i)
+        val newS = s + i - i
         s == newS && s.hashCode == newS.hashCode
     }
 
@@ -299,7 +308,7 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
         }
     }
 
-    property("-") = forAll { (ps: (IntArraySet, IntArraySet)) ⇒
+    property("-") = forAll { ps: (IntArraySet, IntArraySet) ⇒
         val (s, other) = ps
         val its = s.foldLeft(IntTrieSet.empty)(_ + _)
         val newits = other.foldLeft(its)(_ - _)
@@ -310,7 +319,7 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
         }
     }
 
-    property("intersect") = forAll { (ps: (IntArraySet, IntArraySet)) ⇒
+    property("intersect") = forAll { ps: (IntArraySet, IntArraySet) ⇒
         val (ias1, ias2) = ps
         val s1 = ias1.foldLeft(IntTrieSet.empty)(_ + _)
         val s2 = ias2.foldLeft(IntTrieSet.empty)(_ + _)
@@ -326,12 +335,12 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
             newits == EmptyIntTrieSet
     }
 
-    property("filter (all elements)") = forAll { (s: IntArraySet) ⇒
+    property("filter (all elements)") = forAll { s: IntArraySet ⇒
         val its = s.foldLeft(IntTrieSet.empty)(_ + _)
         its.filter(i ⇒ false) eq EmptyIntTrieSet
     }
 
-    property("withFilter") = forAll { (ss: (IntArraySet, IntArraySet)) ⇒
+    property("withFilter") = forAll { ss: (IntArraySet, IntArraySet) ⇒
         val (s1: IntArraySet, s2: IntArraySet) = ss
         val its1 = s1.foldLeft(IntTrieSet.empty)(_ + _)
         val its2 = s2.foldLeft(IntTrieSet.empty)(_ + _)
@@ -341,8 +350,8 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
         !evaluated :| "not eagerly evaluated" &&
             news.forall(i ⇒ newits.exists(newi ⇒ newi == i)) :| "exists check" &&
             (news.forall(newits.contains) && newits.forall(news.contains)) :| "contains check" &&
-            news.forall(i ⇒ newits.intIterator.contains(i)) :| s"IntIterator.contains $news vs. $newits" &&
-            newits.intIterator.forall(news.contains) :| "IntIterator.forall" &&
+            news.forall(i ⇒ newits.iterator.contains(i)) :| s"IntIterator.contains $news vs. $newits" &&
+            newits.iterator.forall(news.contains) :| "IntIterator.forall" &&
             news.forall(i ⇒ newits.iterator.contains(i)) && newits.iterator.forall(news.contains) :| "Iterator[Int]"
     }
 
@@ -700,11 +709,11 @@ class IntTrieSetTest extends FunSpec with Matchers {
                 assert(newIMapped.size == length, s"$newI;length=$length")
                 if (length > 0) {
                     assert(
-                        (IntArraySet.empty ++ newIMapped.intIterator).head == 5,
+                        (IntArraySet.empty ++ newIMapped.iterator).head == 5,
                         s"$newI => $newIMapped;length=$length"
                     )
                     assert(
-                        (IntArraySet.empty ++ newIMapped.intIterator).last == length - 1 + 5,
+                        (IntArraySet.empty ++ newIMapped.iterator).last == length - 1 + 5,
                         s"$newI;length=$length"
                     )
                 }
@@ -740,11 +749,11 @@ class IntTrieSetTest extends FunSpec with Matchers {
                 assert(newIMapped.size == length, s"$newI;length=$length")
                 if (length > 0) {
                     assert(
-                        (IntArraySet.empty ++ newIMapped.intIterator).head == 20,
+                        (IntArraySet.empty ++ newIMapped.iterator).head == 20,
                         s"$newI => $newIMapped;length=$length"
                     )
                     assert(
-                        (IntArraySet.empty ++ newIMapped.intIterator).last == length - 1 + 20,
+                        (IntArraySet.empty ++ newIMapped.iterator).last == length - 1 + 20,
                         s"$newI;length=$length"
                     )
                 }

@@ -23,7 +23,9 @@ trait TypeAnnotationAttributesBinding
     type RuntimeVisibleTypeAnnotations_attribute = RuntimeVisibleTypeAnnotationTable
 
     protected def RuntimeInvisibleTypeAnnotations_attribute(
-        constant_pool:        Constant_Pool,
+        cp:                   Constant_Pool,
+        ap_name_index:        Constant_Pool_Index,
+        ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         annotations:          TypeAnnotations
     ): RuntimeInvisibleTypeAnnotations_attribute = {
@@ -31,7 +33,9 @@ trait TypeAnnotationAttributesBinding
     }
 
     def RuntimeVisibleTypeAnnotations_attribute(
-        constant_pool:        Constant_Pool,
+        cp:                   Constant_Pool,
+        ap_name_index:        Constant_Pool_Index,
+        ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         annotations:          TypeAnnotations
     ): RuntimeVisibleTypeAnnotations_attribute = {

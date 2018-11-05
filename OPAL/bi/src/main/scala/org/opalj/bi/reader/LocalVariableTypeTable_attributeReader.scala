@@ -3,10 +3,10 @@ package org.opalj
 package bi
 package reader
 
-import reflect.ClassTag
-
 import java.io.DataInputStream
-import org.opalj.control.repeat
+
+import org.opalj.control.fillRefArray
+import org.opalj.collection.immutable.RefArray
 
 /**
  * Generic parser for the local variable type table attribute.
@@ -14,15 +14,18 @@ import org.opalj.control.repeat
 trait LocalVariableTypeTable_attributeReader extends AttributeReader {
 
     //
-    // ABSTRACT DEFINITIONS
+    // TYPE DEFINITIONS AND FACTORY METHODS
     //
+
     type LocalVariableTypeTable_attribute >: Null <: Attribute
 
-    type LocalVariableTypeTableEntry
-    implicit val LocalVariableTypeTableEntryManifest: ClassTag[LocalVariableTypeTableEntry]
+    type LocalVariableTypeTableEntry <: AnyRef
+    type LocalVariableTypes = RefArray[LocalVariableTypeTableEntry]
 
     def LocalVariableTypeTable_attribute(
-        constant_pool:             Constant_Pool,
+        cp:                        Constant_Pool,
+        ap_name_index:             Constant_Pool_Index,
+        ap_descriptor_index:       Constant_Pool_Index,
         attribute_name_index:      Constant_Pool_Index,
         local_variable_type_table: LocalVariableTypes
     ): LocalVariableTypeTable_attribute
@@ -40,8 +43,6 @@ trait LocalVariableTypeTable_attributeReader extends AttributeReader {
     // IMPLEMENTATION
     //
 
-    type LocalVariableTypes = IndexedSeq[LocalVariableTypeTableEntry]
-
     /**
      * <pre>
      * LocalVariableTypeTable_attribute {
@@ -58,8 +59,10 @@ trait LocalVariableTypeTable_attributeReader extends AttributeReader {
      * </pre>
      */
     private[this] def parserFactory() = (
-        ap: AttributeParent,
         cp: Constant_Pool,
+        ap: AttributeParent,
+        ap_name_index: Constant_Pool_Index,
+        ap_descriptor_index: Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         in: DataInputStream
     ) ⇒ {
@@ -69,8 +72,10 @@ trait LocalVariableTypeTable_attributeReader extends AttributeReader {
         if (entriesCount > 0 || reifyEmptyAttributes) {
             LocalVariableTypeTable_attribute(
                 cp,
+                ap_name_index,
+                ap_descriptor_index,
                 attribute_name_index,
-                repeat(entriesCount) {
+                fillRefArray(entriesCount) {
                     LocalVariableTypeTableEntry(
                         cp,
                         in.readUnsignedShort,

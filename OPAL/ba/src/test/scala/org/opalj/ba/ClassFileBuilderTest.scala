@@ -3,15 +3,12 @@ package org.opalj
 package ba
 
 import scala.language.postfixOps
-
 import java.io.ByteArrayInputStream
 
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.junit.runner.RunWith
-
 import org.opalj.collection.immutable.UShortPair
-
 import org.opalj.util.InMemoryClassLoader
 import org.opalj.bi.ACC_FINAL
 import org.opalj.bi.ACC_SYNTHETIC
@@ -20,6 +17,7 @@ import org.opalj.bi.ACC_PUBLIC
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.reader.Java8Framework.{ClassFile ⇒ ClassFileReader}
 import org.opalj.bc.Assembler
+import org.opalj.collection.immutable.RefArray
 
 /**
  * Tests general properties of a classes build with the BytecodeAssembler DSL by loading and
@@ -50,8 +48,8 @@ class ClassFileBuilderTest extends FlatSpec {
             accessModifiers = PUBLIC.SUPER.FINAL.SYNTHETIC,
             thisType = "ConcreteClass",
             superclassType = Some("org/opalj/bc/AbstractClass"),
-            interfaceTypes = Seq("MarkerInterface1", "MarkerInterface2"),
-            attributes = Seq(br.SourceFile("ClassFileBuilderTest.scala"), br.Synthetic)
+            interfaceTypes = RefArray("MarkerInterface1", "MarkerInterface2"),
+            attributes = RefArray(br.SourceFile("ClassFileBuilderTest.scala"), br.Synthetic)
         ).toDA()
 
     val abstractAsm = Assembler(abstractClass)
@@ -93,8 +91,8 @@ class ClassFileBuilderTest extends FlatSpec {
     }
 
     it should "implement MarkerInterface1 and MarkerInterface2" in {
-        assert(concreteBRClassFile.interfaceTypes.map(i ⇒ i.fqn).contains("MarkerInterface1"))
-        assert(concreteBRClassFile.interfaceTypes.map(i ⇒ i.fqn).contains("MarkerInterface2"))
+        assert(concreteBRClassFile.interfaceTypes.map[String](i ⇒ i.fqn).contains("MarkerInterface1"))
+        assert(concreteBRClassFile.interfaceTypes.map[String](i ⇒ i.fqn).contains("MarkerInterface2"))
     }
 
     it should "be public final synthetic (super)" in {

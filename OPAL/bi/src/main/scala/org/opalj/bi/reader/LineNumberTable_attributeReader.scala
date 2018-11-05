@@ -3,24 +3,29 @@ package org.opalj
 package bi
 package reader
 
-import scala.reflect.ClassTag
-
 import java.io.DataInputStream
 
-import org.opalj.control.repeat
+import org.opalj.collection.immutable.RefArray
+import org.opalj.control.fillRefArray
 
 /**
  * Generic parser for the ''LineNumberTable'' attribute.
  */
 trait LineNumberTable_attributeReader extends AttributeReader {
 
+    //
+    // TYPE DEFINITIONS AND FACTORY METHODS
+    //
+
     type LineNumberTable_attribute >: Null <: Attribute
 
-    type LineNumberTableEntry
-    implicit val LineNumberTableEntryManifest: ClassTag[LineNumberTableEntry]
+    type LineNumberTableEntry <: AnyRef
+    type LineNumbers = RefArray[LineNumberTableEntry]
 
     def LineNumberTable_attribute(
-        constant_pool:        Constant_Pool,
+        cp:                   Constant_Pool,
+        ap_name_index:        Constant_Pool_Index,
+        ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         line_number_table:    LineNumbers
     ): LineNumberTable_attribute
@@ -30,8 +35,6 @@ trait LineNumberTable_attributeReader extends AttributeReader {
     //
     // IMPLEMENTATION
     //
-
-    type LineNumbers = IndexedSeq[LineNumberTableEntry]
 
     /**
      * <pre>
@@ -46,8 +49,10 @@ trait LineNumberTable_attributeReader extends AttributeReader {
      * </pre>
      */
     private[this] def parserFactory() = (
-        ap: AttributeParent,
         cp: Constant_Pool,
+        ap: AttributeParent,
+        ap_name_index: Constant_Pool_Index,
+        ap_descriptor_index: Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         in: DataInputStream
     ) ⇒ {
@@ -56,8 +61,10 @@ trait LineNumberTable_attributeReader extends AttributeReader {
         if (line_number_table_length > 0 || reifyEmptyAttributes) {
             LineNumberTable_attribute(
                 cp,
+                ap_name_index,
+                ap_descriptor_index,
                 attribute_name_index,
-                repeat(line_number_table_length) {
+                fillRefArray(line_number_table_length) {
                     LineNumberTableEntry(in.readUnsignedShort, in.readUnsignedShort)
                 }
             )

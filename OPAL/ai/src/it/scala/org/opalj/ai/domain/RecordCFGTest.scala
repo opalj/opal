@@ -122,7 +122,7 @@ class RecordCFGTest extends FunSpec with Matchers {
                     }
                 }
 
-                evaluatedInstructions.intIterator.foreach { pc ⇒
+                evaluatedInstructions.iterator.foreach { pc ⇒
 
                     domain.foreachSuccessorOf(pc) { succPC ⇒
                         domain.predecessorsOf(succPC).contains(pc) should be(true)
@@ -149,7 +149,7 @@ class RecordCFGTest extends FunSpec with Matchers {
                         dTime('ControlDependencies) { domain.pdtBasedControlDependencies }
                     }
 
-                evaluatedInstructions.intIterator.foreach { pc ⇒
+                evaluatedInstructions.iterator.foreach { pc ⇒
                     if (pc != dt.startNode &&
                         (dt.dom(pc) != dt.startNode) &&
                         !evaluatedInstructions.contains(dt.dom(pc))) {
@@ -217,25 +217,25 @@ class RecordCFGTest extends FunSpec with Matchers {
                 val project = projectFactory()
                 time {
                     analyzeProject(projectName, project)
-                } { t ⇒ info("the analysis took (real time): "+t.toSeconds) }
+                } { t ⇒ info("the analysis took (real time):                            "+t.toSeconds) }
 
                 import DominatorsPerformanceEvaluation.getTime
-                info("performing AI took (CPU time) "+getTime('AI).toSeconds)
-                info("computing dominator information took (CPU time)"+getTime('Dominators).toSeconds)
+                info("performing AI took (CPU time):                            "+getTime('AI).toSeconds)
+                info("computing dominator information took (CPU time):          "+getTime('Dominators).toSeconds)
 
                 val postDominatorsTime = getTime('PostDominators).toSeconds
-                info("computing post-dominator information took (CPU time) "+postDominatorsTime)
+                info("computing post-dominator information took (CPU time):     "+postDominatorsTime)
 
                 val cdgTime = getTime('ControlDependencies).toSeconds
-                info("computing control dependency information took (CPU time) "+cdgTime)
+                info("computing control dependency information took (CPU time): "+cdgTime)
                 val cdgQueryTime = getTime('QueryingControlDependencies).toSeconds
-                info("querying control dependency information took (CPU time) "+cdgQueryTime)
+                info("querying control dependency information took (CPU time):  "+cdgQueryTime)
 
                 val bbAICFGTime = getTime('BasicBlocksBasedAICFG).toSeconds
-                info("constructing the AI based CFGs took (CPU time) "+bbAICFGTime)
+                info("constructing the AI based CFGs took (CPU time):           "+bbAICFGTime)
 
                 val bbBRCFGTime = getTime('BasicBlocksBasedBRCFG).toSeconds
-                info("constructing the BR based CFGs took (CPU time) "+bbBRCFGTime)
+                info("constructing the BR based CFGs took (CPU time):           "+bbBRCFGTime)
             }
         }
 

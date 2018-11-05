@@ -2,6 +2,8 @@
 package org.opalj
 package da
 
+import org.opalj.bytecode.PC
+
 import scala.xml.Node
 import scala.xml.Text
 
@@ -11,9 +13,9 @@ import scala.xml.Text
  * @author Noorulla Sharief
  */
 case class ExceptionTableEntry(
-        start_pc:   Int,
-        end_pc:     Int,
-        handler_pc: Int,
+        start_pc:   PC,
+        end_pc:     PC,
+        handler_pc: PC,
         catch_type: Int
 ) {
 

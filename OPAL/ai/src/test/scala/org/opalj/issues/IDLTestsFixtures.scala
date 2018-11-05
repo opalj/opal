@@ -14,6 +14,13 @@ import org.opalj.br.ArrayType
 import org.opalj.br.ByteType
 import org.opalj.br.ClassFile
 import org.opalj.br.Code
+import org.opalj.br.Attributes
+import org.opalj.br.Methods
+import org.opalj.br.NoAttributes
+import org.opalj.br.NoInterfaces
+import org.opalj.br.NoFieldTemplates
+import org.opalj.br.FieldTypes
+import org.opalj.br.NoFieldTypes
 import org.opalj.br.CompactLineNumberTable
 import org.opalj.br.IntegerType
 import org.opalj.br.Method
@@ -39,7 +46,7 @@ object IDLTestsFixtures {
 
     val simplePackageLocation = new PackageLocation(Option("foo"), null, "bar/baz")
 
-    val attributes = IndexedSeq(CompactLineNumberTable(Array[Byte](0, 0, 10, 0, 0, 0, 0, 10)))
+    val attributes = Attributes(CompactLineNumberTable(Array[Byte](0, 0, 10, 0, 0, 0, 0, 10)))
 
     val code = Code(0, 0, Array(new IFEQ(0)))
 
@@ -66,11 +73,11 @@ object IDLTestsFixtures {
         "firstLine" → JsNull
     )
     private[this] val methodTemplateReturnVoidNoParameters = {
-        Method(ACC_PUBLIC.mask, "test0p", IndexedSeq.empty, VoidType, Seq(code))
+        Method(ACC_PUBLIC.mask, "test0p", NoFieldTypes, VoidType, Attributes(code))
     }
 
     private[this] val methodTemplateReturnIntOneParameter = {
-        Method(ACC_PUBLIC.mask | ACC_STATIC.mask, "test1p", IndexedSeq(ObjectType("foo/Bar")), IntegerType)
+        Method(ACC_PUBLIC.mask | ACC_STATIC.mask, "test1p", FieldTypes(ObjectType("foo/Bar")), IntegerType)
     }
 
     val methodReturnIntTwoParametersIDL: JsObject = Json.obj(
@@ -87,9 +94,9 @@ object IDLTestsFixtures {
     private[issues] val methodTemplateReturnIntTwoParameters = Method(
         ACC_PUBLIC.mask | ACC_STATIC.mask,
         "test2p",
-        IndexedSeq(ArrayType(2, ByteType), ObjectType("foo/Bar")),
+        FieldTypes(ArrayType(2, ByteType), ObjectType("foo/Bar")),
         IntegerType,
-        Seq(codeWithLineNumbers)
+        Attributes(codeWithLineNumbers)
     )
 
     // an arbitrary (actually invalid) class file
@@ -99,14 +106,14 @@ object IDLTestsFixtures {
         ACC_PUBLIC.mask,
         ObjectType("foo/Bar"),
         Option.empty,
-        Nil,
-        IndexedSeq(),
-        IndexedSeq(
+        NoInterfaces,
+        NoFieldTemplates,
+        Methods(
             methodTemplateReturnVoidNoParameters,
             methodTemplateReturnIntOneParameter,
             methodTemplateReturnIntTwoParameters
         ),
-        Seq()
+        NoAttributes
     )
 
     val methodReturnVoidNoParameters = classFile.methods(0)

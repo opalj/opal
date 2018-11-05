@@ -23,7 +23,7 @@ case class Code(instructions: Array[Byte]) {
 
     def toXHTML(
         methodIndex:     Int,
-        exceptionTable:  IndexedSeq[ExceptionTableEntry],
+        exceptionTable:  ExceptionTable,
         lineNumberTable: Option[Seq[LineNumberTableEntry]]
     )(
         implicit
@@ -54,7 +54,10 @@ case class Code(instructions: Array[Byte]) {
                     pc ← (0 until instructions.length)
                     if instructions(pc) != null
                 } yield {
-                    val exceptionInfo = exceptions.foldRight(List[Node]())((a, b) ⇒ List(a(pc)) ++ b)
+                    val exceptionInfo =
+                        exceptions.foldRight(Seq.empty[Node]) { (a, b) ⇒
+                            Seq(a(pc)) ++ b
+                        }
                     createTableRowForInstruction(
                         methodIndex, instructions(pc), exceptionInfo, pc, lineNumberTable
                     )
@@ -66,7 +69,7 @@ case class Code(instructions: Array[Byte]) {
     private[this] def createTableRowForInstruction(
         methodIndex:     Int,
         instruction:     Node,
-        exceptions:      List[Node],
+        exceptions:      Seq[Node],
         pc:              Int,
         lineNumberTable: Option[Seq[LineNumberTableEntry]]
     ): Node = {
@@ -488,10 +491,25 @@ case class Code(instructions: Array[Byte]) {
                         <span class="instruction new">new </span>
                         { objectType.asSpan("") }
                     </span>
-                case 188 ⇒ <span><span class="instruction newarray">newarray </span>{ in.readByte } </span>
-                case 0   ⇒ <span class="instruction nop">nop</span>
-                case 87  ⇒ <span class="instruction pop">pop</span>
-                case 88  ⇒ <span class="instruction pop2">pop2</span>
+                case 188 ⇒
+                    <span>
+                        <span class="instruction newarray">newarray </span>
+                        {
+                            in.readByte match {
+                                case 4⇒ "T_BOOLEAN (4)"
+                                case 5⇒ "T_CHAR (5)"
+                                case 6⇒ "T_FLOAT (6)"
+                                case 7⇒ "T_DOUBLE (7)"
+                                case 8⇒ "T_BYTE (8)"
+                                case 9⇒ "T_SHORT (9)"
+                                case 10⇒ "T_INT (10)"
+                                case 11⇒ "T_LONG (11)"
+                            }
+                        }
+                    </span>
+                case 0  ⇒ <span class="instruction nop">nop</span>
+                case 87 ⇒ <span class="instruction pop">pop</span>
+                case 88 ⇒ <span class="instruction pop2">pop2</span>
                 case 181 ⇒
                     val c = in.readUnsignedShort()
                     val signature = cp(c).asInstructionParameter
@@ -544,15 +562,15 @@ case class Code(instructions: Array[Byte]) {
 
     def ExceptionsToXHTMLTableElements(
         instructions:   Array[Node],
-        exceptionTable: IndexedSeq[ExceptionTableEntry]
+        exceptionTable: ExceptionTable
     )(
         implicit
         cp: Constant_Pool
     ): Array[Array[Node]] = {
         val exceptions: Array[Array[Node]] = new Array(exceptionTable.size)
-        for { (exceptionHandler, index) ← exceptionTable.zipWithIndex } yield {
+        for { (exceptionHandler, index) ← exceptionTable.iterator.zipWithIndex } {
             val exceptionName =
-                (index + 1).toString()+": "+(
+                (index + 1).toString+": "+(
                     if (exceptionHandler.catch_type != 0)
                         cp(exceptionHandler.catch_type).toString
                     else
@@ -560,11 +578,11 @@ case class Code(instructions: Array[Byte]) {
                 )
             var exceptionPCLength = 0
             var exceptionPCStart = -1
-            exceptions(index) = new Array[Node](instructions.size)
+            exceptions(index) = new Array[Node](instructions.length)
 
             for {
-                i ← (exceptionHandler.start_pc to exceptionHandler.end_pc - 1)
-                if (instructions(i) ne null)
+                i ← exceptionHandler.start_pc until exceptionHandler.end_pc
+                if instructions(i) ne null
             } {
                 if (exceptionPCLength == 0)
                     exceptionPCStart = i
@@ -572,14 +590,14 @@ case class Code(instructions: Array[Byte]) {
             }
 
             for {
-                i ← (0 until exceptionHandler.start_pc)
+                i ← 0 until exceptionHandler.start_pc
                 if i != exceptionHandler.handler_pc
             } {
                 exceptions(index)(i) = <td class="exception_empty"></td>
             }
 
             for {
-                i ← (exceptionHandler.end_pc until instructions.size)
+                i ← exceptionHandler.end_pc until instructions.length
                 if i != exceptionHandler.handler_pc
             } {
                 exceptions(index)(i) = <td class="exception_empty"></td>

@@ -3,25 +3,25 @@ package org.opalj
 package bi
 package reader
 
-import scala.reflect.ClassTag
-
 import java.io.DataInputStream
-import org.opalj.control.repeat
+
+import org.opalj.control.fillRefArray
+import org.opalj.collection.immutable.RefArray
 
 /**
  * Generic parser for an annotation's element-value pairs.
  */
-trait ElementValuePairsReader extends AnnotationAbstractions {
+trait ElementValuePairsReader extends AnnotationsAbstractions {
 
     //
-    // ABSTRACT DEFINITIONS
+    // TYPE DEFINITIONS AND FACTORY METHODS
     //
 
-    type ElementValue
-    implicit val ElementValueManifest: ClassTag[ElementValue]
+    type ElementValue <: AnyRef
+    type ElementValues = RefArray[ElementValue]
 
-    type ElementValuePair
-    implicit val ElementValuePairManifest: ClassTag[ElementValuePair]
+    type ElementValuePair <: AnyRef
+    type ElementValuePairs = RefArray[ElementValuePair]
 
     def ElementValuePair(
         constant_pool:      Constant_Pool,
@@ -99,11 +99,8 @@ trait ElementValuePairsReader extends AnnotationAbstractions {
     // IMPLEMENTATION
     //
 
-    type ElementValues = IndexedSeq[ElementValue]
-    type ElementValuePairs = IndexedSeq[ElementValuePair]
-
     def ElementValuePairs(cp: Constant_Pool, in: DataInputStream): ElementValuePairs = {
-        repeat(in.readUnsignedShort) {
+        fillRefArray(in.readUnsignedShort) {
             ElementValuePair(cp, in)
         }
     }
@@ -154,7 +151,7 @@ trait ElementValuePairsReader extends AnnotationAbstractions {
             case 'e' ⇒ EnumValue(cp, in.readUnsignedShort, in.readUnsignedShort)
             case 'c' ⇒ ClassValue(cp, in.readUnsignedShort)
             case '@' ⇒ AnnotationValue(cp, Annotation(cp, in))
-            case '[' ⇒ ArrayValue(cp, repeat(in.readUnsignedShort) { ElementValue(cp, in) })
+            case '[' ⇒ ArrayValue(cp, fillRefArray(in.readUnsignedShort)(ElementValue(cp, in)))
         }
     }
 }

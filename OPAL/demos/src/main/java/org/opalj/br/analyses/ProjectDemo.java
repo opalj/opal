@@ -28,7 +28,7 @@ public class ProjectDemo {
         // Map<ObjectType, ClassFile> project = projectLike.toJavaMap();
 
         // Create an abstract interpreter (the same instance can be reused)
-        BaseAI ai = new BaseAI(true);
+        BaseAI ai = new BaseAI(true, false);
 
         // Alternatively choose between the available domains using the registry
         Iterable<String> domainDescriptions = JavaConversions

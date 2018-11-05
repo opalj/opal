@@ -77,14 +77,17 @@ trait AIProject[Source, D <: Domain with OptionalReport] {
             ai(m, theDomain)
             theDomain.report
         }
-
+        val entryPoints = this.entryPoints(project)
+        if (entryPoints.isEmpty) {
+            throw new IllegalArgumentException("no entry points found")
+        }
         val reports =
             if (analyzeInParallel)
-                (entryPoints(project).par map { analyze }).seq
+                entryPoints.par.map(analyze).seq
             else
-                entryPoints(project) map { analyze }
+                entryPoints.map(analyze)
 
-        val theReports = reports.filter(_.isDefined).map(_.get)
+        val theReports = reports.collect { case Some(report) ⇒ report }
         BasicReport("Number of reports: "+theReports.size+"\n"+theReports.mkString("\n"))
     }
 }

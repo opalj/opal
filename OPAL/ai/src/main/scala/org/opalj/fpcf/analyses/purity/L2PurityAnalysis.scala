@@ -4,22 +4,16 @@ package fpcf
 package analyses
 package purity
 
+import scala.annotation.switch
+
 import net.ceedubs.ficus.Ficus._
-import org.opalj.ai.isImmediateVMException
-import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
-import org.opalj.br.ComputationalTypeReference
-import org.opalj.br.DeclaredMethod
-import org.opalj.br.DefinedMethod
-import org.opalj.br.Field
-import org.opalj.br.Method
-import org.opalj.br.ObjectType
-import org.opalj.br.MethodDescriptor
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.DeclaredMethodsKey
+
 import org.opalj.collection.immutable.EmptyIntTrieSet
 import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.fpcf.properties.ClassImmutability
 import org.opalj.fpcf.properties.ClassifiedImpure
+import org.opalj.fpcf.properties.ClassImmutability
+import org.opalj.fpcf.properties.CompileTimePure
+import org.opalj.fpcf.properties.ContextuallyPure
 import org.opalj.fpcf.properties.ExtensibleGetter
 import org.opalj.fpcf.properties.ExtensibleLocalField
 import org.opalj.fpcf.properties.ExtensibleLocalFieldWithGetter
@@ -27,30 +21,39 @@ import org.opalj.fpcf.properties.FieldLocality
 import org.opalj.fpcf.properties.FieldMutability
 import org.opalj.fpcf.properties.FreshReturnValue
 import org.opalj.fpcf.properties.Getter
-import org.opalj.fpcf.properties.ContextuallyPure
 import org.opalj.fpcf.properties.ImpureByAnalysis
-import org.opalj.fpcf.properties.SideEffectFree
 import org.opalj.fpcf.properties.LocalField
 import org.opalj.fpcf.properties.LocalFieldWithGetter
 import org.opalj.fpcf.properties.NoFreshReturnValue
 import org.opalj.fpcf.properties.NoLocalField
 import org.opalj.fpcf.properties.PrimitiveReturnValue
+import org.opalj.fpcf.properties.Pure
 import org.opalj.fpcf.properties.Purity
 import org.opalj.fpcf.properties.ReturnValueFreshness
+import org.opalj.fpcf.properties.SideEffectFree
+import org.opalj.fpcf.properties.StaticDataUsage
 import org.opalj.fpcf.properties.TypeImmutability
+import org.opalj.fpcf.properties.UsesConstantDataOnly
+import org.opalj.fpcf.properties.UsesNoStaticData
+import org.opalj.fpcf.properties.UsesVaryingData
 import org.opalj.fpcf.properties.VExtensibleGetter
 import org.opalj.fpcf.properties.VFreshReturnValue
 import org.opalj.fpcf.properties.VGetter
-import org.opalj.fpcf.properties.VNoFreshReturnValue
-import org.opalj.fpcf.properties.VPrimitiveReturnValue
 import org.opalj.fpcf.properties.VirtualMethodPurity
 import org.opalj.fpcf.properties.VirtualMethodReturnValueFreshness
-import org.opalj.fpcf.properties.Pure
-import org.opalj.fpcf.properties.CompileTimePure
-import org.opalj.fpcf.properties.StaticDataUsage
-import org.opalj.fpcf.properties.UsesNoStaticData
-import org.opalj.fpcf.properties.UsesConstantDataOnly
-import org.opalj.fpcf.properties.UsesVaryingData
+import org.opalj.fpcf.properties.VNoFreshReturnValue
+import org.opalj.fpcf.properties.VPrimitiveReturnValue
+import org.opalj.br.cfg.CFG
+import org.opalj.br.ComputationalTypeReference
+import org.opalj.br.DeclaredMethod
+import org.opalj.br.DefinedMethod
+import org.opalj.br.Field
+import org.opalj.br.Method
+import org.opalj.br.MethodDescriptor
+import org.opalj.br.ObjectType
+import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.SomeProject
+import org.opalj.ai.isImmediateVMException
 import org.opalj.tac.ArrayStore
 import org.opalj.tac.Assignment
 import org.opalj.tac.Expr
@@ -62,15 +65,14 @@ import org.opalj.tac.NewArray
 import org.opalj.tac.NonVirtualFunctionCall
 import org.opalj.tac.OriginOfThis
 import org.opalj.tac.PutField
-import org.opalj.tac.StaticFunctionCall
-import org.opalj.tac.Stmt
-import org.opalj.tac.TACode
-import org.opalj.tac.VirtualFunctionCall
-import org.opalj.tac.StaticMethodCall
 import org.opalj.tac.SelfReferenceParameter
+import org.opalj.tac.StaticFunctionCall
+import org.opalj.tac.StaticMethodCall
+import org.opalj.tac.Stmt
+import org.opalj.tac.TACStmts
 import org.opalj.tac.UVar
-
-import scala.annotation.switch
+import org.opalj.tac.VirtualFunctionCall
+import org.opalj.tac.fpcf.properties.TACAI
 
 /**
  * An inter-procedural analysis to determine a method's purity.
@@ -109,7 +111,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
             val method:        Method,
             val definedMethod: DeclaredMethod,
             val declClass:     ObjectType,
-            val code:          Array[Stmt[V]]
+            var code:          Array[Stmt[V]] = Array.empty
     ) extends AnalysisState {
         var fieldLocalityDependees: Map[Field, (EOptionP[Field, FieldLocality], Set[(Expr[V], Purity)])] = Map.empty
 
@@ -126,6 +128,8 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
 
         var staticDataUsage: Option[EOptionP[DeclaredMethod, StaticDataUsage]] = None
 
+        var tacai: Option[EOptionP[Method, TACAI]] = None
+
         def dependees: Traversable[EOptionP[Entity, Property]] =
             (fieldLocalityDependees.valuesIterator.map(_._1) ++
                 fieldMutabilityDependees.valuesIterator.map(_._1) ++
@@ -135,7 +139,8 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                 virtualPurityDependees.valuesIterator.map(_._1) ++
                 rvfDependees.valuesIterator.map(_._1) ++
                 virtualRVFDependees.valuesIterator.map(_._1) ++
-                staticDataUsage).toTraversable
+                staticDataUsage ++
+                tacai).toTraversable
 
         def addFieldLocalityDependee(
             f:    Field,
@@ -252,6 +257,13 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
 
         def updateStaticDataUsage(eps: Option[EOptionP[DeclaredMethod, StaticDataUsage]]): Unit = {
             staticDataUsage = eps
+        }
+
+        def updateTacai(eps: EOptionP[Method, TACAI]): Unit = {
+            if (eps.isFinal) tacai = None
+            else tacai = Some(eps)
+            if (eps.hasProperty)
+                code = eps.ub.tac.get.stmts
         }
     }
 
@@ -392,7 +404,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                     true
                 } else false
             case NonVirtualFunctionCall.ASTID ⇒
-                val callee = rhs.asNonVirtualFunctionCall.resolveCallTarget(p)
+                val callee = rhs.asNonVirtualFunctionCall.resolveCallTarget(state.declClass)(p)
                 if (callee.hasValue) {
                     val rvf = propertyStore(declaredMethods(callee.value), ReturnValueFreshness.key)
                     val receiver = rhs.asNonVirtualFunctionCall.receiver
@@ -622,7 +634,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
      */
     def checkStaticDataUsage(ep: EOptionP[DeclaredMethod, StaticDataUsage])(implicit state: State): Unit = {
         ep match {
-            case FinalEP(_, UsesNoStaticData | UsesConstantDataOnly) ⇒
+            case EPS(_, UsesNoStaticData | UsesConstantDataOnly, _) ⇒
                 state.updateStaticDataUsage(None)
             case EPS(_, _, UsesVaryingData) ⇒
                 state.updateStaticDataUsage(None)
@@ -662,6 +674,13 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                 ep.asInstanceOf[EOptionP[ObjectType, TypeImmutability]],
                 expr
             )
+    }
+
+    /**
+     * Adds the dependee necessary if the TACAI is not yet final.
+     */
+    override def handleTACAI(ep: EOptionP[Method, TACAI])(implicit state: State): Unit = {
+        state.updateTacai(ep)
     }
 
     /**
@@ -721,6 +740,8 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
      */
     def adjustLowerBound()(implicit state: State): Unit = {
         var newLowerBound = state.ubPurity
+
+        if (state.tacai.isDefined) return ; // Nothing to be done, lower bound is still LBImpure
 
         for ((eop, _) ← state.purityDependees.valuesIterator) {
             eop match {
@@ -844,6 +865,9 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                 }
             case StaticDataUsage.key ⇒
                 checkStaticDataUsage(eps.asInstanceOf[EOptionP[DeclaredMethod, StaticDataUsage]])
+            case TACAI.key ⇒
+                state.updateTacai(eps.asInstanceOf[EOptionP[Method, TACAI]])
+                return determineMethodPurity(eps.ub.asInstanceOf[TACAI].tac.get.cfg);
         }
 
         if (state.ubPurity ne oldPurity)
@@ -865,58 +889,46 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
     }
 
     /**
-     * Determines the purity of the given method.
-     *
-     * @param definedMethod A defined method with a body.
+     * Determines the purity of a method once TACAI is available.
      */
-    def determinePurity(definedMethod: DefinedMethod): PropertyComputationResult = {
-        val method = definedMethod.definedMethod
-        val declClass = method.classFile.thisType
-
-        // If this is not the method's declaration, but a non-overwritten method in a subtype,
-        // don't re-analyze the code
-        if (declClass ne definedMethod.declaringClassType)
-            return baseMethodPurity(definedMethod.asDefinedMethod);
-
-        val TACode(_, code, _, cfg, _, _) = tacai(method)
-
-        implicit val state: State =
-            new State(CompileTimePure, CompileTimePure, method, definedMethod, declClass, code)
-
+    def determineMethodPurity(
+        cfg: CFG[Stmt[V], TACStmts[V]]
+    )(implicit state: State): PropertyComputationResult = {
         // Special case: The Throwable constructor is `LBSideEffectFree`, but subtype constructors
         // may not be because of overridable fillInStackTrace method
-        if (method.isConstructor && declClass.isSubtypeOf(ObjectType.Throwable))
-            project.instanceMethods(declClass).foreach { mdc ⇒
+        if (state.method.isConstructor && state.declClass.isSubtypeOf(ObjectType.Throwable))
+            project.instanceMethods(state.declClass).foreach { mdc ⇒
                 if (mdc.name == "fillInStackTrace" &&
                     mdc.method.classFile.thisType != ObjectType.Throwable) {
-                    val d = new DefaultDomainWithCFGAndDefUse(p, method)
                     val selfReference =
-                        UVar(d)(d.InitializedObjectValue(-1, declClass), SelfReferenceParameter)
+                        // "The value" is actually not used at all - hence, we can use "null"
+                        // overhere.
+                        UVar(null, SelfReferenceParameter)
                     val impureFillInStackTrace = !checkPurityOfCall(
-                        declClass,
+                        state.declClass,
                         "fillInStackTrace",
                         MethodDescriptor("()Ljava/lang/Throwable;"),
                         List(selfReference),
                         Success(mdc.method)
                     )
                     if (impureFillInStackTrace) { // Early return for impure fillInStackTrace
-                        return Result(definedMethod, state.ubPurity);
+                        return Result(state.definedMethod, state.ubPurity);
                     }
                 }
             }
 
         // Synchronized methods have a visible side effect on the receiver
         // Static synchronized methods lock the class which is potentially globally visible
-        if (method.isSynchronized)
-            if (method.isStatic) return Result(definedMethod, ImpureByAnalysis);
+        if (state.method.isSynchronized)
+            if (state.method.isStatic) return Result(state.definedMethod, ImpureByAnalysis);
             else atMost(ContextuallyPure(IntTrieSet(0)))
 
-        val stmtCount = code.length
+        val stmtCount = state.code.length
         var s = 0
         while (s < stmtCount) {
-            if (!checkPurityOfStmt(code(s))) { // Early return for impure statements
+            if (!checkPurityOfStmt(state.code(s))) { // Early return for impure statements
                 assert(state.ubPurity.isInstanceOf[ClassifiedImpure])
-                return Result(definedMethod, state.ubPurity);
+                return Result(state.definedMethod, state.ubPurity);
             }
             s += 1
         }
@@ -936,16 +948,47 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         }
 
         if (state.ubPurity eq CompileTimePure) // Check static data usage only if necessary
-            checkStaticDataUsage(propertyStore(definedMethod, StaticDataUsage.key))
+            checkStaticDataUsage(propertyStore(state.definedMethod, StaticDataUsage.key))
         else
             cleanupDependees() // Remove dependees we already know we won't need
 
         val dependees = state.dependees
         if (dependees.isEmpty || (state.lbPurity == state.ubPurity)) {
-            Result(definedMethod, state.ubPurity)
+            Result(state.definedMethod, state.ubPurity)
         } else {
-            IntermediateResult(definedMethod, state.lbPurity, state.ubPurity, dependees, c)
+            IntermediateResult(state.definedMethod, state.lbPurity, state.ubPurity, dependees, c)
         }
+    }
+
+    /**
+     * Determines the purity of the given method.
+     *
+     * @param definedMethod A defined method with a body.
+     */
+    def determinePurity(definedMethod: DefinedMethod): PropertyComputationResult = {
+        val method = definedMethod.definedMethod
+        val declClass = method.classFile.thisType
+
+        // If this is not the method's declaration, but a non-overwritten method in a subtype,
+        // don't re-analyze the code
+        if (declClass ne definedMethod.declaringClassType)
+            return baseMethodPurity(definedMethod.asDefinedMethod);
+
+        implicit val state: State =
+            new State(CompileTimePure, CompileTimePure, method, definedMethod, declClass)
+
+        val tacaiO = getTACAI(method)
+
+        if (tacaiO.isEmpty)
+            return IntermediateResult(
+                definedMethod,
+                ImpureByAnalysis,
+                CompileTimePure,
+                state.dependees,
+                c
+            );
+
+        determineMethodPurity(tacaiO.get.cfg)
     }
 }
 
@@ -969,6 +1012,7 @@ trait L2PurityAnalysisScheduler extends ComputationSpecification {
 
     final override def uses: Set[PropertyKind] = {
         Set(
+            TACAI,
             FieldMutability,
             ClassImmutability,
             TypeImmutability,

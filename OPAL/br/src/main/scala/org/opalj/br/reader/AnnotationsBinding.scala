@@ -3,9 +3,7 @@ package org.opalj
 package br
 package reader
 
-import scala.reflect.ClassTag
-
-import org.opalj.bi.reader.AnnotationAbstractions
+import org.opalj.bi.reader.AnnotationsAbstractions
 import org.opalj.bi.reader.ElementValuePairsReader
 
 /**
@@ -14,16 +12,13 @@ import org.opalj.bi.reader.ElementValuePairsReader
  * @author Michael Eichberg
  */
 trait AnnotationsBinding
-    extends AnnotationAbstractions
+    extends AnnotationsAbstractions
     with ElementValuePairsReader
     with ConstantPoolBinding {
 
     type Annotation = br.Annotation
 
-    val AnnotationManifest: ClassTag[Annotation] = implicitly
-
     type ElementValue = br.ElementValue
-    val ElementValueManifest: ClassTag[ElementValue] = implicitly
 
     type EnumValue = br.EnumValue
 
@@ -50,7 +45,6 @@ trait AnnotationsBinding
     type BooleanValue = br.BooleanValue
 
     type ElementValuePair = br.ElementValuePair
-    val ElementValuePairManifest: ClassTag[ElementValuePair] = implicitly
 
     def ElementValuePair(
         cp:                 Constant_Pool,

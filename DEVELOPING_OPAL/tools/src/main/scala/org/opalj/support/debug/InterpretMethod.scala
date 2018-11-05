@@ -70,7 +70,7 @@ object InterpretMethod {
             println("\t6[Optional]: -identifyDeadVariables={true,false} default:true")
         }
 
-        if (args.size < 3 || args.size > 5) {
+        if (args.length < 3 || args.length > 5) {
             printUsage(Some("wrong number of parameters"))
             return ;
         }

@@ -22,7 +22,7 @@ class ConstantFieldValuesResolutionTest extends FunSpec with Matchers {
 
     class ConstantFieldValuesResolutionTestDomain(val project: Project[java.net.URL])
         extends CorrelationalDomain
-        with DefaultDomainValueBinding
+        with DefaultSpecialDomainValuesBinding
         with TheProject
         with ThrowAllPotentialExceptionsConfiguration
         with l1.DefaultIntegerRangeValues

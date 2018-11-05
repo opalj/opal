@@ -3,6 +3,8 @@ package org.opalj
 package da
 
 import scala.xml.Node
+import scala.xml.NodeBuffer
+
 import org.opalj.bi.AccessFlags
 import org.opalj.bi.AccessFlagsContexts
 import org.opalj.bi.AccessFlagsContexts.MODULE
@@ -17,20 +19,20 @@ case class Module_attribute(
         module_name_index:    Constant_Pool_Index,
         module_flags:         Int,
         module_version_index: Constant_Pool_Index, // can be "0"!
-        requires:             IndexedSeq[RequiresEntry],
-        exports:              IndexedSeq[ExportsEntry],
-        opens:                IndexedSeq[OpensEntry],
-        uses:                 IndexedSeq[UsesEntry],
-        provides:             IndexedSeq[ProvidesEntry]
+        requires:             Requires,
+        exports:              Exports,
+        opens:                Opens,
+        uses:                 Uses,
+        provides:             Provides
 ) extends Attribute {
 
     def attribute_length: Int = {
-        2 + 2 + 2 + // module meta information
-            2 + requires.length * 6 + // <= requires
-            2 + exports.iterator.map(_.attribute_length).sum +
-            2 + opens.iterator.map(_.attribute_length).sum +
-            2 + uses.length * 2 + // <= uses
-            2 + provides.iterator.map(_.attribute_length).sum
+        2 + 2 + 2 + // <= module meta information
+            2 + requires.size * 6 +
+            2 + exports.iterator.sum(_.attribute_length) +
+            2 + opens.iterator.sum(_.attribute_length) +
+            2 + uses.size * 2 +
+            2 + provides.iterator.sum(_.attribute_length)
     }
 
     override def toXHTML(implicit cp: Constant_Pool): Node = {
@@ -46,11 +48,41 @@ case class Module_attribute(
 
         <details>
             <summary class="attribute">{ module }</summary>
-            <div>{ requires.map(_.toString(cp)).sorted.map(r ⇒ <span>{ r }</span><br/>) }</div>
-            <div>{ exports.map(_.toString(cp)).sorted.map(r ⇒ <span>{ r }</span><br/>) }</div>
-            <div>{ opens.map(_.toString(cp)).sorted.map(r ⇒ <span>{ r }</span><br/>) }</div>
-            <div>{ uses.map(_.toString(cp)).sorted.map(r ⇒ <span>{ r }</span><br/>) }</div>
-            <div>{ provides.map(_.toString(cp)).sorted.map(r ⇒ <span>{ r }</span><br/>) }</div>
+            <div>
+                {
+                    requires.map[String](_.toString)._UNSAFE_sorted.map[NodeBuffer] { r ⇒
+                        <span>{ r }</span><br/>
+                    }
+                }
+            </div>
+            <div>
+                {
+                    exports.map[String](_.toString)._UNSAFE_sorted.map[NodeBuffer] { r ⇒
+                        <span>{ r }</span><br/>
+                    }
+                }
+            </div>
+            <div>
+                {
+                    opens.map[String](_.toString)._UNSAFE_sorted.map[NodeBuffer] { r ⇒
+                        <span>{ r }</span><br/>
+                    }
+                }
+            </div>
+            <div>
+                {
+                    uses.map(cp(_).toString)._UNSAFE_sorted.map[NodeBuffer] { r ⇒
+                        <span>{ s"uses $r" }</span><br/>
+                    }
+                }
+            </div>
+            <div>
+                {
+                    provides.map[String](_.toString)._UNSAFE_sorted.map[NodeBuffer] { r ⇒
+                        <span>{ r }</span><br/>
+                    }
+                }
+            </div>
         </details>
     }
 
@@ -76,19 +108,13 @@ case class RequiresEntry(
     }
 }
 
-case class ExportsToEntry(exports_to_index: Constant_Pool_Index) {
-
-    def toString(implicit cp: Constant_Pool): String = cp(exports_to_index).toString(cp)
-
-}
-
 case class ExportsEntry(
         exports_index:          Constant_Pool_Index,
         exports_flags:          Int,
-        exports_to_index_table: IndexedSeq[ExportsToEntry]
+        exports_to_index_table: ExportsToIndexTable
 ) {
 
-    def attribute_length: Int = 6 + exports_to_index_table.length * 2
+    def attribute_length: Int = 6 + exports_to_index_table.size * 2
 
     def toString(implicit cp: Constant_Pool): String = {
         val flags = AccessFlags.toString(exports_flags, MODULE)
@@ -96,26 +122,23 @@ case class ExportsEntry(
             if (exports_to_index_table.isEmpty)
                 ";"
             else
-                exports_to_index_table.map(_.toString).sorted.mkString(" to ", ", ", ";")
+                exports_to_index_table
+                    .map(cp(_).toString)
+                    ._UNSAFE_sorted
+                    .mkString(" to ", ", ", ";")
         }
 
         s"exports $flags ${cp(exports_index).toString(cp)}$exports_to"
     }
 }
 
-case class OpensToIndexEntry(opens_to_index: Constant_Pool_Index) {
-
-    def toString(implicit cp: Constant_Pool): String = cp(opens_to_index).toString(cp)
-
-}
-
 case class OpensEntry(
         opens_index:          Constant_Pool_Index,
         opens_flags:          Int,
-        opens_to_index_table: IndexedSeq[OpensToIndexEntry]
+        opens_to_index_table: OpensToIndexTable
 ) {
 
-    def attribute_length: Int = 6 + opens_to_index_table.length * 2
+    def attribute_length: Int = 6 + opens_to_index_table.size * 2
 
     def toString(implicit cp: Constant_Pool): String = {
         val flags = AccessFlags.toString(opens_flags, MODULE)
@@ -123,39 +146,29 @@ case class OpensEntry(
             if (opens_to_index_table.isEmpty)
                 ";"
             else
-                opens_to_index_table.map(_.toString).sorted.mkString(" to ", ", ", ";")
+                opens_to_index_table.
+                    map(cp(_).toString).
+                    _UNSAFE_sorted.
+                    mkString(" to ", ", ", ";")
         }
 
         s"opens $flags ${cp(opens_index).toString(cp)}$opens_to"
     }
 }
 
-case class UsesEntry(
-        uses_index: Constant_Pool_Index
-) {
-
-    def toString(implicit cp: Constant_Pool): String = {
-        s"uses ${cp(uses_index).toString(cp)};"
-    }
-
-}
-
-case class ProvidesWithIndexEntry(provides_with_index: Constant_Pool_Index) {
-
-    def toString(implicit cp: Constant_Pool): String = cp(provides_with_index).toString(cp)
-
-}
-
 case class ProvidesEntry(
         provides_index:            Constant_Pool_Index,
-        provides_with_index_table: IndexedSeq[ProvidesWithIndexEntry]
+        provides_with_index_table: ProvidesWithIndexTable
 ) {
 
-    def attribute_length: Int = 4 + provides_with_index_table.length * 2
+    def attribute_length: Int = 4 + provides_with_index_table.size * 2
 
     def toString(implicit cp: Constant_Pool): String = {
         val provides_with =
-            provides_with_index_table.map(_.toString).sorted.mkString(" with ", ", ", ";")
+            provides_with_index_table.
+                map(cp(_).toString).
+                _UNSAFE_sorted.
+                mkString(" with ", ", ", ";")
 
         s"provides ${cp(provides_index).toString(cp)}$provides_with"
     }

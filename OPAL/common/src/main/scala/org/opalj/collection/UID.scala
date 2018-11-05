@@ -3,16 +3,16 @@ package org.opalj
 package collection
 
 /**
- * Identifies objects which have a – potentially context dependent – unique id.
+ * Identifies objects which have - in the scope where the objects are used - unique ids.
  * I.e., this trait is implemented by objects that have – by construction -
  * unique ids in a well-defined scope. The `UIDSet` is based on comparing uids.
  *
  * @author Michael Eichberg
  */
-trait UID {
+trait UID extends AnyRef {
 
     /**
-     * This object's context dependent unique id.
+     * This object's unique id.
      */
     def id: Int
 }
@@ -22,8 +22,8 @@ trait UID {
  * I.e., this trait is implemented by objects that have – by construction -
  * unique ids in a well-defined scope.
  *
- * @note   Two objects that are ''not equal'' may have the same id, if both objects
- *         do not have the same context.
+ * @note   Two objects that are ''not equal'' may still have the same id, if both objects
+ *         are guaranteed to never be compared against each other.
  *
  * @author Michael Eichberg
  */
@@ -35,12 +35,12 @@ trait UIDValue extends UID {
      */
     final override def equals(other: Any): Boolean = {
         other match {
-            case that: UID ⇒ UID.areEqual(this, that)
+            case that: UID ⇒ (this eq that) || this.id == that.id
             case _         ⇒ false
         }
     }
 
-    final def ===(that: UID): Boolean = UID.areEqual(this, that)
+    final def equals(that: UID): Boolean = (this eq that) || ((that ne null) && this.id == that.id)
 
     /**
      * The unique id.
@@ -53,8 +53,6 @@ trait UIDValue extends UID {
  * Helper methods related to data structures that have unique ids.
  */
 object UID {
-
-    final def areEqual(a: UID, b: UID): Boolean = (a eq b) || a.id == b.id
 
     /**
      * Returns the element stored in the given array at the position identified

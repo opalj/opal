@@ -6,8 +6,24 @@ package purity
 
 import scala.annotation.switch
 
-import org.opalj.ai.ValueOrigin
-import org.opalj.ai.isImmediateVMException
+import org.opalj.log.GlobalLogContext
+import org.opalj.log.OPALLogger
+import org.opalj.collection.immutable.EmptyIntTrieSet
+import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.fpcf.properties.ClassImmutability
+import org.opalj.fpcf.properties.CompileTimePure
+import org.opalj.fpcf.properties.FieldMutability
+import org.opalj.fpcf.properties.FinalField
+import org.opalj.fpcf.properties.ImmutableObject
+import org.opalj.fpcf.properties.ImmutableType
+import org.opalj.fpcf.properties.ImpureByAnalysis
+import org.opalj.fpcf.properties.ImpureByLackOfInformation
+import org.opalj.fpcf.properties.Pure
+import org.opalj.fpcf.properties.Purity
+import org.opalj.fpcf.properties.SideEffectFree
+import org.opalj.fpcf.properties.TypeImmutability
+import org.opalj.fpcf.properties.VirtualMethodPurity
+import org.opalj.value.ValueInformation
 import org.opalj.br.ComputationalTypeReference
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
@@ -19,23 +35,8 @@ import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.cg.IsOverridableMethodKey
-import org.opalj.collection.immutable.EmptyIntTrieSet
-import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.fpcf.properties.ClassImmutability
-import org.opalj.fpcf.properties.FieldMutability
-import org.opalj.fpcf.properties.FinalField
-import org.opalj.fpcf.properties.ImmutableObject
-import org.opalj.fpcf.properties.ImmutableType
-import org.opalj.fpcf.properties.ImpureByLackOfInformation
-import org.opalj.fpcf.properties.ImpureByAnalysis
-import org.opalj.fpcf.properties.SideEffectFree
-import org.opalj.fpcf.properties.Purity
-import org.opalj.fpcf.properties.TypeImmutability
-import org.opalj.fpcf.properties.VirtualMethodPurity
-import org.opalj.fpcf.properties.Pure
-import org.opalj.fpcf.properties.CompileTimePure
-import org.opalj.log.GlobalLogContext
-import org.opalj.log.OPALLogger
+import org.opalj.ai.ValueOrigin
+import org.opalj.ai.isImmediateVMException
 import org.opalj.tac.ArrayLength
 import org.opalj.tac.ArrayLoad
 import org.opalj.tac.ArrayStore
@@ -46,11 +47,12 @@ import org.opalj.tac.CaughtException
 import org.opalj.tac.Checkcast
 import org.opalj.tac.ClassConst
 import org.opalj.tac.Compare
-import org.opalj.tac.DUVar
 import org.opalj.tac.DefaultTACAIKey
 import org.opalj.tac.DoubleConst
+import org.opalj.tac.DUVar
 import org.opalj.tac.Expr
 import org.opalj.tac.ExprStmt
+import org.opalj.tac.FieldRead
 import org.opalj.tac.FloatConst
 import org.opalj.tac.GetField
 import org.opalj.tac.GetStatic
@@ -58,7 +60,8 @@ import org.opalj.tac.Goto
 import org.opalj.tac.If
 import org.opalj.tac.InstanceOf
 import org.opalj.tac.IntConst
-import org.opalj.tac.Invokedynamic
+import org.opalj.tac.InvokedynamicFunctionCall
+import org.opalj.tac.InvokedynamicMethodCall
 import org.opalj.tac.JSR
 import org.opalj.tac.LongConst
 import org.opalj.tac.MethodHandleConst
@@ -90,8 +93,7 @@ import org.opalj.tac.Throw
 import org.opalj.tac.Var
 import org.opalj.tac.VirtualFunctionCall
 import org.opalj.tac.VirtualMethodCall
-import org.opalj.tac.FieldRead
-import org.opalj.value.KnownTypedValue
+import org.opalj.tac.fpcf.properties.TACAI
 
 /**
  * Base trait for analyses that analyze the purity of methods.
@@ -101,7 +103,7 @@ import org.opalj.value.KnownTypedValue
 trait AbstractPurityAnalysis extends FPCFAnalysis {
 
     /** The type of the TAC domain. */
-    type V = DUVar[KnownTypedValue]
+    type V = DUVar[ValueInformation]
 
     /**
      * The state of the analysis.
@@ -118,7 +120,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
         var ubPurity: Purity
         val method: Method
         val declClass: ObjectType
-        val code: Array[Stmt[V]]
+        var code: Array[Stmt[V]]
     }
 
     type StateType <: AnalysisState
@@ -242,7 +244,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
                 val call = stmt.asNonVirtualMethodCall
                 if (!isDomainSpecificCall(call, Some(call.receiver))) {
                     val NonVirtualMethodCall(_, declClass, _, name, descr, rcvr, params) = stmt
-                    val callee = stmt.asNonVirtualMethodCall.resolveCallTarget
+                    val callee = stmt.asNonVirtualMethodCall.resolveCallTarget(state.declClass)
                     checkPurityOfCall(declClass, name, descr, rcvr +: params, callee)
                 } else true
             case VirtualMethodCall.ASTID ⇒
@@ -252,6 +254,12 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
                         stmt
                     checkPurityOfVirtualCall(declClass, isInterface, name, rcvr +: params, descr)
                 } else true
+
+            // We don't handle unresolved Invokedynamics
+            // - either OPAL removes it or we forget about it
+            case InvokedynamicMethodCall.ASTID ⇒
+                atMost(ImpureByAnalysis)
+                false
 
             // Returning objects/arrays is pure, if the returned object/array is locally initialized
             // and non-escaping or the object is immutable
@@ -332,7 +340,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
                 val call = expr.asNonVirtualFunctionCall
                 if (!isDomainSpecificCall(call, Some(call.receiver))) {
                     val NonVirtualFunctionCall(_, declClass, _, name, descr, rcvr, params) = expr
-                    val callee = call.resolveCallTarget
+                    val callee = call.resolveCallTarget(state.declClass)
                     checkPurityOfCall(declClass, name, descr, rcvr +: params, callee)
                 } else true
             case VirtualFunctionCall.ASTID ⇒
@@ -361,7 +369,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
 
             // We don't handle unresolved Invokedynamic
             // - either OPAL removes it or we forget about it
-            case Invokedynamic.ASTID ⇒
+            case InvokedynamicFunctionCall.ASTID ⇒
                 atMost(ImpureByAnalysis)
                 false
 
@@ -412,7 +420,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
         onUnknown:    () ⇒ Boolean
     )(implicit state: StateType): Boolean = {
         val rcvrValue = receiver.asVar.value.asReferenceValue
-        val rcvrType = if (receiver.isVar) rcvrValue.valueType else Some(receiverType)
+        val rcvrType = if (receiver.isVar) rcvrValue.leastUpperType else Some(receiverType)
 
         if (rcvrType.isEmpty) {
             // IMPROVE Just use the CFG to check if we have a normal successor
@@ -621,6 +629,11 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
     )(implicit state: StateType): Unit
 
     /**
+     * Handles what to do if the TACAI is not yet final.
+     */
+    def handleTACAI(ep: EOptionP[Method, TACAI])(implicit state: StateType): Unit
+
+    /**
      * Retrieves and commits the methods purity as calculated for its declaring class type for the
      * current DefinedMethod that represents the non-overwritten method in a subtype.
      */
@@ -658,6 +671,27 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
             case dm: DeclaredMethod ⇒ Result(dm, ImpureByLackOfInformation)
             case _ ⇒
                 throw new UnknownError("purity is only defined for declared methods")
+        }
+    }
+
+    /**
+     * Returns the TACode for a method if available, registering dependencies as necessary.
+     */
+    def getTACAI(
+        method: Method
+    )(implicit state: StateType): Option[TACode[TACMethodParameter, V]] = {
+        propertyStore(method, TACAI.key) match {
+            case finalEP: FinalEP[Method, TACAI] ⇒
+                handleTACAI(finalEP)
+                finalEP.ub.tac
+            case eps: IntermediateEP[Method, TACAI] ⇒
+                reducePurityLB(ImpureByAnalysis)
+                handleTACAI(eps)
+                eps.ub.tac
+            case epk ⇒
+                reducePurityLB(ImpureByAnalysis)
+                handleTACAI(epk)
+                None
         }
     }
 

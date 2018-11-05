@@ -1,10 +1,13 @@
-# Overview
+# Configuration and Running Hermes
 
 ## application.conf
 Static configuration of all available queries as well as further global settings.
 
 ## hermes.json
-The configuration file which is used to specify the projects which belong to a test corpus. By default, the projects are specified which belong to OPAL's test corpus. To evaluate another corpus just adapt this file. Basically every project has the following settings: `id`, `cp`, `libcp` and `libcp_defaults`.
+The configuration file which is used to specify the projects which belong to a test corpus. 
+By default, those projects are specified which belong to OPAL's test corpus. 
+To evaluate another corpus just have to adapt this file. 
+Basically every project has the following settings: `id`, `cp`, `libcp` and `libcp_defaults`.
 
 ### `id`
 `id` specifies the unique name of the project.
@@ -27,4 +30,6 @@ Currently, the keys `JRE` and `RTJar` are predefined and will always resolve aga
     }
 
 ## Note
-The split between both files was purely done to provide some structure and to facilitate reuse. All settings defined in application.conf can also be set in Hermes.json. It is in particular possible to turn of or add new queries by specifying them in hermes.json.
+Splitting the configuration across the two files: `application.conf` and `hermes.json` was purely done to provide some structure and to facilitate reuse. 
+All settings defined in `application.conf` can also be set in `hermes.json`. 
+It is in particular possible to turn of or add new queries by specifying them in `hermes.json`.

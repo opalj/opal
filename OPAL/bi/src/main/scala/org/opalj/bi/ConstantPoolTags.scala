@@ -38,28 +38,28 @@ object ConstantPoolTags extends Enumeration {
 
     // THE ENUM VALUES
 
-    val CONSTANT_Class = Value(CONSTANT_Class_ID, "CONSTANT_Class")
+    final val CONSTANT_Class = Value(CONSTANT_Class_ID, "CONSTANT_Class")
 
-    val CONSTANT_Fieldref = Value(CONSTANT_Fieldref_ID, "CONSTANT_Fieldref")
-    val CONSTANT_Methodref = Value(CONSTANT_Methodref_ID, "CONSTANT_Methodref")
-    val CONSTANT_InterfaceMethodref = {
+    final val CONSTANT_Fieldref = Value(CONSTANT_Fieldref_ID, "CONSTANT_Fieldref")
+    final val CONSTANT_Methodref = Value(CONSTANT_Methodref_ID, "CONSTANT_Methodref")
+    final val CONSTANT_InterfaceMethodref = {
         Value(CONSTANT_InterfaceMethodref_ID, "CONSTANT_InterfaceMethodref")
     }
 
-    val CONSTANT_String = Value(CONSTANT_String_ID, "CONSTANT_String")
-    val CONSTANT_Integer = Value(CONSTANT_Integer_ID, "CONSTANT_Integer")
-    val CONSTANT_Float = Value(CONSTANT_Float_ID, "CONSTANT_Float")
-    val CONSTANT_Long = Value(CONSTANT_Long_ID, "CONSTANT_Long")
-    val CONSTANT_Double = Value(CONSTANT_Double_ID, "CONSTANT_Double")
+    final val CONSTANT_String = Value(CONSTANT_String_ID, "CONSTANT_String")
+    final val CONSTANT_Integer = Value(CONSTANT_Integer_ID, "CONSTANT_Integer")
+    final val CONSTANT_Float = Value(CONSTANT_Float_ID, "CONSTANT_Float")
+    final val CONSTANT_Long = Value(CONSTANT_Long_ID, "CONSTANT_Long")
+    final val CONSTANT_Double = Value(CONSTANT_Double_ID, "CONSTANT_Double")
 
-    val CONSTANT_NameAndType = Value(CONSTANT_NameAndType_ID, "CONSTANT_NameAndType")
+    final val CONSTANT_NameAndType = Value(CONSTANT_NameAndType_ID, "CONSTANT_NameAndType")
 
-    val CONSTANT_Utf8 = Value(CONSTANT_Utf8_ID, "CONSTANT_Utf8")
+    final val CONSTANT_Utf8 = Value(CONSTANT_Utf8_ID, "CONSTANT_Utf8")
 
-    val CONSTANT_MethodHandle = Value(CONSTANT_MethodHandle_ID, "CONSTANT_MethodHandle")
-    val CONSTANT_MethodType = Value(CONSTANT_MethodType_ID, "CONSTANT_MethodType")
-    val CONSTANT_InvokeDynamic = Value(CONSTANT_InvokeDynamic_ID, "CONSTANT_InvokeDynamic")
+    final val CONSTANT_MethodHandle = Value(CONSTANT_MethodHandle_ID, "CONSTANT_MethodHandle")
+    final val CONSTANT_MethodType = Value(CONSTANT_MethodType_ID, "CONSTANT_MethodType")
+    final val CONSTANT_InvokeDynamic = Value(CONSTANT_InvokeDynamic_ID, "CONSTANT_InvokeDynamic")
 
-    val CONSTANT_Module = Value(CONSTANT_Module_ID, "CONSTANT_Module")
-    val CONSTANT_Package = Value(CONSTANT_Package_ID, "CONSTANT_Package")
+    final val CONSTANT_Module = Value(CONSTANT_Module_ID, "CONSTANT_Module")
+    final val CONSTANT_Package = Value(CONSTANT_Package_ID, "CONSTANT_Package")
 }

@@ -1,25 +1,43 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.ai.fpcf.properties
+package org.opalj.ai
+package fpcf
+package properties
 
 import org.opalj.log.OPALLogger
+import org.opalj.log.LogContext
 import org.opalj.br.Method
 import org.opalj.br.analyses.ProjectInformationKey
 import org.opalj.br.analyses.SomeProject
-import org.opalj.ai.AIResult
-import org.opalj.ai.BaseAI
 import org.opalj.ai.common.DomainRegistry
 
 /**
- * Key to get the factory to create the domains that are used to perform abstract interpretations.
+ * Encapsulates the information which domain will be used to perform the abstract interpretations
+ * for the specified project. This typically initialized by the [[AIDomainFactoryKey$]].
+ */
+class ProjectSpecificAIExecutor(
+        val project:       SomeProject,
+        val domainClass:   Class[_ <: Domain],
+        val domainFactory: (SomeProject, Method) ⇒ Domain
+) extends (Method ⇒ AIResult) {
+
+    def apply(m: Method): AIResult = { BaseAI(m, domainFactory(project, m)) }
+}
+
+/**
+ * Key to get the factory (actually this is a meta-factory) to create the domains that are
+ * used to perform abstract interpretations.
  * The domain that is going to be used is determined by getting the set of (partial)domains
  * that are required and then computing the cheapest domain;
  * see [[org.opalj.ai.common.DomainRegistry]] for further information.
- * Hence, the AIResult's domain is guaranteed to implement all required (partial) domains.
+ * Hence, the `AIResult`'s domain is guaranteed to implement all required (partial) domains.
+ *
+ * This key's project specific initialization data are `java.lang.Class` objects which
+ * have to be implemented by the finally chosen domain.
  *
  * @author Michael Eichberg
  */
 object AIDomainFactoryKey
-    extends ProjectInformationKey[(SomeProject, Method) ⇒ AIResult, Set[Class[_ <: AnyRef]]] {
+    extends ProjectInformationKey[ProjectSpecificAIExecutor, Set[Class[_ <: AnyRef]]] {
 
     /**
      * This key has no special prerequisites.
@@ -38,29 +56,27 @@ object AIDomainFactoryKey
      * is necessary (e.g., on the ProjectInformationKey) to ensure that each project is
      * instantiated using the desired domain.
      */
-    override protected def compute(
-        project: SomeProject
-    ): (SomeProject, Method) ⇒ AIResult = {
-        implicit val logContext = project.logContext
+    override protected def compute(project: SomeProject): ProjectSpecificAIExecutor = {
+        implicit val logContext: LogContext = project.logContext
 
         val domainFactoryRequirements = project.
             getProjectInformationKeyInitializationData(this).
             getOrElse(Set.empty)
 
-        // TODO make the strategy configurable...
-        val domainFactories = DomainRegistry.selectBest(domainFactoryRequirements)
+        val domainFactories =
+            DomainRegistry.selectConfigured(project.config, domainFactoryRequirements)
+
         if (domainFactories.isEmpty) {
             val message = domainFactoryRequirements.mkString(
-                "no abstract domain that satisfies the requirements: {",
-                ", ",
-                "} exists."
+                "no abstract domain that satisfies the requirements: {", ", ", "} exists."
             )
             throw new IllegalArgumentException(message)
         }
         if (domainFactories.size > 1) {
             OPALLogger.info(
                 "analysis configuration",
-                s"multiple domains ${domainFactories.mkString(", ")} satisfy the requirements ${domainFactoryRequirements.mkString(", ")} "
+                s"multiple domains ${domainFactories.mkString(", ")} "+
+                    s"satisfy the requirements ${domainFactoryRequirements.mkString(", ")} "
             )
         }
 
@@ -70,6 +86,7 @@ object AIDomainFactoryKey
             s"the domain $domainClass will be used for performing abstract interpretations"
         )
 
-        (p: SomeProject, m: Method) ⇒ BaseAI(m, DomainRegistry.domainFactory(domainClass)(p, m))
+        val domainFactory = DomainRegistry.domainMetaInformation(domainClass).factory
+        new ProjectSpecificAIExecutor(project, domainClass, domainFactory)
     }
 }

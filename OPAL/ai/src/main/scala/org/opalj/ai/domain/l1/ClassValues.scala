@@ -6,19 +6,22 @@ package l1
 
 import scala.reflect.ClassTag
 
-import org.opalj.br.Type
+import org.opalj.collection.immutable.RefArray
+import org.opalj.value.IsClassValue
+import org.opalj.value.TheClassValue
 import org.opalj.br.BooleanType
 import org.opalj.br.ByteType
 import org.opalj.br.CharType
-import org.opalj.br.ShortType
+import org.opalj.br.DoubleType
+import org.opalj.br.FieldType
+import org.opalj.br.FloatType
 import org.opalj.br.IntegerType
 import org.opalj.br.LongType
-import org.opalj.br.FloatType
-import org.opalj.br.DoubleType
-import org.opalj.br.ReferenceType
-import org.opalj.br.ObjectType
-import org.opalj.br.FieldType
 import org.opalj.br.MethodDescriptor
+import org.opalj.br.ObjectType
+import org.opalj.br.ReferenceType
+import org.opalj.br.ShortType
+import org.opalj.br.Type
 
 /**
  * Enables the tracking of concrete `Class` values.
@@ -38,7 +41,7 @@ import org.opalj.br.MethodDescriptor
  * @author Arne Lottmann
  */
 trait ClassValues extends StringValues with FieldAccessesDomain with MethodCallsDomain {
-    domain: CorrelationalDomain with IntegerValuesDomain with TypedValuesFactory with Configuration with TheClassHierarchy ⇒
+    domain: CorrelationalDomain with IntegerValuesDomain with TypedValuesFactory with Configuration ⇒
 
     type DomainClassValue <: ClassValue with DomainObjectValue
     val DomainClassValueTag: ClassTag[DomainClassValue]
@@ -47,9 +50,9 @@ trait ClassValues extends StringValues with FieldAccessesDomain with MethodCalls
      * All values (`Class<...> c`) that represent the same type (e.g. `java.lang.String`)
      * are actually represented by the same class (object) value at runtime.
      */
-    protected class ClassValue(origin: ValueOrigin, val value: Type, refId: RefId)
-        extends SObjectValue(origin, No, true, ObjectType.Class, refId) {
-        this: DomainClassValue ⇒
+    protected trait ClassValue extends SObjectValue with IsClassValue { this: DomainClassValue ⇒
+
+        def value: Type
 
         override def doJoinWithNonNullValueWithSameOrigin(
             joinPC: Int,
@@ -77,10 +80,7 @@ trait ClassValues extends StringValues with FieldAccessesDomain with MethodCalls
             }
         }
 
-        override def adapt(
-            target:       TargetDomain,
-            targetOrigin: ValueOrigin
-        ): target.DomainValue = {
+        override def adapt(target: TargetDomain, targetOrigin: ValueOrigin): target.DomainValue = {
             target.ClassValue(targetOrigin, this.value)
         }
 
@@ -94,18 +94,21 @@ trait ClassValues extends StringValues with FieldAccessesDomain with MethodCalls
             }
         }
 
+        override def toCanonicalForm: TheClassValue = TheClassValue(value)
+
         override def equals(other: Any): Boolean =
             other match {
                 case cv: ClassValue ⇒ super.equals(other) && cv.value == this.value
                 case _              ⇒ false
             }
 
-        override protected def canEqual(other: SObjectValue): Boolean =
+        override protected def canEqual(other: SObjectValue): Boolean = {
             other.isInstanceOf[ClassValue]
+        }
 
         override def hashCode: Int = super.hashCode + 71 * value.hashCode
 
-        override def toString(): String = s"Class<${value.toJava}>[↦$origin;refId=$refId]"
+        override def toString: String = s"Class<${value.toJava}>[↦$origin;refId=$refId]"
     }
 
     // Needs to be implemented since the default implementation does not make sense here
@@ -156,7 +159,7 @@ trait ClassValues extends StringValues with FieldAccessesDomain with MethodCalls
         operands:         Operands
     ): MethodCallResult = {
 
-        import ClassValues._
+        import org.opalj.ai.domain.l1.ClassValues._
 
         if ((declaringClass eq ObjectType.Class) && (name == "forName") && operands.nonEmpty) {
 
@@ -188,7 +191,7 @@ trait ClassValues extends StringValues with FieldAccessesDomain with MethodCalls
         declaringClass: ObjectType,
         name:           String,
         fieldType:      FieldType
-    ) = {
+    ): Computation[DomainValue, Nothing] = {
         if (name == "TYPE") {
             declaringClass match {
                 case ObjectType.Boolean   ⇒ ComputedValue(ClassValue(pc, BooleanType))
@@ -223,7 +226,7 @@ private object ClassValues {
 
     final val forName_String_boolean_ClassLoader = {
         MethodDescriptor(
-            IndexedSeq(ObjectType.String, BooleanType, ObjectType("java/lang/ClassLoader")),
+            RefArray(ObjectType.String, BooleanType, ObjectType("java/lang/ClassLoader")),
             ObjectType.Class
         )
     }

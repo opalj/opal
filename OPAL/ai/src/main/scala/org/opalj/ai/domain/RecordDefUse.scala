@@ -3,50 +3,54 @@ package org.opalj
 package ai
 package domain
 
-import scala.annotation.tailrec
 import scala.annotation.switch
+import scala.annotation.tailrec
+
 import java.io.ByteArrayOutputStream
 import java.io.PrintStream
 
 import scala.xml.Node
-import scala.collection.JavaConverters._
-import it.unimi.dsi.fastutil.ints.IntLinkedOpenHashSet
-import it.unimi.dsi.fastutil.ints.Int2IntLinkedOpenHashMap
+
 import org.opalj.graphs.DefaultMutableNode
+import org.opalj.control.foreachNonNullValue
 import org.opalj.collection.immutable.IntArraySet
-import org.opalj.collection.mutable.{Locals ⇒ Registers}
 import org.opalj.collection.immutable.:&:
 import org.opalj.collection.immutable.Chain
-import org.opalj.collection.immutable.Naught
+import org.opalj.collection.immutable.Chain.ChainBuilder
+import org.opalj.collection.immutable.IntRefPair
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.IntTrieSet1
-import org.opalj.collection.immutable.EmptyIntTrieSet
+import org.opalj.collection.immutable.Naught
+import org.opalj.collection.mutable.{Locals ⇒ Registers}
+import org.opalj.collection.mutable.RefArrayStack
 import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.br.Code
 import org.opalj.br.ComputationalTypeCategory
-import org.opalj.br.instructions._
-import org.opalj.br.analyses.AnalysisException
-import org.opalj.ai.util.XHTML
 import org.opalj.br.ObjectType
-import org.opalj.collection.immutable.Chain.ChainBuilder
+import org.opalj.br.PC
+import org.opalj.br.analyses.AnalysisException
+import org.opalj.br.instructions._
+import org.opalj.ai.util.XHTML
 
 /**
  * Collects the definition/use information based on the abstract interpretation time cfg.
  * I.e., makes the information available which value is accessed where/where a used
  * value is defined.
- * In general, all local variables are identified using `Int`s
- * where the `Int` identifies the expression (by means of it's pc) which evaluated
- * to the respective value. In case of a parameter the `Int` value is equivalent to
- * the value `-parameterIndex`.
+ * In general, all local variables are identified using `Int`s where the `Int` identifies
+ * the expression (by means of it's pc) which evaluated to the respective value.
+ * In case of a parameter the `Int` value is `-parametersIndex corrected by computational type
+ * category` (see below for details).
+ *
  * '''In case of exception values the `Int` value identifies the instruction which ex-/implicitly
  * raised the exception.'''
  *
  * @note A checkcast is considered a use-site, but not a def-site, even if the shape changes/
- *       the assumed type is narrowed.
+ *       the assumed type is narrowed. Otherwise, if the cast is useless, we could not replace it
+ *       by a NOP.
  *
  * ==General Usage==
- * This trait finalizes the collection of the def/use information '''after the abstract
- * interpretation has successfully completed''' and the control-flow graph is available.
+ * This trait collects the def/use information '''after the abstract interpretation has
+ * successfully completed''' and the control-flow graph is available.
  * The information is automatically made available, when this plug-in is mixed in.
  *
  * ==Special Values==
@@ -68,7 +72,7 @@ import org.opalj.collection.immutable.Chain.ChainBuilder
  *
  * @author Michael Eichberg
  */
-trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode with TheClassHierarchy ⇒
+trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
 
     // IDEA:
     // EACH LOCAL VARIABLE IS BASICALLY NAMED USING THE PC OF THE INSTRUCTION THAT INITIALIZES IT.
@@ -80,11 +84,10 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode with Th
     // REGISTERS          0: -1     0: -1       0: -1        0: -1     0: 2       0: 1
     // USED(BY) "-1":{1}  "0": N/A  "1":{2}     "2":{3}      "3": N/A  "4": {5}   "5": N/A
 
-    @inline final def ValueOrigins(vo: Int): IntTrieSet = IntTrieSet1(vo)
-    final def NoValueOrigins: IntTrieSet = EmptyIntTrieSet
+    @inline final def ValueOrigins(vo: Int): ValueOrigins = IntTrieSet1(vo)
 
-    // Stores the information where the value defined by an instruction is
-    // used. The used array basically mirrors the instructions array, but has additional
+    // Stores the information where the value defined by an instruction is used.
+    // The used array basically mirrors the instructions array, but has additional
     // space for storing the information about the usage of the parameters. The size
     // of this additional space is `parametersOffset` large and is prepended to
     // the array that mirrors the instructions array.
@@ -105,13 +108,12 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode with Th
         defOps(0) = Naught // the operand stack is empty...
         this.defOps = defOps
 
-        // initialize initial def-use information based on the parameters
+        // Initialize initial def-use information based on the parameters:
         val defLocals = new Array[Registers[ValueOrigins]](codeSize)
         var parameterIndex = 0
         defLocals(0) =
             locals map { v ⇒
-                // we always decrement parameterIndex to get the same offsets as
-                // used by the AI for parameters
+                // We always decrement parameterIndex to get the same offsets as used by the AI.
                 parameterIndex -= 1
                 if (v ne null) {
                     ValueOrigins(parameterIndex)
@@ -120,7 +122,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode with Th
                 }
             }
         this.defLocals = defLocals
-        this.parametersOffset = -parameterIndex
+        this.parametersOffset = -parameterIndex // <= definitively large enough - in general a bit too large
 
         this.used = new Array(codeSize + parametersOffset)
         this.usedExternalExceptions = new Array(codeSize)
@@ -152,18 +154,18 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode with Th
      * The first/top value on the stack has index 0 and the second value - if it exists -
      * has index two; independent of the computational category of the values.
      */
-    def operandOrigin(pc: /*PC*/ Int, stackIndex: Int): ValueOrigins = defOps(pc)(stackIndex)
+    def operandOrigin(pc: PC, stackIndex: Int): ValueOrigins = defOps(pc)(stackIndex)
 
     /**
      * Returns the instruction(s) which define(s) the value found in the register variable with
      * index `registerIndex` and the program counter `pc`.
      */
-    def localOrigin(pc: /*PC*/ Int, registerIndex: Int): ValueOrigins = defLocals(pc)(registerIndex)
+    def localOrigin(pc: PC, registerIndex: Int): ValueOrigins = defLocals(pc)(registerIndex)
 
     /**
      * Returns the instructions which use the value or the external exception identified by
      * the given value origin. In case of external exceptions thrown by an instruction,
-     * the value origin's pc is `ai.underlyingPC(valueOrigin)`
+     * the pc of the value origin pc is `ai.underlyingPC(valueOrigin)`
      */
     def usedBy(valueOrigin: ValueOrigin): ValueOrigins = {
         if (valueOrigin > ImmediateVMExceptionsOriginOffset)
@@ -172,6 +174,11 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode with Th
             usedExternalExceptions(underlyingPC(valueOrigin))
     }
 
+    /**
+     * Returns the instructions which use the value or the external exception identified by
+     * the given value origin. Basically, the same as `usedBy` except that an empty set of
+     * value origins is returned if the instruction with the given value origin is dead.
+     */
     def safeUsedBy(valueOrigin: ValueOrigin): ValueOrigins = {
         val usedBy = this.usedBy(valueOrigin)
         if (usedBy eq null)
@@ -180,7 +187,12 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode with Th
             usedBy
     }
 
+    /**
+     * Returns the instructions which use the (external) exception raised by the instruction
+     * with the given ValueOrigin.
+     */
     def safeExternalExceptionsUsedBy(pc: Int): ValueOrigins = {
+        // There is no offset to subtract over here, because external exceptions are never parameters!
         val usedBy = usedExternalExceptions(pc)
         if (usedBy eq null)
             NoValueOrigins
@@ -192,7 +204,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode with Th
      * Returns the union of the set of unused parameters and the set of all instructions which
      * compute a value that is not used in the following.
      */
-    def unused(): ValueOrigins = {
+    def unused: ValueOrigins = {
         var unused = NoValueOrigins
 
         // 1. check if the parameters are used...
@@ -211,7 +223,8 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode with Th
         // 2. check instructions
         code iterate { (pc, instruction) ⇒
             if (instruction.opcode != CHECKCAST.opcode) {
-                // a checkcast instruction is already a use
+                // A checkcast instruction does not define a new local variable; hence,
+                // though it put a value on the stack, we don't have a new def-site.
                 instruction.expressionResult match {
                     case NoExpression        ⇒ // nothing to do
                     case Stack | Register(_) ⇒ if (usedBy(pc) eq null) { unused += pc }
@@ -222,13 +235,10 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode with Th
         unused
     }
 
-    private[this] def updateUsageInformation(
-        usedValues: ValueOrigins,
-        useSite: /*PC*/ Int
-    ): Unit = {
+    private[this] def updateUsageInformation(usedValues: ValueOrigins, useSite: PC): Unit = {
         usedValues foreach { usedValue ⇒
             if (ai.isImplicitOrExternalException(usedValue)) {
-                // we have a usage of an implicit exception or method external exception
+                // we have a usage of an implicit exception or a method external exception
                 val usedIndex = ai.underlyingPC(usedValue)
                 val oldUsedExternalExceptions: ValueOrigins = usedExternalExceptions(usedIndex)
                 if (oldUsedExternalExceptions eq null) {
@@ -258,7 +268,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode with Th
         cfJoins:       IntTrieSet,
         subroutinePCs: IntArraySet
     ): Boolean = {
-        if (cfJoins.contains(successorPC) && (defLocals(successorPC) ne null /*non-dead*/ )) {
+        if (cfJoins.contains(successorPC) && defLocals(successorPC) != null /*non-dead*/ ) {
             var forceScheduling = false
             // we now also have to perform a join...
             @tailrec def joinDefOps(
@@ -272,11 +282,13 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode with Th
                     // assert(rDefOps.isEmpty)
                     return if (oldIsSuperset) oldDefOps else joinedDefOps.result();
                 }
-                // assert(
-                //     rDefOps.nonEmpty,
-                //     s"unexpected (pc:$currentPC -> pc:$successorPC): $lDefOps vs. $rDefOps;"+
-                //      s" original: $oldDefOps"
-                // )
+                /*
+                assert(
+                    rDefOps.nonEmpty,
+                    s"unexpected (pc:$currentPC -> pc:$successorPC): $lDefOps vs. $rDefOps;"+
+                     s" original: $oldDefOps"
+                )
+                */
 
                 val newHead = lDefOps.head
                 val oldHead = rDefOps.head
@@ -287,16 +299,19 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode with Th
                         oldIsSuperset, joinedDefOps += oldHead
                     )
                 else {
+                    // IMPROVE Consider using ++! (or !==!)
                     val joinedHead = newHead ++ oldHead
-                    // assert(newHead.subsetOf(joinedHead))
-                    // assert(
-                    //      oldHead.subsetOf(joinedHead),
-                    //      s"$newHead ++ $oldHead is $joinedHead"
-                    // )
-                    // assert(
-                    //      joinedHead.size > oldHead.size,
-                    //      s"$newHead ++  $oldHead is $joinedHead"
-                    // )
+                    /*
+                    assert(newHead.subsetOf(joinedHead))
+                    assert(
+                        oldHead.subsetOf(joinedHead),
+                        s"$newHead ++ $oldHead is $joinedHead"
+                    )
+                    assert(
+                        joinedHead.size > oldHead.size,
+                        s"$newHead ++ $oldHead is $joinedHead"
+                    )
+                    */
                     joinDefOps(
                         oldDefOps,
                         lDefOps.tail, rDefOps.tail,
@@ -317,6 +332,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode with Th
                     // joinedDefOps.foreach{vo ⇒
                     //    require(vo != null, s"$newDefOps join $oldDefOps == null")
                     //}
+                    assert(joinedDefOps.forall(e ⇒ e.iterator.size == e.size))
                     defOps(successorPC) = joinedDefOps
                 }
             }
@@ -372,6 +388,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode with Th
                                 o
                             } else {
                                 newUsage = true
+                                // IMPROVE Consider using ++!
                                 val joinedDefLocals = n ++ o
                                 // assert(
                                 //      joinedDefLocals.size > o.size,
@@ -396,6 +413,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode with Th
             forceScheduling
         } else {
             assert(newDefOps forall { vo ⇒ vo != null }, "null value origin found")
+            assert(newDefOps.forall(e ⇒ e.iterator.size == e.size))
             defOps(successorPC) = newDefOps
             defLocals(successorPC) = newDefLocals
             true // <=> always schedule the execution of the next instruction
@@ -416,17 +434,16 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode with Th
     protected[this] def originsOf(domainValue: DomainValue): Option[ValueOrigins] = None
 
     protected[this] def newDefOpsForExceptionalControlFlow(
-        currentPC:          Int,
+        currentPC:          PC,
         currentInstruction: Instruction,
-        successorPC:        Int
+        successorPC:        PC
     )(
         implicit
         operandsArray: OperandsArray
     ): Chain[ValueOrigins] = {
-        // The stack only contains the exception (which was created before
-        // and was explicitly thrown by an athrow instruction or which resulted from
-        // a called method or which was created by the JVM).
-        // (Whether we had a join or not is irrelevant.)
+        // The stack only contains the exception (which was created before and was explicitly
+        // thrown by an athrow instruction or which resulted from a called method or which was
+        // created by the JVM). (Whether we had a join or not is irrelevant.)
         val origins =
             originsOf(operandsArray(successorPC).head) match {
                 case None ⇒
@@ -552,8 +569,8 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode with Th
     }
 
     protected[this] def registerReadWrite(
-        currentPC:   Int,
-        successorPC: Int,
+        currentPC:   PC,
+        successorPC: PC,
         index:       Int
     )(
         implicit
@@ -572,358 +589,6 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode with Th
     }
 
     /**
-     * Updates/computes the def/use information when the instruction with
-     * the pc `successorPC` is executed immediately after the instruction with `currentPC`.
-     */
-    private[this] def handleFlow(
-        currentPC:                Int,
-        successorPC:              Int,
-        isExceptionalControlFlow: Boolean
-    )(
-        implicit
-        cfJoins:       IntTrieSet,
-        subroutinePCs: IntArraySet,
-        operandsArray: OperandsArray,
-        localsArray:   LocalsArray
-    ): Boolean = {
-
-        val currentInstruction = code.instructions(currentPC)
-
-        //
-        // HELPER METHODS
-        //
-
-        def propagate(
-            newDefOps:    Chain[ValueOrigins],
-            newDefLocals: Registers[ValueOrigins]
-        ): Boolean = {
-            defUseDomain.propagate(currentPC, successorPC, newDefOps, newDefLocals)
-        }
-
-        def stackOperation(usedValues: Int, pushesValue: Boolean): Boolean = {
-            defUseDomain.stackOperation(
-                currentPC,
-                currentInstruction,
-                successorPC,
-                isExceptionalControlFlow,
-                usedValues, pushesValue
-            )
-        }
-
-        def load(index: Int): Boolean = {
-            // there will never be an exceptional control flow ...
-            val currentLocals = defLocals(currentPC)
-            val newDefOps = currentLocals(index) :&: defOps(currentPC)
-            propagate(newDefOps, currentLocals)
-        }
-
-        def store(index: Int): Boolean = {
-            // there will never be an exceptional control flow ...
-            val currentOps = defOps(currentPC)
-            val newDefLocals = defLocals(currentPC).updated(index, currentOps.head)
-            propagate(currentOps.tail, newDefLocals)
-        }
-
-        //
-        // THE IMPLEMENTATION...
-        //
-        val scheduleNextPC: Boolean = (currentInstruction.opcode: @switch) match {
-            case GOTO.opcode | GOTO_W.opcode |
-                NOP.opcode |
-                WIDE.opcode ⇒
-                propagate(defOps(currentPC), defLocals(currentPC))
-
-            case JSR.opcode | JSR_W.opcode ⇒
-                stackOperation(0, pushesValue = true)
-
-            case RET.opcode ⇒
-                val RET(lvIndex) = currentInstruction
-                val currentDefLocals = defLocals(currentPC)
-                val returnAddressValue = currentDefLocals(lvIndex)
-                updateUsageInformation(returnAddressValue, currentPC)
-                propagate(defOps(currentPC), currentDefLocals)
-
-            case IF_ACMPEQ.opcode | IF_ACMPNE.opcode
-                | IF_ICMPEQ.opcode | IF_ICMPNE.opcode
-                | IF_ICMPGT.opcode | IF_ICMPGE.opcode | IF_ICMPLT.opcode | IF_ICMPLE.opcode ⇒
-                stackOperation(2, pushesValue = false)
-
-            case IFNULL.opcode | IFNONNULL.opcode
-                | IFEQ.opcode | IFNE.opcode
-                | IFGT.opcode | IFGE.opcode | IFLT.opcode | IFLE.opcode
-                | LOOKUPSWITCH.opcode | TABLESWITCH.opcode ⇒
-                stackOperation(1, pushesValue = false)
-
-            case ATHROW.opcode ⇒
-                val pushesValues = true /* <= irrelevant; athrow has special handling downstream */
-                stackOperation(1, pushesValues)
-
-            //
-            // ARRAYS
-            //
-            case NEWARRAY.opcode | ANEWARRAY.opcode ⇒
-                stackOperation(1, pushesValue = true)
-
-            case ARRAYLENGTH.opcode ⇒
-                stackOperation(1, pushesValue = true)
-
-            case MULTIANEWARRAY.opcode ⇒
-                val dims = currentInstruction.asInstanceOf[MULTIANEWARRAY].dimensions
-                stackOperation(dims, pushesValue = true)
-
-            case 50 /*aaload*/ |
-                49 /*daload*/ | 48 /*faload*/ |
-                51 /*baload*/ |
-                52 /*caload*/ | 46 /*iaload*/ | 47 /*laload*/ | 53 /*saload*/ ⇒
-                stackOperation(2, pushesValue = true)
-
-            case 83 /*aastore*/ |
-                84 /*bastore*/ |
-                85 /*castore*/ | 79 /*iastore*/ | 80 /*lastore*/ | 86 /*sastore*/ |
-                82 /*dastore*/ | 81 /*fastore*/ ⇒
-                stackOperation(3, pushesValue = false)
-
-            //
-            // FIELD ACCESS
-            //
-            case 180 /*getfield*/ ⇒
-                stackOperation(1, pushesValue = true)
-            case 178 /*getstatic*/ ⇒
-                stackOperation(0, pushesValue = true)
-            case 181 /*putfield*/ ⇒
-                stackOperation(2, pushesValue = false)
-            case 179 /*putstatic*/ ⇒
-                stackOperation(1, pushesValue = false)
-
-            //
-            // MONITOR
-            //
-
-            case 194 /*monitorenter*/ ⇒
-                stackOperation(1, pushesValue = false)
-            case 195 /*monitorexit*/ ⇒
-                stackOperation(1, pushesValue = false)
-
-            //
-            // METHOD INVOCATIONS
-            //
-            case 184 /*invokestatic*/ | 186 /*invokedynamic*/ |
-                185 /*invokeinterface*/ | 183 /*invokespecial*/ | 182 /*invokevirtual*/ ⇒
-                val invoke = currentInstruction.asInvocationInstruction
-                val descriptor = invoke.methodDescriptor
-                stackOperation(
-                    invoke.numberOfPoppedOperands(ComputationalTypeCategoryNotAvailable),
-                    !descriptor.returnType.isVoidType
-                )
-
-            //
-            // LOAD AND STORE INSTRUCTIONS
-            //
-            case 25 /*aload*/ | 24 /*dload*/ | 23 /*fload*/ | 21 /*iload*/ | 22 /*lload*/ ⇒
-                load(currentInstruction.asLoadLocalVariableInstruction.lvIndex)
-            case 42 /*aload_0*/ |
-                38 /*dload_0*/ | 34 /*fload_0*/ | 26 /*iload_0*/ | 30 /*lload_0*/ ⇒
-                load(0)
-            case 43 /*aload_1*/ |
-                39 /*dload_1*/ | 35 /*fload_1*/ | 27 /*iload_1*/ | 31 /*lload_1*/ ⇒
-                load(1)
-            case 44 /*aload_2*/ |
-                40 /*dload_2*/ | 36 /*fload_2*/ | 28 /*iload_2*/ | 32 /*lload_2*/ ⇒
-                load(2)
-            case 45 /*aload_3*/ |
-                41 /*dload_3*/ | 37 /*fload_3*/ | 29 /*iload_3*/ | 33 /*lload_3*/ ⇒
-                load(3)
-
-            case 58 /*astore*/ |
-                57 /*dstore*/ | 56 /*fstore*/ | 54 /*istore*/ | 55 /*lstore*/ ⇒
-                store(currentInstruction.asStoreLocalVariableInstruction.lvIndex)
-            case 75 /*astore_0*/ |
-                71 /*dstore_0*/ | 67 /*fstore_0*/ | 63 /*lstore_0*/ | 59 /*istore_0*/ ⇒
-                store(0)
-            case 76 /*astore_1*/ |
-                72 /*dstore_1*/ | 68 /*fstore_1*/ | 64 /*lstore_1*/ | 60 /*istore_1*/ ⇒
-                store(1)
-            case 77 /*astore_2*/ |
-                73 /*dstore_2*/ | 69 /*fstore_2*/ | 65 /*lstore_2*/ | 61 /*istore_2*/ ⇒
-                store(2)
-            case 78 /*astore_3*/ |
-                74 /*dstore_3*/ | 70 /*fstore_3*/ | 66 /*lstore_3*/ | 62 /*istore_3*/ ⇒
-                store(3)
-
-            //
-            // PUSH CONSTANT VALUE
-            //
-            case 1 /*aconst_null*/ |
-                2 /*iconst_m1*/ |
-                3 /*iconst_0*/ | 4 /*iconst_1*/ |
-                5 /*iconst_2*/ | 6 /*iconst_3*/ | 7 /*iconst_4*/ | 8 /*iconst_5*/ |
-                9 /*lconst_0*/ | 10 /*lconst_1*/ |
-                11 /*fconst_0*/ | 12 /*fconst_1*/ | 13 /*fconst_2*/ |
-                14 /*dconst_0*/ | 15 /*dconst_1*/ |
-                16 /*bipush*/ | 17 /*sipush*/ |
-                18 /*ldc*/ | 19 /*ldc_w*/ | 20 /*ldc2_w*/ ⇒
-                stackOperation(0, pushesValue = true)
-
-            //
-            // RELATIONAL OPERATORS
-            //
-            case 148 /*lcmp*/ |
-                150 /*fcmpg*/ | 149 /*fcmpl*/ |
-                152 /*dcmpg*/ | 151 /*dcmpl*/ ⇒
-                stackOperation(2, pushesValue = true)
-
-            //
-            // UNARY EXPRESSIONS
-            //
-            case 116 /*ineg*/ | 117 /*lneg*/ | 119 /*dneg*/ | 118 /*fneg*/ ⇒
-                stackOperation(1, pushesValue = true)
-
-            case NEW.opcode ⇒
-                stackOperation(0, pushesValue = true)
-
-            //
-            // BINARY EXPRESSIONS
-            //
-            case IINC.opcode ⇒
-                val IINC(index, _) = currentInstruction
-                registerReadWrite(currentPC, successorPC, index)
-
-            case 99 /*dadd*/ | 111 /*ddiv*/ | 107 /*dmul*/ | 115 /*drem*/ | 103 /*dsub*/ |
-                98 /*fadd*/ | 110 /*fdiv*/ | 106 /*fmul*/ | 114 /*frem*/ | 102 /*fsub*/ |
-                109 /*ldiv*/ | 105 /*lmul*/ | 113 /*lrem*/ | 101 /*lsub*/ | 97 /*ladd*/ |
-                96 /*iadd*/ | 108 /*idiv*/ | 104 /*imul*/ | 112 /*irem*/ | 100 /*isub*/ |
-                126 /*iand*/ | 128 /*ior*/ | 130 /*ixor*/ |
-                127 /*land*/ | 129 /*lor*/ | 131 /*lxor*/ |
-                120 /*ishl*/ | 122 /*ishr*/ | 124 /*iushr*/ |
-                121 /*lshl*/ | 123 /*lshr*/ | 125 /*lushr*/ ⇒
-                stackOperation(2, pushesValue = true)
-
-            //
-            // GENERIC STACK MANIPULATION
-            //
-            case 89 /*dup*/ ⇒
-                val oldDefOps = defOps(currentPC)
-                propagate(oldDefOps.head :&: oldDefOps, defLocals(currentPC))
-            case 90 /*dup_x1*/ ⇒
-                val v1 :&: v2 :&: rest = defOps(currentPC)
-                propagate(v1 :&: v2 :&: v1 :&: rest, defLocals(currentPC))
-            case 91 /*dup_x2*/ ⇒
-                operandsArray(currentPC) match {
-                    case (_ /*v1 @ CTC1()*/ ) :&: (_@ CTC1()) :&: _ ⇒
-                        val (v1 :&: v2 :&: v3 :&: rest) = defOps(currentPC)
-                        propagate(v1 :&: v2 :&: v3 :&: v1 :&: rest, defLocals(currentPC))
-                    case _ ⇒
-                        val (v1 :&: v2 :&: rest) = defOps(currentPC)
-                        propagate(v1 :&: v2 :&: v1 :&: rest, defLocals(currentPC))
-                }
-            case 92 /*dup2*/ ⇒
-                operandsArray(currentPC) match {
-                    case (_@ CTC1()) :&: _ ⇒
-                        val currentDefOps = defOps(currentPC)
-                        val (v1 :&: v2 :&: _) = currentDefOps
-                        propagate(v1 :&: v2 :&: currentDefOps, defLocals(currentPC))
-                    case _ ⇒
-                        val oldDefOps = defOps(currentPC)
-                        propagate(oldDefOps.head :&: defOps(currentPC), defLocals(currentPC))
-                }
-            case 93 /*dup2_x1*/ ⇒
-                operandsArray(currentPC) match {
-                    case (_@ CTC1()) :&: _ ⇒
-                        val (v1 :&: v2 :&: v3 :&: rest) = defOps(currentPC)
-                        propagate(v1 :&: v2 :&: v3 :&: v1 :&: v2 :&: rest, defLocals(currentPC))
-                    case _ ⇒
-                        val (v1 :&: v2 :&: rest) = defOps(currentPC)
-                        propagate(v1 :&: v2 :&: v1 :&: rest, defLocals(currentPC))
-                }
-            case 94 /*dup2_x2*/ ⇒
-                operandsArray(currentPC) match {
-                    case (_@ CTC1()) :&: (_@ CTC1()) :&: (_@ CTC1()) :&: _ ⇒
-                        val (v1 :&: v2 :&: v3 :&: v4 :&: rest) = defOps(currentPC)
-                        val currentLocals = defLocals(currentPC)
-                        propagate(v1 :&: v2 :&: v3 :&: v4 :&: v1 :&: v2 :&: rest, currentLocals)
-                    case (_@ CTC1()) :&: (_@ CTC1()) :&: _ ⇒
-                        val (v1 :&: v2 :&: v3 :&: rest) = defOps(currentPC)
-                        propagate(v1 :&: v2 :&: v3 :&: v1 :&: v2 :&: rest, defLocals(currentPC))
-                    case (_ /*v1 @ CTC2()*/ ) :&: (_@ CTC1()) :&: _ ⇒
-                        val (v1 :&: v2 :&: v3 :&: rest) = defOps(currentPC)
-                        propagate(v1 :&: v2 :&: v3 :&: v1 :&: rest, defLocals(currentPC))
-                    case _ ⇒
-                        val (v1 :&: v2 :&: rest) = defOps(currentPC)
-                        propagate(v1 :&: v2 :&: v1 :&: rest, defLocals(currentPC))
-                }
-
-            case 87 /*pop*/ ⇒
-                propagate(defOps(currentPC).tail, defLocals(currentPC))
-            case 88 /*pop2*/ ⇒
-                if (operandsArray(currentPC).head.computationalType.operandSize == 1)
-                    propagate(defOps(currentPC).drop(2), defLocals(currentPC))
-                else
-                    propagate(defOps(currentPC).tail, defLocals(currentPC))
-
-            case 95 /*swap*/ ⇒
-                val v1 :&: v2 :&: rest = defOps(currentPC)
-                propagate(v2 :&: v1 :&: rest, defLocals(currentPC))
-
-            //
-            // VALUE CONVERSIONS
-            //
-            case 144 /*d2f*/ | 142 /*d2i*/ | 143 /*d2l*/ |
-                141 /*f2d*/ | 139 /*f2i*/ | 140 /*f2l*/ |
-                145 /*i2b*/ | 146 /*i2c*/ | 135 /*i2d*/ | 134 /*i2f*/ | 133 /*i2l*/ | 147 /*i2s*/ |
-                138 /*l2d*/ | 137 /*l2f*/ | 136 /*l2i*/ |
-                193 /*instanceof*/ ⇒
-                stackOperation(1, pushesValue = true)
-
-            case CHECKCAST.opcode ⇒
-                // Recall that – even if the cast is successful NOW (i.e., we don't have an
-                // exceptional control flow) - that does not mean that the cast was useless.
-                // At this point in time we simply don't have the necessary information to
-                // decide whether the cast is truly useless.
-                // E.g,.
-                //      AbstractList abstractL = ...;
-                //      List l = (java.util.List) abstractL; // USELESS
-                //      ArrayList al = (java.util.ArrayList) l; // MAY OR MAY NO SUCCEED
-                val currentDefOps = defOps(currentPC)
-                val op = currentDefOps.head
-                updateUsageInformation(op, currentPC)
-                val newDefOps =
-                    if (isExceptionalControlFlow) {
-                        newDefOpsForExceptionalControlFlow(
-                            currentPC, currentInstruction, successorPC
-                        )
-                    } else {
-                        currentDefOps
-                    }
-                propagate(newDefOps, defLocals(currentPC))
-
-            //
-            // "ERROR" HANDLING
-            //
-            case RETURN.opcode ⇒
-                if (isExceptionalControlFlow) {
-                    val pushesValue = true /* value doesn't matter - special handling downstream */
-                    stackOperation(0, pushesValue)
-                } else {
-                    val message = s"a return instruction does not have regular successors"
-                    throw BytecodeProcessingFailedException(message)
-                }
-
-            case 176 /*a...*/ | 175 /*d...*/ | 174 /*f...*/ | 172 /*i...*/ | 173 /*l...return*/ ⇒
-                if (isExceptionalControlFlow) {
-                    val pushesValue = true /* value doesn't matter - special handling downstream */
-                    stackOperation(1, pushesValue)
-                } else {
-                    val message = s"a(n) $currentInstruction does not have regular successors"
-                    throw BytecodeProcessingFailedException(message)
-                }
-
-            case opcode ⇒ throw BytecodeProcessingFailedException(s"unknown opcode: $opcode")
-        }
-
-        scheduleNextPC
-    }
-
-    /**
      * Completes the computation of the definition/use information by using the recorded cfg.
      */
     abstract override def abstractInterpretationEnded(
@@ -935,83 +600,581 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode with Th
             return /* nothing to do */ ;
 
         val instructions = code.instructions
-        val operandsArray = aiResult.operandsArray
-        val localsArray = aiResult.localsArray
+        lazy val belongsToSubroutine = code.belongsToSubroutine()
+        // println(belongsToSubroutine.zipWithIndex.map(_.swap).mkString("Subroutine association:\n\t", "\n\t", "\n"))
+        implicit val operandsArray = aiResult.operandsArray
+        implicit val localsArray = aiResult.localsArray
         implicit val subroutinePCs: IntArraySet = aiResult.subroutinePCs
         implicit val cfJoins: IntTrieSet = aiResult.cfJoins
 
+        // THE RefArrayStacks are required to model "at which subroutine level" we are currently
+        // operating.
+        val nextPCs: RefArrayStack[IntTrieSet] = new RefArrayStack(IntTrieSet1(0), 3)
+        val nextJoinPCs: RefArrayStack[IntTrieSet] = new RefArrayStack(IntTrieSet.empty, 3)
         // General idea related to JSR/RET:
-        // Follow JSRs eagerly; RET only to ACTIVE callers. (Recall the underlying CFG already knows
-        // ALL ret targets, but if we have a JSR that was not yet executed, it may be the
-        // case that some instructions (on the way to the respective JSR) are relevant for the
-        // state afterwards!)
-        //
-        // Given that some JSRs have no RET (only athrow/returns instead!); the values are the
-        // pcs of the JSRs unless a ret was found that actually ends the subroutine -
-        // then the value is -1.
-        val retTargetPCs: Int2IntLinkedOpenHashMap = new Int2IntLinkedOpenHashMap(4)
-        val nextPCs: IntLinkedOpenHashSet = new IntLinkedOpenHashSet()
-        nextPCs.add(0)
+        // We jump to a subroutine once all regular paths to a specific JSR have been evaluated.
+        // Then we evaluate the subroutine; collect the def/use information related to the JSR
+        // and reset the JSR. After that we execute the next JSR. At the end we join the information
+        // related to the JSRs.
+        // Due to the possibility of nested subroutine calls, we have to track the level at
+        // which a subroutine level happens - the main level has the id "0".
+        val jsrPCs: RefArrayStack[IntTrieSet] = new RefArrayStack(IntTrieSet.empty, 3)
+        // Recall that we need to ret in reverse order; i.e. last subroutine first!
+        var retTargetPCs: Chain[IntTrieSet] = Naught
+        var retPCs: Chain[Int] = Naught
+        val currentSubroutinePCs: RefArrayStack[IntTrieSet] = RefArrayStack.empty // the instructions belonging to the subroutine
+        var currentSubroutineLevel: Int = 0
+        var subroutineIDs: Chain[Int] = Naught // basically the stack of the pc of the first instructions of the subroutines that are currently executed
+        var subroutineDefOps: Array[Chain[ValueOrigins]] = null
+        var subroutineDefLocals: Array[Registers[ValueOrigins]] = null
+        var subroutineUsed: Array[ValueOrigins] = null
+        var subroutineUsedExternalExceptions: Array[ValueOrigins] = null
 
-        def checkAndScheduleNextSubroutine(): Boolean = {
-            // When we reach this point "nextPCs" is empty!
+        /**
+         * Updates/computes the def/use information when the instruction with
+         * the pc `successorPC` is executed immediately after the instruction with `currentPC`.
+         */
+        def handleFlow(
+            currentPC:                PC,
+            successorPC:              PC,
+            isExceptionalControlFlow: Boolean
+        )(
+            implicit
+            cfJoins:       IntTrieSet,
+            subroutinePCs: IntArraySet,
+            operandsArray: OperandsArray,
+            localsArray:   LocalsArray
+        ): Boolean = {
 
-            /* We have to ensure that all paths of a specific subroutine are
-             * actually evaluated before we return. Therefore, in case of
-             * deeply nested jsr-rets, we have to make sure that we "ret" as
-             * soon as all jumps to the subroutine have been evaluated,
-             * otherwise, we may circumvent a relevant control-flow.
-             *
-             * A concrete example (belonging to the qualitas corpus) is:
-             *  com.aelitis.azureus.plugins.dht.impl.DHTPluginStorageManager{
-             *      public com.aelitis.azureus.core.dht.DHTStorageBlock keyBlockRequest(
-             *          com.aelitis.azureus.core.dht.transport.DHTTransportContact,byte[],byte[]
-             *      )
-             *  }
-             * In general, we have to ensure that a subroutine that is called
-             * directly by the main code, but which may also be called after
-             * some other subroutines were evaluated, is only evaluated after the
-             * other subroutines have been completely evaluated.
-             */
-            while (!retTargetPCs.isEmpty) {
-                val retTargetPC = retTargetPCs.lastIntKey()
-                val jsrPC = retTargetPCs.removeLastInt()
-                if (jsrPC == -1) {
-                    nextPCs.add(retTargetPC)
-                    return true;
-                } else {
-                    val retCandidatePC = predecessorsOf(retTargetPC).filter(instructions(_).isRET)
-                    if (retCandidatePC.isSingletonSet) {
-                        val retPC = retCandidatePC.head
-                        updateUsageInformation(IntTrieSet1(jsrPC), retPC)
-                        val oldRetTargetPCDefLocals = defLocals(retTargetPC)
-                        val oldRetTargetPCDefOps = defOps(retTargetPC)
-                        val retDefLocals = defLocals(retPC)
-                        val retDefOps = defOps(retPC)
-                        if (propagate(retPC, retTargetPC, retDefOps, retDefLocals) && (
-                            oldRetTargetPCDefLocals != defLocals(retTargetPC) ||
-                            oldRetTargetPCDefOps != defOps(retTargetPC)
-                        )) {
-                            nextPCs.add(retTargetPC)
-                            return true;
-                        }
-                    }
-                    /*
-                    else the subroutine never returns via RET and therefore retTargetPC is
-                    actually not an instruction reached via a RET...
-                    */
-                }
+            val currentInstruction = code.instructions(currentPC)
+
+            //
+            // HELPER METHODS
+            //
+
+            def propagate(
+                newDefOps:    Chain[ValueOrigins],
+                newDefLocals: Registers[ValueOrigins]
+            ): Boolean = {
+                defUseDomain.propagate(currentPC, successorPC, newDefOps, newDefLocals)
             }
-            false
+
+            def stackOperation(usedValues: Int, pushesValue: Boolean): Boolean = {
+                defUseDomain.stackOperation(
+                    currentPC,
+                    currentInstruction,
+                    successorPC,
+                    isExceptionalControlFlow,
+                    usedValues, pushesValue
+                )
+            }
+
+            def load(index: Int): Boolean = {
+                // there will never be an exceptional control flow ...
+                val currentLocals = defLocals(currentPC)
+                val newDefOps = currentLocals(index) :&: defOps(currentPC)
+                propagate(newDefOps, currentLocals)
+            }
+
+            def store(index: Int): Boolean = {
+                // there will never be an exceptional control flow ...
+                val currentOps = defOps(currentPC)
+                val newDefLocals = defLocals(currentPC).updated(index, currentOps.head)
+                propagate(currentOps.tail, newDefLocals)
+            }
+
+            //
+            // THE IMPLEMENTATION...
+            //
+            val scheduleNextPC: Boolean = (currentInstruction.opcode: @switch) match {
+                case GOTO.opcode | GOTO_W.opcode |
+                    NOP.opcode |
+                    WIDE.opcode ⇒
+                    propagate(defOps(currentPC), defLocals(currentPC))
+
+                case JSR.opcode | JSR_W.opcode ⇒
+                    // Let's check if we have a JSR to the subroutine that we are
+                    // currently executing. This can be legal in very restricted settings...
+                    if (currentSubroutinePCs.nonEmpty &&
+                        currentSubroutinePCs.head.contains(successorPC)) {
+                        // println(currentPC+": (RE)START OF A SUBROUTINE: "+successorPC)
+                        // In this case, we treat the JSR basically in the same way as a goto.
+                        // We update the retTargetPC, because the calling JSR might be different...
+                        val retTargetPC = currentInstruction.indexOfNextInstruction(currentPC)(code)
+                        retTargetPCs = (retTargetPCs.head + retTargetPC) :&: retTargetPCs.tail
+                        stackOperation(0, pushesValue = true)
+                    } else {
+                        // IN GENERAL:
+                        // HANDLING IS DEFERRED UNTIL ALL PATHS TO A JSR HAVE BEEN EVALUATED!
+                        jsrPCs.push(jsrPCs.pop() + currentPC)
+                        false /*do not schedule the next instruction now - will be done later*/
+                    }
+
+                case RET.opcode ⇒
+                    // IN GENERAL:
+                    // HANDLING IS DEFERRED UNTIL ALL PATHS TO THE RET HAVE BEEN EVALUATED!
+                    // Note that we have at most one RET at each level and initially it
+                    // is set to the fake value -1 and this value is now updated.
+                    retPCs = currentPC :&: retPCs.tail
+                    false /*do not schedule the next instruction now - will be done later*/
+
+                case IF_ACMPEQ.opcode | IF_ACMPNE.opcode
+                    | IF_ICMPEQ.opcode | IF_ICMPNE.opcode
+                    | IF_ICMPGT.opcode | IF_ICMPGE.opcode | IF_ICMPLT.opcode | IF_ICMPLE.opcode ⇒
+                    stackOperation(2, pushesValue = false)
+
+                case IFNULL.opcode | IFNONNULL.opcode
+                    | IFEQ.opcode | IFNE.opcode
+                    | IFGT.opcode | IFGE.opcode | IFLT.opcode | IFLE.opcode
+                    | LOOKUPSWITCH.opcode | TABLESWITCH.opcode ⇒
+                    stackOperation(1, pushesValue = false)
+
+                case ATHROW.opcode ⇒
+                    val pushesValues = true /* <= irrelevant; athrow has special handling downstream */
+                    stackOperation(1, pushesValues)
+
+                //
+                // ARRAYS
+                //
+                case NEWARRAY.opcode | ANEWARRAY.opcode ⇒
+                    stackOperation(1, pushesValue = true)
+
+                case ARRAYLENGTH.opcode ⇒
+                    stackOperation(1, pushesValue = true)
+
+                case MULTIANEWARRAY.opcode ⇒
+                    val dims = currentInstruction.asInstanceOf[MULTIANEWARRAY].dimensions
+                    stackOperation(dims, pushesValue = true)
+
+                case 50 /*aaload*/ |
+                    49 /*daload*/ | 48 /*faload*/ |
+                    51 /*baload*/ |
+                    52 /*caload*/ | 46 /*iaload*/ | 47 /*laload*/ | 53 /*saload*/ ⇒
+                    stackOperation(2, pushesValue = true)
+
+                case 83 /*aastore*/ |
+                    84 /*bastore*/ |
+                    85 /*castore*/ | 79 /*iastore*/ | 80 /*lastore*/ | 86 /*sastore*/ |
+                    82 /*dastore*/ | 81 /*fastore*/ ⇒
+                    stackOperation(3, pushesValue = false)
+
+                //
+                // FIELD ACCESS
+                //
+                case 180 /*getfield*/ ⇒
+                    stackOperation(1, pushesValue = true)
+                case 178 /*getstatic*/ ⇒
+                    stackOperation(0, pushesValue = true)
+                case 181 /*putfield*/ ⇒
+                    stackOperation(2, pushesValue = false)
+                case 179 /*putstatic*/ ⇒
+                    stackOperation(1, pushesValue = false)
+
+                //
+                // MONITOR
+                //
+
+                case 194 /*monitorenter*/ ⇒
+                    stackOperation(1, pushesValue = false)
+                case 195 /*monitorexit*/ ⇒
+                    stackOperation(1, pushesValue = false)
+
+                //
+                // METHOD INVOCATIONS
+                //
+                case 184 /*invokestatic*/ | 186 /*invokedynamic*/ |
+                    185 /*invokeinterface*/ | 183 /*invokespecial*/ | 182 /*invokevirtual*/ ⇒
+                    val invoke = currentInstruction.asInvocationInstruction
+                    val descriptor = invoke.methodDescriptor
+                    stackOperation(
+                        invoke.numberOfPoppedOperands(ComputationalTypeCategoryNotAvailable),
+                        !descriptor.returnType.isVoidType
+                    )
+
+                //
+                // LOAD AND STORE INSTRUCTIONS
+                //
+                case 25 /*aload*/ | 24 /*dload*/ | 23 /*fload*/ | 21 /*iload*/ | 22 /*lload*/ ⇒
+                    load(currentInstruction.asLoadLocalVariableInstruction.lvIndex)
+                case 42 /*aload_0*/ |
+                    38 /*dload_0*/ | 34 /*fload_0*/ | 26 /*iload_0*/ | 30 /*lload_0*/ ⇒
+                    load(0)
+                case 43 /*aload_1*/ |
+                    39 /*dload_1*/ | 35 /*fload_1*/ | 27 /*iload_1*/ | 31 /*lload_1*/ ⇒
+                    load(1)
+                case 44 /*aload_2*/ |
+                    40 /*dload_2*/ | 36 /*fload_2*/ | 28 /*iload_2*/ | 32 /*lload_2*/ ⇒
+                    load(2)
+                case 45 /*aload_3*/ |
+                    41 /*dload_3*/ | 37 /*fload_3*/ | 29 /*iload_3*/ | 33 /*lload_3*/ ⇒
+                    load(3)
+
+                case 58 /*astore*/ |
+                    57 /*dstore*/ | 56 /*fstore*/ | 54 /*istore*/ | 55 /*lstore*/ ⇒
+                    store(currentInstruction.asStoreLocalVariableInstruction.lvIndex)
+                case 75 /*astore_0*/ |
+                    71 /*dstore_0*/ | 67 /*fstore_0*/ | 63 /*lstore_0*/ | 59 /*istore_0*/ ⇒
+                    store(0)
+                case 76 /*astore_1*/ |
+                    72 /*dstore_1*/ | 68 /*fstore_1*/ | 64 /*lstore_1*/ | 60 /*istore_1*/ ⇒
+                    store(1)
+                case 77 /*astore_2*/ |
+                    73 /*dstore_2*/ | 69 /*fstore_2*/ | 65 /*lstore_2*/ | 61 /*istore_2*/ ⇒
+                    store(2)
+                case 78 /*astore_3*/ |
+                    74 /*dstore_3*/ | 70 /*fstore_3*/ | 66 /*lstore_3*/ | 62 /*istore_3*/ ⇒
+                    store(3)
+
+                //
+                // PUSH CONSTANT VALUE
+                //
+                case 1 /*aconst_null*/ |
+                    2 /*iconst_m1*/ |
+                    3 /*iconst_0*/ | 4 /*iconst_1*/ |
+                    5 /*iconst_2*/ | 6 /*iconst_3*/ | 7 /*iconst_4*/ | 8 /*iconst_5*/ |
+                    9 /*lconst_0*/ | 10 /*lconst_1*/ |
+                    11 /*fconst_0*/ | 12 /*fconst_1*/ | 13 /*fconst_2*/ |
+                    14 /*dconst_0*/ | 15 /*dconst_1*/ |
+                    16 /*bipush*/ | 17 /*sipush*/ |
+                    18 /*ldc*/ | 19 /*ldc_w*/ | 20 /*ldc2_w*/ ⇒
+                    stackOperation(0, pushesValue = true)
+
+                //
+                // RELATIONAL OPERATORS
+                //
+                case 148 /*lcmp*/ |
+                    150 /*fcmpg*/ | 149 /*fcmpl*/ |
+                    152 /*dcmpg*/ | 151 /*dcmpl*/ ⇒
+                    stackOperation(2, pushesValue = true)
+
+                //
+                // UNARY EXPRESSIONS
+                //
+                case 116 /*ineg*/ | 117 /*lneg*/ | 119 /*dneg*/ | 118 /*fneg*/ ⇒
+                    stackOperation(1, pushesValue = true)
+
+                case NEW.opcode ⇒
+                    stackOperation(0, pushesValue = true)
+
+                //
+                // BINARY EXPRESSIONS
+                //
+                case IINC.opcode ⇒
+                    val IINC(index, _) = currentInstruction
+                    registerReadWrite(currentPC, successorPC, index)
+
+                case 99 /*dadd*/ | 111 /*ddiv*/ | 107 /*dmul*/ | 115 /*drem*/ | 103 /*dsub*/ |
+                    98 /*fadd*/ | 110 /*fdiv*/ | 106 /*fmul*/ | 114 /*frem*/ | 102 /*fsub*/ |
+                    109 /*ldiv*/ | 105 /*lmul*/ | 113 /*lrem*/ | 101 /*lsub*/ | 97 /*ladd*/ |
+                    96 /*iadd*/ | 108 /*idiv*/ | 104 /*imul*/ | 112 /*irem*/ | 100 /*isub*/ |
+                    126 /*iand*/ | 128 /*ior*/ | 130 /*ixor*/ |
+                    127 /*land*/ | 129 /*lor*/ | 131 /*lxor*/ |
+                    120 /*ishl*/ | 122 /*ishr*/ | 124 /*iushr*/ |
+                    121 /*lshl*/ | 123 /*lshr*/ | 125 /*lushr*/ ⇒
+                    stackOperation(2, pushesValue = true)
+
+                //
+                // GENERIC STACK MANIPULATION
+                //
+                case 89 /*dup*/ ⇒
+                    val oldDefOps = defOps(currentPC)
+                    propagate(oldDefOps.head :&: oldDefOps, defLocals(currentPC))
+                case 90 /*dup_x1*/ ⇒
+                    val v1 :&: v2 :&: rest = defOps(currentPC)
+                    propagate(v1 :&: v2 :&: v1 :&: rest, defLocals(currentPC))
+                case 91 /*dup_x2*/ ⇒
+                    operandsArray(currentPC) match {
+                        case _ /*v1 @ CTC1()*/ :&: (_@ CTC1()) :&: _ ⇒
+                            val v1 :&: v2 :&: v3 :&: rest = defOps(currentPC)
+                            propagate(v1 :&: v2 :&: v3 :&: v1 :&: rest, defLocals(currentPC))
+                        case _ ⇒
+                            val v1 :&: v2 :&: rest = defOps(currentPC)
+                            propagate(v1 :&: v2 :&: v1 :&: rest, defLocals(currentPC))
+                    }
+                case 92 /*dup2*/ ⇒
+                    operandsArray(currentPC) match {
+                        case (_@ CTC1()) :&: _ ⇒
+                            val currentDefOps = defOps(currentPC)
+                            val v1 :&: v2 :&: _ = currentDefOps
+                            propagate(v1 :&: v2 :&: currentDefOps, defLocals(currentPC))
+                        case _ ⇒
+                            val oldDefOps = defOps(currentPC)
+                            propagate(oldDefOps.head :&: defOps(currentPC), defLocals(currentPC))
+                    }
+                case 93 /*dup2_x1*/ ⇒
+                    operandsArray(currentPC) match {
+                        case (_@ CTC1()) :&: _ ⇒
+                            val v1 :&: v2 :&: v3 :&: rest = defOps(currentPC)
+                            propagate(v1 :&: v2 :&: v3 :&: v1 :&: v2 :&: rest, defLocals(currentPC))
+                        case _ ⇒
+                            val v1 :&: v2 :&: rest = defOps(currentPC)
+                            propagate(v1 :&: v2 :&: v1 :&: rest, defLocals(currentPC))
+                    }
+                case 94 /*dup2_x2*/ ⇒
+                    operandsArray(currentPC) match {
+                        case (_@ CTC1()) :&: (_@ CTC1()) :&: (_@ CTC1()) :&: _ ⇒
+                            val v1 :&: v2 :&: v3 :&: v4 :&: rest = defOps(currentPC)
+                            val currentLocals = defLocals(currentPC)
+                            propagate(v1 :&: v2 :&: v3 :&: v4 :&: v1 :&: v2 :&: rest, currentLocals)
+                        case (_@ CTC1()) :&: (_@ CTC1()) :&: _ ⇒
+                            val v1 :&: v2 :&: v3 :&: rest = defOps(currentPC)
+                            propagate(v1 :&: v2 :&: v3 :&: v1 :&: v2 :&: rest, defLocals(currentPC))
+                        case _ /*v1 @ CTC2()*/ :&: (_@ CTC1()) :&: _ ⇒
+                            val v1 :&: v2 :&: v3 :&: rest = defOps(currentPC)
+                            propagate(v1 :&: v2 :&: v3 :&: v1 :&: rest, defLocals(currentPC))
+                        case _ ⇒
+                            val v1 :&: v2 :&: rest = defOps(currentPC)
+                            propagate(v1 :&: v2 :&: v1 :&: rest, defLocals(currentPC))
+                    }
+
+                case 87 /*pop*/ ⇒
+                    propagate(defOps(currentPC).tail, defLocals(currentPC))
+                case 88 /*pop2*/ ⇒
+                    if (operandsArray(currentPC).head.computationalType.operandSize == 1)
+                        propagate(defOps(currentPC).drop(2), defLocals(currentPC))
+                    else
+                        propagate(defOps(currentPC).tail, defLocals(currentPC))
+
+                case 95 /*swap*/ ⇒
+                    val v1 :&: v2 :&: rest = defOps(currentPC)
+                    propagate(v2 :&: v1 :&: rest, defLocals(currentPC))
+
+                //
+                // VALUE CONVERSIONS
+                //
+                case 144 /*d2f*/ | 142 /*d2i*/ | 143 /*d2l*/ |
+                    141 /*f2d*/ | 139 /*f2i*/ | 140 /*f2l*/ |
+                    145 /*i2b*/ | 146 /*i2c*/ | 135 /*i2d*/ | 134 /*i2f*/ | 133 /*i2l*/ | 147 /*i2s*/ |
+                    138 /*l2d*/ | 137 /*l2f*/ | 136 /*l2i*/ |
+                    193 /*instanceof*/ ⇒
+                    stackOperation(1, pushesValue = true)
+
+                case CHECKCAST.opcode ⇒
+                    // Recall that – even if the cast is successful NOW (i.e., we don't have an
+                    // exceptional control flow) - that does not mean that the cast was useless.
+                    // At this point in time we simply don't have the necessary information to
+                    // decide whether the cast is truly useless.
+                    // E.g,.
+                    //      AbstractList abstractL = ...;
+                    //      List l = (java.util.List) abstractL; // USELESS
+                    //      ArrayList al = (java.util.ArrayList) l; // MAY OR MAY NO SUCCEED
+                    val currentDefOps = defOps(currentPC)
+                    val op = currentDefOps.head
+                    updateUsageInformation(op, currentPC)
+                    val newDefOps =
+                        if (isExceptionalControlFlow) {
+                            newDefOpsForExceptionalControlFlow(
+                                currentPC, currentInstruction, successorPC
+                            )
+                        } else {
+                            currentDefOps
+                        }
+                    propagate(newDefOps, defLocals(currentPC))
+
+                //
+                // "ERROR" HANDLING
+                //
+                case RETURN.opcode ⇒
+                    if (isExceptionalControlFlow) {
+                        val pushesValue = true /* value doesn't matter - special handling downstream */
+                        stackOperation(0, pushesValue)
+                    } else {
+                        val message = s"a return instruction does not have regular successors"
+                        throw BytecodeProcessingFailedException(message)
+                    }
+
+                case 176 /*a...*/ | 175 /*d...*/ | 174 /*f...*/ | 172 /*i...*/ | 173 /*l...return*/ ⇒
+                    if (isExceptionalControlFlow) {
+                        val pushesValue = true /* value doesn't matter - special handling downstream */
+                        stackOperation(1, pushesValue)
+                    } else {
+                        val message = s"a(n) $currentInstruction does not have regular successors"
+                        throw BytecodeProcessingFailedException(message)
+                    }
+
+                case opcode ⇒ throw BytecodeProcessingFailedException(s"unknown opcode: $opcode")
+            }
+
+            scheduleNextPC
         }
 
-        while (!nextPCs.isEmpty || checkAndScheduleNextSubroutine()) {
-            val currPC = nextPCs.removeLastInt() // in case of JSRs we need to decent eagerly...
+        @tailrec def scheduleNextSubroutine(): Boolean = {
+            // When we reach this point "next(Join)PCs" is empty!
 
-            def handleSuccessor(isExceptionalControlFlow: Boolean)(succPC: Int): Unit = {
+            // TODO FIXME XXX Handle throws which terminate subroutines...
+
+            // We generally first have to clean-up the state of a currently executed
+            // subroutine, before we start the evaluation of the next subroutine,
+            // unless, we have a nested subroutine call - in that case, we have to
+            // do the nested subroutine call first!
+
+            assert(currentSubroutineLevel == currentSubroutinePCs.size)
+            assert(currentSubroutineLevel == subroutineIDs.size)
+            if (jsrPCs.top.nonEmpty &&
+                // We have to check if we have a nested JSR call;
+                // if the current subroutine level (root = 0) is smaller than the
+                // high of the stack then we have a (nested) subroutine call.
+                currentSubroutineLevel < jsrPCs.size) {
+                val IntRefPair(jsrPC, newJSRPCs) = jsrPCs.pop().headAndTail
+                jsrPCs.push(newJSRPCs)
+                // println("processing jsr: "+jsrPC+"; remaining: "+jsrPCs)
+                val jsrInstruction = instructions(jsrPC).asSimpleBranchInstruction
+                val successorPC = jsrPC + jsrInstruction.branchoffset
+                val retTargetPC = jsrInstruction.indexOfNextInstruction(jsrPC)(code)
+
+                retTargetPCs :&:= IntTrieSet1(retTargetPC)
+
+                // The initial value is basically used to detect subroutines which never end
+                // by a RET. Additionally, we ensure that the size of the retPCs and retTargetPCs
+                // lists are always identical.
+                retPCs :&:= -1
+
+                // The new subroutine does not yet have any instructions!
+                currentSubroutinePCs.push(IntTrieSet.empty)
+                currentSubroutineLevel += 1
+                subroutineIDs :&:= successorPC
+                // Increase the stack to collect nested JSRs
+                jsrPCs.push(IntTrieSet.empty)
+
+                defUseDomain.stackOperation(
+                    jsrPC,
+                    jsrInstruction,
+                    successorPC,
+                    isExceptionalControlFlow = false,
+                    0, pushesValue = true
+                )
+                nextPCs.push(IntTrieSet1(successorPC))
+                nextJoinPCs.push(IntTrieSet.empty)
+                // println(s"START OF A SUBROUTINE: $successorPC")
+                true
+            } else if (retPCs.nonEmpty) {
+                val retPC = retPCs.head
+                retPCs = retPCs.tail
+                val thisSubroutineRetTargetPCs = retTargetPCs.head
+                retTargetPCs = retTargetPCs.tail
+
+                val lastSubroutinePCs = currentSubroutinePCs.pop()
+                currentSubroutineLevel -= 1
+                subroutineIDs = subroutineIDs.tail
+                assert(jsrPCs.head.isEmpty)
+                val oldSubroutineJsrPCs = jsrPCs.pop() // drop empty IntTrieSet
+                assert(oldSubroutineJsrPCs.isEmpty)
+                val oldSubroutineNextPCs = nextPCs.pop() // drop empty IntTrieSet
+                assert(oldSubroutineNextPCs.isEmpty)
+                val oldSubroutineNextJoinPCs = nextJoinPCs.pop() // drop empty IntTrieSet
+                assert(oldSubroutineNextJoinPCs.isEmpty)
+
+                // println(s"END OF A SUBROUTINE: $retPC ... $thisSubroutineRetTargetPCs: "+lastSubroutinePCs.mkString(", "))
+
+                // 0. Let's determine the next instruction:
+                val didRet =
+                    if (retPC == -1) {
+                        // the RET instruction (whether it exists or not!) was not reached
+                        false
+                    } else {
+                        val retInstruction @ RET(lvIndex) = instructions(retPC)
+                        val retDefLocals = defLocals(retPC)
+                        val originOfReturnAddressValue = retDefLocals(lvIndex)
+                        updateUsageInformation(originOfReturnAddressValue, retPC)
+                        thisSubroutineRetTargetPCs foreach { retTargetPC ⇒
+                            defUseDomain.propagate(retPC, retTargetPC, defOps(retPC), retDefLocals)
+                            nextPCs.push(nextPCs.pop() +! retTargetPC)
+                        }
+                        true
+                    }
+
+                // 1. Let's safe and reset the state related to the last subroutine
+                if (subroutineDefOps eq null) { // initialize the data-structures on demand
+                    subroutineDefOps = new Array[Chain[ValueOrigins]](instructions.length)
+                    subroutineDefLocals = new Array[Registers[ValueOrigins]](instructions.length)
+                    subroutineUsed = new Array[ValueOrigins](instructions.length + parametersOffset)
+                    subroutineUsedExternalExceptions = new Array[ValueOrigins](instructions.length)
+                }
+                // Please note, that we only have the aggregated control-flow information
+                // when we analyze a subroutine.
+                lastSubroutinePCs foreach { pc ⇒
+                    // Safe state:
+                    val usedPC = pc + parametersOffset
+                    if (subroutineUsed(usedPC) == null) {
+                        subroutineUsed(usedPC) = used(usedPC)
+                    } else {
+                        val usedPCs = used(usedPC)
+                        if (usedPCs != null)
+                            subroutineUsed(usedPC) ++= usedPCs
+                    }
+                    if (subroutineUsedExternalExceptions(pc) == null) {
+                        subroutineUsedExternalExceptions(pc) = usedExternalExceptions(pc)
+                    } else {
+                        val usedExternalExceptionsPCs = usedExternalExceptions(pc)
+                        if (usedExternalExceptionsPCs != null)
+                            subroutineUsedExternalExceptions(pc) ++= usedExternalExceptionsPCs
+                    }
+                    if (subroutineDefOps(pc) == null) {
+                        subroutineDefOps(pc) = defOps(pc)
+                    } else {
+                        subroutineDefOps(pc) =
+                            (subroutineDefOps(pc) zip defOps(pc)).map(vos ⇒ vos._1 ++ vos._2)
+                    }
+                    if (subroutineDefLocals(pc) == null) {
+                        subroutineDefLocals(pc) = defLocals(pc)
+                    } else {
+                        subroutineDefLocals(pc) =
+                            subroutineDefLocals(pc).fuse(
+                                defLocals(pc),
+                                (l, r) ⇒ if (l == null) r else if (r == null) null else l ++ r
+                            )
+                    }
+                    // Reset:
+                    used(usedPC) = null
+                    usedExternalExceptions(pc) = null
+                    defLocals(pc) = null
+                    defOps(pc) = null
+                }
+
+                // required, because "didRet || schedule..()" is not identified as tail recursive
+                if (didRet)
+                    true
+                else
+                    scheduleNextSubroutine()
+            } else {
+                // we don't have subroutines at all..
+                false
+            }
+        }
+
+        while (nextPCs.top.nonEmpty || nextJoinPCs.top.nonEmpty || scheduleNextSubroutine()) {
+            val currentPC =
+                if (nextPCs.top.nonEmpty) {
+                    val IntRefPair(currentPC, newNextPCs) = nextPCs.pop().headAndTail
+                    nextPCs.push(newNextPCs)
+                    //    print("next pc: "+currentPC)
+                    currentPC
+                } else {
+                    val IntRefPair(currentPC, newNextJoinPCs) = nextJoinPCs.pop().headAndTail
+                    nextJoinPCs.push(newNextJoinPCs)
+                    //      print("next join pc: "+currentPC)
+                    currentPC
+                }
+
+            if (currentSubroutineLevel > 0 /* <=> we are in a subroutine */ ) {
+                // Append the current pc to the list of instructions belonging to the "top-most"
+                // subroutine - if the current PC does not also belong to a higher-level
+                // subroutine/root
+                // if (defOps(currentPC) == null) {
+                val thisSubroutinePCs = currentSubroutinePCs.pop()
+                currentSubroutinePCs.push(thisSubroutinePCs + currentPC)
+                // print(s" (added to the list of subroutine pcs at level ($currentSubroutineLevel))")
+                // } else {
+                // in this case the PC was already added to the list of pcs...
+                // }
+            }
+
+            //  println(" "+instructions(currentPC))
+
+            def handleSuccessor(isExceptionalControlFlow: Boolean)(successorPC: Int): Unit = {
                 val scheduleNextPC = try {
                     handleFlow(
-                        currPC, succPC, isExceptionalControlFlow
+                        currentPC, successorPC, isExceptionalControlFlow
                     )(
                         cfJoins, subroutinePCs,
                         operandsArray, localsArray
@@ -1021,13 +1184,17 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode with Th
                         val method = analyzedEntity(aiResult.domain)
                         var message = s"def-use computation failed for: $method\n"
                         try {
-                            message += s"\tCurrent PC: $currPC; Successor PC: $succPC\n"
+                            message += s"\tCurrent PC: $currentPC; Successor PC: $successorPC\n"
                             message +=
-                                retTargetPCs.int2IntEntrySet().iterator.asScala.
-                                mkString("\tRET Target PCs: ", ",", "\n")
-                            message += s"\tStack: ${defOps(currPC)}\n"
+                                jsrPCs
+                                .reverse
+                                .zipWithIndex
+                                .map(e ⇒ s"(Level ${e._2})${e._1.mkString("{", ",", "}")})")
+                                .mkString("\tJSR PCs: ", ",", "\n")
+                            message += retPCs.mkString("\tRET PCs: ", ",", "\n")
+                            message += s"\tStack: ${defOps(currentPC)}\n"
                             val localsDump =
-                                defLocals(currPC).zipWithIndex.map { e ⇒
+                                defLocals(currentPC).zipWithIndex.map { e ⇒
                                     val (local, index) = e; s"$index: $local"
                                 }
                             message += localsDump.mkString("\tLocals:\n\t\t", "\n\t\t", "\n")
@@ -1050,70 +1217,98 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode with Th
                         throw AnalysisException(message, e);
                 }
 
-                assert(defLocals(succPC) ne null)
-                assert(defOps(succPC) ne null)
-
-                val currentInstruction = instructions(currPC)
-                currentInstruction.opcode match {
-                    case JSR.opcode | JSR_W.opcode ⇒
-                        val retTargetPC = code.pcOfNextInstruction(currPC)
-                        if (scheduleNextPC) {
-                            retTargetPCs.put(retTargetPC, currPC)
-                            nextPCs.add(succPC) // will be executed next(!)
+                if (scheduleNextPC) {
+                    // ... this is never (directly) true for JSR/RET; they are handled specially!
+                    if (!isExceptionalControlFlow ||
+                        currentSubroutineLevel == 0 ||
+                        belongsToSubroutine(currentPC) == belongsToSubroutine(successorPC)) {
+                        if (cfJoins.contains(successorPC)) {
+                            nextJoinPCs.push(nextJoinPCs.pop() + successorPC)
                         } else {
-                            // Let's search for "a" potential last evaluation of the subroutine ...
-                            // it must contain at least the current def-use information.
-                            // (Every instruction is returned-to by at most one RET.)
-                            val retCandidatePC =
-                                predecessorsOf(retTargetPC).filter { predPC ⇒
-                                    instructions(predPC).opcode == RET.opcode
-                                }
-                            if (retCandidatePC.isSingletonSet) {
-                                val retPC = retCandidatePC.head
-                                val retDefLocals = defLocals(retPC)
-                                val retDefOps = defOps(retPC)
-                                updateUsageInformation(IntTrieSet1(currPC), retPC)
-                                if (propagate(retPC, retTargetPC, retDefOps, retDefLocals))
-                                    nextPCs.add(retTargetPC)
-                            }
-                            /*
-                            else the subroutine never returns via RET and therefore retTargetPC is
-                            actually not an instruction reached via a RET...
-                            */
+                            nextPCs.push(nextPCs.pop() + successorPC)
                         }
-
-                    case RET.opcode ⇒ /* nothing to do... */
-
-                    case _ ⇒
-                        if (scheduleNextPC) {
-                            nextPCs.add(succPC)
-                        }
-                }
-
-            }
-
-            val currentSuccessors = regularSuccessorsOf(currPC)
-            if (instructions(currPC).isRET) {
-                // we can't schedule the target of a RET instruction related to a not-yet executed
-                // JSR(!)
-                currentSuccessors foreach { retTargetPC ⇒
-                    if (retTargetPCs.containsKey(retTargetPC)) {
-                        retTargetPCs.replace(retTargetPC, -1)
-                        handleSuccessor(false)(retTargetPC)
+                    } else {
+                        // The instruction with the current pc and the one with the successor pc
+                        // (obviously a handler...) do not belong to the same subroutine.
+                        // Hence, we have to schedule the target instruction in the correct context
+                        // to avoid that we accidentally reset the state related to the instruction.
+                        // In this case, the handler instruction has to be considered a "join"
+                        // instruction, because it may be reached by different subroutine calls.
+                        val targetSubroutineID = belongsToSubroutine(successorPC)
+                        val droppedSubroutines = subroutineIDs.count(_ != targetSubroutineID)
+                        // println(s"currentPC: $currentPC does not belong to the same subroutine (sid=${belongsToSubroutine(currentPC)}) as its successor: $successorPC (sid=$targetSubroutineID) => dropped subroutines $droppedSubroutines")
+                        nextJoinPCs.update(
+                            droppedSubroutines,
+                            nextJoinPCs(droppedSubroutines) + successorPC
+                        )
+                        // println(nextJoinPCs.zipWithIndex.map(_.swap).mkString("new nextJoinPCs:\n\t", "\n\t", "\n"))
                     }
                 }
-            } else {
-                currentSuccessors foreach { handleSuccessor(false) }
             }
-            val currentExceptionHandlerSuccessors = exceptionHandlerSuccessorsOf(currPC)
-            currentExceptionHandlerSuccessors foreach { handleSuccessor(true) }
+
+            val currentSuccessors = regularSuccessorsOf(currentPC)
+            currentSuccessors foreach { handleSuccessor(false) }
+
+            val currentExceptionHandlerSuccessors = exceptionHandlerSuccessorsOf(currentPC)
+            currentExceptionHandlerSuccessors foreach { successorPC ⇒
+                handleSuccessor(isExceptionalControlFlow = true)(successorPC)
+            }
             if (currentSuccessors.isEmpty && currentExceptionHandlerSuccessors.isEmpty) {
                 // e.g., athrow, return or any instruction which potentially leads to an abnormal
                 // return (this excludes, notably, iinc; hence, it has to be an instruction which
                 // just operates on the stack and which is not a stack management instruction (dup,
                 // ...))
-                val usedValues = instructions(currPC).numberOfPoppedOperands(NotRequired)
-                defOps(currPC).forFirstN(usedValues) { op ⇒ updateUsageInformation(op, currPC) }
+                val usedValues = instructions(currentPC).numberOfPoppedOperands(NotRequired)
+                defOps(currentPC).forFirstN(usedValues)(op ⇒ updateUsageInformation(op, currentPC))
+            }
+        }
+
+        assert(nextPCs.tail.isEmpty)
+        assert(nextJoinPCs.tail.isEmpty)
+
+        // Integrate the accumulated subroutine information (if available)
+        if (subroutinePCs.nonEmpty) {
+            foreachNonNullValue(subroutineDefOps) { (pc, subroutineDefOpsAtPC) ⇒
+                // When we reach this point, we have instructions that are executed
+                // as part of the subroutine, but also as part of a parent routine.
+                // Hence, we have to merge the results!
+                if (defOps(pc) == null) {
+                    defOps(pc) = subroutineDefOps(pc)
+                } else {
+                    defOps(pc) =
+                        (defOps(pc) zip subroutineDefOps(pc)).map(vos ⇒ vos._1 ++ vos._2)
+                }
+                if (defLocals(pc) == null) {
+                    defLocals(pc) = subroutineDefLocals(pc)
+                } else {
+                    defLocals(pc) =
+                        defLocals(pc).fuse(
+                            subroutineDefLocals(pc),
+                            (l, r) ⇒ if (l == null) r else if (r == null) null else l ++ r
+                        )
+                }
+
+                // NOTE: we may have usages at the root level of values created in the subroutines!
+                val oldUsedExternalExceptions = usedExternalExceptions(pc)
+                val allSubroutineUsedExternalExceptions = subroutineUsedExternalExceptions(pc)
+                if (allSubroutineUsedExternalExceptions != null) {
+                    usedExternalExceptions(pc) =
+                        if (oldUsedExternalExceptions == null)
+                            allSubroutineUsedExternalExceptions
+                        else
+                            oldUsedExternalExceptions ++ allSubroutineUsedExternalExceptions
+                }
+
+                val usedPC = pc + parametersOffset
+                val oldUsedPC = used(usedPC)
+                val allSubroutineUsed = subroutineUsed(usedPC)
+                if (allSubroutineUsed != null) {
+                    used(usedPC) =
+                        if (oldUsedPC == null)
+                            allSubroutineUsed
+                        else
+                            oldUsedPC ++ allSubroutineUsed
+                }
             }
         }
     }
@@ -1172,7 +1367,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode with Th
 
         <div>
             <h1>Unused</h1>
-            { unused().mkString("", ", ", "") }
+            { unused.mkString("", ", ", "") }
             <h1>Overview</h1>
             <table>
                 <tr>

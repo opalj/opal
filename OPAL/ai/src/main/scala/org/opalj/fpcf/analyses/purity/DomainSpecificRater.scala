@@ -15,7 +15,7 @@ import org.opalj.tac.DUVar
 import org.opalj.tac.Expr
 import org.opalj.tac.GetStatic
 import org.opalj.tac.Stmt
-import org.opalj.value.KnownTypedValue
+import org.opalj.value.ValueInformation
 
 /**
  * Rates, whether three address code statements perform actions that are domain-specific pure.
@@ -24,7 +24,7 @@ import org.opalj.value.KnownTypedValue
  */
 trait DomainSpecificRater {
 
-    type V = DUVar[KnownTypedValue]
+    type V = DUVar[ValueInformation]
 
     /**
      * Rates all types of calls.

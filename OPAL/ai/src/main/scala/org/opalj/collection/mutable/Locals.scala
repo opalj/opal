@@ -61,7 +61,7 @@ sealed trait Locals[T >: Null <: AnyRef] {
      *
      * @note For those values which are not yet set, `null` is passed to `f`.
      */
-    /* ABSTRACT */ def update(f: (T) ⇒ T): Unit
+    /* ABSTRACT */ def update(f: T ⇒ T): Unit
 
     /**
      * Creates a new Locals object where the value stored at the given index is
@@ -70,10 +70,16 @@ sealed trait Locals[T >: Null <: AnyRef] {
     /* ABSTRACT */ def updated(index: Int, value: T): Locals[T]
 
     /**
-     * Creates a new Locals object where the value stored at the given index and the
-     * subsequent index is set to the given one.
+     * Creates a new Locals object where the values stored at the given index and the
+     * subsequent index are set to the given values.
      */
     /* ABSTRACT */ def updated(index: Int, value1: T, value2: T): Locals[T]
+
+    /**
+     * Creates a new Locals object where the values stored at the given index and the two
+     * subsequent indexes are set to the given values.
+     */
+    /* ABSTRACT */ def updated(index: Int, value1: T, value2: T, value3: T): Locals[T]
 
     /* ABSTRACT */ def foreach(f: T ⇒ Unit): Unit
 
@@ -248,8 +254,8 @@ sealed trait Locals[T >: Null <: AnyRef] {
 
     def iterator: Iterator[T] = new Iterator[T] {
         var index = 0
-        def hasNext = index < Locals.this.size
-        def next = {
+        def hasNext: Boolean = index < Locals.this.size
+        def next: T = {
             val currentValue = Locals.this.apply(index)
             index += 1
             currentValue
@@ -301,12 +307,15 @@ private[mutable] final object Locals0 extends Locals[Null] {
     override def set(index: Int, value: Null): Unit =
         throw new IndexOutOfBoundsException("there are no locals")
 
-    override def update(f: (Null) ⇒ Null): Unit = { /*nothing to do*/ }
+    override def update(f: Null ⇒ Null): Unit = { /*nothing to do*/ }
 
     override def updated(index: Int, newValue: Null): Nothing =
         throw new IndexOutOfBoundsException("there are no locals")
 
     override def updated(index: Int, value1: Null, value2: Null): Nothing =
+        throw new IndexOutOfBoundsException("there are no locals")
+
+    override def updated(index: Int, value1: Null, value2: Null, value3: Null): Nothing =
         throw new IndexOutOfBoundsException("there are no locals")
 
     def fuse(other: Locals[Null], onDiff: (Null, Null) ⇒ Null): this.type = {
@@ -393,7 +402,7 @@ private[mutable] final class Locals1[T >: Null <: AnyRef](
         this.v = value
     }
 
-    override def update(f: (T) ⇒ T): Unit = {
+    override def update(f: T ⇒ T): Unit = {
         this.v = f(this.v)
     }
 
@@ -403,6 +412,10 @@ private[mutable] final class Locals1[T >: Null <: AnyRef](
     }
 
     override def updated(index: Int, value1: T, value2: T): Locals1[T] = {
+        throw new IndexOutOfBoundsException("size of locals is 1")
+    }
+
+    override def updated(index: Int, value1: T, value2: T, value3: T): Locals1[T] = {
         throw new IndexOutOfBoundsException("size of locals is 1")
     }
 
@@ -504,6 +517,10 @@ private[mutable] final class Locals2[T >: Null <: AnyRef](
         new Locals2(value1, value2)
     }
 
+    override def updated(index: Int, value1: T, value2: T, value3: T): Locals1[T] = {
+        throw new IndexOutOfBoundsException("size of locals is 2")
+    }
+
     override def fuse(other: Locals[T], onDiff: (T, T) ⇒ T): Locals2[T] = {
         if (this eq other)
             return this;
@@ -598,8 +615,7 @@ private[mutable] final class Locals3[T >: Null <: AnyRef](
             case 0 ⇒ v0 = value
             case 1 ⇒ v1 = value
             case 2 ⇒ v2 = value
-            case _ ⇒
-                throw new IndexOutOfBoundsException("invalid index("+index+")")
+            case _ ⇒ throw new IndexOutOfBoundsException("invalid index("+index+")")
         }
     }
 
@@ -614,8 +630,7 @@ private[mutable] final class Locals3[T >: Null <: AnyRef](
             case 0 ⇒ new Locals3(newValue, v1, v2)
             case 1 ⇒ new Locals3(v0, newValue, v2)
             case 2 ⇒ new Locals3(v0, v1, newValue)
-            case _ ⇒
-                throw new IndexOutOfBoundsException("invalid index("+index+")")
+            case _ ⇒ throw new IndexOutOfBoundsException("invalid index("+index+")")
         }
     }
 
@@ -623,8 +638,14 @@ private[mutable] final class Locals3[T >: Null <: AnyRef](
         (index: @scala.annotation.switch) match {
             case 0 ⇒ new Locals3(value1, value2, v2)
             case 1 ⇒ new Locals3(v0, value1, value2)
-            case _ ⇒
-                throw new IndexOutOfBoundsException("invalid index("+index+")")
+            case _ ⇒ throw new IndexOutOfBoundsException("invalid index("+index+")")
+        }
+    }
+
+    override def updated(index: Int, value1: T, value2: T, value3: T): Locals3[T] = {
+        (index: @scala.annotation.switch) match {
+            case 0 ⇒ new Locals3(value1, value2, value3)
+            case _ ⇒ throw new IndexOutOfBoundsException("invalid index("+index+")")
         }
     }
 
@@ -769,8 +790,7 @@ private[mutable] final class Locals4[T >: Null <: AnyRef](
             case 1 ⇒ new Locals4(v0, newValue, v2, v3)
             case 2 ⇒ new Locals4(v0, v1, newValue, v3)
             case 3 ⇒ new Locals4(v0, v1, v2, newValue)
-            case _ ⇒
-                throw new IndexOutOfBoundsException("invalid index("+index+")")
+            case _ ⇒ throw new IndexOutOfBoundsException("invalid index("+index+")")
         }
     }
 
@@ -779,8 +799,15 @@ private[mutable] final class Locals4[T >: Null <: AnyRef](
             case 0 ⇒ new Locals4(value1, value2, v2, v3)
             case 1 ⇒ new Locals4(v0, value1, value2, v3)
             case 2 ⇒ new Locals4(v0, v1, value1, value2)
-            case _ ⇒
-                throw new IndexOutOfBoundsException("invalid index("+index+")")
+            case _ ⇒ throw new IndexOutOfBoundsException("invalid index("+index+")")
+        }
+    }
+
+    override def updated(index: Int, value1: T, value2: T, value3: T): Locals4[T] = {
+        (index: @scala.annotation.switch) match {
+            case 0 ⇒ new Locals4(value1, value2, value3, v3)
+            case 1 ⇒ new Locals4(v0, value1, value2, value3)
+            case _ ⇒ throw new IndexOutOfBoundsException("invalid index("+index+")")
         }
     }
 
@@ -923,6 +950,15 @@ private[mutable] final class Locals5[T >: Null <: AnyRef](
         }
     }
 
+    override def updated(index: Int, value1: T, value2: T, value3: T): Locals5[T] = {
+        (index: @scala.annotation.switch) match {
+            case 0 ⇒ new Locals5(new Locals2(value1, value2), vs2.updated(0, value3))
+            case 1 ⇒ new Locals5(vs1.updated(1, value1), vs2.updated(0, value2, value3))
+            case 2 ⇒ new Locals5(vs1, new Locals3(value1, value2, value3))
+            case _ ⇒ throw new IndexOutOfBoundsException("invalid index("+index+")")
+        }
+    }
+
     override def fuse(other: Locals[T], onDiff: (T, T) ⇒ T): Locals5[T] = {
         if (this eq other)
             return this;
@@ -937,8 +973,8 @@ private[mutable] final class Locals5[T >: Null <: AnyRef](
                 thisVs1
             else {
                 val newVs1 = thisVs1.fuse(thatVs1, onDiff)
-                useThis = (newVs1 eq thisVs1)
-                useThat = (newVs1 eq thatVs1)
+                useThis = newVs1 eq thisVs1
+                useThat = newVs1 eq thatVs1
                 newVs1
             }
         }
@@ -986,18 +1022,18 @@ private[mutable] final class Locals5[T >: Null <: AnyRef](
 
     override def foreach(f: T ⇒ Unit): Unit = { vs1.foreach(f); vs2.foreach(f) }
 
-    final override def foreachReverse(f: T ⇒ Unit): Unit = {
+    override def foreachReverse(f: T ⇒ Unit): Unit = {
         vs2.foreachReverse(f)
         vs1.foreachReverse(f)
     }
 }
 
 private[mutable] final class Locals6[T >: Null <: AnyRef](
-        final val vs1: Locals3[T] = new Locals3[T],
-        final val vs2: Locals3[T] = new Locals3[T]
+        val vs1: Locals3[T] = new Locals3[T],
+        val vs2: Locals3[T] = new Locals3[T]
 ) extends LocalsX[T] {
 
-    final def size: Int = 6
+    def size: Int = 6
 
     override def apply(index: Int): T = {
         if (index < 3) vs1(index) else vs2(index - 3)
@@ -1010,7 +1046,7 @@ private[mutable] final class Locals6[T >: Null <: AnyRef](
         if (index < 3) vs1.set(index, newValue) else vs2.set(index - 3, newValue)
     }
 
-    override def update(f: (T) ⇒ T): Unit = {
+    override def update(f: T ⇒ T): Unit = {
         vs1.update(f)
         vs2.update(f)
     }
@@ -1030,9 +1066,19 @@ private[mutable] final class Locals6[T >: Null <: AnyRef](
         }
     }
 
+    override def updated(index: Int, value1: T, value2: T, value3: T): Locals6[T] = {
+        (index: @scala.annotation.switch) match {
+            case 0 ⇒ new Locals6(new Locals3(value1, value2, value3), vs2)
+            case 1 ⇒ new Locals6(vs1.updated(1, value1, value2), vs2.updated(0, value3))
+            case 2 ⇒ new Locals6(vs1.updated(2, value1), vs2.updated(0, value2, value3))
+            case 3 ⇒ new Locals6(vs1, new Locals3(value1, value2, value3))
+            case _ ⇒ throw new IndexOutOfBoundsException("invalid index("+index+")")
+        }
+    }
+
     override def foreach(f: T ⇒ Unit): Unit = { vs1.foreach(f); vs2.foreach(f) }
 
-    final override def foreachReverse(f: T ⇒ Unit): Unit = {
+    override def foreachReverse(f: T ⇒ Unit): Unit = {
         vs2.foreachReverse(f)
         vs1.foreachReverse(f)
     }
@@ -1097,11 +1143,11 @@ private[mutable] final class Locals6[T >: Null <: AnyRef](
 }
 
 private[mutable] final class Locals7[T >: Null <: AnyRef](
-        final val vs1: Locals3[T] = new Locals3[T],
-        final val vs2: Locals4[T] = new Locals4[T]
+        val vs1: Locals3[T] = new Locals3[T],
+        val vs2: Locals4[T] = new Locals4[T]
 ) extends LocalsX[T] {
 
-    final def size: Int = 7
+    def size: Int = 7
 
     override def apply(index: Int): T = {
         if (index < 3) vs1(index) else vs2(index - 3)
@@ -1114,7 +1160,7 @@ private[mutable] final class Locals7[T >: Null <: AnyRef](
         if (index < 3) vs1.set(index, newValue) else vs2.set(index - 3, newValue)
     }
 
-    override def update(f: (T) ⇒ T): Unit = {
+    override def update(f: T ⇒ T): Unit = {
         vs1.update(f)
         vs2.update(f)
     }
@@ -1134,9 +1180,19 @@ private[mutable] final class Locals7[T >: Null <: AnyRef](
         }
     }
 
+    override def updated(index: Int, value1: T, value2: T, value3: T): Locals7[T] = {
+        (index: @scala.annotation.switch) match {
+            case 0     ⇒ new Locals7(new Locals3(value1, value2, value3), vs2)
+            case 1     ⇒ new Locals7(vs1.updated(1, value1, value2), vs2.updated(0, value3))
+            case 2     ⇒ new Locals7(vs1.updated(2, value1), vs2.updated(0, value2, value3))
+            case 3 | 4 ⇒ new Locals7(vs1, vs2.updated(index - 3, value1, value2, value3))
+            case _     ⇒ throw new IndexOutOfBoundsException("invalid index("+index+")")
+        }
+    }
+
     override def foreach(f: T ⇒ Unit): Unit = { vs1.foreach(f); vs2.foreach(f) }
 
-    final override def foreachReverse(f: T ⇒ Unit): Unit = {
+    override def foreachReverse(f: T ⇒ Unit): Unit = {
         vs2.foreachReverse(f)
         vs1.foreachReverse(f)
     }
@@ -1201,12 +1257,12 @@ private[mutable] final class Locals7[T >: Null <: AnyRef](
 }
 
 private[mutable] final class Locals8[T >: Null <: AnyRef](
-        final val vs1: Locals2[T] = new Locals2[T],
-        final val vs2: Locals3[T] = new Locals3[T],
-        final val vs3: Locals3[T] = new Locals3[T]
+        val vs1: Locals2[T] = new Locals2[T],
+        val vs2: Locals3[T] = new Locals3[T],
+        val vs3: Locals3[T] = new Locals3[T]
 ) extends LocalsX[T] {
 
-    final def size: Int = 8
+    def size: Int = 8
 
     override def apply(index: Int): T = {
         (index: @scala.annotation.switch) match {
@@ -1256,6 +1312,19 @@ private[mutable] final class Locals8[T >: Null <: AnyRef](
             case 2 | 3 ⇒ new Locals8(vs1, vs2.updated(index - 2, value1, value2), vs3)
             case 4     ⇒ new Locals8(vs1, vs2.updated(2, value1), vs3.updated(0, value2))
             case _     ⇒ new Locals8(vs1, vs2, vs3.updated(index - 5, value1, value2))
+        }
+    }
+
+    override def updated(index: Int, value1: T, value2: T, value3: T): Locals8[T] = {
+        // Pattern: 2 | 3 | 3
+        (index: @scala.annotation.switch) match {
+            case 0 ⇒ new Locals8(new Locals2(value1, value2), vs2.updated(0, value3), vs3)
+            case 1 ⇒ new Locals8(vs1.updated(1, value1), vs2.updated(0, value2, value3), vs3)
+            case 2 ⇒ new Locals8(vs1, new Locals3(value1, value2, value3), vs3)
+            case 3 ⇒ new Locals8(vs1, vs2.updated(1, value1, value2), vs3.updated(0, value3))
+            case 4 ⇒ new Locals8(vs1, vs2.updated(2, value1), vs3.updated(0, value2, value3))
+            case 5 ⇒ new Locals8(vs1, vs2, new Locals3(value1, value2, value3))
+            case _ ⇒ throw new IndexOutOfBoundsException("invalid index("+index+")")
         }
     }
 
@@ -1347,12 +1416,12 @@ private[mutable] final class Locals8[T >: Null <: AnyRef](
 }
 
 private[mutable] final class Locals9[T >: Null <: AnyRef](
-        final val vs1: Locals3[T] = new Locals3[T],
-        final val vs2: Locals3[T] = new Locals3[T],
-        final val vs3: Locals3[T] = new Locals3[T]
+        val vs1: Locals3[T] = new Locals3[T],
+        val vs2: Locals3[T] = new Locals3[T],
+        val vs3: Locals3[T] = new Locals3[T]
 ) extends LocalsX[T] {
 
-    final def size: Int = 9
+    def size: Int = 9
 
     override def apply(index: Int): T = {
         (index: @scala.annotation.switch) match {
@@ -1405,11 +1474,25 @@ private[mutable] final class Locals9[T >: Null <: AnyRef](
         }
     }
 
+    override def updated(index: Int, value1: T, value2: T, value3: T): Locals9[T] = {
+        // Pattern: 3 | 3 | 3
+        (index: @scala.annotation.switch) match {
+            case 0 ⇒ new Locals9(new Locals3(value1, value2, value3), vs2, vs3)
+            case 1 ⇒ new Locals9(vs1.updated(1, value1, value2), vs2.updated(0, value3), vs3)
+            case 2 ⇒ new Locals9(vs1.updated(2, value1), vs2.updated(0, value2, value3), vs3)
+            case 3 ⇒ new Locals9(vs1, new Locals3(value1, value2, value3), vs3)
+            case 4 ⇒ new Locals9(vs1, vs2.updated(1, value1, value2), vs3.updated(0, value3))
+            case 5 ⇒ new Locals9(vs1, vs2.updated(2, value1), vs3.updated(0, value2, value3))
+            case 6 ⇒ new Locals9(vs1, vs2, new Locals3(value1, value2, value3))
+            case _ ⇒ throw new IndexOutOfBoundsException("invalid index("+index+")")
+        }
+    }
+
     override def foreach(f: T ⇒ Unit): Unit = {
         vs1.foreach(f); vs2.foreach(f); vs3.foreach(f)
     }
 
-    final override def foreachReverse(f: T ⇒ Unit): Unit = {
+    override def foreachReverse(f: T ⇒ Unit): Unit = {
         vs3.foreachReverse(f)
         vs2.foreachReverse(f)
         vs1.foreachReverse(f)
@@ -1493,12 +1576,12 @@ private[mutable] final class Locals9[T >: Null <: AnyRef](
 }
 
 private[mutable] final class Locals10[T >: Null <: AnyRef](
-        final val vs1: Locals4[T] = new Locals4[T],
-        final val vs2: Locals3[T] = new Locals3[T],
-        final val vs3: Locals3[T] = new Locals3[T]
+        val vs1: Locals4[T] = new Locals4[T],
+        val vs2: Locals3[T] = new Locals3[T],
+        val vs3: Locals3[T] = new Locals3[T]
 ) extends LocalsX[T] {
 
-    final def size: Int = 10
+    def size: Int = 10
 
     override def apply(index: Int): T = {
         (index: @scala.annotation.switch) match {
@@ -1551,11 +1634,26 @@ private[mutable] final class Locals10[T >: Null <: AnyRef](
         }
     }
 
+    override def updated(index: Int, value1: T, value2: T, value3: T): Locals10[T] = {
+        // Pattern: 4 | 3 | 3
+        (index: @scala.annotation.switch) match {
+            case 0 ⇒ new Locals10(vs1.updated(0, value1, value2, value3), vs2, vs3)
+            case 1 ⇒ new Locals10(vs1.updated(1, value1, value2, value3), vs2, vs3)
+            case 2 ⇒ new Locals10(vs1.updated(2, value1, value2), vs2.updated(0, value3), vs3)
+            case 3 ⇒ new Locals10(vs1.updated(3, value1), vs2.updated(0, value2, value3), vs3)
+            case 4 ⇒ new Locals10(vs1, new Locals3(value1, value2, value3), vs3)
+            case 5 ⇒ new Locals10(vs1, vs2.updated(1, value1, value2), vs3.updated(0, value3))
+            case 6 ⇒ new Locals10(vs1, vs2.updated(2, value1), vs3.updated(0, value2, value3))
+            case 7 ⇒ new Locals10(vs1, vs2, new Locals3(value1, value2, value3))
+            case _ ⇒ throw new IndexOutOfBoundsException("invalid index("+index+")")
+        }
+    }
+
     override def foreach(f: T ⇒ Unit): Unit = {
         vs1.foreach(f); vs2.foreach(f); vs3.foreach(f)
     }
 
-    final override def foreachReverse(f: T ⇒ Unit): Unit = {
+    override def foreachReverse(f: T ⇒ Unit): Unit = {
         vs3.foreachReverse(f)
         vs2.foreachReverse(f)
         vs1.foreachReverse(f)
@@ -1636,12 +1734,12 @@ private[mutable] final class Locals10[T >: Null <: AnyRef](
 }
 
 private[mutable] final class Locals11[T >: Null <: AnyRef](
-        final val vs1: Locals4[T] = new Locals4[T],
-        final val vs2: Locals3[T] = new Locals3[T],
-        final val vs3: Locals4[T] = new Locals4[T]
+        val vs1: Locals4[T] = new Locals4[T],
+        val vs2: Locals3[T] = new Locals3[T],
+        val vs3: Locals4[T] = new Locals4[T]
 ) extends LocalsX[T] {
 
-    final def size: Int = 11
+    def size: Int = 11
 
     override def apply(index: Int): T = {
         (index: @scala.annotation.switch) match {
@@ -1691,6 +1789,22 @@ private[mutable] final class Locals11[T >: Null <: AnyRef](
             case 4 | 5     ⇒ new Locals11(vs1, vs2.updated(index - 4, value1, value2), vs3)
             case 6         ⇒ new Locals11(vs1, vs2.updated(2, value1), vs3.updated(0, value2))
             case _         ⇒ new Locals11(vs1, vs2, vs3.updated(index - 7, value1, value2))
+        }
+    }
+
+    override def updated(index: Int, value1: T, value2: T, value3: T): Locals11[T] = {
+        // Pattern: 4 | 3 | 4
+        (index: @scala.annotation.switch) match {
+            case 0 ⇒ new Locals11(vs1.updated(0, value1, value2, value3), vs2, vs3)
+            case 1 ⇒ new Locals11(vs1.updated(1, value1, value2, value3), vs2, vs3)
+            case 2 ⇒ new Locals11(vs1.updated(2, value1, value2), vs2.updated(0, value3), vs3)
+            case 3 ⇒ new Locals11(vs1.updated(3, value1), vs2.updated(0, value2, value3), vs3)
+            case 4 ⇒ new Locals11(vs1, new Locals3(value1, value2, value3), vs3)
+            case 5 ⇒ new Locals11(vs1, vs2.updated(1, value1, value2), vs3.updated(0, value3))
+            case 6 ⇒ new Locals11(vs1, vs2.updated(2, value1), vs3.updated(0, value2, value3))
+            case 7 ⇒ new Locals11(vs1, vs2, vs3.updated(0, value1, value2, value3))
+            case 8 ⇒ new Locals11(vs1, vs2, vs3.updated(1, value1, value2, value3))
+            case _ ⇒ throw new IndexOutOfBoundsException("invalid index("+index+")")
         }
     }
 
@@ -1826,8 +1940,7 @@ private[mutable] final class Locals12_N[T >: Null <: AnyRef: ClassTag](
         if (index < 11) {
             new Locals12_N(vs11.updated(index, newValue), vs12_N)
         } else {
-            val newVs12_N = new Array(vs12_N.length)
-            System.arraycopy(vs12_N, 0, newVs12_N, 0, vs12_N.length)
+            val newVs12_N = vs12_N.clone()
             newVs12_N(index - 11) = newValue
             new Locals12_N(vs11, newVs12_N)
         }
@@ -1838,15 +1951,36 @@ private[mutable] final class Locals12_N[T >: Null <: AnyRef: ClassTag](
             new Locals12_N(vs11.updated(index, value1, value2), vs12_N)
         } else if (index == 10) {
             val newVs11 = vs11.updated(10, value1)
-            val newVs12_N = new Array(vs12_N.length)
-            System.arraycopy(vs12_N, 0, newVs12_N, 0, vs12_N.length)
+            val newVs12_N = vs12_N.clone()
             newVs12_N(0) = value2
             new Locals12_N(newVs11, newVs12_N)
         } else {
-            val newVs12_N = new Array(vs12_N.length)
-            System.arraycopy(vs12_N, 0, newVs12_N, 0, vs12_N.length)
+            val newVs12_N = vs12_N.clone()
             newVs12_N(index - 11) = value1
             newVs12_N(index - 11 + 1) = value2
+            new Locals12_N(vs11, newVs12_N)
+        }
+    }
+
+    override def updated(index: Int, value1: T, value2: T, value3: T): Locals12_N[T] = {
+        if (index < 9) {
+            new Locals12_N(vs11.updated(index, value1, value2, value3), vs12_N)
+        } else if (index == 9) {
+            val newVs11 = vs11.updated(9, value1, value2)
+            val newVs12_N = vs12_N.clone()
+            newVs12_N(0) = value3
+            new Locals12_N(newVs11, newVs12_N)
+        } else if (index == 10) {
+            val newVs11 = vs11.updated(10, value1)
+            val newVs12_N = vs12_N.clone()
+            newVs12_N(0) = value2
+            newVs12_N(1) = value3
+            new Locals12_N(newVs11, newVs12_N)
+        } else {
+            val newVs12_N = vs12_N.clone()
+            newVs12_N(index - 11) = value1
+            newVs12_N(index - 11 + 1) = value2
+            newVs12_N(index - 11 + 2) = value3
             new Locals12_N(vs11, newVs12_N)
         }
     }
@@ -1978,10 +2112,6 @@ object Locals {
                     new Locals3(data(0), data(1), data(2)),
                     new Locals4(data(3), data(4), data(5), data(6))
                 )
-            //                new Locals7(
-            //                    new Locals2(data(0), data(1)),
-            //                    new Locals2(data(2), data(3)),
-            //                    new Locals3(data(4), data(5), data(6)))
             case 8 ⇒
                 new Locals8(
                     new Locals2(data(0), data(1)),

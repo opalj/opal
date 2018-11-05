@@ -54,7 +54,7 @@ object SimpleDefUseAnalysis extends DefaultOneStepAnalysis {
                     val domain = new DefaultDomainWithCFGAndDefUse(theProject, method)
                     val result = ai(method, domain)
                     val instructions = result.domain.code.instructions
-                    val unused = result.domain.unused()
+                    val unused = result.domain.unused
                     if (unused.nonEmpty) {
                         var values = ListSet.empty[String]
                         val implicitParameterOffset = if (!method.isStatic) 1 else 0

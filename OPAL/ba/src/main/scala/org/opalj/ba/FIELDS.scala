@@ -2,6 +2,8 @@
 package org.opalj
 package ba
 
+import org.opalj.collection.immutable.RefArray
+
 /**
  * Builder for a sequence of [[org.opalj.br.Field]]s.
  *
@@ -13,8 +15,11 @@ case class FIELDS(fields: FIELD*) {
     /**
      * Returns the collection of [[org.opalj.br.FieldTemplate]] objects.
      */
-    def result(): IndexedSeq[br.FieldTemplate] = {
-        IndexedSeq.empty ++ fields.iterator.map(f ⇒ f.result())
+    def result(): RefArray[br.FieldTemplate] = {
+        val b = RefArray.newBuilder[br.FieldTemplate]
+        b.sizeHint(fields.length)
+        fields.foreach(b += _.result())
+        b.result()
     }
 
 }

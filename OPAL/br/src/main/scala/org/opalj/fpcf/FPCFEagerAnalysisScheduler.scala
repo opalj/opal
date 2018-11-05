@@ -27,7 +27,19 @@ trait FPCFEagerAnalysisScheduler extends AbstractFPCFAnalysisScheduler {
 
     /**
      * Starts the analysis for the given `project`. This method is typically implicitly
-     * called by the [[FPCFAnalysesManager]].
+     * called by the [[org.opalj.fpcf.FPCFAnalysesManager]].
      */
     def start(p: SomeProject, ps: PropertyStore, i: InitializationData): FPCFAnalysis
+}
+
+/**
+ * A simple eager analysis scheduler for those analyses that do not perform special initialization
+ * steps.
+ */
+trait BasicFPCFEagerAnalysisScheduler extends FPCFEagerAnalysisScheduler {
+
+    final override type InitializationData = Null
+    final def init(p: SomeProject, ps: PropertyStore): Null = null
+    def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
+    def afterPhaseCompletion(p: SomeProject, ps: PropertyStore): Unit = {}
 }

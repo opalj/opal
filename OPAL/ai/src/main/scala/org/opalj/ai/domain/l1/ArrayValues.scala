@@ -17,7 +17,7 @@ import org.opalj.br.ArrayType
  * @author   Michael Eichberg
  */
 trait ArrayValues extends l1.ReferenceValues {
-    domain: CorrelationalDomain with ConcreteIntegerValues with TheClassHierarchy ⇒
+    domain: CorrelationalDomain with ConcreteIntegerValues ⇒
 
     // We do not refine the type DomainArrayValue any further since we also want
     // to use the super level ArrayValue class to represent arrays for which we have
@@ -34,21 +34,23 @@ trait ArrayValues extends l1.ReferenceValues {
      * Represents some (multi-dimensional) array where the (initialized) dimensions have
      * the given size.
      *
-     * @param   theLength The size of the first dimension of the array.
      */
     // NOTE THAT WE CANNOT STORE SIZE INFORMATION FOR AlL DIMENSIONS BEYOND THE FIRST ONE;
     // WE ARE NOT TRACKING THE ESCAPE STATE!
-    protected class InitializedArrayValue(
-            origin:            ValueOrigin,
-            theUpperTypeBound: ArrayType,
-            val theLength:     Int,
-            refId:             RefId
-    ) extends ArrayValue(origin, isNull = No, isPrecise = true, theUpperTypeBound, refId) {
-        this: DomainInitializedArrayValue ⇒
+    trait InitializedArrayValue extends ArrayValue { this: DomainInitializedArrayValue ⇒
+
+        /**
+         * The size of the first dimension of the array. (The size of this dimension is immutable!)
+         */
+        def theLength: Int
 
         assert(length.get >= 0, "impossible length")
 
-        override def length: Option[Int] = Some(theLength)
+        final override def length: Option[Int] = Some(theLength)
+
+        final override def isNull: No.type = No
+
+        final override def isPrecise: Boolean = true
 
         override def updateRefId(
             refId:  RefId,

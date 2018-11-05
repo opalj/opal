@@ -5,13 +5,16 @@ package domain
 package l0
 
 import org.opalj.collection.immutable.UIDSet
-import org.opalj.collection.immutable.UIDSet1
+import org.opalj.value.ASArrayValue
+import org.opalj.value.IsNullValue
+import org.opalj.value.IsSArrayValue
+import org.opalj.value.IsSReferenceValue
 import org.opalj.br.ArrayType
+import org.opalj.br.ClassHierarchy
 import org.opalj.br.FieldType
 import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
 import org.opalj.br.Type
-import org.opalj.br.UpperTypeBound
 
 /**
  * Implements the foundations for performing computations related to reference values.
@@ -35,7 +38,7 @@ import org.opalj.br.UpperTypeBound
  * @author Michael Eichberg
  */
 trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObject {
-    domain: IntegerValuesDomain with Configuration with TheClassHierarchy ⇒
+    domain: IntegerValuesDomain with Configuration ⇒
 
     /**
      * Merges those exceptions that have the same upper type bound. This ensures
@@ -222,46 +225,19 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
 
         final override def asDomainReferenceValue: DomainReferenceValue = this
 
-        override def valueType: Option[ReferenceType] = {
-            upperTypeBound.size match {
-                case 0 ⇒ None /* only null has an empty upper type bound */
-                case 1 ⇒ Some(upperTypeBound.head)
-                case _ ⇒ Some(classHierarchy.joinReferenceTypesUntilSingleUpperBound(upperTypeBound))
-            }
-        }
-
-        override def isPrecise: Boolean = {
-            upperTypeBound match {
-                case UIDSet1(theUpperTypeBound) ⇒ classHierarchy.isKnownToBeFinal(theUpperTypeBound)
-                case _                          ⇒ false
-            }
-        }
-
-        /*
-        final override def asDomainValue(
-            implicit
-            targetDomain: Domain
-        ): targetDomain.DomainReferenceValue = {
-            if (targetDomain ne domain)
-                throw new UnsupportedOperationException(
-                    "the given domain has to be equal to this value's domain"
-                )
-            this.asInstanceOf[targetDomain.DomainReferenceValue]
-        }
-        */
     }
 
     /**
      * A reference value with a single (upper) type (bound).
      */
-    protected[this] trait SReferenceValue[T <: ReferenceType] extends ReferenceValue {
+    protected[this] trait SReferenceValue[T <: ReferenceType]
+        extends ReferenceValue
+        with IsSReferenceValue[T] {
         this: AReferenceValue ⇒
 
-        val theUpperTypeBound: T
+        def theUpperTypeBound: T
 
-        final override def valueType: Some[ReferenceType] = Some(theUpperTypeBound)
-
-        final override def upperTypeBound: UpperTypeBound = new UIDSet1(theUpperTypeBound)
+        final def classHierarchy: ClassHierarchy = domain.classHierarchy
 
         final override def summarize(pc: Int): this.type = this
 
@@ -276,21 +252,12 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
      *  1. A reference value that is not guaranteed to be non-null is tested against
      *    `null` using `ifnull` or `ifnonnull` and we are now on the branch where
      *    the value has to be `null`.
+     *
+     * Depending on the precision of the domain `null` values may also be returned by
+     * method calls or field reads.
      */
-    protected trait NullValue extends ReferenceValue { this: DomainNullValue ⇒
-
-        final override def valueType: None.type = None
-
-        /** Returns an empty upper type bound. */
-        final override def upperTypeBound: UpperTypeBound = UIDSet.empty
-
-        final override def baseValues: Traversable[AReferenceValue] = Traversable.empty
-
-        /** Returns `Yes`. */
-        final override def isNull: Answer = Yes
-
-        /** Returns `true`. */
-        final override def isPrecise: Boolean = true
+    protected trait NullValue extends ReferenceValue with IsNullValue {
+        value: DomainNullValue ⇒
 
         // IMPLEMENTATION OF THE ARRAY RELATED METHODS
         //
@@ -310,17 +277,6 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
             throws(VMNullPointerException(pc))
         }
 
-        /**
-         * Always throws a [[DomainException]] since it is not possible to give a generic
-         * answer. The answer depends on the context (instanceof/classcast/...)).
-         *
-         * @return Throws a `DomainException` that states that this method is not supported.
-         */
-        @throws[DomainException]("Always - isValueASubtypeOf is not defined on \"null\" values.")
-        final override def isValueASubtypeOf(referenceType: ReferenceType): Nothing = {
-            throw DomainException("\"isValueASubtypeOf\" is not defined on \"null\" values")
-        }
-
         override def summarize(pc: Int): this.type = this
 
         override def adapt(target: TargetDomain, pc: Int): target.DomainValue = target.NullValue(pc)
@@ -332,20 +288,26 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
      * Represents a class/interface value which may have a single class and/or
      * multiple interfaces as its upper type bound.
      */
-    protected[this] trait ObjectValue extends ReferenceValue { this: DomainObjectValue ⇒
+    protected[this] trait ObjectValue extends ReferenceValue {
+        value: DomainObjectValue ⇒
 
     }
 
     /**
      * Represents an array value.
      */
-    protected[this] trait ArrayValue extends ReferenceValue { this: DomainArrayValue ⇒
+    protected[this] trait ArrayValue extends ReferenceValue with IsSArrayValue {
+        value: DomainArrayValue ⇒
 
         /**
          * Returns `Yes` if we can statically determine that the given value can
          * be stored in the array represented by this `ArrayValue`.
          */
         /*ABSTRACT*/ def isAssignable(value: DomainValue): Answer
+
+        override def toCanonicalForm: IsSArrayValue = {
+            ASArrayValue(isNull, isPrecise, theUpperTypeBound)
+        }
 
         /**
          * Called by the load method if the index is potentially valid.

@@ -5,7 +5,6 @@ package reader
 
 import java.io.DataInputStream
 
-import org.opalj.log.GlobalLogContext
 import org.opalj.log.OPALLogger
 
 /**
@@ -14,7 +13,11 @@ import org.opalj.log.OPALLogger
  * The Signature attribute is an optional attribute in the
  * attributes table of a ClassFile, field_info or method_info structure.
  */
-trait Signature_attributeReader extends AttributeReader {
+trait Signature_attributeReader extends AttributeReader with ClassFileReaderConfiguration {
+
+    //
+    // TYPE DEFINITIONS AND FACTORY METHODS
+    //
 
     type Signature_attribute >: Null <: Attribute
 
@@ -23,6 +26,9 @@ trait Signature_attributeReader extends AttributeReader {
      * The default is to just log the invalid signature and to otherwise ignore it.
      *
      * This method is intended to be overridden.
+     *
+     * @note This method was primarily introduced because we found many class files with
+     *       invalid signatures AND the JVM also handles this case gracefully!
      *
      * @return `false`.
      */
@@ -42,9 +48,15 @@ trait Signature_attributeReader extends AttributeReader {
     def Signature_attribute(
         constant_pool:        Constant_Pool,
         ap:                   AttributeParent,
+        ap_name_index:        Constant_Pool_Index,
+        ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         signature_index:      Constant_Pool_Index
     ): Signature_attribute
+
+    //
+    // IMPLEMENTATION
+    //
 
     /**
      * The Signature attribute is an optional attribute in the
@@ -64,21 +76,25 @@ trait Signature_attributeReader extends AttributeReader {
      * is skipped.
      */
     private[this] def parser(
-        ap:                   AttributeParent,
         cp:                   Constant_Pool,
+        ap:                   AttributeParent,
+        ap_name_index:        Constant_Pool_Index,
+        ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         in:                   DataInputStream
     ): Signature_attribute = {
         /*val attribute_length =*/ in.readInt
         val signature_index = in.readUnsignedShort
         try {
-            Signature_attribute(cp, ap, attribute_name_index, signature_index)
+            Signature_attribute(
+                cp, ap, ap_name_index, ap_descriptor_index, attribute_name_index, signature_index
+            )
         } catch {
             case iae: IllegalArgumentException ⇒
                 OPALLogger.error(
                     "parsing bytecode",
                     s"skipping ${ap.toString().toLowerCase()} signature: "+iae.getMessage
-                )(GlobalLogContext)
+                )
                 if (throwIllegalArgumentException) throw iae else null
         }
     }

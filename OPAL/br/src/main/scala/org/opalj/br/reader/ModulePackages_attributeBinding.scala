@@ -3,9 +3,8 @@ package org.opalj
 package br
 package reader
 
-import scala.reflect.ClassTag
-
-import org.opalj.bi.reader.ModuleMainClass_attributeReader
+import org.opalj.collection.immutable.RefArray
+import org.opalj.bi.reader.ModulePackages_attributeReader
 
 /**
  * The factory method to create the `ModulePackages` attribute (Java 9).
@@ -13,30 +12,22 @@ import org.opalj.bi.reader.ModuleMainClass_attributeReader
  * @author Michael Eichberg
  */
 trait ModulePackages_attributeBinding
-    extends ModuleMainClass_attributeReader
+    extends ModulePackages_attributeReader
     with ConstantPoolBinding
     with AttributeBinding {
 
     type ModulePackages_attribute = ModulePackages
 
-    type PackageIndexTableEntry = String
-    implicit val PackageIndexTableEntryManifest: ClassTag[PackageIndexTableEntry] = implicitly
-
-    type PackageIndexTable = IndexedSeq[PackageIndexTableEntry]
-
-    def PackageIndexTableEntry(
-        cp:            Constant_Pool,
-        package_index: Constant_Pool_Index // CONSTANT_Package_info
-    ): PackageIndexTableEntry = {
-        cp(package_index).asPackageIdentifier(cp)
-    }
-
     def ModulePackages_attribute(
-        constant_pool:        Constant_Pool,
+        cp:                   Constant_Pool,
+        ap_name_index:        Constant_Pool_Index,
+        ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         package_index_table:  PackageIndexTable
     ): ModulePackages_attribute = {
-        new ModulePackages(package_index_table)
+        new ModulePackages(
+            RefArray.mapFrom(package_index_table) { p ⇒ cp(p).asPackageIdentifier(cp) }
+        )
     }
 
 }

@@ -4,14 +4,14 @@ package fpcf
 package properties
 package escape
 import org.opalj.ai.common.DefinitionSite
-import org.opalj.ai.common.SimpleAIKey
-import org.opalj.br.DefinedMethod
-import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.ai.domain.l2.PerformInvocations
-import org.opalj.br.analyses.Project
-import org.opalj.br.ObjectType
+import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.br.AnnotationLike
 import org.opalj.br.BooleanValue
+import org.opalj.br.DefinedMethod
+import org.opalj.br.ObjectType
+import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.VirtualFormalParameter
 
 /**
  * A property matcher that checks whether an annotated allocation or parameter has the specified
@@ -34,17 +34,19 @@ abstract class EscapePropertyMatcher(val property: EscapeProperty) extends Abstr
         val m = entity match {
             case VirtualFormalParameter(DefinedMethod(dc, m), _) if dc == m.classFile.thisType ⇒ m
             case VirtualFormalParameter(DefinedMethod(_, _), _) ⇒ return false
-            case DefinitionSite(m, _, _) ⇒ m
+            case DefinitionSite(m, _) ⇒ m
             case _ ⇒ throw new RuntimeException(s"unsuported entity $entity")
         }
         if (as.nonEmpty && m.body.isDefined) {
-            val domain = p.get(SimpleAIKey)(m).domain
+            val domainClass = p.get(AIDomainFactoryKey).domainClass
+            val performInvocationsClass = classOf[PerformInvocations]
+            val isPerformInvocationsClass = performInvocationsClass.isAssignableFrom(domainClass)
 
-            val performInvokationDomainRelevant =
-                if (requiresPerformInvokationsDomain) domain.isInstanceOf[PerformInvocations]
-                else !domain.isInstanceOf[PerformInvocations]
+            val isPerformInvocationDomainRelevant =
+                if (requiresPerformInvokationsDomain) isPerformInvocationsClass
+                else !isPerformInvocationsClass
 
-            analysisRelevant && performInvokationDomainRelevant
+            analysisRelevant && isPerformInvocationDomainRelevant
         } else {
             analysisRelevant
         }

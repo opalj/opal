@@ -3,31 +3,32 @@ package org.opalj
 package bi
 package reader
 
-import scala.reflect.ClassTag
-
 import java.io.DataInputStream
 
-import org.opalj.control.repeat
+import org.opalj.control.fillRefArray
+import org.opalj.collection.immutable.RefArray
 
 trait FieldsReader extends Constant_PoolAbstractions {
 
     //
-    // ABSTRACT DEFINITIONS
+    // TYPE DEFINITIONS AND FACTORY METHODS
     //
 
-    type Field_Info
-    implicit val Field_InfoManifest: ClassTag[Field_Info]
+    type Field_Info <: AnyRef
+    type Fields = RefArray[Field_Info]
 
     type Attributes
 
     protected def Attributes(
-        ap: AttributeParent,
-        cp: Constant_Pool,
-        in: DataInputStream
+        cp:                  Constant_Pool,
+        ap:                  AttributeParent,
+        ap_name_index:       Constant_Pool_Index,
+        ap_descriptor_index: Constant_Pool_Index,
+        in:                  DataInputStream
     ): Attributes
 
     def Field_Info(
-        constant_pool:    Constant_Pool,
+        cp:               Constant_Pool,
         access_flags:     Int,
         name_index:       Constant_Pool_Index,
         descriptor_index: Constant_Pool_Index,
@@ -38,23 +39,25 @@ trait FieldsReader extends Constant_PoolAbstractions {
     // IMPLEMENTATION
     //
 
-    type Fields = IndexedSeq[Field_Info]
-
     // We need the constant pool to look up the attributes' names and other information.
     def Fields(cp: Constant_Pool, in: DataInputStream): Fields = {
         val fields_count = in.readUnsignedShort
-        repeat(fields_count) {
+        fillRefArray(fields_count) {
             Field_Info(cp, in)
         }
     }
 
-    private def Field_Info(cp: Constant_Pool, in: DataInputStream): Field_Info =
+    private def Field_Info(cp: Constant_Pool, in: DataInputStream): Field_Info = {
+        val accessFlags = in.readUnsignedShort
+        val name_index = in.readUnsignedShort
+        val descriptor_index = in.readUnsignedShort
         Field_Info(
             cp,
-            in.readUnsignedShort,
-            in.readUnsignedShort,
-            in.readUnsignedShort,
-            Attributes(AttributesParent.Field, cp, in)
+            accessFlags,
+            name_index,
+            descriptor_index,
+            Attributes(cp, AttributesParent.Field, name_index, descriptor_index, in)
         )
+    }
 
 }

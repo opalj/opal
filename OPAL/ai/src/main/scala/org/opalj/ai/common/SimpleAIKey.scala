@@ -61,7 +61,8 @@ object SimpleAIKey
             getOrElse((m: Method) ⇒ new DefaultDomainWithCFGAndDefUse(project, m))
 
         val aiResults = TrieMap.empty[Method, AIResult { val domain: Domain with RecordDefUse }]
-
+        (m: Method) ⇒ aiResults.getOrElseUpdate(m, BaseAI(m, domainFactory(m)))
+        /*
         (m: Method) ⇒ {
             aiResults.get(m) match {
                 case Some(taCode) ⇒ taCode
@@ -79,6 +80,6 @@ object SimpleAIKey
                         }
                     }
             }
-        }
+        */
     }
 }

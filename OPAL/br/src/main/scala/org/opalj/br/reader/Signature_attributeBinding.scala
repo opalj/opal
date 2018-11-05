@@ -21,6 +21,8 @@ trait Signature_attributeBinding
     def Signature_attribute(
         cp:                   Constant_Pool,
         ap:                   AttributeParent,
+        ap_name_index:        Constant_Pool_Index,
+        ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         signature_index:      Constant_Pool_Index
     ): Signature_attribute = {

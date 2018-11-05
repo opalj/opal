@@ -2,6 +2,8 @@
 package org.opalj
 package br
 
+import org.opalj.collection.immutable.RefArray
+
 /**
  * Describes the kind of the target of a [[TypeAnnotation]].
  *
@@ -142,15 +144,17 @@ case class TAOfThrows(throws_type_index: Int) extends TypeAnnotationTargetInMeto
 }
 
 sealed abstract class TypeAnnotationTargetInVarDecl extends TypeAnnotationTargetInCode {
-    def localVarTable: IndexedSeq[LocalvarTableEntry]
+    def localVarTable: RefArray[LocalvarTableEntry]
 }
 
 case class TAOfLocalvarDecl(
-        localVarTable: IndexedSeq[LocalvarTableEntry]
+        localVarTable: RefArray[LocalvarTableEntry]
 ) extends TypeAnnotationTargetInVarDecl {
+
     override def typeId: Int = 0x40
+
     override def remapPCs(codeSize: Int, f: PC ⇒ PC): Option[TAOfLocalvarDecl] = {
-        val newLocalVarTable = localVarTable.flatMap(_.remapPCs(codeSize, f))
+        val newLocalVarTable = localVarTable.flatMap[LocalvarTableEntry](_.remapPCs(codeSize, f))
         if (newLocalVarTable.nonEmpty)
             Some(copy(newLocalVarTable))
         else
@@ -159,11 +163,13 @@ case class TAOfLocalvarDecl(
 }
 
 case class TAOfResourcevarDecl(
-        localVarTable: IndexedSeq[LocalvarTableEntry]
+        localVarTable: RefArray[LocalvarTableEntry]
 ) extends TypeAnnotationTargetInVarDecl {
+
     override def typeId: Int = 0x41
+
     override def remapPCs(codeSize: Int, f: PC ⇒ PC): Option[TAOfResourcevarDecl] = {
-        val newLocalVarTable = localVarTable.flatMap(_.remapPCs(codeSize, f))
+        val newLocalVarTable = localVarTable.flatMap[LocalvarTableEntry](_.remapPCs(codeSize, f))
         if (newLocalVarTable.nonEmpty)
             Some(copy(newLocalVarTable))
         else
@@ -173,6 +179,10 @@ case class TAOfResourcevarDecl(
 
 /** The local variable is valid in the range `[start_pc, start_pc + length)`. */
 case class LocalvarTableEntry(startPC: Int, length: Int, index: Int) {
+
+    /**
+     * Remaps the PCs; if the new PCs are invalid the entry is considered to be dead.
+     */
     def remapPCs(codeSize: Int, f: PC ⇒ PC): Option[LocalvarTableEntry] = {
         val newStartPC = f(startPC)
         if (newStartPC < codeSize) {
@@ -183,6 +193,7 @@ case class LocalvarTableEntry(startPC: Int, length: Int, index: Int) {
         // ... else
         None
     }
+
 }
 
 case class TAOfCatch(exception_table_index: Int) extends TypeAnnotationTargetInCode {
@@ -343,7 +354,9 @@ case class TAOfMethodInMethodReferenceExpression(
 case object TADirectlyOnType extends TypeAnnotationPath
 
 // path length > 0
-case class TAOnNestedType(path: IndexedSeq[TypeAnnotationPathElement]) extends TypeAnnotationPath
+case class TAOnNestedType(
+        path: RefArray[TypeAnnotationPathElement]
+) extends TypeAnnotationPath
 
 case object TADeeperInArrayType extends TypeAnnotationPathElement {
     final override def kindId: Int = KindId

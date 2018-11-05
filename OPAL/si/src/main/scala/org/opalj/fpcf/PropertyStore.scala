@@ -449,9 +449,8 @@ abstract class PropertyStore {
                     simultaneouslyComputed += otherPk.id
                 }
                 if (simultaneouslyComputed.isEmpty) {
-                    throw new IllegalArgumentException(
-                        pks.mkString("pks is not disjunct: ", ", ", "")
-                    )
+                    val message = pks.mkString("pks is not disjunct: ", ", ", "")
+                    throw new IllegalArgumentException(message)
                 }
             }
         }

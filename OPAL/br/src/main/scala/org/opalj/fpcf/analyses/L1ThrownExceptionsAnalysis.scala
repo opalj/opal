@@ -138,7 +138,7 @@ class L1ThrownExceptionsAnalysis private[analyses] (
                     } else {
                         instruction match {
                             case mii: NonVirtualMethodInvocationInstruction ⇒
-                                project.nonVirtualCall(mii) match {
+                                project.nonVirtualCall(m.classFile.thisType, mii) match {
                                     case Success(`m`) ⇒ true // we basically ignore self-dependencies
                                     case Success(callee) ⇒
                                         // Query the store for information about the callee

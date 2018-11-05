@@ -3,6 +3,7 @@ package org.opalj
 package control
 
 import org.junit.runner.RunWith
+import org.opalj.collection.immutable.IntArray
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
@@ -53,35 +54,72 @@ class ControlAbstractionsTest extends FlatSpec with Matchers {
 
     behavior of "the ControlAbstractions.repeat macro"
 
-    it should "return a empty seq when the number of times is 0" in {
-        val result = repeat(0) { 1 }
+    it should "should do nothing if times is 0" in {
+        var success = true
+        repeat(0) { success = false }
+        assert(success)
+    }
+
+    it should "should execute the given function the given numeber of times" in {
+        var index = 0
+        repeat(5) { index += 1 }
+        assert(index == 5)
+    }
+
+    //
+    // fill(Int|AnyRef)Array
+    //
+
+    behavior of "the ControlAbstractions.fill(Int|AnyRef)Array macro"
+
+    it should "return a empty IntArray when the number of times is 0" in {
+        val result = fillIntArray(0) { 1 }
         result.isEmpty should be(true)
     }
 
-    it should "return a seq with one entry when the number of times is 1" in {
-        val result = repeat(1) { "Hello" }
+    it should "return a empty RefArray when the number of times is 0" in {
+        val result = fillRefArray(0) { "X" }
+        result.isEmpty should be(true)
+    }
+
+    it should "return an IntArray with one entry when the number of times is 1" in {
+        val result = fillIntArray(1) { 1 }
+        result should be(IntArray(1))
+        result(0) should be(1)
+        result.length should be(1)
+    }
+
+    it should "return an RefArray with one entry when the number of times is 1" in {
+        val result = fillRefArray(1) { "Hello" }
         result(0) should be("Hello")
     }
 
-    it should "return a seq with five entries that are dynamically calculated when the number of times is 5" in {
+    it should "return an IntArray with five entries that are dynamically calculated when the number of times is 5" in {
         var index = 0
-        val result = repeat(5) { index = (index + 1); index }
+        val result = fillIntArray(5) { index += 1; index }
         result.length should be(5)
-        result should be(Seq(1, 2, 3, 4, 5))
+        result.toList should be(List(1, 2, 3, 4, 5))
+    }
+
+    it should "return an RefArray with five entries that are dynamically calculated when the number of times is 5" in {
+        var index = 0
+        val result = fillRefArray(5) { index += 1; "value="+index }
+        result.length should be(5)
+        result.toList should be(List("value=1", "value=2", "value=3", "value=4", "value=5"))
     }
 
     it should "work when the number of times is calculated at runtime" in {
         var index = 0
-        val result = repeat((System.nanoTime() % 3 + 1).toInt) { index = (index + 1); index }
+        val result = fillIntArray((System.nanoTime() % 3 + 1).toInt) { index += 1; index }
         result.length should not be (0)
     }
 
     it should "evaluate the expression that calculates the number of times just once" in {
         var times = 0
         var index = 0
-        val result = repeat({ times = times + 1; times }) { index = (index + 1); index };
+        val result = fillIntArray({ times = times + 1; times }) { index += 1; index };
         times should be(1)
-        result should be(Seq(1))
+        result.toList should be(List(1))
     }
 
     //

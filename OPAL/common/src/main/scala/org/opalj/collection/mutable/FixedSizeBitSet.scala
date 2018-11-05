@@ -32,7 +32,7 @@ private[mutable] object ZeroLengthBitSet extends FixedSizeBitSet {
     override def +=(i: Int): this.type = throw new UnsupportedOperationException("fixed size is 0")
     override def -=(i: Int): this.type = this
     override def contains(i: Int): Boolean = false
-    override def intIterator: IntIterator = IntIterator.empty
+    override def iterator: IntIterator = IntIterator.empty
     override def equals(other: Any): Boolean = {
         other match {
             case that: FixedSizeBitSet64  ⇒ that.set == 0
@@ -54,14 +54,14 @@ private[mutable] final class FixedSizeBitSet64 extends FixedSizeBitSet { thisSet
     override def -=(i: Int): this.type = { set &= (-1L & ~(1L << i)); this }
     override def contains(i: Int): Boolean = (set & (1L << i)) != 0L
 
-    override def intIterator: IntIterator = new IntIterator {
+    override def iterator: IntIterator = new IntIterator {
         private[this] var i: Int = -1
-        private[this] def getNextValue(): Unit = {
+        private[this] def advanceIterator(): Unit = {
             do { i += 1 } while (i < 64 && !thisSet.contains(i))
         }
-        getNextValue()
+        advanceIterator()
         def hasNext: Boolean = i < 64
-        def next(): Int = { val i = this.i; getNextValue(); i }
+        def next(): Int = { val i = this.i; advanceIterator(); i }
     }
 
     override def equals(other: Any): Boolean = {
@@ -112,7 +112,7 @@ private[mutable] final class FixedSizeBitSet128 extends FixedSizeBitSet { thisSe
             (set2 & (1L << (i - 64))) != 0L
     }
 
-    override def intIterator: IntIterator = new IntIterator {
+    override def iterator: IntIterator = new IntIterator {
         private[this] var i: Int = -1
         private[this] def getNextValue(): Unit = {
             do { i += 1 } while (i < 128 && !thisSet.contains(i))
@@ -171,7 +171,7 @@ private[mutable] final class FixedSizeBitSetN private[mutable] (
         (set(bucket) & (1L << (i - 64 * bucket))) != 0L
     }
 
-    override def intIterator: IntIterator = new IntIterator {
+    override def iterator: IntIterator = new IntIterator {
         private[this] val max: Int = set.length * 64
         private[this] var i: Int = -1
         private[this] def getNextValue(): Unit = {

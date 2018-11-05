@@ -8,16 +8,17 @@ package mutable
  *
  * @author Michael Eichberg
  */
-class AnyRefAppendChain[N >: Null <: AnyRef] private (
-        private var h: AnyRefAppendChainNode[N],
-        private var l: AnyRefAppendChainNode[N]
+// TODO Rename to RefDeque - add methods from IntQueue
+class RefAppendChain[N >: Null <: AnyRef] private (
+        private var h: RefAppendChainNode[N],
+        private var l: RefAppendChainNode[N]
 ) {
 
     def this() { this(null, null) }
 
-    def isEmpty = h == null
+    def isEmpty: Boolean = h == null
 
-    def nonEmpty = h != null
+    def nonEmpty: Boolean = h != null
 
     def take(): N = {
         val v = h.v
@@ -32,20 +33,20 @@ class AnyRefAppendChain[N >: Null <: AnyRef] private (
 
     def prepend(v: N): this.type = {
         if (h == null) {
-            h = new AnyRefAppendChainNode(v, null)
+            h = new RefAppendChainNode(v, null)
             l = h
         } else {
-            h = new AnyRefAppendChainNode(v, h)
+            h = new RefAppendChainNode(v, h)
         }
         this
     }
 
     def append(v: N): this.type = {
         if (l == null) {
-            h = new AnyRefAppendChainNode(v, null)
+            h = new RefAppendChainNode(v, null)
             l = h
         } else {
-            val newL = new AnyRefAppendChainNode(v, null)
+            val newL = new RefAppendChainNode(v, null)
             l.rest = newL
             l = newL
         }
@@ -54,4 +55,4 @@ class AnyRefAppendChain[N >: Null <: AnyRef] private (
 
 }
 
-private[mutable] class AnyRefAppendChainNode[T](val v: T, var rest: AnyRefAppendChainNode[T])
+private[mutable] class RefAppendChainNode[T](val v: T, var rest: RefAppendChainNode[T])

@@ -28,7 +28,6 @@ import scala.collection.JavaConverters._
 class DefinitionSites(val project: SomeProject) {
 
     val definitionSites = new ConcurrentHashMap[DefinitionSite, DefinitionSite]()
-    private[this] val aiResult = project.get(SimpleAIKey)
 
     /**
      * Returns the [[DefinitionSite]] instance for the given program counter and given method.
@@ -36,8 +35,7 @@ class DefinitionSites(val project: SomeProject) {
      * and stored into the map.
      */
     def apply(m: Method, pc: Int): DefinitionSite = {
-        val uses = aiResult(m).domain.safeUsedBy(pc)
-        val defSite = new DefinitionSite(m, pc, uses)
+        val defSite = DefinitionSite(m, pc)
         val prev = definitionSites.putIfAbsent(defSite, defSite)
         if (prev == null) defSite else prev
     }

@@ -29,8 +29,8 @@ case class Schedule(
 
         // 1 - Note that the properties of lazy computations are considered to be computed as long
         //     as they are used; not only in the first phase where the analysis is scheduled!
-        // 2 - Due to transitive usage of lazily computed properties the lifetime of the analysis
-        //     may be longer than the batch in which the lazy analysis is scheduled
+        // 2 - Due to transitive usage of lazily computed properties the lifetime of the (lazy)
+        //     analysis may be longer than the batch in which the lazy analysis is scheduled
         var currentLazilyComputedProperties = Set.empty[PropertyKind] // those which are just/still computed
 
         batches.toIterator.zipWithIndex foreach { batchId ⇒

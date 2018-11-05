@@ -3,11 +3,10 @@ package org.opalj
 package bi
 package reader
 
-import scala.reflect.ClassTag
-
 import java.io.DataInputStream
 
-import org.opalj.control.repeat
+import org.opalj.collection.immutable.RefArray
+import org.opalj.control.fillRefArray
 
 /**
  * Defines a template method to read in the code attribute.
@@ -18,25 +17,36 @@ import org.opalj.control.repeat
  */
 trait Code_attributeReader extends AttributeReader {
 
-    type ExceptionTableEntry
-    implicit val ExceptionTableEntryManifest: ClassTag[ExceptionTableEntry]
+    //
+    // TYPE DEFINITIONS AND FACTORY METHODS
+    //
+
+    type ExceptionTableEntry <: AnyRef
+    type ExceptionHandlers = RefArray[ExceptionTableEntry]
 
     type Instructions
 
     type Code_attribute <: Attribute
 
-    type Attributes
-
-    def Instructions(cp: Constant_Pool, in: DataInputStream): Instructions
+    def Instructions(
+        cp:                  Constant_Pool,
+        ap_name_index:       Constant_Pool_Index,
+        ap_descriptor_index: Constant_Pool_Index,
+        in:                  DataInputStream
+    ): Instructions
 
     protected def Attributes(
-        ap: AttributeParent,
-        cp: Constant_Pool,
-        in: DataInputStream
+        cp:                  Constant_Pool,
+        ap:                  AttributeParent,
+        ap_name_index:       Constant_Pool_Index,
+        ap_descriptor_index: Constant_Pool_Index,
+        in:                  DataInputStream
     ): Attributes
 
     def Code_attribute(
-        constant_pool:        Constant_Pool,
+        cp:                   Constant_Pool,
+        ap_name_index:        Constant_Pool_Index,
+        ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         max_stack:            Int,
         max_locals:           Int,
@@ -50,14 +60,12 @@ trait Code_attributeReader extends AttributeReader {
         start_pc:      Int,
         end_pc:        Int,
         handler_pc:    Int,
-        catch_type:    Int
+        catch_type:    Constant_Pool_Index // may be "0" in case of "finally"
     ): ExceptionTableEntry
 
     //
     // IMPLEMENTATION
     //
-
-    type ExceptionHandlers = IndexedSeq[ExceptionTableEntry]
 
     /**
      * '''From the Specification'''
@@ -80,26 +88,30 @@ trait Code_attributeReader extends AttributeReader {
      * </pre>
      */
     private[this] def parserFactory() = (
-        ap: AttributeParent,
         cp: Constant_Pool,
+        ap: AttributeParent,
+        ap_name_index: Constant_Pool_Index,
+        ap_descriptor_index: Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         in: DataInputStream
     ) ⇒ {
         /*val attribute_length = */ in.readInt()
         Code_attribute(
             cp,
+            ap_name_index,
+            ap_descriptor_index,
             attribute_name_index,
             in.readUnsignedShort(),
             in.readUnsignedShort(),
-            Instructions(cp, in),
-            repeat(in.readUnsignedShort()) { // "exception_table_length" times
+            Instructions(cp, ap_name_index, ap_descriptor_index, in),
+            fillRefArray(in.readUnsignedShort()) { // "exception_table_length" times
                 ExceptionTableEntry(
                     cp,
                     in.readUnsignedShort, in.readUnsignedShort,
                     in.readUnsignedShort, in.readUnsignedShort
                 )
             },
-            Attributes(AttributesParent.Code, cp, in)
+            Attributes(cp, AttributesParent.Code, ap_name_index, ap_descriptor_index, in)
         )
     }
 

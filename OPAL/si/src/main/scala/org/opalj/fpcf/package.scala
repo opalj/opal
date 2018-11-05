@@ -23,7 +23,7 @@ import org.opalj.log.OPALLogger.info
  *
  * @note ''This framework assumes that all data-structures (e.g., dependee lists and properties)
  *       that are passed to the framework are effectively immutable!''
- *       (Effectively immutable means that the datastructure is never updated after it was
+ *       (Effectively immutable means that a data structure is never updated after it was
  *       passed to the framework.)
  *
  * @note The dependency relation is as follows:
@@ -33,7 +33,8 @@ import org.opalj.log.OPALLogger.info
  *          `===`
  *      “B is depended on by A”
  *
- * @note The very core of the framework is described in: [[https://conf.researchr.org/track/ecoop-issta-2018/SOAP-2018-papers#program Lattice Based Modularization of Static Analyses]]
+ * @note The very core of the framework is described in:
+ *       [[https://conf.researchr.org/track/ecoop-issta-2018/SOAP-2018-papers#program Lattice Based Modularization of Static Analyses]]
  *
  * @author Michael Eichberg
  */
@@ -67,6 +68,8 @@ package object fpcf {
     final type SomeEPS = EPS[_ <: Entity, _ <: Property]
 
     final type SomeFinalEP = FinalEP[_ <: Entity, _ <: Property]
+
+    final type SomePartialResult = PartialResult[_ >: Null <: Entity, _ >: Null <: Property]
 
     /**
      * A function that takes an entity and returns a result. The result maybe:

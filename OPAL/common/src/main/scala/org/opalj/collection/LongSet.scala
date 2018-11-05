@@ -1,9 +1,6 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.collection
 
-import java.util.function.LongConsumer
-import java.util.function.LongFunction
-
 import scala.collection.mutable.Builder
 
 /**
@@ -26,16 +23,11 @@ trait LongSet[T <: LongSet[T]] { longSet: T ⇒
      */
     def size: Int
 
-    def foreach(f: LongConsumer): Unit
+    def foreach[U](f: Long ⇒ U): Unit
     def withFilter(p: Long ⇒ Boolean): T
     def map(f: Long ⇒ Long): T
-    def mapToAny[A](f: LongFunction[A]): Set[A] = {
-        var r = Set.empty[A]
-        foreach { v ⇒ r += f(v) }
-        r
-    }
+    def map[A <: AnyRef](f: Long ⇒ A): Set[A] = foldLeft(Set.empty[A])(_ + f(_))
     def flatMap(f: Long ⇒ T): T
-
     def foldLeft[B](z: B)(f: (B, Long) ⇒ B): B
 
     def head: Long
@@ -68,8 +60,7 @@ trait LongSet[T <: LongSet[T]] { longSet: T ⇒
 
     final def ++(that: LongIterator): T = that.foldLeft(this)(_ + _)
 
-    def iterator: Iterator[Long]
-    def longIterator: LongIterator
+    def iterator: LongIterator
 
     final def transform[B, To](f: Long ⇒ B, b: Builder[B, To]): To = {
         foreach(i ⇒ b += f(i))
@@ -78,7 +69,7 @@ trait LongSet[T <: LongSet[T]] { longSet: T ⇒
 
     final def mkString(pre: String, in: String, post: String): String = {
         val sb = new StringBuilder(pre)
-        val it = longIterator
+        val it = iterator
         var hasNext = it.hasNext
         while (hasNext) {
             sb.append(it.next().toString)

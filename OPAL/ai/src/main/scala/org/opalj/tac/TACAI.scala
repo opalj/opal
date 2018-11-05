@@ -32,7 +32,8 @@ import org.opalj.ai.AIResult
 import org.opalj.ai.Domain
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
-import org.opalj.collection.mutable.AnyRefAppendChain
+import org.opalj.collection.immutable.IntIntPair
+import org.opalj.collection.mutable.RefAppendChain
 
 /**
  * Factory to convert the bytecode of a method into a three address representation using the
@@ -122,7 +123,7 @@ object TACAI {
                 if (a(i) ne null) return false;
                 i += 1
             }
-            return true;
+            true
         }
 
         import UnaryArithmeticOperators._
@@ -200,7 +201,7 @@ object TACAI {
         // The list of bytecode instructions which were killed (=>NOP), and for which we now
         // have to clear the usages.
         // basically a mapping from a UseSite(PC) to a DefSite
-        val obsoleteUseSites: AnyRefAppendChain[PCAndAnyRef[IntTrieSet /*DefSites*/ ]] = new AnyRefAppendChain()
+        val obsoleteUseSites: RefAppendChain[PCAndAnyRef[IntTrieSet /*DefSites*/ ]] = new RefAppendChain()
 
         def killOperandBasedUsages(useSitePC: Int, valuesCount: Int): Unit = {
             // The value(s) is (are) not used and the expression is side effect free;
@@ -716,14 +717,21 @@ object TACAI {
                     }
 
                 case INVOKEDYNAMIC.opcode ⇒
-                    val INVOKEDYNAMIC(bootstrapMethod, name, methodDescriptor) = instruction
-                    val parametersCount = methodDescriptor.parametersCount
+                    val INVOKEDYNAMIC(bootstrapMethod, name, descriptor) = instruction
+                    val parametersCount = descriptor.parametersCount
                     val params = useOperands(parametersCount).reverse
-                    val expr = Invokedynamic(pc, bootstrapMethod, name, methodDescriptor, params)
-                    if (wasExecuted(nextPC)) {
-                        addInitLocalValStmt(pc, operandsArray(nextPC).head, expr)
+                    if (descriptor.returnType.isVoidType) {
+                        val indyMethodCall =
+                            InvokedynamicMethodCall(pc, bootstrapMethod, name, descriptor, params)
+                        addStmt(indyMethodCall)
                     } else {
-                        addStmt(ExprStmt(pc, expr))
+                        val indyFunctionCall =
+                            InvokedynamicFunctionCall(pc, bootstrapMethod, name, descriptor, params)
+                        if (wasExecuted(nextPC)) {
+                            addInitLocalValStmt(pc, operandsArray(nextPC).head, indyFunctionCall)
+                        } else {
+                            addStmt(ExprStmt(pc, indyFunctionCall))
+                        }
                     }
 
                 case PUTSTATIC.opcode ⇒
@@ -813,7 +821,8 @@ object TACAI {
                     val tableSwitch = as[TABLESWITCH](instruction)
                     val defaultTarget = pc + tableSwitch.defaultOffset
                     var caseValue = tableSwitch.low
-                    val npairs = tableSwitch.jumpOffsets map { jo ⇒
+                    // IMPROVE Use IntIntPair
+                    val npairs = tableSwitch.jumpOffsets.map[(Int, Int)] { jo ⇒
                         val caseTarget = pc + jo
                         val npair = (caseValue, caseTarget)
                         caseValue += 1
@@ -825,8 +834,8 @@ object TACAI {
                     val index = operandUse(0)
                     val lookupSwitch = as[LOOKUPSWITCH](instruction)
                     val defaultTarget = pc + lookupSwitch.defaultOffset
-                    val npairs = lookupSwitch.npairs.map { npair ⇒
-                        val (caseValue, branchOffset) = npair
+                    val npairs = lookupSwitch.npairs.map[(Int, Int)] { npair ⇒
+                        val IntIntPair(caseValue, branchOffset) = npair
                         val caseTarget = pc + branchOffset
                         (caseValue, caseTarget)
                     }
@@ -990,11 +999,52 @@ object TACAI {
                 singletonBBsExpander,
                 lastIndex = index - 1
             )
-        val taExceptionHanders = updateExceptionHandlers(pcToIndex)(aiResult)
+        val taExceptionHandlers = updateExceptionHandlers(pcToIndex)(aiResult)
         val lnt = code.lineNumberTable
         val initialTAC = TACode[TACMethodParameter, AIDUVar](
-            tacParams, tacStmts, pcToIndex, taCodeCFG, taExceptionHanders, lnt
+            tacParams, tacStmts, pcToIndex, taCodeCFG, taExceptionHandlers, lnt
         )
+
+        // Potential Optimizations
+        // =======================
+        // (1) Optimizing "not operations on booleans"... e.g., Java code such as m(!a) which is
+        // compiled to:
+        //      if(a)
+        //          val b = false
+        //      else
+        //          val c = true
+        //      m({b,c})
+        // Goal:
+        //      val c = !a
+        //      m(c)
+        //
+        // (2) Perform constant propagation when a use-site has only a _single_ def-site:
+        //     val x = 304
+        //     if({a,b} != x) goto t
+        //          =>  afterwards check if the def site has more use sites and – if not –
+        //              replace it by nops
+        //
+        //
+        // (3) Identify _really_ useless nops and remove them. (Note that some nops may be
+        //     required to ensure that the path information is available. E.g.,
+        //     java.lang.String.<init>(byte[],int,int,int) (java 1.8.0_181)
+
+        // Non-Optimizations
+        // =================
+        // The following code looks optimizable, but is actually not optimizable!
+        //
+        // Seemingly useless if-gotos; e.g., (taken from "java.lang.String replace(char,char)")
+        // 20: if({a} != {param1}) goto 22
+        //       // 20 →
+        // 21:/*pc=102:*/ goto 23
+        //       // 20 →
+        // 22:/*pc=105:*/ ;
+        //       // 21, 22 →
+        // 23:/*pc=107:*/ {lvb}[{lv18, lv5}] = {param2, lv13}
+        //       // ⚡️ <uncaught exception ⇒ abnormal return>
+        // THIS CODE CANNOT BE OPTIMIZED BECAUSE THE CONTROL-FLOW IS RELEVANT TO DETERMINE
+        // WHICH VALUES (param2 or lv13 / lv18 or lv5) ARE ACTUALLY SELECTED AT RUNTIME.
+        // HOWEVER, THIS IS NOT DIRECTLY OBVIOUS FROM THE ABOVE CODE!
 
         if (optimizations.nonEmpty) {
             val base = TACOptimizationResult(initialTAC, wasTransformed = false)

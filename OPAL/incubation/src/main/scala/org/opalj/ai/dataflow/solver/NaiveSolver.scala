@@ -22,7 +22,7 @@ trait NaiveSolver[Source, Params] extends DataFlowProblemSolver[Source, Params] 
 
 trait BaseDomain[Source]
     extends CorrelationalDomain
-    with domain.DefaultDomainValueBinding
+    with domain.DefaultSpecialDomainValuesBinding
     with domain.TheProject
     with domain.l0.DefaultTypeLevelFloatValues
     with domain.l0.DefaultTypeLevelDoubleValues
@@ -42,7 +42,7 @@ trait BaseDomain[Source]
 //    val project: Project[Source],
 //    val method: Method)
 //        extends Domain
-//        with domain.DefaultDomainValueBinding
+//        with domain.DefaultSpecialDomainValuesBinding
 //        with domain.ThrowAllPotentialExceptionsConfiguration
 //        with domain.ProjectBasedClassHierarchy
 //        with domain.TheProject[Source]

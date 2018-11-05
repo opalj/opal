@@ -47,7 +47,7 @@ trait ConfigurationBasedConstructorEscapeAnalysis extends AbstractEscapeAnalysis
         call: NonVirtualMethodCall[V]
     )(implicit context: AnalysisContext, state: AnalysisState): Unit = {
         assert(call.name == "<init>")
-        assert(context.usesDefSite(call.receiver))
+        assert(state.usesDefSite(call.receiver))
         assert(call.declaringClass.isObjectType)
 
         val propertyOption = predefinedConstructors.get(call.declaringClass.asObjectType)

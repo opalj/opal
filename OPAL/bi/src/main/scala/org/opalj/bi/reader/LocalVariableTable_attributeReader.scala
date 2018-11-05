@@ -3,10 +3,10 @@ package org.opalj
 package bi
 package reader
 
-import scala.reflect.ClassTag
-
 import java.io.DataInputStream
-import org.opalj.control.repeat
+
+import org.opalj.collection.immutable.RefArray
+import org.opalj.control.fillRefArray
 
 /**
  * Generic parser for the ''local variable table'' attribute.
@@ -14,15 +14,16 @@ import org.opalj.control.repeat
 trait LocalVariableTable_attributeReader extends AttributeReader {
 
     //
-    // ABSTRACT DEFINITIONS
+    // TYPE DEFINITIONS AND FACTORY METHODS
     //
+
     type LocalVariableTable_attribute >: Null <: Attribute
 
-    type LocalVariableTableEntry
-    implicit val LocalVariableTableEntryManifest: ClassTag[LocalVariableTableEntry]
+    type LocalVariableTableEntry <: AnyRef
+    type LocalVariables = RefArray[LocalVariableTableEntry]
 
     def LocalVariableTableEntry(
-        constant_pool:    Constant_Pool,
+        cp:               Constant_Pool,
         start_pc:         Int,
         length:           Int,
         name_index:       Constant_Pool_Index,
@@ -31,7 +32,9 @@ trait LocalVariableTable_attributeReader extends AttributeReader {
     ): LocalVariableTableEntry
 
     def LocalVariableTable_attribute(
-        constant_pool:        Constant_Pool,
+        cp:                   Constant_Pool,
+        ap_name_index:        Constant_Pool_Index,
+        ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         local_variable_table: LocalVariables
     ): LocalVariableTable_attribute
@@ -39,8 +42,6 @@ trait LocalVariableTable_attributeReader extends AttributeReader {
     //
     // IMPLEMENTATION
     //
-
-    type LocalVariables = IndexedSeq[LocalVariableTableEntry]
 
     /**
      * <pre>
@@ -58,8 +59,10 @@ trait LocalVariableTable_attributeReader extends AttributeReader {
      * </pre>
      */
     private[this] def parserFactory() = (
-        ap: AttributeParent,
         cp: Constant_Pool,
+        ap: AttributeParent,
+        ap_name_index: Constant_Pool_Index,
+        ap_descriptor_index: Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         in: DataInputStream
     ) ⇒ {
@@ -68,9 +71,11 @@ trait LocalVariableTable_attributeReader extends AttributeReader {
         if (entriesCount > 0 || reifyEmptyAttributes) {
             LocalVariableTable_attribute(
                 cp,
+                ap_name_index,
+                ap_descriptor_index,
                 attribute_name_index,
                 {
-                    repeat(entriesCount) {
+                    fillRefArray(entriesCount) {
                         LocalVariableTableEntry(
                             cp,
                             in.readUnsignedShort,

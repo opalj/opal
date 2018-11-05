@@ -3,35 +3,36 @@ package org.opalj
 package bi
 package reader
 
-import scala.reflect.ClassTag
-
 import java.io.DataInputStream
-import org.opalj.control.repeat
+
+import org.opalj.collection.immutable.RefArray
+import org.opalj.control.fillRefArray
 
 /**
- * Generic parser for type annotations. This
- * reader is intended to be used in conjunction with the
+ * Generic parser for type annotations. This reader is intended to be used in conjunction with the
  * Runtime(In)VisibleTypeAnnotations_attributeReaders.
  *
  * @author Michael Eichberg
  */
-trait TypeAnnotationsReader extends AnnotationAbstractions {
+trait TypeAnnotationsReader extends AnnotationsAbstractions {
 
     //
-    // ABSTRACT DEFINITIONS
+    // TYPE DEFINITIONS AND FACTORY METHODS
     //
 
-    type TypeAnnotationTarget
-    def TypeAnnotationTarget(in: DataInputStream): TypeAnnotationTarget
+    type TypeAnnotation <: AnyRef
+    type TypeAnnotations = RefArray[TypeAnnotation]
 
-    type TypeAnnotationPath
+    type TypeAnnotationTarget <: AnyRef
+
+    type TypeAnnotationPath <: AnyRef
+
     def TypeAnnotationPath(in: DataInputStream): TypeAnnotationPath
 
-    type TypeAnnotation
-    implicit val TypeAnnotationManifest: ClassTag[TypeAnnotation]
+    def TypeAnnotationTarget(in: DataInputStream): TypeAnnotationTarget
 
     def TypeAnnotation(
-        constant_pool:       Constant_Pool,
+        cp:                  Constant_Pool,
         target:              TypeAnnotationTarget,
         path:                TypeAnnotationPath,
         type_index:          Constant_Pool_Index,
@@ -41,8 +42,6 @@ trait TypeAnnotationsReader extends AnnotationAbstractions {
     //
     // IMPLEMENTATION
     //
-
-    type TypeAnnotations = IndexedSeq[TypeAnnotation]
 
     /**
      * Reads a Runtime(In)VisibleTypeAnnotations attribute.
@@ -72,7 +71,7 @@ trait TypeAnnotationsReader extends AnnotationAbstractions {
      * </pre>
      */
     def TypeAnnotations(cp: Constant_Pool, in: DataInputStream): TypeAnnotations = {
-        repeat(in.readUnsignedShort) {
+        fillRefArray(in.readUnsignedShort) {
             TypeAnnotation(cp, in)
         }
     }

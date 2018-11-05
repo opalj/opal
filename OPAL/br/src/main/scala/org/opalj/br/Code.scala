@@ -5,6 +5,7 @@ package br
 import scala.annotation.tailrec
 import scala.annotation.switch
 import scala.reflect.ClassTag
+
 import java.util.Arrays.fill
 
 import scala.collection.AbstractIterator
@@ -13,6 +14,7 @@ import scala.collection.immutable.IntMap
 import scala.collection.immutable.Queue
 import scala.collection.generic.FilterMonadic
 import scala.collection.generic.CanBuildFrom
+
 import org.opalj.util.AnyToAnyThis
 import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.collection.IntIterator
@@ -22,13 +24,14 @@ import org.opalj.collection.immutable.IntTrieSet1
 import org.opalj.collection.immutable.BitArraySet
 import org.opalj.collection.immutable.Chain
 import org.opalj.collection.immutable.Naught
+import org.opalj.collection.immutable.IntIntPair
+import org.opalj.collection.immutable.EmptyIntTrieSet
 import org.opalj.collection.mutable.IntQueue
-import org.opalj.br.instructions._
+import org.opalj.collection.mutable.IntArrayStack
 import org.opalj.br.cfg.CFGFactory
 import org.opalj.br.cfg.CFG
-import org.opalj.collection.immutable.IntPair
-import org.opalj.collection.immutable.EmptyIntTrieSet
-import org.opalj.collection.mutable.IntArrayStack
+import org.opalj.br.ClassHierarchy.PreInitializedClassHierarchy
+import org.opalj.br.instructions._
 
 /**
  * Representation of a method's code attribute, that is, representation of a method's
@@ -108,8 +111,6 @@ final class Code private (
 
         compareAttributes(other.attributes, config).isEmpty
     }
-
-    import ClassHierarchy.PreInitializedClassHierarchy
 
     @inline final def codeSize: Int = instructions.length
 
@@ -195,22 +196,14 @@ final class Code private (
      *
      * @see See the method [[foreach]] for an alternative.
      */
-    def programCounters: IntIterator = {
-        new IntIterator {
-            var nextPC = 0 // there is always at least one instruction
-
-            def next(): Int = {
-                val pc = nextPC
-                nextPC = pcOfNextInstruction(nextPC)
-                pc
-            }
-
-            def hasNext: Boolean = nextPC < instructions.length
-        }
+    def programCounters: IntIterator = new IntIterator {
+        private[this] var nextPC = 0 // there is always at least one instruction
+        def hasNext: Boolean = nextPC < instructions.length
+        def next(): Int = { val pc = nextPC; nextPC = pcOfNextInstruction(nextPC); pc }
     }
 
     /**
-     * Computes the number of instructions.
+     * Counts the number of instructions.
      *
      * @note The number of instructions is always smaller or equal to the size of the code array.
      * @note This operation has complexity O(n).
@@ -317,14 +310,10 @@ final class Code private (
                 false
             }
 
-            remainingExceptionHandlers =
-                for {
-                    eh ← remainingExceptionHandlers
-                    if subroutineIds(eh.handlerPC) == -1 // we did not already analyze the handler
-                    if !belongsToCurrentSubroutine(eh.startPC, eh.endPC, eh.handlerPC)
-                } yield {
-                    eh
-                }
+            remainingExceptionHandlers = remainingExceptionHandlers filter { eh ⇒
+                subroutineIds(eh.handlerPC) == -1 && // we did not already analyze the handler
+                    !belongsToCurrentSubroutine(eh.startPC, eh.endPC, eh.handlerPC)
+            }
         }
 
         subroutineIds
@@ -565,7 +554,7 @@ final class Code private (
             if (instruction.readsLocal) {
                 // This instruction is by construction "not a final instruction"
                 // because this instruction never throws any(!) exceptions and it
-                // also never "returns" instructions.
+                // also never "returns".
                 liveVariableInfo += instruction.indexOfReadLocal
             }
             liveVariables(pc) = liveVariableInfo
@@ -1031,7 +1020,7 @@ final class Code private (
      * @note Depending on the configuration of the reader for `ClassFile`s this
      *       attribute may not be reified.
      */
-    def localVariableTypeTable: Seq[LocalVariableTypes] = {
+    def localVariableTypeTable: Iterable[LocalVariableTypes] = {
         attributes collect { case LocalVariableTypeTable(lvtt) ⇒ lvtt }
     }
 
@@ -1221,7 +1210,7 @@ final class Code private (
         None
     }
 
-    @inline final def foreach[U](f: PCAndInstruction ⇒ U): Unit = {
+    def foreach[U](f: PCAndInstruction ⇒ U): Unit = {
         val instructionsLength = instructions.length
         var pc = 0
         while (pc < instructionsLength) {
@@ -1246,7 +1235,7 @@ final class Code private (
         None
     }
 
-    def filter[B](f: (Int /*PC*/ , Instruction) ⇒ Boolean): IntArraySet = {
+    def filter[B](f: (PC, Instruction) ⇒ Boolean): IntArraySet = {
         val max_pc = instructions.length
 
         val pcs = IntArrayStack.empty
@@ -1255,7 +1244,7 @@ final class Code private (
             if (f(pc, instructions(pc))) pcs += pc
             pc = pcOfNextInstruction(pc)
         }
-        IntArraySet.fromSortedArray(pcs.toArray)
+        IntArraySet._UNSAFE_fromSorted(pcs.toArray)
     }
 
     /**
@@ -1765,8 +1754,8 @@ object Code {
         maxStack:          Int,
         maxLocals:         Int,
         instructions:      Array[Instruction],
-        exceptionHandlers: ExceptionHandlers  = IndexedSeq.empty,
-        attributes:        Attributes         = IndexedSeq.empty
+        exceptionHandlers: ExceptionHandlers  = NoExceptionHandlers,
+        attributes:        Attributes         = NoAttributes
     ): Code = {
 
         var localVariableTablesCount = 0
@@ -1783,31 +1772,22 @@ object Code {
             new Code(maxStack, maxLocals, instructions, exceptionHandlers, attributes)
         } else {
             val (localVariableTables, otherAttributes1) =
-                attributes partition {
-                    _.isInstanceOf[LocalVariableTable]
-                }
+                attributes partitionByType classOf[LocalVariableTable]
             val newAttributes1 =
                 if (localVariableTables.nonEmpty && localVariableTables.tail.nonEmpty) {
-                    val allLVs =
-                        localVariableTables.
-                            map(_.asInstanceOf[LocalVariableTable].localVariables).toIndexedSeq
-                    val theLVT = allLVs.flatten
-                    new LocalVariableTable(theLVT) +: otherAttributes1
+                    val theLVT = localVariableTables.flatMap[LocalVariable](_.localVariables)
+                    otherAttributes1 :+ new LocalVariableTable(theLVT)
                 } else {
                     attributes
                 }
 
             val (lineNumberTables, otherAttributes2) =
-                newAttributes1 partition {
-                    _.isInstanceOf[UnpackedLineNumberTable]
-                }
+                newAttributes1 partitionByType classOf[UnpackedLineNumberTable]
             val newAttributes2 =
-                if (lineNumberTables.nonEmpty && lineNumberTables.tail.nonEmpty) {
-                    val mergedTables =
-                        lineNumberTables.flatMap(_.asInstanceOf[UnpackedLineNumberTable].lineNumbers)
-                    val sortedTable =
-                        mergedTables.sortWith((ltA, ltB) ⇒ ltA.startPC < ltB.startPC)
-                    new UnpackedLineNumberTable(sortedTable) +: otherAttributes2
+                if (lineNumberTables.nonEmpty && lineNumberTables.size > 1) {
+                    val mergedTables = lineNumberTables.flatMap[LineNumber](_.lineNumbers)
+                    val sortedTable = mergedTables.sortWith[LineNumber]((ltA, ltB) ⇒ ltA.startPC < ltB.startPC)
+                    otherAttributes2 :+ new UnpackedLineNumberTable(sortedTable)
                 } else {
                     newAttributes1
                 }
@@ -1881,7 +1861,7 @@ object Code {
 
     def computeCFG(
         instructions:      Array[Instruction],
-        exceptionHandlers: ExceptionHandlers  = IndexedSeq.empty,
+        exceptionHandlers: ExceptionHandlers  = NoExceptionHandlers,
         classHierarchy:    ClassHierarchy     = ClassHierarchy.PreInitializedClassHierarchy
     ): CFG[Instruction, Code] = {
         CFGFactory(
@@ -1901,7 +1881,7 @@ object Code {
     def computeMaxStack(
         instructions:      Array[Instruction],
         classHierarchy:    ClassHierarchy     = ClassHierarchy.PreInitializedClassHierarchy,
-        exceptionHandlers: ExceptionHandlers  = IndexedSeq.empty
+        exceptionHandlers: ExceptionHandlers  = NoExceptionHandlers
     ): Int = {
         computeMaxStack(
             instructions,
@@ -1924,12 +1904,12 @@ object Code {
         // Basic idea: follow all paths
         var maxStackDepth: Int = 0
 
-        // IntPair:  /*PC*/ Int, Int /*stackdepth before executing the instruction*/
-        var paths: Chain[IntPair] = Naught
+        // IntIntPair:  /*PC*/ Int, Int /*stackdepth before executing the instruction*/
+        var paths: Chain[IntIntPair] = Naught
         val visitedPCs = new mutable.BitSet(instructions.length)
 
         // We start with the first instruction and an empty stack.
-        paths :&:= IntPair(0, 0)
+        paths :&:= IntIntPair(0, 0)
         visitedPCs += 0
 
         // We have to make sure, that all exception handlers are evaluated for
@@ -1937,7 +1917,7 @@ object Code {
         // containing the exception itself.
         for (exceptionHandler ← exceptionHandlers) {
             val handlerPC = exceptionHandler.handlerPC
-            if (visitedPCs.add(handlerPC)) paths :&:= IntPair(handlerPC, 1)
+            if (visitedPCs.add(handlerPC)) paths :&:= IntIntPair(handlerPC, 1)
         }
 
         while (paths.nonEmpty) {
@@ -1949,7 +1929,7 @@ object Code {
             maxStackDepth = Math.max(maxStackDepth, stackDepth)
             cfg.foreachSuccessor(pc) { succPC ⇒
                 if (visitedPCs.add(succPC)) {
-                    paths :&:= IntPair(succPC, stackDepth)
+                    paths :&:= IntIntPair(succPC, stackDepth)
                 }
             }
         }

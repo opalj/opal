@@ -25,7 +25,7 @@ import org.opalj.br.MethodHandle
 import org.opalj.br.Method
 import org.opalj.br.PC
 import org.opalj.br.analyses.ProjectLike
-import org.opalj.value.KnownTypedValue
+import org.opalj.value.ValueInformation
 
 /**
  * Represents an expression. In general, every expression should be a simple expression, where
@@ -104,6 +104,7 @@ trait Expr[+V <: Var[V]] extends ASTNode[V] {
     def asBinaryExpr: BinaryExpr[V] = throw new ClassCastException();
     def asPrefixExpr: PrefixExpr[V] = throw new ClassCastException();
     def asPrimitiveTypeCastExpr: PrimitiveTypecastExpr[V] = throw new ClassCastException();
+    def isNew: Boolean = false
     def asNew: New = throw new ClassCastException();
     def asNewArray: NewArray[V] = throw new ClassCastException();
     def asArrayLoad: ArrayLoad[V] = throw new ClassCastException();
@@ -112,7 +113,7 @@ trait Expr[+V <: Var[V]] extends ASTNode[V] {
     def isGetField: Boolean = false
     def asGetField: GetField[V] = throw new ClassCastException();
     def asGetStatic: GetStatic = throw new ClassCastException();
-    def asInvokedynamic: Invokedynamic[V] = throw new ClassCastException();
+    def asInvokedynamicFunctionCall: InvokedynamicFunctionCall[V] = throw new ClassCastException();
     def asFunctionCall: FunctionCall[V] = throw new ClassCastException();
     def asStaticFunctionCall: StaticFunctionCall[V] = throw new ClassCastException();
     def asInstanceFunctionCall: InstanceFunctionCall[V] = throw new ClassCastException();
@@ -409,6 +410,7 @@ case class New(pc: PC, tpe: ObjectType) extends Expr[Nothing] {
 
     final override def isValueExpression: Boolean = false
     final override def isVar: Boolean = false
+    final override def isNew: Boolean = true
     final override def asNew: this.type = this
     final override def astID: Int = New.ASTID
     final override def cTpe: ComputationalType = ComputationalTypeReference
@@ -597,7 +599,13 @@ case class GetStatic(
 }
 object GetStatic { final val ASTID = -22 }
 
-case class Invokedynamic[+V <: Var[V]](
+/**
+ * Representation of an `invokedynamic` instruction where the finally called method returns some
+ * value.
+ *
+ * @tparam V The type of the [[Var]]s.
+ */
+case class InvokedynamicFunctionCall[+V <: Var[V]](
         pc:              PC,
         bootstrapMethod: BootstrapMethod,
         name:            String,
@@ -605,10 +613,10 @@ case class Invokedynamic[+V <: Var[V]](
         params:          Seq[Expr[V]]
 ) extends Expr[V] {
 
-    final override def asInvokedynamic: this.type = this
+    final override def asInvokedynamicFunctionCall: this.type = this
     final override def isValueExpression: Boolean = false
     final override def isVar: Boolean = false
-    final override def astID: Int = Invokedynamic.ASTID
+    final override def astID: Int = InvokedynamicFunctionCall.ASTID
     final override def cTpe: ComputationalType = descriptor.returnType.computationalType
     // IMPROVE [FUTURE] Use some analysis to determine if a method call is side effect free
     final override def isSideEffectFree: Boolean = false
@@ -626,7 +634,7 @@ case class Invokedynamic[+V <: Var[V]](
     }
 
     override def hashCode(): Int = {
-        (((Invokedynamic.ASTID * 1171 +
+        (((InvokedynamicFunctionCall.ASTID * 1171 +
             pc) * 31 +
             bootstrapMethod.hashCode) * 31 +
             name.hashCode) * 31 +
@@ -636,10 +644,10 @@ case class Invokedynamic[+V <: Var[V]](
     override def toString: String = {
         val sig = descriptor.toJava(name)
         val params = this.params.mkString("(", ",", ")")
-        s"Invokedynamic(pc=$pc,$bootstrapMethod,$sig,$params)"
+        s"InvokedynamicFunctionCall(pc=$pc,$bootstrapMethod,$sig,$params)"
     }
 }
-object Invokedynamic { final val ASTID = -23 }
+object InvokedynamicFunctionCall { final val ASTID = -23 }
 
 sealed abstract class FunctionCall[+V <: Var[V]] extends Expr[V] with Call[V] {
 
@@ -697,8 +705,8 @@ case class NonVirtualFunctionCall[+V <: Var[V]](
      *
      * @see [ProjectLike#specialCall] for further details.
      */
-    def resolveCallTarget(implicit p: ProjectLike): Result[Method] = {
-        p.specialCall(declaringClass, isInterface, name, descriptor)
+    def resolveCallTarget(callerClassType: ObjectType)(implicit p: ProjectLike): Result[Method] = {
+        p.specialCall(callerClassType, declaringClass, isInterface, name, descriptor)
     }
 
     final override def resolveCallTargets(
@@ -706,9 +714,9 @@ case class NonVirtualFunctionCall[+V <: Var[V]](
     )(
         implicit
         p:  ProjectLike,
-        ev: V <:< DUVar[KnownTypedValue]
+        ev: V <:< DUVar[ValueInformation]
     ): Set[Method] = {
-        resolveCallTarget(p).toSet
+        resolveCallTarget(callingContext)(p).toSet
     }
 
     private[tac] override def remapIndexes(
@@ -810,7 +818,7 @@ case class StaticFunctionCall[+V <: Var[V]](
     )(
         implicit
         p:  ProjectLike,
-        ev: V <:< DUVar[KnownTypedValue]
+        ev: V <:< DUVar[ValueInformation]
     ): Set[Method] = {
         resolveCallTarget(p).toSet
     }

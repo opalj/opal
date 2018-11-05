@@ -11,7 +11,7 @@ package l1
  * @author Michael Eichberg
  */
 trait MaxArrayLengthRefinement extends l0.TypeLevelReferenceValues {
-    domain: Domain with IntegerRangeValues with TheClassHierarchy ⇒
+    domain: Domain with IntegerRangeValues ⇒
 
     abstract override def arraylength(
         pc:       Int,

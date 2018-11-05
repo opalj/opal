@@ -12,7 +12,7 @@ import org.opalj.br.Type
  * @author Arne Lottmann
  */
 trait DefaultClassValuesBinding extends DefaultStringValuesBinding with ClassValues {
-    domain: CorrelationalDomain with IntegerValuesDomain with TypedValuesFactory with Configuration with TheClassHierarchy ⇒
+    domain: CorrelationalDomain with IntegerValuesDomain with TypedValuesFactory with Configuration ⇒
 
     type DomainClassValue = ClassValue
     val DomainClassValueTag: ClassTag[DomainClassValue] = implicitly
@@ -21,11 +21,17 @@ trait DefaultClassValuesBinding extends DefaultStringValuesBinding with ClassVal
     // FACTORY METHODS
     //
 
+    protected case class DefaultClassValue(
+            origin: ValueOrigin,
+            value:  Type,
+            refId:  RefId
+    ) extends ClassValue
+
     override def ClassValue(origin: ValueOrigin, value: Type): DomainClassValue = {
-        new ClassValue(origin, value, nextRefId())
+        DefaultClassValue(origin, value, nextRefId())
     }
 
     def ClassValue(origin: ValueOrigin, value: Type, refId: RefId): DomainClassValue = {
-        new ClassValue(origin, value, refId)
+        DefaultClassValue(origin, value, refId)
     }
 }

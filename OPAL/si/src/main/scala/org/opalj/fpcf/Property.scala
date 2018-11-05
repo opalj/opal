@@ -8,7 +8,8 @@ package org.opalj.fpcf
  *
  * ==Implementation Requirements==
  * Properties have to be (effectively) immutable when passed to the framework. If a property
- * is mutable and (by some analysis) mutated the overall results are no longer deterministic!
+ * is mutable and (by some analysis) mutated the overall results will most likely no longer
+ * be deterministic!
  *
  * ===Structural Equality===
  * Each implementation of the property trait has to implement an `equals` method that

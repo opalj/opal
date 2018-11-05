@@ -3,8 +3,6 @@ package org.opalj.collection
 package immutable
 
 import java.lang.{Long ⇒ JLong}
-import java.util.function.LongConsumer
-import scala.collection.AbstractIterator
 
 /**
  * An unordered set of long values backed by a trie set. The branching is done using
@@ -18,12 +16,6 @@ sealed abstract class LongTrieSet
     with LongCollectionWithStableOrdering[LongTrieSet]
     with LongWorkSet[LongTrieSet] { longSet ⇒
 
-    /**
-     * Returns each pairing of two values. I.e., if the set contains 1, 4, 8, the pairings
-     * ((1,4) XOR (4,1)),((1,8) XOR (8,1)) and ((4,8) XOR (8,4)) will be returned; hence,
-     * the order between the two values is not defined.
-     */
-    def foreachPair[U](f: (Long, Long) ⇒ U): Unit
     def intersect(other: LongTrieSet): LongTrieSet = {
         if (other.size <= 2)
             // we have specialized handling for small sets
@@ -31,9 +23,9 @@ sealed abstract class LongTrieSet
 
         val (smallerSet, largerSet) = if (other.size > this.size) (this, other) else (other, this)
         var r = smallerSet
-        val it = smallerSet.longIterator
+        val it = smallerSet.iterator
         while (it.hasNext) {
-            val n = it.next
+            val n = it.next()
             if (!largerSet.contains(n)) {
                 r -= n
             }
@@ -42,7 +34,7 @@ sealed abstract class LongTrieSet
     }
 
     /** Returns some value and removes it from this set. */
-    def getAndRemove: LongHeadAndRestOfSet[LongTrieSet]
+    def headAndTail: LongRefPair[LongTrieSet]
 
     def filter(p: Long ⇒ Boolean): LongTrieSet
     override def withFilter(p: Long ⇒ Boolean): LongTrieSet
@@ -84,10 +76,9 @@ final class FilteredLongTrieSet(
         private val p: Long ⇒ Boolean
 ) extends LongTrieSet {
 
-    override def iterator: Iterator[Long] = s.iterator.withFilter(p)
-    override def longIterator: LongIterator = s.longIterator.withFilter(p)
+    override def iterator: LongIterator = s.iterator.withFilter(p)
 
-    override def foreach(f: LongConsumer): Unit = s.foreach { i ⇒ if (p(i)) f.accept(i) }
+    override def foreach[U](f: Long ⇒ U): Unit = s.foreach { i ⇒ if (p(i)) f(i) }
     override def map(f: Long ⇒ Long): LongTrieSet = {
         s.foldLeft(EmptyLongTrieSet: LongTrieSet) { (c, i) ⇒ if (p(i)) c +! f(i) else c }
     }
@@ -105,14 +96,13 @@ final class FilteredLongTrieSet(
     private[this] lazy val filtered: LongTrieSet = s.filter(p)
 
     override def intersect(other: LongTrieSet): LongTrieSet = filtered.intersect(other)
-    override def foreachPair[U](f: (Long, Long) ⇒ U): Unit = filtered.foreachPair(f)
     override def filter(p: Long ⇒ Boolean): LongTrieSet = filtered.filter(p)
     override def isSingletonSet: Boolean = filtered.isSingletonSet
     override def hasMultipleElements: Boolean = filtered.hasMultipleElements
     override def isEmpty: Boolean = filtered.isEmpty
     override def size: Int = filtered.size
     override def head: Long = filtered.head
-    override def getAndRemove: LongHeadAndRestOfSet[LongTrieSet] = filtered.getAndRemove
+    override def headAndTail: LongRefPair[LongTrieSet] = filtered.headAndTail
     override def -(i: Long): LongTrieSet = filtered - i
     override def +(i: Long): LongTrieSet = filtered + i
     override def +!(value: Long): LongTrieSet = filtered +! value
@@ -149,11 +139,10 @@ case object EmptyLongTrieSet extends LongTrieSetL {
     override def isEmpty: Boolean = true
     override def size: Int = 0
     override def head: Long = throw new UnsupportedOperationException("empty")
-    override def getAndRemove: LongHeadAndRestOfSet[LongTrieSet] = {
-        throw new UnsupportedOperationException("empty")
+    override def headAndTail: LongRefPair[LongTrieSet] = {
+        throw new UnsupportedOperationException("headAndTail")
     }
-    override def foreach(f: LongConsumer): Unit = {}
-    override def foreachPair[U](f: (Long, Long) ⇒ U): Unit = {}
+    override def foreach[U](f: Long ⇒ U): Unit = {}
     override def filter(p: Long ⇒ Boolean): LongTrieSet = this
     override def withFilter(p: Long ⇒ Boolean): LongTrieSet = this
     override def map(f: Long ⇒ Long): LongTrieSet = this
@@ -161,8 +150,7 @@ case object EmptyLongTrieSet extends LongTrieSetL {
     override def +(i: Long): LongTrieSet1 = LongTrieSet1(i)
     override def +!(i: Long): LongTrieSet = LongTrieSet1(i)
     override def intersect(other: LongTrieSet): LongTrieSet = this
-    override def iterator: Iterator[Long] = Iterator.empty
-    override def longIterator: LongIterator = LongIterator.empty
+    override def iterator: LongIterator = LongIterator.empty
     override def contains(value: Long): Boolean = false
     override def exists(p: Long ⇒ Boolean): Boolean = false
     override def foldLeft[B](z: B)(f: (B, Long) ⇒ B): B = z
@@ -188,11 +176,8 @@ final case class LongTrieSet1 private (i: Long) extends LongTrieSetL {
     override def isSingletonSet: Boolean = true
     override def hasMultipleElements: Boolean = false
     override def size: Int = 1
-    override def foreach(f: java.util.function.LongConsumer): Unit = { f.accept(i) }
-    override def foreachPair[U](f: (Long, Long) ⇒ U): Unit = {}
-    override def getAndRemove: LongHeadAndRestOfSet[LongTrieSet] = {
-        LongHeadAndRestOfSet(i, EmptyLongTrieSet: LongTrieSet)
-    }
+    override def foreach[U](f: Long ⇒ U): Unit = { f(i) }
+    override def headAndTail: LongRefPair[LongTrieSet] = LongRefPair(i, LongTrieSet.empty)
     override def filter(p: Long ⇒ Boolean): LongTrieSet = if (p(i)) this else EmptyLongTrieSet
     override def withFilter(p: Long ⇒ Boolean): LongTrieSet = new FilteredLongTrieSet(this, p)
     override def map(f: Long ⇒ Long): LongTrieSet = {
@@ -207,8 +192,7 @@ final case class LongTrieSet1 private (i: Long) extends LongTrieSetL {
     override def -(i: Long): LongTrieSet = if (this.i != i) this else EmptyLongTrieSet
     override def +(i: Long): LongTrieSet = if (this.i == i) this else LongTrieSet.from(this.i, i)
     override def +!(i: Long): LongTrieSet = this + i
-    override def iterator: Iterator[Long] = Iterator.single(i)
-    override def longIterator: LongIterator = LongIterator(i)
+    override def iterator: LongIterator = LongIterator(i)
     override def intersect(other: LongTrieSet): LongTrieSet = {
         if (other.contains(this.i)) this else EmptyLongTrieSet
     }
@@ -251,20 +235,10 @@ private[immutable] final class LongTrieSet2 private[immutable] (
     override def hasMultipleElements: Boolean = true
     override def size: Int = 2
     override def head: Long = i2
-    override def getAndRemove: LongHeadAndRestOfSet[LongTrieSet] = {
-        LongHeadAndRestOfSet[LongTrieSet](i2, LongTrieSet1(i1))
-    }
-
-    override def iterator: Iterator[Long] = new AbstractIterator[Long] {
-        private[this] var i = 0
-        def hasNext: Boolean = i < 2
-        def next: Long = if (i == 0) { i = 1; i1 } else { i = 2; i2 }
-    }
-    override def longIterator: LongIterator = LongIterator(i1, i2)
-
-    override def foreach(f: LongConsumer): Unit = { f.accept(i1); f.accept(i2) }
-    override def foreachPair[U](f: (Long, Long) ⇒ U): Unit = { f(i1, i2) }
-    override def filter(p: (Long) ⇒ Boolean): LongTrieSet = {
+    override def headAndTail: LongRefPair[LongTrieSet] = LongRefPair(i2, LongTrieSet1(i1))
+    override def iterator: LongIterator = LongIterator(i1, i2)
+    override def foreach[U](f: Long ⇒ U): Unit = { f(i1); f(i2) }
+    override def filter(p: Long ⇒ Boolean): LongTrieSet = {
         if (p(i1)) {
             if (p(i2))
                 this
@@ -277,7 +251,7 @@ private[immutable] final class LongTrieSet2 private[immutable] (
                 EmptyLongTrieSet
         }
     }
-    override def withFilter(p: (Long) ⇒ Boolean): LongTrieSet = new FilteredLongTrieSet(this, p)
+    override def withFilter(p: Long ⇒ Boolean): LongTrieSet = new FilteredLongTrieSet(this, p)
     override def map(f: Long ⇒ Long): LongTrieSet = {
         val i1 = this.i1
         val newI1 = f(i1)
@@ -363,31 +337,16 @@ private[immutable] final class LongTrieSet3 private[immutable] (
     override def isSingletonSet: Boolean = false
     override def hasMultipleElements: Boolean = true
     override def size: Int = 3
-    override def getAndRemove: LongHeadAndRestOfSet[LongTrieSet] = {
-        LongHeadAndRestOfSet(i3, new LongTrieSet2(i1, i2))
+    override def headAndTail: LongRefPair[LongTrieSet] = {
+        LongRefPair(i3, new LongTrieSet2(i1, i2))
     }
     override def head: Long = i1
     override def flatMap(f: Long ⇒ LongTrieSet): LongTrieSet = f(i1) ++ f(i2) ++ f(i3)
-    override def iterator: Iterator[Long] = new AbstractIterator[Long] {
-        var i = 0
-        def hasNext: Boolean = i < 3
-        def next: Long = {
-            val v = i
-            i += 1
-            v match {
-                case 0 ⇒ i1
-                case 1 ⇒ i2
-                case 2 ⇒ i3
-                case _ ⇒ throw new IllegalStateException()
-            }
-        }
-    }
-    override def longIterator: LongIterator = LongIterator(i1, i2, i3)
+    override def iterator: LongIterator = LongIterator(i1, i2, i3)
 
-    override def foreach(f: LongConsumer): Unit = { f.accept(i1); f.accept(i2); f.accept(i3) }
-    override def foreachPair[U](f: (Long, Long) ⇒ U): Unit = { f(i1, i2); f(i1, i3); f(i2, i3) }
+    override def foreach[U](f: Long ⇒ U): Unit = { f(i1); f(i2); f(i3) }
 
-    override def filter(p: (Long) ⇒ Boolean): LongTrieSet = {
+    override def filter(p: Long ⇒ Boolean): LongTrieSet = {
         if (p(i1)) {
             if (p(i2)) {
                 if (p(i3))
@@ -414,7 +373,7 @@ private[immutable] final class LongTrieSet3 private[immutable] (
             }
         }
     }
-    override def withFilter(p: (Long) ⇒ Boolean): LongTrieSet = new FilteredLongTrieSet(this, p)
+    override def withFilter(p: Long ⇒ Boolean): LongTrieSet = new FilteredLongTrieSet(this, p)
     override def map(f: Long ⇒ Long): LongTrieSet = {
         val i1 = this.i1
         val newI1 = f(i1)
@@ -508,8 +467,8 @@ private[immutable] abstract class LongTrieSetNN extends LongTrieSet {
             case that: LongTrieSet ⇒
                 that.size == this.size && {
                     // we have stable orderings!
-                    val thisIt = this.longIterator
-                    val otherIt = that.longIterator
+                    val thisIt = this.iterator
+                    val otherIt = that.iterator
                     var allEqual = true
                     while (thisIt.hasNext && allEqual) {
                         allEqual = thisIt.next() == otherIt.next()
@@ -557,23 +516,7 @@ private[immutable] final class LongTrieSetN private[immutable] (
         }
     }
 
-    override def foreach(f: LongConsumer): Unit = {
-        left.foreach(f)
-        right.foreach(f)
-    }
-    override def foreachPair[U](f: (Long, Long) ⇒ U): Unit = {
-        val is = longIterator.toArray(size = size)
-        val max = size
-        var i = 0
-        while (i < max) {
-            var j = i + 1
-            while (j < max) {
-                f(is(i), is(j))
-                j += 1
-            }
-            i += 1
-        }
-    }
+    override def foreach[U](f: Long ⇒ U): Unit = { left.foreach(f); right.foreach(f) }
 
     override def foldLeft[B](z: B)(f: (B, Long) ⇒ B): B = {
         right.foldLeft(left.foldLeft(z)(f))(f)
@@ -687,32 +630,22 @@ private[immutable] final class LongTrieSetN private[immutable] (
 
     def -(i: Long): LongTrieSet = this.-(i, i)
 
-    def longIterator: LongIterator = {
-        new LongIterator {
-            private[this] var it: LongIterator = left.longIterator
-            private[this] var isRightIterator: Boolean = false
-            private[this] def checkIterator(): Unit = {
-                if (!it.hasNext && !isRightIterator) {
-                    isRightIterator = true
-                    it = right.longIterator
-                }
+    final def iterator: LongIterator = new LongIterator {
+        private[this] var it: LongIterator = left.iterator
+        private[this] var isRightIterator: Boolean = false
+        private[this] def checkIterator(): Unit = {
+            if (!it.hasNext && !isRightIterator) {
+                isRightIterator = true
+                it = right.iterator
             }
-            override def toSet: LongTrieSet = longSet
-            checkIterator()
-            def hasNext: Boolean = it.hasNext
-            def next(): Long = { val v = it.next(); checkIterator(); v }
         }
+        override def toSet: LongTrieSet = longSet
+        checkIterator()
+        def hasNext: Boolean = it.hasNext
+        def next(): Long = { val v = it.next(); checkIterator(); v }
     }
 
-    def iterator: Iterator[Long] = {
-        new AbstractIterator[Long] {
-            private[this] val it = longIterator
-            override def hasNext: Boolean = it.hasNext
-            override def next(): Long = it.next()
-        }
-    }
-
-    override def getAndRemove: LongHeadAndRestOfSet[LongTrieSet] = {
+    override def headAndTail: LongRefPair[LongTrieSet] = {
         // try to reduce the tree size by removing an element from the
         // bigger subtree
         val left = this.left
@@ -722,22 +655,22 @@ private[immutable] final class LongTrieSetN private[immutable] (
         if (leftSize > rightSize) {
             // => left has at least one element
             if (leftSize == 1) { // => right is empty!
-                LongHeadAndRestOfSet(left.head, EmptyLongTrieSet)
+                LongRefPair(left.head, EmptyLongTrieSet)
             } else {
-                val LongHeadAndRestOfSet(v, newLeft) = left.getAndRemove
+                val LongRefPair(v, newLeft) = left.headAndTail
                 val theNewLeft = if (leftSize == 2) newLeft.constringe() else newLeft
-                LongHeadAndRestOfSet(v, LongTrieSetN(theNewLeft, right, leftSize - 1 + rightSize))
+                LongRefPair(v, LongTrieSetN(theNewLeft, right, leftSize - 1 + rightSize))
             }
         } else {
             // ...leftSize <= right.size
             assert(right.nonEmpty)
             if (right.isSingletonSet) {
                 // left.size \in {0,1}
-                LongHeadAndRestOfSet(right.head, left.constringe())
+                LongRefPair(right.head, left.constringe())
             } else {
-                val LongHeadAndRestOfSet(v, newRight) = right.getAndRemove
+                val LongRefPair(v, newRight) = right.headAndTail
                 val theNewRight = if (rightSize == 2) newRight.constringe() else newRight
-                LongHeadAndRestOfSet(v, LongTrieSetN(left, theNewRight, size - 1))
+                LongRefPair(v, LongTrieSetN(left, theNewRight, size - 1))
             }
         }
     }
@@ -798,8 +731,7 @@ private[immutable] final class LongTrieSetNJustRight private[immutable] (
     override def head: Long = right.head
     override def exists(p: Long ⇒ Boolean): Boolean = right.exists(p)
     override def forall(p: Long ⇒ Boolean): Boolean = right.forall(p)
-    override def foreach(f: LongConsumer): Unit = right.foreach(f)
-    override def foreachPair[U](f: (Long, Long) ⇒ U): Unit = right.foreachPair(f)
+    override def foreach[U](f: Long ⇒ U): Unit = right.foreach(f)
     override def foldLeft[B](z: B)(f: (B, Long) ⇒ B): B = right.foldLeft(z)(f)
 
     override private[immutable] def +(i: Long, level: Long): LongTrieSet = {
@@ -880,20 +812,23 @@ private[immutable] final class LongTrieSetNJustRight private[immutable] (
 
     def -(i: Long): LongTrieSet = this.-(i, i)
 
-    def longIterator: LongIterator = right.longIterator
-    def iterator: Iterator[Long] = right.iterator
+    def iterator: LongIterator = new LongIterator {
+        private[this] var it: LongIterator = right.iterator
+        override def toSet: LongTrieSet = longSet
+        def hasNext: Boolean = it.hasNext
+        def next(): Long = it.next()
+    }
 
-    override def getAndRemove: LongHeadAndRestOfSet[LongTrieSet] = {
-        // try to reduce the tree size by removing an element from the
-        // bigger subtree
+    override def headAndTail: LongRefPair[LongTrieSet] = {
+        // try to reduce the tree size by removing an element from the bigger subtree
         val right = this.right
         val rightSize = right.size
         if (right.isSingletonSet) {
-            LongHeadAndRestOfSet(right.head, EmptyLongTrieSet)
+            LongRefPair(right.head, EmptyLongTrieSet)
         } else {
-            val LongHeadAndRestOfSet(v, newRight) = right.getAndRemove
+            val LongRefPair(v, newRight) = right.headAndTail
             val theNewRight = if (rightSize == 2) newRight.constringe() else newRight
-            LongHeadAndRestOfSet(v, new LongTrieSetNJustRight(theNewRight))
+            LongRefPair(v, new LongTrieSetNJustRight(theNewRight))
         }
 
     }
@@ -925,8 +860,7 @@ private[immutable] final class LongTrieSetNJustLeft private[immutable] (
     override def head: Long = left.head
     override def exists(p: Long ⇒ Boolean): Boolean = left.exists(p)
     override def forall(p: Long ⇒ Boolean): Boolean = left.forall(p)
-    override def foreach(f: LongConsumer): Unit = left.foreach(f)
-    override def foreachPair[U](f: (Long, Long) ⇒ U): Unit = left.foreachPair(f)
+    override def foreach[U](f: Long ⇒ U): Unit = left.foreach(f)
     override def foldLeft[B](z: B)(f: (B, Long) ⇒ B): B = left.foldLeft(z)(f)
 
     override private[immutable] def +(i: Long, level: Long): LongTrieSet = {
@@ -959,10 +893,10 @@ private[immutable] final class LongTrieSetNJustLeft private[immutable] (
             return false;
 
         other match {
-            case that: LongTrieSetN          ⇒ this.left.subsetOf(that.left, level + 1)
-            case that: LongTrieSetNJustLeft  ⇒ this.left.subsetOf(that.left, level + 1)
-            case that: LongTrieSetNJustRight ⇒ false
-            case that                        ⇒ this.left.subsetOf(that, level + 1)
+            case that: LongTrieSetN         ⇒ this.left.subsetOf(that.left, level + 1)
+            case that: LongTrieSetNJustLeft ⇒ this.left.subsetOf(that.left, level + 1)
+            case _: LongTrieSetNJustRight   ⇒ false
+            case that                       ⇒ this.left.subsetOf(that, level + 1)
         }
     }
 
@@ -1008,26 +942,29 @@ private[immutable] final class LongTrieSetNJustLeft private[immutable] (
 
     def -(i: Long): LongTrieSet = this.-(i, i)
 
-    def longIterator: LongIterator = left.longIterator
+    def iterator: LongIterator = new LongIterator {
+        private[this] var it: LongIterator = left.iterator
+        override def toSet: LongTrieSet = longSet
+        def hasNext: Boolean = it.hasNext
+        def next(): Long = it.next()
+    }
 
-    def iterator: Iterator[Long] = left.iterator
-
-    override def getAndRemove: LongHeadAndRestOfSet[LongTrieSet] = {
+    override def headAndTail: LongRefPair[LongTrieSet] = {
         // try to reduce the tree size by removing an element from the
         // bigger subtree
         val left = this.left
         val leftSize = left.size
         if (leftSize == 1) { // => right is empty!
-            LongHeadAndRestOfSet(left.head, EmptyLongTrieSet)
+            LongRefPair(left.head, EmptyLongTrieSet)
         } else {
-            val LongHeadAndRestOfSet(v, newLeft) = left.getAndRemove
+            val LongRefPair(v, newLeft) = left.headAndTail
             val theNewLeft = if (leftSize == 2) newLeft.constringe() else newLeft
-            LongHeadAndRestOfSet(v, new LongTrieSetNJustLeft(theNewLeft))
+            LongRefPair(v, new LongTrieSetNJustLeft(theNewLeft))
         }
 
     }
 
-    override def filter(p: (Long) ⇒ Boolean): LongTrieSet = {
+    override def filter(p: Long ⇒ Boolean): LongTrieSet = {
         val left = this.left
         val newLeft = left.filter(p)
         if (newLeft eq left)

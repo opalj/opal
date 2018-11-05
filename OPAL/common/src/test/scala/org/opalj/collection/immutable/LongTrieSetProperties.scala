@@ -141,20 +141,6 @@ object LongTrieSetProperties extends Properties("LongTrieSet") {
         s == newS
     }
 
-    property("foreachPair") = forAll { s: IntArraySet ⇒
-        val its = EmptyLongTrieSet ++ s.iterator.map(_.toLong)
-        var itsPairs = Set.empty[(Long, Long)]
-        its foreachPair { (p1: Long, p2: Long) ⇒
-            if (p1 < p2)
-                itsPairs += ((p1, p2))
-            else
-                itsPairs += ((p2, p1))
-        }
-        var sPairs = Set.empty[(Long, Long)]
-        s foreachPair { (p1: Int, p2: Int) ⇒ sPairs += ((p1.toLong, p2.toLong)) }
-        (sPairs == itsPairs) :| s"$sPairs vs. $itsPairs"
-    }
-
     property("map") = forAll { s: IntArraySet ⇒
         val its = EmptyLongTrieSet ++ s.iterator.map(_.toLong)
         val mappedIts = its.map(_ * 2)
@@ -189,11 +175,11 @@ object LongTrieSetProperties extends Properties("LongTrieSet") {
         its.foldLeft(0L)(_ + _) == s.foldLeft(0L)(_ + _)
     }
 
-    property("getAndRemove") = forAll { s: IntArraySet ⇒
+    property("headAndTail") = forAll { s: IntArraySet ⇒
         var its = EmptyLongTrieSet ++ s.iterator.map(_.toLong)
         var removed = Chain.empty[Long]
         while (its.nonEmpty) {
-            val LongHeadAndRestOfSet(v, newIts) = its.getAndRemove
+            val LongRefPair(v, newIts) = its.headAndTail
             removed :&:= v
             its = newIts
         }
@@ -245,11 +231,13 @@ object LongTrieSetProperties extends Properties("LongTrieSet") {
     property("subsetOf (similar)") = forAll { (s1: IntArraySet, i: Long) ⇒
         val its1 = s1.foldLeft(LongTrieSet.empty)(_ +! _.toLong)
         val its2 = s1.foldLeft(LongTrieSet.empty)(_ +! _.toLong) +! i
+        val setSubsetOf = its1.subsetOf(its2)
+        val iteratorSubsetOf = its1.iterator.toSet.subsetOf(its2.iterator.toSet)
         classify(its1.size == 0, "its1 is empty") {
             classify(its1.size == 1, "its1.size == 1") {
                 classify(its1.size == 2, "its1.size == 2") {
                     classify(its1.size == its2.size, "its1 == its2") {
-                        its1.subsetOf(its2) == its1.iterator.toSet.subsetOf(its2.iterator.toSet)
+                        (setSubsetOf == iteratorSubsetOf) :| s"$setSubsetOf == $iteratorSubsetOf"
                     }
                 }
             }
@@ -322,9 +310,9 @@ object LongTrieSetProperties extends Properties("LongTrieSet") {
         !evaluated :| "not eagerly evaluated" &&
             news.forall(i ⇒ newits.exists(newi ⇒ newi == i)) :| "exists check" &&
             (news.forall(i ⇒ newits.contains(i.toLong)) && newits.forall(l ⇒ news.contains(l.toInt))) :| "contains check" &&
-            news.forall(i ⇒ newits.longIterator.contains(i.toLong)) :| s"LongIterator.contains $news vs. $newits" &&
-            newits.longIterator.forall(l ⇒ news.contains(l.toInt)) :| "LongIterator.forall" &&
-            news.forall(i ⇒ newits.iterator.contains(i)) && newits.iterator.forall(l ⇒ news.contains(l.toInt)) :| "Iterator[Long]"
+            news.forall(i ⇒ newits.iterator.contains(i.toLong)) :| s"iterator.contains $news vs. $newits" &&
+            newits.iterator.forall(l ⇒ news.contains(l.toInt)) :| "iterator.forall" &&
+            news.forall(i ⇒ newits.iterator.contains(i.toLong)) && newits.iterator.forall(l ⇒ news.contains(l.toInt)) :| "LongIterator"
     }
 
 }
@@ -631,7 +619,7 @@ class LongTrieSetTest extends FunSpec with Matchers {
         }
     }
 
-    describe("filtering an LongTrieSet where the values share a very long prefix path") {
+    describe("filtering a LongTrieSet where the values share a very long prefix path") {
 
         it("should create the canonical representation as soon as we just have two values left") {
             val its = LongTrieSet(8192, 2048, 8192 + 2048 + 16384, 8192 + 2048) + (8192 + 16384)
@@ -655,15 +643,29 @@ class LongTrieSetTest extends FunSpec with Matchers {
         }
     }
 
-    describe("an identity mapping of a small LongTrieSet results in the same set") {
-        val is0 = LongTrieSet.empty
-        val is1 = LongTrieSet(1)
-        val is2 = LongTrieSet(3, 4)
-        val is3 = LongTrieSet(256, 512, 1037)
+    describe("an identity mapping of a small LongTrieSet") {
+        it("should results in the same set") {
+            val is0 = LongTrieSet.empty
+            val is1 = LongTrieSet(1)
+            val is2 = LongTrieSet(3, 4)
+            val is3 = LongTrieSet(256, 512, 1037)
 
-        assert(is0.map(i ⇒ i) eq is0)
-        assert(is1.map(i ⇒ i) eq is1)
-        assert(is2.map(i ⇒ i) eq is2)
-        assert(is3.map(i ⇒ i) eq is3)
+            assert(is0.map(i ⇒ i) eq is0)
+            assert(is1.map(i ⇒ i) eq is1)
+            assert(is2.map(i ⇒ i) eq is2)
+            assert(is3.map(i ⇒ i) eq is3)
+        }
+    }
+
+    describe("creation of a set via an iterator") {
+        it("should result in sets comparable using subset of") {
+            val s1 = IntArraySet(-147701, -141111, -7075) + 24133
+            val its1 = s1.foldLeft(LongTrieSet.empty)(_ +! _.toLong)
+            val its2 = s1.foldLeft(LongTrieSet.empty)(_ +! _.toLong) +! 0
+            assert(its1.subsetOf(its2))
+            val its1ItSet = its1.iterator.toSet
+            val its2ItSet = its2.iterator.toSet
+            assert(its1ItSet.subsetOf(its2ItSet))
+        }
     }
 }

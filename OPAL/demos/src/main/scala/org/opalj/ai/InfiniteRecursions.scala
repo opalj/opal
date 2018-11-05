@@ -48,7 +48,7 @@ object InfiniteRecursions extends DefaultOneStepAnalysis {
             for {
                 classFile ← project.allClassFiles.par
                 method ← classFile.methods
-                body ← method.body
+                body ← method.body.toSeq
                 descriptor = method.descriptor
                 if descriptor.parameterTypes.forall { t ⇒
                     // we don't have (as of Jan 1st 2015) a domain that enables a meaningful
@@ -188,7 +188,7 @@ object InfiniteRecursions extends DefaultOneStepAnalysis {
 
 class InfiniteRecursionsDomain(val project: SomeProject, val method: Method)
     extends Domain
-    with domain.DefaultDomainValueBinding
+    with domain.DefaultSpecialDomainValuesBinding
     with domain.ThrowAllPotentialExceptionsConfiguration
     with domain.l0.DefaultTypeLevelFloatValues
     with domain.l0.DefaultTypeLevelDoubleValues

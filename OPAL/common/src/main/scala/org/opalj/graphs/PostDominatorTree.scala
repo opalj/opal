@@ -2,10 +2,6 @@
 package org.opalj
 package graphs
 
-import java.util.function.IntConsumer
-import java.util.function.Consumer
-import java.util.function.IntFunction
-
 import org.opalj.collection.immutable.IntTrieSet
 
 /**
@@ -25,11 +21,11 @@ import org.opalj.collection.immutable.IntTrieSet
  * @param  foreachSuccessorOf The original successor information.
  */
 final class PostDominatorTree private[graphs] (
-        final val startNode:            Int,
-        final val hasVirtualStartNode:  Boolean,
-        final val additionalExitNodes:  IntTrieSet,
-        final val foreachSuccessorOf:   IntFunction[Consumer[IntConsumer]], // Int ⇒ ((Int ⇒ Unit) ⇒ Unit)
-        private[graphs] final val idom: Array[Int] // the (post)dominator information
+        val startNode:            Int,
+        val hasVirtualStartNode:  Boolean,
+        val additionalExitNodes:  IntTrieSet,
+        val foreachSuccessorOf:   Int ⇒ ((Int ⇒ Unit) ⇒ Unit),
+        private[graphs] val idom: Array[Int] // the (post)dominator information
 ) extends AbstractDominatorTree {
 
     /**
@@ -37,7 +33,7 @@ final class PostDominatorTree private[graphs] (
      * we have additional exit nodes. I.e., only methods with a unique end node without
      * artificial exit nodes are not augmented.
      */
-    final def isAugmented: Boolean = hasVirtualStartNode
+    def isAugmented: Boolean = hasVirtualStartNode
 
 }
 
@@ -119,9 +115,9 @@ object PostDominatorTree {
         uniqueExitNode:       Option[Int],
         isExitNode:           Int ⇒ Boolean,
         additionalExitNodes:  IntTrieSet,
-        foreachExitNode:      Consumer[IntConsumer], // (Int ⇒ Unit) ⇒ Unit
-        foreachSuccessorOf:   IntFunction[Consumer[IntConsumer]], // Int ⇒ ((Int ⇒ Unit) ⇒ Unit)
-        foreachPredecessorOf: IntFunction[Consumer[IntConsumer]], // Int ⇒ ((Int ⇒ Unit) ⇒ Unit)
+        foreachExitNode:      (Int ⇒ Unit) ⇒ Unit, // Consumer[IntConsumer],
+        foreachSuccessorOf:   Int ⇒ ((Int ⇒ Unit) ⇒ Unit), // IntFunction[Consumer[IntConsumer]]
+        foreachPredecessorOf: Int ⇒ ((Int ⇒ Unit) ⇒ Unit), // IntFunction[Consumer[IntConsumer]]
         maxNode:              Int
     ): PostDominatorTree = {
         if (uniqueExitNode.isDefined && additionalExitNodes.isEmpty) {
@@ -135,7 +131,7 @@ object PostDominatorTree {
                 (
                     startNode: Int,
                     hasVirtualStartNode: Boolean,
-                    foreachSuccessorOf: IntFunction[Consumer[IntConsumer]], //Int ⇒ ((Int ⇒ Unit) ⇒ Unit)
+                    foreachSuccessorOf: Int ⇒ ((Int ⇒ Unit) ⇒ Unit),
                     idom: Array[Int]
                 ) ⇒ {
                     new PostDominatorTree(
@@ -153,24 +149,24 @@ object PostDominatorTree {
             val startNode = maxNode + 1
 
             // reverse flowgraph
-            val revFGForeachSuccessorOf: IntFunction[Consumer[IntConsumer]] = (n: Int) ⇒ {
+            val revFGForeachSuccessorOf: Int ⇒ ((Int ⇒ Unit) ⇒ Unit) = (n: Int) ⇒ {
                 if (n == startNode) {
-                    (f: IntConsumer) ⇒ { foreachExitNode.accept(f); additionalExitNodes.foreach(f) }
+                    (f: Int ⇒ Unit) ⇒ { foreachExitNode(f); additionalExitNodes.foreach(f) }
                 } else {
                     foreachPredecessorOf(n)
                 }
-            }: Consumer[IntConsumer]
+            }
 
-            val revFGForeachPredecessorOf: IntFunction[Consumer[IntConsumer]] = (n: Int) ⇒ {
+            val revFGForeachPredecessorOf: Int ⇒ ((Int ⇒ Unit) ⇒ Unit) = (n: Int) ⇒ {
                 if (n == startNode) {
                     DominatorTree.fornone // (_: (Int ⇒ Unit)) ⇒ {}
                 } else if (isExitNode(n) || additionalExitNodes.contains(n)) {
                     // a function that expects a function that will be called for all successors
-                    (f: IntConsumer) ⇒ { f.accept(startNode); foreachSuccessorOf(n).accept(f) }
+                    (f: Int ⇒ Unit) ⇒ { f(startNode); foreachSuccessorOf(n)(f) }
                 } else {
                     foreachSuccessorOf(n)
                 }
-            }: Consumer[IntConsumer]
+            }
 
             DominatorTree.create(
                 startNode,
@@ -180,7 +176,7 @@ object PostDominatorTree {
                 (
                     startNode: Int,
                     hasVirtualStartNode: Boolean,
-                    foreachSuccessorOf: IntFunction[Consumer[IntConsumer]], // Int ⇒ ((Int ⇒ Unit) ⇒ Unit)
+                    foreachSuccessorOf: Int ⇒ ((Int ⇒ Unit) ⇒ Unit),
                     idom: Array[Int]
                 ) ⇒ {
                     new PostDominatorTree(

@@ -11,7 +11,7 @@ import java.io.DataInputStream
 trait AnnotationDefault_attributeReader extends AttributeReader {
 
     //
-    // ABSTRACT DEFINITIONS
+    // TYPE DEFINITIONS AND FACTORY METHODS
     //
 
     type ElementValue
@@ -24,7 +24,9 @@ trait AnnotationDefault_attributeReader extends AttributeReader {
     type AnnotationDefault_attribute <: Attribute
 
     def AnnotationDefault_attribute(
-        constant_pool:        Constant_Pool,
+        cp:                   Constant_Pool,
+        ap_name_index:        Constant_Pool_Index,
+        ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         element_value:        ElementValue
     ): AnnotationDefault_attribute
@@ -43,13 +45,21 @@ trait AnnotationDefault_attributeReader extends AttributeReader {
      * </pre>
      */
     private[this] def parserFactory() = (
-        ap: AttributeParent,
         cp: Constant_Pool,
+        ap: AttributeParent,
+        ap_name_index: Constant_Pool_Index,
+        ap_descriptor_index: Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         in: DataInputStream
     ) ⇒ {
-        /* val attributeLength =*/ in.readInt()
-        AnnotationDefault_attribute(cp, attribute_name_index, ElementValue(cp, in))
+        /* val attributeLength = */ in.readInt()
+        AnnotationDefault_attribute(
+            cp,
+            ap_name_index,
+            ap_descriptor_index,
+            attribute_name_index,
+            ElementValue(cp, in)
+        )
     }
 
     registerAttributeReader(AnnotationDefaultAttribute.Name → parserFactory())

@@ -3,24 +3,29 @@ package org.opalj
 package bi
 package reader
 
-import scala.reflect.ClassTag
-
 import java.io.DataInputStream
 
-import org.opalj.control.repeat
+import org.opalj.collection.immutable.RefArray
+import org.opalj.control.fillRefArray
 
 /**
  * A generic reader for Java 8's `MethodParameters` attribute.
  */
 trait MethodParameters_attributeReader extends AttributeReader {
 
+    //
+    // TYPE DEFINITIONS AND FACTORY METHODS
+    //
+
     type MethodParameters_attribute >: Null <: Attribute
 
-    type MethodParameter
-    implicit val MethodParameterManifest: ClassTag[MethodParameter]
+    type MethodParameter <: AnyRef
+    type MethodParameters = RefArray[MethodParameter]
 
     def MethodParameters_attribute(
-        constant_pool:        Constant_Pool,
+        cp:                   Constant_Pool,
+        ap_name_index:        Constant_Pool_Index,
+        ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         parameters:           MethodParameters
     ): MethodParameters_attribute
@@ -35,8 +40,6 @@ trait MethodParameters_attributeReader extends AttributeReader {
     // IMPLEMENTATION
     //
 
-    type MethodParameters = IndexedSeq[MethodParameter]
-
     /**
      * <pre>
      * MethodParameters_attribute {
@@ -50,8 +53,10 @@ trait MethodParameters_attributeReader extends AttributeReader {
      * </pre>
      */
     private[this] def parserFactory() = (
-        ap: AttributeParent,
         cp: Constant_Pool,
+        ap: AttributeParent,
+        ap_name_index: Constant_Pool_Index,
+        ap_descriptor_index: Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         in: DataInputStream
     ) ⇒ {
@@ -60,8 +65,10 @@ trait MethodParameters_attributeReader extends AttributeReader {
         if (parameters_count > 0 || reifyEmptyAttributes) {
             MethodParameters_attribute(
                 cp,
+                ap_name_index,
+                ap_descriptor_index,
                 attribute_name_index,
-                repeat(parameters_count) {
+                fillRefArray(parameters_count) {
                     MethodParameter(cp, in.readUnsignedShort, in.readUnsignedShort)
                 }
             )

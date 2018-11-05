@@ -26,7 +26,7 @@ class MethodsWithArraysTest extends FlatSpec with Matchers {
 
     class TestDomain
         extends Domain
-        with DefaultDomainValueBinding
+        with DefaultSpecialDomainValuesBinding
         with DefaultReferenceValuesBinding
         with DefaultTypeLevelIntegerValues
         with DefaultTypeLevelLongValues

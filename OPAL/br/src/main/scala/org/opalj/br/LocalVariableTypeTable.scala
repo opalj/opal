@@ -25,7 +25,9 @@ case class LocalVariableTypeTable(localVariableTypes: LocalVariableTypes) extend
     }
 
     override def remapPCs(codeSize: Int, f: PC ⇒ PC): CodeAttribute = {
-        LocalVariableTypeTable(localVariableTypes.flatMap(_.remapPCs(codeSize, f)))
+        LocalVariableTypeTable(
+            localVariableTypes.flatMap[LocalVariableType](_.remapPCs(codeSize, f))
+        )
     }
 }
 object LocalVariableTypeTable {

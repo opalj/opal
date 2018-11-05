@@ -3,15 +3,20 @@ package org.opalj
 
 import scala.xml.Node
 import scala.xml.Text
+import scala.collection.mutable.Builder
+
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
+
+import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.collection.immutable.BitArraySet
+import org.opalj.collection.immutable.RefArray
+import org.opalj.collection.immutable.UIDSet
+import org.opalj.log.LogContext
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.OPALLogger.info
-import org.opalj.collection.immutable.BitArraySet
-import org.opalj.collection.immutable.UIDSet
 import org.opalj.bi.AccessFlags
 import org.opalj.bi.AccessFlagsContexts
-import org.opalj.collection.immutable.IntTrieSet
 
 /**
  * In this representation of Java bytecode references to a Java class file's constant
@@ -33,7 +38,7 @@ package object br {
     final val FrameworkName = "OPAL Bytecode Representation"
 
     {
-        implicit val logContext = GlobalLogContext
+        implicit val logContext: LogContext = GlobalLogContext
         try {
             assert(false) // <= test whether assertions are turned on or off...
             info(FrameworkName, "Production Build")
@@ -46,37 +51,76 @@ package object br {
     // find the config files; the libraries (e.g., Typesafe Config) may have
     // been loaded using the parent class loader and, hence, may not be able to
     // find the config files at all.
-    val BaseConfig: Config = ConfigFactory.load(this.getClass.getClassLoader())
+    val BaseConfig: Config = ConfigFactory.load(this.getClass.getClassLoader)
 
     final val ConfigKeyPrefix = "org.opalj.br."
 
     type LiveVariables = Array[BitArraySet]
 
-    type Attributes = Seq[Attribute]
+    type Attributes = RefArray[Attribute]
+    val Attributes: RefArray.type = RefArray
+    final def NoAttributes: Attributes = RefArray.empty
 
-    type ElementValuePairs = IndexedSeq[ElementValuePair]
-    type Annotations = IndexedSeq[Annotation]
-    type TypeAnnotations = IndexedSeq[TypeAnnotation]
+    type ElementValues = RefArray[ElementValue]
+    type ElementValuePairs = RefArray[ElementValuePair]
+    val ElementValuePairs: RefArray.type = RefArray
+    final def NoElementValuePairs: ElementValuePairs = RefArray.empty
 
-    type InnerClasses = IndexedSeq[InnerClass]
+    type Annotations = RefArray[Annotation]
+    def NoAnnotations: RefArray[Annotation] = RefArray.empty
+    type TypeAnnotations = RefArray[TypeAnnotation]
+    final def NoTypeAnnotations: RefArray[TypeAnnotation] = RefArray.empty
 
-    type Methods = IndexedSeq[Method]
-    type Exceptions = Seq[ObjectType]
-    type ExceptionHandlers = IndexedSeq[ExceptionHandler]
-    type LineNumbers = Seq[LineNumber]
-    type LocalVariableTypes = IndexedSeq[LocalVariableType]
-    type LocalVariables = IndexedSeq[LocalVariable]
-    type BootstrapMethods = IndexedSeq[BootstrapMethod]
-    type BootstrapArguments = IndexedSeq[BootstrapArgument]
-    type ParameterAnnotations = IndexedSeq[Annotations]
-    type StackMapFrames = IndexedSeq[StackMapFrame]
-    type VerificationTypeInfoLocals = IndexedSeq[VerificationTypeInfo]
-    type VerificationTypeInfoStack = IndexedSeq[VerificationTypeInfo]
-    type MethodParameters = IndexedSeq[MethodParameter]
+    type InnerClasses = RefArray[InnerClass]
 
-    type Fields = IndexedSeq[Field]
+    type Interfaces = RefArray[ObjectType]
+    final def NoInterfaces: Interfaces = RefArray.empty
+
+    type Methods = RefArray[Method]
+    val Methods: RefArray.type = RefArray
+    final def NoMethods: Methods = RefArray.empty
+    type MethodTemplates = RefArray[MethodTemplate]
+    final def NoMethodTemplates: MethodTemplates = RefArray.empty
+
+    type Exceptions = RefArray[ObjectType]
+    type ExceptionHandlers = RefArray[ExceptionHandler]
+    final def NoExceptionHandlers: ExceptionHandlers = RefArray.empty
+
+    type LineNumbers = RefArray[LineNumber]
+    type LocalVariableTypes = RefArray[LocalVariableType]
+    type LocalVariables = RefArray[LocalVariable]
+    type BootstrapMethods = RefArray[BootstrapMethod]
+    type BootstrapArguments = RefArray[BootstrapArgument]
+    type ParameterAnnotations = RefArray[Annotations]
+    final def NoParameterAnnotations: ParameterAnnotations = RefArray.empty
+    type StackMapFrames = RefArray[StackMapFrame]
+    type VerificationTypeInfoLocals = RefArray[VerificationTypeInfo]
+    type VerificationTypeInfoStack = RefArray[VerificationTypeInfo]
+    type MethodParameters = RefArray[MethodParameter]
+
+    type Fields = RefArray[Field]
+    final def NoFields: Fields = RefArray.empty
+
+    type FieldTemplates = RefArray[FieldTemplate]
+    final def NoFieldTemplates: FieldTemplates = RefArray.empty
 
     type Instructions = Array[instructions.Instruction]
+
+    type MethodDescriptors = RefArray[MethodDescriptor]
+
+    type InstructionLabels = RefArray[instructions.InstructionLabel]
+
+    type ObjectTypes = RefArray[ObjectType]
+    val ObjectTypes: RefArray.type = RefArray
+
+    type FieldTypes = RefArray[FieldType]
+    val FieldTypes: RefArray.type = RefArray
+    final def NoFieldTypes: FieldTypes = RefArray.empty
+    final def newFieldTypesBuilder(): Builder[FieldType, RefArray[FieldType]] = {
+        RefArray.newBuilder[FieldType]
+    }
+
+    type Packages = RefArray[String]
 
     final type SourceElementID = Int
 
@@ -89,7 +133,7 @@ package object br {
      *
      * @note This type alias serves comprehension purposes.
      */
-    final type PC = UShort
+    final type PC = bytecode.PC
 
     /**
      * A collection of program counters using an IntArraySet as its backing collection.
@@ -111,7 +155,7 @@ package object br {
         after:       String      = ""
     ): String = {
 
-        val annotationToJava: (Annotation) ⇒ String = { annotation: Annotation ⇒
+        val annotationToJava: Annotation ⇒ String = { annotation: Annotation ⇒
             val s = annotation.toJava
             if (s.length() > 50 && annotation.elementValuePairs.nonEmpty)
                 annotation.annotationType.toJava+"(...)"

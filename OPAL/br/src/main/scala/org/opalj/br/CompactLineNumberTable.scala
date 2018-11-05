@@ -2,6 +2,8 @@
 package org.opalj
 package br
 
+import org.opalj.collection.immutable.RefArray
+
 /**
  * A method's line number table.
  *
@@ -14,13 +16,12 @@ package br
  *              }
  *          }
  *          </pre>
- *
  * @author Michael Eichberg
  */
 case class CompactLineNumberTable(rawLineNumbers: Array[Byte]) extends LineNumberTable {
 
     def lineNumbers: LineNumbers = {
-        val lineNumbersBuilder = List.newBuilder[LineNumber]
+        val lineNumbersBuilder = RefArray.newBuilder[LineNumber]
         var e = 0
         val entries = rawLineNumbers.length / 4
         while (e < entries) {
@@ -30,12 +31,11 @@ case class CompactLineNumberTable(rawLineNumbers: Array[Byte]) extends LineNumbe
             lineNumbersBuilder += LineNumber(startPC, lineNumber)
             e += 1
         }
-        lineNumbersBuilder.result
+        lineNumbersBuilder.result()
     }
 
     def asUnsignedShort(hb: Byte, lb: Byte): Int = {
-        // see DataInpu.readUnsignedShort
-        (((hb & 0xFF) << 8) | (lb & 0xFF))
+        ((hb & 0xFF) << 8) | (lb & 0xFF) // cf. DataInput.readUnsignedShort
     }
 
     def lookupLineNumber(pc: PC): Option[Int] = {

@@ -4,16 +4,10 @@ package fpcf
 package analyses
 package escape
 
-import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.br.Method
-import org.opalj.br.analyses.VirtualFormalParameters
-import org.opalj.br.cfg.CFG
-import org.opalj.ai.ValueOrigin
+import org.opalj.br.ObjectType
 import org.opalj.br.analyses.DeclaredMethods
-import org.opalj.tac.Expr
-import org.opalj.tac.Stmt
-import org.opalj.tac.UVar
-import org.opalj.tac.TACStmts
+import org.opalj.br.analyses.VirtualFormalParameters
 
 /**
  * Provides the basic information corresponding to an entity to determine its escape information.
@@ -26,33 +20,9 @@ import org.opalj.tac.TACStmts
 trait AbstractEscapeAnalysisContext {
 
     val entity: Entity
-    val uses: IntTrieSet
-    val defSite: ValueOrigin
     val targetMethod: Method
-    val code: Array[Stmt[V]]
 
-    /**
-     * Checks whether the expression is a use of the defSite.
-     * This method is called on expressions within tac statements. We assume a flat hierarchy, so
-     * the expression is expected to be a [[org.opalj.tac.Var]].
-     */
-    private[escape] final def usesDefSite(expr: Expr[V]): Boolean = {
-        assert(expr.isVar)
-        expr.asVar.definedBy.contains(defSite)
-    }
-
-    /**
-     * If there exists a [[org.opalj.tac.UVar]] in the params of a method call that is a use of the
-     * current entity's def-site return true.
-     */
-    private[escape] final def anyParameterUsesDefSite(params: Seq[Expr[V]]): Boolean = {
-        assert(params.forall(_.isVar))
-        params.exists { case UVar(_, defSites) ⇒ defSites.contains(defSite) }
-    }
-}
-
-trait CFGContainer {
-    val cfg: CFG[Stmt[V], TACStmts[V]]
+    def targetMethodDeclaringClassType: ObjectType = targetMethod.classFile.thisType
 }
 
 trait PropertyStoreContainer {

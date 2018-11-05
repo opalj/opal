@@ -3,53 +3,55 @@ package org.opalj
 package br
 package analyses
 
-import java.net.URL
+import scala.annotation.switch
+
 import java.io.File
+import java.lang.ref.SoftReference
+import java.net.URL
 import java.util.Arrays.{sort ⇒ sortArray}
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicReferenceArray
-import java.lang.ref.SoftReference
 
-import scala.annotation.switch
-import scala.collection.Set
 import scala.collection.Map
+import scala.collection.Set
 import scala.collection.SortedMap
-import scala.collection.mutable.{AnyRefMap, OpenHashMap}
+import scala.collection.immutable
+import scala.collection.mutable.AnyRefMap
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.ArrayStack
 import scala.collection.mutable.Buffer
-import scala.collection.immutable
+import scala.collection.mutable.OpenHashMap
 
-import com.typesafe.config.ConfigFactory
 import com.typesafe.config.Config
+import com.typesafe.config.ConfigFactory
 import net.ceedubs.ficus.Ficus._
 
+import org.opalj.log.Error
+import org.opalj.log.GlobalLogContext
+import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger
+import org.opalj.log.OPALLogger.error
+import org.opalj.log.OPALLogger.info
+import org.opalj.log.StandardLogContext
 import org.opalj.util.PerformanceEvaluation.time
+import org.opalj.collection.immutable.Chain
+import org.opalj.collection.immutable.ConstArray
+import org.opalj.collection.immutable.Naught
+import org.opalj.collection.immutable.UIDSet
+import org.opalj.collection.mutable.RefArrayBuffer
 import org.opalj.concurrent.ConcurrentExceptions
-import org.opalj.concurrent.Tasks
 import org.opalj.concurrent.SequentialTasks
+import org.opalj.concurrent.Tasks
 import org.opalj.concurrent.defaultIsInterrupted
 import org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks
 import org.opalj.concurrent.parForeachArrayElement
-import org.opalj.log.LogContext
-import org.opalj.log.OPALLogger
-import org.opalj.log.OPALLogger.info
-import org.opalj.log.OPALLogger.error
-import org.opalj.log.StandardLogContext
-import org.opalj.log.Error
-import org.opalj.log.GlobalLogContext
-import org.opalj.collection.immutable.ConstArray
-import org.opalj.collection.immutable.Chain
-import org.opalj.collection.immutable.Naught
-import org.opalj.collection.immutable.UIDSet
+import org.opalj.br.instructions.Instruction
+import org.opalj.br.instructions.INVOKESPECIAL
+import org.opalj.br.instructions.INVOKESTATIC
+import org.opalj.br.instructions.NEW
 import org.opalj.br.reader.BytecodeInstructionsCache
 import org.opalj.br.reader.Java9FrameworkWithInvokedynamicSupportAndCaching
 import org.opalj.br.reader.Java9LibraryFramework
-import org.opalj.br.instructions.Instruction
-import org.opalj.br.instructions.NEW
-import org.opalj.br.instructions.INVOKESTATIC
-import org.opalj.br.instructions.INVOKESPECIAL
-import org.opalj.collection.mutable.AnyRefArrayBuffer
 
 /**
  * Primary abstraction of a Java project; i.e., a set of classes that constitute a
@@ -111,8 +113,8 @@ import org.opalj.collection.mutable.AnyRefArrayBuffer
  *                         source elements consists of (in this order): all methods + all fields
  *                         + all class files.
  *
- * @param libraryClassFilesAreInterfacesOnly If `true` then only the public interface
- *         of the methods of the library's classes is available.
+ * @param libraryClassFilesAreInterfacesOnly If `true` then only the public interfaces
+ *         of the methods of the library's classes are available.
  *
  * @author Michael Eichberg
  * @author Marco Torsello
@@ -235,10 +237,10 @@ class Project[Source] private (
 
     final val MethodHandleClassFile: Option[ClassFile] = classFile(ObjectType.MethodHandle)
 
-    final val allMethodsWithBody: ConstArray[Method] = ConstArray.from(this.methodsWithBody)
+    final val allMethodsWithBody: ConstArray[Method] = ConstArray._UNSAFE_from(this.methodsWithBody)
 
     final val allMethodsWithBodyWithContext: ConstArray[MethodInfo[Source]] = {
-        ConstArray.from(this.methodsWithBodyAndContext)
+        ConstArray._UNSAFE_from(this.methodsWithBodyAndContext)
     }
 
     /**
@@ -247,12 +249,12 @@ class Project[Source] private (
     // TODO Consider extracting to a ProjectInformationKey
     // TODO Java 9+
     final val classesPerPackage: Map[String, immutable.Set[ClassFile]] = {
-        var classesPerPackage = Map.empty[String, AnyRefArrayBuffer[ClassFile]]
+        var classesPerPackage = Map.empty[String, RefArrayBuffer[ClassFile]]
         allClassFiles foreach { cf ⇒
             val packageName = cf.thisType.packageName
             val buffer =
                 classesPerPackage.getOrElse(packageName, {
-                    val buffer = new AnyRefArrayBuffer[ClassFile]()
+                    val buffer = RefArrayBuffer.empty[ClassFile]
                     classesPerPackage = classesPerPackage.updated(packageName, buffer)
                     buffer
                 })
@@ -1036,6 +1038,7 @@ object Project {
     }
 
     def JavaClassFileReader(
+        implicit
         theLogContext: LogContext = GlobalLogContext,
         theConfig:     Config     = BaseConfig
     ): Java9FrameworkWithInvokedynamicSupportAndCaching = {
@@ -1119,7 +1122,7 @@ object Project {
 
                             case INVOKESPECIAL.opcode ⇒
                                 val invokespecial = instruction.asInstanceOf[INVOKESPECIAL]
-                                project.specialCall(invokespecial) match {
+                                project.specialCall(cf.thisType, invokespecial) match {
                                     case _: Success[_] ⇒ /*OK*/
                                     case Empty         ⇒ /*OK - partial project*/
                                     case Failure ⇒
@@ -1180,7 +1183,7 @@ object Project {
         logContext: LogContext
     ): Map[ObjectType, ConstArray[MethodDeclarationContext]] = time {
 
-        import ProjectLike.findMaximallySpecificSuperinterfaceMethods
+        import org.opalj.br.analyses.ProjectLike.findMaximallySpecificSuperinterfaceMethods
 
         // IDEA
         // Process the type hierarchy starting with the root type(s) to ensure that all method
@@ -1408,7 +1411,7 @@ object Project {
         val result = methods.mapValuesNow { mdcs ⇒
             val sortedMethods = mdcs.toArray
             sortArray(sortedMethods, MethodDeclarationContextOrdering)
-            ConstArray.from(sortedMethods)
+            ConstArray._UNSAFE_from(sortedMethods)
         }
         result.repack
         result
@@ -1702,7 +1705,7 @@ object Project {
         project:                Project[Source],
         config:                 Config          = ConfigFactory.empty(),
         useOldConfigAsFallback: Boolean         = true
-    ) = {
+    ): Project[Source] = {
         apply(
             project.projectClassFilesWithSources,
             project.libraryClassFilesWithSources,
@@ -1725,9 +1728,9 @@ object Project {
      *      the libraries used by the project that will be analyzed.
      *      [Thread Safety] The underlying data structure has to support concurrent access.
      *
-     * @param libraryClassFilesAreInterfacesOnly If `true` then only the public interface
-     *      and no private METHODS or method implementations are available. Otherwise,
-     *      the libraries are completely loaded.
+     * @param libraryClassFilesAreInterfacesOnly If `true` then only the non-private interface of
+     *         of the classes belonging to the library was loaded. I.e., this setting just reflects
+     *         the way how the class files were loaded; it does not change the classes!
      *
      * @param virtualClassFiles A list of virtual class files that have no direct
      *      representation in the project.
@@ -1783,9 +1786,10 @@ object Project {
 
         try {
             import scala.collection.mutable.Set
-            import scala.concurrent.{Future, Await, ExecutionContext}
+            import scala.concurrent.Await
+            import scala.concurrent.Future
             import scala.concurrent.duration.Duration
-            import ExecutionContext.Implicits.{global ⇒ ScalaExecutionContext}
+            import scala.concurrent.ExecutionContext.Implicits.{global ⇒ ScalaExecutionContext}
 
             val classHierarchyFuture: Future[ClassHierarchy] = Future {
                 time {
@@ -2001,9 +2005,9 @@ object Project {
 
             val fieldsCount: Int = projectFieldsCount + libraryFieldsCount
 
-            val allProjectClassFiles: ConstArray[ClassFile] = ConstArray.from(projectClassFilesArray)
+            val allProjectClassFiles: ConstArray[ClassFile] = ConstArray._UNSAFE_from(projectClassFilesArray)
 
-            val allLibraryClassFiles: ConstArray[ClassFile] = ConstArray.from(libraryClassFilesArray)
+            val allLibraryClassFiles: ConstArray[ClassFile] = ConstArray._UNSAFE_from(libraryClassFilesArray)
 
             val allClassFiles: Iterable[ClassFile] = {
                 new Iterable[ClassFile] {

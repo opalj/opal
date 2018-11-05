@@ -6,7 +6,7 @@ package org.opalj.br
  *
  * @author Michael Eichberg
  */
-case class ModulePackages(packages: IndexedSeq[String]) extends Attribute {
+case class ModulePackages(packages: Packages) extends Attribute {
 
     final override def kindId: Int = ModulePackages.KindId
 

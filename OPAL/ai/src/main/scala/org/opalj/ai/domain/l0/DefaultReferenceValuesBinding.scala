@@ -7,7 +7,6 @@ package l0
 import scala.reflect.ClassTag
 
 import org.opalj.collection.immutable.UIDSet
-
 import org.opalj.br.ArrayType
 import org.opalj.br.ObjectType
 
@@ -19,7 +18,7 @@ import org.opalj.br.ObjectType
 trait DefaultReferenceValuesBinding
     extends DefaultTypeLevelReferenceValues
     with DefaultExceptionsFactory {
-    domain: IntegerValuesDomain with TypedValuesFactory with Configuration with TheClassHierarchy ⇒
+    domain: IntegerValuesDomain with TypedValuesFactory with Configuration ⇒
 
     type AReferenceValue = ReferenceValue
     type DomainReferenceValue = AReferenceValue
@@ -33,8 +32,22 @@ trait DefaultReferenceValuesBinding
     val TheNullValue: DomainNullValue = new NullValue()
 
     //
-    // FACTORY METHODS
+    // CONCRETE CLASSES AND FACTORY METHODS
     //
+
+    protected case class DefaultSObjectValue(theUpperTypeBound: ObjectType) extends SObjectValue {
+        override def isNull: Answer = Unknown
+    }
+
+    protected case class DefaultArrayValue(theUpperTypeBound: ArrayType) extends ArrayValue {
+        override def isNull: Answer = Unknown
+    }
+
+    protected case class DefaultMObjectValue(
+            upperTypeBound: UIDSet[ObjectType]
+    ) extends MObjectValue {
+        override def isNull: Answer = Unknown
+    }
 
     /**
      * @inheritdoc
@@ -44,7 +57,7 @@ trait DefaultReferenceValuesBinding
     override def NullValue(origin: ValueOrigin): DomainNullValue = TheNullValue
 
     override def ObjectValue(origin: ValueOrigin, objectType: ObjectType): DomainObjectValue = {
-        new SObjectValue(objectType)
+        DefaultSObjectValue(objectType)
     }
 
     override def ObjectValue(
@@ -54,11 +67,11 @@ trait DefaultReferenceValuesBinding
         if (upperTypeBound.isSingletonSet)
             ObjectValue(origin, upperTypeBound.head)
         else
-            new MObjectValue(upperTypeBound)
+            DefaultMObjectValue { upperTypeBound }
     }
 
     override def ArrayValue(origin: ValueOrigin, arrayType: ArrayType): DomainArrayValue = {
-        new ArrayValue(arrayType)
+        DefaultArrayValue(arrayType)
     }
 
 }

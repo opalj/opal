@@ -5,14 +5,12 @@ package instructions
 
 import org.scalatest.Matchers
 import org.scalatest.FunSpec
-
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
-
 import org.opalj.bi.TestResources.locateTestResources
-
 import org.opalj.br.analyses.{Project, SomeProject}
 import org.opalj.br.reader.{Java8Framework, Java8LibraryFramework}
+import org.opalj.collection.immutable.RefArray
 
 /**
  * Tests that calls to inherited methods on lambda instances go to Object.
@@ -74,7 +72,7 @@ class ObjectMethodsOnFunctionalInterfacesTest extends FunSpec with Matchers {
      * generated object's single method).
      */
     private def getInvokedMethod(annotations: Annotations): Option[Method] = {
-        val candidates: IndexedSeq[Option[Method]] = for {
+        val candidates: RefArray[Option[Method]] = for {
             invokedMethod ← annotations.filter(_.annotationType == InvokedMethod)
             pairs = invokedMethod.elementValuePairs
             ElementValuePair("receiverType", StringValue(receiverType)) ← pairs
@@ -89,14 +87,14 @@ class ObjectMethodsOnFunctionalInterfacesTest extends FunSpec with Matchers {
         if (candidates.nonEmpty) candidates.head else None
     }
 
-    private def getParameterTypes(pairs: ElementValuePairs): IndexedSeq[FieldType] = {
+    private def getParameterTypes(pairs: ElementValuePairs): FieldTypes = {
         pairs.find(_.name == "parameterTypes").map { p ⇒
-            p.value.asInstanceOf[ArrayValue].values.map {
+            p.value.asInstanceOf[ArrayValue].values.map[FieldType] {
                 case ClassValue(x: ObjectType) ⇒ x
                 case ClassValue(x: BaseType)   ⇒ x
                 case x: ElementValue           ⇒ x.valueType
             }
-        }.getOrElse(IndexedSeq())
+        }.getOrElse(NoFieldTypes)
     }
 
     private def getReturnType(pairs: ElementValuePairs): Type = {

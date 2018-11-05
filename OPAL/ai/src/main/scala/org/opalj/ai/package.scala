@@ -141,6 +141,7 @@ package object ai {
     final type ValueOrigins = IntTrieSet
     final type ValueOriginsIterator = IntIterator
     type ValueOrigin = Int
+    @inline final def NoValueOrigins: ValueOrigins = IntTrieSet.empty
 
     /**
      * Used to identify that the origin of the value is outside of the program.

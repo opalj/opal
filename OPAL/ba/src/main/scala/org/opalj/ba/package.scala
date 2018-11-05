@@ -3,11 +3,16 @@ package org.opalj
 
 import scala.language.implicitConversions
 import scala.annotation.switch
+
 import java.io.ByteArrayOutputStream
 import java.io.DataOutputStream
 
 import org.opalj.collection.immutable.UShortPair
+import org.opalj.collection.immutable.IntIntPair
+import org.opalj.collection.immutable.IntArray
+import org.opalj.collection.immutable.RefArray
 import org.opalj.log.GlobalLogContext
+import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 import org.opalj.bi.ACC_PUBLIC
 import org.opalj.bi.ACC_FINAL
@@ -51,7 +56,7 @@ import org.opalj.bi.ConstantPoolTags.CONSTANT_Package_ID
 import org.opalj.br.Attribute
 import org.opalj.br.Code
 import org.opalj.br.ObjectType
-import org.opalj.br.cp._
+import org.opalj.br.cp._ // we need ALL of them...
 import org.opalj.br.instructions._ // we need ALL of them...
 
 /**
@@ -72,7 +77,7 @@ package object ba { ba ⇒
 
     {
         // Log the information whether a production build or a development build is used.
-        implicit val logContext = GlobalLogContext
+        implicit val logContext: LogContext = GlobalLogContext
         import OPALLogger.info
         try {
             scala.Predef.assert(false)
@@ -122,9 +127,9 @@ package object ba { ba ⇒
                 accessFlags:    Int,
                 thisType:       ObjectType,
                 superclassType: Option[ObjectType],
-                interfaceTypes: Seq[ObjectType], // TODO Use a UIDSet here ...
-                fields:         Seq[br.FieldTemplate],
-                methods:        Seq[br.MethodTemplate]
+                interfaceTypes: RefArray[ObjectType], // TODO Use a UIDSet here ...
+                fields:         RefArray[br.FieldTemplate],
+                methods:        RefArray[br.MethodTemplate]
             ): Attribute = {
                 a
             }
@@ -166,7 +171,7 @@ package object ba { ba ⇒
         val bootstrap_methods = bootstrapMethods map { bootstrapMethod ⇒
             new da.BootstrapMethod(
                 CPEMethodHandle(bootstrapMethod.handle, false),
-                bootstrapMethod.arguments map { argument ⇒
+                bootstrapMethod.arguments.map[da.BootstrapArgument] { argument ⇒
                     new da.BootstrapArgument(CPEntryForBootstrapArgument(argument))
                 }
             )
@@ -193,9 +198,9 @@ package object ba { ba ⇒
         }
 
         val interfaces = classFile.interfaceTypes.map(i ⇒ constantsBuffer.CPEClass(i, false))
-        val fields = classFile.fields.map(toDA)
-        val methods = classFile.methods.map(toDA)
-        var attributes = classFile.attributes.flatMap(a ⇒ toDA(a))
+        val fields = classFile.fields.map[da.Field_Info](toDA)
+        val methods = classFile.methods.map[da.Method_Info](toDA)
+        var attributes = classFile.attributes.flatMap[da.Attribute](a ⇒ toDA(a))
         val (constantPoolEntries, constantsPool) = constantsBuffer.build
         if (constantsPool.bootstrapMethods.nonEmpty) {
             attributes :+= createBoostrapMethodTableAttribute(constantsPool)
@@ -208,7 +213,7 @@ package object ba { ba ⇒
             access_flags = classFile.accessFlags,
             this_class = thisTypeCPRef,
             super_class = superClassCPRef,
-            interfaces = interfaces.toIndexedSeq,
+            interfaces = interfaces,
             fields = fields,
             methods = methods,
             attributes = attributes
@@ -226,7 +231,7 @@ package object ba { ba ⇒
             access_flags = field.accessFlags,
             name_index = constantsBuffer.CPEUtf8(field.name),
             descriptor_index = constantsBuffer.CPEUtf8(field.fieldType.toJVMTypeName),
-            attributes = field.attributes.flatMap(a ⇒ toDA(a))
+            attributes = field.attributes.flatMap[da.Attribute](a ⇒ toDA(a))
         )
     }
 
@@ -237,7 +242,7 @@ package object ba { ba ⇒
         constantsBuffer: ConstantsBuffer,
         config:          ToDAConfig
     ): da.Method_Info = {
-        var attributes: Seq[da.Attribute] = method.attributes.flatMap(a ⇒ toDA(a))
+        var attributes: da.Attributes = method.attributes.flatMap[da.Attribute](a ⇒ toDA(a))
         if (method.body.isDefined) {
             attributes = toDA(method.body.get) +: attributes
         }
@@ -491,7 +496,7 @@ package object ba { ba ⇒
                     instructions.writeInt(defaultOffset)
                     instructions.writeInt(npairs.size)
                     npairs.foreach { pair ⇒
-                        val (matchValue, offset) = pair
+                        val IntIntPair(matchValue, offset) = pair
                         instructions.writeInt(matchValue)
                         instructions.writeInt(offset)
                     }
@@ -510,8 +515,8 @@ package object ba { ba ⇒
             max_stack = code.maxStack,
             max_locals = code.maxLocals,
             code = da.Code(data.toByteArray),
-            exceptionTable = code.exceptionHandlers.map(toDA),
-            attributes = code.attributes.flatMap(a ⇒ toDA(a))
+            exceptionTable = code.exceptionHandlers.map[da.ExceptionTableEntry](toDA),
+            attributes = code.attributes.flatMap[da.Attribute](a ⇒ toDA(a))
         )
     }
 
@@ -604,7 +609,7 @@ package object ba { ba ⇒
         config:          ToDAConfig
     ): da.Annotation = {
         val br.Annotation(t, evps) = annotation
-        val daEVPs = evps.map { evp ⇒
+        val daEVPs = evps.map[da.ElementValuePair] { evp ⇒
             da.ElementValuePair(constantsBuffer.CPEUtf8(evp.name), toDA(evp.value))
         }
         da.Annotation(constantsBuffer.CPEUtf8(t.toJVMTypeName), daEVPs)
@@ -659,10 +664,10 @@ package object ba { ba ⇒
 
             case 0x40 ⇒
                 val br.TAOfLocalvarDecl(lvtes) = typeAnnotationTarget
-                da.TATLocalvarDecl(lvtes.map(toDA))
+                da.TATLocalvarDecl(lvtes.map[da.LocalvarTableEntry](toDA))
             case 0x41 ⇒
                 val br.TAOfResourcevarDecl(lvtes) = typeAnnotationTarget
-                da.TATResourcevarDecl(lvtes.map(toDA))
+                da.TATResourcevarDecl(lvtes.map[da.LocalvarTableEntry](toDA))
 
             case 0x42 ⇒
                 val br.TAOfCatch(index) = typeAnnotationTarget
@@ -725,7 +730,7 @@ package object ba { ba ⇒
     ): da.TypeAnnotationPath = {
         typeAnnotationPath match {
             case br.TADirectlyOnType     ⇒ da.TypeAnnotationDirectlyOnType
-            case br.TAOnNestedType(path) ⇒ da.TypeAnnotationPathElements(path.map(toDA))
+            case br.TAOnNestedType(path) ⇒ da.TypeAnnotationPathElements(path.map[da.TypeAnnotationPathElement](toDA))
         }
     }
 
@@ -740,7 +745,7 @@ package object ba { ba ⇒
             toDA(typeAnnotation.target),
             toDA(typeAnnotation.path),
             constantsBuffer.CPEUtf8(typeAnnotation.annotationType.toJVMTypeName),
-            typeAnnotation.elementValuePairs.map { evp ⇒
+            typeAnnotation.elementValuePairs.map[da.ElementValuePair] { evp ⇒
                 da.ElementValuePair(constantsBuffer.CPEUtf8(evp.name), toDA(evp.value))
             }
         )
@@ -813,37 +818,43 @@ package object ba { ba ⇒
             //code attribute conversions
             case br.LineNumberTable.KindId ⇒
                 val attributeNameIndex = CPEUtf8(bi.LineNumberTableAttribute.Name)
-                attribute match {
+                Some(
+                    da.LineNumberTable_attribute(
+                        attributeNameIndex,
+                        attribute match {
 
-                    case br.UnpackedLineNumberTable(lineNumbers) ⇒
-                        val lnt =
-                            lineNumbers.map(l ⇒ da.LineNumberTableEntry(l.startPC, l.lineNumber))
-                        Some(da.LineNumberTable_attribute(attributeNameIndex, lnt))
+                            case br.UnpackedLineNumberTable(lineNumbers) ⇒
+                                lineNumbers.map[da.LineNumberTableEntry] { l ⇒
+                                    da.LineNumberTableEntry(l.startPC, l.lineNumber)
+                                }
 
-                    case c @ br.CompactLineNumberTable(rawLNs: Array[Byte]) ⇒
-                        val lntBuilder = List.newBuilder[da.LineNumberTableEntry]
-                        var e = 0
-                        val entries = rawLNs.length / 4
-                        while (e < entries) {
-                            val index = e * 4
-                            val startPC = c.asUnsignedShort(rawLNs(index), rawLNs(index + 1))
-                            val lineNumber = c.asUnsignedShort(rawLNs(index + 2), rawLNs(index + 3))
-                            lntBuilder += da.LineNumberTableEntry(startPC, lineNumber)
-                            e += 1
+                            case c @ br.CompactLineNumberTable(rawLNs: Array[Byte]) ⇒
+                                val lntBuilder = List.newBuilder[da.LineNumberTableEntry]
+                                var e = 0
+                                val entries = rawLNs.length / 4
+                                while (e < entries) {
+                                    val index = e * 4
+                                    val startPC = c.asUnsignedShort(rawLNs(index), rawLNs(index + 1))
+                                    val lineNumber = c.asUnsignedShort(rawLNs(index + 2), rawLNs(index + 3))
+                                    lntBuilder += da.LineNumberTableEntry(startPC, lineNumber)
+                                    e += 1
+                                }
+                                lntBuilder.result
+
+                            case _ ⇒
+                                val attributeName = attribute.getClass.getName
+                                val m = s"unsupported line number attribute: $attributeName"
+                                throw new Error(m)
                         }
-                        Some(da.LineNumberTable_attribute(attributeNameIndex, lntBuilder.result))
-
-                    case _ ⇒
-                        val m = s"unsupported line number attribute: ${attribute.getClass.getName}"
-                        throw new Error(m)
-                }
+                    )
+                )
 
             case br.LocalVariableTable.KindId ⇒
                 val br.LocalVariableTable(localVariables) = attribute
                 Some(
                     da.LocalVariableTable_attribute(
                         CPEUtf8(bi.LocalVariableTableAttribute.Name),
-                        localVariables.map { l ⇒
+                        localVariables.map[da.LocalVariableTableEntry] { l ⇒
                             da.LocalVariableTableEntry(
                                 start_pc = l.startPC,
                                 length = l.length,
@@ -860,7 +871,7 @@ package object ba { ba ⇒
                 Some(
                     da.LocalVariableTypeTable_attribute(
                         CPEUtf8(bi.LocalVariableTypeTableAttribute.Name),
-                        localVariableTypes.map { l ⇒
+                        localVariableTypes.map[da.LocalVariableTypeTableEntry] { l ⇒
                             da.LocalVariableTypeTableEntry(
                                 start_pc = l.startPC,
                                 length = l.length,
@@ -877,7 +888,7 @@ package object ba { ba ⇒
                 Some(
                     da.MethodParameters_attribute(
                         CPEUtf8(bi.MethodParametersAttribute.Name),
-                        parameters.map { p ⇒
+                        parameters.map[da.MethodParameter] { p ⇒
                             da.MethodParameter(
                                 if (p.name.isDefined) CPEUtf8(p.name.get) else 0,
                                 p.accessFlags
@@ -891,7 +902,7 @@ package object ba { ba ⇒
                 Some(
                     da.Exceptions_attribute(
                         CPEUtf8(bi.ExceptionsAttribute.Name),
-                        exceptions.map(CPEClass(_, false)).toIndexedSeq
+                        exceptions.map(CPEClass(_, false))
                     )
                 )
 
@@ -900,7 +911,7 @@ package object ba { ba ⇒
                 Some(
                     da.InnerClasses_attribute(
                         CPEUtf8(bi.InnerClassesAttribute.Name),
-                        innerClasses.map { ic ⇒
+                        innerClasses.map[da.InnerClassesEntry] { ic ⇒
                             da.InnerClassesEntry(
                                 CPEClass(ic.innerClassType, false),
                                 ic.outerClassType.map(CPEClass(_, false)).getOrElse(0),
@@ -932,7 +943,7 @@ package object ba { ba ⇒
                     }
                 }
 
-                val daFrames = brFrames map { f ⇒
+                val daFrames = brFrames.map[da.StackMapFrame] { f ⇒
                     val frameType = f.frameType
                     if (frameType < 64) {
                         da.SameFrame(frameType)
@@ -952,10 +963,10 @@ package object ba { ba ⇒
                         da.SameFrameExtended(frameType, offsetDelta)
                     } else if (frameType < 255) {
                         val br.AppendFrame(_, offsetDelta, vtis) = f
-                        da.AppendFrame(frameType, offsetDelta, vtis.map(toDA))
+                        da.AppendFrame(frameType, offsetDelta, vtis.map[da.VerificationTypeInfo](toDA))
                     } else if (frameType == 255) {
                         val br.FullFrame(offsetDelta, vtiLocals, vtiStack) = f
-                        da.FullFrame(255, offsetDelta, vtiLocals.map(toDA), vtiStack.map(toDA))
+                        da.FullFrame(255, offsetDelta, vtiLocals.map[da.VerificationTypeInfo](toDA), vtiStack.map[da.VerificationTypeInfo](toDA))
                     } else {
                         throw new Error(s"frame type out of range[0..255] $frameType")
                     }
@@ -997,41 +1008,41 @@ package object ba { ba ⇒
             case br.RuntimeVisibleAnnotationTable.KindId ⇒
                 val br.RuntimeVisibleAnnotationTable(annotations) = attribute
                 val attributeNameIndex = CPEUtf8(bi.RuntimeVisibleAnnotationsAttribute.Name)
-                val daAnnotations = annotations.map(toDA)
+                val daAnnotations = annotations.map[da.Annotation](toDA)
                 Some(da.RuntimeVisibleAnnotations_attribute(attributeNameIndex, daAnnotations))
 
             case br.RuntimeInvisibleAnnotationTable.KindId ⇒
                 val br.RuntimeInvisibleAnnotationTable(annotations) = attribute
                 val attributeNameIndex = CPEUtf8(bi.RuntimeInvisibleAnnotationsAttribute.Name)
-                val daAnnotations = annotations.map(toDA)
+                val daAnnotations = annotations.map[da.Annotation](toDA)
                 Some(da.RuntimeInvisibleAnnotations_attribute(attributeNameIndex, daAnnotations))
 
             case br.RuntimeVisibleParameterAnnotationTable.KindId ⇒
                 val br.RuntimeVisibleParameterAnnotationTable(parameterAnnotations) = attribute
                 val attributeName = bi.RuntimeVisibleParameterAnnotationsAttribute.Name
                 val attributeNameIndex = CPEUtf8(attributeName)
-                val daPAs = parameterAnnotations.map(as ⇒ as.map(toDA))
+                val daPAs = parameterAnnotations.map[da.ParameterAnnotations](as ⇒ as.map[da.Annotation](toDA))
                 Some(da.RuntimeVisibleParameterAnnotations_attribute(attributeNameIndex, daPAs))
 
             case br.RuntimeInvisibleParameterAnnotationTable.KindId ⇒
                 val br.RuntimeInvisibleParameterAnnotationTable(parameterAnnotations) = attribute
                 val attributeName = bi.RuntimeInvisibleParameterAnnotationsAttribute.Name
                 val attributeNameIndex = CPEUtf8(attributeName)
-                val daPAs = parameterAnnotations.map(as ⇒ as.map(toDA))
+                val daPAs = parameterAnnotations.map[da.ParameterAnnotations](as ⇒ as.map[da.Annotation](toDA))
                 Some(da.RuntimeInvisibleParameterAnnotations_attribute(attributeNameIndex, daPAs))
 
             case br.RuntimeInvisibleTypeAnnotationTable.KindId ⇒
                 val br.RuntimeInvisibleTypeAnnotationTable(typeAnnotations) = attribute
                 val attributeName = bi.RuntimeInvisibleTypeAnnotationsAttribute.Name
                 val attributeNameIndex = CPEUtf8(attributeName)
-                val daPAs = typeAnnotations.map(toDA)
+                val daPAs = typeAnnotations.map[da.TypeAnnotation](toDA)
                 Some(da.RuntimeInvisibleTypeAnnotations_attribute(attributeNameIndex, daPAs))
 
             case br.RuntimeVisibleTypeAnnotationTable.KindId ⇒
                 val br.RuntimeVisibleTypeAnnotationTable(typeAnnotations) = attribute
                 val attributeName = bi.RuntimeVisibleTypeAnnotationsAttribute.Name
                 val attributeNameIndex = CPEUtf8(attributeName)
-                val daPAs = typeAnnotations.map(toDA)
+                val daPAs = typeAnnotations.map[da.TypeAnnotation](toDA)
                 Some(da.RuntimeVisibleTypeAnnotations_attribute(attributeNameIndex, daPAs))
 
             case br.ModuleMainClass.KindId ⇒
@@ -1043,7 +1054,7 @@ package object ba { ba ⇒
             case br.ModulePackages.KindId ⇒
                 val br.ModulePackages(packages /*:IndexedSeq[Sgring]*/ ) = attribute
                 val attributeNameIndex = CPEUtf8(bi.ModulePackagesAttribute.Name)
-                Some(da.ModulePackages_attribute(attributeNameIndex, packages.map(CPEPackage)))
+                Some(da.ModulePackages_attribute(attributeNameIndex, packages.map(CPEPackage _)))
 
             case br.Module.KindId ⇒
                 val br.Module(name, flags, version, requires, exports, opens, uses, provides) = attribute
@@ -1053,32 +1064,30 @@ package object ba { ba ⇒
                     CPEModule(name),
                     flags,
                     version.map(CPEUtf8).getOrElse(0),
-                    requires.map(require ⇒
+                    requires.map[da.RequiresEntry](require ⇒
                         da.RequiresEntry(
                             CPEModule(require.requires),
                             require.flags,
                             require.version.map(CPEUtf8).getOrElse(0)
                         )),
-                    exports.map(export ⇒
+                    exports.map[da.ExportsEntry](export ⇒
                         da.ExportsEntry(
                             CPEPackage(export.exports),
                             export.flags,
-                            export.exportsTo.map(exportTo ⇒
-                                da.ExportsToEntry(CPEModule(exportTo)))
+                            export.exportsTo.map(CPEModule _)
                         )),
-                    opens.map(open ⇒
+                    opens.map[da.OpensEntry](open ⇒
                         da.OpensEntry(
                             CPEPackage(open.opens),
                             open.flags,
-                            open.toPackages.map(openTo ⇒
-                                da.OpensToIndexEntry(CPEModule(openTo)))
+                            open.toPackages.map(CPEModule _)
                         )),
-                    uses.map(use ⇒ da.UsesEntry(CPEClass(use, false))),
-                    provides.map(provide ⇒
+                    uses.map(use ⇒ CPEClass(use, false)),
+                    provides.map[da.ProvidesEntry](provide ⇒
                         da.ProvidesEntry(
                             CPEClass(provide.provides, false),
                             provide.withInterfaces.map(withInterface ⇒
-                                da.ProvidesWithIndexEntry(CPEClass(withInterface, false)))
+                                CPEClass(withInterface, false)): IntArray
                         ))
                 ))
 

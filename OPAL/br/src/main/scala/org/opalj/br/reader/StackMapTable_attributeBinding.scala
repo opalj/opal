@@ -3,8 +3,6 @@ package org.opalj
 package br
 package reader
 
-import scala.reflect.ClassTag
-
 import org.opalj.bi.reader.StackMapTable_attributeReader
 import org.opalj.bi.reader.StackMapFrameReader
 import org.opalj.bi.reader.VerificationTypeInfoReader
@@ -23,7 +21,6 @@ trait StackMapTable_attributeBinding
     with AttributeBinding {
 
     type VerificationTypeInfo = br.VerificationTypeInfo
-    val VerificationTypeInfoManifest: ClassTag[VerificationTypeInfo] = implicitly
     type StackMapTable_attribute = br.StackMapTable
     type StackMapFrame = br.StackMapFrame
     type FullFrame = br.FullFrame
@@ -44,10 +41,10 @@ trait StackMapTable_attributeBinding
     type NullVariableInfo = br.VerificationTypeInfo
     type UninitializedThisVariableInfo = br.VerificationTypeInfo
 
-    val StackMapFrameManifest: ClassTag[StackMapFrame] = implicitly
-
     def StackMapTable_attribute(
         cp:                   Constant_Pool,
+        ap_name_index:        Constant_Pool_Index,
+        ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         stack_map_frames:     StackMapFrames
     ): StackMapTable_attribute = StackMapTable(stack_map_frames)
@@ -91,19 +88,21 @@ trait StackMapTable_attributeBinding
         br.FullFrame(offset_delta, verification_type_info_locals, verification_type_info_stack)
     }
 
-    def TopVariableInfo() = br.TopVariableInfo
+    def TopVariableInfo(): br.TopVariableInfo.type = br.TopVariableInfo
 
-    def IntegerVariableInfo() = br.IntegerVariableInfo
+    def IntegerVariableInfo(): br.IntegerVariableInfo.type = br.IntegerVariableInfo
 
-    def FloatVariableInfo() = br.FloatVariableInfo
+    def FloatVariableInfo(): br.FloatVariableInfo.type = br.FloatVariableInfo
 
-    def LongVariableInfo() = br.LongVariableInfo
+    def LongVariableInfo(): br.LongVariableInfo.type = br.LongVariableInfo
 
-    def DoubleVariableInfo() = br.DoubleVariableInfo
+    def DoubleVariableInfo(): br.DoubleVariableInfo.type = br.DoubleVariableInfo
 
-    def NullVariableInfo() = br.NullVariableInfo
+    def NullVariableInfo(): br.NullVariableInfo.type = br.NullVariableInfo
 
-    def UninitializedThisVariableInfo() = br.UninitializedThisVariableInfo
+    def UninitializedThisVariableInfo(): br.UninitializedThisVariableInfo.type = {
+        br.UninitializedThisVariableInfo
+    }
 
     def UninitializedVariableInfo(offset: Int) = new UninitializedVariableInfo(offset)
 

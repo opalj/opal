@@ -489,23 +489,34 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
         org.opalj.graphs.toDot(rootNodes)
     }
 
-    def toDot(f: BasicBlock ⇒ String): Iterable[Node] = {
+    /**
+     * @return The pair:
+     *         `('''Node for the start BB''', '''all Nodes (incl. the node for the start BB)''')`
+     */
+    def toDot(
+        f:                      BasicBlock ⇒ String,
+        includeAbnormalReturns: Boolean             = true
+    ): (Node, Iterable[Node]) = {
         // 1. create a node foreach cfg node
         val bbsIterator = allBBs
         val startBB = bbsIterator.next()
         val startNodeVisualProperties = Map("fillcolor" → "green", "style" → "filled", "shape" → "box")
-        var cfgNodeToGNodes: Map[CFGNode, DefaultMutableNode[String]] =
-            Map(
-                startBB →
-                    new DefaultMutableNode(f(startBB), theVisualProperties = startNodeVisualProperties)
-            )
+        val startBBNode = new DefaultMutableNode(
+            f(startBB),
+            theVisualProperties = startNodeVisualProperties
+        )
+        var cfgNodeToGNodes: Map[CFGNode, DefaultMutableNode[String]] = Map(startBB → startBBNode)
         cfgNodeToGNodes ++= bbsIterator.map(bb ⇒ (bb, new DefaultMutableNode(f(bb))))
         cfgNodeToGNodes ++= catchNodes.map(cn ⇒ (cn, new DefaultMutableNode(cn.toString)))
         cfgNodeToGNodes += (
-            abnormalReturnNode →
-            new DefaultMutableNode(
-                "abnormal return", theVisualProperties = abnormalReturnNode.visualProperties
-            )
+            abnormalReturnNode → {
+                if (includeAbnormalReturns)
+                    new DefaultMutableNode(
+                        "abnormal return", theVisualProperties = abnormalReturnNode.visualProperties
+                    )
+                else
+                    null
+            }
         )
         cfgNodeToGNodes += (
             normalReturnNode →
@@ -517,11 +528,15 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
         // 2. reconnect nodes
         cfgNodeToGNodes foreach { cfgNodeToGNode ⇒
             val (cfgNode, gNode) = cfgNodeToGNode
-            cfgNode.successors foreach { cfgNode ⇒ gNode.addChild(cfgNodeToGNodes(cfgNode)) }
+            if (gNode != null)
+                cfgNode.successors foreach { cfgNode ⇒
+                    val targetGNode = cfgNodeToGNodes(cfgNode)
+                    if (targetGNode != null) gNode.addChild(targetGNode)
+                }
         }
 
         val nodes = cfgNodeToGNodes.values
-        nodes
+        (startBBNode, nodes)
     }
 }
 

@@ -21,16 +21,15 @@ import org.opalj.tac.Throw
  */
 trait ExceptionAwareEscapeAnalysis extends AbstractEscapeAnalysis {
 
-    override type AnalysisContext <: AbstractEscapeAnalysisContext with CFGContainer
-
     override protected[this] def handleThrow(
         aThrow: Throw[V]
     )(implicit context: AnalysisContext, state: AnalysisState): Unit = {
-        if (context.usesDefSite(aThrow.exception)) {
-            val index = context.code indexWhere {
+        if (state.usesDefSite(aThrow.exception)) {
+            val tacai = state.tacai.get
+            val index = tacai.stmts indexWhere {
                 _ == aThrow
             }
-            val successors = context.cfg.bb(index).successors
+            val successors = tacai.cfg.bb(index).successors
 
             var isCaught = false
             var abnormalReturned = false
@@ -38,7 +37,7 @@ trait ExceptionAwareEscapeAnalysis extends AbstractEscapeAnalysis {
                 if (pc.isCatchNode) {
                     val exceptionType = context.entity match {
                         case defSite: DefinitionSiteLike ⇒
-                            val Assignment(_, left, _) = context.code.find(_.pc == defSite.pc).get
+                            val Assignment(_, left, _) = tacai.stmts.find(_.pc == defSite.pc).get
                             classHierarchy.joinReferenceTypesUntilSingleUpperBound(
                                 left.value.asReferenceValue.upperTypeBound
                             )

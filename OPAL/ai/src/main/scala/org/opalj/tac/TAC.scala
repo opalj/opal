@@ -18,7 +18,7 @@ import org.opalj.log.{Error ⇒ ErrorLogLevel}
 import org.opalj.bytecode.JRELibraryFolder
 
 /**
- * Creates the three-address representation for some method(s) and prints it to std out or writes
+ * Creates the three-address representation for some method(s) and prints it to `std out` or writes
  * it to a file.
  *
  * @example To convert all files of a project to the AI based three-address code, you can use:

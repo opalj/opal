@@ -5,13 +5,11 @@ package analyses
 
 import java.util.concurrent.ConcurrentHashMap
 
-import org.opalj
 import org.opalj.ai.ValueOrigin
-import org.opalj.ai.common.SimpleAIKey
-import org.opalj.br.ClassFile
-import org.opalj.br.DeclaredMethod
 import org.opalj.ai.common.DefinitionSiteLike
 import org.opalj.ai.common.DefinitionSitesKey
+import org.opalj.br.ClassFile
+import org.opalj.br.DeclaredMethod
 import org.opalj.br.Field
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
@@ -42,13 +40,12 @@ import org.opalj.fpcf.properties.ReturnValueFreshness
 import org.opalj.fpcf.properties.VExtensibleGetter
 import org.opalj.fpcf.properties.VFreshReturnValue
 import org.opalj.fpcf.properties.VGetter
+import org.opalj.fpcf.properties.VirtualMethodReturnValueFreshness
 import org.opalj.fpcf.properties.VNoFreshReturnValue
 import org.opalj.fpcf.properties.VPrimitiveReturnValue
-import org.opalj.fpcf.properties.VirtualMethodReturnValueFreshness
 import org.opalj.tac.Assignment
 import org.opalj.tac.Const
 import org.opalj.tac.DUVar
-import org.opalj.tac.DefaultTACAIKey
 import org.opalj.tac.Expr
 import org.opalj.tac.GetField
 import org.opalj.tac.New
@@ -60,7 +57,8 @@ import org.opalj.tac.Stmt
 import org.opalj.tac.TACMethodParameter
 import org.opalj.tac.TACode
 import org.opalj.tac.VirtualFunctionCall
-import org.opalj.value.KnownTypedValue
+import org.opalj.tac.fpcf.properties.TACAI
+import org.opalj.value.ValueInformation
 
 /**
  * Determines whether the lifetime of a reference type field is the same as that of its owning
@@ -74,13 +72,11 @@ class FieldLocalityAnalysis private[analyses] (
         final val project: SomeProject
 ) extends FPCFAnalysis {
 
-    type V = DUVar[KnownTypedValue]
+    type V = DUVar[ValueInformation]
 
-    final val tacaiProvider = project.get(DefaultTACAIKey)
     final val declaredMethods = project.get(DeclaredMethodsKey)
     final val typeExtensiblity = project.get(TypeExtensibilityKey)
     final val definitionSites = project.get(DefinitionSitesKey)
-    final val aiResult = project.get(SimpleAIKey)
     final val isOverridableMethod = project.get(IsOverridableMethodKey)
 
     /**
@@ -161,7 +157,7 @@ class FieldLocalityAnalysis private[analyses] (
             }
         }
 
-        step3(field)
+        step3()
     }
 
     /**
@@ -170,59 +166,64 @@ class FieldLocalityAnalysis private[analyses] (
      * has to overwritten to prevent it from being leaked by the shallow copy created through
      * `java.lang.Object.clone`.
      */
-    private[this] def step3(
-        field: Field
-    )(
-        implicit
-        state: FieldLocalityState
-    ): PropertyComputationResult = {
-        val fieldName = field.name
-        val fieldType = field.fieldType
+    private[this] def step3()(implicit state: FieldLocalityState): PropertyComputationResult = {
         for {
-            method ← allMethodsHavingAccess(field)
-            tacai = tacaiProvider(method)
-            stmts = tacai.stmts
-            (stmt, index) ← stmts.iterator.zipWithIndex
+            method ← allMethodsHavingAccess(state.field)
+            tacai ← getTACAI(method)
         } {
-            stmt match {
-                // Values read from the field may not escape, except for
-                // [[org.opalj.fpcf.properties.EscapeViaReturn]] in which case we have a
-                // [[org.opalj.fpcf.properties.LocalFieldWithGetter]].
-                case _@ Assignment(pc, _, GetField(_, declaredType, `fieldName`, `fieldType`, _)) ⇒
-                    project.resolveFieldReference(declaredType, fieldName, fieldType) match {
-                        case Some(`field`) ⇒
-                            val escape = propertyStore(definitionSites(method, pc), EscapeProperty.key)
-                            if (handleEscape(escape)) {
-                                return Result(field, NoLocalField);
-                            }
-                        case _ ⇒ // A field from a different class (None if that class is unknown)
-                    }
-
-                // Values assigned to the field must be fresh and non-escaping.
-                case PutField(pc, declaredFieldType, `fieldName`, `fieldType`, _, value) ⇒
-                    project.resolveFieldReference(declaredFieldType, `fieldName`, `fieldType`) match {
-                        case Some(`field`) ⇒
-                            // value is fresh and does not escape.
-                            // in case of escape via return, we have a local field with getter
-                            if (checkFreshnessAndEscapeOfValue(value, pc, stmts, method)) {
-                                return Result(field, NoLocalField);
-                            }
-                        case _ ⇒ // A field from a different class (None if that class is unknown)
-                    }
-
-                // When super.clone is called, the field must always be overwritten.
-                case Assignment(pc, left, NonVirtualFunctionCall(_, dc: ObjectType, false, "clone", descr, _, _)) ⇒
-                    if (descr.parametersCount == 0 && field.classFile.superclassType.get == dc) {
-                        if (handleSuperCloneCall(index, pc, method, left.usedBy, tacai)) {
-                            return Result(field, NoLocalField);
-                        }
-                    }
-
-                case _ ⇒
-            }
+            if (!isLocalForMethod(method, tacai))
+                return Result(state.field, NoLocalField);
         }
 
         returnResult
+    }
+
+    private[this] def isLocalForMethod(
+        method: Method,
+        tacai:  TACode[TACMethodParameter, V]
+    )(implicit state: FieldLocalityState): Boolean = {
+        val field = state.field
+        val fieldName = field.name
+        val fieldType = field.fieldType
+        val stmts = tacai.stmts
+        stmts.iterator.zipWithIndex.forall {
+            case (stmt, index) ⇒
+                stmt match {
+                    // Values read from the field may not escape, except for
+                    // [[org.opalj.fpcf.properties.EscapeViaReturn]] in which case we have a
+                    // [[org.opalj.fpcf.properties.LocalFieldWithGetter]].
+                    case _@ Assignment(pc, _, GetField(_, declType, `fieldName`, `fieldType`, objRef)) ⇒
+                        project.resolveFieldReference(declType, fieldName, fieldType) match {
+                            case Some(`field`) ⇒
+                                val escape =
+                                    propertyStore(definitionSites(method, pc), EscapeProperty.key)
+                                val isGetFieldOfReceiver =
+                                    objRef.asVar.definedBy == tac.SelfReferenceParameter
+                                !handleEscape(escape, isGetFieldOfReceiver)
+                            case _ ⇒
+                                true // A field from a different class (None if that class is unknown)
+                        }
+
+                    // Values assigned to the field must be fresh and non-escaping.
+                    case PutField(pc, declaredFieldType, `fieldName`, `fieldType`, _, value) ⇒
+                        project.resolveFieldReference(declaredFieldType, `fieldName`, `fieldType`) match {
+                            case Some(`field`) ⇒
+                                // value is fresh and does not escape.
+                                // in case of escape via return, we have a local field with getter
+                                !checkFreshnessAndEscapeOfValue(value, pc, stmts, method)
+                            case _ ⇒
+                                true // A field from a different class (None if that class is unknown)
+                        }
+
+                    // When super.clone is called, the field must always be overwritten.
+                    case Assignment(pc, left, NonVirtualFunctionCall(_, dc: ObjectType, false, "clone", descr, _, _)) ⇒
+                        if (descr.parametersCount == 0 && field.classFile.superclassType.get == dc) {
+                            !handleSuperCloneCall(index, pc, method, left.usedBy, tacai)
+                        } else true
+
+                    case _ ⇒ true
+                }
+        }
     }
 
     /**
@@ -256,7 +257,8 @@ class FieldLocalityAnalysis private[analyses] (
      * @note (Re-)Adds dependees as necessary.
      */
     private[this] def handleEscape(
-        eOptionP: EOptionP[DefinitionSiteLike, EscapeProperty]
+        eOptionP:             EOptionP[DefinitionSiteLike, EscapeProperty],
+        isGetFieldOfReceiver: Boolean
     )(
         implicit
         state: FieldLocalityState
@@ -266,21 +268,21 @@ class FieldLocalityAnalysis private[analyses] (
 
         // The field may be leaked by a getter, but only if the field's owning instance is the
         // receiver of the getter method.
-        case FinalEP(e, EscapeViaReturn) ⇒
-            if (isGetFieldOfReceiver(e)) {
+        case FinalEP(_, EscapeViaReturn) ⇒
+            if (isGetFieldOfReceiver) {
                 state.updateWithMeet(LocalFieldWithGetter)
                 false
             } else
                 true
 
         case IntermediateEP(_, _, NoEscape | EscapeInCallee) ⇒
-            state.addDefinitionSiteDependee(eOptionP)
+            state.addDefinitionSiteDependee(eOptionP, isGetFieldOfReceiver)
             false
 
-        case IntermediateEP(e, _, EscapeViaReturn) ⇒
-            if (isGetFieldOfReceiver(e)) {
+        case IntermediateEP(_, _, EscapeViaReturn) ⇒
+            if (isGetFieldOfReceiver) {
                 state.updateWithMeet(LocalFieldWithGetter)
-                state.addDefinitionSiteDependee(eOptionP)
+                state.addDefinitionSiteDependee(eOptionP, isGetFieldOfReceiver)
                 false
             } else
                 true
@@ -290,21 +292,8 @@ class FieldLocalityAnalysis private[analyses] (
             true
 
         case _ ⇒
-            state.addDefinitionSiteDependee(eOptionP)
+            state.addDefinitionSiteDependee(eOptionP, isGetFieldOfReceiver)
             false
-    }
-
-    /**
-     * Returns, whether the definition site is a GetField on the method's receiver.
-     */
-    private[this] def isGetFieldOfReceiver(defSite: DefinitionSiteLike): Boolean = {
-        val stmt = tacaiProvider(defSite.method).stmts.find(_.pc == defSite.pc)
-        stmt match {
-            case Some(Assignment(_, _, getField: GetField[V])) ⇒
-                getField.objRef.asVar.definedBy == tac.SelfReferenceParameter
-            case _ /*Some(_) | None*/ ⇒ // this method is also called for put fields
-                false
-        }
     }
 
     /**
@@ -324,11 +313,10 @@ class FieldLocalityAnalysis private[analyses] (
                 if (checkFreshnessOfDef(stmt, method)) {
                     true
                 } else {
-                    val filteredUses = aiResult(method).domain.usedBy(stmt.pc) - putField
-                    val defSiteEntity = DefinitionSitesWithoutPutField(method, stmt.pc, filteredUses)
+                    val defSiteEntity = DefinitionSitesWithoutPutField(method, stmt.pc, putField)
                     val escape = propertyStore(defSiteEntity, EscapeProperty.key)
                     // does the value escape?
-                    handleEscape(escape)
+                    handleEscape(escape, isGetFieldOfReceiver = false)
                 }
             }
         }
@@ -352,13 +340,13 @@ class FieldLocalityAnalysis private[analyses] (
                 handleConcreteCall(callee)
 
             case Assignment(_, _, NonVirtualFunctionCall(_, dc, isI, name, desc, _, _)) ⇒
-                val callee = project.specialCall(dc, isI, name, desc)
+                val callee = project.specialCall(caller.classFile.thisType, dc, isI, name, desc)
                 handleConcreteCall(callee)
 
             case Assignment(_, _, VirtualFunctionCall(_, rcvrType, _, name, desc, receiver, _)) ⇒
                 val callerType = caller.classFile.thisType
                 val value = receiver.asVar.value.asReferenceValue
-                val mostPreciseType = value.valueType
+                val mostPreciseType = value.leastUpperType
 
                 if (mostPreciseType.isEmpty) {
                     false // Receiver is null, call will never be executed
@@ -405,7 +393,7 @@ class FieldLocalityAnalysis private[analyses] (
      * @note Adds dependees as necessary.
      */
     def handleConcreteCall(
-        callee: opalj.Result[Method]
+        callee: org.opalj.Result[Method]
     )(
         implicit
         state: FieldLocalityState
@@ -470,7 +458,8 @@ class FieldLocalityAnalysis private[analyses] (
         // that the field is overwritten before the method's exit, not before a potential escape
         // of the object.
         val escape = propertyStore(definitionSites(method, pc), EscapeProperty.key)
-        handleEscapeStateOfResultOfSuperClone(escape)
+        if (handleEscapeStateOfResultOfSuperClone(escape))
+            return true;
 
         var enqueuedBBs: Set[CFGNode] = Set(tacai.cfg.bb(defSite)) // All scheduled BBs
         var worklist: List[CFGNode] = List(tacai.cfg.bb(defSite)) // BBs we still have to visit
@@ -528,17 +517,31 @@ class FieldLocalityAnalysis private[analyses] (
             false
 
         // The escape state is worse than [[org.opalj.fpcf.properties.EscapeViaReturn]]
-        case EPS(_, _, _) ⇒ true
+        case _: EPS[_, _] ⇒ true
 
         case _ ⇒
             state.addClonedDefinitionSiteDependee(eOptionP)
             false
     }
 
+    /**
+     * Returns the TACode for a method if available, registering dependencies as necessary.
+     */
+    def getTACAI(
+        method: Method
+    )(implicit state: FieldLocalityState): Option[TACode[TACMethodParameter, V]] = {
+        val tacai = propertyStore(method, TACAI.key)
+
+        if (tacai.isRefinable)
+            state.addTACDependee(tacai)
+
+        if (tacai.hasProperty) tacai.ub.tac
+        else None
+    }
+
     private[this] def continuation(
         someEPS: SomeEPS
     )(implicit state: FieldLocalityState): PropertyComputationResult = {
-
         val isNotLocal = someEPS.e match {
             case _: DeclaredMethod ⇒
                 val newEP = someEPS.asInstanceOf[EOptionP[DeclaredMethod, Property]]
@@ -547,15 +550,22 @@ class FieldLocalityAnalysis private[analyses] (
 
             case e: DefinitionSiteLike ⇒
                 val newEP = someEPS.asInstanceOf[EOptionP[DefinitionSiteLike, EscapeProperty]]
+                val isGetFieldOfReceiver = state.isGetFieldOfReceiver(e)
                 state.removeDefinitionSiteDependee(newEP)
                 if (state.isDefinitionSiteOfClone(e))
                     handleEscapeStateOfResultOfSuperClone(newEP)
                 else
-                    handleEscape(newEP)
+                    handleEscape(newEP, isGetFieldOfReceiver)
+
+            case m: Method ⇒
+                val newEP = someEPS.asInstanceOf[EOptionP[Method, TACAI]]
+                state.removeTACDependee(newEP)
+                if (newEP.isRefinable) state.addTACDependee(newEP)
+                !isLocalForMethod(m, newEP.ub.tac.get)
         }
-        if (isNotLocal)
+        if (isNotLocal) {
             Result(state.field, NoLocalField)
-        else
+        } else
             returnResult
     }
 
@@ -569,7 +579,7 @@ class FieldLocalityAnalysis private[analyses] (
                 state.temporaryState,
                 state.dependees,
                 continuation,
-                CheapPropertyComputation
+                if (state.hasTacDependees) DefaultPropertyComputation else CheapPropertyComputation
             )
     }
 }
@@ -579,7 +589,7 @@ sealed trait FieldLocalityAnalysisScheduler extends ComputationSpecification {
     final override def derives: Set[PropertyKind] = Set(FieldLocality)
 
     final override def uses: Set[PropertyKind] = {
-        Set(ReturnValueFreshness, VirtualMethodReturnValueFreshness)
+        Set(TACAI, ReturnValueFreshness, VirtualMethodReturnValueFreshness)
     }
 
     final override type InitializationData = Null
@@ -632,8 +642,8 @@ object DefinitionSitesWithoutPutField {
         new ConcurrentHashMap[DefinitionSiteWithoutPutField, DefinitionSiteWithoutPutField]()
     }
 
-    def apply(method: Method, pc: Int, usedBy: IntTrieSet): DefinitionSiteWithoutPutField = {
-        val defSite = DefinitionSiteWithoutPutField(method, pc, usedBy)
+    def apply(method: Method, pc: Int, putFieldPC: Int): DefinitionSiteWithoutPutField = {
+        val defSite = DefinitionSiteWithoutPutField(method, pc, putFieldPC)
         val prev = defSites.putIfAbsent(defSite, defSite)
         if (prev == null) defSite else prev
     }
@@ -650,5 +660,18 @@ object DefinitionSitesWithoutPutField {
  * @author Florian Kuebler
  */
 final case class DefinitionSiteWithoutPutField(
-        method: Method, pc: Int, usedBy: IntTrieSet
-) extends DefinitionSiteLike
+        method: Method, pc: Int, putFieldPC: Int
+) extends DefinitionSiteLike {
+    override def usedBy[V <: ValueInformation](
+        tacode: TACode[TACMethodParameter, DUVar[V]]
+    ): IntTrieSet = {
+        val defSite = tacode.pcToIndex(pc)
+        if (defSite == -1) {
+            // the code is dead
+            IntTrieSet.empty
+        } else {
+            val Assignment(_, dvar, _) = tacode.stmts(defSite)
+            dvar.usedBy - tacode.pcToIndex(putFieldPC)
+        }
+    }
+}

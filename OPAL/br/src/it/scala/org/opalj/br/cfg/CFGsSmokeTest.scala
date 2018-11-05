@@ -54,7 +54,7 @@ class CFGsSmokeTest extends AbstractCFGTest {
 
     def doAnalyzeProject(project: SomeProject): Unit = {
 
-        implicit val classHierarchy = project.classHierarchy
+        implicit val classHierarchy: ClassHierarchy = project.classHierarchy
 
         val methodsWithBodyCount = project.allMethodsWithBody.size
         val methodsCount = new AtomicInteger(0)
@@ -62,17 +62,19 @@ class CFGsSmokeTest extends AbstractCFGTest {
 
         project.parForeachMethodWithBody() { mi ⇒
             val method = mi.method
-            implicit val code = method.body.get
+            implicit val code: Code = method.body.get
 
             val cfg = time { CFGFactory(code) } { t ⇒ executionTime.addAndGet(t.timeSpan) }
 
             // check that each instruction is associated with a basic block
-            if (!code.programCounters.forall { cfg.bb(_) ne null }) {
-                fail("not all instructions are associated with a basic block")
+            code.programCounters foreach { pc ⇒
+                if (cfg.bb(pc) == null) {
+                    fail(method.toJava(s"instruction $pc is not associated with a basic block"))
+                }
             }
 
             // check that allBBs returns the same bbs as a manual iterator
-            val manuallyCollectsBBs = code.programCounters.mapToAny(cfg.bb).filter(_ ne null).toSet
+            val manuallyCollectsBBs = code.programCounters.map[BasicBlock](cfg.bb).toSet
             assert(cfg.allBBs.toSet == manuallyCollectsBBs)
 
             // check the boundaries
@@ -180,14 +182,14 @@ class CFGsSmokeTest extends AbstractCFGTest {
     // Configuration of the tested projects ...
     //
 
-    describe("computing the cfg") {
+    describe("using a method's code") {
 
-        it(s"it should be possible for all methods of the JDK ($JRELibraryFolder)") {
+        it(s"it should be possible to compute the CFG for all methods of the JDK ($JRELibraryFolder)") {
             analyzeProject(TestSupport.createJREProject)
         }
 
         allBITestJARs() foreach { jarFile ⇒
-            it(s"it should be possible for all methods of ${jarFile.getName}") {
+            it(s"it should be possible to compute the CFG for all methods of ${jarFile.getName}") {
                 analyzeProject(Project(jarFile))
             }
         }

@@ -11,13 +11,22 @@ import java.io.DataInputStream
  */
 trait Synthetic_attributeReader extends AttributeReader {
 
+    //
+    // TYPE DEFINITIONS AND FACTORY METHODS
+    //
+
     type Synthetic_attribute <: Attribute
 
     def Synthetic_attribute(
         cp:                   Constant_Pool,
+        ap_name_index:        Constant_Pool_Index,
+        ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index
     ): Synthetic_attribute
 
+    //
+    // IMPLEMENTATION
+    //
     /**
      * <pre>
      * Synthetic_attribute {
@@ -27,13 +36,15 @@ trait Synthetic_attributeReader extends AttributeReader {
      * </pre>
      */
     private[this] def parserFactory() = (
-        ap: AttributeParent,
         cp: Constant_Pool,
+        ap: AttributeParent,
+        ap_name_index: Constant_Pool_Index,
+        ap_descriptor_index: Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         in: DataInputStream
     ) ⇒ {
         /*val attribute_length =*/ in.readInt
-        Synthetic_attribute(cp, attribute_name_index)
+        Synthetic_attribute(cp, ap_name_index, ap_descriptor_index, attribute_name_index)
     }
 
     registerAttributeReader(SyntheticAttribute.Name → parserFactory())

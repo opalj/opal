@@ -105,7 +105,7 @@ class L0AllocationFreenessAnalysis private[analyses] ( final val project: SomePr
                     // Let's continue with the evaluation of the next instruction.
 
                     case mii: NonVirtualMethodInvocationInstruction ⇒
-                        nonVirtualCall(mii) match {
+                        nonVirtualCall(declaringClassType, mii) match {
                             case Success(callee) ⇒
                                 /* Recall that self-recursive calls are handled earlier! */
                                 val allocationFreeness =

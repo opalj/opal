@@ -5,10 +5,14 @@ package common
 
 import org.opalj.br.Method
 import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.tac.TACMethodParameter
+import org.opalj.tac.TACode
+import org.opalj.tac.DUVar
+
+import org.opalj.value.ValueInformation
 
 /**
- * Identifies a definition site object in a method in the bytecode using its program counter and
- * the corresponding use-sites.
+ * Identifies a definition site object in a method in the bytecode using its program counter.
  * It corresponds to the [[org.opalj.fpcf.properties.EscapeProperty]] and the computing
  * analyses.
  * Concrete definition sites are usually associated with [[DefinitionSite]].
@@ -25,6 +29,5 @@ trait DefinitionSiteLike {
 
     val method: Method
 
-    val usedBy: IntTrieSet
-
+    def usedBy[V <: ValueInformation](tacode: TACode[TACMethodParameter, DUVar[V]]): IntTrieSet
 }

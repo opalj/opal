@@ -9,11 +9,11 @@ import org.junit.runner.RunWith
 import org.scalatest.FunSpec
 import org.scalatest.Matchers
 import org.scalatest.junit.JUnitRunner
-
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.br.TestSupport.biProject
 import org.opalj.ai.BaseAI
 import org.opalj.ai.domain.l0.BaseDomain
+import org.opalj.collection.immutable.RefArray
 
 /**
  * Checks that the ClassFileFactory produces valid proxy class files.
@@ -94,7 +94,7 @@ class GeneratedProxyClassFilesTest extends FunSpec with Matchers {
                         methodHandle,
                         invocationInstruction,
                         MethodDescriptor.NoArgsAndReturnVoid, // <= not tested...
-                        IndexedSeq.empty
+                        RefArray.empty
                     )
 
                 def verifyMethod(method: Method): Unit = {
@@ -116,11 +116,12 @@ class GeneratedProxyClassFilesTest extends FunSpec with Matchers {
                     }
 
                     // the layout of the instructions array is correct
-                    for { pc ← 0 until instructions.size } {
-                        if (instructions(pc) != null) {
-                            val nextPc = instructions(pc).indexOfNextInstruction(pc, false)
-                            instructions.slice(pc + 1, nextPc).foreach(_ should be(null))
-                        }
+                    for {
+                        pc ← instructions.indices
+                        if instructions(pc) != null
+                    } {
+                        val nextPc = instructions(pc).indexOfNextInstruction(pc, false)
+                        instructions.slice(pc + 1, nextPc).foreach(_ should be(null))
                     }
                 }
 

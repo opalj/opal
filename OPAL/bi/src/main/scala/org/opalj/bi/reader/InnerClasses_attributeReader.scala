@@ -3,30 +3,35 @@ package org.opalj
 package bi
 package reader
 
-import scala.reflect.ClassTag
-
 import java.io.DataInputStream
 
-import org.opalj.control.repeat
+import org.opalj.control.fillRefArray
+import org.opalj.collection.immutable.RefArray
 
 /**
  * Generic parser for the ''inner classes'' attribute.
  */
 trait InnerClasses_attributeReader extends AttributeReader {
 
-    type InnerClassesEntry
-    implicit val InnerClassesEntryManifest: ClassTag[InnerClassesEntry]
+    //
+    // TYPE DEFINITIONS AND FACTORY METHODS
+    //
+
+    type InnerClassesEntry <: AnyRef
+    type InnerClasses = RefArray[InnerClassesEntry]
 
     type InnerClasses_attribute >: Null <: Attribute
 
     def InnerClasses_attribute(
-        constant_pool:        Constant_Pool,
+        cp:                   Constant_Pool,
+        ap_name_index:        Constant_Pool_Index,
+        ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         inner_classes:        InnerClasses
     ): InnerClasses_attribute
 
     def InnerClassesEntry(
-        constant_pool:            Constant_Pool,
+        cp:                       Constant_Pool,
         inner_class_info_index:   Constant_Pool_Index,
         outer_class_info_index:   Constant_Pool_Index,
         inner_name_index:         Constant_Pool_Index,
@@ -36,8 +41,6 @@ trait InnerClasses_attributeReader extends AttributeReader {
     //
     // IMPLEMENTATION
     //
-
-    type InnerClasses = IndexedSeq[InnerClassesEntry]
 
     /**
      * <pre>
@@ -54,8 +57,10 @@ trait InnerClasses_attributeReader extends AttributeReader {
      * </pre>
      */
     private[this] def parserFactory() = (
-        ap: AttributeParent,
         cp: Constant_Pool,
+        ap: AttributeParent,
+        ap_name_index: Constant_Pool_Index,
+        ap_descriptor_index: Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         in: DataInputStream
     ) ⇒ {
@@ -64,8 +69,10 @@ trait InnerClasses_attributeReader extends AttributeReader {
         if (number_of_classes > 0 || reifyEmptyAttributes) {
             InnerClasses_attribute(
                 cp,
+                ap_name_index,
+                ap_descriptor_index,
                 attribute_name_index,
-                repeat(number_of_classes) {
+                fillRefArray(number_of_classes) {
                     InnerClassesEntry(
                         cp,
                         in.readUnsignedShort, in.readUnsignedShort,

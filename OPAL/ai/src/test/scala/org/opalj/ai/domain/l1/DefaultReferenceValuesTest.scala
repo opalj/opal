@@ -28,7 +28,7 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers {
 
     class TheDomain
         extends CorrelationalDomain
-        with DefaultDomainValueBinding
+        with DefaultSpecialDomainValuesBinding
         with ThrowAllPotentialExceptionsConfiguration
         with PredefinedClassHierarchy
         with PerInstructionPostProcessing

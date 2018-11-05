@@ -154,7 +154,7 @@ sealed trait Chain[@specialized(Int) +T]
             prefixHead
     }
 
-    def forFirstN[U](n: Int)(f: (T) ⇒ U): Unit = {
+    def forFirstN[U](n: Int)(f: T ⇒ U): Unit = {
         var rest = this
         var i = 0
         while (i < n) {
@@ -166,7 +166,7 @@ sealed trait Chain[@specialized(Int) +T]
     }
 
     def flatMap[B, That](
-        f: (T) ⇒ GenTraversableOnce[B]
+        f: T ⇒ GenTraversableOnce[B]
     )(
         implicit
         bf: CanBuildFrom[Chain[T], B, That]

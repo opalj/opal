@@ -49,11 +49,11 @@ object FixedSizeBitSetProperties extends Properties("FixedSizeBitSet") {
     // --------------------------------- TESTS ---------------------------------
     //
 
-    property("+= (implicitly intIterator and contains)") = forAll { (e: (IntArraySet, Int)) ⇒
+    property("+= (implicitly iterator and contains)") = forAll { (e: (IntArraySet, Int)) ⇒
         val (ias, max) = e
         val bs = ias.foldLeft(FixedSizeBitSet.create(max))(_ += _)
         bs.isEmpty == ias.isEmpty
-        bs.intIterator.forall(ias.contains) && ias.forall(bs.contains)
+        bs.iterator.forall(ias.contains) && ias.forall(bs.contains)
     }
 
     property("-=") = forAll { (e1: (IntArraySet, Int)) ⇒
@@ -64,7 +64,7 @@ object FixedSizeBitSetProperties extends Properties("FixedSizeBitSet") {
                 throw new UnknownError("initialization failed")
 
             var ias = initialIas
-            val as = initialIas.intIterator.toArray
+            val as = initialIas.iterator.toArray
             (0 until as.length).forall { i ⇒
                 val v = as(r.nextInt(as.length))
                 ias -= v

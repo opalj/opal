@@ -3,11 +3,8 @@ package org.opalj
 package collection
 package mutable
 
-import java.util.function.IntConsumer
-
 import scala.collection.mutable
 import scala.collection.generic
-import scala.collection.AbstractIterator
 
 /**
  * An array based implementation of a mutable stack of `int` values which has a
@@ -45,6 +42,17 @@ final class IntArrayStack private (
     override def update(index: Int, v: Int): Unit = data(size0 - 1 - index) = v
 
     override def newBuilder: mutable.Builder[Int, IntArrayStack] = IntArrayStack.newBuilder
+
+    override def reverse: IntArrayStack = {
+        val newData = new Array[Int](size0)
+        val max = size0 - 1
+        var i = 0
+        while (i <= max) {
+            newData(max - i) = data(i)
+            i += 1
+        }
+        new IntArrayStack(newData, size0)
+    }
 
     /** The same as push but additionally returns `this`. */
     def +=(i: Int): this.type = {
@@ -138,7 +146,7 @@ final class IntArrayStack private (
         this.data(0)
     }
 
-    override def foreach[U](f: Int ⇒ U): Unit = { // TODO Use Java8 IntConsumer interface
+    override def foreach[U](f: Int ⇒ U): Unit = {
         val data = this.data
         var i = this.size0 - 1
         while (i >= 0) {
@@ -147,12 +155,12 @@ final class IntArrayStack private (
         }
     }
 
-    def foreachReverse(f: IntConsumer): Unit = {
+    def foreachReverse[U](f: Int ⇒ U): Unit = {
         val data = this.data
         val max = this.size0 - 1
         var i = 0
         while (i <= max) {
-            f.accept(data(i))
+            f(data(i))
             i += 1
         }
     }
@@ -174,34 +182,17 @@ final class IntArrayStack private (
      * @note    The `next` method will throw an `IndexOutOfBoundsException`
      *          when all elements are already returned.
      */
-    override def iterator: Iterator[Int] = {
-        new AbstractIterator[Int] {
-            var currentIndex = stack.size0 - 1
-            def hasNext: Boolean = currentIndex >= 0
+    override def iterator: IntIterator = new IntIterator {
+        var currentIndex = stack.size0 - 1
+        def hasNext: Boolean = currentIndex >= 0
 
-            def next(): Int = {
-                val currentIndex = this.currentIndex
-                val r = stack.data(currentIndex)
-                this.currentIndex = currentIndex - 1
-                r
-            }
-
+        def next(): Int = {
+            val currentIndex = this.currentIndex
+            val r = stack.data(currentIndex)
+            this.currentIndex = currentIndex - 1
+            r
         }
-    }
 
-    def intIterator: IntIterator = {
-        new IntIterator {
-            var currentIndex = stack.size0 - 1
-            def hasNext: Boolean = currentIndex >= 0
-
-            def next(): Int = {
-                val currentIndex = this.currentIndex
-                val r = stack.data(currentIndex)
-                this.currentIndex = currentIndex - 1
-                r
-            }
-
-        }
     }
 
     def toArray: Array[Int] = java.util.Arrays.copyOfRange(data, 0, size0)
@@ -233,7 +224,9 @@ object IntArrayStack {
      * Creates a new stack based on a given sequence. The last value of the sequence will
      * be the top value of the stack.
      */
-    def fromSeq(seq: TraversableOnce[Int]): IntArrayStack = seq.foldLeft(new IntArrayStack(8))(_ += _)
+    def fromSeq(seq: TraversableOnce[Int]): IntArrayStack = {
+        seq.foldLeft(new IntArrayStack(8))(_ += _)
+    }
 
     def apply(value: Int): IntArrayStack = {
         val initialArray = new Array[Int](10)
