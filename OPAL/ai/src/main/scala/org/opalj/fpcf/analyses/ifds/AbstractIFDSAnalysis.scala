@@ -7,6 +7,7 @@ package ifds
 import java.util.concurrent.ConcurrentHashMap
 
 import scala.collection.{Set ⇒ SomeSet}
+
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
@@ -33,10 +34,11 @@ import org.opalj.tac.Expr
 import org.opalj.tac.Call
 import org.opalj.tac.ExprStmt
 import org.opalj.tac.fpcf.properties.TACAI
-import org.opalj.value.KnownTypedValue
-
 import scala.annotation.tailrec
+
 import scala.collection.mutable
+
+import org.opalj.value.ValueInformation
 
 /**
  * A framework for IFDS analyses.
@@ -245,12 +247,8 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
 
         eps match {
             case FinalEP(e, _: IFDSProperty[_]) ⇒
-                //state.ifdsDependees -= e.asInstanceOf[(DeclaredMethod, DataFlowFact)]
                 handleCallUpdate(e.asInstanceOf[(DeclaredMethod, DataFlowFact)])
             case IntermediateESimpleP(e, _: IFDSProperty[_]) ⇒
-                //state.ifdsDependees -= e.asInstanceOf[(DeclaredMethod, DataFlowFact)]
-                //state.ifdsDependees += e.asInstanceOf[(DeclaredMethod, DataFlowFact)] →
-                    //eps.asInstanceOf[EOptionP[(DeclaredMethod, DataFlowFact), IFDSProperty[DataFlowFact]]]
                 handleCallUpdate(e.asInstanceOf[(DeclaredMethod, DataFlowFact)])
             case FinalEP(m: Method, tac: TACAI) ⇒
                 handleCallUpdate(m)
@@ -355,7 +353,7 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
                 Some(stmt.asStaticMethodCall.resolveCallTarget.toSet.filter(_.body.isDefined))
 
             case NonVirtualMethodCall.ASTID ⇒
-                Some(stmt.asNonVirtualMethodCall.resolveCallTarget.toSet.filter(_.body.isDefined))
+                Some(stmt.asNonVirtualMethodCall.resolveCallTarget(state.declClass).toSet.filter(_.body.isDefined))
 
             case VirtualMethodCall.ASTID ⇒
                 Some(stmt.asVirtualMethodCall.resolveCallTargets(state.declClass).filter(_.body.isDefined))
@@ -364,7 +362,7 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
                 Some(stmt.asAssignment.expr.asStaticFunctionCall.resolveCallTarget.toSet.filter(_.body.isDefined))
 
             case Assignment.ASTID if expr(stmt).astID == NonVirtualFunctionCall.ASTID ⇒
-                Some(stmt.asAssignment.expr.asNonVirtualFunctionCall.resolveCallTarget.toSet.filter(_.body.isDefined))
+                Some(stmt.asAssignment.expr.asNonVirtualFunctionCall.resolveCallTarget(state.declClass).toSet.filter(_.body.isDefined))
 
             case Assignment.ASTID if expr(stmt).astID == VirtualFunctionCall.ASTID ⇒
                 Some(
@@ -375,7 +373,7 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
                 Some(stmt.asExprStmt.expr.asStaticFunctionCall.resolveCallTarget.toSet.filter(_.body.isDefined))
 
             case ExprStmt.ASTID if expr(stmt).astID == NonVirtualFunctionCall.ASTID ⇒
-                Some(stmt.asExprStmt.expr.asNonVirtualFunctionCall.resolveCallTarget.toSet.filter(_.body.isDefined))
+                Some(stmt.asExprStmt.expr.asNonVirtualFunctionCall.resolveCallTarget(state.declClass).toSet.filter(_.body.isDefined))
 
             case ExprStmt.ASTID if expr(stmt).astID == VirtualFunctionCall.ASTID ⇒
                 Some(
@@ -664,7 +662,7 @@ case class Statement(
 object AbstractIFDSAnalysis {
 
     /** The type of the TAC domain. */
-    type V = DUVar[KnownTypedValue]
+    type V = DUVar[ValueInformation]
 }
 
 sealed trait IFDSAnalysisScheduler[DataFlowFact] extends ComputationSpecification {

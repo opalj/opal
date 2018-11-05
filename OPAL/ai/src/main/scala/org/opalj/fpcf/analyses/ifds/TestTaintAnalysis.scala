@@ -6,6 +6,7 @@ package ifds
 
 //import java.io.File
 
+import org.opalj.collection.immutable.RefArray
 import org.opalj.ai.fpcf.properties.BaseAIResult
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.ObjectType
@@ -111,7 +112,7 @@ class TestTaintAnalysis private[ifds] (
     def getConstValue(expr: Expr[V], code: Array[Stmt[V]]): Option[Int] = {
         if (expr.isIntConst) Some(expr.asIntConst.value)
         else if (expr.isVar) {
-            val constVals = expr.asVar.definedBy.iterator.map { idx ⇒
+            val constVals = expr.asVar.definedBy.iterator.map[Option[Int]] { idx ⇒
                 if (idx >= 0) {
                     val stmt = code(idx)
                     if (stmt.astID == Assignment.ASTID && stmt.asAssignment.expr.isIntConst)
@@ -187,7 +188,7 @@ class TestTaintAnalysis private[ifds] (
                 println(s"Found flow: $stmt")
             Set.empty
         } else if (callee.name == "forName" && (callee.declaringClassType eq ObjectType.Class) &&
-            callee.descriptor.parameterTypes == Seq(ObjectType.String)) {
+            callee.descriptor.parameterTypes == RefArray(ObjectType.String)) {
             if (in.exists {
                 case Variable(index) ⇒
                     asCall(stmt.stmt).params.exists(p ⇒ p.asVar.definedBy.contains(index))
@@ -195,7 +196,7 @@ class TestTaintAnalysis private[ifds] (
             })
                 println(s"Found flow: $stmt")
             Set(FlowFact(ListSet(stmt.method)))
-        } else if (true || (callee.descriptor.returnType eq ObjectType.Class) ||
+        } else if ((callee.descriptor.returnType eq ObjectType.Class) ||
             (callee.descriptor.returnType eq ObjectType.Object)) {
             in.collect {
                 case Variable(index) ⇒ // Taint formal parameter if actual parameter is tainted

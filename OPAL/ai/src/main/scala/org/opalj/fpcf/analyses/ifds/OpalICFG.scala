@@ -12,6 +12,7 @@ import java.util.Collections
 import java.util.concurrent.ConcurrentLinkedQueue
 
 import heros.InterproceduralCFG
+
 import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
 import org.opalj.fpcf.analyses.ifds.AbstractIFDSAnalysis.V
@@ -31,11 +32,11 @@ import org.opalj.tac.DefaultTACAIKey
 import org.opalj.tac.TACMethodParameter
 import org.opalj.tac.DUVar
 import org.opalj.tac.TACode
-import org.opalj.value.KnownTypedValue
+import org.opalj.value.ValueInformation
 
 class OpalICFG(project: SomeProject) extends InterproceduralCFG[Statement, Method] {
 
-    val tacai: Method ⇒ TACode[TACMethodParameter, DUVar[KnownTypedValue]] = project.get(DefaultTACAIKey)
+    val tacai: Method ⇒ TACode[TACMethodParameter, DUVar[ValueInformation]] = project.get(DefaultTACAIKey)
 
     //    val cfgs: ConcurrentHashMap[Method, CFG] = {
     //        val cfgs = new ConcurrentHashMap[Method, CFG]
@@ -97,7 +98,7 @@ class OpalICFG(project: SomeProject) extends InterproceduralCFG[Statement, Metho
                 stmt.asStaticMethodCall.resolveCallTarget.toSet.filter(_.body.isDefined)
 
             case NonVirtualMethodCall.ASTID ⇒
-                stmt.asNonVirtualMethodCall.resolveCallTarget.toSet.filter(_.body.isDefined)
+                stmt.asNonVirtualMethodCall.resolveCallTarget(declClass).toSet.filter(_.body.isDefined)
 
             case VirtualMethodCall.ASTID ⇒
                 stmt.asVirtualMethodCall.resolveCallTargets(declClass).filter(_.body.isDefined)
@@ -106,7 +107,7 @@ class OpalICFG(project: SomeProject) extends InterproceduralCFG[Statement, Metho
                 stmt.asAssignment.expr.asStaticFunctionCall.resolveCallTarget.toSet.filter(_.body.isDefined)
 
             case Assignment.ASTID if expr(stmt).astID == NonVirtualFunctionCall.ASTID ⇒
-                stmt.asAssignment.expr.asNonVirtualFunctionCall.resolveCallTarget.toSet.filter(_.body.isDefined)
+                stmt.asAssignment.expr.asNonVirtualFunctionCall.resolveCallTarget(declClass).toSet.filter(_.body.isDefined)
 
             case Assignment.ASTID if expr(stmt).astID == VirtualFunctionCall.ASTID ⇒
                 stmt.asAssignment.expr.asVirtualFunctionCall.resolveCallTargets(declClass).filter(_.body.isDefined)
@@ -115,7 +116,7 @@ class OpalICFG(project: SomeProject) extends InterproceduralCFG[Statement, Metho
                 stmt.asExprStmt.expr.asStaticFunctionCall.resolveCallTarget.toSet.filter(_.body.isDefined)
 
             case ExprStmt.ASTID if expr(stmt).astID == NonVirtualFunctionCall.ASTID ⇒
-                stmt.asExprStmt.expr.asNonVirtualFunctionCall.resolveCallTarget.toSet.filter(_.body.isDefined)
+                stmt.asExprStmt.expr.asNonVirtualFunctionCall.resolveCallTarget(declClass).toSet.filter(_.body.isDefined)
 
             case ExprStmt.ASTID if expr(stmt).astID == VirtualFunctionCall.ASTID ⇒
                 stmt.asExprStmt.expr.asVirtualFunctionCall.resolveCallTargets(declClass).filter(_.body.isDefined)

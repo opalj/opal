@@ -18,6 +18,7 @@ import heros.flowfunc.Union
 import heros.flowfunc.Kill
 import heros.solver.IFDSSolver
 import heros.template.DefaultIFDSTabulationProblem
+
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
 import org.opalj.br.ClassHierarchy
@@ -33,7 +34,7 @@ import org.opalj.tac.TACode
 import org.opalj.tac.TACMethodParameter
 import org.opalj.tac.DefaultTACAIKey
 import org.opalj.tac.DUVar
-import org.opalj.value.KnownTypedValue
+import org.opalj.value.ValueInformation
 //import org.opalj.tac.PutField
 import org.opalj.tac.ArrayStore
 import org.opalj.tac.Expr
@@ -46,7 +47,7 @@ import scala.collection.immutable.ListSet
 case object NullFact extends Fact
 
 class HerosTestTaintAnalysis(p: SomeProject, icfg: OpalICFG)
-    extends DefaultIFDSTabulationProblem[Statement, Fact, Method, OpalICFG](icfg) {
+        extends DefaultIFDSTabulationProblem[Statement, Fact, Method, OpalICFG](icfg) {
 
     override def numThreads(): Int = 4
 
@@ -66,9 +67,9 @@ class HerosTestTaintAnalysis(p: SomeProject, icfg: OpalICFG)
                         (source: Fact) ⇒ {
                             if (isTainted(store.value, source)) {
                                 if (index.isDefined) {
-                                    (definedBy.iterator.map(ArrayElement(_, index.get)).toSet + source).asJava
+                                    (definedBy.iterator.map[Fact](ArrayElement(_, index.get)).toSet + source).asJava
                                 } else {
-                                    (definedBy.iterator.map(Variable).toSet + source).asJava
+                                    (definedBy.iterator.map[Fact](Variable).toSet + source).asJava
                                 }
                             } else {
                                 if (index.isDefined) {
@@ -322,7 +323,7 @@ class HerosTestTaintAnalysis(p: SomeProject, icfg: OpalICFG)
     def getConstValue(expr: Expr[V], code: Array[Stmt[V]]): Option[Int] = {
         if (expr.isIntConst) Some(expr.asIntConst.value)
         else if (expr.isVar) {
-            val constVals = expr.asVar.definedBy.iterator.map { idx ⇒
+            val constVals = expr.asVar.definedBy.iterator.map[Option[Int]] { idx ⇒
                 if (idx >= 0) {
                     val stmt = code(idx)
                     if (stmt.astID == Assignment.ASTID && stmt.asAssignment.expr.isIntConst)
@@ -353,7 +354,7 @@ class HerosTestTaintAnalysis(p: SomeProject, icfg: OpalICFG)
 object HerosTestTaintAnalysis {
 
     val p = Project(bytecode.RTJar)
-    val tacai: Method ⇒ TACode[TACMethodParameter, DUVar[KnownTypedValue]] = p.get(DefaultTACAIKey)
+    val tacai: Method ⇒ TACode[TACMethodParameter, DUVar[ValueInformation]] = p.get(DefaultTACAIKey)
 
     val initialMethods: Map[Method, util.Set[Fact]] = {
         var result: Map[Method, util.Set[Fact]] = Map.empty
