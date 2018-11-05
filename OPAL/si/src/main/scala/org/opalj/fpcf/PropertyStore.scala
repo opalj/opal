@@ -208,7 +208,7 @@ abstract class PropertyStore {
      * If "debug" is `true` and we have an update related to an ordered property,
      * we will then check if the update is correct!
      */
-    final def debug: Boolean = PropertyStore.Debug
+    final val debug: Boolean = PropertyStore.Debug
 
     final def traceFallbacks: Boolean = PropertyStore.TraceFallbacks
 
@@ -689,17 +689,25 @@ object PropertyStore {
         initialDebug
     }
 
-    // We think of it as a runtime constant (which can be changed for testing purposes).
+    /**
+     * Determines if newly created property stores are created with debug turned on or off.
+     *
+     * Does NOT affect existing instances!
+     */
     def Debug: Boolean = debug
 
+    /**
+     * Determines if new `PropertyStore` instances run with debugging or without debugging.
+     *
+     */
     def updateDebug(newDebug: Boolean): Unit = {
         implicit val logContext = GlobalLogContext
         debug =
             if (newDebug) {
-                info("OPAL", s"$DebugKey: debugging support on")
+                info("OPAL", s"$DebugKey: debugging support on for new PropertyStores")
                 true
             } else {
-                info("OPAL", s"$DebugKey: debugging support off")
+                info("OPAL", s"$DebugKey: debugging support off for new PropertyStores")
                 false
             }
     }
