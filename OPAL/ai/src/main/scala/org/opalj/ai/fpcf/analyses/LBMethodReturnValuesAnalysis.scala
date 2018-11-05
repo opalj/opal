@@ -53,12 +53,15 @@ class LBMethodReturnValuesAnalysis private[analyses] (
 
         override implicit val project: SomeProject = analysis.project
 
-        override protected[this] def doRecordReturnedValue(pc: RefId, value: Value): Unit = {
-            super.doRecordReturnedValue(pc, value)
+        override protected[this] def doRecordReturnedValue(pc: PC, value: Value): Boolean = {
+            val isUpdated = super.doRecordReturnedValue(pc, value)
 
             // The idea is to check if the computed return value can no longer be more
             // precise than the "pure" type information. If this is the case, we simply
             // abort the AI
+            if (!isUpdated)
+                return false;
+
             val returnedReferenceValue = theReturnedValue.asDomainReferenceValue
             if (returnedReferenceValue.isNull.isUnknown &&
                 returnedReferenceValue.upperTypeBound.isSingletonSet &&
@@ -70,6 +73,7 @@ class LBMethodReturnValuesAnalysis private[analyses] (
                     classHierarchy.isKnownToBeFinal(returnedReferenceValue.upperTypeBound.head))) {
                 ai.interrupt()
             }
+            true // <= the information about the returned value was updated
         }
 
         // TODO determine/record the accessed fields
