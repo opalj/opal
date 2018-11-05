@@ -271,7 +271,12 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
             )
             processMethod(state)
         } else {
-            implicit val state: State = new State(definedMethod, _tacaiDependee = Some(tacEP))
+            implicit val state: State = new State(
+                definedMethod,
+                forNamePCs = forNamePCs,
+                invocationPCs = invocationPCs,
+                _tacaiDependee = tacEPOpt
+            )
             SimplePIntermediateResult(
                 definedMethod, NoReflectionRelatedCallees, tacEPOpt, continuation
             )
