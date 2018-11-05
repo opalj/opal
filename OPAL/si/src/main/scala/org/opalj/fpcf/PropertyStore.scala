@@ -15,8 +15,8 @@ import org.opalj.log.OPALLogger.error
 import org.opalj.fpcf.PropertyKind.SupportedPropertyKinds
 
 /**
- * A property store manages the execution of computations of properties related to specific
- * concrete as well as artificial entities (e.g., methods, fields and classes of a program, but
+ * A property store manages the execution of computations of properties related to concrete
+ * entities as well as artificial entities (e.g., methods, fields and classes of a program, but
  * also the call graph as such etc.). These computations may require and
  * provide information about other entities of the store and the property store implements the logic
  * to handle the computations related to the dependencies between the entities.
@@ -73,12 +73,13 @@ import org.opalj.fpcf.PropertyKind.SupportedPropertyKinds
  * ==Thread Safety==
  * The sequential property stores are not thread-safe; the parallelized implementation(s) are
  * thread-safe in the following manner:
- *  - a client has to use the SAME thread (the driver thread) to call the [[setupPhase]],
- *    [[registerLazyPropertyComputation]], [[scheduleEagerComputationForEntity]] /
- *    [[scheduleEagerComputationsForEntities]], [[force]] and (finally)
- *    [[PropertyStore#waitOnPhaseCompletion]] methods. Hence, the previously mentioned methods MUST
- *    NO be called by PropertyComputation/OnUpdateComputation functions.
- *    The methods to query the store (`apply`) are thread-safe and can be called at any time.
+ *  - a client has to use the SAME thread (the driver thread) to call the (1) [[setupPhase]],
+ *    (2) [[registerLazyPropertyComputation]] or [[registerTriggeredComputation]], (3)
+ *    [[scheduleEagerComputationForEntity]] / [[scheduleEagerComputationsForEntities]],
+ *    (4) [[force]] and (finally) [[PropertyStore#waitOnPhaseCompletion]] methods.
+ *    Hence, the previously mentioned methods MUST NOT be called by
+ *    PropertyComputation/OnUpdateComputation functions. The methods to query the store (`apply`)
+ *    are thread-safe and can be called at any time.
  *
  * ==Common Abbreviations==
  *  - e =         Entity

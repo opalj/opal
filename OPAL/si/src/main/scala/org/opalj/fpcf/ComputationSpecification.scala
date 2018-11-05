@@ -113,8 +113,8 @@ trait ComputationSpecification {
     def init(ps: PropertyStore): InitializationData
 
     /**
-     * Called directly before the analysis is scheduled. I.e., after phase setup, but potentially
-     * after other analyses are already scheduled.
+     * Called directly before the analyses belonging to a phase are effectively scheduled. I.e.,
+     * after phase setup, but potentially after other analyses' `beforeSchedule` method is called.
      */
     def beforeSchedule(ps: PropertyStore): Unit
 

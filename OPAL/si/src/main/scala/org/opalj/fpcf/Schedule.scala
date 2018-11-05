@@ -79,14 +79,10 @@ case class Schedule(
                 currentLazilyComputedProperties ++ computedProperties,
                 currentLazilyComputedProperties ++ openProperties // this is an overapproximation, but this is safe!
             )
-            batch foreach { cs ⇒
-                cs.beforeSchedule(ps)
-                cs.schedule(ps, initInfo(cs).asInstanceOf[cs.InitializationData])
-            }
+            batch foreach { cs ⇒ cs.beforeSchedule(ps) }
+            batch foreach { cs ⇒ cs.schedule(ps, initInfo(cs).asInstanceOf[cs.InitializationData]) }
             ps.waitOnPhaseCompletion()
-            batch foreach { cs ⇒
-                cs.afterPhaseCompletion(ps)
-            }
+            batch foreach { cs ⇒ cs.afterPhaseCompletion(ps) }
         }
         // ... we are done now!
         ps.setupPhase(Set.empty, Set.empty)
