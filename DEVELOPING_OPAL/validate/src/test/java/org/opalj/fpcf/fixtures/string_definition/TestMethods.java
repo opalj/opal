@@ -23,18 +23,6 @@ public class TestMethods {
     public void analyzeString(String s) {
     }
 
-    // The following is a strange case (difficult / impossible? to follow back information flow)
-    //    @StringDefinitions(
-    //            value = "checks if a string value with > 1 continuous appends is determined correctly",
-    //            expectedLevel = StringConstancyLevel.CONSTANT,
-    //            expectedStrings = "java.lang.String"
-    //    )
-    //    public void directAppendConcat() {
-    //        StringBuilder sb = new StringBuilder("java");
-    //        sb.append(".").append("lang").append(".").append("String");
-    //        analyzeString(sb.toString());
-    //    }
-
     @StringDefinitions(
             value = "read-only string, trivial case",
             expectedLevel = StringConstancyLevel.CONSTANT,
@@ -78,6 +66,17 @@ public class TestMethods {
         System.out.println(className);
         className += "string";
         analyzeString(className);
+    }
+
+    @StringDefinitions(
+            value = "checks if a string value with > 2 continuous appends is determined correctly",
+            expectedLevel = StringConstancyLevel.CONSTANT,
+            expectedStrings = "java.lang.String"
+    )
+    public void directAppendConcats() {
+        StringBuilder sb = new StringBuilder("java");
+        sb.append(".").append("lang").append(".").append("String");
+        analyzeString(sb.toString());
     }
 
     @StringDefinitions(
@@ -273,6 +272,20 @@ public class TestMethods {
         }
         analyzeString(sb.toString());
     }
+
+    //    @StringDefinitions(
+    //            value = "if-else control structure which append to a string builder multiple times",
+    //            expectedLevel = StringConstancyLevel.CONSTANT,
+    //            expectedStrings = "a(b)+"
+    //    )
+    //    public void ifElseWithStringBuilder3() {
+    //        StringBuilder sb = new StringBuilder("a");
+    //        int i = new Random().nextInt();
+    //        if (i % 2 == 0) {
+    //            sb.append("b");
+    //        }
+    //        analyzeString(sb.toString());
+    //    }
 
     //    @StringDefinitions(
     //            value = "if-else control structure within a for loop with known loop bounds",

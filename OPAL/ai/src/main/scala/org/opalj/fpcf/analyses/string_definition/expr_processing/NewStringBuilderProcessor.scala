@@ -10,6 +10,7 @@ import org.opalj.fpcf.string_definition.properties.StringTreeConcat
 import org.opalj.fpcf.string_definition.properties.StringTreeConst
 import org.opalj.fpcf.string_definition.properties.StringTreeOr
 import org.opalj.fpcf.string_definition.properties.StringTreeRepetition
+import org.opalj.graphs.DominatorTree
 import org.opalj.tac.Assignment
 import org.opalj.tac.Expr
 import org.opalj.tac.New
@@ -134,16 +135,22 @@ class NewStringBuilderProcessor(
     private def getInitsAndNonInits(
         useSites: Array[Int], stmts: Array[Stmt[V]], cfg: CFG[Stmt[V], TACStmts[V]]
     ): (List[Int], List[List[Int]]) = {
+        val domTree = cfg.dominatorTree
         val inits = ListBuffer[Int]()
         var nonInits = ListBuffer[Int]()
+
         useSites.foreach { next ⇒
             stmts(next) match {
                 // Constructors are identified by the "init" method and assignments (ExprStmts, in
                 // contrast, point to non-constructor related calls)
                 case mc: NonVirtualMethodCall[V] if mc.name == "<init>" ⇒ inits.append(next)
                 case _: Assignment[V] ⇒
-                    // TODO: Use dominator tree to determine whether init or noninit
-                    inits.append(next)
+                    // Use dominator tree to determine whether init or noninit
+                    if (doesDominate(inits.toArray, next, domTree)) {
+                        nonInits.append(next)
+                    } else {
+                        inits.append(next)
+                    }
                 case _ ⇒ nonInits.append(next)
             }
         }
@@ -168,6 +175,29 @@ class NewStringBuilderProcessor(
         // Sort the lists in ascending order as this is more intuitive
         val reversedBlocks = mutable.LinkedHashMap(blocks.toSeq.reverse: _*)
         (inits.toList.sorted, reversedBlocks.map(_._2.toList.sorted).toList)
+    }
+
+    /**
+     * `doesDominate` checks if a list of `possibleDominators` dominates another statement,
+     * `toCheck`, by using the given dominator tree, `domTree`. If so, true is returned and false
+     * otherwise.
+     */
+    private def doesDominate(
+        possibleDominators: Array[Int], toCheck: Int, domTree: DominatorTree
+    ): Boolean = {
+        var nextToCheck = toCheck
+        var pd = possibleDominators.filter(_ < nextToCheck)
+
+        while (pd.nonEmpty) {
+            if (possibleDominators.contains(nextToCheck)) {
+                return true
+            }
+
+            nextToCheck = domTree.dom(nextToCheck)
+            pd = pd.filter(_ <= nextToCheck)
+        }
+
+        false
     }
 
 }
