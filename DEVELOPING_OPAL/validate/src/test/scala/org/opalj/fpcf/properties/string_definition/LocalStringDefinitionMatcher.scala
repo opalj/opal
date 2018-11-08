@@ -47,7 +47,15 @@ class LocalStringDefinitionMatcher extends AbstractPropertyMatcher {
         }
     }
 
-    private def aToMsg(a: AnnotationLike): String = {
+    /**
+     * Takes an [[AnnotationLike]] which represents a [[StringConstancyProperty]] and returns its
+     * stringified representation.
+     *
+     * @param a The annotation. This function requires that it holds a StringConstancyProperty.
+     * @return The stringified representation, which is identical to
+     *         [[StringConstancyProperty.toString]].
+     */
+    private def propertyAnnotation2Str(a: AnnotationLike): String = {
         val constancyLevel = getConstancyLevel(a).get.toLowerCase
         val ps = getPossibleStrings(a).get.mkString("[", ", ", "]")
         s"StringConstancyProperty { Constancy Level: $constancyLevel; Possible Strings: $ps }"
@@ -83,13 +91,13 @@ class LocalStringDefinitionMatcher extends AbstractPropertyMatcher {
         val expLevel = getConstancyLevel(a).get
         val actLevel = prop.constancyLevel.toString
         if (expLevel.toLowerCase != actLevel.toLowerCase) {
-            return Some(aToMsg(a))
+            return Some(propertyAnnotation2Str(a))
         }
 
         val expStrings = prop.possibleStrings.toArray
         val actStrings = getPossibleStrings(a).get
         if (!doArraysContainTheSameValues(expStrings, actStrings)) {
-            return Some(aToMsg(a))
+            return Some(propertyAnnotation2Str(a))
         }
 
         None
