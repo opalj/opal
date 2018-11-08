@@ -157,7 +157,12 @@ class NewStringBuilderProcessor(
         // Sort in descending order to enable correct grouping in the next step
         nonInits = nonInits.sorted.reverse
 
-        // Next, group all non inits into lists depending on their basic block in the CFG
+        // Next, group all non inits into lists depending on their basic block in the CFG; as the
+        // "belongs to parent" relationship is transitive, there are two approaches: 1) recursively
+        // check or 2) store grandchildren in a flat structure as well. Here, 2) is implemented as
+        // only references are stored which is not so expensive. However, this leads to the fact
+        // that we need to create a distinct map before returning (see declaration of uniqueLists
+        // below)
         val blocks = mutable.LinkedHashMap[BasicBlock, ListBuffer[Int]]()
         nonInits.foreach { next ⇒
             val nextBlock = cfg.bb(next)
@@ -166,15 +171,17 @@ class NewStringBuilderProcessor(
                 case _              ⇒ false
             }
             if (parentBlock.nonEmpty) {
-                blocks(parentBlock.head.asBasicBlock).append(next)
+                val list = blocks(parentBlock.head.asBasicBlock)
+                list.append(next)
+                blocks += (nextBlock → list)
             } else {
                 blocks += (nextBlock → ListBuffer[Int](next))
             }
         }
 
-        // Sort the lists in ascending order as this is more intuitive
-        val reversedBlocks = mutable.LinkedHashMap(blocks.toSeq.reverse: _*)
-        (inits.toList.sorted, reversedBlocks.map(_._2.toList.sorted).toList)
+        // Make the list unique (as described above) and sort it in ascending order
+        val uniqueLists = blocks.values.toList.distinct.reverse
+        (inits.toList.sorted, uniqueLists.map(_.toList))
     }
 
     /**

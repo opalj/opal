@@ -229,16 +229,17 @@ public class TestMethods {
     @StringDefinitions(
             value = "if-else control structure which append to a string builder multiple times",
             expectedLevel = StringConstancyLevel.CONSTANT,
-            expectedStrings = "a(bc | yz)"
+            expectedStrings = "a(bcd | xyz)"
     )
     public void ifElseWithStringBuilder3() {
         StringBuilder sb = new StringBuilder("a");
         int i = new Random().nextInt();
         if (i % 2 == 0) {
-            // TODO: Extend the case with three append calls per block
             sb.append("b");
             sb.append("c");
+            sb.append("d");
         } else {
+            sb.append("x");
             sb.append("y");
             sb.append("z");
         }
