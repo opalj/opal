@@ -166,7 +166,7 @@ public class TestMethods {
     @StringDefinitions(
             value = "if-else control structure which append to a string builder with an int expr",
             expectedLevel = StringConstancyLevel.DYNAMIC,
-            expectedStrings = "(x | [AnIntegerValue])"
+            expectedStrings = "([AnIntegerValue] | x)"
     )
     public void ifElseWithStringBuilderWithIntExpr() {
         StringBuilder sb = new StringBuilder();
@@ -182,7 +182,7 @@ public class TestMethods {
     @StringDefinitions(
             value = "if-else control structure which append to a string builder with an int",
             expectedLevel = StringConstancyLevel.DYNAMIC,
-            expectedStrings = "(x | [AnIntegerValue])"
+            expectedStrings = "([AnIntegerValue] | x)"
     )
     public void ifElseWithStringBuilderWithConstantInt() {
         StringBuilder sb = new StringBuilder();
@@ -214,7 +214,7 @@ public class TestMethods {
     @StringDefinitions(
             value = "if-else control structure which append to a string builder",
             expectedLevel = StringConstancyLevel.CONSTANT,
-            expectedStrings = "a(b | c)"
+            expectedStrings = "a(c | b)"
     )
     public void ifElseWithStringBuilder2() {
         StringBuilder sb = new StringBuilder("a");
@@ -223,6 +223,24 @@ public class TestMethods {
             sb.append("b");
         } else {
             sb.append("c");
+        }
+        analyzeString(sb.toString());
+    }
+
+    @StringDefinitions(
+            value = "if-else control structure which append to a string builder multiple times",
+            expectedLevel = StringConstancyLevel.CONSTANT,
+            expectedStrings = "a(yz | bc)"
+    )
+    public void ifElseWithStringBuilder3() {
+        StringBuilder sb = new StringBuilder("a");
+        int i = new Random().nextInt();
+        if (i % 2 == 0) {
+            sb.append("b");
+            sb.append("c");
+        } else {
+            sb.append("y");
+            sb.append("z");
         }
         analyzeString(sb.toString());
     }

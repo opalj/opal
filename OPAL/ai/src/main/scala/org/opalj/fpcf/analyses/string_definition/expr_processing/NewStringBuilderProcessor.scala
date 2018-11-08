@@ -1,6 +1,7 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.analyses.string_definition.expr_processing
 
+import org.opalj.br.cfg.BasicBlock
 import org.opalj.br.cfg.CFG
 import org.opalj.collection.immutable.EmptyIntTrieSet
 import org.opalj.collection.immutable.IntTrieSet
@@ -17,6 +18,7 @@ import org.opalj.tac.New
 import org.opalj.tac.NonVirtualMethodCall
 import org.opalj.tac.TACStmts
 
+import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
 /**
@@ -40,7 +42,7 @@ class NewStringBuilderProcessor(
         assignment.expr match {
             case _: New ⇒
                 val useSites = assignment.targetVar.usedBy.filter(!ignore.contains(_))
-                val (inits, nonInits) = getInitsAndNonInits(useSites, stmts)
+                val (inits, nonInits) = getInitsAndNonInits(useSites, stmts, cfg)
                 val initTreeNodes = ListBuffer[StringTree]()
                 val nonInitTreeNodes = ListBuffer[StringTree]()
 
@@ -65,8 +67,8 @@ class NewStringBuilderProcessor(
                     ))
                 }
 
-                nonInits.foreach { next ⇒
-                    val tree = exprHandler.processDefSite(next)
+                nonInits.foreach { nextBlockValues ⇒
+                    val tree = exprHandler.chainDefSites(nextBlockValues)
                     if (tree.isDefined) {
                         nonInitTreeNodes.append(tree.get)
                     }
@@ -110,10 +112,10 @@ class NewStringBuilderProcessor(
      * @return
      */
     private def getInitsAndNonInits(
-        useSites: IntTrieSet, stmts: Array[Stmt[V]]
-    ): (List[Int], List[Int]) = {
+        useSites: IntTrieSet, stmts: Array[Stmt[V]], cfg: CFG[Stmt[V], TACStmts[V]]
+    ): (List[Int], List[List[Int]]) = {
         val inits = ListBuffer[Int]()
-        val nonInits = ListBuffer[Int]()
+        var nonInits = ListBuffer[Int]()
         useSites.foreach { next ⇒
             stmts(next) match {
                 // Constructors are identified by the "init" method and assignments (ExprStmts, in
@@ -123,7 +125,26 @@ class NewStringBuilderProcessor(
                 case _                                                  ⇒ nonInits.append(next)
             }
         }
-        (inits.toList, nonInits.toList)
+        // Sort in descending order to enable correct grouping in the next step
+        nonInits = nonInits.sorted.reverse
+
+        // Next, group all non inits into lists depending on their basic block in the CFG
+        val blocks = mutable.LinkedHashMap[BasicBlock, ListBuffer[Int]]()
+        nonInits.foreach { next ⇒
+            val nextBlock = cfg.bb(next)
+            val parentBlock = nextBlock.successors.filter {
+                case bb: BasicBlock ⇒ blocks.contains(bb)
+                case _              ⇒ false
+            }
+            if (parentBlock.nonEmpty) {
+                blocks(parentBlock.head.asBasicBlock).append(next)
+            } else {
+                blocks += (nextBlock → ListBuffer[Int](next))
+            }
+        }
+
+        // Sort the lists in ascending order as this is more intuitive
+        (inits.toList, blocks.map(_._2.toList.sorted).toList)
     }
 
 }
