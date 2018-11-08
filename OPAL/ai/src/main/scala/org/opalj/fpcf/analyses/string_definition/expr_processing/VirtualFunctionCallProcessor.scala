@@ -45,29 +45,32 @@ class VirtualFunctionCallProcessor(
     override def processAssignment(
         assignment: Assignment[V], stmts: Array[Stmt[V]], cfg: CFG[Stmt[V], TACStmts[V]],
         ignore: List[Int] = List[Int]()
-    ): Option[StringTree] = process(assignment.expr, stmts, ignore)
+    ): Option[StringTree] = process(assignment.expr, Some(assignment), stmts, ignore)
 
     /**
-     * This implementation does not change / implement the behavior of
-     * [[AbstractExprProcessor.processExpr]].
+     * @see [[AbstractExprProcessor.processExpr]].
+     *
+     * @note For expressions, some information are not available that an [[Assignment]] captures.
+     *       Nonetheless, as much information as possible is extracted from this implementation (but
+     *       no use sites for `append` calls, for example).
      */
     override def processExpr(
         expr: Expr[V], stmts: Array[Stmt[V]], cfg: CFG[Stmt[V], TACStmts[V]],
         ignore: List[Int] = List[Int]()
-    ): Option[StringTree] = process(expr, stmts, ignore)
+    ): Option[StringTree] = process(expr, None, stmts, ignore)
 
     /**
-     * Wrapper function for processing expressions.
+     * Wrapper function for processing assignments.
      */
     private def process(
-        expr: Expr[V], stmts: Array[Stmt[V]], ignore: List[Int]
+        expr: Expr[V], assignment: Option[Assignment[V]], stmts: Array[Stmt[V]], ignore: List[Int]
     ): Option[StringTree] = {
         expr match {
             case vfc: VirtualFunctionCall[V] ⇒
                 if (ExprHandler.isStringBuilderAppendCall(expr)) {
-                    Some(processAppendCall(vfc, stmts, ignore))
+                    processAppendCall(expr, assignment, stmts, ignore)
                 } else if (ExprHandler.isStringBuilderToStringCall(expr)) {
-                    processToStringCall(vfc, stmts, ignore)
+                    processToStringCall(assignment, stmts, ignore)
                 } // A call to method which is not (yet) supported
                 else {
                     val ps = ExprHandler.classNameToPossibleString(
@@ -83,25 +86,52 @@ class VirtualFunctionCallProcessor(
      * Function for processing calls to [[StringBuilder#append]].
      */
     private def processAppendCall(
-        call: VirtualFunctionCall[V], stmts: Array[Stmt[V]], ignore: List[Int]
-    ): StringTreeElement = {
-        val defSites = call.receiver.asVar.definedBy.filter(!ignore.contains(_))
-        val appendValue = valueOfAppendCall(call, stmts)
-        val siblings = exprHandler.processDefSites(defSites)
-        if (siblings.isDefined) {
-            StringTreeConcat(ListBuffer[StringTreeElement](siblings.get, appendValue))
+        expr: Expr[V], assignment: Option[Assignment[V]], stmts: Array[Stmt[V]], ignore: List[Int]
+    ): Option[StringTreeElement] = {
+        val defSites = expr.asVirtualFunctionCall.receiver.asVar.definedBy.toArray.sorted
+        val appendValue = valueOfAppendCall(expr.asVirtualFunctionCall, stmts, ignore)
+        // Append has been processed before => do not compute again
+        if (appendValue.isEmpty) {
+            return None
+        }
+
+        val leftSiblings = exprHandler.processDefSites(defSites)
+        // For assignments, we can take use sites into consideration as well
+        var rightSiblings: Option[StringTree] = None
+        if (assignment.isDefined) {
+            val useSites = assignment.get.targetVar.asVar.usedBy.toArray.sorted
+            rightSiblings = exprHandler.processDefSites(useSites)
+        }
+
+        if (leftSiblings.isDefined || rightSiblings.isDefined) {
+            // Combine siblings and return
+            val concatElements = ListBuffer[StringTreeElement]()
+            if (leftSiblings.isDefined) {
+                concatElements.append(leftSiblings.get)
+            }
+            concatElements.append(appendValue.get)
+            if (rightSiblings.isDefined) {
+                concatElements.append(rightSiblings.get)
+            }
+            Some(StringTreeConcat(concatElements))
         } else {
-            appendValue
+            Some(appendValue.get)
         }
     }
 
     /**
-     * Function for processing calls to [[StringBuilder.toString]].
+     * Function for processing calls to [[StringBuilder.toString]]. Note that a value not equals to
+     * `None` can only be expected if `assignments` is defined.
      */
     private def processToStringCall(
-        call: VirtualFunctionCall[V], stmts: Array[Stmt[V]], ignore: List[Int]
+        assignment: Option[Assignment[V]], stmts: Array[Stmt[V]], ignore: List[Int]
     ): Option[StringTree] = {
+        if (assignment.isEmpty) {
+            return None
+        }
+
         val children = ListBuffer[StringTreeElement]()
+        val call = assignment.get.expr.asVirtualFunctionCall
         val defSites = call.receiver.asVar.definedBy.filter(!ignore.contains(_))
         defSites.foreach {
             exprHandler.processDefSite(_) match {
@@ -132,9 +162,14 @@ class VirtualFunctionCallProcessor(
      *         [[org.opalj.fpcf.string_definition.properties.StringConstancyLevel.DYNAMIC]].
      */
     private def valueOfAppendCall(
-        call: VirtualFunctionCall[V], stmts: Array[Stmt[V]]
-    ): StringTreeConst = {
+        call: VirtualFunctionCall[V], stmts: Array[Stmt[V]], ignore: List[Int]
+    ): Option[StringTreeConst] = {
         val defAssignment = call.params.head.asVar.definedBy.head
+        // The definition has been seen before => do not recompute
+        if (ignore.contains(defAssignment)) {
+            return None
+        }
+
         val assign = stmts(defAssignment).asAssignment
         val sci = assign.expr match {
             case _: NonVirtualFunctionCall[V] ⇒
@@ -150,7 +185,7 @@ class VirtualFunctionCallProcessor(
                 )
                 StringConstancyInformation(DYNAMIC, possibleString)
         }
-        StringTreeConst(sci)
+        Some(StringTreeConst(sci))
     }
 
 }

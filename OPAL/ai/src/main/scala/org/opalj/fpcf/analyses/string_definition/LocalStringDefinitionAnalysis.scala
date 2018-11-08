@@ -66,7 +66,7 @@ class LocalStringDefinitionAnalysis(
         } // If not a call to StringBuilder.toString, then we deal with pure strings
         else {
             Result(data, StringConstancyProperty(
-                exprHandler.processDefSites(data._1.definedBy).get
+                exprHandler.processDefSites(data._1.definedBy.toArray).get
             ))
         }
     }
