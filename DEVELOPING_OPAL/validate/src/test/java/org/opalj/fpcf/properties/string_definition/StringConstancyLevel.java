@@ -11,7 +11,7 @@ public enum StringConstancyLevel {
 
     // For details, see {@link org.opalj.fpcf.properties.StringConstancyLevel}.
     CONSTANT("constant"),
-    PARTIALLY_CONSTANT("partially-constant"),
+    PARTIALLY_CONSTANT("partially_constant"),
     DYNAMIC("dynamic");
 
     private final String value;

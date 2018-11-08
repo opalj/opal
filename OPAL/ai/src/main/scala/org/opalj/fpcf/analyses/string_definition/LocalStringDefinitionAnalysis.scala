@@ -3,13 +3,15 @@ package org.opalj.fpcf.analyses.string_definition
 
 import org.opalj.br.analyses.SomeProject
 import org.opalj.fpcf.FPCFAnalysis
-import org.opalj.fpcf.FPCFEagerAnalysisScheduler
 import org.opalj.fpcf.PropertyComputationResult
 import org.opalj.fpcf.PropertyKind
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
 import org.opalj.fpcf.properties.StringConstancyLevel._
 import org.opalj.fpcf.properties.StringConstancyProperty
+import org.opalj.fpcf.FPCFLazyAnalysisScheduler
+import org.opalj.fpcf.NoResult
+import org.opalj.fpcf.ComputationSpecification
 import org.opalj.tac.ArrayLoad
 import org.opalj.tac.ArrayStore
 import org.opalj.tac.Assignment
@@ -40,7 +42,7 @@ class StringTrackingAnalysisContext(
  *
  * @author Patrick Mell
  */
-class LocalStringDefinitionAnalysis private[analyses] (
+class LocalStringDefinitionAnalysis(
         val project: SomeProject
 ) extends FPCFAnalysis {
 
@@ -50,8 +52,9 @@ class LocalStringDefinitionAnalysis private[analyses] (
         // TODO: What is a better way to test if the given DUVar is of a certain type?
         val simpleClassName = data._1.value.getClass.getSimpleName
         simpleClassName match {
-            case "StringValue"  ⇒ processStringValue(data)
-            case "SObjectValue" ⇒ processSObjectValue(data)
+            case "StringValue"             ⇒ processStringValue(data)
+            case "MultipleReferenceValues" ⇒ processMultipleDefSites(data)
+            case "SObjectValue"            ⇒ processSObjectValue(data)
             case _ ⇒ throw new IllegalArgumentException(
                 s"cannot process given UVar type ($simpleClassName)"
             )
@@ -80,6 +83,14 @@ class LocalStringDefinitionAnalysis private[analyses] (
         })
 
         Result(data, StringConstancyProperty(level, assignedValues))
+    }
+
+    /**
+     * Processes the case that a UVar has multiple definition sites.
+     */
+    private def processMultipleDefSites(data: P): PropertyComputationResult = {
+        // TODO: To be implemented
+        NoResult
     }
 
     /**
@@ -117,7 +128,7 @@ class LocalStringDefinitionAnalysis private[analyses] (
     /**
      * Processes the case that a function call is involved, e.g., to StringBuilder#append.
      *
-     * @param stmts The surrounding context. For this analysis, the surrounding method.
+     * @param stmts    The surrounding context. For this analysis, the surrounding method.
      * @param receiver Receiving object of the VirtualFunctionCall.
      * @return Returns a tuple with the constancy level and the string value after the function
      *         call.
@@ -150,8 +161,8 @@ class LocalStringDefinitionAnalysis private[analyses] (
      * Determines the string value that was passed to a `StringBuilder#append` method. This function
      * can process string constants as well as function calls as argument to append.
      *
-     * @param call A function call of `StringBuilder#append`. Note that for all other methods an
-     *             [[IllegalArgumentException]] will be thrown.
+     * @param call  A function call of `StringBuilder#append`. Note that for all other methods an
+     *              [[IllegalArgumentException]] will be thrown.
      * @param stmts The surrounding context. For this analysis, the surrounding method.
      * @return For constants strings as arguments, this function returns the string value and the
      *         level [[CONSTANT]]. For function calls "*" (to indicate ''any
@@ -175,24 +186,31 @@ class LocalStringDefinitionAnalysis private[analyses] (
 
 }
 
-/**
- * Executor for the lazy analysis.
- */
-object LazyStringTrackingAnalysis extends FPCFEagerAnalysisScheduler {
-
-    final override def uses: Set[PropertyKind] = Set.empty
+sealed trait LocalStringDefinitionAnalysisScheduler extends ComputationSpecification {
 
     final override def derives: Set[PropertyKind] = Set(StringConstancyProperty)
 
-    final override type InitializationData = Null
+    final override def uses: Set[PropertyKind] = { Set() }
 
+    final override type InitializationData = Null
     final def init(p: SomeProject, ps: PropertyStore): Null = null
 
     def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
 
     def afterPhaseCompletion(p: SomeProject, ps: PropertyStore): Unit = {}
 
-    final override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+}
+
+/**
+ * Executor for the lazy analysis.
+ */
+object LazyStringDefinitionAnalysis
+        extends LocalStringDefinitionAnalysisScheduler
+        with FPCFLazyAnalysisScheduler {
+
+    final override def startLazily(
+        p: SomeProject, ps: PropertyStore, unused: Null
+    ): FPCFAnalysis = {
         val analysis = new LocalStringDefinitionAnalysis(p)
         ps.registerLazyPropertyComputation(StringConstancyProperty.key, analysis.analyze)
         analysis
