@@ -17,7 +17,7 @@ import java.lang.annotation.*;
  *
  * @author Patrick Mell
  */
-@PropertyValidator(key = "StringDefinitions", validator = LocalStringDefinitionMatcher.class)
+@PropertyValidator(key = "StringConstancy", validator = LocalStringDefinitionMatcher.class)
 @Documented
 @Retention(RetentionPolicy.CLASS)
 @Target({ ElementType.METHOD })

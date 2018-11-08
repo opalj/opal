@@ -38,7 +38,7 @@ object StringConstancyLevel extends Enumeration {
      * appending another string, s2. Later, s2 might be removed partially or entirely without
      * violating the constraints of this level.
      */
-    final val PARTIALLY_CONSTANT = Value("partially-constant")
+    final val PARTIALLY_CONSTANT = Value("partially_constant")
 
     /**
      * This level indicates that a string at some read operations has an unpredictable value.
@@ -48,11 +48,16 @@ object StringConstancyLevel extends Enumeration {
 }
 
 class StringConstancyProperty(
-        val constancyLevel: StringConstancyLevel.Value,
-        val properties:     ArrayBuffer[String]
+        val constancyLevel:  StringConstancyLevel.Value,
+        val possibleStrings: ArrayBuffer[String]
 ) extends Property with StringConstancyPropertyMetaInformation {
 
     final def key = StringConstancyProperty.key
+
+    override def toString: String = {
+        val ps = possibleStrings.mkString("[", ", ", "]")
+        s"StringConstancyProperty { Constancy Level: $constancyLevel; Possible Strings: $ps }"
+    }
 
 }
 
@@ -65,7 +70,7 @@ object StringConstancyProperty extends StringConstancyPropertyMetaInformation {
             PropertyKeyName,
             (_: PropertyStore, _: FallbackReason, e: Entity) ⇒ {
                 // TODO: Using simple heuristics, return a better value for some easy cases
-                StringConstancyProperty(DYNAMIC, ArrayBuffer())
+                StringConstancyProperty(DYNAMIC, ArrayBuffer("*"))
             },
             (_, eps: EPS[Field, StringConstancyProperty]) ⇒ eps.ub,
             (_: PropertyStore, _: Entity) ⇒ None
@@ -73,7 +78,8 @@ object StringConstancyProperty extends StringConstancyPropertyMetaInformation {
     }
 
     def apply(
-        constancyLevel: StringConstancyLevel.Value, properties: ArrayBuffer[String]
-    ): StringConstancyProperty = new StringConstancyProperty(constancyLevel, properties)
+        constancyLevel:  StringConstancyLevel.Value,
+        possibleStrings: ArrayBuffer[String]
+    ): StringConstancyProperty = new StringConstancyProperty(constancyLevel, possibleStrings)
 
 }
