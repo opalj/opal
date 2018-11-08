@@ -4,6 +4,7 @@ package org.opalj.fpcf.analyses.string_definition.expr_processing
 import org.opalj.br.cfg.CFG
 import org.opalj.fpcf.analyses.string_definition.V
 import org.opalj.fpcf.string_definition.properties.StringConstancyInformation
+import org.opalj.fpcf.string_definition.properties.StringConstancyInformation.UnknownWordSymbol
 import org.opalj.fpcf.string_definition.properties.StringConstancyLevel.CONSTANT
 import org.opalj.fpcf.string_definition.properties.StringConstancyLevel.DYNAMIC
 import org.opalj.fpcf.string_definition.properties.StringTree
@@ -136,10 +137,13 @@ class VirtualFunctionCallProcessor(
         val defAssignment = call.params.head.asVar.definedBy.head
         val assign = stmts(defAssignment).asAssignment
         val sci = assign.expr match {
-            case _: NonVirtualFunctionCall[V] ⇒ StringConstancyInformation(DYNAMIC, "*")
-            case StringConst(_, value)        ⇒ StringConstancyInformation(CONSTANT, value)
+            case _: NonVirtualFunctionCall[V] ⇒
+                StringConstancyInformation(DYNAMIC, UnknownWordSymbol)
+            case StringConst(_, value) ⇒
+                StringConstancyInformation(CONSTANT, value)
             // Next case is for an append call as argument to append
-            case _: VirtualFunctionCall[V]    ⇒ processAssignment(assign, stmts, cfg).get.reduce()
+            case _: VirtualFunctionCall[V] ⇒
+                processAssignment(assign, stmts, cfg).get.reduce()
             case be: BinaryExpr[V] ⇒
                 val possibleString = ExprHandler.classNameToPossibleString(
                     be.left.asVar.value.getClass.getSimpleName

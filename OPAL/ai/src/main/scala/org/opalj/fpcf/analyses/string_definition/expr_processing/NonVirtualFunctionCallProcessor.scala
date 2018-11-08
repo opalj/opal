@@ -4,6 +4,7 @@ package org.opalj.fpcf.analyses.string_definition.expr_processing
 import org.opalj.br.cfg.CFG
 import org.opalj.fpcf.analyses.string_definition.V
 import org.opalj.fpcf.string_definition.properties.StringConstancyInformation
+import org.opalj.fpcf.string_definition.properties.StringConstancyInformation.UnknownWordSymbol
 import org.opalj.fpcf.string_definition.properties.StringConstancyLevel.DYNAMIC
 import org.opalj.fpcf.string_definition.properties.StringTree
 import org.opalj.fpcf.string_definition.properties.TreeValueElement
@@ -56,7 +57,7 @@ class NonVirtualFunctionCallProcessor() extends AbstractExprProcessor {
     ): Option[StringTree] = {
         expr match {
             case _: NonVirtualFunctionCall[V] ⇒ Some(TreeValueElement(
-                None, StringConstancyInformation(DYNAMIC, "*")
+                None, StringConstancyInformation(DYNAMIC, UnknownWordSymbol)
             ))
             case _ ⇒ None
         }

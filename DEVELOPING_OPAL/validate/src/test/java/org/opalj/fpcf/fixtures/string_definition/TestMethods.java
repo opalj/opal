@@ -83,7 +83,7 @@ public class TestMethods {
     @StringDefinitions(
             value = "at this point, function call cannot be handled => DYNAMIC",
             expectedLevel = StringConstancyLevel.DYNAMIC,
-            expectedStrings = "*"
+            expectedStrings = "\\w"
     )
     public void fromFunctionCall() {
         String className = getStringBuilderClassName();
@@ -93,7 +93,7 @@ public class TestMethods {
     @StringDefinitions(
             value = "constant string + string from function call => PARTIALLY_CONSTANT",
             expectedLevel = StringConstancyLevel.PARTIALLY_CONSTANT,
-            expectedStrings = "java.lang.*"
+            expectedStrings = "java.lang.\\w"
     )
     public void fromConstantAndFunctionCall() {
         String className = "java.lang.";
@@ -137,7 +137,7 @@ public class TestMethods {
             value = "a more comprehensive case where multiple definition sites have to be "
                     + "considered each with a different string generation mechanism",
             expectedLevel = StringConstancyLevel.DYNAMIC,
-            expectedStrings = "(java.lang.System | java.lang.* | * | java.lang.Object)"
+            expectedStrings = "(\\w | java.lang.System | java.lang.\\w | java.lang.Object)"
     )
     public void multipleDefSites(int value) {
         String[] arr = new String[] { "java.lang.Object", getRuntimeClassName() };
@@ -247,9 +247,10 @@ public class TestMethods {
     }
 
     @StringDefinitions(
-            value = "simple for loop with knows bounds",
+            value = "simple for loop with known bounds",
             expectedLevel = StringConstancyLevel.CONSTANT,
-            expectedStrings = "a(b)^∞"
+            // Currently, the analysis does not support determining loop ranges => a(b)*
+            expectedStrings = "a(b)*"
     )
     public void simpleForLoopWithKnownBounds() {
         StringBuilder sb = new StringBuilder("a");
@@ -258,6 +259,20 @@ public class TestMethods {
         }
         analyzeString(sb.toString());
     }
+
+    //    @StringDefinitions(
+    //            value = "simple for loop with unknown bounds",
+    //            expectedLevel = StringConstancyLevel.CONSTANT,
+    //            expectedStrings = "a(b)*"
+    //    )
+    //    public void simpleForLoopWithUnknownBounds() {
+    //        int limit = new Random().nextInt();
+    //        StringBuilder sb = new StringBuilder("a");
+    //        for (int i = 0; i < limit; i++) {
+    //            sb.append("b");
+    //        }
+    //        analyzeString(sb.toString());
+    //    }
 
     //    @StringDefinitions(
     //            value = "if-else control structure within a for loop with known loop bounds",
