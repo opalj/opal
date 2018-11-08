@@ -5,7 +5,7 @@ import org.opalj.fpcf.analyses.string_definition.V
 import org.opalj.fpcf.string_definition.properties.StringConstancyInformation
 import org.opalj.fpcf.string_definition.properties.StringConstancyLevel.CONSTANT
 import org.opalj.fpcf.string_definition.properties.StringTree
-import org.opalj.fpcf.string_definition.properties.TreeValueElement
+import org.opalj.fpcf.string_definition.properties.StringTreeConst
 import org.opalj.tac.Assignment
 import org.opalj.tac.Expr
 import org.opalj.tac.Stmt
@@ -53,8 +53,7 @@ class StringConstProcessor() extends AbstractExprProcessor {
         expr: Expr[V], stmts: Array[Stmt[V]], ignore: List[Int]
     ): Option[StringTree] = {
         expr match {
-            case strConst: StringConst ⇒ Some(TreeValueElement(
-                None,
+            case strConst: StringConst ⇒ Some(StringTreeConst(
                 StringConstancyInformation(CONSTANT, strConst.value)
             ))
             case _ ⇒ None

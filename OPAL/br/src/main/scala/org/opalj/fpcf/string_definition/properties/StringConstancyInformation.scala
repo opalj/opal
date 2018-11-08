@@ -17,4 +17,9 @@ object StringConstancyInformation {
      */
     val UnknownWordSymbol: String = "\\w"
 
+    /**
+     * A value to be used when the number of an element, that is repeated, is unknown.
+     */
+    val InfiniteRepetitionSymbol: String = "*"
+
 }

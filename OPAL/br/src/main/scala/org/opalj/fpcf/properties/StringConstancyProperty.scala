@@ -11,7 +11,7 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.string_definition.properties.StringConstancyInformation
 import org.opalj.fpcf.string_definition.properties.StringConstancyLevel.DYNAMIC
 import org.opalj.fpcf.string_definition.properties.StringTree
-import org.opalj.fpcf.string_definition.properties.TreeValueElement
+import org.opalj.fpcf.string_definition.properties.StringTreeConst
 
 sealed trait StringConstancyPropertyMetaInformation extends PropertyMetaInformation {
     type Self = StringConstancyProperty
@@ -40,8 +40,8 @@ object StringConstancyProperty extends StringConstancyPropertyMetaInformation {
             PropertyKeyName,
             (_: PropertyStore, _: FallbackReason, _: Entity) ⇒ {
                 // TODO: Using simple heuristics, return a better value for some easy cases
-                StringConstancyProperty(TreeValueElement(
-                    None, StringConstancyInformation(DYNAMIC, "*")
+                StringConstancyProperty(StringTreeConst(
+                    StringConstancyInformation(DYNAMIC, "*")
                 ))
             },
             (_, eps: EPS[Field, StringConstancyProperty]) ⇒ eps.ub,

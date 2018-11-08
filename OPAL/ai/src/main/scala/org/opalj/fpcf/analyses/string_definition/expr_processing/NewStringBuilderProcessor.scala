@@ -6,12 +6,12 @@ import org.opalj.br.cfg.CFG
 import org.opalj.collection.immutable.EmptyIntTrieSet
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.analyses.string_definition.V
-import org.opalj.fpcf.string_definition.properties.StringConstancyInformation
-import org.opalj.fpcf.string_definition.properties.StringConstancyLevel.CONSTANT
 import org.opalj.tac.Stmt
 import org.opalj.fpcf.string_definition.properties.StringTree
-import org.opalj.fpcf.string_definition.properties.TreeConditionalElement
-import org.opalj.fpcf.string_definition.properties.TreeValueElement
+import org.opalj.fpcf.string_definition.properties.StringTreeConcat
+import org.opalj.fpcf.string_definition.properties.StringTreeConst
+import org.opalj.fpcf.string_definition.properties.StringTreeOr
+import org.opalj.fpcf.string_definition.properties.StringTreeRepetition
 import org.opalj.tac.Assignment
 import org.opalj.tac.Expr
 import org.opalj.tac.New
@@ -46,50 +46,70 @@ class NewStringBuilderProcessor(
                 val initTreeNodes = ListBuffer[StringTree]()
                 val nonInitTreeNodes = ListBuffer[StringTree]()
 
-                inits.foreach { next ⇒
+                inits.sorted.foreach { next ⇒
                     val toProcess = stmts(next) match {
                         case init: NonVirtualMethodCall[V] if init.params.nonEmpty ⇒
                             init.params.head.asVar.definedBy
                         case assignment: Assignment[V] ⇒
-                            assignment.expr.asVirtualFunctionCall.receiver.asVar.definedBy
+                            val vfc = assignment.expr.asVirtualFunctionCall
+                            var defs = vfc.receiver.asVar.definedBy
+                            if (vfc.params.nonEmpty) {
+                                vfc.params.head.asVar.definedBy.foreach(defs += _)
+                            }
+                            defs
                         case _ ⇒
                             EmptyIntTrieSet
                     }
-                    exprHandler.processDefSites(toProcess) match {
-                        case Some(toAppend) ⇒ initTreeNodes.append(toAppend)
-                        case None           ⇒
-                    }
-                }
-                // No argument to constructor was passed => empty string with nonInits as child
-                if (initTreeNodes.isEmpty) {
-                    initTreeNodes.append(TreeValueElement(
-                        None, StringConstancyInformation(CONSTANT, "")
-                    ))
-                }
-
-                nonInits.foreach { nextBlockValues ⇒
-                    val tree = exprHandler.chainDefSites(nextBlockValues)
-                    if (tree.isDefined) {
-                        nonInitTreeNodes.append(tree.get)
-                    }
-                }
-
-                if (nonInitTreeNodes.nonEmpty) {
-                    initTreeNodes.foreach { next ⇒
-                        val toAppend = nonInitTreeNodes.size match {
-                            case 1 ⇒ nonInitTreeNodes.head
-                            case _ ⇒ TreeConditionalElement(nonInitTreeNodes)
+                    val processed = if (toProcess.size == 1) {
+                        val intermRes = exprHandler.processDefSite(toProcess.head)
+                        if (intermRes.isDefined) intermRes else None
+                    } else {
+                        val children = toProcess.map(exprHandler.processDefSite _).
+                            filter(_.isDefined).map(_.get)
+                        children.size match {
+                            case 0 ⇒ None
+                            case 1 ⇒ Some(children.head)
+                            case _ ⇒ Some(StringTreeConcat(children.to[ListBuffer]))
                         }
-                        next match {
-                            case tve: TreeValueElement ⇒ tve.child = Some(toAppend)
-                            case _                     ⇒ next.children.append(toAppend)
+                    }
+                    if (processed.isDefined) {
+                        initTreeNodes.append(processed.get)
+                    }
+                }
+
+                nonInits.foreach { next ⇒
+                    val subtree = exprHandler.concatDefSites(next)
+                    if (subtree.isDefined) {
+                        nonInitTreeNodes.append(subtree.get)
+                    }
+                }
+
+                if (initTreeNodes.isEmpty && nonInitTreeNodes.isEmpty) {
+                    return None
+                }
+
+                // Append nonInitTreeNodes to initTreeNodes (as children)
+                if (nonInitTreeNodes.nonEmpty) {
+                    val toAppend = nonInitTreeNodes.size match {
+                        case 1 ⇒ nonInitTreeNodes.head
+                        case _ ⇒ StringTreeOr(nonInitTreeNodes)
+                    }
+                    if (initTreeNodes.isEmpty) {
+                        initTreeNodes.append(toAppend)
+                    } else {
+                        initTreeNodes.zipWithIndex.foreach {
+                            case (rep: StringTreeRepetition, _) ⇒ rep.child = toAppend
+                            // We cannot add to a constant element => slightly rearrange the tree
+                            case (const: StringTreeConst, index) ⇒
+                                initTreeNodes(index) = StringTreeConcat(ListBuffer(const, toAppend))
+                            case (next, _) ⇒ next.children.append(toAppend)
                         }
                     }
                 }
 
                 initTreeNodes.size match {
                     case 1 ⇒ Some(initTreeNodes.head)
-                    case _ ⇒ Some(TreeConditionalElement(initTreeNodes))
+                    case _ ⇒ Some(StringTreeOr(initTreeNodes))
                 }
             case _ ⇒ None
         }

@@ -12,7 +12,7 @@ import org.opalj.fpcf.FPCFLazyAnalysisScheduler
 import org.opalj.fpcf.ComputationSpecification
 import org.opalj.fpcf.analyses.string_definition.expr_processing.ExprHandler
 import org.opalj.fpcf.string_definition.properties.StringTree
-import org.opalj.fpcf.string_definition.properties.TreeConditionalElement
+import org.opalj.fpcf.string_definition.properties.StringTreeCond
 import org.opalj.tac.SimpleTACAIKey
 import org.opalj.tac.Stmt
 
@@ -56,12 +56,12 @@ class LocalStringDefinitionAnalysis(
                 if (treeElements.size == 1) {
                     subtrees.append(treeElements.head)
                 } else {
-                    subtrees.append(TreeConditionalElement(treeElements.to[ListBuffer]))
+                    subtrees.append(StringTreeCond(treeElements.to[ListBuffer]))
                 }
             }
 
             val finalTree = if (subtrees.size == 1) subtrees.head else
-                TreeConditionalElement(subtrees.to[ListBuffer])
+                StringTreeCond(subtrees.to[ListBuffer])
             Result(data, StringConstancyProperty(finalTree))
         } // If not a call to StringBuilder.toString, then we deal with pure strings
         else {

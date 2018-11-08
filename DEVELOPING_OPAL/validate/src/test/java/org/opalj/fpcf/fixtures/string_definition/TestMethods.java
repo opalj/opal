@@ -137,7 +137,7 @@ public class TestMethods {
             value = "a more comprehensive case where multiple definition sites have to be "
                     + "considered each with a different string generation mechanism",
             expectedLevel = StringConstancyLevel.DYNAMIC,
-            expectedStrings = "(\\w | java.lang.System | java.lang.\\w | java.lang.Object)"
+            expectedStrings = "(java.lang.\\w | \\w | java.lang.System | java.lang.Object)"
     )
     public void multipleDefSites(int value) {
         String[] arr = new String[] { "java.lang.Object", getRuntimeClassName() };
@@ -260,19 +260,19 @@ public class TestMethods {
         analyzeString(sb.toString());
     }
 
-    //    @StringDefinitions(
-    //            value = "simple for loop with unknown bounds",
-    //            expectedLevel = StringConstancyLevel.CONSTANT,
-    //            expectedStrings = "a(b)*"
-    //    )
-    //    public void simpleForLoopWithUnknownBounds() {
-    //        int limit = new Random().nextInt();
-    //        StringBuilder sb = new StringBuilder("a");
-    //        for (int i = 0; i < limit; i++) {
-    //            sb.append("b");
-    //        }
-    //        analyzeString(sb.toString());
-    //    }
+    @StringDefinitions(
+            value = "simple for loop with unknown bounds",
+            expectedLevel = StringConstancyLevel.CONSTANT,
+            expectedStrings = "a(b)*"
+    )
+    public void simpleForLoopWithUnknownBounds() {
+        int limit = new Random().nextInt();
+        StringBuilder sb = new StringBuilder("a");
+        for (int i = 0; i < limit; i++) {
+            sb.append("b");
+        }
+        analyzeString(sb.toString());
+    }
 
     //    @StringDefinitions(
     //            value = "if-else control structure within a for loop with known loop bounds",
