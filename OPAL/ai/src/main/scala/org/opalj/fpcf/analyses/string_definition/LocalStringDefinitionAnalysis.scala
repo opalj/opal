@@ -36,11 +36,11 @@ class LocalStringDefinitionAnalysis(
 ) extends FPCFAnalysis {
 
     def analyze(data: P): PropertyComputationResult = {
-        val exprHandler = ExprHandler(p, data._2)
-        val intermResults = data._1.definedBy.filter(_ >= 0).map(exprHandler.processDefSite _)
-        intermResults.head match {
-            case Some(property) ⇒ Result(data, property)
-            case None           ⇒ throw new IllegalArgumentException("could not process expression")
+        val properties = ExprHandler(p, data._2).processDefinitionSites(data._1.definedBy)
+        if (properties.isEmpty) {
+            throw new IllegalArgumentException("could not process expression(s)")
+        } else {
+            Result(data, StringConstancyProperty.reduce(properties).get)
         }
     }
 

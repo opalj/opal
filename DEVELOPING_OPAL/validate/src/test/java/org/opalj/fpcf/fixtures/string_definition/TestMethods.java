@@ -83,6 +83,55 @@ public class TestMethods {
         }
     }
 
+    @StringDefinitions(
+            value = "a simple case where multiple definition sites have to be considered",
+            expectedLevel = StringConstancyLevel.CONSTANT,
+            expectedValues = { "java.lang.System", "java.lang.Runtime" }
+    )
+    public void multipleConstantDefSites(boolean cond) {
+        String s;
+        if (cond) {
+            s = "java.lang.System";
+        } else {
+            s = "java.lang.Runtime";
+        }
+        analyzeString(s);
+    }
+
+    @StringDefinitions(
+            value = "a more comprehensive case where multiple definition sites have to be "
+                    + "considered each with a different string generation mechanism",
+            expectedLevel = StringConstancyLevel.DYNAMIC,
+            expectedValues = { "java.lang.Object", "*", "java.lang.System", "java.lang.*" }
+    )
+    public void multipleDefSites(int value) {
+        String[] arr = new String[] { "java.lang.Object", getRuntimeClassName() };
+
+        String s;
+        switch (value) {
+        case 0:
+            s = arr[value];
+            break;
+        case 1:
+            s = arr[value];
+            break;
+        case 3:
+            s = "java.lang.System";
+            break;
+        case 4:
+            s = "java.lang." + getSimpleStringBuilderClassName();
+            break;
+        default:
+            s = getStringBuilderClassName();
+        }
+
+        analyzeString(s);
+    }
+
+    private String getRuntimeClassName() {
+        return "java.lang.Runtime";
+    }
+
     private String getStringBuilderClassName() {
         return "java.lang.StringBuilder";
     }

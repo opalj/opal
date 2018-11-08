@@ -9,7 +9,9 @@ import org.opalj.fpcf.Property
 import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyMetaInformation
 import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.properties.StringConstancyLevel.CONSTANT
 import org.opalj.fpcf.properties.StringConstancyLevel.DYNAMIC
+import org.opalj.fpcf.properties.StringConstancyLevel.PARTIALLY_CONSTANT
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -81,5 +83,36 @@ object StringConstancyProperty extends StringConstancyPropertyMetaInformation {
         constancyLevel:  StringConstancyLevel.Value,
         possibleStrings: ArrayBuffer[String]
     ): StringConstancyProperty = new StringConstancyProperty(constancyLevel, possibleStrings)
+
+    /**
+     * This function takes an array of [[StringConstancyProperty]] and reduces it. This means that
+     * the most-general [[StringConstancyLevel]] encountered in the given properties is returned
+     * ([[StringConstancyLevel.CONSTANT]] is the most static >
+     * [[StringConstancyLevel.PARTIALLY_CONSTANT]] > [[StringConstancyLevel.DYNAMIC]] is the most-
+     * general) along with the union of all possible strings. Note that this union contains every
+     * possible string only once (also the "*" marker)! "*" might be contained as well as (semi)
+     * constant strings to convey all possibilities.
+     *
+     * @param properties The properties to reduce.
+     * @return Returns a single [[StringConstancyProperty]] with values as described above. In case
+     *         the given `properties` array is empty, `None` will be returned.
+     */
+    def reduce(properties: Array[StringConstancyProperty]): Option[StringConstancyProperty] = {
+        if (properties.isEmpty) {
+            return None
+        }
+
+        val possibleValues = ArrayBuffer[String]()
+        var level = CONSTANT
+        properties.foreach { next ⇒
+            if ((level == CONSTANT) ||
+                (level == PARTIALLY_CONSTANT && next.constancyLevel != CONSTANT)) {
+                level = next.constancyLevel
+            }
+            possibleValues.appendAll(next.possibleStrings)
+        }
+
+        Some(StringConstancyProperty(level, possibleValues.distinct))
+    }
 
 }

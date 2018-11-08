@@ -3,6 +3,7 @@ package org.opalj.fpcf.analyses.string_definition.expr_processing
 
 import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
+import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.analyses.string_definition.V
 import org.opalj.fpcf.properties.StringConstancyProperty
 import org.opalj.tac.ArrayLoad
@@ -18,7 +19,6 @@ import org.opalj.tac.VirtualFunctionCall
  *
  * @param p The project associated with the analysis.
  * @param m The [[Method]] in which the read statement of the string variable of interest occurred.
- *
  * @author Patrick Mell
  */
 class ExprHandler(p: SomeProject, m: Method) {
@@ -35,12 +35,16 @@ class ExprHandler(p: SomeProject, m: Method) {
      *                that is supported by a sub-class of [[AbstractExprProcessor]].
      * @return Returns an instance of [[StringConstancyProperty]] that describes the definition
      *         at the specified site. In case the rules listed above or the ones of the different
-     *         processors are not met `None` will be returned..
+     *         processors are not met `None` will be returned.
      */
     def processDefSite(defSite: Int): Option[StringConstancyProperty] = {
+        if (defSite < 0) {
+            return None
+        }
+
         val expr = methodStmts(defSite).asAssignment.expr
         val exprProcessor: AbstractExprProcessor = expr match {
-            case _: ArrayLoad[V]              ⇒ new ArrayLoadProcessor()
+            case _: ArrayLoad[V]              ⇒ new ArrayLoadProcessor(this)
             case _: VirtualFunctionCall[V]    ⇒ new VirtualFunctionCallProcessor()
             case _: NonVirtualFunctionCall[V] ⇒ new NonVirtualFunctionCallProcessor()
             case _: StringConst               ⇒ new StringConstProcessor()
@@ -50,6 +54,22 @@ class ExprHandler(p: SomeProject, m: Method) {
         }
         exprProcessor.process(methodStmts, expr)
     }
+
+    /**
+     * This function serves as a wrapper function for [[ExprHandler.processDefSite]] in the
+     * sense that it processes multiple definition sites. Thus, it may throw an exception as well if
+     * an expression referenced by a definition site cannot be processed. The same rules as for
+     * [[ExprHandler.processDefSite]] apply.
+     *
+     * @param defSites The definition sites to process.
+     * @return Returns an array of [[StringConstancyProperty]] elements. In contrast to
+     *         [[ExprHandler.processDefSite]] this function returns only those values that are not
+     *         equals `None`. Furthermore, note that this function returns the values unmodified,
+     *         e.g., no call to [[StringConstancyProperty#reduce]] whatsoever is executed that could
+     *         change the array.
+     */
+    def processDefinitionSites(defSites: IntTrieSet): Array[StringConstancyProperty] =
+        defSites.filter(_ >= 0).map(processDefSite _).filter(_.isDefined).map(_.get).toArray
 
 }
 
