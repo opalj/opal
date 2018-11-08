@@ -9,64 +9,60 @@ import org.opalj.fpcf.properties.string_definition.StringDefinitions;
  */
 public class TestMethods {
 
+    /**
+     * This method represents the test method which is serves as the trigger point for the
+     * {@link org.opalj.fpcf.LocalStringDefinitionTest} to know which string read operation to
+     * analyze.
+     * Note that the {@link StringDefinitions} annotation is designed in a way to be able to capture
+     * only one read operation. For how to get around this limitation, see the annotation.
+     *
+     * @param s Some string which is to be analyzed.
+     */
+    public void analyzeString(String s) {
+    }
+
     @StringDefinitions(
             value = "read-only string, trivial case",
             expectedLevel = StringConstancyLevel.CONSTANT,
-            expectedValues = { "java.lang.String" },
-            pc = 4
+            expectedValues = { "java.lang.String" }
     )
     public void constantString() {
         String className = "java.lang.String";
-        try {
-            Class.forName(className);
-        } catch (ClassNotFoundException ignored) {
-        }
+        analyzeString(className);
     }
 
     @StringDefinitions(
             value = "checks if the string value for the *forName* call is correctly determined",
             expectedLevel = StringConstancyLevel.CONSTANT,
-            expectedValues = { "java.lang.string" },
-            pc = 31
+            expectedValues = { "java.lang.string" }
     )
     public void stringConcatenation() {
         String className = "java.lang.";
         System.out.println(className);
         className += "string";
-        try {
-            Class.forName(className);
-        } catch (ClassNotFoundException ignored) {
-        }
+        analyzeString(className);
     }
 
     @StringDefinitions(
             value = "at this point, function call cannot be handled => DYNAMIC",
             expectedLevel = StringConstancyLevel.DYNAMIC,
-            expectedValues = { "*" },
-            pc = 6
+            expectedValues = { "*" }
     )
     public void fromFunctionCall() {
         String className = getStringBuilderClassName();
-        try {
-            Class.forName(className);
-        } catch (ClassNotFoundException ignored) {
-        }
+        analyzeString(className);
     }
 
     @StringDefinitions(
             value = "constant string + string from function call => PARTIALLY_CONSTANT",
             expectedLevel = StringConstancyLevel.PARTIALLY_CONSTANT,
-            expectedValues = { "java.lang.*" },
-            pc = 33
+            expectedValues = { "java.lang.*" }
     )
     public void fromConstantAndFunctionCall() {
         String className = "java.lang.";
         System.out.println(className);
         className += getSimpleStringBuilderClassName();
-        try {
-            Class.forName(className);
-        } catch (ClassNotFoundException ignored) {
-        }
+        analyzeString(className);
     }
 
     @StringDefinitions(
@@ -75,7 +71,7 @@ public class TestMethods {
             expectedValues = {
                     "java.lang.String", "java.lang.StringBuilder",
                     "java.lang.System", "java.lang.Runnable"
-            }, pc = 38
+            }
     )
     public void fromStringArray(int index) {
         String[] classes = {
@@ -83,10 +79,7 @@ public class TestMethods {
                 "java.lang.System", "java.lang.Runnable"
         };
         if (index >= 0 && index < classes.length) {
-            try {
-                Class.forName(classes[index]);
-            } catch (ClassNotFoundException ignored) {
-            }
+            analyzeString(classes[index]);
         }
     }
 
