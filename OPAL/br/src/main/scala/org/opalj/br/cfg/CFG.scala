@@ -722,6 +722,21 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
         )
     }
 
+    /**
+     * @return Returns the dominator tree of this CFG.
+     *
+     * @see [[DominatorTree.apply]]
+     */
+    def dominatorTree: DominatorTree = {
+        DominatorTree(
+            0,
+            basicBlocks.head.predecessors.nonEmpty,
+            foreachSuccessor,
+            foreachPredecessor,
+            basicBlocks.last.endPC
+        )
+    }
+
     // ---------------------------------------------------------------------------------------------
     //
     // Visualization & Debugging
