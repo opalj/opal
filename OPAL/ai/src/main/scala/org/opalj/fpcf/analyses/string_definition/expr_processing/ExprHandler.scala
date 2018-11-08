@@ -4,7 +4,6 @@ package org.opalj.fpcf.analyses.string_definition.expr_processing
 import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.cfg.CFG
-import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.analyses.string_definition.V
 import org.opalj.fpcf.string_definition.properties.StringTree
 import org.opalj.fpcf.string_definition.properties.StringTreeConcat
@@ -63,9 +62,7 @@ class ExprHandler(p: SomeProject, m: Method) {
         val expr = ctxStmts(defSite) match {
             case a: Assignment[V] ⇒ a.expr
             case e: ExprStmt[V]   ⇒ e.expr
-            case _ ⇒ throw new IllegalArgumentException(
-                s"cannot process ${ctxStmts(defSite)}"
-            )
+            case _                ⇒ return None
         }
         val exprProcessor: AbstractExprProcessor = expr match {
             case _: ArrayLoad[V]              ⇒ new ArrayLoadProcessor(this)
@@ -105,12 +102,12 @@ class ExprHandler(p: SomeProject, m: Method) {
      *         control flow statements; thus, this function returns a tree with a
      *         [[StringTreeOr]] as root and each definition site as a child.
      */
-    def processDefSites(defSites: IntTrieSet): Option[StringTree] =
-        defSites.size match {
+    def processDefSites(defSites: Array[Int]): Option[StringTree] =
+        defSites.length match {
             case 0 ⇒ None
             case 1 ⇒ processDefSite(defSites.head)
             case _ ⇒
-                val processedSites = defSites.filter(_ >= 0).toArray.sorted.map(processDefSite)
+                val processedSites = defSites.filter(_ >= 0).sorted.map(processDefSite)
                 Some(StringTreeOr(
                     processedSites.filter(_.isDefined).map(_.get).to[ListBuffer]
                 ))

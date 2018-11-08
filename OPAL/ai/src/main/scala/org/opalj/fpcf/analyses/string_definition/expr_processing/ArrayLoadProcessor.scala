@@ -60,8 +60,7 @@ class ArrayLoadProcessor(
             case al: ArrayLoad[V] ⇒
                 val children = ListBuffer[StringTreeElement]()
                 // Loop over all possible array values
-                val sortedAlDefs = al.arrayRef.asVar.definedBy.toArray.sorted
-                sortedAlDefs.filter(!ignore.contains(_)).foreach { next ⇒
+                al.arrayRef.asVar.definedBy.toArray.sorted.foreach { next ⇒
                     val arrDecl = stmts(next)
                     val sortedArrDeclUses = arrDecl.asAssignment.targetVar.usedBy.toArray.sorted
                     sortedArrDeclUses.filter {

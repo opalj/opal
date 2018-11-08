@@ -3,7 +3,6 @@ package org.opalj.fpcf.analyses.string_definition.expr_processing
 
 import org.opalj.br.cfg.BasicBlock
 import org.opalj.br.cfg.CFG
-import org.opalj.collection.immutable.EmptyIntTrieSet
 import org.opalj.fpcf.analyses.string_definition.V
 import org.opalj.tac.Stmt
 import org.opalj.fpcf.string_definition.properties.StringTree
@@ -48,24 +47,25 @@ class NewStringBuilderProcessor(
                 inits.foreach { next ⇒
                     val toProcess = stmts(next) match {
                         case init: NonVirtualMethodCall[V] if init.params.nonEmpty ⇒
-                            init.params.head.asVar.definedBy
+                            init.params.head.asVar.definedBy.toArray.sorted
                         case assignment: Assignment[V] ⇒
                             val vfc = assignment.expr.asVirtualFunctionCall
                             var defs = vfc.receiver.asVar.definedBy
                             if (vfc.params.nonEmpty) {
                                 vfc.params.head.asVar.definedBy.foreach(defs += _)
                             }
-                            defs
+                            defs ++= assignment.targetVar.asVar.usedBy
+                            defs.toArray.sorted
                         case _ ⇒
-                            EmptyIntTrieSet
+                            Array()
                     }
-                    val processed = if (toProcess.size == 1) {
+                    val processed = if (toProcess.length == 1) {
                         val intermRes = exprHandler.processDefSite(toProcess.head)
                         if (intermRes.isDefined) intermRes else None
                     } else {
-                        val children = toProcess.map(exprHandler.processDefSite _).
+                        val children = toProcess.map(exprHandler.processDefSite).
                             filter(_.isDefined).map(_.get)
-                        children.size match {
+                        children.length match {
                             case 0 ⇒ None
                             case 1 ⇒ Some(children.head)
                             case _ ⇒ Some(StringTreeConcat(children.to[ListBuffer]))
@@ -125,7 +125,8 @@ class NewStringBuilderProcessor(
 
     /**
      *
-     * @param useSites Not-supposed to contain already processed sites.
+     * @param useSites Not-supposed to contain already processed sites. Also, they should be in
+     *                 ascending order.
      * @param stmts    A list of statements (the one that was passed on to the `process`function of
      *                 this class).
      * @return
@@ -140,8 +141,10 @@ class NewStringBuilderProcessor(
                 // Constructors are identified by the "init" method and assignments (ExprStmts, in
                 // contrast, point to non-constructor related calls)
                 case mc: NonVirtualMethodCall[V] if mc.name == "<init>" ⇒ inits.append(next)
-                case _: Assignment[V]                                   ⇒ inits.append(next)
-                case _                                                  ⇒ nonInits.append(next)
+                case _: Assignment[V] ⇒
+                    // TODO: Use dominator tree to determine whether init or noninit
+                    inits.append(next)
+                case _ ⇒ nonInits.append(next)
             }
         }
         // Sort in descending order to enable correct grouping in the next step
