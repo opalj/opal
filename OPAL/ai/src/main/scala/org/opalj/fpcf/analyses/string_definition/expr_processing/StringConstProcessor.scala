@@ -6,6 +6,7 @@ import org.opalj.fpcf.string_definition.properties.StringConstancyLevel.CONSTANT
 import org.opalj.fpcf.string_definition.properties.StringTree
 import org.opalj.fpcf.string_definition.properties.TreeValueElement
 import org.opalj.tac.Assignment
+import org.opalj.tac.Expr
 import org.opalj.tac.Stmt
 import org.opalj.tac.StringConst
 
@@ -23,18 +24,37 @@ class StringConstProcessor() extends AbstractExprProcessor {
      * `None` will be returned).
      *
      * @note The sub-tree, which is created by this implementation, does not have any children.
-     *
-     * @see [[AbstractExprProcessor.process]]
+     * @see [[AbstractExprProcessor.processAssignment]]
      */
-    override def process(
+    override def processAssignment(
         assignment: Assignment[V], stmts: Array[Stmt[V]], ignore: List[Int] = List[Int]()
-    ): Option[StringTree] =
-        assignment.expr match {
+    ): Option[StringTree] = process(assignment.expr, stmts, ignore)
+
+    /**
+     * For this implementation, `stmts` is not required (thus, it is safe to pass an empty value).
+     * `expr`  is required to be of type [[org.opalj.tac.StringConst]] (otherwise `None` will be
+     * returned).
+     *
+     * @note The sub-tree, which is created by this implementation, does not have any children.
+     * @see [[AbstractExprProcessor.processExpr()]]
+     */
+    override def processExpr(
+        expr: Expr[V], stmts: Array[Stmt[V]], ignore: List[Int] = List[Int]()
+    ): Option[StringTree] = process(expr, stmts, ignore)
+
+    /**
+     * Wrapper function for processing an expression.
+     */
+    private def process(
+        expr: Expr[V], stmts: Array[Stmt[V]], ignore: List[Int]
+    ): Option[StringTree] = {
+        expr match {
             case strConst: StringConst ⇒ Some(TreeValueElement(
                 None,
                 StringConstancyInformation(CONSTANT, strConst.value)
             ))
             case _ ⇒ None
         }
+    }
 
 }

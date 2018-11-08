@@ -17,6 +17,7 @@ import org.opalj.tac.SimpleTACAIKey
 import org.opalj.tac.Stmt
 
 import scala.collection.mutable.ArrayBuffer
+import scala.collection.mutable.ListBuffer
 
 class StringTrackingAnalysisContext(
     val stmts: Array[Stmt[V]]
@@ -46,21 +47,21 @@ class LocalStringDefinitionAnalysis(
 
         val exprHandler = ExprHandler(p, data._2)
         val defSites = data._1.definedBy
-        if (ExprHandler.isStringBuilderToStringCall(stmts(defSites.head).asAssignment)) {
+        if (ExprHandler.isStringBuilderToStringCall(stmts(defSites.head).asAssignment.expr)) {
             val subtrees = ArrayBuffer[StringTree]()
             defSites.foreach { nextDefSite ⇒
                 val treeElements = ExprHandler.getDefSitesOfToStringReceiver(
-                    stmts(nextDefSite).asAssignment
+                    stmts(nextDefSite).asAssignment.expr
                 ).map { exprHandler.processDefSite _ }.filter(_.isDefined).map { _.get }
                 if (treeElements.size == 1) {
                     subtrees.append(treeElements.head)
                 } else {
-                    subtrees.append(TreeConditionalElement(treeElements.toList))
+                    subtrees.append(TreeConditionalElement(treeElements.to[ListBuffer]))
                 }
             }
 
             val finalTree = if (subtrees.size == 1) subtrees.head else
-                TreeConditionalElement(subtrees.toList)
+                TreeConditionalElement(subtrees.to[ListBuffer])
             Result(data, StringConstancyProperty(finalTree))
         } // If not a call to StringBuilder.toString, then we deal with pure strings
         else {
