@@ -36,7 +36,7 @@ public @interface StringDefinitions {
 
     /**
      * A regexp like string that describes the elements that are expected. For the rules, refer to
-     * {@link org.opalj.fpcf.string_definition.properties.TreeElement}.
+     * {@link org.opalj.fpcf.string_definition.properties.StringTreeElement}.
      * For example, "(* | (hello | world)^5)" describes a string which can 1) either be any string
      * or 2) a five time concatenation of "hello" and/or "world".
      */

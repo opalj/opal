@@ -8,9 +8,9 @@ import org.opalj.collection.immutable.EmptyIntTrieSet
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.analyses.string_definition.V
 import org.opalj.fpcf.string_definition.properties.StringTree
-import org.opalj.fpcf.string_definition.properties.TreeConditionalElement
-import org.opalj.fpcf.string_definition.properties.TreeLoopElement
-import org.opalj.fpcf.string_definition.properties.TreeValueElement
+import org.opalj.fpcf.string_definition.properties.StringTreeConcat
+import org.opalj.fpcf.string_definition.properties.StringTreeOr
+import org.opalj.fpcf.string_definition.properties.StringTreeRepetition
 import org.opalj.tac.ArrayLoad
 import org.opalj.tac.Assignment
 import org.opalj.tac.Expr
@@ -87,7 +87,7 @@ class ExprHandler(p: SomeProject, m: Method) {
         }
 
         if (subtree.isDefined && ExprHandler.isWithinLoop(defSite, cfg)) {
-            Some(TreeLoopElement(subtree.get, None))
+            Some(StringTreeRepetition(subtree.get, None))
         } else {
             subtree
         }
@@ -104,8 +104,7 @@ class ExprHandler(p: SomeProject, m: Method) {
      *         takes into consideration only those values from `processDefSite` that are not `None`.
      *         Furthermore, this function assumes that different definition sites originate from
      *         control flow statements; thus, this function returns a tree with a
-     *         [[TreeConditionalElement]] as root and
-     *         each definition site as a child.
+     *         [[StringTreeOr]] as root and each definition site as a child.
      */
     def processDefSites(defSites: IntTrieSet): Option[StringTree] =
         defSites.size match {
@@ -113,40 +112,33 @@ class ExprHandler(p: SomeProject, m: Method) {
             case 1 ⇒ processDefSite(defSites.head)
             case _ ⇒
                 val processedSites = defSites.filter(_ >= 0).map(processDefSite _)
-                Some(TreeConditionalElement(
+                Some(StringTreeOr(
                     processedSites.filter(_.isDefined).map(_.get).to[ListBuffer]
                 ))
         }
 
     /**
-     * chainDefSites takes the given definition sites, processes them from the first to the last
-     * element and chains the resulting trees together. That means, the first definition site is
-     * evaluated, its child becomes the evaluated tree of the second definition site and so on.
-     * Consequently, a [[StringTree]] will result where each element has only one child (except the
-     * leaf).
+     * concatDefSites takes the given definition sites, processes them from the first to the last
+     * element and chains the resulting trees together. That means, a
+     * [[StringTreeConcat]] element is returned with one child for each def site in `defSites`.
      *
-     * @param defSites The definition sites to chain.
-     * @return Returns either a [[StringTree]] or `None` in case `defSites` is empty or its head
-     *         points to a definition site that cannot be processed.
+     * @param defSites The definition sites to concat / process.
+     * @return Returns either a [[StringTree]] or `None` in case `defSites` is empty (or does not
+     *         contain processable def sites).
      */
-    def chainDefSites(defSites: List[Int]): Option[StringTree] = {
+    def concatDefSites(defSites: List[Int]): Option[StringTree] = {
         if (defSites.isEmpty) {
             return None
         }
 
-        val parent = processDefSite(defSites.head)
-        parent match {
-            case Some(tree) ⇒ tree match {
-                case tve: TreeValueElement ⇒ tve.child = chainDefSites(defSites.tail)
-                case tree: StringTree ⇒
-                    chainDefSites(defSites.tail) match {
-                        case Some(child) ⇒ tree.children.append(child)
-                        case _           ⇒
-                    }
-            }
-            case None ⇒ None
+        val children = defSites.map(processDefSite).filter(_.isDefined).map(_.get)
+        if (children.isEmpty) {
+            None
+        } else if (children.size == 1) {
+            Some(children.head)
+        } else {
+            Some(StringTreeConcat(children.to[ListBuffer]))
         }
-        parent
     }
 
 }
@@ -206,6 +198,7 @@ object ExprHandler {
      */
     private def getIfOfGoto(goto: Goto, cfg: CFG[Stmt[V], TACStmts[V]]): Option[If[V]] = {
         cfg.code.instructions(goto.targetStmt) match {
+            case i: If[V] ⇒ Some(i)
             case a: Assignment[V] ⇒
                 val possibleIfsSites = a.targetVar.usedBy
                 possibleIfsSites.filter(cfg.code.instructions(_).isInstanceOf[If[V]]).map {
@@ -223,17 +216,17 @@ object ExprHandler {
      * @return Returns `true` if the given site resides within a loop and `false` otherwise.
      */
     def isWithinLoop(defSite: Int, cfg: CFG[Stmt[V], TACStmts[V]]): Boolean = {
-        val succGoto = getSuccessorGoto(defSite, cfg)
-        if (succGoto.isEmpty) {
+        val successorGoto = getSuccessorGoto(defSite, cfg)
+        if (successorGoto.isEmpty) {
             false
         } else {
-            val correspondingIf = getIfOfGoto(succGoto.get, cfg)
+            val correspondingIf = getIfOfGoto(successorGoto.get, cfg)
             if (correspondingIf.isEmpty) {
                 false
             } else {
                 // To be within a loop, the definition site must be within the if and goto
                 val posIf = cfg.code.instructions.indexOf(correspondingIf.get)
-                val posGoto = cfg.code.instructions.indexOf(succGoto.get)
+                val posGoto = cfg.code.instructions.indexOf(successorGoto.get)
                 defSite > posIf && defSite < posGoto
             }
         }

@@ -8,9 +8,10 @@ import org.opalj.fpcf.string_definition.properties.StringConstancyInformation.Un
 import org.opalj.fpcf.string_definition.properties.StringConstancyLevel.CONSTANT
 import org.opalj.fpcf.string_definition.properties.StringConstancyLevel.DYNAMIC
 import org.opalj.fpcf.string_definition.properties.StringTree
-import org.opalj.fpcf.string_definition.properties.TreeConditionalElement
-import org.opalj.fpcf.string_definition.properties.TreeElement
-import org.opalj.fpcf.string_definition.properties.TreeValueElement
+import org.opalj.fpcf.string_definition.properties.StringTreeConcat
+import org.opalj.fpcf.string_definition.properties.StringTreeCond
+import org.opalj.fpcf.string_definition.properties.StringTreeElement
+import org.opalj.fpcf.string_definition.properties.StringTreeConst
 import org.opalj.tac.Assignment
 import org.opalj.tac.BinaryExpr
 import org.opalj.tac.Expr
@@ -72,7 +73,7 @@ class VirtualFunctionCallProcessor(
                     val ps = ExprHandler.classNameToPossibleString(
                         vfc.descriptor.returnType.toJavaClass.getSimpleName
                     )
-                    Some(TreeValueElement(None, StringConstancyInformation(DYNAMIC, ps)))
+                    Some(StringTreeConst(StringConstancyInformation(DYNAMIC, ps)))
                 }
             case _ ⇒ None
         }
@@ -83,15 +84,14 @@ class VirtualFunctionCallProcessor(
      */
     private def processAppendCall(
         call: VirtualFunctionCall[V], stmts: Array[Stmt[V]], ignore: List[Int]
-    ): TreeElement = {
+    ): StringTreeElement = {
         val defSites = call.receiver.asVar.definedBy.filter(!ignore.contains(_))
         val appendValue = valueOfAppendCall(call, stmts)
-        if (defSites.isEmpty) {
-            appendValue
+        val siblings = exprHandler.processDefSites(defSites)
+        if (siblings.isDefined) {
+            StringTreeConcat(ListBuffer[StringTreeElement](siblings.get, appendValue))
         } else {
-            val upperTree = exprHandler.processDefSites(defSites).get
-            upperTree.getLeafs.foreach { _.child = Some(appendValue) }
-            upperTree
+            appendValue
         }
     }
 
@@ -101,7 +101,7 @@ class VirtualFunctionCallProcessor(
     private def processToStringCall(
         call: VirtualFunctionCall[V], stmts: Array[Stmt[V]], ignore: List[Int]
     ): Option[StringTree] = {
-        val children = ListBuffer[TreeElement]()
+        val children = ListBuffer[StringTreeElement]()
         val defSites = call.receiver.asVar.definedBy.filter(!ignore.contains(_))
         defSites.foreach {
             exprHandler.processDefSite(_) match {
@@ -113,7 +113,7 @@ class VirtualFunctionCallProcessor(
         children.size match {
             case 0 ⇒ None
             case 1 ⇒ Some(children.head)
-            case _ ⇒ Some(TreeConditionalElement(children))
+            case _ ⇒ Some(StringTreeCond(children))
         }
     }
 
@@ -124,7 +124,7 @@ class VirtualFunctionCallProcessor(
      * @param call  A function call of `StringBuilder#append`. Note that for all other methods an
      *              [[IllegalArgumentException]] will be thrown.
      * @param stmts The surrounding context, e.g., the surrounding method.
-     * @return Returns a [[TreeValueElement]] with no children and the following value for
+     * @return Returns a [[StringTreeConst]] with no children and the following value for
      *         [[StringConstancyInformation]]: For constants strings as arguments, this function
      *         returns the string value and the level
      *         [[org.opalj.fpcf.string_definition.properties.StringConstancyLevel.CONSTANT]]. For
@@ -133,7 +133,7 @@ class VirtualFunctionCallProcessor(
      */
     private def valueOfAppendCall(
         call: VirtualFunctionCall[V], stmts: Array[Stmt[V]]
-    ): TreeValueElement = {
+    ): StringTreeConst = {
         val defAssignment = call.params.head.asVar.definedBy.head
         val assign = stmts(defAssignment).asAssignment
         val sci = assign.expr match {
@@ -150,7 +150,7 @@ class VirtualFunctionCallProcessor(
                 )
                 StringConstancyInformation(DYNAMIC, possibleString)
         }
-        TreeValueElement(None, sci)
+        StringTreeConst(sci)
     }
 
 }

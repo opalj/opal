@@ -3,8 +3,8 @@ package org.opalj.fpcf.analyses.string_definition.expr_processing
 import org.opalj.br.cfg.CFG
 import org.opalj.fpcf.analyses.string_definition.V
 import org.opalj.fpcf.string_definition.properties.StringTree
-import org.opalj.fpcf.string_definition.properties.TreeConditionalElement
-import org.opalj.fpcf.string_definition.properties.TreeElement
+import org.opalj.fpcf.string_definition.properties.StringTreeElement
+import org.opalj.fpcf.string_definition.properties.StringTreeOr
 import org.opalj.tac.ArrayLoad
 import org.opalj.tac.ArrayStore
 import org.opalj.tac.Assignment
@@ -58,26 +58,25 @@ class ArrayLoadProcessor(
     ): Option[StringTree] = {
         expr match {
             case al: ArrayLoad[V] ⇒
-                val children = ListBuffer[TreeElement]()
+                val children = ListBuffer[StringTreeElement]()
                 // Loop over all possible array values
-                al.arrayRef.asVar.definedBy.foreach { defSite ⇒
-                    if (!ignore.contains(defSite)) {
-                        val arrDecl = stmts(defSite)
-                        arrDecl.asAssignment.targetVar.usedBy.filter {
-                            stmts(_).isInstanceOf[ArrayStore[V]]
-                        } foreach { f: Int ⇒
-                            // Actually, definedBy should contain only one element but for the sake
-                            // of completion, loop over all
-                            // TODO: If not, the tree construction has to be modified
-                            val arrValues = stmts(f).asArrayStore.value.asVar.definedBy.map {
-                                exprHandler.processDefSite _
-                            }.filter(_.isDefined).map(_.get)
-                            children.appendAll(arrValues)
-                        }
+                al.arrayRef.asVar.definedBy.filter(!ignore.contains(_)).foreach { next ⇒
+                    val arrDecl = stmts(next)
+                    arrDecl.asAssignment.targetVar.usedBy.filter {
+                        stmts(_).isInstanceOf[ArrayStore[V]]
+                    } foreach { f: Int ⇒
+                        val arrValues = stmts(f).asArrayStore.value.asVar.definedBy.map {
+                            exprHandler.processDefSite _
+                        }.filter(_.isDefined).map(_.get)
+                        children.appendAll(arrValues)
                     }
                 }
 
-                Some(TreeConditionalElement(children))
+                if (children.nonEmpty) {
+                    Some(StringTreeOr(children))
+                } else {
+                    None
+                }
             case _ ⇒ None
         }
     }

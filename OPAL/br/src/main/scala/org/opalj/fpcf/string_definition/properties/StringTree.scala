@@ -1,17 +1,18 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.string_definition.properties
 
+import org.opalj.fpcf.string_definition.properties.StringConstancyInformation.InfiniteRepetitionSymbol
+
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.ListBuffer
 
 /**
- * Models the nodes and leafs of [[StringTree]].
- * TODO: Prepend "String"
+ * Super type for modeling nodes and leafs of [[StringTree]]s.
  *
  * @author Patrick Mell
  */
-sealed abstract class TreeElement(val children: ListBuffer[TreeElement]) {
+sealed abstract class StringTreeElement(val children: ListBuffer[StringTreeElement]) {
 
     /**
      * Accumulator / helper function for reducing a tree.
@@ -19,9 +20,39 @@ sealed abstract class TreeElement(val children: ListBuffer[TreeElement]) {
      * @param subtree The tree (or subtree) to reduce.
      * @return The reduced tree.
      */
-    private def reduceAcc(subtree: TreeElement): StringConstancyInformation = {
+    private def reduceAcc(subtree: StringTreeElement): StringConstancyInformation = {
         subtree match {
-            case TreeConditionalElement(c) ⇒
+            case StringTreeRepetition(c, lowerBound, upperBound) ⇒
+                val reduced = reduceAcc(c)
+                val times = if (lowerBound.isDefined && upperBound.isDefined)
+                    (upperBound.get - lowerBound.get).toString else InfiniteRepetitionSymbol
+                StringConstancyInformation(
+                    reduced.constancyLevel,
+                    s"(${reduced.possibleStrings})$times"
+                )
+
+            case StringTreeConcat(cs) ⇒
+                cs.map(reduceAcc).reduceLeft { (old, next) ⇒
+                    StringConstancyInformation(
+                        StringConstancyLevel.determineForConcat(
+                            old.constancyLevel, next.constancyLevel
+                        ),
+                        old.possibleStrings + next.possibleStrings
+                    )
+                }
+
+            case StringTreeOr(cs) ⇒
+                val reduced = cs.map(reduceAcc).reduceLeft { (old, next) ⇒
+                    StringConstancyInformation(
+                        StringConstancyLevel.determineMoreGeneral(
+                            old.constancyLevel, next.constancyLevel
+                        ),
+                        old.possibleStrings+" | "+next.possibleStrings
+                    )
+                }
+                StringConstancyInformation(reduced.constancyLevel, s"(${reduced.possibleStrings})")
+
+            case StringTreeCond(c) ⇒
                 val scis = c.map(reduceAcc)
                 val reducedInfo = scis.reduceLeft((o, n) ⇒ StringConstancyInformation(
                     StringConstancyLevel.determineMoreGeneral(o.constancyLevel, n.constancyLevel),
@@ -31,55 +62,32 @@ sealed abstract class TreeElement(val children: ListBuffer[TreeElement]) {
                     reducedInfo.constancyLevel, s"(${reducedInfo.possibleStrings})"
                 )
 
-            case TreeLoopElement(c, nli) ⇒
-                val reduced = reduceAcc(c)
-                val times = if (nli.isDefined) nli.get.toString else "*"
-                StringConstancyInformation(
-                    reduced.constancyLevel,
-                    s"(${reduced.possibleStrings})$times"
-                )
-
-            case TreeValueElement(c, sci) ⇒
-                c match {
-                    case Some(child) ⇒
-                        val reduced = reduceAcc(child)
-                        // Do not consider an empty constructor as a CONSTANT value (otherwise
-                        // PARTIALLY_CONSTANT will result when DYNAMIC is required)
-                        val level = if (sci.possibleStrings == "") {
-                            reduced.constancyLevel
-                        } else {
-                            StringConstancyLevel.determineForConcat(
-                                sci.constancyLevel, reduced.constancyLevel
-                            )
-                        }
-                        StringConstancyInformation(
-                            level, sci.possibleStrings + reduced.possibleStrings
-                        )
-                    case None ⇒ sci
-                }
+            case StringTreeConst(sci) ⇒ sci
         }
     }
 
     /**
-     * This function removes duplicate [[TreeValueElement]]s from a given list. In this context, two
-     * elements are equal if their [[TreeValueElement.sci]] information is equal.
+     * This function removes duplicate [[StringTreeConst]]s from a given list. In this
+     * context, two elements are equal if their [[StringTreeConst.sci]] information are equal.
      *
      * @param children The children from which to remove duplicates.
-     * @return Returns a list of [[TreeElement]] with unique elements.
+     * @return Returns a list of [[StringTreeElement]] with unique elements.
      */
     private def removeDuplicateTreeValues(
-        children: ListBuffer[TreeElement]
-    ): ListBuffer[TreeElement] = {
+        children: ListBuffer[StringTreeElement]
+    ): ListBuffer[StringTreeElement] = {
         val seen = mutable.Map[StringConstancyInformation, Boolean]()
-        val unique = ListBuffer[TreeElement]()
+        val unique = ListBuffer[StringTreeElement]()
         children.foreach {
-            case next @ TreeValueElement(_, sci) ⇒
+            case next @ StringTreeConst(sci) ⇒
                 if (!seen.contains(sci)) {
                     seen += (sci → true)
                     unique.append(next)
                 }
-            case loopElement: TreeLoopElement        ⇒ unique.append(loopElement)
-            case condElement: TreeConditionalElement ⇒ unique.append(condElement)
+            case loop: StringTreeRepetition ⇒ unique.append(loop)
+            case concat: StringTreeConcat   ⇒ unique.append(concat)
+            case or: StringTreeOr           ⇒ unique.append(or)
+            case cond: StringTreeCond       ⇒ unique.append(cond)
         }
         unique
     }
@@ -89,9 +97,9 @@ sealed abstract class TreeElement(val children: ListBuffer[TreeElement]) {
      */
     private def simplifyAcc(subtree: StringTree): StringTree = {
         subtree match {
-            case TreeConditionalElement(cs) ⇒
+            case StringTreeOr(cs) ⇒
                 cs.foreach {
-                    case nextC @ TreeConditionalElement(subChildren) ⇒
+                    case nextC @ StringTreeOr(subChildren) ⇒
                         simplifyAcc(nextC)
                         subChildren.foreach(subtree.children.append(_))
                         subtree.children.-=(nextC)
@@ -115,13 +123,13 @@ sealed abstract class TreeElement(val children: ListBuffer[TreeElement]) {
 
     /**
      * Simplifies this tree. Currently, this means that when a (sub) tree has a
-     * [[TreeConditionalElement]] as root, ''r'', and a child, ''c'' (or several children) which is
-     * a [[TreeConditionalElement]] as well, that ''c'' is attached as a direct child of ''r'' (the
-     * child [[TreeConditionalElement]] under which ''c'' was located is then removed safely).
+     * [[StringTreeCond]] as root, ''r'', and a child, ''c'' (or several children)
+     * which is a [[StringTreeCond]] as well, that ''c'' is attached as a direct child
+     * of ''r'' (the child [[StringTreeCond]] under which ''c'' was located is then
+     * removed safely).
      *
      * @return This function modifies `this` tree and returns this instance, e.g., for chaining
      *         commands.
-     *
      * @note Applying this function changes the representation of the tree but not produce a
      *       semantically different tree! Executing this function prior to [[reduce()]] simplifies
      *       its stringified representation.
@@ -131,21 +139,18 @@ sealed abstract class TreeElement(val children: ListBuffer[TreeElement]) {
     /**
      * @return Returns all leaf elements of this instance.
      */
-    def getLeafs: Array[TreeValueElement] = {
-        def leafsAcc(root: TreeElement, leafs: ArrayBuffer[TreeValueElement]): Unit = {
+    def getLeafs: Array[StringTreeConst] = {
+        def leafsAcc(root: StringTreeElement, leafs: ArrayBuffer[StringTreeConst]): Unit = {
             root match {
-                case TreeLoopElement(c, _)         ⇒ leafsAcc(c, leafs)
-                case TreeConditionalElement(cs) ⇒ cs.foreach(leafsAcc(_, leafs))
-                case TreeValueElement(c, _) ⇒
-                    if (c.isDefined) {
-                        leafsAcc(c.get, leafs)
-                    } else {
-                        leafs.append(root.asInstanceOf[TreeValueElement])
-                    }
+                case StringTreeRepetition(c, _, _) ⇒ leafsAcc(c, leafs)
+                case StringTreeConcat(c)           ⇒ c.foreach(leafsAcc(_, leafs))
+                case StringTreeOr(cs)              ⇒ cs.foreach(leafsAcc(_, leafs))
+                case StringTreeCond(cs)            ⇒ cs.foreach(leafsAcc(_, leafs))
+                case stc: StringTreeConst          ⇒ leafs.append(stc)
             }
         }
 
-        val leafs = ArrayBuffer[TreeValueElement]()
+        val leafs = ArrayBuffer[StringTreeConst]()
         leafsAcc(this, leafs)
         leafs.toArray
     }
@@ -153,49 +158,63 @@ sealed abstract class TreeElement(val children: ListBuffer[TreeElement]) {
 }
 
 /**
- * TreeLoopElement models loops with a [[StringTree]]. `TreeLoopElement`s are supposed to have
- * either at lease one other `TreeLoopElement`, `TreeConditionalElement`, or a [[TreeValueElement]]
- * as children . A tree with a `TreeLoopElement` that has no children is regarded as an invalid tree
- * in this sense!<br>
+ * [[StringTreeRepetition]] models repetitive elements within a [[StringTree]], such as loops
+ * or recursion. [[StringTreeRepetition]] are required to have a child. A tree with a
+ * [[StringTreeRepetition]] that has no child is regarded as an invalid tree!<br>
  *
- * `numLoopIterations` indicates how often the loop iterates. For some loops, this can be statically
- * computed - in this case set `numLoopIterations` to that value. When the number of loop iterations
- * cannot be determined, set it to [[None]].
+ * `lowerBound` and `upperBound` refer to how often the element is repeated / evaluated when run.
+ * It may either refer to loop bounds or how often a recursion is repeated. If either or both values
+ * is/are set to `None`, it cannot be determined of often the element is actually repeated.
+ * Otherwise, the number of repetitions is computed by `upperBound - lowerBound`.
  */
-case class TreeLoopElement(
-    child:             TreeElement,
-    numLoopIterations: Option[Int]
-) extends TreeElement(ListBuffer(child))
+case class StringTreeRepetition(
+    var child:  StringTreeElement,
+    lowerBound: Option[Int]       = None,
+    upperBound: Option[Int]       = None
+) extends StringTreeElement(ListBuffer(child))
 
 /**
- * For modelling conditionals, such as if, if-else, if-elseif-else, switch, and also as parent
- * element for possible array values, but no loops! Even though loops are conditionals as well,
- * they are to be modelled using [[TreeLoopElement]] (as they capture further information).<br>
- *
- * `TreeConditionalElement`s are supposed to have either at lease one other
- * `TreeConditionalElement`, `TreeLoopElement`, or a [[TreeValueElement]] as children . A tree with
- * a `TreeConditionalElement` that has no children is regarded as an invalid tree in this sense!
+ * [[StringTreeConcat]] models the concatenation of multiple strings. For example, if it is known
+ * that a string is the concatenation of ''s_1'', ..., ''s_n'' (in that order), use a
+ * [[StringTreeConcat]] element where the first child / first element in the `children`list
+ * represents ''s_1'' and the last child / last element ''s_n''.
  */
-case class TreeConditionalElement(
-    override val children: ListBuffer[TreeElement],
-) extends TreeElement(children)
+case class StringTreeConcat(
+    override val children: ListBuffer[StringTreeElement]
+) extends StringTreeElement(children)
 
 /**
- * TreeExprElement are the only elements which are supposed to act as leafs within a
+ * [[StringTreeOr]] models that a string (or part of a string) has one out of several possible
+ * values. For instance, if in an `if` block and its corresponding `else` block two values, ''s1''
+ * and ''s2'' are appended to a [[StringBuffer]], `sb`, a [[StringTreeOr]] can be used to model that
+ * `sb` can contain either ''s1'' or ''s2'' (but not both at the same time!).<br>
+ *
+ * In contrast to [[StringTreeCond]], [[StringTreeOr]] provides several possible values for
+ * a (sub) string.
+ */
+case class StringTreeOr(
+    override val children: ListBuffer[StringTreeElement]
+) extends StringTreeElement(children)
+
+/**
+ * [[StringTreeCond]] is used to model that a string (or part of a string) is optional / may
+ * not always be present. For example, if an `if` block (and maybe a corresponding `else if` but NO
+ * `else`) appends to a [[StringBuilder]], a [[StringTreeCond]] is appropriate.<br>
+ *
+ * In contrast to [[StringTreeOr]], [[StringTreeCond]] provides a way to express that a (sub)
+ * string may have (contain) a particular but not necessarily.
+ */
+case class StringTreeCond(
+    override val children: ListBuffer[StringTreeElement]
+) extends StringTreeElement(children)
+
+/**
+ * [[StringTreeConst]]s are the only elements which are supposed to act as leafs within a
  * [[StringTree]].
- * They may have one `child` but do not need to have children necessarily. Intuitively, a
- * TreeExprElement, ''e1'', which has a child ''e2'', represents the concatenation of ''e1'' and
- * ''e2''.<br>
  *
  * `sci` is a [[StringConstancyInformation]] instance that resulted from evaluating an
- * expression.
+ * expression and that represents part of the value(s) a string may have.
  */
-case class TreeValueElement(
-    var child: Option[TreeElement],
-    sci:       StringConstancyInformation
-) extends TreeElement(
-    child match {
-        case Some(c) ⇒ ListBuffer(c)
-        case None    ⇒ ListBuffer()
-    }
-)
+case class StringTreeConst(
+    sci: StringConstancyInformation
+) extends StringTreeElement(ListBuffer())
