@@ -31,29 +31,34 @@ class VirtualFunctionCallProcessor() extends AbstractExprProcessor {
      * @see [[AbstractExprProcessor.process]]
      */
     override def process(stmts: Array[Stmt[V]], expr: Expr[V]): Option[StringConstancyProperty] = {
-        var level = CONSTANT
+        val properties = ArrayBuffer[StringConstancyProperty]()
 
         expr match {
             case vfc: VirtualFunctionCall[V] ⇒
-                val receiver = vfc.receiver
                 // TODO: Are these long concatenations the best / most robust way?
-                val appendCall =
-                    stmts(receiver.asVar.definedBy.head).asAssignment.expr.asVirtualFunctionCall
-
-                // Get previous value of string builder
-                val baseAssignment = stmts(appendCall.receiver.asVar.definedBy.head).asAssignment
-                val baseStr = valueOfAppendCall(baseAssignment.expr.asVirtualFunctionCall, stmts)
-                var assignedStr = baseStr._1
-                // Get appended value and build the new string value
-                val appendData = valueOfAppendCall(appendCall, stmts)
-                if (appendData._2 == CONSTANT) {
-                    assignedStr += appendData._1
-                } else {
-                    assignedStr += "*"
-                    level = PARTIALLY_CONSTANT
+                vfc.receiver.asVar.definedBy.foreach { defSite ⇒
+                    val appendCall = stmts(defSite).asAssignment.expr.asVirtualFunctionCall
+                    appendCall.receiver.asVar.definedBy.foreach { rDefSite ⇒
+                        var level = CONSTANT
+                        // Get previous value of string builder
+                        val baseAssignment = stmts(rDefSite).asAssignment
+                        val baseStr = valueOfAppendCall(
+                            baseAssignment.expr.asVirtualFunctionCall, stmts
+                        )
+                        var assignedStr = baseStr._1
+                        // Get appended value and build the new string value
+                        val appendData = valueOfAppendCall(appendCall, stmts)
+                        if (appendData._2 == CONSTANT) {
+                            assignedStr += appendData._1
+                        } else {
+                            assignedStr += "*"
+                            level = PARTIALLY_CONSTANT
+                        }
+                        properties.append(StringConstancyProperty(level, ArrayBuffer(assignedStr)))
+                    }
                 }
+                StringConstancyProperty.reduce(properties.toArray)
 
-                Some(StringConstancyProperty(level, ArrayBuffer(assignedStr)))
             case _ ⇒ None
         }
     }
