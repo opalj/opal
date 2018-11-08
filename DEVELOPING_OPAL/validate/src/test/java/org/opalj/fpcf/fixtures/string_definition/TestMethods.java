@@ -131,35 +131,35 @@ public class TestMethods {
         analyzeString(s);
     }
 
-    //    @StringDefinitions(
-    //            value = "a more comprehensive case where multiple definition sites have to be "
-    //                    + "considered each with a different string generation mechanism",
-    //            expectedLevel = StringConstancyLevel.DYNAMIC,
-    //            expectedStrings = "(java.lang.Object | * | java.lang.System | java.lang.*)"
-    //    )
-    //    public void multipleDefSites(int value) {
-    //        String[] arr = new String[] { "java.lang.Object", getRuntimeClassName() };
-    //
-    //        String s;
-    //        switch (value) {
-    //        case 0:
-    //            s = arr[value];
-    //            break;
-    //        case 1:
-    //            s = arr[value];
-    //            break;
-    //        case 3:
-    //            s = "java.lang.System";
-    //            break;
-    //        case 4:
-    //            s = "java.lang." + getSimpleStringBuilderClassName();
-    //            break;
-    //        default:
-    //            s = getStringBuilderClassName();
-    //        }
-    //
-    //        analyzeString(s);
-    //    }
+    @StringDefinitions(
+            value = "a more comprehensive case where multiple definition sites have to be "
+                    + "considered each with a different string generation mechanism",
+            expectedLevel = StringConstancyLevel.DYNAMIC,
+            expectedStrings = "(java.lang.System | java.lang.* | * | java.lang.Object)"
+    )
+    public void multipleDefSites(int value) {
+        String[] arr = new String[] { "java.lang.Object", getRuntimeClassName() };
+
+        String s;
+        switch (value) {
+        case 0:
+            s = arr[value];
+            break;
+        case 1:
+            s = arr[value];
+            break;
+        case 3:
+            s = "java.lang.System";
+            break;
+        case 4:
+            s = "java.lang." + getSimpleStringBuilderClassName();
+            break;
+        default:
+            s = getStringBuilderClassName();
+        }
+
+        analyzeString(s);
+    }
 
     //        @StringDefinitions(
     //                value = "if-else control structure which append to a string builder",

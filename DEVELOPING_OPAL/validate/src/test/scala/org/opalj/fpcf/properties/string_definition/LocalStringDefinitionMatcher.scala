@@ -71,7 +71,7 @@ class LocalStringDefinitionMatcher extends AbstractPropertyMatcher {
         val prop = properties.filter(
             _.isInstanceOf[StringConstancyProperty]
         ).head.asInstanceOf[StringConstancyProperty]
-        val reducedProp = prop.stringTree.reduce()
+        val reducedProp = prop.stringTree.simplify().reduce()
 
         val expLevel = getConstancyLevel(a).get
         val actLevel = reducedProp.constancyLevel.toString

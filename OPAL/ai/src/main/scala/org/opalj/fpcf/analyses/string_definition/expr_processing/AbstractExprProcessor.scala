@@ -30,6 +30,8 @@ abstract class AbstractExprProcessor() {
      *         cases an exception be thrown).
      * @see StringConstancyProperty
      */
-    def process(assignment: Assignment[V], stmts: Array[Stmt[V]]): Option[StringTree]
+    def process(
+        assignment: Assignment[V], stmts: Array[Stmt[V]], ignore: List[Int] = List[Int]()
+    ): Option[StringTree]
 
 }

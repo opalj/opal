@@ -18,8 +18,8 @@ import scala.collection.mutable.ListBuffer
  * @author Patrick Mell
  */
 class NewStringBuilderProcessor(
-                                   private val exprHandler: ExprHandler
-                               ) extends AbstractExprProcessor {
+        private val exprHandler: ExprHandler
+) extends AbstractExprProcessor {
 
     /**
      * `expr` of `assignment`is required to be of type [[org.opalj.tac.New]] (otherwise `None` will
@@ -27,7 +27,9 @@ class NewStringBuilderProcessor(
      *
      * @see [[AbstractExprProcessor.process()]]
      */
-    override def process(assignment: Assignment[V], stmts: Array[Stmt[V]]): Option[StringTree] = {
+    override def process(
+        assignment: Assignment[V], stmts: Array[Stmt[V]], ignore: List[Int] = List[Int]()
+    ): Option[StringTree] = {
         assignment.expr match {
             case _: New ⇒
                 val inits = assignment.targetVar.usedBy.filter {
@@ -39,11 +41,13 @@ class NewStringBuilderProcessor(
                 val treeNodes = ListBuffer[Option[StringTree]]()
 
                 inits.foreach { next ⇒
-                    val init = stmts(next).asNonVirtualMethodCall
-                    if (init.params.nonEmpty) {
-                        treeNodes.append(
-                            exprHandler.processDefSites(init.params.head.asVar.definedBy)
-                        )
+                    if (!ignore.contains(next)) {
+                        val init = stmts(next).asNonVirtualMethodCall
+                        if (init.params.nonEmpty) {
+                            treeNodes.append(
+                                exprHandler.processDefSites(init.params.head.asVar.definedBy)
+                            )
+                        }
                     }
                 }
 
@@ -53,7 +57,7 @@ class NewStringBuilderProcessor(
                         Some(TreeValueElement(None, StringConstancyInformation(CONSTANT, "")))
                     case 1 ⇒ treeNodes.head
                     case _ ⇒ Some(TreeConditionalElement(
-                        treeNodes.filter(_.isDefined).map(_.get).toList
+                        treeNodes.filter(_.isDefined).map(_.get)
                     ))
                 }
             case _ ⇒ None
