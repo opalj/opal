@@ -10,6 +10,8 @@ import org.opalj.fpcf.string_definition.properties.TreeConditionalElement
 import org.opalj.fpcf.string_definition.properties.TreeElement
 import org.opalj.fpcf.string_definition.properties.TreeValueElement
 import org.opalj.tac.Assignment
+import org.opalj.tac.BinaryExpr
+import org.opalj.tac.Expr
 import org.opalj.tac.NonVirtualFunctionCall
 import org.opalj.tac.Stmt
 import org.opalj.tac.StringConst
@@ -33,20 +35,38 @@ class VirtualFunctionCallProcessor(
      * `expr` of `assignment`is required to be of type [[org.opalj.tac.VirtualFunctionCall]]
      * (otherwise `None` will be returned).
      *
-     * @see [[AbstractExprProcessor.process]]
+     * @see [[AbstractExprProcessor.processAssignment]]
      */
-    override def process(
+    override def processAssignment(
         assignment: Assignment[V], stmts: Array[Stmt[V]], ignore: List[Int] = List[Int]()
+    ): Option[StringTree] = process(assignment.expr, stmts, ignore)
+
+    /**
+     * This implementation does not change / implement the behavior of
+     * [[AbstractExprProcessor.processExpr]].
+     */
+    override def processExpr(
+        expr: Expr[V], stmts: Array[Stmt[V]], ignore: List[Int]
+    ): Option[StringTree] = process(expr, stmts, ignore)
+
+    /**
+     * Wrapper function for processing expressions.
+     */
+    private def process(
+        expr: Expr[V], stmts: Array[Stmt[V]], ignore: List[Int]
     ): Option[StringTree] = {
-        assignment.expr match {
+        expr match {
             case vfc: VirtualFunctionCall[V] ⇒
-                if (ExprHandler.isStringBuilderAppendCall(assignment)) {
+                if (ExprHandler.isStringBuilderAppendCall(expr)) {
                     Some(processAppendCall(vfc, stmts, ignore))
-                } else if (ExprHandler.isStringBuilderToStringCall(assignment)) {
+                } else if (ExprHandler.isStringBuilderToStringCall(expr)) {
                     Some(processToStringCall(vfc, stmts, ignore))
                 } // A call to method which is not (yet) supported
                 else {
-                    None
+                    val ps = ExprHandler.classNameToPossibleString(
+                        vfc.descriptor.returnType.toJavaClass.getSimpleName
+                    )
+                    Some(TreeValueElement(None, StringConstancyInformation(DYNAMIC, ps)))
                 }
             case _ ⇒ None
         }
@@ -114,7 +134,12 @@ class VirtualFunctionCallProcessor(
             case _: NonVirtualFunctionCall[V] ⇒ StringConstancyInformation(DYNAMIC, "*")
             case StringConst(_, value)        ⇒ StringConstancyInformation(CONSTANT, value)
             // Next case is for an append call as argument to append
-            case _: VirtualFunctionCall[V]    ⇒ process(assign, stmts).get.reduce()
+            case _: VirtualFunctionCall[V]    ⇒ processAssignment(assign, stmts).get.reduce()
+            case be: BinaryExpr[V] ⇒
+                val possibleString = ExprHandler.classNameToPossibleString(
+                    be.left.asVar.value.getClass.getSimpleName
+                )
+                StringConstancyInformation(DYNAMIC, possibleString)
         }
         TreeValueElement(None, sci)
     }

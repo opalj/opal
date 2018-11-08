@@ -7,6 +7,7 @@ import org.opalj.fpcf.string_definition.properties.StringConstancyLevel.DYNAMIC
 import org.opalj.fpcf.string_definition.properties.StringTree
 import org.opalj.fpcf.string_definition.properties.TreeValueElement
 import org.opalj.tac.Assignment
+import org.opalj.tac.Expr
 import org.opalj.tac.NonVirtualFunctionCall
 import org.opalj.tac.Stmt
 
@@ -27,16 +28,34 @@ class NonVirtualFunctionCallProcessor() extends AbstractExprProcessor {
      * (otherwise `None` will be returned).
      * `stmts` currently is not relevant, thus an empty array may be passed.
      *
-     * @see [[AbstractExprProcessor#process]]
+     * @see [[AbstractExprProcessor.processAssignment]]
      */
-    override def process(
+    override def processAssignment(
         assignment: Assignment[V], stmts: Array[Stmt[V]], ignore: List[Int] = List[Int]()
-    ): Option[StringTree] =
-        assignment.expr match {
+    ): Option[StringTree] = process(assignment.expr, stmts, ignore)
+
+    /**
+     * `expr` is required to be of type [[org.opalj.tac.NonVirtualFunctionCall]] (otherwise `None`
+     * will be returned). `stmts` currently is not relevant, thus an empty array may be passed.
+     *
+     * @see [[AbstractExprProcessor.processExpr()]]
+     */
+    override def processExpr(
+        expr: Expr[V], stmts: Array[Stmt[V]], ignore: List[Int] = List[Int]()
+    ): Option[StringTree] = process(expr, stmts, ignore)
+
+    /**
+     * Wrapper function for processing.
+     */
+    private def process(
+        expr: Expr[V], stmts: Array[Stmt[V]], ignore: List[Int]
+    ): Option[StringTree] = {
+        expr match {
             case _: NonVirtualFunctionCall[V] ⇒ Some(TreeValueElement(
                 None, StringConstancyInformation(DYNAMIC, "*")
             ))
             case _ ⇒ None
         }
+    }
 
 }

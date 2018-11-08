@@ -7,6 +7,7 @@ import org.opalj.fpcf.string_definition.properties.TreeElement
 import org.opalj.tac.ArrayLoad
 import org.opalj.tac.ArrayStore
 import org.opalj.tac.Assignment
+import org.opalj.tac.Expr
 import org.opalj.tac.Stmt
 
 import scala.collection.mutable.ListBuffer
@@ -29,12 +30,29 @@ class ArrayLoadProcessor(
      * The `expr` of `assignment`is required to be of type [[org.opalj.tac.ArrayLoad]] (otherwise
      * `None` will be returned).
      *
-     * @see [[AbstractExprProcessor.process]]
+     * @see [[AbstractExprProcessor.processAssignment]]
      */
-    override def process(
+    override def processAssignment(
         assignment: Assignment[V], stmts: Array[Stmt[V]], ignore: List[Int] = List[Int]()
+    ): Option[StringTree] = process(assignment.expr, stmts, ignore)
+
+    /**
+     * The `expr` of `assignment`is required to be of type [[org.opalj.tac.ArrayLoad]] (otherwise
+     * * `None` will be returned).
+     * *
+     * * @see [[AbstractExprProcessor.processExpr]]
+     */
+    override def processExpr(
+        expr: Expr[V], stmts: Array[Stmt[V]], ignore: List[Int]
+    ): Option[StringTree] = process(expr, stmts, ignore)
+
+    /**
+     * Wrapper function for processing an expression.
+     */
+    private def process(
+        expr: Expr[V], stmts: Array[Stmt[V]], ignore: List[Int]
     ): Option[StringTree] = {
-        assignment.expr match {
+        expr match {
             case al: ArrayLoad[V] ⇒
                 val children = ListBuffer[TreeElement]()
                 // Loop over all possible array values

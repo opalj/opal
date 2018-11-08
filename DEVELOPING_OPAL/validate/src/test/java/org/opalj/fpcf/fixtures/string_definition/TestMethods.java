@@ -4,6 +4,8 @@ package org.opalj.fpcf.fixtures.string_definition;
 import org.opalj.fpcf.properties.string_definition.StringConstancyLevel;
 import org.opalj.fpcf.properties.string_definition.StringDefinitions;
 
+import java.util.Random;
+
 /**
  * @author Patrick Mell
  */
@@ -161,21 +163,69 @@ public class TestMethods {
         analyzeString(s);
     }
 
-    //        @StringDefinitions(
-    //                value = "if-else control structure which append to a string builder",
-    //                expectedLevel = StringConstancyLevel.DYNAMIC,
-    //                expectedStrings = "x | [Int Value]"
-    //        )
-    //        public void ifElseWithStringBuilder() {
-    //            StringBuilder sb = new StringBuilder();
-    //            int i = new Random().nextInt();
-    //            if (i % 2 == 0) {
-    //                sb.append("x");
-    //            } else {
-    //                sb.append(i + 1);
-    //            }
-    //            analyzeString(sb.toString());
+    @StringDefinitions(
+            value = "if-else control structure which append to a string builder with an int expr",
+            expectedLevel = StringConstancyLevel.DYNAMIC,
+            expectedStrings = "(x | [AnIntegerValue])"
+    )
+    public void ifElseWithStringBuilderWithIntExpr() {
+        StringBuilder sb = new StringBuilder();
+        int i = new Random().nextInt();
+        if (i % 2 == 0) {
+            sb.append("x");
+        } else {
+            sb.append(i + 1);
+        }
+        analyzeString(sb.toString());
+    }
+
+    @StringDefinitions(
+            value = "if-else control structure which append to a string builder with an int",
+            expectedLevel = StringConstancyLevel.DYNAMIC,
+            expectedStrings = "(x | [AnIntegerValue])"
+    )
+    public void ifElseWithStringBuilderWithConstantInt() {
+        StringBuilder sb = new StringBuilder();
+        int i = new Random().nextInt();
+        if (i % 2 == 0) {
+            sb.append("x");
+        } else {
+            sb.append(i);
+        }
+        analyzeString(sb.toString());
+    }
+
+    @StringDefinitions(
+            value = "if-else control structure which append to a string builder",
+            expectedLevel = StringConstancyLevel.CONSTANT,
+            expectedStrings = "(b | a)"
+    )
+    public void ifElseWithStringBuilder1() {
+        StringBuilder sb;
+        int i = new Random().nextInt();
+        if (i % 2 == 0) {
+            sb = new StringBuilder("a");
+        } else {
+            sb = new StringBuilder("b");
+        }
+        analyzeString(sb.toString());
+    }
+
+    //    @StringDefinitions(
+    //            value = "if-else control structure which append to a string builder",
+    //            expectedLevel = StringConstancyLevel.CONSTANT,
+    //            expectedStrings = "(ac | ab)"
+    //    )
+    //    public void ifElseWithStringBuilder2() {
+    //        StringBuilder sb = new StringBuilder("a");
+    //        int i = new Random().nextInt();
+    //        if (i % 2 == 0) {
+    //            sb.append("b");
+    //        } else {
+    //            sb.append("c");
     //        }
+    //        analyzeString(sb.toString());
+    //    }
 
     //    @StringDefinitions(
     //            value = "if-else control structure within a for loop with known loop bounds",

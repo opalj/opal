@@ -10,6 +10,8 @@ import org.opalj.fpcf.string_definition.properties.StringTree
 import org.opalj.fpcf.string_definition.properties.TreeConditionalElement
 import org.opalj.tac.ArrayLoad
 import org.opalj.tac.Assignment
+import org.opalj.tac.Expr
+import org.opalj.tac.ExprStmt
 import org.opalj.tac.New
 import org.opalj.tac.NonVirtualFunctionCall
 import org.opalj.tac.SimpleTACAIKey
@@ -50,19 +52,31 @@ class ExprHandler(p: SomeProject, m: Method) {
         }
         processedDefSites.append(defSite)
 
-        val assignment = ctxStmts(defSite).asAssignment
-        val exprProcessor: AbstractExprProcessor = assignment.expr match {
+        // Determine whether to process an assignment or an expression
+        val expr = ctxStmts(defSite) match {
+            case a: Assignment[V] ⇒ a.expr
+            case e: ExprStmt[V]   ⇒ e.expr
+            case _ ⇒ throw new IllegalArgumentException(
+                s"cannot process ${ctxStmts(defSite)}"
+            )
+        }
+        val exprProcessor: AbstractExprProcessor = expr match {
             case _: ArrayLoad[V]              ⇒ new ArrayLoadProcessor(this)
             case _: VirtualFunctionCall[V]    ⇒ new VirtualFunctionCallProcessor(this)
             case _: New                       ⇒ new NewStringBuilderProcessor(this)
             case _: NonVirtualFunctionCall[V] ⇒ new NonVirtualFunctionCallProcessor()
             case _: StringConst               ⇒ new StringConstProcessor()
             case _ ⇒ throw new IllegalArgumentException(
-                s"cannot process expression ${assignment.expr}"
+                s"cannot process expression $expr"
             )
         }
 
-        val subtree = exprProcessor.process(assignment, ctxStmts)
+        val subtree = ctxStmts(defSite) match {
+            case a: Assignment[V] ⇒
+                exprProcessor.processAssignment(a, ctxStmts, processedDefSites.toList)
+            case _ ⇒
+                exprProcessor.processExpr(expr, ctxStmts, processedDefSites.toList)
+        }
         subtree
     }
 
@@ -95,32 +109,37 @@ class ExprHandler(p: SomeProject, m: Method) {
 
 object ExprHandler {
 
+    private val classNameMap = Map(
+        "AnIntegerValue" → "[AnIntegerValue]",
+        "int" → "[AnIntegerValue]"
+    )
+
     /**
      * @see [[ExprHandler]]
      */
     def apply(p: SomeProject, m: Method): ExprHandler = new ExprHandler(p, m)
 
     /**
-     * Checks whether an assignment has an expression which is a call to [[StringBuilder.toString]].
+     * Checks whether an expression contains a call to [[StringBuilder.toString]].
      *
-     * @param a The assignment whose expression is to be checked.
-     * @return Returns true if `a`'s expression is a call to [[StringBuilder.toString]].
+     * @param expr The expression that is to be checked.
+     * @return Returns true if `expr` is a call to [[StringBuilder.toString]].
      */
-    def isStringBuilderToStringCall(a: Assignment[V]): Boolean =
-        a.expr match {
+    def isStringBuilderToStringCall(expr: Expr[V]): Boolean =
+        expr match {
             case VirtualFunctionCall(_, clazz, _, name, _, _, _) ⇒
                 clazz.toJavaClass.getName == "java.lang.StringBuilder" && name == "toString"
             case _ ⇒ false
         }
 
     /**
-     * Checks whether an assignment has an expression which is a call to [[StringBuilder#append]].
+     * Checks whether an expression is a call to [[StringBuilder#append]].
      *
-     * @param a The assignment whose expression is to be checked.
-     * @return Returns true if `a`'s expression is a call to [[StringBuilder#append]].
+     * @param expr The expression that is to be checked.
+     * @return Returns true if `expr` is a call to [[StringBuilder#append]].
      */
-    def isStringBuilderAppendCall(a: Assignment[V]): Boolean =
-        a.expr match {
+    def isStringBuilderAppendCall(expr: Expr[V]): Boolean =
+        expr match {
             case VirtualFunctionCall(_, clazz, _, name, _, _, _) ⇒
                 clazz.toJavaClass.getName == "java.lang.StringBuilder" && name == "append"
             case _ ⇒ false
@@ -129,16 +148,27 @@ object ExprHandler {
     /**
      * Retrieves the definition sites of the receiver of a [[StringBuilder.toString]] call.
      *
-     * @param a The assignment whose expression contains the receiver whose definition sites to get.
-     * @return If `a` does not conform to the expected structure, an [[EmptyIntTrieSet]] is
+     * @param expr The expression that contains the receiver whose definition sites to get.
+     * @return If `expr` does not conform to the expected structure, an [[EmptyIntTrieSet]] is
      *         returned (avoid by using [[isStringBuilderToStringCall]]) and otherwise the
      *         definition sites of the receiver.
      */
-    def getDefSitesOfToStringReceiver(a: Assignment[V]): IntTrieSet =
-        if (!isStringBuilderToStringCall(a)) {
+    def getDefSitesOfToStringReceiver(expr: Expr[V]): IntTrieSet =
+        if (!isStringBuilderToStringCall(expr)) {
             EmptyIntTrieSet
         } else {
-            a.expr.asVirtualFunctionCall.receiver.asVar.definedBy
+            expr.asVirtualFunctionCall.receiver.asVar.definedBy
         }
+
+    /**
+     * Maps a class name to a string which is to be displayed as a possible string.
+     *
+     * @param javaSimpleClassName The simple class name, i.e., NOT fully-qualified, for which to
+     *                            retrieve the value for "possible string".
+     * @return Either returns the mapped string representation or, when an unknown string is passed,
+     *         the passed parameter surrounded by "[" and "]".
+     */
+    def classNameToPossibleString(javaSimpleClassName: String): String =
+        classNameMap.getOrElse(javaSimpleClassName, s"[$javaSimpleClassName]")
 
 }
