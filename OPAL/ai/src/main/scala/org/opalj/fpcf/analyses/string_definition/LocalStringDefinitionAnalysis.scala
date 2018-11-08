@@ -11,7 +11,12 @@ import org.opalj.fpcf.properties.StringConstancyProperty
 import org.opalj.fpcf.FPCFLazyAnalysisScheduler
 import org.opalj.fpcf.ComputationSpecification
 import org.opalj.fpcf.analyses.string_definition.expr_processing.ExprHandler
+import org.opalj.fpcf.string_definition.properties.StringTree
+import org.opalj.fpcf.string_definition.properties.TreeConditionalElement
+import org.opalj.tac.SimpleTACAIKey
 import org.opalj.tac.Stmt
+
+import scala.collection.mutable.ArrayBuffer
 
 class StringTrackingAnalysisContext(
     val stmts: Array[Stmt[V]]
@@ -36,11 +41,32 @@ class LocalStringDefinitionAnalysis(
 ) extends FPCFAnalysis {
 
     def analyze(data: P): PropertyComputationResult = {
-        val properties = ExprHandler(p, data._2).processDefinitionSites(data._1.definedBy)
-        if (properties.isEmpty) {
-            throw new IllegalArgumentException("could not process expression(s)")
-        } else {
-            Result(data, StringConstancyProperty.reduce(properties).get)
+        val tacProvider = p.get(SimpleTACAIKey)
+        val stmts = tacProvider(data._2).stmts
+
+        val exprHandler = ExprHandler(p, data._2)
+        val defSites = data._1.definedBy
+        if (ExprHandler.isStringBuilderToStringCall(stmts(defSites.head).asAssignment)) {
+            val subtrees = ArrayBuffer[StringTree]()
+            defSites.foreach { nextDefSite ⇒
+                val treeElements = ExprHandler.getDefSitesOfToStringReceiver(
+                    stmts(nextDefSite).asAssignment
+                ).map { exprHandler.processDefSite _ }.filter(_.isDefined).map { _.get }
+                if (treeElements.size == 1) {
+                    subtrees.append(treeElements.head)
+                } else {
+                    subtrees.append(TreeConditionalElement(treeElements.toList))
+                }
+            }
+
+            val finalTree = if (subtrees.size == 1) subtrees.head else
+                TreeConditionalElement(subtrees.toList)
+            Result(data, StringConstancyProperty(finalTree))
+        } // If not a call to StringBuilder.toString, then we deal with pure strings
+        else {
+            Result(data, StringConstancyProperty(
+                exprHandler.processDefSites(data._1.definedBy).get
+            ))
         }
     }
 

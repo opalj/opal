@@ -35,10 +35,11 @@ public @interface StringDefinitions {
     StringConstancyLevel expectedLevel() default StringConstancyLevel.DYNAMIC;
 
     /**
-     * A set of string elements that are expected. If exact matching is desired, insert only one
-     * element. Otherwise, a super set may be specified, e.g., if some value from an array is
-     * expected.
+     * A regexp like string that describes the elements that are expected. For the rules, refer to
+     * {@link org.opalj.fpcf.string_definition.properties.TreeElement}.
+     * For example, "(* | (hello | world)^5)" describes a string which can 1) either be any string
+     * or 2) a five time concatenation of "hello" and/or "world".
      */
-    String[] expectedValues() default "";
+    String expectedStrings() default "";
 
 }

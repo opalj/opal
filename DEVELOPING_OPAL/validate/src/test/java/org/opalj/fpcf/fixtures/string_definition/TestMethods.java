@@ -21,23 +21,58 @@ public class TestMethods {
     public void analyzeString(String s) {
     }
 
+    // The following is a strange case (difficult / impossible? to follow back information flow)
+    //    @StringDefinitions(
+    //            value = "checks if a string value with > 1 continuous appends is determined correctly",
+    //            expectedLevel = StringConstancyLevel.CONSTANT,
+    //            expectedStrings = "java.lang.String"
+    //    )
+    //    public void directAppendConcat() {
+    //        StringBuilder sb = new StringBuilder("java");
+    //        sb.append(".").append("lang").append(".").append("String");
+    //        analyzeString(sb.toString());
+    //    }
+
     @StringDefinitions(
             value = "read-only string, trivial case",
             expectedLevel = StringConstancyLevel.CONSTANT,
-            expectedValues = { "java.lang.String" }
+            expectedStrings = "java.lang.String"
     )
     public void constantString() {
+        analyzeString("java.lang.String");
+    }
+
+    @StringDefinitions(
+            value = "read-only string variable, trivial case",
+            expectedLevel = StringConstancyLevel.CONSTANT,
+            expectedStrings = "java.lang.String"
+    )
+    public void constantStringVariable() {
         String className = "java.lang.String";
         analyzeString(className);
     }
 
     @StringDefinitions(
-            value = "checks if the string value for the *forName* call is correctly determined",
+            value = "checks if a string value with one append is determined correctly",
             expectedLevel = StringConstancyLevel.CONSTANT,
-            expectedValues = { "java.lang.string" }
+            expectedStrings = "java.lang.string"
     )
-    public void stringConcatenation() {
+    public void simpleStringConcat() {
         String className = "java.lang.";
+        System.out.println(className);
+        className += "string";
+        analyzeString(className);
+    }
+
+    @StringDefinitions(
+            value = "checks if a string value with > 1 appends is determined correctly",
+            expectedLevel = StringConstancyLevel.CONSTANT,
+            expectedStrings = "java.lang.string"
+    )
+    public void advStringConcat() {
+        String className = "java.";
+        System.out.println(className);
+        className += "lang.";
         System.out.println(className);
         className += "string";
         analyzeString(className);
@@ -46,7 +81,7 @@ public class TestMethods {
     @StringDefinitions(
             value = "at this point, function call cannot be handled => DYNAMIC",
             expectedLevel = StringConstancyLevel.DYNAMIC,
-            expectedValues = { "*" }
+            expectedStrings = "*"
     )
     public void fromFunctionCall() {
         String className = getStringBuilderClassName();
@@ -56,7 +91,7 @@ public class TestMethods {
     @StringDefinitions(
             value = "constant string + string from function call => PARTIALLY_CONSTANT",
             expectedLevel = StringConstancyLevel.PARTIALLY_CONSTANT,
-            expectedValues = { "java.lang.*" }
+            expectedStrings = "java.lang.*"
     )
     public void fromConstantAndFunctionCall() {
         String className = "java.lang.";
@@ -68,10 +103,8 @@ public class TestMethods {
     @StringDefinitions(
             value = "array access with unknown index",
             expectedLevel = StringConstancyLevel.CONSTANT,
-            expectedValues = {
-                    "java.lang.String", "java.lang.StringBuilder",
-                    "java.lang.System", "java.lang.Runnable"
-            }
+            expectedStrings = "(java.lang.String | java.lang.System | "
+                    + "java.lang.Runnable | java.lang.StringBuilder)"
     )
     public void fromStringArray(int index) {
         String[] classes = {
@@ -86,7 +119,7 @@ public class TestMethods {
     @StringDefinitions(
             value = "a simple case where multiple definition sites have to be considered",
             expectedLevel = StringConstancyLevel.CONSTANT,
-            expectedValues = { "java.lang.System", "java.lang.Runtime" }
+            expectedStrings = "(java.lang.System | java.lang.Runtime)"
     )
     public void multipleConstantDefSites(boolean cond) {
         String s;
@@ -98,35 +131,69 @@ public class TestMethods {
         analyzeString(s);
     }
 
-    @StringDefinitions(
-            value = "a more comprehensive case where multiple definition sites have to be "
-                    + "considered each with a different string generation mechanism",
-            expectedLevel = StringConstancyLevel.DYNAMIC,
-            expectedValues = { "java.lang.Object", "*", "java.lang.System", "java.lang.*" }
-    )
-    public void multipleDefSites(int value) {
-        String[] arr = new String[] { "java.lang.Object", getRuntimeClassName() };
+    //    @StringDefinitions(
+    //            value = "a more comprehensive case where multiple definition sites have to be "
+    //                    + "considered each with a different string generation mechanism",
+    //            expectedLevel = StringConstancyLevel.DYNAMIC,
+    //            expectedStrings = "(java.lang.Object | * | java.lang.System | java.lang.*)"
+    //    )
+    //    public void multipleDefSites(int value) {
+    //        String[] arr = new String[] { "java.lang.Object", getRuntimeClassName() };
+    //
+    //        String s;
+    //        switch (value) {
+    //        case 0:
+    //            s = arr[value];
+    //            break;
+    //        case 1:
+    //            s = arr[value];
+    //            break;
+    //        case 3:
+    //            s = "java.lang.System";
+    //            break;
+    //        case 4:
+    //            s = "java.lang." + getSimpleStringBuilderClassName();
+    //            break;
+    //        default:
+    //            s = getStringBuilderClassName();
+    //        }
+    //
+    //        analyzeString(s);
+    //    }
 
-        String s;
-        switch (value) {
-        case 0:
-            s = arr[value];
-            break;
-        case 1:
-            s = arr[value];
-            break;
-        case 3:
-            s = "java.lang.System";
-            break;
-        case 4:
-            s = "java.lang." + getSimpleStringBuilderClassName();
-            break;
-        default:
-            s = getStringBuilderClassName();
-        }
+    //        @StringDefinitions(
+    //                value = "if-else control structure which append to a string builder",
+    //                expectedLevel = StringConstancyLevel.DYNAMIC,
+    //                expectedStrings = "x | [Int Value]"
+    //        )
+    //        public void ifElseWithStringBuilder() {
+    //            StringBuilder sb = new StringBuilder();
+    //            int i = new Random().nextInt();
+    //            if (i % 2 == 0) {
+    //                sb.append("x");
+    //            } else {
+    //                sb.append(i + 1);
+    //            }
+    //            analyzeString(sb.toString());
+    //        }
 
-        analyzeString(s);
-    }
+    //    @StringDefinitions(
+    //            value = "if-else control structure within a for loop with known loop bounds",
+    //            expectedLevel = StringConstancyLevel.PARTIALLY_CONSTANT,
+    //            expectedValues = { "(\"x\" | [Int Value])^20" }
+    //    )
+    //    public void ifElseInLoopWithKnownBounds() {
+    //        StringBuilder sb = new StringBuilder();
+    //        for (int i = 0; i < 20; i++) {
+    //            if (i % 2 == 0) {
+    //                sb.append("x");
+    //            } else {
+    //                sb.append(i + 1);
+    //            }
+    //        }
+    //
+    //        analyzeString(sb.toString());
+    //    }
 
     private String getRuntimeClassName() {
         return "java.lang.Runtime";
