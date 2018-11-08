@@ -101,7 +101,11 @@ sealed abstract class StringTreeElement(val children: ListBuffer[StringTreeEleme
                 cs.foreach {
                     case nextC @ StringTreeOr(subChildren) ⇒
                         simplifyAcc(nextC)
-                        subChildren.foreach(subtree.children.append(_))
+                        var insertIndex = subtree.children.indexOf(nextC)
+                        subChildren.foreach { next ⇒
+                            subtree.children.insert(insertIndex, next)
+                            insertIndex += 1
+                        }
                         subtree.children.-=(nextC)
                     case _ ⇒
                 }

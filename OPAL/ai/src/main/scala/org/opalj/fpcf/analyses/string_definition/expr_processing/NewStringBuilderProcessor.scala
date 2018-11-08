@@ -4,7 +4,6 @@ package org.opalj.fpcf.analyses.string_definition.expr_processing
 import org.opalj.br.cfg.BasicBlock
 import org.opalj.br.cfg.CFG
 import org.opalj.collection.immutable.EmptyIntTrieSet
-import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.analyses.string_definition.V
 import org.opalj.tac.Stmt
 import org.opalj.fpcf.string_definition.properties.StringTree
@@ -41,12 +40,12 @@ class NewStringBuilderProcessor(
     ): Option[StringTree] = {
         assignment.expr match {
             case _: New ⇒
-                val useSites = assignment.targetVar.usedBy.filter(!ignore.contains(_))
-                val (inits, nonInits) = getInitsAndNonInits(useSites, stmts, cfg)
+                val uses = assignment.targetVar.usedBy.filter(!ignore.contains(_)).toArray.sorted
+                val (inits, nonInits) = getInitsAndNonInits(uses, stmts, cfg)
                 val initTreeNodes = ListBuffer[StringTree]()
                 val nonInitTreeNodes = ListBuffer[StringTree]()
 
-                inits.sorted.foreach { next ⇒
+                inits.foreach { next ⇒
                     val toProcess = stmts(next) match {
                         case init: NonVirtualMethodCall[V] if init.params.nonEmpty ⇒
                             init.params.head.asVar.definedBy
@@ -132,7 +131,7 @@ class NewStringBuilderProcessor(
      * @return
      */
     private def getInitsAndNonInits(
-        useSites: IntTrieSet, stmts: Array[Stmt[V]], cfg: CFG[Stmt[V], TACStmts[V]]
+        useSites: Array[Int], stmts: Array[Stmt[V]], cfg: CFG[Stmt[V], TACStmts[V]]
     ): (List[Int], List[List[Int]]) = {
         val inits = ListBuffer[Int]()
         var nonInits = ListBuffer[Int]()
@@ -164,7 +163,8 @@ class NewStringBuilderProcessor(
         }
 
         // Sort the lists in ascending order as this is more intuitive
-        (inits.toList, blocks.map(_._2.toList.sorted).toList)
+        val reversedBlocks = mutable.LinkedHashMap(blocks.toSeq.reverse: _*)
+        (inits.toList.sorted, reversedBlocks.map(_._2.toList.sorted).toList)
     }
 
 }
