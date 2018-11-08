@@ -1,13 +1,15 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.analyses.string_definition.expr_processing
-import org.opalj.tac.Expr
 import org.opalj.fpcf.analyses.string_definition.V
-import org.opalj.fpcf.properties.StringConstancyProperty
+import org.opalj.fpcf.string_definition.properties.StringTree
+import org.opalj.fpcf.string_definition.properties.TreeConditionalElement
+import org.opalj.fpcf.string_definition.properties.TreeElement
 import org.opalj.tac.ArrayLoad
 import org.opalj.tac.ArrayStore
+import org.opalj.tac.Assignment
 import org.opalj.tac.Stmt
 
-import scala.collection.mutable.ArrayBuffer
+import scala.collection.mutable.ListBuffer
 
 /**
  * This implementation of [[AbstractExprProcessor]] processes [[org.opalj.tac.ArrayLoad]]
@@ -24,27 +26,32 @@ class ArrayLoadProcessor(
 ) extends AbstractExprProcessor {
 
     /**
-     * `expr` is required to be of type [[org.opalj.tac.ArrayLoad]] (otherwise `None` will be
-     * returned).
+     * The `expr` of `assignment`is required to be of type [[org.opalj.tac.ArrayLoad]] (otherwise
+     * `None` will be returned).
      *
      * @see [[AbstractExprProcessor.process]]
      */
-    override def process(stmts: Array[Stmt[V]], expr: Expr[V]): Option[StringConstancyProperty] = {
-        expr match {
+    override def process(assignment: Assignment[V], stmts: Array[Stmt[V]]): Option[StringTree] = {
+        assignment.expr match {
             case al: ArrayLoad[V] ⇒
-                val properties = ArrayBuffer[StringConstancyProperty]()
+                val children = ListBuffer[TreeElement]()
+                // Loop over all possible array values
                 al.arrayRef.asVar.definedBy.foreach { defSite ⇒
                     val arrDecl = stmts(defSite)
                     arrDecl.asAssignment.targetVar.usedBy.filter {
                         stmts(_).isInstanceOf[ArrayStore[V]]
                     } foreach { f: Int ⇒
-                        properties.appendAll(exprHandler.processDefinitionSites(
-                            stmts(f).asArrayStore.value.asVar.definedBy
-                        ))
+                        // Actually, definedBy should contain only one element but for the sake of
+                        // completion, loop over all
+                        // TODO: If not, the tree construction has to be modified
+                        val arrValues = stmts(f).asArrayStore.value.asVar.definedBy.map {
+                            exprHandler.processDefSite _
+                        }.filter(_.isDefined).map(_.get)
+                        children.appendAll(arrValues)
                     }
                 }
 
-                StringConstancyProperty.reduce(properties.toArray)
+                Some(TreeConditionalElement(children.toList))
             case _ ⇒ None
         }
     }

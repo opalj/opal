@@ -3,7 +3,6 @@ package org.opalj.fpcf.properties.string_definition
 
 import org.opalj.br.analyses.Project
 import org.opalj.br.AnnotationLike
-import org.opalj.br.ElementValue
 import org.opalj.br.ObjectType
 import org.opalj.fpcf.properties.AbstractPropertyMatcher
 import org.opalj.fpcf.Property
@@ -34,44 +33,29 @@ class LocalStringDefinitionMatcher extends AbstractPropertyMatcher {
     /**
      * @param a An annotation like of type
      *          [[org.opalj.fpcf.properties.string_definition.StringDefinitions]].
-     * @return Returns an array of strings with the expected / possible string values and `None` in
-     *         case the element with the name 'expectedValues' was not present in the annotation
-     *         (should never be the case if an annotation of the correct type is passed).
+     * @return Returns the ''expectedStrings'' value from the annotation or `None` in case the
+     *         element with the name ''expectedStrings'' was not present in the annotation (should
+     *         never be the case if an annotation of the correct type is passed).
      */
-    private def getPossibleStrings(a: AnnotationLike): Option[Array[String]] = {
-        a.elementValuePairs.find(_.name == "expectedValues") match {
-            case Some(el) ⇒ Some(
-                el.value.asArrayValue.values.map { f: ElementValue ⇒ f.asStringValue.value }.toArray
-            )
-            case None ⇒ None
+    private def getExpectedStrings(a: AnnotationLike): Option[String] = {
+        a.elementValuePairs.find(_.name == "expectedStrings") match {
+            case Some(el) ⇒ Some(el.value.asStringValue.value)
+            case None     ⇒ None
         }
     }
 
     /**
-     * Takes an [[AnnotationLike]] which represents a [[StringConstancyProperty]] and returns its
+     * Takes an [[AnnotationLike]] which represents a [[org.opalj.fpcf.properties.StringConstancyProperty]] and returns its
      * stringified representation.
      *
      * @param a The annotation. This function requires that it holds a StringConstancyProperty.
      * @return The stringified representation, which is identical to
-     *         [[StringConstancyProperty.toString]].
+     *         [[org.opalj.fpcf.properties.StringConstancyProperty.toString]].
      */
     private def propertyAnnotation2Str(a: AnnotationLike): String = {
         val constancyLevel = getConstancyLevel(a).get.toLowerCase
-        val ps = getPossibleStrings(a).get.mkString("[", ", ", "]")
+        val ps = getExpectedStrings(a).get
         s"StringConstancyProperty { Constancy Level: $constancyLevel; Possible Strings: $ps }"
-    }
-
-    /**
-     * @param a1 The first array.
-     * @param a2 The second array.
-     * @return Returns true if both arrays have the same length and all values of the first array
-     *         are contained in the second array.
-     */
-    private def doArraysContainTheSameValues(a1: Array[String], a2: Array[String]): Boolean = {
-        if (a1.length != a2.length) {
-            return false
-        }
-        a1.map(a2.contains(_)).forall { b ⇒ b }
     }
 
     /**
@@ -87,16 +71,17 @@ class LocalStringDefinitionMatcher extends AbstractPropertyMatcher {
         val prop = properties.filter(
             _.isInstanceOf[StringConstancyProperty]
         ).head.asInstanceOf[StringConstancyProperty]
+        val reducedProp = prop.stringTree.reduce()
 
         val expLevel = getConstancyLevel(a).get
-        val actLevel = prop.constancyLevel.toString
+        val actLevel = reducedProp.constancyLevel.toString
         if (expLevel.toLowerCase != actLevel.toLowerCase) {
             return Some(propertyAnnotation2Str(a))
         }
 
-        val expStrings = prop.possibleStrings.toArray
-        val actStrings = getPossibleStrings(a).get
-        if (!doArraysContainTheSameValues(expStrings, actStrings)) {
+        // TODO: This string comparison is not very robust
+        val expStrings = getExpectedStrings(a).get
+        if (expStrings != reducedProp.possibleStrings) {
             return Some(propertyAnnotation2Str(a))
         }
 
