@@ -4,7 +4,6 @@ package org.opalj.fpcf.analyses.string_definition.expr_processing
 import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.cfg.CFG
-import org.opalj.collection.immutable.EmptyIntTrieSet
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.analyses.string_definition.V
 import org.opalj.fpcf.string_definition.properties.StringTree
@@ -111,7 +110,7 @@ class ExprHandler(p: SomeProject, m: Method) {
             case 0 ⇒ None
             case 1 ⇒ processDefSite(defSites.head)
             case _ ⇒
-                val processedSites = defSites.filter(_ >= 0).map(processDefSite _)
+                val processedSites = defSites.filter(_ >= 0).toArray.sorted.map(processDefSite)
                 Some(StringTreeOr(
                     processedSites.filter(_.isDefined).map(_.get).to[ListBuffer]
                 ))
@@ -131,7 +130,7 @@ class ExprHandler(p: SomeProject, m: Method) {
             return None
         }
 
-        val children = defSites.map(processDefSite).filter(_.isDefined).map(_.get)
+        val children = defSites.sorted.map(processDefSite).filter(_.isDefined).map(_.get)
         if (children.isEmpty) {
             None
         } else if (children.size == 1) {
@@ -262,15 +261,15 @@ object ExprHandler {
      * Retrieves the definition sites of the receiver of a [[StringBuilder.toString]] call.
      *
      * @param expr The expression that contains the receiver whose definition sites to get.
-     * @return If `expr` does not conform to the expected structure, an [[EmptyIntTrieSet]] is
+     * @return If `expr` does not conform to the expected structure, an empty array is
      *         returned (avoid by using [[isStringBuilderToStringCall]]) and otherwise the
      *         definition sites of the receiver.
      */
-    def getDefSitesOfToStringReceiver(expr: Expr[V]): IntTrieSet =
+    def getDefSitesOfToStringReceiver(expr: Expr[V]): Array[Int] =
         if (!isStringBuilderToStringCall(expr)) {
-            EmptyIntTrieSet
+            Array()
         } else {
-            expr.asVirtualFunctionCall.receiver.asVar.definedBy
+            expr.asVirtualFunctionCall.receiver.asVar.definedBy.toArray.sorted
         }
 
     /**

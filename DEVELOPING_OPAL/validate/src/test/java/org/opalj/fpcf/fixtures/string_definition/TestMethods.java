@@ -105,8 +105,8 @@ public class TestMethods {
     @StringDefinitions(
             value = "array access with unknown index",
             expectedLevel = StringConstancyLevel.CONSTANT,
-            expectedStrings = "(java.lang.String | java.lang.System | "
-                    + "java.lang.Runnable | java.lang.StringBuilder)"
+            expectedStrings = "(java.lang.String | java.lang.StringBuilder | "
+                    + "java.lang.System | java.lang.Runnable)"
     )
     public void fromStringArray(int index) {
         String[] classes = {
@@ -137,7 +137,7 @@ public class TestMethods {
             value = "a more comprehensive case where multiple definition sites have to be "
                     + "considered each with a different string generation mechanism",
             expectedLevel = StringConstancyLevel.DYNAMIC,
-            expectedStrings = "(java.lang.\\w | \\w | java.lang.System | java.lang.Object)"
+            expectedStrings = "(java.lang.Object | \\w | java.lang.System | java.lang.\\w)"
     )
     public void multipleDefSites(int value) {
         String[] arr = new String[] { "java.lang.Object", getRuntimeClassName() };
@@ -166,7 +166,7 @@ public class TestMethods {
     @StringDefinitions(
             value = "if-else control structure which append to a string builder with an int expr",
             expectedLevel = StringConstancyLevel.DYNAMIC,
-            expectedStrings = "([AnIntegerValue] | x)"
+            expectedStrings = "(x | [AnIntegerValue])"
     )
     public void ifElseWithStringBuilderWithIntExpr() {
         StringBuilder sb = new StringBuilder();
@@ -188,9 +188,9 @@ public class TestMethods {
         StringBuilder sb = new StringBuilder();
         int i = new Random().nextInt();
         if (i % 2 == 0) {
-            sb.append("x");
-        } else {
             sb.append(i);
+        } else {
+            sb.append("x");
         }
         analyzeString(sb.toString());
     }
@@ -198,7 +198,7 @@ public class TestMethods {
     @StringDefinitions(
             value = "if-else control structure which append to a string builder",
             expectedLevel = StringConstancyLevel.CONSTANT,
-            expectedStrings = "(b | a)"
+            expectedStrings = "(a | b)"
     )
     public void ifElseWithStringBuilder1() {
         StringBuilder sb;
@@ -214,7 +214,7 @@ public class TestMethods {
     @StringDefinitions(
             value = "if-else control structure which append to a string builder",
             expectedLevel = StringConstancyLevel.CONSTANT,
-            expectedStrings = "a(c | b)"
+            expectedStrings = "a(b | c)"
     )
     public void ifElseWithStringBuilder2() {
         StringBuilder sb = new StringBuilder("a");
@@ -230,7 +230,7 @@ public class TestMethods {
     @StringDefinitions(
             value = "if-else control structure which append to a string builder multiple times",
             expectedLevel = StringConstancyLevel.CONSTANT,
-            expectedStrings = "a(yz | bc)"
+            expectedStrings = "a(bc | yz)"
     )
     public void ifElseWithStringBuilder3() {
         StringBuilder sb = new StringBuilder("a");

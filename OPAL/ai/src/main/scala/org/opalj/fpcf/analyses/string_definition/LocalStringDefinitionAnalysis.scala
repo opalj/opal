@@ -46,14 +46,14 @@ class LocalStringDefinitionAnalysis(
         val stmts = tacProvider(data._2).stmts
 
         val exprHandler = ExprHandler(p, data._2)
-        val defSites = data._1.definedBy
+        val defSites = data._1.definedBy.toArray.sorted
         if (ExprHandler.isStringBuilderToStringCall(stmts(defSites.head).asAssignment.expr)) {
             val subtrees = ArrayBuffer[StringTree]()
             defSites.foreach { nextDefSite ⇒
                 val treeElements = ExprHandler.getDefSitesOfToStringReceiver(
                     stmts(nextDefSite).asAssignment.expr
-                ).map { exprHandler.processDefSite _ }.filter(_.isDefined).map { _.get }
-                if (treeElements.size == 1) {
+                ).map { exprHandler.processDefSite }.filter(_.isDefined).map { _.get }
+                if (treeElements.length == 1) {
                     subtrees.append(treeElements.head)
                 } else {
                     subtrees.append(StringTreeCond(treeElements.to[ListBuffer]))
