@@ -59,6 +59,7 @@ class LoadedClassesAnalysis(
      * and ensures that:
      *     1. For each loaded class, its static initializer is called (see [[CallersProperty]])
      *     2. For each instantiated type, the type is also a loaded class
+     *     // todo split this into to methods and schedule both!
      */
     def registerToInstantiatedTypesAndLoadedClasses(project: SomeProject): PropertyComputationResult = {
         val (lcDependee, loadedClassesUB) = propertyStore(project, LoadedClasses.key) match {
