@@ -8,6 +8,7 @@ import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.analyses.string_definition.V
 import org.opalj.fpcf.string_definition.properties.StringTree
 import org.opalj.fpcf.string_definition.properties.TreeConditionalElement
+import org.opalj.fpcf.string_definition.properties.TreeValueElement
 import org.opalj.tac.ArrayLoad
 import org.opalj.tac.Assignment
 import org.opalj.tac.Expr
@@ -105,6 +106,37 @@ class ExprHandler(p: SomeProject, m: Method) {
                     processedSites.filter(_.isDefined).map(_.get).to[ListBuffer]
                 ))
         }
+
+    /**
+     * chainDefSites takes the given definition sites, processes them from the first to the last
+     * element and chains the resulting trees together. That means, the first definition site is
+     * evaluated, its child becomes the evaluated tree of the second definition site and so on.
+     * Consequently, a [[StringTree]] will result where each element has only one child (except the
+     * leaf).
+     *
+     * @param defSites The definition sites to chain.
+     * @return Returns either a [[StringTree]] or `None` in case `defSites` is empty or its head
+     *         points to a definition site that cannot be processed.
+     */
+    def chainDefSites(defSites: List[Int]): Option[StringTree] = {
+        if (defSites.isEmpty) {
+            return None
+        }
+
+        val parent = processDefSite(defSites.head)
+        parent match {
+            case Some(tree) ⇒ tree match {
+                case tve: TreeValueElement ⇒ tve.child = chainDefSites(defSites.tail)
+                case tree: StringTree ⇒
+                    chainDefSites(defSites.tail) match {
+                        case Some(child) ⇒ tree.children.append(child)
+                        case _           ⇒
+                    }
+            }
+            case None ⇒ None
+        }
+        parent
+    }
 
 }
 
