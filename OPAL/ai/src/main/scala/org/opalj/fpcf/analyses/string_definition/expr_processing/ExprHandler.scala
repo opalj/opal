@@ -34,6 +34,7 @@ class ExprHandler(p: SomeProject, m: Method) {
     private val tacProvider = p.get(SimpleTACAIKey)
     private val ctxStmts = tacProvider(m).stmts
     private val processedDefSites = ListBuffer[Int]()
+    private val cfg = tacProvider(m).cfg
 
     /**
      * Processes a given definition site. That is, this function determines the
@@ -62,7 +63,7 @@ class ExprHandler(p: SomeProject, m: Method) {
         }
         val exprProcessor: AbstractExprProcessor = expr match {
             case _: ArrayLoad[V]              ⇒ new ArrayLoadProcessor(this)
-            case _: VirtualFunctionCall[V]    ⇒ new VirtualFunctionCallProcessor(this)
+            case _: VirtualFunctionCall[V]    ⇒ new VirtualFunctionCallProcessor(this, cfg)
             case _: New                       ⇒ new NewStringBuilderProcessor(this)
             case _: NonVirtualFunctionCall[V] ⇒ new NonVirtualFunctionCallProcessor()
             case _: StringConst               ⇒ new StringConstProcessor()
@@ -73,9 +74,9 @@ class ExprHandler(p: SomeProject, m: Method) {
 
         val subtree = ctxStmts(defSite) match {
             case a: Assignment[V] ⇒
-                exprProcessor.processAssignment(a, ctxStmts, processedDefSites.toList)
+                exprProcessor.processAssignment(a, ctxStmts, cfg, processedDefSites.toList)
             case _ ⇒
-                exprProcessor.processExpr(expr, ctxStmts, processedDefSites.toList)
+                exprProcessor.processExpr(expr, ctxStmts, cfg, processedDefSites.toList)
         }
         subtree
     }

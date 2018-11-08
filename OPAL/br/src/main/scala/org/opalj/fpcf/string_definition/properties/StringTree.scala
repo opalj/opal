@@ -43,11 +43,17 @@ sealed abstract class TreeElement(val children: ListBuffer[TreeElement]) {
                 c match {
                     case Some(child) ⇒
                         val reduced = reduceAcc(child)
-                        StringConstancyInformation(
+                        // Do not consider an empty constructor as a CONSTANT value (otherwise
+                        // PARTIALLY_CONSTANT will result when DYNAMIC is required)
+                        val level = if (sci.possibleStrings == "") {
+                            reduced.constancyLevel
+                        } else {
                             StringConstancyLevel.determineForConcat(
                                 sci.constancyLevel, reduced.constancyLevel
-                            ),
-                            sci.possibleStrings + reduced.possibleStrings
+                            )
+                        }
+                        StringConstancyInformation(
+                            level, sci.possibleStrings + reduced.possibleStrings
                         )
                     case None ⇒ sci
                 }
@@ -67,12 +73,12 @@ sealed abstract class TreeElement(val children: ListBuffer[TreeElement]) {
         val seen = mutable.Map[StringConstancyInformation, Boolean]()
         val unique = ListBuffer[TreeElement]()
         children.foreach {
-            case next @ TreeValueElement(_, sci) ⇒
+            case next@TreeValueElement(_, sci) ⇒
                 if (!seen.contains(sci)) {
                     seen += (sci → true)
                     unique.append(next)
                 }
-            case loopElement: TreeLoopElement        ⇒ unique.append(loopElement)
+            case loopElement: TreeLoopElement ⇒ unique.append(loopElement)
             case condElement: TreeConditionalElement ⇒ unique.append(condElement)
         }
         unique
@@ -85,7 +91,7 @@ sealed abstract class TreeElement(val children: ListBuffer[TreeElement]) {
         subtree match {
             case TreeConditionalElement(cs) ⇒
                 cs.foreach {
-                    case nextC @ TreeConditionalElement(subChildren) ⇒
+                    case nextC@TreeConditionalElement(subChildren) ⇒
                         simplifyAcc(nextC)
                         subChildren.foreach(subtree.children.append(_))
                         subtree.children.-=(nextC)
@@ -115,7 +121,6 @@ sealed abstract class TreeElement(val children: ListBuffer[TreeElement]) {
      *
      * @return This function modifies `this` tree and returns this instance, e.g., for chaining
      *         commands.
-     *
      * @note Applying this function changes the representation of the tree but not produce a
      *       semantically different tree! Executing this function prior to [[reduce()]] simplifies
      *       its stringified representation.
@@ -128,7 +133,7 @@ sealed abstract class TreeElement(val children: ListBuffer[TreeElement]) {
     def getLeafs: Array[TreeValueElement] = {
         def leafsAcc(root: TreeElement, leafs: ArrayBuffer[TreeValueElement]): Unit = {
             root match {
-                case TreeLoopElement(c, _)      ⇒ leafsAcc(c, leafs)
+                case TreeLoopElement(c, _) ⇒ leafsAcc(c, leafs)
                 case TreeConditionalElement(cs) ⇒ cs.foreach(leafsAcc(_, leafs))
                 case TreeValueElement(c, _) ⇒
                     if (c.isDefined) {
@@ -157,7 +162,7 @@ sealed abstract class TreeElement(val children: ListBuffer[TreeElement]) {
  * cannot be determined, set it to [[None]].
  */
 case class TreeLoopElement(
-    child:             TreeElement,
+    child: TreeElement,
     numLoopIterations: Option[Int]
 ) extends TreeElement(ListBuffer(child))
 
@@ -171,7 +176,7 @@ case class TreeLoopElement(
  * a `TreeConditionalElement` that has no children is regarded as an invalid tree in this sense!
  */
 case class TreeConditionalElement(
-    override val children: ListBuffer[TreeElement]
+    override val children: ListBuffer[TreeElement],
 ) extends TreeElement(children)
 
 /**
@@ -186,10 +191,10 @@ case class TreeConditionalElement(
  */
 case class TreeValueElement(
     var child: Option[TreeElement],
-    sci:       StringConstancyInformation
+    sci: StringConstancyInformation
 ) extends TreeElement(
     child match {
         case Some(c) ⇒ ListBuffer(c)
-        case None    ⇒ ListBuffer()
+        case None ⇒ ListBuffer()
     }
 )

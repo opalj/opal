@@ -1,11 +1,13 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.analyses.string_definition.expr_processing
 
+import org.opalj.br.cfg.CFG
 import org.opalj.fpcf.analyses.string_definition.V
 import org.opalj.fpcf.string_definition.properties.StringTree
 import org.opalj.tac.Assignment
 import org.opalj.tac.Expr
 import org.opalj.tac.Stmt
+import org.opalj.tac.TACStmts
 
 /**
  * AbstractExprProcessor defines the abstract / general strategy to process expressions in the
@@ -24,6 +26,7 @@ abstract class AbstractExprProcessor() {
      *                    passed, meets the requirements of that implementation.
      * @param stmts The statements that surround the expression to process, such as a method.
      *              Concrete processors might use these to retrieve further information.
+     * @param cfg The control flow graph that corresponds to the given `stmts`
      * @param ignore A list of processed def or use sites. This list makes sure that an assignment
      *               or expression is not processed twice (which could lead to duplicate
      *               computations and unnecessary elements in the resulting string tree.
@@ -34,7 +37,8 @@ abstract class AbstractExprProcessor() {
      * @see StringConstancyProperty
      */
     def processAssignment(
-        assignment: Assignment[V], stmts: Array[Stmt[V]], ignore: List[Int] = List[Int]()
+        assignment: Assignment[V], stmts: Array[Stmt[V]], cfg: CFG[Stmt[V], TACStmts[V]],
+        ignore: List[Int] = List[Int]()
     ): Option[StringTree]
 
     /**
@@ -56,7 +60,8 @@ abstract class AbstractExprProcessor() {
      *       this method (by default, `None` will be returned.
      */
     def processExpr(
-        expr: Expr[V], stmts: Array[Stmt[V]], ignore: List[Int] = List[Int]()
+        expr: Expr[V], stmts: Array[Stmt[V]], cfg: CFG[Stmt[V], TACStmts[V]],
+        ignore: List[Int] = List[Int]()
     ): Option[StringTree] = { None }
 
 }
