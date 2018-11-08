@@ -42,7 +42,6 @@ import org.opalj.fpcf.properties.UsesVaryingData
 import org.opalj.fpcf.properties.VExtensibleGetter
 import org.opalj.fpcf.properties.VFreshReturnValue
 import org.opalj.fpcf.properties.VGetter
-import org.opalj.fpcf.properties.VirtualMethodReturnValueFreshness
 import org.opalj.fpcf.properties.VNoFreshReturnValue
 import org.opalj.fpcf.properties.VPrimitiveReturnValue
 import org.opalj.br.ComputationalTypeReference
@@ -927,7 +926,6 @@ trait L2PurityAnalysisScheduler extends ComputationSpecification {
             TypeImmutability,
             FieldLocality,
             ReturnValueFreshness,
-            VirtualMethodReturnValueFreshness,
             Callees
         )
     }
