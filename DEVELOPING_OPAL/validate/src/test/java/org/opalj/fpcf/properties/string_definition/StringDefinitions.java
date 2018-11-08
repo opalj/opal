@@ -8,6 +8,12 @@ import java.lang.annotation.*;
 /**
  * The StringDefinitions annotation states how a string field or local variable is used during a
  * program execution.
+ * <p>
+ * Note that the {@link StringDefinitions} annotation is designed in a way to be able to capture
+ * only one read operation per test method. If this is a limitation, either (1) duplicate the
+ * corresponding test method and remove the first calls which trigger the analysis or (2) put the
+ * relevant code of the test function into a dedicated function and then call it from different
+ * test methods (to avoid copy&paste).
  *
  * @author Patrick Mell
  */
@@ -34,12 +40,5 @@ public @interface StringDefinitions {
      * expected.
      */
     String[] expectedValues() default "";
-
-    /**
-     * `pc` identifies the program counter of the statement for which a `UVar` is to be
-     * extracted for a test. Note that if an expression has more than one `UVar`, the test suite
-     * is free to choose which one it actually uses for its test(s).
-     */
-    int pc();
 
 }
