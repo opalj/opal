@@ -211,21 +211,21 @@ public class TestMethods {
         analyzeString(sb.toString());
     }
 
-    //    @StringDefinitions(
-    //            value = "if-else control structure which append to a string builder",
-    //            expectedLevel = StringConstancyLevel.CONSTANT,
-    //            expectedStrings = "(ac | ab)"
-    //    )
-    //    public void ifElseWithStringBuilder2() {
-    //        StringBuilder sb = new StringBuilder("a");
-    //        int i = new Random().nextInt();
-    //        if (i % 2 == 0) {
-    //            sb.append("b");
-    //        } else {
-    //            sb.append("c");
-    //        }
-    //        analyzeString(sb.toString());
-    //    }
+    @StringDefinitions(
+            value = "if-else control structure which append to a string builder",
+            expectedLevel = StringConstancyLevel.CONSTANT,
+            expectedStrings = "a(b | c)"
+    )
+    public void ifElseWithStringBuilder2() {
+        StringBuilder sb = new StringBuilder("a");
+        int i = new Random().nextInt();
+        if (i % 2 == 0) {
+            sb.append("b");
+        } else {
+            sb.append("c");
+        }
+        analyzeString(sb.toString());
+    }
 
     //    @StringDefinitions(
     //            value = "if-else control structure within a for loop with known loop bounds",

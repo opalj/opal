@@ -1,6 +1,7 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.analyses.string_definition.expr_processing
 
+import org.opalj.br.cfg.CFG
 import org.opalj.fpcf.analyses.string_definition.V
 import org.opalj.fpcf.string_definition.properties.StringConstancyInformation
 import org.opalj.fpcf.string_definition.properties.StringConstancyLevel.CONSTANT
@@ -15,6 +16,7 @@ import org.opalj.tac.Expr
 import org.opalj.tac.NonVirtualFunctionCall
 import org.opalj.tac.Stmt
 import org.opalj.tac.StringConst
+import org.opalj.tac.TACStmts
 import org.opalj.tac.VirtualFunctionCall
 
 import scala.collection.mutable.ListBuffer
@@ -28,7 +30,8 @@ import scala.collection.mutable.ListBuffer
  * @author Patrick Mell
  */
 class VirtualFunctionCallProcessor(
-        private val exprHandler: ExprHandler
+        private val exprHandler: ExprHandler,
+        private val cfg:         CFG[Stmt[V], TACStmts[V]]
 ) extends AbstractExprProcessor {
 
     /**
@@ -38,7 +41,8 @@ class VirtualFunctionCallProcessor(
      * @see [[AbstractExprProcessor.processAssignment]]
      */
     override def processAssignment(
-        assignment: Assignment[V], stmts: Array[Stmt[V]], ignore: List[Int] = List[Int]()
+        assignment: Assignment[V], stmts: Array[Stmt[V]], cfg: CFG[Stmt[V], TACStmts[V]],
+        ignore: List[Int] = List[Int]()
     ): Option[StringTree] = process(assignment.expr, stmts, ignore)
 
     /**
@@ -46,7 +50,8 @@ class VirtualFunctionCallProcessor(
      * [[AbstractExprProcessor.processExpr]].
      */
     override def processExpr(
-        expr: Expr[V], stmts: Array[Stmt[V]], ignore: List[Int]
+        expr: Expr[V], stmts: Array[Stmt[V]], cfg: CFG[Stmt[V], TACStmts[V]],
+        ignore: List[Int] = List[Int]()
     ): Option[StringTree] = process(expr, stmts, ignore)
 
     /**
@@ -60,7 +65,7 @@ class VirtualFunctionCallProcessor(
                 if (ExprHandler.isStringBuilderAppendCall(expr)) {
                     Some(processAppendCall(vfc, stmts, ignore))
                 } else if (ExprHandler.isStringBuilderToStringCall(expr)) {
-                    Some(processToStringCall(vfc, stmts, ignore))
+                    processToStringCall(vfc, stmts, ignore)
                 } // A call to method which is not (yet) supported
                 else {
                     val ps = ExprHandler.classNameToPossibleString(
@@ -94,7 +99,7 @@ class VirtualFunctionCallProcessor(
      */
     private def processToStringCall(
         call: VirtualFunctionCall[V], stmts: Array[Stmt[V]], ignore: List[Int]
-    ): StringTree = {
+    ): Option[StringTree] = {
         val children = ListBuffer[TreeElement]()
         val defSites = call.receiver.asVar.definedBy.filter(!ignore.contains(_))
         defSites.foreach {
@@ -104,10 +109,10 @@ class VirtualFunctionCallProcessor(
             }
         }
 
-        if (children.size == 1) {
-            children.head
-        } else {
-            TreeConditionalElement(children)
+        children.size match {
+            case 0 ⇒ None
+            case 1 ⇒ Some(children.head)
+            case _ ⇒ Some(TreeConditionalElement(children))
         }
     }
 
@@ -134,7 +139,7 @@ class VirtualFunctionCallProcessor(
             case _: NonVirtualFunctionCall[V] ⇒ StringConstancyInformation(DYNAMIC, "*")
             case StringConst(_, value)        ⇒ StringConstancyInformation(CONSTANT, value)
             // Next case is for an append call as argument to append
-            case _: VirtualFunctionCall[V]    ⇒ processAssignment(assign, stmts).get.reduce()
+            case _: VirtualFunctionCall[V]    ⇒ processAssignment(assign, stmts, cfg).get.reduce()
             case be: BinaryExpr[V] ⇒
                 val possibleString = ExprHandler.classNameToPossibleString(
                     be.left.asVar.value.getClass.getSimpleName

@@ -1,5 +1,6 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.analyses.string_definition.expr_processing
+import org.opalj.br.cfg.CFG
 import org.opalj.fpcf.analyses.string_definition.V
 import org.opalj.fpcf.string_definition.properties.StringTree
 import org.opalj.fpcf.string_definition.properties.TreeConditionalElement
@@ -9,6 +10,7 @@ import org.opalj.tac.ArrayStore
 import org.opalj.tac.Assignment
 import org.opalj.tac.Expr
 import org.opalj.tac.Stmt
+import org.opalj.tac.TACStmts
 
 import scala.collection.mutable.ListBuffer
 
@@ -33,7 +35,8 @@ class ArrayLoadProcessor(
      * @see [[AbstractExprProcessor.processAssignment]]
      */
     override def processAssignment(
-        assignment: Assignment[V], stmts: Array[Stmt[V]], ignore: List[Int] = List[Int]()
+        assignment: Assignment[V], stmts: Array[Stmt[V]], cfg: CFG[Stmt[V], TACStmts[V]],
+        ignore: List[Int] = List[Int]()
     ): Option[StringTree] = process(assignment.expr, stmts, ignore)
 
     /**
@@ -43,7 +46,8 @@ class ArrayLoadProcessor(
      * * @see [[AbstractExprProcessor.processExpr]]
      */
     override def processExpr(
-        expr: Expr[V], stmts: Array[Stmt[V]], ignore: List[Int]
+        expr: Expr[V], stmts: Array[Stmt[V]], cfg: CFG[Stmt[V], TACStmts[V]],
+        ignore: List[Int] = List[Int]()
     ): Option[StringTree] = process(expr, stmts, ignore)
 
     /**
