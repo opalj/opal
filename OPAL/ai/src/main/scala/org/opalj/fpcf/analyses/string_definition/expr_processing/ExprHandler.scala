@@ -16,6 +16,8 @@ import org.opalj.tac.SimpleTACAIKey
 import org.opalj.tac.StringConst
 import org.opalj.tac.VirtualFunctionCall
 
+import scala.collection.mutable.ListBuffer
+
 /**
  * `ExprHandler` is responsible for processing expressions that are relevant in order to determine
  * which value(s) a string read operation might have. These expressions usually come from the
@@ -29,6 +31,7 @@ class ExprHandler(p: SomeProject, m: Method) {
 
     private val tacProvider = p.get(SimpleTACAIKey)
     private val ctxStmts = tacProvider(m).stmts
+    private val processedDefSites = ListBuffer[Int]()
 
     /**
      * Processes a given definition site. That is, this function determines the
@@ -42,9 +45,10 @@ class ExprHandler(p: SomeProject, m: Method) {
      *         returned.
      */
     def processDefSite(defSite: Int): Option[StringTree] = {
-        if (defSite < 0) {
+        if (defSite < 0 || processedDefSites.contains(defSite)) {
             return None
         }
+        processedDefSites.append(defSite)
 
         val assignment = ctxStmts(defSite).asAssignment
         val exprProcessor: AbstractExprProcessor = assignment.expr match {
@@ -80,9 +84,11 @@ class ExprHandler(p: SomeProject, m: Method) {
         defSites.size match {
             case 0 ⇒ None
             case 1 ⇒ processDefSite(defSites.head)
-            case _ ⇒ Some(TreeConditionalElement(
-                defSites.filter(_ >= 0).map(processDefSite _).filter(_.isDefined).map(_.get).toList
-            ))
+            case _ ⇒
+                val processedSites = defSites.filter(_ >= 0).map(processDefSite _)
+                Some(TreeConditionalElement(
+                    processedSites.filter(_.isDefined).map(_.get).to[ListBuffer]
+                ))
         }
 
 }

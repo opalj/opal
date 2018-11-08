@@ -5,12 +5,6 @@ package org.opalj.fpcf.string_definition.properties
  *
  * @author Patrick Mell
  */
-class StringConstancyInformation(
-    val constancyLevel: StringConstancyLevel.Value, val possibleStrings: String
+case class StringConstancyInformation(
+    constancyLevel: StringConstancyLevel.Value, possibleStrings: String
 )
-
-object StringConstancyInformation {
-    def apply(
-        constancyLevel: StringConstancyLevel.Value, possibleStrings: String
-    ): StringConstancyInformation = new StringConstancyInformation(constancyLevel, possibleStrings)
-}

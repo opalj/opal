@@ -1,7 +1,9 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.string_definition.properties
 
+import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
+import scala.collection.mutable.ListBuffer
 
 /**
  * Models the nodes and leafs of [[StringTree]].
@@ -9,7 +11,7 @@ import scala.collection.mutable.ArrayBuffer
  *
  * @author Patrick Mell
  */
-sealed abstract class TreeElement(val children: List[TreeElement]) {
+sealed abstract class TreeElement(val children: ListBuffer[TreeElement]) {
 
     /**
      * Accumulator / helper function for reducing a tree.
@@ -17,14 +19,12 @@ sealed abstract class TreeElement(val children: List[TreeElement]) {
      * @param subtree The tree (or subtree) to reduce.
      * @return The reduced tree.
      */
-    private def reduceAcc(
-        subtree: TreeElement
-    ): StringConstancyInformation = {
+    private def reduceAcc(subtree: TreeElement): StringConstancyInformation = {
         subtree match {
             case TreeConditionalElement(c) ⇒
                 val scis = c.map(reduceAcc)
                 val reducedInfo = scis.reduceLeft((o, n) ⇒ StringConstancyInformation(
-                    StringConstancyLevel.determineLevel(o.constancyLevel, n.constancyLevel),
+                    StringConstancyLevel.determineMoreGeneral(o.constancyLevel, n.constancyLevel),
                     s"${o.possibleStrings} | ${n.possibleStrings}"
                 ))
                 StringConstancyInformation(
@@ -44,7 +44,7 @@ sealed abstract class TreeElement(val children: List[TreeElement]) {
                     case Some(child) ⇒
                         val reduced = reduceAcc(child)
                         StringConstancyInformation(
-                            StringConstancyLevel.determineLevel(
+                            StringConstancyLevel.determineForConcat(
                                 sci.constancyLevel, reduced.constancyLevel
                             ),
                             sci.possibleStrings + reduced.possibleStrings
@@ -55,12 +55,72 @@ sealed abstract class TreeElement(val children: List[TreeElement]) {
     }
 
     /**
+     * This function removes duplicate [[TreeValueElement]]s from a given list. In this context, two
+     * elements are equal if their [[TreeValueElement.sci]] information is equal.
+     *
+     * @param children The children from which to remove duplicates.
+     * @return Returns a list of [[TreeElement]] with unique elements.
+     */
+    private def removeDuplicateTreeValues(
+        children: ListBuffer[TreeElement]
+    ): ListBuffer[TreeElement] = {
+        val seen = mutable.Map[StringConstancyInformation, Boolean]()
+        val unique = ListBuffer[TreeElement]()
+        children.foreach {
+            case next @ TreeValueElement(_, sci) ⇒
+                if (!seen.contains(sci)) {
+                    seen += (sci → true)
+                    unique.append(next)
+                }
+            case loopElement: TreeLoopElement        ⇒ unique.append(loopElement)
+            case condElement: TreeConditionalElement ⇒ unique.append(condElement)
+        }
+        unique
+    }
+
+    /**
+     * Accumulator function for simplifying a tree.
+     */
+    private def simplifyAcc(subtree: StringTree): StringTree = {
+        subtree match {
+            case TreeConditionalElement(cs) ⇒
+                cs.foreach {
+                    case nextC @ TreeConditionalElement(subChildren) ⇒
+                        simplifyAcc(nextC)
+                        subChildren.foreach(subtree.children.append(_))
+                        subtree.children.-=(nextC)
+                    case _ ⇒
+                }
+                val unique = removeDuplicateTreeValues(cs)
+                subtree.children.clear()
+                subtree.children.appendAll(unique)
+                subtree
+            case _ ⇒ subtree
+        }
+    }
+
+    /**
      * Reduces this [[StringTree]] instance to a [[StringConstancyInformation]] object that captures
      * the information stored in this tree.
      *
      * @return A [[StringConstancyInformation]] instance that flatly describes this tree.
      */
     def reduce(): StringConstancyInformation = reduceAcc(this)
+
+    /**
+     * Simplifies this tree. Currently, this means that when a (sub) tree has a
+     * [[TreeConditionalElement]] as root, ''r'', and a child, ''c'' (or several children) which is
+     * a [[TreeConditionalElement]] as well, that ''c'' is attached as a direct child of ''r'' (the
+     * child [[TreeConditionalElement]] under which ''c'' was located is then removed safely).
+     *
+     * @return This function modifies `this` tree and returns this instance, e.g., for chaining
+     *         commands.
+     *
+     * @note Applying this function changes the representation of the tree but not produce a
+     *       semantically different tree! Executing this function prior to [[reduce()]] simplifies
+     *       its stringified representation.
+     */
+    def simplify(): StringTree = simplifyAcc(this)
 
     /**
      * @return Returns all leaf elements of this instance.
@@ -99,7 +159,7 @@ sealed abstract class TreeElement(val children: List[TreeElement]) {
 case class TreeLoopElement(
     child:             TreeElement,
     numLoopIterations: Option[Int]
-) extends TreeElement(List(child))
+) extends TreeElement(ListBuffer(child))
 
 /**
  * For modelling conditionals, such as if, if-else, if-elseif-else, switch, and also as parent
@@ -111,7 +171,7 @@ case class TreeLoopElement(
  * a `TreeConditionalElement` that has no children is regarded as an invalid tree in this sense!
  */
 case class TreeConditionalElement(
-    override val children: List[TreeElement]
+    override val children: ListBuffer[TreeElement]
 ) extends TreeElement(children)
 
 /**
@@ -129,7 +189,7 @@ case class TreeValueElement(
     sci:       StringConstancyInformation
 ) extends TreeElement(
     child match {
-        case Some(c) ⇒ List(c)
-        case None    ⇒ List()
+        case Some(c) ⇒ ListBuffer(c)
+        case None    ⇒ ListBuffer()
     }
 )

@@ -35,13 +35,15 @@ class VirtualFunctionCallProcessor(
      *
      * @see [[AbstractExprProcessor.process]]
      */
-    override def process(assignment: Assignment[V], stmts: Array[Stmt[V]]): Option[StringTree] = {
+    override def process(
+        assignment: Assignment[V], stmts: Array[Stmt[V]], ignore: List[Int] = List[Int]()
+    ): Option[StringTree] = {
         assignment.expr match {
             case vfc: VirtualFunctionCall[V] ⇒
                 if (ExprHandler.isStringBuilderAppendCall(assignment)) {
-                    Some(processAppendCall(vfc, stmts))
+                    Some(processAppendCall(vfc, stmts, ignore))
                 } else if (ExprHandler.isStringBuilderToStringCall(assignment)) {
-                    Some(processToStringCall(vfc, stmts))
+                    Some(processToStringCall(vfc, stmts, ignore))
                 } // A call to method which is not (yet) supported
                 else {
                     None
@@ -54,9 +56,9 @@ class VirtualFunctionCallProcessor(
      * Function for processing calls to [[StringBuilder#append]].
      */
     private def processAppendCall(
-        call: VirtualFunctionCall[V], stmts: Array[Stmt[V]]
+        call: VirtualFunctionCall[V], stmts: Array[Stmt[V]], ignore: List[Int]
     ): TreeElement = {
-        val defSites = call.receiver.asVar.definedBy
+        val defSites = call.receiver.asVar.definedBy.filter(!ignore.contains(_))
         val appendValue = valueOfAppendCall(call, stmts)
         if (defSites.isEmpty) {
             appendValue
@@ -71,10 +73,11 @@ class VirtualFunctionCallProcessor(
      * Function for processing calls to [[StringBuilder.toString]].
      */
     private def processToStringCall(
-        call: VirtualFunctionCall[V], stmts: Array[Stmt[V]]
+        call: VirtualFunctionCall[V], stmts: Array[Stmt[V]], ignore: List[Int]
     ): StringTree = {
         val children = ListBuffer[TreeElement]()
-        call.receiver.asVar.definedBy.foreach {
+        val defSites = call.receiver.asVar.definedBy.filter(!ignore.contains(_))
+        defSites.foreach {
             exprHandler.processDefSite(_) match {
                 case Some(subtree) ⇒ children.append(subtree)
                 case None          ⇒
@@ -84,7 +87,7 @@ class VirtualFunctionCallProcessor(
         if (children.size == 1) {
             children.head
         } else {
-            TreeConditionalElement(children.toList)
+            TreeConditionalElement(children)
         }
     }
 

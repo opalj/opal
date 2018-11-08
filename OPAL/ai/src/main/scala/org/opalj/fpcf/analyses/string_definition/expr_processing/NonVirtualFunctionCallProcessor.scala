@@ -29,7 +29,9 @@ class NonVirtualFunctionCallProcessor() extends AbstractExprProcessor {
      *
      * @see [[AbstractExprProcessor#process]]
      */
-    override def process(assignment: Assignment[V], stmts: Array[Stmt[V]]): Option[StringTree] =
+    override def process(
+        assignment: Assignment[V], stmts: Array[Stmt[V]], ignore: List[Int] = List[Int]()
+    ): Option[StringTree] =
         assignment.expr match {
             case _: NonVirtualFunctionCall[V] ⇒ Some(TreeValueElement(
                 None, StringConstancyInformation(DYNAMIC, "*")

@@ -31,27 +31,31 @@ class ArrayLoadProcessor(
      *
      * @see [[AbstractExprProcessor.process]]
      */
-    override def process(assignment: Assignment[V], stmts: Array[Stmt[V]]): Option[StringTree] = {
+    override def process(
+        assignment: Assignment[V], stmts: Array[Stmt[V]], ignore: List[Int] = List[Int]()
+    ): Option[StringTree] = {
         assignment.expr match {
             case al: ArrayLoad[V] ⇒
                 val children = ListBuffer[TreeElement]()
                 // Loop over all possible array values
                 al.arrayRef.asVar.definedBy.foreach { defSite ⇒
-                    val arrDecl = stmts(defSite)
-                    arrDecl.asAssignment.targetVar.usedBy.filter {
-                        stmts(_).isInstanceOf[ArrayStore[V]]
-                    } foreach { f: Int ⇒
-                        // Actually, definedBy should contain only one element but for the sake of
-                        // completion, loop over all
-                        // TODO: If not, the tree construction has to be modified
-                        val arrValues = stmts(f).asArrayStore.value.asVar.definedBy.map {
-                            exprHandler.processDefSite _
-                        }.filter(_.isDefined).map(_.get)
-                        children.appendAll(arrValues)
+                    if (!ignore.contains(defSite)) {
+                        val arrDecl = stmts(defSite)
+                        arrDecl.asAssignment.targetVar.usedBy.filter {
+                            stmts(_).isInstanceOf[ArrayStore[V]]
+                        } foreach { f: Int ⇒
+                            // Actually, definedBy should contain only one element but for the sake
+                            // of completion, loop over all
+                            // TODO: If not, the tree construction has to be modified
+                            val arrValues = stmts(f).asArrayStore.value.asVar.definedBy.map {
+                                exprHandler.processDefSite _
+                            }.filter(_.isDefined).map(_.get)
+                            children.appendAll(arrValues)
+                        }
                     }
                 }
 
-                Some(TreeConditionalElement(children.toList))
+                Some(TreeConditionalElement(children))
             case _ ⇒ None
         }
     }
