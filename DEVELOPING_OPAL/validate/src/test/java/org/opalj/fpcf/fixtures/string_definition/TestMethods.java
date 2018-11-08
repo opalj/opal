@@ -236,11 +236,25 @@ public class TestMethods {
         StringBuilder sb = new StringBuilder("a");
         int i = new Random().nextInt();
         if (i % 2 == 0) {
+            // TODO: Extend the case with three append calls per block
             sb.append("b");
             sb.append("c");
         } else {
             sb.append("y");
             sb.append("z");
+        }
+        analyzeString(sb.toString());
+    }
+
+    @StringDefinitions(
+            value = "simple for loop with knows bounds",
+            expectedLevel = StringConstancyLevel.CONSTANT,
+            expectedStrings = "a(b)^∞"
+    )
+    public void simpleForLoopWithKnownBounds() {
+        StringBuilder sb = new StringBuilder("a");
+        for (int i = 0; i < 10; i++) {
+            sb.append("b");
         }
         analyzeString(sb.toString());
     }

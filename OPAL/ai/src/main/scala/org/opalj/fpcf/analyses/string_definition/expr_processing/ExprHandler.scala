@@ -3,20 +3,26 @@ package org.opalj.fpcf.analyses.string_definition.expr_processing
 
 import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br.cfg.CFG
 import org.opalj.collection.immutable.EmptyIntTrieSet
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.analyses.string_definition.V
 import org.opalj.fpcf.string_definition.properties.StringTree
 import org.opalj.fpcf.string_definition.properties.TreeConditionalElement
+import org.opalj.fpcf.string_definition.properties.TreeLoopElement
 import org.opalj.fpcf.string_definition.properties.TreeValueElement
 import org.opalj.tac.ArrayLoad
 import org.opalj.tac.Assignment
 import org.opalj.tac.Expr
 import org.opalj.tac.ExprStmt
+import org.opalj.tac.Goto
+import org.opalj.tac.If
 import org.opalj.tac.New
 import org.opalj.tac.NonVirtualFunctionCall
 import org.opalj.tac.SimpleTACAIKey
+import org.opalj.tac.Stmt
 import org.opalj.tac.StringConst
+import org.opalj.tac.TACStmts
 import org.opalj.tac.VirtualFunctionCall
 
 import scala.collection.mutable.ListBuffer
@@ -79,7 +85,12 @@ class ExprHandler(p: SomeProject, m: Method) {
             case _ ⇒
                 exprProcessor.processExpr(expr, ctxStmts, cfg, processedDefSites.toList)
         }
-        subtree
+
+        if (subtree.isDefined && ExprHandler.isWithinLoop(defSite, cfg)) {
+            Some(TreeLoopElement(subtree.get, None))
+        } else {
+            subtree
+        }
     }
 
     /**
@@ -151,6 +162,82 @@ object ExprHandler {
      * @see [[ExprHandler]]
      */
     def apply(p: SomeProject, m: Method): ExprHandler = new ExprHandler(p, m)
+
+    /**
+     * Determines the successor [[Goto]] element for the given definition site, if present.
+     *
+     * @param defSite The definition site to check.
+     * @param cfg The control flow graph which is required for that operation.
+     * @return Either returns the corresponding [[Goto]] element or `None` in case there is non
+     *         following the given site.
+     */
+    private def getSuccessorGoto(defSite: Int, cfg: CFG[Stmt[V], TACStmts[V]]): Option[Goto] = {
+        val successorBlocks = cfg.bb(defSite).successors.filter(_.isBasicBlock)
+        val successorDefSites = ListBuffer[Int]()
+        var goto: Option[Goto] = None
+
+        successorBlocks.foreach { next ⇒
+            for (i ← next.asBasicBlock.startPC to next.asBasicBlock.endPC) {
+                cfg.code.instructions(i) match {
+                    case gt: Goto ⇒ goto = Some(gt)
+                    case _        ⇒ if (i > defSite) successorDefSites.append(i)
+                }
+            }
+        }
+        if (goto.isDefined) {
+            goto
+        } else {
+            val successor = successorDefSites.map(getSuccessorGoto(_, cfg)).filter(_.isDefined)
+            if (successor.nonEmpty && successor.head.isDefined) {
+                successor.head
+            } else {
+                None
+            }
+        }
+    }
+
+    /**
+     * Determines the if statement that belongs to the given `goto`.
+     *
+     * @param goto The [[Goto]] for which to determine the corresponding [[If]]. Note that the
+     *             `goto` is not required to have a corresponding [[If]].
+     * @param cfg The control flow graph which is required for that operation.
+     * @return Either returns the corresponding [[If]] or `None` if there is no such [[If]].
+     */
+    private def getIfOfGoto(goto: Goto, cfg: CFG[Stmt[V], TACStmts[V]]): Option[If[V]] = {
+        cfg.code.instructions(goto.targetStmt) match {
+            case a: Assignment[V] ⇒
+                val possibleIfsSites = a.targetVar.usedBy
+                possibleIfsSites.filter(cfg.code.instructions(_).isInstanceOf[If[V]]).map {
+                    cfg.code.instructions(_).asIf
+                }.headOption
+            case _ ⇒ None
+        }
+    }
+
+    /**
+     * Checks whether the given definition site is within a loop.
+     *
+     * @param defSite The definition site to check.
+     * @param cfg The control flow graph which is required for that operation.
+     * @return Returns `true` if the given site resides within a loop and `false` otherwise.
+     */
+    def isWithinLoop(defSite: Int, cfg: CFG[Stmt[V], TACStmts[V]]): Boolean = {
+        val succGoto = getSuccessorGoto(defSite, cfg)
+        if (succGoto.isEmpty) {
+            false
+        } else {
+            val correspondingIf = getIfOfGoto(succGoto.get, cfg)
+            if (correspondingIf.isEmpty) {
+                false
+            } else {
+                // To be within a loop, the definition site must be within the if and goto
+                val posIf = cfg.code.instructions.indexOf(correspondingIf.get)
+                val posGoto = cfg.code.instructions.indexOf(succGoto.get)
+                defSite > posIf && defSite < posGoto
+            }
+        }
+    }
 
     /**
      * Checks whether an expression contains a call to [[StringBuilder.toString]].
