@@ -10,7 +10,6 @@ import org.opalj.fpcf.string_definition.properties.StringTreeConcat
 import org.opalj.fpcf.string_definition.properties.StringTreeConst
 import org.opalj.fpcf.string_definition.properties.StringTreeOr
 import org.opalj.fpcf.string_definition.properties.StringTreeRepetition
-import org.opalj.graphs.DominatorTree
 import org.opalj.tac.Assignment
 import org.opalj.tac.Expr
 import org.opalj.tac.New
@@ -146,7 +145,7 @@ class NewStringBuilderProcessor(
                 case mc: NonVirtualMethodCall[V] if mc.name == "<init>" ⇒ inits.append(next)
                 case _: Assignment[V] ⇒
                     // Use dominator tree to determine whether init or noninit
-                    if (doesDominate(inits.toArray, next, domTree)) {
+                    if (domTree.doesDominate(inits.toArray, next)) {
                         nonInits.append(next)
                     } else {
                         inits.append(next)
@@ -182,29 +181,6 @@ class NewStringBuilderProcessor(
         // Make the list unique (as described above) and sort it in ascending order
         val uniqueLists = blocks.values.toList.distinct.reverse
         (inits.toList.sorted, uniqueLists.map(_.toList))
-    }
-
-    /**
-     * `doesDominate` checks if a list of `possibleDominators` dominates another statement,
-     * `toCheck`, by using the given dominator tree, `domTree`. If so, true is returned and false
-     * otherwise.
-     */
-    private def doesDominate(
-        possibleDominators: Array[Int], toCheck: Int, domTree: DominatorTree
-    ): Boolean = {
-        var nextToCheck = toCheck
-        var pd = possibleDominators.filter(_ < nextToCheck)
-
-        while (pd.nonEmpty) {
-            if (possibleDominators.contains(nextToCheck)) {
-                return true
-            }
-
-            nextToCheck = domTree.dom(nextToCheck)
-            pd = pd.filter(_ <= nextToCheck)
-        }
-
-        false
     }
 
 }
