@@ -26,6 +26,47 @@ final class DominatorTree private (
 
     def isAugmented: Boolean = hasVirtualStartNode
 
+    /**
+     * Checks whether a given node is dominated by another node in this dominator tree.
+     *
+     * @param possibleDominator The index of the node which could be a dominator.
+     * @param toCheck The index of the node which is to be checked whether it is dominated by the
+     *                node identified by `possibleDominator`.
+     * @return Returns `true` if the node identified by `toCheck` is dominated by the node
+     *         identified by `possibleDominator`. Otherwise, false will be returned.
+     */
+    def doesDominate(
+        possibleDominator: Int, toCheck: Int
+    ): Boolean = doesDominate(Array(possibleDominator), toCheck)
+
+    /**
+     * Convenient function which checks whether at least one node of a list, `possibleDominators`,
+     * dominates another node, `toCheck`. Note that analogously to `doesDominate(Int, Int)`,
+     * `possibleDominators` and `toCheck` contain the indices of the nodes.
+     *
+     * @note One could easily simulate the behavior of this function by looping over the possible
+     *       dominators and call `doesDominate(Int, Int)` for each. However, this function has the
+     *       advantage that only one iteration is necessary instead of ''n'' where ''n'' is the
+     *       number of possible dominators.
+     */
+    def doesDominate(
+        possibleDominators: Array[Int], toCheck: Int
+    ): Boolean = {
+        var nextToCheck = toCheck
+        var pd = possibleDominators.filter(_ < nextToCheck)
+
+        while (pd.nonEmpty) {
+            if (possibleDominators.contains(nextToCheck)) {
+                return true
+            }
+
+            nextToCheck = dom(nextToCheck)
+            pd = pd.filter(_ <= nextToCheck)
+        }
+
+        false
+    }
+
 }
 
 /**
