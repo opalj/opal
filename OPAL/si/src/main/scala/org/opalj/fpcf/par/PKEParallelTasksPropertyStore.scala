@@ -9,7 +9,6 @@ import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.Semaphore
-import java.util.concurrent.atomic.AtomicReferenceArray
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
@@ -55,7 +54,7 @@ final class PKEParallelTasksPropertyStore private (
 )(
         implicit
         val logContext: LogContext
-) extends PropertyStore {
+) extends ParallelPropertyStore {
     store ⇒
 
     // --------------------------------------------------------------------------------------------
@@ -87,10 +86,10 @@ final class PKEParallelTasksPropertyStore private (
     private[this] val fastTrackPropertiesCounter: AtomicInteger = new AtomicInteger(0)
     def fastTrackPropertiesCount: Int = fastTrackPropertiesCounter.get
 
-    @volatile private[this] var redundantIdempotentResultsCounter = 0
+    private[this] var redundantIdempotentResultsCounter = 0
     def redundantIdempotentResultsCount: Int = redundantIdempotentResultsCounter
 
-    @volatile private[this] var uselessPartialResultComputationCounter = 0
+    private[this] var uselessPartialResultComputationCounter = 0
     def uselessPartialResultComputationCount: Int = uselessPartialResultComputationCounter
 
     private[this] var scheduledLazyTasksCounter = 0
@@ -99,18 +98,18 @@ final class PKEParallelTasksPropertyStore private (
     private[this] val fallbacksUsedCounter: AtomicInteger = new AtomicInteger(0)
     def fallbacksUsedCount: Int = fallbacksUsedCounter.get
 
-    @volatile private[this] var scheduledOnUpdateComputationsCounter = 0
+    private[this] var scheduledOnUpdateComputationsCounter = 0
     def scheduledOnUpdateComputationsCount: Int = scheduledOnUpdateComputationsCounter
 
-    @volatile private[this] var scheduledDependeeUpdatesCounter = 0
+    private[this] var scheduledDependeeUpdatesCounter = 0
     /** Computations of dependees which are scheduled immediately. */
     def scheduledDependeeUpdatesCount: Int = scheduledDependeeUpdatesCounter
 
-    @volatile private[this] var directDependerOnUpdateComputationsCounter = 0
+    private[this] var directDependerOnUpdateComputationsCounter = 0
     /** Computations which are executed immediately and which are not scheduled. */
     def directDependerOnUpdateComputationsCount: Int = directDependerOnUpdateComputationsCounter
 
-    @volatile private[this] var directDependeeUpdatesCounter = 0
+    private[this] var directDependeeUpdatesCounter = 0
     def directDependeeUpdatesCount: Int = directDependeeUpdatesCounter
 
     def immediateOnUpdateComputationsCount: Int = {
@@ -122,10 +121,10 @@ final class PKEParallelTasksPropertyStore private (
     private[this] var updatesCounter = 0
     private[this] var oneStepFinalUpdatesCounter = 0
 
-    @volatile private[this] var resolvedCSCCsCounter = 0
+    private[this] var resolvedCSCCsCounter = 0
     def resolvedCSCCsCount: Int = resolvedCSCCsCounter
 
-    @volatile private[this] var quiescenceCounter = 0
+    private[this] var quiescenceCounter = 0
     def quiescenceCount: Int = quiescenceCounter
 
     def statistics: SomeMap[String, Int] = {
@@ -169,14 +168,20 @@ final class PKEParallelTasksPropertyStore private (
         Array.fill(SupportedPropertyKinds) { new ConcurrentHashMap() }
     }
 
+    // The following "var"s/"arrays" do not need to be volatile, because the updates – which are
+    // only done while the store is quiescent – are done within the driver thread andF are guaranteed
+    // to be visible to all relevant threads. The (tasks/storeupdates)semaphores.release methods,
+    // which necessarily will be called to start some computations/process some result –
+    // do establish the required happens-before relation.
+
     /** Those computations that will only be scheduled if the property is required. */
-    private[this] val lazyComputations: AtomicReferenceArray[SomePropertyComputation] = {
-        new AtomicReferenceArray(SupportedPropertyKinds)
+    private[this] val lazyComputations: Array[SomePropertyComputation] = {
+        new Array(SupportedPropertyKinds)
     }
 
     /** Computations that will be triggered when a new property becomes available. */
-    private[this] val triggeredComputations: AtomicReferenceArray[Array[SomePropertyComputation]] = {
-        new AtomicReferenceArray(SupportedPropertyKinds)
+    private[this] val triggeredComputations: Array[Array[SomePropertyComputation]] = {
+        new Array(SupportedPropertyKinds)
     }
 
     // Contains all those EPKs that should be computed until we have a final result.
@@ -185,13 +190,13 @@ final class PKEParallelTasksPropertyStore private (
         Array.fill(SupportedPropertyKinds) { new ConcurrentHashMap() }
     }
 
-    @volatile private[this] var previouslyComputedPropertyKinds: Array[Boolean] = {
+    private[this] var previouslyComputedPropertyKinds: Array[Boolean] = {
         new Array[Boolean](SupportedPropertyKinds)
     }
 
-    @volatile private[this] var computedPropertyKinds: Array[Boolean] = _ /*null*/
+    private[this] var computedPropertyKinds: Array[Boolean] = _ /*null*/
 
-    @volatile private[this] var delayedPropertyKinds: Array[Boolean] = _ /*null*/
+    private[this] var delayedPropertyKinds: Array[Boolean] = _ /*null*/
 
     // ---------------------------------------------------------------------------------------------
     // The following three data-structures are never read or updated concurrently;
@@ -469,7 +474,6 @@ final class PKEParallelTasksPropertyStore private (
                 "lazy computations can only be registered while no computations are running"
             )
         }
-
         // By contract, this method is never executed concurrently and no computations
         // are running. Furthermore, the store is either newly created or waitOnPhaseCompletion
         // was called and the happens-before relation w.r.t. "dependers" is established and
@@ -489,8 +493,7 @@ final class PKEParallelTasksPropertyStore private (
                 )
             }
         }
-
-        lazyComputations.set(pk.id, pc)
+        lazyComputations(pk.id) = pc
     }
 
     override def registerTriggeredComputation[E <: Entity, P <: Property](
@@ -505,15 +508,15 @@ final class PKEParallelTasksPropertyStore private (
         val pkId = pk.id
         var oldComputations: Array[SomePropertyComputation] = null
         var newComputations: Array[SomePropertyComputation] = null
-        do {
-            oldComputations = triggeredComputations.get(pkId)
-            if (oldComputations == null) {
-                newComputations = Array[SomePropertyComputation](pc)
-            } else {
-                newComputations = java.util.Arrays.copyOf(oldComputations, oldComputations.length + 1)
-                newComputations(oldComputations.length) = pc
-            }
-        } while (!triggeredComputations.compareAndSet(pkId, oldComputations, newComputations))
+
+        oldComputations = triggeredComputations(pkId)
+        if (oldComputations == null) {
+            newComputations = Array[SomePropertyComputation](pc)
+        } else {
+            newComputations = java.util.Arrays.copyOf(oldComputations, oldComputations.length + 1)
+            newComputations(oldComputations.length) = pc
+        }
+        triggeredComputations(pkId) = newComputations
 
     }
 
@@ -649,7 +652,7 @@ final class PKEParallelTasksPropertyStore private (
                     throw new IllegalStateException("setup phase was not called")
                 }
 
-                lazyComputations.get(pkId) match {
+                lazyComputations(pkId) match {
                     case null ⇒
                         if (!computedPropertyKinds(pkId) && !delayedPropertyKinds(pkId)) {
                             // ... a property is queried that is not going to be computed;
@@ -702,7 +705,7 @@ final class PKEParallelTasksPropertyStore private (
     override def force[E <: Entity, P <: Property](e: E, pk: PropertyKey[P]): Unit = {
         val pkId = pk.id
         if (forcedComputations(pkId).put(e, e) == null) {
-            val lc = lazyComputations.get(pkId).asInstanceOf[PropertyComputation[E]]
+            val lc = lazyComputations(pkId).asInstanceOf[PropertyComputation[E]]
             if (lc != null) {
                 if (properties(pkId).get(e) == null) {
                     if (tracer.isDefined) tracer.get.force(e, pkId)
@@ -718,7 +721,7 @@ final class PKEParallelTasksPropertyStore private (
 
     // Thread safe!
     override def set(e: Entity, p: Property): Unit = handleExceptions {
-        if (debug && lazyComputations.get(p.key.id) != null) {
+        if (debug && lazyComputations(p.key.id) != null) {
             throw new IllegalStateException(
                 s"$e: setting $p is not supported; lazy computation is (already) registered"
             )
@@ -867,7 +870,7 @@ final class PKEParallelTasksPropertyStore private (
     private[this] def handleInitialProperty(e: Entity, pkId: Int, isFinal: Boolean): Unit = {
         if (isFinal) oneStepFinalUpdatesCounter += 1
 
-        val computationsToStart = this.triggeredComputations.get(pkId)
+        val computationsToStart = this.triggeredComputations(pkId)
         if (computationsToStart ne null) {
             foreachValue[SomePropertyComputation](computationsToStart) { (_ /*index*/ , pc) ⇒
                 scheduleEagerComputationForEntity(e)(pc.asInstanceOf[PropertyComputation[Entity]])
