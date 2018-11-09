@@ -21,6 +21,9 @@ import org.opalj.graphs.DefaultMutableNode
 import org.opalj.graphs.DominatorTree
 import org.opalj.graphs.Node
 
+import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
+
 /**
  * Represents the control flow graph of a method.
  *
@@ -735,6 +738,54 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
             foreachPredecessor,
             basicBlocks.last.endPC
         )
+    }
+
+    // We use this variable for caching, as the loop information of a CFG are permanent and do not
+    // need to be recomputed (see findNaturalLoops for usage)
+    private var naturalLoops: Option[List[List[Int]]] = None
+
+    /**
+     * ''findNaturalLoops'' finds all natural loops in this dominator tree and returns them as a
+     * list of lists where each inner list represents one loop and the Int values correspond to the
+     * indices of the nodes.
+     *
+     * @return Returns all found loops. The structure of the inner lists is as follows: The first
+     *         element of each inner list, i.e., each loop, is the loop header and the very last
+     *         element is the one that has a back-edge to the loop header. In between, elements are
+     *         ordered according to their occurrences, i.e., if ''n1'' is executed before ''n2'',
+     *         the index of ''n1'' is less than the index of ''n2''.
+     * @note This function only focuses on natural loops, i.e., it may / will produce incorrect
+     *       results on irreducible loops. For further information, see
+     *       [[http://www.cs.princeton.edu/courses/archive/spring03/cs320/notes/loops.pdf]].
+     */
+    def findNaturalLoops(): List[List[Int]] = {
+        // Find loops only if that has not been done before
+        if (naturalLoops.isEmpty) {
+            val domTree = dominatorTree
+            // Execute a depth-first-search to find all back-edges
+            val start = startBlock.startPC
+            val seenNodes = ListBuffer[Int](start)
+            val toVisitStack = mutable.Stack[Int](successors(start).toArray: _*)
+            // backedges stores all back-edges in the form (from, to) (where to dominates from)
+            val backedges = ListBuffer[(Int, Int)]()
+            while (toVisitStack.nonEmpty) {
+                val from = toVisitStack.pop()
+                val to = successors(from).toArray
+                // Check for back-edges
+                to.filter { next ⇒
+                    val index = seenNodes.indexOf(next)
+                    index > -1 && domTree.doesDominate(seenNodes(index), from)
+                }.foreach(destIndex ⇒ backedges.append((from, destIndex)))
+
+                seenNodes.append(from)
+                toVisitStack.pushAll(to.filter(!seenNodes.contains(_)))
+            }
+
+            // Finally, assemble the lists of loop elements
+            naturalLoops = Some(backedges.map { case (dest, root) ⇒ root.to(dest).toList }.toList)
+        }
+
+        naturalLoops.get
     }
 
     // ---------------------------------------------------------------------------------------------
