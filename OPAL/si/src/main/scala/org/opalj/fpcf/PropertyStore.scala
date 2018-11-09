@@ -269,7 +269,10 @@ abstract class PropertyStore {
     /** The number of properties that were computed using a fast-track. */
     def fastTrackPropertiesCount: Int
 
-    /** Core statistics. */
+    /**
+     * Reports core statistics; this method is only guaranteed to report ''final'' results
+     * if it is called while the store is quiescent.
+     */
     def statistics: SomeMap[String, Int]
 
     //
