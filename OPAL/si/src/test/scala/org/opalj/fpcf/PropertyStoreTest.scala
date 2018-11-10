@@ -933,7 +933,7 @@ sealed abstract class PropertyStoreTest(
                             FinalEP(nodeR, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR)))
                         )
                         // now let's check if we have the correct notification of the
-                        // of the lazily dependent computations
+                        // lazily dependent computations
                         ps(nodeA, ReachableNodesCount.Key) should be(
                             FinalEP(nodeA, ReachableNodesCount(nodeEntities.toSet.size - 1))
                         )
@@ -1598,7 +1598,7 @@ object ReachableNodesCount {
         PropertyKey.create[Node, ReachableNodesCount](
             s"ReachableNodesCount",
             (_: PropertyStore, reason: FallbackReason, e: Node) ⇒ TooManyNodesReachable,
-            (_: PropertyStore, eps: EPS[Node, ReachableNodesCount]) ⇒ TooManyNodesReachable,
+            (_: PropertyStore, eps: EPS[Node, ReachableNodesCount]) ⇒ eps.ub,
             (ps: PropertyStore, e: Entity) ⇒ None
         )
 }
