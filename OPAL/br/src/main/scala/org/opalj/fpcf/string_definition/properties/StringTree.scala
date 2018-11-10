@@ -118,6 +118,58 @@ sealed abstract class StringTreeElement(val children: ListBuffer[StringTreeEleme
     }
 
     /**
+     * Accumulator function for grouping repetition elements.
+     */
+    private def groupRepetitionElementsAcc(subtree: StringTree): StringTree = {
+        /**
+         * Function for processing [[StringTreeOr]] or [[StringTreeConcat]] elements as these cases
+         * are equal (except for distinguishing the object to return). Thus, make sure that only
+         * instance of these classes are passed. Otherwise, an exception will be thrown!
+         */
+        def processConcatOrOrCase(subtree: StringTree): StringTree = {
+            if (!subtree.isInstanceOf[StringTreeOr] && !subtree.isInstanceOf[StringTreeConcat]) {
+                throw new IllegalArgumentException(
+                    "can only process instances of StringTreeOr and StringTreeConcat"
+                )
+            }
+
+            var newChildren = subtree.children.map(groupRepetitionElementsAcc)
+            val repetitionElements = newChildren.filter(_.isInstanceOf[StringTreeRepetition])
+            // Nothing to do when less than two repetition elements
+            if (repetitionElements.length <= 1) {
+                subtree
+            } else {
+                val childrenOfReps = repetitionElements.map(
+                    _.asInstanceOf[StringTreeRepetition].child
+                )
+                val newRepElement = StringTreeRepetition(StringTreeOr(childrenOfReps))
+                val indexFirstChild = newChildren.indexOf(repetitionElements.head)
+                newChildren = newChildren.filterNot(_.isInstanceOf[StringTreeRepetition])
+                newChildren.insert(indexFirstChild, newRepElement)
+                if (newChildren.length == 1) {
+                    newChildren.head
+                } else {
+                    if (subtree.isInstanceOf[StringTreeOr]) {
+                        StringTreeOr(newChildren)
+                    } else {
+                        StringTreeConcat(newChildren)
+                    }
+                }
+            }
+        }
+
+        subtree match {
+            case sto: StringTreeOr     ⇒ processConcatOrOrCase(sto)
+            case stc: StringTreeConcat ⇒ processConcatOrOrCase(stc)
+            case StringTreeCond(cs) ⇒
+                StringTreeCond(cs.map(groupRepetitionElementsAcc))
+            case StringTreeRepetition(child, _, _) ⇒
+                StringTreeRepetition(groupRepetitionElementsAcc(child))
+            case stc: StringTreeConst ⇒ stc
+        }
+    }
+
+    /**
      * Reduces this [[StringTree]] instance to a [[StringConstancyInformation]] object that captures
      * the information stored in this tree.
      *
@@ -139,6 +191,20 @@ sealed abstract class StringTreeElement(val children: ListBuffer[StringTreeEleme
      *       its stringified representation.
      */
     def simplify(): StringTree = simplifyAcc(this)
+
+    /**
+     * This function groups repetition elements that belong together. For example, an if-else block,
+     * which both append to a StringBuilder is modeled as a [[StringTreeOr]] with two
+     * [[StringTreeRepetition]] elements. Conceptually, this is not wrong, however, may create
+     * confusion when interpreting the tree / expression. This function finds such groupable
+     * children and actually groups them.
+     *
+     * @return This function modifies `this` tree and returns this instance, e.g., for chaining
+     *         commands.
+     * @note Applying this function changes the representation of the tree but not produce a
+     *       semantically different tree!
+     */
+    def groupRepetitionElements(): StringTree = groupRepetitionElementsAcc(this)
 
     /**
      * @return Returns all leaf elements of this instance.
@@ -172,9 +238,9 @@ sealed abstract class StringTreeElement(val children: ListBuffer[StringTreeEleme
  * Otherwise, the number of repetitions is computed by `upperBound - lowerBound`.
  */
 case class StringTreeRepetition(
-    var child:  StringTreeElement,
-    lowerBound: Option[Int]       = None,
-    upperBound: Option[Int]       = None
+        var child:  StringTreeElement,
+        lowerBound: Option[Int]       = None,
+        upperBound: Option[Int]       = None
 ) extends StringTreeElement(ListBuffer(child))
 
 /**
@@ -184,7 +250,7 @@ case class StringTreeRepetition(
  * represents ''s_1'' and the last child / last element ''s_n''.
  */
 case class StringTreeConcat(
-    override val children: ListBuffer[StringTreeElement]
+        override val children: ListBuffer[StringTreeElement]
 ) extends StringTreeElement(children)
 
 /**
@@ -197,7 +263,7 @@ case class StringTreeConcat(
  * a (sub) string.
  */
 case class StringTreeOr(
-    override val children: ListBuffer[StringTreeElement]
+        override val children: ListBuffer[StringTreeElement]
 ) extends StringTreeElement(children)
 
 /**
@@ -209,7 +275,7 @@ case class StringTreeOr(
  * string may have (contain) a particular but not necessarily.
  */
 case class StringTreeCond(
-    override val children: ListBuffer[StringTreeElement]
+        override val children: ListBuffer[StringTreeElement]
 ) extends StringTreeElement(children)
 
 /**
@@ -220,5 +286,5 @@ case class StringTreeCond(
  * expression and that represents part of the value(s) a string may have.
  */
 case class StringTreeConst(
-    sci: StringConstancyInformation
+        sci: StringConstancyInformation
 ) extends StringTreeElement(ListBuffer())
