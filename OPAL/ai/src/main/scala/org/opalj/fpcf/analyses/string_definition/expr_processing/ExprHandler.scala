@@ -141,7 +141,8 @@ object ExprHandler {
 
     private val classNameMap = Map(
         "AnIntegerValue" → "[AnIntegerValue]",
-        "int" → "[AnIntegerValue]"
+        "int" → "[AnIntegerValue]",
+        "IntegerRange" → "[AnIntegerValue]",
     )
 
     /**

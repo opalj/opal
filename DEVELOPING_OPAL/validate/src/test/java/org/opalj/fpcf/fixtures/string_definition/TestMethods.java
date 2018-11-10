@@ -274,6 +274,24 @@ public class TestMethods {
         analyzeString(sb.toString());
     }
 
+    @StringDefinitions(
+            value = "if-else control structure within a for loop with known loop bounds",
+            expectedLevel = StringConstancyLevel.DYNAMIC,
+            expectedStrings = "((x | [AnIntegerValue]))*"
+    )
+    public void ifElseInLoopWithKnownBounds() {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < 20; i++) {
+            if (i % 2 == 0) {
+                sb.append("x");
+            } else {
+                sb.append(i + 1);
+            }
+        }
+
+        analyzeString(sb.toString());
+    }
+
     //    @StringDefinitions(
     //            value = "if-else control structure which append to a string builder multiple times",
     //            expectedLevel = StringConstancyLevel.CONSTANT,
@@ -286,24 +304,7 @@ public class TestMethods {
     //            sb.append("b");
     //        }
     //        analyzeString(sb.toString());
-    //    }
 
-    //    @StringDefinitions(
-    //            value = "if-else control structure within a for loop with known loop bounds",
-    //            expectedLevel = StringConstancyLevel.PARTIALLY_CONSTANT,
-    //            expectedValues = { "(\"x\" | [Int Value])^20" }
-    //    )
-    //    public void ifElseInLoopWithKnownBounds() {
-    //        StringBuilder sb = new StringBuilder();
-    //        for (int i = 0; i < 20; i++) {
-    //            if (i % 2 == 0) {
-    //                sb.append("x");
-    //            } else {
-    //                sb.append(i + 1);
-    //            }
-    //        }
-    //
-    //        analyzeString(sb.toString());
     //    }
 
     private String getRuntimeClassName() {
