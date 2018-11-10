@@ -101,8 +101,8 @@ final class PKESequentialPropertyStore private (
     //
     // --------------------------------------------------------------------------------------------
 
-    private[this] val ps: Array[mutable.AnyRefMap[Entity, PropertyValue]] = {
-        Array.fill(PropertyKind.SupportedPropertyKinds) { mutable.AnyRefMap.empty }
+    private[this] val ps: Array[mutable.OpenHashMap[Entity, PropertyValue]] = {
+        Array.fill(PropertyKind.SupportedPropertyKinds) { mutable.OpenHashMap.empty }
     }
 
     // Those computations that will only be scheduled if the result is required
