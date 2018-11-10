@@ -24,9 +24,7 @@ class StringConstancyProperty(
     final def key: PropertyKey[StringConstancyProperty] = StringConstancyProperty.key
 
     override def toString: String = {
-        val sci = stringTree.reduce()
-        s"StringConstancyProperty { Constancy Level: ${sci.constancyLevel}; "+
-            s"Possible Strings: ${sci.possibleStrings} }"
+        stringTree.reduce().toString
     }
 
 }

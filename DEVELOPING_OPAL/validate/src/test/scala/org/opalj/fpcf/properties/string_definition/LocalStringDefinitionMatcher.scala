@@ -45,20 +45,6 @@ class LocalStringDefinitionMatcher extends AbstractPropertyMatcher {
     }
 
     /**
-     * Takes an [[AnnotationLike]] which represents a [[org.opalj.fpcf.properties.StringConstancyProperty]] and returns its
-     * stringified representation.
-     *
-     * @param a The annotation. This function requires that it holds a StringConstancyProperty.
-     * @return The stringified representation, which is identical to
-     *         [[org.opalj.fpcf.properties.StringConstancyProperty.toString]].
-     */
-    private def propertyAnnotation2Str(a: AnnotationLike): String = {
-        val constancyLevel = getConstancyLevel(a).get.toLowerCase
-        val ps = getExpectedStrings(a).get
-        s"StringConstancyProperty { Constancy Level: $constancyLevel; Possible Strings: $ps }"
-    }
-
-    /**
      * @inheritdoc
      */
     override def validateProperty(
@@ -71,18 +57,14 @@ class LocalStringDefinitionMatcher extends AbstractPropertyMatcher {
         val prop = properties.filter(
             _.isInstanceOf[StringConstancyProperty]
         ).head.asInstanceOf[StringConstancyProperty]
-        val reducedProp = prop.stringTree.simplify().reduce()
+        val reducedProp = prop.stringTree.simplify().groupRepetitionElements().reduce()
 
         val expLevel = getConstancyLevel(a).get
         val actLevel = reducedProp.constancyLevel.toString
-        if (expLevel.toLowerCase != actLevel.toLowerCase) {
-            return Some(propertyAnnotation2Str(a))
-        }
-
-        // TODO: This string comparison is not very robust
         val expStrings = getExpectedStrings(a).get
-        if (expStrings != reducedProp.possibleStrings) {
-            return Some(propertyAnnotation2Str(a))
+        val actStrings = reducedProp.possibleStrings
+        if ((expLevel.toLowerCase != actLevel.toLowerCase) || (expStrings != actStrings)) {
+            return Some(reducedProp.toString)
         }
 
         None
