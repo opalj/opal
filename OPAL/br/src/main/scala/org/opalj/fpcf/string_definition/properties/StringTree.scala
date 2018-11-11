@@ -137,6 +137,9 @@ sealed abstract class StringTreeElement(val children: ListBuffer[StringTreeEleme
             val repetitionElements = newChildren.filter(_.isInstanceOf[StringTreeRepetition])
             // Nothing to do when less than two repetition elements
             if (repetitionElements.length <= 1) {
+                // In case there is only one (new) repetition element, replace the children
+                subtree.children.clear()
+                subtree.children.append(newChildren: _*)
                 subtree
             } else {
                 val childrenOfReps = repetitionElements.map(
