@@ -292,6 +292,25 @@ public class TestMethods {
         analyzeString(sb.toString());
     }
 
+    @StringDefinitions(
+            value = "if-else control structure within a for loop and with an append afterwards",
+            expectedLevel = StringConstancyLevel.PARTIALLY_CONSTANT,
+            expectedStrings = "((x | [AnIntegerValue]))*yz"
+    )
+    public void ifElseInLoopWithAppendAfterwards() {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < 20; i++) {
+            if (i % 2 == 0) {
+                sb.append("x");
+            } else {
+                sb.append(i + 1);
+            }
+        }
+        sb.append("yz");
+
+        analyzeString(sb.toString());
+    }
+
     //    @StringDefinitions(
     //            value = "if-else control structure which append to a string builder multiple times",
     //            expectedLevel = StringConstancyLevel.CONSTANT,
