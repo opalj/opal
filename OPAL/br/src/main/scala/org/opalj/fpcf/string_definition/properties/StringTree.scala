@@ -59,7 +59,7 @@ sealed abstract class StringTreeElement(val children: ListBuffer[StringTreeEleme
                     s"${o.possibleStrings} | ${n.possibleStrings}"
                 ))
                 StringConstancyInformation(
-                    reducedInfo.constancyLevel, s"(${reducedInfo.possibleStrings})"
+                    reducedInfo.constancyLevel, s"(${reducedInfo.possibleStrings})+"
                 )
 
             case StringTreeConst(sci) ⇒ sci
@@ -113,7 +113,19 @@ sealed abstract class StringTreeElement(val children: ListBuffer[StringTreeEleme
                 subtree.children.clear()
                 subtree.children.appendAll(unique)
                 subtree
-            case _ ⇒ subtree
+            case stc: StringTreeCond ⇒
+                // If the child of a StringTreeCond is a StringTreeRepetition, replace the
+                // StringTreeCond by the StringTreeRepetition element (otherwise, regular
+                // expressions like ((s)*)+ will follow which is equivalent to (s)*).
+                if (stc.children.nonEmpty && stc.children.head.isInstanceOf[StringTreeRepetition]) {
+                    stc.children.head
+                } else {
+                    stc
+                }
+            // Remaining cases are trivial
+            case str: StringTreeRepetition ⇒ StringTreeRepetition(simplifyAcc(str.child))
+            case stc: StringTreeConcat     ⇒ StringTreeConcat(stc.children.map(simplifyAcc))
+            case stc: StringTreeConst      ⇒ stc
         }
     }
 

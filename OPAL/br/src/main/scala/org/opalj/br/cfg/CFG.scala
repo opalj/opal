@@ -7,6 +7,8 @@ import scala.reflect.ClassTag
 
 import java.util.Arrays
 
+import org.opalj.collection.immutable.EmptyIntTrieSet
+
 import scala.collection.{Set ⇒ SomeSet}
 import scala.collection.AbstractIterator
 
@@ -20,6 +22,7 @@ import org.opalj.collection.mutable.IntArrayStack
 import org.opalj.graphs.DefaultMutableNode
 import org.opalj.graphs.DominatorTree
 import org.opalj.graphs.Node
+import org.opalj.graphs.PostDominatorTree
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
@@ -786,6 +789,28 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
         }
 
         naturalLoops.get
+    }
+
+    /**
+     * @return Returns the post dominator tree of this CFG.
+     *
+     * @see [[PostDominatorTree.apply]]
+     */
+    def postDominatorTree: PostDominatorTree = {
+        val exitNodes = basicBlocks.zipWithIndex.filter(_._1.successors.size == 1).map(_._2)
+        PostDominatorTree(
+            if (exitNodes.length == 1) Some(exitNodes.head) else None,
+            i ⇒ exitNodes.contains(i),
+            // TODO: Pass an IntTrieSet if exitNodes contains more than one element
+            EmptyIntTrieSet,
+            // TODO: Correct function (just copied it from one of the tests)?
+            (f: Int ⇒ Unit) ⇒ exitNodes.foreach(e ⇒ f(e)),
+            foreachSuccessor,
+            foreachPredecessor,
+            basicBlocks.foldLeft(0) { (prevMaxNode: Int, next: BasicBlock) ⇒
+                math.max(prevMaxNode, next.endPC)
+            }
+        )
     }
 
     // ---------------------------------------------------------------------------------------------
