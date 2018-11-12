@@ -7,6 +7,7 @@ import org.opalj.fpcf.analyses.string_definition.V
 import org.opalj.tac.Stmt
 import org.opalj.fpcf.string_definition.properties.StringTree
 import org.opalj.fpcf.string_definition.properties.StringTreeConcat
+import org.opalj.fpcf.string_definition.properties.StringTreeCond
 import org.opalj.fpcf.string_definition.properties.StringTreeConst
 import org.opalj.fpcf.string_definition.properties.StringTreeOr
 import org.opalj.fpcf.string_definition.properties.StringTreeRepetition
@@ -95,8 +96,17 @@ class NewStringBuilderProcessor(
                 // Append nonInitTreeNodes to initTreeNodes (as children)
                 if (nonInitTreeNodes.nonEmpty) {
                     val toAppend = nonInitTreeNodes.size match {
-                        // If there is only one element in the map use this
-                        case 1 ⇒ nonInitTreeNodes.head._2.head
+                        // If there is only one element in the map use it; but first check the
+                        // relation between that element and the init element
+                        case 1 ⇒
+                            val postDomTree = cfg.postDominatorTree
+                            if (initTreeNodes.nonEmpty &&
+                                !postDomTree.doesPostDominate(nonInits.head.head, inits.head)) {
+                                // If not post-dominated, it is optional => Put it in a Cond
+                                StringTreeCond(nonInitTreeNodes.head._2)
+                            } else {
+                                nonInitTreeNodes.head._2.head
+                            }
                         // Otherwise, we need to build the proper tree, considering dominators
                         case _ ⇒ orderNonInitNodes(nonInitTreeNodes, cfg)
                     }

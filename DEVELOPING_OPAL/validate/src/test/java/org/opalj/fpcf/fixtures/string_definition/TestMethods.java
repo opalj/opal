@@ -311,20 +311,19 @@ public class TestMethods {
         analyzeString(sb.toString());
     }
 
-    //    @StringDefinitions(
-    //            value = "if-else control structure which append to a string builder multiple times",
-    //            expectedLevel = StringConstancyLevel.CONSTANT,
-    //            expectedStrings = "a(b)+"
-    //    )
-    //    public void ifElseWithStringBuilder3() {
-    //        StringBuilder sb = new StringBuilder("a");
-    //        int i = new Random().nextInt();
-    //        if (i % 2 == 0) {
-    //            sb.append("b");
-    //        }
-    //        analyzeString(sb.toString());
-
-    //    }
+    @StringDefinitions(
+            value = "if control structure without an else",
+            expectedLevel = StringConstancyLevel.CONSTANT,
+            expectedStrings = "a(b)+"
+    )
+    public void ifWithoutElse() {
+        StringBuilder sb = new StringBuilder("a");
+        int i = new Random().nextInt();
+        if (i % 2 == 0) {
+            sb.append("b");
+        }
+        analyzeString(sb.toString());
+    }
 
     private String getRuntimeClassName() {
         return "java.lang.Runtime";
