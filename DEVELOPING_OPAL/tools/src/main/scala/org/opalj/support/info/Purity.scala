@@ -114,7 +114,10 @@ object Purity {
         EagerThreadRelatedCallsAnalysis,
         EagerSerializationRelatedCallsAnalysis,
         EagerReflectionRelatedCallsAnalysis,
-        SystemPropertiesAnalysis
+        SystemPropertiesAnalysis,
+        new LazyCalleesAnalysis(
+            Set(StandardInvokeCallees, SerializationRelatedCallees, ReflectionRelatedCallees)
+        )
     )
 
     val supportingAnalyses = IndexedSeq(
@@ -126,10 +129,7 @@ object Purity {
         Set[FPCFLazyAnalysisScheduler](
             LazyL1FieldMutabilityAnalysis,
             LazyClassImmutabilityAnalysis,
-            LazyTypeImmutabilityAnalysis,
-            new LazyCalleesAnalysis(
-                Set(StandardInvokeCallees, SerializationRelatedCallees, ReflectionRelatedCallees)
-            )
+            LazyTypeImmutabilityAnalysis
         ),
         Set[FPCFLazyAnalysisScheduler](
             LazyL0CompileTimeConstancyAnalysis,
@@ -142,10 +142,7 @@ object Purity {
             LazyFieldLocalityAnalysis,
             LazyL1FieldMutabilityAnalysis,
             LazyClassImmutabilityAnalysis,
-            LazyTypeImmutabilityAnalysis,
-            new LazyCalleesAnalysis(
-                Set(StandardInvokeCallees, SerializationRelatedCallees, ReflectionRelatedCallees)
-            )
+            LazyTypeImmutabilityAnalysis
         )
     )
 
@@ -270,14 +267,6 @@ object Purity {
 
             analyzedMethods = projMethods.filter(reachableMethods.contains)
         } { t ⇒ callGraphTime = t.toSeconds }
-
-        val unreachableMethods = projMethods.filterNot(analyzedMethods.contains)
-        val (uMP, uMNP) = unreachableMethods.partition(m ⇒ m.definedMethod.isPrivate)
-        println("#####################################################################")
-        uMP.foreach(m ⇒ println(m.toJava))
-        println("#####################################################################")
-        uMNP.foreach(m ⇒ println(m.toJava))
-        println("#####################################################################")
 
         time {
             val analyses = support + analysis
