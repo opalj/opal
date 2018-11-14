@@ -797,7 +797,9 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
      * @see [[PostDominatorTree.apply]]
      */
     def postDominatorTree: PostDominatorTree = {
-        val exitNodes = basicBlocks.zipWithIndex.filter(_._1.successors.size == 1).map(_._2)
+        val exitNodes = basicBlocks.zipWithIndex.filter { next ⇒
+            next._1.successors.size == 1 && next._1.successors.head.isInstanceOf[ExitNode]
+        }.map(_._2)
         PostDominatorTree(
             if (exitNodes.length == 1) Some(exitNodes.head) else None,
             i ⇒ exitNodes.contains(i),
