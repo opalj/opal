@@ -95,6 +95,7 @@ class CHACallGraphAnalysis private[analyses] ( final val project: SomeProject) e
         // for each call site in the current method, the set of methods that might called
         val calleesAndCallers = new CalleesAndCallers()
 
+        // todo add calls to library targets
         @inline def handleTgts(tgts: Set[Method], pc: Int): Unit = {
             if (tgts.isEmpty) {
                 calleesAndCallers.addIncompleteCallsite(pc) // todo is this reasonable?
