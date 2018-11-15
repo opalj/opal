@@ -123,6 +123,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         var purityDependees: Map[DeclaredMethod, (EOptionP[DeclaredMethod, Purity], Set[Seq[Expr[V]]])] = Map.empty
 
         var calleesDependee: Option[EOptionP[DeclaredMethod, Callees]] = None
+        var callees: Option[Callees] = None
 
         var rvfDependees: Map[DeclaredMethod, (EOptionP[DeclaredMethod, ReturnValueFreshness], Set[(Option[Expr[V]], Purity)])] = Map.empty
         var rvfCallSites: IntMap[(Option[Expr[V]], Purity)] = IntMap.empty
@@ -207,8 +208,11 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
             }
         }
 
-        def updateCalleesDependee(eps: Option[EOptionP[DeclaredMethod, Callees]]): Unit = {
-            calleesDependee = eps
+        def updateCalleesDependee(eps: EOptionP[DeclaredMethod, Callees]): Unit = {
+            if (eps.isFinal) calleesDependee = None
+            else calleesDependee = Some(eps)
+            if (eps.hasProperty)
+                callees = Some(eps.ub)
         }
 
         def addRVFDependee(
@@ -384,8 +388,13 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                 VirtualFunctionCall.ASTID ⇒
                 val oldPurityLevel =
                     state.rvfCallSites.get(stmt.pc).map(_._2).getOrElse(CompileTimePure)
-                state.rvfCallSites +=
-                    stmt.pc → ((rhs.asFunctionCall.receiverOption, otherwise meet oldPurityLevel))
+                val data = (rhs.asFunctionCall.receiverOption, otherwise meet oldPurityLevel)
+                if (state.callees.isDefined) {
+                    checkFreshnessOfReturn(stmt.pc, data, state.callees.get)
+                } else {
+                    state.rvfCallSites += stmt.pc → data
+                    reducePurityLB(otherwise)
+                }
                 true
             case GetField.ASTID ⇒
                 val GetField(_, declClass, name, fieldType, objRef) = rhs
@@ -605,11 +614,9 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
     override def handleCalleesUpdate(
         callees: EOptionP[DeclaredMethod, Callees]
     )(implicit state: State): Unit = {
-        if (callees.isFinal) state.updateCalleesDependee(None)
-        else {
-            state.updateCalleesDependee(Some(callees))
+        state.updateCalleesDependee(callees)
+        if (callees.isRefinable)
             reducePurityLB(ImpureByAnalysis)
-        }
     }
 
     /*
@@ -640,6 +647,12 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
             if (newData.nonEmpty) newFieldLocalityDependees += ((dependee, (eop, newData)))
         }
         state.fieldLocalityDependees = newFieldLocalityDependees
+
+        var newRVFCallsites: IntMap[(Option[Expr[V]], Purity)] = IntMap.empty
+        for ((callsite, data) ← state.rvfCallSites) {
+            if (data._2 meet state.ubPurity ne state.ubPurity) newRVFCallsites += ((callsite, data))
+        }
+        state.rvfCallSites = newRVFCallsites
 
         var newRVFDependees: Map[DeclaredMethod, (EOptionP[DeclaredMethod, ReturnValueFreshness], Set[(Option[Expr[V]], Purity)])] = Map.empty
         for ((dependee, (eop, data)) ← state.rvfDependees) {
@@ -686,6 +699,12 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         for {
             (_, data) ← state.fieldLocalityDependees.valuesIterator
             (_, purity) ← data
+        } {
+            newLowerBound = newLowerBound meet purity
+        }
+
+        for {
+            (_, purity) ← state.rvfCallSites.valuesIterator
         } {
             newLowerBound = newLowerBound meet purity
         }

@@ -542,7 +542,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
                 if (hasIncompleteCallSites)
                     atMost(ImpureByAnalysis)
 
-                !hasIncompleteCallSites &&
+                hasIncompleteCallSites &&
                     p.directCallSites().forall {
                         case (pc, callees) ⇒
                             val index = state.pcToIndex(pc)
@@ -552,11 +552,10 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
                                 val call = getCall(state.code(index))
                                 isDomainSpecificCall(call, call.receiverOption) ||
                                     callees.forall { callee ⇒
-                                        (callee eq state.definedMethod) ||
-                                            checkPurityOfMethod(
-                                                callee,
-                                                call.receiverOption.orNull +: call.params
-                                            )
+                                        checkPurityOfMethod(
+                                            callee,
+                                            call.receiverOption.orNull +: call.params
+                                        )
                                     }
                             }
                     } &&
@@ -567,13 +566,12 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
                                 true // call will not be executed
                             else
                                 callees.forall { callee ⇒
-                                    (callee eq state.definedMethod) ||
-                                        checkPurityOfMethod(
-                                            callee,
-                                            p.indirectCallParameters(pc, callee).map { paramO ⇒
-                                                paramO.map(uVarForDefSites(_, state.pcToIndex)).orNull
-                                            }
-                                        )
+                                    checkPurityOfMethod(
+                                        callee,
+                                        p.indirectCallParameters(pc, callee).map { paramO ⇒
+                                            paramO.map(uVarForDefSites(_, state.pcToIndex)).orNull
+                                        }
+                                    )
                                 }
                     }
 
