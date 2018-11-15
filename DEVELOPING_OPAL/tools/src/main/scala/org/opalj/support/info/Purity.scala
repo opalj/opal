@@ -38,7 +38,9 @@ import org.opalj.fpcf.analyses.LazyL1FieldMutabilityAnalysis
 import org.opalj.fpcf.analyses.LazyStaticDataUsageAnalysis
 import org.opalj.fpcf.analyses.LazyTypeImmutabilityAnalysis
 import org.opalj.fpcf.analyses.SystemPropertiesAnalysis
+import org.opalj.fpcf.analyses.cg.EagerConfiguredNativeMethodsAnalysis
 import org.opalj.fpcf.analyses.cg.EagerFinalizerAnalysisScheduler
+import org.opalj.fpcf.analyses.cg.EagerInstantiatedTypesAnalysis
 import org.opalj.fpcf.analyses.cg.EagerLibraryEntryPointsAnalysis
 import org.opalj.fpcf.analyses.cg.EagerLoadedClassesAnalysis
 import org.opalj.fpcf.analyses.cg.EagerRTACallGraphAnalysisScheduler
@@ -107,6 +109,8 @@ object Purity {
         EagerThreadRelatedCallsAnalysis,
         EagerSerializationRelatedCallsAnalysis,
         EagerReflectionRelatedCallsAnalysis,
+        EagerInstantiatedTypesAnalysis,
+        EagerConfiguredNativeMethodsAnalysis,
         SystemPropertiesAnalysis,
         new LazyCalleesAnalysis(
             Set(StandardInvokeCallees, SerializationRelatedCallees, ReflectionRelatedCallees)

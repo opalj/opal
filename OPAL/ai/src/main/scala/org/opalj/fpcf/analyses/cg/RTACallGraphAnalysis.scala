@@ -4,27 +4,6 @@ package fpcf
 package analyses
 package cg
 
-import scala.language.existentials
-
-import scala.collection.immutable.IntMap
-
-import net.ceedubs.ficus.Ficus._
-import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-
-import org.opalj.log.Error
-import org.opalj.log.OPALLogger
-import org.opalj.log.Warn
-import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.collection.immutable.UIDSet
-import org.opalj.fpcf.cg.properties.CallersProperty
-import org.opalj.fpcf.cg.properties.InstantiatedTypes
-import org.opalj.fpcf.cg.properties.NoCallers
-import org.opalj.fpcf.cg.properties.NoStandardInvokeCallees
-import org.opalj.fpcf.cg.properties.OnlyCallersWithUnknownContext
-import org.opalj.fpcf.cg.properties.StandardInvokeCallees
-import org.opalj.fpcf.cg.properties.StandardInvokeCalleesImplementation
-import org.opalj.fpcf.cg.properties.LoadedClasses
-import org.opalj.value.ValueInformation
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
@@ -35,15 +14,25 @@ import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.InitialEntryPointsKey
-import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
 import org.opalj.br.analyses.cg.IsOverridableMethodKey
+import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.collection.immutable.UIDSet
+import org.opalj.fpcf.cg.properties.CallersProperty
+import org.opalj.fpcf.cg.properties.InstantiatedTypes
+import org.opalj.fpcf.cg.properties.NoCallers
+import org.opalj.fpcf.cg.properties.NoStandardInvokeCallees
+import org.opalj.fpcf.cg.properties.OnlyCallersWithUnknownContext
+import org.opalj.fpcf.cg.properties.StandardInvokeCallees
+import org.opalj.fpcf.cg.properties.StandardInvokeCalleesImplementation
+import org.opalj.log.Error
+import org.opalj.log.OPALLogger
+import org.opalj.log.Warn
 import org.opalj.tac.Assignment
 import org.opalj.tac.Call
 import org.opalj.tac.DUVar
 import org.opalj.tac.ExprStmt
 import org.opalj.tac.InvokedynamicFunctionCall
 import org.opalj.tac.InvokedynamicMethodCall
-import org.opalj.tac.New
 import org.opalj.tac.NonVirtualFunctionCallStatement
 import org.opalj.tac.NonVirtualMethodCall
 import org.opalj.tac.StaticFunctionCallStatement
@@ -54,6 +43,10 @@ import org.opalj.tac.VirtualCall
 import org.opalj.tac.VirtualFunctionCallStatement
 import org.opalj.tac.VirtualMethodCall
 import org.opalj.tac.fpcf.properties.TACAI
+import org.opalj.value.ValueInformation
+
+import scala.collection.immutable.IntMap
+import scala.language.existentials
 
 class RTAState private (
         private[cg] val method:                       DefinedMethod,
@@ -140,7 +133,7 @@ class RTAState private (
         _instantiatedTypesDependee
     }
 
-    private[cg] def hasOpenDependees(): Boolean = {
+    private[cg] def hasOpenDependees: Boolean = {
         _tacDependee.isDefined || _instantiatedTypesDependee.isDefined
     }
 
@@ -210,8 +203,6 @@ class RTACallGraphAnalysis private[analyses] (
 
     private[this] implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
     private[this] val isMethodOverridable: Method ⇒ Answer = project.get(IsOverridableMethodKey)
-    private[this] val initialInstantiatedTypes: UIDSet[ObjectType] =
-        UIDSet(project.get(InitialInstantiatedTypesKey).toSeq: _*)
 
     /**
      * Computes the calls from the given method ([[StandardInvokeCallees]] property) and updates the
@@ -250,11 +241,8 @@ class RTACallGraphAnalysis private[analyses] (
         if (method.classFile.thisType != declaredMethod.declaringClassType)
             return NoResult;
 
-        if (method.isNative)
-            return handleNativeMethod(declaredMethod, method);
-
         if (method.body.isEmpty)
-            // happens in particular for native methods TODO does it happen for non-native methods?
+            // happens in particular for native methods
             return NoResult;
 
         val tacEP = propertyStore(method, TACAI.key)
@@ -284,7 +272,9 @@ class RTACallGraphAnalysis private[analyses] (
 
         // the upper bound for type instantiations, seen so far
         // in case they are not yet computed, we use the initialTypes
-        val instantiatedTypesUB: UIDSet[ObjectType] = getInstantiatedTypesUB(instantiatedTypesEOptP)
+        val instantiatedTypesUB: UIDSet[ObjectType] = if (instantiatedTypesEOptP.hasProperty)
+            instantiatedTypesEOptP.ub.types
+        else UIDSet.empty
 
         val instantiatedTypesDependee =
             if (instantiatedTypesEOptP.isFinal) None else Some(instantiatedTypesEOptP)
@@ -293,7 +283,7 @@ class RTACallGraphAnalysis private[analyses] (
         //  1. newly allocated types
         //  2. methods (+ pc) called by the current method
         //  3. compute the call sites of virtual calls, whose targets are not yet final
-        val (newInstantiatedTypes, calleesAndCallers, virtualCallSites) = handleStmts(
+        val (calleesAndCallers, virtualCallSites) = handleStmts(
             state.method, tac, instantiatedTypesUB
         )
 
@@ -312,33 +302,17 @@ class RTACallGraphAnalysis private[analyses] (
         // here we can ignore the return value, as the state also gets updated
         handleVirtualCallSites(newState, instantiatedTypesUB.iterator, calleesAndCallers)
 
-        var results = resultForStandardInvokeCallees(newState) :: calleesAndCallers.partialResultsForCallers
-
-        // todo: move this e.g. fallback value?
-        if (newInstantiatedTypes.nonEmpty ||
-            (instantiatedTypesDependee.isDefined && instantiatedTypesDependee.get.hasNoProperty))
-            results ::= RTACallGraphAnalysis.partialResultForInstantiatedTypes(
-                p, newInstantiatedTypes, initialInstantiatedTypes
-            )
+        val results = resultForStandardInvokeCallees(newState) :: calleesAndCallers.partialResultsForCallers
 
         Results(results)
-    }
-
-    def getInstantiatedTypesUB(
-        instantiatedTypesEOptP: EOptionP[SomeProject, InstantiatedTypes]
-    ): UIDSet[ObjectType] = {
-        instantiatedTypesEOptP match {
-            case eps: EPS[_, _] ⇒ eps.ub.types
-            case _              ⇒ initialInstantiatedTypes
-        }
     }
 
     def handleStmts(
         method:              DefinedMethod,
         tac:                 TACode[TACMethodParameter, V],
         instantiatedTypesUB: UIDSet[ObjectType]
-    // (new instantiated types, callees map, virtual call sites)
-    ): (UIDSet[ObjectType], CalleesAndCallers, Traversable[(Int, ObjectType, String, MethodDescriptor)]) = {
+    // (callees map, virtual call sites)
+    ): (CalleesAndCallers, Traversable[(Int, ObjectType, String, MethodDescriptor)]) = {
         implicit val p: SomeProject = project
 
         // for each call site in the current method, the set of methods that might called
@@ -347,22 +321,9 @@ class RTACallGraphAnalysis private[analyses] (
         // the virtual call sites, where we can not determine the precise tgts
         var virtualCallSites = List.empty[(Int, ObjectType, String, MethodDescriptor)]
 
-        // the set of types for which we find an allocation which was not present before
-        var newInstantiatedTypes = UIDSet.empty[ObjectType]
-
         // for allocation sites, add new types
         // for calls, add new edges
         tac.stmts.foreach {
-            case Assignment(_, _, New(_, allocatedType)) ⇒
-                if (!instantiatedTypesUB.contains(allocatedType)) {
-                    newInstantiatedTypes += allocatedType
-                }
-
-            case ExprStmt(_, New(_, allocatedType)) ⇒
-                if (!instantiatedTypesUB.contains(allocatedType)) {
-                    newInstantiatedTypes += allocatedType
-                }
-
             case stmt @ StaticFunctionCallStatement(call) ⇒
                 handleCall(
                     method, call, stmt.pc, call.resolveCallTarget, calleesAndCallers
@@ -431,7 +392,7 @@ class RTACallGraphAnalysis private[analyses] (
             case _ ⇒ //nothing to do
         }
 
-        (newInstantiatedTypes, calleesAndCallers, virtualCallSites)
+        (calleesAndCallers, virtualCallSites)
     }
 
     private[this] def unknownLibraryCall(
@@ -621,7 +582,7 @@ class RTACallGraphAnalysis private[analyses] (
             else
                 new StandardInvokeCalleesImplementation(state.callees, state.incompleteCallSites)
 
-        if (state.virtualCallSites.isEmpty || !state.hasOpenDependees())
+        if (state.virtualCallSites.isEmpty || !state.hasOpenDependees)
             Result(state.method, newCallees)
         else {
             SimplePIntermediateResult(
@@ -632,117 +593,6 @@ class RTACallGraphAnalysis private[analyses] (
             )
         }
     }
-
-    private case class NativeMethodData(
-            cf:                String,
-            m:                 String,
-            desc:              String,
-            instantiatedTypes: Option[Seq[String]],
-            reachableMethods:  Option[Seq[ReachableMethod]]
-    )
-    private case class ReachableMethod(cf: String, m: String, desc: String)
-
-    private val nativeMethodData: Map[(String, String, String), (Option[Seq[String]], Option[Seq[ReachableMethod]])] =
-        project.config.as[Iterator[NativeMethodData]](
-            "org.opalj.fpcf.analysis.RTACallGraphAnalysis.nativeMethods"
-        ).map { action ⇒
-                (action.cf, action.m, action.desc) →
-                    ((action.instantiatedTypes, action.reachableMethods))
-            }.toMap
-
-    /**
-     * Handles configured calls and instantiations for a native method.
-     */
-    def handleNativeMethod(
-        declaredMethod: DeclaredMethod,
-        m:              Method
-    ): PropertyComputationResult = {
-
-        /**
-         * Creates partial results for instantiated types given by their FQNs.
-         */
-        def instantiatedTypesResults(fqns: Seq[String]): List[PropertyComputationResult] = {
-            val instantiatedTypesUB =
-                getInstantiatedTypesUB(propertyStore(project, InstantiatedTypes.key))
-
-            val newInstantiatedTypes =
-                UIDSet(fqns.map(ObjectType(_)).filterNot(instantiatedTypesUB.contains): _*)
-
-            val instantiatedTypesResultList =
-                List(RTACallGraphAnalysis.partialResultForInstantiatedTypes(
-                    p, newInstantiatedTypes, initialInstantiatedTypes
-                ))
-
-            if (newInstantiatedTypes.isEmpty) List.empty
-            else instantiatedTypesResultList
-        }
-
-        /**
-         * Creates the results for callees and callers properties for the given methods.
-         */
-        def calleesResults(
-            reachableMethods: Seq[ReachableMethod]
-        ): List[PropertyComputationResult] = {
-            val calleesAndCallers = new CalleesAndCallers()
-            for (reachableMethod ← reachableMethods.iterator) {
-                val classType = ObjectType(reachableMethod.cf)
-                val name = reachableMethod.m
-                val descriptor = MethodDescriptor(reachableMethod.desc)
-                val callee =
-                    declaredMethods(classType, classType.packageName, classType, name, descriptor)
-                calleesAndCallers.updateWithCall(declaredMethod, callee, 0)
-            }
-            val callees =
-                new StandardInvokeCalleesImplementation(calleesAndCallers.callees, IntTrieSet.empty)
-            Result(declaredMethod, callees) :: calleesAndCallers.partialResultsForCallers
-        }
-
-        val methodDataO =
-            nativeMethodData.get((m.classFile.thisType.fqn, m.name, m.descriptor.toJVMDescriptor))
-
-        if (methodDataO.isEmpty)
-            return NoResult;
-
-        val (instantiatedTypesO, reachableMethodsO) = methodDataO.get
-
-        if (reachableMethodsO.isDefined) {
-            val callResults = calleesResults(reachableMethodsO.get)
-            if (instantiatedTypesO.isDefined) {
-                val typesResult = instantiatedTypesResults(instantiatedTypesO.get)
-                Results(typesResult ::: callResults)
-            } else Results(callResults)
-        } else if (instantiatedTypesO.isDefined) {
-            Results(instantiatedTypesResults(instantiatedTypesO.get))
-        } else {
-            NoResult
-        }
-    }
-}
-
-object RTACallGraphAnalysis {
-
-    def partialResultForInstantiatedTypes(
-        p:                        SomeProject,
-        newInstantiatedTypes:     UIDSet[ObjectType],
-        initialInstantiatedTypes: UIDSet[ObjectType]
-    ): PartialResult[SomeProject, InstantiatedTypes] = {
-        PartialResult[SomeProject, InstantiatedTypes](p, InstantiatedTypes.key,
-            {
-                case IntermediateESimpleP(_, ub) ⇒
-                    Some(IntermediateESimpleP(
-                        p,
-                        ub.updated(newInstantiatedTypes)
-                    ))
-
-                case _: EPK[_, _] ⇒
-                    Some(IntermediateESimpleP(
-                        p,
-                        InstantiatedTypes.initial(newInstantiatedTypes, initialInstantiatedTypes)
-                    ))
-
-                case r ⇒ throw new IllegalStateException(s"unexpected previous result $r")
-            })
-    }
 }
 
 object EagerRTACallGraphAnalysisScheduler extends FPCFEagerAnalysisScheduler {
@@ -752,7 +602,7 @@ object EagerRTACallGraphAnalysisScheduler extends FPCFEagerAnalysisScheduler {
     override def uses: Set[PropertyKind] = Set(InstantiatedTypes, CallersProperty, TACAI)
 
     override def derives: Set[PropertyKind] = Set(
-        LoadedClasses, InstantiatedTypes, CallersProperty, StandardInvokeCallees
+        InstantiatedTypes, CallersProperty, StandardInvokeCallees
     )
 
     override def init(p: SomeProject, ps: PropertyStore): RTACallGraphAnalysis = {

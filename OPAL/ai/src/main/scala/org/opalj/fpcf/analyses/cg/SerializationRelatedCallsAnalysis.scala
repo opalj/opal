@@ -455,7 +455,7 @@ class SerializationRelatedCallsAnalysis private[analyses] (
         res ::= calleesResult
 
         if (newInstantiatedTypes.nonEmpty)
-            res ::= RTACallGraphAnalysis.partialResultForInstantiatedTypes(
+            res ::= InstantiatedTypesAnalysis.partialResultForInstantiatedTypes(
                 p, newInstantiatedTypes, initialInstantiatedTypes
             )
 
