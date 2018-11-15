@@ -950,7 +950,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         if (pc.isDefined) {
             state.calleesAndCallers.addIncompleteCallsite(pc.get)
         }
-        if (state.hasSystemProperties) {
+        if (!state.hasSystemProperties) {
             Iterator.empty
         } else {
             val keys = getPossibleStrings(value, None, onlyStringConsts = true)
