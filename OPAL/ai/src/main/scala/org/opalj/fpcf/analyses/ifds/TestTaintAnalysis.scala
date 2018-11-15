@@ -13,7 +13,6 @@ import org.opalj.br.ObjectType
 import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.Project
-import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.fpcf.analyses.ifds.AbstractIFDSAnalysis.V
 import org.opalj.tac.fpcf.analyses.LazyL0TACAIAnalysis
 import org.opalj.tac.fpcf.properties.TACAI
@@ -36,6 +35,7 @@ import org.opalj.tac.Stmt
 import org.opalj.tac.ReturnValue
 
 import scala.collection.immutable.ListSet
+import org.opalj.util.PerformanceEvaluation.time
 
 trait Fact
 
@@ -79,18 +79,18 @@ class TestTaintAnalysis private[ifds] (
                 else if (index.isDefined && definedBy.size == 1) // Untaint if possible
                     in - ArrayElement(definedBy.head, index.get)
                 else in
-                /*case PutStatic.ASTID ⇒
+            /*case PutStatic.ASTID ⇒
                     val put = stmt.stmt.asPutStatic
                     if (isTainted(put.value, in)) in + StaticField(put.declaringClass, put.name)
                     else in - StaticField(put.declaringClass, put.name)*/
-                /*case PutField.ASTID ⇒
+            /*case PutField.ASTID ⇒
                     val put = stmt.stmt.asPutField
                     val definedBy = put.objRef.asVar.definedBy
                     if (isTainted(put.value, in))
                         in ++ definedBy.iterator.map(InstanceField(_, put.declaringClass, put.name))
                     else if (definedBy.size == 1) // Untaint if object is known precisely
                         in - InstanceField(definedBy.head, put.declaringClass, put.name)
-                    else*/ in
+                    else in */
             case _ ⇒ in
         }
 
@@ -195,7 +195,7 @@ class TestTaintAnalysis private[ifds] (
                 case _ ⇒ false
             })
                 println(s"Found flow: $stmt")
-            Set(FlowFact(ListSet(stmt.method)))
+            Set.empty
         } else if ((callee.descriptor.returnType eq ObjectType.Class) ||
             (callee.descriptor.returnType eq ObjectType.Object)) {
             in.collect {
@@ -273,7 +273,8 @@ class TestTaintAnalysis private[ifds] (
                         flows ++= param.asVar.definedBy.iterator.map(InstanceField(_, declClass, taintedField))
                     //case sf: StaticField ⇒ flows += sf
                     case FlowFact(flow) ⇒
-                        flows += FlowFact(flow + stmt.method)
+                        if (!entryPoints.contains(declaredMethods(exit.method)))
+                            flows += FlowFact(flow + stmt.method)
                     case _ ⇒
                 }
             }
@@ -312,9 +313,29 @@ class TestTaintAnalysis private[ifds] (
                     }
                 case _ ⇒ true
             }
-        } else
+        } else if (call.name == "forName" && (call.declaringClass eq ObjectType.Class) &&
+            call.descriptor.parameterTypes == RefArray(ObjectType.String)) {
+            if (in.exists {
+                case Variable(index) ⇒
+                    asCall(stmt.stmt).params.exists(p ⇒ p.asVar.definedBy.contains(index))
+                case _ ⇒ false
+            }){
+                in ++ Set(FlowFact(ListSet(stmt.method)))
+            } else {
+                in
+            }
+        } else {
             in
+        }
     }
+
+    val entryPoints: Map[DeclaredMethod, Fact] = (for {
+        m ← p.allMethodsWithBody
+        if (m.isPublic || m.isProtected) && (m.descriptor.returnType == ObjectType.Object || m.descriptor.returnType == ObjectType.Class)
+        index ← m.descriptor.parameterTypes.zipWithIndex.collect { case (pType, index) if pType == ObjectType.String ⇒ index }
+    } //yield (declaredMethods(m), null)
+    yield declaredMethods(m) → Variable(-2 - index)).toMap
+
 }
 
 object TestTaintAnalysis extends LazyIFDSAnalysis[Fact] {
@@ -346,54 +367,44 @@ object TestTaintAnalysisRunner {
     def main(args: Array[String]): Unit = {
         //val p = Project(new File("/home/dominik/Desktop/test"))
         //val p = Project(new File("/home/dominik/Work/opal/OPAL/bi/src/test/resources/classfiles/OPAL-MultiJar-SNAPSHOT-01-04-2018.jar"))
-        val p = Project(bytecode.RTJar)
-        p.getOrCreateProjectInformationKeyInitializationData(
-            PropertyStoreKey,
-            (context: List[PropertyStoreContext[AnyRef]]) ⇒ {
-                /*val ps = PKEParallelTasksPropertyStore.create(
+        time {
+            val p = Project(bytecode.RTJar)
+            p.getOrCreateProjectInformationKeyInitializationData(
+                PropertyStoreKey,
+                (context: List[PropertyStoreContext[AnyRef]]) ⇒ {
+                    /*val ps = PKEParallelTasksPropertyStore.create(
                     new RecordAllPropertyStoreTracer,
                     context.iterator.map(_.asTuple).toMap
                 )(p.logContext)*/
-                implicit val lg = p.logContext
-                val ps = PKEParallelTasksPropertyStore(context: _*)
-                //val ps = PKESequentialPropertyStore.apply(context: _*)
-                PropertyStore.updateTraceCycleResolutions(true)
-                PropertyStore.updateDebug(true)
-                ps
+                    implicit val lg = p.logContext
+                    val ps = PKEParallelTasksPropertyStore(context: _*)
+                    //val ps = PKESequentialPropertyStore.apply(context: _*)
+                    PropertyStore.updateTraceCycleResolutions(true)
+                    PropertyStore.updateDebug(true)
+                    ps
+                }
+            )
+            val ps = p.get(PropertyStoreKey)
+            ps.setupPhase(Set(BaseAIResult, TACAI, TestTaintAnalysis.property))
+            LazyL0TACAIAnalysis.init(ps)
+            LazyL0TACAIAnalysis.schedule(ps, null)
+            val analysis = TestTaintAnalysis.startLazily(p, ps, TestTaintAnalysis.init(p, ps))
+            val entryPoints = analysis.asInstanceOf[TestTaintAnalysis].entryPoints
+            for (e ← entryPoints) {
+                ps.force(e, TestTaintAnalysis.property.key)
             }
-        )
-        val ps = p.get(PropertyStoreKey)
-        ps.setupPhase(Set(BaseAIResult, TACAI, TestTaintAnalysis.property))
-        LazyL0TACAIAnalysis.init(ps)
-        LazyL0TACAIAnalysis.schedule(ps, null)
-        TestTaintAnalysis.startLazily(p, ps, TestTaintAnalysis.init(p, ps))
-        val declaredMethods = p.get(DeclaredMethodsKey)
-        var entryPoints: Set[(DeclaredMethod, Fact)] = Set.empty
-        for (m ← p.allMethodsWithBody) {
-            //val e = (declaredMethods(m), null)
-            //ps.force(e, TestTaintAnalysis.property.key)
-            if (m.isPublic && (m.descriptor.returnType == ObjectType.Object ||
-                m.descriptor.returnType == ObjectType.Class)) {
-                m.descriptor.parameterTypes.zipWithIndex.collect {
-                    case (pType, index) if pType == ObjectType.String ⇒ index
-                } foreach { index ⇒
-                    val e = (declaredMethods(m), Variable(-2 - index))
-                    entryPoints += e
-                    ps.force(e, TestTaintAnalysis.property.key)
+            println(entryPoints.size)
+            ps.waitOnPhaseCompletion()
+            for {
+                e ← entryPoints
+                flows = ps(e, TestTaintAnalysis.property.key)
+                fact ← flows.ub.asInstanceOf[IFDSProperty[Fact]].flows.values.flatten.toSet[Fact]
+            } {
+                fact match {
+                    case FlowFact(flow) ⇒ println(s"flow: "+flow.map(_.toJava).mkString(", "))
+                    case _              ⇒
                 }
             }
-        }
-        println(entryPoints.size)
-        ps.waitOnPhaseCompletion()
-        for {
-            e ← entryPoints
-            flows = ps(e, TestTaintAnalysis.property.key)
-            fact ← flows.ub.asInstanceOf[IFDSProperty[Fact]].flows.values.flatten.toSet[Fact]
-        } {
-            fact match {
-                case FlowFact(flow) ⇒ println(s"flow: "+flow.map(_.toJava).mkString(", "))
-                case _              ⇒
-            }
-        }
+        } { t ⇒ println(s"Time: ${t.toSeconds}") }
     }
 }

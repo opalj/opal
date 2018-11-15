@@ -19,6 +19,7 @@ import heros.flowfunc.Kill
 import heros.solver.IFDSSolver
 import heros.template.DefaultIFDSTabulationProblem
 
+import org.opalj.collection.immutable.RefArray
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
 import org.opalj.br.ClassHierarchy
@@ -43,6 +44,7 @@ import org.opalj.tac.ArrayLoad
 import org.opalj.tac.Var
 
 import scala.collection.immutable.ListSet
+import org.opalj.util.PerformanceEvaluation.time
 
 case object NullFact extends Fact
 
@@ -165,7 +167,7 @@ class HerosTestTaintAnalysis(p: SomeProject, icfg: OpalICFG)
                             Collections.emptySet()
                         }
                 } else if (callee.name == "forName" && (callee.classFile.thisType eq ObjectType.Class) &&
-                    callee.descriptor.parameterTypes == Seq(ObjectType.String)) {
+                    callee.descriptor.parameterTypes == RefArray(ObjectType.String)) {
                     source: Fact ⇒
                         {
                             source match {
@@ -173,9 +175,9 @@ class HerosTestTaintAnalysis(p: SomeProject, icfg: OpalICFG)
                                     println(s"Found flow: $stmt")
                                 case _ ⇒
                             }
-                            Collections.singleton(FlowFact(ListSet(stmt.method)))
+                            Collections.emptySet()
                         }
-                } else if (true || (callee.descriptor.returnType eq ObjectType.Class) ||
+                } else if ((callee.descriptor.returnType eq ObjectType.Class) ||
                     (callee.descriptor.returnType eq ObjectType.Object)) {
                     source: Fact ⇒
                         (source match {
@@ -252,8 +254,13 @@ class HerosTestTaintAnalysis(p: SomeProject, icfg: OpalICFG)
 
                             //case sf: StaticField ⇒ flows += sf
                             case FlowFact(flow) ⇒
-                                val flowFact = FlowFact(flow + stmt.method).asInstanceOf[Fact]
-                                Set(flowFact)
+                                val newFlow = flow + stmt.method
+                                if (HerosTestTaintAnalysis.initialMethods.contains(stmt.method)) {
+                                    println(s"flow: "+newFlow.map(_.toJava).mkString(", "))
+                                    Set.empty[Fact]
+                                } else {
+                                    Set(FlowFact(newFlow))
+                                }
                             case _ ⇒
                                 Set.empty
                         }
@@ -283,8 +290,25 @@ class HerosTestTaintAnalysis(p: SomeProject, icfg: OpalICFG)
                             new Kill[Fact](Variable(param.asVar.definedBy.head))
                     }
                     Union.union(kill: _*)
-                } else
+                } else if (call.name == "forName" && (call.declaringClass eq ObjectType.Class) &&
+                    call.descriptor.parameterTypes == RefArray(ObjectType.String)) {
+                    source: Fact ⇒
+                        {
+                            source match {
+                                case Variable(index) if call.allParams.exists(p ⇒ p.asVar.definedBy.contains(index)) ⇒
+                                    if (HerosTestTaintAnalysis.initialMethods.contains(stmt.method)) {
+                                        println(s"flow: " + stmt.method.toJava)
+                                        Collections.singleton(source)
+                                    } else {
+                                        TwoElementSet.twoElementSet(source, FlowFact(ListSet(stmt.method)))
+                                    }
+                                case _ ⇒
+                                    Collections.singleton(source)
+                            }
+                        }
+                } else {
                     Identity.v()
+                }
             }
         }
     }
@@ -354,13 +378,13 @@ class HerosTestTaintAnalysis(p: SomeProject, icfg: OpalICFG)
 object HerosTestTaintAnalysis {
 
     val p = Project(bytecode.RTJar)
+    //val p = Project(new File("/home/dominik/Desktop/test"))
     val tacai: Method ⇒ TACode[TACMethodParameter, DUVar[ValueInformation]] = p.get(DefaultTACAIKey)
 
     val initialMethods: Map[Method, util.Set[Fact]] = {
         var result: Map[Method, util.Set[Fact]] = Map.empty
         for (m ← p.allMethodsWithBody) {
-            //val e = (declaredMethods(m), null)
-            //ps.force(e, TestTaintAnalysis.property.key)
+            //result = result.updated(m, Collections.singleton(NullFact))
             if ((m.isPublic || m.isProtected) && (m.descriptor.returnType == ObjectType.Object ||
                 m.descriptor.returnType == ObjectType.Class)) {
                 m.descriptor.parameterTypes.zipWithIndex.collect {
@@ -381,29 +405,10 @@ object HerosTestTaintAnalysis {
     def paramToIndex(param: Int, includeThis: Boolean): Int =
         (if (includeThis) -1 else -2) - param
 
-    /**
-     * Finds all statements that may terminate the given method.
-     */
-    def getExits(method: Method): Set[Statement] = {
-        val TACode(_, code, _, cfg, _, _) = tacai(method)
-        cfg.normalReturnNode.predecessors.map {
-            block ⇒
-                val endPC = block.asBasicBlock.endPC
-                Statement(method, code(endPC), endPC, code, cfg)
-        }
-    }
-
     def main(args: Array[String]): Unit = {
-        val solver = new IFDSSolver(new HerosTestTaintAnalysis(p, new OpalICFG(p)))
-        solver.solve()
-        /*for {
-            m ← initialMethods.keysIterator
-            fact ← getExits(m).flatMap(solver.ifdsResultsAt(_).asScala)
-        } {
-            fact match {
-                case FlowFact(flow) ⇒ println(s"flow: "+flow.map(_.toJava).mkString(", "))
-                case _              ⇒
-            }
-        }*/
+        time {
+            val solver = new IFDSSolver(new HerosTestTaintAnalysis(p, new OpalICFG(p)))
+            solver.solve()
+        } { t ⇒ println(s"Time: ${t.toSeconds}") }
     }
 }
