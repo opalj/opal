@@ -499,7 +499,7 @@ object Purity {
             if (domainName.isEmpty)
                 classOf[domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse[_]]
             else {
-                Class.forName(raterName.get).asInstanceOf[Class[Domain with RecordDefUse]]
+                Class.forName(domainName.get).asInstanceOf[Class[Domain with RecordDefUse]]
             }
 
         val rater = if (raterName.isEmpty) {
