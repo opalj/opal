@@ -370,6 +370,7 @@ class FieldLocalityAnalysis private[analyses] (
                 true
             } else {
                 callees.callees(pc).exists { callee ⇒
+                    callee.descriptor.returnType.isReferenceType &&
                     handleReturnValueFreshness(propertyStore(callee, ReturnValueFreshness.key))
                 }
             }
