@@ -564,15 +564,18 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
                             val index = state.pcToIndex(pc)
                             if (index < 0)
                                 true // call will not be executed
-                            else
-                                callees.forall { callee ⇒
-                                    checkPurityOfMethod(
-                                        callee,
-                                        p.indirectCallParameters(pc, callee).map { paramO ⇒
-                                            paramO.map(uVarForDefSites(_, state.pcToIndex)).orNull
-                                        }
-                                    )
-                                }
+                            else {
+                                val call = getCall(state.code(index))
+                                isDomainSpecificCall(call, call.receiverOption) ||
+                                    callees.forall { callee ⇒
+                                        checkPurityOfMethod(
+                                            callee,
+                                            p.indirectCallParameters(pc, callee).map { paramO ⇒
+                                                paramO.map(uVarForDefSites(_, state.pcToIndex)).orNull
+                                            }
+                                        )
+                                    }
+                            }
                     }
 
             case _ ⇒
