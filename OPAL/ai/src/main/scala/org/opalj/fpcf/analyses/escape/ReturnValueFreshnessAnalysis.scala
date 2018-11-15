@@ -51,15 +51,15 @@ class ReturnValueFreshnessState(val dm: DefinedMethod) {
     private[this] var fieldDependees: Set[EOptionP[Field, FieldLocality]] = Set.empty
     private[this] var defSiteDependees: Set[EOptionP[DefinitionSite, EscapeProperty]] = Set.empty
     private[this] var tacaiDependee: Option[EOptionP[Method, TACAI]] = None
-    var calleesDependee: Option[EOptionP[DeclaredMethod, Callees]] = None
+    private[this] var _calleesDependee: Option[EOptionP[DeclaredMethod, Callees]] = None
 
-    var callSitePCs: IntTrieSet = IntTrieSet.empty
+    private[this] var _callSitePCs: IntTrieSet = IntTrieSet.empty
 
     private[this] var upperBound: ReturnValueFreshness = FreshReturnValue
 
     def dependees: Set[EOptionP[Entity, Property]] = {
         returnValueDependees ++ fieldDependees ++ defSiteDependees ++ tacaiDependee ++
-            calleesDependee.filter(_.isRefinable)
+            _calleesDependee.filter(_.isRefinable)
     }
 
     def hasDependees: Boolean = dependees.nonEmpty
@@ -77,6 +77,16 @@ class ReturnValueFreshnessState(val dm: DefinedMethod) {
     def addDefSiteDependee(epOrEpk: EOptionP[DefinitionSite, EscapeProperty]): Unit = {
         defSiteDependees += epOrEpk
     }
+
+    def setCalleesDependee(epOrEpk: EOptionP[DeclaredMethod, Callees]): Unit = {
+        _calleesDependee = Some(epOrEpk)
+    }
+
+    def calleesDependee: Option[EOptionP[DeclaredMethod, Callees]] = _calleesDependee
+
+    def addCallSitePC(pc: Int): Unit = { _callSitePCs += pc }
+
+    def callSitePCs: IntTrieSet = _callSitePCs
 
     def removeMethodDependee(epOrEpk: EOptionP[DeclaredMethod, Property]): Unit = {
         returnValueDependees = returnValueDependees.filter(other ⇒ (other.e ne epOrEpk.e) || other.pk != epOrEpk.pk)
@@ -271,10 +281,11 @@ class ReturnValueFreshnessAnalysis private[analyses] (
         state: ReturnValueFreshnessState
     ): Boolean = {
         if (state.calleesDependee.isEmpty)
-            state.calleesDependee = Some(propertyStore(caller, Callees.key))
+            state.setCalleesDependee(propertyStore(caller, Callees.key))
         val calleesEP = state.calleesDependee.get
 
         if (calleesEP.hasNoProperty) {
+            state.addCallSitePC(pc)
             false
         } else {
             calleesEP.ub.callees(pc).exists { callee ⇒
@@ -371,14 +382,16 @@ class ReturnValueFreshnessAnalysis private[analyses] (
     def handleReturnValueFreshness(
         ep: EOptionP[DeclaredMethod, ReturnValueFreshness]
     )(implicit state: ReturnValueFreshnessState): Boolean = ep match {
-        case FinalEP(_, NoFreshReturnValue) ⇒ true
+        case FinalEP(_, NoFreshReturnValue)  ⇒ true
 
-        case FinalEP(_, FreshReturnValue)   ⇒ false
+        case FinalEP(_, FreshReturnValue)    ⇒ false
+
+        case EPS(_, _, PrimitiveReturnValue) ⇒ false
 
         //IMPROVE: We can still be a getter if the callee has the same receiver
-        case EPS(_, _, Getter)              ⇒ true
+        case EPS(_, _, Getter)               ⇒ true
 
-        case EPS(_, _, ExtensibleGetter)    ⇒ true
+        case EPS(_, _, ExtensibleGetter)     ⇒ true
 
         case IntermediateEP(_, _, FreshReturnValue) ⇒
             state.addMethodDependee(ep)
@@ -387,8 +400,8 @@ class ReturnValueFreshnessAnalysis private[analyses] (
         case _: EPS[_, _] ⇒
             //TODO This currently happens because of a JSR/RET problem with the TAC
             // - restore the exception once this is fixed!
-            //throw new RuntimeException(s"unexpected property $ep for entity ${state.dm}")
-            false
+            throw new RuntimeException(s"unexpected property $ep for entity ${state.dm}")
+        //false
 
         case _ ⇒
             state.addMethodDependee(ep)
@@ -413,8 +426,9 @@ class ReturnValueFreshnessAnalysis private[analyses] (
             case ReturnValueFreshness.key ⇒
                 val newEP = someEPS.asInstanceOf[EOptionP[DeclaredMethod, ReturnValueFreshness]]
                 state.removeMethodDependee(newEP)
-                if (handleReturnValueFreshness(newEP))
+                if (handleReturnValueFreshness(newEP)) {
                     return Result(dm, NoFreshReturnValue);
+                }
 
             case FieldLocality.key ⇒
                 val newEP = someEPS.asInstanceOf[EOptionP[Field, FieldLocality]]
@@ -429,9 +443,10 @@ class ReturnValueFreshnessAnalysis private[analyses] (
 
             case Callees.key ⇒
                 val newEP = someEPS.asInstanceOf[EOptionP[DeclaredMethod, Callees]]
-                state.calleesDependee = Some(newEP)
-                if (state.callSitePCs.exists(pc ⇒ handleCallSite(dm, pc)))
+                state.setCalleesDependee(newEP)
+                if (state.callSitePCs.exists(pc ⇒ handleCallSite(dm, pc))) {
                     return Result(dm, NoFreshReturnValue);
+                }
         }
 
         returnResult
@@ -470,8 +485,8 @@ sealed trait ReturnValueFreshnessAnalysisScheduler extends ComputationSpecificat
 }
 
 object EagerReturnValueFreshnessAnalysis
-    extends ReturnValueFreshnessAnalysisScheduler
-    with FPCFEagerAnalysisScheduler {
+        extends ReturnValueFreshnessAnalysisScheduler
+        with FPCFEagerAnalysisScheduler {
 
     override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val declaredMethods =
@@ -483,8 +498,8 @@ object EagerReturnValueFreshnessAnalysis
 }
 
 object LazyReturnValueFreshnessAnalysis
-    extends ReturnValueFreshnessAnalysisScheduler
-    with FPCFLazyAnalysisScheduler {
+        extends ReturnValueFreshnessAnalysisScheduler
+        with FPCFLazyAnalysisScheduler {
 
     /**
      * Registers the analysis as a lazy computation, that is, the method
