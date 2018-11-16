@@ -104,8 +104,8 @@ public class TestMethods {
     @StringDefinitions(
             value = "array access with unknown index",
             expectedLevel = StringConstancyLevel.CONSTANT,
-            expectedStrings = "(java.lang.String | java.lang.StringBuilder | "
-                    + "java.lang.System | java.lang.Runnable)"
+            expectedStrings = "(java.lang.String|java.lang.StringBuilder|"
+                    + "java.lang.System|java.lang.Runnable)"
     )
     public void fromStringArray(int index) {
         String[] classes = {
@@ -120,7 +120,7 @@ public class TestMethods {
     @StringDefinitions(
             value = "a simple case where multiple definition sites have to be considered",
             expectedLevel = StringConstancyLevel.CONSTANT,
-            expectedStrings = "(java.lang.System | java.lang.Runtime)"
+            expectedStrings = "(java.lang.System|java.lang.Runtime)"
     )
     public void multipleConstantDefSites(boolean cond) {
         String s;
@@ -136,7 +136,7 @@ public class TestMethods {
             value = "a more comprehensive case where multiple definition sites have to be "
                     + "considered each with a different string generation mechanism",
             expectedLevel = StringConstancyLevel.DYNAMIC,
-            expectedStrings = "(java.lang.Object | \\w | java.lang.System | java.lang.\\w)"
+            expectedStrings = "(java.lang.Object|\\w|java.lang.System|java.lang.\\w)"
     )
     public void multipleDefSites(int value) {
         String[] arr = new String[] { "java.lang.Object", getRuntimeClassName() };
@@ -165,7 +165,7 @@ public class TestMethods {
     @StringDefinitions(
             value = "if-else control structure which append to a string builder with an int expr",
             expectedLevel = StringConstancyLevel.DYNAMIC,
-            expectedStrings = "(x | [AnIntegerValue])"
+            expectedStrings = "(x|[AnIntegerValue])"
     )
     public void ifElseWithStringBuilderWithIntExpr() {
         StringBuilder sb = new StringBuilder();
@@ -181,7 +181,7 @@ public class TestMethods {
     @StringDefinitions(
             value = "if-else control structure which append to a string builder with an int",
             expectedLevel = StringConstancyLevel.DYNAMIC,
-            expectedStrings = "([AnIntegerValue] | x)"
+            expectedStrings = "([AnIntegerValue]|x)"
     )
     public void ifElseWithStringBuilderWithConstantInt() {
         StringBuilder sb = new StringBuilder();
@@ -197,7 +197,7 @@ public class TestMethods {
     @StringDefinitions(
             value = "if-else control structure which append to a string builder",
             expectedLevel = StringConstancyLevel.CONSTANT,
-            expectedStrings = "(a | b)"
+            expectedStrings = "(a|b)"
     )
     public void ifElseWithStringBuilder1() {
         StringBuilder sb;
@@ -213,7 +213,7 @@ public class TestMethods {
     @StringDefinitions(
             value = "if-else control structure which append to a string builder",
             expectedLevel = StringConstancyLevel.CONSTANT,
-            expectedStrings = "a(b | c)"
+            expectedStrings = "a(b|c)"
     )
     public void ifElseWithStringBuilder2() {
         StringBuilder sb = new StringBuilder("a");
@@ -229,7 +229,7 @@ public class TestMethods {
     @StringDefinitions(
             value = "if-else control structure which append to a string builder multiple times",
             expectedLevel = StringConstancyLevel.CONSTANT,
-            expectedStrings = "a(bcd | xyz)"
+            expectedStrings = "a(bcd|xyz)"
     )
     public void ifElseWithStringBuilder3() {
         StringBuilder sb = new StringBuilder("a");
@@ -277,7 +277,7 @@ public class TestMethods {
     @StringDefinitions(
             value = "if-else control structure within a for loop with known loop bounds",
             expectedLevel = StringConstancyLevel.DYNAMIC,
-            expectedStrings = "((x | [AnIntegerValue]))*"
+            expectedStrings = "((x|[AnIntegerValue]))*"
     )
     public void ifElseInLoopWithKnownBounds() {
         StringBuilder sb = new StringBuilder();
@@ -295,7 +295,7 @@ public class TestMethods {
     @StringDefinitions(
             value = "if-else control structure within a for loop and with an append afterwards",
             expectedLevel = StringConstancyLevel.PARTIALLY_CONSTANT,
-            expectedStrings = "((x | [AnIntegerValue]))*yz"
+            expectedStrings = "((x|[AnIntegerValue]))*yz"
     )
     public void ifElseInLoopWithAppendAfterwards() {
         StringBuilder sb = new StringBuilder();
