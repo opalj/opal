@@ -226,7 +226,7 @@ object EagerLBFieldValuesAnalysis extends BasicFPCFEagerAnalysisScheduler {
 
     final override def derives: Set[PropertyKind] = Set(FieldValue.key)
 
-    final override def refinesLowerBound: Boolean = true
+    final override def computesLowerBound: Boolean = true
 
     final override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new LBFieldValuesAnalysis(p)

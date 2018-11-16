@@ -80,7 +80,7 @@ trait ComputationSpecification {
      *       w.r.t. a certain method – means that some exceptions are guaranteed to never be thrown
      *       by that method.
      */
-    def refinesLowerBound: Boolean = false
+    def computesLowerBound: Boolean = false
 
     override def toString: String = {
         val uses =
