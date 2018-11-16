@@ -231,11 +231,10 @@ object Purity {
             } { t ⇒ tacTime = t.toSeconds }
         }
 
+        PropertyStore.updateDebug(debug)
         val propertyStore = time {
             project.get(PropertyStoreKey)
         } { t ⇒ propertyStoreTime = t.toSeconds }
-
-        PropertyStore.updateDebug(debug)
 
         analysis match {
             case LazyL0PurityAnalysis ⇒

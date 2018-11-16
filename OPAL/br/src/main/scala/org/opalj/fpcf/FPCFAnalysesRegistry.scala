@@ -59,7 +59,10 @@ object FPCFAnalysesRegistry {
                 ((analysisID, analysisRunner.get.asInstanceOf[FPCFEagerAnalysisScheduler]))
 
             idToDescription += ((analysisID, analysisDescription))
-            info("OPAL Setup", s"registered analysis: $analysisID ($analysisDescription)")
+            val analysisType = if (lazyFactory) "lazy" else "eager"
+            val message =
+                s"registered $analysisType analysis: $analysisID ($analysisDescription)"
+            info("OPAL Setup", message)
         } else {
             error("OPAL Setup", s"unknown analysis implementation: $analysisFactory")
         }

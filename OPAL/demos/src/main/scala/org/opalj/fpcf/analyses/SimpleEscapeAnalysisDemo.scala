@@ -52,10 +52,11 @@ object SimpleEscapeAnalysisDemo extends DefaultOneStepAnalysis {
     ): BasicReport = {
         implicit val logContext: LogContext = project.logContext
 
+        PropertyStore.updateDebug(true)
+
         val propertyStore = time {
             project.get(PropertyStoreKey)
         } { t ⇒ info("progress", s"initialization of property store took ${t.toSeconds}") }
-        PropertyStore.updateDebug(true)
 
         time {
             val manager = project.get(FPCFAnalysesManagerKey)

@@ -431,6 +431,23 @@ final class Method private[br] (
     def toJava: String = s"${classFile.thisType.toJava}{ ${signatureToJava(true)} }"
 
     /**
+     * Creates a method object based on this method where the body is replaced by the code
+     * returned by `Code.invalidBytecode`. This method is NOT replaced in its declaring class file.
+     *
+     * @param message A short descriptive method that states why the body was replaced.
+     */
+    def invalidBytecode(message: Option[String]): Method = {
+        new Method(
+            declaringClassFile,
+            accessFlags,
+            name,
+            descriptor,
+            Some(Code.invalidBytecode(descriptor, !isStatic, message)),
+            attributes
+        )
+    }
+
+    /**
      * A Java-like representation of the signature of this method; "the body" will contain
      * the given `methodInfo` data.
      */

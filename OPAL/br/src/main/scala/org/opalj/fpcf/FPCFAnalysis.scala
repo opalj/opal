@@ -12,6 +12,6 @@ trait FPCFAnalysis extends ProjectBasedAnalysis {
 
     final implicit val propertyStore: PropertyStore = project.get(PropertyStoreKey)
 
-    final def ps = propertyStore
+    final def ps: PropertyStore = propertyStore
 
 }

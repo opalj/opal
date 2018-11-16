@@ -312,6 +312,8 @@ abstract class PropertiesTest extends FunSpec with Matchers {
 
         init(p)
 
+        PropertyStore.updateDebug(true)
+
         p.getOrCreateProjectInformationKeyInitializationData(
             PropertyStoreKey,
             (context: List[PropertyStoreContext[AnyRef]]) ⇒ {
@@ -319,7 +321,6 @@ abstract class PropertiesTest extends FunSpec with Matchers {
                     new RecordAllPropertyStoreTracer,
                     context.iterator.map(_.asTuple).toMap
                 )(p.logContext)
-                PropertyStore.updateDebug(true)
                 ps
             }
         )
