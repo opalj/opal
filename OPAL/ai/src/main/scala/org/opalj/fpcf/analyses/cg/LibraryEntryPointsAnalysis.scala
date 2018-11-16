@@ -45,7 +45,7 @@ class LibraryEntryPointsAnalysis private[analyses] (
                     isFinal,
                     initialTypes.types.size
                 )
-            case _ ⇒ (Nil, false, 0)
+            case _ ⇒ (Iterator.empty, false, 0)
         }
 
         val fakeResult =
@@ -75,7 +75,7 @@ class LibraryEntryPointsAnalysis private[analyses] (
         }
     }
 
-    def analyzeTypes(types: List[ObjectType]): List[DeclaredMethod] = {
+    def analyzeTypes(types: Iterator[ObjectType]): Iterator[DeclaredMethod] = {
         types.flatMap { ot ⇒
             project.classFile(ot).map { cf ⇒
                 cf.methodsWithBody.filter(m ⇒ !m.isStatic && m.isPublic)
@@ -84,9 +84,9 @@ class LibraryEntryPointsAnalysis private[analyses] (
     }
 
     def resultsForReachableMethods(
-        reachableMethods: List[DeclaredMethod]
+        reachableMethods: Iterator[DeclaredMethod]
     ): Iterator[PropertyComputationResult] = {
-        reachableMethods.iterator.map { method ⇒
+        reachableMethods.map { method ⇒
             PartialResult[DeclaredMethod, CallersProperty](method, CallersProperty.key, {
                 case IntermediateESimpleP(_, ub) if !ub.hasCallersWithUnknownContext ⇒
                     Some(IntermediateESimpleP(method, ub.updatedWithUnknownContext()))
