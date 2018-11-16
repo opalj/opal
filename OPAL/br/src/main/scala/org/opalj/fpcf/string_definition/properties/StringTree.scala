@@ -47,7 +47,7 @@ sealed abstract class StringTreeElement(val children: ListBuffer[StringTreeEleme
                         StringConstancyLevel.determineMoreGeneral(
                             old.constancyLevel, next.constancyLevel
                         ),
-                        old.possibleStrings+" | "+next.possibleStrings
+                        old.possibleStrings+"|"+next.possibleStrings
                     )
                 }
                 StringConstancyInformation(reduced.constancyLevel, s"(${reduced.possibleStrings})")
@@ -56,7 +56,7 @@ sealed abstract class StringTreeElement(val children: ListBuffer[StringTreeEleme
                 val scis = c.map(reduceAcc)
                 val reducedInfo = scis.reduceLeft((o, n) ⇒ StringConstancyInformation(
                     StringConstancyLevel.determineMoreGeneral(o.constancyLevel, n.constancyLevel),
-                    s"${o.possibleStrings} | ${n.possibleStrings}"
+                    s"${o.possibleStrings}|${n.possibleStrings}"
                 ))
                 StringConstancyInformation(
                     reducedInfo.constancyLevel, s"(${reducedInfo.possibleStrings})?"
