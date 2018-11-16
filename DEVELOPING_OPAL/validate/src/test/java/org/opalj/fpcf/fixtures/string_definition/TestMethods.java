@@ -314,7 +314,7 @@ public class TestMethods {
     @StringDefinitions(
             value = "if control structure without an else",
             expectedLevel = StringConstancyLevel.CONSTANT,
-            expectedStrings = "a(b)+"
+            expectedStrings = "a(b)?"
     )
     public void ifWithoutElse() {
         StringBuilder sb = new StringBuilder("a");
