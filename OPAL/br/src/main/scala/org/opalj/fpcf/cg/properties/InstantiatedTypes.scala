@@ -44,8 +44,8 @@ case class InstantiatedTypes private[properties] (
         new InstantiatedTypes(newOrderedTypes, types ++ newTypes)
     }
 
-    def getNewTypes(index: Int): Iterator[ObjectType] = {
-        orderedTypes.iterator.take(types.size - index)
+    def getNewTypes(index: Int): List[ObjectType] = {
+        orderedTypes.take(types.size - index)
     }
 
     def numElements: Int = types.size
