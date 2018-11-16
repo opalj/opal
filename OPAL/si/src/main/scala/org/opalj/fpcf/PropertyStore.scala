@@ -686,7 +686,7 @@ abstract class PropertyStore {
  */
 object PropertyStore {
 
-    final val DebugKey = "org.opalj.debug.fpcf.PropertyStore.Debug"
+    final val DebugKey = "org.opalj.fpcf.PropertyStore.Debug"
 
     private[this] var debug: Boolean = {
         val initialDebug = BaseConfig.getBoolean(DebugKey)
@@ -722,7 +722,7 @@ object PropertyStore {
     // about debugging analyses.
     //
 
-    final val TraceFallbacksKey = "org.opalj.debug.fpcf.PropertyStore.TraceFallbacks"
+    final val TraceFallbacksKey = "org.opalj.fpcf.PropertyStore.TraceFallbacks"
 
     private[this] var traceFallbacks: Boolean = {
         val initialTraceFallbacks = BaseConfig.getBoolean(TraceFallbacksKey)
@@ -745,7 +745,7 @@ object PropertyStore {
             }
     }
 
-    final val TraceCycleResolutionsKey = "org.opalj.debug.fpcf.PropertyStore.TraceCycleResolutions"
+    final val TraceCycleResolutionsKey = "org.opalj.fpcf.PropertyStore.TraceCycleResolutions"
 
     private[this] var traceCycleResolutions: Boolean = {
         val initialTraceCycleResolutions = BaseConfig.getBoolean(TraceCycleResolutionsKey)

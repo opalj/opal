@@ -84,6 +84,6 @@ class FPCFAnalysesManager private[fpcf] (
 
 object FPCFAnalysesManager {
 
-    final val TraceConfigKey = "org.opalj.debug.fcpf.analyses.FPCFAnalysesManager.trace"
+    final val TraceConfigKey = "org.opalj.fpcf.analyses.FPCFAnalysesManager.Trace"
 
 }
