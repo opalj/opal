@@ -23,6 +23,7 @@ import org.opalj.ai.domain.RecordDefUse
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.ai.fpcf.properties.AnAIResult
 import org.opalj.ai.fpcf.properties.BaseAIResult
+import org.opalj.log.OPALLogger.warn
 import org.opalj.tac.{TACAI ⇒ TACAIFactory}
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.TheTACAI
@@ -51,15 +52,27 @@ class L0TACAIAnalysis private[analyses] (val project: SomeProject) extends FPCFA
      * Computes the TAC for the given method.
      */
     private[analyses] def computeTAC(m: Method): PropertyComputationResult = {
-        val aiResult = aiFactory(m).asInstanceOf[AIResult { val domain: Domain with RecordDefUse }]
-        val aiResultProperty = AnAIResult(aiResult)
-        val taCode = TACAIFactory(m, p.classHierarchy, aiResult)(Nil)
-        val tacaiProperty = TheTACAI(
-            // the following cast is safe - see TACode for details
-            // IMPROVE Get rid of nasty type checks/casts related to TACode once we use ConstCovariantArray in TACode.. (here and elsewhere)
-            taCode.asInstanceOf[TACode[TACMethodParameter, DUVar[ValueInformation]]]
-        )
-        MultiResult(List(FinalEP(m, aiResultProperty), FinalEP(m, tacaiProperty)))
+        try {
+            val aiResult = aiFactory(m).asInstanceOf[AIResult { val domain: Domain with RecordDefUse }]
+            val aiResultProperty = AnAIResult(aiResult)
+            val taCode = TACAIFactory(m, p.classHierarchy, aiResult)(Nil)
+            val tacaiProperty = TheTACAI(
+                // the following cast is safe - see TACode for details
+                // IMPROVE Get rid of nasty type checks/casts related to TACode once we use ConstCovariantArray in TACode.. (here and elsewhere)
+                taCode.asInstanceOf[TACode[TACMethodParameter, DUVar[ValueInformation]]]
+            )
+            MultiResult(List(FinalEP(m, aiResultProperty), FinalEP(m, tacaiProperty)))
+        } catch {
+            case t: Throwable ⇒
+                warn(
+                    "project configuration",
+                    s"interpretation of ${m.toJava} failed; "+
+                        " replacing method body with a generic error throwing body"
+                )
+                computeTAC(
+                    m.invalidBytecode(Some("replaced due to invalid bytecode\n"+t.getMessage))
+                )
+        }
     }
 }
 
