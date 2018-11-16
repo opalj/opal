@@ -6,7 +6,7 @@ case class SpecificationViolation(message: String) extends Exception(message)
 
 /**
  * Specification of the properties and the life-cycle methods of a fixpoint computation
- * (FPC) that are relevant when computing the correct scheduling order and actually executing
+ * (FPC) which are required when computing the correct scheduling order and actually executing
  * the fixpoint computation.
  *
  * @note The [[PropertyStore]] can be used without using [[ComputationSpecification]]s and
@@ -18,8 +18,8 @@ case class SpecificationViolation(message: String) extends Exception(message)
 trait ComputationSpecification {
 
     /**
-     * The type of the data used at initialization time.
-     * For analysis without special initialization requirements this type is `Null`.
+     * The type of the data used by the analysis at initialization time.
+     * For analyses without special initialization requirements this type is `Null`.
      */
     type InitializationData
 
@@ -64,14 +64,17 @@ trait ComputationSpecification {
      * This information is used to check that we never schedule multiple lazy analyses
      * which compute the same kind of property.
      *
-     * @note Collaboratively computed properties can only be computed by eager analyses.
+     * @note    Collaboratively computed properties can only be computed by eager analyses, which
+     *         - however - can use lazy analyses.
      */
     def isLazy: Boolean
 
     /**
-     * Returns `true` if this analysis ''only'' refines the lower bound of a specific property,
-     * the default is `false`. Analyses which refine the lower bound cannot be run in parallel
-     * with analyses that use a property computed by `this` analysis and that refine upper bounds
+     * Returns `true` if this analysis computes the lower bound of a specific property,
+     * the default is `false`.
+     *
+     * Analyses which compute the lower bound cannot be run in the same phase with analyses that
+     * use a property computed by `this` analysis when this analysis computes the upper bounds
      * related to other property kinds.
      *
      * @note The lower bound generally models the set of all possible states that may be
