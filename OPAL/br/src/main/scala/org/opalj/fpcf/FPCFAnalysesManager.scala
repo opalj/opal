@@ -66,7 +66,7 @@ class FPCFAnalysesManager private[fpcf] (
 
         if (trace) { debug("analysis progress", "executing "+schedule) }
         time {
-            schedule(propertyStore)
+            schedule(propertyStore, trace)
         } { t ⇒
             if (trace) debug("analysis progress", s"execution of schedule took ${t.toSeconds}")
         }
