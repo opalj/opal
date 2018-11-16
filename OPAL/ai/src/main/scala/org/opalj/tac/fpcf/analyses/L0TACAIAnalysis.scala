@@ -41,7 +41,7 @@ class L0TACAIAnalysis private[analyses] (val project: SomeProject) extends FPCFA
     def computeTAC(entity: Entity): PropertyComputationResult = {
         entity match {
             case m: Method ⇒
-                computeTAC(m)
+                computeTAC(m, m)
             case e ⇒
                 val m = "expected org.opalj.br.Method; given "+e.getClass.getSimpleName
                 throw new IllegalArgumentException(m)
@@ -50,8 +50,13 @@ class L0TACAIAnalysis private[analyses] (val project: SomeProject) extends FPCFA
 
     /**
      * Computes the TAC for the given method.
+     *
+     * @param e The method that is used as the entity for the result.
+     * @param m The method that is analyzed.
+     * @note `e` and `m` are typically identical, unless the interpretation of the method fails
+     *      and the `error throwing fake method` is analyzed.
      */
-    private[analyses] def computeTAC(m: Method): PropertyComputationResult = {
+    private[analyses] def computeTAC(e: Method, m: Method): PropertyComputationResult = {
         try {
             val aiResult = aiFactory(m).asInstanceOf[AIResult { val domain: Domain with RecordDefUse }]
             val aiResultProperty = AnAIResult(aiResult)
@@ -61,7 +66,7 @@ class L0TACAIAnalysis private[analyses] (val project: SomeProject) extends FPCFA
                 // IMPROVE Get rid of nasty type checks/casts related to TACode once we use ConstCovariantArray in TACode.. (here and elsewhere)
                 taCode.asInstanceOf[TACode[TACMethodParameter, DUVar[ValueInformation]]]
             )
-            MultiResult(List(FinalEP(m, aiResultProperty), FinalEP(m, tacaiProperty)))
+            MultiResult(List(FinalEP(e, aiResultProperty), FinalEP(e, tacaiProperty)))
         } catch {
             case t: Throwable ⇒
                 warn(
@@ -70,6 +75,7 @@ class L0TACAIAnalysis private[analyses] (val project: SomeProject) extends FPCFA
                         " replacing method body with a generic error throwing body"
                 )
                 computeTAC(
+                    e,
                     m.invalidBytecode(Some("replaced due to invalid bytecode\n"+t.getMessage))
                 )
         }
