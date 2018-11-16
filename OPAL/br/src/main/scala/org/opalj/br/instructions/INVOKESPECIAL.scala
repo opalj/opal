@@ -37,7 +37,7 @@ case class INVOKESPECIAL(
     }
 
     // Required to avoid that Scala generates a default toString method!
-    override def toString : String = super.toString
+    override def toString: String = super.toString
 
 }
 
