@@ -50,9 +50,9 @@ import scala.language.existentials
 
 class RTAState private (
         private[cg] val method:                       DefinedMethod,
-        private[cg] val virtualCallSites:             Traversable[(Int /*PC*/ , ObjectType, String, MethodDescriptor)],
         private[cg] var incompleteCallSites:          IntTrieSet, // key = PC
         private[cg] var numTypesProcessed:            Int,
+        private[this] var _virtualCallSites:          List[(Int /*PC*/ , ObjectType, String, MethodDescriptor)],
         private[this] var _callees:                   IntMap[IntTrieSet], // key = PC
         private[this] var _tacDependee:               Option[EOptionP[Method, TACAI]],
         private[this] var _tac:                       Option[TACode[TACMethodParameter, V]],
@@ -62,20 +62,20 @@ class RTAState private (
     assert(_instantiatedTypesDependee.isEmpty || _instantiatedTypesDependee.get.isRefinable)
 
     private[cg] def copy(
-        method:                    DefinedMethod                                                    = this.method,
-        virtualCallSites:          Traversable[(Int /*PC*/ , ObjectType, String, MethodDescriptor)] = this.virtualCallSites,
-        incompleteCallSites:       IntTrieSet                                                       = this.incompleteCallSites, // key = PC
-        numTypesProcessed:         Int                                                              = this.numTypesProcessed,
-        callees:                   IntMap[IntTrieSet]                                               = _callees, // key = PC
-        tacDependee:               Option[EOptionP[Method, TACAI]]                                  = _tacDependee,
-        tac:                       Option[TACode[TACMethodParameter, V]]                            = _tac,
-        instantiatedTypesDependee: Option[EOptionP[SomeProject, InstantiatedTypes]]                 = _instantiatedTypesDependee
+        method:                    DefinedMethod                                             = this.method,
+        incompleteCallSites:       IntTrieSet                                                = this.incompleteCallSites, // key = PC
+        numTypesProcessed:         Int                                                       = this.numTypesProcessed,
+        virtualCallSites:          List[(Int /*PC*/ , ObjectType, String, MethodDescriptor)] = _virtualCallSites,
+        callees:                   IntMap[IntTrieSet]                                        = _callees, // key = PC
+        tacDependee:               Option[EOptionP[Method, TACAI]]                           = _tacDependee,
+        tac:                       Option[TACode[TACMethodParameter, V]]                     = _tac,
+        instantiatedTypesDependee: Option[EOptionP[SomeProject, InstantiatedTypes]]          = _instantiatedTypesDependee
     ): RTAState = {
         new RTAState(
             method,
-            virtualCallSites,
             incompleteCallSites,
             numTypesProcessed,
+            virtualCallSites,
             callees,
             tacDependee,
             tac,
@@ -142,15 +142,25 @@ class RTAState private (
     }
 
     private[cg] def tac(): Option[TACode[TACMethodParameter, V]] = _tac
+
+    private[cg] def virtualCallSites: List[(Int, ObjectType, String, MethodDescriptor)] = {
+        _virtualCallSites
+    }
+
+    private[cg] def removeVirtualCallSites(
+        toBeRemoved: List[(Int, ObjectType, String, MethodDescriptor)]
+    ): Unit = {
+        _virtualCallSites = _virtualCallSites.filterNot(toBeRemoved.contains)
+    }
 }
 
 object RTAState {
     def apply(method: DefinedMethod, tacDependee: EOptionP[Method, TACAI]): RTAState = {
         new RTAState(
             method,
-            virtualCallSites = Traversable.empty,
             incompleteCallSites = IntTrieSet.empty,
             numTypesProcessed = 0,
+            _virtualCallSites = List.empty,
             _callees = IntMap.empty,
             if (tacDependee.isFinal) None else Some(tacDependee),
             if (tacDependee.hasProperty) tacDependee.ub.tac else None,
@@ -159,7 +169,7 @@ object RTAState {
     }
     def apply(
         method:                    DefinedMethod,
-        virtualCallSites:          Traversable[(Int /*PC*/ , ObjectType, String, MethodDescriptor)],
+        virtualCallSites:          List[(Int /*PC*/ , ObjectType, String, MethodDescriptor)],
         incompleteCallSites:       IntTrieSet, // key = PC
         numTypesProcessed:         Int,
         callees:                   IntMap[IntTrieSet], // key = PC
@@ -169,9 +179,9 @@ object RTAState {
     ): RTAState = {
         new RTAState(
             method,
-            virtualCallSites,
             incompleteCallSites,
             numTypesProcessed,
+            virtualCallSites,
             callees,
             tacDependee,
             tac,
@@ -300,7 +310,9 @@ class RTACallGraphAnalysis private[analyses] (
         )
 
         // here we can ignore the return value, as the state also gets updated
-        handleVirtualCallSites(newState, instantiatedTypesUB.iterator, calleesAndCallers)
+        handleVirtualCallSites(
+            newState, instantiatedTypesUB, instantiatedTypesUB.iterator, calleesAndCallers
+        )
 
         val results = resultForStandardInvokeCallees(newState) :: calleesAndCallers.partialResultsForCallers
 
@@ -312,7 +324,7 @@ class RTACallGraphAnalysis private[analyses] (
         tac:                 TACode[TACMethodParameter, V],
         instantiatedTypesUB: UIDSet[ObjectType]
     // (callees map, virtual call sites)
-    ): (CalleesAndCallers, Traversable[(Int, ObjectType, String, MethodDescriptor)]) = {
+    ): (CalleesAndCallers, List[(Int, ObjectType, String, MethodDescriptor)]) = {
         implicit val p: SomeProject = project
 
         // for each call site in the current method, the set of methods that might called
@@ -354,12 +366,12 @@ class RTACallGraphAnalysis private[analyses] (
 
             case VirtualFunctionCallStatement(call) ⇒
                 virtualCallSites = handleVirtualCall(
-                    method, call, call.pc, calleesAndCallers, virtualCallSites
+                    method, call, call.pc, instantiatedTypesUB, calleesAndCallers, virtualCallSites
                 )
 
             case call: VirtualMethodCall[V] ⇒
                 virtualCallSites = handleVirtualCall(
-                    method, call, call.pc, calleesAndCallers, virtualCallSites
+                    method, call, call.pc, instantiatedTypesUB, calleesAndCallers, virtualCallSites
                 )
 
             case Assignment(_, _, idc: InvokedynamicFunctionCall[V]) ⇒
@@ -396,7 +408,7 @@ class RTACallGraphAnalysis private[analyses] (
     }
 
     private[this] def unknownLibraryCall(
-        method:              DefinedMethod,
+        caller:              DefinedMethod,
         call:                Call[V],
         runtimeReceiverType: ReferenceType,
         packageName:         String,
@@ -421,12 +433,16 @@ class RTACallGraphAnalysis private[analyses] (
             call.descriptor
         )
 
-        if (declTgt.hasSingleDefinedMethod) {
-            if (isMethodOverridable(declTgt.definedMethod).isNotNo)
-                calleesAndCallers.addIncompleteCallsite(pc)
-        } else if (!declTgt.hasMultipleDefinedMethods) {
-            calleesAndCallers.updateWithCall(method, declTgt, pc)
+        if (declTgt.hasSingleDefinedMethod || !declTgt.hasMultipleDefinedMethods) {
+            calleesAndCallers.updateWithCall(caller, declTgt, pc)
+        } else {
+            declTgt.definedMethods.foreach { m ⇒
+                val dm = declaredMethods(m)
+                calleesAndCallers.updateWithCall(caller, dm, pc)
+            }
         }
+
+        calleesAndCallers.addIncompleteCallsite(pc)
     }
 
     /**
@@ -436,11 +452,12 @@ class RTACallGraphAnalysis private[analyses] (
      * type bounds for the receiver.
      */
     private[this] def handleVirtualCall(
-        caller:            DefinedMethod,
-        call:              Call[V] with VirtualCall[V],
-        pc:                Int,
-        calleesAndCallers: CalleesAndCallers,
-        virtualCallSites:  List[(Int /*PC*/ , ObjectType, String, MethodDescriptor)]
+        caller:              DefinedMethod,
+        call:                Call[V] with VirtualCall[V],
+        pc:                  Int,
+        instantiatedTypesUB: UIDSet[ObjectType],
+        calleesAndCallers:   CalleesAndCallers,
+        virtualCallSites:    List[(Int /*PC*/ , ObjectType, String, MethodDescriptor)]
     ): List[(Int /*PC*/ , ObjectType, String, MethodDescriptor)] = {
         val callerType = caller.definedMethod.classFile.thisType
 
@@ -478,16 +495,40 @@ class RTACallGraphAnalysis private[analyses] (
                         handleCall(caller, call, pc, tgt, calleesAndCallers)
                     } else {
                         val receiverObjectType = receiverType.asObjectType
-                        resVirtualCallSites ::= ((pc, receiverObjectType, call.name, call.descriptor))
+                        val possibleTargets = classHierarchy.allSubtypes(receiverObjectType, true)
+                        if (possibleTargets.forall(instantiatedTypesUB.contains)) {
+                            possibleTargets.foreach { concreteReceiverType ⇒
+                                val tgtR = project.instanceCall(
+                                    caller.declaringClassType.asObjectType,
+                                    concreteReceiverType,
+                                    call.name,
+                                    call.descriptor
+                                )
+                                handleCall(caller, call, pc, tgtR, calleesAndCallers)
+                            }
+                        } else {
+                            resVirtualCallSites ::= ((pc, receiverObjectType, call.name, call.descriptor))
+                        }
 
-                        unknownLibraryCall(
-                            caller,
-                            call,
-                            receiverObjectType,
-                            callerType.packageName,
-                            pc,
-                            calleesAndCallers
-                        )
+                        val m =
+                            if (call.isInterface)
+                                org.opalj.Result(project.resolveInterfaceMethodReference(
+                                    receiverObjectType, call.name, call.descriptor
+                                ))
+                            else
+                                project.resolveClassMethodReference(
+                                    receiverObjectType, call.name, call.descriptor
+                                )
+                        if (m.isEmpty || isMethodOverridable(m.value).isYesOrUnknown) {
+                            unknownLibraryCall(
+                                caller,
+                                call,
+                                receiverObjectType,
+                                callerType.packageName,
+                                pc,
+                                calleesAndCallers
+                            )
+                        }
                     }
                 }
             }
@@ -521,22 +562,35 @@ class RTACallGraphAnalysis private[analyses] (
     // modifies state and the calleesAndCallers
     private[this] def handleVirtualCallSites(
         state:                RTAState,
+        instantiatedTypesUB:  UIDSet[ObjectType],
         newInstantiatedTypes: Iterator[ObjectType],
         calleesAndCallers:    CalleesAndCallers
     ): Unit = {
+        // todo var virtualCallSitesToRemove = List.empty[]
+        var virtualCallSitesToRemove =
+            List.empty[(Int /*PC*/ , ObjectType, String, MethodDescriptor)]
+
         for {
             instantiatedType ← newInstantiatedTypes // only iterate once!
             (pc, typeBound, name, descr) ← state.virtualCallSites
-            if classHierarchy.isSubtypeOf(instantiatedType, typeBound) // TODO once we collect all type bounds, check againts all of them
-            tgt ← project.instanceCall(
-                state.method.definedMethod.classFile.thisType, instantiatedType, name, descr
-            )
         } {
-            val tgtDM = declaredMethods(tgt)
-            calleesAndCallers.updateWithCall(state.method, tgtDM, pc)
-            state.addCallEdge(pc, tgtDM.id)
+            if (classHierarchy.allSubtypes(typeBound, true).forall(instantiatedTypesUB.contains)) {
+                virtualCallSitesToRemove ::= ((pc, typeBound, name, descr))
+            }
+            if (classHierarchy.isSubtypeOf(instantiatedType, typeBound)) // TODO once we collect all type bounds, check against all of them
+                for {
+                    tgt ← project.instanceCall(
+                        state.method.definedMethod.classFile.thisType, instantiatedType, name, descr
+                    )
+                } {
+                    val tgtDM = declaredMethods(tgt)
+                    calleesAndCallers.updateWithCall(state.method, tgtDM, pc)
+                    state.addCallEdge(pc, tgtDM.id)
 
+                }
         }
+
+        state.removeVirtualCallSites(virtualCallSitesToRemove)
     }
 
     private[this] def continuation(
@@ -561,7 +615,7 @@ class RTACallGraphAnalysis private[analyses] (
 
                 // the new edges in the call graph due to the new types
                 handleVirtualCallSites(
-                    state, newInstantiatedTypes, calleesAndCallers
+                    state, ub.types, newInstantiatedTypes, calleesAndCallers
                 )
 
                 Results(
