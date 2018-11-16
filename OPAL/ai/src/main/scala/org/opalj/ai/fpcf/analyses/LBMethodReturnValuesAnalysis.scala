@@ -100,7 +100,7 @@ object EagerLBMethodReturnValuesAnalysis extends BasicFPCFEagerAnalysisScheduler
 
     final override def derives: Set[PropertyKind] = Set(MethodReturnValue.key)
 
-    final override def refinesLowerBound: Boolean = true
+    final override def computesLowerBound: Boolean = true
 
     final override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new LBMethodReturnValuesAnalysis(p)
