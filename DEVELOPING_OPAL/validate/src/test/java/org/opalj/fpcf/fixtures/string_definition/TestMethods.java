@@ -7,6 +7,33 @@ import org.opalj.fpcf.properties.string_definition.StringDefinitions;
 import java.util.Random;
 
 /**
+ * This file contains various tests for the StringDefinitionAnalysis. The following things are to be
+ * considered when adding test cases:
+ * <ul>
+ * <li>
+ * The asterisk symbol (*) is used to indicate that a string (or part of it) can occur >= 0 times.
+ * </li>
+ * <li>
+ * Question marks (?) are used to indicate that a string (or part of it) can occur either zero
+ * times or once.
+ * </li>
+ * <li>
+ * The string "\w" is used to indicate that a string (or part of it) is unknown / arbitrary, i.e.,
+ * it cannot be approximated.
+ * </li>
+ * <li>
+ * The pipe symbol is used to indicate that a string (or part of it) consists of one of several
+ * options (but definitely one of these values).
+ * </li>
+ * <li>
+ * Brackets ("(" and "(") are used for nesting and grouping string expressions.
+ * </li>
+ * </ul>
+ * <p>
+ * Thus, you should avoid the following characters / strings to occur in "expectedStrings":
+ * {*, ?, \w, |}. In the future, "expectedStrings" might be parsed back into a StringTree. Thus, to
+ * be on the safe side, brackets should be avoided as well.
+ *
  * @author Patrick Mell
  */
 public class TestMethods {
