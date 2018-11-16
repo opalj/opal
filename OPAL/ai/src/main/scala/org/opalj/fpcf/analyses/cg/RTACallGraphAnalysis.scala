@@ -49,7 +49,7 @@ class RTAState private (
         private[cg] val method:                       DefinedMethod,
         private[cg] var incompleteCallSites:          IntTrieSet, // key = PC
         private[cg] var numTypesProcessed:            Int,
-        private[this] var _virtualCallSites:          Map[ObjectType, Set[CallSite]],
+        private[this] var _virtualCallSites:          Map[ObjectType, Set[CallSiteT]],
         private[this] var _callees:                   IntMap[IntTrieSet], // key = PC
         private[this] var _tacDependee:               Option[EOptionP[Method, TACAI]],
         private[this] var _tac:                       Option[TACode[TACMethodParameter, V]],
@@ -63,7 +63,7 @@ class RTAState private (
         method:                    DefinedMethod                                    = this.method,
         incompleteCallSites:       IntTrieSet                                       = this.incompleteCallSites, // key = PC
         numTypesProcessed:         Int                                              = this.numTypesProcessed,
-        virtualCallSites:          Map[ObjectType, Set[CallSite]]                   = _virtualCallSites,
+        virtualCallSites:          Map[ObjectType, Set[CallSiteT]]                   = _virtualCallSites,
         callees:                   IntMap[IntTrieSet]                               = _callees, // key = PC
         tacDependee:               Option[EOptionP[Method, TACAI]]                  = _tacDependee,
         tac:                       Option[TACode[TACMethodParameter, V]]            = _tac,
@@ -141,7 +141,7 @@ class RTAState private (
 
     private[cg] def tac(): Option[TACode[TACMethodParameter, V]] = _tac
 
-    private[cg] def virtualCallSites: Map[ObjectType, Set[CallSite]] = {
+    private[cg] def virtualCallSites: Map[ObjectType, Set[CallSiteT]] = {
         _virtualCallSites
     }
 
@@ -165,7 +165,7 @@ object RTAState {
     }
     def apply(
         method:                    DefinedMethod,
-        virtualCallSites:          Map[ObjectType, Set[CallSite]],
+        virtualCallSites:          Map[ObjectType, Set[CallSiteT]],
         incompleteCallSites:       IntTrieSet, // key = PC
         numTypesProcessed:         Int,
         callees:                   IntMap[IntTrieSet], // key = PC
@@ -318,14 +318,14 @@ class RTACallGraphAnalysis private[analyses] (
         tac:                 TACode[TACMethodParameter, V],
         instantiatedTypesUB: UIDSet[ObjectType]
     // (callees map, virtual call sites)
-    ): (CalleesAndCallers, Map[ObjectType, Set[CallSite]]) = {
+    ): (CalleesAndCallers, Map[ObjectType, Set[CallSiteT]]) = {
         implicit val p: SomeProject = project
 
         // for each call site in the current method, the set of methods that might called
         val calleesAndCallers = new CalleesAndCallers()
 
         // the virtual call sites, where we can not determine the precise tgts
-        var virtualCallSites = Map.empty[ObjectType, Set[CallSite]]
+        var virtualCallSites = Map.empty[ObjectType, Set[CallSiteT]]
 
         // for allocation sites, add new types
         // for calls, add new edges
@@ -451,8 +451,8 @@ class RTACallGraphAnalysis private[analyses] (
         pc:                  Int,
         instantiatedTypesUB: UIDSet[ObjectType],
         calleesAndCallers:   CalleesAndCallers,
-        virtualCallSites:    Map[ObjectType, Set[CallSite]]
-    ): Map[ObjectType, Set[CallSite]] = {
+        virtualCallSites:    Map[ObjectType, Set[CallSiteT]]
+    ): Map[ObjectType, Set[CallSiteT]] = {
         val callerType = caller.definedMethod.classFile.thisType
 
         var resVirtualCallSites = virtualCallSites

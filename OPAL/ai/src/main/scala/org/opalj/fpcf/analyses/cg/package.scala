@@ -25,7 +25,7 @@ package object cg {
     type V = DUVar[ValueInformation]
 
 
-    type CallSite = (Int /*PC*/, String, MethodDescriptor)
+    type CallSiteT = (Int /*PC*/, String, MethodDescriptor)
 
     /**
      * A persisten representation (using pcs instead of TAC value origins) for a UVar.
