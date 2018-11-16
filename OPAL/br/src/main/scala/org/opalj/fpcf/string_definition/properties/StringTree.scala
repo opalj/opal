@@ -59,7 +59,7 @@ sealed abstract class StringTreeElement(val children: ListBuffer[StringTreeEleme
                     s"${o.possibleStrings} | ${n.possibleStrings}"
                 ))
                 StringConstancyInformation(
-                    reducedInfo.constancyLevel, s"(${reducedInfo.possibleStrings})+"
+                    reducedInfo.constancyLevel, s"(${reducedInfo.possibleStrings})?"
                 )
 
             case StringTreeConst(sci) ⇒ sci
