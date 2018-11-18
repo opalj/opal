@@ -111,7 +111,7 @@ object MultiResult { private[fpcf] final val id = 2 }
  *      times for different entities (`e`) which should be avoided and is generally not necessary.
  *      I.e., it is recommended to think about `c` as the function that completes the
  *      computation of the property `p` for the entity `e` identified by `ep`.
- *      In general, `c` can have (mutual) state encapsulates
+ *      In general, `c` can have (mutual) state that encapsulates
  *      (temporary) information required to compute the final property.
  *
  * @note All elements on which the result declares to be dependent on must have been queried
