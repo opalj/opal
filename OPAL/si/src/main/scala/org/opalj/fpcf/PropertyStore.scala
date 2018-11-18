@@ -16,8 +16,8 @@ import org.opalj.fpcf.PropertyKind.SupportedPropertyKinds
 
 /**
  * A property store manages the execution of computations of properties related to concrete
- * entities as well as artificial entities (e.g., methods, fields and classes of a program, but
- * also the call graph as such etc.). These computations may require and
+ * entities as well as artificial entities (for example, methods, fields and classes of a program,
+ * but, for another example, also the call graph as such). These computations may require and
  * provide information about other entities of the store and the property store implements the logic
  * to handle the computations related to the dependencies between the entities.
  * Furthermore, the property store may parallelize the computation of the properties as far as
@@ -196,6 +196,10 @@ abstract class PropertyStore {
      */
     @volatile var isSuspended: () ⇒ Boolean = () ⇒ false
 
+    /**
+     * Should be called when a PropertyStore is no longer going to be used to schedule
+     * computations. Primarily reclaims resources such as "Threads".
+     */
     def shutdown(): Unit
 
     //
