@@ -466,40 +466,6 @@ abstract class PropertyStore {
         finalEPs: TraversableOnce[FinalEP[E, P]] = Iterator.empty
     ): Unit
 
-    private[fpcf] val simultaneouslyLazilyComputedPropertyKinds: Array[IntTrieSet /*Set[PKId]*/ ] = {
-        Array.fill(SupportedPropertyKinds)(IntTrieSet.empty)
-    }
-
-    /**
-     * Registers a function that lazily computes multiple properties of different kinds
-     * at the same time for an element of the store.
-     *
-     * For further details see [[registerLazyPropertyComputation]].
-     */
-    def registerLazyMultiPropertyComputation[E <: Entity, P <: Property](
-        pc:  PropertyComputation[E],
-        pks: PropertyKey[P]*
-    ): Unit = {
-        if (pks.isEmpty) {
-            throw new IllegalArgumentException("pks is empty");
-        }
-        if (pks.size == 1) {
-            registerLazyPropertyComputation(pks.head, pc)
-        } else {
-            pks foreach { pk ⇒
-                registerLazyPropertyComputation(pk, pc)
-                var simultaneouslyComputed = IntTrieSet.empty
-                pks filter (_ != pk) foreach { otherPk ⇒
-                    simultaneouslyComputed += otherPk.id
-                }
-                if (simultaneouslyComputed.isEmpty) {
-                    val message = pks.mkString("pks is not disjunct: ", ", ", "")
-                    throw new IllegalArgumentException(message)
-                }
-            }
-        }
-    }
-
     /**
      * Registers a property computation that is eagerly triggered when a property of the given kind
      * is derived for some entity for the first time. Note, that the property computation
