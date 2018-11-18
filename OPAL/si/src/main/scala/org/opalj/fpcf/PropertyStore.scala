@@ -491,8 +491,8 @@ abstract class PropertyStore {
         pks: PropertyKey[P]*
     ): Unit = {
         if (pks.isEmpty) {
-            throw new IllegalArgumentException("pks is empty")
-        };
+            throw new IllegalArgumentException("pks is empty");
+        }
         if (pks.size == 1) {
             registerLazyPropertyComputation(pks.head, pc)
         } else {
