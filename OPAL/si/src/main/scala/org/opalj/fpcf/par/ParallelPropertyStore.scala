@@ -3,6 +3,8 @@ package org.opalj
 package fpcf
 package par
 
+import org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks
+
 /**
  * A parallel implementation of the property store.
  *
@@ -17,5 +19,14 @@ abstract class ParallelPropertyStore extends PropertyStore { store ⇒
     // --------------------------------------------------------------------------------------------
 
     def NumberOfThreadsForProcessingPropertyComputations: Int
+
+}
+
+trait ParallelPropertyStoreFactory extends PropertyStoreFactory {
+
+    @volatile var NumberOfThreadsForProcessingPropertyComputations: Int = {
+        // We need at least one thread for processing property computations.
+        Math.max(NumberOfThreadsForCPUBoundTasks, 1)
+    }
 
 }

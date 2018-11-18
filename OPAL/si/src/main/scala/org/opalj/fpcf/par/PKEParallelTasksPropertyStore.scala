@@ -1552,12 +1552,7 @@ final class PKEParallelTasksPropertyStore private (
  *
  * @author Michael Eichberg
  */
-object PKEParallelTasksPropertyStore extends PropertyStoreFactory {
-
-    @volatile var NumberOfThreadsForProcessingPropertyComputations: Int = {
-        // We need at least one thread for processing property computations.
-        Math.max(NumberOfThreadsForCPUBoundTasks, 1)
-    }
+object PKEParallelTasksPropertyStore extends ParallelPropertyStoreFactory {
 
     def apply(
         context: PropertyStoreContext[_ <: AnyRef]*
