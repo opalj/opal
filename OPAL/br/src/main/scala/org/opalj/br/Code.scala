@@ -1937,4 +1937,36 @@ object Code {
         maxStackDepth
     }
 
+    /**
+     * Creates a method body which throws a `java.lang.Error` with the given message or
+     * that states that the underlying bytecode is invalid if the message is empty.
+     */
+    def invalidBytecode(
+        descriptor:       MethodDescriptor,
+        isInstanceMethod: Boolean,
+        message:          Option[String]   = None
+    ): Code = {
+        new Code(
+            maxStack = 3 /* 3 for the message! */ ,
+            maxLocals = descriptor.requiredRegisters + (if (isInstanceMethod) 1 else 0),
+            instructions =
+                Array(
+                    NEW(ObjectType.Error), null, null,
+                    DUP,
+                    message.
+                        map(LoadString.apply).
+                        getOrElse(LoadString("OPAL: the underlying bytecode is invalid")), null,
+                    INVOKESPECIAL(
+                        ObjectType.Error,
+                        isInterface = false,
+                        "<init>",
+                        MethodDescriptor.JustTakes(ObjectType.String)
+                    ), null, null,
+                    ATHROW
+                ),
+            exceptionHandlers = NoExceptionHandlers,
+            attributes = NoAttributes
+        )
+    }
+
 }
