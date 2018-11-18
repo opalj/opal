@@ -119,9 +119,6 @@ final class PKEParallelTasksPropertyStore private (
     private[this] var updatesCounter = 0
     private[this] var oneStepFinalUpdatesCounter = 0
 
-    private[this] var resolvedCSCCsCounter = 0
-    def resolvedCSCCsCount: Int = resolvedCSCCsCounter
-
     private[this] var quiescenceCounter = 0
     def quiescenceCount: Int = quiescenceCounter
 
@@ -142,7 +139,6 @@ final class PKEParallelTasksPropertyStore private (
         statistics += "direct evaluation of dependers (cheap property computation)" -> directDependerOnUpdateComputationsCount
         statistics += "direct reevaluations of dependee due to updated dependers (cheap property computation)" -> directDependeeUpdatesCount
         statistics += "number of times the store reached quiescence" -> quiescenceCount
-        statistics += "resolved cSCCs" -> resolvedCSCCsCount
 
         statistics
     }

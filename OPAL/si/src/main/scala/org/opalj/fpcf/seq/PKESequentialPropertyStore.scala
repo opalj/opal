@@ -75,9 +75,6 @@ final class PKESequentialPropertyStore private (
     private[this] var fallbacksUsedForComputedPropertiesCounter: Int = 0
     def fallbacksUsedForComputedPropertiesCount: Int = fallbacksUsedForComputedPropertiesCounter
 
-    private[this] var resolvedCSCCsCounter: Int = 0
-    def resolvedCSCCsCount: Int = resolvedCSCCsCounter
-
     private[this] var quiescenceCounter = 0
     def quiescenceCount: Int = quiescenceCounter
 
@@ -90,8 +87,7 @@ final class PKESequentialPropertyStore private (
             "scheduled on update computations" -> scheduledOnUpdateComputationsCount,
             "fast-track properties" -> fastTrackPropertiesCount,
             "computations of fallback properties for computed properties" -> fallbacksUsedForComputedPropertiesCounter,
-            "quiescence" -> quiescenceCount,
-            "resolved cSCCs" -> resolvedCSCCsCount
+            "quiescence" -> quiescenceCount
         )
     }
 
@@ -875,7 +871,6 @@ final class PKESequentialPropertyStore private (
                             }
                             update(e, newP, newP, Nil)
                         }
-                        resolvedCSCCsCounter += 1
                         continueComputation = true
                     }
                 }

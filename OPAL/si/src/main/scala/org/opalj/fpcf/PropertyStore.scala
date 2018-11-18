@@ -249,20 +249,6 @@ abstract class PropertyStore {
      */
     def immediateOnUpdateComputationsCount: Int
 
-    /**
-     * The number of resolved closed strongly connected components.
-     *
-     * Please note, that depending on the implementation strategy and the type of the
-     * closed strongly connected component, the resolution of one strongly connected
-     * component may require multiple phases. This is in particular true if a cSCC is
-     * resolved by committing an arbitrary value as a final value and we have a cSCC
-     * which is actually a chain-like cSCC. In the latter case committing a single value
-     * as final which just break up the chain, but will otherwise (in case of chains with
-     * more than three elements) lead to new cSCCs which the require detection and
-     * resolution.
-     */
-    def resolvedCSCCsCount: Int
-
     /** The number of times the property store reached quiescence. */
     def quiescenceCount: Int
 
