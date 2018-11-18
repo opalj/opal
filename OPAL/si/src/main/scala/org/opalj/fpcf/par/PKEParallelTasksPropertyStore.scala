@@ -18,7 +18,6 @@ import scala.collection.{Map ⇒ SomeMap}
 
 import org.opalj.control.foreachValue
 import org.opalj.collection.mutable.RefAccumulator
-import org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.info
 import org.opalj.log.OPALLogger.{debug ⇒ trace}
@@ -176,12 +175,6 @@ final class PKEParallelTasksPropertyStore private (
     /** Computations that will be triggered when a new property becomes available. */
     private[this] val triggeredComputations: Array[Array[SomePropertyComputation]] = {
         new Array(SupportedPropertyKinds)
-    }
-
-    // Contains all those EPKs that should be computed until we have a final result.
-    // When we have computed a final result, the epk will be deleted.
-    private[this] val forcedComputations: Array[ConcurrentHashMap[Entity, Entity] /*...a set*/ ] = {
-        Array.fill(SupportedPropertyKinds) { new ConcurrentHashMap() }
     }
 
     private[this] var previouslyComputedPropertyKinds: Array[Boolean] = {
@@ -354,8 +347,8 @@ final class PKEParallelTasksPropertyStore private (
             } while (update eq null)
             try {
                 update match {
-                    case NewProperty(r, forceEvaluation, forceDependersNotifications) ⇒
-                        doHandleResult(r, forceEvaluation, forceDependersNotifications)
+                    case NewProperty(r, forceDependersNotifications) ⇒
+                        doHandleResult(r, forceDependersNotifications)
 
                     case TriggeredLazyComputation(e, pkId, triggeredByForce, lc) ⇒
                         // Recall, that -- once we have a final result -- all meta data
@@ -377,11 +370,6 @@ final class PKEParallelTasksPropertyStore private (
                                 scheduledLazyTasksCounter += 1
                                 appendTask(new PropertyComputationTask[Entity](store, e, pkId, lc))
                             }
-                        } else if (triggeredByForce && currentP.isFinal) {
-                            // it maybe the case that an epk is already final; e.g., if a value
-                            // is first set/computed and then forced; in this case, we have
-                            // to ensure that the meta-information is really deleted
-                            forcedComputations(pkId).remove(e)
                         }
                 }
             } finally {
@@ -589,12 +577,11 @@ final class PKEParallelTasksPropertyStore private (
 
     // Thread Safe!
     private[this] def scheduleComputationForEntity[E <: Entity](
-        e:               E,
-        pc:              PropertyComputation[E],
-        forceEvaluation: Boolean
+        e:  E,
+        pc: PropertyComputation[E]
     ): Unit = {
         if (debug) scheduledTasksCounter.incrementAndGet()
-        appendTask(new InitialPropertyComputationTask[E](this, e, pc, forceEvaluation))
+        appendTask(new InitialPropertyComputationTask[E](this, e, pc))
     }
 
     // Thread Safe!
@@ -632,7 +619,7 @@ final class PKEParallelTasksPropertyStore private (
     )(
         pc: PropertyComputation[E]
     ): Unit = {
-        scheduleComputationForEntity(e, pc, forceEvaluation = true)
+        scheduleComputationForEntity(e, pc)
     }
 
     // Thread Safe!
@@ -698,18 +685,17 @@ final class PKEParallelTasksPropertyStore private (
     // Thread Safe!
     override def force[E <: Entity, P <: Property](e: E, pk: PropertyKey[P]): Unit = {
         val pkId = pk.id
-        if (forcedComputations(pkId).put(e, e) == null) {
-            val lc = lazyComputations(pkId).asInstanceOf[PropertyComputation[E]]
-            if (lc != null) {
-                if (properties(pkId).get(e) == null) {
-                    if (tracer.isDefined) tracer.get.force(e, pkId)
-                    computeOrScheduleLazyComputationForEntity(e, pk, triggeredByForce = true, lc)
-                } else {
-                    // the property was already computed or set...
-                    if (tracer.isDefined) tracer.get.forceForComputedEPK(e, pkId)
-                    forcedComputations(pkId).remove(e)
-                }
+        val lc = lazyComputations(pkId).asInstanceOf[PropertyComputation[E]]
+        if (lc != null) {
+            if (properties(pkId).get(e) == null) {
+                if (tracer.isDefined) tracer.get.force(e, pkId)
+                computeOrScheduleLazyComputationForEntity(e, pk, triggeredByForce = true, lc)
+            } else {
+                // the property was already computed or set...
+                if (tracer.isDefined) tracer.get.forceForComputedEPK(e, pkId)
             }
+        } else {
+            throw new IllegalArgumentException(s"force for a non-lazyily computed property: $pk")
         }
     }
 
@@ -725,17 +711,13 @@ final class PKEParallelTasksPropertyStore private (
     }
 
     // Thread safe!
-    final override def handleResult(
-        r:               PropertyComputationResult,
-        forceEvaluation: Boolean
-    ): Unit = {
-        handleResult(r, forceEvaluation, Set.empty)
+    final override def handleResult(r: PropertyComputationResult): Unit = {
+        handleResult(r, Set.empty)
     }
 
     // Thread safe!
     private[par] def handleResult(
         r:                           PropertyComputationResult,
-        forceEvaluation:             Boolean,
         forceDependersNotifications: Set[SomeEPK]
     ): Unit = {
         // In the following, we have to ensure that we do not get multiple notifications
@@ -751,13 +733,13 @@ final class PKEParallelTasksPropertyStore private (
 
             case IncrementalResult.id ⇒
                 val IncrementalResult(ir, npcs, propertyComputationsHint) = r
-                handleResult(ir, forceEvaluation, forceDependersNotifications)
+                handleResult(ir, forceDependersNotifications)
                 if (propertyComputationsHint == CheapPropertyComputation) {
                     npcs /*: Traversable[(PropertyComputation[e],e)]*/ foreach { npc ⇒
                         if (debug)
                             directInTaskThreadPropertyComputationsCounter.incrementAndGet()
                         val (pc, e) = npc
-                        handleResult(pc(e), forceEvaluation, Set.empty)
+                        handleResult(pc(e), Set.empty)
                     }
                 } else {
                     npcs /*: Traversable[(PropertyComputation[e],e)]*/ foreach { npc ⇒
@@ -769,31 +751,31 @@ final class PKEParallelTasksPropertyStore private (
                             if (debug)
                                 directInTaskThreadPropertyComputationsCounter.incrementAndGet()
                             val (pc, e) = npc
-                            handleResult(pc(e), forceEvaluation, Set.empty)
+                            handleResult(pc(e), Set.empty)
                         } else {
-                            scheduleComputationForEntity(e, pc, forceEvaluation)
+                            scheduleComputationForEntity(e, pc)
                         }
                     }
                 }
 
             case IntermediateResult.id ⇒
                 val queueId = r.asIntermediateResult.dependees.size / 4 + 1
-                val update = NewProperty(r, forceEvaluation, forceDependersNotifications)
+                val update = NewProperty(r, forceDependersNotifications)
                 appendStoreUpdate(queueId, update)
 
             case SimplePIntermediateResult.id ⇒
                 val queueId = r.asSimplePIntermediateResult.dependees.size / 4 + 1
-                val update = NewProperty(r, forceEvaluation, forceDependersNotifications)
+                val update = NewProperty(r, forceDependersNotifications)
                 appendStoreUpdate(queueId, update)
 
             case PartialResult.id ⇒
                 // TODO Implement some special logic to accumulate partial results to minimize depender notifications
-                val update = NewProperty(r, forceEvaluation, forceDependersNotifications)
+                val update = NewProperty(r, forceDependersNotifications)
                 appendStoreUpdate(queueId = 1, update)
 
             case _ /*nothing special...*/ ⇒
                 // "final" results are prepended
-                val update = NewProperty(r, forceEvaluation, forceDependersNotifications)
+                val update = NewProperty(r, forceDependersNotifications)
                 appendStoreUpdate(queueId = 0, update)
         }
     }
@@ -858,7 +840,6 @@ final class PKEParallelTasksPropertyStore private (
         // 3.2. perform clean-up if necessary/possible
         if (isFinal) {
             if (tracer.isDefined) tracer.get.metaInformationDeleted(newEPS.asFinal)
-            forcedComputations(pkId).remove(e)
             triggeredLazyComputations(pkId).remove(e)
         }
     }
@@ -1042,7 +1023,6 @@ final class PKEParallelTasksPropertyStore private (
 
     private[this] def doHandleResult(
         r:                                  PropertyComputationResult,
-        forceEvaluation:                    Boolean,
         initialForceDependersNotifications: Set[SomeEPK]
     ): Unit = {
 
@@ -1057,7 +1037,7 @@ final class PKEParallelTasksPropertyStore private (
             )
 
             if (tracer.isDefined)
-                tracer.get.handlingResult(r, forceEvaluation, forceDependersNotifications)
+                tracer.get.handlingResult(r, forceDependersNotifications)
 
             r.id match {
 
@@ -1085,7 +1065,7 @@ final class PKEParallelTasksPropertyStore private (
                     } else {
                         npcs /*: Iterator[(PropertyComputation[e],e)]*/ foreach { npc ⇒
                             val (pc, e) = npc
-                            scheduleComputationForEntity(e, pc, forceEvaluation)
+                            scheduleComputationForEntity(e, pc)
                         }
                     }
 
@@ -1177,8 +1157,6 @@ final class PKEParallelTasksPropertyStore private (
                     val pk = ub.key
                     val pkId = pk.id
                     val epk = EPK(e, pk)
-
-                    if (forceEvaluation) forcedComputations(pkId).put(e, e)
 
                     assertNoDependees(e, pkId)
 
@@ -1279,8 +1257,6 @@ final class PKEParallelTasksPropertyStore private (
                     val pk = ub.key
                     val pkId = pk.id
                     val epk = EPK(e, pk)
-
-                    if (forceEvaluation) forcedComputations(pkId).put(e, e)
 
                     assertNoDependees(e, pkId)
 
@@ -1511,14 +1487,11 @@ final class PKEParallelTasksPropertyStore private (
                 pkId = 0
                 while (pkId < maxPKIndex) {
                     if (computedPropertyKinds(pkId)) {
-                        // 2.1. drop the forced computations related to cycles:
-                        forcedComputations(pkId).clear()
-
-                        // 2.2. remaining depender/dependee relationships are no longer required:
+                        // 2.1. remaining depender/dependee relationships are no longer required:
                         dependees(pkId).clear()
                         dependers(pkId).clear()
 
-                        // 2.3. commit all values:
+                        // 2.2. commit all values:
                         if (isPropertyKeyForSimplePropertyBasedOnPKId(pkId)) {
                             properties(pkId).replaceAll { (e, eps) ⇒
                                 if (eps.isFinal) { eps } else { eps.toUBEP }
@@ -1601,7 +1574,6 @@ private[par] sealed trait StoreUpdate
 
 private[par] case class NewProperty(
         pcr:                         PropertyComputationResult,
-        forceEvaluation:             Boolean                   = false,
         forceDependersNotifications: Set[SomeEPK]              = Set.empty
 ) extends StoreUpdate
 

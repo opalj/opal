@@ -16,7 +16,7 @@ private[seq] final case class PropertyComputationTask[E <: Entity](
         pc: PropertyComputation[E]
 ) extends QualifiedTask {
 
-    override def apply(): Unit = ps.handleResult(pc(e), true)
+    override def apply(): Unit = ps.handleResult(pc(e))
 }
 
 private[seq] final case class OnFinalUpdateComputationTask[E <: Entity, P <: Property](
@@ -25,7 +25,7 @@ private[seq] final case class OnFinalUpdateComputationTask[E <: Entity, P <: Pro
         c:  OnUpdateContinuation
 ) extends QualifiedTask {
 
-    override def apply(): Unit = ps.handleResult(c(r), true)
+    override def apply(): Unit = ps.handleResult(c(r))
 }
 
 private[seq] final case class OnUpdateComputationTask[E <: Entity, P <: Property](
@@ -40,7 +40,7 @@ private[seq] final case class OnUpdateComputationTask[E <: Entity, P <: Property
         // of this check depends on the scheduling strategy(!)
         val pValue = ps(epk)
         val eps = EPS(epk.e, pValue.lb, pValue.ub)
-        ps.handleResult(c(eps), true)
+        ps.handleResult(c(eps))
     }
 }
 

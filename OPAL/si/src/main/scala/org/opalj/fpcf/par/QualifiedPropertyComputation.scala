@@ -23,15 +23,14 @@ private[par] sealed trait FirstPropertyComputationTask[E <: Entity] extends Qual
 }
 
 private[par] final case class InitialPropertyComputationTask[E <: Entity](
-        ps:              PKEParallelTasksPropertyStore,
-        e:               E,
-        pc:              PropertyComputation[E],
-        forceEvaluation: Boolean
+        ps: PKEParallelTasksPropertyStore,
+        e:  E,
+        pc: PropertyComputation[E]
 ) extends FirstPropertyComputationTask[E] {
 
     override def apply(): Unit = {
         val r = pc(e)
-        ps.handleResult(r, forceEvaluation)
+        ps.handleResult(r)
     }
 
     override def isInitialTask: Boolean = true
@@ -49,7 +48,7 @@ private[par] final case class PropertyComputationTask[E <: Entity](
         pc:   PropertyComputation[E]
 ) extends TriggeredTask[E] with FirstPropertyComputationTask[E] {
 
-    override def apply(): Unit = ps.handleResult(pc(e), forceEvaluation = false)
+    override def apply(): Unit = ps.handleResult(pc(e))
 }
 
 private[par] sealed abstract class ContinuationTask[E <: Entity] extends TriggeredTask[E] {
@@ -67,7 +66,7 @@ private[par] final case class OnFinalUpdateComputationTask[E <: Entity, P <: Pro
 
     override def dependeePKId: Int = dependeeFinalEP.p.id
 
-    override def apply(): Unit = ps.handleResult(c(dependeeFinalEP), forceEvaluation = false)
+    override def apply(): Unit = ps.handleResult(c(dependeeFinalEP))
 }
 
 private[par] final case class OnUpdateComputationTask[E <: Entity, P <: Property](
@@ -85,7 +84,7 @@ private[par] final case class OnUpdateComputationTask[E <: Entity, P <: Property
         // the effectiveness of this check depends on the scheduling strategy(!)
         val eps = ps(dependeeEPK).asEPS
         val newResult = c(eps)
-        ps.handleResult(newResult, forceEvaluation = false)
+        ps.handleResult(newResult)
     }
 }
 
@@ -110,7 +109,7 @@ private[par] final case class ImmediateOnUpdateComputationTask[E <: Entity, P <:
                 s"an on-update continuation resulted in the same result as before: $newResult"
             )
         }
-        ps.handleResult(newResult, forceEvaluation = false, forceDependersNotifications)
+        ps.handleResult(newResult, forceDependersNotifications)
     }
 }
 
@@ -135,7 +134,7 @@ private[par] final case class ImmediateOnFinalUpdateComputationTask[E <: Entity,
                 s"an on-update continuation resulted in the same result as before: $newResult"
             )
         }
-        ps.handleResult(newResult, forceEvaluation = false, forceDependersNotifications)
+        ps.handleResult(newResult, forceDependersNotifications)
     }
 }
 

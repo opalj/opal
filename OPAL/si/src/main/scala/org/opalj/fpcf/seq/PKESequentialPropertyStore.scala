@@ -184,17 +184,10 @@ final class PKESequentialPropertyStore private (
     }
 
     override def apply[E <: Entity, P <: Property](e: E, pk: PropertyKey[P]): EOptionP[E, P] = {
-        apply(EPK(e, pk), force = false)
+        apply(EPK(e, pk))
     }
 
     override def apply[E <: Entity, P <: Property](epk: EPK[E, P]): EOptionP[E, P] = {
-        apply(epk, force = false)
-    }
-
-    private[this] def apply[E <: Entity, P <: Property](
-        epk:   EPK[E, P],
-        force: Boolean
-    ): EOptionP[E, P] = {
         val e = epk.e
         val pk = epk.pk
         val pkId = pk.id
@@ -219,9 +212,7 @@ final class PKESequentialPropertyStore private (
                                     PropertyIsNotComputedByAnyAnalysis
                             }
                             val p = fallbackPropertyBasedOnPKId(this, reason, e, pkId)
-                            if (force) {
-                                set(e, p)
-                            }
+                            set(e, p)
                             FinalEP(e, p.asInstanceOf[P])
                         }
 
@@ -282,7 +273,7 @@ final class PKESequentialPropertyStore private (
     }
 
     override def force[E <: Entity, P <: Property](e: E, pk: PropertyKey[P]): Unit = {
-        apply[E, P](EPK(e, pk), true)
+        apply[E, P](EPK(e, pk))
     }
 
     /**
@@ -512,10 +503,7 @@ final class PKESequentialPropertyStore private (
         }
     }
 
-    override def handleResult(
-        r:               PropertyComputationResult,
-        forceEvaluation: Boolean                   = true // acutally ignored, but conceptually "true"
-    ): Unit = handleExceptions {
+    override def handleResult(r: PropertyComputationResult): Unit = handleExceptions {
 
         r.id match {
 
@@ -530,7 +518,7 @@ final class PKESequentialPropertyStore private (
 
             case Results.id ⇒
                 val Results(results) = r
-                results.foreach(r ⇒ handleResult(r, forceEvaluation))
+                results.foreach(r ⇒ handleResult(r))
 
             case MultiResult.id ⇒
                 val MultiResult(results) = r

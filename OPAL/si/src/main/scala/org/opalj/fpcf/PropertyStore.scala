@@ -554,7 +554,7 @@ abstract class PropertyStore {
      * @note   If any computation resulted in an exception, then `handleResult` will fail and
      *         the exception related to the failing computation will be thrown again.
      */
-    def handleResult(r: PropertyComputationResult, forceEvaluation: Boolean = false): Unit
+    def handleResult(r: PropertyComputationResult): Unit
 
     /**
      * Awaits the completion of all property computations which were previously scheduled.
