@@ -696,7 +696,7 @@ object PropertyStore {
      *
      */
     def updateDebug(newDebug: Boolean): Unit = {
-        implicit val logContext = GlobalLogContext
+        implicit val logContext: LogContext = GlobalLogContext
         debug =
             if (newDebug) {
                 info("OPAL", s"$DebugKey: debugging support on for new PropertyStores")
@@ -724,7 +724,7 @@ object PropertyStore {
     def TraceFallbacks: Boolean = traceFallbacks
 
     def updateTraceFallbacks(newTraceFallbacks: Boolean): Unit = {
-        implicit val logContext = GlobalLogContext
+        implicit val logContext: LogContext = GlobalLogContext
         traceFallbacks =
             if (newTraceFallbacks) {
                 info("OPAL", s"$TraceFallbacksKey: usages of fallbacks are reported")
@@ -747,7 +747,7 @@ object PropertyStore {
     def TraceCycleResolutions: Boolean = traceCycleResolutions
 
     def updateTraceCycleResolutions(newTraceCycleResolutions: Boolean): Unit = {
-        implicit val logContext = GlobalLogContext
+        implicit val logContext: LogContext = GlobalLogContext
         traceCycleResolutions =
             if (newTraceCycleResolutions) {
                 info("OPAL", s"$TraceCycleResolutionsKey: cycle resolutions are reported")
