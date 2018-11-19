@@ -6,7 +6,7 @@ package analyses
 
 import org.opalj.fpcf.ComputationSpecification
 import org.opalj.fpcf.Entity
-import org.opalj.fpcf.FinalEP
+import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.FPCFAnalysis
 import org.opalj.fpcf.FPCFEagerAnalysisScheduler
 import org.opalj.fpcf.FPCFLazyAnalysisScheduler
@@ -66,7 +66,7 @@ class L0TACAIAnalysis private[analyses] (val project: SomeProject) extends FPCFA
                 // IMPROVE Get rid of nasty type checks/casts related to TACode once we use ConstCovariantArray in TACode.. (here and elsewhere)
                 taCode.asInstanceOf[TACode[TACMethodParameter, DUVar[ValueInformation]]]
             )
-            MultiResult(List(FinalEP(e, aiResultProperty), FinalEP(e, tacaiProperty)))
+            MultiResult(List(FinalP(e, aiResultProperty), FinalP(e, tacaiProperty)))
         } catch {
             case t: Throwable ⇒
                 warn(

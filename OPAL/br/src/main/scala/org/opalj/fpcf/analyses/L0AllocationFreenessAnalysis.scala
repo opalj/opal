@@ -35,7 +35,7 @@ class L0AllocationFreenessAnalysis private[analyses] ( final val project: SomePr
     def baseMethodAllocationFreeness(dm: DefinedMethod): PropertyComputationResult = {
 
         def c(eps: SomeEOptionP): PropertyComputationResult = eps match {
-            case FinalEP(_, af) ⇒ Result(dm, af)
+            case FinalP(_, af) ⇒ Result(dm, af)
             case ep @ IntermediateEP(_, lb, ub) ⇒
                 IntermediateResult(dm, lb, ub, Seq(ep), c, CheapPropertyComputation)
             case epk ⇒
@@ -112,7 +112,7 @@ class L0AllocationFreenessAnalysis private[analyses] ( final val project: SomePr
                                     propertyStore(declaredMethods(callee), AllocationFreeness.key)
 
                                 allocationFreeness match {
-                                    case FinalEP(_, AllocationFreeMethod) ⇒ /* Nothing to do */
+                                    case FinalP(_, AllocationFreeMethod) ⇒ /* Nothing to do */
 
                                     // Handling cyclic computations
                                     case ep @ IntermediateEP(_, _, AllocationFreeMethod) ⇒
@@ -193,7 +193,7 @@ class L0AllocationFreenessAnalysis private[analyses] ( final val project: SomePr
             dependees = dependees.filter(_.e ne eps.e)
 
             eps match {
-                case FinalEP(_, AllocationFreeMethod) ⇒
+                case FinalP(_, AllocationFreeMethod) ⇒
                     if (dependees.isEmpty)
                         Result(definedMethod, AllocationFreeMethod)
                     else {
@@ -206,7 +206,7 @@ class L0AllocationFreenessAnalysis private[analyses] ( final val project: SomePr
                         )
                     }
 
-                case FinalEP(_, MethodWithAllocations) ⇒
+                case FinalP(_, MethodWithAllocations) ⇒
                     Result(definedMethod, MethodWithAllocations)
 
                 case _: IntermediateEP[_, _] ⇒

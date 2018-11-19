@@ -59,15 +59,15 @@ private[par] sealed abstract class ContinuationTask[E <: Entity] extends Trigger
 
 private[par] final case class OnFinalUpdateComputationTask[E <: Entity, P <: Property](
         ps:              PKEParallelTasksPropertyStore,
-        dependeeFinalEP: FinalEP[E, P],
+        dependeeFinalP: FinalP[E, P],
         c:               OnUpdateContinuation
 ) extends ContinuationTask[E] {
 
-    override def dependeeE: E = dependeeFinalEP.e
+    override def dependeeE: E = dependeeFinalP.e
 
-    override def dependeePKId: Int = dependeeFinalEP.p.id
+    override def dependeePKId: Int = dependeeFinalP.p.id
 
-    override def apply(): Unit = ps.handleResult(c(dependeeFinalEP), forceEvaluation = false)
+    override def apply(): Unit = ps.handleResult(c(dependeeFinalP), forceEvaluation = false)
 }
 
 private[par] final case class OnUpdateComputationTask[E <: Entity, P <: Property](
@@ -116,20 +116,20 @@ private[par] final case class ImmediateOnUpdateComputationTask[E <: Entity, P <:
 
 private[par] final case class ImmediateOnFinalUpdateComputationTask[E <: Entity, P <: Property](
         ps:                          PKEParallelTasksPropertyStore,
-        dependeeFinalEP:             FinalEP[E, P],
+        dependeeFinalP:             FinalP[E, P],
         previousResult:              PropertyComputationResult,
         forceDependersNotifications: Set[SomeEPK],
         c:                           OnUpdateContinuation
 ) extends ContinuationTask[E] {
 
-    override def dependeeE: E = dependeeFinalEP.e
+    override def dependeeE: E = dependeeFinalP.e
 
-    override def dependeePKId: Int = dependeeFinalEP.pk.id
+    override def dependeePKId: Int = dependeeFinalP.pk.id
 
     override def apply(): Unit = {
         // get the most current property when the depender is eventually evaluated;
         // the effectiveness of this check depends on the scheduling strategy(!)
-        val newResult = c(dependeeFinalEP)
+        val newResult = c(dependeeFinalP)
         if (debug && newResult == previousResult) {
             throw new IllegalStateException(
                 s"an on-update continuation resulted in the same result as before: $newResult"

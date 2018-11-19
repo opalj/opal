@@ -63,7 +63,7 @@ class InterProceduralEscapeAnalysis private[analyses] (
             case VirtualFormalParameter(DefinedMethod(dc, m), i) if dc != m.classFile.thisType ⇒
                 def handleEscapeState(eOptionP: SomeEOptionP): PropertyComputationResult = {
                     eOptionP match {
-                        case FinalEP(_, p) ⇒
+                        case FinalP(_, p) ⇒
                             Result(fp, p)
 
                         case IntermediateEP(_, lb, ub) ⇒

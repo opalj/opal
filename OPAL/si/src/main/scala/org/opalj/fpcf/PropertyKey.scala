@@ -29,7 +29,12 @@ final class PropertyKey[+P] private[fpcf] (val id: Int) extends AnyVal with Prop
  */
 object PropertyKey {
 
-    // TODO additionally pass the cycle to the cycle resolution strategy to enable decisions about the "correct" value
+    /**
+     * Currently, the cycle resolution strategy either enables choosing the upper bound
+     * or the lower bound. That is, all analyses have to satisfy the condition that the
+     * value that is computed is always a sound over-approximation w.r.t. all potential
+     * information.
+     */
     type CycleResolutionStrategy[E <: Entity, P <: Property] = (PropertyStore, EPS[E, P]) ⇒ P
 
     private[this] val propertyKeyNames = new AtomicReferenceArray[String](SupportedPropertyKinds)
@@ -104,7 +109,8 @@ object PropertyKey {
      */
     def forSimpleProperty[P <: Property](
         name:                String,
-        notComputedProperty: P
+        // hasFallbackIfNoAnalysisIsScheduled : Boolean,
+        notComputedProperty: P //  FallbackPropertyComputation[E,P]
     ): PropertyKey[P] = {
         val thisKeyId = nextKeyId()
         setKeyName(thisKeyId, name)

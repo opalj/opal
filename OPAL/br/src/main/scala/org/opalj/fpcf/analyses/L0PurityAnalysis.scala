@@ -83,8 +83,8 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
                             }
                             if (!fieldType.isBaseType) {
                                 propertyStore(fieldType, TypeImmutability.key) match {
-                                    case FinalEP(_, ImmutableType) ⇒
-                                    case FinalEP(_, _) ⇒
+                                    case FinalP(_, ImmutableType) ⇒
+                                    case FinalP(_, _) ⇒
                                         return Result(definedMethod, ImpureByAnalysis);
                                     case ep ⇒
                                         dependees += ep
@@ -92,8 +92,8 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
                             }
                             if (field.isNotFinal) {
                                 propertyStore(field, FieldMutability.key) match {
-                                    case FinalEP(_, _: FinalField) ⇒
-                                    case FinalEP(_, _) ⇒
+                                    case FinalP(_, _: FinalField) ⇒
+                                    case FinalP(_, _) ⇒
                                         return Result(definedMethod, ImpureByAnalysis);
                                     case ep ⇒
                                         dependees += ep
@@ -122,7 +122,7 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
                                 val purity = propertyStore(declaredMethods(callee), Purity.key)
 
                                 purity match {
-                                    case FinalEP(_, CompileTimePure | Pure) ⇒ /* Nothing to do */
+                                    case FinalP(_, CompileTimePure | Pure) ⇒ /* Nothing to do */
 
                                     // Handling cyclic computations
                                     case ep @ IntermediateEP(_, _, Pure) ⇒
@@ -198,7 +198,7 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
                 // We can't report any real result as long as we don't know that the fields are all
                 // effectively final and the types are immutable.
 
-                case FinalEP(_, _: FinalField | ImmutableType) ⇒
+                case FinalP(_, _: FinalField | ImmutableType) ⇒
                     if (dependees.isEmpty) {
                         Result(definedMethod, Pure)
                     } else {
@@ -207,14 +207,14 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
                         IntermediateResult(definedMethod, ImpureByAnalysis, Pure, dependees, c)
                     }
 
-                case FinalEP(_, ImmutableContainerType) ⇒
+                case FinalP(_, ImmutableContainerType) ⇒
                     Result(definedMethod, ImpureByAnalysis)
 
                 // The type is at most conditionally immutable.
-                case FinalEP(_, _: TypeImmutability) ⇒ Result(definedMethod, ImpureByAnalysis)
-                case FinalEP(_, _: NonFinalField)    ⇒ Result(definedMethod, ImpureByAnalysis)
+                case FinalP(_, _: TypeImmutability) ⇒ Result(definedMethod, ImpureByAnalysis)
+                case FinalP(_, _: NonFinalField)    ⇒ Result(definedMethod, ImpureByAnalysis)
 
-                case FinalEP(_, CompileTimePure | Pure) ⇒
+                case FinalP(_, CompileTimePure | Pure) ⇒
                     if (dependees.isEmpty)
                         Result(definedMethod, Pure)
                     else {
@@ -225,7 +225,7 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
                     dependees += eps
                     IntermediateResult(definedMethod, ImpureByAnalysis, Pure, dependees, c)
 
-                case FinalEP(_, _: Purity) ⇒
+                case FinalP(_, _: Purity) ⇒
                     // a called method is impure...
                     Result(definedMethod, ImpureByAnalysis)
             }
@@ -256,8 +256,8 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
         var dependees: Set[EOptionP[Entity, Property]] = Set.empty
         referenceTypes foreach { e ⇒
             propertyStore(e, TypeImmutability.key) match {
-                case FinalEP(_, ImmutableType) ⇒ /*everything is Ok*/
-                case FinalEP(_, _) ⇒
+                case FinalP(_, ImmutableType) ⇒ /*everything is Ok*/
+                case FinalP(_, _) ⇒
                     return Result(definedMethod, ImpureByAnalysis);
                 case IntermediateEP(_, _, ub) if ub ne ImmutableType ⇒
                     return Result(definedMethod, ImpureByAnalysis);
@@ -275,7 +275,7 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
     def baseMethodPurity(dm: DefinedMethod): PropertyComputationResult = {
 
         def c(eps: SomeEOptionP): PropertyComputationResult = eps match {
-            case FinalEP(_, p)                  ⇒ Result(dm, p)
+            case FinalP(_, p)                  ⇒ Result(dm, p)
             case ep @ IntermediateEP(_, lb, ub) ⇒ IntermediateResult(dm, lb, ub, Seq(ep), c)
             case epk                            ⇒ IntermediateResult(dm, ImpureByAnalysis, CompileTimePure, Seq(epk), c)
         }

@@ -63,7 +63,7 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
         immutability: MutableObject
     ): MultiResult = {
         val allSubtypes = classHierarchy.allSubclassTypes(t, reflexive = true)
-        val r = allSubtypes.map { st ⇒ new FinalEP(st, immutability) }.toSeq
+        val r = allSubtypes.map { st ⇒ new FinalP(st, immutability) }.toSeq
         MultiResult(r)
     }
 
@@ -164,7 +164,7 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
 
         val instanceFields = cf.fields.filter { f ⇒ !f.isStatic }
         dependees ++= (propertyStore(instanceFields, FieldMutability) collect {
-            case FinalEP(_, _: NonFinalField) ⇒
+            case FinalP(_, _: NonFinalField) ⇒
                 // <=> The class is definitively mutable and therefore also all subclasses.
                 if (lazyComputation)
                     return Result(t, MutableObjectByAnalysis);
@@ -268,7 +268,7 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
 
             return createIncrementalResult(
                 t,
-                FinalEP(t, maxLocalImmutability),
+                FinalP(t, maxLocalImmutability),
                 cfMutabilityIsFinal = true,
                 Result(t, maxLocalImmutability)
             );
@@ -414,7 +414,7 @@ trait ClassImmutabilityAnalysisScheduler extends ComputationSpecification {
         // 1.2
         // All (instances of) interfaces are (by their very definition) also immutable.
         val allInterfaces = project.allClassFiles.filter(cf ⇒ cf.isInterfaceDeclaration)
-        handleResult(MultiResult(allInterfaces.map(cf ⇒ new FinalEP(cf.thisType, ImmutableObject))))
+        handleResult(MultiResult(allInterfaces.map(cf ⇒ new FinalP(cf.thisType, ImmutableObject))))
 
         // 2.
         // All classes that do not have complete superclass information are mutable
@@ -473,7 +473,7 @@ object EagerClassImmutabilityAnalysis
         val cfs = setResultsAnComputeEntities(p, ps)
         ps.scheduleEagerComputationsForEntities(cfs)(
             analysis.determineClassImmutability(
-                null, FinalEP(ObjectType.Object, ImmutableObject), true, false
+                null, FinalP(ObjectType.Object, ImmutableObject), true, false
             )
         )
 

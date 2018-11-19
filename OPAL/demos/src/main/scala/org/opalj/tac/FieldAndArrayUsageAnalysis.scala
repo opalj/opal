@@ -8,7 +8,7 @@ import org.opalj.ai.common.DefinitionSitesKey
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.BasicReport
 import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.fpcf.FinalEP
+import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.PropertyStoreKey
 import org.opalj.fpcf.analyses.escape.EagerSimpleEscapeAnalysis
 import org.opalj.fpcf.properties.EscapeProperty
@@ -148,17 +148,17 @@ object FieldAndArrayUsageAnalysis extends DefaultOneStepAnalysis {
                                             for (pc ← pcsOfNewArrays) {
                                                 val as = defSites(m, pc)
                                                 propertyStore(as, EscapeProperty.key) match {
-                                                    case FinalEP(_, NoEscape | AtMost(NoEscape)) ⇒
+                                                    case FinalP(_, NoEscape | AtMost(NoEscape)) ⇒
                                                         maybeNoEscapingArrays += 1
-                                                    case FinalEP(_, EscapeInCallee | AtMost(EscapeInCallee)) ⇒
+                                                    case FinalP(_, EscapeInCallee | AtMost(EscapeInCallee)) ⇒
                                                         maybeInCalleeArrays += 1
-                                                    case FinalEP(_, EscapeViaParameter | AtMost(EscapeViaParameter)) ⇒
+                                                    case FinalP(_, EscapeViaParameter | AtMost(EscapeViaParameter)) ⇒
                                                         maybeViaParamArrays += 1
-                                                    case FinalEP(_, EscapeViaReturn | AtMost(EscapeViaReturn)) ⇒
+                                                    case FinalP(_, EscapeViaReturn | AtMost(EscapeViaReturn)) ⇒
                                                         maybeViaReturn += 1
-                                                    case FinalEP(_, EscapeViaAbnormalReturn | AtMost(EscapeViaAbnormalReturn)) ⇒
+                                                    case FinalP(_, EscapeViaAbnormalReturn | AtMost(EscapeViaAbnormalReturn)) ⇒
                                                         maybeViaAbnormal += 1
-                                                    case FinalEP(_, p) if p.isBottom ⇒ globalArrays += 1
+                                                    case FinalP(_, p) if p.isBottom ⇒ globalArrays += 1
                                                     case _                           ⇒ maybeInCallerArrays += 1
                                                 }
                                             }

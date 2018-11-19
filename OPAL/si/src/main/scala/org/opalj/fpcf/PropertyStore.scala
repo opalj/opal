@@ -473,7 +473,7 @@ abstract class PropertyStore {
     def registerLazyPropertyComputation[E <: Entity, P <: Property](
         pk:       PropertyKey[P],
         pc:       PropertyComputation[E],
-        finalEPs: TraversableOnce[FinalEP[E, P]] = Iterator.empty
+        finalEPs: TraversableOnce[FinalP[E, P]] = Iterator.empty
     ): Unit
 
     private[fpcf] val simultaneouslyLazilyComputedPropertyKinds: Array[IntTrieSet /*Set[PKId]*/ ] = {

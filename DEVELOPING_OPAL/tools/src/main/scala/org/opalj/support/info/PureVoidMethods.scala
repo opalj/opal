@@ -9,7 +9,7 @@ import org.opalj.br.DefinedMethod
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.BasicReport
-import org.opalj.fpcf.FinalEP
+import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.PropertyStoreKey
 import org.opalj.fpcf.FPCFAnalysesManagerKey
 import org.opalj.fpcf.analyses.LazyStaticDataUsageAnalysis
@@ -67,7 +67,7 @@ object PureVoidMethods extends DefaultOneStepAnalysis {
         val entities = propertyStore.entities(fpcf.properties.Purity.key)
 
         val voidReturn = entities.collect {
-            case FinalEP(m: DefinedMethod, p @ (CompileTimePure | Pure | SideEffectFree)) // Do not report empty methods, they are e.g. used for base implementations of listeners
+            case FinalP(m: DefinedMethod, p @ (CompileTimePure | Pure | SideEffectFree)) // Do not report empty methods, they are e.g. used for base implementations of listeners
             // Empty methods still have a return instruction and therefore a body size of 1
             if m.definedMethod.returnType.isVoidType && !m.definedMethod.isConstructor &&
                 m.definedMethod.body.isDefined && m.definedMethod.body.get.instructions.length != 1 ⇒

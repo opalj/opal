@@ -21,7 +21,7 @@ private[seq] final case class PropertyComputationTask[E <: Entity](
 
 private[seq] final case class OnFinalUpdateComputationTask[E <: Entity, P <: Property](
         ps: PropertyStore,
-        r:  FinalEP[E, P],
+        r:  FinalP[E, P],
         c:  OnUpdateContinuation
 ) extends QualifiedTask {
 

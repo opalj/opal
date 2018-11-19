@@ -72,7 +72,7 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
             }
 
             ps(t, ClassImmutability.key) match {
-                case FinalEP(_, p) ⇒
+                case FinalP(_, p) ⇒
                     Result(t, p.correspondingTypeImmutability)
                 case eps @ IntermediateEP(_, lb, ub) ⇒
                     val thisUB = ub.correspondingTypeImmutability
@@ -93,12 +93,12 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
             var maxImmutability: TypeImmutability = ImmutableType
 
             ps(t, ClassImmutability.key) match {
-                case FinalEP(_, ImmutableObject) ⇒
+                case FinalP(_, ImmutableObject) ⇒
 
-                case FinalEP(_, _: MutableObject) ⇒
+                case FinalP(_, _: MutableObject) ⇒
                     return Result(t, MutableType);
 
-                case FinalEP(_, ImmutableContainer) ⇒
+                case FinalP(_, ImmutableContainer) ⇒
                     joinedImmutability = ImmutableContainerType
                     maxImmutability = ImmutableContainerType
 
@@ -114,12 +114,12 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
 
             directSubtypes foreach { subtype ⇒
                 ps(subtype, TypeImmutability.key) match {
-                    case FinalEP(_, ImmutableType) ⇒
+                    case FinalP(_, ImmutableType) ⇒
 
                     case EPS(_, _, MutableType) ⇒
                         return Result(t, MutableType);
 
-                    case FinalEP(_, ImmutableContainerType) ⇒
+                    case FinalP(_, ImmutableContainerType) ⇒
                         joinedImmutability = joinedImmutability.meet(ImmutableContainerType)
                         maxImmutability = ImmutableContainerType
 
@@ -184,14 +184,14 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
                     }
 
                     eps match {
-                        case FinalEP(e, ImmutableType | ImmutableObject) ⇒
+                        case FinalP(e, ImmutableType | ImmutableObject) ⇒
                             dependencies = dependencies - e
                             nextResult()
 
                         case EPS(_, _, MutableType | _: MutableObject) ⇒
                             Result(t, MutableType)
 
-                        case FinalEP(e, ImmutableContainerType | ImmutableContainer) ⇒
+                        case FinalP(e, ImmutableContainerType | ImmutableContainer) ⇒
                             maxImmutability = ImmutableContainerType
                             dependencies = dependencies - e
                             nextResult()

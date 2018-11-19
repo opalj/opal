@@ -68,7 +68,7 @@ object UnnecessarySynchronizationAnalysis extends DefaultOneStepAnalysis {
             for {
                 as ← allocationSites
                 method = as.method
-                FinalEP(_, escape) = propertyStore(as, EscapeProperty.key)
+                FinalP(_, escape) = propertyStore(as, EscapeProperty.key)
                 if EscapeViaNormalAndAbnormalReturn lessOrEqualRestrictive escape
                 code = tacai(method).stmts
                 defSite = code indexWhere (stmt ⇒ stmt.pc == as.pc)

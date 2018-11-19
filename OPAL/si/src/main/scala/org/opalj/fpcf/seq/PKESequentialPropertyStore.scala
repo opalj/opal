@@ -226,7 +226,7 @@ final class PKESequentialPropertyStore private (
                             if (force) {
                                 set(e, p)
                             }
-                            FinalEP(e, p.asInstanceOf[P])
+                            FinalP(e, p.asInstanceOf[P])
                         }
 
                     case lc: PropertyComputation[E] @unchecked ⇒
@@ -239,7 +239,7 @@ final class PKESequentialPropertyStore private (
                             case Some(p) ⇒
                                 fastTrackPropertiesCounter += 1
                                 set(e, p, isFastTrackProperty = true)
-                                FinalEP(e, p.asInstanceOf[P])
+                                FinalP(e, p.asInstanceOf[P])
                             case None ⇒
                                 // create PropertyValue to ensure that we do not schedule
                                 // multiple (lazy) computations => the entity is now known
@@ -299,7 +299,7 @@ final class PKESequentialPropertyStore private (
     override def registerLazyPropertyComputation[E <: Entity, P <: Property](
         pk:       PropertyKey[P],
         pc:       PropertyComputation[E],
-        finalEPs: TraversableOnce[FinalEP[E, P]]
+        finalEPs: TraversableOnce[FinalP[E, P]]
     ): Unit = {
         if (debug && !tasks.isEmpty) {
             throw new IllegalStateException(
@@ -455,7 +455,7 @@ final class PKESequentialPropertyStore private (
                             if (newPValueIsFinal) {
                                 new OnFinalUpdateComputationTask(
                                     this,
-                                    FinalEP(e, ub),
+                                    FinalP(e, ub),
                                     onUpdateContinuation
                                 )
                             } else {
@@ -602,7 +602,7 @@ final class PKESequentialPropertyStore private (
                                 immediateOnUpdateComputationsCounter += 1
                                 val newEP =
                                     if (dependeePValue.isFinal) {
-                                        FinalEP(dependeeE, dependeePValue.ub)
+                                        FinalP(dependeeE, dependeePValue.ub)
                                     } else {
                                         EPS(dependeeE, dependeePValue.lb, dependeePValue.ub)
                                     }
@@ -639,7 +639,7 @@ final class PKESequentialPropertyStore private (
                                     val t =
                                         OnFinalUpdateComputationTask(
                                             this,
-                                            FinalEP(dependeeE, dependeePValue.ub),
+                                            FinalP(dependeeE, dependeePValue.ub),
                                             c
                                         )
                                     if (dependeeUpdateHandling.delayHandlingOfFinalDependeeUpdates)

@@ -49,7 +49,7 @@ sealed trait EOptionP[+E <: Entity, +P <: Property] {
      */
     def isFinal: Boolean
     final def isRefinable: Boolean = !isFinal
-    def asFinal: FinalEP[E, P]
+    def asFinal: FinalP[E, P]
 
     /**
      * Combines the test if we have a final property and – if we have one – if it is equal (by
@@ -57,8 +57,8 @@ sealed trait EOptionP[+E <: Entity, +P <: Property] {
      */
     def is(p: AnyRef): Boolean = /*this.hasProperty && */ this.isFinal && this.ub == p
 
-    private[fpcf] def toUBEP: FinalEP[E, P]
-    private[fpcf] def toLBEP: FinalEP[E, P]
+    private[fpcf] def toUBEP: FinalP[E, P]
+    private[fpcf] def toLBEP: FinalP[E, P]
 
     /**
      * Returns the upper bound of the property if it is available – [[hasProperty]] has to be
@@ -142,12 +142,12 @@ sealed trait EPS[+E <: Entity, +P <: Property] extends EOptionP[E, P] {
     final override def toEPK: EPK[E, P] = EPK(e, pk)
 
     /**
-     * Creates a [[FinalEP]] object using the current ub.
+     * Creates a [[FinalP]] object using the current ub.
      *
      * @note No check is done whether the property is actually final.
      */
-    override def toUBEP: FinalEP[E, P] = FinalEP(e, ub)
-    override def toLBEP: FinalEP[E, P] = FinalEP(e, lb)
+    override def toUBEP: FinalP[E, P] = FinalP(e, ub)
+    override def toLBEP: FinalP[E, P] = FinalP(e, lb)
 
     final override def hasProperty: Boolean = true
     final override def asEPS: EPS[E, P] = this
@@ -163,7 +163,7 @@ object EPS {
 
     def apply[E <: Entity, P <: Property](e: E, lb: P, ub: P): EPS[E, P] = {
         if (lb == ub)
-            FinalEP(e, ub)
+            FinalP(e, ub)
         else
             IntermediateEP(e, lb, ub)
     }
@@ -179,11 +179,11 @@ object EPS {
 
 object ESimplePS {
 
-    def apply[E <: Entity, P <: Property](e: E, ub: P, isFinal: Boolean): EPS[E, P] = {
+    def apply[E <: Entity, P <: Property](e: E, p: P, isFinal: Boolean): EPS[E, P] = {
         if (isFinal)
-            FinalEP(e, ub)
+            FinalP(e, p)
         else
-            IntermediateESimpleP(e, ub)
+            IntermediateESimpleP(e, p)
     }
 
     /**
@@ -208,7 +208,7 @@ final class IntermediateEP[+E <: Entity, +P <: Property](
 ) extends EPS[E, P] {
 
     override def isFinal: Boolean = false
-    override def asFinal: FinalEP[E, P] = throw new ClassCastException();
+    override def asFinal: FinalP[E, P] = throw new ClassCastException();
 
     override def equals(other: Any): Boolean = {
         other match {
@@ -227,6 +227,7 @@ final class IntermediateEP[+E <: Entity, +P <: Property](
 object IntermediateEP {
 
     def apply[E <: Entity, P <: Property](e: E, lb: P, ub: P): IntermediateEP[E, P] = {
+        assert(lb ne ub)
         new IntermediateEP(e, lb, ub)
     }
 
@@ -250,7 +251,7 @@ final class IntermediateESimpleP[+E <: Entity, +P <: Property](
     }
 
     override def isFinal: Boolean = false
-    override def asFinal: FinalEP[E, P] = throw new ClassCastException();
+    override def asFinal: FinalP[E, P] = throw new ClassCastException();
 
     override def equals(other: Any): Boolean = {
         other match {
@@ -282,21 +283,21 @@ object IntermediateESimpleP {
  *
  * For a detailed discussion of the semantics of `lb` and `ub` see [[EOptionP.ub]].
  */
-final class FinalEP[+E <: Entity, +P <: Property](val e: E, val ub: P) extends EPS[E, P] {
+final class FinalP[+E <: Entity, +P <: Property](val e: E, val ub: P) extends EPS[E, P] {
 
     override def isFinal: Boolean = true
-    override def asFinal: FinalEP[E, P] = this
+    override def asFinal: FinalP[E, P] = this
 
     override def lb: P = ub
 
     def p: P = ub // or lb
 
-    override def toUBEP: FinalEP[E, P] = this
-    override def toLBEP: FinalEP[E, P] = this
+    override def toUBEP: FinalP[E, P] = this
+    override def toLBEP: FinalP[E, P] = this
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: FinalEP[_, _] ⇒ that.e == this.e && this.p == that.p
+            case that: FinalP[_, _] ⇒ that.e == this.e && this.p == that.p
             case _                   ⇒ false
         }
     }
@@ -304,16 +305,16 @@ final class FinalEP[+E <: Entity, +P <: Property](val e: E, val ub: P) extends E
     override def hashCode: Int = e.hashCode() * 727 + ub.hashCode()
 
     override def toString: String = {
-        s"FinalEP($e@${System.identityHashCode(e).toHexString},p=$p)"
+        s"FinalP($e@${System.identityHashCode(e).toHexString},p=$p)"
     }
 
 }
 
-object FinalEP {
+object FinalP {
 
-    def apply[E <: Entity, P <: Property](e: E, p: P): FinalEP[E, P] = new FinalEP(e, p)
+    def apply[E <: Entity, P <: Property](e: E, p: P): FinalP[E, P] = new FinalP(e, p)
 
-    def unapply[E <: Entity, P <: Property](eps: FinalEP[E, P]): Option[(E, P)] = {
+    def unapply[E <: Entity, P <: Property](eps: FinalP[E, P]): Option[(E, P)] = {
         Some((eps.e, eps.lb))
     }
 
@@ -334,10 +335,10 @@ final class EPK[+E <: Entity, +P <: Property](
     override def ub: Nothing = throw new UnsupportedOperationException();
 
     override def isFinal: Boolean = false
-    override def asFinal: FinalEP[E, P] = throw new ClassCastException();
+    override def asFinal: FinalP[E, P] = throw new ClassCastException();
 
-    private[fpcf] def toUBEP: FinalEP[E, P] = throw new UnsupportedOperationException();
-    private[fpcf] def toLBEP: FinalEP[E, P] = throw new UnsupportedOperationException();
+    private[fpcf] def toUBEP: FinalP[E, P] = throw new UnsupportedOperationException();
+    private[fpcf] def toLBEP: FinalP[E, P] = throw new UnsupportedOperationException();
 
     override def hasProperty: Boolean = false
     override def asEPS: EPS[E, P] = throw new ClassCastException();

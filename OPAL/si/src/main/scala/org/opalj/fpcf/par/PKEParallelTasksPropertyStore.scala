@@ -465,7 +465,7 @@ final class PKEParallelTasksPropertyStore private (
     override def registerLazyPropertyComputation[E <: Entity, P <: Property](
         pk:       PropertyKey[P],
         pc:       PropertyComputation[E],
-        finalEPs: TraversableOnce[FinalEP[E, P]]
+        finalEPs: TraversableOnce[FinalP[E, P]]
     ): Unit = {
         if (openJobs.get() > 0) {
             throw new IllegalStateException(
@@ -620,7 +620,7 @@ final class PKEParallelTasksPropertyStore private (
             val p = fastTrackPropertyBasedOnPKId(this, e, pkId)
             if (p.isDefined) {
                 if (debug) fastTrackPropertiesCounter.incrementAndGet()
-                val finalEP = FinalEP(e, p.get.asInstanceOf[P])
+                val finalEP = FinalP(e, p.get.asInstanceOf[P])
                 appendStoreUpdate(queueId = 0, NewProperty(IdempotentResult(finalEP)))
                 return finalEP;
             }
@@ -677,7 +677,7 @@ final class PKEParallelTasksPropertyStore private (
                                 trace("analysis progress", message)
                             }
                             if (debug) fallbacksUsedCounter.incrementAndGet()
-                            val finalEP = FinalEP(e, p.asInstanceOf[P])
+                            val finalEP = FinalP(e, p.asInstanceOf[P])
                             val r = IdempotentResult(finalEP)
                             appendStoreUpdate(queueId = 0, NewProperty(r))
                             finalEP
@@ -1115,7 +1115,7 @@ final class PKEParallelTasksPropertyStore private (
                     }
 
                 case IdempotentResult.id ⇒
-                    val IdempotentResult(ep @ FinalEP(e, p)) = r
+                    val IdempotentResult(ep @ FinalP(e, p)) = r
                     val pkId = p.key.id
                     val epk = ep.toEPK
                     val propertiesOfEntity = properties(pkId)
@@ -1532,7 +1532,7 @@ final class PKEParallelTasksPropertyStore private (
                                 if (eps.isFinal) {
                                     eps
                                 } else {
-                                    FinalEP(e, PropertyKey.resolveCycle(this, eps))
+                                    FinalP(e, PropertyKey.resolveCycle(this, eps))
                                 }
                             }
                         }

@@ -69,7 +69,7 @@ class VirtualCallAggregatingEscapeAnalysis private[analyses] ( final val project
                 case ep @ IntermediateEP(_, _, p) ⇒
                     escapeState = escapeState meet p
                     dependees += ep
-                case FinalEP(_, p) ⇒ escapeState = escapeState meet p
+                case FinalP(_, p) ⇒ escapeState = escapeState meet p
                 case epk           ⇒ dependees += epk
             }
 

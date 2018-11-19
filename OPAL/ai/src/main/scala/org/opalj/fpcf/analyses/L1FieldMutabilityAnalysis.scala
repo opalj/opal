@@ -202,7 +202,7 @@ class L1FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
         pcs:    PCs
     )(implicit state: State): Option[TACode[TACMethodParameter, V]] = {
         propertyStore(method, TACAI.key) match {
-            case finalEP: FinalEP[Method, TACAI] ⇒
+            case finalEP: FinalP[Method, TACAI] ⇒
                 finalEP.ub.tac
             case eps: IntermediateEP[Method, TACAI] ⇒
                 state.tacDependees += method → ((eps, pcs))
@@ -282,13 +282,13 @@ class L1FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
     def handleEscapeProperty(
         ep: EOptionP[DefinitionSite, EscapeProperty]
     )(implicit state: State): Boolean = ep match {
-        case FinalEP(_, NoEscape | EscapeInCallee | EscapeViaReturn) ⇒
+        case FinalP(_, NoEscape | EscapeInCallee | EscapeViaReturn) ⇒
             false
 
-        case FinalEP(_, AtMost(_)) ⇒
+        case FinalP(_, AtMost(_)) ⇒
             true
 
-        case FinalEP(_, _) ⇒
+        case FinalP(_, _) ⇒
             true // Escape state is worse than via return
 
         case IntermediateEP(_, _, NoEscape | EscapeInCallee | EscapeViaReturn) ⇒

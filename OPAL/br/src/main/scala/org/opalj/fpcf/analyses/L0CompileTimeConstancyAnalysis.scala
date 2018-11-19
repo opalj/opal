@@ -38,9 +38,9 @@ class L0CompileTimeConstancyAnalysis private[analyses] ( final val project: Some
             return Result(field, CompileTimeConstantField);
 
         var dependee: EOptionP[Entity, Property] = propertyStore(field, FieldMutability.key) match {
-            case FinalEP(_, LazyInitializedField) ⇒ return Result(field, CompileTimeVaryingField);
-            case FinalEP(_, _: FinalField)        ⇒ return Result(field, CompileTimeConstantField);
-            case FinalEP(_, _: NonFinalField)     ⇒ return Result(field, CompileTimeVaryingField);
+            case FinalP(_, LazyInitializedField) ⇒ return Result(field, CompileTimeVaryingField);
+            case FinalP(_, _: FinalField)        ⇒ return Result(field, CompileTimeConstantField);
+            case FinalP(_, _: NonFinalField)     ⇒ return Result(field, CompileTimeVaryingField);
             case ep                               ⇒ ep
         }
 
@@ -48,11 +48,11 @@ class L0CompileTimeConstancyAnalysis private[analyses] ( final val project: Some
         // mutability is updated
         def c(eps: SomeEPS): PropertyComputationResult = {
             eps match {
-                case FinalEP(_, LazyInitializedField) ⇒
+                case FinalP(_, LazyInitializedField) ⇒
                     Result(field, CompileTimeVaryingField);
-                case FinalEP(_, _: FinalField) ⇒
+                case FinalP(_, _: FinalField) ⇒
                     Result(field, CompileTimeConstantField);
-                case FinalEP(_, _: NonFinalField) ⇒
+                case FinalP(_, _: NonFinalField) ⇒
                     Result(field, CompileTimeVaryingField);
 
                 case IntermediateEP(_, _, _) ⇒
