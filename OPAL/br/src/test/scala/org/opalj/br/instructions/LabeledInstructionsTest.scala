@@ -1,34 +1,9 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.br.instructions
 
 import org.junit.runner.RunWith
+import org.opalj.collection.immutable.RefArray
+import org.opalj.collection.immutable.IntArray
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.{FlatSpec, Matchers}
 
@@ -109,8 +84,8 @@ class LabeledInstructionsTest extends FlatSpec with Matchers {
             assert(JSR_W(label).resolveJumpTargets(2, Map(label → 44)).branchoffset == 42)
         }
 
-    val table = IndexedSeq(InstructionLabel('two), InstructionLabel('three))
-    val lookupTable = ((2 to 3) zip table)
+    val table = RefArray(InstructionLabel('two), InstructionLabel('three))
+    val lookupTable = RefArray.from[(Int, InstructionLabel)](take = 2, (2 to 3).iterator zip table.iterator)
     val labelsMap = Map[InstructionLabel, Int](
         label → 43,
         InstructionLabel('two) → 44,
@@ -132,14 +107,14 @@ class LabeledInstructionsTest extends FlatSpec with Matchers {
             )
             assert(resolvedLOOKUPSWITCH.defaultOffset == 42)
             assert(resolvedLOOKUPSWITCH.jumpOffsets == IndexedSeq(43, 44))
-            assert(resolvedLOOKUPSWITCH.caseValues == IndexedSeq(2, 3))
+            assert(resolvedLOOKUPSWITCH.caseValues.toIndexedSeq == IndexedSeq(2, 3))
 
             val resolvedTABLESWITCH = TABLESWITCH(label, 2, 3, table).resolveJumpTargets(
                 1,
                 labelsMap
             )
             assert(resolvedTABLESWITCH.defaultOffset == 42)
-            assert(resolvedTABLESWITCH.jumpOffsets == IndexedSeq(43, 44))
+            assert(resolvedTABLESWITCH.jumpOffsets == IntArray(43, 44))
         }
 
 }

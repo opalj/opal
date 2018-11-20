@@ -10,7 +10,11 @@ Parameters:
                        where in FeatureIDs every \ is replaced by \\
                                              ... new line ('\n') is replaced by \n
                                              ... , is replaced by \,
+   -writeLocations <DirName> the target directory to which the result file should be exported.
+                    The export will create a file for each project and list all locations
+                    where the given features have been found.
+
    Other Settings:
    [-noProjectStatistics project statistics are not exported]
 
-java ...HermesCLI -config <ConfigFile.json> -statistics <FileName>
+java ...HermesCLI -config <ConfigFile.json> -statistics <FileName> -writeLocations <DirName>

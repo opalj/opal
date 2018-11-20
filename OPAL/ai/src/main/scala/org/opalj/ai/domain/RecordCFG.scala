@@ -1,54 +1,27 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package ai
 package domain
 
 import java.lang.ref.{SoftReference ⇒ SRef}
-import java.util.function.IntConsumer
-
-import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap
 
 import scala.collection.BitSet
 import scala.collection.mutable
 import scala.collection.JavaConverters._
+
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap
+
 import org.opalj.collection.mutable.IntArrayStack
 import org.opalj.collection.immutable.{Chain ⇒ List}
 import org.opalj.collection.immutable.{Naught ⇒ Nil}
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.IntTrieSet1
-import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.collection.immutable.IntHeadAndRestOfSet
+import org.opalj.collection.immutable.IntRefPair
 import org.opalj.graphs.DefaultMutableNode
 import org.opalj.graphs.DominatorTree
 import org.opalj.graphs.PostDominatorTree
 import org.opalj.graphs.DominanceFrontiers
+import org.opalj.br.PC
 import org.opalj.br.Code
 import org.opalj.br.ExceptionHandler
 import org.opalj.br.instructions.Instruction
@@ -57,7 +30,6 @@ import org.opalj.br.cfg.CFG
 import org.opalj.br.cfg.ExitNode
 import org.opalj.br.cfg.BasicBlock
 import org.opalj.br.cfg.CatchNode
-import org.opalj.collection.immutable.IntTrieSet1
 
 /**
  * Records the abstract interpretation time control-flow graph (CFG).
@@ -185,7 +157,7 @@ trait RecordCFG
     ): List[Int /*PC*/ ] = {
 
         if (successorPC <= currentPC) { // "<=" to handle "x: goto x"
-            theJumpBackTargetPCs += successorPC
+            theJumpBackTargetPCs +!= successorPC
         }
 
         val successors =
@@ -198,7 +170,7 @@ trait RecordCFG
         if (successorsOfPC eq null)
             successors(currentPC) = IntTrieSet1(successorPC)
         else {
-            val newSuccessorsOfPC = successorsOfPC + successorPC
+            val newSuccessorsOfPC = successorsOfPC +! successorPC
             if (newSuccessorsOfPC ne successorsOfPC) successors(currentPC) = newSuccessorsOfPC
         }
 
@@ -224,7 +196,7 @@ trait RecordCFG
         branchTargetPC: Int,
         returnTargetPC: Int
     ): Unit = {
-        theSubroutineStartPCs += branchTargetPC
+        theSubroutineStartPCs +!= branchTargetPC
         super.jumpToSubroutine(pc, branchTargetPC, returnTargetPC)
     }
 
@@ -235,7 +207,7 @@ trait RecordCFG
      *       ensured; otherwise the recorded CFG will be incomplete.
      */
     abstract override def returnVoid(pc: Int): Computation[Nothing, ExceptionValue] = {
-        theExitPCs += pc
+        theExitPCs +!= pc
         super.returnVoid(pc)
     }
 
@@ -249,7 +221,7 @@ trait RecordCFG
         pc:    Int,
         value: DomainValue
     ): Computation[Nothing, ExceptionValue] = {
-        theExitPCs += pc
+        theExitPCs +!= pc
         super.ireturn(pc, value)
     }
 
@@ -263,7 +235,7 @@ trait RecordCFG
         pc:    Int,
         value: DomainValue
     ): Computation[Nothing, ExceptionValue] = {
-        theExitPCs += pc
+        theExitPCs +!= pc
         super.lreturn(pc, value)
     }
 
@@ -277,7 +249,7 @@ trait RecordCFG
         pc:    Int,
         value: DomainValue
     ): Computation[Nothing, ExceptionValue] = {
-        theExitPCs += pc
+        theExitPCs +!= pc
         super.freturn(pc, value)
     }
 
@@ -291,7 +263,7 @@ trait RecordCFG
         pc:    Int,
         value: DomainValue
     ): Computation[Nothing, ExceptionValue] = {
-        theExitPCs += pc
+        theExitPCs +!= pc
         super.dreturn(pc, value)
     }
 
@@ -305,7 +277,7 @@ trait RecordCFG
         pc:    Int,
         value: DomainValue
     ): Computation[Nothing, ExceptionValue] = {
-        theExitPCs += pc
+        theExitPCs +!= pc
         super.areturn(pc, value)
     }
 
@@ -319,7 +291,7 @@ trait RecordCFG
         pc:             Int,
         exceptionValue: ExceptionValue
     ): Unit = {
-        theExitPCs += pc
+        theExitPCs +!= pc
         super.abruptMethodExecution(pc, exceptionValue)
     }
 
@@ -452,9 +424,9 @@ trait RecordCFG
         (exceptionHandlerSuccessors(pc) ne null) && (regularSuccessors(pc) eq null)
     }
 
-    def foreachSuccessorOf(pc: Int)(f: IntConsumer /*PC => Unit*/ ): Unit = {
-        regularSuccessorsOf(pc).foreach { f }
-        exceptionHandlerSuccessorsOf(pc).foreach { f }
+    def foreachSuccessorOf(pc: Int)(f: PC ⇒ Unit): Unit = {
+        regularSuccessorsOf(pc).foreach(f)
+        exceptionHandlerSuccessorsOf(pc).foreach(f)
     }
 
     /**
@@ -472,12 +444,12 @@ trait RecordCFG
             if (successorsToVisit.exists { succPC ⇒ p(succPC) })
                 return true;
 
-            visitedSuccessors ++= successorsToVisit
+            visitedSuccessors ++!= successorsToVisit
             successorsToVisit =
                 successorsToVisit.foldLeft(IntTrieSet.empty) { (l, r) ⇒
                     var newL = l
                     successorsOf(r, regularSuccessorsOnly) foreach { pc ⇒
-                        if (!visitedSuccessors.contains(pc)) newL += pc
+                        if (!visitedSuccessors.contains(pc)) newL +!= pc
                     }
                     newL
                 }
@@ -498,7 +470,7 @@ trait RecordCFG
         if (pc == successorPC)
             return true;
 
-        // IMPROVE  Use a better data-structure; e.g., an IntTrieSet with efficient head and tail operations to avoid that the successorsToVisit contains the same value multiple times
+        // IMPROVE Use a better data-structure; e.g., an IntTrieSet with efficient head and tail operations to avoid that the successorsToVisit contains the same value multiple times
         var visitedSuccessors = Set(pc)
         val successorsToVisit = IntArrayStack.fromSeq(regularSuccessorsOf(pc).iterator) // REFACTOR fromSeq(Iterator...)
         while (successorsToVisit.nonEmpty) {
@@ -536,24 +508,16 @@ trait RecordCFG
      * by an instruction in its try block.
      */
     final def handlesException(exceptionHandler: ExceptionHandler): Boolean = {
+        val code = this.code
+        var currentPC = exceptionHandler.startPC
         val endPC = exceptionHandler.endPC
         val handlerPC = exceptionHandler.handlerPC
-        var currentPC = exceptionHandler.startPC
-        val code = this.code
-        while (currentPC <= endPC) {
-            if (exceptionHandlerSuccessorsOf(currentPC).exists(_ == handlerPC))
+        while (currentPC < endPC) {
+            if (exceptionHandlerSuccessorsOf(currentPC).contains(handlerPC))
                 return true;
             currentPC = code.pcOfNextInstruction(currentPC)
         }
         false
-    }
-
-    /**
-     * Computes the transitive hull of all instructions reachable from the given set of
-     * instructions.
-     */
-    def allReachable(pcs: IntTrieSet): IntTrieSet = {
-        pcs.foldLeft(IntTrieSet.empty) { (c, pc) ⇒ c ++ allReachable(pc) }
     }
 
     /**
@@ -563,14 +527,22 @@ trait RecordCFG
         var allReachable: IntTrieSet = IntTrieSet1(pc)
         var successorsToVisit = allSuccessorsOf(pc)
         while (successorsToVisit.nonEmpty) {
-            val IntHeadAndRestOfSet(succPC, newSuccessorsToVisit) = successorsToVisit.getAndRemove
+            val IntRefPair(succPC, newSuccessorsToVisit) = successorsToVisit.headAndTail
             successorsToVisit = newSuccessorsToVisit
             if (!allReachable.contains(succPC)) {
-                allReachable += succPC
-                successorsToVisit ++= allSuccessorsOf(succPC)
+                allReachable +!= succPC
+                successorsToVisit ++!= allSuccessorsOf(succPC)
             }
         }
         allReachable
+    }
+
+    /**
+     * Computes the transitive hull of all instructions reachable from the given set of
+     * instructions.
+     */
+    def allReachable(pcs: IntTrieSet): IntTrieSet = {
+        pcs.foldLeft(IntTrieSet.empty) { (c, pc) ⇒ c ++! allReachable(pc) }
     }
 
     // ==================== METHODS WHICH COMPUTE DERIVED DATA-STRUCTURES ==========================
@@ -659,9 +631,9 @@ trait RecordCFG
      * Returns `true` if the instruction with the given pc has multiple direct
      * predecessors (more than one).
      */
-    final def hasMultiplePredecessors(pc: Int): Boolean = predecessorsOf(pc).size > 1
+    final def hasMultiplePredecessors(pc: Int): Boolean = predecessorsOf(pc).hasMultipleElements
 
-    final def foreachPredecessorOf(pc: Int)(f: IntConsumer /*PC ⇒ Unit*/ ): Unit = {
+    final def foreachPredecessorOf(pc: Int)(f: PC ⇒ Unit): Unit = {
         predecessorsOf(pc).foreach(f)
     }
 
@@ -679,12 +651,12 @@ trait RecordCFG
     def dominatorTree: DominatorTree = {
         getOrInitField[DominatorTree](
             () ⇒ this.theDominatorTree,
-            (dt) ⇒ this.theDominatorTree = dt,
+            dt ⇒ this.theDominatorTree = dt,
             regularSuccessors
         ) {
                 // We want to keep a non-soft reference and avoid any further useless synchronization.
                 val predecessors = this.predecessors
-                def foreachPredecessorOf(pc: Int)(f: IntConsumer /*PC => Unit*/ ): Unit = {
+                def foreachPredecessorOf(pc: Int)(f: PC ⇒ Unit): Unit = {
                     val s = predecessors(pc)
                     if (s ne null)
                         s.foreach(f)
@@ -720,11 +692,11 @@ trait RecordCFG
         val predecessors = this.predecessors
         var remainingPotentialInfiniteLoopHeaders = theJumpBackTargetPCs
         var nodesToVisit = theExitPCs.toChain
-        val visitedNodes = new mutable.BitSet(code.codeSize)
+        val visitedNodes = new Array[Boolean](code.codeSize)
         while (nodesToVisit.nonEmpty) {
             val nextPC = nodesToVisit.head
             nodesToVisit = nodesToVisit.tail
-            visitedNodes += nextPC
+            visitedNodes(nextPC) = true
             val nextPredecessors = predecessors(nextPC)
             if (nextPredecessors ne null) {
                 nextPredecessors.foreach { predPC ⇒
@@ -732,7 +704,7 @@ trait RecordCFG
                     if (remainingPotentialInfiniteLoopHeaders.isEmpty) {
                         return IntTrieSet.empty;
                     }
-                    if (!visitedNodes.contains(predPC)) {
+                    if (!visitedNodes(predPC)) {
                         nodesToVisit :&:= predPC
                     }
                 }
@@ -785,10 +757,8 @@ trait RecordCFG
 
     def bbCFG: CFG[Instruction, Code] = {
         getOrInitField[CFG[Instruction, Code]](
-            () ⇒ theBBCFG, (cfg) ⇒ theBBCFG = cfg, exceptionHandlerSuccessors
-        ) {
-                computeBBCFG
-            }
+            () ⇒ theBBCFG, cfg ⇒ theBBCFG = cfg, exceptionHandlerSuccessors
+        ) { computeBBCFG }
     }
 
     /**
@@ -811,7 +781,7 @@ trait RecordCFG
         val bbs = new Array[BasicBlock](codeSize)
 
         // OLD val exceptionHandlers = mutable.HashMap.empty[Int, CatchNode]
-        val exceptionHandlers = new Int2ObjectOpenHashMap[CatchNode]
+        val exceptionHandlers = new Int2ObjectOpenHashMap[CatchNode](code.exceptionHandlers.size)
         for {
             (exceptionHandler, index) ← code.exceptionHandlers.iterator.zipWithIndex
         } {
@@ -845,7 +815,7 @@ trait RecordCFG
         var runningBB: BasicBlock = null
         val pcIt = code.programCounters
         while (pcIt.hasNext) {
-            val pc = pcIt.next
+            val pc = pcIt.next()
             if (runningBB eq null) {
                 runningBB = bbs(pc)
                 if (runningBB eq null) {
@@ -963,7 +933,7 @@ trait RecordCFG
                 None
         // We want to keep a non-soft reference and avoid any further useless synchronization.
         val predecessors = this.predecessors
-        def foreachPredecessorOf(pc: Int)(f: IntConsumer /*PC ⇒ Unit*/ ): Unit = {
+        def foreachPredecessorOf(pc: Int)(f: PC ⇒ Unit): Unit = {
             val s = predecessors(pc)
             if (s ne null)
                 s.foreach(f)

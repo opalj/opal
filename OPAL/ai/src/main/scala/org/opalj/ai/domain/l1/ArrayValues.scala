@@ -1,31 +1,4 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package ai
 package domain
@@ -44,7 +17,7 @@ import org.opalj.br.ArrayType
  * @author   Michael Eichberg
  */
 trait ArrayValues extends l1.ReferenceValues {
-    domain: CorrelationalDomain with ConcreteIntegerValues with TheClassHierarchy ⇒
+    domain: CorrelationalDomain with ConcreteIntegerValues ⇒
 
     // We do not refine the type DomainArrayValue any further since we also want
     // to use the super level ArrayValue class to represent arrays for which we have
@@ -52,7 +25,7 @@ trait ArrayValues extends l1.ReferenceValues {
     // DON'T DO: type DomainArrayValue <: ArrayValue with DomainSingleOriginReferenceValue
 
     type DomainInitializedArrayValue <: InitializedArrayValue with DomainArrayValue
-    val DomainInitializedArrayValue: ClassTag[DomainInitializedArrayValue]
+    val DomainInitializedArrayValueTag: ClassTag[DomainInitializedArrayValue]
 
     // IMPROVE Extend MultipleReferenceValues to handle the case that we reference multiple arrays.
     // IMPROVE Add support to track the size of arrays independent of a concrete instance
@@ -61,21 +34,23 @@ trait ArrayValues extends l1.ReferenceValues {
      * Represents some (multi-dimensional) array where the (initialized) dimensions have
      * the given size.
      *
-     * @param   theLength The size of the first dimension of the array.
      */
     // NOTE THAT WE CANNOT STORE SIZE INFORMATION FOR AlL DIMENSIONS BEYOND THE FIRST ONE;
     // WE ARE NOT TRACKING THE ESCAPE STATE!
-    protected class InitializedArrayValue(
-            origin:            ValueOrigin,
-            theUpperTypeBound: ArrayType,
-            val theLength:     Int,
-            refId:             RefId
-    ) extends ArrayValue(origin, isNull = No, isPrecise = true, theUpperTypeBound, refId) {
-        this: DomainInitializedArrayValue ⇒
+    trait InitializedArrayValue extends ArrayValue { this: DomainInitializedArrayValue ⇒
+
+        /**
+         * The size of the first dimension of the array. (The size of this dimension is immutable!)
+         */
+        def theLength: Int
 
         assert(length.get >= 0, "impossible length")
 
-        override def length: Option[Int] = Some(theLength)
+        final override def length: Option[Int] = Some(theLength)
+
+        final override def isNull: No.type = No
+
+        final override def isPrecise: Boolean = true
 
         override def updateRefId(
             refId:  RefId,
@@ -91,7 +66,7 @@ trait ArrayValues extends l1.ReferenceValues {
         ): Update[DomainSingleOriginReferenceValue] = {
 
             other match {
-                case DomainInitializedArrayValue(that) ⇒
+                case DomainInitializedArrayValueTag(that) ⇒
                     if (this.theUpperTypeBound eq that.theUpperTypeBound) {
                         if (that.theLength == this.theLength) {
                             if (this.refId == that.refId)
@@ -154,7 +129,7 @@ trait ArrayValues extends l1.ReferenceValues {
         }
 
         override def equals(other: Any): Boolean = other match {
-            case DomainInitializedArrayValue(that) ⇒
+            case DomainInitializedArrayValueTag(that) ⇒
                 (that eq this) || (
                     (that canEqual this) &&
                     this.origin == that.origin &&

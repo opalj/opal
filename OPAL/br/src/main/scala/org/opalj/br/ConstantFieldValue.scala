@@ -1,53 +1,38 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package br
+
+import org.opalj.value.IsDoubleValue
+import org.opalj.value.IsFloatValue
+import org.opalj.value.IsIntegerValue
+import org.opalj.value.IsLongValue
+import org.opalj.value.IsStringValue
+import org.opalj.value.KnownTypedValue
 
 /**
  * A representation of the constant value of a field.
  *
  * @author Michael Eichberg
  */
-sealed abstract class ConstantFieldValue[T >: Nothing] extends Attribute with ConstantValue[T] {
+sealed abstract class ConstantFieldValue[T >: Nothing]
+    extends Attribute
+    with ConstantValue[T]
+    with KnownTypedValue {
 
     override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = this == other
 }
 
-final case class ConstantLong(value: Long) extends ConstantFieldValue[Long] {
+final case class ConstantLong(value: Long) extends ConstantFieldValue[Long] with IsLongValue {
+
+    override def constantValue: Option[Long] = Some(value)
 
     override def toLong: Long = value
 
     override def valueToString: String = value.toString
 
-    final def toJava: String = valueToString+"l"
+    override def toJava: String = valueToString+"l"
 
-    override def valueType: LongType = LongType
+    override def runtimeValueType: LongType = LongType
 
     override def kindId: Int = ConstantLong.KindId
 
@@ -58,7 +43,13 @@ object ConstantLong {
 
 }
 
-final case class ConstantInteger(value: Int) extends ConstantFieldValue[Int] {
+final case class ConstantInteger(value: Int) extends ConstantFieldValue[Int] with IsIntegerValue {
+
+    override def constantValue: Option[Int] = Some(value)
+
+    override def lowerBound: Int = value
+
+    override def upperBound: Int = value
 
     override def toBoolean: Boolean = value != 0
 
@@ -72,9 +63,9 @@ final case class ConstantInteger(value: Int) extends ConstantFieldValue[Int] {
 
     override def valueToString: String = value.toString
 
-    final def toJava: String = valueToString
+    override def toJava: String = valueToString
 
-    override def valueType: IntegerType = IntegerType
+    override def runtimeValueType: IntegerType = IntegerType
 
     override def kindId: Int = ConstantInteger.KindId
 
@@ -85,15 +76,17 @@ object ConstantInteger {
 
 }
 
-final case class ConstantDouble(value: Double) extends ConstantFieldValue[Double] {
+final case class ConstantDouble(value: Double) extends ConstantFieldValue[Double] with IsDoubleValue {
+
+    override def constantValue: Option[Double] = Some(value)
 
     override def toDouble: Double = value
 
     override def valueToString: String = value.toString
 
-    final def toJava: String = valueToString+"d"
+    override def toJava: String = valueToString+"d"
 
-    override def valueType: DoubleType = DoubleType
+    override def runtimeValueType: DoubleType = DoubleType
 
     override def kindId: Int = ConstantDouble.KindId
 
@@ -113,15 +106,17 @@ object ConstantDouble {
 
 }
 
-final case class ConstantFloat(value: Float) extends ConstantFieldValue[Float] {
+final case class ConstantFloat(value: Float) extends ConstantFieldValue[Float] with IsFloatValue {
+
+    override def constantValue: Option[Float] = Some(value)
 
     override def toFloat: Float = value
 
     override def valueToString: String = value.toString
 
-    final def toJava: String = valueToString+"f"
+    override def toJava: String = valueToString+"f"
 
-    override def valueType: FloatType = FloatType
+    override def runtimeValueType: FloatType = FloatType
 
     override def kindId: Int = ConstantFloat.KindId
 
@@ -141,18 +136,24 @@ object ConstantFloat {
 
 }
 
-final case class ConstantString(value: String) extends ConstantFieldValue[String] {
+final case class ConstantString(
+        value: String
+) extends ConstantFieldValue[String]
+    with IsStringValue {
 
     override def toUTF8: String = value
 
     override def valueToString: String = value.toString
 
-    final def toJava: String = s""""$valueToString""""
+    override def toJava: String = s""""$valueToString""""
 
-    override def valueType: ObjectType = ObjectType.String
+    override def runtimeValueType: ObjectType.String.type = ObjectType.String
 
     override def kindId: Int = ConstantString.KindId
 
+    override def constantValue: Option[String] = Some(value)
+
+    override def toCanonicalForm: IsStringValue = this
 }
 object ConstantString {
 

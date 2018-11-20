@@ -1,48 +1,24 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package ba
 
 import scala.language.postfixOps
+import scala.reflect.runtime.universe._
+
+import org.junit.runner.RunWith
 
 import org.scalatest.FlatSpec
 import org.scalatest.junit.JUnitRunner
-import org.junit.runner.RunWith
 
-import scala.reflect.runtime.universe._
+import java.io.ByteArrayInputStream
 
 import org.opalj.util.InMemoryClassLoader
+import org.opalj.collection.immutable.RefArray
 import org.opalj.bc.Assembler
 import org.opalj.bi._
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.instructions._
-import org.opalj.br.reader.Java8Framework
+import org.opalj.br.reader.Java8Framework.{ClassFile ⇒ J8ClassFile}
 import org.opalj.br.MethodAttributeBuilder
 import org.opalj.br.ObjectType
 import org.opalj.br.IntegerType
@@ -66,7 +42,7 @@ class MethodBuilderTest extends FlatSpec {
                 METHOD(
                     FINAL.SYNTHETIC.PUBLIC, "testMethod", "(Ljava/lang/String;)Ljava/lang/String;",
                     CODE(ACONST_NULL, ARETURN),
-                    Seq[MethodAttributeBuilder](EXCEPTIONS("java/lang/Exception"), br.Deprecated)
+                    RefArray[MethodAttributeBuilder](EXCEPTIONS("java/lang/Exception"), br.Deprecated)
                 )
             )
         ).toDA()
@@ -87,7 +63,7 @@ class MethodBuilderTest extends FlatSpec {
         assert(mirror.reflectMethod(method)("test") == null)
     }
 
-    val brClassFile = Java8Framework.ClassFile(() ⇒ new java.io.ByteArrayInputStream(rawClassFile)).head
+    val brClassFile = J8ClassFile(() ⇒ new java.io.ByteArrayInputStream(rawClassFile)).head
 
     val testMethod = brClassFile.methods.find { m ⇒
         val expectedMethodDescritor = MethodDescriptor("(Ljava/lang/String;)Ljava/lang/String;")
@@ -155,14 +131,14 @@ class MethodBuilderTest extends FlatSpec {
                         'tryEnd,
                         TRYEND('Try1),
                         GOTO('finally),
-                        CATCH('Try1, "java/lang/Exception"),
+                        CATCH('Try1, 0, "java/lang/Exception"),
                         POP,
                         ICONST_0,
                         ISTORE_2,
                         TRYEND('FinallyTry2),
                         GOTO('finally),
-                        CATCH('FinallyTry2),
-                        CATCH('LastPCTry3),
+                        CATCH('FinallyTry2, 1),
+                        CATCH('LastPCTry3, 2),
                         POP,
                         'finally,
                         ILOAD_1,
@@ -179,9 +155,7 @@ class MethodBuilderTest extends FlatSpec {
         ).toDA()
 
     val rawAttributeCF = Assembler(attributeMethodClass)
-    val attributeBrClassFile = Java8Framework.ClassFile(
-        () ⇒ new java.io.ByteArrayInputStream(rawAttributeCF)
-    ).head
+    val attributeBrClassFile = J8ClassFile(() ⇒ new ByteArrayInputStream(rawAttributeCF)).head
 
     val attributeTestMethod = attributeBrClassFile.methods.find { m ⇒
         m.name == "<init>" && m.descriptor == MethodDescriptor("()V")
@@ -198,10 +172,9 @@ class MethodBuilderTest extends FlatSpec {
 
     it should "have 'maxLocals' set to: 3" in {
         assert(attributeTestMethod.body.get.maxLocals == 3)
-
     }
 
-    it should "have a LineNumberTable" in {
+    it should "have the expected LineNumberTable" in {
         val lineNumberTable = attributeTestMethod.body.get.attributes.collect {
             case l: br.LineNumberTable ⇒ l
         }.head
@@ -215,23 +188,36 @@ class MethodBuilderTest extends FlatSpec {
             m ⇒ m.name == "tryCatchFinallyTest"
         }.get.body.get.exceptionHandlers
         assert(
-            exceptionTable.contains(
+            exceptionTable(0) ==
                 br.ExceptionHandler(2, 14, 17, Some(br.ObjectType("java/lang/Exception")))
-            )
+
         )
-        assert(exceptionTable.contains(br.ExceptionHandler(2, 20, 23, None)))
-        assert(exceptionTable.contains(br.ExceptionHandler(2, 32, 23, None)))
+        assert(exceptionTable(1) == br.ExceptionHandler(2, 20, 23, None))
+        assert(exceptionTable(2) == br.ExceptionHandler(2, 32, 23, None))
     }
 
     "the generated method `tryCatchFinallyTest`" should "execute as expected" in {
-        val attributeMethodClass = loader.loadClass("AttributeMethodClass")
-        val attributeTestInstance = attributeMethodClass.getDeclaredConstructor().newInstance()
-        val mirror = runtimeMirror(loader).reflect(attributeTestInstance)
-        val method = mirror.symbol.typeSignature.member(TermName("tryCatchFinallyTest")).asMethod
-
-        assert(mirror.reflectMethod(method)(-1) == 0)
-        assert(mirror.reflectMethod(method)(0) == 1)
-        assert(mirror.reflectMethod(method)(1) == 2)
+        try {
+            val attributeMethodClass = loader.loadClass("AttributeMethodClass")
+            val attributeTestInstance = attributeMethodClass.getDeclaredConstructor().newInstance()
+            val mirror = runtimeMirror(loader).reflect(attributeTestInstance)
+            val method = mirror.symbol.typeSignature.member(TermName("tryCatchFinallyTest")).asMethod
+            assert(mirror.reflectMethod(method)(-1) == 0)
+            assert(mirror.reflectMethod(method)(0) == 1)
+            assert(mirror.reflectMethod(method)(1) == 2)
+        } catch {
+            case t: Throwable ⇒
+                info(
+                    attributeBrClassFile.findMethod("tryCatchFinallyTest").head.toJava
+                )
+                org.opalj.io.writeAndOpen(
+                    attributeMethodClass.toXHTML(Some("AttributeMethodClass.scala")),
+                    "AttributeMethodClass",
+                    ".class.html"
+                )
+                info(t.getLocalizedMessage)
+                fail(t)
+        }
     }
 
     "removing dead code related to TRY/CATCH" should "work correctly with \"standard\" TRY/CATCH" in {
@@ -240,7 +226,7 @@ class MethodBuilderTest extends FlatSpec {
             TRY('try),
             NOP,
             TRYEND('try),
-            CATCH('try),
+            CATCH('try, 0),
             ATHROW,
             'b,
             ICONST_0,
@@ -254,7 +240,7 @@ class MethodBuilderTest extends FlatSpec {
     it should "work correctly with TRY/CATCH when the CATCH precedes the TRY" in {
         val c = CODE(
             LabeledGOTO('b),
-            CATCH('try),
+            CATCH('try, 0),
             ATHROW,
             TRY('try),
             ICONST_0,
@@ -273,7 +259,7 @@ class MethodBuilderTest extends FlatSpec {
         val c = CODE(
             LabeledGOTO('b),
             TRY('try),
-            CATCH('try),
+            CATCH('try, 0),
             ICONST_1,
             IRETURN,
             TRYEND('try),
@@ -293,7 +279,7 @@ class MethodBuilderTest extends FlatSpec {
     it should "correctly remove useless TRY/CATCHs if no exceptions are thrown" in {
         val c = CODE(
             LabeledGOTO('b),
-            CATCH('try),
+            CATCH('try, 0),
             ATHROW,
             TRY('try),
             ICONST_0,
@@ -383,7 +369,7 @@ class MethodBuilderTest extends FlatSpec {
             /*DEAD*/ ICONST_1, // INVOKESTATIC(run.SimpleExceptions{ int effectOp1() }),
             /*DEAD*/ RETURN,
             /*DEAD*/ TRYEND('EHeffectOp2$entrypoint$1),
-            /*DEAD*/ CATCH('EHeffectOp2$entrypoint$1, Some(ExceptionType)),
+            /*DEAD*/ CATCH('EHeffectOp2$entrypoint$1, 0, Some(ExceptionType)),
             /*DEAD*/ POP, //INVOKESTATIC(effekt.Effekt{ void onThrow(java.lang.Throwable) }),
             /*DEAD*/ RETURN,
             LabelElement('EP1),
@@ -392,7 +378,7 @@ class MethodBuilderTest extends FlatSpec {
             ISTORE_0,
             /*DEAD*/ TRYEND('eh0),
             LabeledGOTO(PCLabel(21)),
-            /*DEAD*/ CATCH('eh0, Some(ExceptionType)),
+            /*DEAD*/ CATCH('eh0, 0, Some(ExceptionType)),
             LabelElement(PCLabel(9)),
             /*DEAD*/ ASTORE_1,
             LabelElement(PCLabel(10)),
@@ -436,7 +422,7 @@ class MethodBuilderTest extends FlatSpec {
             /*DEAD*/ ICONST_1, // INVOKESTATIC(run.SimpleExceptions{ int effectOp1() }),
             /*DEAD*/ RETURN,
             /*DEAD*/ TRYEND('EHeffectOp2$entrypoint$1),
-            /*DEAD*/ CATCH('EHeffectOp2$entrypoint$1, Some(ExceptionType)),
+            /*DEAD*/ CATCH('EHeffectOp2$entrypoint$1, 0, Some(ExceptionType)),
             /*DEAD*/ POP, //INVOKESTATIC(effekt.Effekt{ void onThrow(java.lang.Throwable) }),
             /*DEAD*/ RETURN,
             LabelElement('EP1),
@@ -447,7 +433,7 @@ class MethodBuilderTest extends FlatSpec {
             ISTORE_0,
             TRYEND('eh0),
             LabeledGOTO(PCLabel(21)),
-            CATCH('eh0, Some(ExceptionType)),
+            CATCH('eh0, 0, Some(ExceptionType)),
             LabelElement(PCLabel(9)),
             ASTORE_1,
             LabelElement(PCLabel(10)),

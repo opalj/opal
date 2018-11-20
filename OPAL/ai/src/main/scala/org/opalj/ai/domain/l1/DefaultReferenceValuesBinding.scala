@@ -1,31 +1,4 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package ai
 package domain
@@ -34,7 +7,6 @@ package l1
 import scala.reflect.ClassTag
 
 import org.opalj.collection.immutable.UIDSet
-
 import org.opalj.br.ArrayType
 import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
@@ -43,33 +15,56 @@ import org.opalj.br.ReferenceType
  * @author Michael Eichberg
  */
 trait DefaultReferenceValuesBinding extends l1.ReferenceValues with DefaultExceptionsFactory {
-    domain: CorrelationalDomainSupport with IntegerValuesDomain with TypedValuesFactory with Configuration with TheClassHierarchy ⇒
+    domain: CorrelationalDomainSupport with IntegerValuesDomain with TypedValuesFactory with Configuration ⇒
 
     // Let's fix the type hierarchy
 
     type AReferenceValue = ReferenceValue
-    final val AReferenceValue: ClassTag[AReferenceValue] = implicitly
+    final val AReferenceValueTag: ClassTag[AReferenceValue] = implicitly
     type DomainReferenceValue = AReferenceValue
-    final val DomainReferenceValue: ClassTag[DomainReferenceValue] = implicitly
+    final val DomainReferenceValueTag: ClassTag[DomainReferenceValue] = implicitly
 
     type DomainSingleOriginReferenceValue = SingleOriginReferenceValue
-    final val DomainSingleOriginReferenceValue: ClassTag[DomainSingleOriginReferenceValue] = implicitly
+    final val DomainSingleOriginReferenceValueTag: ClassTag[DomainSingleOriginReferenceValue] = implicitly
 
     type DomainNullValue = NullValue
-    final val DomainNullValue: ClassTag[DomainNullValue] = implicitly
+    final val DomainNullValueTag: ClassTag[DomainNullValue] = implicitly
 
     type DomainObjectValue = ObjectValue
-    final val DomainObjectValue: ClassTag[DomainObjectValue] = implicitly
+    final val DomainObjectValueTag: ClassTag[DomainObjectValue] = implicitly
 
     type DomainArrayValue = ArrayValue
-    final val DomainArrayValue: ClassTag[DomainArrayValue] = implicitly
+    final val DomainArrayValueTag: ClassTag[DomainArrayValue] = implicitly
 
     type DomainMultipleReferenceValues = MultipleReferenceValues
-    final val DomainMultipleReferenceValues: ClassTag[DomainMultipleReferenceValues] = implicitly
+    final val DomainMultipleReferenceValuesTag: ClassTag[DomainMultipleReferenceValues] = implicitly
 
     //
-    // FACTORY METHODS
+    // CONCRETE CLASSES AND THEIR FACTORY METHODS
     //
+
+    protected case class DefaultSObjectValue(
+            origin:                 ValueOrigin,
+            isNull:                 Answer,
+            override val isPrecise: Boolean,
+            theUpperTypeBound:      ObjectType,
+            refId:                  RefId
+    ) extends SObjectValue
+
+    protected case class DefaultMObjectValue(
+            origin:              ValueOrigin,
+            override val isNull: Answer,
+            upperTypeBound:      UIDSet[ObjectType],
+            refId:               RefId
+    ) extends MObjectValue
+
+    private case class DefaultArrayValue(
+            origin:                 ValueOrigin,
+            isNull:                 Answer,
+            override val isPrecise: Boolean,
+            theUpperTypeBound:      ArrayType,
+            refId:                  RefId
+    ) extends ArrayValue
 
     override def NullValue(origin: ValueOrigin): DomainNullValue = new NullValue(origin)
 
@@ -80,7 +75,7 @@ trait DefaultReferenceValuesBinding extends l1.ReferenceValues with DefaultExcep
         theUpperTypeBound: ObjectType,
         refId:             RefId
     ): SObjectValue = {
-        new SObjectValue(
+        DefaultSObjectValue(
             origin,
             isNull,
             isPrecise || classHierarchy.isKnownToBeFinal(theUpperTypeBound),
@@ -97,7 +92,7 @@ trait DefaultReferenceValuesBinding extends l1.ReferenceValues with DefaultExcep
         if (upperTypeBound.isSingletonSet) {
             ObjectValue(origin, isNull, false, upperTypeBound.head, refId)
         } else
-            new MObjectValue(origin, isNull, upperTypeBound, refId)
+            DefaultMObjectValue(origin, isNull, upperTypeBound, refId)
     }
 
     override protected[domain] def ArrayValue(
@@ -107,7 +102,7 @@ trait DefaultReferenceValuesBinding extends l1.ReferenceValues with DefaultExcep
         theUpperTypeBound: ArrayType,
         t:                 RefId
     ): DomainArrayValue = {
-        new ArrayValue(
+        DefaultArrayValue(
             origin,
             isNull,
             isPrecise || classHierarchy.isKnownToBeFinal(theUpperTypeBound),
@@ -124,11 +119,12 @@ trait DefaultReferenceValuesBinding extends l1.ReferenceValues with DefaultExcep
 
     override protected[domain] def MultipleReferenceValues(
         values:            UIDSet[DomainSingleOriginReferenceValue],
+        origins:           ValueOrigins,
         isNull:            Answer,
         isPrecise:         Boolean,
         theUpperTypeBound: UIDSet[_ <: ReferenceType],
         refId:             RefId
     ): DomainMultipleReferenceValues = {
-        new MultipleReferenceValues(values, isNull, isPrecise, theUpperTypeBound, refId)
+        new MultipleReferenceValues(values, origins, isNull, isPrecise, theUpperTypeBound, refId)
     }
 }

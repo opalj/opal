@@ -1,31 +1,4 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package support
 package info
@@ -35,54 +8,58 @@ import java.net.URL
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
-import org.opalj.fpcf.PropertyStoreKey
 import org.opalj.fpcf.analyses.EagerL1FieldMutabilityAnalysis
 import org.opalj.fpcf.analyses.purity.LazyL2PurityAnalysis
-import org.opalj.fpcf.analyses.LazyVirtualMethodPurityAnalysis
 import org.opalj.fpcf.analyses.LazyUnsoundPrematurelyReadFieldsAnalysis
-import org.opalj.fpcf.properties.VirtualMethodPurity
+import org.opalj.fpcf.FPCFAnalysesManagerKey
+import org.opalj.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.fpcf.properties.DeclaredFinalField
-import org.opalj.fpcf.properties.EffectivelyFinalField
 import org.opalj.fpcf.properties.LazyInitializedField
+import org.opalj.fpcf.properties.EffectivelyFinalField
 import org.opalj.fpcf.properties.NonFinalFieldByAnalysis
+import org.opalj.fpcf.properties.NonFinalFieldByLackOfInformation
+import org.opalj.tac.fpcf.analyses.LazyL0TACAIAnalysis
 
 /**
- * Determines the field mutability for all fields in the current project.
+ * Computes the field mutability; see [[org.opalj.fpcf.properties.FieldMutability]] for details.
  *
  * @author Dominik Helm
  */
 object FieldMutability extends DefaultOneStepAnalysis {
+
+    override def title: String = "Field mutability"
+
+    override def description: String = {
+        "Provides information about the mutability of fields."
+    }
+
     override def doAnalyze(
         project:       Project[URL],
         parameters:    Seq[String],
         isInterrupted: () ⇒ Boolean
     ): BasicReport = {
-        val ps = project.get(PropertyStoreKey)
-
-        ps.setupPhase(
-            Set(
-                fpcf.properties.FieldMutability.key,
-                fpcf.properties.Purity.key,
-                VirtualMethodPurity.key
-            )
+        val ps = project.get(FPCFAnalysesManagerKey).runAll(
+            LazyL0TACAIAnalysis,
+            LazyUnsoundPrematurelyReadFieldsAnalysis,
+            LazyInterProceduralEscapeAnalysis,
+            LazyL2PurityAnalysis,
+            EagerL1FieldMutabilityAnalysis
         )
-        LazyUnsoundPrematurelyReadFieldsAnalysis.startLazily(project, ps)
-        LazyL2PurityAnalysis.startLazily(project, ps)
-        LazyVirtualMethodPurityAnalysis.startLazily(project, ps)
 
-        EagerL1FieldMutabilityAnalysis.start(project, ps)
         ps.waitOnPhaseCompletion()
 
-        val declared = ps.finalEntities(DeclaredFinalField).toSeq
-        val effectively = ps.finalEntities(EffectivelyFinalField).toSeq
-        val lazily = ps.finalEntities(LazyInitializedField).toSeq
-        val nonFinal = ps.finalEntities(NonFinalFieldByAnalysis).toSeq
+        val declaredFinal = ps.finalEntities(DeclaredFinalField).toSeq
+        val effectivelyFinal = ps.finalEntities(EffectivelyFinalField).toSeq
+        val lazyInitialized = ps.finalEntities(LazyInitializedField).toSeq
+        val nonFinalByAnalysis = ps.finalEntities(NonFinalFieldByAnalysis).toSeq
+        val nonFinalByLackOfInformation = ps.finalEntities(NonFinalFieldByLackOfInformation).toSeq
 
         val message =
-            s"""|# of declared final fields: ${declared.size}
-                |# of effectively final fields: ${effectively.size}
-                |# of lazily initialized fields: ${lazily.size}
-                |# of non-final fields: ${nonFinal.size}
+            s"""|# of declared final fields: ${declaredFinal.size}
+                |# of effectively final fields: ${effectivelyFinal.size}
+                |# of lazy initialized fields: ${lazyInitialized.size}
+                |# of non final fields (by analysis): ${nonFinalByAnalysis.size}
+                |# of non final fields (by lack of information): ${nonFinalByLackOfInformation.size}
                 |"""
 
         BasicReport(message.stripMargin('|'))

@@ -1,36 +1,11 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package br
 
 import scala.collection.Seq
 import scala.math.Ordered
+
+import org.opalj.collection.immutable.RefArray
 
 /**
  * A method descriptor represents the parameters that the method takes and
@@ -47,7 +22,7 @@ sealed abstract class MethodDescriptor
     with (Int ⇒ FieldType)
     with Ordered[MethodDescriptor] {
 
-    def parameterTypes: IndexedSeq[FieldType]
+    def parameterTypes: FieldTypes
 
     def apply(parameterIndex: Int): FieldType = {
         parameterTypes(parameterIndex)
@@ -58,8 +33,8 @@ sealed abstract class MethodDescriptor
     def parametersCount: Int
 
     final def copy(
-        parameterTypes: IndexedSeq[FieldType] = this.parameterTypes,
-        returnType:     Type                  = this.returnType
+        parameterTypes: FieldTypes = this.parameterTypes,
+        returnType:     Type       = this.returnType
     ): MethodDescriptor = {
         MethodDescriptor(parameterTypes, returnType)
     }
@@ -75,12 +50,14 @@ sealed abstract class MethodDescriptor
     def returnType: Type
 
     def toJVMDescriptor: String = {
-        parameterTypes.map(_.toJVMTypeName).mkString("(", "", ")") + returnType.toJVMTypeName
+        parameterTypes.iterator
+            .map[String](_.toJVMTypeName)
+            .mkString("(", "", ")"+returnType.toJVMTypeName)
     }
 
     def value: this.type = this
 
-    def valueType: ObjectType = ObjectType.MethodType
+    override def runtimeValueType: ObjectType = ObjectType.MethodType
 
     def valueToString: String = toUMLNotation
 
@@ -88,7 +65,8 @@ sealed abstract class MethodDescriptor
      * Returns a Java like view when a MethodDescriptor is used as a [[BootstrapArgument]].
      */
     def toJava: String = {
-        val parameterTypes = this.parameterTypes.map(_.toJava).mkString("(", ",", ")")
+        val parameterTypes =
+            this.parameterTypes.iterator.map[String](_.toJava).mkString("(", ",", ")")
         s"MethodDescriptor(${returnType.toJava},$parameterTypes)"
     }
 
@@ -199,7 +177,7 @@ private object NoArgumentAndNoReturnValueMethodDescriptor extends MethodDescript
 
     override def returnType: VoidType = VoidType
 
-    override def parameterTypes: IndexedSeq[FieldType] = IndexedSeq.empty
+    override def parameterTypes: FieldTypes = NoFieldTypes
 
     override def parameterType(index: Int): FieldType = throw new IndexOutOfBoundsException()
 
@@ -216,7 +194,7 @@ private object NoArgumentAndNoReturnValueMethodDescriptor extends MethodDescript
 
 private final class NoArgumentMethodDescriptor(val returnType: Type) extends MethodDescriptor {
 
-    override def parameterTypes: IndexedSeq[FieldType] = IndexedSeq.empty
+    override def parameterTypes: FieldTypes = NoFieldTypes
 
     override def parameterType(index: Int): FieldType = throw new IndexOutOfBoundsException()
 
@@ -242,7 +220,7 @@ private final class SingleArgumentMethodDescriptor(
         val returnType:    Type
 ) extends MethodDescriptor {
 
-    override def parameterTypes = IndexedSeq(parameterType)
+    override def parameterTypes: FieldTypes = RefArray(parameterType)
 
     override def parameterType(index: Int): FieldType = {
         if (index == 0)
@@ -277,7 +255,7 @@ private final class TwoArgumentsMethodDescriptor(
         val returnType:          Type
 ) extends MethodDescriptor {
 
-    override def parameterTypes = IndexedSeq(firstParameterType, secondParameterType)
+    override def parameterTypes: FieldTypes = RefArray(firstParameterType, secondParameterType)
 
     override def parameterType(index: Int): FieldType = {
         index match {
@@ -317,7 +295,7 @@ private final class TwoArgumentsMethodDescriptor(
 }
 
 private final class MultiArgumentsMethodDescriptor(
-        val parameterTypes: IndexedSeq[FieldType],
+        val parameterTypes: FieldTypes,
         val returnType:     Type
 ) extends MethodDescriptor {
 
@@ -444,7 +422,7 @@ object TwoArgumentsMethodDescriptor {
  */
 object MethodDescriptor {
 
-    def unapply(md: MethodDescriptor): Option[(IndexedSeq[FieldType], Type)] = {
+    def unapply(md: MethodDescriptor): Option[(FieldTypes, Type)] = {
         Some((md.parameterTypes, md.returnType))
     }
 
@@ -520,7 +498,7 @@ object MethodDescriptor {
      */
     final val LambdaMetafactoryDescriptor = {
         MethodDescriptor(
-            IndexedSeq(
+            RefArray(
                 ObjectType.MethodHandles$Lookup,
                 ObjectType.String,
                 ObjectType.MethodType,
@@ -537,7 +515,7 @@ object MethodDescriptor {
      */
     final val LambdaAltMetafactoryDescriptor = {
         MethodDescriptor(
-            IndexedSeq(
+            RefArray(
                 ObjectType.MethodHandles$Lookup,
                 ObjectType.String,
                 ObjectType.MethodType,
@@ -548,11 +526,11 @@ object MethodDescriptor {
     }
 
     /**
-     * Descriptor of the method `scala.runtime.LambdaDeserializer`.
+     * Descriptor of the method `scala.runtime.LambdaDeserializer.bootstrap`.
      */
     final val ScalaLambdaDeserializeDescriptor = {
         MethodDescriptor(
-            IndexedSeq(
+            RefArray(
                 ObjectType.MethodHandles$Lookup,
                 ObjectType.String,
                 ObjectType.MethodType,
@@ -562,13 +540,31 @@ object MethodDescriptor {
         )
     }
 
+    /**
+     * Descriptor of the method `scala.runtime.SymbolLiteral.bootstrap`.
+     */
     final val ScalaSymbolLiteralDescriptor = {
         MethodDescriptor(
-            IndexedSeq(
+            RefArray(
                 ObjectType.MethodHandles$Lookup,
                 ObjectType.String,
                 ObjectType.MethodType,
                 ObjectType.String
+            ),
+            ObjectType.CallSite
+        )
+    }
+
+    /**
+     * Descriptor of the method `scala.runtime.StructuralCallSite.bootstrap`.
+     */
+    final val ScalaStructuralCallSiteDescriptor = {
+        MethodDescriptor(
+            RefArray(
+                ObjectType.MethodHandles$Lookup,
+                ObjectType.String,
+                ObjectType.MethodType,
+                ObjectType.MethodType
             ),
             ObjectType.CallSite
         )
@@ -596,7 +592,7 @@ object MethodDescriptor {
         new SingleArgumentMethodDescriptor(parameterType, returnType)
     }
 
-    def apply(parameterTypes: IndexedSeq[FieldType], returnType: Type): MethodDescriptor = {
+    def apply(parameterTypes: FieldTypes, returnType: Type): MethodDescriptor = {
         (parameterTypes.size: @annotation.switch) match {
             case 0 ⇒
                 withNoArgs(returnType)
@@ -611,16 +607,16 @@ object MethodDescriptor {
 
     def apply(md: String): MethodDescriptor = {
         var index = 1 // we are not interested in the leading '('
-        var parameterTypes: IndexedSeq[FieldType] = IndexedSeq.empty
+        val parameterTypesBuilder = newFieldTypesBuilder()
         while (md.charAt(index) != ')') {
             val (ft, nextIndex) = parseParameterType(md, index)
-            parameterTypes = parameterTypes :+ ft
+            parameterTypesBuilder += ft
             index = nextIndex
         }
 
         val returnType = ReturnType(md.substring(index + 1))
 
-        apply(parameterTypes, returnType)
+        apply(parameterTypesBuilder.result(), returnType)
     }
 
     private[this] def parseParameterType(md: String, startIndex: Int): (FieldType, Int) = {

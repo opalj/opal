@@ -1,31 +1,4 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package br
 package analyses
@@ -43,6 +16,8 @@ import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.instructions.NonVirtualMethodInvocationInstruction
 import org.opalj.br.MethodDescriptor.{SignaturePolymorphicMethod ⇒ SignaturePolymorphicMethodDescriptor}
+import org.opalj.log.OPALLogger
+import org.opalj.log.LogContext
 
 /**
  * Enables project wide lookups of methods and fields as required to determine the target(s) of an
@@ -284,6 +259,7 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
             case None ⇒
                 if (MethodHandleSubtypes.contains(receiverType) && (
                     // we have to avoid endless recursion if we can't find the target method
+                    // TODO FIXME [Java9+] use "isSignaturePolymorphic" to support VarHandles
                     receiverType != ObjectType.MethodHandle ||
                     descriptor != SignaturePolymorphicMethodDescriptor
                 )) {
@@ -358,8 +334,7 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
      *          by this method.
      * @param   forceLookupInSuperinterfacesOnFailure If true (default: false) the method tries
      *          to look up the method in a super interface if it can't find it in the available
-     *          super classes. (This setting is only relevant if the class hierarchy is not
-     *          complete.)
+     *          super classes.
      * @return  The resolved method `Some(`'''METHOD'''`)` or `None`.
      *          (To get the defining class file use the project's respective method.)
      */
@@ -380,13 +355,70 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
             case Success(method)                                 ⇒ Some(method)
             case Empty if !forceLookupInSuperinterfacesOnFailure ⇒ None
             case _ /*Failure | (Empty && lookupInSuperinterfacesOnFailure) */ ⇒
-                val superinterfaceTypes = classHierarchy.superinterfaceTypes(receiverType).get
+                val superinterfaceTypes = classHierarchy.allSuperinterfacetypes(receiverType)
                 val (_, methods) =
                     findMaximallySpecificSuperinterfaceMethods(
                         superinterfaceTypes, name, descriptor,
                         analyzedSuperinterfaceTypes = UIDSet.empty[ObjectType]
                     )
-                methods.headOption // either it is THE max. specific method or some ...
+                // Either it is THE max. specific method or some "arbitrary" method.
+                // recall that we already give precedence to non-abstract
+                // methods in the find... methods
+                methods.headOption
+        }
+    }
+
+    /**
+     * Resolves a method reference to all possible methods. I.e., this is identical to
+     * `resolveMethodReference` or `resolveInterfaceMethodReference` for class and interface types
+     * respectively except for the case where there are multiple maximally specific interface
+     * methods in which case all of them are returned instead of only a single one.
+     *
+     * @param declaringClassType The type of the object that receives the method call. The type may
+     *         be a class or interface type.
+     *
+     * @return The set of resolved methods; empty if the resolution fails, more than one if
+     *         resolution finds several maximally specific interface methods - in the latter case
+     *         it is not possible to call the method on objects of the declaring class type, but
+     *         only on subclasses overriding the method uniquely.
+     */
+    def resolveAllMethodReferences(
+        declaringClassType: ReferenceType,
+        name:               String,
+        descriptor:         MethodDescriptor
+    ): Set[Method] = {
+        val receiverType =
+            if (declaringClassType.isArrayType) {
+                ObjectType.Object
+            } else {
+                declaringClassType.asObjectType
+            }
+
+        def lookupInObject(): Option[Method] = {
+            ObjectClassFile flatMap { classFile ⇒
+                classFile.findMethod(name, descriptor) filter { m ⇒ m.isPublic && !m.isStatic }
+            }
+        }
+
+        project.classFile(receiverType) match {
+            case Some(classFile) ⇒
+                val classMethod =
+                    if (classFile.isInterfaceDeclaration)
+                        Result(classFile.findMethod(name, descriptor) orElse lookupInObject())
+                    else
+                        resolveClassMethodReference(receiverType, name, descriptor)
+
+                classMethod match {
+                    case Success(method) ⇒ Set(method)
+                    case _ ⇒
+                        val superinterfaces = classHierarchy.allSuperinterfacetypes(receiverType)
+                        val (_, methods) = findMaximallySpecificSuperinterfaceMethods(
+                            superinterfaces, name, descriptor, UIDSet.empty[ObjectType]
+                        )
+                        methods
+                }
+
+            case None ⇒ Set.empty
         }
     }
 
@@ -445,44 +477,9 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
         descriptor:                  MethodDescriptor,
         analyzedSuperinterfaceTypes: UIDSet[ObjectType] = UIDSet.empty
     ): ( /*analyzed types*/ UIDSet[ObjectType], Set[Method]) = {
-
-        val newAnalyzedSuperinterfaceTypes = analyzedSuperinterfaceTypes + superinterfaceType
-
-        // the superinterfaceTypes in which it is potentially relevant to search for methods
-        val superinterfaceTypes: UIDSet[ObjectType] =
-            classHierarchy.superinterfaceTypes(superinterfaceType).getOrElse(UIDSet.empty) --
-                analyzedSuperinterfaceTypes
-
-        project.classFile(superinterfaceType) match {
-            case Some(classFile) ⇒
-                assert(classFile.isInterfaceDeclaration)
-
-                classFile.findMethod(name, descriptor) match {
-                    case Some(method) if !method.isPrivate && !method.isStatic ⇒
-                        val analyzedTypes = newAnalyzedSuperinterfaceTypes ++ superinterfaceTypes
-                        (analyzedTypes, Set(method))
-
-                    case None ⇒
-                        if (superinterfaceTypes.isEmpty) {
-                            (newAnalyzedSuperinterfaceTypes, Set.empty)
-                        } else if (superinterfaceTypes.isSingletonSet) {
-                            findMaximallySpecificSuperinterfaceMethods(
-                                superinterfaceTypes.head,
-                                name, descriptor,
-                                newAnalyzedSuperinterfaceTypes
-                            )
-                        } else {
-                            findMaximallySpecificSuperinterfaceMethods(
-                                superinterfaceTypes,
-                                name, descriptor,
-                                newAnalyzedSuperinterfaceTypes
-                            )
-                        }
-                }
-
-            case None ⇒
-                (analyzedSuperinterfaceTypes ++ superinterfaceTypes + superinterfaceType, Set.empty)
-        }
+        ProjectLike.findMaximallySpecificSuperinterfaceMethods(
+            superinterfaceType, name, descriptor, analyzedSuperinterfaceTypes
+        )(this.classFile, this.classHierarchy, this.logContext)
     }
 
     /**
@@ -498,62 +495,9 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
         descriptor:                  MethodDescriptor,
         analyzedSuperinterfaceTypes: UIDSet[ObjectType]
     ): ( /*analyzed types*/ UIDSet[ObjectType], Set[Method]) = {
-        val anchor = ((analyzedSuperinterfaceTypes, Set.empty[Method]))
-        superinterfaceTypes.foldLeft(anchor) { (currentResult, interfaceType) ⇒
-            val (currentAnalyzedSuperinterfaceTypes, currentMethods) = currentResult
-            val (analyzedSuperinterfaceTypes, methods) =
-                findMaximallySpecificSuperinterfaceMethods(
-                    interfaceType, name, descriptor,
-                    currentAnalyzedSuperinterfaceTypes
-                )
-
-            val allMethods = currentMethods ++ methods
-            if (allMethods.isEmpty || allMethods.size == 1) {
-                (analyzedSuperinterfaceTypes, allMethods /*empty or singleton set*/ )
-            } else {
-                // When we reach this point, we may have a situation such as:
-                //     intf A { default void foo(){} }
-                //     intf B extends A { default void foo(){} }
-                //     intf C extends A { }
-                //     intf D extends B { }
-                // and we started the analysis with the set {C,D} and
-                // first selected C (hence, first found A.foo).
-                //
-                // We now have to determine the maximally specific method.
-
-                // Both, the set of `currentMethods` and also the set of `methods`
-                // each only contains maximally specific methods w.r.t. their
-                // set.
-                var currentMaximallySpecificMethods = currentMethods
-                var additionalMaximallySpecificMethods = Set.empty[Method]
-                methods.view.filter(!currentMethods.contains(_)) foreach { method ⇒
-                    val newMethodDeclaringClassType = method.classFile.thisType
-                    var addNewMethod = true
-                    currentMaximallySpecificMethods = currentMaximallySpecificMethods.filter { method ⇒
-                        val specificMethodDeclaringClassType = method.classFile.thisType
-                        if ((specificMethodDeclaringClassType isSubtypeOf newMethodDeclaringClassType).isYes) {
-                            addNewMethod = false
-                            true
-                        } else if ((newMethodDeclaringClassType isSubtypeOf specificMethodDeclaringClassType).isYes) {
-                            false
-                        } else {
-                            //... we have an incomplete class hierarchy; let's keep both methods
-                            true
-                        }
-                    }
-                    if (addNewMethod) additionalMaximallySpecificMethods += method
-                }
-                currentMaximallySpecificMethods ++= additionalMaximallySpecificMethods
-
-                val concreteMaximallySpecificMethods = currentMaximallySpecificMethods.filter(!_.isAbstract)
-                if (concreteMaximallySpecificMethods.isEmpty) {
-                    // We have not yet found any method or we may have multiple abstract methods...
-                    (analyzedSuperinterfaceTypes, currentMaximallySpecificMethods)
-                } else {
-                    (analyzedSuperinterfaceTypes, concreteMaximallySpecificMethods)
-                }
-            }
-        }
+        ProjectLike.findMaximallySpecificSuperinterfaceMethods(
+            superinterfaceTypes, name, descriptor, analyzedSuperinterfaceTypes
+        )(this.classFile, this.classHierarchy, this.logContext)
     }
 
     /**
@@ -562,8 +506,9 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
      * @return  [[org.opalj.Success]]`(method)` if the method was found;
      *          `Empty` if the project is incomplete and the method could not be found;
      *          `Failure` if the method could not be found though the project is seemingly complete.
-     *          I.e., if `Failure` is returned the analyzed code basis is most likely
-     *          inconsistent.
+     *          I.e., if `Failure` is returned the method is not defined by a concrete class
+     *          and is either a default method defined by an interface or the analyzed code
+     *          basis is inconsistent.
      */
     def resolveClassMethodReference(
         receiverType: ObjectType,
@@ -597,6 +542,7 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
                 // - It has a single formal parameter of type Object[].
                 // - It has a return type of Object.
                 // - It has the ACC_VARARGS and ACC_NATIVE flags set.
+                // TODO [Java9+] Document or fix if VarHandle needs/does not need support
                 val isPotentiallySignaturePolymorphicCall = receiverType eq ObjectType.MethodHandle
 
                 if (isPotentiallySignaturePolymorphicCall) {
@@ -604,7 +550,7 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
                     if (methods.isSingletonList) {
                         val method = methods.head
                         if (method.isNativeAndVarargs &&
-                            method.descriptor == MethodDescriptor.SignaturePolymorphicMethod)
+                            method.descriptor == SignaturePolymorphicMethodDescriptor)
                             Success(method) // the resolved method is signature polymorphic
                         else if (method.descriptor == descriptor)
                             Success(method) // "normal" resolution of a method
@@ -678,13 +624,13 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
         }
     }
 
-    def specialCall(i: INVOKESPECIAL): Result[Method] = {
-        specialCall(i.declaringClass, i.isInterface, i.name, i.methodDescriptor)
+    def specialCall(callerClassType: ObjectType, i: INVOKESPECIAL): Result[Method] = {
+        specialCall(callerClassType, i.declaringClass, i.isInterface, i.name, i.methodDescriptor)
     }
 
-    def nonVirtualCall(i: NonVirtualMethodInvocationInstruction): Result[Method] = {
+    def nonVirtualCall(callerClassType: ObjectType, i: NonVirtualMethodInvocationInstruction): Result[Method] = {
         if (i.opcode == INVOKESPECIAL.opcode) {
-            specialCall(i.asINVOKESPECIAL)
+            specialCall(callerClassType, i.asINVOKESPECIAL)
         } else { // i.opcode == INVOKESTATIC.opcode
             staticCall(i.asINVOKESTATIC)
         }
@@ -705,11 +651,31 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
      *           - `Empty`.
      */
     def specialCall(
-        declaringClassType: ObjectType, // an interface or class type to be precise
-        isInterface:        Boolean,
-        name:               String, // an interface or class type to be precise
-        descriptor:         MethodDescriptor
+        callerClassType:           ObjectType,
+        initialDeclaringClassType: ObjectType, // an interface or class type to be precise
+        isInterface:               Boolean,
+        name:                      String, // an interface or class type to be precise
+        descriptor:                MethodDescriptor
     ): Result[Method] = {
+        /* FROM THE SPEC
+            If all of the following are true, let C be the direct superclass of the current class:
+            • The resolved method is not an instance initialization method (§2.9.1).
+            • If the symbolic reference names a class (not an interface), then that class is a
+              superclass of the current class.
+            • The ACC_SUPER flag is set for the class file (§4.1).
+            Otherwise, let C be the class or interface named by the symbolic reference.
+         */
+        val declaringClassType =
+            if (name != "<init>" &&
+                (callerClassType ne initialDeclaringClassType) && // <= handles private calls
+                classHierarchy.isInterface(initialDeclaringClassType).isNo) {
+                // Let's select the direct superclass (if it is available; otherwise we use the
+                // declared class as a fallback.)
+                classHierarchy.superclassType(callerClassType).getOrElse(initialDeclaringClassType)
+            } else {
+                initialDeclaringClassType
+            }
+
         // ...  default methods cannot override methods from java.lang.Object
         // ...  in case of super method calls (not initializers), we can use
         //      "instanceMethods" to find the method, because the method has to
@@ -820,10 +786,10 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
         // Depending on the set of open/closed packages it may be the case that the method
         // cannot be a receiver, because it is actually always overridden; however, we don't
         // do any checks related to this issue.
-        val initialMethods = instanceMethods.get(declaringClass)
-        if (initialMethods.isEmpty)
+        val initialMethodsOption = instanceMethods.get(declaringClass)
+        if (initialMethodsOption.isEmpty)
             return methods;
-        find(initialMethods.get) { mdc ⇒
+        find(initialMethodsOption.get) { mdc ⇒
             mdc.method.compare(name, descriptor)
         } foreach (mdc ⇒ methods += mdc.method)
 
@@ -839,7 +805,7 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
                     // is an abstract class in a closed package/module
                     methods ++=
                         overriddenBy(mdc.method).iterator.filter { m ⇒
-                            (m.classFile.thisType isSubtypeOf subtype).isYes
+                            m.classFile.thisType isSubtypeOf subtype
                         }
 
                     // for interfaces we have to continue, because we may have inherited a
@@ -887,14 +853,14 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
         val declaringClassType = declaringType.asObjectType
         var methods = SomeSet.empty[Method]
 
-        val initialMethods = instanceMethods.get(declaringClassType)
-        if (initialMethods.isEmpty)
+        val initialMethodsOption = instanceMethods.get(declaringClassType)
+        if (initialMethodsOption.isEmpty)
             return methods;
 
         // Let's find the (concrete) method defined by this type or a supertype if it exists.
         // We have to check the declaring package if the method has package visibility to ensure
         // that we find the correct method!
-        find(initialMethods.get) { mdc ⇒
+        find(initialMethodsOption.get) { mdc ⇒
             mdc.compareAccessibilityAware(callerPackageName, name, descriptor)
         } foreach (mdc ⇒ methods += mdc.method)
 
@@ -962,4 +928,157 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
 
     }
 
+}
+
+object ProjectLike {
+
+    /**
+     * Computes the set of maximally specific superinterface methods with the
+     * given name and descriptor.
+     *
+     * @note    This method requires that the class hierarchy is already computed.
+     *          It does not required `instanceMethods`.
+     * @note    '''This method does not consider methods defined by `java.lang.Object`'''!
+     *          Those methods have precedence over respective methods defined by
+     *          superinterfaces! A corresponding check needs to be done before calling
+     *          this method.
+     */
+    def findMaximallySpecificSuperinterfaceMethods(
+        superinterfaceType:          ObjectType,
+        name:                        String,
+        descriptor:                  MethodDescriptor,
+        analyzedSuperinterfaceTypes: UIDSet[ObjectType] = UIDSet.empty
+    )(
+        implicit
+        objectTypeToClassFile: ObjectType ⇒ Option[ClassFile],
+        classHierarchy:        ClassHierarchy,
+        logContext:            LogContext
+    ): ( /*analyzed types*/ UIDSet[ObjectType], Set[Method]) = {
+
+        val newAnalyzedSuperinterfaceTypes = analyzedSuperinterfaceTypes + superinterfaceType
+
+        // the superinterfaceTypes in which it is potentially relevant to search for methods
+        val superinterfaceTypes: UIDSet[ObjectType] =
+            classHierarchy.superinterfaceTypes(superinterfaceType).getOrElse(UIDSet.empty) --
+                analyzedSuperinterfaceTypes
+
+        objectTypeToClassFile(superinterfaceType) match {
+            case Some(classFile) ⇒
+                if (!classFile.isInterfaceDeclaration) {
+                    OPALLogger.warn(
+                        "project configuration",
+                        "finding the maximally specific superinterface methods failed: "+
+                            s"$superinterfaceType is not an interface and therefore ignored"
+                    )
+                    (analyzedSuperinterfaceTypes ++ superinterfaceTypes + superinterfaceType, Set.empty)
+                } else {
+                    classFile.findMethod(name, descriptor) match {
+                        case Some(method) if !method.isPrivate && !method.isStatic ⇒
+                            val analyzedTypes = newAnalyzedSuperinterfaceTypes ++ superinterfaceTypes
+                            (analyzedTypes, Set(method))
+
+                        case _ /* None OR "the method was either private or static" */ ⇒
+                            if (superinterfaceTypes.isEmpty) {
+                                (newAnalyzedSuperinterfaceTypes, Set.empty)
+                            } else if (superinterfaceTypes.isSingletonSet) {
+                                findMaximallySpecificSuperinterfaceMethods(
+                                    superinterfaceTypes.head,
+                                    name, descriptor,
+                                    newAnalyzedSuperinterfaceTypes
+                                )
+                            } else {
+                                findMaximallySpecificSuperinterfaceMethods(
+                                    superinterfaceTypes,
+                                    name, descriptor,
+                                    newAnalyzedSuperinterfaceTypes
+                                )
+                            }
+                    }
+                }
+
+            case None ⇒
+                (analyzedSuperinterfaceTypes ++ superinterfaceTypes + superinterfaceType, Set.empty)
+        }
+    }
+
+    /**
+     * Computes the maximally specific superinterface method with the given name
+     * and descriptor
+     *
+     * @note    This method requires that the class hierarchy is already computed.
+     *          It does not required `instanceMethods`.
+     * @param   superinterfaceTypes A set of interfaces which potentially declare a method
+     *          with the given name and descriptor.
+     */
+    def findMaximallySpecificSuperinterfaceMethods(
+        superinterfaceTypes:         UIDSet[ObjectType],
+        name:                        String,
+        descriptor:                  MethodDescriptor,
+        analyzedSuperinterfaceTypes: UIDSet[ObjectType]
+    )(
+        implicit
+        objectTypeToClassFile: (ObjectType) ⇒ Option[ClassFile],
+        classHierarchy:        ClassHierarchy,
+        logContext:            LogContext
+    ): ( /*analyzed types*/ UIDSet[ObjectType], Set[Method]) = {
+
+        val anchor = ((analyzedSuperinterfaceTypes, Set.empty[Method]))
+
+        superinterfaceTypes.foldLeft(anchor) { (currentResult, interfaceType) ⇒
+            val (currentAnalyzedSuperinterfaceTypes, currentMethods) = currentResult
+            val (analyzedSuperinterfaceTypes, methods) =
+                findMaximallySpecificSuperinterfaceMethods(
+                    interfaceType, name, descriptor,
+                    currentAnalyzedSuperinterfaceTypes
+                )
+
+            val allMethods = currentMethods ++ methods
+            if (allMethods.isEmpty || allMethods.size == 1) {
+                (analyzedSuperinterfaceTypes, allMethods /*empty or singleton set*/ )
+            } else {
+                // When we reach this point, we may have a situation such as:
+                //     intf A { default void foo(){} }
+                //     intf B extends A { default void foo(){} }
+                //     intf C extends A { }
+                //     intf D extends B { }
+                // and we started the analysis with the set {C,D} and
+                // first selected C (hence, first found A.foo).
+                //
+                // We now have to determine the maximally specific method.
+
+                // Both, the set of `currentMethods` and also the set of `methods`
+                // each only contains maximally specific methods w.r.t. their
+                // set.
+                var currentMaximallySpecificMethods = currentMethods
+                var additionalMaximallySpecificMethods = Set.empty[Method]
+                methods.iterator.filter(m ⇒ !currentMethods.contains(m)) foreach { method ⇒
+                    val newMethodDeclaringClassType = method.classFile.thisType
+                    var addNewMethod = true
+                    currentMaximallySpecificMethods =
+                        currentMaximallySpecificMethods.filter { currentMaximallySpecificMethod ⇒
+                            val specificMethodDeclaringClassType = currentMaximallySpecificMethod.classFile.thisType
+                            if (specificMethodDeclaringClassType isSubtypeOf newMethodDeclaringClassType) {
+                                addNewMethod = false
+                                true
+                            } else if (newMethodDeclaringClassType isSubtypeOf specificMethodDeclaringClassType) {
+                                false
+                            } else {
+                                //... we have an incomplete class hierarchy; let's keep both methods
+                                true
+                            }
+                        }
+                    if (addNewMethod) additionalMaximallySpecificMethods += method
+                }
+                currentMaximallySpecificMethods ++= additionalMaximallySpecificMethods
+
+                val concreteMaximallySpecificMethods = currentMaximallySpecificMethods.filter(!_.isAbstract)
+                if (concreteMaximallySpecificMethods.isEmpty) {
+                    // We have not yet found any method or we may have multiple abstract methods...
+                    (analyzedSuperinterfaceTypes, currentMaximallySpecificMethods)
+                } else {
+                    (analyzedSuperinterfaceTypes, concreteMaximallySpecificMethods)
+                }
+            }
+        }
+    }
 }

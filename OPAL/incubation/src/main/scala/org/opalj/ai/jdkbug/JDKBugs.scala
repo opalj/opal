@@ -1,31 +1,4 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package ai
 package jdkbug
@@ -33,10 +6,12 @@ package jdkbug
 import scala.language.existentials
 import java.net.URL
 import java.io.File
+import java.util.concurrent.atomic.AtomicInteger
+
 import org.opalj.io.process
 import org.opalj.graphs._
 import org.opalj.br._
-import org.opalj.br.analyses.{Project, OneStepAnalysis, AnalysisExecutor, ReportableAnalysisResult}
+import org.opalj.br.analyses.{AnalysisExecutor, OneStepAnalysis, Project, ReportableAnalysisResult}
 import project.{AIProject, OptionalReport}
 import org.opalj.ai.domain.l0.TypeLevelLongValuesShiftOperators
 import org.opalj.ai.domain.ThrowAllPotentialExceptionsConfiguration
@@ -46,7 +21,7 @@ import org.opalj.ai.BaseAI
 import org.opalj.ai.Domain
 import org.opalj.ai.CorrelationalDomain
 import org.opalj.ai.project.OptionalReport
-import org.opalj.ai.domain.DefaultDomainValueBinding
+import org.opalj.ai.domain.DefaultSpecialDomainValuesBinding
 import org.opalj.ai.domain.DomainId
 import org.opalj.ai.domain.DomainValues
 import org.opalj.ai.project.AIProject
@@ -61,6 +36,9 @@ import org.opalj.ai.domain.l0.DefaultTypeLevelFloatValues
 import org.opalj.ai.domain.l0.TypeLevelReferenceValues
 import org.opalj.ai.domain.l0.TypeLevelPrimitiveValuesConversions
 import org.opalj.ai.domain.l0.TypeLevelFieldAccessInstructions
+import org.opalj.br.analyses.SomeProject
+import org.opalj.collection.immutable.RefArray
+import org.opalj.log.OPALLogger
 
 class CallerNode(
         theIdentifier:       String,
@@ -110,7 +88,7 @@ object JDKTaintAnalysis
 
     override def description: String = "Finds unsafe Class.forName(...) calls."
 
-    val analysis = this
+    val analysis: this.type = this
 
     val javaSecurityParameter = "-java.security="
 
@@ -120,7 +98,7 @@ object JDKTaintAnalysis
         javaSecurityParameter+"<JRE/JDK Security Policy File>"
 
     override def checkAnalysisSpecificParameters(parameters: Seq[String]): Seq[String] = {
-        if (parameters.size == 0)
+        if (parameters.isEmpty)
             Seq("missing parameter: -java.security")
         else if (parameters.size > 1)
             Seq("too many parameters: "+parameters.mkString(" "))
@@ -149,7 +127,10 @@ object JDKTaintAnalysis
                 split(",").
                 map(_.trim.replace('.', '/')).toSet
         }
-        println(restrictedPackages.mkString("Restricted packages:\n\t", "\n\t", "\n"))
+        OPALLogger.info(
+            "analysis configuration",
+            restrictedPackages.mkString("Restricted packages:\n\t", "\n\t", "\n")
+        )(project.logContext)
 
         super.analyze(project, parameters)
     }
@@ -168,8 +149,10 @@ object JDKTaintAnalysis
             if method.body.isDefined
             if method.isPublic || (method.isProtected && !classFile.isFinal)
             descriptor = method.descriptor
-            if (descriptor.parameterTypes.contains(String))
-        } yield (method)
+            if descriptor.parameterTypes.contains(String)
+        } yield {
+            method
+        }
     }
 
     /**
@@ -218,7 +201,7 @@ object JDKTaintAnalysis
  */
 object TaintAnalysisDomain {
 
-    var numberOfReports = new java.util.concurrent.atomic.AtomicInteger(0)
+    var numberOfReports = new AtomicInteger(0)
 
 }
 
@@ -232,7 +215,7 @@ trait TaintAnalysisDomain[Source]
     with IgnoreSynchronization
     with TypeLevelLongValuesShiftOperators
     with TypeLevelPrimitiveValuesConversions
-    with DefaultDomainValueBinding
+    with DefaultSpecialDomainValuesBinding
     with TypeLevelInvokeInstructions
     with TypeLevelFieldAccessInstructions
     with DefaultTypeLevelLongValues
@@ -321,7 +304,7 @@ trait TaintAnalysisDomain[Source]
      * Calling this method only makes sense when the analysis of this domain's method
      * has completed.
      */
-    def isRelevantValueReturned(): Boolean = {
+    def isRelevantValueReturned: Boolean = {
         relevantValuesOrigins.exists { relevantValueOrigin ⇒
             returnedValues.exists { returnedValue ⇒
                 originsIterator(returnedValue._2).exists { returnedValueOrigin ⇒
@@ -367,7 +350,7 @@ trait TaintAnalysisDomain[Source]
      * Calling this method only makes sense when the analysis of this domain's method
      * has completed.
      */
-    lazy val report = {
+    lazy val report: Option[String] = {
         postAnalysis()
         if (isRelevantValueReturned && callToClassForNameFound) {
             val createdDot = toDot(Set(callerNode))
@@ -382,27 +365,23 @@ trait TaintAnalysisDomain[Source]
      * value is passed on and the method returns either a class object or some
      * object for which we have no further type information.
      */
-    private def isRelevantCall(
-        descriptor: MethodDescriptor,
-        operands:   Operands
-    ): Boolean = {
+    private def isRelevantCall(descriptor: MethodDescriptor, operands: Operands): Boolean = {
         operands.exists { op ⇒
             originsIterator(op).exists(contextNode.identifier._1.union(taintedPCs).contains)
         } && (
-            descriptor.returnType == Object ||
-            descriptor.returnType == Class
+            descriptor.returnType == Object || descriptor.returnType == Class
         )
     }
 
     override def areturn(pc: Int, value: DomainValue): Computation[Nothing, ExceptionValue] = {
         // in case a relevant parameter is returned by the method
         if (originsIterator(value).exists(contextNode.identifier._1.union(taintedPCs).contains)) {
-            relevantValuesOrigins = (
+            relevantValuesOrigins ::= ((
                 -1,
                 new CallerNode("return of a relevant Parameter")
-            ) :: relevantValuesOrigins
+            ))
         }
-        returnedValues = (pc, value) :: returnedValues
+        returnedValues ::= ((pc, value))
         super.areturn(pc, value)
     }
 
@@ -494,7 +473,7 @@ trait TaintAnalysisDomain[Source]
         //        inspectMethod(pc, m, operands)
         //      }
         //    }
-        return doTypeLevelInvoke
+        doTypeLevelInvoke
     }
 
     override def invokevirtual(
@@ -505,7 +484,7 @@ trait TaintAnalysisDomain[Source]
         operands:       Operands
     ): MethodCallResult = {
 
-        def doTypeLevelInvoke =
+        def doTypeLevelInvoke() =
             super.invokevirtual(pc, declaringClass, name, descriptor, operands)
 
         // check if we have a call to Class.newInstance...
@@ -516,11 +495,11 @@ trait TaintAnalysisDomain[Source]
         }
 
         if (isIrrelevantInvoke(descriptor, declaringClass))
-            return doTypeLevelInvoke;
+            return doTypeLevelInvoke();
 
         val relevantOperands = computeRelevantOperands(operands)
         if (relevantOperands.isEmpty)
-            return doTypeLevelInvoke;
+            return doTypeLevelInvoke();
 
         // If we reach this point, we have an invocation of a relevant method
         // with a relevant parameter that is not our final sink...
@@ -531,16 +510,16 @@ trait TaintAnalysisDomain[Source]
                 declaringClass.asObjectType, name, descriptor
             ) match {
                     case Success(mdc) ⇒ mdc.method
-                    case _            ⇒ return doTypeLevelInvoke;
+                    case _            ⇒ return doTypeLevelInvoke();
                 }
 
         if (method.body.isEmpty) {
-            return doTypeLevelInvoke;
+            return doTypeLevelInvoke();
         }
 
         inspectMethod(pc, method, operands)
 
-        return doTypeLevelInvoke
+        doTypeLevelInvoke()
     }
 
     abstract override def invokespecial(
@@ -552,15 +531,16 @@ trait TaintAnalysisDomain[Source]
         operands:       Operands
     ): MethodCallResult = {
 
-        def doTypeLevelInvoke =
+        def doTypeLevelInvoke() = {
             super.invokespecial(pc, declaringClass, isInterface, name, descriptor, operands)
+        }
 
         if (isIrrelevantInvoke(descriptor, declaringClass))
-            return doTypeLevelInvoke;
+            return doTypeLevelInvoke();
 
         val relevantOperands = computeRelevantOperands(operands)
         if (relevantOperands.isEmpty)
-            return doTypeLevelInvoke;
+            return doTypeLevelInvoke();
 
         // If we reach this point, we have an invocation of a relevant method
         // with a relevant parameter that is not our final sink...
@@ -568,12 +548,12 @@ trait TaintAnalysisDomain[Source]
             project.resolveMethodReference(
                 declaringClass, name, descriptor
             ).getOrElse {
-                return doTypeLevelInvoke;
+                return doTypeLevelInvoke();
             }
 
         inspectMethod(pc, method, operands)
 
-        return doTypeLevelInvoke
+        doTypeLevelInvoke()
     }
 
     override def invokestatic(
@@ -650,7 +630,7 @@ trait TaintAnalysisDomain[Source]
                 originsIterator(value).toChain.toSeq
             ).nonEmpty) {
 
-                taintedFields = name :: taintedFields
+                taintedFields ::= name
 
                 val thisField: Field = project.resolveFieldReference(
                     declaringClass,
@@ -678,7 +658,7 @@ trait TaintAnalysisDomain[Source]
         // check if a tainted field is read
         if (taintedFields.contains(name)) {
             // set the value at this pc as tainted
-            taintedPCs = pc :: taintedPCs
+            taintedPCs ::= pc
         }
 
         super.getfield(pc, objectref, declaringClass, name, fieldType)
@@ -759,21 +739,21 @@ trait TaintAnalysisDomain[Source]
         descriptor:     MethodDescriptor,
         name:           String
     ): Boolean = {
-        (declaringClass == ObjectType.Class &&
+        declaringClass == ObjectType.Class &&
             name == "forName" &&
-            descriptor.parameterTypes == Seq(String))
+            descriptor.parameterTypes == RefArray(String)
     }
 
     /**
      * Creates a sinkNode into the call graph and add the PC to additionalRelevantParameters
      * and relevantValuesOrigins
      */
-    def registerSink(pc: PC, operands: Operands) = {
-        val sinkNode: CallerNode = new CallerNode(pc+": Class.forName("+operands.head+")")
+    def registerSink(pc: PC, operands: Operands): Unit = {
+        val sinkNode: CallerNode = new CallerNode(s"$pc: Class.forName(${operands.head})")
         contextNode.addChild(sinkNode)
-        callToClassForNameFound = true;
-        taintedPCs = pc :: taintedPCs
-        relevantValuesOrigins = (pc, sinkNode) :: relevantValuesOrigins
+        callToClassForNameFound = true
+        taintedPCs ::= pc
+        relevantValuesOrigins ::= ((pc, sinkNode))
     }
 
     /**
@@ -798,7 +778,7 @@ trait TaintAnalysisDomain[Source]
                 if (originsIterator(operand).exists(
                     contextNode.identifier._1.union(taintedPCs).contains
                 )) {
-                    relevantParameters = -(index + 1) :: relevantParameters
+                    relevantParameters ::= -(index + 1)
                 }
             }
 
@@ -810,7 +790,7 @@ trait TaintAnalysisDomain[Source]
                 checkForFields
             )
 
-            val calleeParameters = calleeDomain.DomainValue.newArray(method.body.get.maxLocals)
+            val calleeParameters = calleeDomain.DomainValueTag.newArray(method.body.get.maxLocals)
             var localVariableIndex = 0
             for (opWithIndex ← operands.reverse.zipWithIndex) {
                 val (operand, index) = opWithIndex
@@ -834,15 +814,15 @@ trait TaintAnalysisDomain[Source]
                 } else {
                     aiResult.domain.postAnalysis()
                     if (aiResult.domain.callToClassForNameFound) {
-                        callToClassForNameFound = true;
+                        callToClassForNameFound = true
                     }
                     // set return nodes
                     val returnNode: CallerNode = new CallerNode(pc+": returned value from : "+aiResult.domain.contextIdentifier)
                     contextNode.addChild(returnNode)
-                    taintedPCs = pc :: taintedPCs
+                    taintedPCs ::= pc
                     contextNode.addChild(callerNode)
 
-                    relevantValuesOrigins = (pc, returnNode) :: relevantValuesOrigins
+                    relevantValuesOrigins ::= ((pc, returnNode))
                     true
                 }
             }
@@ -858,10 +838,10 @@ trait TaintAnalysisDomain[Source]
     def findAndInspectNewEntryPoint(classFile: ClassFile): Unit = {
         for (method ← classFile.methods) {
             if (!isRecursiveCall(method, null)) {
-                if (!method.body.isEmpty) {
+                if (method.body.nonEmpty) {
                     val domain = new RootTaintAnalysisDomain(project, taintedFields, CallStackEntry(method), true)
                     val aiResult = BaseAI.perform(method, domain)()
-                    val log: String = aiResult.domain.report.getOrElse(null)
+                    val log: String = aiResult.domain.report.orNull
                     if (log != null)
                         println(log)
                 }
@@ -899,7 +879,7 @@ class RootTaintAnalysisDomain[Source](
                 // filter for Strings
             }.filter { param_idx ⇒ param_idx._1 == ObjectType.String
                 // map on correct index
-            }.map(param_idx ⇒ -(param_idx._2))
+            }.map(param_idx ⇒ -param_idx._2)
 
         new ContextNode((relevantParameters, contextIdentifier))
     }
@@ -937,7 +917,7 @@ class CalledTaintAnalysisDomain[Source](
 
     val contextNode: ContextNode = new ContextNode((relevantParameters, contextIdentifier))
 
-    def project = previousTaintAnalysisDomain.project
+    def project: SomeProject = previousTaintAnalysisDomain.project
 
     /**
      * Checks against all previous instantiated AnalysisDomains in the respective call graph

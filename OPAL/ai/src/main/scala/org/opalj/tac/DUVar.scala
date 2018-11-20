@@ -1,49 +1,24 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package tac
 
+import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.value.ValueInformation
 import org.opalj.br.ComputationalType
 import org.opalj.br.ComputationalTypeReturnAddress
 import org.opalj.ai.ValueOrigin
-import org.opalj.ai.VMLevelValuesOriginOffset
-import org.opalj.ai.pcOfVMLevelValue
-import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.ai.isImmediateVMException
+import org.opalj.ai.isMethodExternalExceptionOrigin
+import org.opalj.ai.pcOfImmediateVMException
+import org.opalj.ai.pcOfMethodExternalException
 
 /**
  * Identifies a variable which has a single static definition/initialization site.
  */
-abstract class DUVar[+Value <: org.opalj.ai.ValuesDomain#DomainValue] extends Var[DUVar[Value]] {
+abstract class DUVar[+Value <: ValueInformation] extends Var[DUVar[Value]] {
 
     /**
      * The information about the variable that were derived by the underlying data-flow analysis.
-     *
      */
     def value: Value
 
@@ -117,7 +92,7 @@ object DefSites {
  * @param value The value information.
  *
  */
-class DVar[+Value <: org.opalj.ai.ValuesDomain#DomainValue] private (
+class DVar[+Value <: ValueInformation /*org.opalj.ai.ValuesDomain#DomainValue*/ ] private (
         private[tac] var origin:   ValueOrigin,
         val value:                 Value,
         private[tac] var useSites: IntTrieSet
@@ -125,7 +100,7 @@ class DVar[+Value <: org.opalj.ai.ValuesDomain#DomainValue] private (
 
     assert(origin >= 0)
 
-    def copy[V >: Value <: org.opalj.ai.ValuesDomain#DomainValue](
+    def copy[V >: Value <: ValueInformation /*org.opalj.ai.ValuesDomain#DomainValue*/ ](
         origin:   ValueOrigin = this.origin,
         value:    V           = this.value,
         useSites: IntTrieSet  = this.useSites
@@ -179,6 +154,8 @@ class DVar[+Value <: org.opalj.ai.ValuesDomain#DomainValue] private (
         }
     }
 
+    override def hashCode(): Int = Var.ASTID * 1171 - 13 + origin
+
     override def toString: String = {
         s"DVar(useSites=${useSites.mkString("{", ",", "}")},value=$value,origin=$origin)"
     }
@@ -203,7 +180,7 @@ object DVar {
         new DVar[d.DomainValue](origin, value, useSites)
     }
 
-    def unapply[Value <: org.opalj.ai.ValuesDomain#DomainValue](
+    def unapply[Value <: ValueInformation /* org.opalj.ai.ValuesDomain#DomainValue*/ ](
         d: DVar[Value]
     ): Some[(Value, IntTrieSet)] = {
         Some((d.value, d.useSites))
@@ -211,7 +188,7 @@ object DVar {
 
 }
 
-class UVar[+Value <: org.opalj.ai.ValuesDomain#DomainValue] private (
+class UVar[+Value <: ValueInformation /*org.opalj.ai.ValuesDomain#DomainValue*/ ] private (
         val value:                 Value,
         private[tac] var defSites: IntTrieSet
 ) extends DUVar[Value] {
@@ -220,12 +197,15 @@ class UVar[+Value <: org.opalj.ai.ValuesDomain#DomainValue] private (
         val n =
             defSites.iterator.map { defSite ⇒
                 val n =
-                    if (defSite <= VMLevelValuesOriginOffset)
-                        "exception@"+pcOfVMLevelValue(defSite)
+                    if (isImmediateVMException(defSite))
+                        "exception[VM]@"+pcOfImmediateVMException(defSite)
+                    else if (isMethodExternalExceptionOrigin(defSite))
+                        "exception@"+pcOfMethodExternalException(defSite)
                     else if (defSite < 0) {
                         "param"+(-defSite - 1).toHexString
-                    } else
+                    } else {
                         "lv"+defSite.toHexString
+                    }
                 if (DUVar.printDomainValue) s"$n/*:$value*/" else n
             }.mkString("{", ", ", "}")
         if (DUVar.printDomainValue) s"$n/*:$value*/" else n
@@ -248,12 +228,14 @@ class UVar[+Value <: org.opalj.ai.ValuesDomain#DomainValue] private (
                     defSiteIndex + 1 // we have to skip the "CaughtExceptionStatement" - it can't be a definition site!
                 else
                     defSiteIndex
-            } else if (ai.isVMLevelValue(defSite))
-                ai.ValueOriginForVMLevelValue(pcToIndex(ai.pcOfVMLevelValue(defSite)))
+            } else if (ai.isImplicitOrExternalException(defSite))
+                ai.remapPC(pcToIndex)(defSite)
             else
                 defSite /* <= it is referencing a parameter */
         }
     }
+
+    override def hashCode(): Int = Var.ASTID * 1171 - 113 + defSites.hashCode
 
     override def toString: String = {
         s"UVar(defSites=${defSites.mkString("{", ",", "}")},value=$value)"
@@ -266,12 +248,16 @@ object UVar {
     def apply(
         d: org.opalj.ai.ValuesDomain
     )(
-        value: d.DomainValue, useSites: IntTrieSet
+        value: d.DomainValue, defSites: IntTrieSet
     ): UVar[d.DomainValue] = {
-        new UVar[d.DomainValue](value, useSites)
+        new UVar[d.DomainValue](value, defSites)
     }
 
-    def unapply[Value <: org.opalj.ai.ValuesDomain#DomainValue](
+    def apply(value: ValueInformation, defSites: IntTrieSet): UVar[ValueInformation] = {
+        new UVar(value, defSites)
+    }
+
+    def unapply[Value <: ValueInformation /* org.opalj.ai.ValuesDomain#DomainValue*/ ](
         u: UVar[Value]
     ): Some[(Value, IntTrieSet)] = {
         Some((u.value, u.defSites))

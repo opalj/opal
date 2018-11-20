@@ -1,31 +1,4 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package collection
 package immutable
@@ -72,7 +45,7 @@ object ChainProperties extends Properties("Chain") {
      */
     val listAndIndexGen = for {
         n ← Gen.choose(0, 20)
-        m ← Gen.listOfN(n, Arbitrary.arbitrary[String])
+        m ← Gen.listOfN(n, Arbitrary.arbString.arbitrary)
         i ← Gen.choose(0, n)
     } yield (m, i)
 
@@ -82,7 +55,7 @@ object ChainProperties extends Properties("Chain") {
     } yield m
 
     val smallListsGen = for {
-        m ← Gen.listOfN(5, Arbitrary.arbitrary[String])
+        m ← Gen.listOfN(5, Arbitrary.arbString.arbitrary)
     } yield (m)
 
     /**
@@ -90,7 +63,7 @@ object ChainProperties extends Properties("Chain") {
      */
     val listAndIntGen = for {
         n ← Gen.choose(0, 20)
-        m ← Gen.listOfN(n, Arbitrary.arbitrary[String])
+        m ← Gen.listOfN(n, Arbitrary.arbString.arbitrary)
         i ← Gen.choose(0, n + 2)
     } yield (m, i)
 
@@ -207,7 +180,7 @@ object ChainProperties extends Properties("Chain") {
 
     property("seq") = forAll { l: List[String] ⇒
         val fl = Chain(l: _*)
-        (fl.seq eq fl)
+        fl.seq eq fl
     }
 
     property("flatMap") = forAll(listOfListGen) { l: List[List[String]] ⇒
@@ -275,11 +248,6 @@ object ChainProperties extends Properties("Chain") {
     property("isTraversableAgain") = forAll { l: List[String] ⇒
         val fl = Chain(l: _*)
         fl.isTraversableAgain
-    }
-
-    property("seq") = forAll { l: List[String] ⇒
-        val fl = Chain(l: _*)
-        (fl.seq eq fl)
     }
 
     property("head") = forAll { l: List[String] ⇒
@@ -597,6 +565,16 @@ object ChainProperties extends Properties("Chain") {
         val fl = Chain(l: _*).toIterator.toList
         fl == l
     }
+    property("toIntTrieSet") = forAll { l: List[Int] ⇒
+        val fl = Chain(l: _*).toIntTrieSet
+        val lSet = l.toSet
+        lSet.forall(fl.contains) && lSet.size == fl.size
+    }
+    property("toIntArraySet") = forAll { l: List[Int] ⇒
+        val fl = Chain(l: _*).toIntArraySet
+        val lSet = l.toSet
+        lSet.forall(fl.contains) && lSet.size == fl.size
+    }
 
     property("toTraversable") = forAll { l: List[String] ⇒
         val fl = Chain(l: _*).toTraversable.toList
@@ -634,7 +612,7 @@ object ChainProperties extends Properties("Chain") {
         val cl1 = Chain(l1: _*)
         l2s.forall { l2 ⇒
             val cl2 = Chain(l2: _*)
-            (cl1.fuse[String](cl2, (x, y) ⇒ if (x == y) x else y)).mkString ==
+            cl1.fuse[String](cl2, (x, y) ⇒ if (x == y) x else y).mkString ==
                 l1.zip(l2).map(v ⇒ if (v._1 == v._2) v._1 else v._2).mkString
         }
     }
@@ -668,8 +646,8 @@ object ChainProperties extends Properties("Chain") {
         val cl1 = Chain(l1: _*)
         l2s.forall { l2 ⇒
             val cl2 = Chain(l2: _*)
-            (cl1.merge[String, String](cl2)((x, y) ⇒ if (x == y) x else y).mkString ==
-                l1.zip(l2).map(v ⇒ if (v._1 == v._2) v._1 else v._2).mkString)
+            cl1.merge[String, String](cl2)((x, y) ⇒ if (x == y) x else y).mkString ==
+                l1.zip(l2).map(v ⇒ if (v._1 == v._2) v._1 else v._2).mkString
         }
     }
 
@@ -682,7 +660,7 @@ object ChainProperties extends Properties("Chain") {
 
     property("forFirstN") = forAll { (l1: List[String]) ⇒
         val cl1 = Chain(l1: _*)
-        (0 until l1.size).forall { i ⇒
+        l1.indices.forall { i ⇒
             var result = ""
             cl1.forFirstN(i)(result += _)
             result == l1.take(i).foldLeft("")(_ + _)

@@ -1,31 +1,4 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package ai;
 
 import java.io.File;
@@ -99,14 +72,13 @@ public class MethodsWithExceptions {
                 throw t; // <= will throw t (non-null!)
             else {
                 System.out.println("Nothing happening");
-                // May throw a NullPointerException. However, it
+                // May throw some exception. However, it
                 // will be replaced by a NullPointerException in the finally
                 // clause because t is null; i.e., this potential NullPointerException
                 // will never be visible outside of this method.
             }
         } finally {
-            t.printStackTrace(); // <= t may be null => may
-            // throw NullPointerException
+            t.printStackTrace(); // <= t may be null => may throw NullPointerException
         }
     }
 
@@ -184,6 +156,17 @@ public class MethodsWithExceptions {
         try {
             o.toString();
         } catch (NullPointerException npe) {
+            return o; // null or a NullPointerException thrown by toString...
+        }
+        o.toString();
+        return o; // not-null
+    }
+
+    public static Object exceptionsWithMultipleReasonsForNull(Object o) throws Exception {
+        try {
+            o.toString();
+        } catch (NullPointerException npe) {
+            o.wait();
             return o; // null or a NullPointerException thrown by toString...
         }
         o.toString();
@@ -348,4 +331,39 @@ public class MethodsWithExceptions {
         }
         new java.util.HashMap<Integer,Integer>(i / j);
     }
+
+    public static int differentExceptionsHandledBySameHandler(int i) {
+        int j = 0;
+        try {
+            if(i == 0) {
+                j = 10 / i; // <= ArithmethicException
+            } else {
+                throw new RuntimeException("unexpected value");
+            }
+        } catch (Exception e) {
+            System.out.println(e);
+        }
+        return j;
+    }
+
+
+    public static void differentExceptionsRelatedToArraysHandledBySameHandler(int i) {
+        int j = 0;
+        Object[] as = new String[10];
+        Object value = null;
+        try {
+            if(i == 0) {
+                j = 10; // <= will cause IndexOutOfBounds in the following
+                value = "10";
+            } else {
+                j = 0;
+                value = new Object(); // <= will cause ArrayStoreException in the following
+            }
+            as[j] = value;
+        } catch (Exception e) {
+            System.out.println(e);
+        }
+    }
+
+
 }

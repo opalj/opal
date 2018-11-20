@@ -1,31 +1,4 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package concurrent
 
@@ -54,8 +27,7 @@ class TasksTest extends FunSpec with Matchers {
 
         it("it should be possible to process an empty set of tasks") {
             val counter = new AtomicInteger(0)
-            val exceptions = Tasks { (tasks: Tasks[Int], i: Int) ⇒ counter.incrementAndGet() }.join()
-            exceptions should be('empty)
+            Tasks { (tasks: Tasks[Int], i: Int) ⇒ counter.incrementAndGet() }.join()
             counter.get should be(0)
         }
 
@@ -66,9 +38,30 @@ class TasksTest extends FunSpec with Matchers {
                 Thread.sleep(50)
             }
             tasks.submit(1)
-            val exceptions = tasks.join()
-            exceptions should be('empty)
+            tasks.join()
             counter.get should be(1)
+        }
+
+        it("it should be possible to reuse tasks after join") {
+            val counter = new AtomicInteger(0)
+            val tasks = Tasks { (tasks: Tasks[Int], i: Int) ⇒
+                counter.incrementAndGet()
+            }
+            tasks.submit(1)
+            while (tasks.currentTasksCount > 0) {
+                Thread.sleep(50);
+            }
+            tasks.submit(1)
+            while (tasks.currentTasksCount > 0) {
+                Thread.sleep(50);
+            }
+            tasks.submit(1)
+            tasks.join()
+            counter.get should be(3)
+
+            tasks.submit(1)
+            tasks.join()
+            counter.get should be(4)
         }
 
         it("it should be possible to add a task while processing a task") {
@@ -79,8 +72,7 @@ class TasksTest extends FunSpec with Matchers {
                 Thread.sleep(50)
             }
             tasks.submit(1)
-            val exceptions = tasks.join()
-            exceptions should be('empty)
+            tasks.join()
             counter.get should be(2)
         }
 
@@ -97,8 +89,7 @@ class TasksTest extends FunSpec with Matchers {
                 }
             }
             tasks.submit(0)
-            val exceptions = tasks.join()
-            exceptions should be('empty)
+            tasks.join()
             for (i ← 0 until 100000) processedValues.get(i) should be(1)
         }
 
@@ -111,9 +102,8 @@ class TasksTest extends FunSpec with Matchers {
             tasks.submit(1)
             Thread.sleep(250) // ttask 1 is probably already long finished...
             tasks.submit(2)
-            val exceptions = tasks.join() // task 2 is probably still running..
+            tasks.join() // task 2 is probably still running..
             processedValues.get() should be(2)
-            exceptions should be('empty)
         }
 
         it("it should be possible to create thousands of tasks in multiple steps multiple times") {
@@ -133,8 +123,7 @@ class TasksTest extends FunSpec with Matchers {
                     }
                 }
                 for (i ← 0 until 100000) tasks.submit(i)
-                val exceptions = tasks.join()
-                exceptions should be('empty)
+                tasks.join()
                 processedValues.get() should be(100000 + subsequentlyScheduled.get)
                 info(s"run $r succeeded")
             }
@@ -147,12 +136,12 @@ class TasksTest extends FunSpec with Matchers {
 
             val nextValue = new AtomicInteger(100000)
             val tasks: Tasks[Int] = Tasks { (tasks: Tasks[Int], i: Int) ⇒
-                if ((i % 1000) == 0) {
+                if (i % 1000 == 0) {
                     for (i ← 1 until 10) {
                         subsequentlyScheduled.incrementAndGet()
                         tasks.submit(nextValue.incrementAndGet())
                     }
-                } else if ((i % 1333 == 0)) {
+                } else if (i % 1333 == 0) {
                     aborted.incrementAndGet()
                     throw new Exception();
                 } else {
@@ -162,7 +151,13 @@ class TasksTest extends FunSpec with Matchers {
             }
             for (i ← 0 until 100000) tasks.submit(i)
 
-            val exceptions = tasks.join()
+            var exceptions: Array[Throwable] = null
+            try {
+                tasks.join()
+            } catch {
+                case ce: ConcurrentExceptions ⇒
+                    exceptions = ce.getSuppressed
+            }
 
             info("subsequently scheduled: "+subsequentlyScheduled.get)
             info("number of caught exceptions: "+exceptions.size)

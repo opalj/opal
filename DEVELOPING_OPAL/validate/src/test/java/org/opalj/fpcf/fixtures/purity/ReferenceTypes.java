@@ -1,31 +1,4 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.purity;
 
 import org.opalj.fpcf.analyses.L0PurityAnalysis;
@@ -39,7 +12,7 @@ import org.opalj.fpcf.properties.purity.*;
  *
  * @author Dominik Helm
  */
-public class ReferenceTypes {
+final public class ReferenceTypes {
 
     // Fields with different attributes for use in test methods
 
@@ -74,7 +47,7 @@ public class ReferenceTypes {
         nonFinalField = 5;
     }
 
-    @ContextuallyPure("Only modifies fields of parameters")
+    @ContextuallyPure(value = "Only modifies fields of parameters", modifies = {1})
     @Impure(value = "Modifies field of different instance",
             analyses = {L0PurityAnalysis.class, L1PurityAnalysis.class})
     public ReferenceTypes(ReferenceTypes other) {
@@ -287,17 +260,18 @@ public class ReferenceTypes {
         return arr[index];
     }
 
-    @DomainSpecificExternallyPure(value = "Modified array is local",
+    @DomainSpecificContextuallyPure(value = "Modified array is local", modifies = {0},
             eps = @EP(cf = ReferenceTypes.class, pk = "FieldLocality", field = "nonConstFinalArr",
-                    p = "ExtensibleLocalField"))
+                    p = "LocalField"))
     @Impure(value = "Modifies array entry/array not recognized as local", negate = true,
             eps = @EP(cf = ReferenceTypes.class, pk = "FieldLocality", field = "nonConstFinalArr",
-                    p = "ExtensibleLocalField", analyses = L2PurityAnalysis.class))
+                    p = "LocalField", analyses = L2PurityAnalysis.class))
     public void setArrayEntry(int index, int value) {
         nonConstFinalArr[index] = value;
     }
 
-    @DomainSpecificContextuallyPure("Modifies parameter, array could be null or index out bounds")
+    @DomainSpecificContextuallyPure(
+            value = "Modifies parameter, array could be null or index out bounds", modifies = {1})
     @Impure(value = "Modifies array entry",
             analyses = {L0PurityAnalysis.class, L1PurityAnalysis.class})
     public static void setArrayEntryStatic(int[] arr, int index, int value) {
@@ -337,7 +311,7 @@ public class ReferenceTypes {
 
     // Synchronization is impure (unless done on a fresh, non-escaping object)
 
-    @DomainSpecificExternallyPure("Synchronizes on this reference")
+    @DomainSpecificContextuallyPure(value = "Synchronizes on this reference", modifies = {0})
     @Impure(value = "Synchronizes on this reference",
             analyses = {L0PurityAnalysis.class, L1PurityAnalysis.class})
     private int syncMethod() {
@@ -348,7 +322,7 @@ public class ReferenceTypes {
         return result;
     }
 
-    @ExternallyPure(value = "Synchronizes on this reference")
+    @ContextuallyPure(value = "Synchronizes on this reference", modifies = {0})
     @Impure(value = "Synchronizes on this reference",
             analyses = {L0PurityAnalysis.class, L1PurityAnalysis.class})
     private synchronized int syncMethod2() {

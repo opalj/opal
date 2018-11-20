@@ -1,39 +1,11 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package fpcf
 package analyses
 
-import org.opalj.br.DefinedMethod
+import org.opalj.br.VirtualDeclaredMethod
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.VirtualFormalParameter
-import org.opalj.br.analyses.VirtualFormalParameters
 import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.fpcf.properties.AtMost
@@ -58,8 +30,7 @@ class VirtualCallAggregatingEscapeAnalysis private[analyses] ( final val project
 
     def determineEscape(fp: VirtualFormalParameter): PropertyComputationResult = {
         val dm = fp.method
-        assert(dm.isInstanceOf[DefinedMethod])
-        val m = dm.methodDefinition
+        assert(!dm.isInstanceOf[VirtualDeclaredMethod])
 
         if (dm.declaringClassType.isArrayType) {
             ??? //TODO handle case
@@ -71,18 +42,22 @@ class VirtualCallAggregatingEscapeAnalysis private[analyses] ( final val project
 
         val maybeFile = project.classFile(dm.declaringClassType.asObjectType)
 
-        val methods = if (maybeFile.isDefined && maybeFile.get.isInterfaceDeclaration) {
-            project.interfaceCall(
-                /* use the package in which the concrete method context is defined */
-                dm.declaringClassType.asObjectType, dm.name, dm.descriptor
+        val methods =
+            if (maybeFile.isDefined && maybeFile.get.isInterfaceDeclaration)
+                project.interfaceCall(dm.declaringClassType.asObjectType, dm.name, dm.descriptor)
+            else if (dm.hasSingleDefinedMethod && dm.definedMethod.isPackagePrivate)
+                project.virtualCall(
+                    dm.definedMethod.classFile.thisType.packageName,
+                    dm.declaringClassType,
+                    dm.name,
+                    dm.descriptor
+                )
+            else project.virtualCall(
+                "" /* package is irrelevant, must be public interface methods */ ,
+                dm.declaringClassType,
+                dm.name,
+                dm.descriptor
             )
-        } else {
-            project.virtualCall(
-                /* use the package in which the concrete method context is defined */
-                m.classFile.thisType.packageName,
-                dm.declaringClassType, dm.name, dm.descriptor
-            )
-        }
 
         for (method ← methods) {
             val vfp = formalParameters(declaredMethods(method))(-1 - fp.origin)
@@ -106,7 +81,10 @@ class VirtualCallAggregatingEscapeAnalysis private[analyses] ( final val project
                 else
                     Result(fp, escapeState.asAggregatedProperty)
             else
-                IntermediateResult(fp, GlobalEscape.asAggregatedProperty, escapeState.asAggregatedProperty, dependees, continuation)
+                IntermediateResult(
+                    fp, GlobalEscape.asAggregatedProperty, escapeState.asAggregatedProperty,
+                    dependees, continuation
+                )
         }
 
         def continuation(someEPS: SomeEPS): PropertyComputationResult = {
@@ -126,28 +104,39 @@ class VirtualCallAggregatingEscapeAnalysis private[analyses] ( final val project
 
 sealed trait VirtualCallAggregatingEscapeAnalysisScheduler extends ComputationSpecification {
 
-    override def derives: Set[PropertyKind] = Set(VirtualMethodEscapeProperty)
+    final override def derives: Set[PropertyKind] = Set(VirtualMethodEscapeProperty)
 
-    override def uses: Set[PropertyKind] = Set(EscapeProperty)
+    final override def uses: Set[PropertyKind] = Set(EscapeProperty)
+
+    final override type InitializationData = Null
+    final def init(p: SomeProject, ps: PropertyStore): Null = null
+
+    def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
+
+    def afterPhaseCompletion(p: SomeProject, ps: PropertyStore): Unit = {}
+
 }
 
 object EagerVirtualCallAggregatingEscapeAnalysis
     extends VirtualCallAggregatingEscapeAnalysisScheduler
     with FPCFEagerAnalysisScheduler {
 
-    def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
-        val analysis = new VirtualCallAggregatingEscapeAnalysis(project)
-        val vfps = propertyStore.context[VirtualFormalParameters].virtualFormalParameters
-        propertyStore.scheduleEagerComputationsForEntities(vfps)(analysis.determineEscape)
+    override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+        val analysis = new VirtualCallAggregatingEscapeAnalysis(p)
+        val vfps = p.get(VirtualFormalParametersKey).virtualFormalParameters
+        ps.scheduleEagerComputationsForEntities(vfps)(analysis.determineEscape)
         analysis
     }
 }
+
 object LazyVirtualCallAggregatingEscapeAnalysis
     extends VirtualCallAggregatingEscapeAnalysisScheduler
     with FPCFLazyAnalysisScheduler {
-    def startLazily(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
-        val analysis = new VirtualCallAggregatingEscapeAnalysis(project)
-        propertyStore.registerLazyPropertyComputation(VirtualMethodEscapeProperty.key, analysis.determineEscape)
+
+    override def startLazily(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+        val analysis = new VirtualCallAggregatingEscapeAnalysis(p)
+        ps.registerLazyPropertyComputation(VirtualMethodEscapeProperty.key, analysis.determineEscape)
         analysis
     }
+
 }

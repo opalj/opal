@@ -31,6 +31,7 @@ package org.opalj.fpcf.properties.field_mutability;
 import org.opalj.fpcf.FPCFAnalysis;
 import org.opalj.fpcf.analyses.L0FieldMutabilityAnalysis;
 import org.opalj.fpcf.analyses.L1FieldMutabilityAnalysis;
+import org.opalj.fpcf.analyses.L2FieldMutabilityAnalysis;
 import org.opalj.fpcf.properties.PropertyValidator;
 
 import java.lang.annotation.Documented;
@@ -53,5 +54,9 @@ public @interface DeclaredFinal {
      */
     String value() ; // default = "N/A";
 
-    Class<? extends FPCFAnalysis>[] analyses() default {L0FieldMutabilityAnalysis.class, L1FieldMutabilityAnalysis.class};
+    Class<? extends FPCFAnalysis>[] analyses() default {
+        L0FieldMutabilityAnalysis.class,
+            L1FieldMutabilityAnalysis.class,
+            L2FieldMutabilityAnalysis.class
+    };
 }

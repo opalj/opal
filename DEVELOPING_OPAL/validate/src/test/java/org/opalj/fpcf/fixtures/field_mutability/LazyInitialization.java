@@ -29,6 +29,7 @@
 package org.opalj.fpcf.fixtures.field_mutability;
 
 import org.opalj.fpcf.properties.field_mutability.DeclaredFinal;
+import org.opalj.fpcf.properties.field_mutability.EffectivelyFinal;
 import org.opalj.fpcf.properties.field_mutability.LazyInitialized;
 import org.opalj.fpcf.properties.field_mutability.NonFinal;
 
@@ -291,10 +292,9 @@ class ExceptionInInitialization {
 
     /**
      * @note As the field write is dead, this field is really 'effectively final' as it will never
-     * be different from the default value. As there is a field write outside an initializer,
-     * analysis recognize this as lazily initialized instead.
+     * be different from the default value.
      */
-    @LazyInitialized("Field is never initialized, so it stays on its default value")
+    @EffectivelyFinal("Field is never initialized, so it stays on its default value")
         private int x;
 
         private int getZero(){ return 0; }

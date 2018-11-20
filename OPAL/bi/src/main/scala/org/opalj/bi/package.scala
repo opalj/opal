@@ -1,38 +1,10 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 
 import java.lang.Integer.parseInt
 
-import org.opalj.collection.immutable.UShortPair
-
 import scala.io.Source
+
 import org.opalj.io.process
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
@@ -40,6 +12,7 @@ import org.opalj.log.Warn
 import org.opalj.log.OPALLogger
 import org.opalj.log.OPALLogger.info
 import org.opalj.log.OPALLogger.error
+import org.opalj.collection.immutable.UShortPair
 
 /**
  * Implementation of a library for parsing Java bytecode and creating arbitrary
@@ -59,7 +32,7 @@ package object bi {
 
     {
         // Log the information whether a production build or a development build is used.
-        implicit val logContext = GlobalLogContext
+        implicit val logContext: LogContext = GlobalLogContext
         try {
             assert(false)
             info("OPAL Bytecode Infrastructure", "Production Build")
@@ -69,11 +42,11 @@ package object bi {
         }
     }
 
-    type AccessFlagsContext = AccessFlagsContexts.Value
+    final type AccessFlagsContext = AccessFlagsContexts.Value
 
-    type AttributeParent = AttributesParent.Value
+    final type AttributeParent = AttributesParent.Value
 
-    type ConstantPoolTag = ConstantPoolTags.Value
+    final type ConstantPoolTag = ConstantPoolTags.Value
 
     /**
      * Every Java class file starts with "0xCAFEBABE".
@@ -95,20 +68,31 @@ package object bi {
         }
     }
 
-    final val Java10MajorVersion = 54
-    final val Java10Version = UShortPair(0, Java9MajorVersion)
-    final val Java9MajorVersion = 53
-    final val Java9Version = UShortPair(0, Java9MajorVersion)
-    final val Java8MajorVersion = 52
-    final val Java8Version = UShortPair(0, Java8MajorVersion)
-    final val Java7MajorVersion = 51
-    final val Java7Version = UShortPair(0, Java7MajorVersion)
-    final val Java6MajorVersion = 50
-    final val Java6Version = UShortPair(0, Java6MajorVersion)
+    // previous versions are not really relevant in the context of Java bytecode
+    final val Java1MajorVersion = 45
     final val Java5MajorVersion = 49
     final val Java5Version = UShortPair(0, Java5MajorVersion)
-    // all other versions are not really relevant in the context of Java bytecode
-    final val Java1MajorVersion = 45
+    final val Java6MajorVersion = 50
+    final val Java6Version = UShortPair(0, Java6MajorVersion)
+    final val Java7MajorVersion = 51
+    final val Java7Version = UShortPair(0, Java7MajorVersion)
+    final val Java8MajorVersion = 52
+    final val Java8Version = UShortPair(0, Java8MajorVersion)
+    final val Java9MajorVersion = 53
+    final val Java9Version = UShortPair(0, Java9MajorVersion)
+    final val Java10MajorVersion = 54
+    final val Java10Version = UShortPair(0, Java10MajorVersion)
+
+    /**
+     * The latest major version supported by OPAL; this constant is adapted whenever a new version
+     * is supported.
+     */
+    final val LatestSupportedJavaMajorVersion = Java10MajorVersion
+    /**
+     * The latest version supported by OPAL; this constant is adapted whenever a new version
+     * is supported.
+     */
+    final val LatestSupportedJavaVersion = Java10Version
 
     /**
      * Returns `true` if the current JRE is at least Java 8 or a newer version.
@@ -116,7 +100,7 @@ package object bi {
      * @note This method makes some assumptions how the version numbers will evolve.
      */
     final lazy val isCurrentJREAtLeastJava8: Boolean = {
-        implicit val logContext = org.opalj.log.GlobalLogContext
+        implicit val logContext: LogContext = GlobalLogContext
         val versionString = System.getProperty("java.version")
         try {
             val splittedVersionString = versionString.split('.')

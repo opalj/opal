@@ -1,31 +1,4 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package ai
 package domain
@@ -33,19 +6,22 @@ package l1
 
 import scala.reflect.ClassTag
 
-import org.opalj.br.Type
+import org.opalj.collection.immutable.RefArray
+import org.opalj.value.IsClassValue
+import org.opalj.value.TheClassValue
 import org.opalj.br.BooleanType
 import org.opalj.br.ByteType
 import org.opalj.br.CharType
-import org.opalj.br.ShortType
+import org.opalj.br.DoubleType
+import org.opalj.br.FieldType
+import org.opalj.br.FloatType
 import org.opalj.br.IntegerType
 import org.opalj.br.LongType
-import org.opalj.br.FloatType
-import org.opalj.br.DoubleType
-import org.opalj.br.ReferenceType
-import org.opalj.br.ObjectType
-import org.opalj.br.FieldType
 import org.opalj.br.MethodDescriptor
+import org.opalj.br.ObjectType
+import org.opalj.br.ReferenceType
+import org.opalj.br.ShortType
+import org.opalj.br.Type
 
 /**
  * Enables the tracking of concrete `Class` values.
@@ -65,18 +41,18 @@ import org.opalj.br.MethodDescriptor
  * @author Arne Lottmann
  */
 trait ClassValues extends StringValues with FieldAccessesDomain with MethodCallsDomain {
-    domain: CorrelationalDomain with IntegerValuesDomain with TypedValuesFactory with Configuration with TheClassHierarchy ⇒
+    domain: CorrelationalDomain with IntegerValuesDomain with TypedValuesFactory with Configuration ⇒
 
     type DomainClassValue <: ClassValue with DomainObjectValue
-    val DomainClassValue: ClassTag[DomainClassValue]
+    val DomainClassValueTag: ClassTag[DomainClassValue]
 
     /**
      * All values (`Class<...> c`) that represent the same type (e.g. `java.lang.String`)
      * are actually represented by the same class (object) value at runtime.
      */
-    protected class ClassValue(origin: ValueOrigin, val value: Type, refId: RefId)
-        extends SObjectValue(origin, No, true, ObjectType.Class, refId) {
-        this: DomainClassValue ⇒
+    protected trait ClassValue extends SObjectValue with IsClassValue { this: DomainClassValue ⇒
+
+        def value: Type
 
         override def doJoinWithNonNullValueWithSameOrigin(
             joinPC: Int,
@@ -104,10 +80,7 @@ trait ClassValues extends StringValues with FieldAccessesDomain with MethodCalls
             }
         }
 
-        override def adapt(
-            target:       TargetDomain,
-            targetOrigin: ValueOrigin
-        ): target.DomainValue = {
+        override def adapt(target: TargetDomain, targetOrigin: ValueOrigin): target.DomainValue = {
             target.ClassValue(targetOrigin, this.value)
         }
 
@@ -121,18 +94,21 @@ trait ClassValues extends StringValues with FieldAccessesDomain with MethodCalls
             }
         }
 
+        override def toCanonicalForm: TheClassValue = TheClassValue(value)
+
         override def equals(other: Any): Boolean =
             other match {
                 case cv: ClassValue ⇒ super.equals(other) && cv.value == this.value
                 case _              ⇒ false
             }
 
-        override protected def canEqual(other: SObjectValue): Boolean =
+        override protected def canEqual(other: SObjectValue): Boolean = {
             other.isInstanceOf[ClassValue]
+        }
 
         override def hashCode: Int = super.hashCode + 71 * value.hashCode
 
-        override def toString(): String = s"Class<${value.toJava}>[↦$origin;refId=$refId]"
+        override def toString: String = s"Class<${value.toJava}>[↦$origin;refId=$refId]"
     }
 
     // Needs to be implemented since the default implementation does not make sense here
@@ -183,7 +159,7 @@ trait ClassValues extends StringValues with FieldAccessesDomain with MethodCalls
         operands:         Operands
     ): MethodCallResult = {
 
-        import ClassValues._
+        import org.opalj.ai.domain.l1.ClassValues._
 
         if ((declaringClass eq ObjectType.Class) && (name == "forName") && operands.nonEmpty) {
 
@@ -215,7 +191,7 @@ trait ClassValues extends StringValues with FieldAccessesDomain with MethodCalls
         declaringClass: ObjectType,
         name:           String,
         fieldType:      FieldType
-    ) = {
+    ): Computation[DomainValue, Nothing] = {
         if (name == "TYPE") {
             declaringClass match {
                 case ObjectType.Boolean   ⇒ ComputedValue(ClassValue(pc, BooleanType))
@@ -250,7 +226,7 @@ private object ClassValues {
 
     final val forName_String_boolean_ClassLoader = {
         MethodDescriptor(
-            IndexedSeq(ObjectType.String, BooleanType, ObjectType("java/lang/ClassLoader")),
+            RefArray(ObjectType.String, BooleanType, ObjectType("java/lang/ClassLoader")),
             ObjectType.Class
         )
     }

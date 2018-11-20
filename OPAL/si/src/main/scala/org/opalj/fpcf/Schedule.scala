@@ -1,38 +1,12 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package fpcf
 
 import org.opalj.collection.immutable.Chain
 
 /**
- * Encapsulates a computed schedule and enables the execution of it.
+ * Encapsulates a computed schedule and enables the execution of it. Use an [[AnalysisScenario]]
+ * to compute a schedule.
  *
  * @param batches The representation of the computed schedule.
  *
@@ -40,25 +14,87 @@ import org.opalj.collection.immutable.Chain
  */
 case class Schedule(
         batches: Chain[Chain[ComputationSpecification]]
-) extends ((PropertyStore) ⇒ Unit) {
+) extends (PropertyStore ⇒ Unit) {
 
+    /**
+     * Schedules the computation specifications; that is, executes the underlying analysis scenario.
+     *
+     * @param ps The property store which should be used to execute the analyses.
+     */
     def apply(ps: PropertyStore): Unit = {
-        batches foreach { batch ⇒
+        val initInfo =
+            batches.flatMap { batch ⇒
+                batch.toIterator.map[(ComputationSpecification, Any)] { cs ⇒ cs -> cs.init(ps) }
+            }.toMap
+
+        // 1 - Note that the properties of lazy computations are considered to be computed as long
+        //     as they are used; not only in the first phase where the analysis is scheduled!
+        // 2 - Due to transitive usage of lazily computed properties the lifetime of the (lazy)
+        //     analysis may be longer than the batch in which the lazy analysis is scheduled
+        var currentLazilyComputedProperties = Set.empty[PropertyKind] // those which are just/still computed
+
+        batches.toIterator.zipWithIndex foreach { batchId ⇒
+            // IMPROVE Rewrite the algorithm to avoid recomputing the sets "nextBatches", "nextCSs",.. on every iteration.
+            val (batch, currentBatchIndex) = batchId
+            val oldLazyComputedProperties = currentLazilyComputedProperties
+            currentLazilyComputedProperties = Set.empty
             val computedProperties =
-                batch.foldLeft(Set.empty[PropertyKind])((c, n) ⇒ c ++ n.derives)
+                batch.foldLeft(Set.empty[PropertyKind]) { (computedProperties, cs) ⇒
+                    if (cs.isLazy) currentLazilyComputedProperties ++= cs.derives
+                    computedProperties ++ cs.derives
+                }
+            val nextBatches = batches.drop(currentBatchIndex)
             val openProperties =
-                batches.dropWhile(_ ne batch).tail. // collect properties derived in the future
+                nextBatches.tail. // collect properties derived in the future
                     map(batch ⇒ batch.foldLeft(Set.empty[PropertyKind])((c, n) ⇒ c ++ n.derives)).
                     reduceOption((l, r) ⇒ l ++ r).
                     getOrElse(Set.empty)
-            ps.setupPhase(computedProperties, openProperties)
-            batch.foreach { fpc ⇒ fpc.schedule(ps) }
+            // Check if any of the current or future analyses still (transitively) uses
+            // a lazily computed property;
+            // Note that an analysis which uses an eagerly computed property which is
+            // computed using lazily computed properties has no more dependency on the lazily
+            // computed property!
+            val oldLazyCSs = batches.take(currentBatchIndex).flatMap(batch ⇒ batch.filter(cs ⇒ cs.isLazy))
+            val oldEagerCSs = batches.take(currentBatchIndex).flatMap(batch ⇒ batch.filter(cs ⇒ !cs.isLazy))
+            val nextCSs = nextBatches.flatMap(batch ⇒ batch)
+            val nextUsages = nextCSs.flatMap(cs ⇒ cs.uses)
+            var stillUsedLazilyComputedProperties = oldLazyComputedProperties.intersect(nextUsages.toSet)
+            var stillUsedLazilyComputedPropertiesCount = -1 // any value..
+            // let's check which cs are computing the properties and if they are also lazy...
+            // if a property is eagerly computed it acts as a boundary
+            do { // => fixpoint computation
+                stillUsedLazilyComputedPropertiesCount = stillUsedLazilyComputedProperties.size
+                oldLazyCSs foreach { oldLazyCS ⇒
+                    if (oldLazyCS.derives.intersect(stillUsedLazilyComputedProperties).nonEmpty) {
+                        stillUsedLazilyComputedProperties ++= oldLazyCS.uses
+                    }
+                }
+            } while (stillUsedLazilyComputedPropertiesCount < stillUsedLazilyComputedProperties.size)
+            // let's filter those uses based on old eager analyses
+            oldEagerCSs foreach { cs ⇒
+                stillUsedLazilyComputedProperties --= cs.derives
+            }
+            currentLazilyComputedProperties ++= stillUsedLazilyComputedProperties
+            ps.setupPhase(
+                currentLazilyComputedProperties ++ computedProperties,
+                currentLazilyComputedProperties ++ openProperties // this is an overapproximation, but this is safe!
+            )
+            batch foreach { cs ⇒
+                cs.beforeSchedule(ps)
+                cs.schedule(ps, initInfo(cs).asInstanceOf[cs.InitializationData])
+            }
             ps.waitOnPhaseCompletion()
+            batch foreach { cs ⇒
+                cs.afterPhaseCompletion(ps)
+            }
         }
+        // ... we are done now!
+        ps.setupPhase(Set.empty, Set.empty)
     }
 
     override def toString: String = {
-        batches.map(_.map(_.name).mkString("{", ", ", "}")).mkString("Schedule(\n\t", "\n\t", "\n)")
+        batches.map(_.map(_.name).mkString("{", ", ", "}")).
+            mkString("Schedule(\n\t", "\n\t", "\n)")
     }
 
 }

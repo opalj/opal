@@ -1,31 +1,4 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package ai
 package domain
@@ -33,11 +6,15 @@ package l0
 
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.collection.immutable.UIDSet1
+import org.opalj.value.IsMObjectValue
+import org.opalj.value.IsPrimitiveValue
+import org.opalj.value.IsSArrayValue
+import org.opalj.value.IsSObjectValue
+import org.opalj.value.TypeOfReferenceValue
 import org.opalj.br.ArrayType
+import org.opalj.br.ClassHierarchy
 import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
-import org.opalj.value.IsPrimitiveValue
-import org.opalj.value.TypeOfReferenceValue
 
 /**
  * Default implementation for handling reference values.
@@ -45,9 +22,9 @@ import org.opalj.value.TypeOfReferenceValue
  * @author Michael Eichberg
  */
 trait DefaultTypeLevelReferenceValues
-    extends DefaultDomainValueBinding
+    extends DefaultSpecialDomainValuesBinding
     with TypeLevelReferenceValues {
-    domain: IntegerValuesDomain with TypedValuesFactory with Configuration with TheClassHierarchy ⇒
+    domain: IntegerValuesDomain with TypedValuesFactory with Configuration ⇒
 
     // -----------------------------------------------------------------------------------
     //
@@ -59,7 +36,7 @@ trait DefaultTypeLevelReferenceValues
     type DomainObjectValue <: ObjectValue with AReferenceValue // <= SObject.. and MObject...
     type DomainArrayValue <: ArrayValue with AReferenceValue
 
-    protected[this] class NullValue extends super.NullValue { this: DomainNullValue ⇒
+    protected[this] class NullValue() extends super.NullValue { this: DomainNullValue ⇒
 
         override protected def doJoin(pc: Int, other: DomainValue): Update[DomainValue] = {
             other match {
@@ -76,42 +53,14 @@ trait DefaultTypeLevelReferenceValues
         }
     }
 
-    /**
-     * @param theUpperTypeBound The upper type bound of this array, which is necessarily
-     *      precise if the element type of the array is a base type (primitive type).
-     */
-    protected[this] class ArrayValue(
-            override val theUpperTypeBound: ArrayType
-    ) extends super.ArrayValue with SReferenceValue[ArrayType] {
+    protected[this] trait ArrayValue
+        extends super.ArrayValue
+        with IsSArrayValue
+        with SReferenceValue[ArrayType] {
         this: DomainArrayValue ⇒
 
-        override def baseValues: Traversable[DomainArrayValue] = Traversable.empty
-
-        override def isValueSubtypeOf(supertype: ReferenceType): Answer = {
-            val isSubtypeOf = domain.isSubtypeOf(theUpperTypeBound, supertype)
-            isSubtypeOf match {
-                case Yes ⇒ Yes
-                case No if isPrecise ||
-                    /* the array's supertypes: Object, Serializable and Cloneable
-                     * are handled by domain.isSubtypeOf */
-                    supertype.isObjectType ||
-                    theUpperTypeBound.elementType.isBaseType ||
-                    (
-                        supertype.isArrayType &&
-                        supertype.asArrayType.elementType.isBaseType &&
-                        (
-                            theUpperTypeBound.dimensions >= supertype.asArrayType.dimensions ||
-                            (theUpperTypeBound.componentType ne ObjectType.Object)
-                        )
-                    ) ⇒ No
-                case _ ⇒ Unknown
-            }
-        }
-
         override def isAssignable(value: DomainValue): Answer = {
-
-            // TODO Get rid of "typeOfValue" call; the value is now always typed!
-            (typeOfValue(value): @unchecked) match {
+            value match {
 
                 case IsPrimitiveValue(primitiveType) ⇒
                     // The following is an over approximation that makes it theoretically
@@ -229,7 +178,7 @@ trait DefaultTypeLevelReferenceValues
             other match {
                 case _: NullValue ⇒ true
                 case ArrayValue(thatUpperTypeBound) ⇒
-                    domain.isSubtypeOf(thatUpperTypeBound, this.theUpperTypeBound).isYes
+                    domain.isSubtypeOf(thatUpperTypeBound, this.theUpperTypeBound)
                 case _ ⇒ false
             }
         }
@@ -247,8 +196,6 @@ trait DefaultTypeLevelReferenceValues
     }
 
     protected trait ObjectValue extends super.ObjectValue { this: DomainObjectValue ⇒
-
-        override def baseValues: Traversable[DomainObjectValue] = Traversable.empty
 
         protected def asStructuralUpdate(
             pc:                Int,
@@ -278,50 +225,10 @@ trait DefaultTypeLevelReferenceValues
 
     }
 
-    protected class SObjectValue(
-            override val theUpperTypeBound: ObjectType
-    ) extends ObjectValue with SReferenceValue[ObjectType] { this: DomainObjectValue ⇒
-
-        /**
-         * @inheritdoc
-         *
-         * @note It is often not necessary to override this method as this method already
-         *      takes the property whether the upper type bound '''is precise''' into
-         *      account.
-         */
-        override def isValueSubtypeOf(supertype: ReferenceType): Answer = {
-            val isSubtypeOf = domain.isSubtypeOf(theUpperTypeBound, supertype)
-            val result = isSubtypeOf match {
-                case Yes ⇒
-                    Yes
-                case No if isPrecise
-                    || (
-                        supertype.isArrayType &&
-                        // and it is impossible that this value is actually an array...
-                        (theUpperTypeBound ne ObjectType.Object) &&
-                        (theUpperTypeBound ne ObjectType.Serializable) &&
-                        (theUpperTypeBound ne ObjectType.Cloneable)
-                    ) || (
-                            // If both types represent class types and it is not
-                            // possible that some value of this type may be a subtype
-                            // of the given supertype, the answer "No" is correct.
-                            supertype.isObjectType &&
-                            classHierarchy.isKnown(supertype.asObjectType) &&
-                            classHierarchy.isKnown(theUpperTypeBound) &&
-                            classHierarchy.isInterface(supertype.asObjectType).isNo &&
-                            classHierarchy.isInterface(theUpperTypeBound).isNo &&
-                            domain.isSubtypeOf(supertype, theUpperTypeBound).isNo
-                        ) ⇒
-                    No
-                case _ if isPrecise &&
-                    // Note "reflexivity" is already captured by the first isSubtypeOf call
-                    domain.isSubtypeOf(supertype, theUpperTypeBound).isYes ⇒
-                    No
-                case _ ⇒
-                    Unknown
-            }
-            result
-        }
+    protected trait SObjectValue
+        extends ObjectValue
+        with SReferenceValue[ObjectType]
+        with IsSObjectValue { this: DomainObjectValue ⇒
 
         // WIDENING OPERATION
         override protected def doJoin(pc: Int, other: DomainValue): Update[DomainValue] = {
@@ -369,16 +276,16 @@ trait DefaultTypeLevelReferenceValues
         override def abstractsOver(other: DomainValue): Boolean = {
             other match {
                 case SObjectValue(thatUpperTypeBound) ⇒
-                    domain.isSubtypeOf(thatUpperTypeBound, this.theUpperTypeBound).isYes
+                    domain.isSubtypeOf(thatUpperTypeBound, this.theUpperTypeBound)
 
                 case ArrayValue(thatUpperTypeBound) ⇒
-                    domain.isSubtypeOf(thatUpperTypeBound, this.theUpperTypeBound).isYes
+                    domain.isSubtypeOf(thatUpperTypeBound, this.theUpperTypeBound)
 
                 case MObjectValue(thatUpperTypeBound) ⇒
                     classHierarchy.isSubtypeOf(
                         thatUpperTypeBound.asInstanceOf[UIDSet[ReferenceType]],
                         this.theUpperTypeBound
-                    ).isYes
+                    )
 
                 case _: NullValue ⇒ true
             }
@@ -394,60 +301,10 @@ trait DefaultTypeLevelReferenceValues
         def unapply(that: SObjectValue): Some[ObjectType] = Some(that.theUpperTypeBound)
     }
 
-    /**
-     * @param upperTypeBound All types from which the (precise, but unknown) type of the
-     *      represented value inherits. I.e., the value represented by this domain value
-     *      is known to have a type that (in)directly inherits from all given types at
-     *      the same time.
-     */
-    protected class MObjectValue(
-            override val upperTypeBound: UIDSet[ObjectType]
-    ) extends ObjectValue { value: DomainObjectValue ⇒
+    protected trait MObjectValue extends ObjectValue with IsMObjectValue {
+        value: DomainObjectValue ⇒
 
-        assert(upperTypeBound.size > 1)
-
-        /**
-         * Determines if this value is a subtype of the given supertype by
-         * delegating to the `isSubtypeOf(ReferenceType,ReferenceType)` method of the
-         * domain.
-         *
-         * @note This is a very basic implementation that cannot determine that this
-         *      value is '''not''' a subtype of the given type as this implementation
-         *      does not distinguish between class types and interface types.
-         */
-        override def isValueSubtypeOf(supertype: ReferenceType): Answer = {
-            var isSubtypeOf: Answer = No
-            upperTypeBound foreach { anUpperTypeBound ⇒
-                domain.isSubtypeOf(anUpperTypeBound, supertype) match {
-                    case Yes     ⇒ return Yes; // <= Shortcut evaluation
-                    case Unknown ⇒ isSubtypeOf = Unknown
-                    case No      ⇒ /*nothing to do*/
-                }
-            }
-            /* No | Unknown*/
-            // In general, we could check whether a type exists that is a
-            // proper subtype of the type identified by this value's type bounds
-            // and that is also a subtype of the given `supertype`.
-            //
-            // If such a type does not exist the answer is truly `no` (if we
-            // assume that we know the complete type hierarchy);
-            // if we don't know the complete hierarchy or if we currently
-            // analyze a library the answer generally has to be `Unknown`
-            // unless we also consider the classes that are final or ....
-
-            isSubtypeOf match {
-                // Yes is not possible here!
-
-                case No if (
-                    supertype.isArrayType && upperTypeBound != ObjectType.SerializableAndCloneable
-                ) ⇒
-                    // even if the upper bound is not precise we are now 100% sure
-                    // that this value is not a subtype of the given supertype
-                    No
-                case _ ⇒
-                    Unknown
-            }
-        }
+        final override def classHierarchy: ClassHierarchy = domain.classHierarchy
 
         override protected def doJoin(pc: Int, other: DomainValue): Update[DomainValue] = {
             val thisUTB = this.upperTypeBound

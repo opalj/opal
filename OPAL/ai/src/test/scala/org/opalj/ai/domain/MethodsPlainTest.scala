@@ -1,31 +1,4 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package ai
 package domain
@@ -109,7 +82,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val method = classFile.methods.find(_.name == "sLDC").get
         /*val result =*/ BaseAI(method, domain)
 
-        domain.isValueSubtypeOf(domain.returnedValue.get, ObjectType.String) should be(Yes)
+        domain.isValueASubtypeOf(domain.returnedValue.get, ObjectType.String) should be(Yes)
     }
 
     it should "be able to analyze a method that returns a fixed class value" in {
@@ -117,7 +90,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val method = classFile.methods.find(_.name == "cLDC").get
         /*val result =*/ BaseAI(method, domain)
 
-        domain.isValueSubtypeOf(domain.returnedValue.get, ObjectType.Class) should be(Yes)
+        domain.isValueASubtypeOf(domain.returnedValue.get, ObjectType.Class) should be(Yes)
 
     }
 
@@ -136,7 +109,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val method = classFile.methods.find(_.name == "sOne").get
         /*val result =*/ BaseAI(method, domain)
 
-        domain.isValueSubtypeOf(domain.returnedValue.get, ObjectType.String) should be(Yes)
+        domain.isValueASubtypeOf(domain.returnedValue.get, ObjectType.String) should be(Yes)
     }
 
     //
@@ -601,7 +574,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val method = classFile.methods.find(_.name == "asSimpleMethods").get
         /*val result =*/ BaseAI(method, domain)
 
-        domain.isValueSubtypeOf(domain.returnedValue.get, ObjectType("ai/MethodsPlain")) should be(Yes)
+        domain.isValueASubtypeOf(domain.returnedValue.get, ObjectType("ai/MethodsPlain")) should be(Yes)
     }
 
     it should "be able to correctly handle an instance of" in {
@@ -712,7 +685,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val method = classFile.methods.find(_.name == "localSimpleMethod").get
         /*val result =*/ BaseAI(method, domain)
 
-        domain.isValueSubtypeOf(domain.returnedValue.get, ObjectType("ai/MethodsPlain")) should be(Yes)
+        domain.isValueASubtypeOf(domain.returnedValue.get, ObjectType("ai/MethodsPlain")) should be(Yes)
         domain.refIsNull(-1, domain.returnedValue.get) should not be (No)
     }
 
@@ -864,7 +837,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val method = classFile.methods.find(_.name == "createNewBooleanArray").get
         /*val result =*/ BaseAI(method, domain)
 
-        domain.isValueSubtypeOf(
+        domain.isValueASubtypeOf(
             domain.returnedValue.get,
             ArrayType(BooleanType)
         ) should be(Yes)
@@ -875,7 +848,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val method = classFile.methods.find(_.name == "createNewCharArray").get
         /*val result =*/ BaseAI(method, domain)
 
-        domain.isValueSubtypeOf(
+        domain.isValueASubtypeOf(
             domain.returnedValue.get,
             ArrayType(CharType)
         ) should be(Yes)
@@ -886,7 +859,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val method = classFile.methods.find(_.name == "createNewFloatArray").get
         /*val result =*/ BaseAI(method, domain)
 
-        domain.isValueSubtypeOf(
+        domain.isValueASubtypeOf(
             domain.returnedValue.get,
             ArrayType(FloatType)
         ) should be(Yes)
@@ -897,7 +870,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val method = classFile.methods.find(_.name == "createNewDoubleArray").get
         /*val result =*/ BaseAI(method, domain)
 
-        domain.isValueSubtypeOf(
+        domain.isValueASubtypeOf(
             domain.returnedValue.get,
             ArrayType(DoubleType)
         ) should be(Yes)
@@ -909,7 +882,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val method = classFile.methods.find(_.name == "createNewByteArray").get
         /*val result =*/ BaseAI(method, domain)
 
-        domain.isValueSubtypeOf(
+        domain.isValueASubtypeOf(
             domain.returnedValue.get,
             ArrayType(ByteType)
         ) should be(Yes)
@@ -920,7 +893,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val method = classFile.methods.find(_.name == "createNewShortArray").get
         /*val result =*/ BaseAI(method, domain)
 
-        domain.isValueSubtypeOf(
+        domain.isValueASubtypeOf(
             domain.returnedValue.get,
             ArrayType(ShortType)
         ) should be(Yes)
@@ -931,7 +904,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val method = classFile.methods.find(_.name == "createNewIntArray").get
         /*val result =*/ BaseAI(method, domain)
 
-        domain.isValueSubtypeOf(
+        domain.isValueASubtypeOf(
             domain.returnedValue.get,
             ArrayType(IntegerType)
         ) should be(Yes)
@@ -942,7 +915,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val method = classFile.methods.find(_.name == "createNewLongArray").get
         /*val result =*/ BaseAI(method, domain)
 
-        domain.isValueSubtypeOf(
+        domain.isValueASubtypeOf(
             domain.returnedValue.get,
             ArrayType(LongType)
         ) should be(Yes)
@@ -954,7 +927,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val method = classFile.methods.find(_.name == "createNewSimpleMethodsArray").get
         /*val result =*/ BaseAI(method, domain)
 
-        domain.isValueSubtypeOf(
+        domain.isValueASubtypeOf(
             domain.returnedValue.get,
             ArrayType(ObjectType("ai/MethodsPlain"))
         ) should be(Yes)
@@ -965,7 +938,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val method = classFile.methods.find(_.name == "createNewMultiSimpleMethodsArray").get
         /*val result =*/ BaseAI(method, domain)
 
-        domain.isValueSubtypeOf(
+        domain.isValueASubtypeOf(
             domain.returnedValue.get,
             ArrayType(ArrayType(ObjectType("ai/MethodsPlain")))
         ) should be(Yes)
@@ -979,7 +952,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val result = BaseAI(method, domain)
 
         dumpOnFailureDuringValidation(Some(classFile), Some(method), method.body.get, result) {
-            domain.isValueSubtypeOf(
+            domain.isValueASubtypeOf(
                 domain.returnedValue.get,
                 ObjectType("ai/MethodsPlain")
             ) should be(Yes)
@@ -1077,7 +1050,7 @@ class MethodsPlainTest extends FlatSpec with Matchers {
         val method = classFile.methods.find(_.name == "create").get
         /*val result =*/ BaseAI(method, domain)
 
-        domain.isValueSubtypeOf(
+        domain.isValueASubtypeOf(
             domain.returnedValue.get,
             ObjectType.Object
         ) should be(Yes)
@@ -1096,7 +1069,7 @@ private object MethodsPlainTest {
 
     class RecordingDomain
         extends Domain
-        with DefaultDomainValueBinding
+        with DefaultSpecialDomainValuesBinding
         with DefaultHandlingForReturnInstructions
         with DefaultHandlingOfVoidReturns
         with DefaultReferenceValuesBinding

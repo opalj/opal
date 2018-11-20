@@ -1,37 +1,9 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package fpcf
 package analyses
 
 import scala.annotation.switch
-
 import org.opalj.br.ArrayType
 import org.opalj.br.DefinedMethod
 import org.opalj.br.ObjectType
@@ -68,7 +40,7 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
     import project.nonVirtualCall
     import project.resolveFieldReference
 
-    val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
+    private[this] val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
 
     /**
      * Determines the purity of the method starting with the instruction with the given
@@ -143,7 +115,7 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
 
                     case mii: NonVirtualMethodInvocationInstruction ⇒
 
-                        nonVirtualCall(mii) match {
+                        nonVirtualCall(declaringClassType, mii) match {
 
                             case Success(callee) ⇒
                                 /* Recall that self-recursive calls are handled earlier! */
@@ -191,6 +163,10 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
                     RETURN.opcode ⇒
                 // if we have a monitor instruction the method is impure anyway..
                 // hence, we can ignore the monitor related implicit exception
+
+                // Reference comparisons may have different results for structurally equal values
+                case IF_ACMPEQ.opcode | IF_ACMPNE.opcode ⇒
+                    return Result(definedMethod, ImpureByAnalysis);
 
                 case _ ⇒
                     // All other instructions (IFs, Load/Stores, Arith., etc.) are pure
@@ -263,7 +239,7 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
 
         // All parameters either have to be base types or have to be immutable.
         // IMPROVE Use plain object type once we use ObjectType in the store!
-        var referenceTypes = method.parameterTypes.iterator.collect {
+        var referenceTypes = method.parameterTypes.iterator.collect[ObjectType] {
             case t: ObjectType ⇒ t
             case _: ArrayType  ⇒ return Result(definedMethod, ImpureByAnalysis);
         }
@@ -311,7 +287,7 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
      * Determines the purity of the given method.
      */
     def determinePurity(definedMethod: DefinedMethod): PropertyComputationResult = {
-        val method = definedMethod.methodDefinition
+        val method = definedMethod.definedMethod
 
         // If thhis is not the method's declaration, but a non-overwritten method in a subtype,
         // don't re-analyze the code
@@ -340,28 +316,41 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
 }
 
 trait L0PurityAnalysisScheduler extends ComputationSpecification {
-    override def derives: Set[PropertyKind] = Set(Purity)
 
-    override def uses: Set[PropertyKind] = Set(TypeImmutability, FieldMutability)
+    final override def derives: Set[PropertyKind] = Set(Purity)
+
+    final override def uses: Set[PropertyKind] = Set(TypeImmutability, FieldMutability)
+
+    final override type InitializationData = Null
+    final def init(p: SomeProject, ps: PropertyStore): Null = null
+
+    def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
+
+    def afterPhaseCompletion(p: SomeProject, ps: PropertyStore): Unit = {}
 }
 
-object EagerL0PurityAnalysis extends L0PurityAnalysisScheduler with FPCFEagerAnalysisScheduler {
+object EagerL0PurityAnalysis
+    extends L0PurityAnalysisScheduler
+    with FPCFEagerAnalysisScheduler {
 
-    def start(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
-        val analysis = new L0PurityAnalysis(project)
-        val dms = project.get(DeclaredMethodsKey).declaredMethods
-        val methodsWithBody = dms.collect {
-            case dm if dm.hasDefinition && dm.methodDefinition.body.isDefined ⇒ dm.asDefinedMethod
+    override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+        val analysis = new L0PurityAnalysis(p)
+        val dms = p.get(DeclaredMethodsKey).declaredMethods
+        val methodsWithBody = dms.toIterator.collect {
+            case dm if dm.hasSingleDefinedMethod && dm.definedMethod.body.isDefined ⇒ dm.asDefinedMethod
         }
-        propertyStore.scheduleEagerComputationsForEntities(methodsWithBody)(analysis.determinePurity)
+        ps.scheduleEagerComputationsForEntities(methodsWithBody)(analysis.determinePurity)
         analysis
     }
 }
 
-object LazyL0PurityAnalysis extends L0PurityAnalysisScheduler with FPCFLazyAnalysisScheduler {
-    def startLazily(project: SomeProject, propertyStore: PropertyStore): FPCFAnalysis = {
-        val analysis = new L0PurityAnalysis(project)
-        propertyStore.registerLazyPropertyComputation(Purity.key, analysis.doDeterminePurity)
+object LazyL0PurityAnalysis
+    extends L0PurityAnalysisScheduler
+    with FPCFLazyAnalysisScheduler {
+
+    override def startLazily(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+        val analysis = new L0PurityAnalysis(p)
+        ps.registerLazyPropertyComputation(Purity.key, analysis.doDeterminePurity)
         analysis
     }
 }

@@ -1,38 +1,10 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package bi
 package reader
 
 import java.io.DataInputStream
 
-import org.opalj.log.GlobalLogContext
 import org.opalj.log.OPALLogger
 
 /**
@@ -41,7 +13,11 @@ import org.opalj.log.OPALLogger
  * The Signature attribute is an optional attribute in the
  * attributes table of a ClassFile, field_info or method_info structure.
  */
-trait Signature_attributeReader extends AttributeReader {
+trait Signature_attributeReader extends AttributeReader with ClassFileReaderConfiguration {
+
+    //
+    // TYPE DEFINITIONS AND FACTORY METHODS
+    //
 
     type Signature_attribute >: Null <: Attribute
 
@@ -50,6 +26,9 @@ trait Signature_attributeReader extends AttributeReader {
      * The default is to just log the invalid signature and to otherwise ignore it.
      *
      * This method is intended to be overridden.
+     *
+     * @note This method was primarily introduced because we found many class files with
+     *       invalid signatures AND the JVM also handles this case gracefully!
      *
      * @return `false`.
      */
@@ -69,9 +48,15 @@ trait Signature_attributeReader extends AttributeReader {
     def Signature_attribute(
         constant_pool:        Constant_Pool,
         ap:                   AttributeParent,
+        ap_name_index:        Constant_Pool_Index,
+        ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         signature_index:      Constant_Pool_Index
     ): Signature_attribute
+
+    //
+    // IMPLEMENTATION
+    //
 
     /**
      * The Signature attribute is an optional attribute in the
@@ -91,21 +76,25 @@ trait Signature_attributeReader extends AttributeReader {
      * is skipped.
      */
     private[this] def parser(
-        ap:                   AttributeParent,
         cp:                   Constant_Pool,
+        ap:                   AttributeParent,
+        ap_name_index:        Constant_Pool_Index,
+        ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         in:                   DataInputStream
     ): Signature_attribute = {
         /*val attribute_length =*/ in.readInt
         val signature_index = in.readUnsignedShort
         try {
-            Signature_attribute(cp, ap, attribute_name_index, signature_index)
+            Signature_attribute(
+                cp, ap, ap_name_index, ap_descriptor_index, attribute_name_index, signature_index
+            )
         } catch {
             case iae: IllegalArgumentException ⇒
                 OPALLogger.error(
                     "parsing bytecode",
                     s"skipping ${ap.toString().toLowerCase()} signature: "+iae.getMessage
-                )(GlobalLogContext)
+                )
                 if (throwIllegalArgumentException) throw iae else null
         }
     }

@@ -1,31 +1,4 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package br
 package reader
@@ -67,40 +40,50 @@ trait AnnotationAttributesBinding
 
     def AnnotationDefault_attribute(
         cp:                   Constant_Pool,
+        ap_name_index:        Constant_Pool_Index,
+        ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
-        element_value:        ElementValue
+        element_value:        ElementValue,
     ): AnnotationDefault_attribute = {
         element_value
     }
 
     def RuntimeVisibleAnnotations_attribute(
         cp:                   Constant_Pool,
+        ap_name_index:        Constant_Pool_Index,
+        ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
-        annotations:          Annotations
+        annotations:          Annotations,
     ): RuntimeVisibleAnnotations_attribute = {
         new RuntimeVisibleAnnotations_attribute(annotations)
     }
 
     def RuntimeInvisibleAnnotations_attribute(
         cp:                   Constant_Pool,
+        ap_name_index:        Constant_Pool_Index,
+        ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
-        annotations:          Annotations
+        annotations:          Annotations,
     ): RuntimeInvisibleAnnotations_attribute = {
         new RuntimeInvisibleAnnotations_attribute(annotations)
     }
 
     def RuntimeVisibleParameterAnnotations_attribute(
         cp:                     Constant_Pool,
+        ap_name_index:          Constant_Pool_Index,
+        ap_descriptor_index:    Constant_Pool_Index,
         attribute_name_index:   Constant_Pool_Index,
-        parameters_annotations: ParametersAnnotations
+        parameters_annotations: ParametersAnnotations,
     ): RuntimeVisibleParameterAnnotations_attribute = {
         new RuntimeVisibleParameterAnnotations_attribute(parameters_annotations)
     }
 
     def RuntimeInvisibleParameterAnnotations_attribute(
         cp:                     Constant_Pool,
+        ap_name_index:          Constant_Pool_Index,
+        ap_descriptor_index:    Constant_Pool_Index,
         attribute_name_index:   Constant_Pool_Index,
-        parameters_annotations: ParametersAnnotations
+        parameters_annotations: ParametersAnnotations,
     ): RuntimeInvisibleParameterAnnotations_attribute = {
         new RuntimeInvisibleParameterAnnotations_attribute(parameters_annotations)
     }

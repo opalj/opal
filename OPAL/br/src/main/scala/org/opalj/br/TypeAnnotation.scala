@@ -1,33 +1,8 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package br
+
+import org.opalj.collection.immutable.RefArray
 
 /**
  * Describes the kind of the target of a [[TypeAnnotation]].
@@ -169,15 +144,17 @@ case class TAOfThrows(throws_type_index: Int) extends TypeAnnotationTargetInMeto
 }
 
 sealed abstract class TypeAnnotationTargetInVarDecl extends TypeAnnotationTargetInCode {
-    def localVarTable: IndexedSeq[LocalvarTableEntry]
+    def localVarTable: RefArray[LocalvarTableEntry]
 }
 
 case class TAOfLocalvarDecl(
-        localVarTable: IndexedSeq[LocalvarTableEntry]
+        localVarTable: RefArray[LocalvarTableEntry]
 ) extends TypeAnnotationTargetInVarDecl {
+
     override def typeId: Int = 0x40
+
     override def remapPCs(codeSize: Int, f: PC ⇒ PC): Option[TAOfLocalvarDecl] = {
-        val newLocalVarTable = localVarTable.flatMap(_.remapPCs(codeSize, f))
+        val newLocalVarTable = localVarTable.flatMap[LocalvarTableEntry](_.remapPCs(codeSize, f))
         if (newLocalVarTable.nonEmpty)
             Some(copy(newLocalVarTable))
         else
@@ -186,11 +163,13 @@ case class TAOfLocalvarDecl(
 }
 
 case class TAOfResourcevarDecl(
-        localVarTable: IndexedSeq[LocalvarTableEntry]
+        localVarTable: RefArray[LocalvarTableEntry]
 ) extends TypeAnnotationTargetInVarDecl {
+
     override def typeId: Int = 0x41
+
     override def remapPCs(codeSize: Int, f: PC ⇒ PC): Option[TAOfResourcevarDecl] = {
-        val newLocalVarTable = localVarTable.flatMap(_.remapPCs(codeSize, f))
+        val newLocalVarTable = localVarTable.flatMap[LocalvarTableEntry](_.remapPCs(codeSize, f))
         if (newLocalVarTable.nonEmpty)
             Some(copy(newLocalVarTable))
         else
@@ -200,6 +179,10 @@ case class TAOfResourcevarDecl(
 
 /** The local variable is valid in the range `[start_pc, start_pc + length)`. */
 case class LocalvarTableEntry(startPC: Int, length: Int, index: Int) {
+
+    /**
+     * Remaps the PCs; if the new PCs are invalid the entry is considered to be dead.
+     */
     def remapPCs(codeSize: Int, f: PC ⇒ PC): Option[LocalvarTableEntry] = {
         val newStartPC = f(startPC)
         if (newStartPC < codeSize) {
@@ -210,6 +193,7 @@ case class LocalvarTableEntry(startPC: Int, length: Int, index: Int) {
         // ... else
         None
     }
+
 }
 
 case class TAOfCatch(exception_table_index: Int) extends TypeAnnotationTargetInCode {
@@ -370,7 +354,9 @@ case class TAOfMethodInMethodReferenceExpression(
 case object TADirectlyOnType extends TypeAnnotationPath
 
 // path length > 0
-case class TAOnNestedType(path: IndexedSeq[TypeAnnotationPathElement]) extends TypeAnnotationPath
+case class TAOnNestedType(
+        path: RefArray[TypeAnnotationPathElement]
+) extends TypeAnnotationPath
 
 case object TADeeperInArrayType extends TypeAnnotationPathElement {
     final override def kindId: Int = KindId

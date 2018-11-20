@@ -1,31 +1,4 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package hermes
 
@@ -44,6 +17,8 @@ import scalafx.beans.property.BooleanProperty
 import scalafx.beans.property.IntegerProperty
 import scalafx.beans.property.LongProperty
 import org.opalj.br.analyses.Project
+
+import scala.reflect.io.Directory
 
 /**
  * Implements the core functionality to evaluate a set of feature queries against a set of
@@ -323,4 +298,101 @@ trait HermesCore extends HermesConfig {
         writer.flush()
     }
 
+    def exportLocations(dir: Directory): Unit = {
+        projectConfigurations.iterator foreach { pc ⇒
+            featureMatrix.foreach { pf ⇒
+                val projectFile = new File(s"${dir.path}/${pf.id.value}.tsv")
+                io.process(new BufferedWriter(new FileWriter(projectFile))) { writer ⇒
+                    exportLocations(writer, pf)
+                }
+            }
+        }
+    }
+
+    def exportLocations(writer: BufferedWriter, pf: ProjectFeatures[URL]): Unit = {
+        // Logic to create the csv file:
+        val csvSchema = CsvSchema.builder()
+            .addColumn("PID")
+            .addColumn("FID")
+            .addColumn("Source")
+            .addColumn("Package")
+            .addColumn("FQN")
+            .addColumn("MethodName")
+            .addColumn("MethodDescriptor")
+            .addColumn("PC", CsvSchema.ColumnType.NUMBER)
+            .addColumn("Field")
+            .setUseHeader(true)
+            .setColumnSeparator('\t')
+            .build()
+
+        val csvGenerator = new CsvFactory().createGenerator(writer)
+        csvGenerator.setSchema(csvSchema)
+
+        def writeEntry[S](
+            source:           Option[S],
+            pn:               String,
+            cls:              String    = "",
+            methodName:       String    = "",
+            methodDescriptor: String    = "",
+            inst:             String    = "",
+            field:            String    = ""
+        ): Unit = {
+            csvGenerator.writeString(source.getOrElse("").toString)
+            csvGenerator.writeString(pn)
+            csvGenerator.writeString(cls)
+            csvGenerator.writeString(methodName)
+            csvGenerator.writeString(methodDescriptor)
+            csvGenerator.writeString(inst)
+            csvGenerator.writeString(field)
+        }
+
+        val projectId = pf.id.value
+        pf.features.foreach { f ⇒
+            val feature = f.value
+            val fid = feature.id
+            feature.extensions.foreach { l ⇒
+                csvGenerator.writeStartArray()
+                csvGenerator.writeString(projectId)
+                csvGenerator.writeString(fid)
+                l match {
+                    case PackageLocation(source, packageName) ⇒
+                        writeEntry(source, packageName)
+                    case ClassFileLocation(source, classFileFQN) ⇒
+                        writeEntry(source, "", s"L${classFileFQN.replace(".", "/")};")
+                    case ml @ MethodLocation(cfl, _, _) ⇒
+                        val jvmTypeName = s"L${ml.classFileFQN.replace(".", "/")};"
+                        writeEntry(
+                            cfl.source,
+                            "",
+                            jvmTypeName,
+                            ml.methodName,
+                            ml.methodDescriptor.toJVMDescriptor
+                        )
+                    case InstructionLocation(ml, pc) ⇒
+                        val jvmTypeName = s"L${ml.classFileFQN.replace(".", "/")};"
+                        writeEntry(
+                            ml.source,
+                            "",
+                            jvmTypeName,
+                            ml.methodName,
+                            ml.methodDescriptor.toJVMDescriptor,
+                            pc.toString
+                        )
+                    case FieldLocation(cfl, fieldName, fieldType) ⇒
+                        val fieldEntry = s"$fieldName : ${fieldType.toJava}"
+                        val jvmTypeName = s"L${cfl.classFileFQN.replace(".", "/")};"
+                        writeEntry(
+                            cfl.source,
+                            "",
+                            jvmTypeName,
+                            field = fieldEntry
+                        )
+                    case _ ⇒ throw new UnknownError(s"unsupported location type: $l")
+                }
+                csvGenerator.flush()
+                csvGenerator.writeEndArray()
+            }
+        }
+        csvGenerator.flush()
+    }
 }

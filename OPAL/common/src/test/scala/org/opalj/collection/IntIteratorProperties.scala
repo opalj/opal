@@ -1,31 +1,4 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package collection
 
@@ -39,7 +12,7 @@ import org.scalacheck.Prop.BooleanOperators
 import org.scalatest.FunSpec
 import org.scalatest.Matchers
 
-import java.util.Arrays
+import java.util.{Arrays ⇒ JArrays}
 
 import org.opalj.collection.immutable.IntArraySet
 import org.opalj.collection.immutable.Chain
@@ -61,67 +34,104 @@ object IntIteratorProperties extends Properties("IntIterator") {
 
     property("exists") = forAll { (is: IntArraySet, v: Int) ⇒
         classify(is.contains(v), "v is in the set") {
-            is.intIterator.exists(_ == v) == is.iterator.exists(_ == v)
+            is.iterator.exists(_ == v) == is.iterator.exists(_ == v)
         }
     }
 
     property("forall") = forAll { (is: IntArraySet, v: Int) ⇒
         classify(is.contains(v), "v is in the set") {
-            is.intIterator.forall(_ != v) == is.iterator.forall(_ != v)
+            is.iterator.forall(_ != v) == is.iterator.forall(_ != v)
         }
     }
 
     property("contains") = forAll { (is: IntArraySet, values: IntArraySet) ⇒
         values.forall { v ⇒
-            is.intIterator.contains(v) == is.iterator.contains(v)
+            is.iterator.contains(v) == is.iterator.contains(v)
         }
     }
 
-    property("foldLeft") = forAll { (is: IntArraySet) ⇒
-        is.intIterator.foldLeft(0)(_ + _) == is.iterator.foldLeft(0)(_ + _)
+    property("foldLeft") = forAll { is: IntArraySet ⇒
+        is.iterator.foldLeft(0)(_ + _) == is.iterator.foldLeft(0)(_ + _)
     }
 
-    property("map") = forAll { (is: IntArraySet) ⇒
-        is.intIterator.map(_ + 1).toChain == is.map(_ + 1).toChain
+    property("map") = forAll { is: IntArraySet ⇒
+        is.iterator.map(_ + 1).toChain == is.map(_ + 1).toChain
     }
 
-    property("foreach") = forAll { (is: IntArraySet) ⇒
+    property("foreach") = forAll { is: IntArraySet ⇒
         var c: Chain[Int] = Naught
-        is.intIterator.foreach { i ⇒ c = i :&: c }
+        is.iterator.foreach { i ⇒ c = i :&: c }
         c.reverse == is.toChain
     }
 
     property("filter") = forAll { (is: IntArraySet, values: IntArraySet) ⇒
-        (is.intIterator.filter(values.contains).forall(values.contains) :| "filter => forall") &&
-            is.intIterator.filter(values.contains).toChain == is.withFilter(values.contains).toChain
+        (is.iterator.filter(values.contains).forall(values.contains) :| "filter => forall") &&
+            is.iterator.filter(values.contains).toChain == is.withFilter(values.contains).toChain
     }
 
     property("withFilter") = forAll { (is: IntArraySet, values: IntArraySet) ⇒
-        is.intIterator.withFilter(values.contains).toChain == is.withFilter(values.contains).toChain
+        is.iterator.withFilter(values.contains).toChain == is.withFilter(values.contains).toChain
     }
 
-    property("toArray") = forAll { (is: IntArraySet) ⇒
-        val itArray = is.intIterator.toArray
+    property("map[AnyRef]") = forAll { is: IntArraySet ⇒
+        val setBased =
+            for {
+                i ← is.toArray
+                p = (i, i + 1)
+                j ← 0 until 3
+                q = (i, j)
+            } yield {
+                (p, q)
+            }
+        val iteratorBased =
+            for {
+                i ← is.iterator // here, we generate the IntIterator
+                p = (i, i + 1)
+                j ← 0 until 3
+                q = (i, j)
+            } yield {
+                (p, q)
+            }
+        setBased.toSet == iteratorBased.toSet
+    }
+
+    property("flatMap[AnyRef]") = forAll { is: IntArraySet ⇒
+        val setBased =
+            for {
+                i ← is.toArray
+                j ← is.toArray
+                q = (i, j)
+            } yield {
+                q
+            }
+        val iteratorBased =
+            for {
+                i ← is.iterator // here, we generate the IntIterator
+                j ← is.iterator // here, we generate the IntIterator
+                q = (i, j)
+            } yield {
+                q
+            }
+        setBased.toSet == iteratorBased.toSet
+    }
+
+    property("toArray") = forAll { is: IntArraySet ⇒
+        val itArray = is.iterator.toArray
         val isArray = is.toChain.toArray
-        Arrays.equals(itArray, isArray) :| isArray.mkString(",")+" vs. "+itArray.mkString(",")
+        JArrays.equals(itArray, isArray) :| isArray.mkString(",")+" vs. "+itArray.mkString(",")
     }
 
-    property("toChain") = forAll { (is: IntArraySet) ⇒
-        is.intIterator.toChain == is.toChain
+    property("toChain") = forAll { is: IntArraySet ⇒
+        is.iterator.toChain == is.toChain
     }
 
-    property("mkString") = forAll { (is: IntArraySet) ⇒
-        is.intIterator.mkString("-", ";", "-!") == is.iterator.mkString("-", ";", "-!")
+    property("mkString") = forAll { is: IntArraySet ⇒
+        is.iterator.mkString("-", ";", "-!") == is.iterator.mkString("-", ";", "-!")
     }
 
-    property("iterator") = forAll { (is: IntArraySet) ⇒
-        val it = is.iterator
-        val intIt = is.intIterator.iterator
-        intIt.forall(i ⇒ it.next == i) && !it.hasNext
-    }
 }
 
-class IntIteratorTest extends FunSpec with Matchers {
+class IntIteratorFactoryTest extends FunSpec with Matchers {
 
     describe("an empty IntIterator") {
 
@@ -146,7 +156,7 @@ class IntIteratorTest extends FunSpec with Matchers {
         }
 
         it("should return an array with specified value") {
-            assert(Arrays.equals(IntIterator(1).toArray, Array(1)))
+            assert(JArrays.equals(IntIterator(1).toArray, Array(1)))
         }
     }
 
@@ -163,7 +173,7 @@ class IntIteratorTest extends FunSpec with Matchers {
         }
 
         it("should return an array with specified values") {
-            assert(Arrays.equals(IntIterator(1, 2).toArray, Array(1, 2)))
+            assert(JArrays.equals(IntIterator(1, 2).toArray, Array(1, 2)))
         }
 
     }
@@ -183,7 +193,7 @@ class IntIteratorTest extends FunSpec with Matchers {
         }
 
         it("should return an array with specified values") {
-            assert(Arrays.equals(IntIterator(1, 2, 3).toArray, Array(1, 2, 3)))
+            assert(JArrays.equals(IntIterator(1, 2, 3).toArray, Array(1, 2, 3)))
         }
 
     }

@@ -1,78 +1,57 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package br
 package analyses
 
-import java.net.URL
+import scala.annotation.switch
+
 import java.io.File
+import java.lang.ref.SoftReference
+import java.net.URL
 import java.util.Arrays.{sort ⇒ sortArray}
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicReferenceArray
-import java.lang.ref.SoftReference
 
-import scala.annotation.switch
-import scala.collection.Set
 import scala.collection.Map
+import scala.collection.Set
 import scala.collection.SortedMap
-import scala.collection.mutable.{AnyRefMap, OpenHashMap}
+import scala.collection.immutable
+import scala.collection.mutable.AnyRefMap
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.ArrayStack
 import scala.collection.mutable.Buffer
-import com.typesafe.config.ConfigFactory
+import scala.collection.mutable.OpenHashMap
+
 import com.typesafe.config.Config
+import com.typesafe.config.ConfigFactory
 import net.ceedubs.ficus.Ficus._
+
+import org.opalj.log.Error
+import org.opalj.log.GlobalLogContext
+import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger
+import org.opalj.log.OPALLogger.error
+import org.opalj.log.OPALLogger.info
+import org.opalj.log.StandardLogContext
 import org.opalj.util.PerformanceEvaluation.time
-import org.opalj.concurrent.Tasks
+import org.opalj.collection.immutable.Chain
+import org.opalj.collection.immutable.ConstArray
+import org.opalj.collection.immutable.Naught
+import org.opalj.collection.immutable.UIDSet
+import org.opalj.collection.mutable.RefArrayBuffer
+import org.opalj.concurrent.ConcurrentExceptions
 import org.opalj.concurrent.SequentialTasks
+import org.opalj.concurrent.Tasks
 import org.opalj.concurrent.defaultIsInterrupted
 import org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks
 import org.opalj.concurrent.parForeachArrayElement
-import org.opalj.log.LogContext
-import org.opalj.log.OPALLogger
-import org.opalj.log.OPALLogger.info
-import org.opalj.log.OPALLogger.error
-import org.opalj.log.StandardLogContext
-import org.opalj.log.Error
-import org.opalj.log.GlobalLogContext
-import org.opalj.collection.immutable.ConstArray
-import org.opalj.collection.immutable.Chain
-import org.opalj.collection.immutable.Naught
-import org.opalj.collection.immutable.UIDSet
-import org.opalj.br.reader.BytecodeInstructionsCache
-import org.opalj.br.reader.Java9FrameworkWithLambdaExpressionsSupportAndCaching
-import org.opalj.br.reader.Java9LibraryFramework
 import org.opalj.br.instructions.Instruction
-import org.opalj.br.instructions.NEW
-import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.instructions.INVOKESPECIAL
-import org.opalj.concurrent.ConcurrentExceptions
+import org.opalj.br.instructions.INVOKESTATIC
+import org.opalj.br.instructions.NEW
+import org.opalj.br.reader.BytecodeInstructionsCache
+import org.opalj.br.reader.Java9FrameworkWithInvokedynamicSupportAndCaching
+import org.opalj.br.reader.Java9LibraryFramework
 
 /**
  * Primary abstraction of a Java project; i.e., a set of classes that constitute a
@@ -134,8 +113,8 @@ import org.opalj.concurrent.ConcurrentExceptions
  *                         source elements consists of (in this order): all methods + all fields
  *                         + all class files.
  *
- * @param libraryClassFilesAreInterfacesOnly If `true` then only the public interface
- *         of the methods of the library's classes is available.
+ * @param libraryClassFilesAreInterfacesOnly If `true` then only the public interfaces
+ *         of the methods of the library's classes are available.
  *
  * @author Michael Eichberg
  * @author Marco Torsello
@@ -172,7 +151,9 @@ class Project[Source] private (
         final val classHierarchy:                     ClassHierarchy,
         final val instanceMethods:                    Map[ObjectType, ConstArray[MethodDeclarationContext]],
         final val overridingMethods:                  Map[Method, Set[Method]],
-        final val projectType:                        ProjectType
+        final val projectType:                        ProjectType,
+        // Note that the referenced array will never shrink!
+        @volatile private[this] var projectInformation: AtomicReferenceArray[AnyRef] = new AtomicReferenceArray[AnyRef](32)
 )(
         implicit
         final val logContext: LogContext,
@@ -180,10 +161,28 @@ class Project[Source] private (
 ) extends ProjectLike {
 
     /**
-     * Returns a shallow clone of this project excluding project keys and where the log
-     * context is updated.
+     * Returns a shallow clone of this project with an updated log context and (optionally)
+     * filtered ProjectInformations.
+     *
+     * @param filterProjectInformation Enables filtering of the ProjectInformations that should be
+     *                                 kept when a new Project is created.
      */
-    def recreate(): Project[Source] = {
+    def recreate(
+        filterProjectInformation: Int ⇒ Boolean = _ ⇒ false
+    ): Project[Source] = this.synchronized {
+        // the synchronization is necessary to get exclusive access to "project information".
+        val max = projectInformation.length()
+        val newProjectInformation = new AtomicReferenceArray[AnyRef](max)
+        var i = 0
+        while (i < max) {
+            if (filterProjectInformation(i)) {
+                val pi = projectInformation.get(i)
+                if (pi != null) {
+                    newProjectInformation.set(i, pi)
+                }
+            }
+            i += 1
+        }
         val newLogContext = logContext.successor
         val newClassHierarchy = classHierarchy.updatedLogContext(newLogContext)
         new Project(
@@ -218,7 +217,8 @@ class Project[Source] private (
             newClassHierarchy,
             instanceMethods,
             overridingMethods,
-            projectType
+            projectType,
+            newProjectInformation
         )(
             newLogContext,
             config
@@ -237,10 +237,30 @@ class Project[Source] private (
 
     final val MethodHandleClassFile: Option[ClassFile] = classFile(ObjectType.MethodHandle)
 
-    final val allMethodsWithBody: ConstArray[Method] = ConstArray.from(this.methodsWithBody)
+    final val allMethodsWithBody: ConstArray[Method] = ConstArray._UNSAFE_from(this.methodsWithBody)
 
     final val allMethodsWithBodyWithContext: ConstArray[MethodInfo[Source]] = {
-        ConstArray.from(this.methodsWithBodyAndContext)
+        ConstArray._UNSAFE_from(this.methodsWithBodyAndContext)
+    }
+
+    /**
+     * The set of all classes defined in a specific package.
+     */
+    // TODO Consider extracting to a ProjectInformationKey
+    // TODO Java 9+
+    final val classesPerPackage: Map[String, immutable.Set[ClassFile]] = {
+        var classesPerPackage = Map.empty[String, RefArrayBuffer[ClassFile]]
+        allClassFiles foreach { cf ⇒
+            val packageName = cf.thisType.packageName
+            val buffer =
+                classesPerPackage.getOrElse(packageName, {
+                    val buffer = RefArrayBuffer.empty[ClassFile]
+                    classesPerPackage = classesPerPackage.updated(packageName, buffer)
+                    buffer
+                })
+            buffer += cf
+        }
+        classesPerPackage.mapValues(cfs ⇒ cfs.toSet)
     }
 
     /**
@@ -250,6 +270,7 @@ class Project[Source] private (
      *
      * @return The functional interfaces.
      */
+    // TODO Consider extracting to a ProjectInformationKey
     final lazy val functionalInterfaces: UIDSet[ObjectType] = time {
 
         // Core idea: a subtype is only processed after processing all supertypes;
@@ -259,7 +280,7 @@ class Project[Source] private (
         // the set of interfaces that are not functional interfaces themselve, but
         // which can be extended.
         var irrelevantInterfaces = UIDSet.empty[ObjectType]
-        var functionalInterfaces = Map.empty[ObjectType, MethodSignature]
+        val functionalInterfaces = AnyRefMap.empty[ObjectType, MethodSignature]
         var otherInterfaces = UIDSet.empty[ObjectType]
 
         // our worklist/-set; it only contains those interface types for which
@@ -373,14 +394,11 @@ class Project[Source] private (
                         if (isPotentiallyIrrelevant)
                             irrelevantInterfaces += interfaceType
                         else
-                            functionalInterfaces += ((
-                                interfaceType,
-                                abstractMethods.head.signature
-                            ))
+                            functionalInterfaces(interfaceType) = abstractMethods.head.signature
                         processSubinterfaces(interfaceType)
                     } else if (isPotentiallyIrrelevant ||
                         sharedFunctionalMethod == abstractMethods.head.signature) {
-                        functionalInterfaces += ((interfaceType, sharedFunctionalMethod))
+                        functionalInterfaces(interfaceType) = sharedFunctionalMethod
                         processSubinterfaces(interfaceType)
                     } else {
                         // different methods are defined...
@@ -451,9 +469,23 @@ class Project[Source] private (
         ).asInstanceOf[I]
     }
 
-    // Note that the referenced array will never shrink!
-    @volatile
-    private[this] var projectInformation = new AtomicReferenceArray[AnyRef](32)
+    /**
+     * Updates project information key specific initialization object. If an object is already
+     * registered, that object will be given to `info`.
+     *
+     * @note    Initialization data is discarded once the key is used.
+     */
+    def updateProjectInformationKeyInitializationData[T <: AnyRef, I <: AnyRef](
+        key:  ProjectInformationKey[T, I],
+        info: Option[I] ⇒ I
+    ): I = {
+        projectInformationKeyInitializationData.compute(
+            key.asInstanceOf[ProjectInformationKey[AnyRef, AnyRef]],
+            (_, current: AnyRef) ⇒ {
+                info(Option(current.asInstanceOf[I]))
+            }: I
+        ).asInstanceOf[I]
+    }
 
     /**
      * Returns the additional project information that is ''currently'' available.
@@ -642,13 +674,8 @@ class Project[Source] private (
     )(
         f: ClassFile ⇒ T
     ): Unit = {
-        try {
-            parForeachProjectClassFile(isInterrupted)(f)
-            parForeachLibraryClassFile(isInterrupted)(f)
-        } catch {
-            case ce: ConcurrentExceptions ⇒
-                throw ce;
-        }
+        parForeachProjectClassFile(isInterrupted)(f)
+        parForeachLibraryClassFile(isInterrupted)(f)
     }
 
     /**
@@ -1011,14 +1038,15 @@ object Project {
     }
 
     def JavaClassFileReader(
+        implicit
         theLogContext: LogContext = GlobalLogContext,
         theConfig:     Config     = BaseConfig
-    ): Java9FrameworkWithLambdaExpressionsSupportAndCaching = {
+    ): Java9FrameworkWithInvokedynamicSupportAndCaching = {
         // The following makes use of early initializers
         class ConfiguredFramework extends {
             override implicit val logContext: LogContext = theLogContext
             override implicit val config: Config = theConfig
-        } with Java9FrameworkWithLambdaExpressionsSupportAndCaching(cache)
+        } with Java9FrameworkWithInvokedynamicSupportAndCaching(cache)
         new ConfiguredFramework
     }
 
@@ -1060,61 +1088,70 @@ object Project {
                         }) + ot.toJava
                     }.getOrElse("<None>")
 
-                m.body.get.iterate { (pc: Int, instruction: Instruction) ⇒
-                    (instruction.opcode: @switch) match {
+                m.body.get iterate { (pc: Int, instruction: Instruction) ⇒
+                    try {
+                        (instruction.opcode: @switch) match {
 
-                        case NEW.opcode ⇒
-                            val NEW(objectType) = instruction
-                            if (isInterface(objectType).isYes) {
-                                val ex = InconsistentProjectException(
-                                    s"cannot create an instance of interface ${objectType.toJava} in "+
-                                        m.toJava(s"pc=$pc $disclaimer"),
-                                    Error
-                                )
-                                addException(ex)
-                            }
-
-                        case INVOKESTATIC.opcode ⇒
-                            val invokestatic = instruction.asInstanceOf[INVOKESTATIC]
-                            project.staticCall(invokestatic) match {
-                                case _: Success[_] ⇒ /*OK*/
-                                case Empty         ⇒ /*OK - partial project*/
-                                case Failure ⇒
+                            case NEW.opcode ⇒
+                                val NEW(objectType) = instruction
+                                if (isInterface(objectType).isYes) {
                                     val ex = InconsistentProjectException(
-                                        s"target method of invokestatic call in "+
-                                            m.toJava(s"pc=$pc; $invokestatic - $disclaimer")+
-                                            " cannot be resolved; supertype information is complete="+
-                                            completeSupertypeInformation+
-                                            "; missing supertype class file: "+missingSupertypeClassFile,
+                                        s"cannot create an instance of interface ${objectType.toJava} in "+
+                                            m.toJava(s"pc=$pc $disclaimer"),
                                         Error
                                     )
                                     addException(ex)
-                            }
+                                }
 
-                        case INVOKESPECIAL.opcode ⇒
-                            val invokespecial = instruction.asInstanceOf[INVOKESPECIAL]
-                            project.specialCall(invokespecial) match {
-                                case _: Success[_] ⇒ /*OK*/
-                                case Empty         ⇒ /*OK - partial project*/
-                                case Failure ⇒
-                                    val ex = InconsistentProjectException(
-                                        s"target method of invokespecial call in "+
-                                            m.toJava(s"pc=$pc; $invokespecial - $disclaimer")+
-                                            " cannot be resolved; supertype information is complete="+
-                                            completeSupertypeInformation+
-                                            "; missing supertype class file: "+missingSupertypeClassFile,
-                                        Error
-                                    )
-                                    addException(ex)
-                            }
+                            case INVOKESTATIC.opcode ⇒
+                                val invokestatic = instruction.asInstanceOf[INVOKESTATIC]
+                                project.staticCall(invokestatic) match {
+                                    case _: Success[_] ⇒ /*OK*/
+                                    case Empty         ⇒ /*OK - partial project*/
+                                    case Failure ⇒
+                                        val ex = InconsistentProjectException(
+                                            s"target method of invokestatic call in "+
+                                                m.toJava(s"pc=$pc; $invokestatic - $disclaimer")+
+                                                " cannot be resolved; supertype information is complete="+
+                                                completeSupertypeInformation+
+                                                "; missing supertype class file: "+missingSupertypeClassFile,
+                                            Error
+                                        )
+                                        addException(ex)
+                                }
 
-                        case _ ⇒ // Nothing special is checked (so far)
+                            case INVOKESPECIAL.opcode ⇒
+                                val invokespecial = instruction.asInstanceOf[INVOKESPECIAL]
+                                project.specialCall(cf.thisType, invokespecial) match {
+                                    case _: Success[_] ⇒ /*OK*/
+                                    case Empty         ⇒ /*OK - partial project*/
+                                    case Failure ⇒
+                                        val ex = InconsistentProjectException(
+                                            s"target method of invokespecial call in "+
+                                                m.toJava(s"pc=$pc; $invokespecial - $disclaimer")+
+                                                " cannot be resolved; supertype information is complete="+
+                                                completeSupertypeInformation+
+                                                "; missing supertype class file: "+missingSupertypeClassFile,
+                                            Error
+                                        )
+                                        addException(ex)
+                                }
+
+                            case _ ⇒ // Nothing special is checked (so far)
+                        }
+                    } catch {
+                        case t: Throwable ⇒
+                            OPALLogger.error(
+                                "OPAL",
+                                s"project validation of ${m.toJava(s"pc=$pc/$instruction")} failed unexpectedly",
+                                t
+                            )
                     }
                 }
             }
         } catch {
             case ce: ConcurrentExceptions ⇒
-                ce.getSuppressed.foreach { e ⇒
+                ce.getSuppressed foreach { e ⇒
                     error("internal - ignored", "project validation failed", e)
                 }
         }
@@ -1140,13 +1177,13 @@ object Project {
 
     def instanceMethods(
         classHierarchy:        ClassHierarchy,
-        objectTypeToClassFile: Map[ObjectType, ClassFile]
+        objectTypeToClassFile: ObjectType ⇒ Option[ClassFile]
     )(
         implicit
         logContext: LogContext
     ): Map[ObjectType, ConstArray[MethodDeclarationContext]] = time {
 
-        // IMPROVE Instead of a Chain => Array (for the value) use a sorted trie (set) or something similar which is always sorted.
+        import org.opalj.br.analyses.ProjectLike.findMaximallySpecificSuperinterfaceMethods
 
         // IDEA
         // Process the type hierarchy starting with the root type(s) to ensure that all method
@@ -1160,112 +1197,221 @@ object Project {
             new AnyRefMap(ObjectType.objectTypesCount)
         }
 
-        /* Returns `true` if the potentially available information is actually available. */
-        @inline def isAvailable(
-            objectType: ObjectType,
-            methods:    Option[Chain[MethodDeclarationContext]]
-        ): Boolean = {
-            methods.nonEmpty || !objectTypeToClassFile.contains(objectType)
+        // Here, "overridden" is to be taken with a grain of salt, because we have a static
+        // method with the same name and descriptor as an instance method defined by a super
+        // class...
+        var staticallyOverriddenInstanceMethods: List[(ObjectType, String, MethodDescriptor)] = Nil
+
+        // Returns `true` if the potentially available information is not yet available.
+        @inline def notYetAvailable(superinterfaceType: ObjectType): Boolean = {
+            methods.get(superinterfaceType).isEmpty &&
+                // If the class file is not known, we will never have any details;
+                // hence, the information will "NEVER" be available; or - in other
+                // words - all potentially available information is available.
+                objectTypeToClassFile(superinterfaceType).nonEmpty
         }
 
         def computeDefinedMethods(tasks: Tasks[ObjectType], objectType: ObjectType): Unit = {
             // Due to the fact that we may inherit from multiple interfaces,
-            // the computation may have been scheduled multiple times.
+            // the computation may have been scheduled multiple times; hence, if we are
+            // already done, just return.
             if (methods.get(objectType).nonEmpty)
                 return ;
 
-            var inheritedClassMethods: Chain[MethodDeclarationContext] = null
             val superclassType = classHierarchy.superclassType(objectType)
-            if (superclassType.isDefined) {
-                val theSuperclassType = superclassType.get
-                val superclassTypeMethods = methods.get(theSuperclassType)
-                if (!isAvailable(theSuperclassType, superclassTypeMethods)) {
-                    // let's postpone the processing of this object type
-                    // because we will get some result in the future
-                    tasks.submit(objectType)
-                    return ;
-                }
-                if (superclassTypeMethods.nonEmpty)
-                    inheritedClassMethods = superclassTypeMethods.get
-                else
-                    inheritedClassMethods = Naught
-            } else {
-                inheritedClassMethods = Naught
-            }
 
-            var inheritedInterfacesMethods: Chain[Chain[MethodDeclarationContext]] = Naught
-            for {
-                superinterfaceTypes ← classHierarchy.superinterfaceTypes(objectType)
-                superinterfaceType ← superinterfaceTypes
-                superinterfaceTypeMethods = methods.get(superinterfaceType)
-            } {
-                if (!isAvailable(superinterfaceType, superinterfaceTypeMethods)) {
-                    tasks.submit(objectType)
-                    return ;
+            val inheritedClassMethods: Chain[MethodDeclarationContext] =
+                if (superclassType.isDefined) {
+                    val theSuperclassType = superclassType.get
+                    if (notYetAvailable(theSuperclassType)) {
+                        // let's postpone the processing of this object type
+                        // because we will get some result in the future
+                        tasks.submit(objectType)
+                        return ;
+                    }
+                    val superclassTypeMethods = methods.get(theSuperclassType)
+                    if (superclassTypeMethods.nonEmpty) {
+                        val inheritedClassMethods = superclassTypeMethods.get
+                        if (classHierarchy.isInterface(objectType).isYes) {
+                            // an interface does not inherit non-public methods from java.lang.Object
+                            inheritedClassMethods.filter(mdc ⇒ mdc.method.isPublic)
+                        } else {
+                            inheritedClassMethods
+                        }
+                    } else
+                        Naught
+                } else {
+                    Naught
                 }
-                if (superinterfaceTypeMethods.nonEmpty) {
-                    inheritedInterfacesMethods :&:= superinterfaceTypeMethods.get
-                }
-            }
 
-            // When we reach this point, we have collected all methods inherited by the
-            // current type.
-
-            // We now have to select the most maximally specific methods, recall that:
+            // We have to select the most maximally specific methods, recall that:
             //  -   methods defined by a class have precedence over concrete methods defined
             //      by interfaces (e.g., default methods).
+            //  -   an abstract method defined by an interface "nullifies" a concrete
+            //      package-visible or protected visible method defined by a superclass.
             //  -   we assume that the project is valid; i.e., there is
             //      always at most one maximally specific method and if not, then
             //      the subclass resolves the conflict by defining the method.
             var definedMethods: Chain[MethodDeclarationContext] = inheritedClassMethods
-            for {
-                inheritedInterfaceMethods ← inheritedInterfacesMethods
-                inheritedInterfaceMethod ← inheritedInterfaceMethods
-            } {
+
+            val superinterfaceTypes = classHierarchy.allSuperinterfacetypes(objectType)
+
+            // We have to filter (remove) those interfaces that are directly and indirectly
+            // inherited. In this case the potentially(!) correct method is defined by the interface
+            // which also implements the indirectly inherited interface!
+            // Concrete case:
+            // interface S { default void m(){;} }
+            // interface SL extends S { abstract void m(); /* m is made abstract!!! */ }
+            // interface SR extends S { }
+            // The concrete method m defined by S does NOT belong to the interface of SB(!):
+            // interface SB extends SL,SR { }
+            //
+            // Hence, when we have to find the correct method, we first have to determine
+            // that - in case of SB - the only relevant super interfaces are SL and SR, but
+            // not S.
+
+            def processMaximallySpecificSuperinterfaceMethod(
+                inheritedInterfaceMethod: Method
+            ): Unit = {
                 // The relevant interface methods are public, hence, the package
                 // name is not relevant!
-                if (!definedMethods.exists { definedMethod ⇒
+                definedMethods find { definedMethod ⇒
                     definedMethod.descriptor == inheritedInterfaceMethod.descriptor &&
                         definedMethod.name == inheritedInterfaceMethod.name
-                }) {
-                    definedMethods :&:= inheritedInterfaceMethod
+                } match {
+                    case Some(mdc) ⇒
+                        // If there is already a method and it is from an interface, then it is not
+                        // maximally specific and must be replaced. If it is from a class however, we
+                        // must keep it.
+
+                        if (mdc.method.classFile.isInterfaceDeclaration) {
+                            definedMethods = definedMethods filterNot { definedMethod ⇒
+                                definedMethod.descriptor == inheritedInterfaceMethod.descriptor &&
+                                    definedMethod.name == inheritedInterfaceMethod.name
+                            }
+                            if (!inheritedInterfaceMethod.isAbstract)
+                                definedMethods :&:= MethodDeclarationContext(inheritedInterfaceMethod)
+                        }
+                    case None ⇒
+                        if (!inheritedInterfaceMethod.isAbstract)
+                            definedMethods :&:= MethodDeclarationContext(inheritedInterfaceMethod)
                 }
             }
 
-            objectTypeToClassFile.get(objectType) match {
-                case Some(classFile) ⇒
-                    for {
-                        declaredMethod ← classFile.methods
-                        if declaredMethod.isVirtualMethodDeclaration
-                        declaredMethodContext = MethodDeclarationContext(declaredMethod)
-                    } {
-                        // We have to filter multiple methods when we inherit (w.r.t. the
-                        // visibility) multiple conflicting methods!
-                        definedMethods =
-                            definedMethods.filterNot(declaredMethodContext.directlyOverrides)
+            var interfaceMethods: Set[MethodSignature] = Set.empty
+            var uniqueInterfaceMethods: Set[Method] = Set.empty
+            var uniqueInterfaceMethodSignatures: Set[MethodSignature] = Set.empty
+            for {
+                superinterfaceType ← superinterfaceTypes
+                superinterfaceClassfile ← objectTypeToClassFile(superinterfaceType)
+                superinterfaceTypeMethod ← superinterfaceClassfile.methods
+                if superinterfaceTypeMethod.isPublic &&
+                    !superinterfaceTypeMethod.isStatic &&
+                    !superinterfaceTypeMethod.isInitializer
+            } {
+                val signature = superinterfaceTypeMethod.signature
+                if (interfaceMethods.contains(signature)) {
+                    uniqueInterfaceMethodSignatures -= signature
+                    uniqueInterfaceMethods = uniqueInterfaceMethods.filterNot { m ⇒
+                        m.signature == signature
+                    }
+                } else {
+                    interfaceMethods += signature
+                    uniqueInterfaceMethodSignatures += signature
+                    uniqueInterfaceMethods += superinterfaceTypeMethod
+                }
+            }
 
-                        // Recall that it is possible to make a method "abstract" again...
-                        if (declaredMethod.isNotAbstract) {
-                            definedMethods :&:= declaredMethodContext
+            uniqueInterfaceMethods foreach { m ⇒
+                processMaximallySpecificSuperinterfaceMethod(m)
+            }
+
+            // let's keep the contexts related to the maximally specific methods.
+            interfaceMethods.iterator.filterNot { ms ⇒
+                uniqueInterfaceMethodSignatures.contains(ms)
+            } foreach { interfaceMethod ⇒
+                val (_, maximallySpecificSuperiniterfaceMethod) =
+                    findMaximallySpecificSuperinterfaceMethods(
+                        superinterfaceTypes,
+                        interfaceMethod.name, interfaceMethod.descriptor,
+                        UIDSet.empty[ObjectType]
+                    )(objectTypeToClassFile, classHierarchy, logContext)
+                if (maximallySpecificSuperiniterfaceMethod.size == 1) {
+                    // A maximally specific interface method can only be invoked if it is unique!
+                    processMaximallySpecificSuperinterfaceMethod(
+                        maximallySpecificSuperiniterfaceMethod.head
+                    )
+                }
+            }
+
+            objectTypeToClassFile(objectType) match {
+                case Some(classFile) ⇒
+                    for { declaredMethod ← classFile.methods } {
+                        if (declaredMethod.isVirtualMethodDeclaration) {
+                            val declaredMethodContext = MethodDeclarationContext(declaredMethod)
+                            // We have to filter multiple methods when we inherit (w.r.t. the
+                            // visibility) multiple conflicting methods!
+                            definedMethods =
+                                definedMethods.filterNot(declaredMethodContext.directlyOverrides)
+
+                            // Recall that it is possible to make a method "abstract" again...
+                            if (declaredMethod.isNotAbstract) {
+                                definedMethods :&:= declaredMethodContext
+                            }
+                        } else if (declaredMethod.isStatic) {
+                            val declaredMethodName = declaredMethod.name
+                            val declaredMethodDescriptor = declaredMethod.descriptor
+                            if (definedMethods.exists { mdc ⇒
+                                mdc.name == declaredMethodName &&
+                                    mdc.descriptor == declaredMethodDescriptor
+                            }) {
+                                // In this case we may have an "overriding" of an instance method by
+                                // a static method defined by the current interface or class type.
+                                // If so – we have to remove the instance method from the set
+                                // of defined methods for THIS SPECIFIC CLASS/INTERFACE ONlY; however,
+                                // we can only remove it later on, because the instance method is
+                                // visible again in subclasses/subinterfaces and we therefore
+                                // first have to propagate it.
+                                staticallyOverriddenInstanceMethods ::=
+                                    ((objectType, declaredMethodName, declaredMethodDescriptor))
+                            }
                         }
                     }
-                case None ⇒ // ... reached only in case of a rather incomplete projects...
+
+                case None ⇒
+                    // ... reached only in case of rather incomplete projects...
+                    OPALLogger.warn(
+                        "project configuration - instance methods",
+                        s"no class file for ${objectType.toJava}"
+                    )
             }
-            methods += ((objectType, definedMethods))
+            methods(objectType) = definedMethods
             classHierarchy.foreachDirectSubtypeOf(objectType)(tasks.submit)
         }
 
-        val tasks = new SequentialTasks[ObjectType](computeDefinedMethods)
-        classHierarchy.rootTypes foreach { t ⇒ tasks.submit(t) }
-        val exceptions = tasks.join()
-        exceptions foreach { e ⇒
-            OPALLogger.error("project setup", "computing the defined methods failed", e)
+        val tasks = new SequentialTasks[ObjectType](computeDefinedMethods, abortOnExceptions = true)
+        classHierarchy.rootTypes.foreach(tasks.submit)
+        try {
+            tasks.join()
+        } catch {
+            case ce: ConcurrentExceptions ⇒
+                ce.getSuppressed foreach { e ⇒
+                    error("project setup", "computing the defined methods failed", e)
+                }
+        }
+
+        staticallyOverriddenInstanceMethods foreach { sodm ⇒
+            val (declaringType, name, descriptor) = sodm
+            methods(declaringType) =
+                methods(declaringType) filter { mdc ⇒
+                    mdc.descriptor != descriptor || mdc.name != name
+                }
         }
 
         val result = methods.mapValuesNow { mdcs ⇒
             val sortedMethods = mdcs.toArray
             sortArray(sortedMethods, MethodDeclarationContextOrdering)
-            ConstArray.from(sortedMethods)
+            ConstArray._UNSAFE_from(sortedMethods)
         }
         result.repack
         result
@@ -1354,7 +1500,7 @@ object Project {
 
                         if (declaredMethod.isNotAbstract) overridingMethods += declaredMethod
 
-                        methods.put(declaredMethod, overridingMethods)
+                        methods(declaredMethod) = overridingMethods
                     }
                 }
             } finally {
@@ -1373,9 +1519,14 @@ object Project {
 
         val tasks = new SequentialTasks[ObjectType](computeOverridingMethods)
         classHierarchy.leafTypes foreach { t ⇒ tasks.submit(t) }
-        val exceptions = tasks.join()
-        exceptions foreach { e ⇒
-            OPALLogger.error("project configuration", "computing the overriding methods failed", e)
+        try {
+            tasks.join()
+        } catch {
+            case ce: ConcurrentExceptions ⇒
+                error("project setup", "computing overriding methods failed, e")
+                ce.getSuppressed foreach { e ⇒
+                    error("project setup", "computing the overriding methods failed", e)
+                }
         }
         methods.repack
         methods
@@ -1554,7 +1705,7 @@ object Project {
         project:                Project[Source],
         config:                 Config          = ConfigFactory.empty(),
         useOldConfigAsFallback: Boolean         = true
-    ) = {
+    ): Project[Source] = {
         apply(
             project.projectClassFilesWithSources,
             project.libraryClassFilesWithSources,
@@ -1577,9 +1728,9 @@ object Project {
      *      the libraries used by the project that will be analyzed.
      *      [Thread Safety] The underlying data structure has to support concurrent access.
      *
-     * @param libraryClassFilesAreInterfacesOnly If `true` then only the public interface
-     *      and no private METHODS or method implementations are available. Otherwise,
-     *      the libraries are completely loaded.
+     * @param libraryClassFilesAreInterfacesOnly If `true` then only the non-private interface of
+     *         of the classes belonging to the library was loaded. I.e., this setting just reflects
+     *         the way how the class files were loaded; it does not change the classes!
      *
      * @param virtualClassFiles A list of virtual class files that have no direct
      *      representation in the project.
@@ -1635,9 +1786,10 @@ object Project {
 
         try {
             import scala.collection.mutable.Set
-            import scala.concurrent.{Future, Await, ExecutionContext}
+            import scala.concurrent.Await
+            import scala.concurrent.Future
             import scala.concurrent.duration.Duration
-            import ExecutionContext.Implicits.{global ⇒ ScalaExecutionContext}
+            import scala.concurrent.ExecutionContext.Implicits.{global ⇒ ScalaExecutionContext}
 
             val classHierarchyFuture: Future[ClassHierarchy] = Future {
                 time {
@@ -1737,8 +1889,8 @@ object Project {
                         method.body.foreach(codeSize += _.instructions.length)
                     }
                     projectFieldsCount += classFile.fields.size
-                    objectTypeToClassFile.put(projectType, classFile)
-                    source.foreach(sources.put(classFile.thisType, _))
+                    objectTypeToClassFile(projectType) = classFile
+                    source.foreach(sources(classFile.thisType) = _)
                 }
             }
 
@@ -1805,15 +1957,15 @@ object Project {
                         method.body.foreach(codeSize += _.instructions.length)
                     }
                     libraryFieldsCount += libClassFile.fields.size
-                    objectTypeToClassFile.put(libraryType, libClassFile)
-                    sources.put(libraryType, source)
+                    objectTypeToClassFile(libraryType) = libClassFile
+                    sources(libraryType) = source
                 }
             }
 
             val classHierarchy = Await.result(classHierarchyFuture, Duration.Inf)
 
             val instanceMethodsFuture = Future {
-                this.instanceMethods(classHierarchy, objectTypeToClassFile)
+                this.instanceMethods(classHierarchy, objectTypeToClassFile.get)
             }
 
             val projectClassFilesArray = projectClassFiles.toArray
@@ -1853,9 +2005,9 @@ object Project {
 
             val fieldsCount: Int = projectFieldsCount + libraryFieldsCount
 
-            val allProjectClassFiles: ConstArray[ClassFile] = ConstArray.from(projectClassFilesArray)
+            val allProjectClassFiles: ConstArray[ClassFile] = ConstArray._UNSAFE_from(projectClassFilesArray)
 
-            val allLibraryClassFiles: ConstArray[ClassFile] = ConstArray.from(libraryClassFilesArray)
+            val allLibraryClassFiles: ConstArray[ClassFile] = ConstArray._UNSAFE_from(libraryClassFilesArray)
 
             val allClassFiles: Iterable[ClassFile] = {
                 new Iterable[ClassFile] {

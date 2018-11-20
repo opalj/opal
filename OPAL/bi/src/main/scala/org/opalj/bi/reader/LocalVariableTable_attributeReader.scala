@@ -1,39 +1,12 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package bi
 package reader
 
-import scala.reflect.ClassTag
-
 import java.io.DataInputStream
-import org.opalj.control.repeat
+
+import org.opalj.collection.immutable.RefArray
+import org.opalj.control.fillRefArray
 
 /**
  * Generic parser for the ''local variable table'' attribute.
@@ -41,15 +14,16 @@ import org.opalj.control.repeat
 trait LocalVariableTable_attributeReader extends AttributeReader {
 
     //
-    // ABSTRACT DEFINITIONS
+    // TYPE DEFINITIONS AND FACTORY METHODS
     //
+
     type LocalVariableTable_attribute >: Null <: Attribute
 
-    type LocalVariableTableEntry
-    implicit val LocalVariableTableEntryManifest: ClassTag[LocalVariableTableEntry]
+    type LocalVariableTableEntry <: AnyRef
+    type LocalVariables = RefArray[LocalVariableTableEntry]
 
     def LocalVariableTableEntry(
-        constant_pool:    Constant_Pool,
+        cp:               Constant_Pool,
         start_pc:         Int,
         length:           Int,
         name_index:       Constant_Pool_Index,
@@ -58,7 +32,9 @@ trait LocalVariableTable_attributeReader extends AttributeReader {
     ): LocalVariableTableEntry
 
     def LocalVariableTable_attribute(
-        constant_pool:        Constant_Pool,
+        cp:                   Constant_Pool,
+        ap_name_index:        Constant_Pool_Index,
+        ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         local_variable_table: LocalVariables
     ): LocalVariableTable_attribute
@@ -66,8 +42,6 @@ trait LocalVariableTable_attributeReader extends AttributeReader {
     //
     // IMPLEMENTATION
     //
-
-    type LocalVariables = IndexedSeq[LocalVariableTableEntry]
 
     /**
      * <pre>
@@ -85,8 +59,10 @@ trait LocalVariableTable_attributeReader extends AttributeReader {
      * </pre>
      */
     private[this] def parserFactory() = (
-        ap: AttributeParent,
         cp: Constant_Pool,
+        ap: AttributeParent,
+        ap_name_index: Constant_Pool_Index,
+        ap_descriptor_index: Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         in: DataInputStream
     ) ⇒ {
@@ -95,9 +71,11 @@ trait LocalVariableTable_attributeReader extends AttributeReader {
         if (entriesCount > 0 || reifyEmptyAttributes) {
             LocalVariableTable_attribute(
                 cp,
+                ap_name_index,
+                ap_descriptor_index,
                 attribute_name_index,
                 {
-                    repeat(entriesCount) {
+                    fillRefArray(entriesCount) {
                         LocalVariableTableEntry(
                             cp,
                             in.readUnsignedShort,

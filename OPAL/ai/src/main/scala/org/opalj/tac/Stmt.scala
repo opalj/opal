@@ -1,40 +1,16 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package tac
 
 import org.opalj.br._
 import org.opalj.br.analyses.ProjectLike
 import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.collection.immutable.RefArray
+import org.opalj.collection.immutable.IntArray
+import org.opalj.value.ValueInformation
 
 /**
- * Super trait of all quadruple statements.
+ * Super trait of all three-address code/quadruple statements.
  *
  * @author Michael Eichberg
  * @author Roberts Kolosovs
@@ -90,6 +66,7 @@ sealed abstract class Stmt[+V <: Var[V]] extends ASTNode[V] {
     def asNonVirtualMethodCall: NonVirtualMethodCall[V] = throw new ClassCastException();
     def asVirtualMethodCall: VirtualMethodCall[V] = throw new ClassCastException();
     def asStaticMethodCall: StaticMethodCall[V] = throw new ClassCastException();
+    def asInvokedynamicMethodCall: InvokedynamicMethodCall[V] = throw new ClassCastException();
     def asExprStmt: ExprStmt[V] = throw new ClassCastException();
     def asCaughtException: CaughtException[V] = throw new ClassCastException();
     def asCheckcast: Checkcast[V] = throw new ClassCastException();
@@ -99,10 +76,10 @@ sealed abstract class Stmt[+V <: Var[V]] extends ASTNode[V] {
 /**
  * @param target Index in the statements array.
  * @param left The expression left to the relational operator. In general, this can be expected to
- *             be a Var. However, it is not expression to facilitate advanced use cases such as
+ *             be a Var. However, it is an expression to facilitate advanced use cases such as
  *             generating source code.
  * @param right The expression right to the relational operator. In general, this can be expected to
- *             be a Var. However, it is not expression to facilitate advanced use cases such as
+ *             be a Var. However, it is an expression to facilitate advanced use cases such as
  *             generating source code.
  *
  */
@@ -259,7 +236,7 @@ case class Switch[+V <: Var[V]](
         pc:                        PC,
         private var defaultTarget: PC,
         index:                     Expr[V],
-        private var npairs:        IndexedSeq[(Int, PC)]
+        private var npairs:        RefArray[(Int, PC)] // IMPROVE use IntIntPair
 ) extends Stmt[V] {
 
     final override def asSwitch: this.type = this
@@ -272,7 +249,7 @@ case class Switch[+V <: Var[V]](
         pcToIndex:                    Array[Int],
         isIndexOfCaughtExceptionStmt: Int ⇒ Boolean
     ): Unit = {
-        npairs = npairs.map { x ⇒ (x._1, pcToIndex(x._2)) }
+        npairs._UNSAFE_mapped(x ⇒ (x._1, pcToIndex(x._2)))
         defaultTarget = pcToIndex(defaultTarget)
         index.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt)
     }
@@ -282,9 +259,9 @@ case class Switch[+V <: Var[V]](
         true
     }
 
-    // Calling this method is only supported after the quadruples representation
+    // Calling this method is only supported after the three-address code representation
     // is created and the remapping of pcs to instruction indexes has happened!
-    def caseStmts: IndexedSeq[Int] = npairs.map(x ⇒ x._2)
+    def caseStmts: IntArray = npairs.map(x ⇒ x._2)
 
     // Calling this method is only supported after the quadruples representation
     // is created and the remapping of pcs to instruction indexes has happened!
@@ -316,6 +293,8 @@ case class Assignment[+V <: Var[V]](pc: Int, targetVar: V, expr: Expr[V]) extend
     }
 
     final override def isSideEffectFree: Boolean = expr.isSideEffectFree
+
+    override def hashCode(): Opcode = (Assignment.ASTID * 1171 + pc) * 31 + expr.hashCode
 
     override def toString: String = s"Assignment(pc=$pc,$targetVar,$expr)"
 
@@ -496,6 +475,8 @@ case class Throw[+V <: Var[V]](pc: Int, exception: Expr[V]) extends Stmt[V] {
 
     final override def isSideEffectFree: Boolean = false
 
+    override def hashCode(): Opcode = (Throw.ASTID * 1171 + pc) * 31 + exception.hashCode
+
     override def toString: String = s"Throw(pc=$pc,$exception)"
 }
 object Throw {
@@ -544,8 +525,12 @@ case class PutStatic[+V <: Var[V]](
         false
     }
 
+    override def hashCode(): Opcode = {
+        ((PutStatic.ASTID * 1171 + pc) * 31 + declaringClass.hashCode) * 31 + name.hashCode
+    }
+
     override def toString: String = {
-        s"PutStatic(pc=$pc,${declaringClass.toJava},name,${declaredFieldType.toJava},$value)"
+        s"PutStatic(pc=$pc,${declaringClass.toJava},$name,${declaredFieldType.toJava},$value)"
     }
 }
 object PutStatic {
@@ -580,8 +565,12 @@ case class PutField[+V <: Var[V]](
         false
     }
 
+    override def hashCode(): Opcode = {
+        ((PutField.ASTID * 1171 + pc) * 31 + declaringClass.hashCode) * 31 + name.hashCode
+    }
+
     override def toString: String = {
-        s"PutField(pc=$pc,${declaringClass.toJava},name,${declaredFieldType.toJava},$objRef,$value)"
+        s"PutField(pc=$pc,${declaringClass.toJava},$name,${declaredFieldType.toJava},$objRef,$value)"
     }
 }
 object PutField {
@@ -597,6 +586,9 @@ sealed abstract class MethodCall[+V <: Var[V]] extends Stmt[V] with Call[V] {
 }
 
 sealed abstract class InstanceMethodCall[+V <: Var[V]] extends MethodCall[V] {
+
+    final override def allParams: Seq[Expr[V]] = receiver +: params
+    final override def receiverOption: Option[Expr[V]] = Some(receiver)
 
     def receiver: Expr[V]
     final override def asInstanceMethodCall: this.type = this
@@ -646,8 +638,19 @@ case class NonVirtualMethodCall[+V <: Var[V]](
      *
      * @see [ProjectLike#specialCall] for further details.
      */
-    def resolveCallTarget(implicit p: ProjectLike): Result[Method] = {
-        p.specialCall(declaringClass, isInterface, name, descriptor)
+    def resolveCallTarget(callerClassType: ObjectType)(implicit p: ProjectLike): Result[Method] = {
+        p.specialCall(callerClassType, declaringClass, isInterface, name, descriptor)
+    }
+
+    // convenience method to enable Call to define a single method to handle all kinds of calls
+    def resolveCallTargets(
+        callingContext: ObjectType
+    )(
+        implicit
+        p:  ProjectLike,
+        ev: V <:< DUVar[ValueInformation]
+    ): Set[Method] = {
+        resolveCallTarget(callingContext)(p).toSet
     }
 
     override def toString: String = {
@@ -695,6 +698,9 @@ case class StaticMethodCall[+V <: Var[V]](
         params:         Seq[Expr[V]]
 ) extends MethodCall[V] {
 
+    final override def allParams: Seq[Expr[V]] = params
+    final override def receiverOption: Option[Expr[V]] = None
+
     final override def asStaticMethodCall: this.type = this
     final override def astID: Int = StaticMethodCall.ASTID
     final override def forallSubExpressions[W >: V <: Var[W]](p: Expr[W] ⇒ Boolean): Boolean = {
@@ -710,6 +716,17 @@ case class StaticMethodCall[+V <: Var[V]](
         p.staticCall(declaringClass, isInterface, name, descriptor)
     }
 
+    // convenience method to enable Call to define a single method to handle all kinds of calls
+    def resolveCallTargets(
+        callingContext: ObjectType
+    )(
+        implicit
+        p:  ProjectLike,
+        ev: V <:< DUVar[ValueInformation]
+    ): Set[Method] = {
+        resolveCallTarget(p).toSet
+    }
+
     private[tac] override def remapIndexes(
         pcToIndex:                    Array[Int],
         isIndexOfCaughtExceptionStmt: Int ⇒ Boolean
@@ -721,12 +738,57 @@ case class StaticMethodCall[+V <: Var[V]](
         val sig = descriptor.toJava(name)
         val declClass = declaringClass.toJava
         val params = this.params.mkString("(", ",", ")")
-        s"NonVirtualMethodCall(pc=$pc,$declClass,isInterface=$isInterface,$sig,$params)"
+        s"StaticMethodCall(pc=$pc,$declClass,isInterface=$isInterface,$sig,$params)"
     }
 }
 object StaticMethodCall {
     final val ASTID = 17
 }
+
+/**
+ * Representation of an `invokedynamic` instruction where the return type of the finally called
+ * method is `void`.
+ *
+ * @tparam V The type of the [[Var]]s.
+ */
+case class InvokedynamicMethodCall[+V <: Var[V]](
+        pc:              PC,
+        bootstrapMethod: BootstrapMethod,
+        name:            String,
+        descriptor:      MethodDescriptor,
+        params:          Seq[Expr[V]]
+) extends Stmt[V] {
+
+    final override def astID: Int = InvokedynamicMethodCall.ASTID
+    final override def asInvokedynamicMethodCall: this.type = this
+    // IMPROVE [FUTURE] Use some analysis to determine if a method call is side effect free
+    final override def isSideEffectFree: Boolean = false
+    final override def forallSubExpressions[W >: V <: Var[W]](p: Expr[W] ⇒ Boolean): Boolean = {
+        params.forall(param ⇒ p(param))
+    }
+
+    private[tac] override def remapIndexes(
+        pcToIndex:                    Array[Int],
+        isIndexOfCaughtExceptionStmt: Int ⇒ Boolean
+    ): Unit = {
+        params.foreach { p ⇒ p.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt) }
+    }
+
+    override def hashCode(): Int = {
+        (((InvokedynamicMethodCall.ASTID * 1171 +
+            pc) * 31 +
+            bootstrapMethod.hashCode) * 31 +
+            name.hashCode) * 31 +
+            descriptor.hashCode
+    }
+
+    override def toString: String = {
+        val sig = descriptor.toJava(name)
+        val params = this.params.mkString("(", ",", ")")
+        s"InvokedynamicMethodCall(pc=$pc,$bootstrapMethod,$sig,$params)"
+    }
+}
+object InvokedynamicMethodCall { final val ASTID = 18 }
 
 /** An expression where the value is not further used. */
 case class ExprStmt[+V <: Var[V]](pc: Int, expr: Expr[V]) extends Stmt[V] {
@@ -752,11 +814,13 @@ case class ExprStmt[+V <: Var[V]](pc: Int, expr: Expr[V]) extends Stmt[V] {
         false
     }
 
+    override def hashCode(): Opcode = (ExprStmt.ASTID * 1171 + pc) * 31 + expr.hashCode
+
     override def toString: String = s"ExprStmt(pc=$pc,$expr)"
 
 }
 object ExprStmt {
-    final val ASTID = 18
+    final val ASTID = 19
 }
 
 /**
@@ -826,15 +890,7 @@ case class CaughtException[+V <: Var[V]](
         pcToIndex:                    Array[Int],
         isIndexOfCaughtExceptionStmt: Int ⇒ Boolean
     ): Unit = {
-        throwingStmts = throwingStmts map { stmt ⇒
-            if (ai.isVMLevelValue(stmt))
-                ai.ValueOriginForVMLevelValue(pcToIndex(ai.pcOfVMLevelValue(stmt)))
-            else if (stmt < 0)
-                stmt
-            else
-                pcToIndex(stmt)
-
-        }
+        throwingStmts = throwingStmts map { pc ⇒ ai.remapPC(pcToIndex)(pc) }
     }
 
     /**
@@ -844,9 +900,9 @@ case class CaughtException[+V <: Var[V]](
      *    same method, then the origin identifies a normal variable definition site.
      *  - If the exception is a parameter the parameter's origin (-1,... -n) is returned.
      *  - If the exception was raised due to a sideeffect of evaluating an expression, then the
-     *    origin is smaller or equal to [[org.opalj.ai.VMLevelValuesOriginOffset]] and can be
+     *    origin is smaller or equal to [[org.opalj.ai.ImmediateVMExceptionsOriginOffset]] and can be
      *    tranformed to the index of the responsible instruction using
-     *    [[org.opalj.ai#pcOfVMLevelValue]].
+     *    [[org.opalj.ai#pcOfImmediateVMException]].
      */
     def origins: IntTrieSet = throwingStmts
 
@@ -860,8 +916,10 @@ case class CaughtException[+V <: Var[V]](
     final def exceptionLocations: Iterator[String] = {
         throwingStmts.iterator.map { defSite ⇒
             if (defSite < 0) {
-                if (ai.isVMLevelValue(defSite))
-                    "exception@"+ai.pcOfVMLevelValue(defSite)
+                if (ai.isImmediateVMException(defSite))
+                    "exception[VM]@"+ai.pcOfImmediateVMException(defSite)
+                else if (ai.isMethodExternalExceptionOrigin(defSite))
+                    "exception@"+ai.pcOfMethodExternalException(defSite)
                 else
                     "param"+(-defSite - 1).toHexString
             } else {
@@ -879,7 +937,7 @@ case class CaughtException[+V <: Var[V]](
 
 object CaughtException {
 
-    final val ASTID = 19
+    final val ASTID = 20
 
 }
 
@@ -914,5 +972,5 @@ case class Checkcast[+V <: Var[V]](pc: PC, value: Expr[V], cmpTpe: ReferenceType
 
 }
 object Checkcast {
-    final val ASTID = 20
+    final val ASTID = 21
 }

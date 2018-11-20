@@ -1,41 +1,16 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package br
 package analyses
+
+import scala.language.implicitConversions
 
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FunSpec
 import org.scalatest.Matchers
+
 import org.opalj.collection.immutable.UIDSet
-import scala.language.implicitConversions
 import org.opalj.log.GlobalLogContext
 
 /**
@@ -44,11 +19,17 @@ import org.opalj.log.GlobalLogContext
 @RunWith(classOf[JUnitRunner])
 class JoinObjectTypesTest extends FunSpec with Matchers {
 
-    val classhierachy =
+    final val classhierachy = {
+        //val thisClass = classOf[org.opalj.br.analyses.JoinObjectTypesTest]
+        val thisClass = this.getClass()
+        val in = thisClass.getResourceAsStream("ClassHierarchyUpperBounds.ths")
+        if (in == null)
+            throw new UnknownError("class hierarchy could not be loaded")
         ClassHierarchy(
             Traversable.empty,
-            List(() ⇒ this.getClass.getResourceAsStream("ClassHierachyUpperBounds.ths"))
+            List(() ⇒ in)
         )(GlobalLogContext)
+    }
 
     implicit def stringToUIDSetObjectType(str: String) = UIDSet(ObjectType(str))
     implicit def stringToObjectType(str: String) = ObjectType(str)
@@ -84,7 +65,7 @@ class JoinObjectTypesTest extends FunSpec with Matchers {
         val result = classhierachy.joinObjectTypes(param1, param2, reflexive)
         if (result != expected)
             fail(
-                s"${param1} join${if (reflexive) "(reflexive)" else ""}"+
+                s"$param1 join${if (reflexive) "(reflexive)" else ""}"+
                     s" ${mkString(param2)} is ${mkString(result)};"+
                     s" expected ${mkString(expected)}"
             )
@@ -109,7 +90,7 @@ class JoinObjectTypesTest extends FunSpec with Matchers {
     ) = {
         val result = classhierachy.joinObjectTypesUntilSingleUpperBound(param)
         if (result != expected)
-            fail(s"join of ${mkString(param)} "+
+            fail(s"join of ${mkString(param)}"+
                 s" using joinObjectTypesUntilSingleUpperBound(UIDSet[ObjectType]) is ${result};"+
                 s" expected ${expected}")
 
@@ -117,222 +98,221 @@ class JoinObjectTypesTest extends FunSpec with Matchers {
 
     describe("the behavior of the method joinObjectTypes(ObjectType,ObjectType) of ClassHierachy") {
         // uncomment to display the test graph:
-        //        io.writeAndOpen((toDot.generateDot(Set(classhierachy.toGraph))), "test", ".dot")
+        // io.writeAndOpen((toDot.generateDot(Set(classhierachy.toGraph))), "test", ".dot")
 
         describe("the behavior of joins with classes") {
-            describe("the behavior of joins with sets containing one class") {
-                it("join class with itself should result in the same class") {
-                    testJoinOfTwoObjectTypes("A", "A", true, "A")
-                }
 
-                it("join of two direct subclasses should result in the superclass (reflexive)") {
-                    testJoinOfTwoObjectTypes("SubA", "SubA2", true, "A")
-                }
-
-                it("join of two direct subclasses should result in the superclass (non-reflexive)") {
-                    testJoinOfTwoObjectTypes("SubA", "SubA2", false, "A")
-                }
-
-                it("join of two indirect subclasses should result in the superclass (reflexive)") {
-                    testJoinOfTwoObjectTypes("SubSubA", "SubA2", true, "A")
-                }
-
-                it("join of two indirect subclasses should result in the superclass (non-reflexive)") {
-                    testJoinOfTwoObjectTypes("SubSubA", "SubA2", false, "A")
-                }
-
-                it("join of a class and a subclass with common implemented interfaces should result in the superclass (reflexive)") {
-                    testJoinOfTwoObjectTypes("A", "SubA", true, "A")
-                }
-
-                it("join of a class and a subclass with no common implemented interfaces should result in the class (reflexive)") {
-                    testJoinOfTwoObjectTypes("E", "SubE", true, "E")
-                }
-
-                it("join of class with no interface and no superclass and another class should result in java/lang/Object (reflexive)") {
-                    testJoinOfTwoObjectTypes("E", "C", true, "java/lang/Object")
-                }
-
-                it("join of class with no interface and no superclass and another class should result in java/lang/Object (non-reflexive)") {
-                    testJoinOfTwoObjectTypes("E", "C", false, "java/lang/Object")
-                }
-
-                it("join of classes with same direct superclass, different interface should result in their superclass (reflexive)") {
-                    testJoinOfTwoObjectTypes("SubA2", "SubA3", true, "A")
-                }
-
-                it("join of classes with same direct superclass, different interface should result in their superclass (non-reflexive)") {
-                    testJoinOfTwoObjectTypes("SubA2", "SubA3", false, "A")
-                }
-
-                it("join of classes with same direct superclass, same interface should result in their superclass and common interface (reflexive)") {
-                    testJoinOfTwoObjectTypes("SubA", "SubA4", true, Set("A", "ID"))
-                }
-
-                it("join of classes with same direct superclass, same interface should result in their superclass and common interface (non-reflexive)") {
-                    testJoinOfTwoObjectTypes("SubA", "SubA4", false, Set("A", "ID"))
-                }
-
-                it("join of classes with same indirect superclass, different interface should result in their superclass (reflexive)") {
-                    testJoinOfTwoObjectTypes("SubSubA", "SubSubA2", true, "A")
-                }
-
-                it("join of classes with same indirect superclass, different interface should result in their superclass (non-reflexive)") {
-                    testJoinOfTwoObjectTypes("SubSubA", "SubSubA2", false, "A")
-                }
-
-                it("join of classes with same indirect superclass, same interface should result in their superclass and common interface (reflexive)") {
-                    testJoinOfTwoObjectTypes("SubA4", "SubSubA", true, Set("A", "ID"))
-                }
-
-                it("join of classes with same indirect superclass, same interface should result in their superclass and common interface (non-reflexive)") {
-                    testJoinOfTwoObjectTypes("SubA4", "SubSubA", false, Set("A", "ID"))
-                }
-
-                it("join of classes with different superclass, different interface should result in java/lang/Object (reflexive)") {
-                    testJoinOfTwoObjectTypes("SubA3", "SubB", true, "java/lang/Object")
-                }
-
-                it("join of classes with different superclass, different interface should result in java/lang/Object (non-reflexive)") {
-                    testJoinOfTwoObjectTypes("SubA3", "SubB", false, "java/lang/Object")
-                }
-
-                it("join of classes with different superclass, same interface should result in their common interface (reflexive)") {
-                    testJoinOfTwoObjectTypes("SubB", "SubC", true, "SubIB")
-                }
-
-                it("join of classes with different superclass, same interface should result in their common interface (non-reflexive)") {
-                    testJoinOfTwoObjectTypes("SubB", "SubC", false, "SubIB")
-                }
-
-                it("join of class and subclass with re-implemented interface should result in the class (reflexive)") {
-                    testJoinOfTwoObjectTypes("SubA", "SubSubA", true, "SubA")
-                }
-
-                it("join of two subclasses with a re-implemented interface should result in the superclass and the subinterface (reflexive)") {
-                    testJoinOfTwoObjectTypes("SubB", "SubB2", true, Set("B", "SubIB"))
-                }
-
-                it("join of two subclasses with a re-implemented interface should result in the superclass and the subinterface (non-reflexive)") {
-                    testJoinOfTwoObjectTypes("SubB", "SubB2", false, Set("B", "SubIB"))
-                }
+            it("join class with itself should result in the same class") {
+                testJoinOfTwoObjectTypes("A", "A", true, "A")
             }
+
+            it("join of two direct subclasses should result in the superclass (reflexive)") {
+                testJoinOfTwoObjectTypes("SubA", "SubA2", true, "A")
+            }
+
+            it("join of two direct subclasses should result in the superclass (non-reflexive)") {
+                testJoinOfTwoObjectTypes("SubA", "SubA2", false, "A")
+            }
+
+            it("join of two indirect subclasses should result in the superclass (reflexive)") {
+                testJoinOfTwoObjectTypes("SubSubA", "SubA2", true, "A")
+            }
+
+            it("join of two indirect subclasses should result in the superclass (non-reflexive)") {
+                testJoinOfTwoObjectTypes("SubSubA", "SubA2", false, "A")
+            }
+
+            it("join of a class and a subclass with common implemented interfaces should result in the superclass (reflexive)") {
+                testJoinOfTwoObjectTypes("A", "SubA", true, "A")
+            }
+
+            it("join of a class and a subclass with no common implemented interfaces should result in the class (reflexive)") {
+                testJoinOfTwoObjectTypes("E", "SubE", true, "E")
+            }
+
+            it("join of class with no interface and no superclass and another class should result in java/lang/Object (reflexive)") {
+                testJoinOfTwoObjectTypes("E", "C", true, "java/lang/Object")
+            }
+
+            it("join of class with no interface and no superclass and another class should result in java/lang/Object (non-reflexive)") {
+                testJoinOfTwoObjectTypes("E", "C", false, "java/lang/Object")
+            }
+
+            it("join of classes with same direct superclass, different interface should result in their superclass (reflexive)") {
+                testJoinOfTwoObjectTypes("SubA2", "SubA3", true, "A")
+            }
+
+            it("join of classes with same direct superclass, different interface should result in their superclass (non-reflexive)") {
+                testJoinOfTwoObjectTypes("SubA2", "SubA3", false, "A")
+            }
+
+            it("join of classes with same direct superclass, same interface should result in their superclass and common interface (reflexive)") {
+                testJoinOfTwoObjectTypes("SubA", "SubA4", true, Set("A", "ID"))
+            }
+
+            it("join of classes with same direct superclass, same interface should result in their superclass and common interface (non-reflexive)") {
+                testJoinOfTwoObjectTypes("SubA", "SubA4", false, Set("A", "ID"))
+            }
+
+            it("join of classes with same indirect superclass, different interface should result in their superclass (reflexive)") {
+                testJoinOfTwoObjectTypes("SubSubA", "SubSubA2", true, "A")
+            }
+
+            it("join of classes with same indirect superclass, different interface should result in their superclass (non-reflexive)") {
+                testJoinOfTwoObjectTypes("SubSubA", "SubSubA2", false, "A")
+            }
+
+            it("join of classes with same indirect superclass, same interface should result in their superclass and common interface (reflexive)") {
+                testJoinOfTwoObjectTypes("SubA4", "SubSubA", true, Set("A", "ID"))
+            }
+
+            it("join of classes with same indirect superclass, same interface should result in their superclass and common interface (non-reflexive)") {
+                testJoinOfTwoObjectTypes("SubA4", "SubSubA", false, Set("A", "ID"))
+            }
+
+            it("join of classes with different superclass, different interface should result in java/lang/Object (reflexive)") {
+                testJoinOfTwoObjectTypes("SubA3", "SubB", true, "java/lang/Object")
+            }
+
+            it("join of classes with different superclass, different interface should result in java/lang/Object (non-reflexive)") {
+                testJoinOfTwoObjectTypes("SubA3", "SubB", false, "java/lang/Object")
+            }
+
+            it("join of classes with different superclass, same interface should result in their common interface (reflexive)") {
+                testJoinOfTwoObjectTypes("SubB", "SubC", true, "SubIB")
+            }
+
+            it("join of classes with different superclass, same interface should result in their common interface (non-reflexive)") {
+                testJoinOfTwoObjectTypes("SubB", "SubC", false, "SubIB")
+            }
+
+            it("join of class and subclass with re-implemented interface should result in the class (reflexive)") {
+                testJoinOfTwoObjectTypes("SubA", "SubSubA", true, "SubA")
+            }
+
+            it("join of two subclasses with a re-implemented interface should result in the superclass and the subinterface (reflexive)") {
+                testJoinOfTwoObjectTypes("SubB", "SubB2", true, Set("B", "SubIB"))
+            }
+
+            it("join of two subclasses with a re-implemented interface should result in the superclass and the subinterface (non-reflexive)") {
+                testJoinOfTwoObjectTypes("SubB", "SubB2", false, Set("B", "SubIB"))
+            }
+
         }
 
         describe("the behavior of joins with interfaces") {
-            describe("the behavior of joins with sets containing one interfaces") {
-                it("join interface with itself should result in the same interface") {
-                    testJoinOfTwoObjectTypes("SubIB", "SubIB", true, "SubIB")
-                }
 
-                it("join of interface and its direct superinterface should result in the interface") {
-                    testJoinOfTwoObjectTypes("ID", "SubID", true, "ID")
-                }
-
-                it("join of two direct subinterfaces should result in the superinterface (reflexive)") {
-                    testJoinOfTwoObjectTypes("SubID", "SubID2", true, "ID")
-                }
-
-                it("join of two direct subinterfaces should result in the superinterface (non-reflexive)") {
-                    testJoinOfTwoObjectTypes("SubID", "SubID2", false, "ID")
-                }
-
-                it("join of two indirect subinterfaces should result in the superinterface (reflexive)") {
-                    testJoinOfTwoObjectTypes("SubSubID", "SubID2", true, "ID")
-                }
-
-                it("join of two indirect subinterfaces should result in the superinterface (non-reflexive)") {
-                    testJoinOfTwoObjectTypes("SubSubID", "SubID2", false, "ID")
-                }
-
-                it("join of interface with no superinterface and another interface should result in java/lang/Object (reflexive)") {
-                    testJoinOfTwoObjectTypes("IE", "SubID", true, "java/lang/Object")
-                }
-
-                it("join of interface with no superinterface and another interface should result in java/lang/Object (non-reflexive)") {
-                    testJoinOfTwoObjectTypes("IE", "SubID", false, "java/lang/Object")
-                }
-
-                it("join of interfaces with same direct superinterface and a different superinterface should result in their common superinterface (reflexive)") {
-                    testJoinOfTwoObjectTypes("SubSubID", "SubSubIDSubIA", true, "SubID")
-                }
-
-                it("join of interfaces with same direct superinterface and a different superinterface should result in their common superinterface (non-reflexive)") {
-                    testJoinOfTwoObjectTypes("SubSubID", "SubSubIDSubIA", false, "SubID")
-                }
-
-                it("join of interfaces with same direct superinterface and another common superinterface should result in both superinterfaces (reflexive)") {
-                    testJoinOfTwoObjectTypes("SubSubIDSubIA", "SubSubIDSubIA2", true, Set("SubID", "IA"))
-                }
-
-                it("join of interfaces with same direct superinterface and another common superinterface should result in both superinterfaces (non-reflexive)") {
-                    testJoinOfTwoObjectTypes("SubSubIDSubIA", "SubSubIDSubIA2", false, Set("SubID", "IA"))
-                }
-
-                it("join of interfaces with same indirect superinterface and a different superinterface should result in their common superinterface (reflexive)") {
-                    testJoinOfTwoObjectTypes("SubID2", "SubSubID", true, "ID")
-                }
-
-                it("join of interfaces with same indirect superinterface and a different superinterface should result in their common superinterface (non-reflexive)") {
-                    testJoinOfTwoObjectTypes("SubID2", "SubSubID", false, "ID")
-                }
-
-                it("join of interfaces with same indirect superinterface and another common superinterface should result in both superinterfaces (reflexive)") {
-                    testJoinOfTwoObjectTypes("SubIDSubIA", "SubSubIDSubIA", true, Set("ID", "IA"))
-                }
-
-                it("join of interfaces with same indirect superinterface and another common superinterface should result in both superinterfaces (non-reflexive)") {
-                    testJoinOfTwoObjectTypes("SubIDSubIA", "SubSubIDSubIA", false, Set("ID", "IA"))
-                }
-
-                it("join of interfaces with different superinterfaces should result in java/lang/Object (reflexive)") {
-                    testJoinOfTwoObjectTypes("SubIDSubIA", "SubIB", true, "java/lang/Object")
-                }
-
-                it("join of interfaces with different superinterfaces should result in java/lang/Object (non-reflexive)") {
-                    testJoinOfTwoObjectTypes("SubIDSubIA", "SubIB", false, "java/lang/Object")
-                }
-
-                it("join of interface and subinterface with re-implemented interface should result in the interface (reflexive)") {
-                    testJoinOfTwoObjectTypes("SubSubID2", "SubID2", true, "SubID2")
-                }
+            it("join interface with itself should result in the same interface") {
+                testJoinOfTwoObjectTypes("SubIB", "SubIB", true, "SubIB")
             }
+
+            it("join of interface and its direct superinterface should result in the interface") {
+                testJoinOfTwoObjectTypes("ID", "SubID", true, "ID")
+            }
+
+            it("join of two direct subinterfaces should result in the superinterface (reflexive)") {
+                testJoinOfTwoObjectTypes("SubID", "SubID2", true, "ID")
+            }
+
+            it("join of two direct subinterfaces should result in the superinterface (non-reflexive)") {
+                testJoinOfTwoObjectTypes("SubID", "SubID2", false, "ID")
+            }
+
+            it("join of two indirect subinterfaces should result in the superinterface (reflexive)") {
+                testJoinOfTwoObjectTypes("SubSubID", "SubID2", true, "ID")
+            }
+
+            it("join of two indirect subinterfaces should result in the superinterface (non-reflexive)") {
+                testJoinOfTwoObjectTypes("SubSubID", "SubID2", false, "ID")
+            }
+
+            it("join of interface with no superinterface and another interface should result in java/lang/Object (reflexive)") {
+                testJoinOfTwoObjectTypes("IE", "SubID", true, "java/lang/Object")
+            }
+
+            it("join of interface with no superinterface and another interface should result in java/lang/Object (non-reflexive)") {
+                testJoinOfTwoObjectTypes("IE", "SubID", false, "java/lang/Object")
+            }
+
+            it("join of interfaces with same direct superinterface and a different superinterface should result in their common superinterface (reflexive)") {
+                testJoinOfTwoObjectTypes("SubSubID", "SubSubIDSubIA", true, "SubID")
+            }
+
+            it("join of interfaces with same direct superinterface and a different superinterface should result in their common superinterface (non-reflexive)") {
+                testJoinOfTwoObjectTypes("SubSubID", "SubSubIDSubIA", false, "SubID")
+            }
+
+            it("join of interfaces with same direct superinterface and another common superinterface should result in both superinterfaces (reflexive)") {
+                testJoinOfTwoObjectTypes("SubSubIDSubIA", "SubSubIDSubIA2", true, Set("SubID", "IA"))
+            }
+
+            it("join of interfaces with same direct superinterface and another common superinterface should result in both superinterfaces (non-reflexive)") {
+                testJoinOfTwoObjectTypes("SubSubIDSubIA", "SubSubIDSubIA2", false, Set("SubID", "IA"))
+            }
+
+            it("join of interfaces with same indirect superinterface and a different superinterface should result in their common superinterface (reflexive)") {
+                testJoinOfTwoObjectTypes("SubID2", "SubSubID", true, "ID")
+            }
+
+            it("join of interfaces with same indirect superinterface and a different superinterface should result in their common superinterface (non-reflexive)") {
+                testJoinOfTwoObjectTypes("SubID2", "SubSubID", false, "ID")
+            }
+
+            it("join of interfaces with same indirect superinterface and another common superinterface should result in both superinterfaces (reflexive)") {
+                testJoinOfTwoObjectTypes("SubIDSubIA", "SubSubIDSubIA", true, Set("ID", "IA"))
+            }
+
+            it("join of interfaces with same indirect superinterface and another common superinterface should result in both superinterfaces (non-reflexive)") {
+                testJoinOfTwoObjectTypes("SubIDSubIA", "SubSubIDSubIA", false, Set("ID", "IA"))
+            }
+
+            it("join of interfaces with different superinterfaces should result in java/lang/Object (reflexive)") {
+                testJoinOfTwoObjectTypes("SubIDSubIA", "SubIB", true, "java/lang/Object")
+            }
+
+            it("join of interfaces with different superinterfaces should result in java/lang/Object (non-reflexive)") {
+                testJoinOfTwoObjectTypes("SubIDSubIA", "SubIB", false, "java/lang/Object")
+            }
+
+            it("join of interface and subinterface with re-implemented interface should result in the interface (reflexive)") {
+                testJoinOfTwoObjectTypes("SubSubID2", "SubID2", true, "SubID2")
+            }
+
         }
 
         describe("the behavior of joins with classes and interfaces") {
-            describe("the behavior of joins with sets containing one interfaces or class") {
-                it("join of class and its only interface should result in the interface (reflexive)") {
-                    testJoinOfTwoObjectTypes("A", "IA", true, "IA")
-                }
-
-                it("join of class and a superinterface of its only interface should result in the superinterface (reflexive)") {
-                    testJoinOfTwoObjectTypes("SubA", "ID", true, "ID")
-                }
-
-                it("join of class with several interfaces and one of those interfaces should result in this interface (reflexive)") {
-                    testJoinOfTwoObjectTypes("D", "IA", true, "IA")
-                }
-
-                it("join of class with several interfaces and one of those interfaces superinterface should result in this superinterface (reflexive)") {
-                    testJoinOfTwoObjectTypes("SubSubA", "SubID3", true, "SubID3")
-                }
-
-                it("join of class and a re-implemented interface should result in the interface (reflexive)") {
-                    testJoinOfTwoObjectTypes("SubB", "SubIB", true, "SubIB")
-                }
-
-                it("join of class and interface with no inheritance relation should result in java/lang/Object (reflexive)") {
-                    testJoinOfTwoObjectTypes("C", "IA", true, "java/lang/Object")
-                }
-
-                it("join of class and interface with no inheritance relation should result in java/lang/Object (non-reflexive)") {
-                    testJoinOfTwoObjectTypes("C", "IA", false, "java/lang/Object")
-                }
+            it("join of class and its only interface should result in the interface (reflexive)") {
+                testJoinOfTwoObjectTypes("A", "IA", true, "IA")
             }
+
+            it("join of class and a superinterface of its only interface should result in the superinterface (reflexive)") {
+                testJoinOfTwoObjectTypes("SubA", "ID", true, "ID")
+            }
+
+            it("join of class with several interfaces and one of those interfaces should result in this interface (reflexive)") {
+                testJoinOfTwoObjectTypes("D", "IA", true, "IA")
+            }
+
+            it("join of class with several interfaces and one of those interfaces superinterface should result in this superinterface (reflexive)") {
+                testJoinOfTwoObjectTypes("SubSubA", "SubID3", true, "SubID3")
+            }
+
+            it("join of class and a re-implemented interface should result in the interface (reflexive)") {
+                testJoinOfTwoObjectTypes("SubB", "SubIB", true, "SubIB")
+            }
+
+            it("join of class and interface with no inheritance relation should result in java/lang/Object (reflexive)") {
+                testJoinOfTwoObjectTypes("C", "IA", true, "java/lang/Object")
+            }
+
+            it("join of class and interface with no inheritance relation should result in java/lang/Object (non-reflexive)") {
+                testJoinOfTwoObjectTypes("C", "IA", false, "java/lang/Object")
+            }
+
         }
     }
 
-    describe("the behavior of the method joinObjectTypes(ObjectType, Set(ObjectType)) of ClassHierachy") {
+    describe("the behavior of the method joinObjectTypes(ObjectType, Set(ObjectType)) of ClassHierarchy") {
         describe("the behavior of joins with classes") {
             describe("the behavior of joins with sets containing one class") {
                 it("join class with itself should result in the same class") {
@@ -547,11 +527,11 @@ class JoinObjectTypesTest extends FunSpec with Matchers {
                     testJoinOfObjectTypesWithUpperBound("SubIB", Set("ID", "IA", "IC"), false, "java/lang/Object")
                 }
 
-                it("join of several interfaces with same direct superinterface and a different superinterface should result in their common superinterface (reflexive)") {
+                it("join of several interfaces with the same direct superinterface and a different superinterface should result in their common superinterface (reflexive)") {
                     testJoinOfObjectTypesWithUpperBound("SubSubIDSubIA", Set("SubID3", "SubID2"), true, "ID")
                 }
 
-                it("join of several interfaces with same direct superinterface and a different superinterface should result in their common superinterface (non-reflexive)") {
+                it("join of several interfaces with the same direct superinterface and a different superinterface should result in their common superinterface (non-reflexive)") {
                     testJoinOfObjectTypesWithUpperBound("SubSubIDSubIA", Set("SubID3", "SubID2"), false, "ID")
                 }
 
@@ -817,11 +797,11 @@ class JoinObjectTypesTest extends FunSpec with Matchers {
                     testJoinObjectTypesUntilSingleUpperBound(Set("ID", "IA", "IC", "SubIB"), "java/lang/Object")
                 }
 
-                it("join of several interfaces with same direct superinterface and a different superinterface should result in their common superinterface (reflexive)") {
+                it("join of several interfaces with the same direct superinterface and a different superinterface should result in their common superinterface (reflexive)") {
                     testJoinObjectTypesUntilSingleUpperBound(Set("SubID3", "SubID2", "SubSubIDSubIA"), "ID")
                 }
 
-                it("join of several interfaces with same direct superinterface and another common superinterface should result in their common superinterface (reflexive)") {
+                it("join of several interfaces with the same direct superinterface and another common superinterface should result in their common superinterface (reflexive)") {
                     testJoinObjectTypesUntilSingleUpperBound(Set("SubID2", "SubSubIDSubIA", "SubID3", "SubSubIDSubIA2"), "ID")
                 }
 

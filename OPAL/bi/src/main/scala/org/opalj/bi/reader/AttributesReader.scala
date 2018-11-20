@@ -1,37 +1,12 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package bi
 package reader
 
 import java.io.DataInputStream
-import org.opalj.control.repeat
+
+import org.opalj.collection.immutable.RefArray
+import org.opalj.control.fillRefArray
 
 /**
  * Trait that implements a template method to read in the attributes of
@@ -43,14 +18,8 @@ trait AttributesReader
     with Unknown_attributeAbstractions {
 
     //
-    // ABSTRACT DEFINITIONS
+    // TYPE DEFINITIONS AND FACTORY METHODS
     //
-
-    type Constant_Pool_Entry <: ConstantPoolEntry
-
-    type CONSTANT_Utf8_info <: Constant_Pool_Entry
-
-    override type Constant_Pool = Array[Constant_Pool_Entry]
 
     /**
      * This factory method is called if an attribute is encountered that is unknown.
@@ -61,8 +30,10 @@ trait AttributesReader
      * If `null` is returned all information regarding this attribute are thrown away.
      */
     def Unknown_attribute(
-        ap:                   AttributeParent,
         cp:                   Constant_Pool,
+        ap:                   AttributeParent,
+        ap_name_index:        Constant_Pool_Index,
+        ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Int,
         in:                   DataInputStream
     ): Unknown_attribute
@@ -124,15 +95,18 @@ trait AttributesReader
      * The returned function is allowed to return null; in this case the attribute
      * will be discarded.
      */
-    private[this] var attributeReaders: Map[String, (AttributeParent, Constant_Pool, Constant_Pool_Index, DataInputStream) ⇒ Attribute] = Map()
+    private[this] var attributeReaders: Map[String, (Constant_Pool, AttributeParent, Constant_Pool_Index, Constant_Pool_Index, Constant_Pool_Index, DataInputStream) ⇒ Attribute] = Map()
 
+    /**
+     * See `AttributeReader.registerAttributeReader` for details.
+     */
     def registerAttributeReader(
-        reader: (String, (AttributeParent, Constant_Pool, Constant_Pool_Index, DataInputStream) ⇒ Attribute)
+        reader: (String, (Constant_Pool, AttributeParent, Constant_Pool_Index, Constant_Pool_Index, Constant_Pool_Index, DataInputStream) ⇒ Attribute)
     ): Unit = {
         attributeReaders += reader
     }
 
-    private[this] var attributesPostProcessors: List[(Attributes) ⇒ Attributes] = List()
+    private[this] var attributesPostProcessors = RefArray.empty[Attributes ⇒ Attributes]
 
     /**
      * Registers a new processor for the list of all attributes of a given class file
@@ -142,27 +116,38 @@ trait AttributesReader
      * `localvar_target` structure of the `Runtime(In)VisibleTypeAnnotations` attribute
      * has a reference in the local variable table attribute.
      */
-    def registerAttributesPostProcessor(p: (Attributes) ⇒ Attributes): Unit = {
-        attributesPostProcessors = p :: attributesPostProcessors
+    def registerAttributesPostProcessor(p: Attributes ⇒ Attributes): Unit = {
+        attributesPostProcessors :+= p
     }
 
-    def Attributes(ap: AttributeParent, cp: Constant_Pool, in: DataInputStream): Attributes = {
-        val attributes: Attributes = repeat(in.readUnsignedShort) {
-            Attribute(ap, cp, in)
-        } filter (_ != null) // lets remove the attributes we don't need or understand
+    def Attributes(
+        cp:                  Constant_Pool,
+        ap:                  AttributeParent,
+        ap_name_index:       Constant_Pool_Index,
+        ap_descriptor_index: Constant_Pool_Index,
+        in:                  DataInputStream
+    ): Attributes = {
+        val attributes: Attributes =
+            fillRefArray(in.readUnsignedShort) {
+                Attribute(cp, ap, ap_name_index, ap_descriptor_index, in)
+            }.filterNonNull // lets remove the attributes we don't need or understand
 
         attributesPostProcessors.foldLeft(attributes)((a, p) ⇒ p(a))
-        //attributesPostProcessors.foreach(p ⇒ attributes = p(attributes))
-        //attributes
     }
 
-    def Attribute(ap: AttributeParent, cp: Constant_Pool, in: DataInputStream): Attribute = {
+    def Attribute(
+        cp:                  Constant_Pool,
+        ap:                  AttributeParent,
+        ap_name_index:       Constant_Pool_Index,
+        ap_descriptor_index: Constant_Pool_Index,
+        in:                  DataInputStream
+    ): Attribute = {
         val attribute_name_index = in.readUnsignedShort()
         val attribute_name = cp(attribute_name_index).asString
 
         attributeReaders.getOrElse(
             attribute_name,
             Unknown_attribute _ // this is a factory method
-        )(ap, cp, attribute_name_index, in)
+        )(cp, ap, ap_name_index, ap_descriptor_index, attribute_name_index, in)
     }
 }

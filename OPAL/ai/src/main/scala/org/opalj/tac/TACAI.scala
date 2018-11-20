@@ -1,37 +1,8 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package tac
 
 import scala.annotation.switch
-import scala.collection.mutable.Queue
-
 import org.opalj.collection.immutable.ConstArray
 import org.opalj.collection.immutable.IntArraySetBuilder
 import org.opalj.collection.immutable.IntArraySet
@@ -55,12 +26,14 @@ import org.opalj.br.ComputationalTypeInt
 import org.opalj.br.instructions._
 import org.opalj.br.cfg.CFG
 import org.opalj.br.analyses.SomeProject
-import org.opalj.ai.VMLevelValuesOriginOffset
+import org.opalj.ai.ImmediateVMExceptionsOriginOffset
 import org.opalj.ai.BaseAI
 import org.opalj.ai.AIResult
 import org.opalj.ai.Domain
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
+import org.opalj.collection.immutable.IntIntPair
+import org.opalj.collection.mutable.RefAppendChain
 
 /**
  * Factory to convert the bytecode of a method into a three address representation using the
@@ -150,7 +123,7 @@ object TACAI {
                 if (a(i) ne null) return false;
                 i += 1
             }
-            return true;
+            true
         }
 
         import UnaryArithmeticOperators._
@@ -205,7 +178,7 @@ object TACAI {
                 // => we have to subtract -1 from origins related to parameters
                 (aiVOs: IntTrieSet) ⇒
                     aiVOs.map { aiVO ⇒
-                        if (aiVO <= VMLevelValuesOriginOffset || aiVO >= 0) aiVO else aiVO - 1
+                        if (aiVO <= ImmediateVMExceptionsOriginOffset || aiVO >= 0) aiVO else aiVO - 1
                     }
             } else {
                 // => we create an array which contains the mapping information
@@ -215,7 +188,7 @@ object TACAI {
                         IntTrieSet.empty
                     } else {
                         aiVOs map { aiVO ⇒
-                            if (aiVO <= VMLevelValuesOriginOffset || aiVO >= 0)
+                            if (aiVO <= ImmediateVMExceptionsOriginOffset || aiVO >= 0)
                                 aiVO
                             else
                                 aiVOToTACVo(-aiVO - 1)
@@ -228,7 +201,7 @@ object TACAI {
         // The list of bytecode instructions which were killed (=>NOP), and for which we now
         // have to clear the usages.
         // basically a mapping from a UseSite(PC) to a DefSite
-        val obsoleteUseSites: Queue[PCAndAnyRef[IntTrieSet /*DefSites*/ ]] = Queue.empty
+        val obsoleteUseSites: RefAppendChain[PCAndAnyRef[IntTrieSet /*DefSites*/ ]] = new RefAppendChain()
 
         def killOperandBasedUsages(useSitePC: Int, valuesCount: Int): Unit = {
             // The value(s) is (are) not used and the expression is side effect free;
@@ -246,13 +219,13 @@ object TACAI {
                     origins ++= normalizeParameterOrigins(domain.operandOrigin(useSitePC, i))
                     i += 1
                 }
-                obsoleteUseSites enqueue (new PCAndAnyRef(useSitePC, origins))
+                obsoleteUseSites.append(new PCAndAnyRef(useSitePC, origins))
             }
         }
 
         def killRegisterBasedUsages(useSitePC: Int, index: Int): Unit = {
             val origins = normalizeParameterOrigins(domain.localOrigin(useSitePC, index))
-            obsoleteUseSites enqueue (new PCAndAnyRef(useSitePC, origins))
+            obsoleteUseSites.append(new PCAndAnyRef(useSitePC, origins))
         }
 
         // The catch handler statements which were added to the code that do not take up
@@ -744,14 +717,21 @@ object TACAI {
                     }
 
                 case INVOKEDYNAMIC.opcode ⇒
-                    val INVOKEDYNAMIC(bootstrapMethod, name, methodDescriptor) = instruction
-                    val parametersCount = methodDescriptor.parametersCount
+                    val INVOKEDYNAMIC(bootstrapMethod, name, descriptor) = instruction
+                    val parametersCount = descriptor.parametersCount
                     val params = useOperands(parametersCount).reverse
-                    val expr = Invokedynamic(pc, bootstrapMethod, name, methodDescriptor, params)
-                    if (wasExecuted(nextPC)) {
-                        addInitLocalValStmt(pc, operandsArray(nextPC).head, expr)
+                    if (descriptor.returnType.isVoidType) {
+                        val indyMethodCall =
+                            InvokedynamicMethodCall(pc, bootstrapMethod, name, descriptor, params)
+                        addStmt(indyMethodCall)
                     } else {
-                        addStmt(ExprStmt(pc, expr))
+                        val indyFunctionCall =
+                            InvokedynamicFunctionCall(pc, bootstrapMethod, name, descriptor, params)
+                        if (wasExecuted(nextPC)) {
+                            addInitLocalValStmt(pc, operandsArray(nextPC).head, indyFunctionCall)
+                        } else {
+                            addStmt(ExprStmt(pc, indyFunctionCall))
+                        }
                     }
 
                 case PUTSTATIC.opcode ⇒
@@ -841,7 +821,8 @@ object TACAI {
                     val tableSwitch = as[TABLESWITCH](instruction)
                     val defaultTarget = pc + tableSwitch.defaultOffset
                     var caseValue = tableSwitch.low
-                    val npairs = tableSwitch.jumpOffsets map { jo ⇒
+                    // IMPROVE Use IntIntPair
+                    val npairs = tableSwitch.jumpOffsets.map[(Int, Int)] { jo ⇒
                         val caseTarget = pc + jo
                         val npair = (caseValue, caseTarget)
                         caseValue += 1
@@ -853,8 +834,8 @@ object TACAI {
                     val index = operandUse(0)
                     val lookupSwitch = as[LOOKUPSWITCH](instruction)
                     val defaultTarget = pc + lookupSwitch.defaultOffset
-                    val npairs = lookupSwitch.npairs.map { npair ⇒
-                        val (caseValue, branchOffset) = npair
+                    val npairs = lookupSwitch.npairs.map[(Int, Int)] { npair ⇒
+                        val IntIntPair(caseValue, branchOffset) = npair
                         val caseTarget = pc + branchOffset
                         (caseValue, caseTarget)
                     }
@@ -929,7 +910,7 @@ object TACAI {
         //  - every pc appears at most once in `obsoleteUseSites`
         //  - we do not have deeply nested expressions
         while (obsoleteUseSites.nonEmpty) {
-            val /*original - bytecode based...:*/ useDefMapping = obsoleteUseSites.dequeue()
+            val /*original - bytecode based...:*/ useDefMapping = obsoleteUseSites.take()
             val useSite = useDefMapping.pc
             val defSites = useDefMapping.value
             // Now... we need to go the def site - which has to be an assignment - and kill
@@ -959,7 +940,7 @@ object TACAI {
                     } else {
                         statements(defSiteIndex) = ExprStmt(pc, expr)
                     }
-                } else if (defSite > VMLevelValuesOriginOffset /*&& < 0*/ ) {
+                } else if (ImmediateVMExceptionsOriginOffset < defSite /*&& < 0*/ ) {
                     // We have an obsolete parameter usage; recall that the def-sites are
                     // already "normalized"!
                     val TACMethodParameter(origin, useSites) = tacParams.parameter(defSite)
@@ -1018,11 +999,52 @@ object TACAI {
                 singletonBBsExpander,
                 lastIndex = index - 1
             )
-        val taExceptionHanders = updateExceptionHandlers(pcToIndex)(aiResult)
+        val taExceptionHandlers = updateExceptionHandlers(pcToIndex)(aiResult)
         val lnt = code.lineNumberTable
         val initialTAC = TACode[TACMethodParameter, AIDUVar](
-            tacParams, tacStmts, pcToIndex, taCodeCFG, taExceptionHanders, lnt
+            tacParams, tacStmts, pcToIndex, taCodeCFG, taExceptionHandlers, lnt
         )
+
+        // Potential Optimizations
+        // =======================
+        // (1) Optimizing "not operations on booleans"... e.g., Java code such as m(!a) which is
+        // compiled to:
+        //      if(a)
+        //          val b = false
+        //      else
+        //          val c = true
+        //      m({b,c})
+        // Goal:
+        //      val c = !a
+        //      m(c)
+        //
+        // (2) Perform constant propagation when a use-site has only a _single_ def-site:
+        //     val x = 304
+        //     if({a,b} != x) goto t
+        //          =>  afterwards check if the def site has more use sites and – if not –
+        //              replace it by nops
+        //
+        //
+        // (3) Identify _really_ useless nops and remove them. (Note that some nops may be
+        //     required to ensure that the path information is available. E.g.,
+        //     java.lang.String.<init>(byte[],int,int,int) (java 1.8.0_181)
+
+        // Non-Optimizations
+        // =================
+        // The following code looks optimizable, but is actually not optimizable!
+        //
+        // Seemingly useless if-gotos; e.g., (taken from "java.lang.String replace(char,char)")
+        // 20: if({a} != {param1}) goto 22
+        //       // 20 →
+        // 21:/*pc=102:*/ goto 23
+        //       // 20 →
+        // 22:/*pc=105:*/ ;
+        //       // 21, 22 →
+        // 23:/*pc=107:*/ {lvb}[{lv18, lv5}] = {param2, lv13}
+        //       // ⚡️ <uncaught exception ⇒ abnormal return>
+        // THIS CODE CANNOT BE OPTIMIZED BECAUSE THE CONTROL-FLOW IS RELEVANT TO DETERMINE
+        // WHICH VALUES (param2 or lv13 / lv18 or lv5) ARE ACTUALLY SELECTED AT RUNTIME.
+        // HOWEVER, THIS IS NOT DIRECTLY OBVIOUS FROM THE ABOVE CODE!
 
         if (optimizations.nonEmpty) {
             val base = TACOptimizationResult(initialTAC, wasTransformed = false)

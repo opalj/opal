@@ -1,33 +1,8 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf
 
+import org.opalj.br.Type
+import org.opalj.br.AnnotationLike
 import org.opalj.fpcf.analyses.EagerVirtualMethodAllocationFreenessAnalysis
 import org.opalj.fpcf.analyses.EagerL1ThrownExceptionsAnalysis
 import org.opalj.fpcf.properties.ThrownExceptions
@@ -42,26 +17,26 @@ import org.opalj.fpcf.properties.ThrownExceptions
 class ThrownExceptionsAnalysisTests extends PropertiesTest {
 
     object DummyProperty {
-        final val Key: PropertyKey[DummyProperty] =
-            PropertyKey.create[Entity, DummyProperty](
-                "DummyProperty",
-                new DummyProperty
-            )
+        final val Key: PropertyKey[DummyProperty] = {
+            PropertyKey.create[Entity, DummyProperty]("DummyProperty", new DummyProperty)
+        }
     }
 
     sealed class DummyProperty extends Property {
         override type Self = DummyProperty
 
-        override def key = DummyProperty.Key
+        override def key: PropertyKey[DummyProperty] = DummyProperty.Key
     }
 
     describe("no analysis is scheduled and fallback is used") {
         val as = executeAnalyses(Set.empty)
-        val pk = Set("ExpectedExceptions", "ExpectedExceptionsByOverridingMethods", "ThrownExceptionsAreUnknown")
         val TestContext(p, ps, _) = as
+
+        val pk = Set("ExpectedExceptions", "ExpectedExceptionsByOverridingMethods", "ThrownExceptionsAreUnknown")
+        ps.setupPhase(Set.empty, Set.empty)
         for {
             (e, _, annotations) ← methodsWithAnnotations(as.project)
-            if annotations.flatMap(getPropertyMatcher(p, pk)).nonEmpty
+            if annotations.flatMap[(AnnotationLike, String, Type)](a ⇒ getPropertyMatcher(p, pk)(a).toSeq).nonEmpty
         } {
             val epk = EPK(e, ThrownExceptions.key)
             ps.scheduleEagerComputationForEntity(e) { e ⇒
@@ -71,11 +46,9 @@ class ThrownExceptionsAnalysisTests extends PropertiesTest {
 
         ps.waitOnPhaseCompletion()
 
-        validateProperties(
-            as,
-            methodsWithAnnotations(as.project),
-            pk
-        )
+        validateProperties(as, methodsWithAnnotations(as.project), pk)
+
+        ps.shutdown()
     }
 
     describe("L1ThrownExceptionsAnalysis and EagerVirtualMethodAllocationFreenessAnalysis are executed") {
@@ -83,6 +56,8 @@ class ThrownExceptionsAnalysisTests extends PropertiesTest {
             EagerVirtualMethodAllocationFreenessAnalysis,
             EagerL1ThrownExceptionsAnalysis
         ))
+        val TestContext(_, ps, _) = as
+
         validateProperties(
             as,
             methodsWithAnnotations(as.project),
@@ -92,6 +67,8 @@ class ThrownExceptionsAnalysisTests extends PropertiesTest {
                 "ThrownExceptionsAreUnknown"
             )
         )
+
+        ps.shutdown()
     }
 
 }

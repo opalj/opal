@@ -1,51 +1,20 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package ai
 package domain
 package l0
 
-import org.opalj.value.IsCharValue
-import org.opalj.value.IsByteValue
-import org.opalj.value.IsShortValue
 import org.opalj.value.IsBooleanValue
+import org.opalj.value.IsByteValue
+import org.opalj.value.IsCharValue
 import org.opalj.value.IsIntegerValue
-import org.opalj.br.ComputationalType
-import org.opalj.br.ComputationalTypeInt
+import org.opalj.value.IsShortValue
 import org.opalj.br.BooleanType
-import org.opalj.br.CharType
 import org.opalj.br.ByteType
-import org.opalj.br.ShortType
-import org.opalj.br.IntegerType
+import org.opalj.br.CharType
 import org.opalj.br.CTIntType
-import org.opalj.br.IntegerVariableInfo
-import org.opalj.br.VerificationTypeInfo
+import org.opalj.br.IntegerType
+import org.opalj.br.ShortType
 
 /**
  * Domain that performs computations related to integer values at the type level.
@@ -66,10 +35,6 @@ trait TypeLevelIntegerValues extends Domain { this: Configuration ⇒
     protected[this] trait ComputationalTypeIntegerValue[T <: CTIntType] extends TypedValue[T] {
         this: DomainTypedValue[T] ⇒
 
-        final override def computationalType: ComputationalType = ComputationalTypeInt
-
-        final override def verificationTypeInfo: VerificationTypeInfo = IntegerVariableInfo
-
         override def summarize(pc: Int): DomainValue = this
 
     }
@@ -77,7 +42,7 @@ trait TypeLevelIntegerValues extends Domain { this: Configuration ⇒
     trait BooleanValue extends ComputationalTypeIntegerValue[BooleanType] with IsBooleanValue {
         this: DomainTypedValue[BooleanType] ⇒
 
-        final override def valueType: Option[BooleanType] = Some(BooleanType)
+        final override def leastUpperType: Option[BooleanType] = Some(BooleanType)
 
         override def adapt(target: TargetDomain, vo: ValueOrigin): target.DomainValue = {
             target.BooleanValue(vo)
@@ -87,7 +52,7 @@ trait TypeLevelIntegerValues extends Domain { this: Configuration ⇒
     trait ByteValue extends ComputationalTypeIntegerValue[ByteType] with IsByteValue {
         this: DomainTypedValue[ByteType] ⇒
 
-        final override def valueType: Option[ByteType] = Some(ByteType)
+        final override def leastUpperType: Option[ByteType] = Some(ByteType)
 
         override def adapt(target: TargetDomain, vo: ValueOrigin): target.DomainValue = {
             target.ByteValue(vo)
@@ -98,7 +63,7 @@ trait TypeLevelIntegerValues extends Domain { this: Configuration ⇒
     trait CharValue extends ComputationalTypeIntegerValue[CharType] with IsCharValue {
         this: DomainTypedValue[CharType] ⇒
 
-        final override def valueType: Option[CharType] = Some(CharType)
+        final override def leastUpperType: Option[CharType] = Some(CharType)
 
         override def adapt(target: TargetDomain, vo: ValueOrigin): target.DomainValue = {
             target.CharValue(vo)
@@ -109,7 +74,7 @@ trait TypeLevelIntegerValues extends Domain { this: Configuration ⇒
     trait ShortValue extends ComputationalTypeIntegerValue[ShortType] with IsShortValue {
         this: DomainTypedValue[ShortType] ⇒
 
-        final override def valueType: Option[ShortType] = Some(ShortType)
+        final override def leastUpperType: Option[ShortType] = Some(ShortType)
 
         override def adapt(target: TargetDomain, vo: ValueOrigin): target.DomainValue = {
             target.ShortValue(vo)
@@ -120,7 +85,10 @@ trait TypeLevelIntegerValues extends Domain { this: Configuration ⇒
     trait IntegerValue extends ComputationalTypeIntegerValue[IntegerType] with IsIntegerValue {
         this: DomainTypedValue[IntegerType] ⇒
 
-        final override def valueType: Option[IntegerType] = Some(IntegerType)
+        final override def leastUpperType: Option[IntegerType] = Some(IntegerType)
+
+        final override def lowerBound: Int = Int.MinValue
+        final override def upperBound: Int = Int.MaxValue
 
         override def adapt(target: TargetDomain, vo: ValueOrigin): target.DomainValue = {
             target.IntegerValue(vo)

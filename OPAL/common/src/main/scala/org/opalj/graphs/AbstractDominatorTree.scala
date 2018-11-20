@@ -1,40 +1,10 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package graphs
 
-import java.util.function.IntFunction
-import java.util.function.IntConsumer
-import java.util.function.Consumer
-
 import scala.annotation.tailrec
 import org.opalj.collection.immutable.Chain
+import org.opalj.collection.immutable.IntArray
 
 /**
  * Representation of a (post) dominator tree of, for example, a control flow graph.
@@ -58,7 +28,7 @@ abstract class AbstractDominatorTree {
      *
      * Defined w.r.t. the (implicitly) augmented CFG.
      */
-    val foreachSuccessorOf: IntFunction[Consumer[IntConsumer]] //Int ⇒ ((Int ⇒ Unit) ⇒ Unit)
+    val foreachSuccessorOf: Int ⇒ ((Int ⇒ Unit) ⇒ Unit) // IntFunction[Consumer[IntConsumer]]
 
     // PROPERTIES OF THE TREE
     //
@@ -136,14 +106,14 @@ abstract class AbstractDominatorTree {
     /**
      * The array which stores the immediate dominator for each node.
      */
-    def immediateDominators: IndexedSeq[Int] = idom
+    def immediateDominators: IntArray = IntArray._UNSAFE_from(idom)
 
     /**
      * (Re-)computes the dominator tree's leaf nodes. Due to the way the graph is stored,
      * this method has a complexity of O(2n). Hence, if the leaves are required more than
      * once, storing/caching them should be considered.
      */
-    def leaves(isIndexValid: (Int) ⇒ Boolean = (i) ⇒ true): Chain[Int] = {
+    def leaves(isIndexValid: Int ⇒ Boolean = _ ⇒ true): Chain[Int] = {
         // A leaf is a node which does not dominate another node.
         var i = 0
         val max = idom.length
@@ -176,7 +146,7 @@ abstract class AbstractDominatorTree {
      *          specific index is actually identifying a node. This is particularly useful/
      *          required if the `idom` array given at initialization time is a sparse array.
      */
-    def toDot(isIndexValid: (Int) ⇒ Boolean = (i) ⇒ true): String = {
+    def toDot(isIndexValid: Int ⇒ Boolean = _ ⇒ true): String = {
         val g = Graph.empty[Int]
         idom.zipWithIndex.foreach { e ⇒
             val (t, s /*index*/ ) = e

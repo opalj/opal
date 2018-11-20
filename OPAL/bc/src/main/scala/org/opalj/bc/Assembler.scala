@@ -1,31 +1,4 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package bc
 
@@ -635,9 +608,7 @@ object Assembler {
                         writeShort(e.exports_index)
                         writeShort(e.exports_flags)
                         writeShort(e.exports_to_index_table.length)
-                        e.exports_to_index_table foreach { et ⇒
-                            writeShort(et.exports_to_index)
-                        }
+                        e.exports_to_index_table.foreach(writeShort)
                     }
 
                     writeShort(a.opens.length)
@@ -645,21 +616,17 @@ object Assembler {
                         writeShort(o.opens_index)
                         writeShort(o.opens_flags)
                         writeShort(o.opens_to_index_table.length)
-                        o.opens_to_index_table foreach { ot ⇒
-                            writeShort(ot.opens_to_index)
-                        }
+                        o.opens_to_index_table.foreach(writeShort)
                     }
 
                     writeShort(a.uses.length)
-                    a.uses foreach { u ⇒ writeShort(u.uses_index) }
+                    a.uses.foreach(writeShort)
 
                     writeShort(a.provides.length)
                     a.provides foreach { p ⇒
                         writeShort(p.provides_index)
                         writeShort(p.provides_with_index_table.length)
-                        p.provides_with_index_table foreach { pw ⇒
-                            writeShort(pw.provides_with_index)
-                        }
+                        p.provides_with_index_table.foreach(writeShort)
                     }
 
                 case a: ModuleMainClass_attribute ⇒
@@ -718,7 +685,7 @@ object Assembler {
         ): Unit = {
             import classFile._
             import out._
-            implicit val cp = classFile.constant_pool
+            implicit val cp: Constant_Pool = classFile.constant_pool
             writeInt(org.opalj.bi.ClassFileMagic)
             writeShort(minor_version)
             writeShort(major_version)

@@ -1,31 +1,4 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package ai
 package domain
@@ -76,6 +49,7 @@ trait NullPropertyRefinement extends CoreDomainFunctionality {
         oldLocals:                Locals,
         targetPC:                 Int,
         isExceptionalControlFlow: Boolean,
+        forceJoin:                Boolean,
         newOperands:              Operands,
         newLocals:                Locals
     ): (Operands, Locals) = {
@@ -83,31 +57,30 @@ trait NullPropertyRefinement extends CoreDomainFunctionality {
         @inline def default() =
             super.afterEvaluation(
                 pc, instruction, oldOperands, oldLocals,
-                targetPC, isExceptionalControlFlow, newOperands, newLocals
+                targetPC, isExceptionalControlFlow, forceJoin, newOperands, newLocals
             )
 
         def establishNullProperty(objectRef: DomainValue): (Operands, Locals) = {
             if (refIsNull(pc, objectRef).isUnknown) {
-                if (isExceptionalControlFlow
-                    // && the NullPointerException was created by the JVM, because
+                if (isExceptionalControlFlow && {
+                    // the NullPointerException was created by the JVM, because
                     // the objectRef is (assumed to be) null
-                    && {
-                        val exception = newOperands.head
-                        val TypeOfReferenceValue(utb) = exception
-                        (utb.head eq ObjectType.NullPointerException) && {
-                            val origins = originsIterator(exception)
-                            origins.nonEmpty && {
-                                val origin = origins.next
-                                isVMLevelValue(origin) && pcOfVMLevelValue(origin) == pc &&
-                                    !origins.hasNext
-                            }
+                    val exception = newOperands.head
+                    val TypeOfReferenceValue(utb) = exception
+                    (utb.head eq ObjectType.NullPointerException) && {
+                        val origins = originsIterator(exception)
+                        origins.nonEmpty && {
+                            val origin = origins.next
+                            isImmediateVMException(origin) && pcOfImmediateVMException(origin) == pc &&
+                                !origins.hasNext
                         }
-                    }) {
+                    }
+                }) {
                     val (operands2, locals2) =
                         refEstablishIsNull(targetPC, objectRef, newOperands, newLocals)
                     super.afterEvaluation(
                         pc, instruction, oldOperands, oldLocals,
-                        targetPC, isExceptionalControlFlow, operands2, locals2
+                        targetPC, isExceptionalControlFlow, forceJoin, operands2, locals2
                     )
                 } else {
                     // ... the value is not null... even if an exception was thrown,
@@ -116,7 +89,7 @@ trait NullPropertyRefinement extends CoreDomainFunctionality {
                         refEstablishIsNonNull(targetPC, objectRef, newOperands, newLocals)
                     super.afterEvaluation(
                         pc, instruction, oldOperands, oldLocals,
-                        targetPC, isExceptionalControlFlow, operands2, locals2
+                        targetPC, isExceptionalControlFlow, forceJoin, operands2, locals2
                     )
                 }
             } else {
@@ -163,8 +136,7 @@ trait NullPropertyRefinement extends CoreDomainFunctionality {
                 val objectRef = oldOperands.tail.head
                 establishNullProperty(objectRef)
 
-            // THE RECEIVER OF AN INVOKESPECIAL IS ALWAYS "THIS" AND, HENCE, IS
-            // IRRELEVANT!
+            // THE RECEIVER OF AN INVOKESPECIAL IS ALWAYS "THIS" AND, HENCE, IS IRRELEVANT!
             case INVOKEVIRTUAL.opcode | INVOKEINTERFACE.opcode ⇒
                 val invoke = instruction.asInstanceOf[VirtualMethodInvocationInstruction]
                 val receiver = oldOperands(invoke.methodDescriptor.parametersCount)

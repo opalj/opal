@@ -1,37 +1,11 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package fpcf
 
 import org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.ProjectInformationKey
+import org.opalj.log.OPALLogger
 
 /**
  * The ''key'' object to get the project's [[org.opalj.fpcf.PropertyStore]].
@@ -41,7 +15,8 @@ import org.opalj.br.analyses.ProjectInformationKey
  *
  * @author Michael Eichberg
  */
-object PropertyStoreKey extends ProjectInformationKey[PropertyStore, Nothing] {
+object PropertyStoreKey
+    extends ProjectInformationKey[PropertyStore, (List[PropertyStoreContext[AnyRef]]) ⇒ PropertyStore] {
 
     /**
      * Used to specify the number of threads the property store should use. This
@@ -66,9 +41,19 @@ object PropertyStoreKey extends ProjectInformationKey[PropertyStore, Nothing] {
         implicit val logContext = project.logContext
 
         val context: List[PropertyStoreContext[AnyRef]] = List(
-            PropertyStoreContext[org.opalj.br.analyses.SomeProject](project)
+            PropertyStoreContext(classOf[SomeProject], project)
         )
-        seq.PKESequentialPropertyStore(context: _*)
-        // seq.EPKSequentialPropertyStore(context: _*)
+        project.getProjectInformationKeyInitializationData(this) match {
+            case Some(psFactory) ⇒
+                OPALLogger.info(
+                    "analysis configuration",
+                    "the PropertyStore is created using project information key initialization data"
+                )(project.logContext)
+                psFactory(context)
+            case None ⇒
+                // val ps = seq.PKESequentialPropertyStore(context: _*)
+                val ps = par.PKEParallelTasksPropertyStore(context: _*)
+                ps
+        }
     }
 }

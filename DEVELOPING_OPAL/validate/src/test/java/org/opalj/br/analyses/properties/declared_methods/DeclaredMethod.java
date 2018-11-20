@@ -1,3 +1,4 @@
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.br.analyses.properties.declared_methods;
 
 import java.lang.annotation.*;
@@ -17,5 +18,5 @@ import static java.lang.annotation.ElementType.TYPE;
 public @interface DeclaredMethod {
     String name();
     String descriptor();
-    Class<?> declaringClass();
+    Class<?>[] declaringClass();
 }

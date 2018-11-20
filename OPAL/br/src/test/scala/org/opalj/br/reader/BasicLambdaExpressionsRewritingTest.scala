@@ -1,34 +1,9 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package br
 package reader
+
+import java.io.File
 
 import org.scalatest.Matchers
 import org.scalatest.FunSpec
@@ -45,10 +20,11 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.bi.TestResources.{locateTestResources ⇒ locate}
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.instructions.MethodInvocationInstruction
+import org.opalj.collection.immutable.RefArray
 
 /**
  * Tests the rewriting of lambda expressions/method references using Java 8's infrastructure. I.e.,
- * tests rewritinh of [[org.opalj.br.instructions.INVOKEDYNAMIC]] instruction using
+ * tests rewriting of [[org.opalj.br.instructions.INVOKEDYNAMIC]] instruction using
  * `LambdaMetafactory`s.
  *
  * @author Arne Lottmann
@@ -62,7 +38,7 @@ class BasicLambdaExpressionsRewritingTest extends FunSpec with Matchers {
 
     val InvokedMethods = ObjectType("annotations/target/InvokedMethods")
 
-    val lambda18TestResources = locate("lambdas-1.8-g-parameters-genericsignature.jar", "bi")
+    val lambda18TestResources: File = locate("lambdas-1.8-g-parameters-genericsignature.jar", "bi")
 
     private def testMethod(project: SomeProject, classFile: ClassFile, name: String): Unit = {
         info(s"Testing $name")
@@ -71,32 +47,45 @@ class BasicLambdaExpressionsRewritingTest extends FunSpec with Matchers {
             method ← classFile.findMethod(name)
             body ← method.body
             factoryCall ← body.iterator.collect { case i: INVOKESTATIC ⇒ i }
-            if factoryCall.declaringClass.fqn.matches(LambdaExpressionsRewriting.LambdaNameRegEx)
-            annotations = method.runtimeVisibleAnnotations
+            if factoryCall.declaringClass.fqn.matches(InvokedynamicRewriting.LambdaNameRegEx)
         } {
+            val annotations = method.runtimeVisibleAnnotations
             successFull = true
-            implicit val MethodDeclarationEquality = new Equality[Method] {
-                def areEqual(a: Method, b: Any): Boolean =
-                    b match {
-                        case m: Method ⇒
-                            a.compare(m) == 0 /* <=> same name and descriptor */ &&
-                                a.visibilityModifier == m.visibilityModifier &&
-                                a.isStatic == m.isStatic
-                        case _ ⇒ false
-                    }
-            }
+            implicit val MethodDeclarationEquality: Equality[Method] =
+                (a: Method, b: Any) ⇒ b match {
+                    case m: Method ⇒
+                        a.compare(m) == 0 /* <=> same name and descriptor */ &&
+                            a.visibilityModifier == m.visibilityModifier &&
+                            a.isStatic == m.isStatic
+                    case _ ⇒ false
+                }
 
             if (annotations.exists(_.annotationType == InvokedMethods)) {
-                val invokedTarget = annotations
-                    .filter(_.annotationType == InvokedMethods)
-                    .flatMap(_.elementValuePairs)
-                    .flatMap(_.value.asInstanceOf[ArrayValue].values)
-                    .filter { invokeMethod ⇒
-                        val innerAnnotation = IndexedSeq(invokeMethod.asInstanceOf[AnnotationValue].annotation)
-                        val expectedTarget = getInvokedMethod(project, classFile, innerAnnotation)
-                        val actualTarget = getCallTarget(project, factoryCall, expectedTarget.get.name)
-                        MethodDeclarationEquality.areEqual(expectedTarget.get, actualTarget.get)
-                    }
+                val invokedTarget = for {
+                    a ← annotations.iterator
+                    if a.annotationType == InvokedMethods
+                    evp ← a.elementValuePairs
+                    ArrayValue(values) = evp.value
+                    ev @ AnnotationValue(annotation) ← values
+                    innerAnnotation = RefArray(annotation)
+                    expectedTarget = getInvokedMethod(project, classFile, innerAnnotation)
+                    actualTarget = getCallTarget(project, factoryCall, expectedTarget.get.name)
+                    if MethodDeclarationEquality.areEqual(expectedTarget.get, actualTarget.get)
+                } yield {
+                    ev
+                }
+                /*
+                val invokedTarget =
+                    annotations.iterator
+                        .filter(_.annotationType == InvokedMethods)
+                        .flatMap[ElementValuePair](_.elementValuePairs)
+                        .flatMap[ElementValue](_.value.asInstanceOf[ArrayValue].values)
+                        .filter { invokeMethod ⇒
+                            val innerAnnotation = RefArray(invokeMethod.asInstanceOf[AnnotationValue].annotation)
+                            val expectedTarget = getInvokedMethod(project, classFile, innerAnnotation)
+                            val actualTarget = getCallTarget(project, factoryCall, expectedTarget.get.name)
+                            MethodDeclarationEquality.areEqual(expectedTarget.get, actualTarget.get)
+                        }*/
 
                 assert(
                     invokedTarget.nonEmpty,
@@ -199,7 +188,7 @@ class BasicLambdaExpressionsRewritingTest extends FunSpec with Matchers {
                     filter(_.annotationType == InvokedMethod).
                     mkString("\n\t", "\n\t", "\n")
             fail(
-                s"the specified invoked method ${message} is not defined "+
+                s"the specified invoked method $message is not defined "+
                     classFile.methods.map(_.name).mkString("; defined methods = {", ",", "}")
             )
         }
@@ -222,7 +211,7 @@ class BasicLambdaExpressionsRewritingTest extends FunSpec with Matchers {
         classFile:      ClassFile,
         methodName:     String,
         receiverType:   String,
-        parameterTypes: Option[IndexedSeq[FieldType]]
+        parameterTypes: Option[FieldTypes]
     ): Method = {
         /**
          * Get the method definition recursively -> if the method isn't implemented in `classFile`, check if
@@ -250,9 +239,9 @@ class BasicLambdaExpressionsRewritingTest extends FunSpec with Matchers {
         findMethodRecursiveInner(classFile)
     }
 
-    private def getParameterTypes(pairs: ElementValuePairs): Option[IndexedSeq[FieldType]] = {
+    private def getParameterTypes(pairs: ElementValuePairs): Option[RefArray[FieldType]] = {
         pairs.find(_.name == "parameterTypes").map { p ⇒
-            p.value.asInstanceOf[ArrayValue].values.map {
+            p.value.asInstanceOf[ArrayValue].values.map[FieldType] {
                 case ClassValue(x: ArrayType)  ⇒ x
                 case ClassValue(x: ObjectType) ⇒ x
                 case ClassValue(x: BaseType)   ⇒ x
@@ -320,21 +309,23 @@ class BasicLambdaExpressionsRewritingTest extends FunSpec with Matchers {
         OPALLogger.register(logContext, new ConsoleOPALLogger(ansiColored = true))
 
         val baseConfig: Config = ConfigFactory.load()
-        val rewritingConfigKey = LambdaExpressionsRewriting.LambdaExpressionsRewritingConfigKey
-        val logRewritingsConfigKey = LambdaExpressionsRewriting.LambdaExpressionsLogRewritingsConfigKey
+        val rewritingConfigKey = InvokedynamicRewriting.InvokedynamicRewritingConfigKey
+        val logLambdaConfigKey = InvokedynamicRewriting.LambdaExpressionsLogRewritingsConfigKey
+        val logConcatConfigKey = InvokedynamicRewriting.StringConcatLogRewritingsConfigKey
         val testConfig = baseConfig.
             withValue(rewritingConfigKey, ConfigValueFactory.fromAnyRef(java.lang.Boolean.TRUE)).
-            withValue(logRewritingsConfigKey, ConfigValueFactory.fromAnyRef(java.lang.Boolean.FALSE))
+            withValue(logLambdaConfigKey, ConfigValueFactory.fromAnyRef(java.lang.Boolean.FALSE)).
+            withValue(logConcatConfigKey, ConfigValueFactory.fromAnyRef(java.lang.Boolean.FALSE))
         object Framework extends {
             override val config = testConfig
-        } with Java8FrameworkWithLambdaExpressionsSupportAndCaching(
+        } with Java8FrameworkWithInvokedynamicSupportAndCaching(
             new BytecodeInstructionsCache
         )
 
         val project = Project(
             Framework.ClassFiles(lambda18TestResources),
             Java8LibraryFramework.ClassFiles(org.opalj.bytecode.JRELibraryFolder),
-            true,
+            libraryClassFilesAreInterfacesOnly = true,
             Traversable.empty,
             Project.defaultHandlerForInconsistentProjects,
             testConfig,

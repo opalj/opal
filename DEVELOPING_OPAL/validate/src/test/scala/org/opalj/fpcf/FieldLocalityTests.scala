@@ -1,50 +1,65 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package fpcf
+
+import java.net.URL
+
 import org.opalj.fpcf.analyses.EagerFieldLocalityAnalysis
-import org.opalj.fpcf.analyses.LazyReturnValueFreshnessAnalysis
 import org.opalj.fpcf.analyses.LazyVirtualCallAggregatingEscapeAnalysis
 import org.opalj.fpcf.analyses.LazyVirtualReturnValueFreshnessAnalysis
+import org.opalj.fpcf.analyses.SystemPropertiesAnalysis
+import org.opalj.fpcf.analyses.cg.LazyCalleesAnalysis
+import org.opalj.fpcf.analyses.cg.EagerReflectionRelatedCallsAnalysis
+import org.opalj.fpcf.analyses.cg.EagerFinalizerAnalysisScheduler
+import org.opalj.fpcf.analyses.cg.EagerSerializationRelatedCallsAnalysis
+import org.opalj.fpcf.analyses.cg.EagerThreadRelatedCallsAnalysis
+import org.opalj.fpcf.analyses.cg.EagerRTACallGraphAnalysisScheduler
+import org.opalj.fpcf.analyses.cg.EagerLoadedClassesAnalysis
+import org.opalj.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
 import org.opalj.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
+import org.opalj.fpcf.cg.properties.SerializationRelatedCallees
+import org.opalj.fpcf.cg.properties.StandardInvokeCallees
+import org.opalj.fpcf.cg.properties.ReflectionRelatedCallees
+import org.opalj.br.analyses.Project
+import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
+import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
+import org.opalj.tac.fpcf.analyses.LazyL0TACAIAnalysis
 
 class FieldLocalityTests extends PropertiesTest {
 
-    val lazyAnalysisScheduler = Set(
+    val eagerAnalysisSchedulers = Set[FPCFEagerAnalysisScheduler](
+        EagerFieldLocalityAnalysis,
+        EagerRTACallGraphAnalysisScheduler,
+        EagerLoadedClassesAnalysis,
+        EagerFinalizerAnalysisScheduler,
+        EagerThreadRelatedCallsAnalysis,
+        EagerSerializationRelatedCallsAnalysis,
+        EagerReflectionRelatedCallsAnalysis,
+        SystemPropertiesAnalysis
+    )
+
+    val lazyAnalysisSchedulers = Set[FPCFLazyAnalysisScheduler](
+        LazyL0TACAIAnalysis,
         LazyInterProceduralEscapeAnalysis,
         LazyVirtualCallAggregatingEscapeAnalysis,
         LazyVirtualReturnValueFreshnessAnalysis,
-        LazyReturnValueFreshnessAnalysis
+        LazyReturnValueFreshnessAnalysis,
+        new LazyCalleesAnalysis(Set(
+            StandardInvokeCallees, SerializationRelatedCallees, ReflectionRelatedCallees
+        ))
     )
 
+    override def init(p: Project[URL]): Unit = {
+        p.updateProjectInformationKeyInitializationData(
+            AIDomainFactoryKey,
+            (_: Option[Set[Class[_ <: AnyRef]]]) ⇒
+                Set(classOf[DefaultDomainWithCFGAndDefUse[URL]]): Set[Class[_ <: AnyRef]]
+        )
+    }
+
     describe("field locality analysis is executed") {
-        val as = executeAnalyses(Set(EagerFieldLocalityAnalysis), lazyAnalysisScheduler)
+        val as = executeAnalyses(eagerAnalysisSchedulers, lazyAnalysisSchedulers)
+        as.propertyStore.shutdown()
         validateProperties(
             as,
             fieldsWithAnnotations(as.project),

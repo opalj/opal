@@ -1,31 +1,4 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package fpcf
 
@@ -33,6 +6,9 @@ import org.scalatest.Matchers
 import org.scalatest.FunSpec
 import java.net.URL
 import java.io.File
+
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigValueFactory
 
 import org.opalj.ai.common.DefinitionSite
 import org.opalj.ai.common.DefinitionSitesKey
@@ -56,7 +32,11 @@ import org.opalj.br.TAOfNew
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.fpcf.par.PKEParallelTasksPropertyStore
+import org.opalj.fpcf.par.RecordAllPropertyStoreTracer
 import org.opalj.fpcf.properties.PropertyMatcher
+import org.opalj.br.analyses.cg.InitialEntryPointsKey
+import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
 
 /**
  * Framework to test if the properties specified in the test project (the classes in the
@@ -93,11 +73,29 @@ abstract class PropertiesTest extends FunSpec with Matchers {
 
         val libraryClassFiles = (if (withRT) ClassFiles(RTJar) else List()) ++ propertiesClassFiles
 
+        val configForEntryPoints = BaseConfig.withValue(
+            InitialEntryPointsKey.ConfigKeyPrefix+"analysis",
+            ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.AllEntryPointsFinder")
+        ).withValue(
+                InitialEntryPointsKey.ConfigKeyPrefix+"AllEntryPointsFinder.projectMethodsOnly",
+                ConfigValueFactory.fromAnyRef(true)
+            )
+
+        implicit val config: Config = configForEntryPoints.withValue(
+            InitialInstantiatedTypesKey.ConfigKeyPrefix+"analysis",
+            ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.AllInstantiatedTypesFinder")
+        ).withValue(
+                InitialInstantiatedTypesKey.ConfigKeyPrefix+
+                    "AllInstantiatedTypesFinder.projectClassesOnly",
+                ConfigValueFactory.fromAnyRef(true)
+            )
+
         info(s"the test fixture project consists of ${projectClassFiles.size} class files")
         Project(
             projectClassFiles,
             libraryClassFiles,
-            libraryClassFilesAreInterfacesOnly = false
+            libraryClassFilesAreInterfacesOnly = false,
+            virtualClassFiles = Traversable.empty
         )
     }
 
@@ -166,7 +164,11 @@ abstract class PropertiesTest extends FunSpec with Matchers {
                 it(entityIdentifier(s"$annotationTypeName")) {
                     info(s"validator: "+matcherClass.toString.substring(32))
                     val epss = ps.properties(e).toIndexedSeq
-                    assert(epss.forall(_.isFinal))
+                    val nonFinalEPSs = epss.filter(!_.isFinal)
+                    assert(
+                        nonFinalEPSs.isEmpty,
+                        nonFinalEPSs.mkString("some epss are not final:\n\t", "\n\t", "\n")
+                    )
                     val properties = epss.map(_.toUBEP.p)
                     matcher.validateProperty(p, ats, e, annotation, properties) match {
                         case Some(error: String) ⇒
@@ -298,18 +300,51 @@ abstract class PropertiesTest extends FunSpec with Matchers {
         }
     }
 
+    def init(p: Project[URL]): Unit = {}
+
     def executeAnalyses(
         eagerAnalysisRunners: Set[FPCFEagerAnalysisScheduler],
         lazyAnalysisRunners:  Set[FPCFLazyAnalysisScheduler]  = Set.empty
     ): TestContext = {
-        val p = FixtureProject.recreate() // to ensure that this project is not "polluted"
+        val p = FixtureProject.recreate { piKeyUnidueId ⇒
+            piKeyUnidueId != PropertyStoreKey.uniqueId
+        } // to ensure that this project is not "polluted"
+
+        init(p)
+
+        p.getOrCreateProjectInformationKeyInitializationData(
+            PropertyStoreKey,
+            (context: List[PropertyStoreContext[AnyRef]]) ⇒ {
+                val ps = PKEParallelTasksPropertyStore.create(
+                    new RecordAllPropertyStoreTracer,
+                    context.iterator.map(_.asTuple).toMap
+                )(p.logContext)
+                PropertyStore.updateDebug(true)
+                ps
+            }
+        )
+
         val ps = p.get(PropertyStoreKey)
+
+        val initInfo = (eagerAnalysisRunners ++ lazyAnalysisRunners).map { cs ⇒
+            cs → cs.init(ps)
+        }.toMap
+
         ps.setupPhase((eagerAnalysisRunners ++ lazyAnalysisRunners).flatMap(
             _.derives.map(_.asInstanceOf[PropertyMetaInformation].key)
         ))
-        val las = lazyAnalysisRunners.map(ar ⇒ ar.startLazily(p, ps))
-        val as = eagerAnalysisRunners.map(ar ⇒ ar.start(p, ps))
+        val las = lazyAnalysisRunners.map { ar ⇒
+            ar.beforeSchedule(ps)
+            ar.startLazily(p, ps, initInfo(ar).asInstanceOf[ar.InitializationData])
+        }
+        val as = eagerAnalysisRunners.map { ar ⇒
+            ar.beforeSchedule(ps)
+            ar.start(p, ps, initInfo(ar).asInstanceOf[ar.InitializationData])
+        }
         ps.waitOnPhaseCompletion()
+
+        (eagerAnalysisRunners ++ lazyAnalysisRunners).foreach(_.afterPhaseCompletion(ps))
+
         TestContext(p, ps, as ++ las)
     }
 }

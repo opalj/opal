@@ -1,50 +1,23 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package fpcf
 package analyses
 package purity
 
 import net.ceedubs.ficus.Ficus._
-import org.opalj.ai.isVMLevelValue
-import org.opalj.ai.pcOfVMLevelValue
+import org.opalj.ai.isImmediateVMException
 import org.opalj.br.ComputationalTypeReference
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
 import org.opalj.br.Field
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
-import org.opalj.br.MethodDescriptor
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.cfg.CFG
 import org.opalj.collection.immutable.EmptyIntTrieSet
 import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.fpcf.cg.properties.Callees
 import org.opalj.fpcf.properties.ClassImmutability
 import org.opalj.fpcf.properties.ClassifiedImpure
 import org.opalj.fpcf.properties.FieldMutability
@@ -64,7 +37,8 @@ import org.opalj.tac.New
 import org.opalj.tac.NewArray
 import org.opalj.tac.OriginOfThis
 import org.opalj.tac.Stmt
-import org.opalj.tac.TACode
+import org.opalj.tac.TACStmts
+import org.opalj.tac.fpcf.properties.TACAI
 
 /**
  * An inter-procedural analysis to determine a method's purity.
@@ -102,13 +76,14 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
      * @param code The code of the currently analyzed method
      */
     class State(
-            var lbPurity:      Purity,
-            var ubPurity:      Purity,
             var dependees:     Set[EOptionP[Entity, Property]],
             val method:        Method,
             val definedMethod: DeclaredMethod,
             val declClass:     ObjectType,
-            val code:          Array[Stmt[V]]
+            var pcToIndex:     Array[Int]                      = Array.empty,
+            var code:          Array[Stmt[V]]                  = Array.empty,
+            var lbPurity:      Purity                          = Pure,
+            var ubPurity:      Purity                          = Pure
     ) extends AnalysisState
 
     override type StateType = State
@@ -152,8 +127,8 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                             case _ ⇒ false
                         }
                     }
-                } else if (isVMLevelValue(defSite)) {
-                    true // VMLevelValues are freshly created
+                } else if (isImmediateVMException(defSite)) {
+                    true // immediate VM exceptions are freshly created
                 } else {
                     // In initializers the self reference (this) is local
                     state.method.isConstructor && defSite == OriginOfThis
@@ -181,26 +156,14 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
      * @note Adds dependendies when necessary.
      */
     def checkMethodPurity(
-        ep:     EOptionP[DeclaredMethod, Property],
-        params: (Option[Expr[V]], Seq[Expr[V]])
+        ep:     EOptionP[DeclaredMethod, Purity],
+        params: Seq[Expr[V]]
     )(implicit state: State): Boolean = ep match {
-        case EPS(_, _, _: ClassifiedImpure | VirtualMethodPurity(_: ClassifiedImpure)) ⇒
+        case EPS(_, _, _: ClassifiedImpure) ⇒
             atMost(ImpureByAnalysis)
             false
-        case eps @ EPS(_, lb: Purity, ub: Purity) ⇒
-            if (ub.modifiesReceiver) {
-                atMost(ImpureByAnalysis)
-                false
-            } else {
-                if (eps.isRefinable && ((lb meet state.ubPurity) ne state.ubPurity)) {
-                    state.dependees += ep // On Conditional, keep dependence
-                    reducePurityLB(lb)
-                }
-                atMost(ub)
-                true
-            }
-        case eps @ EPS(_, VirtualMethodPurity(lb: Purity), VirtualMethodPurity(ub: Purity)) ⇒
-            if (ub.modifiesReceiver) {
+        case eps @ EPS(_, lb, ub) ⇒
+            if (ub.modifiesParameters) {
                 atMost(ImpureByAnalysis)
                 false
             } else {
@@ -239,11 +202,34 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         if (!isLocal(expr, Pure)) state.dependees += ep
     }
 
+    /**
+     * If the callees property is not yet final, adds the necessary dependee.
+     */
+    override def handleCalleesUpdate(
+        callees: EOptionP[DeclaredMethod, Callees]
+    )(implicit state: StateType): Unit = {
+        if (!callees.isFinal) state.dependees += callees
+    }
+
+    /**
+     * Handles what to do if the TACAI is not yet final.
+     */
+    override def handleTACAI(ep: EOptionP[Method, TACAI])(implicit state: State): Unit = {
+        if (ep.isRefinable)
+            state.dependees += ep
+        if (ep.hasProperty) {
+            val tac = ep.ub.tac.get
+            state.pcToIndex = tac.pcToIndex
+            state.code = tac.stmts
+        }
+    }
+
     def cleanupDependees()(implicit state: State): Unit = {
         // Remove unnecessary dependees
         if (!state.ubPurity.isDeterministic) {
             state.dependees = state.dependees.filter { ep ⇒
-                ep.pk == Purity.key || ep.pk == VirtualMethodPurity.key
+                ep.pk == Purity.key || ep.pk == VirtualMethodPurity.key || ep.pk == Callees.key ||
+                    ep.pk == TACAI.key
             }
         }
         //IMPROVE: We could filter Purity/VPurity dependees with an lb not less than maxPurity
@@ -261,9 +247,17 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         val oldPurity = state.ubPurity
 
         eps match {
+            case ESimplePS(_, _: Callees, _) ⇒
+                if (!checkPurityOfCallees(eps.asInstanceOf[EOptionP[DeclaredMethod, Callees]]))
+                    return Result(state.definedMethod, ImpureByAnalysis)
+
+            case EPS(_, _, tacai: TACAI) ⇒
+                handleTACAI(eps.asInstanceOf[EOptionP[Method, TACAI]])
+                return determineMethodPurity(tacai.tac.get.cfg);
+
             // Cases dealing with other purity values
-            case EPS(_, _, _: Purity | _: VirtualMethodPurity) ⇒
-                if (!checkMethodPurity(eps.asInstanceOf[EOptionP[DeclaredMethod, Property]]))
+            case EPS(_, _, _: Purity) ⇒
+                if (!checkMethodPurity(eps.asInstanceOf[EOptionP[DeclaredMethod, Purity]]))
                     return Result(state.definedMethod, ImpureByAnalysis)
 
             // Cases that are pure
@@ -281,7 +275,70 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         if (state.ubPurity ne oldPurity)
             cleanupDependees()
 
-        if (state.dependees.isEmpty || (state.lbPurity eq state.ubPurity)) {
+        if (state.dependees.isEmpty || (state.lbPurity == state.ubPurity)) {
+            Result(state.definedMethod, state.ubPurity)
+        } else {
+            IntermediateResult(
+                state.definedMethod,
+                state.lbPurity,
+                state.ubPurity,
+                state.dependees,
+                continuation
+            )
+        }
+    }
+
+    /**
+     * Determines the purity of a method once TACAI is available.
+     */
+    def determineMethodPurity(
+        cfg: CFG[Stmt[V], TACStmts[V]]
+    )(implicit state: State): PropertyComputationResult = {
+        // Special case: The Throwable constructor is `LBSideEffectFree`, but subtype constructors
+        // may not be because of overridable fillInStackTrace method
+        if (state.method.isConstructor && state.declClass.isSubtypeOf(ObjectType.Throwable))
+            project.instanceMethods(state.declClass).foreach { mdc ⇒
+                if (mdc.name == "fillInStackTrace" &&
+                    mdc.method.classFile.thisType != ObjectType.Throwable) {
+                    val fISTPurity = propertyStore(declaredMethods(mdc.method), Purity.key)
+                    if (!checkMethodPurity(fISTPurity, Seq.empty))
+                        // Early return for impure fillInStackTrace
+                        return Result(state.definedMethod, state.ubPurity);
+                }
+            }
+
+        val stmtCount = state.code.length
+        var s = 0
+        while (s < stmtCount) {
+            if (!checkPurityOfStmt(state.code(s))) // Early return for impure statements
+                return Result(state.definedMethod, state.ubPurity)
+            s += 1
+        }
+
+        val callees = propertyStore(state.definedMethod, Callees.key)
+        if (!checkPurityOfCallees(callees))
+            return Result(state.definedMethod, state.ubPurity)
+
+        // Creating implicit exceptions is side-effect free (because of fillInStackTrace)
+        // but it may be ignored as domain-specific
+        val bbsCausingExceptions = cfg.abnormalReturnNode.predecessors
+        for {
+            bb ← bbsCausingExceptions
+            pc = bb.asBasicBlock.endPC
+            if isSourceOfImmediateException(pc)
+        } {
+            val throwingStmt = state.code(pc)
+            val ratedResult = rater.handleException(throwingStmt)
+            if (ratedResult.isDefined) atMost(ratedResult.get)
+            else atMost(SideEffectFree)
+        }
+
+        // Remove unnecessary dependees
+        if (state.ubPurity ne Pure) {
+            cleanupDependees()
+        }
+
+        if (state.dependees.isEmpty || (state.lbPurity == state.ubPurity)) {
             Result(state.definedMethod, state.ubPurity)
         } else {
             IntermediateResult(
@@ -300,7 +357,7 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
      * @param definedMethod a defined method with body.
      */
     def determinePurity(definedMethod: DefinedMethod): PropertyComputationResult = {
-        val method = definedMethod.methodDefinition
+        val method = definedMethod.definedMethod
         val declClass = method.classFile.thisType
 
         // If this is not the method's declaration, but a non-overwritten method in a subtype,
@@ -312,72 +369,22 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         if (method.isSynchronized)
             return Result(definedMethod, ImpureByAnalysis);
 
-        val TACode(_, code, _, cfg, _, _) = tacai(method)
-
         implicit val state: State =
-            new State(Pure, Pure, Set.empty, method, definedMethod, declClass, code)
+            new State(Set.empty, method, definedMethod, declClass)
 
-        // Special case: The Throwable constructor is `LBSideEffectFree`, but subtype constructors
-        // may not be because of overridable fillInStackTrace method
-        if (method.isConstructor && declClass.isSubtypeOf(ObjectType.Throwable).isYes)
-            project.instanceMethods(declClass).foreach { mdc ⇒
-                if (mdc.name == "fillInStackTrace" &&
-                    mdc.method.classFile.thisType != ObjectType.Throwable) {
-                    val impureFillInStackTrace = !checkPurityOfCall(
-                        declClass,
-                        "fillInStackTrace",
-                        MethodDescriptor("()Ljava/lang/Throwable;"),
-                        None,
-                        List.empty,
-                        Success(mdc.method)
-                    )
-                    if (impureFillInStackTrace) { // Early return for impure statements
-                        return Result(definedMethod, state.ubPurity);
-                    }
-                }
-            }
+        val tacaiO = getTACAI(method)
 
-        // Creating implicit except
-        // ions is side-effect free (because of fillInStackTrace)
-        // but it may be ignored as domain-specific
-        val bbsCausingExceptions = cfg.abnormalReturnNode.predecessors
-        for {
-            bb ← bbsCausingExceptions
-            pc = bb.asBasicBlock.endPC
-            if isImmediateVMException(pc)
-        } {
-            val origin = state.code(if (isVMLevelValue(pc)) pcOfVMLevelValue(pc) else pc)
-            val ratedResult = rater.handleException(origin)
-            if (ratedResult.isDefined) atMost(ratedResult.get)
-            else atMost(SideEffectFree)
-        }
-
-        val stmtCount = code.length
-        var s = 0
-        while (s < stmtCount) {
-            if (!checkPurityOfStmt(code(s))) // Early return for impure statements
-                return Result(definedMethod, state.ubPurity)
-            s += 1
-        }
-
-        // Remove unnecessary dependees
-        if (state.ubPurity ne Pure) {
-            cleanupDependees()
-        }
-
-        if (state.dependees.isEmpty || (state.lbPurity eq state.ubPurity)) {
-            Result(definedMethod, state.ubPurity)
-        } else {
-            IntermediateResult(
+        if (tacaiO.isEmpty)
+            return IntermediateResult(
                 definedMethod,
-                state.lbPurity,
-                state.ubPurity,
+                ImpureByAnalysis,
+                Pure,
                 state.dependees,
                 continuation
-            )
-        }
-    }
+            );
 
+        determineMethodPurity(tacaiO.get.cfg)
+    }
 }
 
 object L1PurityAnalysis {
@@ -395,19 +402,28 @@ object L1PurityAnalysis {
 
 trait L1PurityAnalysisScheduler extends ComputationSpecification {
 
-    override def derives: Set[PropertyKind] = Set(Purity)
+    final override def derives: Set[PropertyKind] = Set(Purity)
 
-    override def uses: Set[PropertyKind] = {
-        Set(VirtualMethodPurity, FieldMutability, ClassImmutability, TypeImmutability)
+    final override def uses: Set[PropertyKind] = {
+        Set(TACAI, Callees, FieldMutability, ClassImmutability, TypeImmutability)
     }
+
+    final override type InitializationData = Null
+    final def init(p: SomeProject, ps: PropertyStore): Null = null
+
+    def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
+
+    def afterPhaseCompletion(p: SomeProject, ps: PropertyStore): Unit = {}
+
 }
 
 object EagerL1PurityAnalysis extends L1PurityAnalysisScheduler with FPCFEagerAnalysisScheduler {
-    def start(p: SomeProject, ps: PropertyStore): FPCFAnalysis = {
+
+    override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new L1PurityAnalysis(p)
         val dms = p.get(DeclaredMethodsKey).declaredMethods
         val methodsWithBody = dms.collect {
-            case dm if dm.hasDefinition && dm.methodDefinition.body.isDefined ⇒ dm.asDefinedMethod
+            case dm if dm.hasSingleDefinedMethod && dm.definedMethod.body.isDefined ⇒ dm.asDefinedMethod
         }
         ps.scheduleEagerComputationsForEntities(methodsWithBody.filterNot(analysis.configuredPurity.wasSet))(
             analysis.determinePurity
@@ -418,7 +434,7 @@ object EagerL1PurityAnalysis extends L1PurityAnalysisScheduler with FPCFEagerAna
 
 object LazyL1PurityAnalysis extends L1PurityAnalysisScheduler with FPCFLazyAnalysisScheduler {
 
-    def startLazily(p: SomeProject, ps: PropertyStore): FPCFAnalysis = {
+    override def startLazily(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new L1PurityAnalysis(p)
         ps.registerLazyPropertyComputation(Purity.key, analysis.doDeterminePurity)
         analysis

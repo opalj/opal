@@ -1,31 +1,4 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package hermes
 package queries
@@ -76,7 +49,7 @@ case class APIClassExtension(featureID: String, declClass: ObjectType) extends C
 /**
  * Common trait that abstracts over instance and static api methods.
  */
-sealed abstract class APIMethod extends APIFeature {
+sealed abstract class APIMethod(private val fID: Option[String] = None) extends APIFeature {
 
     def declClass: ObjectType
 
@@ -90,17 +63,22 @@ sealed abstract class APIMethod extends APIFeature {
 
     final override val apiMethods = Chain(this)
 
+    private def customFeatureID: Option[String] = fID
+
     /**
      * Return the feature id of the feature.
      *
      * @note Feature ids have to be unique.
      */
     override val featureID: String = {
-        val methodName = descriptor.map(_.toJava(name)).getOrElse(name)
-        val abbreviatedMethodName = methodName.replaceAll("java.lang.Object", "Object")
-        s"${declClass.toJava}\n$abbreviatedMethodName"
+        if (customFeatureID.isDefined) {
+            customFeatureID.get
+        } else {
+            val methodName = descriptor.map(_.toJava(name)).getOrElse(name)
+            val abbreviatedMethodName = methodName.replaceAll("java.lang.Object", "Object")
+            s"${declClass.toJava}\n$abbreviatedMethodName"
+        }
     }
-
 }
 
 /**
@@ -114,8 +92,9 @@ sealed abstract class APIMethod extends APIFeature {
 case class InstanceAPIMethod(
         declClass:  ObjectType,
         name:       String,
-        descriptor: Option[MethodDescriptor]
-) extends APIMethod {
+        descriptor: Option[MethodDescriptor],
+        fID:        Option[String]           = None
+) extends APIMethod(fID) {
 
     def unapply(i: MethodInvocationInstruction): Boolean = {
         i.isInstanceMethod &&
@@ -130,12 +109,19 @@ case class InstanceAPIMethod(
  */
 object InstanceAPIMethod {
 
-    def apply(declClass: ObjectType, name: String): InstanceAPIMethod = {
+    def apply(
+        declClass: ObjectType,
+        name:      String
+    ): InstanceAPIMethod = {
         InstanceAPIMethod(declClass, name, None)
     }
 
-    def apply(declClass: ObjectType, name: String, descriptor: String): InstanceAPIMethod = {
-        InstanceAPIMethod(declClass, name, Some(MethodDescriptor(descriptor)))
+    def apply(
+        declClass: ObjectType,
+        name:      String,
+        featureID: String
+    ): InstanceAPIMethod = {
+        InstanceAPIMethod(declClass, name, None, Some(featureID))
     }
 
     def apply(
@@ -159,8 +145,9 @@ object InstanceAPIMethod {
 case class StaticAPIMethod(
         declClass:  ObjectType,
         name:       String,
-        descriptor: Option[MethodDescriptor]
-) extends APIMethod {
+        descriptor: Option[MethodDescriptor],
+        fID:        Option[String]           = None
+) extends APIMethod(fID) {
 
     def unapply(i: MethodInvocationInstruction): Boolean = {
         !i.isInstanceMethod &&
@@ -179,8 +166,8 @@ object StaticAPIMethod {
         StaticAPIMethod(declClass, name, None)
     }
 
-    def apply(declClass: ObjectType, name: String, descriptor: String): StaticAPIMethod = {
-        StaticAPIMethod(declClass, name, Some(MethodDescriptor(descriptor)))
+    def apply(declClass: ObjectType, name: String, featureID: String): StaticAPIMethod = {
+        StaticAPIMethod(declClass, name, None, Some(featureID))
     }
 
     def apply(

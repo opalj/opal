@@ -1,31 +1,4 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package br
 package instructions
@@ -101,6 +74,7 @@ object LoadConstantInstruction {
      */
     def apply(i: Int): LoadConstantInstruction[Int] =
         (i: @scala.annotation.switch) match {
+            case -1                                              ⇒ ICONST_M1
             case 0                                               ⇒ ICONST_0
             case 1                                               ⇒ ICONST_1
             case 2                                               ⇒ ICONST_2
@@ -110,6 +84,18 @@ object LoadConstantInstruction {
             case _ if i >= Byte.MinValue && i <= Byte.MaxValue   ⇒ BIPUSH(i)
             case _ if i >= Short.MinValue && i <= Short.MaxValue ⇒ SIPUSH(i)
             case _                                               ⇒ LoadInt(i)
+        }
+
+    def apply(c: ConstantValue[_], wide: Boolean): LoadConstantInstruction[_] =
+        c match {
+            case ConstantDouble(d)    ⇒ LoadDouble(d)
+            case ConstantFloat(f)     ⇒ if (wide) LoadFloat_W(f) else LoadFloat(f)
+            case ConstantInteger(i)   ⇒ if (wide) LoadInt_W(i) else LoadInt(i)
+            case ConstantLong(l)      ⇒ LoadLong(l)
+            case ConstantString(s)    ⇒ if (wide) LoadString_W(s) else LoadString(s)
+            case ConstantClass(c)     ⇒ if (wide) LoadClass_W(c) else LoadClass(c)
+            case md: MethodDescriptor ⇒ if (wide) LoadMethodType_W(md) else LoadMethodType(md)
+            case mh: MethodHandle     ⇒ if (wide) LoadMethodHandle_W(mh) else LoadMethodHandle(mh)
         }
 
     def unapply[T](ldc: LoadConstantInstruction[T]): Some[T] = Some(ldc.value)

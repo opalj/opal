@@ -1,31 +1,4 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package support
 package info
@@ -40,10 +13,11 @@ import org.opalj.br.collection.TypesSet
 import org.opalj.fpcf.PropertyStoreKey
 import org.opalj.fpcf.FPCFAnalysesManagerKey
 import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.analyses.LazyVirtualMethodThrownExceptionsAnalysis
 import org.opalj.fpcf.analyses.EagerL1ThrownExceptionsAnalysis
 import org.opalj.fpcf.properties.{ThrownExceptions ⇒ ThrownExceptionsProperty}
-import org.opalj.log.OPALLogger.info
+import org.opalj.util.Nanoseconds
 import org.opalj.util.PerformanceEvaluation.time
 
 /**
@@ -82,6 +56,7 @@ object ThrownExceptions extends DefaultOneStepAnalysis {
         parameters:    Seq[String],
         isInterrupted: () ⇒ Boolean
     ): BasicReport = {
+        var executionTime: Nanoseconds = Nanoseconds.None
         val ps: PropertyStore = time {
 
             if (parameters.contains(AnalysisLevelL0)) {
@@ -89,9 +64,7 @@ object ThrownExceptions extends DefaultOneStepAnalysis {
                 val ps = project.get(PropertyStoreKey)
                 ps.setupPhase(Set.empty) // <= ALWAYS REQUIRED.
                 // We have to query the properties...
-                project.allMethods.foreach { m ⇒
-                    ps.force(m, ThrownExceptionsProperty.key)
-                }
+                project.allMethods foreach { m ⇒ ps.force(m, ThrownExceptionsProperty.key) }
                 ps.waitOnPhaseCompletion()
                 ps
             } else /* if no analysis level is specified or L1 */ {
@@ -100,9 +73,7 @@ object ThrownExceptions extends DefaultOneStepAnalysis {
                     EagerL1ThrownExceptionsAnalysis
                 )
             }
-        } { t ⇒
-            info("analysis progress", "execution time: "+t.toSeconds)(project.logContext)
-        }
+        } { t ⇒ executionTime = t }
 
         val allMethods = ps.entities(ThrownExceptionsProperty.key).toIterable
         val (epsNotThrowingExceptions, otherEPS) =
@@ -118,23 +89,40 @@ object ThrownExceptions extends DefaultOneStepAnalysis {
         val perMethodsReport =
             if (parameters.contains(SuppressPerMethodReports))
                 ""
-            else
-                epsThrowingExceptions.map { p ⇒
-                    p.e.asInstanceOf[Method].toJava(p.ub.toString)
-                }.toList.sorted.mkString("\n")
+            else {
+                val epsThrowingExceptionsByClassFile = epsThrowingExceptions groupBy (_.e.asInstanceOf[Method].classFile)
+                epsThrowingExceptionsByClassFile.map { e ⇒
+                    val (cf, epsThrowingExceptionsPerMethod) = e
+                    cf.thisType.toJava+"{"+
+                        epsThrowingExceptionsPerMethod.map { eps: SomeEPS ⇒
+                            val m: Method = eps.e.asInstanceOf[Method]
+                            val ThrownExceptionsProperty(types) = eps.ub
+                            m.descriptor.toJava(m.name)+" throws "+types.toString
+                        }.toList.sorted.mkString("\n\t\t", "\n\t\t", "\n")+
+                        "}"
 
-        BasicReport(
-            "\nThrown Exceptions Information:\n"+
-                perMethodsReport+"\n"+
-                ps.toString(printProperties = false)+
-                "\nStatistics:\n"+
+                }.mkString("\n", "\n", "\n")
+            }
+
+        val psStatistics = ps.statistics.map(e ⇒ e._1+": "+e._2).mkString("Property Store Statistics:\n\t", "\n\t", "\n")
+
+        val analysisStatistics: String =
+            "\nStatistics:\n"+
                 "#methods with a thrown exceptions property: "+
                 s"${allMethods.size} (${project.methodsCount})\n"+
                 "#methods with exceptions information more precise than _ <: Throwable: "+
                 s"${methodsThrowingExceptions.size + epsNotThrowingExceptions.size}\n"+
                 s" ... #exceptions == 0: ${epsNotThrowingExceptions.size}\n"+
                 s" ... #exceptions == 0 and private: ${privateMethodsNotThrowingExceptions.size}\n"+
-                s" ... #exceptions >  0 and private: $privateMethodsThrowingExceptionsCount\n"
+                s" ... #exceptions >  0 and private: $privateMethodsThrowingExceptionsCount\n"+
+                s"execution time: ${executionTime.toSeconds}\n"
+
+        BasicReport(
+            psStatistics+
+                "\nThrown Exceptions Information:\n"+
+                perMethodsReport+"\n"+
+                ps.toString(printProperties = false) +
+                analysisStatistics
         )
     }
 }

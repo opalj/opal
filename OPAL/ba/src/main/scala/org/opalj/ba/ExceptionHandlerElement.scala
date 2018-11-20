@@ -1,31 +1,4 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package ba
 
@@ -70,10 +43,21 @@ case class TRYEND(id: Symbol) extends ExceptionHandlerElement {
  * Pseudo instruction marking the handler of a [[org.opalj.br.ExceptionHandler]].
  *
  * @see [[ExceptionHandlerElement]]
+ * @param position The (relative) position in the final exception handler table.
+ *         The `CATCH` with the lowest position will be the first exception handler
+ *         (the handler with the highest priority).
+ *         Overall the order is just used so sort the handlers and nothing more. The sorting
+ *         is stable - i.e., two handlers with the same number will end up in the same order
+ *         in the table. Furthermore, it is possible to use negative numbers to ensure that a
+ *         (custom) handler has precedence over all ''handlers'' found in the initial code;
+ *         the initial handlers will have ids in the range [0...(number of exception handler)).
+ * @param handlerType The type of the handled exception or `None` if all exceptions are handled
+ *         (finally handler).
  */
-case class CATCH private (
+case class CATCH(
         id:          Symbol,
-        handlerType: Option[br.ObjectType]
+        position:    Int,
+        handlerType: Option[br.ObjectType] = None
 ) extends ExceptionHandlerElement {
     final override def isTry: Boolean = false
     final override def isCatch: Boolean = true
@@ -92,18 +76,7 @@ object CATCH {
      * @see [[ExceptionHandlerElement]]
      * @param handlerType the fqn of the caught exception class
      */
-    def apply(id: Symbol, handlerType: String): CATCH = {
-        new CATCH(id, Some(br.ObjectType(handlerType)))
-    }
-
-    /**
-     * Creates a [[CATCH]] pseudo instruction marking the handler of a
-     * [[org.opalj.br.ExceptionHandler]] catching any exception.
-     * @see [[ExceptionHandlerElement]]
-     */
-    def apply(id: Symbol): CATCH = new CATCH(id, None)
-
-    def unapply(arg: CATCH): Option[(Symbol, Option[br.ObjectType])] = {
-        Some((arg.id, arg.handlerType))
+    def apply(id: Symbol, order: Int, handlerType: String): CATCH = {
+        new CATCH(id, order, Some(br.ObjectType(handlerType)))
     }
 }

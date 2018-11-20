@@ -26,7 +26,7 @@
             <nav id="nav">
                 <ul>
                     <li><a href="index.html">Getting Started</a></li>
-                    <li><a href="http://www.opal-project.de/library/api/SNAPSHOT/#org.opalj.package">ScalaDoc</a></li>
+                    <li><a href="http://www.opal-project.de/library/api/SNAPSHOT/org/opalj/index.html">ScalaDoc</a></li>
                     <li><a href="http://www.bitbucket.org/delors/opal">Repository</a></li>
                     <li><a href="https://search.maven.org/#search%7Cga%7C1%7Cg%3A%22de.opal-project%22">Maven Central</a></li>
                 </ul>
@@ -81,30 +81,50 @@
                                     <li><a href="http://stackoverflow.com/questions/tagged/opal-framework" class="icon fa-stack-overflow"><span class="label">Stackoverflow</span></a></li>
                                     <li><a href="https://hub.docker.com/r/opalj/sbt_scala_javafx/" class="icon fa-cloud"><span class="label">Docker</span></a></li>
                                 </ul>
-                            </div>
-                            <div class="6u">
                                 <h3>Related</h3>
                                 <ul class="alt">
-                                    <li><a href="https://bitbucket.org/delors/opal/raw/master/LICENSE">License (BSD 2 Clause)</a></li>
                                     <li><a href="https://www.openhub.net/p/OPAL-Project">OPAL on OpenHub</a></li>
+                                </ul>
+                                <h3>Supported By</h3>
+                                <ul class="alt">
+                                    <li><a href="https://www.yourkit.com/"><img src="images/yklogo.png" width="139", height="33"></a><br>
+                                        YourKit supports open source projects with its full-featured Java Profiler.
+                                        YourKit, LLC is the creator of <a href="https://www.yourkit.com/java/profiler/">YourKit Java Profiler</a>
+                                        an innovative and intelligent tool for profiling Java applications.
+                                    </li>
+                                </ul>
+                            </div>
+                            <div class="6u">
+                                <h3>Core Papers</h3>
+                                <ul class="alt">
+                                    <li><a href="http://ase2018.com">A Unified Lattice Model and Framework for Purity Analyses</a></li>
+                                    <li><a href="https://conf.researchr.org/track/ecoop-issta-2018/SOAP-2018-papers#program">Lattice Based Modularization of Static Analyses</a></li>
+                                    <li><a href="articles/Hermes@SOAP18.pdf">Assessment and Creation of Effective Test Corpora</a></li>
+                                    <li><a href="http://doi.acm.org/10.1145/2950290.2950312">Call Graph Construction for Java Libraries</a></li>
+                                    <li><a href="http://doi.acm.org/10.1145/2614628.2614630">A software product line for static analyses: the OPAL framework</a></li>
                                 </ul>
                             </div>
                         </div>
                     </div>
                     <div class="6u">
-                        <h3>OPAL Related Papers / Presentations</h3>
+                        <h3>Research Using OPAL</h3>
+                        <emph>The following papers give you an idea what you can do with OPAL.</emph>
                         <ul class="alt">
-                            <li><a href="articles/Hermes@PLDI.pdf">Assessment and Creation of Effective Test Corpora</a></li>
-                            <li><a href="http://doi.acm.org/10.1145/2950290.2950312">Call Graph Construction for Java Libraries</a></li>
+                            <li><a href="https://2018.splashcon.org/event/splash-2018-oopsla-algebraic-effects-for-the-masses">Algebraic Effects for the Masses</a></li>
+                            <li><a href="http://michael-reif.name/publications/JCG.pdf">Systematic Evaluation of the Unsoundness of Call Graph Construction Algorithms for Java</a></li>
                             <li><a href="http://doi.acm.org/10.1145/2786805.2786865">Hidden Truths in Dead Software Paths</a></li>
                             <li><a href="http://doi.acm.org/10.1145/2786805.2786829">Getting to know you. . . Towards a Capability Model for Java</a></li>
-                            <li><a href="http://doi.acm.org/10.1145/2614628.2614630">A software product line for static analyses: the OPAL framework</a></li>
+                        </ul>
+                        <h3>Related Presentations</h3>
+                        <ul class="alt">
                             <li><a href="articles/Your_JDK-Entwicklertag2015.pdf">Your JDK 8</a></li>
+                            <li><a href="articles/FPCF-Slides@SOAP18.pdf">Lattice Based Modularization of Static Analyses</a></li>
                         </ul>
                     </div>
     			</div>
     			<ul class="copyright">
-    				<li>&copy; The OPAL Project. All rights reserved.</li>
+                    <li>&copy; The OPAL Project. All rights reserved.</li>
+                    <li><a href="https://bitbucket.org/delors/opal/raw/master/LICENSE">License (BSD 2 Clause)</a></li>
                     <li><img src="Athene.png" height="27" style="vertical-align:middle"></li>
     				<li>Design: <a href="http://templated.co">TEMPLATED</a></li>
     			</ul>

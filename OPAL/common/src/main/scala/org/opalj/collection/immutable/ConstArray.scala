@@ -1,40 +1,13 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package collection
 package immutable
 
-import scala.language.higherKinds
-
-import java.util.Arrays
-
 import scala.reflect.ClassTag
+
+import java.util.{Arrays ⇒ JArrays}
+import java.lang.System.arraycopy
+
 import scala.collection.IndexedSeqOptimized
 import scala.collection.generic.CanBuildFrom
 import scala.collection.mutable.Builder
@@ -49,7 +22,7 @@ import org.opalj.control.{find ⇒ findInArray}
  * @author Michael Eichberg
  */
 final class ConstArray[T <: AnyRef] private (
-        private val data: Array[_ <: T]
+        private val data: Array[T]
 ) extends IndexedSeq[T] with IndexedSeqOptimized[T, ConstArray[T]] {
 
     // Required to ensure that "map" creates a ConstArray whenever possible.
@@ -57,9 +30,9 @@ final class ConstArray[T <: AnyRef] private (
 
     override def apply(idx: Int): T = data(idx)
 
-    final override def length: Int = data.length
-    final override def size: Int = data.length
-    final override def foreach[U](f: T ⇒ U): Unit = {
+    override def length: Int = data.length
+    override def size: Int = data.length
+    override def foreach[U](f: T ⇒ U): Unit = {
         val data = this.data
         var i = 0
         val max = data.length
@@ -67,6 +40,42 @@ final class ConstArray[T <: AnyRef] private (
             f(data(i))
             i += 1
         }
+    }
+
+    override def iterator: RefIterator[T] = new RefIterator[T] {
+        private[this] var i = 0
+        override def hasNext: Boolean = i < data.length
+        override def next(): T = {
+            val e = data(i)
+            i += 1
+            e
+        }
+    }
+
+    /**
+     * Creates a new `ConstArray` where the value at the given index is replaced by the given value.
+     */
+    def replaced(index: Int, e: T): ConstArray[T] = {
+        val newData = JArrays.copyOf(data, data.length)
+        newData(index) = e
+        new ConstArray(newData)
+    }
+
+    def binarySearch(key: Comparable[T]): Int = {
+        JArrays.binarySearch(data.asInstanceOf[Array[Object]], 0, data.length, key)
+    }
+
+    /**
+     * Creates a new `ConstArray` where the given value is inserted at the specified
+     * `insertionPoint`. If the underlying array happens to be sorted, then the insertion point can
+     * easily be computed using `binarySearch`; it will be `-index -1` if the
+     * returned index is less than zero.
+     */
+    def insertAt(insertionPoint: Int, e: T): ConstArray[T] = {
+        val newData = JArrays.copyOf(data, data.length + 1)
+        newData(insertionPoint) = e
+        arraycopy(data, insertionPoint, newData, insertionPoint + 1, data.length - insertionPoint)
+        new ConstArray(newData)
     }
 
     override def equals(other: Any): Boolean = {
@@ -85,12 +94,13 @@ final class ConstArray[T <: AnyRef] private (
 
     override def canEqual(that: Any): Boolean = that.isInstanceOf[IndexedSeq[T]]
 
-    override lazy val hashCode: Int = Arrays.hashCode(data.asInstanceOf[Array[Object]]) * 11
+    override lazy val hashCode: Int = JArrays.hashCode(data.asInstanceOf[Array[Object]]) * 11
 
     override def toString: String = data.mkString("ConstArray(", ", ", ")")
 
 }
 
+/*
 /**
  * Low level implicits to; e.g., enable a mapping of an ''arbitrary'' data structure to
  * a [[ConstArray]].
@@ -106,11 +116,12 @@ trait LowLevelConstArrayImplicits {
         }
 
 }
+*/
 
 /**
  * Factory for [[ConstArray]]s.
  */
-object ConstArray extends LowLevelConstArrayImplicits {
+object ConstArray /*extends LowLevelConstArrayImplicits*/ {
 
     def newBuilder[T <: AnyRef](sizeHint: Int = 8): Builder[T, ConstArray[T]] = {
         val builder = new ArrayBuffer[T](sizeHint)
@@ -124,13 +135,11 @@ object ConstArray extends LowLevelConstArrayImplicits {
         }
     }
 
-    final val EmptyConstArray = new ConstArray[Null](new Array[Null](0))
-
     def find[T <: AnyRef](sortedConstArray: ConstArray[T])(evaluate: T ⇒ Int): Option[T] = {
         findInArray(sortedConstArray.data)(evaluate)
     }
 
-    def empty[T <: AnyRef]: ConstArray[T] = EmptyConstArray.asInstanceOf[ConstArray[T]]
+    def empty[T <: AnyRef: ClassTag]: ConstArray[T] = new ConstArray[T](new Array[T](0))
 
     def apply[T <: AnyRef: ClassTag](data: T*): ConstArray[T] = new ConstArray(data.toArray)
 
@@ -144,9 +153,9 @@ object ConstArray extends LowLevelConstArrayImplicits {
     /**
      * Creates a new [[ConstArray]] from the given array. Hence, changes to the underlying array
      * would be reflected! '''Only use this factory method if you have full control over all
-     * alias to the given array to ensure that the underlying array is not mutated.'''
+     * aliases to the given array to ensure that the underlying array is not mutated.'''
      */
     // IMPROVE Use an ownership annotation to specify that ConstArray takes over the ownership of the array.
-    def from[T <: AnyRef](data: Array[T]): ConstArray[T] = new ConstArray(data)
+    def _UNSAFE_from[T <: AnyRef](data: Array[T]): ConstArray[T] = new ConstArray(data)
 
 }

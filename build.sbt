@@ -8,21 +8,23 @@ import sbtunidoc.ScalaUnidocPlugin
 name := "OPAL Library"
 
 // SNAPSHOT
-version in ThisBuild := "1.1.0-SNAPSHOT"
-// RELEASED version 		in ThisBuild := "1.0.0" // October 25th, 2017
-// RELEASED version 		in ThisBuild := "0.8.15" // September 7th, 2017
-// RELEASED version 		in ThisBuild := "0.8.14" // June 23rd, 2017
-// RELEASED version 		in ThisBuild := "0.8.13" // MAY 19th, 2017
-// RELEASED version 		in ThisBuild := "0.8.12" // April 28th, 2017
-// RELEASED version 		in ThisBuild := "0.8.11" // April 14th, 2017
-// RELEASED version 		in ThisBuild := "0.8.10"
-// RELEASED version 		in ThisBuild := "0.8.9"
+version in ThisBuild := "2.1.0-SNAPSHOT"
+// RELEASED version in ThisBuild := "2.0.1" // October 10th, 2018
+// RELEASED version in ThisBuild := "2.0.0" // October 2nd, 2018
+// RELEASED version in ThisBuild := "1.0.0" // October 25th, 2017
+// RELEASED version in ThisBuild := "0.8.15" // September 7th, 2017
+// RELEASED version in ThisBuild := "0.8.14" // June 23rd, 2017
+// RELEASED version in ThisBuild := "0.8.13" // MAY 19th, 2017
+// RELEASED version in ThisBuild := "0.8.12" // April 28th, 2017
+// RELEASED version in ThisBuild := "0.8.11" // April 14th, 2017
+// RELEASED version in ThisBuild := "0.8.10"
+// RELEASED version in ThisBuild := "0.8.9"
 
 organization in ThisBuild := "de.opal-project"
 homepage in ThisBuild := Some(url("http://www.opal-project.de"))
 licenses in ThisBuild := Seq("BSD-2-Clause" -> url("http://opensource.org/licenses/BSD-2-Clause"))
 
-scalaVersion  in ThisBuild := "2.12.6"
+scalaVersion  in ThisBuild := "2.12.7"
 
 ScalacConfiguration.globalScalacOptions
 
@@ -221,6 +223,8 @@ lazy val `AbstractInterpretationFramework` = (project in file("OPAL/ai"))
   .settings(
     name := "Abstract Interpretation Framework",
     scalacOptions in(Compile, doc) := (Opts.doc.title("OPAL - Abstract Interpretation Framework") ++ Seq("-groups", "-implicits")),
+    assemblyJarName in assembly := "OPALTACDisassembler.jar",
+    mainClass in assembly := Some("org.opalj.tac.TAC"),
     fork in run := true
   )
   .dependsOn(br % "it->it;it->test;test->test;compile->compile")
@@ -283,7 +287,7 @@ lazy val `OPAL-DeveloperTools` = (project in file("DEVELOPING_OPAL/tools"))
     scalacOptions in(Compile, console) := Seq("-deprecation"),
     //library dependencies
     libraryDependencies ++= Dependencies.developertools,
-    assemblyJarName in assembly := "OPALLambdaRectifier.jar",
+    assemblyJarName in assembly := "OPALInvokedynamicRectifier.jar",
     mainClass in assembly := Some("org.opalj.support.tools.ProjectSerializer"),
     // Required by Java/ScalaFX
     fork := true

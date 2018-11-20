@@ -1,31 +1,4 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package ai
 
@@ -75,7 +48,7 @@ object InfiniteRecursions extends DefaultOneStepAnalysis {
             for {
                 classFile ← project.allClassFiles.par
                 method ← classFile.methods
-                body ← method.body
+                body ← method.body.toSeq
                 descriptor = method.descriptor
                 if descriptor.parameterTypes.forall { t ⇒
                     // we don't have (as of Jan 1st 2015) a domain that enables a meaningful
@@ -164,7 +137,7 @@ object InfiniteRecursions extends DefaultOneStepAnalysis {
                         // in the same manner; the idea is to reduce false positives
                         // due to non-infinite recursions due to side effects
                         if (callOperands.forall {
-                            case domain.DomainSingleOriginReferenceValue(v) ⇒
+                            case domain.DomainSingleOriginReferenceValueTag(v) ⇒
                                 if (v.origin < 0 /* === the value is a parameter*/ ||
                                     // the value is always created anew (no sideeffect)
                                     body.instructions(v.origin).opcode == NEW.opcode)
@@ -215,7 +188,7 @@ object InfiniteRecursions extends DefaultOneStepAnalysis {
 
 class InfiniteRecursionsDomain(val project: SomeProject, val method: Method)
     extends Domain
-    with domain.DefaultDomainValueBinding
+    with domain.DefaultSpecialDomainValuesBinding
     with domain.ThrowAllPotentialExceptionsConfiguration
     with domain.l0.DefaultTypeLevelFloatValues
     with domain.l0.DefaultTypeLevelDoubleValues

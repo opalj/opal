@@ -1,38 +1,13 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package br
 package reader
 
-import org.opalj.control.repeat
+import org.opalj.control.fillRefArray
+import org.opalj.control.fillIntArray
 import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.br.instructions._
+import org.opalj.collection.immutable.IntIntPair
 
 /**
  * Defines a method to parse an array of bytes (containing Java bytecode instructions) and
@@ -54,7 +29,12 @@ trait CachedBytecodeReaderAndBinding extends InstructionsDeserializer {
      * Transforms an array of bytes into an array of
      * [[org.opalj.br.instructions.Instruction]]s.
      */
-    def Instructions(cp: Constant_Pool, source: Array[Byte]): Instructions = {
+    def Instructions(
+        cp:                  Constant_Pool,
+        ap_name_index:       Constant_Pool_Index,
+        ap_descriptor_index: Constant_Pool_Index,
+        source:              Array[Byte]
+    ): Instructions = {
         import java.io.DataInputStream
         import java.io.ByteArrayInputStream
 
@@ -232,7 +212,15 @@ trait CachedBytecodeReaderAndBinding extends InstructionsDeserializer {
                     in.readByte // ignored; fixed value
                     in.readByte // ignored; fixed value
                     registerDeferredAction(cp) { classFile ⇒
-                        deferredInvokedynamicResolution(classFile, cp, cpEntry, instructions, index)
+                        deferredInvokedynamicResolution(
+                            classFile,
+                            cp,
+                            ap_name_index,
+                            ap_descriptor_index,
+                            cpEntry,
+                            instructions,
+                            index
+                        )
                     }
                     //INVOKEDYNAMIC(cpe.bootstrapMethodAttributeIndex, cpe.methodName, cpe.methodDescriptor)
                     INCOMPLETE_INVOKEDYNAMIC
@@ -304,8 +292,7 @@ trait CachedBytecodeReaderAndBinding extends InstructionsDeserializer {
                     in.skip((3 - (index % 4)).toLong) // skip padding bytes
                     val defaultOffset = in.readInt
                     val npairsCount = in.readInt
-                    val npairs: IndexedSeq[(Int, Int)] =
-                        repeat(npairsCount) { (in.readInt, in.readInt) }
+                    val npairs = fillRefArray(npairsCount) { IntIntPair(in.readInt, in.readInt) }
                     LOOKUPSWITCH(defaultOffset, npairs)
                 case 129 ⇒ LOR
                 case 113 ⇒ LREM
@@ -361,7 +348,7 @@ trait CachedBytecodeReaderAndBinding extends InstructionsDeserializer {
                     val defaultOffset = in.readInt
                     val low = in.readInt
                     val high = in.readInt
-                    val jumpOffsets: IndexedSeq[Int] = repeat(high - low + 1) { in.readInt }
+                    val jumpOffsets = fillIntArray(high - low + 1) { in.readInt }
                     TABLESWITCH(defaultOffset, low, high, jumpOffsets)
                 case 196 ⇒
                     wide = true

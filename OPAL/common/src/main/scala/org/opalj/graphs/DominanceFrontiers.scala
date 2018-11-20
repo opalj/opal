@@ -1,37 +1,12 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package graphs
 
-import org.opalj.collection.mutable.FixedSizeBitSet
-import org.opalj.collection.immutable.{Chain, IntArraySet, IntHeadAndRestOfSet}
+import org.opalj.collection.immutable.Chain
+import org.opalj.collection.immutable.IntArraySet
 import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.collection.immutable.IntRefPair
+import org.opalj.collection.mutable.FixedSizeBitSet
 import org.opalj.collection.mutable.IntArrayStack
 
 /**
@@ -40,17 +15,17 @@ import org.opalj.collection.mutable.IntArrayStack
  * @author Michael Eichberg
  */
 final class DominanceFrontiers private (
-        private final val dfs: Array[IntArraySet]
+        private val dfs: Array[IntArraySet] // IMPROVE Consider using an IntTrieSet (if it doesn't work, document it!)
 ) extends ControlDependencies {
 
-    final def apply(n: Int): IntArraySet = df(n)
+    def apply(n: Int): IntArraySet = df(n)
 
-    final def maxNode: Int = dfs.length - 1
+    def maxNode: Int = dfs.length - 1
 
     /**
      * Returns the nodes in the dominance frontier of the given node.
      */
-    final def df(n: Int): IntArraySet = {
+    def df(n: Int): IntArraySet = {
         val df = dfs(n)
         if (df eq null)
             IntArraySet.empty
@@ -58,15 +33,15 @@ final class DominanceFrontiers private (
             df
     }
 
-    final def transitiveDF(n: Int): IntTrieSet = {
-        var transitiveDF = IntTrieSet.empty ++ this.df(n).intIterator
+    def transitiveDF(n: Int): IntTrieSet = {
+        var transitiveDF = IntTrieSet.empty ++ this.df(n).iterator
         var nodesToVisit = transitiveDF - n
         while (nodesToVisit.nonEmpty) {
-            val IntHeadAndRestOfSet(nextN, newNodesToVisit) = nodesToVisit.getAndRemove
+            val IntRefPair(nextN, newNodesToVisit) = nodesToVisit.headAndTail
             nodesToVisit = newNodesToVisit
             val nextDF = this.df(nextN)
-            transitiveDF ++= nextDF.intIterator
-            nodesToVisit ++= nextDF.intIterator.filter(_ != nextN)
+            transitiveDF ++= nextDF.iterator
+            nodesToVisit ++= nextDF.iterator.filter(_ != nextN)
         }
         transitiveDF
     }
@@ -111,7 +86,7 @@ final class DominanceFrontiers private (
      *          a valid node, then the default function, which always returns `true`,
      *          can be used.
      */
-    def toDot(isNodeValid: (Int) ⇒ Boolean = (i) ⇒ true): String = {
+    def toDot(isNodeValid: Int ⇒ Boolean = _ ⇒ true): String = {
         val g = Graph.empty[Int]
         dfs.zipWithIndex.foreach { e ⇒
             val (df, s /*index*/ ) = e
@@ -123,7 +98,7 @@ final class DominanceFrontiers private (
                 }
             }
         }
-        g.toDot(rankdir = "BT", dir = "forward", ranksep = "0.3")
+        g.toDot(rankdir = "BT", ranksep = "0.3")
     }
 }
 
@@ -217,7 +192,7 @@ object DominanceFrontiers {
         @inline def dfLocal(n: Int): IntArraySet = {
             var s = IntArraySet.empty
             try {
-                foreachSuccessorOf(n) accept { y ⇒ if (dt.dom(y) != n) s = s + y }
+                foreachSuccessorOf(n) { y ⇒ if (dt.dom(y) != n) s = s + y }
             } catch {
                 case t: Throwable ⇒
                     throw new Throwable(s"failed iterating over successors of node $n", t)

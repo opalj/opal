@@ -1,45 +1,18 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package collection
 
 /**
- * Identifies objects which have a – potentially context dependent – unique id.
+ * Identifies objects which have - in the scope where the objects are used - unique ids.
  * I.e., this trait is implemented by objects that have – by construction -
  * unique ids in a well-defined scope. The `UIDSet` is based on comparing uids.
  *
  * @author Michael Eichberg
  */
-trait UID {
+trait UID extends AnyRef {
 
     /**
-     * This object's context dependent unique id.
+     * This object's unique id.
      */
     def id: Int
 }
@@ -49,8 +22,8 @@ trait UID {
  * I.e., this trait is implemented by objects that have – by construction -
  * unique ids in a well-defined scope.
  *
- * @note   Two objects that are ''not equal'' may have the same id, if both objects
- *         do not have the same context.
+ * @note   Two objects that are ''not equal'' may still have the same id, if both objects
+ *         are guaranteed to never be compared against each other.
  *
  * @author Michael Eichberg
  */
@@ -62,12 +35,12 @@ trait UIDValue extends UID {
      */
     final override def equals(other: Any): Boolean = {
         other match {
-            case that: UID ⇒ UID.areEqual(this, that)
+            case that: UID ⇒ (this eq that) || this.id == that.id
             case _         ⇒ false
         }
     }
 
-    final def ===(that: UID): Boolean = UID.areEqual(this, that)
+    final def equals(that: UID): Boolean = (this eq that) || ((that ne null) && this.id == that.id)
 
     /**
      * The unique id.
@@ -80,8 +53,6 @@ trait UIDValue extends UID {
  * Helper methods related to data structures that have unique ids.
  */
 object UID {
-
-    final def areEqual(a: UID, b: UID): Boolean = (a eq b) || a.id == b.id
 
     /**
      * Returns the element stored in the given array at the position identified

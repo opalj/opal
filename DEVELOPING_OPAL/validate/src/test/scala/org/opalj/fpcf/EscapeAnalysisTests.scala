@@ -1,39 +1,26 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf
 
-import org.opalj.ai.common.SimpleAIKey
+import java.net.URL
+
 import org.opalj.ai.domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse
-import org.opalj.br.Method
+import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
+import org.opalj.br.analyses.Project
 import org.opalj.fpcf.analyses.LazyVirtualCallAggregatingEscapeAnalysis
+import org.opalj.fpcf.analyses.SystemPropertiesAnalysis
+import org.opalj.fpcf.analyses.cg.EagerFinalizerAnalysisScheduler
+import org.opalj.fpcf.analyses.cg.EagerLoadedClassesAnalysis
+import org.opalj.fpcf.analyses.cg.EagerRTACallGraphAnalysisScheduler
+import org.opalj.fpcf.analyses.cg.EagerReflectionRelatedCallsAnalysis
+import org.opalj.fpcf.analyses.cg.EagerSerializationRelatedCallsAnalysis
+import org.opalj.fpcf.analyses.cg.EagerThreadRelatedCallsAnalysis
+import org.opalj.fpcf.analyses.cg.LazyCalleesAnalysis
 import org.opalj.fpcf.analyses.escape.EagerInterProceduralEscapeAnalysis
 import org.opalj.fpcf.analyses.escape.EagerSimpleEscapeAnalysis
+import org.opalj.fpcf.cg.properties.ReflectionRelatedCallees
+import org.opalj.fpcf.cg.properties.SerializationRelatedCallees
+import org.opalj.fpcf.cg.properties.StandardInvokeCallees
+import org.opalj.tac.fpcf.analyses.LazyL0TACAIAnalysis
 
 /**
  * Tests if the escape properties specified in the test project (the classes in the (sub-)package of
@@ -44,32 +31,38 @@ import org.opalj.fpcf.analyses.escape.EagerSimpleEscapeAnalysis
  */
 class EscapeAnalysisTests extends PropertiesTest {
 
-    override def executeAnalyses(
-        eagerAnalysisRunners: Set[FPCFEagerAnalysisScheduler],
-        lazyAnalysisRunners:  Set[FPCFLazyAnalysisScheduler]
-    ): TestContext = {
-        val p = FixtureProject.recreate()
+    val eagerAnalyses: Set[FPCFEagerAnalysisScheduler] = Set(
+        EagerRTACallGraphAnalysisScheduler,
+        EagerLoadedClassesAnalysis,
+        EagerFinalizerAnalysisScheduler,
+        EagerThreadRelatedCallsAnalysis,
+        EagerSerializationRelatedCallsAnalysis,
+        EagerReflectionRelatedCallsAnalysis,
+        SystemPropertiesAnalysis
+    )
 
-        p.getOrCreateProjectInformationKeyInitializationData(
-            SimpleAIKey,
-            (m: Method) ⇒ {
-                new DefaultPerformInvocationsDomainWithCFGAndDefUse(p, m)
-            }
+    val lazyAnalyses: Set[FPCFLazyAnalysisScheduler] = Set(
+        LazyL0TACAIAnalysis,
+        new LazyCalleesAnalysis(
+            Set(StandardInvokeCallees, SerializationRelatedCallees, ReflectionRelatedCallees)
         )
-        val ps = p.get(PropertyStoreKey)
+    )
 
-        ps.setupPhase((eagerAnalysisRunners ++ lazyAnalysisRunners).flatMap(
-            _.derives.map(_.asInstanceOf[PropertyMetaInformation].key)
-        ))
+    override def init(p: Project[URL]): Unit = {
+        val performInvocationsDomain = classOf[DefaultPerformInvocationsDomainWithCFGAndDefUse[_]]
 
-        lazyAnalysisRunners.foreach(_.startLazily(p, ps))
-        val as = eagerAnalysisRunners.map(ar ⇒ ar.start(p, ps))
-        ps.waitOnPhaseCompletion()
-        TestContext(p, ps, as)
+        p.updateProjectInformationKeyInitializationData(
+            AIDomainFactoryKey,
+            (i: Option[Set[Class[_ <: AnyRef]]]) ⇒ (i match {
+                case None               ⇒ Set(performInvocationsDomain)
+                case Some(requirements) ⇒ requirements + performInvocationsDomain
+            }): Set[Class[_ <: AnyRef]]
+        )
     }
 
     describe("no analysis is scheduled") {
         val as = executeAnalyses(Set.empty)
+        as.propertyStore.shutdown()
         validateProperties(
             as,
             allocationSitesWithAnnotations(as.project) ++
@@ -79,7 +72,8 @@ class EscapeAnalysisTests extends PropertiesTest {
     }
 
     describe("the org.opalj.fpcf.analyses.escape.SimpleEscapeAnalysis is executed") {
-        val as = executeAnalyses(Set(EagerSimpleEscapeAnalysis))
+        val as = executeAnalyses(eagerAnalyses + EagerSimpleEscapeAnalysis, lazyAnalyses)
+        as.propertyStore.shutdown()
         validateProperties(
             as,
             allocationSitesWithAnnotations(as.project) ++
@@ -90,9 +84,10 @@ class EscapeAnalysisTests extends PropertiesTest {
 
     describe("the org.opalj.fpcf.analyses.escape.InterProceduralEscapeAnalysis is executed") {
         val as = executeAnalyses(
-            Set(EagerInterProceduralEscapeAnalysis),
-            Set(LazyVirtualCallAggregatingEscapeAnalysis)
+            eagerAnalyses + EagerInterProceduralEscapeAnalysis,
+            lazyAnalyses + LazyVirtualCallAggregatingEscapeAnalysis
         )
+        as.propertyStore.shutdown()
         validateProperties(
             as,
             allocationSitesWithAnnotations(as.project) ++

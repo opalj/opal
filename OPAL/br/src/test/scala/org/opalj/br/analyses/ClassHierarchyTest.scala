@@ -1,31 +1,4 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package br
 package analyses
@@ -377,98 +350,141 @@ class ClassHierarchyTest extends FlatSpec with Matchers {
         )
     }
 
-    behavior of "the default ClassHierarchy's isSubtypeOf method w.r.t. class types"
+    behavior of "the default ClassHierarchy's is(A)SubtypeOf method w.r.t. class types"
 
-    it should "return Unknown if the \"subtype\" is unknown" in {
-        preInitCH.isSubtypeOf(AnUnknownType, Throwable) should be(Unknown)
+    it should "return false(Unknown) if the \"subtype\" is unknown" in {
+        preInitCH.isASubtypeOf(AnUnknownType, Throwable) should be(Unknown)
+        preInitCH.isSubtypeOf(AnUnknownType, Throwable) should be(false)
     }
 
-    it should "return Yes if a class-type indirectly inherits an interface-type" in {
-        preInitCH.isSubtypeOf(ArithmeticException, Serializable) should be(Yes)
+    it should "return true(Yes) if a class-type indirectly inherits an interface-type" in {
+        preInitCH.isASubtypeOf(ArithmeticException, Serializable) should be(Yes)
+        preInitCH.isSubtypeOf(ArithmeticException, Serializable) should be(true)
     }
 
-    it should "always return Yes if both types are identical" in {
-        preInitCH.isSubtypeOf(ArithmeticException, ArithmeticException) should be(Yes)
-        preInitCH.isSubtypeOf(AnUnknownType, AnUnknownType) should be(Yes)
+    it should "always return true(Yes) if both types are identical" in {
+        preInitCH.isASubtypeOf(ArithmeticException, ArithmeticException) should be(Yes)
+        preInitCH.isASubtypeOf(AnUnknownType, AnUnknownType) should be(Yes)
+        preInitCH.isSubtypeOf(ArithmeticException, ArithmeticException) should be(true)
+        preInitCH.isSubtypeOf(AnUnknownType, AnUnknownType) should be(true)
     }
 
-    it should "return Yes for interface types when the given super type is Object even if the interface type's supertypes are not known" in {
-        preInitCH.isSubtypeOf(Serializable, Object) should be(Yes)
+    it should "return true(Yes) for interface types when the given super type is Object even if the interface type's supertypes are not known" in {
+        preInitCH.isASubtypeOf(Serializable, Object) should be(Yes)
+        preInitCH.isSubtypeOf(Serializable, Object) should be(true)
     }
 
-    it should "return No for a type that is not a subtype of another type and all type information is known" in {
+    it should "return false(No) for a type that is not a subtype of another type and all type information is known" in {
         // "only" classes
-        preInitCH.isSubtypeOf(Error, Exception) should be(No)
-        preInitCH.isSubtypeOf(Exception, Error) should be(No)
-        preInitCH.isSubtypeOf(Exception, RuntimeException) should be(No)
+        preInitCH.isASubtypeOf(Error, Exception) should be(No)
+        preInitCH.isSubtypeOf(Error, Exception) should be(false)
+        preInitCH.isASubtypeOf(Exception, Error) should be(No)
+        preInitCH.isSubtypeOf(Exception, Error) should be(false)
+        preInitCH.isASubtypeOf(Exception, RuntimeException) should be(No)
+        preInitCH.isSubtypeOf(Exception, RuntimeException) should be(false)
 
         // "only" interfaces
-        preInitCH.isSubtypeOf(Serializable, Cloneable) should be(No)
+        preInitCH.isASubtypeOf(Serializable, Cloneable) should be(No)
+        preInitCH.isSubtypeOf(Serializable, Cloneable) should be(false)
 
         // class and interface
-        preInitCH.isSubtypeOf(ArithmeticException, Cloneable) should be(No)
+        preInitCH.isASubtypeOf(ArithmeticException, Cloneable) should be(No)
+        preInitCH.isSubtypeOf(ArithmeticException, Cloneable) should be(false)
     }
 
-    it should "return Unknown if two types are not in an inheritance relationship but the subtype's supertypes are not guaranteed to be known" in {
-        javaLangCH.isSubtypeOf(Serializable, Cloneable) should be(Unknown)
+    it should "return false(Unknown) if two types are not in an inheritance relationship but the subtype's supertypes are not guaranteed to be known" in {
+        javaLangCH.isKnown(Serializable) should be(true)
+        javaLangCH.isSupertypeInformationComplete(Serializable) should be(false)
+        javaLangCH.isASubtypeOf(Serializable, Cloneable) should be(Unknown)
+        javaLangCH.isSubtypeOf(Serializable, Cloneable) should be(false)
     }
 
-    behavior of "the preInitialized ClassHierarchy's isSubtypeOf method w.r.t. Exceptions"
+    behavior of "the preInitialized ClassHierarchy's is(A)SubtypeOf method w.r.t. Exceptions"
 
     it should "correctly reflect the base exception hierarchy" in {
+        preInitCH.isASubtypeOf(Throwable, Object) should be(Yes)
+        preInitCH.isSubtypeOf(Throwable, Object) should be(true)
+        preInitCH.isASubtypeOf(Error, Throwable) should be(Yes)
+        preInitCH.isSubtypeOf(Error, Throwable) should be(true)
+        preInitCH.isASubtypeOf(RuntimeException, Exception) should be(Yes)
+        preInitCH.isSubtypeOf(RuntimeException, Exception) should be(true)
+        preInitCH.isASubtypeOf(Exception, Throwable) should be(Yes)
+        preInitCH.isSubtypeOf(Exception, Throwable) should be(true)
 
-        preInitCH.isSubtypeOf(Throwable, Object) should be(Yes)
-        preInitCH.isSubtypeOf(Error, Throwable) should be(Yes)
-        preInitCH.isSubtypeOf(RuntimeException, Exception) should be(Yes)
-        preInitCH.isSubtypeOf(Exception, Throwable) should be(Yes)
+        preInitCH.isASubtypeOf(Object, Throwable) should be(No)
+        preInitCH.isSubtypeOf(Object, Throwable) should be(false)
 
-        preInitCH.isSubtypeOf(Object, Throwable) should be(No)
-
-        preInitCH.isSubtypeOf(AnUnknownType, Object) should be(Yes)
-        preInitCH.isSubtypeOf(Object, AnUnknownType) should be(No)
+        preInitCH.isASubtypeOf(AnUnknownType, Object) should be(Yes)
+        preInitCH.isSubtypeOf(AnUnknownType, Object) should be(true)
+        preInitCH.isASubtypeOf(Object, AnUnknownType) should be(No)
+        preInitCH.isSubtypeOf(Object, AnUnknownType) should be(false)
 
     }
 
-    behavior of "the ClassHierarchy's isSubtypeOf method w.r.t. Arrays"
+    behavior of "the ClassHierarchy's is(A)SubtypeOf method w.r.t. Arrays"
 
     it should "correctly reflect the basic type hierarchy related to Arrays" in {
-        preInitCH.isSubtypeOf(ObjectArray, Object) should be(Yes)
-        preInitCH.isSubtypeOf(SeriablizableArray, ObjectArray) should be(Yes)
-        preInitCH.isSubtypeOf(CloneableArray, ObjectArray) should be(Yes)
-        preInitCH.isSubtypeOf(ObjectArray, ObjectArray) should be(Yes)
-        preInitCH.isSubtypeOf(SeriablizableArray, SeriablizableArray) should be(Yes)
-        preInitCH.isSubtypeOf(AnUnknownTypeArray, AnUnknownTypeArray) should be(Yes)
+        preInitCH.isASubtypeOf(ObjectArray, Object) should be(Yes)
+        preInitCH.isSubtypeOf(ObjectArray, Object) should be(true)
+        preInitCH.isASubtypeOf(SeriablizableArray, ObjectArray) should be(Yes)
+        preInitCH.isSubtypeOf(SeriablizableArray, ObjectArray) should be(true)
+        preInitCH.isASubtypeOf(CloneableArray, ObjectArray) should be(Yes)
+        preInitCH.isSubtypeOf(CloneableArray, ObjectArray) should be(true)
+        preInitCH.isASubtypeOf(ObjectArray, ObjectArray) should be(Yes)
+        preInitCH.isSubtypeOf(ObjectArray, ObjectArray) should be(true)
+        preInitCH.isASubtypeOf(SeriablizableArray, SeriablizableArray) should be(Yes)
+        preInitCH.isSubtypeOf(SeriablizableArray, SeriablizableArray) should be(true)
+        preInitCH.isASubtypeOf(AnUnknownTypeArray, AnUnknownTypeArray) should be(Yes)
+        preInitCH.isSubtypeOf(AnUnknownTypeArray, AnUnknownTypeArray) should be(true)
 
-        preInitCH.isSubtypeOf(Object, ObjectArray) should be(No)
-        preInitCH.isSubtypeOf(CloneableArray, SeriablizableArray) should be(No)
+        preInitCH.isASubtypeOf(Object, ObjectArray) should be(No)
+        preInitCH.isSubtypeOf(Object, ObjectArray) should be(false)
+        preInitCH.isASubtypeOf(CloneableArray, SeriablizableArray) should be(No)
+        preInitCH.isSubtypeOf(CloneableArray, SeriablizableArray) should be(false)
 
-        preInitCH.isSubtypeOf(AnUnknownTypeArray, SeriablizableArray) should be(Unknown)
+        preInitCH.isASubtypeOf(AnUnknownTypeArray, SeriablizableArray) should be(Unknown)
+        preInitCH.isSubtypeOf(AnUnknownTypeArray, SeriablizableArray) should be(false)
 
-        preInitCH.isSubtypeOf(SeriablizableArray, AnUnknownTypeArray) should be(No)
+        preInitCH.isASubtypeOf(SeriablizableArray, AnUnknownTypeArray) should be(No)
+        preInitCH.isSubtypeOf(SeriablizableArray, AnUnknownTypeArray) should be(false)
     }
 
     it should "correctly reflect the type hierarchy related to Arrays of primitives" in {
-        preInitCH.isSubtypeOf(intArray, Object) should be(Yes)
-        preInitCH.isSubtypeOf(intArray, Serializable) should be(Yes)
-        preInitCH.isSubtypeOf(intArray, Cloneable) should be(Yes)
-        preInitCH.isSubtypeOf(intArray, intArray) should be(Yes)
+        preInitCH.isASubtypeOf(intArray, Object) should be(Yes)
+        preInitCH.isSubtypeOf(intArray, Object) should be(true)
+        preInitCH.isASubtypeOf(intArray, Serializable) should be(Yes)
+        preInitCH.isSubtypeOf(intArray, Serializable) should be(true)
+        preInitCH.isASubtypeOf(intArray, Cloneable) should be(Yes)
+        preInitCH.isSubtypeOf(intArray, Cloneable) should be(true)
+        preInitCH.isASubtypeOf(intArray, intArray) should be(Yes)
+        preInitCH.isSubtypeOf(intArray, intArray) should be(true)
 
-        preInitCH.isSubtypeOf(intArray, longArray) should be(No)
-        preInitCH.isSubtypeOf(longArray, intArray) should be(No)
+        preInitCH.isASubtypeOf(intArray, longArray) should be(No)
+        preInitCH.isSubtypeOf(intArray, longArray) should be(false)
+        preInitCH.isASubtypeOf(longArray, intArray) should be(No)
+        preInitCH.isSubtypeOf(longArray, intArray) should be(false)
 
-        preInitCH.isSubtypeOf(arrayOfIntArray, ObjectArray) should be(Yes)
-        preInitCH.isSubtypeOf(arrayOfIntArray, SeriablizableArray) should be(Yes)
+        preInitCH.isASubtypeOf(arrayOfIntArray, ObjectArray) should be(Yes)
+        preInitCH.isSubtypeOf(arrayOfIntArray, ObjectArray) should be(true)
+        preInitCH.isASubtypeOf(arrayOfIntArray, SeriablizableArray) should be(Yes)
+        preInitCH.isSubtypeOf(arrayOfIntArray, SeriablizableArray) should be(true)
     }
 
     it should "correctly reflect the type hierarchy related to Arrays of Arrays" in {
-        preInitCH.isSubtypeOf(SeriablizableArrayOfArray, Object) should be(Yes)
-        preInitCH.isSubtypeOf(SeriablizableArrayOfArray, SeriablizableArrayOfArray) should be(Yes)
+        preInitCH.isASubtypeOf(SeriablizableArrayOfArray, Object) should be(Yes)
+        preInitCH.isSubtypeOf(SeriablizableArrayOfArray, Object) should be(true)
+        preInitCH.isASubtypeOf(SeriablizableArrayOfArray, SeriablizableArrayOfArray) should be(Yes)
+        preInitCH.isSubtypeOf(SeriablizableArrayOfArray, SeriablizableArrayOfArray) should be(true)
 
-        preInitCH.isSubtypeOf(SeriablizableArrayOfArray, SeriablizableArray) should be(Yes)
-        preInitCH.isSubtypeOf(SeriablizableArrayOfArray, ObjectArray) should be(Yes)
-        preInitCH.isSubtypeOf(SeriablizableArrayOfArray, CloneableArray) should be(Yes)
+        preInitCH.isASubtypeOf(SeriablizableArrayOfArray, SeriablizableArray) should be(Yes)
+        preInitCH.isSubtypeOf(SeriablizableArrayOfArray, SeriablizableArray) should be(true)
+        preInitCH.isASubtypeOf(SeriablizableArrayOfArray, ObjectArray) should be(Yes)
+        preInitCH.isSubtypeOf(SeriablizableArrayOfArray, ObjectArray) should be(true)
+        preInitCH.isASubtypeOf(SeriablizableArrayOfArray, CloneableArray) should be(Yes)
+        preInitCH.isSubtypeOf(SeriablizableArrayOfArray, CloneableArray) should be(true)
 
-        preInitCH.isSubtypeOf(SeriablizableArrayOfArray, AnUnknownTypeArray) should be(No)
+        preInitCH.isASubtypeOf(SeriablizableArrayOfArray, AnUnknownTypeArray) should be(No)
+        preInitCH.isSubtypeOf(SeriablizableArrayOfArray, AnUnknownTypeArray) should be(false)
     }
 
     behavior of "the ClassHierarchy's directSubtypesOf(UpperTypeBound) method"
@@ -570,155 +586,155 @@ class ClassHierarchyTest extends FlatSpec with Matchers {
     //
     // -----------------------------------------------------------------------------------
 
-    behavior of "isSubTypeOf method w.r.t. concrete generics"
+    behavior of "isASubtypeOf method w.r.t. concrete generics"
 
     it should "return YES iff the type arguments do match considering variance indicators and wildcards" in {
         implicit val genericProject = ClassHierarchyTest.genericProject
-        import genericProject.classHierarchy.isSubtypeOf
-        isSubtypeOf(baseContainer, baseContainer) should be(Yes)
-        isSubtypeOf(baseContainer, wildCardContainer) should be(Yes)
-        isSubtypeOf(concreteSubGeneric, baseContainer) should be(Yes)
-        isSubtypeOf(wildCardContainer, wildCardContainer) should be(Yes)
-        isSubtypeOf(extBaseContainer, covariantContainer) should be(Yes)
-        isSubtypeOf(baseContainer, covariantContainer) should be(Yes)
-        isSubtypeOf(baseContainer, contravariantContainer) should be(Yes)
-        isSubtypeOf(doubleContainerET, baseContainer) should be(Yes)
-        isSubtypeOf(doubleContainerTE, baseContainer) should be(Yes)
-        isSubtypeOf(doubleContainerBase, baseContainer) should be(Yes)
+        import genericProject.classHierarchy.isASubtypeOf
+        isASubtypeOf(baseContainer, baseContainer) should be(Yes)
+        isASubtypeOf(baseContainer, wildCardContainer) should be(Yes)
+        isASubtypeOf(concreteSubGeneric, baseContainer) should be(Yes)
+        isASubtypeOf(wildCardContainer, wildCardContainer) should be(Yes)
+        isASubtypeOf(extBaseContainer, covariantContainer) should be(Yes)
+        isASubtypeOf(baseContainer, covariantContainer) should be(Yes)
+        isASubtypeOf(baseContainer, contravariantContainer) should be(Yes)
+        isASubtypeOf(doubleContainerET, baseContainer) should be(Yes)
+        isASubtypeOf(doubleContainerTE, baseContainer) should be(Yes)
+        isASubtypeOf(doubleContainerBase, baseContainer) should be(Yes)
     }
 
     it should "return NO if the type arguments doesn't match considering variance indicators and wildcards" in {
         implicit val genericProject = ClassHierarchyTest.genericProject
-        import genericProject.classHierarchy.isSubtypeOf
-        isSubtypeOf(baseContainer, extBaseContainer) should be(No)
-        isSubtypeOf(concreteSubGeneric, altContainer) should be(No)
-        isSubtypeOf(wildCardContainer, baseContainer) should be(No)
-        isSubtypeOf(altContainer, contravariantContainer) should be(No)
-        isSubtypeOf(extBaseContainer, contravariantBaseContainer) should be(No)
-        isSubtypeOf(altContainer, covariantContainer) should be(No)
-        isSubtypeOf(baseContainer, doubleContainerET) should be(No)
-        isSubtypeOf(baseContainer, doubleContainerTE) should be(No)
-        isSubtypeOf(wrongDoubleContainer, baseContainer) should be(No)
-        isSubtypeOf(doubleContainerAltBase, baseContainer) should be(No)
+        import genericProject.classHierarchy.isASubtypeOf
+        isASubtypeOf(baseContainer, extBaseContainer) should be(No)
+        isASubtypeOf(concreteSubGeneric, altContainer) should be(No)
+        isASubtypeOf(wildCardContainer, baseContainer) should be(No)
+        isASubtypeOf(altContainer, contravariantContainer) should be(No)
+        isASubtypeOf(extBaseContainer, contravariantBaseContainer) should be(No)
+        isASubtypeOf(altContainer, covariantContainer) should be(No)
+        isASubtypeOf(baseContainer, doubleContainerET) should be(No)
+        isASubtypeOf(baseContainer, doubleContainerTE) should be(No)
+        isASubtypeOf(wrongDoubleContainer, baseContainer) should be(No)
+        isASubtypeOf(doubleContainerAltBase, baseContainer) should be(No)
     }
 
-    behavior of "isSubTypeOf method w.r.t. generics with interface types"
+    behavior of "isASubtypeOf method w.r.t. generics with interface types"
 
     it should "return YES iff the subtype directly implements the interface with matching type arguments" in {
         implicit val genericProject = ClassHierarchyTest.genericProject
-        import genericProject.classHierarchy.isSubtypeOf
-        isSubtypeOf(concreteInterfaceWithBase, iContainerWithBase) should be(Yes)
-        isSubtypeOf(IBaseContainerWithBase, iContainerWithBase) should be(Yes)
+        import genericProject.classHierarchy.isASubtypeOf
+        isASubtypeOf(concreteInterfaceWithBase, iContainerWithBase) should be(Yes)
+        isASubtypeOf(IBaseContainerWithBase, iContainerWithBase) should be(Yes)
 
     }
 
     it should "return NO if the subtype doesn't directly implement the interface with matching type arguments" in {
         implicit val genericProject = ClassHierarchyTest.genericProject
-        import genericProject.classHierarchy.isSubtypeOf
-        isSubtypeOf(IBaseContainerWithAltBase, iContainerWithBase) should be(No)
-        isSubtypeOf(concreteInterfaceWithAltBase, IBaseContainerWithBase) should be(No)
-        isSubtypeOf(concreteInterfaceWithBase, concreteInterfaceWithAltBase) should be(No)
+        import genericProject.classHierarchy.isASubtypeOf
+        isASubtypeOf(IBaseContainerWithAltBase, iContainerWithBase) should be(No)
+        isASubtypeOf(concreteInterfaceWithAltBase, IBaseContainerWithBase) should be(No)
+        isASubtypeOf(concreteInterfaceWithBase, concreteInterfaceWithAltBase) should be(No)
     }
 
     it should "return YES iff the subtype implements the given interface with matching type arguments through some supertype" in {
         implicit val genericProject = ClassHierarchyTest.genericProject
-        import genericProject.classHierarchy.isSubtypeOf
-        isSubtypeOf(subClassWithInterface, iContainerWithAltBase) should be(Yes)
-        isSubtypeOf(subClassWithInterface, concreteSubGeneric) should be(Yes)
-        isSubtypeOf(subClassWithInterface, baseContainer) should be(Yes)
+        import genericProject.classHierarchy.isASubtypeOf
+        isASubtypeOf(subClassWithInterface, iContainerWithAltBase) should be(Yes)
+        isASubtypeOf(subClassWithInterface, concreteSubGeneric) should be(Yes)
+        isASubtypeOf(subClassWithInterface, baseContainer) should be(Yes)
     }
 
     it should "return NO if the subtype doesn't implement the given interface with matching type arguments through some supertype" in {
         implicit val genericProject = ClassHierarchyTest.genericProject
-        import genericProject.classHierarchy.isSubtypeOf
-        isSubtypeOf(subClassWithInterface, iContainerWithBase) should be(No)
+        import genericProject.classHierarchy.isASubtypeOf
+        isASubtypeOf(subClassWithInterface, iContainerWithBase) should be(No)
     }
 
     it should "return UNKNOWN if one of the arguments is an unknown type" in {
         implicit val genericProject = ClassHierarchyTest.genericProject
-        import genericProject.classHierarchy.isSubtypeOf
-        isSubtypeOf(unknownContainer, baseContainer) should be(Unknown)
+        import genericProject.classHierarchy.isASubtypeOf
+        isASubtypeOf(unknownContainer, baseContainer) should be(Unknown)
     }
 
-    behavior of "isSubTypeOf method w.r.t. generics with nested types"
+    behavior of "isASubtypeOf method w.r.t. generics with nested types"
 
     it should "return YES iff if nested type arguments of the supertype and the subtype do match" in {
         implicit val genericProject = ClassHierarchyTest.genericProject
-        import genericProject.classHierarchy.isSubtypeOf
-        isSubtypeOf(nestedInnerCovariantContainer, nestedInnerCovariantContainer) should be(Yes)
-        isSubtypeOf(nestedExtBase, nestedInnerCovariantContainer) should be(Yes)
-        isSubtypeOf(nestedBase, nestedContravariantContainer) should be(Yes)
-        isSubtypeOf(nestedBase, contravariantWithContainer) should be(Yes)
-        isSubtypeOf(nestedBase, nestedOutterCovariantContainer) should be(Yes)
+        import genericProject.classHierarchy.isASubtypeOf
+        isASubtypeOf(nestedInnerCovariantContainer, nestedInnerCovariantContainer) should be(Yes)
+        isASubtypeOf(nestedExtBase, nestedInnerCovariantContainer) should be(Yes)
+        isASubtypeOf(nestedBase, nestedContravariantContainer) should be(Yes)
+        isASubtypeOf(nestedBase, contravariantWithContainer) should be(Yes)
+        isASubtypeOf(nestedBase, nestedOutterCovariantContainer) should be(Yes)
     }
 
     it should "return NO if nested type arguments of the subtype and the supertype doesn't match" in {
         implicit val genericProject = ClassHierarchyTest.genericProject
-        import genericProject.classHierarchy.isSubtypeOf
-        isSubtypeOf(nestedBase, nestedAltBase) should be(No)
-        isSubtypeOf(nestedAltBase, nestedInnerCovariantContainer) should be(No)
-        isSubtypeOf(nestedLvlTwoBase, nestedContravariantContainer) should be(No)
-        isSubtypeOf(nestedSubGenBase, nestedContravariantContainer) should be(No)
+        import genericProject.classHierarchy.isASubtypeOf
+        isASubtypeOf(nestedBase, nestedAltBase) should be(No)
+        isASubtypeOf(nestedAltBase, nestedInnerCovariantContainer) should be(No)
+        isASubtypeOf(nestedLvlTwoBase, nestedContravariantContainer) should be(No)
+        isASubtypeOf(nestedSubGenBase, nestedContravariantContainer) should be(No)
     }
 
-    behavior of "isSubTypeOf method w.r.t. generics with class suffix (e.g. by inner classes)"
+    behavior of "isASubtypeOf method w.r.t. generics with class suffix (e.g. by inner classes)"
 
     it should "return YES iff the class suffixes of a ClassTypeSignature of inner classes also match when considering generic type arguments" in {
         implicit val genericProject = ClassHierarchyTest.genericProject
-        import genericProject.classHierarchy.isSubtypeOf
+        import genericProject.classHierarchy.isASubtypeOf
 
-        isSubtypeOf(genericWithSuffix_Suffix1_7, baseCTS) should be(Yes)
-        isSubtypeOf(genericWithSuffix_publicSuffix1_1, genericWithSuffix_publicSuffix1_1) should be(Yes)
-        isSubtypeOf(genericWithSuffix_publicSuffix4_1, genericWithSuffix_publicSuffix1_1) should be(Yes)
-        isSubtypeOf(genericWithSuffix_Suffix1_4, iContainerWithBase) should be(Yes)
-        isSubtypeOf(genericWithSuffix_Suffix1_3, genericWithSuffix_publicSuffix1_2) should be(Yes)
-        isSubtypeOf(genericWithSuffix_Suffix1_6, genericWithSuffix_Suffix1_5) should be(Yes)
-        isSubtypeOf(genericWithSuffix_altBase_Suffix1_6, genericWithSuffix_altBase_Suffix1_5) should be(Yes)
-        isSubtypeOf(genericWithSuffix_Suffix2_3, genericWithSuffix_Suffix2_2) should be(Yes)
-        isSubtypeOf(genericWithSuffix_Suffix2_4_base_altBase, genericWithSuffix_Suffix2_4_base_altBase) should be(Yes)
+        isASubtypeOf(genericWithSuffix_Suffix1_7, baseCTS) should be(Yes)
+        isASubtypeOf(genericWithSuffix_publicSuffix1_1, genericWithSuffix_publicSuffix1_1) should be(Yes)
+        isASubtypeOf(genericWithSuffix_publicSuffix4_1, genericWithSuffix_publicSuffix1_1) should be(Yes)
+        isASubtypeOf(genericWithSuffix_Suffix1_4, iContainerWithBase) should be(Yes)
+        isASubtypeOf(genericWithSuffix_Suffix1_3, genericWithSuffix_publicSuffix1_2) should be(Yes)
+        isASubtypeOf(genericWithSuffix_Suffix1_6, genericWithSuffix_Suffix1_5) should be(Yes)
+        isASubtypeOf(genericWithSuffix_altBase_Suffix1_6, genericWithSuffix_altBase_Suffix1_5) should be(Yes)
+        isASubtypeOf(genericWithSuffix_Suffix2_3, genericWithSuffix_Suffix2_2) should be(Yes)
+        isASubtypeOf(genericWithSuffix_Suffix2_4_base_altBase, genericWithSuffix_Suffix2_4_base_altBase) should be(Yes)
     }
 
     it should "return NO if the class suffixes of a ClassTypeSignature of inner classes doesn't match when considering generic type arguments " in {
         implicit val genericProject = ClassHierarchyTest.genericProject
-        import genericProject.classHierarchy.isSubtypeOf
-        isSubtypeOf(genericWithSuffix_publicSuffix1_1, genericWithSuffix_publicSuffix1_1_altBase) should be(No)
-        isSubtypeOf(genericWithSuffix_altBase_publicSuffix1_1, genericWithSuffix_publicSuffix1_1) should be(No)
-        isSubtypeOf(genericWithSuffix_publicSuffix1_1_Suffix1_2, genericWithSuffix_publicSuffix1_1) should be(No)
-        isSubtypeOf(genericWithSuffix_publicSuffix1_1_Suffix1_2, genericWithSuffix_publicSuffix1_1_Suffix1_2_altBase) should be(No)
-        isSubtypeOf(genericWithSuffix_Suffix1_4, iContainerWithAltBase) should be(No)
-        isSubtypeOf(genericWithSuffix_altBase_Suffix1_3, iContainerWithBase) should be(No)
-        isSubtypeOf(genericWithSuffix_altBase_Suffix1_3, genericWithSuffix_publicSuffix1_2) should be(No)
-        isSubtypeOf(genericWithSuffix_Suffix1_6, genericWithSuffix_altBase_Suffix1_5) should be(No)
-        isSubtypeOf(genericWithSuffix_Suffix1_6, genericWithSuffix_Suffix1_5_altBase) should be(No)
-        isSubtypeOf(genericWithSuffix_Suffix2_2, genericWithSuffix_Suffix2_2_l2altBase) should be(No)
-        isSubtypeOf(genericWithSuffix_Suffix2_2, genericWithSuffix_Suffix2_2_l1altBase) should be(No)
-        isSubtypeOf(genericWithSuffix_Suffix2_3_l2altBase, genericWithSuffix_Suffix2_2) should be(No)
-        isSubtypeOf(genericWithSuffix_Suffix2_4_base_altBase, genericWithSuffix_Suffix2_4_altBase_altBase) should be(No)
+        import genericProject.classHierarchy.isASubtypeOf
+        isASubtypeOf(genericWithSuffix_publicSuffix1_1, genericWithSuffix_publicSuffix1_1_altBase) should be(No)
+        isASubtypeOf(genericWithSuffix_altBase_publicSuffix1_1, genericWithSuffix_publicSuffix1_1) should be(No)
+        isASubtypeOf(genericWithSuffix_publicSuffix1_1_Suffix1_2, genericWithSuffix_publicSuffix1_1) should be(No)
+        isASubtypeOf(genericWithSuffix_publicSuffix1_1_Suffix1_2, genericWithSuffix_publicSuffix1_1_Suffix1_2_altBase) should be(No)
+        isASubtypeOf(genericWithSuffix_Suffix1_4, iContainerWithAltBase) should be(No)
+        isASubtypeOf(genericWithSuffix_altBase_Suffix1_3, iContainerWithBase) should be(No)
+        isASubtypeOf(genericWithSuffix_altBase_Suffix1_3, genericWithSuffix_publicSuffix1_2) should be(No)
+        isASubtypeOf(genericWithSuffix_Suffix1_6, genericWithSuffix_altBase_Suffix1_5) should be(No)
+        isASubtypeOf(genericWithSuffix_Suffix1_6, genericWithSuffix_Suffix1_5_altBase) should be(No)
+        isASubtypeOf(genericWithSuffix_Suffix2_2, genericWithSuffix_Suffix2_2_l2altBase) should be(No)
+        isASubtypeOf(genericWithSuffix_Suffix2_2, genericWithSuffix_Suffix2_2_l1altBase) should be(No)
+        isASubtypeOf(genericWithSuffix_Suffix2_3_l2altBase, genericWithSuffix_Suffix2_2) should be(No)
+        isASubtypeOf(genericWithSuffix_Suffix2_4_base_altBase, genericWithSuffix_Suffix2_4_altBase_altBase) should be(No)
     }
 
-    behavior of "isSubTypeOf method w.r.t. generics specified by formal type parameters"
+    behavior of "isASubtypeOf method w.r.t. generics specified by formal type parameters"
 
     it should "return YES iff the subtype extends the class and implements all declared interfaces of the FormalTypeParameter" in {
         implicit val genericProject = ClassHierarchyTest.genericProject
-        import genericProject.classHierarchy.isSubtypeOf
-        isSubtypeOf(extBaseCTS, FormalTypeParameter("X", Some(baseCTS), Nil)) should be(Yes)
-        isSubtypeOf(subClassWithInterface, FormalTypeParameter("T", Some(concreteSubGeneric), List(iContainerWithAltBase))) should be(Yes)
-        isSubtypeOf(genericWithSuffix_Suffix1_7, FormalTypeParameter("T", Some(baseCTS), Nil)) should be(Yes)
-        isSubtypeOf(genericWithSuffix_Suffix1_4, FormalTypeParameter("T", None, List(iContainerWithBase))) should be(Yes)
+        import genericProject.classHierarchy.isASubtypeOf
+        isASubtypeOf(extBaseCTS, FormalTypeParameter("X", Some(baseCTS), Nil)) should be(Yes)
+        isASubtypeOf(subClassWithInterface, FormalTypeParameter("T", Some(concreteSubGeneric), List(iContainerWithAltBase))) should be(Yes)
+        isASubtypeOf(genericWithSuffix_Suffix1_7, FormalTypeParameter("T", Some(baseCTS), Nil)) should be(Yes)
+        isASubtypeOf(genericWithSuffix_Suffix1_4, FormalTypeParameter("T", None, List(iContainerWithBase))) should be(Yes)
     }
 
     it should "return NO if the subtype doesn't extends the class and implements all declared interfaces of the FormalTypeParameter" in {
         implicit val genericProject = ClassHierarchyTest.genericProject
-        import genericProject.classHierarchy.isSubtypeOf
-        isSubtypeOf(altBaseCTS, FormalTypeParameter("X", Some(baseCTS), Nil)) should be(No)
-        isSubtypeOf(subClassWithInterface, FormalTypeParameter("T", Some(concreteSubGeneric), List(iContainerWithAltBase, altInterfaceCTS))) should be(No)
-        isSubtypeOf(genericWithSuffix_Suffix1_4, FormalTypeParameter("T", None, List(iContainerWithAltBase))) should be(No)
+        import genericProject.classHierarchy.isASubtypeOf
+        isASubtypeOf(altBaseCTS, FormalTypeParameter("X", Some(baseCTS), Nil)) should be(No)
+        isASubtypeOf(subClassWithInterface, FormalTypeParameter("T", Some(concreteSubGeneric), List(iContainerWithAltBase, altInterfaceCTS))) should be(No)
+        isASubtypeOf(genericWithSuffix_Suffix1_4, FormalTypeParameter("T", None, List(iContainerWithAltBase))) should be(No)
     }
 
     it should "return UNKNOWN if an unknown type is encountered" in {
         implicit val genericProject = ClassHierarchyTest.genericProject
-        import genericProject.classHierarchy.isSubtypeOf
-        isSubtypeOf(unknownContainer, FormalTypeParameter("X", Some(baseCTS), Nil)) should be(Unknown)
+        import genericProject.classHierarchy.isASubtypeOf
+        isASubtypeOf(unknownContainer, FormalTypeParameter("X", Some(baseCTS), Nil)) should be(Unknown)
     }
 
     // -----------------------------------------------------------------------------------
@@ -758,7 +774,7 @@ class ClassHierarchyTest extends FlatSpec with Matchers {
 
     behavior of "the ClassHierarchy's method to traverse the class hierarchy"
 
-    it should "correctly find all suptyes of an interface" in {
+    it should "correctly find all suptypes of an interface" in {
         import clusteringProject.classHierarchy
 
         val window = ObjectType("pattern/decorator/example1/Window")
@@ -767,8 +783,8 @@ class ClassHierarchyTest extends FlatSpec with Matchers {
         classHierarchy.isKnown(window) should be(true)
         classHierarchy.isKnown(simpleWindow) should be(true)
 
-        classHierarchy.isSubtypeOf(window, simpleWindow) should be(No)
-        classHierarchy.isSubtypeOf(simpleWindow, window) should be(Yes)
+        classHierarchy.isASubtypeOf(window, simpleWindow) should be(No)
+        classHierarchy.isSubtypeOf(simpleWindow, window) should be(true)
 
         // check if the SimpleWindow is in the set of all subtypes of Window
         var subtypes = Set.empty[ObjectType]
@@ -785,6 +801,27 @@ class ClassHierarchyTest extends FlatSpec with Matchers {
 
         import clusteringProject.resolveInterfaceMethodReference
         resolveInterfaceMethodReference(window, "draw", NoArgsAndReturnVoid) should be('nonEmpty)
+    }
+
+    val jvmFeaturesProject =
+        Project(
+            ClassFiles(locateTestResources("jvm_features-1.8-g-parameters-genericsignature.jar", "bi")),
+            Traversable.empty,
+            true
+        )
+
+    it should "correctly iterate over all suptypes of Object, even without the JDK included" in {
+        var foundSomeEnumerationClass = false
+        jvmFeaturesProject.classHierarchy.foreachSubtypeCF(ObjectType.Object, false) { subTypeCF ⇒
+            val subType = subTypeCF.thisType
+            if (subType == ObjectType("class_types/SomeEnumeration")) {
+                foundSomeEnumerationClass = true
+                false
+            } else
+                true
+        }(jvmFeaturesProject)
+
+        foundSomeEnumerationClass should be(true)
     }
 
 }

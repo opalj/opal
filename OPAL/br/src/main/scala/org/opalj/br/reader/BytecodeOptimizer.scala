@@ -1,40 +1,15 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package br
 package reader
 
 import scala.annotation.switch
 import scala.annotation.tailrec
+
 import net.ceedubs.ficus.Ficus._
-import org.opalj.log.OPALLogger.info
+
 import org.opalj.collection.immutable.IntTrieSet1
+import org.opalj.log.OPALLogger.info
 import org.opalj.br.instructions.Instruction
 import org.opalj.br.instructions.GotoInstruction
 import org.opalj.br.instructions.GOTO
@@ -67,7 +42,7 @@ import org.opalj.br.instructions.JSR_W
 
 /**
  * Performs some very basic, in-place control-flow simplifications to make the code more regular.
- * In particular to make it more likely that an if that is actually a loop's if actually
+ * In particular to make it more likely that an `if` that is actually a loop's `if` actually
  * jumps back.
  *
  * The following transformations are performed:
@@ -89,8 +64,8 @@ import org.opalj.br.instructions.JSR_W
  * of dead code.
  *
  * @note All transformation always only reduce the number of basic blocks and never create new
- *       basic blocks. The existing stack map table attributes are never effect and remain
- *       valid!
+ *       basic blocks. The existing stack map table attributes are never effected and remain
+ *       valid; they may just contain more entries than strictly necessary.
  *
  * @author Michael Eichberg
  */
@@ -149,7 +124,7 @@ trait BytecodeOptimizer extends MethodsBinding {
 
         // This is the set of instructions which are effectively jumped to by if, switch, goto, and
         // jsr/ret instructions and exception handlers.
-        // It contains those instrutions which are definitive jump targets AFTER simplification.
+        // It contains those instructions which are definitive jump targets AFTER simplification.
         var jumpTargetInstructions =
             exceptionsHandlers.foldLeft(NoPCs) { (c, eh) ⇒ c + eh.handlerPC }
 
@@ -233,7 +208,7 @@ trait BytecodeOptimizer extends MethodsBinding {
                         instructions(pc + 1) = NOP
                         instructions(pc + 2) = NOP
                         simplified = true
-                        // IMPROVE log the removal of the totally USELESS IF instruction
+                        // TODO log the removal of the totally USELESS IF instruction
                     } else {
                         val jumpTargetInstruction = instructions(jumpTargetPC)
                         val nextInstruction = instructions(nextPC)
@@ -255,7 +230,7 @@ trait BytecodeOptimizer extends MethodsBinding {
                                 instructions(pc + 4) = NOP
                                 instructions(pc + 5) = NOP
                                 simplified = true
-                                // IMPROVE log the removal of the totally USELESS IF instruction
+                                // TODO log the removal of the totally USELESS IF instruction
                             } else if (jumpTargetInstruction.isGotoInstruction) {
                                 totallyConfusedIfs += pc
                             } else {
@@ -266,6 +241,7 @@ trait BytecodeOptimizer extends MethodsBinding {
                             val newBranchoffset = nextGoto.branchoffset + branchoffset
                             if (newBranchoffset >= Short.MinValue && newBranchoffset <= Short.MaxValue) {
                                 // Let's use the goto target as the if's target
+                                // IMPROVE Consider using +!=
                                 jumpTargetInstructions += pc + newBranchoffset
                                 instructions(pc) = ifInstruction.copy(newBranchoffset)
                                 simplified = true
@@ -287,6 +263,7 @@ trait BytecodeOptimizer extends MethodsBinding {
                         if (newBranchoffset != branchoffset &&
                             newBranchoffset >= Short.MinValue && newBranchoffset <= Short.MaxValue) {
                             // let's replace the original jump
+                            // IMPROVE Consider using +!=
                             jumpTargetInstructions += pc + newBranchoffset
                             instructions(pc) = GOTO(newBranchoffset)
                             simplified = true
@@ -309,6 +286,7 @@ trait BytecodeOptimizer extends MethodsBinding {
                     } else {
                         val newBranchoffset = finalJumpTarget(IntTrieSet1(pc), jumpTargetPC, branchoffset)
                         if (newBranchoffset != branchoffset) {
+                            // IMPROVE Consider using +!=
                             jumpTargetInstructions += pc + newBranchoffset
                             if (newBranchoffset >= Short.MinValue &&
                                 newBranchoffset <= Short.MaxValue) {
@@ -341,6 +319,7 @@ trait BytecodeOptimizer extends MethodsBinding {
                             // This switch is basically just a goto... we will add
                             // the goto at the end of this section of the bytecode
                             // array; however, the original target remains valid...
+                            // IMPROVE Consider using +!=
                             jumpTargetInstructions += pc + defaultOffset
                             instructions(pc) = POP
                             i = pc + 1
@@ -376,9 +355,10 @@ trait BytecodeOptimizer extends MethodsBinding {
 
                         while (i < newNextPC) { instructions(i) = NOP; i += 1 }
                         simplified = true
-                        // IMPROVE log the removal of the USELESS SWITCH instruction
+                        // TODO log the removal of the USELESS SWITCH instruction
                     } else {
-                        // IMPROVE optimize goto chains
+                        // IMPROVE Optimize goto chains by directly jumping to the final target
+                        // IMPROVE Consider using +!=
                         jumpTargetInstructions += pc + defaultOffset
                         switchInstruction.jumpOffsets foreach { branchoffset ⇒
                             jumpTargetInstructions += pc + branchoffset
@@ -390,6 +370,7 @@ trait BytecodeOptimizer extends MethodsBinding {
                     // right away... it is the instruction succeeding the jsr instruction.
                     val JSRInstruction(branchoffset) = instruction
 
+                    // IMPROVE Consider using +!=
                     jumpTargetInstructions += pc + branchoffset
                     jumpTargetInstructions += nextPC
 

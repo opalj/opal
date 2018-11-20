@@ -1,39 +1,12 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package fpcf
 package analyses
 package escape
 
 import org.opalj.collection.immutable.EmptyIntTrieSet
-import org.opalj.collection.immutable.IntHeadAndRestOfSet
 import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.collection.immutable.IntRefPair
 import org.opalj.fpcf.properties.AtMost
 import org.opalj.fpcf.properties.EscapeViaHeapObject
 import org.opalj.fpcf.properties.EscapeViaParameter
@@ -61,14 +34,14 @@ trait SimpleFieldAwareEscapeAnalysis extends AbstractEscapeAnalysis {
     override protected[this] def handlePutField(
         putField: PutField[V]
     )(implicit context: AnalysisContext, state: AnalysisState): Unit = {
-        if (context.usesDefSite(putField.value))
+        if (state.usesDefSite(putField.value))
             handleFieldLike(putField.objRef.asVar.definedBy)
     }
 
     override protected[this] def handleArrayStore(
         arrayStore: ArrayStore[V]
     )(implicit context: AnalysisContext, state: AnalysisState): Unit = {
-        if (context.usesDefSite(arrayStore.value))
+        if (state.usesDefSite(arrayStore.value))
             handleFieldLike(arrayStore.arrayRef.asVar.definedBy)
     }
 
@@ -78,7 +51,7 @@ trait SimpleFieldAwareEscapeAnalysis extends AbstractEscapeAnalysis {
      */
     private[this] def handleFieldLike(
         referenceDefSites: IntTrieSet
-    )(implicit context: AnalysisContext, state: AnalysisState): Unit = {
+    )(implicit state: AnalysisState): Unit = {
         // the definition sites to handle
         var workset = referenceDefSites
 
@@ -86,16 +59,16 @@ trait SimpleFieldAwareEscapeAnalysis extends AbstractEscapeAnalysis {
         var seen: IntTrieSet = EmptyIntTrieSet
 
         while (workset.nonEmpty) {
-            val IntHeadAndRestOfSet(referenceDefSite, newWorklist) = workset.getAndRemove
+            val IntRefPair(referenceDefSite, newWorklist) = workset.headAndTail
             workset = newWorklist
             seen += referenceDefSite
 
             // do not check the escape state of the entity (defSite) whose escape state we are
             // currently computing to avoid endless loops
-            if (context.defSite != referenceDefSite) {
+            if (state.defSite != referenceDefSite) {
                 // is the object/array reference of the field a local
                 if (referenceDefSite >= 0) {
-                    context.code(referenceDefSite) match {
+                    state.tacai.get.stmts(referenceDefSite) match {
                         case Assignment(_, _, New(_, _) | NewArray(_, _, _)) ⇒
                             /* as may alias information are not easily available we cannot simply
                             check for escape information of the base object */
@@ -135,7 +108,7 @@ trait SimpleFieldAwareEscapeAnalysis extends AbstractEscapeAnalysis {
                             throw new UnknownError(s"Unexpected tac: $s")
                     }
 
-                } else if (referenceDefSite > ai.VMLevelValuesOriginOffset) {
+                } else if (referenceDefSite > ai.ImmediateVMExceptionsOriginOffset) {
                     // assigned to field of parameter
                     state.meetMostRestrictive(AtMost(EscapeViaParameter))
                     /* As may alias information are not easily available we cannot simply use

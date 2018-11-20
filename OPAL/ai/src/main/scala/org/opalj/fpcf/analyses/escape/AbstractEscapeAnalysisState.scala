@@ -1,41 +1,21 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package fpcf
 package analyses
 package escape
 
+import org.opalj.ai.common.DefinitionSiteLike
+import org.opalj.br.DeclaredMethod
 import org.opalj.br.analyses.VirtualFormalParameter
+import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.fpcf.cg.properties.Callees
 import org.opalj.fpcf.properties.EscapeProperty
 import org.opalj.fpcf.properties.NoEscape
 import org.opalj.fpcf.properties.VirtualMethodEscapeProperty
-
+import org.opalj.tac.Expr
+import org.opalj.tac.TACMethodParameter
+import org.opalj.tac.TACode
+import org.opalj.tac.UVar
 import scala.collection.mutable
 
 /**
@@ -51,6 +31,12 @@ trait AbstractEscapeAnalysisState {
     private[this] var _dependees = Set.empty[EOptionP[Entity, Property]]
     private[this] var _mostRestrictiveProperty: EscapeProperty = NoEscape
 
+    private[this] var _tacai: Option[TACode[TACMethodParameter, V]] = None
+
+    private[this] var _uses: IntTrieSet = _
+
+    private[this] var _defSite: Int = _
+
     /**
      * Sets mostRestrictiveProperty to the greatest lower bound of its current value and the
      * given one.
@@ -65,13 +51,16 @@ trait AbstractEscapeAnalysisState {
      */
     @inline private[escape] final def addDependency(eOptionP: EOptionP[Entity, Property]): Unit = {
         _dependees += eOptionP
+        if (_dependees.count(epk ⇒ (epk.e eq eOptionP.e) && epk.pk == eOptionP.pk) > 1)
+            println()
+        assert(_dependees.count(epk ⇒ (epk.e eq eOptionP.e) && epk.pk == eOptionP.pk) <= 1)
     }
 
     /**
      * Removes the entity property pair (or epk) that correspond to the given ep from the set of
      * dependees.
      */
-    @inline private[escape] final def removeDependency(ep: EPS[Entity, Property]): Unit = {
+    @inline private[escape] final def removeDependency(ep: EOptionP[Entity, Property]): Unit = {
         assert(_dependees.count(epk ⇒ (epk.e eq ep.e) && epk.pk == ep.pk) <= 1)
         _dependees = _dependees.filter(epk ⇒ (epk.e ne ep.e) || epk.pk != ep.pk)
     }
@@ -86,6 +75,48 @@ trait AbstractEscapeAnalysisState {
      * analysis.
      */
     private[escape] final def mostRestrictiveProperty: EscapeProperty = _mostRestrictiveProperty
+
+    private[escape] def updateTACAI(
+        tacai: TACode[TACMethodParameter, V]
+    )(implicit context: AbstractEscapeAnalysisContext): Unit = {
+        _tacai = Some(tacai)
+
+        context.entity match {
+            case ds: DefinitionSiteLike ⇒
+                _defSite = tacai.pcToIndex(ds.pc)
+                _uses = ds.usedBy(tacai)
+
+            case fp: VirtualFormalParameter ⇒
+                val param = tacai.params.parameter(fp.origin)
+                _uses = param.useSites
+                _defSite = param.origin
+        }
+    }
+
+    private[escape] def tacai: Option[TACode[TACMethodParameter, V]] = _tacai
+
+    private[escape] def uses: IntTrieSet = _uses
+
+    private[escape] def defSite: Int = _defSite
+
+    /**
+     * Checks whether the expression is a use of the defSite.
+     * This method is called on expressions within tac statements. We assume a flat hierarchy, so
+     * the expression is expected to be a [[org.opalj.tac.Var]].
+     */
+    @inline private[escape] final def usesDefSite(expr: Expr[V]): Boolean = {
+        assert(expr.isVar)
+        expr.asVar.definedBy.contains(_defSite)
+    }
+
+    /**
+     * If there exists a [[org.opalj.tac.UVar]] in the params of a method call that is a use of the
+     * current entity's def-site return true.
+     */
+    @inline private[escape] final def anyParameterUsesDefSite(params: Seq[Expr[V]]): Boolean = {
+        assert(params.forall(_.isVar))
+        params.exists { case UVar(_, defSites) ⇒ defSites.contains(_defSite) }
+    }
 }
 
 /**
@@ -94,6 +125,9 @@ trait AbstractEscapeAnalysisState {
  * to the [[PropertyStore]].
  */
 trait DependeeCache {
+    // TODO There is only ever one key in this map, the current method, so an Option should suffice
+    private[escape] val calleesCache: mutable.Map[DeclaredMethod, EOptionP[Entity, Callees]] =
+        mutable.Map()
 
     private[escape] val dependeeCache: mutable.Map[VirtualFormalParameter, EOptionP[Entity, EscapeProperty]] =
         mutable.Map()

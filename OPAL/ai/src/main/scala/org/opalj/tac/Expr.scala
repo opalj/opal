@@ -1,31 +1,4 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package tac
 
@@ -53,6 +26,7 @@ import org.opalj.br.Method
 import org.opalj.br.PC
 import org.opalj.br.Field
 import org.opalj.br.analyses.ProjectLike
+import org.opalj.value.ValueInformation
 
 /**
  * Represents an expression. In general, every expression should be a simple expression, where
@@ -111,7 +85,9 @@ trait Expr[+V <: Var[V]] extends ASTNode[V] {
     def asInstanceOf: InstanceOf[V] = throw new ClassCastException();
     def asCompare: Compare[V] = throw new ClassCastException();
     def asParam: Param = throw new ClassCastException();
+    def isMethodTypeConst: Boolean = false
     def asMethodTypeConst: MethodTypeConst = throw new ClassCastException();
+    def isMethodHandleConst: Boolean = false
     def asMethodHandleConst: MethodHandleConst = throw new ClassCastException();
     def isConst: Boolean = false
     def isIntConst: Boolean = false
@@ -131,7 +107,9 @@ trait Expr[+V <: Var[V]] extends ASTNode[V] {
     def asBinaryExpr: BinaryExpr[V] = throw new ClassCastException();
     def asPrefixExpr: PrefixExpr[V] = throw new ClassCastException();
     def asPrimitiveTypeCastExpr: PrimitiveTypecastExpr[V] = throw new ClassCastException();
+    def isNew: Boolean = false
     def asNew: New = throw new ClassCastException();
+    def isNewArray: Boolean = false
     def asNewArray: NewArray[V] = throw new ClassCastException();
     def asArrayLoad: ArrayLoad[V] = throw new ClassCastException();
     def asArrayLength: ArrayLength[V] = throw new ClassCastException();
@@ -139,12 +117,15 @@ trait Expr[+V <: Var[V]] extends ASTNode[V] {
     def asFieldRead: FieldRead[V] = throw new ClassCastException();
     def isGetField: Boolean = false
     def asGetField: GetField[V] = throw new ClassCastException();
+    def isGetStatic: Boolean = false
     def asGetStatic: GetStatic = throw new ClassCastException();
-    def asInvokedynamic: Invokedynamic[V] = throw new ClassCastException();
+    def asInvokedynamicFunctionCall: InvokedynamicFunctionCall[V] = throw new ClassCastException();
     def asFunctionCall: FunctionCall[V] = throw new ClassCastException();
+    def isStaticFunctionCall: Boolean = false
     def asStaticFunctionCall: StaticFunctionCall[V] = throw new ClassCastException();
     def asInstanceFunctionCall: InstanceFunctionCall[V] = throw new ClassCastException();
     def asNonVirtualFunctionCall: NonVirtualFunctionCall[V] = throw new ClassCastException();
+    def isVirtualFunctionCall: Boolean = false;
     def asVirtualFunctionCall: VirtualFunctionCall[V] = throw new ClassCastException();
 }
 
@@ -242,6 +223,7 @@ sealed abstract class Const extends ValueExpr[Nothing] {
 }
 
 case class MethodTypeConst(pc: PC, value: MethodDescriptor) extends Const {
+    final override def isMethodTypeConst: Boolean = true
     final override def asMethodTypeConst: this.type = this
     final override def astID: Int = MethodTypeConst.ASTID
     final override def tpe: Type = ObjectType.MethodType
@@ -251,6 +233,7 @@ case class MethodTypeConst(pc: PC, value: MethodDescriptor) extends Const {
 object MethodTypeConst { final val ASTID = -10 }
 
 case class MethodHandleConst(pc: PC, value: MethodHandle) extends Const {
+    final override def isMethodHandleConst: Boolean = true
     final override def asMethodHandleConst: this.type = this
     final override def astID: Int = MethodHandleConst.ASTID
     final override def tpe: Type = ObjectType.MethodHandle
@@ -437,6 +420,7 @@ case class New(pc: PC, tpe: ObjectType) extends Expr[Nothing] {
 
     final override def isValueExpression: Boolean = false
     final override def isVar: Boolean = false
+    final override def isNew: Boolean = true
     final override def asNew: this.type = this
     final override def astID: Int = New.ASTID
     final override def cTpe: ComputationalType = ComputationalTypeReference
@@ -465,6 +449,7 @@ trait ArrayExpr[+V <: Var[V]] extends Expr[V] {
  */
 case class NewArray[+V <: Var[V]](pc: PC, counts: Seq[Expr[V]], tpe: ArrayType) extends ArrayExpr[V] {
 
+    final override def isNewArray: Boolean = true
     final override def asNewArray: this.type = this
     final override def astID: Int = NewArray.ASTID
     final override def cTpe: ComputationalType = ComputationalTypeReference
@@ -586,6 +571,13 @@ case class GetField[+V <: Var[V]](
         false
     }
 
+    override def hashCode(): Int = {
+        ((GetField.ASTID * 1171 +
+            pc) * 31 +
+            declaringClass.hashCode) * 31 +
+            name.hashCode
+    }
+
     override def toString: String = {
         s"GetField(pc=$pc,${declaringClass.toJava},$name,${declaredFieldType.toJava},$objRef)"
     }
@@ -599,6 +591,7 @@ case class GetStatic(
         declaredFieldType: FieldType
 ) extends FieldRead[Nothing] {
 
+    final override def isGetStatic: Boolean = true
     final override def asGetStatic: this.type = this
     final override def astID: Int = GetStatic.ASTID
     final override def isSideEffectFree: Boolean = true
@@ -606,13 +599,26 @@ case class GetStatic(
     final override def subExpr(index: Int): Nothing = throw new IndexOutOfBoundsException();
     final override def forallSubExpressions[W >: Nothing <: Var[W]](p: Expr[W] ⇒ Boolean): Boolean = true
 
+    override def hashCode(): Int = {
+        ((GetStatic.ASTID * 1171 +
+            pc) * 31 +
+            declaringClass.hashCode) * 31 +
+            name.hashCode
+    }
+
     override def toString: String = {
         s"GetStatic(pc=$pc,${declaringClass.toJava},$name,${declaredFieldType.toJava})"
     }
 }
 object GetStatic { final val ASTID = -22 }
 
-case class Invokedynamic[+V <: Var[V]](
+/**
+ * Representation of an `invokedynamic` instruction where the finally called method returns some
+ * value.
+ *
+ * @tparam V The type of the [[Var]]s.
+ */
+case class InvokedynamicFunctionCall[+V <: Var[V]](
         pc:              PC,
         bootstrapMethod: BootstrapMethod,
         name:            String,
@@ -620,10 +626,10 @@ case class Invokedynamic[+V <: Var[V]](
         params:          Seq[Expr[V]]
 ) extends Expr[V] {
 
-    final override def asInvokedynamic: this.type = this
+    final override def asInvokedynamicFunctionCall: this.type = this
     final override def isValueExpression: Boolean = false
     final override def isVar: Boolean = false
-    final override def astID: Int = Invokedynamic.ASTID
+    final override def astID: Int = InvokedynamicFunctionCall.ASTID
     final override def cTpe: ComputationalType = descriptor.returnType.computationalType
     // IMPROVE [FUTURE] Use some analysis to determine if a method call is side effect free
     final override def isSideEffectFree: Boolean = false
@@ -640,13 +646,21 @@ case class Invokedynamic[+V <: Var[V]](
         params.foreach { p ⇒ p.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt) }
     }
 
+    override def hashCode(): Int = {
+        (((InvokedynamicFunctionCall.ASTID * 1171 +
+            pc) * 31 +
+            bootstrapMethod.hashCode) * 31 +
+            name.hashCode) * 31 +
+            descriptor.hashCode
+    }
+
     override def toString: String = {
         val sig = descriptor.toJava(name)
         val params = this.params.mkString("(", ",", ")")
-        s"Invokedynamic(pc=$pc,$bootstrapMethod,$sig,$params)"
+        s"InvokedynamicFunctionCall(pc=$pc,$bootstrapMethod,$sig,$params)"
     }
 }
-object Invokedynamic { final val ASTID = -23 }
+object InvokedynamicFunctionCall { final val ASTID = -23 }
 
 sealed abstract class FunctionCall[+V <: Var[V]] extends Expr[V] with Call[V] {
 
@@ -657,6 +671,9 @@ sealed abstract class FunctionCall[+V <: Var[V]] extends Expr[V] with Call[V] {
 }
 
 sealed abstract class InstanceFunctionCall[+V <: Var[V]] extends FunctionCall[V] {
+
+    final override def allParams: Seq[Expr[V]] = receiver +: params
+    final override def receiverOption: Option[Expr[V]] = Some(receiver)
 
     def receiver: Expr[V]
     final override def subExprCount: Int = params.size + 1
@@ -702,8 +719,18 @@ case class NonVirtualFunctionCall[+V <: Var[V]](
      *
      * @see [ProjectLike#specialCall] for further details.
      */
-    def resolveCallTarget(implicit p: ProjectLike): Result[Method] = {
-        p.specialCall(declaringClass, isInterface, name, descriptor)
+    def resolveCallTarget(callerClassType: ObjectType)(implicit p: ProjectLike): Result[Method] = {
+        p.specialCall(callerClassType, declaringClass, isInterface, name, descriptor)
+    }
+
+    final override def resolveCallTargets(
+        callingContext: ObjectType
+    )(
+        implicit
+        p:  ProjectLike,
+        ev: V <:< DUVar[ValueInformation]
+    ): Set[Method] = {
+        resolveCallTarget(callingContext)(p).toSet
     }
 
     private[tac] override def remapIndexes(
@@ -712,6 +739,14 @@ case class NonVirtualFunctionCall[+V <: Var[V]](
     ): Unit = {
         receiver.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt)
         params foreach { p ⇒ p.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt) }
+    }
+
+    override def hashCode(): Int = {
+        (((NonVirtualFunctionCall.ASTID * 1171 +
+            pc) * 31 +
+            declaringClass.hashCode) * 31 +
+            name.hashCode) * 31 +
+            descriptor.hashCode
     }
 
     override def toString: String = {
@@ -734,6 +769,7 @@ case class VirtualFunctionCall[+V <: Var[V]](
 ) extends InstanceFunctionCall[V]
     with VirtualCall[V] {
 
+    final override def isVirtualFunctionCall: Boolean = true
     final override def asVirtualFunctionCall: this.type = this
     final override def astID: Int = VirtualFunctionCall.ASTID
     final override def isSideEffectFree: Boolean = false
@@ -744,6 +780,14 @@ case class VirtualFunctionCall[+V <: Var[V]](
     ): Unit = {
         receiver.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt)
         params.foreach { p ⇒ p.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt) }
+    }
+
+    override def hashCode(): Int = {
+        (((VirtualFunctionCall.ASTID * 1171 +
+            pc) * 31 +
+            declaringClass.hashCode) * 31 +
+            name.hashCode) * 31 +
+            descriptor.hashCode
     }
 
     override def toString: String = {
@@ -764,6 +808,10 @@ case class StaticFunctionCall[+V <: Var[V]](
         params:         Seq[Expr[V]]
 ) extends FunctionCall[V] {
 
+    final override def allParams: Seq[Expr[V]] = params
+    final override def receiverOption: Option[Expr[V]] = None
+
+    final override def isStaticFunctionCall: Boolean = true
     final override def asStaticFunctionCall: this.type = this
     final override def astID: Int = StaticFunctionCall.ASTID
     final override def isSideEffectFree: Boolean = false
@@ -782,11 +830,29 @@ case class StaticFunctionCall[+V <: Var[V]](
         p.staticCall(declaringClass, isInterface, name, descriptor)
     }
 
+    final override def resolveCallTargets(
+        callingContext: ObjectType
+    )(
+        implicit
+        p:  ProjectLike,
+        ev: V <:< DUVar[ValueInformation]
+    ): Set[Method] = {
+        resolveCallTarget(p).toSet
+    }
+
     private[tac] override def remapIndexes(
         pcToIndex:                    Array[Int],
         isIndexOfCaughtExceptionStmt: Int ⇒ Boolean
     ): Unit = {
         params.foreach { p ⇒ p.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt) }
+    }
+
+    override def hashCode(): Int = {
+        (((StaticFunctionCall.ASTID * 1171 +
+            pc) * 31 +
+            declaringClass.hashCode) * 31 +
+            name.hashCode) * 31 +
+            descriptor.hashCode
     }
 
     override def toString: String = {

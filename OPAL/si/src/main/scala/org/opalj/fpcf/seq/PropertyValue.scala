@@ -1,36 +1,11 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package fpcf
 package seq
 
 /**
+ * Enapculates the extension of a specific property for a specific entity.
+ *
  * @note   For collaboratively computed properties isFinal maybe false, but we do not
  *         have dependees!
  * @author Michael Eichberg
@@ -64,7 +39,7 @@ private[seq] sealed abstract class PropertyValue {
     def isFinal: Boolean
 
     def asIntermediate: IntermediatePropertyValue = {
-        throw new ClassCastException(s"$this is not an IntermediatePropertyValue")
+        throw new ClassCastException(s"$this is not an IntermediatePropertyValue");
     }
 
     def toEPS[E <: Entity](e: E): Option[EPS[E, Property]] = {
@@ -73,6 +48,8 @@ private[seq] sealed abstract class PropertyValue {
         else
             Some(EPS(e, lb, ub))
     }
+
+    private[seq] def toEPKUnsafe[E <: Entity](e: E): EPK[E, Property] = EPK(e, lb)
 
     private[seq] def toEPSUnsafe[E <: Entity, P <: Property](e: E): Option[EPS[E, P]] = {
         if (ub == null || ub == PropertyIsLazilyComputed)
@@ -101,25 +78,36 @@ private[seq] final class IntermediatePropertyValue(
 
     assert(ub != lb || ub == PropertyIsLazilyComputed || ub == null)
 
-    def this(epk: SomeEPK, c: OnUpdateContinuation) {
-        this(null, null, Map(epk → c), Nil)
+    def this(dependerEPK: SomeEPK, c: OnUpdateContinuation) {
+        this(null, null, Map(dependerEPK → c), Nil)
     }
 
-    final override def isFinal: Boolean = {
+    override def isFinal: Boolean = {
         val ub = this.ub
         ub != null && ub != PropertyIsLazilyComputed && ub == lb
     }
 
-    final override def asIntermediate: IntermediatePropertyValue = this
+    override def asIntermediate: IntermediatePropertyValue = this
+}
+
+object IntermediatePropertyValue {
+    def lazilyComputed(dependerEPK: SomeEPK, c: OnUpdateContinuation): PropertyValue = {
+        new IntermediatePropertyValue(
+            PropertyIsLazilyComputed,
+            PropertyIsLazilyComputed,
+            Map(dependerEPK → c),
+            Nil
+        )
+    }
 }
 
 private[seq] final class FinalPropertyValue(val ub: Property) extends PropertyValue {
-    assert(ub != PropertyIsLazilyComputed)
-    assert(ub != null)
-    final override def lb: Property = ub
-    final override def dependers: Map[SomeEPK, OnUpdateContinuation] = Map.empty
-    final override def dependees: Traversable[SomeEOptionP] = Nil
-    final override def isFinal: Boolean = true
+    assert(ub != PropertyIsLazilyComputed, "ub is lazily computed")
+    assert(ub != null, "ub is null")
+    override def lb: Property = ub
+    override def dependers: Map[SomeEPK, OnUpdateContinuation] = Map.empty
+    override def dependees: Traversable[SomeEOptionP] = Nil
+    override def isFinal: Boolean = true
 }
 
 private[seq] object PropertyValue {
@@ -139,7 +127,6 @@ private[seq] object PropertyValue {
         dependees: Traversable[SomeEOptionP]
     ): PropertyValue = {
         if (lb == ub && ub != PropertyIsLazilyComputed) {
-            assert(dependees.isEmpty)
             new FinalPropertyValue(ub)
         } else {
             new IntermediatePropertyValue(lb, ub, Map.empty, dependees)

@@ -1,71 +1,41 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package fpcf
 package analyses
 package purity
 
 import scala.annotation.switch
-import org.opalj.ai.Domain
-import org.opalj.ai.VMLevelValuesOriginOffset
-import org.opalj.ai.ValueOrigin
-import org.opalj.ai.domain.RecordDefUse
-import org.opalj.ai.isVMLevelValue
-import org.opalj.ai.pcOfVMLevelValue
+
+import org.opalj.log.GlobalLogContext
+import org.opalj.log.OPALLogger
+import org.opalj.collection.immutable.EmptyIntTrieSet
+import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.fpcf.analyses.cg.uVarForDefSites
+import org.opalj.fpcf.cg.properties.Callees
+import org.opalj.fpcf.properties.ClassImmutability
+import org.opalj.fpcf.properties.CompileTimePure
+import org.opalj.fpcf.properties.FieldMutability
+import org.opalj.fpcf.properties.FinalField
+import org.opalj.fpcf.properties.ImmutableObject
+import org.opalj.fpcf.properties.ImmutableType
+import org.opalj.fpcf.properties.ImpureByAnalysis
+import org.opalj.fpcf.properties.ImpureByLackOfInformation
+import org.opalj.fpcf.properties.Pure
+import org.opalj.fpcf.properties.Purity
+import org.opalj.fpcf.properties.SideEffectFree
+import org.opalj.fpcf.properties.TypeImmutability
+import org.opalj.value.ValueInformation
 import org.opalj.br.ComputationalTypeReference
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
 import org.opalj.br.Field
 import org.opalj.br.Method
-import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
-import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.cg.IsOverridableMethodKey
-import org.opalj.collection.immutable.EmptyIntTrieSet
-import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.fpcf.properties.ClassImmutability
-import org.opalj.fpcf.properties.FieldMutability
-import org.opalj.fpcf.properties.FinalField
-import org.opalj.fpcf.properties.ImmutableObject
-import org.opalj.fpcf.properties.ImmutableType
-import org.opalj.fpcf.properties.ImpureByLackOfInformation
-import org.opalj.fpcf.properties.ImpureByAnalysis
-import org.opalj.fpcf.properties.SideEffectFree
-import org.opalj.fpcf.properties.Purity
-import org.opalj.fpcf.properties.TypeImmutability
-import org.opalj.fpcf.properties.VirtualMethodPurity
-import org.opalj.fpcf.properties.Pure
-import org.opalj.fpcf.properties.CompileTimePure
-import org.opalj.log.GlobalLogContext
-import org.opalj.log.OPALLogger
+import org.opalj.ai.ValueOrigin
+import org.opalj.ai.isImmediateVMException
 import org.opalj.tac.ArrayLength
 import org.opalj.tac.ArrayLoad
 import org.opalj.tac.ArrayStore
@@ -76,11 +46,11 @@ import org.opalj.tac.CaughtException
 import org.opalj.tac.Checkcast
 import org.opalj.tac.ClassConst
 import org.opalj.tac.Compare
-import org.opalj.tac.DUVar
-import org.opalj.tac.DefaultTACAIKey
 import org.opalj.tac.DoubleConst
+import org.opalj.tac.DUVar
 import org.opalj.tac.Expr
 import org.opalj.tac.ExprStmt
+import org.opalj.tac.FieldRead
 import org.opalj.tac.FloatConst
 import org.opalj.tac.GetField
 import org.opalj.tac.GetStatic
@@ -88,7 +58,8 @@ import org.opalj.tac.Goto
 import org.opalj.tac.If
 import org.opalj.tac.InstanceOf
 import org.opalj.tac.IntConst
-import org.opalj.tac.Invokedynamic
+import org.opalj.tac.InvokedynamicFunctionCall
+import org.opalj.tac.InvokedynamicMethodCall
 import org.opalj.tac.JSR
 import org.opalj.tac.LongConst
 import org.opalj.tac.MethodHandleConst
@@ -120,7 +91,7 @@ import org.opalj.tac.Throw
 import org.opalj.tac.Var
 import org.opalj.tac.VirtualFunctionCall
 import org.opalj.tac.VirtualMethodCall
-import org.opalj.tac.FieldRead
+import org.opalj.tac.fpcf.properties.TACAI
 
 /**
  * Base trait for analyses that analyze the purity of methods.
@@ -130,7 +101,7 @@ import org.opalj.tac.FieldRead
 trait AbstractPurityAnalysis extends FPCFAnalysis {
 
     /** The type of the TAC domain. */
-    type V = DUVar[(Domain with RecordDefUse)#DomainValue]
+    type V = DUVar[ValueInformation]
 
     /**
      * The state of the analysis.
@@ -146,8 +117,10 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
         var lbPurity: Purity
         var ubPurity: Purity
         val method: Method
+        val definedMethod: DeclaredMethod
         val declClass: ObjectType
-        val code: Array[Stmt[V]]
+        var pcToIndex: Array[Int]
+        var code: Array[Stmt[V]]
     }
 
     type StateType <: AnalysisState
@@ -156,9 +129,8 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
 
     val rater: DomainSpecificRater
 
-    protected[this] val tacai: Method ⇒ TACode[TACMethodParameter, V] = project.get(DefaultTACAIKey)
     protected[this] val isMethodOverridable: Method ⇒ Answer = project.get(IsOverridableMethodKey)
-    protected[this] val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
+    protected[this] implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
 
     val configuredPurity: ConfiguredPurity = project.get(ConfiguredPurityKey)
 
@@ -196,17 +168,18 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
      * exception or if the VM instantiated the exception. Here, we are only concerned about the
      * exceptions thrown by the instructions not about exceptions that are transitively thrown;
      * e.g. if a method is called.
+     * TODO We need this method because currently, for exceptions that terminate the method, no
+     * definitions are recorded. Once this is done, use that information instead to determine
+     * whether it may be an immediate exception or not.
      */
-    def isImmediateVMException(origin: ValueOrigin)(implicit state: StateType): Boolean = {
-        if (VMLevelValuesOriginOffset < origin && origin < 0)
-            return false; // Parameters aren't implicit exceptions
+    def isSourceOfImmediateException(origin: ValueOrigin)(implicit state: StateType): Boolean = {
 
         def evaluationMayCauseVMLevelException(expr: Expr[V]): Boolean = {
             (expr.astID: @switch) match {
 
                 case NonVirtualFunctionCall.ASTID | VirtualFunctionCall.ASTID ⇒
                     val rcvr = expr.asInstanceFunctionCall.receiver
-                    !rcvr.isVar || rcvr.asVar.value.asDomainReferenceValue.isNull.isYesOrUnknown
+                    !rcvr.isVar || rcvr.asVar.value.asReferenceValue.isNull.isYesOrUnknown
 
                 case StaticFunctionCall.ASTID ⇒ false
 
@@ -214,17 +187,16 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
             }
         }
 
-        val pc = if (isVMLevelValue(origin)) pcOfVMLevelValue(origin) else origin
-        val stmt = state.code(pc)
+        val stmt = state.code(origin)
         (stmt.astID: @switch) match {
             case StaticMethodCall.ASTID ⇒ false // We are looking for implicit exceptions only
 
             case Throw.ASTID ⇒
-                stmt.asThrow.exception.asVar.value.asDomainReferenceValue.isNull.isNotNo
+                stmt.asThrow.exception.asVar.value.asReferenceValue.isNull.isNotNo
 
             case NonVirtualMethodCall.ASTID | VirtualMethodCall.ASTID ⇒
                 val rcvr = stmt.asInstanceMethodCall.receiver
-                !rcvr.isVar || rcvr.asVar.value.asDomainReferenceValue.isNull.isNotNo
+                !rcvr.isVar || rcvr.asVar.value.asReferenceValue.isNull.isNotNo
 
             case Assignment.ASTID ⇒ evaluationMayCauseVMLevelException(stmt.asAssignment.expr)
 
@@ -256,28 +228,15 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
      */
     def checkPurityOfStmt(stmt: Stmt[V])(implicit state: StateType): Boolean = {
         val isStmtNotImpure = (stmt.astID: @switch) match {
-            // For method calls, purity depends on purity of the called method
-            case StaticMethodCall.ASTID ⇒
-                val call = stmt.asStaticMethodCall
-                if (!isDomainSpecificCall(call, None)) {
-                    val StaticMethodCall(_, declClass, _, name, descr, params) = stmt
-                    val callee = call.resolveCallTarget
-                    checkPurityOfCall(declClass, name, descr, None, params, callee)
-                } else true
-            case NonVirtualMethodCall.ASTID ⇒
-                val call = stmt.asNonVirtualMethodCall
-                if (!isDomainSpecificCall(call, Some(call.receiver))) {
-                    val NonVirtualMethodCall(_, declClass, _, name, descr, rcvr, params) = stmt
-                    val callee = stmt.asNonVirtualMethodCall.resolveCallTarget
-                    checkPurityOfCall(declClass, name, descr, Some(rcvr), params, callee)
-                } else true
-            case VirtualMethodCall.ASTID ⇒
-                val call = stmt.asVirtualMethodCall
-                if (!isDomainSpecificCall(call, Some(call.receiver))) {
-                    val VirtualMethodCall(_, declClass, isInterface, name, descr, rcvr, params) =
-                        stmt
-                    checkPurityOfVirtualCall(declClass, isInterface, name, rcvr, params, descr)
-                } else true
+            // For method calls, purity will be checked later
+            case StaticMethodCall.ASTID | NonVirtualMethodCall.ASTID | VirtualMethodCall.ASTID ⇒
+                true
+
+            // We don't handle unresolved Invokedynamics
+            // - either OPAL removes it or we forget about it
+            case InvokedynamicMethodCall.ASTID ⇒
+                atMost(ImpureByAnalysis)
+                false
 
             // Returning objects/arrays is pure, if the returned object/array is locally initialized
             // and non-escaping or the object is immutable
@@ -314,11 +273,11 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
             // but it may be ignored as domain-specific
             case CaughtException.ASTID ⇒
                 for {
-                    pc ← stmt.asCaughtException.origins
-                    if isImmediateVMException(pc)
+                    origin ← stmt.asCaughtException.origins
+                    if isImmediateVMException(origin)
                 } {
-                    val origin = state.code(if (isVMLevelValue(pc)) pcOfVMLevelValue(pc) else pc)
-                    val ratedResult = rater.handleException(origin)
+                    val baseOrigin = state.code(ai.underlyingPC(origin))
+                    val ratedResult = rater.handleException(baseOrigin)
                     if (ratedResult.isDefined) atMost(ratedResult.get)
                     else atMost(SideEffectFree)
                 }
@@ -327,7 +286,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
             // Reference comparisons may have different results for structurally equal values
             case If.ASTID ⇒
                 val If(_, left, _, right, _) = stmt
-                if ((left.cTpe eq ComputationalTypeReference))
+                if (left.cTpe eq ComputationalTypeReference)
                     if (!(isLocal(left, CompileTimePure) || isLocal(right, CompileTimePure)))
                         atMost(SideEffectFree)
                 true
@@ -347,27 +306,10 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
      */
     def checkPurityOfExpr(expr: Expr[V])(implicit state: StateType): Boolean = {
         val isExprNotImpure = (expr.astID: @switch) match {
-            // For function calls, purity depends on purity of the method called
-            case StaticFunctionCall.ASTID ⇒
-                if (!isDomainSpecificCall(expr.asStaticFunctionCall, None)) {
-                    val StaticFunctionCall(_, declClass, _, name, descr, params) = expr
-                    val callee = expr.asStaticFunctionCall.resolveCallTarget
-                    checkPurityOfCall(declClass, name, descr, None, params, callee)
-                } else true
-            case NonVirtualFunctionCall.ASTID ⇒
-                val call = expr.asNonVirtualFunctionCall
-                if (!isDomainSpecificCall(call, Some(call.receiver))) {
-                    val NonVirtualFunctionCall(_, declClass, _, name, descr, rcvr, params) = expr
-                    val callee = call.resolveCallTarget
-                    checkPurityOfCall(declClass, name, descr, Some(rcvr), params, callee)
-                } else true
-            case VirtualFunctionCall.ASTID ⇒
-                val call = expr.asVirtualFunctionCall
-                if (!isDomainSpecificCall(call, Some(call.receiver))) {
-                    val VirtualFunctionCall(_, declClass, interface, name, descr, rcvr, params) =
-                        expr
-                    checkPurityOfVirtualCall(declClass, interface, name, rcvr, params, descr)
-                } else true
+            // For function calls, purity will be checked later
+            case StaticFunctionCall.ASTID | NonVirtualFunctionCall.ASTID |
+                VirtualFunctionCall.ASTID ⇒
+                true
 
             // Field/array loads are pure if the field is (effectively) final or the object/array is
             // local and non-escaping
@@ -387,7 +329,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
 
             // We don't handle unresolved Invokedynamic
             // - either OPAL removes it or we forget about it
-            case Invokedynamic.ASTID ⇒
+            case InvokedynamicFunctionCall.ASTID ⇒
                 atMost(ImpureByAnalysis)
                 false
 
@@ -405,90 +347,24 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
         isExprNotImpure && expr.forallSubExpressions(checkPurityOfExpr)
     }
 
-    /**
-     * Examines a virtual call for its influence on the method's purity.
-     * Resolves the call and uses [[checkPurityOfCall]] to examine the individual possible callees.
-     * This method will return false for impure calls, so evaluation can be terminated early.
-     */
-    def checkPurityOfVirtualCall(
-        rcvrType:  ReferenceType,
-        interface: Boolean,
-        name:      String,
-        rcvr:      Expr[V],
-        params:    Seq[Expr[V]],
-        descr:     MethodDescriptor
+    def checkPurityOfMethod(
+        callee: DeclaredMethod,
+        params: Seq[Expr[V]]
     )(implicit state: StateType): Boolean = {
-        onVirtualMethod(rcvrType, interface, name, rcvr, params, descr,
-            callee ⇒ checkPurityOfCall(rcvrType, name, descr, Some(rcvr), params, callee),
-            dm ⇒ checkMethodPurity(
-                propertyStore(dm, VirtualMethodPurity.key), (Some(rcvr), params)
-            ),
-            () ⇒ { atMost(ImpureByAnalysis); false })
-    }
-
-    def onVirtualMethod(
-        receiverType: ReferenceType,
-        interface:    Boolean,
-        name:         String,
-        receiver:     Expr[V],
-        params:       Seq[Expr[V]],
-        descr:        MethodDescriptor,
-        onPrecise:    org.opalj.Result[Method] ⇒ Boolean,
-        onMultiple:   DeclaredMethod ⇒ Boolean,
-        onUnknown:    () ⇒ Boolean
-    )(implicit state: StateType): Boolean = {
-        val rcvrType =
-            if (receiver.isVar) receiver.asVar.value.asDomainReferenceValue.valueType
-            else Some(receiverType)
-
-        if (rcvrType.isEmpty) {
-            // IMPROVE Just use the CFG to check if we have a normal successor
-            true // We don't have to examine calls that will result in an NPE
-        } else if (rcvrType.get.isArrayType) {
-            val callee = project.instanceCall(state.declClass, ObjectType.Object, name, descr)
-            onPrecise(callee)
-        } else if (receiver.asVar.value.asDomainReferenceValue.isPrecise) {
-            // The receiver could refer to further expressions in a non-flat representation.
-            // To avoid special handling, we just fallback to the general case of virtual/interface
-            // calls here as the analysis is intended to be used on flat representations anyway.
-            val callee = project.instanceCall(state.declClass, rcvrType.get, name, descr)
-            onPrecise(callee)
+        if (callee.hasSingleDefinedMethod && (callee.definedMethod eq state.method)) {
+            true
         } else {
-            val callee =
-                declaredMethods(state.declClass.packageName, rcvrType.get.asObjectType, name, descr)
-
-            if (!callee.hasDefinition || isMethodOverridable(callee.methodDefinition).isNotNo) {
-                onUnknown() // We don't know all overrides
-            } else {
-                onMultiple(callee)
-            }
+            val calleePurity = propertyStore(callee, Purity.key)
+            checkMethodPurity(calleePurity, params)
         }
     }
 
-    /**
-     * Examines a call to a given callee for its influence on the method's purity.
-     * This method will return false for impure calls, so evaluation can be terminated early.
-     */
-    def checkPurityOfCall(
-        receiverClass: ReferenceType,
-        name:          String,
-        descriptor:    MethodDescriptor,
-        receiver:      Option[Expr[V]],
-        params:        Seq[Expr[V]],
-        methodResult:  org.opalj.Result[Method]
-    )(implicit state: StateType): Boolean = {
-        val receiverType =
-            if (receiverClass.isArrayType) ObjectType.Object else receiverClass.asObjectType
-
-        val dm = methodResult match {
-            case Success(callee) if callee eq state.method ⇒
-                return true; // Self-recursive calls don't need to be checked
-            case Success(callee) ⇒ declaredMethods(callee)
-            case _ ⇒
-                declaredMethods(state.declClass.packageName, receiverType, name, descriptor)
-        }
-        val calleePurity = propertyStore(dm, Purity.key)
-        checkMethodPurity(calleePurity, (receiver, params))
+    def getCall(stmt: Stmt[V]): Call[V] = stmt.astID match {
+        case StaticMethodCall.ASTID     ⇒ stmt.asStaticMethodCall
+        case NonVirtualMethodCall.ASTID ⇒ stmt.asNonVirtualMethodCall
+        case VirtualMethodCall.ASTID    ⇒ stmt.asVirtualMethodCall
+        case Assignment.ASTID           ⇒ stmt.asAssignment.expr.asFunctionCall
+        case ExprStmt.ASTID             ⇒ stmt.asExprStmt.expr.asFunctionCall
     }
 
     /**
@@ -497,8 +373,8 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
      * @note Adds dependendies when necessary.
      */
     def checkMethodPurity(
-        ep:     EOptionP[DeclaredMethod, Property],
-        params: (Option[Expr[V]], Seq[Expr[V]])    = (None, Seq.empty)
+        ep:     EOptionP[DeclaredMethod, Purity],
+        params: Seq[Expr[V]]                     = Seq.empty
     )(implicit state: StateType): Boolean
 
     /**
@@ -576,7 +452,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
             return ;
         }
 
-        val value = returnValue.asVar.value.asDomainReferenceValue
+        val value = returnValue.asVar.value.asReferenceValue
         if (value.isNull.isYes)
             return ; // Null is immutable
 
@@ -611,21 +487,25 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
         }
     }
 
+    /**
+     * Examines the effect that the mutability of a returned value's type has on the method's
+     * purity.
+     */
     def checkTypeMutability(
-        ep:   EOptionP[ObjectType, Property],
-        expr: Expr[V]
+        ep:          EOptionP[ObjectType, Property],
+        returnValue: Expr[V]
     )(implicit state: StateType): Boolean = ep match {
         // Returning immutable object is pure
         case EPS(_, ImmutableType | ImmutableObject, _) ⇒ true
         case FinalEP(_, _) ⇒
             atMost(Pure) // Can not be compile time pure if mutable object is returned
             if (state.ubPurity.isDeterministic)
-                isLocal(expr, SideEffectFree)
+                isLocal(returnValue, SideEffectFree)
             false // Return early if we are already side-effect free
         case _ ⇒
             reducePurityLB(SideEffectFree)
             if (state.ubPurity.isDeterministic)
-                handleUnknownTypeMutability(ep, expr)
+                handleUnknownTypeMutability(ep, returnValue)
             true
     }
 
@@ -639,15 +519,102 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
     )(implicit state: StateType): Unit
 
     /**
+     * Examines the effect that the purity of all potential callees has on the purity of the method.
+     */
+    def checkPurityOfCallees(
+        calleesEOptP: EOptionP[DeclaredMethod, Callees]
+    )(implicit state: StateType): Boolean = {
+        handleCalleesUpdate(calleesEOptP)
+        calleesEOptP match {
+            case ESimplePS(_, p, isFinal) ⇒
+                if (!isFinal) reducePurityLB(ImpureByAnalysis)
+
+                val hasIncompleteCallSites =
+                    p.incompleteCallSites.exists { pc ⇒
+                        val index = state.pcToIndex(pc)
+                        if (index < 0)
+                            false // call will not be executed
+                        else {
+                            val call = getCall(state.code(state.pcToIndex(pc)))
+                            !isDomainSpecificCall(call, call.receiverOption)
+                        }
+                    }
+                if (hasIncompleteCallSites)
+                    atMost(ImpureByAnalysis)
+
+                hasIncompleteCallSites &&
+                    p.directCallSites().forall {
+                        case (pc, callees) ⇒
+                            val index = state.pcToIndex(pc)
+                            if (index < 0)
+                                true // call will not be executed
+                            else {
+                                val call = getCall(state.code(index))
+                                isDomainSpecificCall(call, call.receiverOption) ||
+                                    callees.forall { callee ⇒
+                                        checkPurityOfMethod(
+                                            callee,
+                                            call.receiverOption.orNull +: call.params
+                                        )
+                                    }
+                            }
+                    } &&
+                    p.indirectCallSites().forall {
+                        case (pc, callees) ⇒
+                            val index = state.pcToIndex(pc)
+                            if (index < 0)
+                                true // call will not be executed
+                            else {
+                                val call = getCall(state.code(index))
+                                isDomainSpecificCall(call, call.receiverOption) ||
+                                    callees.forall { callee ⇒
+                                        checkPurityOfMethod(
+                                            callee,
+                                            p.indirectCallParameters(pc, callee).map { paramO ⇒
+                                                paramO.map(uVarForDefSites(_, state.pcToIndex)).orNull
+                                            }
+                                        )
+                                    }
+                            }
+                    }
+
+            case _ ⇒
+                reducePurityLB(ImpureByAnalysis)
+                true
+        }
+    }
+
+    /**
+     * Handles what to do when the set of potential callees changes.
+     * Analyses must implement this method with the behavior they need, e.g. registering dependees.
+     */
+    def handleCalleesUpdate(
+        callees: EOptionP[DeclaredMethod, Callees]
+    )(implicit state: StateType): Unit
+
+    /**
+     * Handles what to do if the TACAI is not yet final.
+     */
+    def handleTACAI(ep: EOptionP[Method, TACAI])(implicit state: StateType): Unit
+
+    /**
      * Retrieves and commits the methods purity as calculated for its declaring class type for the
      * current DefinedMethod that represents the non-overwritten method in a subtype.
      */
     def baseMethodPurity(dm: DefinedMethod): PropertyComputationResult = {
 
         def c(eps: SomeEOptionP): PropertyComputationResult = eps match {
-            case FinalEP(_, p)                  ⇒ Result(dm, p)
-            case ep @ IntermediateEP(_, lb, ub) ⇒ IntermediateResult(dm, lb, ub, Seq(ep), c)
-            case epk                            ⇒ IntermediateResult(dm, ImpureByAnalysis, CompileTimePure, Seq(epk), c)
+            case FinalEP(_, p) ⇒ Result(dm, p)
+            case ep @ IntermediateEP(_, lb, ub) ⇒
+                IntermediateResult(
+                    dm, lb, ub,
+                    Seq(ep), c, CheapPropertyComputation
+                )
+            case epk ⇒
+                IntermediateResult(
+                    dm, ImpureByAnalysis, CompileTimePure,
+                    Seq(epk), c, CheapPropertyComputation
+                )
         }
 
         c(propertyStore(declaredMethods(dm.definedMethod), Purity.key))
@@ -668,6 +635,27 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
             case dm: DeclaredMethod ⇒ Result(dm, ImpureByLackOfInformation)
             case _ ⇒
                 throw new UnknownError("purity is only defined for declared methods")
+        }
+    }
+
+    /**
+     * Returns the TACode for a method if available, registering dependencies as necessary.
+     */
+    def getTACAI(
+        method: Method
+    )(implicit state: StateType): Option[TACode[TACMethodParameter, V]] = {
+        propertyStore(method, TACAI.key) match {
+            case finalEP: FinalEP[Method, TACAI] ⇒
+                handleTACAI(finalEP)
+                finalEP.ub.tac
+            case eps: IntermediateEP[Method, TACAI] ⇒
+                reducePurityLB(ImpureByAnalysis)
+                handleTACAI(eps)
+                eps.ub.tac
+            case epk ⇒
+                reducePurityLB(ImpureByAnalysis)
+                handleTACAI(epk)
+                None
         }
     }
 

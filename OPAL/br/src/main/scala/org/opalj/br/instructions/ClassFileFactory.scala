@@ -1,31 +1,4 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package br
 package instructions
@@ -34,6 +7,7 @@ import scala.annotation.switch
 
 import org.opalj.log.OPALLogger
 import org.opalj.log.GlobalLogContext
+import org.opalj.collection.immutable.RefArray
 import org.opalj.bi.ACC_BRIDGE
 import org.opalj.bi.ACC_PUBLIC
 import org.opalj.bi.ACC_SYNTHETIC
@@ -219,7 +193,7 @@ object ClassFileFactory {
         implMethod:              MethodCallMethodHandle,
         invocationInstruction:   Opcode,
         samMethodType:           MethodDescriptor,
-        bridgeMethodDescriptors: IndexedSeq[MethodDescriptor]
+        bridgeMethodDescriptors: MethodDescriptors
     ): ClassFile = {
 
         val interfaceMethodParametersCount = methodDescriptor.parametersCount
@@ -234,16 +208,16 @@ object ClassFileFactory {
                     implMethod.methodDescriptor,
                     methodDescriptor
                 )) {
-                IndexedSeq.empty
+                RefArray.empty
             } else {
-                IndexedSeq(createField(fieldType = receiverType, name = ReceiverFieldName))
+                RefArray(createField(fieldType = receiverType, name = ReceiverFieldName))
             }
         val additionalFieldsForStaticParameters =
-            implMethodParameters.dropRight(interfaceMethodParametersCount).zipWithIndex map { p ⇒
+            implMethodParameters.dropRight(interfaceMethodParametersCount).zipWithIndex.map[FieldTemplate] { p ⇒
                 val (fieldType, index) = p
                 createField(fieldType = fieldType, name = s"staticParameter$index")
             }
-        val fields: IndexedSeq[FieldTemplate] =
+        val fields: RefArray[FieldTemplate] =
             receiverField ++ additionalFieldsForStaticParameters
 
         val constructor: MethodTemplate = createConstructor(definingType, fields)
@@ -265,7 +239,7 @@ object ClassFileFactory {
          */
         val isSerializable = definingType.theSuperinterfaceTypes.contains(ObjectType.Serializable)
 
-        val methods: Array[MethodTemplate] = new Array(
+        val methods = new Array[AnyRef](
             3 /* proxy method, constructor, factory */ +
                 bridgeMethodDescriptors.length + // bridge methods
                 (if (isSerializable) 2 else 0) // writeReplace and $deserializeLambda$ if Serializable
@@ -283,7 +257,7 @@ object ClassFileFactory {
         methods(1) = constructor
         methods(2) = createFactoryMethod(
             definingType.objectType,
-            fields.map(_.fieldType),
+            fields.map[FieldType](_.fieldType),
             factoryMethodName
         )
 
@@ -322,10 +296,10 @@ object ClassFileFactory {
             bi.ACC_SYNTHETIC.mask | bi.ACC_PUBLIC.mask | bi.ACC_SUPER.mask,
             definingType.objectType,
             definingType.theSuperclassType,
-            definingType.theSuperinterfaceTypes.toSeq,
+            definingType.theSuperinterfaceTypes.toRefArray,
             fields,
-            methods,
-            IndexedSeq(VirtualTypeFlag)
+            RefArray._UNSAFE_from[MethodTemplate](methods),
+            RefArray(VirtualTypeFlag)
         )
     }
 
@@ -403,7 +377,7 @@ object ClassFileFactory {
                         false,
                         "methodType",
                         MethodDescriptor(
-                            IndexedSeq(ObjectType.Class),
+                            RefArray(ObjectType.Class),
                             ObjectType.MethodType
                         )
                     ), null, null
@@ -417,7 +391,7 @@ object ClassFileFactory {
                         false,
                         "methodType",
                         MethodDescriptor(
-                            IndexedSeq(ObjectType.Class, ObjectType.Class),
+                            RefArray(ObjectType.Class, ObjectType.Class),
                             ObjectType.MethodType
                         )
                     ), null, null
@@ -448,7 +422,7 @@ object ClassFileFactory {
                         false,
                         "methodType",
                         MethodDescriptor(
-                            IndexedSeq(
+                            RefArray(
                                 ObjectType.Class,
                                 ObjectType.Class,
                                 ArrayType(ObjectType.Class)
@@ -471,7 +445,7 @@ object ClassFileFactory {
                     ObjectType.MethodHandles$Lookup,
                     "getStatic",
                     MethodDescriptor(
-                        IndexedSeq(
+                        RefArray(
                             ObjectType.Class,
                             ObjectType.String,
                             ObjectType.MethodType
@@ -500,7 +474,7 @@ object ClassFileFactory {
                     false,
                     "methodType",
                     MethodDescriptor(
-                        IndexedSeq(ObjectType.Class, ObjectType.Class), ObjectType.MethodType
+                        RefArray(ObjectType.Class, ObjectType.Class), ObjectType.MethodType
                     )
                 ), null, null,
                 ASTORE_3,
@@ -524,7 +498,7 @@ object ClassFileFactory {
                         false,
                         "bootstrap",
                         MethodDescriptor(
-                            IndexedSeq(
+                            RefArray(
                                 ObjectType.MethodHandles$Lookup,
                                 ObjectType.String,
                                 ObjectType.MethodType,
@@ -554,16 +528,16 @@ object ClassFileFactory {
 
         val maxStack = Code.computeMaxStack(instructions)
 
-        val methods: Array[MethodTemplate] = Array(
+        val methods = RefArray(
             Method(
                 bi.ACC_PUBLIC.mask | bi.ACC_STATIC.mask,
                 staticMethodName,
                 MethodDescriptor(
-                    IndexedSeq(ObjectType.SerializedLambda),
+                    RefArray(ObjectType.SerializedLambda),
                     ObjectType.Object
                 ),
-                Seq(
-                    Code(maxStack, maxLocals = 5, instructions, IndexedSeq.empty, Seq.empty)
+                RefArray(
+                    Code(maxStack, maxLocals = 5, instructions, NoExceptionHandlers, NoAttributes)
                 )
             )
         )
@@ -577,10 +551,10 @@ object ClassFileFactory {
             bi.ACC_SYNTHETIC.mask | bi.ACC_PUBLIC.mask | bi.ACC_SUPER.mask,
             definingType.objectType,
             definingType.theSuperclassType,
-            definingType.theSuperinterfaceTypes.toSeq,
-            IndexedSeq.empty[FieldTemplate], // Class fields
+            definingType.theSuperinterfaceTypes.toRefArray,
+            NoFieldTemplates, // Class fields
             methods,
-            IndexedSeq(VirtualTypeFlag)
+            RefArray(VirtualTypeFlag)
         )
     }
 
@@ -616,10 +590,10 @@ object ClassFileFactory {
      * Creates a field of the specified type with the given name.
      */
     def createField(
-        accessFlags: Int            = bi.ACC_PRIVATE.mask | bi.ACC_FINAL.mask,
+        accessFlags: Int        = bi.ACC_PRIVATE.mask | bi.ACC_FINAL.mask,
         name:        String,
         fieldType:   FieldType,
-        attributes:  Seq[Attribute] = Seq.empty
+        attributes:  Attributes = NoAttributes
     ): FieldTemplate = {
         Field(accessFlags, name, fieldType, attributes)
     }
@@ -639,7 +613,7 @@ object ClassFileFactory {
      */
     def createConstructor(
         definingType: TypeDeclaration,
-        fields:       IndexedSeq[FieldTemplate]
+        fields:       FieldTemplates
     ): MethodTemplate = {
         // it doesn't make sense that the superClassType is not defined
         val theSuperclassType = definingType.theSuperclassType.get
@@ -662,13 +636,13 @@ object ClassFileFactory {
                 else
                     1
             )
-        val maxLocals = 1 + fields.map(_.fieldType.computationalType.operandSize).sum
+        val maxLocals = 1 + fields.iterator.sum(_.fieldType.computationalType.operandSize)
 
         Method(
             bi.ACC_PUBLIC.mask,
             "<init>",
-            MethodDescriptor(fields.map(_.fieldType), VoidType),
-            Seq(Code(maxStack, maxLocals, instructions, IndexedSeq.empty, Seq.empty))
+            MethodDescriptor(fields.map[FieldType](_.fieldType), VoidType),
+            RefArray(Code(maxStack, maxLocals, instructions, NoExceptionHandlers, NoAttributes))
         )
     }
 
@@ -697,11 +671,11 @@ object ClassFileFactory {
      */
     def copyParametersToInstanceFields(
         declaringType: ObjectType,
-        fields:        IndexedSeq[FieldTemplate]
+        fields:        FieldTemplates
     ): Array[Instruction] = {
 
         val requiredInstructions =
-            computeNumberOfInstructionsForParameterLoading(fields.map(_.fieldType), 1) +
+            computeNumberOfInstructionsForParameterLoading(fields.map[FieldType](_.fieldType), 1) +
                 fields.size + // ALOAD_0  for each field
                 (3 * fields.size) // PUTFIELD for each field
         val instructions = new Array[Instruction](requiredInstructions)
@@ -729,7 +703,7 @@ object ClassFileFactory {
      * as `fieldTypes` onto the stack.
      */
     private def computeNumberOfInstructionsForParameterLoading(
-        fieldTypes:          Seq[FieldType],
+        fieldTypes:          FieldTypes,
         localVariableOffset: Int
     ): Int = {
         var numberOfInstructions = 0
@@ -753,7 +727,7 @@ object ClassFileFactory {
      */
     def createFactoryMethod(
         typeToCreate:      ObjectType,
-        fieldTypes:        IndexedSeq[FieldType],
+        fieldTypes:        FieldTypes,
         factoryMethodName: String
     ): MethodTemplate = {
         val numberOfInstructionsForParameterLoading: Int =
@@ -764,7 +738,7 @@ object ClassFileFactory {
                 numberOfInstructionsForParameterLoading +
                 3 + // INVOKESPECIAL
                 1 // ARETURN
-        val maxLocals = fieldTypes.map(_.computationalType.operandSize.toInt).sum
+        val maxLocals = fieldTypes.iterator.sum(_.computationalType.operandSize.toInt)
         val maxStack = maxLocals + 2 // new + dup makes two extra on the stack
         val instructions = new Array[Instruction](numberOfInstructions)
         var currentPC: Int = 0
@@ -789,7 +763,7 @@ object ClassFileFactory {
             bi.ACC_PUBLIC.mask | bi.ACC_STATIC.mask,
             factoryMethodName,
             MethodDescriptor(fieldTypes, typeToCreate),
-            Seq(body)
+            RefArray(body)
         )
     }
 
@@ -826,7 +800,7 @@ object ClassFileFactory {
         samMethodType:                       MethodDescriptor,
         implMethod:                          MethodCallMethodHandle,
         instantiatedMethodType:              MethodDescriptor,
-        additionalFieldsForStaticParameters: IndexedSeq[FieldTemplate]
+        additionalFieldsForStaticParameters: FieldTemplates
     ): MethodTemplate = {
         var instructions: Array[Instruction] = Array(
             NEW(ObjectType.SerializedLambda), null, null,
@@ -865,7 +839,7 @@ object ClassFileFactory {
                 isInterface = false,
                 "<init>",
                 MethodDescriptor(
-                    IndexedSeq(
+                    RefArray(
                         ObjectType.Class,
                         ObjectType.String,
                         ObjectType.String,
@@ -889,7 +863,7 @@ object ClassFileFactory {
             bi.ACC_PUBLIC.mask | bi.ACC_SYNTHETIC.mask,
             "writeReplace",
             MethodDescriptor.JustReturnsObject,
-            Seq(body)
+            RefArray(body)
         )
     }
 
@@ -925,7 +899,7 @@ object ClassFileFactory {
             bi.ACC_PUBLIC.mask | bi.ACC_STATIC.mask | bi.ACC_SYNTHETIC.mask,
             "$deserializeLambda$",
             deserializedLambdaMethodDescriptor,
-            Seq(body)
+            RefArray(body)
         )
     }
 
@@ -954,7 +928,7 @@ object ClassFileFactory {
                 invocationInstruction
             )
 
-        Method(bi.ACC_PUBLIC.mask, methodName, methodDescriptor, Seq(code))
+        Method(bi.ACC_PUBLIC.mask, methodName, methodDescriptor, RefArray(code))
     }
 
     /**
@@ -1092,7 +1066,7 @@ object ClassFileFactory {
             1 +
                 receiverObjectStackSize + parametersStackSize + returnValueStackSize
 
-        Code(maxStack, maxLocals, bytecodeInstructions, IndexedSeq.empty, Seq.empty)
+        Code(maxStack, maxLocals, bytecodeInstructions, NoExceptionHandlers, NoAttributes)
     }
 
     /**
@@ -1429,7 +1403,7 @@ object ClassFileFactory {
             methodName,
             bridgeMethodDescriptor.parameterTypes,
             bridgeMethodDescriptor.returnType,
-            Seq(Code(maxStack, maxLocals, instructions, IndexedSeq.empty, Seq.empty))
+            RefArray(Code(maxStack, maxLocals, instructions, NoExceptionHandlers, NoAttributes))
         )
     }
 

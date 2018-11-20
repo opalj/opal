@@ -1,31 +1,4 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package br
 package analyses
@@ -33,6 +6,7 @@ package analyses
 import java.io.File
 import java.net.URL
 
+import org.opalj.collection.immutable.ConstArray
 import org.opalj.util.ScalaMajorVersion
 import org.scalatest.Matchers
 import org.scalatest.FunSpec
@@ -78,24 +52,26 @@ class DeclaredMethodsKeyTest extends FunSpec with Matchers {
         assert(declaredMethods.size == numDeclaredMethods, "duplicate methods found")
     }
 
-    var numAnnotated = 0
+    var annotated: Set[DeclaredMethod] = Set.empty
 
-    for {
-        cf ← FixtureProject.allProjectClassFiles
-        annotations = cf.runtimeInvisibleAnnotations
-        if annotations.nonEmpty
-        annotation ← annotations
-        annotationType = annotation.annotationType
-        if annotationType == singleAnnotationType || annotationType == multiAnnotationType
-    } {
+    for (cf ← FixtureProject.allProjectClassFiles) {
         val classType = cf.thisType
-        if (annotationType == singleAnnotationType)
-            checkDeclaredMethod(classType, annotation)
-        else {
-            for (value ← getValue(annotation, "value").asArrayValue.values) {
-                val annotation = value.asAnnotationValue.annotation
-                checkDeclaredMethod(classType, annotation)
-            }
+        it(classType.simpleName) {
+            val annotations = cf.runtimeInvisibleAnnotations
+            if (annotations.nonEmpty)
+                for {
+                    annotation ← annotations
+                    annotationType = annotation.annotationType
+                } {
+                    if (annotationType == singleAnnotationType)
+                        checkDeclaredMethod(classType, annotation)
+                    else if (annotationType == multiAnnotationType) {
+                        for (value ← getValue(annotation, "value").asArrayValue.values) {
+                            val annotation = value.asAnnotationValue.annotation
+                            checkDeclaredMethod(classType, annotation)
+                        }
+                    }
+                }
         }
     }
 
@@ -103,24 +79,50 @@ class DeclaredMethodsKeyTest extends FunSpec with Matchers {
     // there may not be any additional defined method. There may be VirtualDeclaredMethods for
     // predefined methods from the JDK, though.
     it("should not create excess declared methods") {
-        val definedMethods = declaredMethods.filter(_.hasDefinition)
-        assert(definedMethods.size == numAnnotated, "found unexpected defined methods")
+        val excessMethods = declaredMethods.filter(m ⇒ m.hasSingleDefinedMethod && !annotated.contains(m))
+        if (excessMethods.nonEmpty)
+            fail(
+                "found unexpected methods: \n\t"+excessMethods.mkString("\n\t")
+            )
     }
 
     def checkDeclaredMethod(classType: ObjectType, annotation: Annotation): Unit = {
         val name = getValue(annotation, "name").asStringValue.value
         val descriptor = MethodDescriptor(getValue(annotation, "descriptor").asStringValue.value)
-        val declaringClass = getValue(annotation, "declaringClass").asClassValue.value.asObjectType
+        val declaringClasses = getValue(annotation, "declaringClass").asArrayValue.values
 
-        val method = FixtureProject.classFile(declaringClass).get.findMethod(name, descriptor).get
-
-        val expected = DefinedMethod(classType, method)
-
-        it(s"${classType.simpleName}: ${declaringClass.simpleName}.$name$descriptor") {
-            assert(declaredMethods.contains(expected))
+        val methodOs = declaringClasses map { declClass ⇒
+            val declClassType = declClass.asClassValue.value.asObjectType
+            (declClassType, FixtureProject.classFile(declClassType).get.findMethod(name, descriptor))
         }
 
-        numAnnotated += 1
+        val emptyMethodO = methodOs.find(_._2.isEmpty)
+        if (emptyMethodO.isDefined)
+            fail(s"method ${emptyMethodO.get._1.simpleName}.${descriptor.toJava(name)}"+
+                "not found in fixture project")
+
+        val actual = declaredMethodsKey(
+            methodOs.head._1,
+            methodOs.head._1.packageName,
+            classType,
+            name,
+            descriptor
+        )
+
+        val foundMethod = if (methodOs.size == 1) {
+            actual.hasSingleDefinedMethod && (actual.definedMethod eq methodOs.head._2.get)
+        } else {
+            actual.hasMultipleDefinedMethods &&
+                ConstArray(methodOs.map(_._2.get): _*) == actual.definedMethods
+
+        }
+
+        if (foundMethod)
+            annotated += actual
+        else
+            fail(
+                s"No declared method for ${classType.simpleName}: $actual"
+            )
     }
 
     def getValue(a: Annotation, name: String): ElementValue = {

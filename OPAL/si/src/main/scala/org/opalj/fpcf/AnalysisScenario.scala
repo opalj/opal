@@ -1,31 +1,4 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package fpcf
 
@@ -37,18 +10,28 @@ import org.opalj.collection.immutable.Naught
 import org.opalj.collection.immutable.Chain
 import org.opalj.collection.immutable.:&:
 
+/**
+ * Provides functionality to compute an optimal schedule to execute a set of analyses. Here,
+ * optimal means that the schedule will try to minimize the number of notifications due to updated
+ * properties. It will run analyses that just use information provided by earlier analyses,
+ * but which do not provide information required by the earlier ones, in a later batch/phase.
+ *
+ * @author Michael Eichberg
+ */
 class AnalysisScenario {
 
-    private[this] var ccs: Set[ComputationSpecification] = Set.empty
-
+    private[this] var allCS: Set[ComputationSpecification] = Set.empty
+    private[this] var eagerCS: Set[ComputationSpecification] = Set.empty
+    private[this] var lazyCS: Set[ComputationSpecification] = Set.empty
     private[this] var lazilyComputedProperties: Set[PropertyKind] = Set.empty
 
     def allProperties: Set[PropertyKind] = {
-        ccs.foldLeft(Set.empty[PropertyKind]) { (c, n) ⇒ c ++ n.derives ++ n.uses }
+        eagerCS.foldLeft(Set.empty[PropertyKind]) { (c, n) ⇒ c ++ n.derives ++ n.uses } ++
+            lazilyComputedProperties
     }
 
     def +=(cs: ComputationSpecification): Unit = this.synchronized {
-        ccs += cs
+        allCS += cs
         if (cs.isLazy) {
             // check that lazily computed properties are always only computed by ONE analysis
             cs.derives.find(lazilyComputedProperties.contains) foreach { p ⇒
@@ -58,23 +41,25 @@ class AnalysisScenario {
                 throw new SpecificationViolation(m)
             }
             lazilyComputedProperties ++= cs.derives
+            lazyCS += cs
+        } else {
+            eagerCS += cs
         }
     }
 
     /**
-     * Returns the graph which depicts the dependencies between the properties based on
-     * the selected computations. I.e., a property `d` depends on another property `p` if the
-     * algorithm which computes `d` uses the property `p`.
+     * Returns the graph which depicts the dependencies between the computed properties
+     * based on the current computation specifications.
+     * I.e., a property `d` depends on another property `p` if the algorithm which computes
+     * `d` uses the property `p`.
      */
     def propertyComputationsDependencies: Graph[PropertyKind] = {
         val psDeps = Graph.empty[PropertyKind]
-        ccs foreach { cs ⇒
+        allCS foreach { cs ⇒
             // all derived properties depend on all used properties
             cs.derives foreach { derived ⇒
                 psDeps += derived
-                cs.uses foreach { use ⇒
-                    psDeps += (derived, use)
-                }
+                cs.uses foreach { use ⇒ psDeps += (derived, use) }
             }
         }
         psDeps
@@ -85,47 +70,81 @@ class AnalysisScenario {
      */
     def computationDependencies: Graph[ComputationSpecification] = {
         val compDeps = Graph.empty[ComputationSpecification]
-        val derivedBy: Map[PropertyKind, ComputationSpecification] = {
-            ccs.flatMap(cs ⇒ cs.derives.map(derives ⇒ (derives, cs))).toMap
+        val derivedBy: Map[PropertyKind, Set[ComputationSpecification]] = {
+            var derivedBy: Map[PropertyKind, Set[ComputationSpecification]] = Map.empty
+            allCS foreach { cs ⇒
+                cs.derives foreach { derives ⇒
+                    derivedBy += derives -> (derivedBy.getOrElse(derives, Set.empty) + cs)
+                }
+            }
+            derivedBy
         }
-        ccs foreach { cs ⇒
+        allCS foreach { cs ⇒
             compDeps += cs
             cs.uses foreach { usedPK ⇒
-                derivedBy.get(usedPK).map { providerCS ⇒
+                derivedBy.get(usedPK).iterator.flatten.foreach { providerCS ⇒
                     if (providerCS ne cs) {
                         compDeps += (cs, providerCS)
                     }
                 }
             }
         }
+        // let's handle the case that multiple analyses derives a property collaboratively
+        derivedBy.valuesIterator.filter(_.size > 1) foreach { css ⇒
+            val cssIt = css.iterator
+            val headCS = cssIt.next()
+            var lastCS = headCS
+            do {
+                val nextCS = cssIt.next()
+                compDeps += (lastCS -> nextCS)
+                lastCS = nextCS
+            } while (cssIt.hasNext)
+            compDeps += (lastCS -> headCS)
+        }
+
         compDeps
     }
 
     /**
-     * Computes a schedule. A schedule is a function that, given a property store, executes
-     * the specified analyses.
+     * Computes an executable schedule.
      *
      * The goal is to find a schedule that:
-     *   -  ... schedules as many analyses in parallel as possible
-     *   -  ... does not schedule two analyses A and B at the same time if B has a dependency on
-     *          the properties computed by A, but A has no dependency on B. Scheduling the
-     *          computation of B in a later batch potentially minimizes the number of derivations.
-     *
+     *   - ... schedules as many completely independent analyses in parallel as possible
+     *   - ... does not schedule two analyses A and B at the same time if B has a dependency on
+     *         the properties computed by A, but A has no dependency on B. Scheduling the
+     *         computation of B in a later batch potentially minimizes the number of derivations.
+     *   - ... schedules two analyses which collaboratively compute a property in the same batch/
+     *         phase.
      */
     def computeSchedule(
         implicit
         logContext: LogContext
     ): Schedule = this.synchronized {
+        if (eagerCS.isEmpty) {
+            if (lazyCS.isEmpty) {
+                return Schedule(Chain.empty)
+            } else {
+                // there is no need to compute batches...
+                val scheduleBuilder = (Chain.newBuilder[ComputationSpecification] ++= lazyCS)
+                return Schedule(Chain(scheduleBuilder.result))
+            }
+        }
 
         var derived: Set[PropertyKind] = Set.empty
         var uses: Set[PropertyKind] = Set.empty
-        ccs foreach { cs ⇒
+        allCS foreach { cs ⇒
             cs.derives foreach { pk ⇒ derived += pk }
             uses ++= cs.uses
         }
         // 1. check for properties that are not derived
         val underived = uses -- derived
         if (underived.nonEmpty) {
+            underived.find(PropertyKey.isPropertyKindForSimpleProperty).foreach { pk ⇒
+                val p = PropertyKey.name(pk)
+                val m = "no analysis is scheduled which computes the simple property: "+p
+                throw new IllegalStateException(m)
+            }
+
             val underivedInfo = underived.iterator.map(up ⇒ PropertyKey.name(up)).mkString(", ")
             val message = s"no analyses are scheduled for the properties: $underivedInfo"
             OPALLogger.warn("analysis configuration", message)
@@ -141,24 +160,28 @@ class AnalysisScenario {
             var leafComputations = computationDependencies.leafNodes
             while (leafComputations.nonEmpty) {
                 // assign each computation to its own "batch"
-                batches = batches ++! leafComputations.map(Chain.singleton(_)).to[Chain]
+                val (lazyLeafCs, eagerLeafCs) = leafComputations.partition(cs ⇒ cs.isLazy)
+                batches ++!= (lazyLeafCs.toList ++ eagerLeafCs.toList).map(Chain.singleton).to[Chain]
                 computationDependencies --= leafComputations
                 leafComputations = computationDependencies.leafNodes
             }
             var cyclicComputations = closedSCCs(computationDependencies)
             while (cyclicComputations.nonEmpty) {
-                val cyclicComputation = cyclicComputations.head
+                val (lazyCyclicCs, eagerCyclicCs) = cyclicComputations.head.partition(cs ⇒ cs.isLazy)
                 cyclicComputations = cyclicComputations.tail
                 // assign cyclic computations to one batch
-                batches = batches ++! (new :&:(cyclicComputation.to[Chain]))
+                val cyclicComputation = lazyCyclicCs.toList ++ eagerCyclicCs.toList
+                batches ++!= (new :&:(cyclicComputation.to[Chain]))
                 computationDependencies --= cyclicComputation
             }
         }
-
         Schedule(batches)
     }
 }
 
+/**
+ * Factory to create an [[AnalysisScenario]].
+ */
 object AnalysisScenario {
 
     def apply(analyses: Set[ComputationSpecification]): AnalysisScenario = {

@@ -41,8 +41,8 @@ public class Main {
 
     public static void callBarA(A a) {
         Object o = new
-                @AtMostEscapeInCallee(
-                        value = "default implementation let it escape, but we optimize as it is extensible",
+                @EscapeViaStaticField(
+                        value = "default implementation let it escape",
                         analyses = InterProceduralEscapeAnalysis.class
                 ) Object();
         a.bar(o);
@@ -50,8 +50,8 @@ public class Main {
 
     public static void callFooA(A a) {
         Object o = new
-                @AtMostEscapeInCallee(
-                        value = "B#foo let it escape, but we optimize as it is extensible",
+                @EscapeViaStaticField(
+                        value = "B#foo let it escape",
                         analyses = InterProceduralEscapeAnalysis.class
                 ) Object();
         a.bar(o);
@@ -59,8 +59,8 @@ public class Main {
 
     public static void callBazzB(B a) {
         Object o = new
-                @AtMostEscapeInCallee(
-                        value = "default implementation let it escape, but we optimize as it is extensible",
+                @EscapeViaStaticField(
+                        value = "default implementation let it escape",
                         analyses = InterProceduralEscapeAnalysis.class
                 ) Object();
         a.bazz(o);

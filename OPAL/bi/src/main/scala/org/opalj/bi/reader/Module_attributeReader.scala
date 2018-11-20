@@ -1,85 +1,66 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package bi
 package reader
 
-import scala.reflect.ClassTag
-
 import java.io.DataInputStream
 
-import org.opalj.control.repeat
+import org.opalj.control.fillRefArray
+import org.opalj.control.fillArrayOfInt
+import org.opalj.collection.immutable.RefArray
 
 /**
  * Generic parser for the ''Module'' attribute (Java 9).
  */
 trait Module_attributeReader extends AttributeReader {
 
+    //
+    // TYPE DEFINITIONS AND FACTORY METHODS
+    //
+
     type Module_attribute <: Attribute
 
-    type RequiresEntry
-    implicit val RequiresEntryManifest: ClassTag[RequiresEntry]
+    type RequiresEntry <: AnyRef
+    type Requires = RefArray[RequiresEntry]
 
-    type ExportsEntry
-    implicit val ExportsEntryManifest: ClassTag[ExportsEntry]
-    type ExportsToIndexEntry
-    implicit val ExportsToIndexEntryManifest: ClassTag[ExportsToIndexEntry]
-    type ExportsToIndexTable = IndexedSeq[ExportsToIndexEntry]
+    type ExportsEntry <: AnyRef
+    type Exports = RefArray[ExportsEntry]
 
-    type OpensEntry
-    implicit val OpensEntryManifest: ClassTag[OpensEntry]
-    type OpensToIndexEntry
-    implicit val OpensToIndexEntryManifest: ClassTag[OpensToIndexEntry]
-    type OpensToIndexTable = IndexedSeq[OpensToIndexEntry]
+    // CONCEPTUALLY:
+    // type ExportsToIndexEntry => type ExportsToIndexTable = <X>Array[ExportsToIndexEntry]
+    type ExportsToIndexTable = Array[Constant_Pool_Index] // CONSTANT_Module_Index[]
 
-    type UsesEntry
-    implicit val UsesEntryManifest: ClassTag[UsesEntry]
+    type OpensEntry <: AnyRef
+    type Opens = RefArray[OpensEntry]
 
-    type ProvidesEntry
-    implicit val ProvidesEntryManifest: ClassTag[ProvidesEntry]
-    type ProvidesWithIndexEntry
-    implicit val ProvidesWithIndexEntryManifest: ClassTag[ProvidesWithIndexEntry]
-    type ProvidesWithIndexTable = IndexedSeq[ProvidesWithIndexEntry]
+    // CONCEPTUALLY:
+    // type OpensToIndexEntry => type OpensToIndexTable = <X>Array[OpensToIndexEntry]
+    type OpensToIndexTable = Array[Constant_Pool_Index]
 
-    type Requires = IndexedSeq[RequiresEntry]
-    type Exports = IndexedSeq[ExportsEntry]
-    type Opens = IndexedSeq[OpensEntry]
-    type Uses = IndexedSeq[UsesEntry]
-    type Provides = IndexedSeq[ProvidesEntry]
+    // CONCEPTUALLY:
+    // type UsesEntry => type Uses = <X>Array[UsesEntry]
+    type Uses = Array[Constant_Pool_Index] // CONSTANT_Class_Index[]
+
+    // CONCEPTUALLY:
+    // type ProvidesWithIndexEntry => type ProvidesWithIndexTable = <X>Array[ProvidesWithIndexEntry]
+    type ProvidesWithIndexTable = Array[Constant_Pool_Index] // CONSTANT_Class_Index[]
+
+    type ProvidesEntry <: AnyRef
+    type Provides = RefArray[ProvidesEntry]
+
+    //
+    // IMPLEMENTATION
+    //
 
     /**
-     * @param module_version_index 0 or index into the constant pool. (I.e., optional)
+     * @param module_version_index 0 or index into the constant pool (i.e., optional).
      * @param module_name_index Reference to the constant pool entry with the name of the module -
      *                          which is NOT in internal form. (I.e., "." are used!)
      */
     def Module_attribute(
-        constant_pool:        Constant_Pool,
+        cp:                   Constant_Pool,
+        ap_name_index:        Constant_Pool_Index,
+        ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         module_name_index:    Constant_Pool_Index, // CONSTANT_Module_info
         module_flags:         Int,
@@ -92,50 +73,30 @@ trait Module_attributeReader extends AttributeReader {
     ): Module_attribute
 
     def RequiresEntry(
-        constant_pool:         Constant_Pool,
+        cp:                    Constant_Pool,
         module_index:          Constant_Pool_Index, // CONSTANT_Module_info
         requires_flags:        Int,
         require_version_index: Constant_Pool_Index // Optional: CONSTANT_UTF8
     ): RequiresEntry
 
-    def ExportsToIndexEntry(
-        constant_pool:    Constant_Pool,
-        exports_to_index: Constant_Pool_Index
-    ): ExportsToIndexEntry
-
     def ExportsEntry(
-        constant_pool:          Constant_Pool,
+        cp:                     Constant_Pool,
         module_index:           Constant_Pool_Index, // CONSTANT_Package_info
         exports_flags:          Int,
-        exports_to_index_table: ExportsToIndexTable
+        exports_to_index_table: ExportsToIndexTable // CONSTANT_Module_info[]
     ): ExportsEntry
 
-    def OpensToIndexEntry(
-        constant_pool:  Constant_Pool,
-        opens_to_index: Constant_Pool_Index
-    ): OpensToIndexEntry
-
     def OpensEntry(
-        constant_pool:        Constant_Pool,
+        cp:                   Constant_Pool,
         opens_index:          Constant_Pool_Index, // CONSTANT_Package_info
         opens_flags:          Int,
-        opens_to_index_table: OpensToIndexTable
+        opens_to_index_table: OpensToIndexTable // CONSTANT_Module_info[]
     ): OpensEntry
 
-    def UsesEntry(
-        constant_pool: Constant_Pool,
-        uses_index:    Constant_Pool_Index // CONSTANT_Class
-    ): UsesEntry
-
-    def ProvidesWithIndexEntry(
-        constant_pool:       Constant_Pool,
-        provides_with_index: Constant_Pool_Index // CONSTANT_Class
-    ): ProvidesWithIndexEntry
-
     def ProvidesEntry(
-        constant_pool:             Constant_Pool,
+        cp:                        Constant_Pool,
         provides_index:            Constant_Pool_Index, // CONSTANT_Class
-        provides_with_index_table: ProvidesWithIndexTable
+        provides_with_index_table: ProvidesWithIndexTable // CONSTANT_Class[]
     ): ProvidesEntry
 
     //
@@ -187,8 +148,10 @@ trait Module_attributeReader extends AttributeReader {
      * </pre>
      */
     private[this] def parserFactory() = (
-        ap: AttributeParent,
         cp: Constant_Pool,
+        ap: AttributeParent,
+        ap_name_index: Constant_Pool_Index,
+        ap_descriptor_index: Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         in: DataInputStream
     ) ⇒ {
@@ -199,65 +162,63 @@ trait Module_attributeReader extends AttributeReader {
         val version_index = in.readUnsignedShort()
 
         val requiresCount = in.readUnsignedShort()
-        val requires = repeat(requiresCount) {
-            RequiresEntry(
-                cp,
-                in.readUnsignedShort(), in.readUnsignedShort(), in.readUnsignedShort()
-            )
-        }
+        val requires =
+            fillRefArray(requiresCount) {
+                RequiresEntry(
+                    cp,
+                    in.readUnsignedShort(),
+                    in.readUnsignedShort(),
+                    in.readUnsignedShort()
+                )
+            }
 
         val exportsCount = in.readUnsignedShort()
-        val exports = repeat(exportsCount) {
-            ExportsEntry(
-                cp,
-                in.readUnsignedShort(),
-                in.readUnsignedShort(),
-                {
-                    val exportsToCount = in.readUnsignedShort()
-                    repeat(exportsToCount) {
-                        val cpIndex = in.readUnsignedShort()
-                        ExportsToIndexEntry(cp, cpIndex)
+        val exports =
+            fillRefArray(exportsCount) {
+                ExportsEntry(
+                    cp,
+                    in.readUnsignedShort(),
+                    in.readUnsignedShort(),
+                    {
+                        val exportsToCount = in.readUnsignedShort()
+                        fillArrayOfInt(exportsToCount) { in.readUnsignedShort() }
                     }
-                }
-            )
-        }
+                )
+            }
 
         val opensCount = in.readUnsignedShort()
-        val opens = repeat(opensCount) {
-            OpensEntry(
-                cp,
-                in.readUnsignedShort(),
-                in.readUnsignedShort(),
-                {
-                    val opensToCount = in.readUnsignedShort()
-                    repeat(opensToCount) {
-                        val cpIndex = in.readUnsignedShort()
-                        OpensToIndexEntry(cp, cpIndex)
+        val opens =
+            fillRefArray(opensCount) {
+                OpensEntry(
+                    cp,
+                    in.readUnsignedShort(),
+                    in.readUnsignedShort(),
+                    {
+                        val opensToCount = in.readUnsignedShort()
+                        fillArrayOfInt(opensToCount) { in.readUnsignedShort() }
                     }
-                }
-            )
-        }
+                )
+            }
 
         val usesCount = in.readUnsignedShort()
-        val uses = repeat(usesCount) { UsesEntry(cp, in.readUnsignedShort()) }
+        val uses = fillArrayOfInt(usesCount) { in.readUnsignedShort() }
 
         val providesCount = in.readUnsignedShort()
-        val provides = repeat(providesCount) {
-            ProvidesEntry(
-                cp,
-                in.readUnsignedShort(),
-                {
-                    val providesWithCount = in.readUnsignedShort()
-                    repeat(providesWithCount) {
-                        val cpIndex = in.readUnsignedShort()
-                        ProvidesWithIndexEntry(cp, cpIndex)
+        val provides =
+            fillRefArray(providesCount) {
+                ProvidesEntry(
+                    cp,
+                    in.readUnsignedShort(),
+                    {
+                        val providesWithCount = in.readUnsignedShort()
+                        fillArrayOfInt(providesWithCount) { in.readUnsignedShort() }
                     }
-                }
-            )
-        }
+                )
+            }
 
         Module_attribute(
             cp,
+            ap_name_index, ap_descriptor_index,
             attribute_name_index,
             name_index, flags, version_index, requires, exports, opens, uses, provides
         )

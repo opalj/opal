@@ -1,31 +1,4 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package collection
 package immutable
@@ -80,24 +53,24 @@ object BitArraySetProperties extends Properties("BitArraySetProperties") {
     ////////////////////////////////////////////////////////////////////////////////////////////////
     //                             P R O P E R T I E S
 
-    property("create BitArraySet based on empty set (implicitly intIterator & contains)") = forAll { s: IntArraySet ⇒
+    property("create BitArraySet based on empty set (implicitly iterator & contains)") = forAll { s: IntArraySet ⇒
         val bas = s.foldLeft(BitArraySet.empty)(_ + _)
         classify(s.isEmpty, "empty set") {
             classify(s.nonEmpty && s.max < 64, "set with max value < 64") {
                 (bas.isEmpty == s.isEmpty) :| "isEmpty" &&
-                    bas.intIterator.forall(s.contains) :| "all values in the bit array set were added" &&
-                    s.intIterator.forall(bas.contains) :| "the bit array set contains all values"
+                    bas.iterator.forall(s.contains) :| "all values in the bit array set were added" &&
+                    s.iterator.forall(bas.contains) :| "the bit array set contains all values"
             }
         }
     }
 
-    property("create BitArraySet based on initial set with one element (implicitly intIterator & contains)") = forAll { s: IntArraySet ⇒
+    property("create BitArraySet based on initial set with one element (implicitly iterator & contains)") = forAll { s: IntArraySet ⇒
         s.size > 0 ==> {
             classify(s.max < 64, "set with max value < 64") {
-                val sIt = s.intIterator
+                val sIt = s.iterator
                 val bas = sIt.foldLeft(BitArraySet(sIt.next))(_ + _)
-                bas.intIterator.forall(s.contains) :| "all values in the bit array set were added" &&
-                    s.intIterator.forall(bas.contains) :| "the bit array set contains all values"
+                bas.iterator.forall(s.contains) :| "all values in the bit array set were added" &&
+                    s.iterator.forall(bas.contains) :| "the bit array set contains all values"
             }
         }
     }
@@ -107,7 +80,7 @@ object BitArraySetProperties extends Properties("BitArraySetProperties") {
         s.forall(v ⇒ (bas + v) eq bas)
     }
 
-    property("| and ++ (implicitly intIterator & contains)") = forAll { (s1: SBitSet, s2: SBitSet) ⇒
+    property("| and ++ (implicitly iterator & contains)") = forAll { (s1: SBitSet, s2: SBitSet) ⇒
         val bas1 = s1.foldLeft(BitArraySet.empty)(_ + _)
         val bas2 = s2.foldLeft(BitArraySet.empty)(_ + _)
         val bas3 = bas1 | bas2
@@ -116,7 +89,7 @@ object BitArraySetProperties extends Properties("BitArraySetProperties") {
         classify(s1.isEmpty && s2.isEmpty, "both sets are empty") {
             classify(s1.nonEmpty && s2.nonEmpty && s1.max < 64 && s2.max < 64, "both sets max value < 64") {
                 classify(s1.size <= s2.size, "|s1| <= |s2|", "|s1| > |s2|") {
-                    bas3.intIterator.forall(s3.contains) :| "all values in the bit array set were added" &&
+                    bas3.iterator.forall(s3.contains) :| "all values in the bit array set were added" &&
                         s3.iterator.forall(bas3.contains) :| "the bit array set does not contain all values"
                 }
             }
@@ -135,7 +108,7 @@ object BitArraySetProperties extends Properties("BitArraySetProperties") {
         val bas2 = s2.foldLeft(BitArraySet.empty)(_ + _)
         val basMerged = bas1 ++ bas2
         val basRemerged = (bas1 ++ basMerged /*use that...*/ )
-        basMerged.intIterator.forall(sMerged.contains) :| "all values in the bit array set were added" &&
+        basMerged.iterator.forall(sMerged.contains) :| "all values in the bit array set were added" &&
             sMerged.iterator.forall(basMerged.contains) :| "the bit array set does not contain all values" &&
             (basRemerged eq basMerged) :| "same instance"
     }
@@ -143,7 +116,7 @@ object BitArraySetProperties extends Properties("BitArraySetProperties") {
     property("iterator") = forAll { s: IntArraySet ⇒
         val bas = s.foldLeft(BitArraySet.empty)(_ + _)
         val basIt = bas.iterator
-        val basIntIt = bas.intIterator
+        val basIntIt = bas.iterator
         basIt.forall(v ⇒ basIntIt.next == v) :| "the scala iterator iterates over the same values" &&
             basIntIt.isEmpty :| "the scala iterator does not miss any values"
     }

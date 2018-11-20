@@ -1,31 +1,4 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package ai
 package domain
@@ -35,12 +8,7 @@ import scala.Int.{MinValue ⇒ MinInt}
 import scala.Int.{MaxValue ⇒ MaxInt}
 
 import org.opalj.value.IsIntegerValue
-
-import org.opalj.br.ComputationalType
-import org.opalj.br.ComputationalTypeInt
 import org.opalj.br.CTIntType
-import org.opalj.br.VerificationTypeInfo
-import org.opalj.br.IntegerVariableInfo
 
 /**
  * This domain represents integer values using ranges.
@@ -152,11 +120,7 @@ trait IntegerRangeValues
         with IsIntegerValue {
         this: DomainTypedValue[CTIntType] ⇒
 
-        final override def valueType: Option[CTIntType] = Some(CTIntType)
-
-        final override def computationalType: ComputationalType = ComputationalTypeInt
-
-        final override def verificationTypeInfo: VerificationTypeInfo = IntegerVariableInfo
+        final override def leastUpperType: Option[CTIntType] = Some(CTIntType)
 
         def newInstance: DomainValue
     }
@@ -168,6 +132,9 @@ trait IntegerRangeValues
      */
     trait AnIntegerValue extends IntegerLikeValue {
         this: DomainTypedValue[CTIntType] ⇒
+        final override def lowerBound: Int = Int.MinValue
+        final override def upperBound: Int = Int.MaxValue
+        final override def constantValue: Option[ValueOrigin] = None
     }
 
     /**
@@ -195,7 +162,7 @@ trait IntegerRangeValues
     /**
      * Creates a new IntegerRange value with the given bounds.
      */
-    def IntegerRange(lb: Int, ub: Int): DomainTypedValue[CTIntType]
+    def IntegerRange(lowerBound: Int, upperBound: Int): DomainTypedValue[CTIntType]
 
     /**
      * Creates a new IntegerRange value with the given bounds.
@@ -850,7 +817,7 @@ trait IntegerRangeValues
                 } else {
                     // both values are positive (lbs are >= 0) and at least one
                     // value is not just 0.
-                    import Integer.{numberOfLeadingZeros ⇒ nlz}
+                    import java.lang.Integer.{numberOfLeadingZeros ⇒ nlz}
                     val max = Math.max(rub, lub)
                     val nlzMax = nlz(max)
                     val ub =

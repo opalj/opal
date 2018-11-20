@@ -1,31 +1,4 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package ai
 
@@ -52,15 +25,13 @@ import org.opalj.br.ReferenceType
  *      origin of a value should consider to implement.
  *      - [[TheProject]] defines a standard mechanism how a domain can access the
  *      ''current'' project.
- *      - [[TheClassHierarchy]] defines a standard mechanism how to get the project's
- *      class hierarchy.
  *      - ...
  *
  *  - Domains That Provide a Default Implementation
  *      - [[Origin]] defines the functionality to return a value's origin if the value
  *      supports that.
- *      - [[org.opalj.ai.domain.TheProject]] default implementation of the [[TheClassHierarchy]]
- *      trait that uses the project's class hierarchy.
+ *      - [[org.opalj.ai.domain.TheProject]] default implementation of the class hierarchy related
+ *      methods using the project's class hierarchy.
  *      - [[org.opalj.ai.domain.DefaultHandlingOfMethodResults]] basically implements a Domain's methods
  *      related to return instructions an uncaught exceptions.
  *      - ...
@@ -89,7 +60,7 @@ package object domain {
 
     /**
      * Tries to determine the name of the method/class that is analyzed;
-     * the result depends on the mixed-in domain.
+     * the result depends on the mixed-in domain(s).
      */
     def analyzedEntity(domain: Domain): String = {
         domain match {

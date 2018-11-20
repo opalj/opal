@@ -1,44 +1,20 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package ai
 package domain
 package l0
 
 import org.opalj.collection.immutable.UIDSet
-import org.opalj.collection.immutable.UIDSet1
+import org.opalj.value.ASArrayValue
+import org.opalj.value.IsNullValue
+import org.opalj.value.IsSArrayValue
+import org.opalj.value.IsSReferenceValue
 import org.opalj.br.ArrayType
+import org.opalj.br.ClassHierarchy
 import org.opalj.br.FieldType
 import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
 import org.opalj.br.Type
-import org.opalj.br.UpperTypeBound
 
 /**
  * Implements the foundations for performing computations related to reference values.
@@ -62,7 +38,7 @@ import org.opalj.br.UpperTypeBound
  * @author Michael Eichberg
  */
 trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObject {
-    domain: IntegerValuesDomain with Configuration with TheClassHierarchy ⇒
+    domain: IntegerValuesDomain with Configuration ⇒
 
     /**
      * Merges those exceptions that have the same upper type bound. This ensures
@@ -247,46 +223,21 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
     trait ReferenceValue extends super.ReferenceValue with ArrayAbstraction {
         this: AReferenceValue ⇒
 
-        override def valueType: Option[ReferenceType] = {
-            upperTypeBound.size match {
-                case 0 ⇒ None /* only null has an empty upper type bound */
-                case 1 ⇒ Some(upperTypeBound.head)
-                case _ ⇒ Some(classHierarchy.joinReferenceTypesUntilSingleUpperBound(upperTypeBound))
-            }
-        }
+        final override def asDomainReferenceValue: DomainReferenceValue = this
 
-        override def isPrecise: Boolean = {
-            upperTypeBound match {
-                case UIDSet1(theUpperTypeBound) ⇒ classHierarchy.isKnownToBeFinal(theUpperTypeBound)
-                case _                          ⇒ false
-            }
-        }
-
-        /*
-        final override def asDomainValue(
-            implicit
-            targetDomain: Domain
-        ): targetDomain.DomainReferenceValue = {
-            if (targetDomain ne domain)
-                throw new UnsupportedOperationException(
-                    "the given domain has to be equal to this value's domain"
-                )
-            this.asInstanceOf[targetDomain.DomainReferenceValue]
-        }
-        */
     }
 
     /**
      * A reference value with a single (upper) type (bound).
      */
-    protected[this] trait SReferenceValue[T <: ReferenceType] extends ReferenceValue {
+    protected[this] trait SReferenceValue[T <: ReferenceType]
+        extends ReferenceValue
+        with IsSReferenceValue[T] {
         this: AReferenceValue ⇒
 
-        val theUpperTypeBound: T
+        def theUpperTypeBound: T
 
-        final override def valueType: Some[ReferenceType] = Some(theUpperTypeBound)
-
-        final override def upperTypeBound: UpperTypeBound = new UIDSet1(theUpperTypeBound)
+        final def classHierarchy: ClassHierarchy = domain.classHierarchy
 
         final override def summarize(pc: Int): this.type = this
 
@@ -301,21 +252,12 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
      *  1. A reference value that is not guaranteed to be non-null is tested against
      *    `null` using `ifnull` or `ifnonnull` and we are now on the branch where
      *    the value has to be `null`.
+     *
+     * Depending on the precision of the domain `null` values may also be returned by
+     * method calls or field reads.
      */
-    protected trait NullValue extends ReferenceValue { this: DomainNullValue ⇒
-
-        final override def valueType: None.type = None
-
-        /** Returns an empty upper type bound. */
-        final override def upperTypeBound: UpperTypeBound = UIDSet.empty
-
-        final override def baseValues: Traversable[AReferenceValue] = Traversable.empty
-
-        /** Returns `Yes`. */
-        final override def isNull: Answer = Yes
-
-        /** Returns `true`. */
-        final override def isPrecise: Boolean = true
+    protected trait NullValue extends ReferenceValue with IsNullValue {
+        value: DomainNullValue ⇒
 
         // IMPLEMENTATION OF THE ARRAY RELATED METHODS
         //
@@ -335,17 +277,6 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
             throws(VMNullPointerException(pc))
         }
 
-        /**
-         * Always throws a [[DomainException]] since it is not possible to give a generic
-         * answer. The answer depends on the context (instanceof/classcast/...)).
-         *
-         * @return Throws a `DomainException` that states that this method is not supported.
-         */
-        @throws[DomainException]("Always - isValueSubtypeOf is not defined on \"null\" values.")
-        final override def isValueSubtypeOf(referenceType: ReferenceType): Nothing = {
-            throw DomainException("\"isValueSubtypeOf\" is not defined on \"null\" values")
-        }
-
         override def summarize(pc: Int): this.type = this
 
         override def adapt(target: TargetDomain, pc: Int): target.DomainValue = target.NullValue(pc)
@@ -357,20 +288,26 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
      * Represents a class/interface value which may have a single class and/or
      * multiple interfaces as its upper type bound.
      */
-    protected[this] trait ObjectValue extends ReferenceValue { this: DomainObjectValue ⇒
+    protected[this] trait ObjectValue extends ReferenceValue {
+        value: DomainObjectValue ⇒
 
     }
 
     /**
      * Represents an array value.
      */
-    protected[this] trait ArrayValue extends ReferenceValue { this: DomainArrayValue ⇒
+    protected[this] trait ArrayValue extends ReferenceValue with IsSArrayValue {
+        value: DomainArrayValue ⇒
 
         /**
          * Returns `Yes` if we can statically determine that the given value can
          * be stored in the array represented by this `ArrayValue`.
          */
         /*ABSTRACT*/ def isAssignable(value: DomainValue): Answer
+
+        override def toCanonicalForm: IsSArrayValue = {
+            ASArrayValue(isNull, isPrecise, theUpperTypeBound)
+        }
 
         /**
          * Called by the load method if the index is potentially valid.
@@ -543,8 +480,8 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
                 val ch = classHierarchy
                 // - both values may not be null
                 // - at least one value is not precise
-                if (ch.isSubtypeOf(v1UTB, v2UTB).isNo &&
-                    ch.isSubtypeOf(v2UTB, v1UTB).isNo &&
+                if (ch.isASubtypeOf(v1UTB, v2UTB).isNo &&
+                    ch.isASubtypeOf(v2UTB, v1UTB).isNo &&
                     // two interfaces that are not in an inheritance relation can
                     // still be implemented by the same class and, hence, the references
                     // can still be equal
@@ -557,8 +494,8 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
         }
     }
 
-    final override def isValueSubtypeOf(value: DomainValue, supertype: ReferenceType): Answer = {
-        asReferenceValue(value).isValueSubtypeOf(supertype)
+    final override def isValueASubtypeOf(value: DomainValue, supertype: ReferenceType): Answer = {
+        asReferenceValue(value).isValueASubtypeOf(supertype)
     }
 
     /**

@@ -1,31 +1,4 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package fpcf
 package analyses
@@ -50,7 +23,11 @@ import org.opalj.fpcf.properties.TypeImmutability
  */
 class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnalysis {
 
-    def doDetermineTypeMutability(typeExtensibility: ObjectType ⇒ Answer)(e: Entity): PropertyComputationResult = e match {
+    def doDetermineTypeMutability(
+        typeExtensibility: ObjectType ⇒ Answer
+    )(
+        e: Entity
+    ): PropertyComputationResult = e match {
         case t: ObjectType ⇒ step1(typeExtensibility)(t)
         case _ ⇒
             val m = e.getClass.getSimpleName+" is not an org.opalj.br.ObjectType"
@@ -86,7 +63,10 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
                             if (eps.isFinal)
                                 Result(t, thisUB)
                             else
-                                IntermediateResult(t, thisLB, thisUB, Seq(eps), c)
+                                IntermediateResult(
+                                    t, thisLB, thisUB,
+                                    Seq(eps), c, CheapPropertyComputation
+                                )
                     }
                 }
             }
@@ -97,9 +77,15 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
                 case eps @ IntermediateEP(_, lb, ub) ⇒
                     val thisUB = ub.correspondingTypeImmutability
                     val thisLB = lb.correspondingTypeImmutability
-                    IntermediateResult(t, thisLB, thisUB, Seq(eps), c)
+                    IntermediateResult(
+                        t, thisLB, thisUB,
+                        Seq(eps), c, CheapPropertyComputation
+                    )
                 case epk ⇒
-                    IntermediateResult(t, MutableType, ImmutableType, Seq(epk), c)
+                    IntermediateResult(
+                        t, MutableType, ImmutableType,
+                        Seq(epk), c, CheapPropertyComputation
+                    )
             }
         } else {
             var dependencies = Map.empty[Entity, EOptionP[Entity, Property]]
@@ -152,13 +138,13 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
             if (dependencies.isEmpty) {
                 Result(t, maxImmutability)
             } else if (joinedImmutability == maxImmutability) {
-                // E.g., as soon as one subtype is ConditionallyImmutable, we are at most
-                // ConditionallyImmutable, even if all other subtype may even be immutable!
+                // E.g., as soon as one subtype is an ImmutableContainer, we are at most
+                // ImmutableContainer, even if all other subtype may even be immutable!
                 Result(t, joinedImmutability)
             } else {
                 // when we reach this point, we have dependencies to types for which
                 // we have non-final information; joinedImmutability is either MutableType
-                // or ConditionallyMutableType
+                // or ImmutableContainer
                 def c(eps: EPS[Entity, Property]): PropertyComputationResult = {
 
                     ///*debug*/ val previousDependencies = dependencies
@@ -169,7 +155,7 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
                             Result(t, maxImmutability)
                         } else {
                             joinedImmutability = maxImmutability
-                            val depIt = dependencies.values.iterator
+                            val depIt = dependencies.valuesIterator
                             var continue = true
                             while (continue && depIt.hasNext) {
                                 val n = depIt.next()
@@ -189,7 +175,10 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
                                 assert(maxImmutability == ImmutableContainerType)
                                 Result(t, maxImmutability)
                             } else {
-                                IntermediateResult(t, joinedImmutability, maxImmutability, dependencies.values, c)
+                                IntermediateResult(
+                                    t, joinedImmutability, maxImmutability,
+                                    dependencies.values, c
+                                )
                             }
                         }
                     }
@@ -228,9 +217,17 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
 }
 
 trait TypeImmutabilityAnalysisScheduler extends ComputationSpecification {
-    override def derives: Set[PropertyKind] = Set(TypeImmutability)
 
-    override def uses: Set[PropertyKind] = Set(ClassImmutability)
+    final override def derives: Set[PropertyKind] = Set(TypeImmutability)
+
+    final override def uses: Set[PropertyKind] = Set(ClassImmutability)
+
+    final override type InitializationData = Null
+    final def init(p: SomeProject, ps: PropertyStore): Null = null
+
+    def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
+
+    def afterPhaseCompletion(p: SomeProject, ps: PropertyStore): Unit = {}
 }
 
 /**
@@ -239,9 +236,10 @@ trait TypeImmutabilityAnalysisScheduler extends ComputationSpecification {
  * @author Michael Eichberg
  */
 object EagerTypeImmutabilityAnalysis
-    extends TypeImmutabilityAnalysisScheduler with FPCFEagerAnalysisScheduler {
+    extends TypeImmutabilityAnalysisScheduler
+    with FPCFEagerAnalysisScheduler {
 
-    override def start(project: SomeProject, ps: PropertyStore): FPCFAnalysis = {
+    override def start(project: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val typeExtensibility = project.get(TypeExtensibilityKey)
         val analysis = new TypeImmutabilityAnalysis(project)
 
@@ -260,20 +258,24 @@ object EagerTypeImmutabilityAnalysis
 }
 
 object LazyTypeImmutabilityAnalysis
-    extends TypeImmutabilityAnalysisScheduler with FPCFLazyAnalysisScheduler {
+    extends TypeImmutabilityAnalysisScheduler
+    with FPCFLazyAnalysisScheduler {
+
     /**
      * Registers the analysis as a lazy computation, that is, the method
      * will call `ProperytStore.scheduleLazyComputation`.
      */
-    override def startLazily(p: SomeProject, ps: PropertyStore): FPCFAnalysis = {
+    override def startLazily(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
 
         val typeExtensibility = p.get(TypeExtensibilityKey)
         val analysis = new TypeImmutabilityAnalysis(p)
+        val analysisRunner: PropertyComputation[Entity] =
+            analysis.doDetermineTypeMutability(typeExtensibility)
 
         // An optimization, if the analysis also includes the JDK.
         ps.set(ObjectType.Object, MutableType)
-
-        ps.registerLazyPropertyComputation(TypeImmutability.key, analysis.doDetermineTypeMutability(typeExtensibility))
+        ps.waitOnPhaseCompletion() // wait for ps.set to complete
+        ps.registerLazyPropertyComputation(TypeImmutability.key, analysisRunner)
         analysis
 
     }

@@ -1,40 +1,16 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package ai
 package domain
 package l1
 
 import scala.reflect.ClassTag
+
+import org.opalj.value.IsStringValue
+import org.opalj.value.TheStringValue
+import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
 import org.opalj.br.VoidType
-import org.opalj.br.MethodDescriptor
 
 /**
  * Enables the tracing of concrete string values and can, e.g., be used to
@@ -47,20 +23,21 @@ trait StringValues
     with DefaultJavaObjectToDomainValueConversion
     with MethodCallsDomain
     with PostEvaluationMemoryManagement {
-    domain: CorrelationalDomainSupport with IntegerValuesDomain with TypedValuesFactory with Configuration with TheClassHierarchy ⇒
+    domain: CorrelationalDomainSupport with IntegerValuesDomain with TypedValuesFactory with Configuration ⇒
 
     type DomainStringValue <: StringValue with DomainObjectValue
-    val DomainStringValue: ClassTag[DomainStringValue]
+    val DomainStringValueTag: ClassTag[DomainStringValue]
 
-    /**
-     * @param value `null` if and only if the StringValue is not yet completely initialized!
-     */
-    protected class StringValue(
-            origin:    ValueOrigin,
-            val value: String,
-            refId:     RefId
-    ) extends SObjectValue(origin, No, true, ObjectType.String, refId) {
+    protected trait StringValue extends SObjectValue with IsStringValue {
         this: DomainStringValue ⇒
+
+        /**
+         * The represented string. `value` will be `null` if and only if the [[StringValue]] is not
+         * yet completely initialized!
+         */
+        def value: String
+
+        override def constantValue: Option[String] = Some(value)
 
         override def doJoinWithNonNullValueWithSameOrigin(
             joinPC: Int,
@@ -68,7 +45,7 @@ trait StringValues
         ): Update[DomainSingleOriginReferenceValue] = {
 
             other match {
-                case DomainStringValue(that) ⇒
+                case DomainStringValueTag(that) ⇒
                     if (this.value == that.value) {
                         if (this.refId == that.refId)
                             NoUpdate
@@ -82,7 +59,8 @@ trait StringValues
                         // We have to drop the concrete information...
                         // Given that the values are different we are no longer able to
                         // derive the concrete value.
-                        val newValue = ObjectValue(origin, No, true, ObjectType.String, nextRefId())
+                        val newRefId = nextRefId()
+                        val newValue = ObjectValue(origin, No, true, ObjectType.String, newRefId)
                         StructuralUpdate(newValue)
                     }
 
@@ -115,6 +93,8 @@ trait StringValues
             target.StringValue(vo, this.value)
         }
 
+        override def toCanonicalForm: IsStringValue = TheStringValue(value)
+
         override def equals(other: Any): Boolean = {
             other match {
                 case that: StringValue ⇒ that.value == this.value && super.equals(other)
@@ -130,7 +110,7 @@ trait StringValues
             super.hashCode * 41 + (if (value eq null) 0 else value.hashCode())
         }
 
-        override def toString(): String = {
+        override def toString: String = {
             if (value eq null)
                 s"""String(<initialization incomplete>)[@$origin;refId=$refId]"""
             else
@@ -193,7 +173,7 @@ trait StringValues
             if (newStringKindValue.isInstanceOf[StringValue]) {
                 // we need to filter inter-constructor calls (i.e., we don't
                 // want to analyze calls between the constructors of the class
-                // java.lang.String
+                // java.lang.String)
                 val newStringValue = newStringKindValue.asInstanceOf[StringValue]
 
                 if (methodDescriptor == MethodDescriptor.NoArgsAndReturnVoid) {

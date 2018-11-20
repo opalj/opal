@@ -1,39 +1,12 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package da
-
-import org.opalj.bi.AccessFlagsContexts.METHOD
 
 import scala.xml.Text
 import scala.xml.NodeSeq
 import scala.xml.Node
+
+import org.opalj.bi.AccessFlagsContexts.METHOD
 
 /**
  * @author Michael Eichberg
@@ -46,7 +19,7 @@ case class Method_Info(
         access_flags:     Int,
         name_index:       Constant_Pool_Index,
         descriptor_index: Constant_Pool_Index,
-        attributes:       Attributes          = IndexedSeq.empty
+        attributes:       Attributes          = NoAttributes
 ) extends ClassMember {
 
     /**
@@ -76,39 +49,37 @@ case class Method_Info(
         val jvmDescriptor = this.descriptor
         val index = methodIndex.toString
 
-        val (exceptionsAttributes, attributes0) = attributes.partition(_.isInstanceOf[Exceptions_attribute])
-        val (methodParametersAttributes, attributes1) = attributes0.partition(_.isInstanceOf[MethodParameters_attribute])
+        val (exceptionsAttributes, attributes0) = attributes.partitionByType(classOf[Exceptions_attribute])
+        val (methodParametersAttributes, attributes1) = attributes0.partitionByType(classOf[MethodParameters_attribute])
         val declarationNode =
             <span class="method_declaration">
                 { accessFlags }{
                     methodDescriptorAsInlineNode(
                         name,
                         jvmDescriptor,
-                        methodParametersAttributes.headOption.map(_.asInstanceOf[MethodParameters_attribute].parameters)
+                        methodParametersAttributes.headOption.map(_.parameters)
                     )
                 }{
-                    exceptionsAttributes.headOption.map { ea ⇒
-                        ea.asInstanceOf[Exceptions_attribute].exceptionsSpan
-                    }.getOrElse(NodeSeq.Empty)
+                    exceptionsAttributes.headOption.map(_.exceptionsSpan).getOrElse(NodeSeq.Empty)
                 }
             </span>
 
-        val (codeAttributes, attributes2) = attributes1.partition(_.isInstanceOf[Code_attribute])
-        val (signatureAttributes, attributes3) = attributes2.partition(_.isInstanceOf[Signature_attribute])
+        val (codeAttributes, attributes2) = attributes1.partitionByType(classOf[Code_attribute])
+        val (signatureAttributes, attributes3) = attributes2.partitionByType(classOf[Signature_attribute])
         val signatureNode =
             if (signatureAttributes.nonEmpty) {
-                val signatureAttribute = signatureAttributes.head.asInstanceOf[Signature_attribute]
+                val signatureAttribute = signatureAttributes.head
                 Seq(<br/>, signatureAttribute.signatureSpan)
             } else {
                 NodeSeq.Empty
             }
         if (codeAttributes.nonEmpty) {
-            val codeAttribute = codeAttributes.head.asInstanceOf[Code_attribute]
-
+            val codeAttribute = codeAttributes.head
             val code = codeAttribute.code
             val codeSize = code.instructions.length
             val maxStack = codeAttribute.max_stack
             val maxLocals = codeAttribute.max_locals
+            val (lntAttributes, otherAttributes) = codeAttribute.attributes.partitionByType(classOf[LineNumberTable_attribute])
             val methodBodyHeader =
                 s"[size: $codeSize bytes, max Stack: $maxStack, max Locals: $maxLocals]"
             <details open="" class="method" id={ name + jvmDescriptor } data-index={ index } data-name={ name } data-access-flags={ explicitAccessFlags }>
@@ -121,17 +92,11 @@ case class Method_Info(
                         code.toXHTML(
                             methodIndex,
                             codeAttribute.exceptionTable,
-                            codeAttribute.attributes.collectFirst {
-                                case LineNumberTable_attribute(_, lnt)⇒ lnt
-                            }
+                            lntAttributes.headOption.map(_.line_number_table)
                         )
                     }
                     { codeAttribute.exception_handlersAsXHTML }
-                    {
-                        codeAttribute.attributes.
-                            filterNot(_.isInstanceOf[LineNumberTable_attribute]).
-                            map(_.toXHTML)
-                    }
+                    { otherAttributes.map(_.toXHTML) }
                 </div>
                 { attributes3.map(_.toXHTML) }
             </details>

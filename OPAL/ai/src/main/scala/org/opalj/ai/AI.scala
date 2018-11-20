@@ -1,57 +1,35 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2017
- * Software Technology Group
- * Department of Computer Science
- * Technische Universität Darmstadt
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package ai
 
 import scala.language.existentials
 import scala.annotation.switch
+
 import scala.util.control.ControlThrowable
 
-import org.opalj.log.Warn
-import org.opalj.log.OPALLogger
+import org.opalj.control.foreachNonNullValue
+
 import org.opalj.log.GlobalLogContext
+import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger
+import org.opalj.log.Warn
+import org.opalj.collection.immutable.{Chain ⇒ List}
+import org.opalj.collection.immutable.{Naught ⇒ Nil}
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.:&:
 import org.opalj.collection.immutable.Chain
+import org.opalj.collection.immutable.IntIntPair
 import org.opalj.collection.immutable.Naught
-import org.opalj.collection.immutable.{Chain ⇒ List}
-import org.opalj.collection.immutable.{Naught ⇒ Nil}
-import org.opalj.control.foreachNonNullValue
-import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.collection.mutable.{Locals ⇒ Registers}
-import org.opalj.ai.util.removeFirstUnless
+import org.opalj.collection.mutable.IntArrayStack
+import org.opalj.bytecode.BytecodeProcessingFailedException
+import org.opalj.bi.warnMissingLibrary
+import org.opalj.br._
+import org.opalj.br.instructions._
 import org.opalj.ai.util.containsInPrefix
 import org.opalj.ai.util.insertBefore
 import org.opalj.ai.util.insertBeforeIfNew
-import org.opalj.br._
-import org.opalj.br.instructions._
-import org.opalj.collection.mutable.IntArrayStack
+import org.opalj.ai.util.removeFirstUnless
 
 /**
  * A highly-configurable framework for the (abstract) interpretation of Java bytecode.
@@ -141,9 +119,30 @@ import org.opalj.collection.mutable.IntArrayStack
  * Customization of the abstract interpreter is done by creating new subclasses that
  * override the relevant methods (in particular: [[AI#isInterrupted]] and [[AI#tracer]]).
  *
+ * @param IdentifyDeadVariables If `true` the results of a relatively cheap live variables
+ *         analysis are used to avoid the useless propagation and joining of variables that
+ *         are not used anymore. This setting is generally turned on. However, identification
+ *         of dead variables – in combination with the fact that we only consider instructions
+ *         as throwing exceptions that explicitly declare to do so – may lead to a situation
+ *         where a variable is correctly identified as dead (`IllegalValue`), but where the JVM –
+ *         when verifying the bytecode – still expects the variable to still be alive because it
+ *         considers more instructions as potentially throwing exceptions (e.g., pop,
+ *         <x>load|string,...).
+ *         (In `CodeAttributeBuilderTest` we have a corresponding test case.)
+ *         Hence, when the result of the abstract interpretation is used to compute stack map
+ *         tables, `IdentifyDeadVariables` should be `false`.
+ * @param  RegisterStoreMayThrowExceptions If `true` (default: `false`), the <x>Store instructions;
+ *         i.e., those potentially changing the shape of the registers w.r.t. the type information
+ *         relevant when verifying the bytecode are considered as throwing "some" exception.
+ *         This is required when using the result of the abstract interpretation for computing
+ *         stack map tables.
+ *
  * @author Michael Eichberg
  */
-abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true) {
+abstract class AI[D <: Domain](
+        final val IdentifyDeadVariables:           Boolean = true,
+        final val RegisterStoreMayThrowExceptions: Boolean = false
+) {
 
     type SomeLocals[V <: d.DomainValue forSome { val d: D }] = Option[IndexedSeq[V]]
 
@@ -239,7 +238,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
         someLocals: SomeLocals[domain.DomainValue] = None
     ): domain.Locals = {
 
-        import domain.DomainValue
+        import domain.DomainValueTag
 
         val locals = someLocals.map { l ⇒
             val maxLocals = method.body.get.maxLocals
@@ -378,14 +377,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
         theOperandsArray:         theDomain.OperandsArray,
         theLocalsArray:           theDomain.LocalsArray
     ): AIResult { val domain: theDomain.type } = {
-        val classHierarchy: ClassHierarchy =
-            theDomain match {
-                case domainWithClassHierarchy: TheClassHierarchy ⇒
-                    domainWithClassHierarchy.classHierarchy
-                case _ ⇒
-                    ClassHierarchy.PreInitializedClassHierarchy
-            }
-        val (predecessorPCs, finalPCs, cfJoins) = code.predecessorPCs(classHierarchy)
+        val (predecessorPCs, finalPCs, cfJoins) = code.predecessorPCs(theDomain.classHierarchy)
         val liveVariables = code.liveVariables(predecessorPCs, finalPCs, cfJoins)
         continueInterpretation(
             code, cfJoins, liveVariables,
@@ -509,7 +501,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
         code: Code, cfJoins: IntTrieSet, liveVariables: LiveVariables,
         theDomain: D
     )(
-        initialWorkList:                     List[Int /*PC*/ ],
+        initialWorkList:                     List[PC],
         alreadyEvaluatedPCs:                 IntArrayStack,
         subroutinesWereEvaluated:            Boolean,
         theOperandsArray:                    theDomain.OperandsArray,
@@ -540,25 +532,40 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
             )
         }
 
-        import theDomain.{DomainValue, ExceptionValue, ExceptionValues, Operands, Locals}
+        import theDomain.DomainValue
+        import theDomain.ExceptionValue
+        import theDomain.ExceptionValues
+        import theDomain.Locals
+        import theDomain.Operands
 
         // import reference values related functionality
-        import theDomain.{refAreEqual, refAreNotEqual}
-        import theDomain.{refIsNonNull, refIsNull}
-        import theDomain.{refEstablishAreEqual, refEstablishAreNotEqual}
-        import theDomain.{refEstablishIsNonNull, refEstablishIsNull}
+        import theDomain.refAreEqual
+        import theDomain.refAreNotEqual
+        import theDomain.refEstablishAreEqual
+        import theDomain.refEstablishAreNotEqual
+        import theDomain.refEstablishIsNonNull
+        import theDomain.refEstablishIsNull
+        import theDomain.refIsNonNull
+        import theDomain.refIsNull
 
         // import int values related functionality
-        import theDomain.{intAreEqual, intAreNotEqual}
-        import theDomain.{intIs0, intIsNot0}
-        import theDomain.{intIsLessThan, intIsLessThan0}
-        import theDomain.{intIsLessThanOrEqualTo, intIsLessThanOrEqualTo0}
-        import theDomain.{intIsGreaterThan, intIsGreaterThan0}
-        import theDomain.{intIsGreaterThanOrEqualTo, intIsGreaterThanOrEqualTo0}
-
+        import theDomain.intAreEqual
+        import theDomain.intAreNotEqual
+        import theDomain.intEstablishAreEqual
+        import theDomain.intEstablishAreNotEqual
+        import theDomain.intEstablishIsLessThan
+        import theDomain.intEstablishIsLessThanOrEqualTo
+        import theDomain.intIs0
+        import theDomain.intIsGreaterThan
+        import theDomain.intIsGreaterThan0
+        import theDomain.intIsGreaterThanOrEqualTo
+        import theDomain.intIsGreaterThanOrEqualTo0
+        import theDomain.intIsLessThan
+        import theDomain.intIsLessThan0
+        import theDomain.intIsLessThanOrEqualTo
+        import theDomain.intIsLessThanOrEqualTo0
+        import theDomain.intIsNot0
         import theDomain.IntegerConstant0
-        import theDomain.{intEstablishAreEqual, intEstablishAreNotEqual}
-        import theDomain.{intEstablishIsLessThanOrEqualTo, intEstablishIsLessThan}
 
         val instructions: Array[Instruction] = code.instructions
 
@@ -574,7 +581,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
          * The first PC of each element of the list is the pc of the first instruction of
          * the subroutine <=> the subroutine id
          */
-        type SubroutineMemoryLayouts = List[(Int /*PC*/ , theDomain.OperandsArray, theDomain.LocalsArray)]
+        type SubroutineMemoryLayouts = List[(PC, theDomain.OperandsArray, theDomain.LocalsArray)]
         // The entire state of the computation is (from the perspective of the AI)
         // encapsulated by the following data-structures:
         /* 1 */ var operandsArray = theOperandsArray
@@ -608,7 +615,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                     // In this case the subroutine and the normal functionality are overlapping.
                     // In this case, the "normal" operands/locals array already contains the
                     // combined state.
-                    if ((operandsArray(pc) eq null) /* && (localsArray(pc) eq null)*/ ) {
+                    if (operandsArray(pc) eq null /* && (localsArray(pc) eq null)*/ ) {
                         val subroutineOperands = subroutinesOperandsArray(pc)
                         val subroutineLocals = subroutinesLocalsArray(pc)
                         operandsArray(pc) = subroutineOperands
@@ -662,6 +669,12 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
          *
          * In case of an abrupt termination of a subroutine the operands and locals
          * array of the catching method are also updated.
+         *
+         * @param forceJoin Needs to be true if we may have only one control-flow between
+         *        sourcePC and targetPC; i.e., the set of predecessor instructions for
+         *        targetPC only contains sourcePC, but we can have multiple data-flows _at the
+         *        same time_; in that case cfJoins would not contain targetPC.
+         *        This situation generally only arise in case of exceptional control-flows.
          */
         def gotoTarget(
             sourcePC:                 Int,
@@ -670,6 +683,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
             sourceLocals:             Locals,
             targetPC:                 Int,
             isExceptionalControlFlow: Boolean,
+            forceJoin:                Boolean,
             newOperands:              Operands,
             newLocals:                Locals
         ): Unit = {
@@ -678,7 +692,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                 theDomain.afterEvaluation(
                     sourcePC, sourceInstruction,
                     sourceOperands, sourceLocals,
-                    targetPC, isExceptionalControlFlow,
+                    targetPC, isExceptionalControlFlow, forceJoin,
                     newOperands, newLocals
                 )
 
@@ -747,11 +761,11 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                 // all active real subroutines) now let's remove the elements of those
                 // subroutines from the worklist, schedule the instruction (if necessary)
                 // and re-add the child subroutines.
-                var header: List[Int /*PC*/ ] = Nil
-                var remainingWorklist: List[Int /*PC*/ ] = worklist
+                var header: List[PC] = Nil
+                var remainingWorklist: List[PC] = worklist
                 while (subroutinesToTerminate > 0) {
                     val pc = remainingWorklist.head
-                    header = pc :&: header
+                    header :&:= pc
                     remainingWorklist = remainingWorklist.tail
                     if (pc == SUBROUTINE) {
                         subroutinesToTerminate -= 1
@@ -829,12 +843,10 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                     if (IdentifyDeadVariables && cfJoins.contains(targetPC)) {
                         var i = 0
                         val theLiveVariables = liveVariables(targetPC)
-                        val newLocals = locals.mapConserve { v: theDomain.DomainValue ⇒
+                        val newLocals = locals mapConserve { v: theDomain.DomainValue ⇒
                             val lvIndex = i
                             i += 1
-                            if ((v eq null) ||
-                                (v eq theDomain.TheIllegalValue) ||
-                                theLiveVariables.contains(lvIndex)) {
+                            if ((v eq null) || theLiveVariables.contains(lvIndex)) {
                                 v
                             } else {
                                 theDomain.TheIllegalValue
@@ -871,7 +883,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
 
                     /* join: */ false
 
-                } else if (!cfJoins.contains(targetPC)) {
+                } else if (!forceJoin && !cfJoins.contains(targetPC)) {
                     assert(abruptSubroutineTerminationCount == 0)
 
                     // The instruction is not an instruction where multiple control-flow
@@ -1075,7 +1087,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                     while (worklist.head >= SUBROUTINE_INFORMATION_BLOCK_SEPARATOR_BOUND) {
                         // In case that a subroutine always throws a (non-caught) exception,
                         // we will not have encountered a single ret instruction.
-                        retPCs += worklist.head
+                        retPCs +!= worklist.head
                         worklist = worklist.tail
                     }
                     // We don't know the local variable in case that the subroutine
@@ -1113,7 +1125,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                         trace = trace.tail
                     }
                      */
-                    val traceIterator = evaluatedPCs.intIterator
+                    val traceIterator = evaluatedPCs.iterator
                     traceIterator.next()
                     import traceIterator.foreachWhile
                     foreachWhile(pc ⇒ pc != SUBROUTINE_START || subroutineLevel != 0) { pc ⇒
@@ -1164,7 +1176,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                         }
                     }
 
-                    val targets = retPCs mapToAny { retPC ⇒
+                    val targets = retPCs.map[(Int, theDomain.Operands, theDomain.Locals)] { retPC ⇒
                         if (tracer.isDefined) {
                             tracer.get.returnFromSubroutine(theDomain)(
                                 retPC,
@@ -1192,7 +1204,8 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                         gotoTarget(
                             retPC, instructions(retPC),
                             operandsArray(retPC), localsArray(retPC),
-                            returnAddress, isExceptionalControlFlow = false,
+                            returnAddress,
+                            isExceptionalControlFlow = false, forceJoin = false,
                             operands, updatedLocals
                         )
                     }
@@ -1308,14 +1321,16 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                             checkDefinitivePath(branchTargetPC, nextPC, "ifXX-YES")
                             gotoTarget(
                                 pc, instruction, operands, locals,
-                                branchTargetPC, isExceptionalControlFlow = false,
+                                branchTargetPC,
+                                isExceptionalControlFlow = false, forceJoin = false,
                                 rest, locals
                             )
                         case No ⇒
                             checkDefinitivePath(nextPC, branchTargetPC, "ifXX-NO")
                             gotoTarget(
                                 pc, instruction, operands, locals,
-                                nextPC, isExceptionalControlFlow = false,
+                                nextPC,
+                                isExceptionalControlFlow = false, forceJoin = false,
                                 rest, locals
                             )
                         case Unknown ⇒
@@ -1351,23 +1366,27 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                             if (branchTargetPC < pc) {
                                 gotoTarget(
                                     pc, instruction, operands, locals,
-                                    nextPC, isExceptionalControlFlow = false,
+                                    nextPC,
+                                    isExceptionalControlFlow = false, forceJoin = false,
                                     newFTOperands, newFTLocals
                                 )
                                 gotoTarget(
                                     pc, instruction, operands, locals,
-                                    branchTargetPC, isExceptionalControlFlow = false,
+                                    branchTargetPC,
+                                    isExceptionalControlFlow = false, forceJoin = false,
                                     newBTOperands, newBTLocals
                                 )
                             } else {
                                 gotoTarget(
                                     pc, instruction, operands, locals,
-                                    branchTargetPC, isExceptionalControlFlow = false,
+                                    branchTargetPC,
+                                    isExceptionalControlFlow = false, forceJoin = false,
                                     newBTOperands, newBTLocals
                                 )
                                 gotoTarget(
                                     pc, instruction, operands, locals,
-                                    nextPC, isExceptionalControlFlow = false,
+                                    nextPC,
+                                    isExceptionalControlFlow = false, forceJoin = false,
                                     newFTOperands, newFTLocals
                                 )
                             }
@@ -1452,14 +1471,16 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                             checkDefinitivePath(branchTargetPC, nextPC, "ifTcmpXX-YES")
                             gotoTarget(
                                 pc, instruction, operands, locals,
-                                branchTargetPC, isExceptionalControlFlow = false,
+                                branchTargetPC,
+                                isExceptionalControlFlow = false, forceJoin = false,
                                 rest, locals
                             )
                         case No ⇒
                             checkDefinitivePath(nextPC, branchTargetPC, "ifTcmpXX-NO")
                             gotoTarget(
                                 pc, instruction, operands, locals,
-                                nextPC, isExceptionalControlFlow = false,
+                                nextPC,
+                                isExceptionalControlFlow = false, forceJoin = false,
                                 rest, locals
                             )
                         case Unknown ⇒
@@ -1490,23 +1511,27 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                             if (branchTargetPC > pc) {
                                 gotoTarget(
                                     pc, instruction, operands, locals,
-                                    nextPC, isExceptionalControlFlow = false,
+                                    nextPC,
+                                    isExceptionalControlFlow = false, forceJoin = false,
                                     newFTOperands, newFTLocals
                                 )
                                 gotoTarget(
                                     pc, instruction, operands, locals,
-                                    branchTargetPC, isExceptionalControlFlow = false,
+                                    branchTargetPC,
+                                    isExceptionalControlFlow = false, forceJoin = false,
                                     newBTOperands, newBTLocals
                                 )
                             } else {
                                 gotoTarget(
                                     pc, instruction, operands, locals,
-                                    branchTargetPC, isExceptionalControlFlow = false,
+                                    branchTargetPC,
+                                    isExceptionalControlFlow = false, forceJoin = false,
                                     newBTOperands, newBTLocals
                                 )
                                 gotoTarget(
                                     pc, instruction, operands, locals,
-                                    nextPC, isExceptionalControlFlow = false,
+                                    nextPC,
+                                    isExceptionalControlFlow = false, forceJoin = false,
                                     newFTOperands, newFTLocals
                                 )
                             }
@@ -1530,10 +1555,10 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                  */
                 def doHandleTheException(
                     exceptionValue:   ExceptionValue,
-                    establishNonNull: Boolean
-                ): PCs = {
+                    establishNonNull: Boolean,
+                    forceJoin:        Boolean
+                ): Unit = {
 
-                    var targetPCs = IntTrieSet.empty
                     def gotoExceptionHandler(
                         pc:             Int,
                         branchTargetPC: Int,
@@ -1561,10 +1586,10 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
 
                         gotoTarget(
                             pc, instruction, operands, locals,
-                            branchTargetPC, isExceptionalControlFlow = true,
+                            branchTargetPC,
+                            isExceptionalControlFlow = true, forceJoin = forceJoin,
                             updatedOperands2, updatedLocals2
                         )
-                        targetPCs += branchTargetPC
                     }
 
                     val isHandled = code.handlersFor(pc) exists { eh ⇒
@@ -1582,17 +1607,19 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                                 gotoExceptionHandler(pc, branchTarget, None)
                                 true
                             } else {
-                                theDomain.isValueSubtypeOf(exceptionValue, caughtType) match {
-                                    case No ⇒ false
+                                theDomain.isValueASubtypeOf(exceptionValue, caughtType) match {
+                                    case No ⇒
+                                        false
                                     case Yes ⇒
-                                        gotoExceptionHandler(pc, branchTarget, None); true
+                                        gotoExceptionHandler(pc, branchTarget, None)
+                                        true
 
                                     case _ ⇒ /*Unknown*/
                                         // In general, we have to abort the exception handling...
                                         // otherwise we may end up executing a compile-time
-                                        // impossible handler which potentially results in an
+                                        // impossible handler which potentially results in a
                                         // fatally failing analysis.
-                                        // I.e., we have to ensure to never folllow paths the
+                                        // I.e., we have to ensure to never follow paths the
                                         // bytecode verifier would not follow!
                                         // However, previously identified handlers remain valid and
                                         // in case of called methods/athrow we can still continue,
@@ -1607,14 +1634,14 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                                             gotoExceptionHandler(pc, branchTarget, catchTypeOption)
                                             false
                                         } else {
-                                            val logContext = theDomain match {
+                                            implicit val logContext: LogContext = theDomain match {
                                                 case ctx: LogContextProvider ⇒ ctx.logContext
                                                 case _                       ⇒ GlobalLogContext
                                             }
-                                            org.opalj.bi.warnMissingLibrary(logContext)
+                                            warnMissingLibrary
                                             var exceptionTypeAsJava =
-                                                exceptionValue.upperTypeBound.
-                                                    iterator.map(_.toJava).
+                                                exceptionValue.upperTypeBound.iterator.
+                                                    map[String](_.toJava).
                                                     mkString(" & ")
                                             if (!exceptionValue.isPrecise)
                                                 exceptionTypeAsJava = "_ <: "+exceptionTypeAsJava
@@ -1624,7 +1651,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                                                     s"$exceptionTypeAsJava and ${caughtType.toJava}; "+
                                                     "aborting exception processing"
                                             )
-                                            OPALLogger.logOnce(warning)(logContext)
+                                            OPALLogger.logOnce(warning)
                                             true // effectively aborts the handling..
                                         }
                                 }
@@ -1637,63 +1664,73 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                     // to avoid that impossible paths are taken ... hence this method
                     // invocation will not complete abruptly.
                     if (!isHandled) abruptMethodExecution(pc, exceptionValue)
-
-                    targetPCs
                 }
 
                 /*
                  * @param testForNullnessOfExceptionValue Required to avoid the meaningless
                  *        generation of "NullPointerExceptions" for exceptions thrown by the
                  *        JVM/outside the scope of the current method. In case of a domain
-                 *        which tracks nullness this issue is probably already implicitly handled
+                 *        which tracks null-ness this issue is probably already implicitly handled
                  *        by the domain;
                  *        if the domain does not track null-ness, this information is
-                 *        explicitly required otherwise the assumption would be made that the
+                 *        explicitly required, otherwise, the assumption would be made that the
                  *        exception value could be null – in all cases!
                  */
                 def handleException(
                     exceptionValue:                  ExceptionValue,
-                    testForNullnessOfExceptionValue: Boolean
-                ): PCs = {
+                    testForNullnessOfExceptionValue: Boolean,
+                    forceJoin:                       Boolean
+                ): Unit = {
                     // Iterating over the individual exceptions is potentially
                     // more precise than just iterating over the "abstraction".
-                    val baseValues = exceptionValue.baseValues
+                    val baseValues: Traversable[theDomain.DomainReferenceValue] = exceptionValue.baseValues
                     if (baseValues.isEmpty) {
                         if (testForNullnessOfExceptionValue) {
                             exceptionValue.isNull match {
                                 case No ⇒ // just forward
-                                    doHandleTheException(exceptionValue, establishNonNull = false)
+                                    doHandleTheException(
+                                        exceptionValue, establishNonNull = false, forceJoin
+                                    )
                                 case Unknown ⇒
-                                    val npeHandlerPC =
-                                        if (theDomain.throwNullPointerExceptionOnThrow) {
-                                            val npe = theDomain.VMNullPointerException(pc)
-                                            doHandleTheException(npe, false)
-                                        } else {
-                                            IntTrieSet.empty
-                                        }
-                                    npeHandlerPC ++ doHandleTheException(exceptionValue, true)
+                                    if (theDomain.throwNullPointerExceptionOnThrow) {
+                                        val npe = theDomain.VMNullPointerException(pc)
+                                        doHandleTheException(
+                                            npe, establishNonNull = false, forceJoin
+                                        )
+                                    }
+                                    // Effectively, we now have multiple exceptions that are
+                                    // raised by the same instruction and which may be handled
+                                    // by the same athrow. Hence, we may have one control-flow
+                                    // between the two instructions, but multiple data-flows!
+                                    // Therefore, we have to force the join of the values.
+                                    doHandleTheException(
+                                        exceptionValue, establishNonNull = true, forceJoin = true
+                                    )
                                 case Yes ⇒
                                     val npe = theDomain.VMNullPointerException(pc)
-                                    doHandleTheException(npe, false)
+                                    doHandleTheException(npe, establishNonNull = false, forceJoin)
                             }
                         } else {
                             // The exception is either VM generated or is thrown in the
                             // context of a called method; in both cases the exception is
                             // not null; the latter can only be the case if we have a
                             // "throw null".
-                            doHandleTheException(exceptionValue, establishNonNull = false)
+                            doHandleTheException(exceptionValue, establishNonNull = false, forceJoin)
                         }
                     } else {
                         handleExceptions(baseValues, testForNullnessOfExceptionValue)
                     }
                 }
 
+                /* One instruction may cause multiple data-flows at the same time! */
                 def handleExceptions(
                     exceptions:                      Traversable[ExceptionValue],
                     testForNullnessOfExceptionValue: Boolean
-                ): PCs = {
-                    exceptions.foldLeft(IntTrieSet.empty) { (pcs, e) ⇒
-                        pcs ++ handleException(e, testForNullnessOfExceptionValue)
+                ): Unit = {
+                    var forceJoin: Boolean = false
+                    exceptions foreach { e ⇒
+                        handleException(e, testForNullnessOfExceptionValue, forceJoin)
+                        forceJoin = true // <= if we have more than one exception
                     }
                 }
 
@@ -1711,7 +1748,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                     val nextPC = pcOfNextInstruction
                     gotoTarget(
                         pc, instruction, operands, locals,
-                        nextPC, isExceptionalControlFlow = false,
+                        nextPC, isExceptionalControlFlow = false, forceJoin = false,
                         newOperands, newLocals
                     )
                     nextPC
@@ -1720,24 +1757,42 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                 def handleReturn(computation: Computation[Nothing, ExceptionValue]): Unit = {
                     if (computation.throwsException) {
                         val exceptions = computation.exceptions
-                        handleException(exceptions, testForNullnessOfExceptionValue = false)
+                        handleException(
+                            exceptions, testForNullnessOfExceptionValue = false, forceJoin = false
+                        )
                     }
                 }
 
+                def handleRegisterStore(newLocals: Locals): Unit = {
+                    fallThrough(operands.tail, newLocals)
+                    if (RegisterStoreMayThrowExceptions) {
+                        handleException(
+                            // theDomain.NonNullObjectValue(ValueOriginForImmediateVMException(pc), ObjectType.Throwable)
+                            theDomain.VMThrowable(pc),
+                            testForNullnessOfExceptionValue = false,
+                            forceJoin = false
+                        )
+                    }
+                }
+
+                /*
+                 * `computationWithException` is only used when the instruction at most throws
+                 * one implicit exception. Therefore, there can be at most one data-flow
+                 * from the instruction to a handler at one point in time.
+                 * `computationWithException` is NOT used when handling aThrow.
+                 */
                 def computationWithException(
                     computation: Computation[Nothing, ExceptionValue],
                     rest:        Operands
                 ): Unit = {
-                    //TODO val regPC =
-                    if (computation.returnsNormally) fallThrough(rest) // else -1
-                    //TODO val exPCs =
+                    if (computation.returnsNormally) fallThrough(rest)
                     if (computation.throwsException) {
-                        val exceptions = computation.exceptions
-                        handleException(exceptions, testForNullnessOfExceptionValue = false)
-                    } // else IntTrieSet.empty
-
-                    //TODO if (computation.returnsNormally != computation.throwsException)
-                    //TODO    println(s"$pc: DEFINITIVE PATH $regPC of ${exPCs} - $instruction")
+                        val exception = computation.exceptions
+                        handleException(
+                            exception,
+                            testForNullnessOfExceptionValue = false, forceJoin = false
+                        )
+                    }
                 }
 
                 def computationWithExceptions(
@@ -1752,32 +1807,46 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                     }
                 }
 
+                /*
+                 * @see `computationWithException` w.r.t. "forceJoin = false"
+                 */
                 def computationWithReturnValueAndException(
                     computation: Computation[DomainValue, ExceptionValue],
                     rest:        Operands
                 ): Unit = {
-                    //TODOval regPC =
-                    if (computation.hasResult) fallThrough(computation.result :&: rest) // else -1
-                    //TODO val exPCs =
+                    if (computation.hasResult) fallThrough(computation.result :&: rest)
                     if (computation.throwsException) {
                         val exceptions = computation.exceptions
-                        handleException(exceptions, testForNullnessOfExceptionValue = false)
-                    } // else IntTrieSet.empty
-
-                    //TODO if (computation.returnsNormally != computation.throwsException)
-                    //TODO    println(s"$pc: DEFINITIVE PATH $regPC of ${exPCs} in {$exPCs} - $instruction")
+                        handleException(
+                            exceptions,
+                            testForNullnessOfExceptionValue = false, forceJoin = false
+                        )
+                    }
                 }
 
                 def computationWithReturnValueAndExceptions(
                     computation: Computation[DomainValue, ExceptionValues],
                     rest:        Operands
                 ): Unit = {
-
                     if (computation.hasResult) fallThrough(computation.result :&: rest)
                     if (computation.throwsException) {
                         val exceptions = computation.exceptions
                         handleExceptions(exceptions, testForNullnessOfExceptionValue = false)
                     }
+                }
+
+                def computation(
+                    computation: Computation[Nothing, Nothing],
+                    rest:        Operands
+                ): Unit = {
+                    fallThrough(rest)
+                }
+
+                def computationWithReturnValue(
+                    computation: Computation[DomainValue, Nothing],
+                    rest:        Operands
+                ): Unit = {
+                    fallThrough(computation.result :&: rest)
                 }
 
                 def computationWithOptionalReturnValueAndExceptions(
@@ -1795,9 +1864,6 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                         val exceptions = computation.exceptions
                         handleExceptions(exceptions, testForNullnessOfExceptionValue = false)
                     }
-
-                    //TODOif (computation.hasResult != computation.throwsException)
-                    //TODO    println(s"$pc: DEFINITIVE PATH - $instruction")
                 }
 
                 // Small helper method to make type casts shorter.
@@ -1814,7 +1880,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                         val branchtarget = pc + offset
                         gotoTarget(
                             pc, instruction, operands, locals,
-                            branchtarget, isExceptionalControlFlow = false,
+                            branchtarget, isExceptionalControlFlow = false, forceJoin = false,
                             operands, locals
                         )
 
@@ -1863,7 +1929,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                         val newOperands = theDomain.ReturnAddressValue(returnTarget) :&: operands
                         gotoTarget(
                             pc, instruction, operands, locals,
-                            branchTarget, isExceptionalControlFlow = false,
+                            branchTarget, isExceptionalControlFlow = false, forceJoin = false,
                             newOperands, locals
                         )
 
@@ -2012,7 +2078,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                             gotoTarget(
                                 pc, instruction, operands, locals,
                                 pc + switch.defaultOffset,
-                                isExceptionalControlFlow = false,
+                                isExceptionalControlFlow = false, forceJoin = false,
                                 remainingOperands, locals
                             )
                         } else {
@@ -2022,7 +2088,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                             val npairs = switch.npairs
                             val firstKey = npairs(0)._1
                             var previousKey = firstKey
-                            for ((key, offset) ← npairs) {
+                            for (IntIntPair(key, offset) ← npairs) {
                                 if (!branchToDefaultRequired && (key - previousKey) > 1) {
                                     // there is a hole in the switch table...
                                     val nonCaseValue =
@@ -2051,7 +2117,8 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                                     }
                                     gotoTarget(
                                         pc, instruction, operands, locals,
-                                        branchTargetPC, isExceptionalControlFlow = false,
+                                        branchTargetPC,
+                                        isExceptionalControlFlow = false, forceJoin = false,
                                         updatedOperands, updatedLocals
                                     )
                                 }
@@ -2065,7 +2132,8 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
 
                                 gotoTarget(
                                     pc, instruction, operands, locals,
-                                    defaultBranchTargetPC, isExceptionalControlFlow = false,
+                                    defaultBranchTargetPC,
+                                    isExceptionalControlFlow = false, forceJoin = false,
                                     remainingOperands, locals
                                 )
                             }
@@ -2101,7 +2169,8 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                                 }
                                 gotoTarget(
                                     pc, instruction, operands, locals,
-                                    branchTargetPC, isExceptionalControlFlow = false,
+                                    branchTargetPC,
+                                    isExceptionalControlFlow = false, forceJoin = false,
                                     updatedOperands, updatedLocals
                                 )
                             }
@@ -2112,7 +2181,8 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                             val defaultBranchTargetPC = pc + tableswitch.defaultOffset
                             gotoTarget(
                                 pc, instruction, operands, locals,
-                                defaultBranchTargetPC, isExceptionalControlFlow = false,
+                                defaultBranchTargetPC,
+                                isExceptionalControlFlow = false, forceJoin = false,
                                 remainingOperands, locals
                             )
                         }
@@ -2129,8 +2199,15 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                         // stored in a table. At runtime the Java virtual machine searches
                         // the exception handlers of the current method in the order that
                         // they appear in the corresponding exception handler table.
-                        val theDomain.DomainReferenceValue(exceptionValue) = operands.head
-                        handleException(exceptionValue, testForNullnessOfExceptionValue = true)
+                        val theDomain.DomainReferenceValueTag(exceptionValue) = operands.head
+                        handleException(
+                            exceptionValue,
+                            testForNullnessOfExceptionValue = true,
+                            // athrow throws AT MOST  one implicit exception and the case of
+                            // potentially overlapping implicit and explicit exceptions
+                            // related to NullPointerException is handled by "testForNull..=true"
+                            forceJoin = false
+                        )
 
                     //
                     // CREATE ARRAY
@@ -2157,12 +2234,14 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                             case LongType.atype ⇒
                                 theDomain.newarray(pc, count, LongType)
                         }
+                        // TODO Consider modeling of OutOfMemoryErrors here!
                         computationWithReturnValueAndException(computation, rest)
 
                     case 189 /*anewarray*/ ⇒
                         val count :&: rest = operands
                         val componentType = instruction.asInstanceOf[ANEWARRAY].componentType
                         val computation = theDomain.newarray(pc, count, componentType)
+                        // TODO Consider modeling of OutOfMemoryErrors here!
                         computationWithReturnValueAndException(computation, rest)
 
                     case 197 /*multianewarray*/ ⇒
@@ -2171,6 +2250,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                         val dimensionSizes = operands.take(multianewarray.dimensions)
                         val arrayType = multianewarray.arrayType
                         val computation = theDomain.multianewarray(pc, dimensionSizes, arrayType)
+                        // TODO Consider modeling of OutOfMemoryErrors here!
                         computationWithReturnValueAndException(computation, operands.drop(dimensions))
 
                     //
@@ -2272,7 +2352,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
 
                     case 178 /*getstatic*/ ⇒
                         val getstatic = instruction.asInstanceOf[GETSTATIC]
-                        computationWithReturnValueAndException(
+                        computationWithReturnValue(
                             theDomain.getstatic(
                                 pc,
                                 getstatic.declaringClass,
@@ -2300,7 +2380,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                     case 179 /*putstatic*/ ⇒
                         val putstatic = instruction.asInstanceOf[PUTSTATIC]
                         val value :&: rest = operands
-                        computationWithException(
+                        computation(
                             theDomain.putstatic(
                                 pc,
                                 value,
@@ -2326,7 +2406,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                                 operands.take(argsCount)
                             )
                         val newOperands = operands.drop(argsCount)
-                        computationWithReturnValueAndExceptions(computation, newOperands)
+                        computationWithOptionalReturnValueAndExceptions(computation, newOperands)
 
                     case 185 /*invokeinterface*/ ⇒
                         val invoke = instruction.asInstanceOf[INVOKEINTERFACE]
@@ -2458,57 +2538,123 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                     case 75 /*astore_0*/
                         | 67 /*fstore_0*/
                         | 59 /*istore_0*/ ⇒
-                        fallThrough(operands.tail, locals.updated(0, operands.head))
+                        handleRegisterStore(locals.updated(0, operands.head))
+
                     case 63 /*lstore_0*/
                         | 71 /*dstore_0*/ ⇒
-                        val newLocals = locals.
-                            updated(0, operands.head).
-                            updated(1, null) // the 2nd slot is used by the long/double value
-                        fallThrough(operands.tail, newLocals)
+                        // ... the 2nd slot is used by the long/double value:
+                        handleRegisterStore(locals.updated(0, operands.head, null))
 
                     case 76 /*astore_1*/
                         | 68 /*fstore_1*/
                         | 60 /*istore_1*/ ⇒
-                        val previousLocal = locals(0)
-                        if (null != previousLocal && {
-                            val verificationTypeInfo = previousLocal.verificationTypeInfo
-                            verificationTypeInfo != DoubleVariableInfo &&
-                                verificationTypeInfo != LongVariableInfo
-                        }) {
-                            fallThrough(operands.tail, locals.updated(1, operands.head))
-                        } else {
-                            fallThrough(
-                                operands.tail,
+                        val local0 = locals(0)
+                        if (local0 != null && local0.hasCategory2ComputationalType) {
+                            // ... the previous "long or double" is no longer valid!
+                            handleRegisterStore(
                                 locals.updated(0, theDomain.TheIllegalValue, operands.head)
                             )
+                        } else {
+                            handleRegisterStore(locals.updated(1, operands.head))
                         }
+
                     case 72 /*dstore_1*/
                         | 64 /*lstore_1*/ ⇒
-                        fallThrough(operands.tail, locals.updated(1, operands.head, null))
+                        val local0 = locals(0)
+                        if (local0 != null && local0.hasCategory2ComputationalType) {
+                            // ... the previous "long or double" is no longer valid!
+                            handleRegisterStore(
+                                locals.updated(0, theDomain.TheIllegalValue, operands.head, null)
+                            )
+                        } else {
+                            handleRegisterStore(locals.updated(1, operands.head, null))
+                        }
+
                     case 77 /*astore_2*/
                         | 69 /*fstore_2*/
                         | 61 /*istore_2*/ ⇒
-                        fallThrough(operands.tail, locals.updated(2, operands.head))
+                        val local1 = locals(1)
+                        val newLocals =
+                            if (local1 != null && local1.hasCategory2ComputationalType) {
+                                // ... the previous "long or double" is no longer valid!
+                                locals.updated(1, theDomain.TheIllegalValue, operands.head)
+                            } else {
+                                locals.updated(2, operands.head)
+                            }
+                        handleRegisterStore(newLocals)
+
                     case 73 /*dstore_2*/
                         | 65 /*lstore_2*/ ⇒
-                        fallThrough(operands.tail, locals.updated(2, operands.head, null))
+                        val local1 = locals(1)
+                        val newLocals =
+                            if (local1 != null && local1.hasCategory2ComputationalType) {
+                                // ... the previous "long or double" is no longer valid!
+                                locals.updated(1, theDomain.TheIllegalValue, operands.head, null)
+                            } else {
+                                locals.updated(2, operands.head, null)
+                            }
+                        handleRegisterStore(newLocals)
+
                     case 78 /*astore_3*/
                         | 70 /*fstore_3*/
                         | 62 /*istore_3*/ ⇒
-                        fallThrough(operands.tail, locals.updated(3, operands.head))
+                        val local2 = locals(2)
+                        val newLocals =
+                            if (local2 != null && local2.hasCategory2ComputationalType) {
+                                // ... the previous "long or double" is no longer valid!
+                                locals.updated(2, theDomain.TheIllegalValue, operands.head)
+                            } else {
+                                locals.updated(3, operands.head)
+                            }
+                        handleRegisterStore(newLocals)
+
                     case 74 /*dstore_3*/
                         | 66 /*lstore_3*/ ⇒
-                        fallThrough(operands.tail, locals.updated(3, operands.head, null))
+                        val local2 = locals(2)
+                        val newLocals =
+                            if (local2 != null && local2.hasCategory2ComputationalType) {
+                                // ... the previous "long or double" is no longer valid!
+                                locals.updated(2, theDomain.TheIllegalValue, operands.head, null)
+                            } else {
+                                locals.updated(3, operands.head, null)
+                            }
+                        handleRegisterStore(newLocals)
 
                     case 58 /*astore*/
                         | 56 /*fstore*/
                         | 54 /*istore*/ ⇒
                         val lvIndex = as[StoreLocalVariableInstruction](instruction).lvIndex
-                        fallThrough(operands.tail, locals.updated(lvIndex, operands.head))
+                        val newLocals =
+                            if (lvIndex > 0 && {
+                                val lvIndexM1Local = locals(lvIndex - 1)
+                                lvIndexM1Local != null &&
+                                    lvIndexM1Local.hasCategory2ComputationalType
+                            }) {
+                                // ... the previous "long or double" is no longer valid!
+                                locals.updated(lvIndex - 1, theDomain.TheIllegalValue, operands.head)
+                            } else {
+                                locals.updated(lvIndex, operands.head)
+                            }
+                        handleRegisterStore(newLocals)
+
                     case 57 /*dstore*/
                         | 55 /*lstore*/ ⇒
                         val lvIndex = as[StoreLocalVariableInstruction](instruction).lvIndex
-                        fallThrough(operands.tail, locals.updated(lvIndex, operands.head, null))
+                        val newLocals =
+                            if (lvIndex > 0 && {
+                                val lvIndexM1Local = locals(lvIndex - 1)
+                                lvIndexM1Local != null &&
+                                    lvIndexM1Local.hasCategory2ComputationalType
+                            }) {
+                                // ... the previous "long or double" is no longer valid!
+                                locals.updated(
+                                    lvIndex - 1,
+                                    theDomain.TheIllegalValue, operands.head, null
+                                )
+                            } else {
+                                locals.updated(lvIndex, operands.head, null)
+                            }
+                        handleRegisterStore(newLocals)
 
                     //
                     // PUSH CONSTANT VALUE
@@ -2520,8 +2666,10 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                         val value = instruction.asInstanceOf[BIPUSH].value.toByte
                         fallThrough(theDomain.ByteValue(pc, value) :&: operands)
 
-                    case 14 /*dconst_0*/ ⇒ fallThrough(theDomain.DoubleValue(pc, 0.0d) :&: operands)
-                    case 15 /*dconst_1*/ ⇒ fallThrough(theDomain.DoubleValue(pc, 1.0d) :&: operands)
+                    case 14 /*dconst_0*/ ⇒
+                        fallThrough(theDomain.DoubleValue(pc, 0.0d) :&: operands)
+                    case 15 /*dconst_1*/ ⇒
+                        fallThrough(theDomain.DoubleValue(pc, 1.0d) :&: operands)
 
                     case 11 /*fconst_0*/ ⇒ fallThrough(theDomain.FloatValue(pc, 0.0f) :&: operands)
                     case 12 /*fconst_1*/ ⇒ fallThrough(theDomain.FloatValue(pc, 1.0f) :&: operands)
@@ -2815,7 +2963,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                             // if objectref is null => UNCHANGED (see spec. for details)
                             fallThrough()
                         else {
-                            theDomain.isValueSubtypeOf(objectref, supertype) match {
+                            theDomain.isValueASubtypeOf(objectref, supertype) match {
                                 case Yes ⇒
                                     // if objectref is a subtype => UNCHANGED
                                     fallThrough()
@@ -2824,7 +2972,8 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                                     if (isNull.isNo) {
                                         handleException(
                                             theDomain.VMClassCastException(pc),
-                                            testForNullnessOfExceptionValue = false
+                                            testForNullnessOfExceptionValue = false,
+                                            forceJoin = false
                                         )
                                     } else { // isNull is unknown
                                         val (newOperands, newLocals) =
@@ -2834,7 +2983,8 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                                         if (theDomain.throwClassCastException) {
                                             handleException(
                                                 theDomain.VMClassCastException(pc),
-                                                testForNullnessOfExceptionValue = false
+                                                testForNullnessOfExceptionValue = false,
+                                                forceJoin = false
                                             )
                                         }
                                     }
@@ -2851,19 +3001,20 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                                     assert(
                                         {
                                             val castedValue = newOperands.head
-                                            theDomain.isValueSubtypeOf(castedValue, supertype).isYes
+                                            theDomain.isValueASubtypeOf(castedValue, supertype).isYes
                                         },
                                         s"the cast of $objectref to ${supertype.toJava} failed: "+
                                             s"the subtyping relation between "+
                                             s"${newOperands.head} and ${supertype.toJava} is "+
-                                            theDomain.isValueSubtypeOf(newOperands.head, supertype)
+                                            theDomain.isValueASubtypeOf(newOperands.head, supertype).isYes
                                     )
                                     fallThrough(newOperands, newLocals)
 
                                     if (theDomain.throwClassCastException) {
                                         handleException(
                                             theDomain.VMClassCastException(pc),
-                                            testForNullnessOfExceptionValue = false
+                                            testForNullnessOfExceptionValue = false,
+                                            forceJoin = false
                                         )
                                     }
                             }
@@ -2882,7 +3033,7 @@ abstract class AI[D <: Domain]( final val IdentifyDeadVariables: Boolean = true)
                             if (valueIsNull.isYes)
                                 theDomain.BooleanValue(pc, false)
                             else
-                                theDomain.isValueSubtypeOf(value, referenceType) match {
+                                theDomain.isValueASubtypeOf(value, referenceType) match {
                                     case No ⇒
                                         theDomain.BooleanValue(pc, false)
 
