@@ -21,6 +21,7 @@ import org.opalj.br.analyses.DeclaredMethods
 private[cg] class CalleesAndCallers(
         private[this] var _callees: IntMap[IntTrieSet] = IntMap.empty
 ) {
+
     private[this] var _incompleteCallsites: IntTrieSet = IntTrieSet.empty
 
     private[this] var _partialResultsForCallers: List[PartialResult[DeclaredMethod, CallersProperty]] =
@@ -32,13 +33,17 @@ private[cg] class CalleesAndCallers(
         _partialResultsForCallers
     }
 
+    private[cg] def clearPartialResultsForCallers(): Unit = {
+        _partialResultsForCallers = Nil
+    }
+
     private[cg] def incompleteCallsites: IntTrieSet = _incompleteCallsites
 
     private[cg] def addIncompleteCallsite(pc: Int): Unit = _incompleteCallsites += pc
 
     private[cg] def updateWithCall(
         caller: DeclaredMethod, callee: DeclaredMethod, pc: Int
-    )(implicit declaredMethods: DeclaredMethods): Unit = {
+    ): Unit = {
         val calleeId = callee.id
         if (!_callees.contains(pc) || !_callees(pc).contains(calleeId)) {
             _callees = _callees.updated(pc, _callees.getOrElse(pc, IntTrieSet.empty) + calleeId)
@@ -72,7 +77,7 @@ private[cg] class CalleesAndCallers(
 
     private[this] def createPartialResultForCaller(
         caller: DeclaredMethod, callee: DeclaredMethod, pc: Int
-    )(implicit declaredMethods: DeclaredMethods): PartialResult[DeclaredMethod, CallersProperty] = {
+    ): PartialResult[DeclaredMethod, CallersProperty] = {
         PartialResult[DeclaredMethod, CallersProperty](callee, CallersProperty.key, {
             case IntermediateESimpleP(_, ub) ⇒
                 val newCallers = ub.updated(caller, pc)
@@ -104,7 +109,7 @@ private[cg] class IndirectCalleesAndCallers(
 
     private[cg] override def updateWithCall(
         caller: DeclaredMethod, callee: DeclaredMethod, pc: Int
-    )(implicit declaredMethods: DeclaredMethods): Unit = {
+    ): Unit = {
         throw new UnsupportedOperationException("Use updateWithIndirectCall instead!")
     }
 
@@ -113,7 +118,7 @@ private[cg] class IndirectCalleesAndCallers(
         callee:     DeclaredMethod,
         pc:         Int,
         parameters: Seq[Option[(ValueInformation, IntTrieSet)]]
-    )(implicit declaredMethods: DeclaredMethods): Unit = {
+    ): Unit = {
         super.updateWithCall(caller, callee, pc)
         _parameters = _parameters.updated(
             pc,

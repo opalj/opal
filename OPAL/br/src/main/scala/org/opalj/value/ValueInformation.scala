@@ -257,7 +257,7 @@ object IsPrimitiveValue {
 
 }
 
-trait IsIntegerLikeValue[T <: BaseType] extends IsPrimitiveValue[T] {
+sealed trait IsIntegerLikeValue[T <: BaseType] extends IsPrimitiveValue[T] {
     final override def verificationTypeInfo: VerificationTypeInfo = IntegerVariableInfo
 }
 
@@ -526,7 +526,7 @@ trait IsReferenceValue extends KnownTypedValue {
     def baseValues: Traversable[IsReferenceValue]
 
     /**
-     * The set of base values ([[IsBaseReferenceValue]]) this value abstracts over.
+     * The set of base values (`IsReferenceValue`) this value abstracts over.
      * This set is never empty and contains this value if this value does not (further) abstract
      * over other reference values; otherwise it only contains the base values,
      * but not `this` value.

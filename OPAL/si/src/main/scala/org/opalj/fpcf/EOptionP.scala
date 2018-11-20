@@ -53,11 +53,12 @@ sealed trait EOptionP[+E <: Entity, +P <: Property] {
 
     /**
      * Combines the test if we have a final property and – if we have one – if it is equal (by
-     * means of equality check) to the given one.
+     * means of an equality check) to the given one.
      */
     def is(p: AnyRef): Boolean = /*this.hasProperty && */ this.isFinal && this.ub == p
 
     private[fpcf] def toUBEP: FinalEP[E, P]
+    private[fpcf] def toLBEP: FinalEP[E, P]
 
     /**
      * Returns the upper bound of the property if it is available – [[hasProperty]] has to be
@@ -145,7 +146,8 @@ sealed trait EPS[+E <: Entity, +P <: Property] extends EOptionP[E, P] {
      *
      * @note No check is done whether the property is actually final.
      */
-    final def toUBEP: FinalEP[E, P] = FinalEP(e, ub)
+    override def toUBEP: FinalEP[E, P] = FinalEP(e, ub)
+    override def toLBEP: FinalEP[E, P] = FinalEP(e, lb)
 
     final override def hasProperty: Boolean = true
     final override def asEPS: EPS[E, P] = this
@@ -289,6 +291,9 @@ final class FinalEP[+E <: Entity, +P <: Property](val e: E, val ub: P) extends E
 
     def p: P = ub // or lb
 
+    override def toUBEP: FinalEP[E, P] = this
+    override def toLBEP: FinalEP[E, P] = this
+
     override def equals(other: Any): Boolean = {
         other match {
             case that: FinalEP[_, _] ⇒ that.e == this.e && this.p == that.p
@@ -332,6 +337,7 @@ final class EPK[+E <: Entity, +P <: Property](
     override def asFinal: FinalEP[E, P] = throw new ClassCastException();
 
     private[fpcf] def toUBEP: FinalEP[E, P] = throw new UnsupportedOperationException();
+    private[fpcf] def toLBEP: FinalEP[E, P] = throw new UnsupportedOperationException();
 
     override def hasProperty: Boolean = false
     override def asEPS: EPS[E, P] = throw new ClassCastException();

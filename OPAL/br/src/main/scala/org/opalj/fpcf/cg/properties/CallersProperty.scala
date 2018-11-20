@@ -29,7 +29,7 @@ sealed trait CallersProperty extends Property with OrderedProperty with CallersP
 
     def callers(implicit declaredMethods: DeclaredMethods): TraversableOnce[(DeclaredMethod, Int /*PC*/ )]
 
-    def updated(caller: DeclaredMethod, pc: Int)(implicit declaredMethods: DeclaredMethods): CallersProperty
+    def updated(caller: DeclaredMethod, pc: Int): CallersProperty
 
     def updatedWithUnknownContext(): CallersProperty
 
@@ -77,7 +77,7 @@ sealed trait EmptyConcreteCallers extends CallersProperty {
 
     final override def updated(
         caller: DeclaredMethod, pc: Int
-    )(implicit declaredMethods: DeclaredMethods): CallersProperty = {
+    ): CallersProperty = {
         val set = LongTrieSet(CallersProperty.toLong(caller.id, pc))
 
         if (!hasCallersWithUnknownContext && !hasVMLevelCallers) {
@@ -129,7 +129,7 @@ class CallersOnlyWithConcreteCallers(
 
     override def updated(
         caller: DeclaredMethod, pc: Int
-    )(implicit declaredMethods: DeclaredMethods): CallersProperty = {
+    ): CallersProperty = {
         val encodedCaller = CallersProperty.toLong(caller.id, pc)
         if (encodedCallers.contains(encodedCaller))
             this
@@ -165,7 +165,7 @@ class CallersImplWithOtherCalls(
 
     override def updated(
         caller: DeclaredMethod, pc: Int
-    )(implicit declaredMethods: DeclaredMethods): CallersProperty = {
+    ): CallersProperty = {
         val encodedCaller = CallersProperty.toLong(caller.id, pc)
         if (encodedCallers.contains(encodedCaller: java.lang.Long))
             this

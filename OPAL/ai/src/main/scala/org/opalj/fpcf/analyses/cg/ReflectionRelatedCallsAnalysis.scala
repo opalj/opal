@@ -188,6 +188,8 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
     }
 
     implicit private[this] val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
+
+    // todo move this to instantiatedTypes analysis
     private[this] val initialInstantiatedTypes: UIDSet[ObjectType] =
         UIDSet(project.get(InitialInstantiatedTypesKey).toSeq: _*)
 
@@ -948,7 +950,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         if (pc.isDefined) {
             state.calleesAndCallers.addIncompleteCallsite(pc.get)
         }
-        if (state.hasSystemProperties) {
+        if (!state.hasSystemProperties) {
             Iterator.empty
         } else {
             val keys = getPossibleStrings(value, None, onlyStringConsts = true)
@@ -1344,7 +1346,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         }
 
         if (state.newInstantiatedTypes.nonEmpty)
-            res ::= RTACallGraphAnalysis.partialResultForInstantiatedTypes(
+            res ::= InstantiatedTypesAnalysis.partialResultForInstantiatedTypes(
                 p, state.newInstantiatedTypes, initialInstantiatedTypes
             )
 

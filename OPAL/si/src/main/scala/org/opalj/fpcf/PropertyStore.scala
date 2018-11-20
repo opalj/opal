@@ -2,10 +2,12 @@
 package org.opalj
 package fpcf
 
-import org.opalj.collection.immutable.IntTrieSet
+import java.util.concurrent.ConcurrentHashMap
 
+import org.opalj.collection.immutable.IntTrieSet
 import scala.util.control.ControlThrowable
 import scala.collection.{Map ⇒ SomeMap}
+
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.info
@@ -13,8 +15,8 @@ import org.opalj.log.OPALLogger.error
 import org.opalj.fpcf.PropertyKind.SupportedPropertyKinds
 
 /**
- * A property store manages the execution of computations of properties related to specific
- * concrete as well as artificial entities (e.g., methods, fields and classes of a program, but
+ * A property store manages the execution of computations of properties related to concrete
+ * entities as well as artificial entities (e.g., methods, fields and classes of a program, but
  * also the call graph as such etc.). These computations may require and
  * provide information about other entities of the store and the property store implements the logic
  * to handle the computations related to the dependencies between the entities.
@@ -71,12 +73,13 @@ import org.opalj.fpcf.PropertyKind.SupportedPropertyKinds
  * ==Thread Safety==
  * The sequential property stores are not thread-safe; the parallelized implementation(s) are
  * thread-safe in the following manner:
- *  - a client has to use the SAME thread (the driver thread) to call the [[setupPhase]],
- *    [[registerLazyPropertyComputation]], [[scheduleEagerComputationForEntity]] /
- *    [[scheduleEagerComputationsForEntities]], [[force]] and (finally)
- *    [[PropertyStore#waitOnPhaseCompletion]] methods. Hence, the previously mentioned methods MUST
- *    NO be called by PropertyComputation/OnUpdateComputation functions.
- *    The methods to query the store (`apply`) are thread-safe and can be called at any time.
+ *  - a client has to use the SAME thread (the driver thread) to call the (1) [[setupPhase]],
+ *    (2) [[registerLazyPropertyComputation]] or [[registerTriggeredComputation]], (3)
+ *    [[scheduleEagerComputationForEntity]] / [[scheduleEagerComputationsForEntities]],
+ *    (4) [[force]] and (finally) [[PropertyStore#waitOnPhaseCompletion]] methods.
+ *    Hence, the previously mentioned methods MUST NOT be called by
+ *    PropertyComputation/OnUpdateComputation functions. The methods to query the store (`apply`)
+ *    are thread-safe and can be called at any time.
  *
  * ==Common Abbreviations==
  *  - e =         Entity
@@ -97,9 +100,9 @@ import org.opalj.fpcf.PropertyKind.SupportedPropertyKinds
  * debugging (and assertions!) off to get the best performance.
  *
  * We will throw `IllegalArgumentException`'s iff a parameter is in itself invalid. E.g., the lower
- * and upper bound do not have the same [[PropertyKind]]. In all other cases `IllegalStateException`s
- * are thrown. All exceptions are either thrown immediately or eventually, when
- * [[PropertyStore#waitOnPhaseCompletion]] is called. In the latter case, the exceptions are
+ * and upper bound do not have the same [[PropertyKind]]. In all other cases
+ * `IllegalStateException`s are thrown. All exceptions are either thrown immediately or eventually,
+ * when [[PropertyStore#waitOnPhaseCompletion]] is called. In the latter case, the exceptions are
  * accumulated in the first thrown exception using suppressed exceptions.
  *
  * @author Michael Eichberg
@@ -107,6 +110,52 @@ import org.opalj.fpcf.PropertyKind.SupportedPropertyKinds
 abstract class PropertyStore {
 
     implicit val logContext: LogContext
+
+    //
+    //
+    // FUNCTIONALITY TO ASSOCIATE SOME INFORMATION WITH THE STORE THAT
+    // (TYPICALLY) HAS THE SAME AS THE PROPERTYSTORE
+    //
+    //
+
+    private[this] val externalInformation = new ConcurrentHashMap[AnyRef, AnyRef]()
+
+    /**
+     * Attaches or returns some information associated with the property store using a key object.
+     *
+     * This facility is in particular well suited to attach information with the property store
+     * which has the same life-time. For example, this mechanism is used to associate the
+     * property store specific cycle resolution strategies with the store.
+     *
+     * This method is thread-safe. However, the client which adds information to the store
+     * has to ensure that the overall process of adding/querying/removing is well defined and
+     * the ordered is ensured.
+     */
+    final def getOrCreateInformation[T <: AnyRef](key: AnyRef, f: ⇒ T): T = {
+        externalInformation.computeIfAbsent(key, _ ⇒ f).asInstanceOf[T]
+    }
+
+    /**
+     * Returns the information stored in the store, if any.
+     *
+     * This method is thread-safe. However, the client which adds information to the store
+     * has to ensure that the overall process of adding/querying/removing is well defined and
+     * the ordered is ensured.
+     */
+    final def getInformation[T <: AnyRef](key: AnyRef): Option[T] = {
+        Option(externalInformation.get(key).asInstanceOf[T])
+    }
+
+    /**
+     * Returns the information stored in the store and removes the key, if any.
+     *
+     * This method is thread-safe. However, the client which adds information to the store
+     * has to ensure that the overall process of adding/querying/removing is well defined and
+     * the ordered is ensured.
+     */
+    final def getAndClearInformation[T <: AnyRef](key: AnyRef): Option[T] = {
+        Option(externalInformation.remove(key).asInstanceOf[T])
+    }
 
     //
     //
@@ -159,7 +208,7 @@ abstract class PropertyStore {
      * If "debug" is `true` and we have an update related to an ordered property,
      * we will then check if the update is correct!
      */
-    final def debug: Boolean = PropertyStore.Debug
+    final val debug: Boolean = PropertyStore.Debug
 
     final def traceFallbacks: Boolean = PropertyStore.TraceFallbacks
 
@@ -220,7 +269,10 @@ abstract class PropertyStore {
     /** The number of properties that were computed using a fast-track. */
     def fastTrackPropertiesCount: Int
 
-    /** Core statistics. */
+    /**
+     * Reports core statistics; this method is only guaranteed to report ''final'' results
+     * if it is called while the store is quiescent.
+     */
     def statistics: SomeMap[String, Int]
 
     //
@@ -410,16 +462,18 @@ abstract class PropertyStore {
      * In general, the result can't be an `IncrementalResult` and `scheduleLazyPropertyComputation`
      * cannot be used for properties which should be computed by phased analyses.
      *
-     * '''A lazy computation must never return a [[NoResult]]; if the entity cannot be processed an
-     * exception has to be thrown or the bottom value has to be returned.'''
+     * ''A lazy computation must never return a [[NoResult]]; if the entity cannot be processed an
+     * exception has to be thrown or the bottom value has to be returned.''
      *
-     * Setting `scheduleLazyPropertyComputation` is only supported as long as the store is not
-     * queried. In general, this requires that lazy property computations are scheduled before
-     * any eager analysis that potentially reads the value.
+     * '''Calling `registerLazyPropertyComputation` is only supported as long as the store is not
+     * queried and no computations are already running.
+     * In general, this requires that lazy property computations are scheduled before any eager
+     * analysis that potentially reads the value.'''
      */
     def registerLazyPropertyComputation[E <: Entity, P <: Property](
-        pk: PropertyKey[P],
-        pc: PropertyComputation[E]
+        pk:       PropertyKey[P],
+        pc:       PropertyComputation[E],
+        finalEPs: TraversableOnce[FinalEP[E, P]] = Iterator.empty
     ): Unit
 
     private[fpcf] val simultaneouslyLazilyComputedPropertyKinds: Array[IntTrieSet /*Set[PKId]*/ ] = {
@@ -632,7 +686,7 @@ abstract class PropertyStore {
  */
 object PropertyStore {
 
-    final val DebugKey = "org.opalj.debug.fpcf.PropertyStore.Debug"
+    final val DebugKey = "org.opalj.fpcf.PropertyStore.Debug"
 
     private[this] var debug: Boolean = {
         val initialDebug = BaseConfig.getBoolean(DebugKey)
@@ -640,17 +694,25 @@ object PropertyStore {
         initialDebug
     }
 
-    // We think of it as a runtime constant (which can be changed for testing purposes).
+    /**
+     * Determines if newly created property stores are created with debug turned on or off.
+     *
+     * Does NOT affect existing instances!
+     */
     def Debug: Boolean = debug
 
+    /**
+     * Determines if new `PropertyStore` instances run with debugging or without debugging.
+     *
+     */
     def updateDebug(newDebug: Boolean): Unit = {
         implicit val logContext = GlobalLogContext
         debug =
             if (newDebug) {
-                info("OPAL", s"$DebugKey: debugging support on")
+                info("OPAL", s"$DebugKey: debugging support on for new PropertyStores")
                 true
             } else {
-                info("OPAL", s"$DebugKey: debugging support off")
+                info("OPAL", s"$DebugKey: debugging support off for new PropertyStores")
                 false
             }
     }
@@ -660,7 +722,7 @@ object PropertyStore {
     // about debugging analyses.
     //
 
-    final val TraceFallbacksKey = "org.opalj.debug.fpcf.PropertyStore.TraceFallbacks"
+    final val TraceFallbacksKey = "org.opalj.fpcf.PropertyStore.TraceFallbacks"
 
     private[this] var traceFallbacks: Boolean = {
         val initialTraceFallbacks = BaseConfig.getBoolean(TraceFallbacksKey)
@@ -683,7 +745,7 @@ object PropertyStore {
             }
     }
 
-    final val TraceCycleResolutionsKey = "org.opalj.debug.fpcf.PropertyStore.TraceCycleResolutions"
+    final val TraceCycleResolutionsKey = "org.opalj.fpcf.PropertyStore.TraceCycleResolutions"
 
     private[this] var traceCycleResolutions: Boolean = {
         val initialTraceCycleResolutions = BaseConfig.getBoolean(TraceCycleResolutionsKey)

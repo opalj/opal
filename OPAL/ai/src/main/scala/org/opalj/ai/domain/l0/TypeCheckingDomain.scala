@@ -91,7 +91,10 @@ final class TypeCheckingDomain(
     ) extends SObjectValue {
         this: DomainObjectValue ⇒
 
-        override def isPrecise: Boolean = origin != -1 // we are talking about uninitialized this
+        override def isPrecise: Boolean = {
+            origin != -1 /* "-1" means that we are talking about "uninitialized this" */ ||
+                classHierarchy.isKnownToBeFinal(theUpperTypeBound)
+        }
 
         // joins of an uninitialized value with null results in an illegal value
         override def isNull: Answer = No

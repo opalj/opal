@@ -14,7 +14,10 @@ import org.opalj.br.instructions.MethodInvocationInstruction
 import org.opalj.br.reader.Java8Framework.ClassFiles
 import org.opalj.fpcf.cg.properties.CallersProperty
 import org.opalj.fpcf.cg.properties.Callees
+import org.opalj.fpcf.cg.properties.ReflectionRelatedCallees
+import org.opalj.fpcf.cg.properties.SerializationRelatedCallees
 import org.opalj.fpcf.cg.properties.StandardInvokeCallees
+import org.opalj.tac.fpcf.analyses.LazyL0TACAIAnalysis
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
 import org.scalatest.junit.JUnitRunner
@@ -50,7 +53,15 @@ class RTAIntegrationTest extends FlatSpec with Matchers {
         EagerLoadedClassesAnalysis,
         EagerFinalizerAnalysisScheduler,
         EagerThreadRelatedCallsAnalysis,
-        new LazyCalleesAnalysis(Set(StandardInvokeCallees))
+        EagerSerializationRelatedCallsAnalysis,
+        EagerReflectionRelatedCallsAnalysis,
+        SystemPropertiesAnalysis,
+        EagerConfiguredNativeMethodsAnalysis,
+        EagerInstantiatedTypesAnalysis,
+        LazyL0TACAIAnalysis,
+        new LazyCalleesAnalysis(
+            Set(StandardInvokeCallees, SerializationRelatedCallees, ReflectionRelatedCallees)
+        )
     )
     implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
     for (dm ← declaredMethods.declaredMethods) { propertyStore(dm, Callees.key) }

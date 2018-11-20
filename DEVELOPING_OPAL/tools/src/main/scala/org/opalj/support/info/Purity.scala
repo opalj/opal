@@ -38,7 +38,9 @@ import org.opalj.fpcf.analyses.LazyL1FieldMutabilityAnalysis
 import org.opalj.fpcf.analyses.LazyStaticDataUsageAnalysis
 import org.opalj.fpcf.analyses.LazyTypeImmutabilityAnalysis
 import org.opalj.fpcf.analyses.SystemPropertiesAnalysis
+import org.opalj.fpcf.analyses.cg.EagerConfiguredNativeMethodsAnalysis
 import org.opalj.fpcf.analyses.cg.EagerFinalizerAnalysisScheduler
+import org.opalj.fpcf.analyses.cg.EagerInstantiatedTypesAnalysis
 import org.opalj.fpcf.analyses.cg.EagerLibraryEntryPointsAnalysis
 import org.opalj.fpcf.analyses.cg.EagerLoadedClassesAnalysis
 import org.opalj.fpcf.analyses.cg.EagerRTACallGraphAnalysisScheduler
@@ -107,6 +109,8 @@ object Purity {
         EagerThreadRelatedCallsAnalysis,
         EagerSerializationRelatedCallsAnalysis,
         EagerReflectionRelatedCallsAnalysis,
+        EagerInstantiatedTypesAnalysis,
+        EagerConfiguredNativeMethodsAnalysis,
         SystemPropertiesAnalysis,
         new LazyCalleesAnalysis(
             Set(StandardInvokeCallees, SerializationRelatedCallees, ReflectionRelatedCallees)
@@ -227,11 +231,10 @@ object Purity {
             } { t ⇒ tacTime = t.toSeconds }
         }
 
+        PropertyStore.updateDebug(debug)
         val propertyStore = time {
             project.get(PropertyStoreKey)
         } { t ⇒ propertyStoreTime = t.toSeconds }
-
-        PropertyStore.updateDebug(debug)
 
         analysis match {
             case LazyL0PurityAnalysis ⇒
@@ -495,7 +498,7 @@ object Purity {
             if (domainName.isEmpty)
                 classOf[domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse[_]]
             else {
-                Class.forName(raterName.get).asInstanceOf[Class[Domain with RecordDefUse]]
+                Class.forName(domainName.get).asInstanceOf[Class[Domain with RecordDefUse]]
             }
 
         val rater = if (raterName.isEmpty) {

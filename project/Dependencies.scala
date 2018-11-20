@@ -16,8 +16,8 @@ object Dependencies {
 
         val scalaxml = "1.1.1"
         val playjson = "2.6.10"
-        val ficus = "1.4.3"
-        val commonstext = "1.4"
+        val ficus = "1.4.4"
+        val commonstext = "1.6"
         val scalaparsercombinators = "1.1.1"
 
         val scalafx = "8.0.181-R13"
@@ -25,7 +25,7 @@ object Dependencies {
         //val controlsfx = "9.0.0" requires Java 9
         val txtmark = "0.16"
         val jacksonDF = "2.9.7"
-        val chocosolver = "4.0.8"
+        val chocosolver = "4.0.9"
         val fastutil = "8.2.2"
     }
 
@@ -62,9 +62,13 @@ object Dependencies {
     val testlibs: Seq[ModuleID] = Seq(junit, scalatest, scalacheck)
 
     def common(scalaVersion: String) = Seq(reflect(scalaVersion), scalaxml, playjson, ficus, fastutil)
+    
     val si = Seq()
     val bi = Seq(commonstext)
     val br = Seq(scalaparsercombinators, scalaxml)
-    val developertools = Seq(scalafx, controlsfx, txtmark, jacksonDF, chocosolver)
+    val developerTools = Seq(scalafx, controlsfx, txtmark, jacksonDF, chocosolver)
+    val hermesCore = Seq(scalafx, controlsfx, txtmark, jacksonDF, chocosolver)
+    val hermesUI = Seq(scalafx, controlsfx, txtmark, jacksonDF, chocosolver)
+
 
 }

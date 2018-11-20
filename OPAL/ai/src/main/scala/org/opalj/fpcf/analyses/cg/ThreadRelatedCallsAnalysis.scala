@@ -317,7 +317,7 @@ class ThreadRelatedCallsAnalysis private[analyses] (
 
     /**
      * Handles the case of a call to `run` of a thread object, that holds a instance of
-     * [[Runable]] (passed as an argument to the constructor).
+     * [[Runnable]] (passed as an argument to the constructor).
      *
      * Note: It takes the given `threadRelatedMethods`, add the relavant ones and returns the
      * updated set.

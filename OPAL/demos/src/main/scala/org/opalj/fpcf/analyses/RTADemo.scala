@@ -10,7 +10,9 @@ import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ReportableAnalysisResult
+import org.opalj.fpcf.analyses.cg.EagerConfiguredNativeMethodsAnalysis
 import org.opalj.fpcf.analyses.cg.EagerFinalizerAnalysisScheduler
+import org.opalj.fpcf.analyses.cg.EagerInstantiatedTypesAnalysis
 import org.opalj.fpcf.analyses.cg.EagerLoadedClassesAnalysis
 import org.opalj.fpcf.analyses.cg.EagerRTACallGraphAnalysisScheduler
 import org.opalj.fpcf.analyses.cg.EagerSerializationRelatedCallsAnalysis
@@ -67,6 +69,8 @@ object RTADemo extends DefaultOneStepAnalysis {
                 EagerSerializationRelatedCallsAnalysis,
                 EagerReflectionRelatedCallsAnalysis,
                 SystemPropertiesAnalysis,
+                EagerConfiguredNativeMethodsAnalysis,
+                EagerInstantiatedTypesAnalysis,
                 LazyL0TACAIAnalysis,
                 new LazyCalleesAnalysis(
                     Set(StandardInvokeCallees, SerializationRelatedCallees, ReflectionRelatedCallees)
