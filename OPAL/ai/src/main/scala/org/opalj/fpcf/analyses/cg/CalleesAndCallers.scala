@@ -21,6 +21,7 @@ import org.opalj.br.analyses.DeclaredMethods
 private[cg] class CalleesAndCallers(
         private[this] var _callees: IntMap[IntTrieSet] = IntMap.empty
 ) {
+
     private[this] var _incompleteCallsites: IntTrieSet = IntTrieSet.empty
 
     private[this] var _partialResultsForCallers: List[PartialResult[DeclaredMethod, CallersProperty]] =
@@ -30,6 +31,10 @@ private[cg] class CalleesAndCallers(
 
     private[cg] def partialResultsForCallers: List[PartialResult[DeclaredMethod, CallersProperty]] = {
         _partialResultsForCallers
+    }
+
+    private[cg] def clearPartialResultsForCallers(): Unit = {
+        _partialResultsForCallers = Nil
     }
 
     private[cg] def incompleteCallsites: IntTrieSet = _incompleteCallsites
