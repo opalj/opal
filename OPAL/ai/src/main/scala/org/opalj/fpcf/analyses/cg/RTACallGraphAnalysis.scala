@@ -215,10 +215,6 @@ class RTACallGraphAnalysis private[analyses] (
     def analyze(
         declaredMethod: DeclaredMethod
     ): PropertyComputationResult = {
-
-        if(declaredMethod.toString == "DefinedMethod(declaringClassType=org.opalj.fpcf.fixtures.field_mutability.NondeterministicCall,definedMethod=org.opalj.fpcf.fixtures.field_mutability.NondeterministicCall{ public int init() })")
-            println()
-
         propertyStore(declaredMethod, CallersProperty.key) match {
             case FinalEP(_, NoCallers) ⇒
                 // nothing to do, since there is no caller
@@ -268,8 +264,6 @@ class RTACallGraphAnalysis private[analyses] (
     ): PropertyComputationResult = {
         assert(state.tac().isDefined)
         val tac = state.tac().get
-        if(state.method.toString == "DefinedMethod(declaringClassType=org.opalj.fpcf.fixtures.field_mutability.NondeterministicCall,definedMethod=org.opalj.fpcf.fixtures.field_mutability.NondeterministicCall{ public int init() })")
-            println()
 
         // the set of types that are definitely initialized at this point in time
         val instantiatedTypesEOptP = propertyStore(project, InstantiatedTypes.key)

@@ -13,8 +13,13 @@ import org.opalj.fpcf.analyses.cg.EagerRTACallGraphAnalysisScheduler
 import org.opalj.fpcf.analyses.cg.EagerSerializationRelatedCallsAnalysis
 import org.opalj.fpcf.analyses.cg.EagerLoadedClassesAnalysis
 import org.opalj.fpcf.analyses.cg.EagerReflectionRelatedCallsAnalysis
+import org.opalj.fpcf.analyses.cg.EagerInstantiatedTypesAnalysis
+import org.opalj.fpcf.analyses.cg.LazyCalleesAnalysis
 import org.opalj.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.fpcf.analyses.purity.LazyL2PurityAnalysis
+import org.opalj.fpcf.cg.properties.StandardInvokeCallees
+import org.opalj.fpcf.cg.properties.SerializationRelatedCallees
+import org.opalj.fpcf.cg.properties.ReflectionRelatedCallees
 import org.opalj.tac.fpcf.analyses.LazyL0TACAIAnalysis
 
 /**
@@ -51,12 +56,18 @@ class FieldMutabilityTests extends PropertiesTest {
                 EagerThreadRelatedCallsAnalysis,
                 EagerSerializationRelatedCallsAnalysis,
                 EagerReflectionRelatedCallsAnalysis,
+                EagerInstantiatedTypesAnalysis,
                 SystemPropertiesAnalysis
             ),
             Set(
                 LazyL0TACAIAnalysis,
                 LazyUnsoundPrematurelyReadFieldsAnalysis,
-                LazyInterProceduralEscapeAnalysis
+                LazyInterProceduralEscapeAnalysis,
+                new LazyCalleesAnalysis(Set(
+                    StandardInvokeCallees,
+                    SerializationRelatedCallees,
+                    ReflectionRelatedCallees
+                ))
             )
         )
         as.propertyStore.shutdown()
@@ -73,13 +84,19 @@ class FieldMutabilityTests extends PropertiesTest {
                 EagerThreadRelatedCallsAnalysis,
                 EagerSerializationRelatedCallsAnalysis,
                 EagerReflectionRelatedCallsAnalysis,
+                EagerInstantiatedTypesAnalysis,
                 SystemPropertiesAnalysis
             ),
             Set(
                 LazyUnsoundPrematurelyReadFieldsAnalysis,
                 LazyL2PurityAnalysis,
                 LazyInterProceduralEscapeAnalysis,
-                LazyL0TACAIAnalysis
+                LazyL0TACAIAnalysis,
+                new LazyCalleesAnalysis(Set(
+                    StandardInvokeCallees,
+                    SerializationRelatedCallees,
+                    ReflectionRelatedCallees
+                ))
             )
         )
         as.propertyStore.shutdown()

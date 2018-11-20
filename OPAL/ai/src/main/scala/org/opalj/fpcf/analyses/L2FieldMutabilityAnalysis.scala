@@ -139,9 +139,6 @@ class L2FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
         if (field.isFinal)
             return createResult();
 
-        if(field.classFile.thisType.simpleName.contains("NondeterministicCall"))
-            println()
-
         state.fieldMutability = EffectivelyFinalField
 
         val thisType = field.classFile.thisType
@@ -340,8 +337,6 @@ class L2FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
      * property of the method that initializes a (potentially) lazy initialized field.
      */
     def c(eps: SomeEPS)(implicit state: State): PropertyComputationResult = {
-        if(state.field.classFile.thisType.simpleName.contains("NondeterministicCall"))
-            println()
         val isNotFinal = eps.pk match {
             case EscapeProperty.key ⇒
                 val newEP = eps.asInstanceOf[EOptionP[DefinitionSite, EscapeProperty]]
@@ -364,7 +359,10 @@ class L2FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
                 state.purityDependees = state.purityDependees.filter(_.e ne newEP.e)
                 isNonDeterministic(newEP)
             case FieldMutability.key ⇒
-                !isFinalField(eps.asInstanceOf[EOptionP[Field, FieldMutability]])
+                val newEP = eps.asInstanceOf[EOptionP[Field, FieldMutability]]
+                state.fieldMutabilityDependees =
+                    state.fieldMutabilityDependees.filter(_.e ne newEP.e)
+                !isFinalField(newEP)
         }
 
         if (isNotFinal)
