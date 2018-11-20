@@ -489,11 +489,11 @@ class RTACallGraphAnalysis private[analyses] (
 
                         val m = if (call.isInterface)
                             org.opalj.Result(project.resolveInterfaceMethodReference(
-                                receiverObjectType, call.name, call.descriptor
+                                call.declaringClass.asObjectType, call.name, call.descriptor
                             ))
                         else
                             project.resolveClassMethodReference(
-                                receiverObjectType, call.name, call.descriptor
+                                call.declaringClass.asObjectType, call.name, call.descriptor
                             )
                         if (m.isEmpty || isMethodOverridable(m.value).isYesOrUnknown) {
                             unknownLibraryCall(
@@ -552,10 +552,11 @@ class RTACallGraphAnalysis private[analyses] (
     }
 
     private[this] def returnResult(implicit state: RTAState): PropertyComputationResult = {
-        state.clearPartialResultsForCallers()
-        Results(
+        val results = Results(
             resultForStandardInvokeCallees(state) :: state.partialResultsForCallers
         )
+        state.clearPartialResultsForCallers()
+        results
     }
 
     private[this] def continuation(
