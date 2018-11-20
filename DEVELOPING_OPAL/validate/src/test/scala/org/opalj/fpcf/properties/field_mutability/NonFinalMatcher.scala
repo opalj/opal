@@ -27,6 +27,13 @@ class NonFinalMatcher extends AbstractPropertyMatcher {
     ): Boolean = {
         val annotationType = a.annotationType.asObjectType
 
+        val analysesElementValues =
+            getValue(p, annotationType, a.elementValuePairs, "analyses").asArrayValue.values
+        val analyses = analysesElementValues.map(ev ⇒ ev.asClassValue.value.asObjectType)
+
+        if (!analyses.exists(as.contains))
+            return false;
+
         val prematurelyRead = getValue(p, annotationType, a.elementValuePairs, "prematurelyRead").asInstanceOf[BooleanValue].value
 
         if (prematurelyRead) {

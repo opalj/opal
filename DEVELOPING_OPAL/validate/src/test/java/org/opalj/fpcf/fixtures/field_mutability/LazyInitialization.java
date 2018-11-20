@@ -28,6 +28,9 @@
  */
 package org.opalj.fpcf.fixtures.field_mutability;
 
+import org.opalj.fpcf.analyses.L0FieldMutabilityAnalysis;
+import org.opalj.fpcf.analyses.L1FieldMutabilityAnalysis;
+import org.opalj.fpcf.analyses.L2FieldMutabilityAnalysis;
 import org.opalj.fpcf.properties.field_mutability.DeclaredFinal;
 import org.opalj.fpcf.properties.field_mutability.EffectivelyFinal;
 import org.opalj.fpcf.properties.field_mutability.LazyInitialized;
@@ -40,11 +43,14 @@ import org.opalj.fpcf.properties.field_mutability.NonFinal;
  */
 
 class Simple {
+
     @LazyInitialized("Simple lazy initialization")
+    @NonFinal(value = "Analysis doesn't recognize lazy initialization",
+            analyses = { L0FieldMutabilityAnalysis.class, L1FieldMutabilityAnalysis.class })
     private int x;
 
-    public int init(){
-        if(x == 0){
+    public int init() {
+        if (x == 0) {
             x = 5;
         }
         return x;
@@ -52,12 +58,15 @@ class Simple {
 }
 
 class Local {
+
     @LazyInitialized("Lazy initialization with local")
+    @NonFinal(value = "Analysis doesn't recognize lazy initialization",
+            analyses = { L0FieldMutabilityAnalysis.class, L1FieldMutabilityAnalysis.class })
     private int x;
 
-    public int init(){
+    public int init() {
         int y = this.x;
-        if(y == 0){
+        if (y == 0) {
             x = y = 5;
         }
         return y;
@@ -65,12 +74,13 @@ class Local {
 }
 
 class LocalWrong {
+
     @NonFinal("Incorrect lazy initialization with local")
     private int x;
 
-    public int init(){
+    public int init() {
         int y = this.x;
-        if(y == 0){
+        if (y == 0) {
             x = 5;
         }
         return y;
@@ -78,12 +88,15 @@ class LocalWrong {
 }
 
 class LocalReversed {
+
     @LazyInitialized("Lazy initialization with local (reversed)")
+    @NonFinal(value = "Analysis doesn't recognize lazy initialization",
+            analyses = { L0FieldMutabilityAnalysis.class, L1FieldMutabilityAnalysis.class })
     private int x;
 
-    public int init(){
+    public int init() {
         int y = this.x;
-        if(y == 0){
+        if (y == 0) {
             y = x = 5;
         }
         return y;
@@ -91,12 +104,15 @@ class LocalReversed {
 }
 
 class LocalReload {
+
     @LazyInitialized("Lazy initialization with local (reloading the field's value after the write)")
+    @NonFinal(value = "Analysis doesn't recognize lazy initialization",
+            analyses = { L0FieldMutabilityAnalysis.class, L1FieldMutabilityAnalysis.class })
     private int x;
 
-    public int init(){
+    public int init() {
         int y = this.x;
-        if(y == 0){
+        if (y == 0) {
             x = 5;
             y = x;
         }
@@ -105,26 +121,37 @@ class LocalReload {
 }
 
 class SimpleReversed {
+
     @LazyInitialized("Simple lazy initialization (reversed)")
+    @NonFinal(value = "Analysis doesn't recognize lazy initialization",
+            analyses = { L0FieldMutabilityAnalysis.class, L1FieldMutabilityAnalysis.class })
     private int x;
 
-    public int init(){
-        if(x != 0) return x;
+    public int init() {
+        if (x != 0)
+            return x;
         x = 5;
         return x;
     }
 }
 
 class SimpleWithDifferentDefault {
-    @LazyInitialized("Simple lazy initialization, but different default value")
+
+    @LazyInitialized(value = "Simple lazy initialization, but different default value",
+            analyses = {})
+    @NonFinal(value = "Analysis doesn't recognize lazy initialization with different default")
     private int x;
 
-    public SimpleWithDifferentDefault(){ x = -1; }
+    public SimpleWithDifferentDefault() {
+        x = -1;
+    }
 
-    public SimpleWithDifferentDefault(int a){ this(); }
+    public SimpleWithDifferentDefault(int a) {
+        this();
+    }
 
-    public int init(){
-        if(x == -1){
+    public int init() {
+        if (x == -1) {
             x = 5;
         }
         return x;
@@ -132,15 +159,20 @@ class SimpleWithDifferentDefault {
 }
 
 class WrongDefault {
+
     @NonFinal("Not lazily initialized because of two different default values")
     private int x;
 
-    public WrongDefault(){ }
+    public WrongDefault() {
+    }
 
-    public WrongDefault(int a){ this(); x = -1; }
+    public WrongDefault(int a) {
+        this();
+        x = -1;
+    }
 
-    public int init(){
-        if(x == -1){
+    public int init() {
+        if (x == -1) {
             x = 5;
         }
         return x;
@@ -148,56 +180,70 @@ class WrongDefault {
 }
 
 class DeterministicCall {
+
     @LazyInitialized("Lazy initialization with call to deterministic method")
+    @NonFinal(value = "Analysis doesn't recognize lazy initialization",
+            analyses = { L0FieldMutabilityAnalysis.class, L1FieldMutabilityAnalysis.class })
     private int x;
 
-    public int init(){
-        if(x == 0){
+    public int init() {
+        if (x == 0) {
             x = this.sum(5, 8);
         }
         return x;
     }
 
-    private final int sum(int a, int b){
-        return a+b;
+    private final int sum(int a, int b) {
+        return a + b;
     }
 }
 
 class DeterministicCallWithParam {
+
     @NonFinal("Lazy initialization is not the same for different invocations")
     private int x;
 
-    public int init(int z){
-        if(x == 0){
+    public int init(int z) {
+        if (x == 0) {
             x = this.sum(z, 8);
         }
         return x;
     }
 
-    private final int sum(int a, int b){
-        return a+b;
+    private final int sum(int a, int b) {
+        return a + b;
     }
 }
 
 class DeterministicCallOnFinalField {
+
     @LazyInitialized("Lazy initialization with call to deterministic method on final field")
+    @NonFinal(value = "Analysis doesn't recognize lazy initialization",
+            analyses = { L0FieldMutabilityAnalysis.class, L1FieldMutabilityAnalysis.class })
     private int x;
 
     @DeclaredFinal("Declared final field")
     private final Inner inner;
 
-    public DeterministicCallOnFinalField(int v){ inner = new Inner(v); }
-
-    private final class Inner {
-        final int val;
-
-        public Inner(int v){ val = v; }
-
-        public final int hashCode(){ return val; }
+    public DeterministicCallOnFinalField(int v) {
+        inner = new Inner(v);
     }
 
-    public int init(){
-        if(x == 0){
+    private final class Inner {
+
+        final int val;
+
+        public Inner(int v) {
+            val = v;
+        }
+
+        public final int hashCode() {
+            return val;
+        }
+    }
+
+    public int init() {
+        if (x == 0) {
             x = inner.hashCode();
         }
         return x;
@@ -205,24 +251,32 @@ class DeterministicCallOnFinalField {
 }
 
 class DeterministicCallOnNonFinalField {
+
     @NonFinal("Wrong lazy initialization with call to non-deterministic method on final field")
     private int x;
 
     @NonFinal("Non final field")
     private Inner inner;
 
-    public void createInner(int v){ inner = new Inner(v); }
-
-    private final class Inner {
-        final int val;
-
-        public Inner(int v){ val = v; }
-
-        public final int hashCode(){ return val; }
+    public void createInner(int v) {
+        inner = new Inner(v);
     }
 
-    public int init(){
-        if(x == 0){
+    private final class Inner {
+
+        final int val;
+
+        public Inner(int v) {
+            val = v;
+        }
+
+        public final int hashCode() {
+            return val;
+        }
+    }
+
+    public int init() {
+        if (x == 0) {
             x = inner.hashCode();
         }
         return x;
@@ -230,13 +284,14 @@ class DeterministicCallOnNonFinalField {
 }
 
 class NondeterministicCall {
+
     @NonFinal("Wrong lazy initialization with call to non-deterministic method")
     private int x;
 
     private final Object object = new Object();
 
-    public int init(){
-        if(x == 0){
+    public int init() {
+        if (x == 0) {
             x = object.hashCode();
         }
         return x;
@@ -244,11 +299,14 @@ class NondeterministicCall {
 }
 
 class DoubleLocalAssignment {
+
     @LazyInitialized("Lazy initialization with a local that is updated twice")
+    @NonFinal(value = "Analysis doesn't recognize lazy initialization",
+            analyses = { L0FieldMutabilityAnalysis.class, L1FieldMutabilityAnalysis.class })
     private int x;
 
-    public int init(){
-        if(x == 0){
+    public int init() {
+        if (x == 0) {
             int y = 5;
             y ^= -1;
             x = y;
@@ -256,12 +314,14 @@ class DoubleLocalAssignment {
         return x;
     }
 }
+
 class DoubleAssignment {
+
     @NonFinal("Field can be observed partially updated")
     private int x;
 
-    public int init(){
-        if(x == 0){
+    public int init() {
+        if (x == 0) {
             x = 5;
             x ^= -1;
         }
@@ -294,41 +354,47 @@ class ExceptionInInitialization {
      * @note As the field write is dead, this field is really 'effectively final' as it will never
      * be different from the default value.
      */
-    @EffectivelyFinal("Field is never initialized, so it stays on its default value")
-        private int x;
-
-        private int getZero(){ return 0; }
-
-        public int init(){
-            int y = this.x;
-            if(y == 0){
-                int z = 10/getZero();
-                y = x = 5;
-            }
-            return y;
-        }
-    }
-
-class PossibleExceptionInInitialization {
-    @NonFinal("Incorrect because lazy initialization is may not happen due to exception")
+    @EffectivelyFinal(value = "Field is never initialized, so it stays on its default value",
+            analyses = { L1FieldMutabilityAnalysis.class, L2FieldMutabilityAnalysis.class })
+    @NonFinal(value = "Instance field not considered by analysis",
+            analyses = L0FieldMutabilityAnalysis.class)
     private int x;
 
-    public int init(int i){
+    private int getZero() {
+        return 0;
+    }
+
+    public int init() {
         int y = this.x;
-        if(y == 0){
-            int z = 10/i;
+        if (y == 0) {
+            int z = 10 / getZero();
             y = x = 5;
         }
         return y;
     }
 }
 
+class PossibleExceptionInInitialization {
 
-class CaughtExceptionInInitialization {
     @NonFinal("Incorrect because lazy initialization is may not happen due to exception")
     private int x;
 
-    public int init(int i){
+    public int init(int i) {
+        int y = this.x;
+        if (y == 0) {
+            int z = 10 / i;
+            y = x = 5;
+        }
+        return y;
+    }
+}
+
+class CaughtExceptionInInitialization {
+
+    @NonFinal("Incorrect because lazy initialization is may not happen due to exception")
+    private int x;
+
+    public int init(int i) {
         int y = this.x;
         try {
             if (y == 0) {
@@ -336,8 +402,7 @@ class CaughtExceptionInInitialization {
                 y = x = 5;
             }
             return y;
-        }
-        catch(Exception e){
+        } catch (Exception e) {
             return 0;
         }
     }
