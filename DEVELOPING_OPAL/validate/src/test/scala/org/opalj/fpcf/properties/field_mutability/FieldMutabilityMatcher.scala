@@ -10,21 +10,14 @@ import org.opalj.br.analyses.SomeProject
 
 /**
  * Matches a field's `FieldMutability` property. The match is successful if the field has the
- * property [[EffectivelyFinalField]] and a sufficiently capable analysis was scheduled.
+ * given property and a sufficiently capable analysis was scheduled.
  *
  * @author Michael Eichberg
+ * @author Dominik Helm
  */
-class EffectivelyFinalMatcher extends AbstractPropertyMatcher {
+class FieldMutabilityMatcher(val property: FieldMutability) extends AbstractPropertyMatcher {
 
     private final val PropertyReasonID = 0
-    private final val AnalysesValueId = 1 // the index of the "analyses" key
-
-    final val SupportedAnalyses: Set[ObjectType] = {
-        Set(
-            ObjectType("org/opalj/fpcf/analyses/L0FieldMutabilityAnalysis"),
-            ObjectType("org/opalj/fpcf/analyses/L1FieldMutabilityAnalysis")
-        )
-    }
 
     override def isRelevant(
         p:      SomeProject,
@@ -32,7 +25,13 @@ class EffectivelyFinalMatcher extends AbstractPropertyMatcher {
         entity: Object,
         a:      AnnotationLike
     ): Boolean = {
-        as.exists(SupportedAnalyses.contains)
+        val annotationType = a.annotationType.asObjectType
+
+        val analysesElementValues =
+            getValue(p, annotationType, a.elementValuePairs, "analyses").asArrayValue.values
+        val analyses = analysesElementValues.map(ev ⇒ ev.asClassValue.value.asObjectType)
+
+        analyses.exists(as.contains)
     }
 
     def validateProperty(
@@ -42,12 +41,7 @@ class EffectivelyFinalMatcher extends AbstractPropertyMatcher {
         a:          AnnotationLike,
         properties: Traversable[Property]
     ): Option[String] = {
-        val annotationType = a.annotationType.asObjectType
-
-        val analysesElementValues =
-            getValue(p, annotationType, a.elementValuePairs, "analyses").asArrayValue.values
-        val analyses = analysesElementValues.map(ev ⇒ ev.asClassValue.value.asObjectType)
-        if (analyses.exists(as.contains) && !properties.exists(p ⇒ p == EffectivelyFinalField)) {
+        if (!properties.exists(p ⇒ p == property)) {
             // ... when we reach this point the expected property was not found.
             Some(a.elementValuePairs(PropertyReasonID).value.asStringValue.value)
         } else {
@@ -56,3 +50,9 @@ class EffectivelyFinalMatcher extends AbstractPropertyMatcher {
     }
 
 }
+
+class DeclaredFinalMatcher extends FieldMutabilityMatcher(DeclaredFinalField)
+
+class EffectivelyFinalMatcher extends FieldMutabilityMatcher(EffectivelyFinalField)
+
+class LazyInitializedMatcher extends FieldMutabilityMatcher(LazyInitializedField)

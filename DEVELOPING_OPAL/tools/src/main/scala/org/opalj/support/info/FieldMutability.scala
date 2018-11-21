@@ -8,9 +8,10 @@ import java.net.URL
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
-import org.opalj.fpcf.FPCFAnalysesManagerKey
 import org.opalj.fpcf.analyses.EagerL1FieldMutabilityAnalysis
-import org.opalj.fpcf.analyses.LazyVirtualCallAggregatingEscapeAnalysis
+import org.opalj.fpcf.analyses.purity.LazyL2PurityAnalysis
+import org.opalj.fpcf.analyses.LazyUnsoundPrematurelyReadFieldsAnalysis
+import org.opalj.fpcf.FPCFAnalysesManagerKey
 import org.opalj.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.fpcf.properties.DeclaredFinalField
 import org.opalj.fpcf.properties.LazyInitializedField
@@ -37,11 +38,11 @@ object FieldMutability extends DefaultOneStepAnalysis {
         parameters:    Seq[String],
         isInterrupted: () ⇒ Boolean
     ): BasicReport = {
-
         val ps = project.get(FPCFAnalysesManagerKey).runAll(
             LazyL0TACAIAnalysis,
+            LazyUnsoundPrematurelyReadFieldsAnalysis,
             LazyInterProceduralEscapeAnalysis,
-            LazyVirtualCallAggregatingEscapeAnalysis,
+            LazyL2PurityAnalysis,
             EagerL1FieldMutabilityAnalysis
         )
 

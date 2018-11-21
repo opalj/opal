@@ -58,6 +58,7 @@ sealed abstract class Stmt[+V <: Var[V]] extends ASTNode[V] {
     def asMonitorExit: MonitorExit[V] = throw new ClassCastException();
     def asArrayStore: ArrayStore[V] = throw new ClassCastException();
     def asThrow: Throw[V] = throw new ClassCastException();
+    def asFieldWriteAccessStmt: FieldWriteAccessStmt[V] = throw new ClassCastException();
     def asPutStatic: PutStatic[V] = throw new ClassCastException();
     def asPutField: PutField[V] = throw new ClassCastException();
     /*inner type*/ def asMethodCall: MethodCall[V] = throw new ClassCastException();
@@ -485,7 +486,17 @@ object Throw {
 sealed abstract class FieldWriteAccessStmt[+V <: Var[V]] extends Stmt[V] {
     def declaringClass: ObjectType
     def name: String
+    def declaredFieldType: FieldType
     def value: Expr[V]
+
+    final override def asFieldWriteAccessStmt: this.type = this
+
+    /**
+     * Identifies the field if it can be found.
+     */
+    def resolveField(implicit p: ProjectLike): Option[Field] = {
+        p.resolveFieldReference(declaringClass, name, declaredFieldType)
+    }
 }
 
 case class PutStatic[+V <: Var[V]](

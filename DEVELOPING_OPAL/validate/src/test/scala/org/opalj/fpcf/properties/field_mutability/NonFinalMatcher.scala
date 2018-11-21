@@ -6,6 +6,7 @@ package field_mutability
 
 import org.opalj.br.AnnotationLike
 import org.opalj.br.ObjectType
+import org.opalj.br.BooleanValue
 import org.opalj.br.analyses.SomeProject
 
 /**
@@ -14,8 +15,37 @@ import org.opalj.br.analyses.SomeProject
  * `NonFinalField`) or if the property is an instance of `NonFinalField`.
  *
  * @author Michael Eichberg
+ * @author Dominik Helm
  */
 class NonFinalMatcher extends AbstractPropertyMatcher {
+
+    override def isRelevant(
+        p:  SomeProject,
+        as: Set[ObjectType],
+        e:  Entity,
+        a:  AnnotationLike
+    ): Boolean = {
+        val annotationType = a.annotationType.asObjectType
+
+        val analysesElementValues =
+            getValue(p, annotationType, a.elementValuePairs, "analyses").asArrayValue.values
+        val analyses = analysesElementValues.map(ev ⇒ ev.asClassValue.value.asObjectType)
+
+        if (!analyses.exists(as.contains))
+            return false;
+
+        val prematurelyRead = getValue(p, annotationType, a.elementValuePairs, "prematurelyRead").asInstanceOf[BooleanValue].value
+
+        if (prematurelyRead) {
+            val propertyStore = p.get(PropertyStoreKey)
+            propertyStore(e, FieldPrematurelyRead.key) match {
+                case FinalEP(_, PrematurelyReadField) ⇒ true
+                case _                                ⇒ false
+            }
+        } else {
+            true
+        }
+    }
 
     def validateProperty(
         p:          SomeProject,
