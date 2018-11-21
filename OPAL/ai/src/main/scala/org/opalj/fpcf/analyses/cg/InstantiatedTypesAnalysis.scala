@@ -78,7 +78,7 @@ class InstantiatedTypesAnalysis private[analyses] (
     ): PropertyComputationResult = someEPS match {
         case ESimplePS(_, _: TACAI, _) ⇒
             processMethod(declaredMethod, someEPS.asInstanceOf[EPS[Method, TACAI]])
-        case _                       ⇒ throw new RuntimeException(s"unexpected update $someEPS")
+        case _ ⇒ throw new RuntimeException(s"unexpected update $someEPS")
     }
 
     def getInstantiatedTypesUB(
