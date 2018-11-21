@@ -398,23 +398,24 @@ trait ClassImmutabilityAnalysisScheduler extends ComputationSpecification {
 
     def afterPhaseCompletion(p: SomeProject, ps: PropertyStore): Unit = {}
 
-    def setResultsAnComputeEntities(
+    def computeInitialProperties(
         project: SomeProject, propertyStore: PropertyStore
-    ): TraversableOnce[ClassFile] = {
+    ): (TraversableOnce[ClassFile], TraversableOnce[FinalEP[ObjectType, ClassImmutability]]) = {
         val classHierarchy = project.classHierarchy
         import classHierarchy.allSubtypes
         import classHierarchy.rootClassTypes
-        import propertyStore.handleResult
         implicit val logContext: LogContext = project.logContext
+
+        var initialProperties: List[FinalEP[ObjectType, ClassImmutability]] = List.empty
 
         // 1.1
         // java.lang.Object is by definition immutable.
-        handleResult(Result(ObjectType.Object, ImmutableObject))
+        initialProperties +:= new FinalEP(ObjectType.Object, ImmutableObject)
 
         // 1.2
         // All (instances of) interfaces are (by their very definition) also immutable.
         val allInterfaces = project.allClassFiles.filter(cf ⇒ cf.isInterfaceDeclaration)
-        handleResult(MultiResult(allInterfaces.map(cf ⇒ new FinalEP(cf.thisType, ImmutableObject))))
+        allInterfaces.foreach(cf ⇒ initialProperties ::= new FinalEP(cf.thisType, ImmutableObject))
 
         // 2.
         // All classes that do not have complete superclass information are mutable
@@ -427,7 +428,8 @@ trait ClassImmutabilityAnalysisScheduler extends ComputationSpecification {
         unexpectedRootClassTypes foreach { rt ⇒
             allSubtypes(rt, reflexive = true) foreach { ot ⇒
                 project.classFile(ot) foreach { cf ⇒
-                    handleResult(Result(cf.thisType, MutableObjectDueToUnknownSupertypes))
+                    initialProperties ::=
+                        new FinalEP(cf.thisType, MutableObjectDueToUnknownSupertypes)
                 }
             }
         }
@@ -450,10 +452,11 @@ trait ClassImmutabilityAnalysisScheduler extends ComputationSpecification {
                         s"${t.toJava}'s class file is not available"
                     )
                     allSubtypes(t, reflexive = true).foreach(project.classFile(_).foreach { cf ⇒
-                        handleResult(Result(cf.thisType, MutableObjectDueToUnknownSupertypes))
+                        initialProperties ::=
+                            new FinalEP(cf.thisType, MutableObjectDueToUnknownSupertypes)
                     })
             }
-        cfs
+        (cfs, initialProperties)
     }
 }
 
@@ -470,7 +473,8 @@ object EagerClassImmutabilityAnalysis
 
         val analysis = new ClassImmutabilityAnalysis(p)
 
-        val cfs = setResultsAnComputeEntities(p, ps)
+        val (cfs, initialProperties) = computeInitialProperties(p, ps)
+        ps.handleResult(MultiResult(initialProperties))
         ps.scheduleEagerComputationsForEntities(cfs)(
             analysis.determineClassImmutability(
                 null, FinalEP(ObjectType.Object, ImmutableObject), true, false
@@ -493,10 +497,9 @@ object LazyClassImmutabilityAnalysis
     override def startLazily(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new ClassImmutabilityAnalysis(p)
 
-        setResultsAnComputeEntities(p, ps)
-        ps.waitOnPhaseCompletion() // wait for completion of setting results
+        val (_, initialProperties) = computeInitialProperties(p, ps)
         ps.registerLazyPropertyComputation(
-            ClassImmutability.key, analysis.doDetermineClassImmutability
+            ClassImmutability.key, analysis.doDetermineClassImmutability, initialProperties
         )
         analysis
     }
