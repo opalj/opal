@@ -16,6 +16,7 @@ import org.opalj.tac.Expr
 import org.opalj.tac.New
 import org.opalj.tac.NonVirtualMethodCall
 import org.opalj.tac.TACStmts
+import org.opalj.tac.VirtualFunctionCall
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
@@ -207,39 +208,39 @@ class NewStringBuilderProcessor(
      * <p>
      * This function uses the following algorithm to determine the relation of the given nodes:
      * <ol>
-     *   <li>
-     *       For each given node, compute the dominators (and store it in lists called
-     *       ''dominatorLists'').</li>
-     *   <li>
-     *       Take all ''dominatorLists'' and union them (without duplicates) and sort this list in
-     *       descending order. This list, called ''uniqueDomList'', is then used in the next step.
-     *   </li>
-     *   <li>
-     *       Traverse ''uniqueDomList''. Here, we call the next element in that list ''nextDom''.
-     *       One of the following cases will occur:
-     *       <ol>
-     *           <li>
-     *               Only one [[StringTree]] element in ''treeNodes'' has ''nextDom'' as a
+     * <li>
+     * For each given node, compute the dominators (and store it in lists called
+     * ''dominatorLists'').</li>
+     * <li>
+     * Take all ''dominatorLists'' and union them (without duplicates) and sort this list in
+     * descending order. This list, called ''uniqueDomList'', is then used in the next step.
+     * </li>
+     * <li>
+     * Traverse ''uniqueDomList''. Here, we call the next element in that list ''nextDom''.
+     * One of the following cases will occur:
+     * <ol>
+     * <li>
+     * Only one [[StringTree]] element in ''treeNodes'' has ''nextDom'' as a
      *               dominator. In this case, nothing is done as we cannot say anything about the
-     *               relation to other elements in ''treeNodes''.
-     *           </li>
-     *           <li>
-     *               At least two elements in ''treeNodes'' have ''nextDom'' as a dominator. In this
-     *               case, these nodes are in a 'only-one-node-is-evaluated-relation' as it happens
-     *               when the dominator of two nodes is an if condition, for example. Thus, these
-     *               elements are put into a [[StringTreeOr]] element and then no longer considered
-     *               for the computation.
-     *           </li>
-     *       </ol>
-     *   </li>
-     *   <li>
-     *       It might be that not all elements in ''treeNodes'' were processed by the second case of
-     *       the previous step (normally, this should be only one element. These elements represent
-     *       a concatenation relation. Thus, all [[StringTreeOr]] elements of the last step are then
-     *       put into a [[StringTreeConcat]] element with the ones not processed yet. They are
-     *       ordered in ascending order according to their index in the statement list to preserve
-     *       the correct order.
-     *   </li>
+     * relation to other elements in ''treeNodes''.
+     * </li>
+     * <li>
+     * At least two elements in ''treeNodes'' have ''nextDom'' as a dominator. In this
+     * case, these nodes are in a 'only-one-node-is-evaluated-relation' as it happens
+     * when the dominator of two nodes is an if condition, for example. Thus, these
+     * elements are put into a [[StringTreeOr]] element and then no longer considered
+     * for the computation.
+     * </li>
+     * </ol>
+     * </li>
+     * <li>
+     * It might be that not all elements in ''treeNodes'' were processed by the second case of
+     * the previous step (normally, this should be only one element. These elements represent
+     * a concatenation relation. Thus, all [[StringTreeOr]] elements of the last step are then
+     * put into a [[StringTreeConcat]] element with the ones not processed yet. They are
+     * ordered in ascending order according to their index in the statement list to preserve
+     * the correct order.
+     * </li>
      * </ol>
      *
      * @param treeNodes The nodes which are to be ordered. The key of the map refers to the index in
@@ -247,7 +248,7 @@ class NewStringBuilderProcessor(
      *                  definition sites; In this case, pass the minimum index. The values of the
      *                  map correspond to [[StringTree]] elements that resulted from the evaluation
      *                  of the definition site(s).
-     * @param cfg The control flow graph.
+     * @param cfg       The control flow graph.
      * @return This function computes the correct relation of the given [[StringTree]] elements
      *         and returns this as a single tree element.
      */
@@ -299,13 +300,56 @@ class NewStringBuilderProcessor(
         }
 
         // If there are elements left, add them as well (they represent concatenations)
-        for ((key, _) ← dominatorLists) { newChildren.append(treeNodes(key).head) }
+        for ((key, _) ← dominatorLists) {
+            newChildren.append(treeNodes(key).head)
+        }
 
         if (newChildren.size == 1) {
             newChildren.head
         } else {
             StringTreeConcat(newChildren)
         }
+    }
+
+}
+
+object NewStringBuilderProcessor {
+
+    /**
+     * Determines the definition site of the initialization of the base object that belongs to a
+     * ''toString'' call.
+     *
+     * @param toString The ''toString'' call of the object for which to get the initialization def
+     *                 site for. Make sure that the object is a subclass of
+     *                 [[AbstractStringBuilder]].
+     * @param stmts A list of statements which will be used to lookup which one the initialization
+     *              is.
+     * @return Returns the definition site of the base object of the call. If something goes wrong,
+     *         e.g., no initialization is found, ''None'' is returned.
+     */
+    def findDefSiteOfInit(toString: VirtualFunctionCall[V], stmts: Array[Stmt[V]]): List[Int] = {
+        // TODO: Check that we deal with an instance of AbstractStringBuilder
+        if (toString.name != "toString") {
+            return List()
+        }
+
+        val defSites = ListBuffer[Int]()
+        val stack = mutable.Stack[Int](toString.receiver.asVar.definedBy.toArray: _*)
+        while (stack.nonEmpty) {
+            val next = stack.pop()
+            stmts(next) match {
+                case a: Assignment[V] ⇒
+                    a.expr match {
+                        case _: New ⇒
+                            defSites.append(next)
+                        case vfc: VirtualFunctionCall[V] ⇒
+                            stack.pushAll(vfc.receiver.asVar.definedBy.toArray)
+                    }
+                case _ ⇒
+            }
+        }
+
+        defSites.sorted.toList
     }
 
 }
