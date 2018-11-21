@@ -43,12 +43,13 @@ import org.opalj.tac.VirtualMethodCall
 import org.opalj.tac.fpcf.properties.TACAI
 
 import scala.collection.immutable.IntMap
+import scala.collection.mutable
 import scala.language.existentials
 
 class RTAState private (
         private[cg] val method:                       DefinedMethod,
         private[cg] var numTypesProcessed:            Int,
-        private[this] var _virtualCallSites:          IntMap[Set[CallSiteT]],
+        private[this] val _virtualCallSites:          mutable.LongMap[Set[CallSiteT]],
         private[this] var _calleesAndCallers:         CalleesAndCallers,
         private[this] var _tacDependee:               Option[EOptionP[Method, TACAI]],
         private[this] var _tac:                       Option[TACode[TACMethodParameter, V]],
@@ -61,7 +62,7 @@ class RTAState private (
     private[cg] def copy(
         method:                    DefinedMethod                                    = this.method,
         numTypesProcessed:         Int                                              = this.numTypesProcessed,
-        virtualCallSites:          IntMap[Set[CallSiteT]]                           = _virtualCallSites,
+        virtualCallSites:          mutable.LongMap[Set[CallSiteT]]                  = _virtualCallSites,
         calleesAndCallers:         CalleesAndCallers                                = _calleesAndCallers,
         tacDependee:               Option[EOptionP[Method, TACAI]]                  = _tacDependee,
         tac:                       Option[TACode[TACMethodParameter, V]]            = _tac,
@@ -153,17 +154,17 @@ class RTAState private (
 
     private[cg] def tac(): Option[TACode[TACMethodParameter, V]] = _tac
 
-    private[cg] def virtualCallSites: IntMap[Set[CallSiteT]] = {
+    private[cg] def virtualCallSites: mutable.LongMap[Set[CallSiteT]] = {
         _virtualCallSites
     }
 
     private[cg] def addVirtualCallSite(objectType: ObjectType, callSite: CallSiteT): Unit = {
-        val oldVal = _virtualCallSites.getOrElse(objectType.id, Set.empty)
-        _virtualCallSites = _virtualCallSites.updated(objectType.id, oldVal + callSite)
+        val oldVal = _virtualCallSites.getOrElse(objectType.id.toLong, Set.empty)
+        _virtualCallSites.update(objectType.id.toLong, oldVal + callSite)
     }
 
     private[cg] def removeCallSite(instantiatedType: ObjectType): Unit = {
-        _virtualCallSites -= instantiatedType.id
+        _virtualCallSites -= instantiatedType.id.toLong
     }
 }
 
@@ -172,7 +173,7 @@ object RTAState {
         new RTAState(
             method,
             numTypesProcessed = 0,
-            _virtualCallSites = IntMap.empty,
+            _virtualCallSites = new mutable.LongMap[Set[CallSiteT]](),
             _calleesAndCallers = new CalleesAndCallers(),
             if (tacDependee.isFinal) None else Some(tacDependee),
             if (tacDependee.hasProperty) tacDependee.ub.tac else None,
@@ -542,7 +543,7 @@ class RTACallGraphAnalysis private[analyses] (
 
         for (instantiatedType ← newInstantiatedTypes) {
             for {
-                (pc, name, descr) ← state.virtualCallSites.getOrElse(instantiatedType.id, Set.empty)
+                (pc, name, descr) ← state.virtualCallSites.getOrElse(instantiatedType.id.toLong, Set.empty)
                 // todo in case of Failure?
                 tgt ← project.instanceCall(
                     state.method.definedMethod.classFile.thisType, instantiatedType, name, descr

@@ -19,6 +19,7 @@ import org.opalj.br.ObjectType
 import org.opalj.br.analyses.DeclaredMethods
 
 private[cg] class CalleesAndCallers(
+        //IMPROVE: mutable map for performance
         private[this] var _callees: IntMap[IntTrieSet] = IntMap.empty
 ) {
 
