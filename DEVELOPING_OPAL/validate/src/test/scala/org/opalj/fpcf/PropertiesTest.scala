@@ -334,12 +334,13 @@ abstract class PropertiesTest extends FunSpec with Matchers {
         ps.setupPhase((eagerAnalysisRunners ++ lazyAnalysisRunners).flatMap(
             _.derives.map(_.asInstanceOf[PropertyMetaInformation].key)
         ))
+
+        (eagerAnalysisRunners ++ lazyAnalysisRunners).foreach(_.beforeSchedule(p, ps))
+
         val las = lazyAnalysisRunners.map { ar ⇒
-            ar.beforeSchedule(ps)
             ar.startLazily(p, ps, initInfo(ar).asInstanceOf[ar.InitializationData])
         }
         val as = eagerAnalysisRunners.map { ar ⇒
-            ar.beforeSchedule(ps)
             ar.start(p, ps, initInfo(ar).asInstanceOf[ar.InitializationData])
         }
         ps.waitOnPhaseCompletion()
@@ -351,7 +352,7 @@ abstract class PropertiesTest extends FunSpec with Matchers {
 }
 
 case class TestContext(
-        project:       Project[URL],
-        propertyStore: PropertyStore,
-        analyses:      Set[FPCFAnalysis]
+    project:       Project[URL],
+    propertyStore: PropertyStore,
+    analyses:      Set[FPCFAnalysis]
 )
