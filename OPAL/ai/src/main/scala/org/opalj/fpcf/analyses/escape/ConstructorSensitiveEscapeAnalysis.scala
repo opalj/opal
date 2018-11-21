@@ -63,6 +63,7 @@ trait ConstructorSensitiveEscapeAnalysis extends AbstractEscapeAnalysis {
                 val fp = context.virtualFormalParameters(context.declaredMethods(callee))(0)
                 if (fp != context.entity) {
                     val escapeState = context.propertyStore(fp, EscapeProperty.key)
+                    state.removeDependency(escapeState)
                     handleEscapeState(escapeState)
                 }
             case /* unknown method */ _ ⇒ state.meetMostRestrictive(AtMost(NoEscape))
@@ -140,7 +141,7 @@ trait ConstructorSensitiveEscapeAnalysis extends AbstractEscapeAnalysis {
     )(implicit context: AnalysisContext, state: AnalysisState): PropertyComputationResult = {
 
         someEPS.e match {
-            case VirtualFormalParameter(DefinedMethod(_, method), -1) if method.isConstructor ⇒
+            case VirtualFormalParameter(dm: DefinedMethod, -1) if dm.definedMethod.isConstructor ⇒
                 state.removeDependency(someEPS)
                 handleEscapeState(someEPS)
                 returnResult

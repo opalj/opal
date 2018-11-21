@@ -20,7 +20,7 @@ object IdentifyResourcesAnalysis extends DefaultOneStepAnalysis {
             override val project: Project[URL],
             val method:           Method
     ) extends CorrelationalDomain
-        with domain.DefaultDomainValueBinding
+        with domain.DefaultSpecialDomainValuesBinding
         with domain.ThrowAllPotentialExceptionsConfiguration
         with domain.l0.DefaultTypeLevelIntegerValues
         with domain.l0.DefaultTypeLevelLongValues

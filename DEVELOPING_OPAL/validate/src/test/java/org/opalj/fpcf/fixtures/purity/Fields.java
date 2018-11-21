@@ -29,7 +29,7 @@ public class Fields implements Cloneable {
     @DomainSpecificSideEffectFree(value = "Only creates copy (but can raise NullPointerException)",
             eps = @EP(cf = Object.class, pk = "ReturnValueFreshness",
                     method = "clone()Ljava/lang/Object;", p = "FreshReturnValue"))
-    @Impure(value = "Allocates new objects",
+    @Impure(value = "Allocates new objects/return value of super.clone not recognized as fresh",
             eps = @EP(cf = Object.class, pk = "ReturnValueFreshness",
                     method = "clone()Ljava/lang/Object;", p = "FreshReturnValue",
                     analyses = L2PurityAnalysis.class), negate = true)

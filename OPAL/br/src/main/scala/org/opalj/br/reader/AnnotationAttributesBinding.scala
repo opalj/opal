@@ -43,7 +43,7 @@ trait AnnotationAttributesBinding
         ap_name_index:        Constant_Pool_Index,
         ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
-        element_value:        ElementValue
+        element_value:        ElementValue,
     ): AnnotationDefault_attribute = {
         element_value
     }
@@ -53,7 +53,7 @@ trait AnnotationAttributesBinding
         ap_name_index:        Constant_Pool_Index,
         ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
-        annotations:          Annotations
+        annotations:          Annotations,
     ): RuntimeVisibleAnnotations_attribute = {
         new RuntimeVisibleAnnotations_attribute(annotations)
     }
@@ -63,7 +63,7 @@ trait AnnotationAttributesBinding
         ap_name_index:        Constant_Pool_Index,
         ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
-        annotations:          Annotations
+        annotations:          Annotations,
     ): RuntimeInvisibleAnnotations_attribute = {
         new RuntimeInvisibleAnnotations_attribute(annotations)
     }
@@ -73,7 +73,7 @@ trait AnnotationAttributesBinding
         ap_name_index:          Constant_Pool_Index,
         ap_descriptor_index:    Constant_Pool_Index,
         attribute_name_index:   Constant_Pool_Index,
-        parameters_annotations: ParametersAnnotations
+        parameters_annotations: ParametersAnnotations,
     ): RuntimeVisibleParameterAnnotations_attribute = {
         new RuntimeVisibleParameterAnnotations_attribute(parameters_annotations)
     }
@@ -83,7 +83,7 @@ trait AnnotationAttributesBinding
         ap_name_index:          Constant_Pool_Index,
         ap_descriptor_index:    Constant_Pool_Index,
         attribute_name_index:   Constant_Pool_Index,
-        parameters_annotations: ParametersAnnotations
+        parameters_annotations: ParametersAnnotations,
     ): RuntimeInvisibleParameterAnnotations_attribute = {
         new RuntimeInvisibleParameterAnnotations_attribute(parameters_annotations)
     }

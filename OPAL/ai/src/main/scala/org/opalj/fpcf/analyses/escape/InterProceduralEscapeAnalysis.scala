@@ -4,10 +4,8 @@ package fpcf
 package analyses
 package escape
 
-import org.opalj.ai.Domain
 import org.opalj.ai.ValueOrigin
 import org.opalj.ai.common.DefinitionSitesKey
-import org.opalj.ai.domain.RecordDefUse
 import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
 import org.opalj.br.VirtualDeclaredMethod
@@ -17,8 +15,11 @@ import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.br.analyses.VirtualFormalParameters
 import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.br.analyses.cg.IsOverridableMethodKey
+import org.opalj.fpcf.cg.properties.Callees
 import org.opalj.fpcf.properties._
+import org.opalj.value.ValueInformation
 import org.opalj.tac.DUVar
+import org.opalj.tac.fpcf.properties.TACAI
 
 class InterProceduralEscapeAnalysisContext(
         val entity:                  Entity,
@@ -61,7 +62,7 @@ class InterProceduralEscapeAnalysis private[analyses] (
         fp match {
             // if the underlying method is inherited, we avoid recomputation and query the
             // result of the method for its defining class.
-            case VirtualFormalParameter(DefinedMethod(dc, m), i) if dc != m.classFile.thisType ⇒
+            case VirtualFormalParameter(dm: DefinedMethod, i) if dm.declaringClassType != dm.definedMethod.classFile.thisType ⇒
                 def handleEscapeState(eOptionP: SomeEOptionP): PropertyComputationResult = {
                     eOptionP match {
                         case FinalEP(_, p) ⇒
@@ -81,11 +82,13 @@ class InterProceduralEscapeAnalysis private[analyses] (
                     }
                 }
 
-                val parameterOfBase = virtualFormalParameters(declaredMethods(m))(-i - 1)
+                val parameterOfBase = virtualFormalParameters(
+                    declaredMethods(dm.definedMethod)
+                )(-i - 1)
 
                 handleEscapeState(propertyStore(parameterOfBase, EscapeProperty.key))
 
-            case VirtualFormalParameter(DefinedMethod(_, m), _) if m.body.isEmpty ⇒
+            case VirtualFormalParameter(dm: DefinedMethod, _) if dm.definedMethod.body.isEmpty ⇒
                 //TODO IntermediateResult(fp, GlobalEscape, AtMost(NoEscape), Seq.empty, (_) ⇒ throw new RuntimeException())
                 Result(fp, AtMost(NoEscape))
 
@@ -94,11 +97,11 @@ class InterProceduralEscapeAnalysis private[analyses] (
                 //TODO IntermediateResult(fp, GlobalEscape, AtMost(NoEscape), Seq.empty, (_) ⇒ throw new RuntimeException())
                 Result(fp, AtMost(NoEscape))
 
-            case VirtualFormalParameter(DefinedMethod(_, m), i) ⇒
-                val ctx = createContext(fp, i, m)
+            case VirtualFormalParameter(dm: DefinedMethod, i) ⇒
+                val ctx = createContext(fp, i, dm.definedMethod)
                 doDetermineEscape(ctx, createState)
 
-            case VirtualFormalParameter(VirtualDeclaredMethod(_, _, _), _) ⇒
+            case VirtualFormalParameter(_: VirtualDeclaredMethod, _) ⇒
                 throw new IllegalArgumentException()
         }
     }
@@ -125,7 +128,7 @@ sealed trait InterProceduralEscapeAnalysisScheduler extends ComputationSpecifica
 
     final override def derives: Set[PropertyKind] = Set(EscapeProperty)
 
-    final override def uses: Set[PropertyKind] = Set(VirtualMethodEscapeProperty)
+    final override def uses: Set[PropertyKind] = Set(TACAI, Callees, EscapeProperty)
 
     final override type InitializationData = Null
     final def init(p: SomeProject, ps: PropertyStore): Null = null
@@ -139,7 +142,7 @@ sealed trait InterProceduralEscapeAnalysisScheduler extends ComputationSpecifica
 object EagerInterProceduralEscapeAnalysis
     extends InterProceduralEscapeAnalysisScheduler
     with FPCFEagerAnalysisScheduler {
-    type V = DUVar[(Domain with RecordDefUse)#DomainValue]
+    type V = DUVar[ValueInformation]
 
     override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new InterProceduralEscapeAnalysis(p)

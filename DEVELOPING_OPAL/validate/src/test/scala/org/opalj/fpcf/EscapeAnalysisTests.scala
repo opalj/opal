@@ -7,8 +7,19 @@ import org.opalj.ai.domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.br.analyses.Project
 import org.opalj.fpcf.analyses.LazyVirtualCallAggregatingEscapeAnalysis
+import org.opalj.fpcf.analyses.SystemPropertiesAnalysis
+import org.opalj.fpcf.analyses.cg.EagerFinalizerAnalysisScheduler
+import org.opalj.fpcf.analyses.cg.EagerLoadedClassesAnalysis
+import org.opalj.fpcf.analyses.cg.EagerRTACallGraphAnalysisScheduler
+import org.opalj.fpcf.analyses.cg.EagerReflectionRelatedCallsAnalysis
+import org.opalj.fpcf.analyses.cg.EagerSerializationRelatedCallsAnalysis
+import org.opalj.fpcf.analyses.cg.EagerThreadRelatedCallsAnalysis
+import org.opalj.fpcf.analyses.cg.LazyCalleesAnalysis
 import org.opalj.fpcf.analyses.escape.EagerInterProceduralEscapeAnalysis
 import org.opalj.fpcf.analyses.escape.EagerSimpleEscapeAnalysis
+import org.opalj.fpcf.cg.properties.ReflectionRelatedCallees
+import org.opalj.fpcf.cg.properties.SerializationRelatedCallees
+import org.opalj.fpcf.cg.properties.StandardInvokeCallees
 import org.opalj.tac.fpcf.analyses.LazyL0TACAIAnalysis
 
 /**
@@ -19,6 +30,23 @@ import org.opalj.tac.fpcf.analyses.LazyL0TACAIAnalysis
  * @author Florian Kuebler
  */
 class EscapeAnalysisTests extends PropertiesTest {
+
+    val eagerAnalyses: Set[FPCFEagerAnalysisScheduler] = Set(
+        EagerRTACallGraphAnalysisScheduler,
+        EagerLoadedClassesAnalysis,
+        EagerFinalizerAnalysisScheduler,
+        EagerThreadRelatedCallsAnalysis,
+        EagerSerializationRelatedCallsAnalysis,
+        EagerReflectionRelatedCallsAnalysis,
+        SystemPropertiesAnalysis
+    )
+
+    val lazyAnalyses: Set[FPCFLazyAnalysisScheduler] = Set(
+        LazyL0TACAIAnalysis,
+        new LazyCalleesAnalysis(
+            Set(StandardInvokeCallees, SerializationRelatedCallees, ReflectionRelatedCallees)
+        )
+    )
 
     override def init(p: Project[URL]): Unit = {
         val performInvocationsDomain = classOf[DefaultPerformInvocationsDomainWithCFGAndDefUse[_]]
@@ -44,7 +72,7 @@ class EscapeAnalysisTests extends PropertiesTest {
     }
 
     describe("the org.opalj.fpcf.analyses.escape.SimpleEscapeAnalysis is executed") {
-        val as = executeAnalyses(Set(EagerSimpleEscapeAnalysis), Set(LazyL0TACAIAnalysis))
+        val as = executeAnalyses(eagerAnalyses + EagerSimpleEscapeAnalysis, lazyAnalyses)
         as.propertyStore.shutdown()
         validateProperties(
             as,
@@ -56,8 +84,8 @@ class EscapeAnalysisTests extends PropertiesTest {
 
     describe("the org.opalj.fpcf.analyses.escape.InterProceduralEscapeAnalysis is executed") {
         val as = executeAnalyses(
-            Set(EagerInterProceduralEscapeAnalysis),
-            Set(LazyL0TACAIAnalysis, LazyVirtualCallAggregatingEscapeAnalysis)
+            eagerAnalyses + EagerInterProceduralEscapeAnalysis,
+            lazyAnalyses + LazyVirtualCallAggregatingEscapeAnalysis
         )
         as.propertyStore.shutdown()
         validateProperties(

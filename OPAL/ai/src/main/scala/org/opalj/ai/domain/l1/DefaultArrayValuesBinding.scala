@@ -12,7 +12,7 @@ import org.opalj.br.ArrayType
  * @author Michael Eichberg
  */
 trait DefaultArrayValuesBinding extends DefaultReferenceValuesBinding with ArrayValues {
-    domain: CorrelationalDomain with ConcreteIntegerValues with TheClassHierarchy ⇒
+    domain: CorrelationalDomain with ConcreteIntegerValues ⇒
 
     type DomainInitializedArrayValue = InitializedArrayValue
     final val DomainInitializedArrayValueTag: ClassTag[DomainInitializedArrayValue] = implicitly
@@ -21,13 +21,20 @@ trait DefaultArrayValuesBinding extends DefaultReferenceValuesBinding with Array
     // FACTORY METHODS
     //
 
+    private case class DefaultInitializedArrayValue(
+            origin:            ValueOrigin,
+            theUpperTypeBound: ArrayType,
+            theLength:         Int,
+            refId:             RefId
+    ) extends InitializedArrayValue
+
     override def InitializedArrayValue(
         origin:    ValueOrigin,
         arrayType: ArrayType,
         counts:    Int,
         refId:     RefId
     ): DomainInitializedArrayValue = {
-        new InitializedArrayValue(origin, arrayType, counts, refId)
+        DefaultInitializedArrayValue(origin, arrayType, counts, refId)
     }
 
 }

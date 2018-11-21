@@ -7,7 +7,7 @@ import scala.collection.Set
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.ProjectLike
-import org.opalj.value.KnownTypedValue
+import org.opalj.value.ValueInformation
 
 trait VirtualCall[+V <: Var[V]] { this: Call[V] ⇒
 
@@ -25,7 +25,7 @@ trait VirtualCall[+V <: Var[V]] { this: Call[V] ⇒
     )(
         implicit
         p:  ProjectLike,
-        ev: V <:< DUVar[KnownTypedValue]
+        ev: V <:< DUVar[ValueInformation]
     ): Set[Method] = {
         val receiverValue = receiver.asVar.value.asReferenceValue
 

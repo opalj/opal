@@ -10,7 +10,7 @@ import org.junit.runner.RunWith
 import org.opalj.collection.immutable.Chain
 import org.opalj.collection.immutable.Naught
 import org.opalj.ai.domain.ValuesCoordinatingDomain
-import org.opalj.ai.domain.DefaultDomainValueBinding
+import org.opalj.ai.domain.DefaultSpecialDomainValuesBinding
 import org.opalj.ai.domain.PredefinedClassHierarchy
 import org.opalj.ai.domain.l0.DefaultReferenceValuesBinding
 import org.opalj.ai.domain.l0.DefaultTypeLevelIntegerValues
@@ -117,7 +117,7 @@ class PackageTest extends FlatSpec with Matchers {
 
 object SimpleCoordinatingTypeLevelDomain
     extends ValuesCoordinatingDomain
-    with DefaultDomainValueBinding
+    with DefaultSpecialDomainValuesBinding
     with DefaultReferenceValuesBinding
     with DefaultTypeLevelIntegerValues
     with DefaultTypeLevelLongValues

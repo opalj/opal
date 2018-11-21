@@ -3,31 +3,34 @@ package org.opalj
 package ai
 package domain
 
-import scala.annotation.tailrec
 import scala.annotation.switch
+import scala.annotation.tailrec
+
 import java.io.ByteArrayOutputStream
 import java.io.PrintStream
 
 import scala.xml.Node
+
 import org.opalj.graphs.DefaultMutableNode
+import org.opalj.control.foreachNonNullValue
 import org.opalj.collection.immutable.IntArraySet
-import org.opalj.collection.mutable.{Locals ⇒ Registers}
 import org.opalj.collection.immutable.:&:
 import org.opalj.collection.immutable.Chain
-import org.opalj.collection.immutable.Naught
+import org.opalj.collection.immutable.Chain.ChainBuilder
+import org.opalj.collection.immutable.IntRefPair
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.IntTrieSet1
-import org.opalj.collection.immutable.Chain.ChainBuilder
+import org.opalj.collection.immutable.Naught
+import org.opalj.collection.mutable.{Locals ⇒ Registers}
+import org.opalj.collection.mutable.RefArrayStack
 import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.br.Code
-import org.opalj.br.PC
-import org.opalj.br.ObjectType
 import org.opalj.br.ComputationalTypeCategory
-import org.opalj.br.instructions._
+import org.opalj.br.ObjectType
+import org.opalj.br.PC
 import org.opalj.br.analyses.AnalysisException
+import org.opalj.br.instructions._
 import org.opalj.ai.util.XHTML
-import org.opalj.collection.immutable.IntRefPair
-import org.opalj.collection.mutable.RefArrayStack
 
 /**
  * Collects the definition/use information based on the abstract interpretation time cfg.
@@ -69,7 +72,7 @@ import org.opalj.collection.mutable.RefArrayStack
  *
  * @author Michael Eichberg
  */
-trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode with TheClassHierarchy ⇒
+trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
 
     // IDEA:
     // EACH LOCAL VARIABLE IS BASICALLY NAMED USING THE PC OF THE INSTRUCTION THAT INITIALIZES IT.
@@ -611,13 +614,13 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode with Th
         // General idea related to JSR/RET:
         // We jump to a subroutine once all regular paths to a specific JSR have been evaluated.
         // Then we evaluate the subroutine; collect the def/use information related to the JSR
-        // and reset the JSR and then execute the next JSR. At the end we join the information
+        // and reset the JSR. After that we execute the next JSR. At the end we join the information
         // related to the JSRs.
         // Due to the possibility of nested subroutine calls, we have to track the level at
         // which a subroutine level happens - the main level has the id "0".
         val jsrPCs: RefArrayStack[IntTrieSet] = new RefArrayStack(IntTrieSet.empty, 3)
         // Recall that we need to ret in reverse order; i.e. last subroutine first!
-        var retTargetPCs: Chain[Int] = Naught
+        var retTargetPCs: Chain[IntTrieSet] = Naught
         var retPCs: Chain[Int] = Naught
         val currentSubroutinePCs: RefArrayStack[IntTrieSet] = RefArrayStack.empty // the instructions belonging to the subroutine
         var currentSubroutineLevel: Int = 0
@@ -690,19 +693,26 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode with Th
                     propagate(defOps(currentPC), defLocals(currentPC))
 
                 case JSR.opcode | JSR_W.opcode ⇒
-                    // DEFERRED UNTIL ALL PATHS TO A SPECIFIC JSR HAVE BEEN EVALUATED:
-                    // stackOperation(0, pushesValue = true)
-                    jsrPCs.push(jsrPCs.pop + currentPC)
-                    false /*do not schedule the next instruction now - will be done later*/
+                    // Let's check if we have a JSR to the subroutine that we are
+                    // currently executing. This can be legal in very restricted settings...
+                    if (currentSubroutinePCs.nonEmpty &&
+                        currentSubroutinePCs.head.contains(successorPC)) {
+                        // println(currentPC+": (RE)START OF A SUBROUTINE: "+successorPC)
+                        // In this case, we treat the JSR basically in the same way as a goto.
+                        // We update the retTargetPC, because the calling JSR might be different...
+                        val retTargetPC = currentInstruction.indexOfNextInstruction(currentPC)(code)
+                        retTargetPCs = (retTargetPCs.head + retTargetPC) :&: retTargetPCs.tail
+                        stackOperation(0, pushesValue = true)
+                    } else {
+                        // IN GENERAL:
+                        // HANDLING IS DEFERRED UNTIL ALL PATHS TO A JSR HAVE BEEN EVALUATED!
+                        jsrPCs.push(jsrPCs.pop() + currentPC)
+                        false /*do not schedule the next instruction now - will be done later*/
+                    }
 
                 case RET.opcode ⇒
-                    // DEFERRED UNTIL ALL PATHS TO THE RET HAVE BEEN EVALUATED:
-                    // val RET(lvIndex) = currentInstruction
-                    // val currentDefLocals = defLocals(currentPC)
-                    // val originOfReturnAddressValue = currentDefLocals(lvIndex)
-                    // updateUsageInformation(originOfReturnAddressValue , currentPC)
-                    // propagate(defOps(currentPC), currentDefLocals)
-
+                    // IN GENERAL:
+                    // HANDLING IS DEFERRED UNTIL ALL PATHS TO THE RET HAVE BEEN EVALUATED!
                     // Note that we have at most one RET at each level and initially it
                     // is set to the fake value -1 and this value is now updated.
                     retPCs = currentPC :&: retPCs.tail
@@ -1003,19 +1013,21 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode with Th
             if (jsrPCs.top.nonEmpty &&
                 // We have to check if we have a nested JSR call;
                 // if the current subroutine level (root = 0) is smaller than the
-                // high of the stack then we have a nested subroutine call.
+                // high of the stack then we have a (nested) subroutine call.
                 currentSubroutineLevel < jsrPCs.size) {
                 val IntRefPair(jsrPC, newJSRPCs) = jsrPCs.pop().headAndTail
                 jsrPCs.push(newJSRPCs)
+                // println("processing jsr: "+jsrPC+"; remaining: "+jsrPCs)
                 val jsrInstruction = instructions(jsrPC).asSimpleBranchInstruction
-                retTargetPCs :&:= jsrInstruction.indexOfNextInstruction(jsrPC)(code)
+                val successorPC = jsrPC + jsrInstruction.branchoffset
+                val retTargetPC = jsrInstruction.indexOfNextInstruction(jsrPC)(code)
+
+                retTargetPCs :&:= IntTrieSet1(retTargetPC)
 
                 // The initial value is basically used to detect subroutines which never end
                 // by a RET. Additionally, we ensure that the size of the retPCs and retTargetPCs
                 // lists are always identical.
                 retPCs :&:= -1
-
-                val successorPC = jsrPC + jsrInstruction.branchoffset
 
                 // The new subroutine does not yet have any instructions!
                 currentSubroutinePCs.push(IntTrieSet.empty)
@@ -1038,7 +1050,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode with Th
             } else if (retPCs.nonEmpty) {
                 val retPC = retPCs.head
                 retPCs = retPCs.tail
-                val retTargetPC = retTargetPCs.head
+                val thisSubroutineRetTargetPCs = retTargetPCs.head
                 retTargetPCs = retTargetPCs.tail
 
                 val lastSubroutinePCs = currentSubroutinePCs.pop()
@@ -1052,7 +1064,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode with Th
                 val oldSubroutineNextJoinPCs = nextJoinPCs.pop() // drop empty IntTrieSet
                 assert(oldSubroutineNextJoinPCs.isEmpty)
 
-                // println(s"END OF A SUBROUTINE: $retPC ... $retTargetPC: "+lastSubroutinePCs.mkString(", "))
+                // println(s"END OF A SUBROUTINE: $retPC ... $thisSubroutineRetTargetPCs: "+lastSubroutinePCs.mkString(", "))
 
                 // 0. Let's determine the next instruction:
                 val didRet =
@@ -1064,8 +1076,10 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode with Th
                         val retDefLocals = defLocals(retPC)
                         val originOfReturnAddressValue = retDefLocals(lvIndex)
                         updateUsageInformation(originOfReturnAddressValue, retPC)
-                        defUseDomain.propagate(retPC, retTargetPC, defOps(retPC), retDefLocals)
-                        nextPCs.push(nextPCs.pop() +! retTargetPC)
+                        thisSubroutineRetTargetPCs foreach { retTargetPC ⇒
+                            defUseDomain.propagate(retPC, retTargetPC, defOps(retPC), retDefLocals)
+                            nextPCs.push(nextPCs.pop() +! retTargetPC)
+                        }
                         true
                     }
 
@@ -1133,23 +1147,29 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode with Th
                 if (nextPCs.top.nonEmpty) {
                     val IntRefPair(currentPC, newNextPCs) = nextPCs.pop().headAndTail
                     nextPCs.push(newNextPCs)
-                    // print("next pc: "+currentPC)
+                    //    print("next pc: "+currentPC)
                     currentPC
                 } else {
                     val IntRefPair(currentPC, newNextJoinPCs) = nextJoinPCs.pop().headAndTail
                     nextJoinPCs.push(newNextJoinPCs)
-                    // print("next join pc: "+currentPC)
+                    //      print("next join pc: "+currentPC)
                     currentPC
                 }
 
             if (currentSubroutineLevel > 0 /* <=> we are in a subroutine */ ) {
                 // Append the current pc to the list of instructions belonging to the "top-most"
-                // subroutine:
+                // subroutine - if the current PC does not also belong to a higher-level
+                // subroutine/root
+                // if (defOps(currentPC) == null) {
+                val thisSubroutinePCs = currentSubroutinePCs.pop()
+                currentSubroutinePCs.push(thisSubroutinePCs + currentPC)
                 // print(s" (added to the list of subroutine pcs at level ($currentSubroutineLevel))")
-                currentSubroutinePCs.push(currentSubroutinePCs.pop() + currentPC)
+                // } else {
+                // in this case the PC was already added to the list of pcs...
+                // }
             }
 
-            // println(" "+instructions(currentPC))
+            //  println(" "+instructions(currentPC))
 
             def handleSuccessor(isExceptionalControlFlow: Boolean)(successorPC: Int): Unit = {
                 val scheduleNextPC = try {
@@ -1247,30 +1267,48 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode with Th
         assert(nextJoinPCs.tail.isEmpty)
 
         // Integrate the accumulated subroutine information (if available)
-        subroutinePCs.foreach { pc ⇒
-            defOps(pc) = subroutineDefOps(pc)
-            defLocals(pc) = subroutineDefLocals(pc)
+        if (subroutinePCs.nonEmpty) {
+            foreachNonNullValue(subroutineDefOps) { (pc, subroutineDefOpsAtPC) ⇒
+                // When we reach this point, we have instructions that are executed
+                // as part of the subroutine, but also as part of a parent routine.
+                // Hence, we have to merge the results!
+                if (defOps(pc) == null) {
+                    defOps(pc) = subroutineDefOps(pc)
+                } else {
+                    defOps(pc) =
+                        (defOps(pc) zip subroutineDefOps(pc)).map(vos ⇒ vos._1 ++ vos._2)
+                }
+                if (defLocals(pc) == null) {
+                    defLocals(pc) = subroutineDefLocals(pc)
+                } else {
+                    defLocals(pc) =
+                        defLocals(pc).fuse(
+                            subroutineDefLocals(pc),
+                            (l, r) ⇒ if (l == null) r else if (r == null) null else l ++ r
+                        )
+                }
 
-            // NOTE: we may have usages at the root level of values created in the subroutines!
-            val oldUsedExternalExceptions = usedExternalExceptions(pc)
-            val allSubroutineUsedExternalExceptions = subroutineUsedExternalExceptions(pc)
-            if (allSubroutineUsedExternalExceptions != null) {
-                usedExternalExceptions(pc) =
-                    if (oldUsedExternalExceptions == null)
-                        allSubroutineUsedExternalExceptions
-                    else
-                        oldUsedExternalExceptions ++ allSubroutineUsedExternalExceptions
-            }
+                // NOTE: we may have usages at the root level of values created in the subroutines!
+                val oldUsedExternalExceptions = usedExternalExceptions(pc)
+                val allSubroutineUsedExternalExceptions = subroutineUsedExternalExceptions(pc)
+                if (allSubroutineUsedExternalExceptions != null) {
+                    usedExternalExceptions(pc) =
+                        if (oldUsedExternalExceptions == null)
+                            allSubroutineUsedExternalExceptions
+                        else
+                            oldUsedExternalExceptions ++ allSubroutineUsedExternalExceptions
+                }
 
-            val usedPC = pc + parametersOffset
-            val oldUsedPC = used(usedPC)
-            val allSubroutineUsed = subroutineUsed(usedPC)
-            if (allSubroutineUsed != null) {
-                used(usedPC) =
-                    if (oldUsedPC == null)
-                        allSubroutineUsed
-                    else
-                        oldUsedPC ++ allSubroutineUsed
+                val usedPC = pc + parametersOffset
+                val oldUsedPC = used(usedPC)
+                val allSubroutineUsed = subroutineUsed(usedPC)
+                if (allSubroutineUsed != null) {
+                    used(usedPC) =
+                        if (oldUsedPC == null)
+                            allSubroutineUsed
+                        else
+                            oldUsedPC ++ allSubroutineUsed
+                }
             }
         }
     }

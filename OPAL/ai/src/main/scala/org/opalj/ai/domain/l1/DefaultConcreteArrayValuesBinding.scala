@@ -14,7 +14,7 @@ import org.opalj.br.ArrayType
 trait DefaultConcreteArrayValuesBinding
     extends DefaultArrayValuesBinding
     with ConcreteArrayValues {
-    domain: CorrelationalDomain with ConcreteIntegerValues with TheClassHierarchy with LogContextProvider ⇒
+    domain: CorrelationalDomain with ConcreteIntegerValues with LogContextProvider ⇒
 
     type DomainConcreteArrayValue = ConcreteArrayValue
     final val DomainConcreteArrayValueTag: ClassTag[DomainConcreteArrayValue] = implicitly
@@ -23,13 +23,20 @@ trait DefaultConcreteArrayValuesBinding
     // FACTORY METHODS
     //
 
+    private case class DefaultConcreteArrayValue(
+            origin:            ValueOrigin,
+            theUpperTypeBound: ArrayType,
+            values:            Array[DomainValue],
+            refId:             RefId
+    ) extends ConcreteArrayValue
+
     override def ArrayValue(
-        origin:  ValueOrigin,
-        theType: ArrayType,
-        values:  Array[DomainValue],
-        refId:   RefId
+        origin:            ValueOrigin,
+        theUpperTypeBound: ArrayType,
+        values:            Array[DomainValue],
+        refId:             RefId
     ): DomainConcreteArrayValue = {
-        new ConcreteArrayValue(origin, theType, values, refId)
+        DefaultConcreteArrayValue(origin, theUpperTypeBound, values, refId)
     }
 
 }

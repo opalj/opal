@@ -3,11 +3,11 @@ package org.opalj
 package collection
 
 /**
- * Common interface of all BitSets provided by OPAL.
+ * Common interface of all BitSet based collections provided by OPAL.
  *
  * @author Michael Eichberg
  */
-trait BitSet { thisSet ⇒
+trait BitSet {
 
     def isEmpty: Boolean
 

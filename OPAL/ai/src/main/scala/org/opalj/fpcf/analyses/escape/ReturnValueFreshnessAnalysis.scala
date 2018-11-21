@@ -5,16 +5,9 @@ package analyses
 package escape
 
 import scala.annotation.switch
+
 import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.br.DeclaredMethod
-import org.opalj.br.DefinedMethod
-import org.opalj.br.Field
-import org.opalj.br.Method
-import org.opalj.br.MethodDescriptor
-import org.opalj.br.ObjectType
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.analyses.cg.IsOverridableMethodKey
+import org.opalj.fpcf.cg.properties.Callees
 import org.opalj.fpcf.properties.AtMost
 import org.opalj.fpcf.properties.EscapeInCallee
 import org.opalj.fpcf.properties.EscapeProperty
@@ -32,11 +25,14 @@ import org.opalj.fpcf.properties.NoFreshReturnValue
 import org.opalj.fpcf.properties.NoLocalField
 import org.opalj.fpcf.properties.PrimitiveReturnValue
 import org.opalj.fpcf.properties.ReturnValueFreshness
-import org.opalj.fpcf.properties.VExtensibleGetter
-import org.opalj.fpcf.properties.VFreshReturnValue
-import org.opalj.fpcf.properties.VGetter
-import org.opalj.fpcf.properties.VNoFreshReturnValue
-import org.opalj.fpcf.properties.VirtualMethodReturnValueFreshness
+import org.opalj.br.DeclaredMethod
+import org.opalj.br.DefinedMethod
+import org.opalj.br.Field
+import org.opalj.br.Method
+import org.opalj.br.MethodDescriptor
+import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.ai.common.DefinitionSite
 import org.opalj.ai.common.DefinitionSitesKey
 import org.opalj.tac.Assignment
@@ -55,11 +51,15 @@ class ReturnValueFreshnessState(val dm: DefinedMethod) {
     private[this] var fieldDependees: Set[EOptionP[Field, FieldLocality]] = Set.empty
     private[this] var defSiteDependees: Set[EOptionP[DefinitionSite, EscapeProperty]] = Set.empty
     private[this] var tacaiDependee: Option[EOptionP[Method, TACAI]] = None
+    private[this] var _calleesDependee: Option[EOptionP[DeclaredMethod, Callees]] = None
+
+    private[this] var _callSitePCs: IntTrieSet = IntTrieSet.empty
 
     private[this] var upperBound: ReturnValueFreshness = FreshReturnValue
 
     def dependees: Set[EOptionP[Entity, Property]] = {
-        returnValueDependees ++ fieldDependees ++ defSiteDependees ++ tacaiDependee
+        returnValueDependees ++ fieldDependees ++ defSiteDependees ++ tacaiDependee ++
+            _calleesDependee.filter(_.isRefinable)
     }
 
     def hasDependees: Boolean = dependees.nonEmpty
@@ -77,6 +77,16 @@ class ReturnValueFreshnessState(val dm: DefinedMethod) {
     def addDefSiteDependee(epOrEpk: EOptionP[DefinitionSite, EscapeProperty]): Unit = {
         defSiteDependees += epOrEpk
     }
+
+    def setCalleesDependee(epOrEpk: EOptionP[DeclaredMethod, Callees]): Unit = {
+        _calleesDependee = Some(epOrEpk)
+    }
+
+    def calleesDependee: Option[EOptionP[DeclaredMethod, Callees]] = _calleesDependee
+
+    def addCallSitePC(pc: Int): Unit = { _callSitePCs += pc }
+
+    def callSitePCs: IntTrieSet = _callSitePCs
 
     def removeMethodDependee(epOrEpk: EOptionP[DeclaredMethod, Property]): Unit = {
         returnValueDependees = returnValueDependees.filter(other ⇒ (other.e ne epOrEpk.e) || other.pk != epOrEpk.pk)
@@ -117,18 +127,17 @@ class ReturnValueFreshnessAnalysis private[analyses] (
         final val project: SomeProject
 ) extends FPCFAnalysis {
 
-    private[this] val declaredMethods = project.get(DeclaredMethodsKey)
+    private[this] implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
     private[this] val definitionSites = project.get(DefinitionSitesKey)
-    private[this] val isOverridableMethod = project.get(IsOverridableMethodKey)
 
     /**
      * Ensures that we invoke [[doDetermineFreshness]] for [[org.opalj.br.DefinedMethod]]s only.
      */
     def determineFreshness(e: Entity): PropertyComputationResult = e match {
-        case dm @ DefinedMethod(dc, m) if m.classFile.thisType == dc ⇒ doDetermineFreshness(dm)
+        case dm: DefinedMethod if dm.definedMethod.classFile.thisType == dm.declaringClassType ⇒ doDetermineFreshness(dm)
 
         // if the method is inherited, query the result for the one in its defining class
-        case DefinedMethod(_, m) ⇒
+        case dm: DefinedMethod ⇒
 
             def handleReturnValueFreshness(
                 eOptP: SomeEOptionP
@@ -146,9 +155,14 @@ class ReturnValueFreshnessAnalysis private[analyses] (
                     )
             }
 
-            handleReturnValueFreshness(propertyStore(declaredMethods(m), ReturnValueFreshness.key))
+            handleReturnValueFreshness(
+                propertyStore(declaredMethods(dm.definedMethod), ReturnValueFreshness.key)
+            )
 
-        case _ ⇒ throw new RuntimeException(s"Unsupported entity $e")
+        // We treat VirtualDeclaredMethods and MultipleDefinedMethods as NoFreshReturnValue for now
+        case dm: DeclaredMethod ⇒ Result(dm, NoFreshReturnValue)
+
+        case _                  ⇒ throw new RuntimeException(s"Unsupported entity $e")
     }
 
     /**
@@ -189,7 +203,6 @@ class ReturnValueFreshnessAnalysis private[analyses] (
         code: Array[Stmt[V]]
     )(implicit state: ReturnValueFreshnessState): PropertyComputationResult = {
         val m = dm.definedMethod
-        implicit val p: SomeProject = project
 
         // for every return-value statement check the def-sites
         for {
@@ -232,18 +245,9 @@ class ReturnValueFreshnessAnalysis private[analyses] (
                         val locality = propertyStore(field, FieldLocality.key)
                         handleFieldLocalityProperty(locality)
 
-                    case StaticFunctionCall.ASTID ⇒
-                        val callee = rhs.asStaticFunctionCall.resolveCallTarget
-                        handleConcreteCall(callee)
-
-                    case NonVirtualFunctionCall.ASTID ⇒
-                        val callee = rhs.asNonVirtualFunctionCall.resolveCallTarget(
-                            dm.declaringClassType.asObjectType
-                        )
-                        handleConcreteCall(callee)
-
-                    case VirtualFunctionCall.ASTID ⇒
-                        handleVirtualCall(rhs.asVirtualFunctionCall)
+                    case StaticFunctionCall.ASTID | NonVirtualFunctionCall.ASTID |
+                        VirtualFunctionCall.ASTID ⇒
+                        handleCallSite(dm, pc)
 
                     // other kinds of assignments like GetStatic etc.
                     case _ ⇒ return Result(dm, NoFreshReturnValue);
@@ -272,73 +276,22 @@ class ReturnValueFreshnessAnalysis private[analyses] (
         else None
     }
 
-    /**
-     * Handles the effect of a virtual call on the return value freshness.
-     * @return false if the return value may still be fresh, true otherwise.
-     * @note Adds dependees as necessary.
-     */
-    def handleVirtualCall(
-        callSite: VirtualFunctionCall[V]
-    )(
+    def handleCallSite(caller: DeclaredMethod, pc: Int)(
         implicit
         state: ReturnValueFreshnessState
     ): Boolean = {
-        val VirtualFunctionCall(_, dc, _, name, desc, receiver, _) = callSite
+        if (state.calleesDependee.isEmpty)
+            state.setCalleesDependee(propertyStore(caller, Callees.key))
+        val calleesEP = state.calleesDependee.get
 
-        val value = receiver.asVar.value.asReferenceValue
-        val dm = state.dm
-        val m = dm.definedMethod
-        val thisType = m.classFile.thisType
-
-        val receiverType = value.valueType
-
-        if (receiverType.isEmpty) {
-            false // Receiver is null, call will never be executed
-        } else if (receiverType.get.isArrayType) {
-            val callee = project.instanceCall(ObjectType.Object, ObjectType.Object, name, desc)
-            handleConcreteCall(callee)
-        } else if (value.isPrecise) {
-            val callee = project.instanceCall(thisType, receiverType.get, name, desc)
-            handleConcreteCall(callee)
+        if (calleesEP.hasNoProperty) {
+            state.addCallSitePC(pc)
+            false
         } else {
-            val callee = declaredMethods(
-                dc.asObjectType,
-                thisType.packageName,
-                receiverType.get.asObjectType,
-                name,
-                desc
-            )
-
-            // unknown method
-            if (!callee.hasSingleDefinedMethod ||
-                isOverridableMethod(callee.definedMethod).isYesOrUnknown)
-                return true;
-
-            val rvf = propertyStore(callee, VirtualMethodReturnValueFreshness.key)
-            handleReturnValueFreshness(rvf)
-        }
-    }
-
-    /**
-     * Handles the influence of a monomorphic call on the return value freshness.
-     * @return false if the return value may still be fresh, true otherwise.
-     * @note Adds dependees as necessary.
-     */
-    def handleConcreteCall(
-        callee: org.opalj.Result[Method]
-    )(
-        implicit
-        state: ReturnValueFreshnessState
-    ): Boolean = {
-        if (callee.isEmpty) // Unknown method, not found in the scope of the current project
-            return true;
-
-        val dmCallee = declaredMethods(callee.value)
-
-        if (dmCallee eq state.dm) {
-            false // Recursive calls don't influence return value freshness
-        } else {
-            handleReturnValueFreshness(propertyStore(dmCallee, ReturnValueFreshness.key))
+            calleesEP.ub.callees(pc).exists { callee ⇒
+                (callee ne caller) && // Recursive calls don't influence return value freshness
+                    handleReturnValueFreshness(propertyStore(callee, ReturnValueFreshness.key))
+            }
         }
     }
 
@@ -354,7 +307,8 @@ class ReturnValueFreshnessAnalysis private[analyses] (
         state: ReturnValueFreshnessState
     ): Boolean = ep match {
         case FinalEP(_, NoEscape | EscapeInCallee) ⇒
-            throw new RuntimeException(s"unexpected result $ep for entity ${state.dm}")
+            //throw new RuntimeException(s"unexpected result $ep for entity ${state.dm}")
+            false // TODO this has happened - why?
 
         case FinalEP(_, EscapeViaReturn) ⇒ false
 
@@ -426,23 +380,28 @@ class ReturnValueFreshnessAnalysis private[analyses] (
      * @note (Re-)Adds dependees as necessary.
      */
     def handleReturnValueFreshness(
-        ep: EOptionP[DeclaredMethod, Property]
+        ep: EOptionP[DeclaredMethod, ReturnValueFreshness]
     )(implicit state: ReturnValueFreshnessState): Boolean = ep match {
-        case FinalEP(_, NoFreshReturnValue | VNoFreshReturnValue) ⇒ true
+        case FinalEP(_, NoFreshReturnValue)  ⇒ true
 
-        case FinalEP(_, FreshReturnValue | VFreshReturnValue)     ⇒ false
+        case FinalEP(_, FreshReturnValue)    ⇒ false
+
+        case EPS(_, _, PrimitiveReturnValue) ⇒ false
 
         //IMPROVE: We can still be a getter if the callee has the same receiver
-        case EPS(_, _, Getter | VGetter)                          ⇒ true
+        case EPS(_, _, Getter)               ⇒ true
 
-        case EPS(_, _, ExtensibleGetter | VExtensibleGetter)      ⇒ true
+        case EPS(_, _, ExtensibleGetter)     ⇒ true
 
-        case IntermediateEP(_, _, FreshReturnValue | VFreshReturnValue) ⇒
+        case IntermediateEP(_, _, FreshReturnValue) ⇒
             state.addMethodDependee(ep)
             false
 
         case _: EPS[_, _] ⇒
+            //TODO This currently happens because of a JSR/RET problem with the TAC
+            // - restore the exception once this is fixed!
             throw new RuntimeException(s"unexpected property $ep for entity ${state.dm}")
+        //false
 
         case _ ⇒
             state.addMethodDependee(ep)
@@ -457,29 +416,37 @@ class ReturnValueFreshnessAnalysis private[analyses] (
     )(implicit state: ReturnValueFreshnessState): PropertyComputationResult = {
         val dm = state.dm
 
-        someEPS.e match {
-            case _: DefinitionSite ⇒
+        someEPS.pk match {
+            case EscapeProperty.key ⇒
                 val newEP = someEPS.asInstanceOf[EOptionP[DefinitionSite, EscapeProperty]]
                 state.removeDefSiteDependee(newEP)
                 if (handleEscapeProperty(newEP))
                     return Result(dm, NoFreshReturnValue);
 
-            case _: DeclaredMethod ⇒
-                val newEP = someEPS.asInstanceOf[EOptionP[DeclaredMethod, Property]]
+            case ReturnValueFreshness.key ⇒
+                val newEP = someEPS.asInstanceOf[EOptionP[DeclaredMethod, ReturnValueFreshness]]
                 state.removeMethodDependee(newEP)
-                if (handleReturnValueFreshness(newEP))
+                if (handleReturnValueFreshness(newEP)) {
                     return Result(dm, NoFreshReturnValue);
+                }
 
-            case _: Field ⇒
+            case FieldLocality.key ⇒
                 val newEP = someEPS.asInstanceOf[EOptionP[Field, FieldLocality]]
                 state.removeFieldDependee(newEP)
                 if (handleFieldLocalityProperty(newEP))
                     return Result(dm, NoFreshReturnValue);
 
-            case _: Method ⇒
+            case TACAI.key ⇒
                 val newEP = someEPS.asInstanceOf[EOptionP[Method, TACAI]]
                 state.updateTacaiDependee(newEP)
                 return determineFreshnessForMethod(dm, newEP.ub.tac.get.stmts);
+
+            case Callees.key ⇒
+                val newEP = someEPS.asInstanceOf[EOptionP[DeclaredMethod, Callees]]
+                state.setCalleesDependee(newEP)
+                if (state.callSitePCs.exists(pc ⇒ handleCallSite(dm, pc))) {
+                    return Result(dm, NoFreshReturnValue);
+                }
         }
 
         returnResult
@@ -505,7 +472,7 @@ sealed trait ReturnValueFreshnessAnalysisScheduler extends ComputationSpecificat
     final override def derives: Set[PropertyKind] = Set(ReturnValueFreshness)
 
     final override def uses: Set[PropertyKind] = {
-        Set(TACAI, EscapeProperty, VirtualMethodReturnValueFreshness, FieldLocality)
+        Set(TACAI, EscapeProperty, Callees, FieldLocality)
     }
 
     final override type InitializationData = Null
@@ -518,8 +485,8 @@ sealed trait ReturnValueFreshnessAnalysisScheduler extends ComputationSpecificat
 }
 
 object EagerReturnValueFreshnessAnalysis
-    extends ReturnValueFreshnessAnalysisScheduler
-    with FPCFEagerAnalysisScheduler {
+        extends ReturnValueFreshnessAnalysisScheduler
+        with FPCFEagerAnalysisScheduler {
 
     override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val declaredMethods =
@@ -531,8 +498,8 @@ object EagerReturnValueFreshnessAnalysis
 }
 
 object LazyReturnValueFreshnessAnalysis
-    extends ReturnValueFreshnessAnalysisScheduler
-    with FPCFLazyAnalysisScheduler {
+        extends ReturnValueFreshnessAnalysisScheduler
+        with FPCFLazyAnalysisScheduler {
 
     /**
      * Registers the analysis as a lazy computation, that is, the method

@@ -4,11 +4,16 @@ package fpcf
 package properties
 
 import org.opalj.log.OPALLogger
+import org.opalj.log.LogContext
 import org.opalj.br.Method
 import org.opalj.br.analyses.ProjectInformationKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.ai.common.DomainRegistry
 
+/**
+ * Encapsulates the information which domain will be used to perform the abstract interpretations
+ * for the specified project. This typically initialized by the [[AIDomainFactoryKey$]].
+ */
 class ProjectSpecificAIExecutor(
         val project:       SomeProject,
         val domainClass:   Class[_ <: Domain],
@@ -19,11 +24,15 @@ class ProjectSpecificAIExecutor(
 }
 
 /**
- * Key to get the factory to create the domains that are used to perform abstract interpretations.
+ * Key to get the factory (actually this is a meta-factory) to create the domains that are
+ * used to perform abstract interpretations.
  * The domain that is going to be used is determined by getting the set of (partial)domains
  * that are required and then computing the cheapest domain;
  * see [[org.opalj.ai.common.DomainRegistry]] for further information.
- * Hence, the AIResult's domain is guaranteed to implement all required (partial) domains.
+ * Hence, the `AIResult`'s domain is guaranteed to implement all required (partial) domains.
+ *
+ * This key's project specific initialization data are `java.lang.Class` objects which
+ * have to be implemented by the finally chosen domain.
  *
  * @author Michael Eichberg
  */
@@ -48,7 +57,7 @@ object AIDomainFactoryKey
      * instantiated using the desired domain.
      */
     override protected def compute(project: SomeProject): ProjectSpecificAIExecutor = {
-        implicit val logContext = project.logContext
+        implicit val logContext: LogContext = project.logContext
 
         val domainFactoryRequirements = project.
             getProjectInformationKeyInitializationData(this).

@@ -7,6 +7,9 @@ import org.scalatest.FunSpec
 import java.net.URL
 import java.io.File
 
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigValueFactory
+
 import org.opalj.ai.common.DefinitionSite
 import org.opalj.ai.common.DefinitionSitesKey
 import org.opalj.br.DefinedMethod
@@ -32,6 +35,8 @@ import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.fpcf.par.PKEParallelTasksPropertyStore
 import org.opalj.fpcf.par.RecordAllPropertyStoreTracer
 import org.opalj.fpcf.properties.PropertyMatcher
+import org.opalj.br.analyses.cg.InitialEntryPointsKey
+import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
 
 /**
  * Framework to test if the properties specified in the test project (the classes in the
@@ -68,11 +73,29 @@ abstract class PropertiesTest extends FunSpec with Matchers {
 
         val libraryClassFiles = (if (withRT) ClassFiles(RTJar) else List()) ++ propertiesClassFiles
 
+        val configForEntryPoints = BaseConfig.withValue(
+            InitialEntryPointsKey.ConfigKeyPrefix+"analysis",
+            ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.AllEntryPointsFinder")
+        ).withValue(
+                InitialEntryPointsKey.ConfigKeyPrefix+"AllEntryPointsFinder.projectMethodsOnly",
+                ConfigValueFactory.fromAnyRef(true)
+            )
+
+        implicit val config: Config = configForEntryPoints.withValue(
+            InitialInstantiatedTypesKey.ConfigKeyPrefix+"analysis",
+            ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.AllInstantiatedTypesFinder")
+        ).withValue(
+                InitialInstantiatedTypesKey.ConfigKeyPrefix+
+                    "AllInstantiatedTypesFinder.projectClassesOnly",
+                ConfigValueFactory.fromAnyRef(true)
+            )
+
         info(s"the test fixture project consists of ${projectClassFiles.size} class files")
         Project(
             projectClassFiles,
             libraryClassFiles,
-            libraryClassFilesAreInterfacesOnly = false
+            libraryClassFilesAreInterfacesOnly = false,
+            virtualClassFiles = Traversable.empty
         )
     }
 
@@ -289,6 +312,8 @@ abstract class PropertiesTest extends FunSpec with Matchers {
 
         init(p)
 
+        PropertyStore.updateDebug(true)
+
         p.getOrCreateProjectInformationKeyInitializationData(
             PropertyStoreKey,
             (context: List[PropertyStoreContext[AnyRef]]) ⇒ {
@@ -296,7 +321,6 @@ abstract class PropertiesTest extends FunSpec with Matchers {
                     new RecordAllPropertyStoreTracer,
                     context.iterator.map(_.asTuple).toMap
                 )(p.logContext)
-                PropertyStore.updateDebug(true)
                 ps
             }
         )
@@ -310,12 +334,13 @@ abstract class PropertiesTest extends FunSpec with Matchers {
         ps.setupPhase((eagerAnalysisRunners ++ lazyAnalysisRunners).flatMap(
             _.derives.map(_.asInstanceOf[PropertyMetaInformation].key)
         ))
+
+        (eagerAnalysisRunners ++ lazyAnalysisRunners).foreach(_.beforeSchedule(p, ps))
+
         val las = lazyAnalysisRunners.map { ar ⇒
-            ar.beforeSchedule(ps)
             ar.startLazily(p, ps, initInfo(ar).asInstanceOf[ar.InitializationData])
         }
         val as = eagerAnalysisRunners.map { ar ⇒
-            ar.beforeSchedule(ps)
             ar.start(p, ps, initInfo(ar).asInstanceOf[ar.InitializationData])
         }
         ps.waitOnPhaseCompletion()
@@ -327,7 +352,7 @@ abstract class PropertiesTest extends FunSpec with Matchers {
 }
 
 case class TestContext(
-        project:       Project[URL],
-        propertyStore: PropertyStore,
-        analyses:      Set[FPCFAnalysis]
+    project:       Project[URL],
+    propertyStore: PropertyStore,
+    analyses:      Set[FPCFAnalysis]
 )

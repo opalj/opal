@@ -4,16 +4,16 @@ package ai
 package fpcf
 package properties
 
+import org.opalj.fpcf.EPS
+import org.opalj.fpcf.FallbackReason
+import org.opalj.fpcf.Property
+import org.opalj.fpcf.PropertyIsNotComputedByAnyAnalysis
+import org.opalj.fpcf.PropertyIsNotDerivedByPreviouslyExecutedAnalysis
+import org.opalj.fpcf.PropertyKey
+import org.opalj.fpcf.PropertyMetaInformation
+import org.opalj.fpcf.PropertyStore
 import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
-import org.opalj.fpcf.PropertyMetaInformation
-import org.opalj.fpcf.PropertyKey
-import org.opalj.fpcf.Property
-import org.opalj.fpcf.PropertyStore
-import org.opalj.fpcf.FallbackReason
-import org.opalj.fpcf.EPS
-import org.opalj.fpcf.PropertyIsNotDerivedByPreviouslyExecutedAnalysis
-import org.opalj.fpcf.PropertyIsNotComputedByAnyAnalysis
 
 sealed trait BaseAIResultPropertyMetaInformation extends PropertyMetaInformation {
 
@@ -57,14 +57,6 @@ case class AnAIResult(theAIResult: AIResult) extends BaseAIResult {
 object BaseAIResult extends BaseAIResultPropertyMetaInformation {
 
     /**
-     * Performs an abstract interpretation of the method using the [[AIDomainFactoryKey]].
-     */
-    def computeAIResult(p: SomeProject, m: Method): AIResult = {
-        // we may still have requirements on the domain that we are going to use...
-        p.get(AIDomainFactoryKey)(m)
-    }
-
-    /**
      * The key associated with every [[BaseAIResult]] property.
      */
     final val key: PropertyKey[BaseAIResult] = PropertyKey.create[Method, BaseAIResult](
@@ -78,7 +70,8 @@ object BaseAIResult extends BaseAIResultPropertyMetaInformation {
                 case PropertyIsNotComputedByAnyAnalysis ⇒
                     // we may still have requirements on the domain that we are going to use...
                     val p = ps.context(classOf[SomeProject])
-                    AnAIResult(computeAIResult(p, m))
+                    // IMPROVE Find an efficient solution that does not require recurring lookups.
+                    AnAIResult(p.get(AIDomainFactoryKey)(m))
             }
         }: BaseAIResult,
         // cycle resolution strategy...

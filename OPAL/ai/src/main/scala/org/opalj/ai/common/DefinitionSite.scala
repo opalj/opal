@@ -10,7 +10,8 @@ import org.opalj.tac.DUVar
 import org.opalj.tac.ExprStmt
 import org.opalj.tac.TACMethodParameter
 import org.opalj.tac.TACode
-import org.opalj.value.KnownTypedValue
+
+import org.opalj.value.ValueInformation
 
 /**
  * Identifies a definition site object in a method in the bytecode using its program counter and
@@ -24,7 +25,7 @@ import org.opalj.value.KnownTypedValue
  * @author Florian Kuebler
  */
 case class DefinitionSite(method: Method, pc: Int) extends DefinitionSiteLike {
-    override def usedBy[V <: KnownTypedValue](
+    override def usedBy[V <: ValueInformation](
         tacode: TACode[TACMethodParameter, DUVar[V]]
     ): IntTrieSet = {
         val defSite = tacode.pcToIndex(pc)

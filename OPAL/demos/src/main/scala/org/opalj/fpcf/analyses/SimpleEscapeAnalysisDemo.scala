@@ -52,10 +52,11 @@ object SimpleEscapeAnalysisDemo extends DefaultOneStepAnalysis {
     ): BasicReport = {
         implicit val logContext: LogContext = project.logContext
 
+        PropertyStore.updateDebug(true)
+
         val propertyStore = time {
             project.get(PropertyStoreKey)
         } { t ⇒ info("progress", s"initialization of property store took ${t.toSeconds}") }
-        PropertyStore.updateDebug(true)
 
         time {
             val manager = project.get(FPCFAnalysesManagerKey)
@@ -66,7 +67,7 @@ object SimpleEscapeAnalysisDemo extends DefaultOneStepAnalysis {
         def countAS(entities: Iterator[Entity]) = entities.count(_.isInstanceOf[DefinitionSite])
 
         // we are only interested in the this locals of the constructors
-        def countFP(entities: Iterator[Entity]) = entities.collect { case e @ VirtualFormalParameter(DefinedMethod(_, m), -1) if m.isConstructor ⇒ e }.size
+        def countFP(entities: Iterator[Entity]) = entities.collect { case e @ VirtualFormalParameter(dm: DefinedMethod, -1) if dm.definedMethod.isConstructor ⇒ e }.size
 
         val message =
             s"""|ALLOCATION SITES:

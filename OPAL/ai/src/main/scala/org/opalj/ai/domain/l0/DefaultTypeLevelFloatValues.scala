@@ -11,7 +11,9 @@ package l0
  *
  * @author Michael Eichberg
  */
-trait DefaultTypeLevelFloatValues extends DefaultDomainValueBinding with TypeLevelFloatValues {
+trait DefaultTypeLevelFloatValues
+    extends DefaultSpecialDomainValuesBinding
+    with TypeLevelFloatValues {
     domain: IntegerValuesFactory ⇒
 
     case object AFloatValue extends super.FloatValue {
@@ -25,6 +27,8 @@ trait DefaultTypeLevelFloatValues extends DefaultDomainValueBinding with TypeLev
         override def adapt(target: TargetDomain, pc: Int): target.DomainValue = {
             target.FloatValue(pc)
         }
+
+        override def constantValue: Option[Float] = None
     }
 
     override def FloatValue(valueOrigin: Int): FloatValue = AFloatValue

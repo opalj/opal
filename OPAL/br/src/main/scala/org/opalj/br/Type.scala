@@ -2,14 +2,15 @@
 package org.opalj
 package br
 
+import scala.annotation.tailrec
+
 import java.lang.ref.WeakReference
 import java.util.WeakHashMap
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.locks.ReentrantReadWriteLock
 
-import scala.annotation.tailrec
-import scala.math.Ordered
 import scala.collection.SortedSet
+import scala.math.Ordered
 
 import org.opalj.collection.UIDValue
 import org.opalj.collection.immutable.UIDSet
@@ -368,7 +369,7 @@ sealed abstract class ReferenceType extends FieldType {
 
     final override def asReferenceType: ReferenceType = this
 
-    final override def computationalType = ComputationalTypeReference
+    final override def computationalType: ComputationalType = ComputationalTypeReference
 
     /**
      * Each reference type is associated with a unique id. Object types get ids &gt;= 0
@@ -403,6 +404,8 @@ object ReferenceType {
 }
 
 sealed trait BaseType extends FieldType with TypeSignature {
+
+    type JType <: AnyVal
 
     final override def isBaseType: Boolean = true
 
@@ -546,6 +549,8 @@ sealed abstract class IntLikeType protected () extends NumericType with CTIntTyp
 
 sealed abstract class ByteType private () extends IntLikeType {
 
+    final override type JType = Byte
+
     final val atype = 8
 
     final val id = Int.MinValue + atype
@@ -595,6 +600,8 @@ case object ByteType extends ByteType
 
 sealed abstract class CharType private () extends IntLikeType {
 
+    final override type JType = Char
+
     final val atype = 5
 
     final val id = Int.MinValue + atype
@@ -642,6 +649,8 @@ sealed abstract class CharType private () extends IntLikeType {
 case object CharType extends CharType
 
 sealed abstract class DoubleType private () extends NumericType {
+
+    final override type JType = Double
 
     final override def isDoubleType: Boolean = true
 
@@ -696,6 +705,8 @@ case object DoubleType extends DoubleType
 
 sealed abstract class FloatType private () extends NumericType {
 
+    final override type JType = Float
+
     final val atype = 6
 
     final val id = Int.MinValue + atype
@@ -748,6 +759,8 @@ case object FloatType extends FloatType
 
 sealed abstract class ShortType private () extends IntLikeType {
 
+    final override type JType = Short
+
     final val atype = 9
 
     final val id = Int.MinValue + atype
@@ -796,6 +809,8 @@ sealed abstract class ShortType private () extends IntLikeType {
 case object ShortType extends ShortType
 
 sealed abstract class IntegerType private () extends IntLikeType {
+
+    final override type JType = Int
 
     final val atype = 10
 
@@ -849,6 +864,8 @@ sealed abstract class IntegerType private () extends IntLikeType {
 case object IntegerType extends IntegerType
 
 sealed abstract class LongType private () extends NumericType {
+
+    final override type JType = Long
 
     final val atype = 11
 
@@ -908,6 +925,8 @@ case object LongType extends LongType
  * some "byte|short|char|int" value to an int value is not directly supported.
  */
 sealed abstract class BooleanType private () extends BaseType with CTIntType {
+
+    final override type JType = Boolean
 
     final val atype = 4
 
@@ -970,9 +989,9 @@ final class ObjectType private ( // DO NOT MAKE THIS A CASE CLASS!
 
     override def toJava: String = fqn.replace('/', '.')
 
-    override def toBinaryJavaName: String = "L"+toJava+";"
+    override def toBinaryJavaName: String = 'L' + toJava + ';'
 
-    override def toJVMTypeName: String = "L"+fqn+";"
+    override def toJVMTypeName: String = 'L' + fqn + ';'
 
     override def toJavaClass: java.lang.Class[_] = classOf[Type].getClassLoader().loadClass(toJava)
 
@@ -1155,12 +1174,27 @@ object ObjectType {
     final val ModuleInfo = ObjectType("module-info")
     require(ModuleInfo.id == 12)
 
+    // the following types are relevant when checking the subtype relation between
+    // two reference types where the subtype is an array type
+    final val Serializable = ObjectType("java/io/Serializable")
+    final val SerializableId = 13
+    require(Serializable.id == SerializableId)
+    final val Cloneable = ObjectType("java/lang/Cloneable")
+    final val CloneableId = 14
+    require(Cloneable.id == CloneableId)
+    final val Comparable = ObjectType("java/lang/Comparable")
+    final val ComparableId = 15
+    require(Comparable.id == ComparableId)
+
     final val System = ObjectType("java/lang/System")
 
     final val Throwable = ObjectType("java/lang/Throwable")
     final val Error = ObjectType("java/lang/Error")
     final val Exception = ObjectType("java/lang/Exception")
     final val RuntimeException = ObjectType("java/lang/RuntimeException")
+
+    final val Thread = ObjectType("java/lang/Thread")
+    final val Runnable = ObjectType("java/lang/Runnable")
 
     final val StringBuilder = ObjectType("java/lang/StringBuilder")
 
@@ -1196,11 +1230,6 @@ object ObjectType {
     final val ArithmeticException = ObjectType("java/lang/ArithmeticException")
     final val ClassNotFoundException = ObjectType("java/lang/ClassNotFoundException")
 
-    // the following types are relevant when checking the subtype relation between
-    // two reference types where the subtype is an array type
-    final val Serializable = ObjectType("java/io/Serializable")
-    final val Cloneable = ObjectType("java/lang/Cloneable")
-
     /**
      * Least upper type bound of Java arrays. That is, every Java array
      * is always `Serializable` and `Cloneable`.
@@ -1214,6 +1243,9 @@ object ObjectType {
 
     // Given the importance of "Object Serialization" we also predefine Externalizable
     final val Externalizable = ObjectType("java/io/Externalizable")
+
+    final val ObjectInputStream = ObjectType("java/io/ObjectInputStream")
+    final val ObjectOutputStream = ObjectType("java/io/ObjectOutputStream")
 
     /**
      * Implicit mapping from a wrapper type to its primitive type.
@@ -1389,7 +1421,7 @@ final class ArrayType private ( // DO NOT MAKE THIS A CASE CLASS!
 
     // The default equals and hashCode methods are a perfect fit.
 
-    override def toString = "ArrayType("+componentType.toString+")"
+    override def toString: String = "ArrayType("+componentType.toString+")"
 }
 
 /**

@@ -7,7 +7,7 @@ import org.opalj.br.analyses.ProjectLike
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.RefArray
 import org.opalj.collection.immutable.IntArray
-import org.opalj.value.KnownTypedValue
+import org.opalj.value.ValueInformation
 
 /**
  * Super trait of all three-address code/quadruple statements.
@@ -58,6 +58,7 @@ sealed abstract class Stmt[+V <: Var[V]] extends ASTNode[V] {
     def asMonitorExit: MonitorExit[V] = throw new ClassCastException();
     def asArrayStore: ArrayStore[V] = throw new ClassCastException();
     def asThrow: Throw[V] = throw new ClassCastException();
+    def asFieldWriteAccessStmt: FieldWriteAccessStmt[V] = throw new ClassCastException();
     def asPutStatic: PutStatic[V] = throw new ClassCastException();
     def asPutField: PutField[V] = throw new ClassCastException();
     /*inner type*/ def asMethodCall: MethodCall[V] = throw new ClassCastException();
@@ -75,10 +76,10 @@ sealed abstract class Stmt[+V <: Var[V]] extends ASTNode[V] {
 /**
  * @param target Index in the statements array.
  * @param left The expression left to the relational operator. In general, this can be expected to
- *             be a Var. However, it is not expression to facilitate advanced use cases such as
+ *             be a Var. However, it is an expression to facilitate advanced use cases such as
  *             generating source code.
  * @param right The expression right to the relational operator. In general, this can be expected to
- *             be a Var. However, it is not expression to facilitate advanced use cases such as
+ *             be a Var. However, it is an expression to facilitate advanced use cases such as
  *             generating source code.
  *
  */
@@ -485,7 +486,17 @@ object Throw {
 sealed abstract class FieldWriteAccessStmt[+V <: Var[V]] extends Stmt[V] {
     def declaringClass: ObjectType
     def name: String
+    def declaredFieldType: FieldType
     def value: Expr[V]
+
+    final override def asFieldWriteAccessStmt: this.type = this
+
+    /**
+     * Identifies the field if it can be found.
+     */
+    def resolveField(implicit p: ProjectLike): Option[Field] = {
+        p.resolveFieldReference(declaringClass, name, declaredFieldType)
+    }
 }
 
 case class PutStatic[+V <: Var[V]](
@@ -576,6 +587,9 @@ sealed abstract class MethodCall[+V <: Var[V]] extends Stmt[V] with Call[V] {
 
 sealed abstract class InstanceMethodCall[+V <: Var[V]] extends MethodCall[V] {
 
+    final override def allParams: Seq[Expr[V]] = receiver +: params
+    final override def receiverOption: Option[Expr[V]] = Some(receiver)
+
     def receiver: Expr[V]
     final override def asInstanceMethodCall: this.type = this
     final override def forallSubExpressions[W >: V <: Var[W]](p: Expr[W] ⇒ Boolean): Boolean = {
@@ -634,7 +648,7 @@ case class NonVirtualMethodCall[+V <: Var[V]](
     )(
         implicit
         p:  ProjectLike,
-        ev: V <:< DUVar[KnownTypedValue]
+        ev: V <:< DUVar[ValueInformation]
     ): Set[Method] = {
         resolveCallTarget(callingContext)(p).toSet
     }
@@ -684,6 +698,9 @@ case class StaticMethodCall[+V <: Var[V]](
         params:         Seq[Expr[V]]
 ) extends MethodCall[V] {
 
+    final override def allParams: Seq[Expr[V]] = params
+    final override def receiverOption: Option[Expr[V]] = None
+
     final override def asStaticMethodCall: this.type = this
     final override def astID: Int = StaticMethodCall.ASTID
     final override def forallSubExpressions[W >: V <: Var[W]](p: Expr[W] ⇒ Boolean): Boolean = {
@@ -705,7 +722,7 @@ case class StaticMethodCall[+V <: Var[V]](
     )(
         implicit
         p:  ProjectLike,
-        ev: V <:< DUVar[KnownTypedValue]
+        ev: V <:< DUVar[ValueInformation]
     ): Set[Method] = {
         resolveCallTarget(p).toSet
     }
@@ -721,7 +738,7 @@ case class StaticMethodCall[+V <: Var[V]](
         val sig = descriptor.toJava(name)
         val declClass = declaringClass.toJava
         val params = this.params.mkString("(", ",", ")")
-        s"NonVirtualMethodCall(pc=$pc,$declClass,isInterface=$isInterface,$sig,$params)"
+        s"StaticMethodCall(pc=$pc,$declClass,isInterface=$isInterface,$sig,$params)"
     }
 }
 object StaticMethodCall {

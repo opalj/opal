@@ -66,7 +66,7 @@ class FPCFAnalysesManager private[fpcf] (
 
         if (trace) { debug("analysis progress", "executing "+schedule) }
         time {
-            schedule(propertyStore)
+            schedule(propertyStore, trace)
         } { t ⇒
             if (trace) debug("analysis progress", s"execution of schedule took ${t.toSeconds}")
         }
@@ -84,6 +84,6 @@ class FPCFAnalysesManager private[fpcf] (
 
 object FPCFAnalysesManager {
 
-    final val TraceConfigKey = "org.opalj.debug.fcpf.analyses.FPCFAnalysesManager.trace"
+    final val TraceConfigKey = "org.opalj.fpcf.analyses.FPCFAnalysesManager.Trace"
 
 }

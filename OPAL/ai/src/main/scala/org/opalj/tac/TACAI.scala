@@ -999,11 +999,52 @@ object TACAI {
                 singletonBBsExpander,
                 lastIndex = index - 1
             )
-        val taExceptionHanders = updateExceptionHandlers(pcToIndex)(aiResult)
+        val taExceptionHandlers = updateExceptionHandlers(pcToIndex)(aiResult)
         val lnt = code.lineNumberTable
         val initialTAC = TACode[TACMethodParameter, AIDUVar](
-            tacParams, tacStmts, pcToIndex, taCodeCFG, taExceptionHanders, lnt
+            tacParams, tacStmts, pcToIndex, taCodeCFG, taExceptionHandlers, lnt
         )
+
+        // Potential Optimizations
+        // =======================
+        // (1) Optimizing "not operations on booleans"... e.g., Java code such as m(!a) which is
+        // compiled to:
+        //      if(a)
+        //          val b = false
+        //      else
+        //          val c = true
+        //      m({b,c})
+        // Goal:
+        //      val c = !a
+        //      m(c)
+        //
+        // (2) Perform constant propagation when a use-site has only a _single_ def-site:
+        //     val x = 304
+        //     if({a,b} != x) goto t
+        //          =>  afterwards check if the def site has more use sites and – if not –
+        //              replace it by nops
+        //
+        //
+        // (3) Identify _really_ useless nops and remove them. (Note that some nops may be
+        //     required to ensure that the path information is available. E.g.,
+        //     java.lang.String.<init>(byte[],int,int,int) (java 1.8.0_181)
+
+        // Non-Optimizations
+        // =================
+        // The following code looks optimizable, but is actually not optimizable!
+        //
+        // Seemingly useless if-gotos; e.g., (taken from "java.lang.String replace(char,char)")
+        // 20: if({a} != {param1}) goto 22
+        //       // 20 →
+        // 21:/*pc=102:*/ goto 23
+        //       // 20 →
+        // 22:/*pc=105:*/ ;
+        //       // 21, 22 →
+        // 23:/*pc=107:*/ {lvb}[{lv18, lv5}] = {param2, lv13}
+        //       // ⚡️ <uncaught exception ⇒ abnormal return>
+        // THIS CODE CANNOT BE OPTIMIZED BECAUSE THE CONTROL-FLOW IS RELEVANT TO DETERMINE
+        // WHICH VALUES (param2 or lv13 / lv18 or lv5) ARE ACTUALLY SELECTED AT RUNTIME.
+        // HOWEVER, THIS IS NOT DIRECTLY OBVIOUS FROM THE ABOVE CODE!
 
         if (optimizations.nonEmpty) {
             val base = TACOptimizationResult(initialTAC, wasTransformed = false)

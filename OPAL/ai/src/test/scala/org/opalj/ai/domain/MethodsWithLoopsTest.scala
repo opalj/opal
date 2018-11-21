@@ -50,7 +50,7 @@ class MethodsWithLoopsTest extends FlatSpec with Matchers {
 
         object MostBasicDomain
             extends Domain
-            with DefaultDomainValueBinding
+            with DefaultSpecialDomainValuesBinding
             with ThrowAllPotentialExceptionsConfiguration
             with l0.DefaultReferenceValuesBinding
             with l0.DefaultTypeLevelIntegerValues

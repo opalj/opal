@@ -223,8 +223,9 @@ class PropertyComputationsSchedulerTest extends FunSpec with Matchers with Befor
                 def force[E <: Entity, P <: Property](e: E, pk: PropertyKey[P]): Unit = ???
 
                 def registerLazyPropertyComputation[E <: Entity, P <: Property](
-                    pk: PropertyKey[P],
-                    pc: PropertyComputation[E]
+                    pk:       PropertyKey[P],
+                    pc:       PropertyComputation[E],
+                    finalEPs: TraversableOnce[FinalEP[E, P]]
                 ): Unit = {}
                 def registerTriggeredComputation[E <: Entity, P <: Property](
                     pk: PropertyKey[P],
@@ -247,7 +248,7 @@ class PropertyComputationsSchedulerTest extends FunSpec with Matchers with Befor
             it("should be possible to create a schedule where a property is computed by multiple computations") {
                 val schedule = AnalysisScenario(Set(c9, c10Lazy)).computeSchedule
 
-                /*smoke test: */ schedule(PKESequentialPropertyStore())
+                /*smoke test: */ schedule(PKESequentialPropertyStore(), trace = false)
 
                 val batches = schedule.batches
                 batches.size should be(1)
@@ -262,7 +263,7 @@ class PropertyComputationsSchedulerTest extends FunSpec with Matchers with Befor
                 val scenario = AnalysisScenario(Set(c1, c2, c3, c4, c5, c6, c7Lazy, c8Lazy, c9))
                 val schedule = scenario.computeSchedule
                 val ps = new PropertyStoreConfigurationRecorder()
-                /*smoke test: */ schedule(ps)
+                /*smoke test: */ schedule(ps, trace = false)
 
                 schedule.batches(5).toSet should contain(c7Lazy)
                 schedule.batches(5).toSet should contain(c8Lazy)

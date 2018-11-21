@@ -9,7 +9,7 @@ import org.opalj.br.MethodDescriptor
 import org.opalj.br.ReferenceType
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.ProjectLike
-import org.opalj.value.KnownTypedValue
+import org.opalj.value.ValueInformation
 
 /**
  * Common supertrait of statements and expressions calling a method.
@@ -26,9 +26,19 @@ trait Call[+V <: Var[V]] {
     def descriptor: MethodDescriptor
 
     /**
-     * The parameters of the method call (including the implicit `this` reference if necessary.)
+     * The parameters of the call (excluding the implicit `this` reference.)
      */
     def params: Seq[Expr[V]] // TODO IndexedSeq
+
+    /**
+     * The parameters of the call (including the implicit `this` reference if necessary.)
+     */
+    def allParams: Seq[Expr[V]]
+
+    /**
+     * The receiver of the call if it is an instance call, None if it is a static call.
+     */
+    def receiverOption: Option[Expr[V]]
 
     /**
      * Convenience method which abstracts over all kinds of calls; not all information is
@@ -39,7 +49,7 @@ trait Call[+V <: Var[V]] {
     )(
         implicit
         p:  ProjectLike,
-        ev: V <:< DUVar[KnownTypedValue]
+        ev: V <:< DUVar[ValueInformation]
     ): Set[Method]
 }
 

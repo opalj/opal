@@ -37,7 +37,7 @@ object MethodReturnValuesAnalysis extends DefaultOneStepAnalysis {
             val ai:               InterruptableAI[_],
             val method:           Method
     ) extends CorrelationalDomain
-        with domain.DefaultDomainValueBinding
+        with domain.DefaultSpecialDomainValuesBinding
         with domain.ThrowAllPotentialExceptionsConfiguration
         with domain.l0.DefaultTypeLevelIntegerValues
         with domain.l0.DefaultTypeLevelLongValues
@@ -64,20 +64,34 @@ object MethodReturnValuesAnalysis extends DefaultOneStepAnalysis {
         // e.g., a method that always throws an exception...
         def returnedValue: Option[DomainValue] = Option(theReturnedValue)
 
-        protected[this] def doRecordReturnedValue(pc: Int, value: DomainValue): Unit = {
-            if (theReturnedValue == null)
-                theReturnedValue = value.summarize(Int.MinValue)
-            else
-                theReturnedValue = summarize(Int.MinValue, Iterable(theReturnedValue, value))
+        protected[this] def doRecordReturnedValue(pc: Int, value: DomainValue): Boolean = {
+            val isUpdated =
+                if (theReturnedValue == null) {
+                    theReturnedValue = value.summarize(Int.MinValue)
+                    true
+                } else {
+                    val newReturnedValue = summarize(Int.MinValue, Iterable(theReturnedValue, value))
+                    if (newReturnedValue ne theReturnedValue) {
+                        theReturnedValue = newReturnedValue
+                        true
+                    } else {
+                        false
+                    }
+                }
 
+            // Test if it make sense to continue the abstract interpretation or if the
+            // return value information is already not more precise than the "return type".
             theReturnedValue match {
                 case rv @ TypeOfReferenceValue(UIDSet1(`originalReturnType`)) if (
                     rv.isNull.isUnknown && !rv.isPrecise
                 ) ⇒
                     // the return type will not be more precise than the original type
                     ai.interrupt()
+
                 case _ ⇒ /*go on*/
             }
+
+            isUpdated
         }
     }
 

@@ -18,6 +18,8 @@ import scalafx.beans.property.IntegerProperty
 import scalafx.beans.property.LongProperty
 import org.opalj.br.analyses.Project
 
+import scala.reflect.io.Directory
+
 /**
  * Implements the core functionality to evaluate a set of feature queries against a set of
  * projects; does not provide any UI. The GUI is implemented by the class [[Hermes]] and the
@@ -296,4 +298,101 @@ trait HermesCore extends HermesConfig {
         writer.flush()
     }
 
+    def exportLocations(dir: Directory): Unit = {
+        projectConfigurations.iterator foreach { pc ⇒
+            featureMatrix.foreach { pf ⇒
+                val projectFile = new File(s"${dir.path}/${pf.id.value}.tsv")
+                io.process(new BufferedWriter(new FileWriter(projectFile))) { writer ⇒
+                    exportLocations(writer, pf)
+                }
+            }
+        }
+    }
+
+    def exportLocations(writer: BufferedWriter, pf: ProjectFeatures[URL]): Unit = {
+        // Logic to create the csv file:
+        val csvSchema = CsvSchema.builder()
+            .addColumn("PID")
+            .addColumn("FID")
+            .addColumn("Source")
+            .addColumn("Package")
+            .addColumn("FQN")
+            .addColumn("MethodName")
+            .addColumn("MethodDescriptor")
+            .addColumn("PC", CsvSchema.ColumnType.NUMBER)
+            .addColumn("Field")
+            .setUseHeader(true)
+            .setColumnSeparator('\t')
+            .build()
+
+        val csvGenerator = new CsvFactory().createGenerator(writer)
+        csvGenerator.setSchema(csvSchema)
+
+        def writeEntry[S](
+            source:           Option[S],
+            pn:               String,
+            cls:              String    = "",
+            methodName:       String    = "",
+            methodDescriptor: String    = "",
+            inst:             String    = "",
+            field:            String    = ""
+        ): Unit = {
+            csvGenerator.writeString(source.getOrElse("").toString)
+            csvGenerator.writeString(pn)
+            csvGenerator.writeString(cls)
+            csvGenerator.writeString(methodName)
+            csvGenerator.writeString(methodDescriptor)
+            csvGenerator.writeString(inst)
+            csvGenerator.writeString(field)
+        }
+
+        val projectId = pf.id.value
+        pf.features.foreach { f ⇒
+            val feature = f.value
+            val fid = feature.id
+            feature.extensions.foreach { l ⇒
+                csvGenerator.writeStartArray()
+                csvGenerator.writeString(projectId)
+                csvGenerator.writeString(fid)
+                l match {
+                    case PackageLocation(source, packageName) ⇒
+                        writeEntry(source, packageName)
+                    case ClassFileLocation(source, classFileFQN) ⇒
+                        writeEntry(source, "", s"L${classFileFQN.replace(".", "/")};")
+                    case ml @ MethodLocation(cfl, _, _) ⇒
+                        val jvmTypeName = s"L${ml.classFileFQN.replace(".", "/")};"
+                        writeEntry(
+                            cfl.source,
+                            "",
+                            jvmTypeName,
+                            ml.methodName,
+                            ml.methodDescriptor.toJVMDescriptor
+                        )
+                    case InstructionLocation(ml, pc) ⇒
+                        val jvmTypeName = s"L${ml.classFileFQN.replace(".", "/")};"
+                        writeEntry(
+                            ml.source,
+                            "",
+                            jvmTypeName,
+                            ml.methodName,
+                            ml.methodDescriptor.toJVMDescriptor,
+                            pc.toString
+                        )
+                    case FieldLocation(cfl, fieldName, fieldType) ⇒
+                        val fieldEntry = s"$fieldName : ${fieldType.toJava}"
+                        val jvmTypeName = s"L${cfl.classFileFQN.replace(".", "/")};"
+                        writeEntry(
+                            cfl.source,
+                            "",
+                            jvmTypeName,
+                            field = fieldEntry
+                        )
+                    case _ ⇒ throw new UnknownError(s"unsupported location type: $l")
+                }
+                csvGenerator.flush()
+                csvGenerator.writeEndArray()
+            }
+        }
+        csvGenerator.flush()
+    }
 }

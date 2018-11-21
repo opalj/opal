@@ -29,8 +29,7 @@ trait IntSet[T <: IntSet[T]] { intSet: T ⇒
     def withFilter(p: Int ⇒ Boolean): T
     def map(f: Int ⇒ Int): T
     /**
-     * Uses the keys of this set to map them to the value found in
-     * the given array at the respective index.
+     * Uses the keys of this set to map them to the value found in the given array at the respective index.
      */
     def map(map: Array[Int]): T
     def map[A <: AnyRef](f: Int ⇒ A): Set[A] = foldLeft(Set.empty[A])(_ + f(_)) // IMPROVE Consider using SetBuilder to set the initial "expected" (maximum) size
@@ -76,6 +75,7 @@ trait IntSet[T <: IntSet[T]] { intSet: T ⇒
         foreach(i ⇒ b += f(i))
         b.result()
     }
+
     def toArray: Array[Int] = {
         val size = this.size
         val data = new Array[Int](size)

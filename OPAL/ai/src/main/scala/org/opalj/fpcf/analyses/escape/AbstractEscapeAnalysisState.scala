@@ -5,8 +5,10 @@ package analyses
 package escape
 
 import org.opalj.ai.common.DefinitionSiteLike
+import org.opalj.br.DeclaredMethod
 import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.fpcf.cg.properties.Callees
 import org.opalj.fpcf.properties.EscapeProperty
 import org.opalj.fpcf.properties.NoEscape
 import org.opalj.fpcf.properties.VirtualMethodEscapeProperty
@@ -14,7 +16,6 @@ import org.opalj.tac.Expr
 import org.opalj.tac.TACMethodParameter
 import org.opalj.tac.TACode
 import org.opalj.tac.UVar
-
 import scala.collection.mutable
 
 /**
@@ -50,13 +51,16 @@ trait AbstractEscapeAnalysisState {
      */
     @inline private[escape] final def addDependency(eOptionP: EOptionP[Entity, Property]): Unit = {
         _dependees += eOptionP
+        if (_dependees.count(epk ⇒ (epk.e eq eOptionP.e) && epk.pk == eOptionP.pk) > 1)
+            println()
+        assert(_dependees.count(epk ⇒ (epk.e eq eOptionP.e) && epk.pk == eOptionP.pk) <= 1)
     }
 
     /**
      * Removes the entity property pair (or epk) that correspond to the given ep from the set of
      * dependees.
      */
-    @inline private[escape] final def removeDependency(ep: EPS[Entity, Property]): Unit = {
+    @inline private[escape] final def removeDependency(ep: EOptionP[Entity, Property]): Unit = {
         assert(_dependees.count(epk ⇒ (epk.e eq ep.e) && epk.pk == ep.pk) <= 1)
         _dependees = _dependees.filter(epk ⇒ (epk.e ne ep.e) || epk.pk != ep.pk)
     }
@@ -121,6 +125,9 @@ trait AbstractEscapeAnalysisState {
  * to the [[PropertyStore]].
  */
 trait DependeeCache {
+    // TODO There is only ever one key in this map, the current method, so an Option should suffice
+    private[escape] val calleesCache: mutable.Map[DeclaredMethod, EOptionP[Entity, Callees]] =
+        mutable.Map()
 
     private[escape] val dependeeCache: mutable.Map[VirtualFormalParameter, EOptionP[Entity, EscapeProperty]] =
         mutable.Map()

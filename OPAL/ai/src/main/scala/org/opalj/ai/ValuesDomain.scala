@@ -5,19 +5,15 @@ package ai
 import scala.language.higherKinds
 import scala.reflect.ClassTag
 
-import org.opalj.br.ComputationalType
-import org.opalj.br.ComputationalTypeReturnAddress
+import org.opalj.value.IsIllegalValue
+import org.opalj.value.IsReferenceValue
+import org.opalj.value.IsReturnAddressValue
+import org.opalj.value.KnownTypedValue
+import org.opalj.value.ValueInformation
+import org.opalj.br.ClassHierarchy
+import org.opalj.br.PC
 import org.opalj.br.ReferenceType
 import org.opalj.br.Type
-import org.opalj.br.PC
-import org.opalj.br.TopVariableInfo
-import org.opalj.br.VerificationTypeInfo
-import org.opalj.br.NullVariableInfo
-import org.opalj.br.ObjectVariableInfo
-import org.opalj.value.ValueInformation
-import org.opalj.value.IsReferenceValue
-import org.opalj.value.UnknownValue
-import org.opalj.value.KnownTypedValue
 
 /**
  * Defines the concept of a value in a `Domain`.
@@ -28,6 +24,29 @@ import org.opalj.value.KnownTypedValue
  * @author Dennis Siebert
  */
 trait ValuesDomain { domain ⇒
+
+    /**
+     * This project's class hierarchy.
+     *
+     * Usually, just a redirect to the `Project`'s class hierarchy or the default class hierarchy.
+     */
+    implicit def classHierarchy: ClassHierarchy
+
+    /**
+     * Tests if `subtype` is known to be subtype of `supertype`.
+     * See [[org.opalj.br.ClassHierarchy]]'s `isSubtypeOf` method for details.
+     */
+    final def isASubtypeOf(subtype: ReferenceType, supertype: ReferenceType): Answer = {
+        classHierarchy.isASubtypeOf(subtype, supertype)
+    }
+
+    /**
+     * Tests if `subtype` is known to be subtype of `supertype`.
+     * See [[org.opalj.br.ClassHierarchy]]'s `isSubtypeOf` method for details.
+     */
+    final def isSubtypeOf(subtype: ReferenceType, supertype: ReferenceType): Boolean = {
+        classHierarchy.isSubtypeOf(subtype, supertype)
+    }
 
     // -----------------------------------------------------------------------------------
     //
@@ -119,7 +138,9 @@ trait ValuesDomain { domain ⇒
      *      If values need to be compared across domains, they need to be adapted
      *      to a target domain first.
      */
-    trait Value extends KnownTypedValue { this: DomainValue ⇒
+    trait Value extends ValueInformation { this: DomainValue ⇒
+
+        @inline final def PCIndependent: Int = Int.MinValue
 
         /**
          * @return  The concrete return address stored by this value; this method
@@ -129,13 +150,6 @@ trait ValuesDomain { domain ⇒
         private[ai] def asReturnAddressValue: Int = {
             throw new ClassCastException(this.getClass.getSimpleName+" is no return address value");
         }
-
-        @inline final def PCIndependent: Int = Int.MinValue
-
-        /**
-         * The type of this value as used by the [[org.opalj.br.StackMapTable]] attribute.
-         */
-        def verificationTypeInfo: VerificationTypeInfo
 
         /**
          * Returns the represented reference value iff this value represents a reference value.
@@ -355,13 +369,14 @@ trait ValuesDomain { domain ⇒
          * The type kind of the values, if the value has a specific type kind; `None` if and
          * only if the underlying value is `null`.
          *
-         * @return The type/the upper type bound of the value. If the type is a base type, then
-         *         the type is necessarily precise. In case of a reference type the type may be
-         *         an upper type bound or may be precise. In the latter case, it may be possible
-         *         to get further information using the concrete domain. If the underlying value
-         *         is `null`, `None` is returned.
+         * @return The type/the least upper type bound of the value.
+         *         If the type is a base type, then the type is necessarily precise.
+         *         In case of a reference type the type may be an upper type bound or may be
+         *         precise.
+         *         In the latter case, it may be possible to get further information using
+         *         the concrete domain. If the underlying value is `null`, `None` is returned.
          */
-        def valueType: Option[T]
+        def leastUpperType: Option[T]
 
     }
 
@@ -380,9 +395,11 @@ trait ValuesDomain { domain ⇒
     trait ReferenceValue extends TypedValue[ReferenceType] with IsReferenceValue {
         this: domain.DomainReferenceValue ⇒
 
-        final override type BaseReferenceValue = domain.DomainReferenceValue
-        final override def asBaseReferenceValue: BaseReferenceValue = this
+        override def baseValues: Traversable[domain.DomainReferenceValue]
 
+        override def allValues: Traversable[domain.DomainReferenceValue]
+
+        /*
         /**
          * Provides the correct verification type for non-locally initialized object values if
          * null-ness is tracked.
@@ -394,9 +411,10 @@ trait ValuesDomain { domain ⇒
             if (isNull.isYes) {
                 NullVariableInfo
             } else {
-                ObjectVariableInfo(valueType.get.asReferenceType)
+                ObjectVariableInfo(leastUpperType.get.asReferenceType)
             }
         }
+        */
     }
 
     /**
@@ -436,17 +454,8 @@ trait ValuesDomain { domain ⇒
      *
      * @see [[org.opalj.ai.Domain.Value]] for further details.
      */
-    protected class IllegalValue extends Value { this: DomainIllegalValue ⇒
-
-        final override def computationalType: Nothing = {
-            throw DomainException("an IllegalValue has no computational type")
-        }
-
-        final override def verificationTypeInfo: VerificationTypeInfo = TopVariableInfo
-
-        final override def isPrimitiveValue: Boolean = false
-        final override def isReferenceValue: Boolean = false
-        final override def isVoid: Boolean = false
+    protected class IllegalValue extends Value with IsIllegalValue {
+        this: DomainIllegalValue ⇒
 
         @throws[DomainException]("doJoin(...) is not supported by IllegalValue")
         override protected def doJoin(pc: Int, other: DomainValue): Update[DomainValue] = {
@@ -504,17 +513,7 @@ trait ValuesDomain { domain ⇒
     }
 
     // an implementation trait for return addresses
-    trait RETValue extends Value { this: DomainValue ⇒
-
-        final override def computationalType: ComputationalType = ComputationalTypeReturnAddress
-
-        final override def verificationTypeInfo: VerificationTypeInfo = {
-            throw new UnsupportedOperationException("see JVM Spec.: StackMapTableAttribute");
-        }
-
-        def isPrimitiveValue: Boolean = false
-        def isReferenceValue: Boolean = false
-        def isVoid: Boolean = false
+    trait RETValue extends Value with IsReturnAddressValue { this: DomainValue ⇒
 
         @throws[DomainException]("summarize(...) is not supported by RETValue")
         override def summarize(pc: Int): DomainValue = {
@@ -526,7 +525,8 @@ trait ValuesDomain { domain ⇒
      * A collection of (not further stored) return address values. Primarily used when we
      * join the executions of subroutines.
      */
-    class ReturnAddressValues extends RETValue { this: DomainReturnAddressValues ⇒
+    class ReturnAddressValues extends RETValue {
+        this: DomainReturnAddressValues ⇒
 
         override protected def doJoin(pc: Int, other: DomainValue): Update[DomainValue] = {
             other match {
@@ -605,48 +605,6 @@ trait ValuesDomain { domain ⇒
     // QUESTION'S ABOUT VALUES
     //
     // -----------------------------------------------------------------------------------
-
-    /**
-     * Returns the type(type bounds) of the given value.
-     *
-     * In general a single value can have multiple type bounds which depend on the control flow.
-     * However, all types that the value represents must belong to the same
-     * computational type category. I.e., it is possible that the value either has the
-     * type "`NullPointerException` or `IllegalArgumentException`", but it will never have
-     * – at the same time – the (Java) types `int` and `long`. Furthermore,
-     * it is possible that the returned type(s) is(are) only an upper bound of the
-     * real type unless the type is a primitive type.
-     *
-     * This default implementation always returns [[org.opalj.value.UnknownValue]].
-     *
-     * ==Implementing `typeOfValue`==
-     * This method is typically not implemented by a single `Domain` trait/object, but is
-     * instead implemented collaboratively by all domains that implement the semantics
-     * of certain values. To achieve that, other `Domain` traits that implement a
-     * concrete domain's semantics have to `abstract override` this method and only
-     * return the value's type if the domain knows anything about the type. If a method
-     * that overrides this method has no knowledge about the given value, it should
-     * delegate this call to its super method.
-     *
-     * '''Example'''
-     * {{{
-     * trait FloatValues extends Domain[...] {
-     *   ...
-     *     abstract override def typeOfValue(value: DomainValue): ValueInformation =
-     *     value match {
-     *       case r: FloatValue ⇒ IsFloatValue
-     *       case _             ⇒ super.typeOfValue(value)
-     *     }
-     * }
-     * }}}
-     */
-    // FIXME Get rid of this by forcing all DomainValues to inherit from ValueInformation...
-    def typeOfValue(value: DomainValue): ValueInformation = {
-        value match {
-            case ta: ValueInformation ⇒ ta
-            case _                    ⇒ UnknownValue
-        }
-    }
 
     /**
      * Merges the given domain value `v1` with the domain value `v2` and returns

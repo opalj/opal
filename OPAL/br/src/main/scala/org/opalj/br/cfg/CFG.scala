@@ -542,7 +542,7 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
 
 object CFG {
 
-    final val ValidateKey = "org.opalj.debug.br.cfg.CFG.Validate"
+    final val ValidateKey = "org.opalj.br.cfg.CFG.Validate"
 
     private[this] var validate: Boolean = {
         val initialValidate = BaseConfig.getBoolean(ValidateKey)

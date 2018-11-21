@@ -106,8 +106,7 @@ class AnalysisScenario {
     }
 
     /**
-     * Computes a schedule. A schedule is a function that, given a property store, executes
-     * the specified analyses.
+     * Computes an executable schedule.
      *
      * The goal is to find a schedule that:
      *   - ... schedules as many completely independent analyses in parallel as possible
@@ -140,6 +139,12 @@ class AnalysisScenario {
         // 1. check for properties that are not derived
         val underived = uses -- derived
         if (underived.nonEmpty) {
+            underived.find(PropertyKey.isPropertyKindForSimpleProperty).foreach { pk ⇒
+                val p = PropertyKey.name(pk)
+                val m = "no analysis is scheduled which computes the simple property: "+p
+                throw new IllegalStateException(m)
+            }
+
             val underivedInfo = underived.iterator.map(up ⇒ PropertyKey.name(up)).mkString(", ")
             val message = s"no analyses are scheduled for the properties: $underivedInfo"
             OPALLogger.warn("analysis configuration", message)

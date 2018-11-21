@@ -10,7 +10,7 @@ import scala.reflect.ClassTag
  * @author Michael Eichberg
  */
 trait DefaultStringValuesBinding extends DefaultReferenceValuesBinding with StringValues {
-    domain: CorrelationalDomainSupport with IntegerValuesDomain with TypedValuesFactory with Configuration with TheClassHierarchy ⇒
+    domain: CorrelationalDomainSupport with IntegerValuesDomain with TypedValuesFactory with Configuration ⇒
 
     type DomainStringValue = StringValue
     final val DomainStringValueTag: ClassTag[DomainStringValue] = implicitly
@@ -19,11 +19,17 @@ trait DefaultStringValuesBinding extends DefaultReferenceValuesBinding with Stri
     // FACTORY METHODS
     //
 
+    protected case class DefaultStringValue(
+            origin: ValueOrigin,
+            value:  String,
+            refId:  RefId
+    ) extends StringValue
+
     override def StringValue(
         origin: ValueOrigin,
         value:  String,
         refId:  RefId
     ): DomainStringValue = {
-        new StringValue(origin, value, refId)
+        DefaultStringValue(origin, value, refId)
     }
 }

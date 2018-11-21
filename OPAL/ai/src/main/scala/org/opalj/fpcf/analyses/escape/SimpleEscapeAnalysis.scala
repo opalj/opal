@@ -16,6 +16,7 @@ import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.fpcf.properties.AtMost
 import org.opalj.fpcf.properties.EscapeProperty
 import org.opalj.fpcf.properties.NoEscape
+import org.opalj.tac.fpcf.properties.TACAI
 
 class SimpleEscapeAnalysisContext(
         val entity:                  Entity,
@@ -53,10 +54,10 @@ class SimpleEscapeAnalysis( final val project: SomeProject)
 
     override def determineEscapeOfFP(fp: VirtualFormalParameter): PropertyComputationResult = {
         fp match {
-            case VirtualFormalParameter(DefinedMethod(_, m), _) if m.body.isEmpty ⇒
+            case VirtualFormalParameter(dm: DefinedMethod, _) if dm.definedMethod.body.isEmpty ⇒
                 Result(fp, AtMost(NoEscape))
-            case VirtualFormalParameter(DefinedMethod(_, m), -1) if m.isInitializer ⇒
-                val ctx = createContext(fp, -1, m)
+            case VirtualFormalParameter(dm: DefinedMethod, -1) if dm.definedMethod.isInitializer ⇒
+                val ctx = createContext(fp, -1, dm.definedMethod)
                 doDetermineEscape(ctx, createState)
             case VirtualFormalParameter(_, _) ⇒
                 //TODO IntermediateResult(fp, GlobalEscape, AtMost(NoEscape), Seq.empty, (_) ⇒ throw new RuntimeException())
@@ -85,7 +86,7 @@ trait SimpleEscapeAnalysisScheduler extends ComputationSpecification {
 
     final override def derives: Set[PropertyKind] = Set(EscapeProperty)
 
-    final override def uses: Set[PropertyKind] = Set.empty
+    final override def uses: Set[PropertyKind] = Set(EscapeProperty, TACAI)
 
     final override type InitializationData = Null
     final def init(p: SomeProject, ps: PropertyStore): Null = null

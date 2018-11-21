@@ -6,6 +6,7 @@ import java.io.File
 import java.util.concurrent.CountDownLatch
 
 import scala.io.Source
+import scala.reflect.io.Directory
 import org.opalj.io.processSource
 
 /**
@@ -30,6 +31,7 @@ object HermesCLI {
         var statisticsFile: String = null
         var mappingFile: Option[String] = None
         var noProjectStatistics: Boolean = false
+        var locationsDir: String = null
 
         var i = 0
         while (i < args.length) {
@@ -47,7 +49,12 @@ object HermesCLI {
                     mappingFile = Some(args(i))
 
                 case "-noProjectStatistics" ⇒
+                    i += 1
                     noProjectStatistics = true
+
+                case "-writeLocations" ⇒
+                    i += 1
+                    locationsDir = args(i)
 
                 case arg ⇒
                     Console.err.println(s"Unknown parameter $arg.")
@@ -72,6 +79,14 @@ object HermesCLI {
                 val theStatisticsFile = new File(statisticsFile).getAbsoluteFile()
                 Hermes.exportStatistics(theStatisticsFile, !noProjectStatistics)
                 println("Wrote statistics: "+theStatisticsFile)
+
+                if (locationsDir ne null) {
+                    val theLocationsDir = Directory(new File(locationsDir))
+                    Hermes.exportLocations(theLocationsDir)
+                    println("Wrote locations: "+theLocationsDir)
+                } else {
+                    println("Skip writing locations, not specified.")
+                }
 
                 mappingFile.foreach { mappingFile ⇒
                     val theMappingFile = new File(mappingFile).getAbsoluteFile()

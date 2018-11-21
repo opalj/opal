@@ -13,16 +13,13 @@ import org.opalj.br.ClassHierarchy
  *
  * @author Michael Eichberg
  */
-trait PredefinedClassHierarchy extends TheClassHierarchy {
+trait PredefinedClassHierarchy {
 
     /**
-     * Returns the predefined class hierarchy unless explicitly overridden. OPAL's
-     * built-in default class hierarchy only reflects the type-hierarchy between the
+     * Returns the predefined class hierarchy.
+     * OPAL's built-in default class hierarchy only reflects the type-hierarchy between the
      * most basic types – in particular between the exceptions potentially thrown
      * by JVM instructions.
-     *
-     * @note '''This method is not intended to be overridden.''' Use a different domain
-     *      as a foundation.
      */
     final def classHierarchy: ClassHierarchy = PredefinedClassHierarchy.classHierarchy
 

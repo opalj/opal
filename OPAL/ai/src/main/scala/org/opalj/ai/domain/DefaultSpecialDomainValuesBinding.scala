@@ -15,7 +15,7 @@ import org.opalj.br.Type
  *
  * @author Michael Eichberg
  */
-trait DefaultDomainValueBinding extends ValuesDomain {
+trait DefaultSpecialDomainValuesBinding extends ValuesDomain {
 
     final type DomainValue = Value
 

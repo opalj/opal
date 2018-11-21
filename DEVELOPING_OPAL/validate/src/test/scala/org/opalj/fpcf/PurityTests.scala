@@ -19,7 +19,6 @@ import org.opalj.fpcf.analyses.LazyL1FieldMutabilityAnalysis
 import org.opalj.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
 import org.opalj.fpcf.analyses.LazyTypeImmutabilityAnalysis
 import org.opalj.fpcf.analyses.LazyVirtualCallAggregatingEscapeAnalysis
-import org.opalj.fpcf.analyses.LazyVirtualMethodPurityAnalysis
 import org.opalj.fpcf.analyses.LazyVirtualReturnValueFreshnessAnalysis
 import org.opalj.fpcf.analyses.purity.SystemOutLoggingAllExceptionRater
 import org.opalj.fpcf.analyses.LazyL0FieldMutabilityAnalysis
@@ -28,6 +27,18 @@ import org.opalj.fpcf.analyses.LazyStaticDataUsageAnalysis
 import org.opalj.fpcf.analyses.LazyVirtualMethodStaticDataUsageAnalysis
 import org.opalj.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.LazyL0TACAIAnalysis
+
+import org.opalj.fpcf.analyses.SystemPropertiesAnalysis
+import org.opalj.fpcf.analyses.cg.EagerThreadRelatedCallsAnalysis
+import org.opalj.fpcf.analyses.cg.EagerFinalizerAnalysisScheduler
+import org.opalj.fpcf.analyses.cg.LazyCalleesAnalysis
+import org.opalj.fpcf.analyses.cg.EagerReflectionRelatedCallsAnalysis
+import org.opalj.fpcf.analyses.cg.EagerSerializationRelatedCallsAnalysis
+import org.opalj.fpcf.analyses.cg.EagerRTACallGraphAnalysisScheduler
+import org.opalj.fpcf.analyses.cg.EagerLoadedClassesAnalysis
+import org.opalj.fpcf.cg.properties.StandardInvokeCallees
+import org.opalj.fpcf.cg.properties.ReflectionRelatedCallees
+import org.opalj.fpcf.cg.properties.SerializationRelatedCallees
 
 /**
  * Tests if the properties specified in the test project (the classes in the (sub-)package of
@@ -70,13 +81,24 @@ class PurityTests extends PropertiesTest {
     describe("the org.opalj.fpcf.analyses.L1PurityAnalysis is executed") {
         L1PurityAnalysis.setRater(Some(SystemOutLoggingAllExceptionRater))
         val as = executeAnalyses(
-            Set(EagerL1PurityAnalysis),
+            Set(
+                EagerL1PurityAnalysis,
+                EagerRTACallGraphAnalysisScheduler,
+                EagerLoadedClassesAnalysis,
+                EagerFinalizerAnalysisScheduler,
+                EagerThreadRelatedCallsAnalysis,
+                EagerSerializationRelatedCallsAnalysis,
+                EagerReflectionRelatedCallsAnalysis,
+                SystemPropertiesAnalysis
+            ),
             Set(
                 LazyL0TACAIAnalysis,
                 LazyL1FieldMutabilityAnalysis,
                 LazyClassImmutabilityAnalysis,
                 LazyTypeImmutabilityAnalysis,
-                LazyVirtualMethodPurityAnalysis
+                new LazyCalleesAnalysis(Set(
+                    StandardInvokeCallees, SerializationRelatedCallees, ReflectionRelatedCallees
+                ))
             )
         )
         as.propertyStore.shutdown()
@@ -86,7 +108,16 @@ class PurityTests extends PropertiesTest {
     describe("the org.opalj.fpcf.analyses.L2PurityAnalysis is executed") {
         L2PurityAnalysis.setRater(Some(SystemOutLoggingAllExceptionRater))
         val as = executeAnalyses(
-            Set(EagerL2PurityAnalysis),
+            Set(
+                EagerL2PurityAnalysis,
+                EagerRTACallGraphAnalysisScheduler,
+                EagerLoadedClassesAnalysis,
+                EagerFinalizerAnalysisScheduler,
+                EagerThreadRelatedCallsAnalysis,
+                EagerSerializationRelatedCallsAnalysis,
+                EagerReflectionRelatedCallsAnalysis,
+                SystemPropertiesAnalysis
+            ),
             Set(
                 LazyL0TACAIAnalysis,
                 LazyL0CompileTimeConstancyAnalysis,
@@ -100,7 +131,9 @@ class PurityTests extends PropertiesTest {
                 LazyL1FieldMutabilityAnalysis,
                 LazyClassImmutabilityAnalysis,
                 LazyTypeImmutabilityAnalysis,
-                LazyVirtualMethodPurityAnalysis
+                new LazyCalleesAnalysis(Set(
+                    StandardInvokeCallees, SerializationRelatedCallees, ReflectionRelatedCallees
+                ))
             )
         )
         as.propertyStore.shutdown()

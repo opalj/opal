@@ -24,18 +24,17 @@ abstract class LongIterator extends AbstractIterator[Long] { self ⇒
      * is undefined and subject to change without notice!
      */
     def next(): Long
-    def hasNext: Boolean
 
     override def exists(p: Long ⇒ Boolean): Boolean = {
-        while (this.hasNext) { if (p(this.next)) return true; }
+        while (this.hasNext) { if (p(this.next())) return true; }
         false
     }
     override def forall(p: Long ⇒ Boolean): Boolean = {
-        while (this.hasNext) { if (!p(this.next)) return false; }
+        while (this.hasNext) { if (!p(this.next())) return false; }
         true
     }
     def contains(i: Long): Boolean = {
-        while (this.hasNext) { if (i == this.next) return true; }
+        while (this.hasNext) { if (i == this.next()) return true; }
         false
     }
     override def foldLeft[B](start: B)(f: (B, Long) ⇒ B): B = {
@@ -51,9 +50,9 @@ abstract class LongIterator extends AbstractIterator[Long] { self ⇒
                 f.accept(c)
                 true
             } else {
-                false;
+                false
             }
-        }) {}
+        }) { /*empty*/ }
     }
 
     def map(f: Long ⇒ Long): LongIterator = {

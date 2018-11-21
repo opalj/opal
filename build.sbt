@@ -8,7 +8,8 @@ import sbtunidoc.ScalaUnidocPlugin
 name := "OPAL Library"
 
 // SNAPSHOT
-version in ThisBuild := "2.0.1-SNAPSHOT"
+version in ThisBuild := "2.1.0-SNAPSHOT"
+// RELEASED version in ThisBuild := "2.0.1" // October 10th, 2018
 // RELEASED version in ThisBuild := "2.0.0" // October 2nd, 2018
 // RELEASED version in ThisBuild := "1.0.0" // October 25th, 2017
 // RELEASED version in ThisBuild := "0.8.15" // September 7th, 2017
@@ -285,7 +286,7 @@ lazy val `OPAL-DeveloperTools` = (project in file("DEVELOPING_OPAL/tools"))
     scalacOptions in(Compile, doc) ++= Opts.doc.title("OPAL - Developer Tools"),
     scalacOptions in(Compile, console) := Seq("-deprecation"),
     //library dependencies
-    libraryDependencies ++= Dependencies.developertools,
+    libraryDependencies ++= Dependencies.developerTools,
     assemblyJarName in assembly := "OPALInvokedynamicRectifier.jar",
     mainClass in assembly := Some("org.opalj.support.tools.ProjectSerializer"),
     // Required by Java/ScalaFX

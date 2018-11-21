@@ -69,6 +69,17 @@ sealed abstract class DeclaredMethod {
      */
     def foreachDefinedMethod[U](f: Method ⇒ U): Unit
 
+    /**
+     * A unique ID.
+     */
+    val id: Int
+
+    override def equals(other: Any): Boolean = other match {
+        case that: DeclaredMethod ⇒ id == that.id
+        case _                    ⇒ false
+    }
+
+    override def hashCode(): Int = id
 }
 
 /**
@@ -77,10 +88,11 @@ sealed abstract class DeclaredMethod {
  * Note that one VirtualDeclaredMethod may represent more than one actual method, because a class
  * may have several package-private methods with the same signature.
  */
-final case class VirtualDeclaredMethod(
-        declaringClassType: ReferenceType,
-        name:               String,
-        descriptor:         MethodDescriptor
+final class VirtualDeclaredMethod private[br] (
+        override val declaringClassType: ReferenceType,
+        override val name:               String,
+        override val descriptor:         MethodDescriptor,
+        override val id:                 Int
 ) extends DeclaredMethod {
 
     override def hasSingleDefinedMethod: Boolean = false
@@ -104,9 +116,10 @@ final case class VirtualDeclaredMethod(
  * Represents a declared method; i.e., a method which belongs to the (public and private) API of a
  * class along with a reference to the original declaration.
  */
-final case class DefinedMethod(
-        declaringClassType: ReferenceType,
-        definedMethod:      Method
+final class DefinedMethod private[br] (
+        override val declaringClassType: ReferenceType,
+        override val definedMethod:      Method,
+        override val id:                 Int
 ) extends DeclaredMethod {
 
     override def name: String = definedMethod.name
@@ -126,9 +139,10 @@ final case class DefinedMethod(
     }
 }
 
-final case class MultipleDefinedMethods(
-        declaringClassType: ReferenceType,
-        definedMethods:     ConstArray[Method]
+final class MultipleDefinedMethods private[br] (
+        override val declaringClassType: ReferenceType,
+        override val definedMethods:     ConstArray[Method],
+        override val id:                 Int
 ) extends DeclaredMethod {
 
     override def name: String = definedMethods.head.name
@@ -146,4 +160,5 @@ final case class MultipleDefinedMethods(
     override def toString: String = {
         s"DefinedMethod(${declaringClassType.toJava},definedMethods=${definedMethods.map(_.toJava).mkString("{", ", ", "}")})"
     }
+
 }

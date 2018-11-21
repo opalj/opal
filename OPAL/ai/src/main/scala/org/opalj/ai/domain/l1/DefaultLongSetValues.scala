@@ -4,9 +4,9 @@ package ai
 package domain
 package l1
 
-import org.opalj.br.ComputationalTypeLong
-
 import scala.collection.immutable.SortedSet
+
+import org.opalj.br.ComputationalTypeLong
 
 /**
  * This domain implements the tracking of long values at the level of sets.
@@ -15,12 +15,14 @@ import scala.collection.immutable.SortedSet
  * @author David Becker
  */
 trait DefaultLongSetValues
-    extends DefaultDomainValueBinding
+    extends DefaultSpecialDomainValuesBinding
     with CorrelationalDomain
     with LongSetValues {
     domain: IntegerRangeValuesFactory with Configuration with ExceptionsFactory ⇒
 
     class ALongValue() extends super.ALongValue {
+
+        override def constantValue: Option[Long] = None
 
         override def doJoin(pc: Int, value: DomainValue): Update[DomainValue] = {
             // we are not joining the "same" value; the join stabilization trait
@@ -48,6 +50,10 @@ trait DefaultLongSetValues
     class LongSet(val values: SortedSet[Long]) extends super.LongSet {
 
         assert(values.nonEmpty)
+
+        override def constantValue: Option[Long] = {
+            if (values.size == 1) Some(values.head) else None
+        }
 
         override def doJoin(pc: Int, other: DomainValue): Update[DomainValue] = {
             val result = other match {

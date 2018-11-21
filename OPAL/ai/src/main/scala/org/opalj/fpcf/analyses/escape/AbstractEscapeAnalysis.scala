@@ -82,7 +82,7 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
      * Analyzes each TAC statement of the given method. This methods assumes that there is at least
      * an intermediate result for the TAC present.
      */
-    private def analyzeTAC()(
+    protected[this] def analyzeTAC()(
         implicit
         context: AnalysisContext,
         state:   AnalysisState
@@ -435,7 +435,7 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
     protected[this] lazy val virtualFormalParameters: VirtualFormalParameters = {
         project.get(VirtualFormalParametersKey)
     }
-    protected[this] val declaredMethods: DeclaredMethods = {
+    protected[this] implicit val declaredMethods: DeclaredMethods = {
         project.get(DeclaredMethodsKey)
     }
 

@@ -11,7 +11,9 @@ package l0
  *
  * @author Michael Eichberg
  */
-trait DefaultTypeLevelDoubleValues extends DefaultDomainValueBinding with TypeLevelDoubleValues {
+trait DefaultTypeLevelDoubleValues
+    extends DefaultSpecialDomainValuesBinding
+    with TypeLevelDoubleValues {
     domain: IntegerValuesFactory ⇒
 
     /**
@@ -33,6 +35,8 @@ trait DefaultTypeLevelDoubleValues extends DefaultDomainValueBinding with TypeLe
         override def adapt(target: TargetDomain, valueOrigin: Int): target.DomainValue = {
             target.DoubleValue(valueOrigin)
         }
+
+        override def constantValue: Option[Double] = None
 
     }
 

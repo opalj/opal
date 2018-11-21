@@ -4,24 +4,49 @@ package fpcf
 
 import java.net.URL
 
-import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
-import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
-import org.opalj.br.analyses.Project
 import org.opalj.fpcf.analyses.EagerFieldLocalityAnalysis
-import org.opalj.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
 import org.opalj.fpcf.analyses.LazyVirtualCallAggregatingEscapeAnalysis
 import org.opalj.fpcf.analyses.LazyVirtualReturnValueFreshnessAnalysis
+import org.opalj.fpcf.analyses.SystemPropertiesAnalysis
+import org.opalj.fpcf.analyses.cg.LazyCalleesAnalysis
+import org.opalj.fpcf.analyses.cg.EagerReflectionRelatedCallsAnalysis
+import org.opalj.fpcf.analyses.cg.EagerFinalizerAnalysisScheduler
+import org.opalj.fpcf.analyses.cg.EagerSerializationRelatedCallsAnalysis
+import org.opalj.fpcf.analyses.cg.EagerThreadRelatedCallsAnalysis
+import org.opalj.fpcf.analyses.cg.EagerRTACallGraphAnalysisScheduler
+import org.opalj.fpcf.analyses.cg.EagerLoadedClassesAnalysis
+import org.opalj.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
 import org.opalj.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
+import org.opalj.fpcf.cg.properties.SerializationRelatedCallees
+import org.opalj.fpcf.cg.properties.StandardInvokeCallees
+import org.opalj.fpcf.cg.properties.ReflectionRelatedCallees
+import org.opalj.br.analyses.Project
+import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
+import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.tac.fpcf.analyses.LazyL0TACAIAnalysis
 
 class FieldLocalityTests extends PropertiesTest {
+
+    val eagerAnalysisSchedulers = Set[FPCFEagerAnalysisScheduler](
+        EagerFieldLocalityAnalysis,
+        EagerRTACallGraphAnalysisScheduler,
+        EagerLoadedClassesAnalysis,
+        EagerFinalizerAnalysisScheduler,
+        EagerThreadRelatedCallsAnalysis,
+        EagerSerializationRelatedCallsAnalysis,
+        EagerReflectionRelatedCallsAnalysis,
+        SystemPropertiesAnalysis
+    )
 
     val lazyAnalysisSchedulers = Set[FPCFLazyAnalysisScheduler](
         LazyL0TACAIAnalysis,
         LazyInterProceduralEscapeAnalysis,
         LazyVirtualCallAggregatingEscapeAnalysis,
         LazyVirtualReturnValueFreshnessAnalysis,
-        LazyReturnValueFreshnessAnalysis
+        LazyReturnValueFreshnessAnalysis,
+        new LazyCalleesAnalysis(Set(
+            StandardInvokeCallees, SerializationRelatedCallees, ReflectionRelatedCallees
+        ))
     )
 
     override def init(p: Project[URL]): Unit = {
@@ -33,7 +58,7 @@ class FieldLocalityTests extends PropertiesTest {
     }
 
     describe("field locality analysis is executed") {
-        val as = executeAnalyses(Set(EagerFieldLocalityAnalysis), lazyAnalysisSchedulers)
+        val as = executeAnalyses(eagerAnalysisSchedulers, lazyAnalysisSchedulers)
         as.propertyStore.shutdown()
         validateProperties(
             as,
