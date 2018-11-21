@@ -446,11 +446,14 @@ class RTACallGraphAnalysis private[analyses] (
                     )
                     handleCall(caller, call, pc, tgt)
                 } else {
+                    // the set of all type bounds, that must be a super type of the concrete type
                     val typeBounds = rv.upperTypeBound
 
+                    // may the receiver be an array?
                     if (typeBounds.forall(t ⇒ t.isArrayType ||
                         (t eq ObjectType.Serializable) ||
-                        (t eq ObjectType.Cloneable))) {
+                        (t eq ObjectType.Cloneable) ||
+                        (t eq ObjectType.Object))) {
                         val tgtR = project.instanceCall(
                             caller.declaringClassType.asObjectType,
                             ObjectType.Object,
@@ -458,12 +461,12 @@ class RTACallGraphAnalysis private[analyses] (
                             call.descriptor
                         )
                         handleCall(caller, call, pc, tgtR)
-                        // add call to Object.method()
                     }
 
+                    // the intersection of all (instantiable) subtypes of the type bounds
                     val typeIntersection = typeBounds.iterator.map[Set[ObjectType]] { typeBound ⇒
                         if (typeBound.isArrayType)
-                            Set.empty
+                            Set.empty // already handled
                         else {
                             classHierarchy.allSubtypes(typeBound.asObjectType, true).filter { subtype ⇒
                                 val cf = project.classFile(subtype)
@@ -488,27 +491,27 @@ class RTACallGraphAnalysis private[analyses] (
                         }
                     }
 
-                    // todo do we need this?
-                    val declType =
-                        if (call.declaringClass.isObjectType) call.declaringClass.asObjectType
-                        else ObjectType.Object
-
-                    val m = if (call.isInterface)
-                        org.opalj.Result(project.resolveInterfaceMethodReference(
-                            declType, call.name, call.descriptor
-                        ))
-                    else
-                        project.resolveClassMethodReference(
-                            declType, call.name, call.descriptor
-                        )
-                    if (m.isEmpty || isMethodOverridable(m.value).isYesOrUnknown) {
-                        unknownLibraryCall(
-                            caller,
-                            call,
-                            declType,
-                            callerType.packageName,
-                            pc
-                        )
+                    // IMPROVE: we would like to have s.th. like if(typeBounds.forall(... isMethodOverridable)
+                    if (call.declaringClass.isObjectType) {
+                        val declType = call.declaringClass.asObjectType
+                        val m = if (call.isInterface)
+                            org.opalj.Result(project.resolveInterfaceMethodReference(
+                                declType, call.name, call.descriptor
+                            ))
+                        else
+                            project.resolveClassMethodReference(
+                                declType, call.name, call.descriptor
+                            )
+                        if (m.isEmpty || isMethodOverridable(m.value).isYesOrUnknown) {
+                            // todo isn't addIncompleteCallSite sufficient?
+                            unknownLibraryCall(
+                                caller,
+                                call,
+                                declType,
+                                callerType.packageName,
+                                pc
+                            )
+                        }
                     }
                 }
             }
