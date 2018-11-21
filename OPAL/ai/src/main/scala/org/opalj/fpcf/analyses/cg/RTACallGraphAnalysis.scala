@@ -277,7 +277,6 @@ class RTACallGraphAnalysis private[analyses] (
         val instantiatedTypesDependee =
             if (instantiatedTypesEOptP.isFinal) None else Some(instantiatedTypesEOptP)
 
-
         // the number of types, already seen by the analysis
         val numTypesProcessed = instantiatedTypesUB.size
         implicit val newState = state.copy(
@@ -386,7 +385,7 @@ class RTACallGraphAnalysis private[analyses] (
         call:                Call[V],
         runtimeReceiverType: ReferenceType,
         packageName:         String,
-        pc:                  Int,
+        pc:                  Int
     )(implicit state: RTAState): Unit = {
         val declaringClassType = if (call.declaringClass.isArrayType)
             ObjectType.Object
@@ -446,63 +445,69 @@ class RTACallGraphAnalysis private[analyses] (
                     )
                     handleCall(caller, call, pc, tgt)
                 } else {
-                    // TODO Instead of joining, keep all type bounds here
-                    val typeBound =
-                        project.classHierarchy.joinReferenceTypesUntilSingleUpperBound(
-                            rv.upperTypeBound
-                        )
-                    val receiverType =
-                        if (project.classHierarchy.isSubtypeOf(typeBound, call.declaringClass))
-                            typeBound
-                        else
-                            call.declaringClass
+                    val typeBounds = rv.upperTypeBound
 
-                    // TODO If the type bound is Serializable on Cloneable or both, this may also be an array, so callees must include the methods on Object
-                    if (receiverType.isArrayType) {
-                        val tgt = project.instanceCall(
-                            callerType, receiverType, call.name, call.descriptor
+                    if (typeBounds.forall(t ⇒ t.isArrayType ||
+                        (t eq ObjectType.Serializable) ||
+                        (t eq ObjectType.Cloneable))) {
+                        val tgtR = project.instanceCall(
+                            caller.declaringClassType.asObjectType,
+                            ObjectType.Object,
+                            call.name,
+                            call.descriptor
                         )
-                        handleCall(caller, call, pc, tgt)
-                    } else {
-                        val receiverObjectType = receiverType.asObjectType
-                        // todo filter the abstract types and use overriddenBy?
-                        val possibleTargets = classHierarchy.allSubtypes(receiverObjectType, true).filter { subtype ⇒
-                            val cf = project.classFile(subtype)
-                            cf.isDefined && !cf.get.isInterfaceDeclaration && !cf.get.isAbstract
-                        }
-                        if (possibleTargets.forall(instantiatedTypesUB.contains)) {
-                            possibleTargets.foreach { concreteReceiverType ⇒
-                                val tgtR = project.instanceCall(
-                                    caller.declaringClassType.asObjectType,
-                                    concreteReceiverType,
-                                    call.name,
-                                    call.descriptor
-                                )
-                                handleCall(caller, call, pc, tgtR)
+                        handleCall(caller, call, pc, tgtR)
+                        // add call to Object.method()
+                    }
+
+                    val typeIntersection = typeBounds.iterator.map[Set[ObjectType]] { typeBound ⇒
+                        if (typeBound.isArrayType)
+                            Set.empty
+                        else {
+                            classHierarchy.allSubtypes(typeBound.asObjectType, true).filter { subtype ⇒
+                                val cf = project.classFile(subtype)
+                                cf.isDefined && !cf.get.isInterfaceDeclaration && !cf.get.isAbstract
                             }
+                        }
+                    }.reduce((x, y) ⇒ x intersect y)
+
+                    for (possibleTgtType ← typeIntersection) {
+                        if (instantiatedTypesUB.contains(possibleTgtType)) {
+                            val tgtR = project.instanceCall(
+                                caller.declaringClassType.asObjectType,
+                                possibleTgtType,
+                                call.name,
+                                call.descriptor
+                            )
+                            handleCall(caller, call, pc, tgtR)
                         } else {
-                            possibleTargets.foreach {
-                                state.addVirtualCallSite(_, (pc, call.name, call.descriptor))
-                            }
+                            state.addVirtualCallSite(
+                                possibleTgtType, (pc, call.name, call.descriptor)
+                            )
                         }
+                    }
 
-                        val m = if (call.isInterface)
-                            org.opalj.Result(project.resolveInterfaceMethodReference(
-                                call.declaringClass.asObjectType, call.name, call.descriptor
-                            ))
-                        else
-                            project.resolveClassMethodReference(
-                                call.declaringClass.asObjectType, call.name, call.descriptor
-                            )
-                        if (m.isEmpty || isMethodOverridable(m.value).isYesOrUnknown) {
-                            unknownLibraryCall(
-                                caller,
-                                call,
-                                receiverObjectType,
-                                callerType.packageName,
-                                pc
-                            )
-                        }
+                    // todo do we need this?
+                    val declType =
+                        if (call.declaringClass.isObjectType) call.declaringClass.asObjectType
+                        else ObjectType.Object
+
+                    val m = if (call.isInterface)
+                        org.opalj.Result(project.resolveInterfaceMethodReference(
+                            declType, call.name, call.descriptor
+                        ))
+                    else
+                        project.resolveClassMethodReference(
+                            declType, call.name, call.descriptor
+                        )
+                    if (m.isEmpty || isMethodOverridable(m.value).isYesOrUnknown) {
+                        unknownLibraryCall(
+                            caller,
+                            call,
+                            declType,
+                            callerType.packageName,
+                            pc
+                        )
                     }
                 }
             }
@@ -514,10 +519,10 @@ class RTACallGraphAnalysis private[analyses] (
      * edges for all targets.
      */
     private[this] def handleCall(
-        caller:            DefinedMethod,
-        call:              Call[V],
-        pc:                Int,
-        target:            org.opalj.Result[Method]
+        caller: DefinedMethod,
+        call:   Call[V],
+        pc:     Int,
+        target: org.opalj.Result[Method]
     )(implicit state: RTAState): Unit = {
         if (target.hasValue) {
             val tgtDM = declaredMethods(target.value)
