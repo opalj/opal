@@ -37,6 +37,8 @@ import org.opalj.tac.fpcf.properties.TACAI
  *
  * @author Florian Kuebler
  */
+// TODO: Basically this represents three analyses -> split them!
+// TODO: Instead of added the clinits for all super types, add all super types to be loaded
 class LoadedClassesAnalysis(
         val project: SomeProject
 ) extends FPCFAnalysis {
