@@ -253,6 +253,9 @@ class L2FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
     def getDefaultValue()(implicit state: State): Option[Any] = {
         Some(if (state.field.fieldType eq FloatType) 0.0f else 0)
 
+        /* TODO Some lazy initialized fields use a different value to mark an uninitialized field
+         * The code below can be used to identify such value, but is not yet adapted to using the
+         * TACAI property */
         /*
         var constantVal: Option[Any] = None
         var allInitializeConstant = true
