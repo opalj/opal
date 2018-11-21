@@ -2,6 +2,7 @@
 package org.opalj.fpcf.analyses
 
 import org.opalj.br.Method
+import org.opalj.fpcf.analyses.string_definition.preprocessing.SubPath
 import org.opalj.tac.DUVar
 import org.opalj.value.ValueInformation
 
@@ -22,5 +23,10 @@ package object string_definition {
      * particular context, i.e., the method in which it is declared and used.
      */
     type P = (V, Method)
+
+    /**
+     * TODO: Comment
+     */
+    type Path = List[SubPath]
 
 }
