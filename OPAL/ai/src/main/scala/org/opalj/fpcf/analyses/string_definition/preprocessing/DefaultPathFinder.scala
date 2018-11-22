@@ -44,7 +44,7 @@ class DefaultPathFinder extends AbstractPathFinder {
 
         // Multiple start sites => We start within a conditional => Prepare for that
         if (startSites.size > 1) {
-            val outerNested = generateNestPathElement(startSites.size)
+            val outerNested = generateNestPathElement(startSites.size, NestedPathType.Conditional)
             numSplits.append(startSites.size)
             currSplitIndex.append(0)
             nestedElementsRef.append(outerNested)
@@ -57,6 +57,7 @@ class DefaultPathFinder extends AbstractPathFinder {
             val bb = cfg.bb(popped)
             val isLoopHeader = isHeadOfLoop(popped, natLoops)
             var isLoopEnding = false
+            var loopEndingIndex = -1
             var belongsToLoopHeader = false
 
             // Append everything of the current basic block to the path
@@ -65,7 +66,7 @@ class DefaultPathFinder extends AbstractPathFinder {
                 val toAppend = FlatPathElement(i)
 
                 if (!isLoopEnding) {
-                    isLoopEnding = isEndOfLoop(i, natLoops)
+                    isLoopEnding = isEndOfLoop(cfg.bb(i).endPC, natLoops)
                 }
 
                 // For loop headers, insert a new nested element (and thus, do the housekeeping)
@@ -73,19 +74,38 @@ class DefaultPathFinder extends AbstractPathFinder {
                     numSplits.prepend(1)
                     currSplitIndex.prepend(0)
 
-                    val outer = generateNestPathElement(1)
-                    outer.element.head.asInstanceOf[NestedPathElement].element.append(toAppend)
+                    val outer = generateNestPathElement(0, NestedPathType.Loop)
+                    outer.element.append(toAppend)
                     nestedElementsRef.prepend(outer)
                     path.append(outer)
 
                     belongsToLoopHeader = true
+                } // For loop ending, find the top-most loop from the stack and add to that element
+                else if (isLoopEnding) {
+                    val loopElement = nestedElementsRef.find {
+                        _.elementType match {
+                            case Some(et) ⇒ et == NestedPathType.Loop
+                            case _        ⇒ false
+                        }
+                    }
+                    if (loopElement.isDefined) {
+                        loopEndingIndex = nestedElementsRef.indexOf(loopElement.get)
+                        loopElement.get.element.append(toAppend)
+                    }
                 } // The instructions belonging to a loop header are stored in a flat structure
                 else if (!belongsToLoopHeader && (numSplits.isEmpty || bb.predecessors.size > 1)) {
                     path.append(toAppend)
                 } // Within a nested structure => append to an inner element
                 else {
-                    val relevantRef = nestedElementsRef.head.element(currSplitIndex.head)
-                    relevantRef.asInstanceOf[NestedPathElement].element.append(toAppend)
+                    // For loops
+                    var ref: NestedPathElement = nestedElementsRef.head
+                    // Refine for conditionals
+                    ref.elementType match {
+                        case Some(t) if t == NestedPathType.Conditional ⇒
+                            ref = ref.element(currSplitIndex.head).asInstanceOf[NestedPathElement]
+                        case _ ⇒
+                    }
+                    ref.element.append(toAppend)
                 }
             }
 
@@ -97,6 +117,13 @@ class DefaultPathFinder extends AbstractPathFinder {
             }
             val hasSeenSuccessor = successors.foldLeft(false) {
                 (old: Boolean, next: Int) ⇒ old || seenElements.contains(next)
+            }
+
+            // Clean a loop from the stacks if the end of a loop was reached
+            if (loopEndingIndex != -1) {
+                numSplits.remove(loopEndingIndex)
+                currSplitIndex.remove(loopEndingIndex)
+                nestedElementsRef.remove(loopEndingIndex)
             }
 
             // At the join point of a branching, do some housekeeping
@@ -116,13 +143,15 @@ class DefaultPathFinder extends AbstractPathFinder {
             } else {
                 stack.appendAll(successorsToAdd)
             }
-            // On a split point, prepare the next (nested) element
+            // On a split point, prepare the next (nested) element (however, not for loop headers)
             if (successors.length > 1 && !isLoopHeader) {
                 val appendSite = if (numSplits.isEmpty) path else
                     nestedElementsRef(currSplitIndex.head).element
-                val relevantNumSuccessors = if (isCondWithoutElse(successors, cfg))
+                val relevantNumSuccessors = if (isCondWithoutElse(popped, cfg))
                     successors.size - 1 else successors.size
-                val outerNested = generateNestPathElement(relevantNumSuccessors)
+                val outerNested = generateNestPathElement(
+                    relevantNumSuccessors, NestedPathType.Conditional
+                )
 
                 numSplits.prepend(relevantNumSuccessors)
                 currSplitIndex.prepend(0)
