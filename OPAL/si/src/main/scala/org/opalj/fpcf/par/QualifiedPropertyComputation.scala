@@ -58,9 +58,9 @@ private[par] sealed abstract class ContinuationTask[E <: Entity] extends Trigger
 }
 
 private[par] final case class OnFinalUpdateComputationTask[E <: Entity, P <: Property](
-        ps:              PKEParallelTasksPropertyStore,
+        ps:             PKEParallelTasksPropertyStore,
         dependeeFinalP: FinalP[E, P],
-        c:               OnUpdateContinuation
+        c:              OnUpdateContinuation
 ) extends ContinuationTask[E] {
 
     override def dependeeE: E = dependeeFinalP.e
@@ -116,7 +116,7 @@ private[par] final case class ImmediateOnUpdateComputationTask[E <: Entity, P <:
 
 private[par] final case class ImmediateOnFinalUpdateComputationTask[E <: Entity, P <: Property](
         ps:                          PKEParallelTasksPropertyStore,
-        dependeeFinalP:             FinalP[E, P],
+        dependeeFinalP:              FinalP[E, P],
         previousResult:              PropertyComputationResult,
         forceDependersNotifications: Set[SomeEPK],
         c:                           OnUpdateContinuation

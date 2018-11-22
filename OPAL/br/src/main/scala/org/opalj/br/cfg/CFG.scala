@@ -554,7 +554,7 @@ object CFG {
     def Validate: Boolean = validate
 
     def updateValidate(newValidate: Boolean): Unit = {
-        implicit val logContext : GlobalLogContext.type = GlobalLogContext
+        implicit val logContext: GlobalLogContext.type = GlobalLogContext
         validate =
             if (newValidate) {
                 info("OPAL", s"$ValidateKey: validation on")

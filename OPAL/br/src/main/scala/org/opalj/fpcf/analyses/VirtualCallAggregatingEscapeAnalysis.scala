@@ -70,7 +70,7 @@ class VirtualCallAggregatingEscapeAnalysis private[analyses] ( final val project
                     escapeState = escapeState meet p
                     dependees += ep
                 case FinalP(_, p) ⇒ escapeState = escapeState meet p
-                case epk           ⇒ dependees += epk
+                case epk          ⇒ dependees += epk
             }
 
         def returnResult: PropertyComputationResult = {

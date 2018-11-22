@@ -50,7 +50,7 @@ class VirtualMethodAllocationFreenessAnalysis private[analyses] ( final val proj
             propertyStore(declaredMethods(method), AllocationFreeness.key) match {
                 case FinalP(_, AllocationFreeMethod)  ⇒
                 case FinalP(_, MethodWithAllocations) ⇒ return Result(dm, VMethodWithAllocations);
-                case epk                               ⇒ dependees += epk
+                case epk                              ⇒ dependees += epk
             }
         }
 

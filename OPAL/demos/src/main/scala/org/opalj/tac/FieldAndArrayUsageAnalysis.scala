@@ -159,7 +159,7 @@ object FieldAndArrayUsageAnalysis extends DefaultOneStepAnalysis {
                                                     case FinalP(_, EscapeViaAbnormalReturn | AtMost(EscapeViaAbnormalReturn)) ⇒
                                                         maybeViaAbnormal += 1
                                                     case FinalP(_, p) if p.isBottom ⇒ globalArrays += 1
-                                                    case _                           ⇒ maybeInCallerArrays += 1
+                                                    case _                          ⇒ maybeInCallerArrays += 1
                                                 }
                                             }
 

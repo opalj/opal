@@ -1164,11 +1164,11 @@ sealed abstract class PropertyStoreTest(
                                     IntermediateResult(node, lb, ub, Iterable(eps), c, pch)
 
                                 // required when we resolve the cycle
-                                case FinalP(_, Pure)             ⇒ Result(node, Pure)
+                                case FinalP(_, Pure)              ⇒ Result(node, Pure)
 
                                 // the following cases should never happen...
                                 case IntermediateEP(_, Impure, _) ⇒ ???
-                                case FinalP(_, Impure)           ⇒ ???
+                                case FinalP(_, Impure)            ⇒ ???
                             }
                         }: PropertyComputationResult
 

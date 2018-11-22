@@ -275,7 +275,7 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
     def baseMethodPurity(dm: DefinedMethod): PropertyComputationResult = {
 
         def c(eps: SomeEOptionP): PropertyComputationResult = eps match {
-            case FinalP(_, p)                  ⇒ Result(dm, p)
+            case FinalP(_, p)                   ⇒ Result(dm, p)
             case ep @ IntermediateEP(_, lb, ub) ⇒ IntermediateResult(dm, lb, ub, Seq(ep), c)
             case epk                            ⇒ IntermediateResult(dm, ImpureByAnalysis, CompileTimePure, Seq(epk), c)
         }

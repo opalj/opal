@@ -433,9 +433,9 @@ class ReturnValueFreshnessAnalysis private[analyses] (
         case FinalP(_, FreshReturnValue | VFreshReturnValue)     ⇒ false
 
         //IMPROVE: We can still be a getter if the callee has the same receiver
-        case EPS(_, _, Getter | VGetter)                          ⇒ true
+        case EPS(_, _, Getter | VGetter)                         ⇒ true
 
-        case EPS(_, _, ExtensibleGetter | VExtensibleGetter)      ⇒ true
+        case EPS(_, _, ExtensibleGetter | VExtensibleGetter)     ⇒ true
 
         case IntermediateEP(_, _, FreshReturnValue | VFreshReturnValue) ⇒
             state.addMethodDependee(ep)

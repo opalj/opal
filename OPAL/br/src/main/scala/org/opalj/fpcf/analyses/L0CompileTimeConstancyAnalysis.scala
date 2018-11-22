@@ -41,7 +41,7 @@ class L0CompileTimeConstancyAnalysis private[analyses] ( final val project: Some
             case FinalP(_, LazyInitializedField) ⇒ return Result(field, CompileTimeVaryingField);
             case FinalP(_, _: FinalField)        ⇒ return Result(field, CompileTimeConstantField);
             case FinalP(_, _: NonFinalField)     ⇒ return Result(field, CompileTimeVaryingField);
-            case ep                               ⇒ ep
+            case ep                              ⇒ ep
         }
 
         // This function updates the compile-time constancy of the field when the field's

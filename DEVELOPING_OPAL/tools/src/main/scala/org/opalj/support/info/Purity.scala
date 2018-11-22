@@ -253,7 +253,7 @@ object Purity {
 
         val purityEs = propertyStore(projMethods, fpcf.properties.Purity.key).filter {
             case FinalP(_, p) ⇒ p ne ImpureByLackOfInformation
-            case ep            ⇒ throw new RuntimeException(s"non final purity result $ep")
+            case ep           ⇒ throw new RuntimeException(s"non final purity result $ep")
         }
 
         def isExternal(dm: DefinedMethod, p: IntTrieSet): Boolean = {
