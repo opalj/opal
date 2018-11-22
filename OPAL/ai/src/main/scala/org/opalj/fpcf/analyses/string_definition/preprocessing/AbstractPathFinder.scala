@@ -23,10 +23,21 @@ sealed class SubPath()
 case class FlatPathElement(element: Int) extends SubPath
 
 /**
- * A nested path element, that is, items can be used to form arbitrary structures / hierarchies.
- * `element` holds all child elements.
+ * Identifies the nature of a nested path element.
  */
-case class NestedPathElement(element: ListBuffer[SubPath]) extends SubPath
+object NestedPathType extends Enumeration {
+    val Loop, Conditional = Value
+}
+
+/**
+ * A nested path element, that is, items can be used to form arbitrary structures / hierarchies.
+ * `element` holds all child elements. Path finders should set the `elementType` property whenever
+ * possible, i.e., when they compute / have this information.
+ */
+case class NestedPathElement(
+        element:     ListBuffer[SubPath],
+        elementType: Option[NestedPathType.Value]
+) extends SubPath
 
 /**
  * [[AbstractPathFinder]] provides a scaffolding for finding all relevant paths in a CFG in the
@@ -39,10 +50,13 @@ trait AbstractPathFinder {
     /**
      * Generates a new [[NestedPathElement]] with a given number of inner [[NestedPathElement]]s.
      */
-    protected def generateNestPathElement(numInnerElements: Int): NestedPathElement = {
-        val outerNested = NestedPathElement(ListBuffer())
+    protected def generateNestPathElement(
+        numInnerElements: Int,
+        elementType:      NestedPathType.Value
+    ): NestedPathElement = {
+        val outerNested = NestedPathElement(ListBuffer(), Some(elementType))
         for (_ ← 0.until(numInnerElements)) {
-            outerNested.element.append(NestedPathElement(ListBuffer()))
+            outerNested.element.append(NestedPathElement(ListBuffer(), None))
         }
         outerNested
     }
@@ -66,16 +80,17 @@ trait AbstractPathFinder {
     /**
      * This function checks if a branching corresponds to an if (or if-elseif) structure that has no
      * else block.
-     * Currently, this function is implemented to check whether the very last element of
-     * `successors` is a path past the if (or if-elseif) paths.
+     * Currently, this function is implemented to check whether the very last element of the
+     * successors of the given site is a path past the if (or if-elseif) paths.
      *
-     * @param successors The successors of a branching.
+     * @param branchingSite The site / index of a branching that is to be checked.
      * @param cfg The control flow graph underlying the successors.
-     * @return Returns ''true'', if the very last element of `successors` is a child of one of the
+     * @return Returns ''true'', if the very last element of the successors is a child of one of the
      *         other successors. If this is the case, the branching corresponds to one without an
      *         ''else'' branch.
      */
-    def isCondWithoutElse(successors: List[Int], cfg: CFG[Stmt[V], TACStmts[V]]): Boolean = {
+    def isCondWithoutElse(branchingSite: Int, cfg: CFG[Stmt[V], TACStmts[V]]): Boolean = {
+        val successors = cfg.bb(branchingSite).successors.map(_.nodeId).toArray.sorted
         // Separate the last element from all previous ones
         val branches = successors.reverse.tail.reverse
         val lastEle = successors.last
@@ -83,7 +98,7 @@ trait AbstractPathFinder {
         // For every successor (except the very last one), execute a DFS to check whether the very
         // last element is a successor. If so, this represents a path past the if (or if-elseif).
         branches.count { next ⇒
-            val seenNodes = ListBuffer[CFGNode](cfg.bb(next))
+            val seenNodes = ListBuffer[CFGNode](cfg.bb(branchingSite), cfg.bb(next))
             val toVisitStack = mutable.Stack[CFGNode](cfg.bb(next).successors.toArray: _*)
             while (toVisitStack.nonEmpty) {
                 val from = toVisitStack.pop()
@@ -113,8 +128,9 @@ trait AbstractPathFinder {
      * @return Returns all found paths as a [[Path]] object. That means, the return object is a flat
      *         structure, however, captures all hierarchies and (nested) flows. Note that a
      *         [[NestedPathElement]] with only one child can either refer to a loop or an ''if''
-     *         that has no ''else'' block (from a high-level perspective). It is the job of the the
-     *         procedure processing the return object to further identify that (if necessary).
+     *         that has no ''else'' block (from a high-level perspective). It is the job of the
+     *         implementations to attach these information to [[NestedPathElement]]s (so that
+     *         procedures using results of this function do not need to re-process).
      */
     def findPaths(startSites: List[Int], endSite: Int, cfg: CFG[Stmt[V], TACStmts[V]]): Path
 
