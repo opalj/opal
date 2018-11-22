@@ -432,9 +432,9 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                 if (definition.isVirtualFunctionCall) {
                     definition.asVirtualFunctionCall match {
                         case VirtualFunctionCall(_, ObjectType.Class, _, "getConstructor", _, classes, params) ⇒
-                            val parameterTypes = getTypesFromVararg(params.head, pc)
-                            val descriptor = parameterTypes.map(s ⇒ MethodDescriptor(s, VoidType))
-                            handleNewInstance(caller, pc, classes, descriptor, actualParams)
+                            val paramTypesOption = getTypesFromVararg(params.head, pc)
+                            val describtor = paramTypesOption.map(s ⇒ MethodDescriptor(s, VoidType))
+                            handleNewInstance(caller, pc, classes, describtor, actualParams)
                         case _ ⇒ state.calleesAndCallers.addIncompleteCallsite(pc)
                     }
                 } else {
