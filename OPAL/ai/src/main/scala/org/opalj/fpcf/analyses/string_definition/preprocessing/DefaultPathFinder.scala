@@ -6,7 +6,6 @@ import org.opalj.tac.Stmt
 import org.opalj.tac.TACStmts
 import org.opalj.br.cfg.CFG
 import org.opalj.br.cfg.ExitNode
-import org.opalj.fpcf.analyses.string_definition.Path
 
 import scala.collection.mutable.ListBuffer
 
@@ -160,7 +159,7 @@ class DefaultPathFinder extends AbstractPathFinder {
             }
         }
 
-        path.toList
+        Path(path.toList)
     }
 
 }

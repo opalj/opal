@@ -3,41 +3,12 @@ package org.opalj.fpcf.analyses.string_definition.preprocessing
 
 import org.opalj.br.cfg.CFG
 import org.opalj.br.cfg.CFGNode
-import org.opalj.fpcf.analyses.string_definition.Path
 import org.opalj.fpcf.analyses.string_definition.V
 import org.opalj.tac.Stmt
 import org.opalj.tac.TACStmts
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
-
-/**
- * [[SubPath]] represents the general item that forms a [[Path]].
- */
-sealed class SubPath()
-
-/**
- * A flat element, e.g., for representing a single statement. The statement is identified by
- * `element`.
- */
-case class FlatPathElement(element: Int) extends SubPath
-
-/**
- * Identifies the nature of a nested path element.
- */
-object NestedPathType extends Enumeration {
-    val Loop, Conditional = Value
-}
-
-/**
- * A nested path element, that is, items can be used to form arbitrary structures / hierarchies.
- * `element` holds all child elements. Path finders should set the `elementType` property whenever
- * possible, i.e., when they compute / have this information.
- */
-case class NestedPathElement(
-        element:     ListBuffer[SubPath],
-        elementType: Option[NestedPathType.Value]
-) extends SubPath
 
 /**
  * [[AbstractPathFinder]] provides a scaffolding for finding all relevant paths in a CFG in the
