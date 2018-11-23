@@ -27,7 +27,27 @@ case class FlatPathElement(element: Int) extends SubPath
  * Identifies the nature of a nested path element.
  */
 object NestedPathType extends Enumeration {
-    val Loop, Conditional = Value
+
+    /**
+     * Used to mark any sort of loops.
+     */
+    val Loop: NestedPathType.Value = Value
+
+    /**
+     *  Use this type to mark a conditional that has an alternative that is guaranteed to be
+     *  executed. For instance, an `if` with an `else` block would fit this type, as would a `case`
+     *  with a `default`. These are just examples for high-level languages. The concepts, however,
+     *  can be applied to low-level format as well.
+     */
+    val CondWithAlternative: NestedPathType.Value = Value
+
+    /**
+     * Use this type to mark a conditional that is not necessarily executed. For instance, an `if`
+     * without an `else` (but possibly several `else if` fits this category. Again, this is to be
+     * mapped to low-level representations as well.
+     */
+    val CondWithoutAlternative: NestedPathType.Value = Value
+
 }
 
 /**
