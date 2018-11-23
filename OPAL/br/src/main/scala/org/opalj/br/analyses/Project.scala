@@ -540,7 +540,12 @@ class Project[Source] private (
                 // we don't need the initialization data anymore
                 projectInformationKeyInitializationData.remove(pik)
                 pi
-            } { t ⇒ info("project", s"initialization of $className took ${t.toSeconds}") }
+            } { t ⇒
+                info(
+                    "project",
+                    s"initialization of $className took ${t.toSeconds}"
+                )
+            }
             projectInformation.set(pikUId, pi)
             pi
         }
@@ -569,18 +574,18 @@ class Project[Source] private (
             // derive an information more than once.
             this.synchronized {
                 val projectInformation = this.projectInformation
-                if (pikUId < projectInformation.length()) {
-                    get(pik)
-                } else {
+                if (pikUId >= projectInformation.length()) {
                     val newLength = Math.max(projectInformation.length * 2, pikUId * 2)
                     val newProjectInformation = new AtomicReferenceArray[AnyRef](newLength)
                     org.opalj.control.iterateUntil(0, projectInformation.length()) { i ⇒
                         newProjectInformation.set(i, projectInformation.get(i))
                     }
                     this.projectInformation = newProjectInformation
-                    derive(newProjectInformation)
+                    return derive(newProjectInformation);
                 }
             }
+            // else (pikUId < projectInformation.length()) => the underlying array is "large enough"
+            get(pik)
         }
     }
 
