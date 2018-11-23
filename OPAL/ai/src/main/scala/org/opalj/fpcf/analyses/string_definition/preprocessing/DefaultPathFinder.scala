@@ -43,7 +43,7 @@ class DefaultPathFinder extends AbstractPathFinder {
 
         // Multiple start sites => We start within a conditional => Prepare for that
         if (startSites.size > 1) {
-            val outerNested = generateNestPathElement(startSites.size, NestedPathType.Conditional)
+            val outerNested = generateNestPathElement(startSites.size, NestedPathType.CondWithAlternative)
             numSplits.append(startSites.size)
             currSplitIndex.append(0)
             nestedElementsRef.append(outerNested)
@@ -100,7 +100,7 @@ class DefaultPathFinder extends AbstractPathFinder {
                     var ref: NestedPathElement = nestedElementsRef.head
                     // Refine for conditionals
                     ref.elementType match {
-                        case Some(t) if t == NestedPathType.Conditional ⇒
+                        case Some(t) if t == NestedPathType.CondWithAlternative ⇒
                             ref = ref.element(currSplitIndex.head).asInstanceOf[NestedPathElement]
                         case _ ⇒
                     }
@@ -146,10 +146,17 @@ class DefaultPathFinder extends AbstractPathFinder {
             if (successors.length > 1 && !isLoopHeader) {
                 val appendSite = if (numSplits.isEmpty) path else
                     nestedElementsRef(currSplitIndex.head).element
-                val relevantNumSuccessors = if (isCondWithoutElse(popped, cfg))
-                    successors.size - 1 else successors.size
+                var relevantNumSuccessors = successors.size
+                var ifWithElse = true
+
+                if (isCondWithoutElse(popped, cfg)) {
+                    relevantNumSuccessors -= 1
+                    ifWithElse = false
+                }
                 val outerNested = generateNestPathElement(
-                    relevantNumSuccessors, NestedPathType.Conditional
+                    relevantNumSuccessors,
+                    if (ifWithElse) NestedPathType.CondWithAlternative else
+                        NestedPathType.CondWithoutAlternative
                 )
 
                 numSplits.prepend(relevantNumSuccessors)
