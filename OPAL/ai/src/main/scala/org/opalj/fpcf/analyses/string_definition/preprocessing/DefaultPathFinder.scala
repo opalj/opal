@@ -73,7 +73,7 @@ class DefaultPathFinder extends AbstractPathFinder {
                     numSplits.prepend(1)
                     currSplitIndex.prepend(0)
 
-                    val outer = generateNestPathElement(0, NestedPathType.Loop)
+                    val outer = generateNestPathElement(0, NestedPathType.Repetition)
                     outer.element.append(toAppend)
                     nestedElementsRef.prepend(outer)
                     path.append(outer)
@@ -83,7 +83,7 @@ class DefaultPathFinder extends AbstractPathFinder {
                 else if (isLoopEnding) {
                     val loopElement = nestedElementsRef.find {
                         _.elementType match {
-                            case Some(et) ⇒ et == NestedPathType.Loop
+                            case Some(et) ⇒ et == NestedPathType.Repetition
                             case _        ⇒ false
                         }
                     }

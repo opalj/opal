@@ -1,18 +1,12 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.fpcf.analyses.string_definition.expr_processing
+package org.opalj.fpcf.analyses.string_definition.interpretation
 import org.opalj.br.cfg.CFG
 import org.opalj.fpcf.analyses.string_definition.V
 import org.opalj.fpcf.string_definition.properties.StringTree
-import org.opalj.fpcf.string_definition.properties.StringTreeElement
-import org.opalj.fpcf.string_definition.properties.StringTreeOr
-import org.opalj.tac.ArrayLoad
-import org.opalj.tac.ArrayStore
 import org.opalj.tac.Assignment
 import org.opalj.tac.Expr
 import org.opalj.tac.Stmt
 import org.opalj.tac.TACStmts
-
-import scala.collection.mutable.ListBuffer
 
 /**
  * This implementation of [[AbstractExprProcessor]] processes [[org.opalj.tac.ArrayLoad]]
@@ -56,31 +50,32 @@ class ArrayLoadProcessor(
     private def process(
         expr: Expr[V], stmts: Array[Stmt[V]], ignore: List[Int]
     ): Option[StringTree] = {
-        expr match {
-            case al: ArrayLoad[V] ⇒
-                val children = ListBuffer[StringTreeElement]()
-                // Loop over all possible array values
-                al.arrayRef.asVar.definedBy.toArray.sorted.foreach { next ⇒
-                    val arrDecl = stmts(next)
-                    val sortedArrDeclUses = arrDecl.asAssignment.targetVar.usedBy.toArray.sorted
-                    sortedArrDeclUses.filter {
-                        stmts(_).isInstanceOf[ArrayStore[V]]
-                    } foreach { f: Int ⇒
-                        val sortedSDefs = stmts(f).asArrayStore.value.asVar.definedBy.toArray.sorted
-                        val arrValues = sortedSDefs.map {
-                            exprHandler.processDefSite
-                        }.filter(_.isDefined).map(_.get)
-                        children.appendAll(arrValues)
-                    }
-                }
-
-                if (children.nonEmpty) {
-                    Some(StringTreeOr(children))
-                } else {
-                    None
-                }
-            case _ ⇒ None
-        }
+        None
+        //        expr match {
+        //            case al: ArrayLoad[V] ⇒
+        //                val children = ListBuffer[StringTreeElement]()
+        //                // Loop over all possible array values
+        //                al.arrayRef.asVar.definedBy.toArray.sorted.foreach { next ⇒
+        //                    val arrDecl = stmts(next)
+        //                    val sortedArrDeclUses = arrDecl.asAssignment.targetVar.usedBy.toArray.sorted
+        //                    sortedArrDeclUses.filter {
+        //                        stmts(_).isInstanceOf[ArrayStore[V]]
+        //                    } foreach { f: Int ⇒
+        //                        val sortedSDefs = stmts(f).asArrayStore.value.asVar.definedBy.toArray.sorted
+        //                        val arrValues = sortedSDefs.map {
+        //                            exprHandler.processDefSite
+        //                        }.filter(_.isDefined).map(_.get)
+        //                        children.appendAll(arrValues)
+        //                    }
+        //                }
+        //
+        //                if (children.nonEmpty) {
+        //                    Some(StringTreeOr(children))
+        //                } else {
+        //                    None
+        //                }
+        //            case _ ⇒ None
+        //        }
     }
 
 }
