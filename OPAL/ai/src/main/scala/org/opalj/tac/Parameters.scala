@@ -2,6 +2,8 @@
 package org.opalj
 package tac
 
+import java.util.{Arrays ⇒ JArrays}
+
 import org.opalj.ai.ValueOrigin
 
 /**
@@ -46,6 +48,21 @@ class Parameters[P <: AnyRef](
         val p = parameters(0)
         if (p eq null) throw new UnsupportedOperationException()
         p
+    }
+
+    override def equals(other: Any): Boolean = {
+        other match {
+            case that: Parameters[_] ⇒
+                JArrays.equals(
+                    this.parameters.asInstanceOf[Array[AnyRef]],
+                    that.parameters.asInstanceOf[Array[AnyRef]]
+                )
+            case _ ⇒ false
+        }
+    }
+
+    override def hashCode(): ValueOrigin = {
+        17 * JArrays.hashCode(parameters.asInstanceOf[Array[AnyRef]])
     }
 
     override def toString: String = {
