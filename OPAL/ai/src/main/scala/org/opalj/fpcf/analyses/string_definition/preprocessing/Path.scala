@@ -31,7 +31,7 @@ object NestedPathType extends Enumeration {
     /**
      * Used to mark any sort of loops.
      */
-    val Loop: NestedPathType.Value = Value
+    val Repetition: NestedPathType.Value = Value
 
     /**
      *  Use this type to mark a conditional that has an alternative that is guaranteed to be
