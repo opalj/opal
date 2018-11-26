@@ -112,7 +112,6 @@ abstract class PropertyStore {
     // TODO Get rid of cycle resolution... either use lower or upper bound depending on the PKs strategy (TACAI refinement is no longer possible)
     // TODO in phase completion First: fill in the fallbacks, if no fallbacks needed to be filled in, second commit all non-final values; clear all dependencies
 
-
     implicit val logContext: LogContext
 
     //
