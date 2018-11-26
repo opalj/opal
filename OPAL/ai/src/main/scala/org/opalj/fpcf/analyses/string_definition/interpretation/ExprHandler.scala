@@ -10,6 +10,7 @@ import org.opalj.tac.BinaryExpr
 import org.opalj.tac.Expr
 import org.opalj.tac.ExprStmt
 import org.opalj.tac.New
+import org.opalj.tac.NonVirtualFunctionCall
 import org.opalj.tac.NonVirtualMethodCall
 import org.opalj.tac.Stmt
 import org.opalj.tac.StringConst
@@ -61,6 +62,10 @@ class ExprHandler(cfg: CFG[Stmt[V], TACStmts[V]]) {
                 new VirtualFunctionCallInterpreter(cfg, this).interpret(expr.asVirtualFunctionCall)
             case Assignment(_, _, expr) if expr.isInstanceOf[BinaryExpr[V]] =>
                 new BinaryExprInterpreter(cfg, this).interpret(expr.asBinaryExpr)
+            case Assignment(_, _, expr) if expr.isInstanceOf[NonVirtualFunctionCall[V]] =>
+                new NonVirtualFunctionCallInterpreter(
+                    cfg, this
+                ).interpret(expr.asNonVirtualFunctionCall)
             case ExprStmt(_, expr) =>
                 expr match {
                     case vfc: VirtualFunctionCall[V] =>
