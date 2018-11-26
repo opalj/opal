@@ -2,7 +2,7 @@
 package org.opalj
 package fpcf
 
-import util.PerformanceEvaluation.time
+import org.opalj.util.PerformanceEvaluation.time
 
 /**
  * A small evaluation of the performance of the different map implementations supported by
@@ -72,25 +72,25 @@ private[fpcf] object MapsEval extends App {
             anyRefMap += (s -> theObject) // <= faster then adding it using pairs...
             //anyRefMap += ((s, theObject()))
         }
-    } { t ⇒ println("AnyRefMap.add: "+t.toSeconds) }
+    } { t ⇒ println("mutable AnyRefMap.add: "+t.toSeconds) }
 
     time {
         ls.foreach { s ⇒
             openHashMap += (s -> theObject)
         }
-    } { t ⇒ println("OpenHashMap.add: "+t.toSeconds) }
+    } { t ⇒ println("mutable OpenHashMap.add: "+t.toSeconds) }
 
     time {
         ls.foreach { s ⇒
             hashMap += (s -> theObject)
         }
-    } { t ⇒ println("HashMap.add: "+t.toSeconds) }
+    } { t ⇒ println("immutable HashMap.add: "+t.toSeconds) }
 
     time {
         ls.foreach { s ⇒
             treeMap += (s -> theObject)
         }
-    } { t ⇒ println("TreeMap.add: "+t.toSeconds) }
+    } { t ⇒ println("immutable TreeMap.add: "+t.toSeconds) }
 
     // query maps
 
