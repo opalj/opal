@@ -298,7 +298,7 @@ final class FinalP[+E <: Entity, +P <: Property](val e: E, val ub: P) extends EP
     override def equals(other: Any): Boolean = {
         other match {
             case that: FinalP[_, _] ⇒ that.e == this.e && this.p == that.p
-            case _                   ⇒ false
+            case _                  ⇒ false
         }
     }
 
