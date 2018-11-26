@@ -357,16 +357,6 @@ final class PKEParallelTasksPropertyStore private (
                         if (currentP == null) {
                             if (triggeredLazyComputations(pkId).add(e)) {
                                 if (tracer.isDefined) tracer.get.schedulingLazyComputation(e, pkId)
-
-                                val alsoComputedPKIds = simultaneouslyLazilyComputedPropertyKinds(pkId)
-                                alsoComputedPKIds foreach { computedPKId ⇒
-                                    if (!triggeredLazyComputations(computedPKId).add(e)) {
-                                        throw new UnknownError(
-                                            "a simultaneously computed property kind was already triggered"
-                                        )
-                                    }
-                                }
-
                                 scheduledLazyTasksCounter += 1
                                 appendTask(new PropertyComputationTask[Entity](store, e, pkId, lc))
                             }

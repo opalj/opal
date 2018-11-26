@@ -4,7 +4,6 @@ package fpcf
 
 import java.util.concurrent.ConcurrentHashMap
 
-import org.opalj.collection.immutable.IntTrieSet
 import scala.util.control.ControlThrowable
 import scala.collection.{Map ⇒ SomeMap}
 
@@ -12,7 +11,6 @@ import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.info
 import org.opalj.log.OPALLogger.error
-import org.opalj.fpcf.PropertyKind.SupportedPropertyKinds
 
 /**
  * A property store manages the execution of computations of properties related to concrete
