@@ -90,6 +90,8 @@ case class Path(elements: List[SubPath]) {
                 stmts(popped) match {
                     case a: Assignment[V] if a.expr.isInstanceOf[VirtualFunctionCall[V]] ⇒
                         stack.pushAll(a.expr.asVirtualFunctionCall.receiver.asVar.definedBy.toArray)
+                        // TODO: Does the following line add too much (in some cases)???
+                        stack.pushAll(a.targetVar.asVar.usedBy.toArray)
                     case a: Assignment[V] if a.expr.isInstanceOf[New] ⇒
                         stack.pushAll(a.targetVar.usedBy.toArray)
                     case _ ⇒
@@ -97,7 +99,7 @@ case class Path(elements: List[SubPath]) {
             }
         }
 
-        defAndUses.toList
+        defAndUses.toList.sorted
     }
 
     /**
