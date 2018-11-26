@@ -2,10 +2,14 @@
 package org.opalj.fpcf.analyses.string_definition.preprocessing
 
 import org.opalj.fpcf.analyses.string_definition.V
+import org.opalj.tac.Assignment
 import org.opalj.tac.DUVar
+import org.opalj.tac.New
 import org.opalj.tac.Stmt
+import org.opalj.tac.VirtualFunctionCall
 import org.opalj.value.ValueInformation
 
+import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
 /**
@@ -76,12 +80,20 @@ case class Path(elements: List[SubPath]) {
         obj: DUVar[ValueInformation], stmts: Array[Stmt[V]]
     ): List[Int] = {
         val defAndUses = ListBuffer[Int]()
+        val stack = mutable.Stack[Int](obj.definedBy.toArray: _*)
 
-        obj.definedBy.foreach { d ⇒
-            val defSites = stmts(d).asAssignment.expr.asVirtualFunctionCall.receiver.asVar.definedBy
-            defSites.foreach { innerDS ⇒
-                defAndUses.append(innerDS)
-                defAndUses.append(stmts(innerDS).asAssignment.targetVar.usedBy.toArray.toList: _*)
+        while (stack.nonEmpty) {
+            val popped = stack.pop()
+            if (!defAndUses.contains(popped)) {
+                defAndUses.append(popped)
+
+                stmts(popped) match {
+                    case a: Assignment[V] if a.expr.isInstanceOf[VirtualFunctionCall[V]] ⇒
+                        stack.pushAll(a.expr.asVirtualFunctionCall.receiver.asVar.definedBy.toArray)
+                    case a: Assignment[V] if a.expr.isInstanceOf[New] ⇒
+                        stack.pushAll(a.targetVar.usedBy.toArray)
+                    case _ ⇒
+                }
             }
         }
 

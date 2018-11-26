@@ -6,7 +6,10 @@ import org.opalj.tac.TACStmts
 import org.opalj.br.cfg.CFG
 import org.opalj.fpcf.analyses.string_definition.V
 import org.opalj.fpcf.string_definition.properties.StringConstancyInformation
+import org.opalj.fpcf.string_definition.properties.StringConstancyLevel
 import org.opalj.tac.VirtualFunctionCall
+
+import scala.collection.mutable.ListBuffer
 
 /**
  * The `VirtualFunctionCallInterpreter` is responsible for processing [[VirtualFunctionCall]]s.
@@ -52,8 +55,50 @@ class VirtualFunctionCallInterpreter(
      */
     private def interpretAppendCall(
         appendCall: VirtualFunctionCall[V]
-    ): List[StringConstancyInformation] =
-        exprHandler.processDefSite(appendCall.params.head.asVar.definedBy.head)
+    ): List[StringConstancyInformation] = {
+        val scis = ListBuffer[StringConstancyInformation]()
+
+        val receiverValue = receiverValueOfAppendCall(appendCall)
+        if (receiverValue.nonEmpty) {
+            scis.appendAll(receiverValue)
+        }
+
+        val appendValue = valueOfAppendCall(appendCall)
+        if (appendValue.isDefined) {
+            scis.append(appendValue.get)
+        }
+
+        scis.toList
+    }
+
+    /**
+     * This function determines the current value of the receiver object of an `append` call.
+     */
+    private def receiverValueOfAppendCall(
+        call: VirtualFunctionCall[V]
+    ): Option[StringConstancyInformation] =
+        exprHandler.processDefSite(call.receiver.asVar.definedBy.head).headOption
+
+    /**
+     * Determines the (string) value that was passed to a `String{Builder, Buffer}#append` method.
+     * This function can process string constants as well as function calls as argument to append.
+     */
+    private def valueOfAppendCall(
+        call: VirtualFunctionCall[V]
+    ): Option[StringConstancyInformation] = {
+        val value = exprHandler.processDefSite(call.params.head.asVar.definedBy.head)
+        // It might be necessary to merge the value of the receiver and of the parameter together
+        value.size match {
+            case 0 ⇒ None
+            case 1 ⇒ value.headOption
+            case _ ⇒ Some(StringConstancyInformation(
+                StringConstancyLevel.determineForConcat(
+                    value.head.constancyLevel, value(1).constancyLevel
+                ),
+                value.head.possibleStrings + value(1).possibleStrings
+            ))
+        }
+    }
 
     /**
      * Function for processing calls to [[StringBuilder#toString]] or [[StringBuffer#toString]].
@@ -61,7 +106,8 @@ class VirtualFunctionCallInterpreter(
      * the expected behavior cannot be guaranteed.
      */
     private def interpretToStringCall(
-        appendCall: VirtualFunctionCall[V]
-    ): List[StringConstancyInformation] = List()
+        call: VirtualFunctionCall[V]
+    ): List[StringConstancyInformation] =
+        exprHandler.processDefSite(call.receiver.asVar.definedBy.head)
 
 }
