@@ -43,7 +43,11 @@ class PathTransformer(val cfg: CFG[Stmt[V], TACStmts[V]]) {
                     case _ ⇒
                         val treeElements = ListBuffer[StringTree]()
                         treeElements.appendAll(sciList.map(StringTreeConst).to[ListBuffer])
-                        Some(StringTreeOr(treeElements))
+                        if (treeElements.nonEmpty) {
+                            Some(StringTreeOr(treeElements))
+                        } else {
+                            None
+                        }
                 }
             case npe: NestedPathElement ⇒
                 if (npe.elementType.isDefined) {
@@ -61,12 +65,16 @@ class PathTransformer(val cfg: CFG[Stmt[V], TACStmts[V]]) {
                             val processedSubPaths = npe.element.map(
                                 pathToTreeAcc
                             ).filter(_.isDefined).map(_.get)
-                            npe.elementType.get match {
-                                case NestedPathType.CondWithAlternative ⇒
-                                    Some(StringTreeOr(processedSubPaths))
-                                case NestedPathType.CondWithoutAlternative ⇒
-                                    Some(StringTreeCond(processedSubPaths))
-                                case _ ⇒ None
+                            if (processedSubPaths.nonEmpty) {
+                                npe.elementType.get match {
+                                    case NestedPathType.CondWithAlternative ⇒
+                                        Some(StringTreeOr(processedSubPaths))
+                                    case NestedPathType.CondWithoutAlternative ⇒
+                                        Some(StringTreeCond(processedSubPaths))
+                                    case _ ⇒ None
+                                }
+                            } else {
+                                None
                             }
                     }
                 } else {

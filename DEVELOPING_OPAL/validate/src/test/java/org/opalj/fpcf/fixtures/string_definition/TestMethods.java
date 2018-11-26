@@ -439,6 +439,22 @@ public class TestMethods {
         analyzeString(sb.toString());
     }
 
+    @StringDefinitions(
+            value = "while-true example",
+            expectedLevel = StringConstancyLevel.CONSTANT,
+            expectedStrings = "a(b)*"
+    )
+    public void whileTrueExample() {
+        StringBuilder sb = new StringBuilder("a");
+        while (true) {
+            sb.append("b");
+            if (sb.length() > 100) {
+                break;
+            }
+        }
+        analyzeString(sb.toString());
+    }
+
     //    @StringDefinitions(
     //            value = "an extensive example with many control structures",
     //            expectedLevel = StringConstancyLevel.PARTIALLY_CONSTANT,
@@ -503,24 +519,6 @@ public class TestMethods {
     //    //        analyzeString(sb.toString());
     //    //    }
 
-    //    @StringDefinitions(
-    //            value = "while-true example (how exactly is it supposed to look like (TODO: Talk to "
-    //                    + "Michael Eichberg)?",
-    //            expectedLevel = StringConstancyLevel.CONSTANT,
-    //            expectedStrings = "a(b)*"
-    //    )
-    //    public void whileTrue() {
-    //        StringBuilder sb = new StringBuilder("a");
-    //        while (true) {
-    //            sb.append("b");
-    //            if (sb.length() > 100) {
-    //                break;
-    //            }
-    //        }
-    //        analyzeString(sb.toString());
-    //    }
-    //
-    //
     //    //    @StringDefinitions(
     //    //            value = "case with an exception",
     //    //            expectedLevel = StringConstancyLevel.CONSTANT,
