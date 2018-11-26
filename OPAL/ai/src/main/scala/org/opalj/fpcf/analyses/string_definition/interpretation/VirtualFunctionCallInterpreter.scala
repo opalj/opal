@@ -9,8 +9,6 @@ import org.opalj.fpcf.string_definition.properties.StringConstancyInformation
 import org.opalj.fpcf.string_definition.properties.StringConstancyLevel
 import org.opalj.tac.VirtualFunctionCall
 
-import scala.collection.mutable.ListBuffer
-
 /**
  * The `VirtualFunctionCallInterpreter` is responsible for processing [[VirtualFunctionCall]]s.
  * The list of currently supported function calls can be seen in the documentation of
@@ -56,19 +54,24 @@ class VirtualFunctionCallInterpreter(
     private def interpretAppendCall(
         appendCall: VirtualFunctionCall[V]
     ): List[StringConstancyInformation] = {
-        val scis = ListBuffer[StringConstancyInformation]()
-
         val receiverValue = receiverValueOfAppendCall(appendCall)
-        if (receiverValue.nonEmpty) {
-            scis.appendAll(receiverValue)
-        }
-
         val appendValue = valueOfAppendCall(appendCall)
-        if (appendValue.isDefined) {
-            scis.append(appendValue.get)
-        }
 
-        scis.toList
+        if (receiverValue.isEmpty && appendValue.isEmpty) {
+            List()
+        } else if (receiverValue.isDefined && appendValue.isEmpty) {
+            List(receiverValue.get)
+        } else if (receiverValue.isEmpty && appendValue.nonEmpty) {
+            List(appendValue.get)
+        } else {
+            List(StringConstancyInformation(
+                StringConstancyLevel.determineForConcat(
+                    receiverValue.get.constancyLevel,
+                    appendValue.get.constancyLevel
+                ),
+                receiverValue.get.possibleStrings + appendValue.get.possibleStrings
+            ))
+        }
     }
 
     /**

@@ -73,9 +73,14 @@ class PathTransformer(val cfg: CFG[Stmt[V], TACStmts[V]]) {
                     npe.element.size match {
                         case 0 ⇒ None
                         case 1 ⇒ pathToTreeAcc(npe.element.head)
-                        case _ ⇒ Some(StringTreeConcat(
-                            npe.element.map(pathToTreeAcc).filter(_.isDefined).map(_.get)
-                        ))
+                        case _ ⇒
+                            val processed =
+                                npe.element.map(pathToTreeAcc).filter(_.isDefined).map(_.get)
+                            if (processed.isEmpty) {
+                                None
+                            } else {
+                                Some(StringTreeConcat(processed))
+                            }
                     }
                 }
             case _ ⇒ None
