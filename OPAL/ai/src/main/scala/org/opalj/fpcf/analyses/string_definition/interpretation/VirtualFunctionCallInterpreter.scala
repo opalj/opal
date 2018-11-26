@@ -4,6 +4,8 @@ package org.opalj.fpcf.analyses.string_definition.interpretation
 import org.opalj.tac.Stmt
 import org.opalj.tac.TACStmts
 import org.opalj.br.cfg.CFG
+import org.opalj.br.ComputationalTypeFloat
+import org.opalj.br.ComputationalTypeInt
 import org.opalj.fpcf.analyses.string_definition.V
 import org.opalj.fpcf.string_definition.properties.StringConstancyInformation
 import org.opalj.fpcf.string_definition.properties.StringConstancyLevel
@@ -90,16 +92,27 @@ class VirtualFunctionCallInterpreter(
         call: VirtualFunctionCall[V]
     ): Option[StringConstancyInformation] = {
         val value = exprHandler.processDefSite(call.params.head.asVar.definedBy.head)
-        // It might be necessary to merge the value of the receiver and of the parameter together
-        value.size match {
-            case 0 ⇒ None
-            case 1 ⇒ value.headOption
-            case _ ⇒ Some(StringConstancyInformation(
-                StringConstancyLevel.determineForConcat(
-                    value.head.constancyLevel, value(1).constancyLevel
-                ),
-                value.head.possibleStrings + value(1).possibleStrings
+        call.params.head.asVar.value.computationalType match {
+            // For some types, we know the (dynamic) values
+            case ComputationalTypeInt ⇒ Some(StringConstancyInformation(
+                StringConstancyLevel.DYNAMIC, StringConstancyInformation.IntValue
             ))
+            case ComputationalTypeFloat ⇒ Some(StringConstancyInformation(
+                StringConstancyLevel.DYNAMIC, StringConstancyInformation.FloatValue
+            ))
+            // Otherwise, try to compute
+            case _ ⇒
+                // It might be necessary to merge the values of the receiver and of the parameter
+                value.size match {
+                    case 0 ⇒ None
+                    case 1 ⇒ value.headOption
+                    case _ ⇒ Some(StringConstancyInformation(
+                        StringConstancyLevel.determineForConcat(
+                            value.head.constancyLevel, value(1).constancyLevel
+                        ),
+                        value.head.possibleStrings + value(1).possibleStrings
+                    ))
+                }
         }
     }
 
