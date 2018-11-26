@@ -106,22 +106,6 @@ public class TestMethods {
         analyzeString(sb.toString());
     }
 
-    //    @StringDefinitions(
-    //            value = "checks if a string value with > 2 continuous appends and a second "
-    //                    + "StringBuilder is determined correctly",
-    //            expectedLevel = StringConstancyLevel.CONSTANT,
-    //            expectedStrings = "java.langStringB."
-    //    )
-    //    public void directAppendConcats2() {
-    //        StringBuilder sb = new StringBuilder("java");
-    //        StringBuilder sb2 = new StringBuilder("B");
-    //        sb.append(".").append("lang");
-    //        sb2.append(".");
-    //        sb.append("String");
-    //        sb.append(sb2.toString());
-    //        analyzeString(sb.toString());
-    //    }
-
     @StringDefinitions(
             value = "at this point, function call cannot be handled => DYNAMIC",
             expectedLevel = StringConstancyLevel.DYNAMIC,
@@ -179,7 +163,7 @@ public class TestMethods {
             value = "a more comprehensive case where multiple definition sites have to be "
                     + "considered each with a different string generation mechanism",
             expectedLevel = StringConstancyLevel.DYNAMIC,
-            expectedStrings = "(java.lang.Object|\\w|java.lang.System|java.lang.\\w)"
+            expectedStrings = "((java.lang.Object|\\w)|java.lang.System|java.lang.\\w|\\w)"
     )
     public void multipleDefSites(int value) {
         String[] arr = new String[] { "java.lang.Object", getRuntimeClassName() };
@@ -204,47 +188,6 @@ public class TestMethods {
 
         analyzeString(s);
     }
-
-    //    @StringDefinitions(
-    //            value = "a case where multiple optional definition sites have to be considered.",
-    //            expectedLevel = StringConstancyLevel.CONSTANT,
-    //            expectedStrings = "a(b|c)?"
-    //    )
-    //    public void multipleOptionalAppendSites(int value) {
-    //        StringBuilder sb = new StringBuilder("a");
-    //        switch (value) {
-    //        case 0:
-    //            sb.append("b");
-    //            break;
-    //        case 1:
-    //            sb.append("c");
-    //            break;
-    //        case 3:
-    //            break;
-    //        case 4:
-    //            break;
-    //        }
-    //        analyzeString(sb.toString());
-    //    }
-
-    //    @StringDefinitions(
-    //            value = "a case with a switch with missing breaks",
-    //            expectedLevel = StringConstancyLevel.CONSTANT,
-    //            expectedStrings = "a(bc|c)?"
-    //    )
-    //    public void multipleOptionalAppendSites(int value) {
-    //        StringBuilder sb = new StringBuilder("a");
-    //        switch (value) {
-    //        case 0:
-    //            sb.append("b");
-    //        case 1:
-    //            sb.append("c");
-    //            break;
-    //        case 2:
-    //            break;
-    //        }
-    //        analyzeString(sb.toString());
-    //    }
 
     @StringDefinitions(
             value = "if-else control structure which append to a string builder with an int expr",
@@ -409,139 +352,196 @@ public class TestMethods {
         analyzeString(sb.toString());
     }
 
-    //        @StringDefinitions(
-    //                value = "an extensive example with many control structures",
-    //                expectedLevel = StringConstancyLevel.PARTIALLY_CONSTANT,
-    //                expectedStrings = "(iv1|iv2): (great!)*(\\w)?"
-    //        )
-    //        public void extensive(boolean cond) {
-    //            StringBuilder sb = new StringBuilder();
-    //            if (cond) {
-    //                sb.append("iv1");
-    //            } else {
-    //                sb.append("iv2");
-    //            }
-    //            System.out.println(sb);
-    //            sb.append(": ");
+    //    //    @StringDefinitions(
+    //    //            value = "a case where multiple optional definition sites have to be considered.",
+    //    //            expectedLevel = StringConstancyLevel.CONSTANT,
+    //    //            expectedStrings = "a(b|c)?"
+    //    //    )
+    //    //    public void multipleOptionalAppendSites(int value) {
+    //    //        StringBuilder sb = new StringBuilder("a");
+    //    //        switch (value) {
+    //    //        case 0:
+    //    //            sb.append("b");
+    //    //            break;
+    //    //        case 1:
+    //    //            sb.append("c");
+    //    //            break;
+    //    //        case 3:
+    //    //            break;
+    //    //        case 4:
+    //    //            break;
+    //    //        }
+    //    //        analyzeString(sb.toString());
+    //    //    }
     //
-    //            Random random = new Random();
-    //            while (random.nextFloat() > 5.) {
-    //                if (random.nextInt() % 2 == 0) {
-    //                    sb.append("great!");
-    //                }
-    //            }
-    //
-    //            if (sb.indexOf("great!") > -1) {
-    //                sb.append(getRuntimeClassName());
-    //            }
-    //
-    //            analyzeString(sb.toString());
-    //        }
+    //    //    @StringDefinitions(
+    //    //            value = "a case with a switch with missing breaks",
+    //    //            expectedLevel = StringConstancyLevel.CONSTANT,
+    //    //            expectedStrings = "a(bc|c)?"
+    //    //    )
+    //    //    public void multipleOptionalAppendSites(int value) {
+    //    //        StringBuilder sb = new StringBuilder("a");
+    //    //        switch (value) {
+    //    //        case 0:
+    //    //            sb.append("b");
+    //    //        case 1:
+    //    //            sb.append("c");
+    //    //            break;
+    //    //        case 2:
+    //    //            break;
+    //    //        }
+    //    //        analyzeString(sb.toString());
+    //    //    }
 
-    //        @StringDefinitions(
-    //                value = "an extensive example with many control structures where appends follow "
-    //                        + "after the read",
-    //                expectedLevel = StringConstancyLevel.PARTIALLY_CONSTANT,
-    //                expectedStrings = "(iv1|iv2): "
-    //        )
-    //        public void extensiveEarlyRead(boolean cond) {
-    //            StringBuilder sb = new StringBuilder();
-    //            if (cond) {
-    //                sb.append("iv1");
-    //            } else {
-    //                sb.append("iv2");
-    //            }
-    //            System.out.println(sb);
-    //            sb.append(": ");
-    //
-    //            analyzeString(sb.toString());
-    //
-    //            Random random = new Random();
-    //            while (random.nextFloat() > 5.) {
-    //                if (random.nextInt() % 2 == 0) {
-    //                    sb.append("great!");
-    //                }
-    //            }
-    //
-    //            if (sb.indexOf("great!") > -1) {
-    //                sb.append(getRuntimeClassName());
-    //            }
-    //        }
+    //    //    @StringDefinitions(
+    //    //            value = "checks if a string value with > 2 continuous appends and a second "
+    //    //                    + "StringBuilder is determined correctly",
+    //    //            expectedLevel = StringConstancyLevel.CONSTANT,
+    //    //            expectedStrings = "java.langStringB."
+    //    //    )
+    //    //    public void directAppendConcats2() {
+    //    //        StringBuilder sb = new StringBuilder("java");
+    //    //        StringBuilder sb2 = new StringBuilder("B");
+    //    //        sb.append(".").append("lang");
+    //    //        sb2.append(".");
+    //    //        sb.append("String");
+    //    //        sb.append(sb2.toString());
+    //    //        analyzeString(sb.toString());
+    //    //    }
 
-    //    @StringDefinitions(
-    //            value = "a case where a StringBuffer is used (instead of a StringBuilder)",
-    //            expectedLevel = StringConstancyLevel.PARTIALLY_CONSTANT,
-    //            expectedStrings = "(iv1|iv2): (great!)*(\\w)?"
-    //    )
-    //    public void extensiveStringBuffer(boolean cond) {
-    //        StringBuffer sb = new StringBuffer();
-    //        if (cond) {
-    //            sb.append("iv1");
-    //        } else {
-    //            sb.append("iv2");
-    //        }
-    //        System.out.println(sb);
-    //        sb.append(": ");
+    //    //        @StringDefinitions(
+    //    //                value = "an extensive example with many control structures",
+    //    //                expectedLevel = StringConstancyLevel.PARTIALLY_CONSTANT,
+    //    //                expectedStrings = "(iv1|iv2): (great!)*(\\w)?"
+    //    //        )
+    //    //        public void extensive(boolean cond) {
+    //    //            StringBuilder sb = new StringBuilder();
+    //    //            if (cond) {
+    //    //                sb.append("iv1");
+    //    //            } else {
+    //    //                sb.append("iv2");
+    //    //            }
+    //    //            System.out.println(sb);
+    //    //            sb.append(": ");
+    //    //
+    //    //            Random random = new Random();
+    //    //            while (random.nextFloat() > 5.) {
+    //    //                if (random.nextInt() % 2 == 0) {
+    //    //                    sb.append("great!");
+    //    //                }
+    //    //            }
+    //    //
+    //    //            if (sb.indexOf("great!") > -1) {
+    //    //                sb.append(getRuntimeClassName());
+    //    //            }
+    //    //
+    //    //            analyzeString(sb.toString());
+    //    //        }
     //
-    //        Random random = new Random();
-    //        while (random.nextFloat() > 5.) {
-    //            if (random.nextInt() % 2 == 0) {
-    //                sb.append("great!");
-    //            }
-    //        }
+    //    //        @StringDefinitions(
+    //    //                value = "an extensive example with many control structures where appends follow "
+    //    //                        + "after the read",
+    //    //                expectedLevel = StringConstancyLevel.PARTIALLY_CONSTANT,
+    //    //                expectedStrings = "(iv1|iv2): "
+    //    //        )
+    //    //        public void extensiveEarlyRead(boolean cond) {
+    //    //            StringBuilder sb = new StringBuilder();
+    //    //            if (cond) {
+    //    //                sb.append("iv1");
+    //    //            } else {
+    //    //                sb.append("iv2");
+    //    //            }
+    //    //            System.out.println(sb);
+    //    //            sb.append(": ");
+    //    //
+    //    //            analyzeString(sb.toString());
+    //    //
+    //    //            Random random = new Random();
+    //    //            while (random.nextFloat() > 5.) {
+    //    //                if (random.nextInt() % 2 == 0) {
+    //    //                    sb.append("great!");
+    //    //                }
+    //    //            }
+    //    //
+    //    //            if (sb.indexOf("great!") > -1) {
+    //    //                sb.append(getRuntimeClassName());
+    //    //            }
+    //    //        }
     //
-    //        if (sb.indexOf("great!") > -1) {
-    //            sb.append(getRuntimeClassName());
-    //        }
+    //    //    @StringDefinitions(
+    //    //            value = "a case where a StringBuffer is used (instead of a StringBuilder)",
+    //    //            expectedLevel = StringConstancyLevel.PARTIALLY_CONSTANT,
+    //    //            expectedStrings = "(iv1|iv2): (great!)*(\\w)?"
+    //    //    )
+    //    //    public void extensiveStringBuffer(boolean cond) {
+    //    //        StringBuffer sb = new StringBuffer();
+    //    //        if (cond) {
+    //    //            sb.append("iv1");
+    //    //        } else {
+    //    //            sb.append("iv2");
+    //    //        }
+    //    //        System.out.println(sb);
+    //    //        sb.append(": ");
+    //    //
+    //    //        Random random = new Random();
+    //    //        while (random.nextFloat() > 5.) {
+    //    //            if (random.nextInt() % 2 == 0) {
+    //    //                sb.append("great!");
+    //    //            }
+    //    //        }
+    //    //
+    //    //        if (sb.indexOf("great!") > -1) {
+    //    //            sb.append(getRuntimeClassName());
+    //    //        }
+    //    //
+    //    //        analyzeString(sb.toString());
+    //    //    }
     //
-    //        analyzeString(sb.toString());
-    //    }
-
-    //    @StringDefinitions(
-    //            value = "while-true example (how exactly is it supposed to look like (TODO: Talk to "
-    //                    + "Michael Eichberg)?",
-    //            expectedLevel = StringConstancyLevel.CONSTANT,
-    //            expectedStrings = "a(b)*"
-    //    )
-    //    public void whileTrue() {
-    //        StringBuilder sb = new StringBuilder("a");
-    //        while (true) {
-    //            sb.append("b");
-    //        }
-    //        analyzeString(sb.toString());
-    //    }
-
-    //    @StringDefinitions(
-    //            value = "case with a nested loop where in the outer loop a StringBuilder is created "
-    //                    + "that is later read (TODO: As Michael Eichberg meant?)",
-    //            expectedLevel = StringConstancyLevel.CONSTANT,
-    //            expectedStrings = "a(b)*"
-    //    )
-    //    public void nestedLoops(int range) {
-    //        for (int i = 0; i < range; i++) {
-    //            StringBuilder sb = new StringBuilder("a");
-    //            for (int j = 0; j < range * range; j++) {
-    //                sb.append("b");
-    //            }
-    //            analyzeString(sb.toString());
-    //        }
-    //    }
-
-    //    @StringDefinitions(
-    //            value = "case with an exception",
-    //            expectedLevel = StringConstancyLevel.CONSTANT,
-    //            expectedStrings = "(File Content: |File Content: *)"
-    //    )
-    //    public void withException(String filename) {
-    //        StringBuilder sb = new StringBuilder("File Content: ");
-    //        try {
-    //            String data = new String(Files.readAllBytes(Paths.get(filename)));
-    //            sb.append(data);
-    //        } catch (Exception ignore) {
-    //        } finally {
-    //            analyzeString(sb.toString());
-    //        }
-    //    }
+    //    //    @StringDefinitions(
+    //    //            value = "while-true example (how exactly is it supposed to look like (TODO: Talk to "
+    //    //                    + "Michael Eichberg)?",
+    //    //            expectedLevel = StringConstancyLevel.CONSTANT,
+    //    //            expectedStrings = "a(b)*"
+    //    //    )
+    //    //    public void whileTrue() {
+    //    //        StringBuilder sb = new StringBuilder("a");
+    //    //        while (true) {
+    //    //            sb.append("b");
+    //    //        }
+    //    //        analyzeString(sb.toString());
+    //    //    }
+    //
+    //    //    @StringDefinitions(
+    //    //            value = "case with a nested loop where in the outer loop a StringBuilder is created "
+    //    //                    + "that is later read (TODO: As Michael Eichberg meant?)",
+    //    //            expectedLevel = StringConstancyLevel.CONSTANT,
+    //    //            expectedStrings = "a(b)*"
+    //    //    )
+    //    //    public void nestedLoops(int range) {
+    //    //        for (int i = 0; i < range; i++) {
+    //    //            StringBuilder sb = new StringBuilder("a");
+    //    //            for (int j = 0; j < range * range; j++) {
+    //    //                sb.append("b");
+    //    //            }
+    //    //            analyzeString(sb.toString());
+    //    //        }
+    //    //    }
+    //
+    //    //    @StringDefinitions(
+    //    //            value = "case with an exception",
+    //    //            expectedLevel = StringConstancyLevel.CONSTANT,
+    //    //            expectedStrings = "(File Content: |File Content: *)"
+    //    //    )
+    //    //    public void withException(String filename) {
+    //    //        StringBuilder sb = new StringBuilder("File Content: ");
+    //    //        try {
+    //    //            String data = new String(Files.readAllBytes(Paths.get(filename)));
+    //    //            sb.append(data);
+    //    //        } catch (Exception ignore) {
+    //    //        } finally {
+    //    //            analyzeString(sb.toString());
+    //    //        }
+    //    //    }
 
     private String getRuntimeClassName() {
         return "java.lang.Runtime";
