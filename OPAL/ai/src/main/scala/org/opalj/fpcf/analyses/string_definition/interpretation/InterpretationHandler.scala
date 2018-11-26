@@ -119,15 +119,19 @@ object InterpretationHandler {
     def apply(cfg: CFG[Stmt[V], TACStmts[V]]): InterpretationHandler = new InterpretationHandler(cfg)
 
     /**
-     * Checks whether an expression contains a call to [[StringBuilder.toString]].
+     * Checks whether an expression contains a call to [[StringBuilder#toString]] or
+     * [[StringBuffer#toString]].
      *
      * @param expr The expression that is to be checked.
-     * @return Returns true if `expr` is a call to [[StringBuilder.toString]].
+     * @return Returns true if `expr` is a call to `toString` of [[StringBuilder]] or
+     *         [[StringBuffer]].
      */
-    def isStringBuilderToStringCall(expr: Expr[V]): Boolean =
+    def isStringBuilderBufferToStringCall(expr: Expr[V]): Boolean =
         expr match {
             case VirtualFunctionCall(_, clazz, _, name, _, _, _) ⇒
-                clazz.toJavaClass.getName == "java.lang.StringBuilder" && name == "toString"
+                val className = clazz.toJavaClass.getName
+                (className == "java.lang.StringBuilder" || className == "java.lang.StringBuffer") &&
+                    name == "toString"
             case _ ⇒ false
         }
 

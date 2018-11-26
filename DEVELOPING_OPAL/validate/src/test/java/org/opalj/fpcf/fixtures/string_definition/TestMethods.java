@@ -420,6 +420,25 @@ public class TestMethods {
         }
     }
 
+    @StringDefinitions(
+            value = "some example that makes use of a StringBuffer instead of a StringBuilder",
+            expectedLevel = StringConstancyLevel.PARTIALLY_CONSTANT,
+            expectedStrings = "((x|[AnIntegerValue]))*yz"
+    )
+    public void stringBufferExample() {
+        StringBuffer sb = new StringBuffer();
+        for (int i = 0; i < 20; i++) {
+            if (i % 2 == 0) {
+                sb.append("x");
+            } else {
+                sb.append(i + 1);
+            }
+        }
+        sb.append("yz");
+
+        analyzeString(sb.toString());
+    }
+
     //    @StringDefinitions(
     //            value = "an extensive example with many control structures",
     //            expectedLevel = StringConstancyLevel.PARTIALLY_CONSTANT,
@@ -484,36 +503,6 @@ public class TestMethods {
     //    //        analyzeString(sb.toString());
     //    //    }
 
-    //
-    //    //    @StringDefinitions(
-    //    //            value = "a case where a StringBuffer is used (instead of a StringBuilder)",
-    //    //            expectedLevel = StringConstancyLevel.PARTIALLY_CONSTANT,
-    //    //            expectedStrings = "(iv1|iv2): (great!)*(\\w)?"
-    //    //    )
-    //    //    public void extensiveStringBuffer(boolean cond) {
-    //    //        StringBuffer sb = new StringBuffer();
-    //    //        if (cond) {
-    //    //            sb.append("iv1");
-    //    //        } else {
-    //    //            sb.append("iv2");
-    //    //        }
-    //    //        System.out.println(sb);
-    //    //        sb.append(": ");
-    //    //
-    //    //        Random random = new Random();
-    //    //        while (random.nextFloat() > 5.) {
-    //    //            if (random.nextInt() % 2 == 0) {
-    //    //                sb.append("great!");
-    //    //            }
-    //    //        }
-    //    //
-    //    //        if (sb.indexOf("great!") > -1) {
-    //    //            sb.append(getRuntimeClassName());
-    //    //        }
-    //    //
-    //    //        analyzeString(sb.toString());
-    //    //    }
-    //
     //    @StringDefinitions(
     //            value = "while-true example (how exactly is it supposed to look like (TODO: Talk to "
     //                    + "Michael Eichberg)?",

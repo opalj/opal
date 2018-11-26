@@ -48,7 +48,7 @@ class LocalStringDefinitionAnalysis(
         val defSites = data._1.definedBy.toArray.sorted
         val expr = stmts(defSites.head).asAssignment.expr
         val pathFinder: AbstractPathFinder = new DefaultPathFinder()
-        if (InterpretationHandler.isStringBuilderToStringCall(expr)) {
+        if (InterpretationHandler.isStringBuilderBufferToStringCall(expr)) {
             val initDefSites = InterpretationHandler.findDefSiteOfInit(
                 expr.asVirtualFunctionCall, stmts
             )
