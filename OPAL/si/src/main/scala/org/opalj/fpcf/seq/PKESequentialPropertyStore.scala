@@ -101,8 +101,8 @@ final class PKESequentialPropertyStore private (
     //
     // --------------------------------------------------------------------------------------------
 
-    private[this] val ps: Array[mutable.OpenHashMap[Entity, PropertyValue]] = {
-        Array.fill(PropertyKind.SupportedPropertyKinds) { mutable.OpenHashMap.empty }
+    private[this] val ps: Array[mutable.AnyRefMap[Entity, PropertyValue]] = {
+        Array.fill(PropertyKind.SupportedPropertyKinds) { mutable.AnyRefMap.empty }
     }
 
     // Those computations that will only be scheduled if the result is required
@@ -224,7 +224,7 @@ final class PKESequentialPropertyStore private (
                             }
                             val p = fallbackPropertyBasedOnPKId(this, reason, e, pkId)
                             if (force) {
-                                set(e, p)
+                                update(e, p, p, Nil)
                             }
                             FinalEP(e, p.asInstanceOf[P])
                         }
@@ -238,7 +238,7 @@ final class PKESequentialPropertyStore private (
                         fastTrackPropertyOption match {
                             case Some(p) ⇒
                                 fastTrackPropertiesCounter += 1
-                                set(e, p, isFastTrackProperty = true)
+                                update(e, p, p, Nil)
                                 FinalEP(e, p.asInstanceOf[P])
                             case None ⇒
                                 // create PropertyValue to ensure that we do not schedule
@@ -296,21 +296,19 @@ final class PKESequentialPropertyStore private (
         ps(pkId).get(e).orNull
     }
 
-    override def registerLazyPropertyComputation[E <: Entity, P <: Property](
-        pk:       PropertyKey[P],
-        pc:       PropertyComputation[E],
-        finalEPs: TraversableOnce[FinalEP[E, P]]
+    override def doRegisterLazyPropertyComputation[E <: Entity, P <: Property](
+        pk: PropertyKey[P],
+        pc: PropertyComputation[E]
     ): Unit = {
         if (debug && !tasks.isEmpty) {
             throw new IllegalStateException(
                 "lazy computations should only be registered while no computations are running"
             )
         }
-        finalEPs.foreach(finalEP ⇒ set(finalEP.e, finalEP.p))
         lazyComputations(pk.id) = pc
     }
 
-    override def registerTriggeredComputation[E <: Entity, P <: Property](
+    override def doRegisterTriggeredComputation[E <: Entity, P <: Property](
         pk: PropertyKey[P],
         pc: PropertyComputation[E]
     ): Unit = {
@@ -339,7 +337,7 @@ final class PKESequentialPropertyStore private (
         tasks.addLast(new PropertyComputationTask(this, e, pc))
     }
 
-    override def scheduleEagerComputationForEntity[E <: Entity](
+    override def doScheduleEagerComputationForEntity[E <: Entity](
         e: E
     )(
         pc: PropertyComputation[E]
@@ -499,26 +497,41 @@ final class PKESequentialPropertyStore private (
         }
     }
 
-    override def set(e: Entity, p: Property): Unit = set(e, p, false)
-
-    def set(e: Entity, p: Property, isFastTrackProperty: Boolean): Unit = handleExceptions {
+    override def doSet(e: Entity, p: Property): Unit = handleExceptions {
         val key = p.key
         val pkId = key.id
 
-        if (debug && !isFastTrackProperty && lazyComputations(pkId) != null) {
-            throw new IllegalStateException(
-                s"$e: setting $p is not supported; lazy computation is scheduled for $key"
-            )
+        val oldPV = ps(pkId).put(e, new FinalPropertyValue(p))
+        if (oldPV.isDefined) {
+            throw new IllegalStateException(s"$e has already a property $oldPV")
         }
+    }
 
-        if (!update(e, p, p, Nil)) {
-            throw new IllegalStateException(s"$e: setting $p failed due to existing property")
+    override def doPreInitialize[E <: Entity, P <: Property](
+        e:  E,
+        pk: PropertyKey[P]
+    )(
+        pc: EOptionP[E, P] ⇒ EPS[E, P]
+    ): Unit = {
+        val pkId = pk.id
+        val propertiesOfKind = ps(pkId)
+        val newEPS =
+            propertiesOfKind.get(e) match {
+                case None ⇒ pc(EPK(e, pk))
+                case Some(oldPV) ⇒
+                    // The "get" is safe, because no analyses were registered/scheduled so far
+                    // and therefore the bounds have to be available.
+                    pc(oldPV.toEPSUnsafe(e).get)
+            }
+        if (newEPS.isFinal) {
+            throw new IllegalArgumentException(s"$newEPS must not be final")
         }
+        propertiesOfKind.put(e, new IntermediatePropertyValue(newEPS.lb, newEPS.ub, Map.empty, Nil))
     }
 
     override def handleResult(
         r:               PropertyComputationResult,
-        forceEvaluation: Boolean                   = true // acutally ignored, but conceptually "true"
+        forceEvaluation: Boolean                   = true // actually ignored, but conceptually "true"
     ): Unit = handleExceptions {
 
         r.id match {

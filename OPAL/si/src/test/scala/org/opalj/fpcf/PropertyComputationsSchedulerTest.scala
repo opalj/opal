@@ -217,21 +217,26 @@ class PropertyComputationsSchedulerTest extends FunSpec with Matchers with Befor
                 def entities[P <: Property](pk: PropertyKey[P]): Iterator[EPS[Entity, P]] = ???
                 def entities[P <: Property](lb: P, ub: P): Iterator[Entity] = ???
                 def entities(propertyFilter: SomeEPS ⇒ Boolean): Iterator[Entity] = ???
-                def set(e: Entity, p: Property): Unit = ???
+                def doSet(e: Entity, p: Property): Unit = ???
+                def doPreInitialize[E <: Entity, P <: Property](
+                    e:  E,
+                    pk: PropertyKey[P]
+                )(
+                    pc: EOptionP[E, P] ⇒ EPS[E, P]
+                ): Unit = ???
                 def apply[E <: Entity, P <: Property](e: E, pk: PropertyKey[P]): EOptionP[E, P] = ???
                 def apply[E <: Entity, P <: Property](epk: EPK[E, P]): EOptionP[E, P] = ???
                 def force[E <: Entity, P <: Property](e: E, pk: PropertyKey[P]): Unit = ???
 
-                def registerLazyPropertyComputation[E <: Entity, P <: Property](
-                    pk:       PropertyKey[P],
-                    pc:       PropertyComputation[E],
-                    finalEPs: TraversableOnce[FinalEP[E, P]]
-                ): Unit = {}
-                def registerTriggeredComputation[E <: Entity, P <: Property](
+                def doRegisterLazyPropertyComputation[E <: Entity, P <: Property](
                     pk: PropertyKey[P],
                     pc: PropertyComputation[E]
                 ): Unit = {}
-                def scheduleEagerComputationForEntity[E <: Entity](e: E)(pc: PropertyComputation[E]): Unit = {}
+                def doRegisterTriggeredComputation[E <: Entity, P <: Property](
+                    pk: PropertyKey[P],
+                    pc: PropertyComputation[E]
+                ): Unit = {}
+                def doScheduleEagerComputationForEntity[E <: Entity](e: E)(pc: PropertyComputation[E]): Unit = {}
                 def handleResult(r: PropertyComputationResult, forceEvaluation: Boolean = false): Unit = {}
                 def waitOnPhaseCompletion(): Unit = {}
 

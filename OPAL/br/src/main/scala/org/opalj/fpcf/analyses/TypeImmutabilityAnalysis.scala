@@ -223,7 +223,13 @@ trait TypeImmutabilityAnalysisScheduler extends ComputationSpecification {
     final override def uses: Set[PropertyKind] = Set(ClassImmutability)
 
     final override type InitializationData = Null
-    final def init(p: SomeProject, ps: PropertyStore): Null = null
+
+    final def init(p: SomeProject, ps: PropertyStore): Null = {
+        // An optimization, if the analysis also includes the JDK.
+        ps.set(ObjectType.Object, MutableType)
+
+        null
+    }
 
     def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
 
@@ -242,11 +248,8 @@ object EagerTypeImmutabilityAnalysis
     override def start(project: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val typeExtensibility = project.get(TypeExtensibilityKey)
         val analysis = new TypeImmutabilityAnalysis(project)
-
-        // An optimization, if the analysis also includes the JDK.
-        ps.set(ObjectType.Object, MutableType)
-
-        val types = project.allClassFiles.filter(_.thisType ne ObjectType.Object).map(_.thisType)
+        val allClassFilesIterator = project.allClassFiles.iterator
+        val types = allClassFilesIterator.filter(_.thisType ne ObjectType.Object).map(_.thisType)
 
         ps.scheduleEagerComputationsForEntities(types) {
             analysis.step1(typeExtensibility)
@@ -266,15 +269,10 @@ object LazyTypeImmutabilityAnalysis
      * will call `ProperytStore.scheduleLazyComputation`.
      */
     override def startLazily(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
-
         val typeExtensibility = p.get(TypeExtensibilityKey)
         val analysis = new TypeImmutabilityAnalysis(p)
         val analysisRunner: PropertyComputation[Entity] =
             analysis.doDetermineTypeMutability(typeExtensibility)
-
-        // An optimization, if the analysis also includes the JDK.
-        ps.set(ObjectType.Object, MutableType)
-        ps.waitOnPhaseCompletion() // wait for ps.set to complete
         ps.registerLazyPropertyComputation(TypeImmutability.key, analysisRunner)
         analysis
 
