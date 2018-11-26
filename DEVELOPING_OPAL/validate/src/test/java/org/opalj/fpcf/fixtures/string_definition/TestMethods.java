@@ -352,46 +352,75 @@ public class TestMethods {
         analyzeString(sb.toString());
     }
 
-    //    //    @StringDefinitions(
-    //    //            value = "a case where multiple optional definition sites have to be considered.",
-    //    //            expectedLevel = StringConstancyLevel.CONSTANT,
-    //    //            expectedStrings = "a(b|c)?"
-    //    //    )
-    //    //    public void multipleOptionalAppendSites(int value) {
-    //    //        StringBuilder sb = new StringBuilder("a");
-    //    //        switch (value) {
-    //    //        case 0:
-    //    //            sb.append("b");
-    //    //            break;
-    //    //        case 1:
-    //    //            sb.append("c");
-    //    //            break;
-    //    //        case 3:
-    //    //            break;
-    //    //        case 4:
-    //    //            break;
-    //    //        }
-    //    //        analyzeString(sb.toString());
-    //    //    }
+    @StringDefinitions(
+            value = "a case where multiple optional definition sites have to be considered.",
+            expectedLevel = StringConstancyLevel.CONSTANT,
+            expectedStrings = "a(b|c)?"
+    )
+    public void multipleOptionalAppendSites(int value) {
+        StringBuilder sb = new StringBuilder("a");
+        switch (value) {
+        case 0:
+            sb.append("b");
+            break;
+        case 1:
+            sb.append("c");
+            break;
+        case 3:
+            break;
+        case 4:
+            break;
+        }
+        analyzeString(sb.toString());
+    }
+
+    //    @StringDefinitions(
+    //            value = "an extensive example with many control structures",
+    //            expectedLevel = StringConstancyLevel.PARTIALLY_CONSTANT,
+    //            expectedStrings = "(iv1|iv2): (great!)*(\\w)?"
+    //    )
+    //    public void extensive(boolean cond) {
+    //        StringBuilder sb = new StringBuilder();
+    //        if (cond) {
+    //            sb.append("iv1");
+    //        } else {
+    //            sb.append("iv2");
+    //        }
+    //        System.out.println(sb);
+    //        sb.append(": ");
     //
-    //    //    @StringDefinitions(
-    //    //            value = "a case with a switch with missing breaks",
-    //    //            expectedLevel = StringConstancyLevel.CONSTANT,
-    //    //            expectedStrings = "a(bc|c)?"
-    //    //    )
-    //    //    public void multipleOptionalAppendSites(int value) {
-    //    //        StringBuilder sb = new StringBuilder("a");
-    //    //        switch (value) {
-    //    //        case 0:
-    //    //            sb.append("b");
-    //    //        case 1:
-    //    //            sb.append("c");
-    //    //            break;
-    //    //        case 2:
-    //    //            break;
-    //    //        }
-    //    //        analyzeString(sb.toString());
-    //    //    }
+    //        Random random = new Random();
+    //        while (random.nextFloat() > 5.) {
+    //            if (random.nextInt() % 2 == 0) {
+    //                sb.append("great!");
+    //            }
+    //        }
+    //
+    //        if (sb.indexOf("great!") > -1) {
+    //            sb.append(getRuntimeClassName());
+    //        }
+    //
+    //        analyzeString(sb.toString());
+    //    }
+
+//    @StringDefinitions(
+//            value = "a case with a switch with missing breaks",
+//            expectedLevel = StringConstancyLevel.CONSTANT,
+//            expectedStrings = "a(bc|c)?"
+//    )
+//    public void switchWithMissingBreak(int value) {
+//        StringBuilder sb = new StringBuilder("a");
+//        switch (value) {
+//        case 0:
+//            sb.append("b");
+//        case 1:
+//            sb.append("c");
+//            break;
+//        case 2:
+//            break;
+//        }
+//        analyzeString(sb.toString());
+//    }
 
     //    //    @StringDefinitions(
     //    //            value = "checks if a string value with > 2 continuous appends and a second "
@@ -409,34 +438,6 @@ public class TestMethods {
     //    //        analyzeString(sb.toString());
     //    //    }
 
-    //    //        @StringDefinitions(
-    //    //                value = "an extensive example with many control structures",
-    //    //                expectedLevel = StringConstancyLevel.PARTIALLY_CONSTANT,
-    //    //                expectedStrings = "(iv1|iv2): (great!)*(\\w)?"
-    //    //        )
-    //    //        public void extensive(boolean cond) {
-    //    //            StringBuilder sb = new StringBuilder();
-    //    //            if (cond) {
-    //    //                sb.append("iv1");
-    //    //            } else {
-    //    //                sb.append("iv2");
-    //    //            }
-    //    //            System.out.println(sb);
-    //    //            sb.append(": ");
-    //    //
-    //    //            Random random = new Random();
-    //    //            while (random.nextFloat() > 5.) {
-    //    //                if (random.nextInt() % 2 == 0) {
-    //    //                    sb.append("great!");
-    //    //                }
-    //    //            }
-    //    //
-    //    //            if (sb.indexOf("great!") > -1) {
-    //    //                sb.append(getRuntimeClassName());
-    //    //            }
-    //    //
-    //    //            analyzeString(sb.toString());
-    //    //        }
     //
     //    //        @StringDefinitions(
     //    //                value = "an extensive example with many control structures where appends follow "
