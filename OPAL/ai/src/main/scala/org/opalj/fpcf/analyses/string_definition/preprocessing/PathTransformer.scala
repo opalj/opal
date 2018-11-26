@@ -43,7 +43,7 @@ class PathTransformer(val cfg: CFG[Stmt[V], TACStmts[V]]) {
                     case _ ⇒
                         val treeElements = ListBuffer[StringTree]()
                         treeElements.appendAll(sciList.map(StringTreeConst).to[ListBuffer])
-                        Some(StringTreeConcat(treeElements))
+                        Some(StringTreeOr(treeElements))
                 }
             case npe: NestedPathElement ⇒
                 if (npe.elementType.isDefined) {
