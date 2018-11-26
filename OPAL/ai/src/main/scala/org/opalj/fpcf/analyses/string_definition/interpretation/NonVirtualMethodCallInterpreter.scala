@@ -34,6 +34,7 @@ class NonVirtualMethodCallInterpreter(
      * one is interpreted).
      * </li>
      * </ul>
+     * For all other calls, an empty list will be returned at the moment.
      *
      * @see [[AbstractStringInterpreter.interpret]]
      */
