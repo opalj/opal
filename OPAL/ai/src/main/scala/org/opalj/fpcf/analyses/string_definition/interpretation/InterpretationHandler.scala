@@ -17,19 +17,19 @@ import org.opalj.tac.StringConst
 import org.opalj.tac.TACStmts
 import org.opalj.tac.VirtualFunctionCall
 
+import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
 /**
- * `ExprHandler` is responsible for processing expressions that are relevant in order to determine
- * which value(s) a string read operation might have. These expressions usually come from the
- * definitions sites of the variable of interest.
+ * `InterpretationHandler` is responsible for processing expressions that are relevant in order to
+ * determine which value(s) a string read operation might have. These expressions usually come from
+ * the definitions sites of the variable of interest.
  *
  * @param cfg The control flow graph that underlies the program / method in which the expressions of
  *            interest reside.
  * @author Patrick Mell
  */
-class ExprHandler(cfg: CFG[Stmt[V], TACStmts[V]]) {
-
+class InterpretationHandler(cfg: CFG[Stmt[V], TACStmts[V]]) {
     private val stmts = cfg.code.instructions
     private val processedDefSites = ListBuffer[Int]()
 
@@ -52,38 +52,38 @@ class ExprHandler(cfg: CFG[Stmt[V], TACStmts[V]]) {
         processedDefSites.append(defSite)
 
         stmts(defSite) match {
-            case Assignment(_, _, expr) if expr.isInstanceOf[StringConst] =>
+            case Assignment(_, _, expr) if expr.isInstanceOf[StringConst] ⇒
                 new StringConstInterpreter(cfg, this).interpret(expr.asStringConst)
-            case Assignment(_, _, expr) if expr.isInstanceOf[ArrayLoad[V]] =>
+            case Assignment(_, _, expr) if expr.isInstanceOf[ArrayLoad[V]] ⇒
                 new ArrayLoadInterpreter(cfg, this).interpret(expr.asArrayLoad)
-            case Assignment(_, _, expr) if expr.isInstanceOf[New] =>
+            case Assignment(_, _, expr) if expr.isInstanceOf[New] ⇒
                 new NewInterpreter(cfg, this).interpret(expr.asNew)
-            case Assignment(_, _, expr) if expr.isInstanceOf[VirtualFunctionCall[V]] =>
+            case Assignment(_, _, expr) if expr.isInstanceOf[VirtualFunctionCall[V]] ⇒
                 new VirtualFunctionCallInterpreter(cfg, this).interpret(expr.asVirtualFunctionCall)
-            case Assignment(_, _, expr) if expr.isInstanceOf[BinaryExpr[V]] =>
+            case Assignment(_, _, expr) if expr.isInstanceOf[BinaryExpr[V]] ⇒
                 new BinaryExprInterpreter(cfg, this).interpret(expr.asBinaryExpr)
-            case Assignment(_, _, expr) if expr.isInstanceOf[NonVirtualFunctionCall[V]] =>
+            case Assignment(_, _, expr) if expr.isInstanceOf[NonVirtualFunctionCall[V]] ⇒
                 new NonVirtualFunctionCallInterpreter(
                     cfg, this
                 ).interpret(expr.asNonVirtualFunctionCall)
-            case ExprStmt(_, expr) =>
+            case ExprStmt(_, expr) ⇒
                 expr match {
-                    case vfc: VirtualFunctionCall[V] =>
+                    case vfc: VirtualFunctionCall[V] ⇒
                         new VirtualFunctionCallInterpreter(cfg, this).interpret(vfc)
-                    case _ => List()
+                    case _ ⇒ List()
                 }
-            case nvmc: NonVirtualMethodCall[V] =>
+            case nvmc: NonVirtualMethodCall[V] ⇒
                 new NonVirtualMethodCallInterpreter(cfg, this).interpret(nvmc)
-            case _ => List()
+            case _ ⇒ List()
 
         }
     }
 
     /**
-     * This function serves as a wrapper function for [[ExprHandler.processDefSite]] in the
+     * This function serves as a wrapper function for [[InterpretationHandler.processDefSite]] in the
      * sense that it processes multiple definition sites. Thus, it may throw an exception as well if
      * an expression referenced by a definition site cannot be processed. The same rules as for
-     * [[ExprHandler.processDefSite]] apply.
+     * [[InterpretationHandler.processDefSite]] apply.
      *
      * @param defSites The definition sites to process.
      * @return Returns a list of lists of [[StringConstancyInformation]]. Note that this function
@@ -99,11 +99,11 @@ class ExprHandler(cfg: CFG[Stmt[V], TACStmts[V]]) {
         }
 
     /**
-     * The [[ExprHandler]] keeps an internal state for correct and faster processing. As long as a
+     * The [[InterpretationHandler]] keeps an internal state for correct and faster processing. As long as a
      * single object within a CFG is analyzed, there is no need to reset the state. However, when
      * analyzing a second object (even the same object) it is necessary to call `reset` to reset the
      * internal state. Otherwise, incorrect results will be produced.
-     * (Alternatively, you could instantiate another [[ExprHandler]] instance.)
+     * (Alternatively, you could instantiate another [[InterpretationHandler]] instance.)
      */
     def reset(): Unit = {
         processedDefSites.clear()
@@ -111,30 +111,12 @@ class ExprHandler(cfg: CFG[Stmt[V], TACStmts[V]]) {
 
 }
 
-object ExprHandler {
-
-    private val classNameMap = Map(
-        "AnIntegerValue" → "[AnIntegerValue]",
-        "int" → "[AnIntegerValue]",
-        "IntegerRange" → "[AnIntegerValue]",
-    )
+object InterpretationHandler {
 
     /**
-     * @see [[ExprHandler]]
+     * @see [[InterpretationHandler]]
      */
-    def apply(cfg: CFG[Stmt[V], TACStmts[V]]): ExprHandler = new ExprHandler(cfg)
-
-    /**
-     * Checks whether the given definition site is within a loop.
-     *
-     * @param defSite The definition site to check.
-     * @param cfg The control flow graph which is required for that operation.
-     * @return Returns `true` if the given site resides within a loop and `false` otherwise.
-     */
-    def isWithinLoop(defSite: Int, cfg: CFG[Stmt[V], TACStmts[V]]): Boolean =
-        cfg.findNaturalLoops().foldLeft(false) { (previous: Boolean, nextLoop: List[Int]) ⇒
-            previous || nextLoop.contains(defSite)
-        }
+    def apply(cfg: CFG[Stmt[V], TACStmts[V]]): InterpretationHandler = new InterpretationHandler(cfg)
 
     /**
      * Checks whether an expression contains a call to [[StringBuilder.toString]].
@@ -150,42 +132,40 @@ object ExprHandler {
         }
 
     /**
-     * Checks whether an expression is a call to [[StringBuilder#append]].
+     * Determines the definition site of the initialization of the base object that belongs to a
+     * ''toString'' call.
      *
-     * @param expr The expression that is to be checked.
-     * @return Returns true if `expr` is a call to [[StringBuilder#append]].
+     * @param toString The ''toString'' call of the object for which to get the initialization def
+     *                 site for. Make sure that the object is a subclass of
+     *                 [[AbstractStringBuilder]].
+     * @param stmts A list of statements which will be used to lookup which one the initialization
+     *              is.
+     * @return Returns the definition site of the base object of the call. If something goes wrong,
+     *         e.g., no initialization is found, ''None'' is returned.
      */
-    def isStringBuilderAppendCall(expr: Expr[V]): Boolean =
-        expr match {
-            case VirtualFunctionCall(_, clazz, _, name, _, _, _) ⇒
-                clazz.toJavaClass.getName == "java.lang.StringBuilder" && name == "append"
-            case _ ⇒ false
+    def findDefSiteOfInit(toString: VirtualFunctionCall[V], stmts: Array[Stmt[V]]): List[Int] = {
+        // TODO: Check that we deal with an instance of AbstractStringBuilder
+        if (toString.name != "toString") {
+            return List()
         }
 
-    /**
-     * Retrieves the definition sites of the receiver of a [[StringBuilder.toString]] call.
-     *
-     * @param expr The expression that contains the receiver whose definition sites to get.
-     * @return If `expr` does not conform to the expected structure, an empty array is
-     *         returned (avoid by using [[isStringBuilderToStringCall]]) and otherwise the
-     *         definition sites of the receiver.
-     */
-    def getDefSitesOfToStringReceiver(expr: Expr[V]): Array[Int] =
-        if (!isStringBuilderToStringCall(expr)) {
-            Array()
-        } else {
-            expr.asVirtualFunctionCall.receiver.asVar.definedBy.toArray.sorted
+        val defSites = ListBuffer[Int]()
+        val stack = mutable.Stack[Int](toString.receiver.asVar.definedBy.toArray: _*)
+        while (stack.nonEmpty) {
+            val next = stack.pop()
+            stmts(next) match {
+                case a: Assignment[V] ⇒
+                    a.expr match {
+                        case _: New ⇒
+                            defSites.append(next)
+                        case vfc: VirtualFunctionCall[V] ⇒
+                            stack.pushAll(vfc.receiver.asVar.definedBy.toArray)
+                    }
+                case _ ⇒
+            }
         }
 
-    /**
-     * Maps a class name to a string which is to be displayed as a possible string.
-     *
-     * @param javaSimpleClassName The simple class name, i.e., NOT fully-qualified, for which to
-     *                            retrieve the value for "possible string".
-     * @return Either returns the mapped string representation or, when an unknown string is passed,
-     *         the passed parameter surrounded by "[" and "]".
-     */
-    def classNameToPossibleString(javaSimpleClassName: String): String =
-        classNameMap.getOrElse(javaSimpleClassName, s"[$javaSimpleClassName]")
+        defSites.sorted.toList
+    }
 
 }

@@ -15,8 +15,8 @@ import org.opalj.tac.TACStmts
  * @author Patrick Mell
  */
 abstract class AbstractStringInterpreter(
-        protected val cfg: CFG[Stmt[V], TACStmts[V]],
-        protected val exprHandler: ExprHandler,
+                                            protected val cfg: CFG[Stmt[V], TACStmts[V]],
+                                            protected val exprHandler: InterpretationHandler,
 ) {
 
     type T <: Any

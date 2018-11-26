@@ -20,7 +20,7 @@ import org.opalj.tac.BinaryExpr
  */
 class BinaryExprInterpreter(
         cfg:         CFG[Stmt[V], TACStmts[V]],
-        exprHandler: ExprHandler
+        exprHandler: InterpretationHandler
 ) extends AbstractStringInterpreter(cfg, exprHandler) {
 
     override type T = BinaryExpr[V]

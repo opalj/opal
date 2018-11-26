@@ -18,7 +18,7 @@ import org.opalj.tac.StringConst
  */
 class StringConstInterpreter(
         cfg:         CFG[Stmt[V], TACStmts[V]],
-        exprHandler: ExprHandler
+        exprHandler: InterpretationHandler
 ) extends AbstractStringInterpreter(cfg, exprHandler) {
 
     override type T = StringConst

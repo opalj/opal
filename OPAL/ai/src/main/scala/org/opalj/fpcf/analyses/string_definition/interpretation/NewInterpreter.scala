@@ -17,7 +17,7 @@ import org.opalj.tac.New
  */
 class NewInterpreter(
         cfg:         CFG[Stmt[V], TACStmts[V]],
-        exprHandler: ExprHandler
+        exprHandler: InterpretationHandler
 ) extends AbstractStringInterpreter(cfg, exprHandler) {
 
     override type T = New
