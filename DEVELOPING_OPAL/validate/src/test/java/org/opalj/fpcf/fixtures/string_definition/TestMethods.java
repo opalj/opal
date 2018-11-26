@@ -374,6 +374,52 @@ public class TestMethods {
         analyzeString(sb.toString());
     }
 
+    @StringDefinitions(
+            value = "an extensive example with many control structures where appends follow "
+                    + "after the read",
+            expectedLevel = StringConstancyLevel.CONSTANT,
+            expectedStrings = "(iv1|iv2): "
+    )
+    public void extensiveEarlyRead(boolean cond) {
+        StringBuilder sb = new StringBuilder();
+        if (cond) {
+            sb.append("iv1");
+        } else {
+            sb.append("iv2");
+        }
+        System.out.println(sb);
+        sb.append(": ");
+
+        analyzeString(sb.toString());
+
+        Random random = new Random();
+        while (random.nextFloat() > 5.) {
+            if (random.nextInt() % 2 == 0) {
+                sb.append("great!");
+            }
+        }
+
+        if (sb.indexOf("great!") > -1) {
+            sb.append(getRuntimeClassName());
+        }
+    }
+
+    @StringDefinitions(
+            value = "case with a nested loop where in the outer loop a StringBuilder is created "
+                    + "that is later read",
+            expectedLevel = StringConstancyLevel.CONSTANT,
+            expectedStrings = "a(b)*"
+    )
+    public void nestedLoops(int range) {
+        for (int i = 0; i < range; i++) {
+            StringBuilder sb = new StringBuilder("a");
+            for (int j = 0; j < range * range; j++) {
+                sb.append("b");
+            }
+            analyzeString(sb.toString());
+        }
+    }
+
     //    @StringDefinitions(
     //            value = "an extensive example with many control structures",
     //            expectedLevel = StringConstancyLevel.PARTIALLY_CONSTANT,
@@ -403,24 +449,24 @@ public class TestMethods {
     //        analyzeString(sb.toString());
     //    }
 
-//    @StringDefinitions(
-//            value = "a case with a switch with missing breaks",
-//            expectedLevel = StringConstancyLevel.CONSTANT,
-//            expectedStrings = "a(bc|c)?"
-//    )
-//    public void switchWithMissingBreak(int value) {
-//        StringBuilder sb = new StringBuilder("a");
-//        switch (value) {
-//        case 0:
-//            sb.append("b");
-//        case 1:
-//            sb.append("c");
-//            break;
-//        case 2:
-//            break;
-//        }
-//        analyzeString(sb.toString());
-//    }
+    //    @StringDefinitions(
+    //            value = "a case with a switch with missing breaks",
+    //            expectedLevel = StringConstancyLevel.CONSTANT,
+    //            expectedStrings = "a(bc|c)?"
+    //    )
+    //    public void switchWithMissingBreak(int value) {
+    //        StringBuilder sb = new StringBuilder("a");
+    //        switch (value) {
+    //        case 0:
+    //            sb.append("b");
+    //        case 1:
+    //            sb.append("c");
+    //            break;
+    //        case 2:
+    //            break;
+    //        }
+    //        analyzeString(sb.toString());
+    //    }
 
     //    //    @StringDefinitions(
     //    //            value = "checks if a string value with > 2 continuous appends and a second "
@@ -438,36 +484,6 @@ public class TestMethods {
     //    //        analyzeString(sb.toString());
     //    //    }
 
-    //
-    //    //        @StringDefinitions(
-    //    //                value = "an extensive example with many control structures where appends follow "
-    //    //                        + "after the read",
-    //    //                expectedLevel = StringConstancyLevel.PARTIALLY_CONSTANT,
-    //    //                expectedStrings = "(iv1|iv2): "
-    //    //        )
-    //    //        public void extensiveEarlyRead(boolean cond) {
-    //    //            StringBuilder sb = new StringBuilder();
-    //    //            if (cond) {
-    //    //                sb.append("iv1");
-    //    //            } else {
-    //    //                sb.append("iv2");
-    //    //            }
-    //    //            System.out.println(sb);
-    //    //            sb.append(": ");
-    //    //
-    //    //            analyzeString(sb.toString());
-    //    //
-    //    //            Random random = new Random();
-    //    //            while (random.nextFloat() > 5.) {
-    //    //                if (random.nextInt() % 2 == 0) {
-    //    //                    sb.append("great!");
-    //    //                }
-    //    //            }
-    //    //
-    //    //            if (sb.indexOf("great!") > -1) {
-    //    //                sb.append(getRuntimeClassName());
-    //    //            }
-    //    //        }
     //
     //    //    @StringDefinitions(
     //    //            value = "a case where a StringBuffer is used (instead of a StringBuilder)",
@@ -498,35 +514,23 @@ public class TestMethods {
     //    //        analyzeString(sb.toString());
     //    //    }
     //
-    //    //    @StringDefinitions(
-    //    //            value = "while-true example (how exactly is it supposed to look like (TODO: Talk to "
-    //    //                    + "Michael Eichberg)?",
-    //    //            expectedLevel = StringConstancyLevel.CONSTANT,
-    //    //            expectedStrings = "a(b)*"
-    //    //    )
-    //    //    public void whileTrue() {
-    //    //        StringBuilder sb = new StringBuilder("a");
-    //    //        while (true) {
-    //    //            sb.append("b");
-    //    //        }
-    //    //        analyzeString(sb.toString());
-    //    //    }
+    //    @StringDefinitions(
+    //            value = "while-true example (how exactly is it supposed to look like (TODO: Talk to "
+    //                    + "Michael Eichberg)?",
+    //            expectedLevel = StringConstancyLevel.CONSTANT,
+    //            expectedStrings = "a(b)*"
+    //    )
+    //    public void whileTrue() {
+    //        StringBuilder sb = new StringBuilder("a");
+    //        while (true) {
+    //            sb.append("b");
+    //            if (sb.length() > 100) {
+    //                break;
+    //            }
+    //        }
+    //        analyzeString(sb.toString());
+    //    }
     //
-    //    //    @StringDefinitions(
-    //    //            value = "case with a nested loop where in the outer loop a StringBuilder is created "
-    //    //                    + "that is later read (TODO: As Michael Eichberg meant?)",
-    //    //            expectedLevel = StringConstancyLevel.CONSTANT,
-    //    //            expectedStrings = "a(b)*"
-    //    //    )
-    //    //    public void nestedLoops(int range) {
-    //    //        for (int i = 0; i < range; i++) {
-    //    //            StringBuilder sb = new StringBuilder("a");
-    //    //            for (int j = 0; j < range * range; j++) {
-    //    //                sb.append("b");
-    //    //            }
-    //    //            analyzeString(sb.toString());
-    //    //        }
-    //    //    }
     //
     //    //    @StringDefinitions(
     //    //            value = "case with an exception",
