@@ -156,15 +156,24 @@ case class Path(elements: List[SubPath]) {
         // Transform the list into a map to have a constant access time
         val siteMap = Map(getAllDefAndUseSites(obj, stmts) map { s ⇒ (s, Unit) }: _*)
         val leanPath = ListBuffer[SubPath]()
-        elements.foreach {
-            case fpe: FlatPathElement if siteMap.contains(fpe.element) ⇒
-                leanPath.append(fpe)
-            case npe: NestedPathElement ⇒
-                val leanedPath = makeLeanPathAcc(npe, siteMap)
-                if (leanedPath.isDefined) {
-                    leanPath.append(leanedPath.get)
+        val endSite = obj.definedBy.head
+        var reachedEndSite = false
+        elements.foreach { next ⇒
+            if (!reachedEndSite) {
+                next match {
+                    case fpe: FlatPathElement if siteMap.contains(fpe.element) ⇒
+                        leanPath.append(fpe)
+                        if (fpe.element == endSite) {
+                            reachedEndSite = true
+                        }
+                    case npe: NestedPathElement ⇒
+                        val leanedPath = makeLeanPathAcc(npe, siteMap)
+                        if (leanedPath.isDefined) {
+                            leanPath.append(leanedPath.get)
+                        }
+                    case _ ⇒
                 }
-            case _ ⇒
+            }
         }
 
         if (elements.isEmpty) {
