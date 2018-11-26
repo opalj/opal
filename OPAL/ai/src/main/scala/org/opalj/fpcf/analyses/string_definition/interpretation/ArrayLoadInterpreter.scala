@@ -19,7 +19,7 @@ import scala.collection.mutable.ListBuffer
  */
 class ArrayLoadInterpreter(
         cfg:         CFG[Stmt[V], TACStmts[V]],
-        exprHandler: ExprHandler
+        exprHandler: InterpretationHandler
 ) extends AbstractStringInterpreter(cfg, exprHandler) {
 
     override type T = ArrayLoad[V]

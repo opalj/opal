@@ -19,7 +19,7 @@ import org.opalj.tac.TACStmts
  */
 class NonVirtualFunctionCallInterpreter(
         cfg:         CFG[Stmt[V], TACStmts[V]],
-        exprHandler: ExprHandler
+        exprHandler: InterpretationHandler
 ) extends AbstractStringInterpreter(cfg, exprHandler) {
 
     override type T = NonVirtualFunctionCall[V]

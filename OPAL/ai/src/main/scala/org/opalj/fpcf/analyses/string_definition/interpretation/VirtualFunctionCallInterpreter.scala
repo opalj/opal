@@ -22,7 +22,7 @@ import org.opalj.tac.VirtualFunctionCall
  */
 class VirtualFunctionCallInterpreter(
         cfg:         CFG[Stmt[V], TACStmts[V]],
-        exprHandler: ExprHandler
+        exprHandler: InterpretationHandler
 ) extends AbstractStringInterpreter(cfg, exprHandler) {
 
     override type T = VirtualFunctionCall[V]

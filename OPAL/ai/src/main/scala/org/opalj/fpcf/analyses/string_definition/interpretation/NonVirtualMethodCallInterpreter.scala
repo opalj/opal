@@ -20,7 +20,7 @@ import scala.collection.mutable.ListBuffer
  */
 class NonVirtualMethodCallInterpreter(
         cfg:         CFG[Stmt[V], TACStmts[V]],
-        exprHandler: ExprHandler
+        exprHandler: InterpretationHandler
 ) extends AbstractStringInterpreter(cfg, exprHandler) {
 
     override type T = NonVirtualMethodCall[V]

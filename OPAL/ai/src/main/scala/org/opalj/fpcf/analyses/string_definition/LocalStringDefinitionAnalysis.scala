@@ -10,12 +10,11 @@ import org.opalj.fpcf.properties.StringConstancyProperty
 import org.opalj.fpcf.FPCFLazyAnalysisScheduler
 import org.opalj.fpcf.ComputationSpecification
 import org.opalj.fpcf.NoResult
-import org.opalj.fpcf.analyses.string_definition.interpretation.NewStringBuilderProcessor
 import org.opalj.fpcf.analyses.string_definition.preprocessing.AbstractPathFinder
 import org.opalj.fpcf.analyses.string_definition.preprocessing.DefaultPathFinder
 import org.opalj.fpcf.analyses.string_definition.preprocessing.PathTransformer
 import org.opalj.fpcf.Result
-import org.opalj.fpcf.analyses.string_definition.interpretation.ExprHandler
+import org.opalj.fpcf.analyses.string_definition.interpretation.InterpretationHandler
 import org.opalj.tac.SimpleTACAIKey
 import org.opalj.tac.Stmt
 
@@ -49,8 +48,8 @@ class LocalStringDefinitionAnalysis(
         val defSites = data._1.definedBy.toArray.sorted
         val expr = stmts(defSites.head).asAssignment.expr
         val pathFinder: AbstractPathFinder = new DefaultPathFinder()
-        if (ExprHandler.isStringBuilderToStringCall(expr)) {
-            val initDefSites = NewStringBuilderProcessor.findDefSiteOfInit(
+        if (InterpretationHandler.isStringBuilderToStringCall(expr)) {
+            val initDefSites = InterpretationHandler.findDefSiteOfInit(
                 expr.asVirtualFunctionCall, stmts
             )
             if (initDefSites.isEmpty) {

@@ -3,7 +3,7 @@ package org.opalj.fpcf.analyses.string_definition.preprocessing
 
 import org.opalj.br.cfg.CFG
 import org.opalj.fpcf.analyses.string_definition.V
-import org.opalj.fpcf.analyses.string_definition.interpretation.ExprHandler
+import org.opalj.fpcf.analyses.string_definition.interpretation.InterpretationHandler
 import org.opalj.fpcf.string_definition.properties.StringTree
 import org.opalj.fpcf.string_definition.properties.StringTreeConcat
 import org.opalj.fpcf.string_definition.properties.StringTreeCond
@@ -28,7 +28,7 @@ import scala.collection.mutable.ListBuffer
  */
 class PathTransformer(val cfg: CFG[Stmt[V], TACStmts[V]]) {
 
-    private val exprHandler = ExprHandler(cfg)
+    private val exprHandler = InterpretationHandler(cfg)
 
     /**
      * Accumulator function for transforming a path into a StringTree element.
@@ -91,10 +91,10 @@ class PathTransformer(val cfg: CFG[Stmt[V], TACStmts[V]]) {
      * Takes a [[Path]] and transforms it into a [[StringTree]]. This implies an interpretation of
      * how to handle methods called on the object of interest (like `append`).
      *
-     * @param path The path element to be transformed.
-     * @param resetExprHandler Whether to reset the underlying [[ExprHandler]] or not. When calling
+     * @param path             The path element to be transformed.
+     * @param resetExprHandler Whether to reset the underlying [[InterpretationHandler]] or not. When calling
      *                         this function from outside, the default value should do fine in most
-     *                         of the cases. For further information, see [[ExprHandler.reset]].
+     *                         of the cases. For further information, see [[InterpretationHandler.reset]].
      * @return If an empty [[Path]] is given, `None` will be returned. Otherwise, the transformed
      *         [[StringTree]] will be returned. Note that all elements of the tree will be defined,
      *         i.e., if `path` contains sites that could not be processed (successfully), they will
