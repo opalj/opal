@@ -4,8 +4,6 @@ package fpcf
 package analyses
 package cg
 
-import scala.language.existentials
-
 import org.opalj.br.ArrayType
 import org.opalj.br.BaseType
 import org.opalj.br.DeclaredMethod
@@ -55,6 +53,8 @@ import org.opalj.tac.VirtualFunctionCall
 import org.opalj.tac.VirtualMethodCall
 import org.opalj.tac.fpcf.properties.TACAI
 
+import scala.language.existentials
+
 /**
  * Finds calls and loaded classes that exist because of reflective calls that are easy to resolve.
  *
@@ -65,6 +65,8 @@ import org.opalj.tac.fpcf.properties.TACAI
 class ReflectionRelatedCallsAnalysis private[analyses] (
         final val project: SomeProject
 ) extends FPCFAnalysis {
+
+    val HIGHSOUNDNESS = true
 
     val ConstructorT = ObjectType("java/lang/reflect/Constructor")
     val MethodT = ObjectType("java/lang/reflect/Method")
@@ -370,7 +372,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                         caller,
                         pc,
                         rcvr,
-                        Some(MethodDescriptor.NoArgsAndReturnVoid),
+                        MethodDescriptor.NoArgsAndReturnVoid,
                         Seq.empty // invokes default constructor, i.e. no arguments
                     )
                 case VirtualFunctionCall(_, ConstructorT, _, "newInstance", _, rcvr, params) ⇒
@@ -407,10 +409,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
      * classes.
      */
     private[this] def handleForName(className: Expr[V])(implicit state: State): Unit = {
-        val loadedClasses = getPossibleForNameClasses(className, None) collect {
-            case r: ObjectType                              ⇒ r
-            case a: ArrayType if a.elementType.isObjectType ⇒ a.elementType.asObjectType
-        }
+        val loadedClasses = getPossibleForNameClasses(className, None)
         state.addNewLoadedClasses(loadedClasses.filter(!state.loadedClassesUB.contains(_)))
     }
 
@@ -425,23 +424,90 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         constructor:       Expr[V],
         newInstanceParams: Expr[V]
     )(implicit state: State): Unit = {
-        val actualParams = getParamsFromVararg(newInstanceParams)
+        // todo what if we do not know the actual params
+        val actualParamsForNewInstance = getParamsFromVararg(newInstanceParams)
+        implicit val stmts: Array[Stmt[V]] = state.tacode.stmts
         constructor.asVar.definedBy.foreach { index ⇒
             if (index > 0) {
-                val definition = state.tacode.stmts(index).asAssignment.expr
-                if (definition.isVirtualFunctionCall) {
-                    definition.asVirtualFunctionCall match {
-                        case VirtualFunctionCall(_, ObjectType.Class, _, "getConstructor", _, classes, params) ⇒
-                            val paramTypesOption = getTypesFromVararg(params.head, pc)
-                            val describtor = paramTypesOption.map(s ⇒ MethodDescriptor(s, VoidType))
-                            handleNewInstance(caller, pc, classes, describtor, actualParams)
-                        case _ ⇒ state.calleesAndCallers.addIncompleteCallsite(pc)
-                    }
-                } else {
-                    state.calleesAndCallers.addIncompleteCallsite(pc)
+                state.tacode.stmts(index).asAssignment.expr match {
+                    // IMPROVE: take only the public constructors
+                    case VirtualFunctionCall(_, ObjectType.Class, _, "getConstructor" | "getDeclaredConstructor", _, classes, params) ⇒
+                        val paramTypesO = getTypesFromVararg(params.head)
+                        if (paramTypesO.isEmpty) {
+                            if (HIGHSOUNDNESS) {
+                                handleNewInstanceUnknownClasses(caller, pc, actualParamsForNewInstance.getOrElse(Seq.empty), classes)
+                            } /* we have no information */ else {
+                                state.calleesAndCallers.addIncompleteCallsite(pc)
+                            }
+                        } else {
+                            val descriptor = MethodDescriptor(paramTypesO.get, VoidType)
+                            handleNewInstance(caller, pc, classes, descriptor, actualParamsForNewInstance.getOrElse(Seq.empty))
+                        }
+                    case VirtualFunctionCall(_, ArrayType(ObjectType.Class), _, "getConstructor" | "getDeclaredConstructor", _, classes, _) ⇒
+                        // todo use the information for the actual params of newInstance
+                        handleNewInstanceUnknownClasses(caller, pc, actualParamsForNewInstance.getOrElse(Seq.empty), classes)
+                    case _ if HIGHSOUNDNESS ⇒
+                        // add calls to all constructors
+                        // todo use the information for the actual params of newInstance
+                        for {
+                            cf ← project.allClassFiles
+                            constructor ← cf.constructors
+                        } {
+                            state.calleesAndCallers.updateWithIndirectCall(
+                                caller,
+                                declaredMethods(constructor),
+                                pc,
+                                // receiver is None
+                                None +: actualParamsForNewInstance.map(_.map(persistentUVar)).getOrElse(Seq.empty)
+                            )
+                        }
+                    case _ ⇒
+                        state.calleesAndCallers.addIncompleteCallsite(pc)
+                }
+            } else if (HIGHSOUNDNESS) {
+                // add calls to all constructors
+                // todo use the information for the actual params of newInstance
+                for {
+                    cf ← project.allClassFiles
+                    constructor ← cf.constructors
+                } {
+                    state.calleesAndCallers.updateWithIndirectCall(
+                        caller,
+                        declaredMethods(constructor),
+                        pc,
+                        // receiver is None
+                        None +: actualParamsForNewInstance.map(_.map(persistentUVar)).getOrElse(Seq.empty)
+                    )
                 }
             } else {
                 state.calleesAndCallers.addIncompleteCallsite(pc)
+            }
+        }
+    }
+
+    private[this] def handleNewInstanceUnknownClasses(
+        caller: DefinedMethod, pc: Int, actualParams: Seq[V], classes: Expr[V]
+    )(implicit state: State): Unit = {
+        implicit val stmts = state.tacode.stmts
+        // we have no information about the parameter types of the
+        // constructor, so we assume all constructors
+        for (t ← getPossibleTypes(classes, pc)) {
+            val cfOption = project.classFile(t.asObjectType)
+            // classfile not found
+            if (cfOption.isEmpty) {
+                state.calleesAndCallers.addIncompleteCallsite(pc)
+            }
+            for {
+                cf ← cfOption
+                constructor ← cf.constructors
+            } {
+                state.calleesAndCallers.updateWithIndirectCall(
+                    caller,
+                    declaredMethods(constructor),
+                    pc,
+                    // receiver is None
+                    None +: actualParams.map(persistentUVar)
+                )
             }
         }
     }
@@ -453,12 +519,12 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         caller:     DefinedMethod,
         pc:         Int,
         receiver:   Expr[V],
-        descriptor: Option[MethodDescriptor],
+        descriptor: MethodDescriptor,
         params:     Seq[V]
     )(implicit state: State): Unit = {
         val instantiatedTypes =
             getPossibleTypes(receiver, pc).asInstanceOf[Iterator[ObjectType]].toIterable
-        handleNewInstances(caller, pc, instantiatedTypes, descriptor, params)
+        handleNewInstances(caller, pc, instantiatedTypes, Seq(descriptor), params)
     }
 
     /**
@@ -516,42 +582,177 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
     )(implicit state: State): Unit = {
         implicit val stmts: Array[Stmt[V]] = state.tacode.stmts
         val receiverDefinition = persistentUVar(methodParams.head.asVar)
-        val paramDefinitions = getParamsFromVararg(methodParams(1)).map(persistentUVar)
+        val paramDefinitionsOpt = getParamsFromVararg(methodParams(1)).map(_.map(persistentUVar))
         method.asVar.definedBy.foreach { index ⇒
             if (index >= 0) {
                 val definition = stmts(index).asAssignment.expr
-                if (definition.isVirtualFunctionCall) {
-                    definition.asVirtualFunctionCall match {
-                        case VirtualFunctionCall(_, ObjectType.Class, _, "getDeclaredMethod" | "getMethod", _, receiver, params) ⇒
-                            val types =
-                                getPossibleTypes(receiver, pc).asInstanceOf[Iterator[ReferenceType]]
-                            val names = getPossibleStrings(params.head, Some(pc)).toIterable
-                            val paramTypesO = getTypesFromVararg(params(1), pc)
-                            if (paramTypesO.isDefined) {
-                                for {
-                                    receiverType ← types
-                                    name ← names
-                                } {
-                                    val callees = resolveCallees(
-                                        receiverType,
-                                        name,
-                                        paramTypesO.get,
-                                        definition.asVirtualFunctionCall.name == "getMethod",
-                                        pc
-                                    )
-                                    for (callee ← callees)
+                definition match {
+                    // IMPROVE filter non-public methods
+                    case VirtualFunctionCall(_, ObjectType.Class, _, "getDeclaredMethod" | "getMethod", _, receiver, params) ⇒
+                        assert(params.size == 2)
+                        val types =
+                            getPossibleTypes(receiver, pc).asInstanceOf[Iterator[ReferenceType]]
+                        val names = getPossibleStrings(params.head, Some(pc))
+                        val paramTypesO = getTypesFromVararg(params(1))
+                        if (paramTypesO.isDefined) {
+                            for {
+                                receiverType ← types
+                                name ← names
+                            } {
+                                val calleesOpt = resolveCallees(
+                                    receiverType,
+                                    name,
+                                    paramTypesO.get,
+                                    definition.asVirtualFunctionCall.name == "getMethod",
+                                    pc
+                                )
+                                if (calleesOpt.isDefined) {
+                                    for (callee ← calleesOpt.get)
                                         state.calleesAndCallers.updateWithIndirectCall(
                                             caller,
                                             callee,
                                             pc,
-                                            receiverDefinition +: paramDefinitions
+                                            receiverDefinition +: paramDefinitionsOpt.getOrElse(Seq.empty)
                                         )
+                                } else {
+                                     // todo we are unsound
                                 }
                             }
-                        case _ ⇒ state.calleesAndCallers.addIncompleteCallsite(pc)
+                        } else if (HIGHSOUNDNESS) {
+                            // we have no information about the parameter types
+                            for {
+                                receiverType ← types
+                                if receiverType.isObjectType
+                                name ← names
+                                cf ← project.classFile(receiverType.asObjectType) // todo what about opts
+                                m ← cf.findMethod(name)
+                            } {
+                                state.calleesAndCallers.updateWithIndirectCall(
+                                    caller,
+                                    declaredMethods(m),
+                                    pc,
+                                    receiverDefinition +: paramDefinitionsOpt.getOrElse(Seq.empty)
+                                )
+                            }
+                        } else {
+                            state.calleesAndCallers.addIncompleteCallsite(pc)
+                        }
+                    case VirtualFunctionCall(_, ObjectType.Class, _, "getMethods" | "getDeclaredMethods", _, receiver, params) ⇒
+                        assert(params.isEmpty)
+                        for {
+                            t ← getPossibleTypes(receiver, pc)
+                        } {
+                            val cfO = project.classFile(t.asObjectType)
+                            if (cfO.isEmpty) {
+                                state.calleesAndCallers.addIncompleteCallsite(pc)
+                            }
+                            for {
+                                cf ← cfO
+                                m ← cf.methods // todo what about abstract ones?
+                            } {
+                                state.calleesAndCallers.updateWithIndirectCall(
+                                    caller,
+                                    declaredMethods(m),
+                                    pc,
+                                    receiverDefinition +: paramDefinitionsOpt.getOrElse(Seq.empty)
+                                )
+                            }
+                        }
+
+                    case _ if HIGHSOUNDNESS ⇒
+                        // we have no idea where the method comes from
+                        // todo we need to add calls to every method that matches the parameters
+                        val mayBeStatic = methodParams.head.asVar.value.asReferenceValue.isNull
+                        for {
+                            cf ← project.allClassFiles
+                            m ← cf.methods
+                            if (m.isStatic && mayBeStatic.isYesOrUnknown) || (!m.isStatic && mayBeStatic.isNoOrUnknown)
+                            if paramDefinitionsOpt.isEmpty || (m.descriptor.parametersCount == paramDefinitionsOpt.size &&
+                                m.descriptor.parameterTypes.zip(methodParams.map(_.asVar.value)).forall {
+                                    // the actual type is null and the declared type is a ref type
+                                    case (pType, v) if pType.isReferenceType && v.isReferenceValue && v.asReferenceValue.isNull.isYes ⇒
+                                        // todo here we would need the declared type information
+                                        true
+                                    // declared type and actual type are reference types and assignable
+                                    case (pType, v) if pType.isReferenceType && v.isReferenceValue ⇒
+                                        v.asReferenceValue.isValueASubtypeOf(pType.asReferenceType).isYesOrUnknown
+
+                                    // declared type and actual type are base types and the same type
+                                    case (pType, v) if pType.isBaseType && v.isPrimitiveValue ⇒
+                                        v.asPrimitiveValue.primitiveType eq pType
+
+                                    // the actual type is null and the declared type is a base type
+                                    case (pType, v) if pType.isBaseType && v.isReferenceValue && v.asReferenceValue.isNull.isYes ⇒
+                                        false
+
+                                    // declared type is base type, actual type might be a boxed value
+                                    case (pType, v) if pType.isBaseType && v.isReferenceValue ⇒
+                                        v.asReferenceValue.isValueASubtypeOf(pType.asBaseType.WrapperType).isYesOrUnknown
+
+                                    // actual type is base type, declared type might be a boxed type
+                                    case (pType, v) if pType.isObjectType && v.isPrimitiveValue ⇒
+                                        pType.asObjectType.isPrimitiveTypeWrapperOf(
+                                            v.asPrimitiveValue.primitiveType
+                                        )
+                                    case _ ⇒
+                                        false
+                                })
+                        } {
+                            state.calleesAndCallers.updateWithIndirectCall(
+                                caller,
+                                declaredMethods(m),
+                                pc,
+                                receiverDefinition +: paramDefinitionsOpt.getOrElse(Seq.empty)
+                            )
+                        }
+                    case _ ⇒ state.calleesAndCallers.addIncompleteCallsite(pc)
+                }
+
+            } else if (HIGHSOUNDNESS) {
+                // the method comes from a parameter -> it could be any method
+                // todo we need to add calls to every method that matches the parameters
+                val mayBeStatic = methodParams.head.asVar.value.asReferenceValue.isNull
+                for {
+                    cf ← project.allClassFiles
+                    m ← cf.methods
+                    if (m.isStatic && mayBeStatic.isYesOrUnknown) || (!m.isStatic && mayBeStatic.isNoOrUnknown)
+                    if m.descriptor.parametersCount == paramDefinitionsOpt.size
+                    if m.descriptor.parameterTypes.zip(methodParams.map(_.asVar.value)).forall {
+                        // the actual type is null and the declared type is a ref type
+                        case (pType, v) if pType.isReferenceType && v.isReferenceValue && v.asReferenceValue.isNull.isYes ⇒
+                            // todo here we would need the declared type information
+                            true
+                        // declared type and actual type are reference types and assignable
+                        case (pType, v) if pType.isReferenceType && v.isReferenceValue ⇒
+                            v.asReferenceValue.isValueASubtypeOf(pType.asReferenceType).isYesOrUnknown
+
+                        // declared type and actual type are base types and the same type
+                        case (pType, v) if pType.isBaseType && v.isPrimitiveValue ⇒
+                            v.asPrimitiveValue.primitiveType eq pType
+
+                        // the actual type is null and the declared type is a base type
+                        case (pType, v) if pType.isBaseType && v.isReferenceValue && v.asReferenceValue.isNull.isYes ⇒
+                            false
+
+                        // declared type is base type, actual type might be a boxed value
+                        case (pType, v) if pType.isBaseType && v.isReferenceValue ⇒
+                            v.asReferenceValue.isValueASubtypeOf(pType.asBaseType.WrapperType).isYesOrUnknown
+
+                        // actual type is base type, declared type might be a boxed type
+                        case (pType, v) if pType.isObjectType && v.isPrimitiveValue ⇒
+                            pType.asObjectType.isPrimitiveTypeWrapperOf(
+                                v.asPrimitiveValue.primitiveType
+                            )
+                        case _ ⇒
+                            false
                     }
-                } else {
-                    state.calleesAndCallers.addIncompleteCallsite(pc)
+                } {
+                    state.calleesAndCallers.updateWithIndirectCall(
+                        caller,
+                        declaredMethods(m),
+                        pc,
+                        receiverDefinition +: paramDefinitionsOpt.getOrElse(Seq.empty)
+                    )
                 }
             } else {
                 state.calleesAndCallers.addIncompleteCallsite(pc)
@@ -571,14 +772,16 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         recurse:     Boolean,
         pc:          Int,
         allowStatic: Boolean       = true
-    )(implicit state: State): Traversable[DeclaredMethod] = {
-        if (classType.isArrayType && name == "clone") None
-        else {
+    )(implicit state: State): Option[Seq[DeclaredMethod]] = {
+        if (classType.isArrayType && name == "clone") {
+            // todo shouldn't it be Object.clone?
+            None
+        } else {
             val recType = if (classType.isArrayType) ObjectType.Object else classType.asObjectType
             val cfO = project.classFile(recType)
             if (cfO.isEmpty) {
                 state.calleesAndCallers.addIncompleteCallsite(pc)
-                Traversable.empty
+                None
             } else {
                 val candidates = cfO.get.methods.filter { method ⇒
                     (!recurse || method.isPublic) /* getMethod only returns public methods */ &&
@@ -588,13 +791,13 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                 }
                 if (candidates.size == 1) {
                     // Single candidate is chosen
-                    Traversable(declaredMethods(candidates.head))
+                    Some(Seq(declaredMethods(candidates.head)))
                 } else if (candidates.isEmpty) {
                     // No candidate => recurse to superclass if allowed, otherwise return no method
                     val superT = cfO.get.superclassType
                     if (!recurse || superT.isEmpty) {
                         state.calleesAndCallers.addIncompleteCallsite(pc)
-                        Traversable.empty
+                        None
                     } else {
                         resolveCallees(
                             superT.get,
@@ -607,7 +810,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                     }
                 } else if (candidates.exists(!_.returnType.isReferenceType)) {
                     // There is no most specific return type for primitive types.
-                    candidates.map[DeclaredMethod](declaredMethods(_))
+                    Some(candidates.map[DeclaredMethod](declaredMethods(_)))
                 } else {
                     // Resolve to the candidate with the most specific return type.
                     val returnTypes = candidates.tail.map[ReferenceType](_.returnType.asReferenceType)
@@ -624,11 +827,11 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                     }
                     if (foundType.isEmpty) {
                         // No most specific return type found => any of the methods could be invoked
-                        candidates.map[DeclaredMethod](declaredMethods(_))
+                        Some(candidates.map[DeclaredMethod](declaredMethods(_)))
                     } else {
-                        Traversable(
+                        Some(Seq(
                             declaredMethods(candidates.find(_.returnType eq foundType.get).get)
-                        )
+                        ))
                     }
                 }
             }
@@ -651,7 +854,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
     )(implicit state: State): Unit = {
         val actualInvokeParams =
             if (isSignaturePolymorphic) invokeParams.asInstanceOf[Seq[V]]
-            else getParamsFromVararg(invokeParams.head)
+            else getParamsFromVararg(invokeParams.head).getOrElse(Seq.empty) // todo what happens here?
         methodHandle.asVar.definedBy.foreach { index ⇒
             if (index >= 0) {
                 val definition = state.tacode.stmts(index).asAssignment.expr
@@ -907,12 +1110,12 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         value:            Expr[V],
         pc:               Option[Int],
         onlyStringConsts: Boolean     = false
-    )(implicit state: State): Iterator[String] = {
-        value.asVar.definedBy.iterator.map[Iterator[String]] { index ⇒
+    )(implicit state: State): Set[String] = {
+        value.asVar.definedBy.map[Set[String]] { index ⇒
             if (index >= 0) {
                 val expr = state.tacode.stmts(index).asAssignment.expr
                 expr match {
-                    case StringConst(_, v) ⇒ Iterator(v)
+                    case StringConst(_, v) ⇒ Set(v)
                     case StaticFunctionCall(_, ObjectType.System, _, "getProperty", GetPropertyDescriptor, params) if !onlyStringConsts ⇒
                         getStringConstsForSystemPropertiesKey(params.head, pc)
                     case VirtualFunctionCall(_, dc, _, "getProperty", GetPropertyDescriptor, _, params) if !onlyStringConsts && ch.isSubtypeOf(dc, PropertiesT) ⇒
@@ -926,13 +1129,13 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                         if (pc.isDefined) {
                             state.calleesAndCallers.addIncompleteCallsite(pc.get)
                         }
-                        Iterator.empty
+                        Set.empty
                 }
             } else {
                 if (pc.isDefined) {
                     state.calleesAndCallers.addIncompleteCallsite(pc.get)
                 }
-                Iterator.empty
+                Set.empty
             }
         }.flatten
     }
@@ -943,7 +1146,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
      */
     private[this] def getStringConstsForSystemPropertiesKey(
         value: Expr[V], pc: Option[Int]
-    )(implicit state: State): Iterator[String] = {
+    )(implicit state: State): Set[String] = {
         if (!state.hasSystemPropertiesDependee) {
             state.addSystemPropertiesDependee(propertyStore(project, SystemProperties.key))
         }
@@ -951,12 +1154,10 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
             state.calleesAndCallers.addIncompleteCallsite(pc.get)
         }
         if (!state.hasSystemProperties) {
-            Iterator.empty
+            Set.empty
         } else {
             val keys = getPossibleStrings(value, None, onlyStringConsts = true)
-            keys.flatMap { key ⇒
-                state.systemProperties.getOrElse(key, Set.empty[String])
-            }
+            keys.flatMap { key ⇒ state.systemProperties.getOrElse(key, Set.empty[String]) }
         }
     }
 
@@ -1053,7 +1254,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
     private[this] def getPossibleForNameClasses(
         className: Expr[V],
         pc:        Option[Int]
-    )(implicit state: State): Iterator[ReferenceType] = {
+    )(implicit state: State): Set[ObjectType] = {
         val classNames = getPossibleStrings(className, pc)
         classNames.map(cls ⇒
             ObjectType(cls.replace('.', '/'))).filter(project.classFile(_).isDefined)
@@ -1110,19 +1311,29 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
             returnTypes.map(MethodDescriptor.withNoArgs)
         } else if (params.size == 3) { // methodType(T1, T2, T3, ...) => (T2, T3, ...)T1
             val firstParamTypes = getPossibleTypes(params(1), pc).asInstanceOf[Iterator[FieldType]]
-            val possibleOtherParamTypes = getTypesFromVararg(params(2), pc)
+            val possibleOtherParamTypes = getTypesFromVararg(params(2))
+            if (possibleOtherParamTypes.isEmpty) {
+                state.calleesAndCallers.addIncompleteCallsite(pc)
+            }
+
             for {
+                otherParamTypes ← possibleOtherParamTypes.iterator // empty seq. if None
                 returnType ← returnTypes
                 firstParamType ← firstParamTypes
-                otherParamTypes ← possibleOtherParamTypes
             } yield MethodDescriptor(firstParamType +: otherParamTypes, returnType)
+
         } else {
             val secondParamType = descriptor.parameterType(1)
             if (secondParamType.isArrayType) { // methodType(T1, Class[]{T2, ...}) => (T2, ...)T1
-                val possibleOtherParamTypes = getTypesFromVararg(params(1), pc)
+                val possibleOtherParamTypes = getTypesFromVararg(params(1))
+
+                if (possibleOtherParamTypes.isEmpty) {
+                    state.calleesAndCallers.addIncompleteCallsite(pc)
+                }
+
                 for {
+                    otherParamTypes ← possibleOtherParamTypes.iterator
                     returnType ← returnTypes
-                    otherParamTypes ← possibleOtherParamTypes
                 } yield MethodDescriptor(otherParamTypes, returnType)
             } else if (secondParamType == ObjectType.Class) { // methodType(T1, T2) => (T2)T2
                 val paramTypes = getPossibleTypes(params(1), pc).asInstanceOf[Iterator[FieldType]]
@@ -1140,34 +1351,41 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
     /**
      * Returns the types that a varargs argument of type Class (i.e. Class<?>...) may evaluate to.
      * Only handles the case of a simple array of class constants or primitive types' classes!
+     * In case [[None]] is returned, the caller must mark the callsite as incomplete.
      */
     private[this] def getTypesFromVararg(
-        expr: Expr[V],
-        pc:   Int
+        expr: Expr[V]
     )(implicit state: State): Option[FieldTypes] = {
         val definitions = expr.asVar.definedBy
         if (!definitions.isSingletonSet || definitions.head < 0) {
-            state.calleesAndCallers.addIncompleteCallsite(pc)
             None
         } else {
             val definition = state.tacode.stmts(definitions.head).asAssignment
-            if (definition.expr.astID != NewArray.ASTID) None
-            else {
+            if (definition.expr.isNullExpr) {
+                Some(RefArray.empty)
+            } else if (definition.expr.astID != NewArray.ASTID) {
+                None
+            } else {
                 val uses = IntArraySetBuilder(definition.targetVar.usedBy.toChain).result()
-                if (state.tacode.cfg.bb(uses.head) != state.tacode.cfg.bb(uses.last)) None
-                else if (state.tacode.stmts(uses.last).astID != Assignment.ASTID) None
-                else {
+                if (state.tacode.cfg.bb(uses.head) != state.tacode.cfg.bb(uses.last)) {
+                    None
+                } else if (state.tacode.stmts(uses.last).astID != Assignment.ASTID) {
+                    None
+                } else {
                     var types: RefArray[FieldType] = RefArray.withSize(uses.size - 1)
                     if (!uses.forall { useSite ⇒
-                        if (useSite == uses.last) true
+                        if (useSite == uses.last)
+                            true
                         else {
                             val use = state.tacode.stmts(useSite)
-                            if (use.astID != ArrayStore.ASTID) false
+                            if (use.astID != ArrayStore.ASTID)
+                                false
                             else {
                                 val typeDefs = use.asArrayStore.value.asVar.definedBy
                                 val indices = use.asArrayStore.index.asVar.definedBy
                                 if (!typeDefs.isSingletonSet || typeDefs.head < 0 ||
-                                    !indices.isSingletonSet || indices.head < 0) false
+                                    !indices.isSingletonSet || indices.head < 0)
+                                    false
                                 else {
                                     val typeDef = state.tacode.stmts(typeDefs.head).asAssignment.expr
                                     val index = state.tacode.stmts(indices.head).asAssignment.expr
@@ -1186,7 +1404,6 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                             }
                         }
                     } || types.contains(null)) {
-                        state.calleesAndCallers.addIncompleteCallsite(pc)
                         None
                     } else {
                         Some(types)
@@ -1201,27 +1418,37 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
      */
     private[this] def getParamsFromVararg(
         expr: Expr[V]
-    )(implicit state: State): Seq[V] = {
+    )(implicit state: State): Option[Seq[V]] = {
         val definitions = expr.asVar.definedBy
         if (!definitions.isSingletonSet || definitions.head < 0) {
-            Seq.empty
+            None
         } else {
             val definition = state.tacode.stmts(definitions.head).asAssignment
-            if (definition.expr.astID != NewArray.ASTID) Seq.empty
-            else {
+            if (definition.expr.isNullExpr) {
+                Some(Seq.empty)
+            } else if (definition.expr.astID != NewArray.ASTID) {
+                None
+            } else {
                 val uses = IntArraySetBuilder(definition.targetVar.usedBy.toChain).result()
-                if (state.tacode.cfg.bb(uses.head) != state.tacode.cfg.bb(uses.last)) Seq.empty
-                else if (state.tacode.stmts(uses.last).astID != Assignment.ASTID) Seq.empty
-                else {
+                if (state.tacode.cfg.bb(uses.head) != state.tacode.cfg.bb(uses.last)) {
+                    // IMPROVE: Here we should also handle the case of non-constant values
+                    None
+                } else if (state.tacode.stmts(uses.last).astID != Assignment.ASTID &&
+                    state.tacode.stmts(uses.last).astID != ExprStmt.ASTID) {
+                    None
+                } else {
                     var params: Seq[V] = RefArray.withSize(uses.size - 1)
                     if (!uses.forall { useSite ⇒
-                        if (useSite == uses.last) true
+                        if (useSite == uses.last)
+                            true
                         else {
                             val use = state.tacode.stmts(useSite)
-                            if (use.astID != ArrayStore.ASTID) false
+                            if (use.astID != ArrayStore.ASTID)
+                                false
                             else {
                                 val indices = use.asArrayStore.index.asVar.definedBy
-                                if (!indices.isSingletonSet || indices.head < 0) false
+                                if (!indices.isSingletonSet || indices.head < 0)
+                                    false
                                 else {
                                     val index = state.tacode.stmts(indices.head).asAssignment.expr
                                     if (!index.isIntConst) {
@@ -1237,9 +1464,9 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                             }
                         }
                     } || params.contains(null)) {
-                        Seq.empty
+                        None
                     } else {
-                        params
+                        Some(params)
                     }
                 }
             }
@@ -1355,7 +1582,6 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
 }
 
 object EagerReflectionRelatedCallsAnalysis extends FPCFEagerAnalysisScheduler {
-
     override type InitializationData = ReflectionRelatedCallsAnalysis
 
     override def start(

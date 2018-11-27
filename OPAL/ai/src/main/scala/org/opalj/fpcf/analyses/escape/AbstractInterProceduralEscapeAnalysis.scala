@@ -189,7 +189,8 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
                     state.meetMostRestrictive(AtMost(EscapeInCallee))
                 else {
                     val fp = fps(i)
-                    if (fp != context.entity)
+                    // fp may be null if the indirect method is static and the parameter is this
+                    if (fp != null && fp != context.entity)
                         handleEscapeState(fp, hasAssignment)
                 }
             }

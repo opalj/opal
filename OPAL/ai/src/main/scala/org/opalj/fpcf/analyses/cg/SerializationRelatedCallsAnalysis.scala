@@ -210,7 +210,7 @@ class SerializationRelatedCallsAnalysis private[analyses] (
         val parameterList = Seq(persistentUVar(param), persistentUVar(outputStream))
 
         for (rv ← param.value.asReferenceValue.allValues) {
-            if (rv.isPrecise) {
+            if (rv.isPrecise && rv.isNull.isNo) {
                 val rt = rv.leastUpperType.get
                 if (rt.isObjectType || rt.asArrayType.elementType.isObjectType) {
                     val paramType =
