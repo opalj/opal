@@ -25,9 +25,7 @@ import org.opalj.log.OPALLogger.{debug ⇒ trace}
 import org.opalj.log.GlobalLogContext
 import org.opalj.fpcf.PropertyKind.SupportedPropertyKinds
 import org.opalj.fpcf.PropertyKey.fallbackPropertyBasedOnPKId
-import org.opalj.fpcf.PropertyKey.fastTrackPropertyBasedOnPKId
-import org.opalj.fpcf.PropertyKey.notComputedPropertyBasedOnPKId
-import org.opalj.fpcf.PropertyKey.isPropertyKeyForSimplePropertyBasedOnPKId
+import org.opalj.fpcf.PropertyKey.computeFastTrackPropertyBasedOnPKId
 
 /**
  * A concurrent implementation of the property store which parallels the execution of the scheduled
@@ -617,7 +615,7 @@ final class PKEParallelTasksPropertyStore private (
         if (!isPropertyKeyForSimplePropertyBasedOnPKId(pkId) &&
             useFastTrackPropertyComputations &&
             (computedPropertyKinds(pkId) || delayedPropertyKinds(pkId))) {
-            val p = fastTrackPropertyBasedOnPKId(this, e, pkId)
+            val p = computeFastTrackPropertyBasedOnPKId(this, e, pkId)
             if (p.isDefined) {
                 if (debug) fastTrackPropertiesCounter.incrementAndGet()
                 val finalEP = FinalP(e, p.get.asInstanceOf[P])
