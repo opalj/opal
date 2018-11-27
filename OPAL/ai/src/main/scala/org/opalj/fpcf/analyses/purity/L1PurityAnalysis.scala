@@ -255,11 +255,11 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                     return Result(state.definedMethod, ImpureByAnalysis)
 
             // Cases that are pure
-            case FinalEP(_, _: FinalField)                   ⇒ // Reading eff. final fields
-            case FinalEP(_, ImmutableType | ImmutableObject) ⇒ // Returning immutable reference
+            case FinalP(_, _: FinalField)                   ⇒ // Reading eff. final fields
+            case FinalP(_, ImmutableType | ImmutableObject) ⇒ // Returning immutable reference
 
             // Cases resulting in side-effect freeness
-            case FinalEP(_, _: FieldMutability | // Reading non-final field
+            case FinalP(_, _: FieldMutability | // Reading non-final field
                 _: TypeImmutability | _: ClassImmutability) ⇒ // Returning mutable reference
                 atMost(SideEffectFree)
 

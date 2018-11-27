@@ -133,7 +133,7 @@ class ReturnValueFreshnessAnalysis private[analyses] (
             def handleReturnValueFreshness(
                 eOptP: SomeEOptionP
             ): PropertyComputationResult = eOptP match {
-                case FinalEP(_, p) ⇒ Result(e, p)
+                case FinalP(_, p) ⇒ Result(e, p)
                 case IntermediateEP(_, lb, ub) ⇒
                     IntermediateResult(
                         e, lb, ub,
@@ -353,14 +353,14 @@ class ReturnValueFreshnessAnalysis private[analyses] (
         implicit
         state: ReturnValueFreshnessState
     ): Boolean = ep match {
-        case FinalEP(_, NoEscape | EscapeInCallee) ⇒
+        case FinalP(_, NoEscape | EscapeInCallee) ⇒
             throw new RuntimeException(s"unexpected result $ep for entity ${state.dm}")
 
-        case FinalEP(_, EscapeViaReturn) ⇒ false
+        case FinalP(_, EscapeViaReturn) ⇒ false
 
-        case FinalEP(_, AtMost(_))       ⇒ true
+        case FinalP(_, AtMost(_))       ⇒ true
 
-        case FinalEP(_, _)               ⇒ true // Escape state is worse than via return
+        case FinalP(_, _)               ⇒ true // Escape state is worse than via return
 
         case IntermediateEP(_, _, NoEscape | EscapeInCallee) ⇒
             state.addDefSiteDependee(ep)
@@ -390,7 +390,7 @@ class ReturnValueFreshnessAnalysis private[analyses] (
         implicit
         state: ReturnValueFreshnessState
     ): Boolean = ep match {
-        case FinalEP(_, LocalFieldWithGetter) ⇒
+        case FinalP(_, LocalFieldWithGetter) ⇒
             state.atMost(Getter)
             false
 
@@ -399,10 +399,10 @@ class ReturnValueFreshnessAnalysis private[analyses] (
             state.addFieldDependee(ep)
             false
 
-        case FinalEP(_, NoLocalField) ⇒
+        case FinalP(_, NoLocalField) ⇒
             true
 
-        case FinalEP(_, ExtensibleLocalFieldWithGetter) ⇒
+        case FinalP(_, ExtensibleLocalFieldWithGetter) ⇒
             state.atMost(ExtensibleGetter)
             false
 
@@ -411,7 +411,7 @@ class ReturnValueFreshnessAnalysis private[analyses] (
             state.addFieldDependee(ep)
             false
 
-        case FinalEP(_, LocalField | ExtensibleLocalField) ⇒
+        case FinalP(_, LocalField | ExtensibleLocalField) ⇒
             // The value is returned, the field can not be local!
             throw new RuntimeException(s"unexpected result $ep for entity ${state.dm}")
 
@@ -428,14 +428,14 @@ class ReturnValueFreshnessAnalysis private[analyses] (
     def handleReturnValueFreshness(
         ep: EOptionP[DeclaredMethod, Property]
     )(implicit state: ReturnValueFreshnessState): Boolean = ep match {
-        case FinalEP(_, NoFreshReturnValue | VNoFreshReturnValue) ⇒ true
+        case FinalP(_, NoFreshReturnValue | VNoFreshReturnValue) ⇒ true
 
-        case FinalEP(_, FreshReturnValue | VFreshReturnValue)     ⇒ false
+        case FinalP(_, FreshReturnValue | VFreshReturnValue)     ⇒ false
 
         //IMPROVE: We can still be a getter if the callee has the same receiver
-        case EPS(_, _, Getter | VGetter)                          ⇒ true
+        case EPS(_, _, Getter | VGetter)                         ⇒ true
 
-        case EPS(_, _, ExtensibleGetter | VExtensibleGetter)      ⇒ true
+        case EPS(_, _, ExtensibleGetter | VExtensibleGetter)     ⇒ true
 
         case IntermediateEP(_, _, FreshReturnValue | VFreshReturnValue) ⇒
             state.addMethodDependee(ep)

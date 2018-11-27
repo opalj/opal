@@ -18,6 +18,7 @@ import org.opalj.log.OPALLogger.error
 import org.opalj.fpcf.PropertyKind.SupportedPropertyKinds
 import org.opalj.fpcf.PropertyKey.fallbackPropertyBasedOnPKId
 import org.opalj.fpcf.PropertyKey.fastTrackPropertyBasedOnPKId
+import org.opalj.fpcf.PropertyKey.computeFastTrackPropertyBasedOnPKId
 
 /**
  * A non-concurrent implementation of the property store. Entities are generally only stored on
@@ -213,20 +214,20 @@ final class PKESequentialPropertyStore private (
                             }
                             val p = fallbackPropertyBasedOnPKId(this, reason, e, pkId)
                             set(e, p)
-                            FinalEP(e, p.asInstanceOf[P])
+                            FinalP(e, p.asInstanceOf[P])
                         }
 
                     case lc: PropertyComputation[E] @unchecked ⇒
                         val fastTrackPropertyOption: Option[P] =
                             if (isComputed && useFastTrackPropertyComputations)
-                                fastTrackPropertyBasedOnPKId(this, e, pkId).asInstanceOf[Option[P]]
+                                computeFastTrackPropertyBasedOnPKId[P](this, e, pkId)
                             else
                                 None
                         fastTrackPropertyOption match {
                             case Some(p) ⇒
                                 fastTrackPropertiesCounter += 1
                                 set(e, p, isFastTrackProperty = true)
-                                FinalEP(e, p.asInstanceOf[P])
+                                FinalP(e, p.asInstanceOf[P])
                             case None ⇒
                                 // create PropertyValue to ensure that we do not schedule
                                 // multiple (lazy) computations => the entity is now known
@@ -278,7 +279,7 @@ final class PKESequentialPropertyStore private (
     override def registerLazyPropertyComputation[E <: Entity, P <: Property](
         pk:       PropertyKey[P],
         pc:       PropertyComputation[E],
-        finalEPs: TraversableOnce[FinalEP[E, P]]
+        finalEPs: TraversableOnce[FinalP[E, P]]
     ): Unit = {
         if (debug && !tasks.isEmpty) {
             throw new IllegalStateException(
@@ -434,7 +435,7 @@ final class PKESequentialPropertyStore private (
                             if (newPValueIsFinal) {
                                 new OnFinalUpdateComputationTask(
                                     this,
-                                    FinalEP(e, ub),
+                                    FinalP(e, ub),
                                     onUpdateContinuation
                                 )
                             } else {
@@ -578,7 +579,7 @@ final class PKESequentialPropertyStore private (
                                 immediateOnUpdateComputationsCounter += 1
                                 val newEP =
                                     if (dependeePValue.isFinal) {
-                                        FinalEP(dependeeE, dependeePValue.ub)
+                                        FinalP(dependeeE, dependeePValue.ub)
                                     } else {
                                         EPS(dependeeE, dependeePValue.lb, dependeePValue.ub)
                                     }
@@ -615,7 +616,7 @@ final class PKESequentialPropertyStore private (
                                     val t =
                                         OnFinalUpdateComputationTask(
                                             this,
-                                            FinalEP(dependeeE, dependeePValue.ub),
+                                            FinalP(dependeeE, dependeePValue.ub),
                                             c
                                         )
                                     if (dependeeUpdateHandling.delayHandlingOfFinalDependeeUpdates)

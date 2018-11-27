@@ -52,9 +52,9 @@ class VirtualMethodStaticDataUsageAnalysis private[analyses] (
 
         for (method ← methods) {
             propertyStore(declaredMethods(method), StaticDataUsage.key) match {
-                case FinalEP(_, UsesNoStaticData)     ⇒
-                case FinalEP(_, UsesConstantDataOnly) ⇒ maxLevel = UsesConstantDataOnly
-                case FinalEP(_, UsesVaryingData)      ⇒ return Result(dm, VUsesVaryingData);
+                case FinalP(_, UsesNoStaticData)     ⇒
+                case FinalP(_, UsesConstantDataOnly) ⇒ maxLevel = UsesConstantDataOnly
+                case FinalP(_, UsesVaryingData)      ⇒ return Result(dm, VUsesVaryingData);
                 case ep @ IntermediateEP(_, _, UsesConstantDataOnly) ⇒
                     maxLevel = UsesConstantDataOnly
                     dependees += ep
@@ -66,9 +66,9 @@ class VirtualMethodStaticDataUsageAnalysis private[analyses] (
             dependees = dependees.filter { _.e ne eps.e }
 
             eps match {
-                case FinalEP(_, UsesNoStaticData)     ⇒
-                case FinalEP(_, UsesConstantDataOnly) ⇒ maxLevel = UsesConstantDataOnly
-                case FinalEP(_, UsesVaryingData)      ⇒ return Result(dm, VUsesVaryingData);
+                case FinalP(_, UsesNoStaticData)     ⇒
+                case FinalP(_, UsesConstantDataOnly) ⇒ maxLevel = UsesConstantDataOnly
+                case FinalP(_, UsesVaryingData)      ⇒ return Result(dm, VUsesVaryingData);
                 case ep @ IntermediateEP(_, _, UsesConstantDataOnly) ⇒
                     maxLevel = UsesConstantDataOnly
                     dependees += ep.asInstanceOf[EOptionP[DeclaredMethod, StaticDataUsage]]

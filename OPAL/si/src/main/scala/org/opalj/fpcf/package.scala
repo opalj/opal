@@ -67,7 +67,7 @@ package object fpcf {
 
     final type SomeEPS = EPS[_ <: Entity, _ <: Property]
 
-    final type SomeFinalEP = FinalEP[_ <: Entity, _ <: Property]
+    final type SomeFinalP = FinalP[_ <: Entity, _ <: Property]
 
     final type SomePartialResult = PartialResult[_ >: Null <: Entity, _ >: Null <: Property]
 
@@ -112,6 +112,6 @@ package object fpcf {
     /**
      * The result of a computation if the computation derives multiple properties at the same time.
      */
-    final type ComputationResults = TraversableOnce[SomeFinalEP]
+    final type ComputationResults = TraversableOnce[SomeFinalP]
 
 }

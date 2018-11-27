@@ -178,7 +178,7 @@ lazy val `BytecodeInfrastructure` = (project in file("OPAL/bi"))
         )
     )
   )
-  .dependsOn(si % "it->test;test->test;compile->compile")
+  .dependsOn(common % "it->test;test->test;compile->compile")
   .configs(IntegrationTest)
   .enablePlugins(JavaFixtureCompiler)
 
@@ -190,6 +190,7 @@ lazy val `BytecodeRepresentation` = (project in file("OPAL/br"))
     scalacOptions in(Compile, doc) ++= Opts.doc.title("OPAL - Bytecode Representation"),
     libraryDependencies ++= Dependencies.br
   )
+  .dependsOn(si % "it->it;it->test;test->test;compile->compile")
   .dependsOn(bi % "it->it;it->test;test->test;compile->compile")
   .configs(IntegrationTest)
 

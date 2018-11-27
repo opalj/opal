@@ -308,35 +308,35 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
 
         val e = escapeState.e.asInstanceOf[VirtualFormalParameter]
         escapeState match {
-            case FinalEP(_, NoEscape | VirtualMethodEscapeProperty(NoEscape)) ⇒
+            case FinalP(_, NoEscape | VirtualMethodEscapeProperty(NoEscape)) ⇒
                 state.meetMostRestrictive(EscapeInCallee)
 
-            case FinalEP(_, EscapeInCallee | VirtualMethodEscapeProperty(EscapeInCallee)) ⇒
+            case FinalP(_, EscapeInCallee | VirtualMethodEscapeProperty(EscapeInCallee)) ⇒
                 state.meetMostRestrictive(EscapeInCallee)
 
-            case FinalEP(_, GlobalEscape | VirtualMethodEscapeProperty(GlobalEscape)) ⇒
+            case FinalP(_, GlobalEscape | VirtualMethodEscapeProperty(GlobalEscape)) ⇒
                 state.meetMostRestrictive(GlobalEscape)
 
-            case FinalEP(_, EscapeViaStaticField | VirtualMethodEscapeProperty(EscapeViaStaticField)) ⇒
+            case FinalP(_, EscapeViaStaticField | VirtualMethodEscapeProperty(EscapeViaStaticField)) ⇒
                 state.meetMostRestrictive(EscapeViaStaticField)
 
-            case FinalEP(_, EscapeViaHeapObject | VirtualMethodEscapeProperty(EscapeViaHeapObject)) ⇒
+            case FinalP(_, EscapeViaHeapObject | VirtualMethodEscapeProperty(EscapeViaHeapObject)) ⇒
                 state.meetMostRestrictive(EscapeViaHeapObject)
 
-            case FinalEP(_, EscapeViaReturn | VirtualMethodEscapeProperty(EscapeViaReturn)) if hasAssignment ⇒
+            case FinalP(_, EscapeViaReturn | VirtualMethodEscapeProperty(EscapeViaReturn)) if hasAssignment ⇒
                 state.meetMostRestrictive(AtMost(EscapeInCallee))
 
-            case FinalEP(_, EscapeViaReturn | VirtualMethodEscapeProperty(EscapeViaReturn)) ⇒
+            case FinalP(_, EscapeViaReturn | VirtualMethodEscapeProperty(EscapeViaReturn)) ⇒
                 state.meetMostRestrictive(EscapeInCallee)
 
             // we do not track parameters or exceptions in the callee side
-            case FinalEP(_, p) if !p.isInstanceOf[AtMost] ⇒
+            case FinalP(_, p) if !p.isInstanceOf[AtMost] ⇒
                 state.meetMostRestrictive(AtMost(EscapeInCallee))
 
-            case FinalEP(_, AtMost(_) | VirtualMethodEscapeProperty(AtMost(_))) ⇒
+            case FinalP(_, AtMost(_) | VirtualMethodEscapeProperty(AtMost(_))) ⇒
                 state.meetMostRestrictive(AtMost(EscapeInCallee))
 
-            case FinalEP(_, p) ⇒
+            case FinalP(_, p) ⇒
                 throw new UnknownError(s"unexpected escape property ($p) for $e")
 
             case ep @ IntermediateEP(_, _, AtMost(_) | VirtualMethodEscapeProperty(AtMost(_))) ⇒

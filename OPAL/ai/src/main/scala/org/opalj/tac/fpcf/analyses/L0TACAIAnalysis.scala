@@ -6,7 +6,7 @@ package analyses
 
 import org.opalj.fpcf.ComputationSpecification
 import org.opalj.fpcf.Entity
-import org.opalj.fpcf.FinalEP
+import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.FPCFAnalysis
 import org.opalj.fpcf.FPCFEagerAnalysisScheduler
 import org.opalj.fpcf.FPCFLazyAnalysisScheduler
@@ -47,9 +47,9 @@ class L0TACAIAnalysis private[analyses] (val project: SomeProject) extends FPCFA
         e match { case m: Method ⇒ computeTAC(m) }
     }
 
-    def computeTheTACAI(m: Method, initialAIResult: AIResult): TheTACAI = {
-        val aiResult = initialAIResult.asInstanceOf[AIResult { val domain: Domain with RecordDefUse }]
-        val taCode = TACAIFactory(m, p.classHierarchy, aiResult)(Nil)
+    def computeTheTACAI(m: Method, aiResult: AIResult): TheTACAI = {
+        val typedAIResult = aiResult.asInstanceOf[AIResult { val domain: Domain with RecordDefUse }]
+        val taCode = TACAIFactory(m, p.classHierarchy, typedAIResult)(Nil)
         val tacaiProperty = TheTACAI(
             // the following cast is safe - see TACode for details
             taCode.asInstanceOf[TACode[TACMethodParameter, DUVar[ValueInformation]]]
@@ -61,10 +61,10 @@ class L0TACAIAnalysis private[analyses] (val project: SomeProject) extends FPCFA
      */
     private[analyses] def computeTAC(m: Method): PropertyComputationResult = {
         ps(m, BaseAIResult.key) match {
-            case FinalEP(_, NoAIResult) ⇒
+            case FinalP(_, NoAIResult) ⇒
                 Result(m, NoTACAI)
 
-            case FinalEP(_, AnAIResult(initialAIResult)) ⇒
+            case FinalP(_, AnAIResult(initialAIResult)) ⇒
                 Result(m, computeTheTACAI(m, initialAIResult))
 
             case currentAIResult @ IntermediateEP(_, AnAIResult(initialLBAIResult), ub) ⇒
@@ -142,7 +142,11 @@ object EagerL0TACAIAnalysis extends L0TACAIAnalysisScheduler with FPCFEagerAnaly
 
 object LazyL0TACAIAnalysis extends L0TACAIAnalysisScheduler with FPCFLazyAnalysisScheduler {
 
-    final override def startLazily(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+    final override def startLazily(
+        p: SomeProject, 
+        ps: PropertyStore, 
+        unused: Null
+    ): FPCFAnalysis = {
         val analysis = new L0TACAIAnalysis(p)
         ps.registerLazyPropertyComputation(TACAI.key, analysis.computeTAC)
         analysis

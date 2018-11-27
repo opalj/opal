@@ -22,7 +22,7 @@ import org.opalj.log.OPALLogger.error
  * possible without requiring users to take care of it;
  * users are also generally not required to think about the concurrency when implementing an
  * analysis as long as only immutable data-structures are used.
- * The concepts are also described in the SOAP paper:
+ * The most basic concepts are also described in the SOAP paper:
  * "Lattice Based Modularization of Static Analyses"
  * (https://conf.researchr.org/event/issta-2018/soap-2018-papers-lattice-based-modularization-of-static-analyses)
  *
@@ -57,16 +57,13 @@ import org.opalj.log.OPALLogger.error
  *    class files - does not derive information about the same method. If results for a specific
  *    entity are collaboratively computed, then a [[PartialResult]] has to be used.
  *
- *  - '''Monoton''' If a PropertyComputation` function calculates (refines) a (new) property for
- *    a specific element, then the result must be equal or more specific.
+ *  - '''Monoton''' a function which computes a property has to be monotonic.
  *
- * ===Closed-strongly Connected Component Dependencies===
- * In general, it may happen that some analyses cannot make any progress, because
- * they are mutually dependent. In this case the computation of a property `p` of an entity `e1`
- * depends on the property `p'` of an entity `e2` that requires the property `p` of the entity `e1`.
- * In this case a registered strategy is used to resolve the cyclic dependency. If no strategy is
- * available all current values will be committed, if no "current" value is available the fallback
- * value will be committed.
+ * ===Cyclic Dependencies===
+ * In general, it may happen that some analyses are mutually dependent and therefore no
+ * final value is directly computed. In this case the current extension (the upper bound)
+ * of the properties are committed as the final values when the phase end. If the analyses only
+ * computed a lower bound that one will be used.
  *
  * ==Thread Safety==
  * The sequential property stores are not thread-safe; the parallelized implementation(s) are
@@ -112,7 +109,7 @@ abstract class PropertyStore {
     //
     //
     // FUNCTIONALITY TO ASSOCIATE SOME INFORMATION WITH THE STORE THAT
-    // (TYPICALLY) HAS THE SAME AS THE PROPERTYSTORE
+    // (TYPICALLY) HAS THE SAME LIFETIME AS THE PROPERTYSTORE
     //
     //
 
@@ -120,10 +117,6 @@ abstract class PropertyStore {
 
     /**
      * Attaches or returns some information associated with the property store using a key object.
-     *
-     * This facility is in particular well suited to attach information with the property store
-     * which has the same life-time. For example, this mechanism is used to associate the
-     * property store specific cycle resolution strategies with the store.
      *
      * This method is thread-safe. However, the client which adds information to the store
      * has to ensure that the overall process of adding/querying/removing is well defined and
@@ -214,9 +207,6 @@ abstract class PropertyStore {
 
     final def traceFallbacks: Boolean = PropertyStore.TraceFallbacks
 
-    final def traceCycleResolutions: Boolean = PropertyStore.TraceCycleResolutions
-
-    def supportsFastTrackPropertyComputations: Boolean
     @volatile var useFastTrackPropertyComputations: Boolean = true
 
     /**
@@ -240,14 +230,13 @@ abstract class PropertyStore {
     def scheduledTasksCount: Int
 
     /**
-     * Simple counter of the number of tasks ([[OnUpdateContinuation]]s) that were executed
-     * in response to an updated property.
+     * The number of ([[OnUpdateContinuation]]s) that were executed in response to an
+     * updated property.
      */
     def scheduledOnUpdateComputationsCount: Int
 
     /**
-     * The number of times a property was directly computed again due to an updated
-     * dependee.
+     * The number of times a property was directly computed again due to an updated dependee.
      */
     def immediateOnUpdateComputationsCount: Int
 
@@ -315,8 +304,10 @@ abstract class PropertyStore {
 
     /**
      * Returns all entities that currently have the given property bounds based on an "==" (equals)
-     * comparison..
+     * comparison.
      * (In case of final properties the bounds are equal.)
+     * If some analysis only computes an upper or a lower bound and no final results exists,
+     * that entity will be ignored.
      *
      * @note Does not trigger lazy property computations.
      */
@@ -461,7 +452,7 @@ abstract class PropertyStore {
     def registerLazyPropertyComputation[E <: Entity, P <: Property](
         pk:       PropertyKey[P],
         pc:       PropertyComputation[E],
-        finalEPs: TraversableOnce[FinalEP[E, P]] = Iterator.empty
+        finalEPs: TraversableOnce[FinalP[E, P]] = Iterator.empty
     ): Unit
 
     /**
