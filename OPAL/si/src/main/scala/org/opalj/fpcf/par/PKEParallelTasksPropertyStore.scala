@@ -745,7 +745,7 @@ final class PKEParallelTasksPropertyStore private (
                 }
 
             case IntermediateResult.id ⇒
-                val queueId = r.asIntermediateResult.dependees.size / 4 + 1
+                val queueId = r.asInterimResult.dependees.size / 4 + 1
                 val update = NewProperty(r, forceDependersNotifications)
                 appendStoreUpdate(queueId, update)
 
@@ -1122,21 +1122,6 @@ final class PKEParallelTasksPropertyStore private (
                         }
                         uselessPartialResultComputationCounter += 1
                     }
-
-                case ExternalResult.id ⇒
-                    val ExternalResult(e, p) = r
-                    if (debug) {
-                        val pkId = p.id
-                        val oldP = properties(pkId).get(e)
-                        if (oldP != null) {
-                            throw new IllegalStateException(s"$e: already has a property $oldP")
-                        }
-                        if (dependees(pkId).containsKey(e)) {
-                            throw new IllegalStateException(s"$e: is already computed/has dependees")
-                        }
-                    }
-                    forceDependersNotifications -= EPK(e, p)
-                    finalUpdate(e, p, pcrs)
 
                 case IntermediateResult.id ⇒
                     val IntermediateResult(e, lb, ub, seenDependees, c, onUpdateContinuationHint) = r
