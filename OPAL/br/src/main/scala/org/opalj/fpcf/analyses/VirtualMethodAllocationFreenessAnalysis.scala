@@ -67,14 +67,14 @@ class VirtualMethodAllocationFreenessAnalysis private[analyses] ( final val proj
             if (dependees.isEmpty) {
                 Result(dm, VAllocationFreeMethod)
             } else {
-                IntermediateResult(dm, VMethodWithAllocations, VAllocationFreeMethod, dependees, c)
+                InterimResult(dm, VMethodWithAllocations, VAllocationFreeMethod, dependees, c)
             }
         }
 
         if (dependees.isEmpty) {
             Result(dm, VAllocationFreeMethod)
         } else {
-            IntermediateResult(dm, VMethodWithAllocations, VAllocationFreeMethod, dependees, c)
+            InterimResult(dm, VMethodWithAllocations, VAllocationFreeMethod, dependees, c)
         }
     }
 

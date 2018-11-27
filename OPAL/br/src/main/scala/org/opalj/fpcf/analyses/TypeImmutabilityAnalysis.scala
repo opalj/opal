@@ -63,7 +63,7 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
                             if (eps.isFinal)
                                 Result(t, thisUB)
                             else
-                                IntermediateResult(
+                                InterimResult(
                                     t, thisLB, thisUB,
                                     Seq(eps), c, CheapPropertyComputation
                                 )
@@ -77,12 +77,12 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
                 case eps @ IntermediateEP(_, lb, ub) ⇒
                     val thisUB = ub.correspondingTypeImmutability
                     val thisLB = lb.correspondingTypeImmutability
-                    IntermediateResult(
+                    InterimResult(
                         t, thisLB, thisUB,
                         Seq(eps), c, CheapPropertyComputation
                     )
                 case epk ⇒
-                    IntermediateResult(
+                    InterimResult(
                         t, MutableType, ImmutableType,
                         Seq(epk), c, CheapPropertyComputation
                     )
@@ -175,7 +175,7 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
                                 assert(maxImmutability == ImmutableContainerType)
                                 Result(t, maxImmutability)
                             } else {
-                                IntermediateResult(
+                                InterimResult(
                                     t, joinedImmutability, maxImmutability,
                                     dependencies.values, c
                                 )
@@ -210,7 +210,7 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
                     }
                 }
 
-                IntermediateResult(t, joinedImmutability, maxImmutability, dependencies.values, c)
+                InterimResult(t, joinedImmutability, maxImmutability, dependencies.values, c)
             }
         }
     }

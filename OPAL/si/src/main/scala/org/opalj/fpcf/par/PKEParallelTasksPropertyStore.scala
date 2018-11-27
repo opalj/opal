@@ -744,13 +744,13 @@ final class PKEParallelTasksPropertyStore private (
                     }
                 }
 
-            case IntermediateResult.id ⇒
+            case InterimResult.id ⇒
                 val queueId = r.asInterimResult.dependees.size / 4 + 1
                 val update = NewProperty(r, forceDependersNotifications)
                 appendStoreUpdate(queueId, update)
 
-            case SimplePIntermediateResult.id ⇒
-                val queueId = r.asSimplePIntermediateResult.dependees.size / 4 + 1
+            case SimplePInterimResult.id ⇒
+                val queueId = r.asSimplePInterimResult.dependees.size / 4 + 1
                 val update = NewProperty(r, forceDependersNotifications)
                 appendStoreUpdate(queueId, update)
 
@@ -1123,8 +1123,8 @@ final class PKEParallelTasksPropertyStore private (
                         uselessPartialResultComputationCounter += 1
                     }
 
-                case IntermediateResult.id ⇒
-                    val IntermediateResult(e, lb, ub, seenDependees, c, onUpdateContinuationHint) = r
+                case InterimResult.id ⇒
+                    val InterimResult(e, lb, ub, seenDependees, c, onUpdateContinuationHint) = r
                     val pk = ub.key
                     val pkId = pk.id
                     val epk = EPK(e, pk)
@@ -1222,9 +1222,9 @@ final class PKEParallelTasksPropertyStore private (
                             computeIfAbsent(dependeeE, _ ⇒ new JHashMap()).put(epk, updateFunction)
                     }
 
-                case SimplePIntermediateResult.id ⇒
-                    // TODO Unify handling with IntermediateResult (avoid code duplication)
-                    val SimplePIntermediateResult(e, ub, seenDependees, c, onUpdateContinuationHint) = r
+                case SimplePInterimResult.id ⇒
+                    // TODO Unify handling with InterimResult (avoid code duplication)
+                    val SimplePInterimResult(e, ub, seenDependees, c, onUpdateContinuationHint) = r
                     val pk = ub.key
                     val pkId = pk.id
                     val epk = EPK(e, pk)

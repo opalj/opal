@@ -407,7 +407,7 @@ abstract class PropertyStore {
      * Returns a snapshot of the properties with the given kind associated with the given entities.
      *
      * @note   Querying the properties of the given entities will trigger lazy computations.
-     * @note   The returned collection can be used to create an [[IntermediateResult]].
+     * @note   The returned collection can be used to create an [[InterimResult]].
      *         @see `apply(epk:EPK)` for details.
      */
     final def apply[E <: Entity, P <: Property](
@@ -421,7 +421,7 @@ abstract class PropertyStore {
      * Returns a snapshot of the properties with the given kind associated with the given entities.
      *
      * @note  Querying the properties of the given entities will trigger lazy computations.
-     * @note  The returned collection can be used to create an [[IntermediateResult]].
+     * @note  The returned collection can be used to create an [[InterimResult]].
      * @see  `apply(epk:EPK)` for details.
      */
     final def apply[E <: Entity, P <: Property](

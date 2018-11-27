@@ -204,7 +204,7 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
                     } else {
                         // We still have dependencies regarding field mutability/type immutability;
                         // hence, we have nothing to report.
-                        IntermediateResult(definedMethod, ImpureByAnalysis, Pure, dependees, c)
+                        InterimResult(definedMethod, ImpureByAnalysis, Pure, dependees, c)
                     }
 
                 case FinalP(_, ImmutableContainerType) ⇒
@@ -218,12 +218,12 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
                     if (dependees.isEmpty)
                         Result(definedMethod, Pure)
                     else {
-                        IntermediateResult(definedMethod, ImpureByAnalysis, Pure, dependees, c)
+                        InterimResult(definedMethod, ImpureByAnalysis, Pure, dependees, c)
                     }
 
                 case IntermediateEP(_, _, _) ⇒
                     dependees += eps
-                    IntermediateResult(definedMethod, ImpureByAnalysis, Pure, dependees, c)
+                    InterimResult(definedMethod, ImpureByAnalysis, Pure, dependees, c)
 
                 case FinalP(_, _: Purity) ⇒
                     // a called method is impure...
@@ -231,7 +231,7 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
             }
         }
 
-        IntermediateResult(definedMethod, ImpureByAnalysis, Pure, dependees, c)
+        InterimResult(definedMethod, ImpureByAnalysis, Pure, dependees, c)
     }
 
     def determinePurityStep1(definedMethod: DefinedMethod): PropertyComputationResult = {
@@ -276,8 +276,8 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
 
         def c(eps: SomeEOptionP): PropertyComputationResult = eps match {
             case FinalP(_, p)                   ⇒ Result(dm, p)
-            case ep @ IntermediateEP(_, lb, ub) ⇒ IntermediateResult(dm, lb, ub, Seq(ep), c)
-            case epk                            ⇒ IntermediateResult(dm, ImpureByAnalysis, CompileTimePure, Seq(epk), c)
+            case ep @ IntermediateEP(_, lb, ub) ⇒ InterimResult(dm, lb, ub, Seq(ep), c)
+            case epk                            ⇒ InterimResult(dm, ImpureByAnalysis, CompileTimePure, Seq(epk), c)
         }
 
         c(propertyStore(declaredMethods(dm.definedMethod), Purity.key))

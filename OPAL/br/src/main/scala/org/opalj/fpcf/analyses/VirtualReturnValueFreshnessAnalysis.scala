@@ -75,7 +75,7 @@ class VirtualReturnValueFreshnessAnalysis private[analyses] (
             if (dependees.isEmpty)
                 Result(m, temporary)
             else
-                IntermediateResult(m, VNoFreshReturnValue, temporary, dependees, c)
+                InterimResult(m, VNoFreshReturnValue, temporary, dependees, c)
         }
 
         def c(someEPS: SomeEPS): PropertyComputationResult = {

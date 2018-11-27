@@ -11,12 +11,12 @@ sealed abstract class PropertyComputationResult {
     private[fpcf] def id: Int
 
     private[fpcf] def isInterimResult: Boolean = false
-    private[fpcf] def asInterimResult: IntermediateResult[_ <: Property] = {
+    private[fpcf] def asInterimResult: InterimResult[_ <: Property] = {
         throw new ClassCastException();
     }
 
-    private[fpcf] def isSimplePIntermediateResult: Boolean = false
-    private[fpcf] def asSimplePIntermediateResult: SimplePIntermediateResult[_ <: Property] = {
+    private[fpcf] def isSimplePInterimResult: Boolean = false
+    private[fpcf] def asSimplePInterimResult: SimplePInterimResult[_ <: Property] = {
         throw new ClassCastException();
     }
 
@@ -100,7 +100,7 @@ object MultiResult { private[fpcf] final val id = 2 }
  *      result. Hence, it is possible to partition the set of entity / properties and to query
  *      each group one after another.
  *
- *      An `IntermediateResult` returned by an `OnUpdateContinuation` must contain the EPS given
+ *      An `InterimResult` returned by an `OnUpdateContinuation` must contain the EPS given
  *      to the continuation function or a newer EPS (i.e., an onUpdateContinuation is allowed
  *      to query the store again).
  *
@@ -119,7 +119,7 @@ object MultiResult { private[fpcf] final val id = 2 }
  * @note All elements on which the result declares to be dependent on must have been queried
  *      before (using one of the `apply` functions of the property store.)
  */
-case class IntermediateResult[P <: Property](
+case class InterimResult[P <: Property](
         e:         Entity,
         lb:        P,
         ub:        P,
@@ -154,16 +154,16 @@ case class IntermediateResult[P <: Property](
         }
     }
 
-    private[fpcf] final def id = IntermediateResult.id
+    private[fpcf] final def id = InterimResult.id
 
     private[fpcf] final override def isInterimResult: Boolean = true
-    private[fpcf] final override def asInterimResult: IntermediateResult[_ <: Property] = this
+    private[fpcf] final override def asInterimResult: InterimResult[_ <: Property] = this
 
     override def hashCode: Int = e.hashCode * 17 + dependees.hashCode
 
     override def equals(other: Any): Boolean = {
         other match {
-            case IntermediateResult(e, lb, ub, otherDependees, _, _) if (
+            case InterimResult(e, lb, ub, otherDependees, _, _) if (
                 this.e == e && this.lb == lb && this.ub == ub
             ) ⇒
                 val dependees = this.dependees
@@ -176,15 +176,15 @@ case class IntermediateResult[P <: Property](
     }
 
     override def toString: String = {
-        s"IntermediateResult($e@${System.identityHashCode(e).toHexString},lb=$lb,ub=$ub,"+
+        s"InterimResult($e@${System.identityHashCode(e).toHexString},lb=$lb,ub=$ub,"+
             s"dependees=${dependees.mkString("{", ",", "}")},c=$c)"
     }
 }
-object IntermediateResult {
+object InterimResult {
     private[fpcf] final val id = 3
 }
 
-case class SimplePIntermediateResult[P <: Property](
+case class SimplePInterimResult[P <: Property](
         e:         Entity,
         ub:        P,
         dependees: Traversable[SomeEOptionP],
@@ -206,16 +206,16 @@ case class SimplePIntermediateResult[P <: Property](
         }
     }
 
-    private[fpcf] final def id = SimplePIntermediateResult.id
+    private[fpcf] final def id = SimplePInterimResult.id
 
-    private[fpcf] final override def isSimplePIntermediateResult: Boolean = true
-    private[fpcf] final override def asSimplePIntermediateResult: SimplePIntermediateResult[_ <: Property] = this
+    private[fpcf] final override def isSimplePInterimResult: Boolean = true
+    private[fpcf] final override def asSimplePInterimResult: SimplePInterimResult[_ <: Property] = this
 
     override def hashCode: Int = e.hashCode * 33 + dependees.hashCode
 
     override def equals(other: Any): Boolean = {
         other match {
-            case SimplePIntermediateResult(e, ub, otherDependees, _, _) if this.e == e ⇒
+            case SimplePInterimResult(e, ub, otherDependees, _, _) if this.e == e ⇒
                 val dependees = this.dependees
                 dependees.size == otherDependees.size &&
                     dependees.forall(thisDependee ⇒ otherDependees.exists(_ == thisDependee))
@@ -226,11 +226,11 @@ case class SimplePIntermediateResult[P <: Property](
     }
 
     override def toString: String = {
-        s"SimplePIntermediateResult($e@${System.identityHashCode(e).toHexString},ub=$ub,"+
+        s"SimplePInterimResult($e@${System.identityHashCode(e).toHexString},ub=$ub,"+
             s"dependees=${dependees.mkString("{", ",", "}")},c=$c)"
     }
 }
-object SimplePIntermediateResult {
+object SimplePInterimResult {
     private[fpcf] final val id = 4
 }
 
@@ -253,10 +253,10 @@ object SimplePIntermediateResult {
  *       computation returns `IncrementalResult` objects.
  */
 case class IncrementalResult[E <: Entity](
-        result:                   PropertyComputationResult,
+        result:                   ProperPropertyComputationResult,
         nextComputations:         Iterator[(PropertyComputation[E], E)],
         propertyComputationsHint: PropertyComputationHint               = DefaultPropertyComputation
-) extends PropertyComputationResult {
+) extends ProperPropertyComputationResult {
 
     private[fpcf] final def id = IncrementalResult.id
 
@@ -270,7 +270,7 @@ object IncrementalResult { private[fpcf] final val id = 5 }
  */
 case class Results(
         results: TraversableOnce[ProperPropertyComputationResult]
-) extends PropertyComputationResult {
+) extends ProperPropertyComputationResult {
 
     private[fpcf] final def id = Results.id
 

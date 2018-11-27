@@ -878,7 +878,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         if (dependees.isEmpty || (state.lbPurity == state.ubPurity)) {
             Result(state.definedMethod, state.ubPurity)
         } else {
-            IntermediateResult(
+            InterimResult(
                 state.definedMethod,
                 state.lbPurity,
                 state.ubPurity,
@@ -956,7 +956,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         if (dependees.isEmpty || (state.lbPurity == state.ubPurity)) {
             Result(state.definedMethod, state.ubPurity)
         } else {
-            IntermediateResult(state.definedMethod, state.lbPurity, state.ubPurity, dependees, c)
+            InterimResult(state.definedMethod, state.lbPurity, state.ubPurity, dependees, c)
         }
     }
 
@@ -980,7 +980,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         val tacaiO = getTACAI(method)
 
         if (tacaiO.isEmpty)
-            return IntermediateResult(
+            return InterimResult(
                 definedMethod,
                 ImpureByAnalysis,
                 CompileTimePure,

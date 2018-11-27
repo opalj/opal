@@ -111,7 +111,7 @@ class VirtualMethodThrownExceptionsAnalysis private[analyses] (
                 Result(m, new ThrownExceptionsByOverridingMethods(exceptions))
             } else {
                 val result = new ThrownExceptionsByOverridingMethods(exceptions)
-                IntermediateResult(m, SomeException, result, dependees, c)
+                InterimResult(m, SomeException, result, dependees, c)
             }
         }
 
@@ -119,7 +119,7 @@ class VirtualMethodThrownExceptionsAnalysis private[analyses] (
             Result(m, new ThrownExceptionsByOverridingMethods(exceptions))
         } else {
             val result = new ThrownExceptionsByOverridingMethods(exceptions)
-            IntermediateResult(m, SomeException, result, dependees, c)
+            InterimResult(m, SomeException, result, dependees, c)
         }
     }
 }

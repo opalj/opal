@@ -361,7 +361,7 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
                 Result(t, maxLocalImmutability)
 
             } else {
-                IntermediateResult(
+                InterimResult(
                     t, minLocalImmutability, maxLocalImmutability,
                     dependees.values, c
                 )
@@ -370,7 +370,7 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
         }
 
         //[DEBUG] assert(initialImmutability.isRefinable)
-        val result = IntermediateResult(
+        val result = InterimResult(
             t, minLocalImmutability, maxLocalImmutability,
             dependees.values, c
         )

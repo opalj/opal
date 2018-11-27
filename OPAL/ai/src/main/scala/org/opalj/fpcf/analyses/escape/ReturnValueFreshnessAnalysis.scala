@@ -135,12 +135,12 @@ class ReturnValueFreshnessAnalysis private[analyses] (
             ): PropertyComputationResult = eOptP match {
                 case FinalP(_, p) ⇒ Result(e, p)
                 case IntermediateEP(_, lb, ub) ⇒
-                    IntermediateResult(
+                    InterimResult(
                         e, lb, ub,
                         Set(eOptP), handleReturnValueFreshness, CheapPropertyComputation
                     )
                 case _ ⇒
-                    IntermediateResult(
+                    InterimResult(
                         e, NoFreshReturnValue, FreshReturnValue,
                         Set(eOptP), handleReturnValueFreshness, CheapPropertyComputation
                     )
@@ -173,7 +173,7 @@ class ReturnValueFreshnessAnalysis private[analyses] (
         val codeO = getTACAICode(m)
 
         if (codeO.isEmpty)
-            return IntermediateResult(
+            return InterimResult(
                 dm,
                 NoFreshReturnValue,
                 FreshReturnValue,
@@ -490,7 +490,7 @@ class ReturnValueFreshnessAnalysis private[analyses] (
 
     def returnResult(implicit state: ReturnValueFreshnessState): PropertyComputationResult = {
         if (state.hasDependees)
-            IntermediateResult(
+            InterimResult(
                 state.dm,
                 NoFreshReturnValue,
                 state.ubRVF,

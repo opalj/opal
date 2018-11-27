@@ -245,7 +245,7 @@ final class PKESequentialPropertyStore private (
                     // computation is already scheduled (if available).
                     // Recall that it is a strict requirement that a
                     // dependee which is listed in the set of dependees
-                    // of an IntermediateResult must have been queried;
+                    // of an InterimResult must have been queried;
                     // however the sequential store does not create the
                     // data-structure eagerly!
                     if (debug && ub == null && lazyComputations(pkId) != null) {
@@ -364,7 +364,7 @@ final class PKESequentialPropertyStore private (
                 // The entity is unknown (=> there are no dependers/dependees):
                 ps(pkId).put(e, PropertyValue(lb, ub, newDependees))
                 triggerComputations(e, pkId)
-                // registration with the new dependees is done when processing IntermediateResult
+                // registration with the new dependees is done when processing InterimResult
                 true
 
             case Some(pValue: IntermediatePropertyValue) ⇒
@@ -541,8 +541,8 @@ final class PKESequentialPropertyStore private (
                 val newEPSOption = u.asInstanceOf[EOptionP[E, P] ⇒ Option[EPS[E, P]]](eOptionP)
                 newEPSOption foreach { newEPS ⇒ update(e, newEPS.lb, newEPS.ub, Nil) }
 
-            case IntermediateResult.id ⇒
-                val IntermediateResult(e, lb, ub, newDependees, c, _) = r
+            case InterimResult.id ⇒
+                val InterimResult(e, lb, ub, newDependees, c, _) = r
 
                 def checkNonFinal(dependee: SomeEOptionP): Unit = {
                     if (dependee.isFinal) {

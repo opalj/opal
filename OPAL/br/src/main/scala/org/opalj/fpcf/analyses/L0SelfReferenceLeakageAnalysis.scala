@@ -188,14 +188,14 @@ class L0SelfReferenceLeakageAnalysis(
             if (dependees.isEmpty) {
                 determineSelfReferenceLeakageContinuation(classFile)
             } else {
-                IntermediateResult(classType, lb, ub, dependees.values, c)
+                InterimResult(classType, lb, ub, dependees.values, c)
             }
         }
 
         if (dependees.isEmpty) {
             determineSelfReferenceLeakageContinuation(classFile)
         } else {
-            IntermediateResult(
+            InterimResult(
                 classFile,
                 lb = LeaksSelfReference, ub = DoesNotLeakSelfReference,
                 dependees.values,

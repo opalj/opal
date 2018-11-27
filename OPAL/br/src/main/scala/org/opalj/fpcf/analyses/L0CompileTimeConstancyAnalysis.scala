@@ -57,7 +57,7 @@ class L0CompileTimeConstancyAnalysis private[analyses] ( final val project: Some
 
                 case IntermediateEP(_, _, _) ⇒
                     dependee = eps
-                    IntermediateResult(
+                    InterimResult(
                         field,
                         CompileTimeVaryingField,
                         CompileTimeConstantField,
@@ -68,7 +68,7 @@ class L0CompileTimeConstancyAnalysis private[analyses] ( final val project: Some
             }
         }
 
-        IntermediateResult(
+        InterimResult(
             field,
             CompileTimeVaryingField,
             CompileTimeConstantField,

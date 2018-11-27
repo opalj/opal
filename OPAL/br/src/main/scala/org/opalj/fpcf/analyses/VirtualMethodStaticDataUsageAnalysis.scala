@@ -78,7 +78,7 @@ class VirtualMethodStaticDataUsageAnalysis private[analyses] (
             if (dependees.isEmpty) {
                 Result(dm, maxLevel.aggregatedProperty)
             } else {
-                IntermediateResult(
+                InterimResult(
                     dm, VUsesVaryingData, maxLevel.aggregatedProperty,
                     dependees, c
                 )
@@ -88,7 +88,7 @@ class VirtualMethodStaticDataUsageAnalysis private[analyses] (
         if (dependees.isEmpty) {
             Result(dm, maxLevel.aggregatedProperty)
         } else {
-            IntermediateResult(
+            InterimResult(
                 dm, VUsesVaryingData, maxLevel.aggregatedProperty,
                 dependees, c
             )

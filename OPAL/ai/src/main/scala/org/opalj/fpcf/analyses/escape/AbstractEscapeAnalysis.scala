@@ -72,7 +72,7 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
         if (state.tacai.isDefined) {
             analyzeTAC()
         } else {
-            IntermediateResult(
+            InterimResult(
                 context.entity, GlobalEscape, NoEscape, state.dependees, continuation
             )
         }
@@ -362,7 +362,7 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
      * This method is called, after the entity has been analyzed. If there is no dependee left or
      * the entity escapes globally, the result is returned directly.
      * Otherwise, the `maybe` version of the current escape state is returned as
-     * [[IntermediateResult]].
+     * [[InterimResult]].
      */
     protected[this] def returnResult(
         implicit
@@ -373,13 +373,13 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
         if (state.dependees.isEmpty || state.mostRestrictiveProperty.isBottom) {
             // that is, mostRestrictiveProperty is an AtMost
             if (state.mostRestrictiveProperty.isInstanceOf[AtMost]) {
-                //TODO IntermediateResult(context.entity, GlobalEscape, state.mostRestrictiveProperty, Seq.empty, continuation)
+                //TODO InterimResult(context.entity, GlobalEscape, state.mostRestrictiveProperty, Seq.empty, continuation)
                 Result(context.entity, state.mostRestrictiveProperty)
             } else {
                 Result(context.entity, state.mostRestrictiveProperty)
             }
         } else {
-            IntermediateResult(
+            InterimResult(
                 context.entity,
                 GlobalEscape, state.mostRestrictiveProperty,
                 state.dependees, continuation

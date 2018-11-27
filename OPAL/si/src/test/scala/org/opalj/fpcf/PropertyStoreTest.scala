@@ -67,7 +67,7 @@ sealed abstract class PropertyStoreTest(
                     ps.isSuspended = () ⇒ true
                     val dependee = EPK("d", Palindromes.PalindromeKey)
                     ps(dependee) // we use a fake dependency...
-                    IntermediateResult(
+                    InterimResult(
                         "a",
                         NoPalindrome,
                         Palindrome,
@@ -112,7 +112,7 @@ sealed abstract class PropertyStoreTest(
                 ps.scheduleEagerComputationForEntity("a") { e ⇒
                     val dependees = Seq(EPK("d", Palindromes.PalindromeKey), EPK("e", Palindromes.PalindromeKey))
                     dependees.foreach(ps(_)) // we use a fake dependency...
-                    IntermediateResult(
+                    InterimResult(
                         "a",
                         NoPalindrome,
                         Palindrome,
@@ -171,7 +171,7 @@ sealed abstract class PropertyStoreTest(
                     ps.isSuspended = () ⇒ true
                     val dependee = EPK("d", Palindromes.PalindromeKey)
                     ps[String, Palindromes.PalindromeProperty](dependee) // we use a fake dependency...
-                    IntermediateResult(
+                    InterimResult(
                         "a",
                         NoPalindrome, Palindrome,
                         Seq(dependee),
@@ -282,7 +282,7 @@ sealed abstract class PropertyStoreTest(
                             case FinalP(_, NoAnalysisForPalindromeProperty) /*<= the test...*/ ⇒
                                 Result(e, Marker.NotMarked)
                             case epk: SomeEPK ⇒
-                                IntermediateResult(e, Marker.IsMarked, Marker.NotMarked, List(epk), c)
+                                InterimResult(e, Marker.IsMarked, Marker.NotMarked, List(epk), c)
                         }
                     }
                     c(ps(e, Palindromes.PalindromeKey))
@@ -317,7 +317,7 @@ sealed abstract class PropertyStoreTest(
                             case FinalP(_, PalindromePropertyNotAnalyzed) ⇒
                                 Result(e, Marker.NotMarked)
 
-                            case epk: SomeEPK ⇒ IntermediateResult(
+                            case epk: SomeEPK ⇒ InterimResult(
                                 e, Marker.IsMarked, Marker.NotMarked, List(epk), c
                             )
                         }
@@ -475,7 +475,7 @@ sealed abstract class PropertyStoreTest(
                         val initialsExpectedEP = EPK(e, ppk)
                         ps(e, ppk) should be(initialsExpectedEP)
 
-                        IntermediateResult(
+                        InterimResult(
                             e, NoSuperPalindrome, SuperPalindrome,
                             Seq(initialsExpectedEP),
                             (eps) ⇒ {
@@ -491,7 +491,7 @@ sealed abstract class PropertyStoreTest(
                 ps.scheduleEagerComputationForEntity("e") { e: String ⇒
                     val initiallyExpectedEP = EPK("e", sppk)
                     ps("e", sppk) should be(initiallyExpectedEP)
-                    IntermediateResult(
+                    InterimResult(
                         "e", Marker.NotMarked, Marker.IsMarked,
                         Seq(initiallyExpectedEP),
                         eps ⇒ {
@@ -502,7 +502,7 @@ sealed abstract class PropertyStoreTest(
                                 else
                                     Result(e, Marker.NotMarked)
                             } else
-                                IntermediateResult(
+                                InterimResult(
                                     "e", Marker.NotMarked, Marker.IsMarked,
                                     Seq(eps),
                                     (eps) ⇒ {
@@ -667,7 +667,7 @@ sealed abstract class PropertyStoreTest(
                         }
                         val r = {
                             if (dependeePs.nonEmpty)
-                                IntermediateResult(n, AllNodes, newUB, dependeePs, c, pch)
+                                InterimResult(n, AllNodes, newUB, dependeePs, c, pch)
                             else
                                 Result(n, newUB)
                         }
@@ -687,7 +687,7 @@ sealed abstract class PropertyStoreTest(
                     if (dependeePs.isEmpty)
                         Result(n, currentReachableNodes)
                     else
-                        IntermediateResult(n, AllNodes, currentReachableNodes, dependeePs, c, pch)
+                        InterimResult(n, AllNodes, currentReachableNodes, dependeePs, c, pch)
                 }
 
                 def reachableNodesCountAnalysis(ps: PropertyStore)(
@@ -704,7 +704,7 @@ sealed abstract class PropertyStoreTest(
                                     Result(n, TooManyNodesReachable)
                                 else {
                                     dependees = eps :: dependees.filter(_.e ne eps.e)
-                                    IntermediateResult(
+                                    InterimResult(
                                         n, TooManyNodesReachable, ReachableNodesCount(ub),
                                         dependees,
                                         c,
@@ -720,7 +720,7 @@ sealed abstract class PropertyStoreTest(
                                     Result(n, ReachableNodesCount(ub))
                                 } else {
                                     dependees = dependees.filter(_.e ne eps.e)
-                                    IntermediateResult(
+                                    InterimResult(
                                         n, TooManyNodesReachable, ReachableNodesCount(ub),
                                         dependees,
                                         c,
@@ -759,7 +759,7 @@ sealed abstract class PropertyStoreTest(
                     else if (dependees.isEmpty)
                         Result(n, ReachableNodesCount(ub))
                     else
-                        IntermediateResult(
+                        InterimResult(
                             n, TooManyNodesReachable, ReachableNodesCount(ub),
                             dependees,
                             c, pch
@@ -773,7 +773,7 @@ sealed abstract class PropertyStoreTest(
                     def c(eps: SomeEOptionP): PropertyComputationResult = {
                         eps match {
                             case eps @ IntermediateEP(_, _, ReachableNodes(reachableNodes)) ⇒
-                                IntermediateResult(
+                                InterimResult(
                                     n, TooManyNodesReachable, ReachableNodesCount(reachableNodes.size),
                                     List(eps),
                                     c, pch
@@ -786,7 +786,7 @@ sealed abstract class PropertyStoreTest(
 
                     ps(n, ReachableNodes.Key) match {
                         case epk: EPK[_, _] ⇒
-                            IntermediateResult(
+                            InterimResult(
                                 n, TooManyNodesReachable, ReachableNodesCount(0),
                                 List(epk),
                                 c, pch
@@ -1100,7 +1100,7 @@ sealed abstract class PropertyStoreTest(
                 ps.scheduleEagerComputationForEntity("aaa") { s: String ⇒
                     ps("a", ppk) match {
                         case epk: EPK[_, _] ⇒
-                            IntermediateResult(
+                            InterimResult(
                                 s, NoPalindrome, Palindrome,
                                 List(epk),
                                 (eps: SomeEPS) ⇒ {
@@ -1149,10 +1149,10 @@ sealed abstract class PropertyStoreTest(
                             successorNode match {
 
                                 case epk: EPK[_, _] ⇒
-                                    IntermediateResult(node, Impure, Pure, Iterable(epk), c, pch)
+                                    InterimResult(node, Impure, Pure, Iterable(epk), c, pch)
 
                                 case eps @ IntermediateEP(_, lb, ub) ⇒
-                                    IntermediateResult(node, lb, ub, Iterable(eps), c, pch)
+                                    InterimResult(node, lb, ub, Iterable(eps), c, pch)
 
                                 // required when we resolve the cycle
                                 case FinalP(_, Pure)              ⇒ Result(node, Pure)
@@ -1204,7 +1204,7 @@ abstract class PropertyStoreTestWithDebugging(
 
         describe(s"the property store with debugging support and $pch") {
 
-            it("should catch IntermediateResults with inverted property bounds") {
+            it("should catch InterimResults with inverted property bounds") {
                 assert(PropertyStore.Debug, "debugging is turned off") // test the pre-state
 
                 val nodeA = Node("a")
@@ -1217,7 +1217,7 @@ abstract class PropertyStoreTestWithDebugging(
 
                 def aAnalysis(ignored: Node): PropertyComputationResult = {
                     val bEOptionP = ps(nodeB, ReachableNodesCount.Key)
-                    IntermediateResult(
+                    InterimResult(
                         nodeA, ReachableNodesCount(10), ReachableNodesCount(20), List(bEOptionP),
                         (bStringEOptionP: SomeEOptionP) ⇒ ???,
                         pch
@@ -1256,7 +1256,7 @@ abstract class PropertyStoreTestWithDebugging(
                         case `nodeA` ⇒
                             Result(nodeA, ReachableNodesCount(50))
                         case `nodeB` ⇒
-                            IntermediateResult(
+                            InterimResult(
                                 n,
                                 ReachableNodesCount(100), // <= invalid refinement of lower bound!
                                 ReachableNodesCount(count),
@@ -1269,7 +1269,7 @@ abstract class PropertyStoreTestWithDebugging(
                 def lazyAnalysis(n: Node): PropertyComputationResult = n match {
                     case `nodeA` ⇒
                         val bEOptionP = ps(nodeB, ReachableNodesCount.Key)
-                        IntermediateResult(
+                        InterimResult(
                             nodeA, ReachableNodesCount(20), ReachableNodesCount(0),
                             List(bEOptionP),
                             c(nodeA), pch
@@ -1278,7 +1278,7 @@ abstract class PropertyStoreTestWithDebugging(
                     case `nodeB` ⇒
                         val cEOptionP = ps(nodeC, ReachableNodesCount.Key)
                         count += 1
-                        IntermediateResult(
+                        InterimResult(
                             n, ReachableNodesCount(100 - count), ReachableNodesCount(count),
                             List(cEOptionP),
                             c(nodeB), pch
@@ -1326,7 +1326,7 @@ abstract class PropertyStoreTestWithDebugging(
                         case `nodeA` ⇒
                             Result(nodeA, ReachableNodesCount(50))
                         case `nodeB` ⇒
-                            IntermediateResult(
+                            InterimResult(
                                 n,
                                 ReachableNodesCount(100 - count),
                                 ReachableNodesCount(0), // <= invalid refinement of upper bound!
@@ -1339,7 +1339,7 @@ abstract class PropertyStoreTestWithDebugging(
                 def lazyAnalysis(n: Node): PropertyComputationResult = n match {
                     case `nodeA` ⇒
                         val bEOptionP = ps(nodeB, ReachableNodesCount.Key)
-                        IntermediateResult(
+                        InterimResult(
                             nodeA, ReachableNodesCount(20), ReachableNodesCount(0),
                             List(bEOptionP),
                             c(nodeA), pch
@@ -1348,7 +1348,7 @@ abstract class PropertyStoreTestWithDebugging(
                     case `nodeB` ⇒
                         val cEOptionP = ps(nodeC, ReachableNodesCount.Key)
                         count += 1
-                        IntermediateResult(
+                        InterimResult(
                             n, ReachableNodesCount(100 - count), ReachableNodesCount(10),
                             List(cEOptionP),
                             c(nodeB), pch
@@ -1395,7 +1395,7 @@ abstract class PropertyStoreTestWithDebugging(
                         case `nodeA` ⇒
                             new Result(nodeA, ReachableNodesCount(50))
                         case `nodeB` ⇒
-                            IntermediateResult(
+                            InterimResult(
                                 n,
                                 ReachableNodesCount(40),
                                 ReachableNodesCount(50),
@@ -1408,7 +1408,7 @@ abstract class PropertyStoreTestWithDebugging(
                 def lazyAnalysis(n: Node): PropertyComputationResult = n match {
                     case `nodeA` ⇒
                         val bEOptionP = ps(nodeB, ReachableNodesCount.Key)
-                        IntermediateResult(
+                        InterimResult(
                             nodeA, ReachableNodesCount(20), ReachableNodesCount(0),
                             List(bEOptionP),
                             c(nodeA), pch
@@ -1417,7 +1417,7 @@ abstract class PropertyStoreTestWithDebugging(
                     case `nodeB` ⇒
                         val cEOptionP = ps(nodeC, ReachableNodesCount.Key)
                         count += 1
-                        IntermediateResult(
+                        InterimResult(
                             n, ReachableNodesCount(100 - count), ReachableNodesCount(10),
                             List(cEOptionP),
                             c(nodeB), pch

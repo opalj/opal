@@ -37,9 +37,9 @@ class L0AllocationFreenessAnalysis private[analyses] ( final val project: SomePr
         def c(eps: SomeEOptionP): PropertyComputationResult = eps match {
             case FinalP(_, af) ⇒ Result(dm, af)
             case ep @ IntermediateEP(_, lb, ub) ⇒
-                IntermediateResult(dm, lb, ub, Seq(ep), c, CheapPropertyComputation)
+                InterimResult(dm, lb, ub, Seq(ep), c, CheapPropertyComputation)
             case epk ⇒
-                IntermediateResult(
+                InterimResult(
                     dm, MethodWithAllocations, AllocationFreeMethod,
                     Seq(epk), c, CheapPropertyComputation
                 )
@@ -197,7 +197,7 @@ class L0AllocationFreenessAnalysis private[analyses] ( final val project: SomePr
                     if (dependees.isEmpty)
                         Result(definedMethod, AllocationFreeMethod)
                     else {
-                        IntermediateResult(
+                        InterimResult(
                             definedMethod,
                             MethodWithAllocations,
                             AllocationFreeMethod,
@@ -211,7 +211,7 @@ class L0AllocationFreenessAnalysis private[analyses] ( final val project: SomePr
 
                 case _: IntermediateEP[_, _] ⇒
                     dependees += eps
-                    IntermediateResult(
+                    InterimResult(
                         definedMethod,
                         MethodWithAllocations,
                         AllocationFreeMethod,
@@ -221,7 +221,7 @@ class L0AllocationFreenessAnalysis private[analyses] ( final val project: SomePr
             }
         }
 
-        IntermediateResult(
+        InterimResult(
             definedMethod, MethodWithAllocations, AllocationFreeMethod,
             dependees, c
         )

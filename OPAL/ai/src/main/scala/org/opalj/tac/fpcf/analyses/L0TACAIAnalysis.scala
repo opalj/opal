@@ -25,7 +25,7 @@ import org.opalj.ai.fpcf.properties.AnAIResult
 import org.opalj.ai.fpcf.properties.BaseAIResult
 import org.opalj.fpcf.EPK
 import org.opalj.fpcf.IntermediateEP
-import org.opalj.fpcf.IntermediateResult
+import org.opalj.fpcf.InterimResult
 import org.opalj.ai.fpcf.analyses.L0BaseAIResultAnalysis
 import org.opalj.ai.fpcf.properties.NoAIResult
 import org.opalj.tac.{TACAI ⇒ TACAIFactory}
@@ -79,7 +79,7 @@ class L0TACAIAnalysis private[analyses] (val project: SomeProject) extends FPCFA
                         computeTheTACAI(m, initialUBAIResult)
                     }
 
-                IntermediateResult(
+                InterimResult(
                     m,
                     newLB,
                     newUB,
@@ -90,7 +90,7 @@ class L0TACAIAnalysis private[analyses] (val project: SomeProject) extends FPCFA
             case epk: EPK[_, _] ⇒
                 val aiResult = L0BaseAIResultAnalysis.performAI(aiFactory, m)
 
-                IntermediateResult(
+                InterimResult(
                     m,
                     computeTheTACAI(m, aiResult),
                     NoTACAI,

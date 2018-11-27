@@ -217,7 +217,7 @@ class L1FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
         if (state.tacDependees.isEmpty && state.escapeDependees.isEmpty)
             Result(state.field, EffectivelyFinalField)
         else
-            IntermediateResult(
+            InterimResult(
                 state.field,
                 NonFinalFieldByAnalysis,
                 EffectivelyFinalField,

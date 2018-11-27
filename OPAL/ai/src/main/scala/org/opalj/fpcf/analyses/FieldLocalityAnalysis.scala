@@ -573,7 +573,7 @@ class FieldLocalityAnalysis private[analyses] (
         if (state.hasNoDependees)
             Result(state.field, state.temporaryState)
         else
-            IntermediateResult(
+            InterimResult(
                 state.field,
                 NoLocalField,
                 state.temporaryState,

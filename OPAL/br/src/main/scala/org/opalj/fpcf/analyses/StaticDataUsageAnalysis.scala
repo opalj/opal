@@ -42,12 +42,12 @@ class StaticDataUsageAnalysis private[analyses] ( final val project: SomeProject
         def c(eps: SomeEOptionP): PropertyComputationResult = eps match {
             case FinalP(_, sdu) ⇒ Result(dm, sdu)
             case ep @ IntermediateEP(_, lb, ub) ⇒
-                IntermediateResult(
+                InterimResult(
                     dm, lb, ub,
                     Seq(ep), c, CheapPropertyComputation
                 )
             case epk ⇒
-                IntermediateResult(
+                InterimResult(
                     dm, UsesVaryingData, UsesNoStaticData,
                     Seq(epk), c, CheapPropertyComputation
                 )
@@ -173,7 +173,7 @@ class StaticDataUsageAnalysis private[analyses] ( final val project: SomeProject
                     if (dependees.isEmpty)
                         Result(definedMethod, maxLevel)
                     else {
-                        IntermediateResult(
+                        InterimResult(
                             definedMethod, UsesVaryingData, maxLevel,
                             dependees, c, CheapPropertyComputation
                         )
@@ -185,7 +185,7 @@ class StaticDataUsageAnalysis private[analyses] ( final val project: SomeProject
                     if (dependees.isEmpty)
                         Result(definedMethod, maxLevel)
                     else {
-                        IntermediateResult(
+                        InterimResult(
                             definedMethod, UsesVaryingData, maxLevel,
                             dependees, c, CheapPropertyComputation
                         )
@@ -196,21 +196,21 @@ class StaticDataUsageAnalysis private[analyses] ( final val project: SomeProject
                 case IntermediateEP(_, _, UsesConstantDataOnly) ⇒
                     maxLevel = UsesConstantDataOnly
                     dependees += eps
-                    IntermediateResult(
+                    InterimResult(
                         definedMethod, UsesVaryingData, maxLevel,
                         dependees, c, CheapPropertyComputation
                     )
 
                 case IntermediateEP(_, _, _) ⇒
                     dependees += eps
-                    IntermediateResult(
+                    InterimResult(
                         definedMethod, UsesVaryingData, maxLevel,
                         dependees, c, CheapPropertyComputation
                     )
             }
         }
 
-        IntermediateResult(
+        InterimResult(
             definedMethod, UsesVaryingData, maxLevel,
             dependees, c, CheapPropertyComputation
         )
