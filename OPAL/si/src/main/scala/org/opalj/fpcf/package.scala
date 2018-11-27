@@ -2,6 +2,7 @@
 package org.opalj
 
 import org.opalj.log.GlobalLogContext
+import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.info
 
 /**
@@ -44,7 +45,7 @@ package object fpcf {
 
     {
         // Log the information whether a production build or a development build is used.
-        implicit val logContext = GlobalLogContext
+        implicit val logContext : LogContext = GlobalLogContext
         try {
             assert(false)
             // when we reach this point assertions are turned off
@@ -88,7 +89,7 @@ package object fpcf {
 
     final type SomePropertyComputation = PropertyComputation[_ <: Entity]
 
-    final type OnUpdateContinuation = SomeEPS ⇒ PropertyComputationResult
+    final type OnUpdateContinuation = SomeEPS ⇒ ProperPropertyComputationResult
 
     /**
      * The [[FallbackReason]] specifies the reason why a fallback property is required. This

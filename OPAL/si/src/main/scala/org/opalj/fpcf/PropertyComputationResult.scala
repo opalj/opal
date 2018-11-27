@@ -10,8 +10,8 @@ sealed abstract class PropertyComputationResult {
 
     private[fpcf] def id: Int
 
-    private[fpcf] def isIntermediateResult: Boolean = false
-    private[fpcf] def asIntermediateResult: IntermediateResult[_ <: Property] = {
+    private[fpcf] def isInterimResult: Boolean = false
+    private[fpcf] def asInterimResult: IntermediateResult[_ <: Property] = {
         throw new ClassCastException();
     }
 
@@ -32,6 +32,8 @@ object NoResult extends PropertyComputationResult {
     private[fpcf] final val id = 0
 }
 
+trait ProperPropertyComputationResult extends PropertyComputationResult
+
 /**
  * Encapsulates the final result of the computation of a property. I.e., the analysis
  * determined that the computed property will not be updated in the future.
@@ -44,7 +46,7 @@ object NoResult extends PropertyComputationResult {
  *         to the property store the behavior is undefined and may/will result in immediate and/or
  *         deferred failures!
  */
-sealed abstract class FinalPropertyComputationResult extends PropertyComputationResult
+sealed abstract class FinalPropertyComputationResult extends ProperPropertyComputationResult
 
 /**
  * Encapsulates the '''final result''' of the computation of the property `p` for the given
@@ -124,7 +126,7 @@ case class IntermediateResult[P <: Property](
         dependees: Traversable[SomeEOptionP],
         c:         OnUpdateContinuation,
         hint:      PropertyComputationHint   = DefaultPropertyComputation
-) extends PropertyComputationResult {
+) extends ProperPropertyComputationResult {
 
     if (PropertyStore.Debug) {
         if (lb == ub) {
@@ -154,8 +156,8 @@ case class IntermediateResult[P <: Property](
 
     private[fpcf] final def id = IntermediateResult.id
 
-    private[fpcf] final override def isIntermediateResult: Boolean = true
-    private[fpcf] final override def asIntermediateResult: IntermediateResult[_ <: Property] = this
+    private[fpcf] final override def isInterimResult: Boolean = true
+    private[fpcf] final override def asInterimResult: IntermediateResult[_ <: Property] = this
 
     override def hashCode: Int = e.hashCode * 17 + dependees.hashCode
 
@@ -267,7 +269,7 @@ object IncrementalResult { private[fpcf] final val id = 5 }
  * e/pk pairs for which it contains results.
  */
 case class Results(
-        results: TraversableOnce[PropertyComputationResult]
+        results: TraversableOnce[ProperPropertyComputationResult]
 ) extends PropertyComputationResult {
 
     private[fpcf] final def id = Results.id
@@ -277,7 +279,7 @@ object Results {
 
     private[fpcf] final val id = 6
 
-    def apply(results: PropertyComputationResult*): Results = new Results(results)
+    def apply(results: ProperPropertyComputationResult*): Results = new Results(results)
 }
 
 /**
@@ -302,7 +304,7 @@ case class PartialResult[E >: Null <: Entity, P >: Null <: Property](
         e:  E,
         pk: PropertyKey[P],
         u:  EOptionP[E, P] ⇒ Option[EPS[E, P]]
-) extends PropertyComputationResult {
+) extends ProperPropertyComputationResult {
 
     private[fpcf] final def id = PartialResult.id
 
@@ -321,4 +323,4 @@ private[fpcf] case class IdempotentResult(
     private[fpcf] final def id = IdempotentResult.id
 
 }
-private[fpcf] object IdempotentResult { private[fpcf] final val id = 10 }
+private[fpcf] object IdempotentResult { private[fpcf] final val id = 8 }
