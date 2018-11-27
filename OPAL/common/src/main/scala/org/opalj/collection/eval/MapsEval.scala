@@ -27,7 +27,6 @@ import org.opalj.util.PerformanceEvaluation.time
  * immutable HashMap.get: 1,8304 s
  * immutable TreeMap.get: 19,0907 s
  * </pre>
- *
  */
 object MapsEval extends App {
 
