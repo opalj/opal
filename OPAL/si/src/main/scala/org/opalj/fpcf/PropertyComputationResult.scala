@@ -315,25 +315,6 @@ object PartialResult { private[fpcf] final val id = 7 }
  *
 \**************************************************************************************************/
 
-private[fpcf] case class ExternalResult(
-        e: Entity,
-        p: Property
-) extends FinalPropertyComputationResult {
-
-    private[fpcf] final def id = ExternalResult.id
-
-}
-private[fpcf] object ExternalResult { private[fpcf] final val id = 8 }
-
-private[fpcf] case class CSCCsResult(
-        csccs: List[Iterable[SomeEPK]]
-) extends FinalPropertyComputationResult {
-
-    private[fpcf] final def id = CSCCsResult.id
-
-}
-private[fpcf] object CSCCsResult { private[fpcf] final val id = 9 }
-
 private[fpcf] case class IdempotentResult(
         finalP: SomeFinalP
 ) extends FinalPropertyComputationResult {
