@@ -119,7 +119,7 @@ final class PKECPropertyStore private (
 
     def shutdown(): Unit = store.pool.shutdown()
 
-    override def scheduleEagerComputationForEntity[E <: Entity](
+    override def doScheduleEagerComputationForEntity[E <: Entity](
         e: E
     )(
         pc: PropertyComputation[E]
@@ -127,17 +127,17 @@ final class PKECPropertyStore private (
         store.pool.execute(new ExecuteComputation(e, pc))
     }
 
-    override def registerTriggeredComputation[E <: Entity, P <: Property](
+    override def doRegisterTriggeredComputation[E <: Entity, P <: Property](
         pk: PropertyKey[P],
         pc: PropertyComputation[E]
     ): Unit = {
+        // Let's check if we need to trigger it right away due to already existing values...
         ???
     }
 
-    override def registerLazyPropertyComputation[E <: Entity, P <: Property](
+    override def doRegisterLazyPropertyComputation[E <: Entity, P <: Property](
         pk:       PropertyKey[P],
-        pc:       PropertyComputation[E],
-        finalPs: TraversableOnce[FinalP[E, P]]
+        pc:       PropertyComputation[E]
     ): Unit = {
         ???
     }
@@ -151,13 +151,17 @@ final class PKECPropertyStore private (
 
     override def force[E <: Entity, P <: Property](e: E, pk: PropertyKey[P]): Unit = this(e, pk)
 
-    override def set(e: Entity, p: Property): Unit = {
-        if (debug && lazyComputations(p.key.id) != null) {
-            throw new IllegalStateException(
-                s"$e: setting $p is not supported; lazy computation is (already) registered"
-            )
-        }
-        handleResult(ExternalResult(e, p))
+    override def doSet(e: Entity, p: Property): Unit = {
+        ???
+    }
+
+    override def doPreInitialize[E <: Entity, P <: Property](
+                                                                e: E,
+                                                                pk: PropertyKey[P]
+                                                            )(
+        pc: EOptionP[E, P] ⇒ EPS[E, P]
+    ): Unit = {
+        ???
     }
 
     override def apply[E <: Entity, P <: Property](e: E, pk: PropertyKey[P]): EOptionP[E, P] = {
@@ -311,21 +315,6 @@ final class PKECPropertyStore private (
                         else
                             updateAndNotifyForRegularP(newEPS.e, newEPS.lb, newEPS.ub, pcrs = pcrs)
                     }
-
-                case ExternalResult.id ⇒
-                    val ExternalResult(e, p) = r
-                    if (debug) {
-                        val pkId = p.id
-                        val oldP = properties(pkId).get(e)
-                        if (oldP != null) {
-                            throw new IllegalStateException(s"$e: already has a property $oldP")
-                        }
-                        if (dependees(pkId).containsKey(e)) {
-                            throw new IllegalStateException(s"$e: is already computed/has dependees")
-                        }
-                    }
-                    forceDependersNotifications -= EPK(e, p)
-                    finalUpdate(e, p, pcrs)
 
                 case IntermediateResult.id ⇒
                     val IntermediateResult(e, lb, ub, seenDependees, c, onUpdateContinuationHint) = r
@@ -586,5 +575,5 @@ trait State {
 }
 
 case class FinalState(eps: SomeEPS) extends State {
-
+ ???
 }
