@@ -21,11 +21,7 @@ import org.opalj.fpcf.PropertyKey.fastTrackPropertyBasedOnPKId
 import org.opalj.fpcf.PropertyKey.computeFastTrackPropertyBasedOnPKId
 
 /**
- * A non-concurrent implementation of the property store. Entities are generally only stored on
- * demand. I.e.,
- *  - they have a property OR
- *  - a computation is already scheduled that will compute the property OR
- *  - we have a `depender`.
+ * A non-concurrent implementation of the property store.
  *
  * @author Michael Eichberg
  */
