@@ -681,9 +681,9 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
         method: Method
     )(implicit state: StateType): Option[TACode[TACMethodParameter, V]] = {
         propertyStore(method, TACAI.key) match {
-            case finalEP: FinalP[Method, TACAI] ⇒
-                handleTACAI(finalEP)
-                finalEP.ub.tac
+            case finalP: FinalP[Method, TACAI] ⇒
+                handleTACAI(finalP)
+                finalP.ub.tac
             case eps: IntermediateEP[Method, TACAI] ⇒
                 reducePurityLB(ImpureByAnalysis)
                 handleTACAI(eps)

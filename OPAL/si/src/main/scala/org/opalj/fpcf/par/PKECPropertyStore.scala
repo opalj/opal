@@ -137,7 +137,7 @@ final class PKECPropertyStore private (
     override def registerLazyPropertyComputation[E <: Entity, P <: Property](
         pk:       PropertyKey[P],
         pc:       PropertyComputation[E],
-        finalEPs: TraversableOnce[FinalEP[E, P]]
+        finalPs: TraversableOnce[FinalP[E, P]]
     ): Unit = {
         ???
     }
@@ -247,7 +247,7 @@ final class PKECPropertyStore private (
                     }
 
                 case IdempotentResult.id ⇒
-                    val IdempotentResult(ep @ FinalEP(e, p)) = r
+                    val IdempotentResult(ep @ FinalP(e, p)) = r
                     val pkId = p.key.id
                     val epk = ep.toEPK
                     val propertiesOfEntity = properties(pkId)

@@ -335,7 +335,7 @@ private[fpcf] case class CSCCsResult(
 private[fpcf] object CSCCsResult { private[fpcf] final val id = 9 }
 
 private[fpcf] case class IdempotentResult(
-        finalEP: SomeFinalP
+        finalP: SomeFinalP
 ) extends FinalPropertyComputationResult {
     private[fpcf] final def id = IdempotentResult.id
 

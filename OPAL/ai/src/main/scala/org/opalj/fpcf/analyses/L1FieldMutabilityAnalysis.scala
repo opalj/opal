@@ -202,8 +202,8 @@ class L1FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
         pcs:    PCs
     )(implicit state: State): Option[TACode[TACMethodParameter, V]] = {
         propertyStore(method, TACAI.key) match {
-            case finalEP: FinalP[Method, TACAI] ⇒
-                finalEP.ub.tac
+            case finalP: FinalP[Method, TACAI] ⇒
+                finalP.ub.tac
             case eps: IntermediateEP[Method, TACAI] ⇒
                 state.tacDependees += method → ((eps, pcs))
                 eps.ub.tac

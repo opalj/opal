@@ -547,7 +547,7 @@ final class PKEParallelTasksPropertyStore private (
     override def doSet(e: Entity, p: Property): Unit = handleExceptions {
         // ... we have the guarantee that no analyses are/were scheduled/registered
         val pkId = p.key.id
-        val oldP = properties(pkId).put(e, FinalEP(e, p))
+        val oldP = properties(pkId).put(e, FinalP(e, p))
         if (oldP != null) {
             throw new IllegalStateException(s"$e: update failed old property $oldP exists (new $p)")
         }
@@ -600,9 +600,9 @@ final class PKEParallelTasksPropertyStore private (
             val p = computeFastTrackPropertyBasedOnPKId(this, e, pkId)
             if (p.isDefined) {
                 if (debug) fastTrackPropertiesCounter.incrementAndGet()
-                val finalEP = FinalP(e, p.get.asInstanceOf[P])
-                appendStoreUpdate(queueId = 0, NewProperty(IdempotentResult(finalEP)))
-                return finalEP;
+                val finalP = FinalP(e, p.get.asInstanceOf[P])
+                appendStoreUpdate(queueId = 0, NewProperty(IdempotentResult(finalP)))
+                return finalP;
             }
         }
 
@@ -657,10 +657,10 @@ final class PKEParallelTasksPropertyStore private (
                                 trace("analysis progress", message)
                             }
                             if (debug) fallbacksUsedCounter.incrementAndGet()
-                            val finalEP = FinalP(e, p.asInstanceOf[P])
-                            val r = IdempotentResult(finalEP)
+                            val finalP = FinalP(e, p.asInstanceOf[P])
+                            val r = IdempotentResult(finalP)
                             appendStoreUpdate(queueId = 0, NewProperty(r))
-                            finalEP
+                            finalP
                         } else {
                             EPK(e, pk)
                         }
