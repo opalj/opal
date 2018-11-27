@@ -434,39 +434,20 @@ final class PKEParallelTasksPropertyStore private (
     //
     // --------------------------------------------------------------------------------------------
 
-    override def registerLazyPropertyComputation[E <: Entity, P <: Property](
-        pk:       PropertyKey[P],
-        pc:       PropertyComputation[E],
-        finalEPs: TraversableOnce[FinalP[E, P]]
+    override def doRegisterLazyPropertyComputation[E <: Entity, P <: Property](
+        pk: PropertyKey[P],
+        pc: PropertyComputation[E]
     ): Unit = {
         if (openJobs.get() > 0) {
             throw new IllegalStateException(
                 "lazy computations can only be registered while no computations are running"
             )
         }
-        // By contract, this method is never executed concurrently and no computations
-        // are running. Furthermore, the store is either newly created or waitOnPhaseCompletion
-        // was called and the happens-before relation w.r.t. "dependers" is established and
-        // we can check that we have no unexpected dependers
 
-        finalEPs.foreach { finalEP ⇒
-            val pkId = finalEP.pk.id
-            val e = finalEP.e
-            val theDependers = dependers(pkId).get(e)
-            if (theDependers != null) {
-                throw new IllegalStateException(s"$e: unexpected dependers exists: $theDependers")
-            }
-            val oldP = properties(pkId).putIfAbsent(e, finalEP)
-            if (oldP != null) {
-                throw new IllegalArgumentException(
-                    s"$e: a property ($oldP) was already set; ignoring ${finalEP.p}"
-                )
-            }
-        }
         lazyComputations(pk.id) = pc
     }
 
-    override def registerTriggeredComputation[E <: Entity, P <: Property](
+    override def doRegisterTriggeredComputation[E <: Entity, P <: Property](
         pk: PropertyKey[P],
         pc: PropertyComputation[E]
     ): Unit = {
@@ -563,6 +544,34 @@ final class PKEParallelTasksPropertyStore private (
         properties(pk.id).values().iterator().asScala.asInstanceOf[Iterator[EPS[Entity, P]]]
     }
 
+    override def doSet(e: Entity, p: Property): Unit = handleExceptions {
+        // ... we have the guarantee that no analyses are/were scheduled/registered
+        val pkId = p.key.id
+        val oldP = properties(pkId).put(e, FinalEP(e, p))
+        if (oldP != null) {
+            throw new IllegalStateException(s"$e: update failed old property $oldP exists (new $p)")
+        }
+    }
+
+    override def doPreInitialize[E <: Entity, P <: Property](
+        e:  E,
+        pk: PropertyKey[P]
+    )(
+        pc: EOptionP[E, P] ⇒ EPS[E, P]
+    ): Unit = {
+        val pkId = pk.id
+        val propertiesOfKind = properties(pkId)
+        val newEPS =
+            propertiesOfKind.get(e) match {
+                case null                                    ⇒ pc(EPK(e, pk))
+                case oldEPS: EPS[E @unchecked, P @unchecked] ⇒ pc(oldEPS)
+            }
+        if (newEPS.isFinal) {
+            throw new IllegalArgumentException(s"$newEPS must not be final")
+        }
+        propertiesOfKind.put(e, newEPS)
+    }
+
     // Thread Safe!
     private[this] def scheduleComputationForEntity[E <: Entity](
         e:  E,
@@ -602,7 +611,7 @@ final class PKEParallelTasksPropertyStore private (
     }
 
     // Thread Safe!
-    override def scheduleEagerComputationForEntity[E <: Entity](
+    override def doScheduleEagerComputationForEntity[E <: Entity](
         e: E
     )(
         pc: PropertyComputation[E]
@@ -685,17 +694,6 @@ final class PKEParallelTasksPropertyStore private (
         } else {
             throw new IllegalArgumentException(s"force for a non-lazyily computed property: $pk")
         }
-    }
-
-    // Thread safe!
-    override def set(e: Entity, p: Property): Unit = handleExceptions {
-        if (debug && lazyComputations(p.key.id) != null) {
-            throw new IllegalStateException(
-                s"$e: setting $p is not supported; lazy computation is (already) registered"
-            )
-        }
-        val r = ExternalResult(e, p)
-        appendStoreUpdate(queueId = 0, NewProperty(r))
     }
 
     // Thread safe!

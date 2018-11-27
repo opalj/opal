@@ -105,20 +105,19 @@ sealed abstract class PropertyStoreTest(
                 val ps = createPropertyStore()
                 info(s"PropertyStore@${System.identityHashCode(ps).toHexString}")
 
+                ps.set("d", Palindrome)
+
                 ps.setupPhase(Set(Palindromes.PalindromeKey), Set.empty)
 
                 ps.scheduleEagerComputationForEntity("a") { e ⇒
                     val dependees = Seq(EPK("d", Palindromes.PalindromeKey), EPK("e", Palindromes.PalindromeKey))
                     dependees.foreach(ps(_)) // we use a fake dependency...
-                    ps.set("d", Palindrome)
                     IntermediateResult(
                         "a",
                         NoPalindrome,
                         Palindrome,
                         dependees,
-                        (eps) ⇒ {
-                            Result("a", Palindrome)
-                        },
+                        (eps) ⇒ { Result("a", Palindrome) },
                         pch
                     )
                 }
@@ -149,7 +148,6 @@ sealed abstract class PropertyStoreTest(
                 info(s"PropertyStore@${System.identityHashCode(ps).toHexString}")
 
                 import Palindromes.Palindrome
-                ps.setupPhase(Set(Palindromes.PalindromeKey, Palindromes.SuperPalindromeKey), Set.empty)
 
                 val palindromeKey = Palindromes.PalindromeKey
                 val superPalindromeKey = Palindromes.SuperPalindromeKey
@@ -158,7 +156,13 @@ sealed abstract class PropertyStoreTest(
                 ps.hasProperty("aba", superPalindromeKey) should be(false)
 
                 ps.set("aba", Palindrome)
+
+                ps.setupPhase(
+                    Set(Palindromes.PalindromeKey, Palindromes.SuperPalindromeKey),
+                    Set.empty
+                )
                 ps.waitOnPhaseCompletion()
+
                 ps.hasProperty("aba", palindromeKey) should be(true)
                 ps.hasProperty("cbc", palindromeKey) should be(false)
                 ps.hasProperty("aba", superPalindromeKey) should be(false)
@@ -171,9 +175,7 @@ sealed abstract class PropertyStoreTest(
                         "a",
                         NoPalindrome, Palindrome,
                         Seq(dependee),
-                        (eps) ⇒ {
-                            Result("a", Palindrome)
-                        },
+                        (eps) ⇒ { Result("a", Palindrome) },
                         pch
                     )
                 }
@@ -200,15 +202,15 @@ sealed abstract class PropertyStoreTest(
                 import Palindromes.Palindrome
                 import Palindromes.NoPalindrome
                 val pk = Palindromes.PalindromeKey
-                ps.setupPhase(Set(Palindrome.key), Set.empty)
 
                 ps.set("aba", Palindrome)
-                ps.waitOnPhaseCompletion()
-                ps("aba", pk) should be(FinalP("aba", Palindrome))
-
                 ps.set("abca", NoPalindrome)
+
+                ps.setupPhase(Set(Palindrome.key), Set.empty)
                 ps.waitOnPhaseCompletion()
+                
                 ps("abca", pk) should be(FinalP("abca", NoPalindrome))
+                ps("aba", pk) should be(FinalP("aba", Palindrome))
 
                 ps.shutdown()
             }
@@ -223,17 +225,16 @@ sealed abstract class PropertyStoreTest(
                 import Palindromes.NoSuperPalindrome
                 val ppk = Palindromes.PalindromeKey
                 val sppk = Palindromes.SuperPalindromeKey
-                ps.setupPhase(Set(Palindrome.key), Set.empty)
 
                 ps.set("aba", Palindrome)
                 ps.set("aba", SuperPalindrome)
+                ps.set("abca", NoPalindrome)
+                ps.set("abca", NoSuperPalindrome)
+
+                ps.setupPhase(Set(Palindrome.key), Set.empty)
                 ps.waitOnPhaseCompletion()
                 ps("aba", ppk) should be(FinalP("aba", Palindrome))
                 ps("aba", sppk) should be(FinalP("aba", SuperPalindrome))
-
-                ps.set("abca", NoPalindrome)
-                ps.set("abca", NoSuperPalindrome)
-                ps.waitOnPhaseCompletion()
                 ps("abca", ppk) should be(FinalP("abca", NoPalindrome))
                 ps("abca", sppk) should be(FinalP("abca", NoSuperPalindrome))
 
@@ -334,18 +335,11 @@ sealed abstract class PropertyStoreTest(
                 val ps = createPropertyStore()
                 info(s"PropertyStore@${System.identityHashCode(ps).toHexString}")
 
-                ps.setupPhase(Set.empty, Set.empty)
                 import Palindromes.Palindrome
                 import Palindromes.NoPalindrome
 
                 ps.set("aba", Palindrome)
-
-                try {
-                    ps.set("aba", NoPalindrome)
-                    ps.waitOnPhaseCompletion()
-                } catch {
-                    case _: IllegalStateException ⇒ // expected!
-                }
+                assertThrows[IllegalStateException] { ps.set("aba", NoPalindrome) }
 
                 ps.shutdown()
             }
@@ -455,6 +449,13 @@ sealed abstract class PropertyStoreTest(
                 import Palindromes.SuperPalindrome
                 val ppk = Palindromes.PalindromeKey
                 val sppk = Palindromes.SuperPalindromeKey
+
+                // let's see if we can register some values...
+                ps.set("dummyymmud", Palindrome)
+                ps.set("dummyBADymmud", NoPalindrome)
+                ps.set("dummyymmud", SuperPalindrome)
+                ps.set("dummyBADymmud", NoSuperPalindrome)
+
                 ps.setupPhase(Set(ppk, sppk), Set.empty)
 
                 val invocationCount = new AtomicInteger(0)
@@ -464,12 +465,7 @@ sealed abstract class PropertyStoreTest(
                         invocationCount.incrementAndGet()
                         val p = if (e.toString.reverse == e.toString) Palindrome else NoPalindrome
                         Result(e, p)
-                    },
-                    // let's see if we can register some values...
-                    List(
-                        FinalP("dummyymmud", Palindrome),
-                        FinalP("dummyBADymmud", NoPalindrome)
-                    )
+                    }
                 )
                 ps.registerLazyPropertyComputation(
                     sppk,
@@ -490,12 +486,7 @@ sealed abstract class PropertyStoreTest(
                             },
                             pch
                         )
-                    },
-                    // let's see if we can register some values...
-                    List(
-                        FinalP("dummyymmud", SuperPalindrome),
-                        FinalP("dummyBADymmud", NoSuperPalindrome)
-                    )
+                    }
                 )
                 ps.scheduleEagerComputationForEntity("e") { e: String ⇒
                     val initiallyExpectedEP = EPK("e", sppk)

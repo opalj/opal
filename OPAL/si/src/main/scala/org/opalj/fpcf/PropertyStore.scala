@@ -106,6 +106,8 @@ abstract class PropertyStore {
 
     implicit val logContext: LogContext
 
+    private[this] var analysesRegistered: Boolean = false
+
     //
     //
     // FUNCTIONALITY TO ASSOCIATE SOME INFORMATION WITH THE STORE THAT
@@ -206,6 +208,8 @@ abstract class PropertyStore {
     final val debug: Boolean = PropertyStore.Debug
 
     final def traceFallbacks: Boolean = PropertyStore.TraceFallbacks
+
+    def supportsFastTrackPropertyComputations: Boolean
 
     @volatile var useFastTrackPropertyComputations: Boolean = true
 
@@ -331,26 +335,73 @@ abstract class PropertyStore {
     def finalEntities[P <: Property](p: P): Iterator[Entity] = entities(p, p)
 
     /**
-     * Directly associates the given property `p` with property kind `pk` with the given entity
+     * Associates the given property `p` with property kind `pk` with the given entity
      * `e` if `e` has no property of the respective kind. The set property is always final.
-     * The store does not guarantee that the value is set before before a later scheduled
-     * analysis is executed. I.e., no guarantee is given that the value is set
-     * immediately.
+     *
+     * '''Calling this method is only supported before any analysis is scheduled!'''
      *
      * A use case is an analysis that does use the property store while executing the analysis,
      * but which wants to store the results in the store. Such an analysis '''must
      * be executed before any other analysis is scheduled'''.
      *
-     * @throws IllegalStateException If a different property is already associated with the
-     *         given entity or a lazy computation is registered. I.e., `set` has to be called
-     *         before respective lazy property computations are registered. The exception may
-     *         be thrown eventually!
-     *
      * @note   This method must not be used '''if there might be another computation that
      *         computes the property kind `pk` for `e` and which returns the respective property
      *         as a result'''.
      */
-    def set(e: Entity, p: Property): Unit
+    final def set(e: Entity, p: Property): Unit = {
+        if (analysesRegistered) {
+            throw new IllegalStateException("analyses are already registered/scheduled")
+        }
+        doSet(e, p)
+    }
+
+    protected[this] def doSet(e: Entity, p: Property): Unit
+
+    /**
+     * Associates the given entity with the newly computed intermediate property P.
+     *
+     * '''Calling this method is only supported before any analysis is scheduled!'''
+     *
+     * @param pc A function which is given the current property of kind pk associated with e and
+     *           which has to compute the new intermediate property `p`.
+     */
+    final def preInitialize[E <: Entity, P <: Property](
+        e:  E,
+        pk: PropertyKey[P]
+    )(
+        pc: EOptionP[E, P] ⇒ EPS[E, P]
+    ): Unit = {
+        if (analysesRegistered) {
+            throw new IllegalStateException("analyses are already registered/scheduled")
+        }
+        doPreInitialize(e, pk)(pc)
+    }
+
+    protected[this] def doPreInitialize[E <: Entity, P <: Property](
+        e:  E,
+        pk: PropertyKey[P]
+    )(
+        pc: EOptionP[E, P] ⇒ EPS[E, P]
+    ): Unit
+
+    /**
+     * Needs to be called before an analysis is scheduled to inform the property store which
+     * properties will be computed now and which are computed in a later phase. The later
+     * information is used to decide when we use a fallback.
+     *
+     * @note `setupPhase` even needs to be called if just fallback values should be computed; in
+     *        this case both sets have to be empty.
+     *
+     * @param computedPropertyKinds The kinds of properties for which we will schedule computations.
+     *
+     * @param delayedPropertyKinds The set of property kinds which will (also) be computed
+     *        in a later phase; no fallback will be used for dependencies to properties of the
+     *        respective kind.
+     */
+    def setupPhase(
+        computedPropertyKinds: Set[PropertyKind],
+        delayedPropertyKinds:  Set[PropertyKind] = Set.empty
+    ): Unit
 
     /**
      * Returns a snapshot of the properties with the given kind associated with the given entities.
@@ -438,21 +489,27 @@ abstract class PropertyStore {
      * than once for the same element at the same time. If `pc` is invoked again for a specific
      * element then only because a dependee has changed!
      *
-     * In general, the result can't be an `IncrementalResult` and `scheduleLazyPropertyComputation`
-     * cannot be used for properties which should be computed by phased analyses.
+     * In general, the result can't be an `IncrementalResult`, a `PartialResult` or a `NoResult`.
      *
      * ''A lazy computation must never return a [[NoResult]]; if the entity cannot be processed an
-     * exception has to be thrown or the bottom value has to be returned.''
+     * exception has to be thrown or the bottom value – if defined – has to be returned.'' 
      *
      * '''Calling `registerLazyPropertyComputation` is only supported as long as the store is not
      * queried and no computations are already running.
      * In general, this requires that lazy property computations are scheduled before any eager
      * analysis that potentially reads the value.'''
      */
-    def registerLazyPropertyComputation[E <: Entity, P <: Property](
-        pk:       PropertyKey[P],
-        pc:       PropertyComputation[E],
-        finalEPs: TraversableOnce[FinalP[E, P]] = Iterator.empty
+    final def registerLazyPropertyComputation[E <: Entity, P <: Property](
+        pk: PropertyKey[P],
+        pc: PropertyComputation[E] // TODO Refine the result type to state that onle "normal" results are allowed!
+    ): Unit = {
+        analysesRegistered = true
+        doRegisterLazyPropertyComputation(pk, pc)
+    }
+
+    protected[this] def doRegisterLazyPropertyComputation[E <: Entity, P <: Property](
+        pk: PropertyKey[P],
+        pc: PropertyComputation[E]
     ): Unit
 
     /**
@@ -483,28 +540,17 @@ abstract class PropertyStore {
      * @param pc The computation that is (potentially concurrently) called to kick-start a
      *           computation related to the given entity.
      */
-    def registerTriggeredComputation[E <: Entity, P <: Property](
+    final def registerTriggeredComputation[E <: Entity, P <: Property](
         pk: PropertyKey[P],
         pc: PropertyComputation[E]
-    ): Unit
+    ): Unit = {
+        analysesRegistered = true
+        doRegisterTriggeredComputation(pk, pc)
+    }
 
-    /**
-     * Needs to be called before an analysis is scheduled to inform the property store which
-     * properties will be computed now and which are computed in a later phase. The later
-     * information is used to decide when we use a fallback.
-     *
-     * @note `setupPhase` even needs to be called if just fallback values should be computed; in
-     *        this case both sets have to be empty.
-     *
-     * @param computedPropertyKinds The kinds of properties for which we will schedule computations.
-     *
-     * @param delayedPropertyKinds The set of property kinds which will (also) be computed
-     *        in a later phase; no fallback will be used for dependencies to properties of the
-     *        respective kind.
-     */
-    def setupPhase(
-        computedPropertyKinds: Set[PropertyKind],
-        delayedPropertyKinds:  Set[PropertyKind] = Set.empty
+    protected[this] def doRegisterTriggeredComputation[E <: Entity, P <: Property](
+        pk: PropertyKey[P],
+        pc: PropertyComputation[E]
     ): Unit
 
     /**
@@ -512,7 +558,7 @@ abstract class PropertyStore {
      *
      * @see [[scheduleEagerComputationForEntity]] for details.
      */
-    def scheduleEagerComputationsForEntities[E <: Entity](
+    final def scheduleEagerComputationsForEntities[E <: Entity](
         es: TraversableOnce[E]
     )(
         c: PropertyComputation[E]
@@ -531,7 +577,20 @@ abstract class PropertyStore {
      * @note   If any computation resulted in an exception, then the scheduling will fail and
      *         the exception related to the failing computation will be thrown again.
      */
-    def scheduleEagerComputationForEntity[E <: Entity](e: E)(pc: PropertyComputation[E]): Unit
+    final def scheduleEagerComputationForEntity[E <: Entity](
+        e: E
+    )(
+        pc: PropertyComputation[E]
+    ): Unit = {
+        analysesRegistered = true
+        doScheduleEagerComputationForEntity(e)(pc)
+    }
+
+    protected[this] def doScheduleEagerComputationForEntity[E <: Entity](
+        e: E
+    )(
+        pc: PropertyComputation[E]
+    ): Unit
 
     /**
      * Processes the result eventually; generally, not directly called by analyses.

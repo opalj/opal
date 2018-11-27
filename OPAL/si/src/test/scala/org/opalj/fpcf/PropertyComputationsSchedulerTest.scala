@@ -216,23 +216,29 @@ class PropertyComputationsSchedulerTest extends FunSpec with Matchers with Befor
                 override def entities[P <: Property](pk: PropertyKey[P]): Iterator[EPS[Entity, P]] = ???
                 override def entities[P <: Property](lb: P, ub: P): Iterator[Entity] = ???
                 override def entities(propertyFilter: SomeEPS ⇒ Boolean): Iterator[Entity] = ???
-                override def set(e: Entity, p: Property): Unit = ???
+                def doSet(e: Entity, p: Property): Unit = ???
+                def doPreInitialize[E <: Entity, P <: Property](
+                    e:  E,
+                    pk: PropertyKey[P]
+                )(
+                    pc: EOptionP[E, P] ⇒ EPS[E, P]
+                ): Unit = ???
                 override def apply[E <: Entity, P <: Property](e: E, pk: PropertyKey[P]): EOptionP[E, P] = ???
                 override def apply[E <: Entity, P <: Property](epk: EPK[E, P]): EOptionP[E, P] = ???
                 override def force[E <: Entity, P <: Property](e: E, pk: PropertyKey[P]): Unit = ???
 
-                override def registerLazyPropertyComputation[E <: Entity, P <: Property](
+                override def doRegisterLazyPropertyComputation[E <: Entity, P <: Property](
                     pk:       PropertyKey[P],
-                    pc:       PropertyComputation[E],
-                    finalEPs: TraversableOnce[FinalP[E, P]]
+                    pc:       PropertyComputation[E]
                 ): Unit = {}
-                override def registerTriggeredComputation[E <: Entity, P <: Property](
+                override def doRegisterTriggeredComputation[E <: Entity, P <: Property](
                     pk: PropertyKey[P],
                     pc: PropertyComputation[E]
                 ): Unit = {}
-                override def scheduleEagerComputationForEntity[E <: Entity](e: E)(pc: PropertyComputation[E]): Unit = {}
+                override def doScheduleEagerComputationForEntity[E <: Entity](e: E)(pc: PropertyComputation[E]): Unit = {}
                 override def handleResult(r: PropertyComputationResult): Unit = {}
                 override def waitOnPhaseCompletion(): Unit = {}
+
 
                 var phaseConfigurations: List[(Set[PropertyKind], Set[PropertyKind])] = List.empty
                 override def setupPhase(
