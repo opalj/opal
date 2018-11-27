@@ -112,18 +112,24 @@ object PropertyKey {
         new PropertyKey(thisKeyId)
     }
 
+    def create[E <: Entity, P <: Property](                                              name:             String                                          ): PropertyKey[P] = {
+        create(name, fallbackPropertyComputation = null, fastTrackPropertyComputation = null)
+    }
+
+
     def create[E <: Entity, P <: Property](
         name:             String,
         fallbackProperty: P
     ): PropertyKey[P] = {
-        create(name, (_: PropertyStore, _: FallbackReason, _: Entity) ⇒ fallbackProperty, null)
+        val fpc = (_: PropertyStore, _: FallbackReason, _: Entity) ⇒ fallbackProperty
+        create(name,fpc ,fastTrackPropertyComputation =  null)
     }
 
     def create[E <: Entity, P <: Property](
         name:                        String,
         fallbackPropertyComputation: FallbackPropertyComputation[E, P]
     ): PropertyKey[P] = {
-        create(name, fallbackPropertyComputation, null)
+        create(name, fallbackPropertyComputation, fastTrackPropertyComputation = null)
     }
 
     def create[E <: Entity, P <: Property](
@@ -131,11 +137,8 @@ object PropertyKey {
         fallbackProperty:             P,
         fastTrackPropertyComputation: (PropertyStore, E) ⇒ Option[P]
     ): PropertyKey[P] = {
-        create(
-            name,
-            (_: PropertyStore, _: FallbackReason, _: Entity) ⇒ fallbackProperty,
-            fastTrackPropertyComputation
-        )
+        val fpc = (_: PropertyStore, _: FallbackReason, _: Entity) ⇒ fallbackProperty
+        create(            name,fpc            ,            fastTrackPropertyComputation        )
     }
 
     //
