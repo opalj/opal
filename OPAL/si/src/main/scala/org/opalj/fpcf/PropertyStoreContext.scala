@@ -2,8 +2,13 @@
 package org.opalj
 package fpcf
 
-class PropertyStoreContext[+T <: AnyRef] private (val key: Class[_], val data: T) {
-
+/**
+ * Object stored in the `PropertyStore` to provide general context information.
+ *
+ * @author Michael Eichberg
+ */
+class PropertyStoreContext[+T <: AnyRef] private (val key: Class[T], val data: T) {
+    // FIXME Make the context invariant and then use the tParam T in "asTuple"
     def asTuple: (Class[_], T) = (key, data)
 }
 
