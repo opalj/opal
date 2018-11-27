@@ -722,7 +722,7 @@ final class PKESequentialPropertyStore private (
 
     override def waitOnPhaseCompletion(): Unit = handleExceptions {
         var continueComputation: Boolean = false
-        // We need a consistent interrupt state for fallback and cycle resolution:
+        // We need a consistent interrupt state for fallback
         var isSuspended: Boolean = false
         do {
             continueComputation = false
@@ -804,33 +804,6 @@ final class PKESequentialPropertyStore private (
                         epks,
                         (epk: SomeEOptionP) ⇒ ps(epk.pk.id)(epk.e).dependees
                     )
-                    /*
-                    for (cSCC ← cSCCs) {
-                        val headEPK = cSCC.head
-                        val e = headEPK.e
-                        val pkId = headEPK.pk.id
-                        val pValue = ps(pkId)(e)
-                        val lb = pValue.lb
-                        val ub = pValue.ub
-                        val headEPS = IntermediateEP(e, lb, ub)
-                        val newP = PropertyKey.resolveCycle(this, headEPS)
-                        if (traceCycleResolutions) {
-                            val cycleAsText =
-                                if (cSCC.size > 10)
-                                    cSCC.take(10).mkString("", ",", "...")
-                                else
-                                    cSCC.mkString(",")
-
-                            info(
-                                "analysis progress",
-                                s"resolving cycle(iteration:$quiescenceCounter): $cycleAsText by updatding $e:ub=$ub with $newP"
-                            )
-                        }
-                        resolvedCSCCsCounter += 1
-                        update(e, newP, newP, Nil)
-                        continueComputation = true
-                    }
-                    */
                     for (cSCC ← cSCCs) {
                         // 1. clear all dependees of all members of a cycle to avoid
                         //    inner cycle notifications!

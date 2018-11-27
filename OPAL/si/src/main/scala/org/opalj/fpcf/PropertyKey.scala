@@ -88,7 +88,8 @@ object PropertyKey {
      *              (see `PropertyStore.setupPhase`). This method is expected to either provide
      *              a precise analysis very fast or to not provide a result at all.
      *              I.e., it is expected to derive only those properties that can trivially be
-     *              derived precisely.
+     *              derived precisely. In general, the computation should succeed in at most
+     *              a few hundred steps!
      *
      * @note This method is '''not thread-safe''' - the setup of the property store (e.g.,
      *       using the [[org.opalj.fpcf.FPCFAnalysesManager]] or an [[AnalysisScenario]] has to
@@ -112,9 +113,23 @@ object PropertyKey {
     }
 
     def create[E <: Entity, P <: Property](
+        name:             String,
+        fallbackProperty: P
+    ): PropertyKey[P] = {
+        create(name, (_: PropertyStore, _: FallbackReason, _: Entity) ⇒ fallbackProperty, null)
+    }
+
+    def create[E <: Entity, P <: Property](
+        name:                        String,
+        fallbackPropertyComputation: FallbackPropertyComputation[E, P]
+    ): PropertyKey[P] = {
+        create(name, fallbackPropertyComputation, null)
+    }
+
+    def create[E <: Entity, P <: Property](
         name:                         String,
-        fallbackProperty:             P                              = null,
-        fastTrackPropertyComputation: (PropertyStore, E) ⇒ Option[P] = null
+        fallbackProperty:             P,
+        fastTrackPropertyComputation: (PropertyStore, E) ⇒ Option[P]
     ): PropertyKey[P] = {
         create(
             name,

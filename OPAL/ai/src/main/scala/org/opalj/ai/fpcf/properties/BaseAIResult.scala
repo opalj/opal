@@ -73,8 +73,6 @@ object BaseAIResult extends BaseAIResultPropertyMetaInformation {
                     AnAIResult(p.get(AIDomainFactoryKey)(m))
             }
         }: BaseAIResult,
-        // cycle resolution strategy...
-        (_: PropertyStore, eps: EPS[Method, BaseAIResult]) ⇒ eps.ub,
         // fast-track property computation...
         (_: PropertyStore, _: Method) ⇒ None
     )

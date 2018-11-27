@@ -68,7 +68,7 @@ object TACAI extends TACAIPropertyMetaInformation {
      * The key associated with every [[TACAI]] property.
      */
     final val key: PropertyKey[TACAI] = PropertyKey.create[Method, TACAI](
-        "org.opalj.tac.fpcf.properties.AIBasedTAC",
+        "org.opalj.tac.AIBasedTAC",
         // fallback property computation...
         (ps: PropertyStore, r: FallbackReason, m: Method) ⇒ {
             r match {
@@ -85,10 +85,6 @@ object TACAI extends TACAIPropertyMetaInformation {
                         taCode.asInstanceOf[TACode[TACMethodParameter, DUVar[ValueInformation]]]
                     )
             }
-        }: TACAI,
-        // cycle resolution strategy...
-        (_: PropertyStore, eps: EPS[Method, TACAI]) ⇒ eps.ub,
-        // fast-track property computation...
-        (_: PropertyStore, _: Method) ⇒ None
+        }: TACAI
     )
 }

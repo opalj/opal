@@ -47,14 +47,8 @@ object TypeImmutability extends TypeImmutabilityPropertyMetaInformation {
      * The key associated with every [[TypeImmutability]] property.
      */
     final val key: PropertyKey[TypeImmutability] = PropertyKey.create(
-        "TypeImmutability",
-        // The  property that will be used if no analysis is able
-        // to (directly) compute the respective property.
-        MutableType,
-        // When we have a cycle all properties are necessarily at least conditionally
-        // immutable hence, we can leverage the "immutability" of one of the members of
-        // the cycle and wait for the automatic propagation...
-        (_: PropertyStore, eps: EPS[ObjectType, TypeImmutability]) ⇒ eps.ub
+        "org.opalj.TypeImmutability",
+        MutableType
     )
 }
 

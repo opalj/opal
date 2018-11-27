@@ -1589,7 +1589,6 @@ object ReachableNodesCount {
         PropertyKey.create[Node, ReachableNodesCount](
             s"ReachableNodesCount",
             (_: PropertyStore, reason: FallbackReason, e: Node) ⇒ TooManyNodesReachable,
-            (_: PropertyStore, eps: EPS[Node, ReachableNodesCount]) ⇒ eps.ub,
             (ps: PropertyStore, e: Entity) ⇒ None
         )
 }

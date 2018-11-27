@@ -749,27 +749,4 @@ object PropertyStore {
             }
     }
 
-    final val TraceCycleResolutionsKey = "org.opalj.fpcf.PropertyStore.TraceCycleResolutions"
-
-    private[this] var traceCycleResolutions: Boolean = {
-        val initialTraceCycleResolutions = BaseConfig.getBoolean(TraceCycleResolutionsKey)
-        updateTraceCycleResolutions(initialTraceCycleResolutions)
-        initialTraceCycleResolutions
-    }
-
-    // We think of it as a runtime constant (which can be changed for testing purposes).
-    def TraceCycleResolutions: Boolean = traceCycleResolutions
-
-    def updateTraceCycleResolutions(newTraceCycleResolutions: Boolean): Unit = {
-        implicit val logContext: LogContext = GlobalLogContext
-        traceCycleResolutions =
-            if (newTraceCycleResolutions) {
-                info("OPAL", s"$TraceCycleResolutionsKey: cycle resolutions are reported")
-                true
-            } else {
-                info("OPAL", s"$TraceCycleResolutionsKey: cycle resolutions are not reported")
-                false
-            }
-    }
-
 }
