@@ -213,8 +213,8 @@ final class PKESequentialPropertyStore private (
                                     PropertyIsNotComputedByAnyAnalysis
                             }
                             val p = fallbackPropertyBasedOnPKId(this, reason, e, pkId)
-                                update(e, p, p, Nil)
-                                FinalP(e, p.asInstanceOf[P])
+                            update(e, p, p, Nil)
+                            FinalP(e, p.asInstanceOf[P])
                         }
 
                     case lc: PropertyComputation[E] @unchecked ⇒

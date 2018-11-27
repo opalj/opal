@@ -45,7 +45,6 @@ object PropertyKey {
         new Array[(PropertyStore, Entity) ⇒ Option[Property]](SupportedPropertyKinds)
     }
 
-
     private[this] val lastKeyId = new AtomicInteger(-1)
 
     private[this] def nextKeyId(): Int = {
@@ -103,10 +102,10 @@ object PropertyKey {
         val thisKeyId = nextKeyId()
         setKeyName(thisKeyId, name)
 
-        fallbackPropertyComputations(           thisKeyId) =
+        fallbackPropertyComputations(thisKeyId) =
             fallbackPropertyComputation.asInstanceOf[(PropertyStore, FallbackReason, Entity) ⇒ Property]
 
-        fastTrackPropertyComputations(           thisKeyId) =
+        fastTrackPropertyComputations(thisKeyId) =
             fastTrackPropertyComputation.asInstanceOf[(PropertyStore, Entity) ⇒ Option[Property]]
 
         new PropertyKey(thisKeyId)
@@ -114,7 +113,7 @@ object PropertyKey {
 
     def create[E <: Entity, P <: Property](
         name:                         String,
-        fallbackProperty:             P = null,
+        fallbackProperty:             P                              = null,
         fastTrackPropertyComputation: (PropertyStore, E) ⇒ Option[P] = null
     ): PropertyKey[P] = {
         create(
@@ -136,11 +135,11 @@ object PropertyKey {
 
     final def name(pKind: PropertyKind): String = name(pKind.id)
 
-    final def hasFallback(propertyKind: PropertyKind) : Boolean = {
+    final def hasFallback(propertyKind: PropertyKind): Boolean = {
         hasFallbackBasedOnPKId(propertyKind.id)
     }
 
-    final def hasFallbackBasedOnPKId(pkId: Int) : Boolean = {
+    final def hasFallbackBasedOnPKId(pkId: Int): Boolean = {
         fallbackPropertyComputations(pkId) != null
     }
 
@@ -168,11 +167,11 @@ object PropertyKey {
         fallbackComputation(ps, fr, e)
     }
 
-    final def hasFastTrackProperty(propertyKind: PropertyKind) : Boolean = {
+    final def hasFastTrackProperty(propertyKind: PropertyKind): Boolean = {
         hasFallbackBasedOnPKId(propertyKind.id)
     }
 
-    final def hasFastTrackPropertyBasedOnPKId(pkId: Int) : Boolean = {
+    final def hasFastTrackPropertyBasedOnPKId(pkId: Int): Boolean = {
         fastTrackPropertyComputations(pkId) != null
     }
 
@@ -200,17 +199,17 @@ object PropertyKey {
     }
 
     private[fpcf] def computeFastTrackProperty[P <: Property](
-                                                                 ps: PropertyStore,
-                                                                 e:  Entity,
-                                                                 pk: PropertyKey[P]
-                                                             ): Option[P] = {
-        computeFastTrackPropertyBasedOnPKId(ps,e,pk.id)
+        ps: PropertyStore,
+        e:  Entity,
+        pk: PropertyKey[P]
+    ): Option[P] = {
+        computeFastTrackPropertyBasedOnPKId(ps, e, pk.id)
     }
-        private[fpcf] def computeFastTrackPropertyBasedOnPKId[P <: Property](
-                                                                     ps: PropertyStore,
-                                                                     e:  Entity,
-                                                                     pkId: Int
-                                                                 ): Option[P] = {
+    private[fpcf] def computeFastTrackPropertyBasedOnPKId[P <: Property](
+        ps:   PropertyStore,
+        e:    Entity,
+        pkId: Int
+    ): Option[P] = {
         val fastTrackPropertyComputation = fastTrackPropertyComputations(pkId)
         if (fastTrackPropertyComputation == null)
             None

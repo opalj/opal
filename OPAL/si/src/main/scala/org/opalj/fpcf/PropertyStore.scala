@@ -492,7 +492,7 @@ abstract class PropertyStore {
      * In general, the result can't be an `IncrementalResult`, a `PartialResult` or a `NoResult`.
      *
      * ''A lazy computation must never return a [[NoResult]]; if the entity cannot be processed an
-     * exception has to be thrown or the bottom value – if defined – has to be returned.'' 
+     * exception has to be thrown or the bottom value – if defined – has to be returned.''
      *
      * '''Calling `registerLazyPropertyComputation` is only supported as long as the store is not
      * queried and no computations are already running.
