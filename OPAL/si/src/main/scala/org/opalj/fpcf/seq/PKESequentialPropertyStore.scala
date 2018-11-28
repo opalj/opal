@@ -9,8 +9,10 @@ import java.util.ArrayDeque
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable
 import scala.collection.{Map ⇒ SomeMap}
+import scala.collection.mutable.AnyRefMap
 
 import org.opalj.graphs
+
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.info
 import org.opalj.log.OPALLogger.{debug ⇒ trace}
@@ -94,8 +96,17 @@ final class PKESequentialPropertyStore private (
     //
     // --------------------------------------------------------------------------------------------
 
-    private[this] val ps: Array[mutable.AnyRefMap[Entity, PropertyValue]] = {
+    // If the map's value is an epk a lazy analysis was started if it exists.
+    private[this] val ps: Array[mutable.AnyRefMap[Entity, SomeEOptionP]] = {
         Array.fill(PropertyKind.SupportedPropertyKinds) { mutable.AnyRefMap.empty }
+    }
+
+    private[this] val dependers: Array[AnyRefMap[Entity, AnyRefMap[SomeEPK, (OnUpdateContinuation, PropertyComputationHint)]]] = {
+        Array.fill(SupportedPropertyKinds) { new AnyRefMap() }
+    }
+
+    private[this] val dependees: Array[AnyRefMap[Entity, Traversable[SomeEOptionP]]] = {
+        Array.fill(SupportedPropertyKinds) { new AnyRefMap() }
     }
 
     // Those computations that will only be scheduled if the result is required
@@ -129,27 +140,23 @@ final class PKESequentialPropertyStore private (
     override def properties[E <: Entity](e: E): Iterator[EPS[E, Property]] = {
         require(e ne null)
         for {
-            ePValue ← ps.iterator
-            pValue ← ePValue.get(e)
-            eps ← pValue.toEPS(e)
+            epks ← ps.iterator
+            eOptionP ← epks.get(e)
+            eps ← eOptionP.toEPS
         } yield {
             eps
         }
     }
 
     override def entities(propertyFilter: SomeEPS ⇒ Boolean): Iterator[Entity] = {
-        val entities = ArrayBuffer.empty[Entity]
-        val max = ps.length
-        var i = 0
-        while (i < max) {
-            ps(i).foreach { ePValue ⇒
-                val (e, pValue) = ePValue
-                val eps = pValue.toEPS[Entity](e)
-                if (eps.isDefined && propertyFilter(eps.get)) entities += e
-            }
-            i += 1
+        for {
+            epks ← ps.iterator
+            (e,eOptionP) ← epks.iterator
+            eps ← eOptionP.toEPS
+            if propertyFilter(eps)
+        } yield {
+            e
         }
-        entities.toIterator
     }
 
     override def entities[P <: Property](lb: P, ub: P): Iterator[Entity] = {
@@ -159,20 +166,17 @@ final class PKESequentialPropertyStore private (
     }
 
     override def entities[P <: Property](pk: PropertyKey[P]): Iterator[EPS[Entity, P]] = {
-        ps(pk.id).iterator.flatMap { ePValue ⇒
-            val (e, pValue) = ePValue
-            pValue.toEPSUnsafe[Entity, P](e)
-        }
+        ps(pk.id).valuesIterator.collect { case eps : SomeEPS ⇒ eps.asInstanceOf[EPS[Entity,P]]       }
     }
 
     override def toString(printProperties: Boolean): String = {
         if (printProperties) {
             val properties = for {
-                (ePValue, pkId) ← ps.iterator.zipWithIndex
-                (e, pValue) ← ePValue
+                (epks, pkId) ← ps.iterator.zipWithIndex
+                (e, eOptionP) ← epks.iterator
             } yield {
                 val propertyKindName = PropertyKey.name(pkId)
-                s"$e -> $propertyKindName[$pkId] = $pValue"
+                s"$e -> $propertyKindName[$pkId] = $eOptionP"
             }
             properties.mkString("PropertyStore(\n\t", "\n\t", "\n")
         } else {
@@ -224,51 +228,21 @@ final class PKESequentialPropertyStore private (
                                 update(e, p, p, Nil)
                                 FinalP(e, p.asInstanceOf[P])
                             case None ⇒
-                                // create PropertyValue to ensure that we do not schedule
+                                // associate e with EPK to ensure that we do not schedule
                                 // multiple (lazy) computations => the entity is now known
-                                ps(pkId).put(e, PropertyValue.lazilyComputed)
+                                ps(pkId).put(e, epk)
                                 scheduleLazyComputationForEntity(e)(lc)
                                 // return the "current" result
                                 epk
-
                         }
                 }
 
-            case Some(pValue) ⇒
-                val ub = pValue.ub // or lb... doesn't matter
-                if (ub != null && ub != PropertyIsLazilyComputed)
-                    // we have a property
-                    EPS(e, pValue.lb.asInstanceOf[P], pValue.ub.asInstanceOf[P])
-                else {
-                    //... ub is null or is PropertyIsLazilyComputed...
-                    // We do not (yet) have a value, but a lazy property
-                    // computation is already scheduled (if available).
-                    // Recall that it is a strict requirement that a
-                    // dependee which is listed in the set of dependees
-                    // of an InterimResult must have been queried;
-                    // however the sequential store does not create the
-                    // data-structure eagerly!
-                    if (debug && ub == null && lazyComputations(pkId) != null) {
-                        throw new IllegalStateException(
-                            "registered lazy computation was not triggered; "+
-                                "this happens, e.g., if the list of dependees contains EPKs "+
-                                "that are instantiated by the client but never queried"
-                        )
-                    }
-                    epk
-                }
+            case Some(eOptionP : EOptionP[E,P]@unchecked) ⇒                eOptionP
         }
     }
 
     override def force[E <: Entity, P <: Property](e: E, pk: PropertyKey[P]): Unit = {
         apply[E, P](EPK(e, pk))
-    }
-
-    /**
-     * Returns the `PropertyValue` associated with the given Entity / PropertyKey or `null`.
-     */
-    private[seq] final def getPropertyValue(e: Entity, pkId: Int): PropertyValue = {
-        ps(pkId).get(e).orNull
     }
 
     override def doRegisterLazyPropertyComputation[E <: Entity, P <: Property](
@@ -293,13 +267,22 @@ final class PKESequentialPropertyStore private (
             )
         }
         triggeredComputations(pk.id) += pc
+        // trigger the computation for entities which already have values
+        for {
+            eOptionP <- ps(pk.id).valuesIterator
+            if eOptionP.isEPS
+        } {
+            pc(eOptionP.e)
+        }
+
     }
 
     private[this] def triggerComputations(e: Entity, pkId: Int): Unit = {
         val triggeredComputations = this.triggeredComputations(pkId)
         if (triggeredComputations != null) {
             triggeredComputations foreach (pc ⇒
-                scheduleEagerComputationForEntity(e)(pc.asInstanceOf[PropertyComputation[Entity]]))
+                scheduleEagerComputationForEntity(e)(pc.asInstanceOf[PropertyComputation[Entity]])
+                )
         }
     }
 
@@ -322,6 +305,7 @@ final class PKESequentialPropertyStore private (
     }
 
     private[this] def clearDependees(pValue: PropertyValue, pValueEPK: SomeEPK): Unit = {
+        // TODO...
         val dependees = pValue.dependees
         if (dependees == null)
             return ;
