@@ -25,7 +25,7 @@ class NewInterpreter(
     /**
      * [[New]] expressions do not carry any relevant information in this context (as the initial
      * values are not set in a [[New]] expressions but, e.g., in
-     * [[org.opalj.tac.NonVirtualMethodCall]]s). Consequently, thus implementation always returns an
+     * [[org.opalj.tac.NonVirtualMethodCall]]s). Consequently, this implementation always returns an
      * empty list.
      *
      * @see [[AbstractStringInterpreter.interpret]]
