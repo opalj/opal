@@ -29,7 +29,7 @@ class NonVirtualMethodCallInterpreter(
      * Currently, this function supports the interpretation of the following non virtual methods:
      * <ul>
      * <li>
-     *     `&lt;init&gt;`, when initializing an object (for this case, currently zero constructor or
+     * `&lt;init&gt;`, when initializing an object (for this case, currently zero constructor or
      * one constructor parameter are supported; if more params are available, only the very first
      * one is interpreted).
      * </li>
