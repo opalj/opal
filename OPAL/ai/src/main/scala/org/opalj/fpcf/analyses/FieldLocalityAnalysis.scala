@@ -275,11 +275,11 @@ class FieldLocalityAnalysis private[analyses] (
             } else
                 true
 
-        case IntermediateEP(_, _, NoEscape | EscapeInCallee) ⇒
+        case InterimP(_, _, NoEscape | EscapeInCallee) ⇒
             state.addDefinitionSiteDependee(eOptionP, isGetFieldOfReceiver)
             false
 
-        case IntermediateEP(_, _, EscapeViaReturn) ⇒
+        case InterimP(_, _, EscapeViaReturn) ⇒
             if (isGetFieldOfReceiver) {
                 state.updateWithMeet(LocalFieldWithGetter)
                 state.addDefinitionSiteDependee(eOptionP, isGetFieldOfReceiver)
@@ -506,13 +506,13 @@ class FieldLocalityAnalysis private[analyses] (
     )(implicit state: FieldLocalityState): Boolean = eOptionP match {
         case FinalP(_, NoEscape | EscapeInCallee) ⇒ false
 
-        case IntermediateEP(_, _, NoEscape | EscapeInCallee) ⇒
+        case InterimP(_, _, NoEscape | EscapeInCallee) ⇒
             state.addClonedDefinitionSiteDependee(eOptionP)
             false
 
         case FinalP(_, EscapeViaReturn) ⇒ false
 
-        case IntermediateEP(_, _, EscapeViaReturn) ⇒
+        case InterimP(_, _, EscapeViaReturn) ⇒
             state.addClonedDefinitionSiteDependee(eOptionP)
             false
 

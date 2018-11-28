@@ -55,7 +55,7 @@ class L0CompileTimeConstancyAnalysis private[analyses] ( final val project: Some
                 case FinalP(_, _: NonFinalField) ⇒
                     Result(field, CompileTimeVaryingField);
 
-                case IntermediateEP(_, _, _) ⇒
+                case InterimP(_, _, _) ⇒
                     dependee = eps
                     InterimResult(
                         field,

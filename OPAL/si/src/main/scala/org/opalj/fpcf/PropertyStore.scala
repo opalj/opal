@@ -456,7 +456,7 @@ abstract class PropertyStore {
      *         is turned on!)
      * @param  epk An entity/property key pair.
      * @return `EPK(e,pk)` if information about the respective property is not (yet) available.
-     *         `Final|IntermediateEP(e,Property)` otherwise.
+     *         `Final|InterimP(e,Property)` otherwise.
      */
     def apply[E <: Entity, P <: Property](epk: EPK[E, P]): EOptionP[E, P]
 

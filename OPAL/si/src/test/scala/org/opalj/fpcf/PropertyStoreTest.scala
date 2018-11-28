@@ -84,7 +84,7 @@ sealed abstract class PropertyStoreTest(
                 ps.scheduleEagerComputationForEntity("d")(e ⇒ Result("d", Palindrome))
 
                 val aEP = ps("a", Palindromes.PalindromeKey)
-                if (aEP != IntermediateEP("a", NoPalindrome, Palindrome) &&
+                if (aEP != InterimP("a", NoPalindrome, Palindrome) &&
                     aEP != EPK("a", Palindromes.PalindromeKey)) {
                     fail("the property store was not correctly suspended")
                 }
@@ -699,7 +699,7 @@ sealed abstract class PropertyStoreTest(
                     def c(eps: SomeEOptionP): PropertyComputationResult = {
                         eps match {
 
-                            case IntermediateEP(_, _, ReachableNodesCount(otherUB)) ⇒
+                            case InterimP(_, _, ReachableNodesCount(otherUB)) ⇒
                                 if (ub + otherUB > 4)
                                     Result(n, TooManyNodesReachable)
                                 else {
@@ -739,7 +739,7 @@ sealed abstract class PropertyStoreTest(
                                 case epk: EPK[_, _] ⇒
                                     dependees ::= epk
                                     true
-                                case iep @ IntermediateEP(_, _, ReachableNodesCount(otherUB)) ⇒
+                                case iep @ InterimP(_, _, ReachableNodesCount(otherUB)) ⇒
                                     if (ub + otherUB > 4) {
                                         ub = TooManyNodesReachable.value
                                         false
@@ -772,7 +772,7 @@ sealed abstract class PropertyStoreTest(
 
                     def c(eps: SomeEOptionP): PropertyComputationResult = {
                         eps match {
-                            case eps @ IntermediateEP(_, _, ReachableNodes(reachableNodes)) ⇒
+                            case eps @ InterimP(_, _, ReachableNodes(reachableNodes)) ⇒
                                 InterimResult(
                                     n, TooManyNodesReachable, ReachableNodesCount(reachableNodes.size),
                                     List(eps),
@@ -1151,14 +1151,14 @@ sealed abstract class PropertyStoreTest(
                                 case epk: EPK[_, _] ⇒
                                     InterimResult(node, Impure, Pure, Iterable(epk), c, pch)
 
-                                case eps @ IntermediateEP(_, lb, ub) ⇒
+                                case eps @ InterimP(_, lb, ub) ⇒
                                     InterimResult(node, lb, ub, Iterable(eps), c, pch)
 
                                 // required when we resolve the cycle
                                 case FinalP(_, Pure)              ⇒ Result(node, Pure)
 
                                 // the following cases should never happen...
-                                case IntermediateEP(_, Impure, _) ⇒ ???
+                                case InterimP(_, Impure, _) ⇒ ???
                                 case FinalP(_, Impure)            ⇒ ???
                             }
                         }: PropertyComputationResult

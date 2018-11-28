@@ -125,7 +125,7 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
                                     case FinalP(_, CompileTimePure | Pure) ⇒ /* Nothing to do */
 
                                     // Handling cyclic computations
-                                    case ep @ IntermediateEP(_, _, Pure) ⇒
+                                    case ep @ InterimP(_, _, Pure) ⇒
                                         dependees += ep
 
                                     case EPS(_, _, _) ⇒
@@ -221,7 +221,7 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
                         InterimResult(definedMethod, ImpureByAnalysis, Pure, dependees, c)
                     }
 
-                case IntermediateEP(_, _, _) ⇒
+                case InterimP(_, _, _) ⇒
                     dependees += eps
                     InterimResult(definedMethod, ImpureByAnalysis, Pure, dependees, c)
 
@@ -259,7 +259,7 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
                 case FinalP(_, ImmutableType) ⇒ /*everything is Ok*/
                 case FinalP(_, _) ⇒
                     return Result(definedMethod, ImpureByAnalysis);
-                case IntermediateEP(_, _, ub) if ub ne ImmutableType ⇒
+                case InterimP(_, _, ub) if ub ne ImmutableType ⇒
                     return Result(definedMethod, ImpureByAnalysis);
                 case epk ⇒ dependees += epk
             }
@@ -276,7 +276,7 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
 
         def c(eps: SomeEOptionP): PropertyComputationResult = eps match {
             case FinalP(_, p)                   ⇒ Result(dm, p)
-            case ep @ IntermediateEP(_, lb, ub) ⇒ InterimResult(dm, lb, ub, Seq(ep), c)
+            case ep @ InterimP(_, lb, ub) ⇒ InterimResult(dm, lb, ub, Seq(ep), c)
             case epk                            ⇒ InterimResult(dm, ImpureByAnalysis, CompileTimePure, Seq(epk), c)
         }
 

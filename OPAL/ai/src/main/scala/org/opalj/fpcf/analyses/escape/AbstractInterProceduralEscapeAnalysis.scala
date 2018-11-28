@@ -339,11 +339,11 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
             case FinalP(_, p) ⇒
                 throw new UnknownError(s"unexpected escape property ($p) for $e")
 
-            case ep @ IntermediateEP(_, _, AtMost(_) | VirtualMethodEscapeProperty(AtMost(_))) ⇒
+            case ep @ InterimP(_, _, AtMost(_) | VirtualMethodEscapeProperty(AtMost(_))) ⇒
                 state.meetMostRestrictive(AtMost(EscapeInCallee))
                 state.addDependency(ep)
 
-            case ep @ IntermediateEP(_, _, EscapeViaReturn | VirtualMethodEscapeProperty(EscapeViaReturn)) ⇒
+            case ep @ InterimP(_, _, EscapeViaReturn | VirtualMethodEscapeProperty(EscapeViaReturn)) ⇒
                 if (hasAssignment) {
                     state.meetMostRestrictive(AtMost(EscapeInCallee))
                     state.hasReturnValueUseSites += e
@@ -352,13 +352,13 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
 
                 state.addDependency(ep)
 
-            case ep @ IntermediateEP(_, _, NoEscape | VirtualMethodEscapeProperty(NoEscape)) ⇒
+            case ep @ InterimP(_, _, NoEscape | VirtualMethodEscapeProperty(NoEscape)) ⇒
                 caseConditionalNoEscape(ep, hasAssignment)
 
-            case ep @ IntermediateEP(_, _, EscapeInCallee | VirtualMethodEscapeProperty(EscapeInCallee)) ⇒
+            case ep @ InterimP(_, _, EscapeInCallee | VirtualMethodEscapeProperty(EscapeInCallee)) ⇒
                 caseConditionalNoEscape(ep, hasAssignment)
 
-            case ep @ IntermediateEP(_, _, _) ⇒
+            case ep @ InterimP(_, _, _) ⇒
                 state.meetMostRestrictive(AtMost(EscapeInCallee))
                 if (hasAssignment)
                     state.hasReturnValueUseSites += e

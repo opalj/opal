@@ -134,7 +134,7 @@ class ReturnValueFreshnessAnalysis private[analyses] (
                 eOptP: SomeEOptionP
             ): PropertyComputationResult = eOptP match {
                 case FinalP(_, p) ⇒ Result(e, p)
-                case IntermediateEP(_, lb, ub) ⇒
+                case InterimP(_, lb, ub) ⇒
                     InterimResult(
                         e, lb, ub,
                         Set(eOptP), handleReturnValueFreshness, CheapPropertyComputation
@@ -362,17 +362,17 @@ class ReturnValueFreshnessAnalysis private[analyses] (
 
         case FinalP(_, _)               ⇒ true // Escape state is worse than via return
 
-        case IntermediateEP(_, _, NoEscape | EscapeInCallee) ⇒
+        case InterimP(_, _, NoEscape | EscapeInCallee) ⇒
             state.addDefSiteDependee(ep)
             false
 
-        case IntermediateEP(_, _, EscapeViaReturn) ⇒
+        case InterimP(_, _, EscapeViaReturn) ⇒
             state.addDefSiteDependee(ep)
             false
 
-        case IntermediateEP(_, _, AtMost(_)) ⇒ true
+        case InterimP(_, _, AtMost(_)) ⇒ true
 
-        case IntermediateEP(_, _, _)         ⇒ true // Escape state is worse than via return
+        case InterimP(_, _, _)         ⇒ true // Escape state is worse than via return
 
         case _ ⇒
             state.addDefSiteDependee(ep)
@@ -394,7 +394,7 @@ class ReturnValueFreshnessAnalysis private[analyses] (
             state.atMost(Getter)
             false
 
-        case IntermediateEP(_, _, LocalFieldWithGetter) ⇒
+        case InterimP(_, _, LocalFieldWithGetter) ⇒
             state.atMost(Getter)
             state.addFieldDependee(ep)
             false
@@ -406,7 +406,7 @@ class ReturnValueFreshnessAnalysis private[analyses] (
             state.atMost(ExtensibleGetter)
             false
 
-        case IntermediateEP(_, _, ExtensibleLocalFieldWithGetter) ⇒
+        case InterimP(_, _, ExtensibleLocalFieldWithGetter) ⇒
             state.atMost(ExtensibleGetter)
             state.addFieldDependee(ep)
             false
@@ -437,7 +437,7 @@ class ReturnValueFreshnessAnalysis private[analyses] (
 
         case EPS(_, _, ExtensibleGetter | VExtensibleGetter)     ⇒ true
 
-        case IntermediateEP(_, _, FreshReturnValue | VFreshReturnValue) ⇒
+        case InterimP(_, _, FreshReturnValue | VFreshReturnValue) ⇒
             state.addMethodDependee(ep)
             false
 

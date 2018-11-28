@@ -641,7 +641,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
 
         def c(eps: SomeEOptionP): PropertyComputationResult = eps match {
             case FinalP(_, p) ⇒ Result(dm, p)
-            case ep @ IntermediateEP(_, lb, ub) ⇒
+            case ep @ InterimP(_, lb, ub) ⇒
                 InterimResult(
                     dm, lb, ub,
                     Seq(ep), c, CheapPropertyComputation
@@ -684,7 +684,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
             case finalP: FinalP[Method, TACAI] ⇒
                 handleTACAI(finalP)
                 finalP.ub.tac
-            case eps: IntermediateEP[Method, TACAI] ⇒
+            case eps: InterimP[Method, TACAI] ⇒
                 reducePurityLB(ImpureByAnalysis)
                 handleTACAI(eps)
                 eps.ub.tac

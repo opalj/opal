@@ -55,7 +55,7 @@ class VirtualMethodStaticDataUsageAnalysis private[analyses] (
                 case FinalP(_, UsesNoStaticData)     ⇒
                 case FinalP(_, UsesConstantDataOnly) ⇒ maxLevel = UsesConstantDataOnly
                 case FinalP(_, UsesVaryingData)      ⇒ return Result(dm, VUsesVaryingData);
-                case ep @ IntermediateEP(_, _, UsesConstantDataOnly) ⇒
+                case ep @ InterimP(_, _, UsesConstantDataOnly) ⇒
                     maxLevel = UsesConstantDataOnly
                     dependees += ep
                 case epk ⇒ dependees += epk
@@ -69,7 +69,7 @@ class VirtualMethodStaticDataUsageAnalysis private[analyses] (
                 case FinalP(_, UsesNoStaticData)     ⇒
                 case FinalP(_, UsesConstantDataOnly) ⇒ maxLevel = UsesConstantDataOnly
                 case FinalP(_, UsesVaryingData)      ⇒ return Result(dm, VUsesVaryingData);
-                case ep @ IntermediateEP(_, _, UsesConstantDataOnly) ⇒
+                case ep @ InterimP(_, _, UsesConstantDataOnly) ⇒
                     maxLevel = UsesConstantDataOnly
                     dependees += ep.asInstanceOf[EOptionP[DeclaredMethod, StaticDataUsage]]
                 case epk ⇒ dependees += epk.asInstanceOf[EOptionP[DeclaredMethod, StaticDataUsage]]

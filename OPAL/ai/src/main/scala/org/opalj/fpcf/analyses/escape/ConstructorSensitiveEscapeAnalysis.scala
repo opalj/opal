@@ -114,18 +114,18 @@ trait ConstructorSensitiveEscapeAnalysis extends AbstractEscapeAnalysis {
             case FinalP(_, p) ⇒
                 throw new UnknownError(s"unexpected escape property ($p) for constructors")
 
-            case ep @ IntermediateEP(_, _, NoEscape) ⇒
+            case ep @ InterimP(_, _, NoEscape) ⇒
                 state.addDependency(ep)
 
-            case ep @ IntermediateEP(_, _, EscapeInCallee) ⇒
+            case ep @ InterimP(_, _, EscapeInCallee) ⇒
                 state.meetMostRestrictive(EscapeInCallee)
                 state.addDependency(ep)
 
-            case ep @ IntermediateEP(_, _, AtMost(EscapeInCallee)) ⇒
+            case ep @ InterimP(_, _, AtMost(EscapeInCallee)) ⇒
                 state.meetMostRestrictive(AtMost(EscapeInCallee))
                 state.addDependency(ep)
 
-            case ep @ IntermediateEP(_, _, _) ⇒
+            case ep @ InterimP(_, _, _) ⇒
                 state.meetMostRestrictive(AtMost(NoEscape))
                 state.addDependency(ep)
 

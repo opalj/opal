@@ -263,7 +263,7 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                 _: TypeImmutability | _: ClassImmutability) ⇒ // Returning mutable reference
                 atMost(SideEffectFree)
 
-            case IntermediateEP(_, _, _) ⇒ state.dependees += eps
+            case InterimP(_, _, _) ⇒ state.dependees += eps
         }
 
         if (state.ubPurity ne oldPurity)

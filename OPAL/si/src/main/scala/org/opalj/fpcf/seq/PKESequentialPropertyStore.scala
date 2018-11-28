@@ -817,7 +817,7 @@ final class PKESequentialPropertyStore private (
                             val pValue = ps(pkId)(e)
                             val lb = pValue.lb
                             val ub = pValue.ub
-                            val headEPS = IntermediateEP(e, lb, ub)
+                            val headEPS = InterimP(e, lb, ub)
                             val newP = PropertyKey.resolveCycle(this, headEPS)
                             if (traceCycleResolutions) {
                                 val cycleAsText =

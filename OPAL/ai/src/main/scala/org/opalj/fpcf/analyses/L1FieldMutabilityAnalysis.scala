@@ -204,7 +204,7 @@ class L1FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
         propertyStore(method, TACAI.key) match {
             case finalP: FinalP[Method, TACAI] ⇒
                 finalP.ub.tac
-            case eps: IntermediateEP[Method, TACAI] ⇒
+            case eps: InterimP[Method, TACAI] ⇒
                 state.tacDependees += method → ((eps, pcs))
                 eps.ub.tac
             case epk ⇒
@@ -291,14 +291,14 @@ class L1FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
         case FinalP(_, _) ⇒
             true // Escape state is worse than via return
 
-        case IntermediateEP(_, _, NoEscape | EscapeInCallee | EscapeViaReturn) ⇒
+        case InterimP(_, _, NoEscape | EscapeInCallee | EscapeViaReturn) ⇒
             state.escapeDependees += ep
             false
 
-        case IntermediateEP(_, _, AtMost(_)) ⇒
+        case InterimP(_, _, AtMost(_)) ⇒
             true
 
-        case IntermediateEP(_, _, _) ⇒
+        case InterimP(_, _, _) ⇒
             true // Escape state is worse than via return
 
         case _ ⇒

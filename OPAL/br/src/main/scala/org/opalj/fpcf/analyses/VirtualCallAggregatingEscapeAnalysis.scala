@@ -66,7 +66,7 @@ class VirtualCallAggregatingEscapeAnalysis private[analyses] ( final val project
 
         def handleEscapeState(eOptionP: EOptionP[VirtualFormalParameter, EscapeProperty]): Unit =
             eOptionP match {
-                case ep @ IntermediateEP(_, _, p) ⇒
+                case ep @ InterimP(_, _, p) ⇒
                     escapeState = escapeState meet p
                     dependees += ep
                 case FinalP(_, p) ⇒ escapeState = escapeState meet p

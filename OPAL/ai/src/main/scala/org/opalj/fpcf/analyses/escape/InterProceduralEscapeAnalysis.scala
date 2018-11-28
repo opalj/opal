@@ -66,7 +66,7 @@ class InterProceduralEscapeAnalysis private[analyses] (
                         case FinalP(_, p) ⇒
                             Result(fp, p)
 
-                        case IntermediateEP(_, lb, ub) ⇒
+                        case InterimP(_, lb, ub) ⇒
                             InterimResult(
                                 fp, lb, ub,
                                 Set(eOptionP), handleEscapeState, CheapPropertyComputation

@@ -41,7 +41,7 @@ class StaticDataUsageAnalysis private[analyses] ( final val project: SomeProject
 
         def c(eps: SomeEOptionP): PropertyComputationResult = eps match {
             case FinalP(_, sdu) ⇒ Result(dm, sdu)
-            case ep @ IntermediateEP(_, lb, ub) ⇒
+            case ep @ InterimP(_, lb, ub) ⇒
                 InterimResult(
                     dm, lb, ub,
                     Seq(ep), c, CheapPropertyComputation
@@ -130,7 +130,7 @@ class StaticDataUsageAnalysis private[analyses] ( final val project: SomeProject
                                         maxLevel = UsesConstantDataOnly
 
                                     // Handling cyclic computations
-                                    case ep @ IntermediateEP(_, _, _: NoVaryingDataUse) ⇒
+                                    case ep @ InterimP(_, _, _: NoVaryingDataUse) ⇒
                                         dependees += ep
 
                                     case EPS(_, _, _) ⇒
@@ -193,7 +193,7 @@ class StaticDataUsageAnalysis private[analyses] ( final val project: SomeProject
 
                 case FinalP(_, CompileTimeVaryingField) ⇒ Result(definedMethod, UsesVaryingData)
 
-                case IntermediateEP(_, _, UsesConstantDataOnly) ⇒
+                case InterimP(_, _, UsesConstantDataOnly) ⇒
                     maxLevel = UsesConstantDataOnly
                     dependees += eps
                     InterimResult(
@@ -201,7 +201,7 @@ class StaticDataUsageAnalysis private[analyses] ( final val project: SomeProject
                         dependees, c, CheapPropertyComputation
                     )
 
-                case IntermediateEP(_, _, _) ⇒
+                case InterimP(_, _, _) ⇒
                     dependees += eps
                     InterimResult(
                         definedMethod, UsesVaryingData, maxLevel,

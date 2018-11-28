@@ -74,7 +74,7 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
             ps(t, ClassImmutability.key) match {
                 case FinalP(_, p) ⇒
                     Result(t, p.correspondingTypeImmutability)
-                case eps @ IntermediateEP(_, lb, ub) ⇒
+                case eps @ InterimP(_, lb, ub) ⇒
                     val thisUB = ub.correspondingTypeImmutability
                     val thisLB = lb.correspondingTypeImmutability
                     InterimResult(
@@ -102,7 +102,7 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
                     joinedImmutability = ImmutableContainerType
                     maxImmutability = ImmutableContainerType
 
-                case eps @ IntermediateEP(_, lb, ub) ⇒
+                case eps @ InterimP(_, lb, ub) ⇒
                     joinedImmutability = lb.correspondingTypeImmutability
                     maxImmutability = ub.correspondingTypeImmutability
                     dependencies += (t → eps)
@@ -123,7 +123,7 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
                         joinedImmutability = joinedImmutability.meet(ImmutableContainerType)
                         maxImmutability = ImmutableContainerType
 
-                    case eps @ IntermediateEP(_, subtypeLB, subtypeUB) ⇒
+                    case eps @ InterimP(_, subtypeLB, subtypeUB) ⇒
                         joinedImmutability = joinedImmutability.meet(subtypeLB)
                         maxImmutability = maxImmutability.meet(subtypeUB)
                         dependencies += ((subtype, eps))
@@ -196,7 +196,7 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
                             dependencies = dependencies - e
                             nextResult()
 
-                        case eps @ IntermediateEP(e, _, subtypeP) ⇒
+                        case eps @ InterimP(e, _, subtypeP) ⇒
                             dependencies = dependencies.updated(
                                 e, eps
                             )

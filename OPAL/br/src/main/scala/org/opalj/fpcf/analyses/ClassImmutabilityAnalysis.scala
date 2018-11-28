@@ -170,7 +170,7 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
                     return Result(t, MutableObjectByAnalysis);
                 else
                     return createResultForAllSubtypes(t, MutableObjectByAnalysis);
-            case ep @ IntermediateEP(e, _, _) ⇒
+            case ep @ InterimP(e, _, _) ⇒
                 hasFieldsWithUnknownMutability = true
                 (e, ep)
             case epk @ EPK(e: Entity, _) ⇒
