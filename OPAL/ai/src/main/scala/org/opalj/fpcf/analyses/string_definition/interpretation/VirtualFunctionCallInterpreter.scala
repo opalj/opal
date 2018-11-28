@@ -56,33 +56,36 @@ class VirtualFunctionCallInterpreter(
     private def interpretAppendCall(
         appendCall: VirtualFunctionCall[V]
     ): List[StringConstancyInformation] = {
-        val receiverValue = receiverValueOfAppendCall(appendCall)
+        val receiverValues = receiverValuesOfAppendCall(appendCall)
         val appendValue = valueOfAppendCall(appendCall)
 
-        if (receiverValue.isEmpty && appendValue.isEmpty) {
-            List()
-        } else if (receiverValue.isDefined && appendValue.isEmpty) {
-            List(receiverValue.get)
-        } else if (receiverValue.isEmpty && appendValue.nonEmpty) {
-            List(appendValue.get)
+        // It might be that we have to go back as much as to a New expression. As they currently do
+        // not produce a result, the if part
+        if (receiverValues.isEmpty) {
+            List(appendValue)
         } else {
-            List(StringConstancyInformation(
-                StringConstancyLevel.determineForConcat(
-                    receiverValue.get.constancyLevel,
-                    appendValue.get.constancyLevel
-                ),
-                receiverValue.get.possibleStrings + appendValue.get.possibleStrings
-            ))
+            receiverValues.map { nextSci ⇒
+                StringConstancyInformation(
+                    StringConstancyLevel.determineForConcat(
+                        nextSci.constancyLevel, appendValue.constancyLevel
+                    ),
+                    nextSci.possibleStrings + appendValue.possibleStrings
+                )
+            }
         }
     }
 
     /**
      * This function determines the current value of the receiver object of an `append` call.
      */
-    private def receiverValueOfAppendCall(
+    private def receiverValuesOfAppendCall(
         call: VirtualFunctionCall[V]
-    ): Option[StringConstancyInformation] =
-        exprHandler.processDefSite(call.receiver.asVar.definedBy.head).headOption
+    ): List[StringConstancyInformation] =
+        // There might be several receivers, thus the map; from the processed sites, however, use
+        // only the head as a single receiver interpretation will produce one element
+        call.receiver.asVar.definedBy.toArray.sorted.map(
+            exprHandler.processDefSite
+        ).filter(_.nonEmpty).map(_.head).toList
 
     /**
      * Determines the (string) value that was passed to a `String{Builder, Buffer}#append` method.
@@ -90,28 +93,28 @@ class VirtualFunctionCallInterpreter(
      */
     private def valueOfAppendCall(
         call: VirtualFunctionCall[V]
-    ): Option[StringConstancyInformation] = {
+    ): StringConstancyInformation = {
+        // .head because we want to evaluate only the first argument of append
         val value = exprHandler.processDefSite(call.params.head.asVar.definedBy.head)
         call.params.head.asVar.value.computationalType match {
             // For some types, we know the (dynamic) values
-            case ComputationalTypeInt ⇒ Some(StringConstancyInformation(
+            case ComputationalTypeInt ⇒ StringConstancyInformation(
                 StringConstancyLevel.DYNAMIC, StringConstancyInformation.IntValue
-            ))
-            case ComputationalTypeFloat ⇒ Some(StringConstancyInformation(
+            )
+            case ComputationalTypeFloat ⇒ StringConstancyInformation(
                 StringConstancyLevel.DYNAMIC, StringConstancyInformation.FloatValue
-            ))
+            )
             // Otherwise, try to compute
             case _ ⇒
                 // It might be necessary to merge the values of the receiver and of the parameter
                 value.size match {
-                    case 0 ⇒ None
-                    case 1 ⇒ value.headOption
-                    case _ ⇒ Some(StringConstancyInformation(
+                    case 1 ⇒ value.head
+                    case _ ⇒ StringConstancyInformation(
                         StringConstancyLevel.determineForConcat(
                             value.head.constancyLevel, value(1).constancyLevel
                         ),
                         value.head.possibleStrings + value(1).possibleStrings
-                    ))
+                    )
                 }
         }
     }
