@@ -402,6 +402,8 @@ public class TestMethods {
         if (sb.indexOf("great!") > -1) {
             sb.append(getRuntimeClassName());
         }
+
+        // TODO: Noch ein Aufruf zu analyzeString
     }
 
     @StringDefinitions(
@@ -444,7 +446,7 @@ public class TestMethods {
             expectedLevel = StringConstancyLevel.CONSTANT,
             expectedStrings = "a(b)*"
     )
-    public void whileTrueExample() {
+    public void whileWithBreak() {
         StringBuilder sb = new StringBuilder("a");
         while (true) {
             sb.append("b");
@@ -455,34 +457,52 @@ public class TestMethods {
         analyzeString(sb.toString());
     }
 
-    //    @StringDefinitions(
-    //            value = "an extensive example with many control structures",
-    //            expectedLevel = StringConstancyLevel.PARTIALLY_CONSTANT,
-    //            expectedStrings = "(iv1|iv2): (great!)*(\\w)?"
-    //    )
-    //    public void extensive(boolean cond) {
-    //        StringBuilder sb = new StringBuilder();
-    //        if (cond) {
-    //            sb.append("iv1");
-    //        } else {
-    //            sb.append("iv2");
-    //        }
-    //        System.out.println(sb);
-    //        sb.append(": ");
-    //
-    //        Random random = new Random();
-    //        while (random.nextFloat() > 5.) {
-    //            if (random.nextInt() % 2 == 0) {
-    //                sb.append("great!");
-    //            }
-    //        }
-    //
-    //        if (sb.indexOf("great!") > -1) {
-    //            sb.append(getRuntimeClassName());
-    //        }
-    //
-    //        analyzeString(sb.toString());
-    //    }
+    @StringDefinitions(
+            value = "an example with a non-while-true loop containing a break",
+            expectedLevel = StringConstancyLevel.CONSTANT,
+            expectedStrings = "a(b)*"
+    )
+    public void whileWithBreak(int i) {
+        StringBuilder sb = new StringBuilder("a");
+        int j = 0;
+        while (j < i) {
+            sb.append("b");
+            if (sb.length() > 100) {
+                break;
+            }
+            j++;
+        }
+        analyzeString(sb.toString());
+    }
+
+    @StringDefinitions(
+            value = "an extensive example with many control structures",
+            expectedLevel = StringConstancyLevel.PARTIALLY_CONSTANT,
+            expectedStrings = "(iv1|iv2): (great!)*(\\w)?"
+    )
+    public void extensive(boolean cond) {
+        StringBuilder sb = new StringBuilder();
+        if (cond) {
+            sb.append("iv1");
+        } else {
+            sb.append("iv2");
+        }
+        System.out.println(sb);
+        sb.append(": ");
+
+        Random random = new Random();
+        while (random.nextFloat() > 5.) {
+            if (random.nextInt() % 2 == 0) {
+                sb.append("great!");
+            }
+        }
+
+        if (sb.indexOf("great!") > -1) {
+            sb.append(getRuntimeClassName());
+        }
+
+        analyzeString(sb.toString());
+    }
 
     //    @StringDefinitions(
     //            value = "a case with a switch with missing breaks",

@@ -4,6 +4,7 @@ package org.opalj.fpcf.analyses.string_definition.preprocessing
 import org.opalj.br.cfg.CFG
 import org.opalj.br.cfg.CFGNode
 import org.opalj.fpcf.analyses.string_definition.V
+import org.opalj.tac.If
 import org.opalj.tac.Stmt
 import org.opalj.tac.TACStmts
 
@@ -36,9 +37,45 @@ trait AbstractPathFinder {
      * Determines whether a given `site` is the head of a loop by comparing it to a set of loops
      * (here a list of lists). This function returns ''true'', if `site` is the head of one of the
      * inner lists.
+     * Note that some high-level constructs, such as ''while-true'', might produce a loop where the
+     * check, whether to loop again or leave the loop, is placed at the end of the loop. In such
+     * cases, the very first statement of a loop is considered its head (which can be an assignment
+     * or function call not related to the loop header for instance).
      */
-    protected def isHeadOfLoop(site: Int, loops: List[List[Int]]): Boolean =
-        loops.foldLeft(false)((old: Boolean, nextLoop: List[Int]) ⇒ old || nextLoop.head == site)
+    protected def isHeadOfLoop(
+        site: Int, loops: List[List[Int]], cfg: CFG[Stmt[V], TACStmts[V]]
+    ): Boolean = {
+        var belongsToLoopHeader = false
+
+        // First, check the trivial case: Is the given site the first statement in a loop (covers,
+        // e.g., the above-mentioned while-true cases)
+        loops.foreach { loop ⇒
+            if (!belongsToLoopHeader) {
+                if (loop.head == site) {
+                    belongsToLoopHeader = true
+                }
+            }
+        }
+
+        // The loop header might not only consist of the very first element in 'loops'; thus, check
+        // whether the given site is between the first site of a loop and the site of the very first
+        // if (again, respect structures as produces by while-true loops)
+        if (!belongsToLoopHeader) {
+            loops.foreach { nextLoop ⇒
+                if (!belongsToLoopHeader) {
+                    val start = nextLoop.head
+                    var end = start
+                    while (!cfg.code.instructions(end).isInstanceOf[If[V]]) {
+                        end += 1
+                    }
+                    if (site >= start && site <= end && end < nextLoop.last) {
+                        belongsToLoopHeader = true
+                    }
+                }
+            }
+        }
+        belongsToLoopHeader
+    }
 
     /**
      * Determines whether a given `site` is the end of a loop by comparing it to a set of loops
@@ -103,6 +140,7 @@ trait AbstractPathFinder {
      *         implementations to attach these information to [[NestedPathElement]]s (so that
      *         procedures using results of this function do not need to re-process).
      */
+    // TODO: endSite kann raus
     def findPaths(startSites: List[Int], endSite: Int, cfg: CFG[Stmt[V], TACStmts[V]]): Path
 
 }
