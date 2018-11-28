@@ -46,10 +46,13 @@ sealed trait EOptionP[+E <: Entity, +P <: Property] {
     def hasLBP: Boolean
     final def hasNoLBP: Boolean = !hasLBP
 
+    def isEPS : Boolean
     /**
      * This EOptionP as an EPS object; defined iff at least a preliminary property exists.
      */
     def asEPS: EPS[E, P]
+
+    def toEPS : Option[EPS[E,P]]
 
     /**
      * Returns `true` if and only if we have a property and the property was stored in the
@@ -144,8 +147,6 @@ object EOptionP {
  */
 sealed trait EPS[+E <: Entity, +P <: Property] extends EOptionP[E, P] {
 
-    final override def pk: PropertyKey[P] = ub.key.asInstanceOf[PropertyKey[P]]
-
     final override def toEPK: EPK[E, P] = EPK(e, pk)
 
     /**
@@ -164,29 +165,43 @@ sealed trait EPS[+E <: Entity, +P <: Property] extends EOptionP[E, P] {
      */
     override def toFinalLBP: FinalP[E, P] = FinalP(e, lb)
 
+    final override def isEPS : Boolean = true
     final override def asEPS: EPS[E, P] = this
 
+    final override  def toEPS : Option[EPS[E,P]] = Some(this)
 }
 
+
 /**
- * Provides a factory and an extractor for [[EPS]] objects.
+ * Provides a factory for [[EPS]] objects.
  *
  * @author Michael Eichberg
  */
-object ELBUBPS {
+object EPS {
 
     def apply[E <: Entity, P <: Property](e: E, lb: P, ub: P): EPS[E, P] = {
         if (lb == ub)
             FinalP(e, ub)
         else
-            InterimP(e, lb, ub)
+            InterimLBUBP(e, lb, ub)
     }
+}
+
+/**
+ * Provides an extractor for [[EPS]] objects.
+ *
+ * @author Michael Eichberg
+ */
+object ELBUBPS {
 
     /**
-     * Returns the `(Entity, LowerBound, UpperBound)`.
+     * Returns the quadruple `(Entity, LowerBound, UpperBound, Boolean)`.
+     *
+     * @note Using ELBUBPS to extract a property for which no lower or upper bound was computed
+     *       will (deliberately) result in an exception!
      */
-    def unapply[E <: Entity, P <: Property](eps: EPS[E, P]): Some[(E, P, P)] = {
-        Some((eps.e, eps.lb, eps.ub))
+    def unapply[E <: Entity, P <: Property](eps: EPS[E, P]): Some[(E, P, P,Boolean)] = {
+        Some((eps.e, eps.lb, eps.ub, eps.isFinal))
     }
 }
 
@@ -213,59 +228,13 @@ object ELBPS {
 }
 
 /**
- * Encapsulates the intermediate lower- and upper bound related to the computation of the respective
- * property kind for the entity `E`.
- *
- * For a detailed discussion of the semantics of `lb` and `ub` see [[EOptionP.lb]].
- */
-final class InterimP[+E <: Entity, +P <: Property](
-        val e:  E,
-        val lb: P,
-        val ub: P
-) extends EPS[E, P] {
-
-    assert(lb != null)
-    assert(ub != null)
-
-    override def isFinal: Boolean = false
-    override def asFinal: FinalP[E, P] = throw new ClassCastException();
-
-    override def hasLBP: Boolean = true
-    override def hasUBP: Boolean = true
-
-    override def equals(other: Any): Boolean = {
-        other match {
-            case that: InterimP[_, _] ⇒ e == that.e && lb == that.lb && ub == that.ub
-            case _                          ⇒ false
-        }
-    }
-
-    override def hashCode: Int = ((e.hashCode() * 31 + lb.hashCode()) * 31) + ub.hashCode()
-
-    override def toString: String = {
-        s"InterimP($e@${System.identityHashCode(e).toHexString},lb=$lb,ub=$ub)"
-    }
-}
-
-object InterimP {
-
-    def apply[E <: Entity, P <: Property](e: E, lb: P, ub: P): InterimP[E, P] = {
-        assert(lb ne ub)
-        new InterimP(e, lb, ub)
-    }
-
-    def unapply[E <: Entity, P <: Property](eps: InterimP[E, P]): Option[(E, P, P)] = {
-        Some((eps.e, eps.lb, eps.ub))
-    }
-}
-
-
-/**
  * Encapsulate the final property `P` for the entity `E`.
  *
  * For a detailed discussion of the semantics of `lb` and `ub` see [[EOptionP.ub]].
  */
 final class FinalP[+E <: Entity, +P <: Property](val e: E, val p: P) extends EPS[E, P] {
+
+    override def pk: PropertyKey[P] = p.key.asInstanceOf[PropertyKey[P]]
 
     override def isFinal: Boolean = true
     override def asFinal: FinalP[E, P] = this
@@ -303,6 +272,149 @@ object FinalP {
 
 }
 
+sealed trait InterimP[+E <: Entity, +P <: Property] extends EPS[E, P] {
+
+    override def isFinal: Boolean = false
+    override def asFinal: FinalP[E, P] = throw new ClassCastException();
+
+}
+
+
+/**
+ * Encapsulates the intermediate lower- and upper bound related to the computation of the respective
+ * property kind for the entity `E`.
+ *
+ * For a detailed discussion of the semantics of `lb` and `ub` see [[EOptionP.lb]].
+ */
+final class InterimLBUBP[+E <: Entity, +P <: Property](
+                                                      val e:  E,
+                                                      val lb: P,
+                                                      val ub: P
+                                                  ) extends InterimP[E, P] {
+
+    assert(lb != null)
+    assert(ub != null)
+
+    override def pk: PropertyKey[P] = ub/* or lb */.key.asInstanceOf[PropertyKey[P]]
+
+    override def hasLBP: Boolean = true
+    override def hasUBP: Boolean = true
+
+    override def equals(other: Any): Boolean = {
+        other match {
+            case that: InterimLBUBP[_, _] ⇒ e == that.e && lb == that.lb && ub == that.ub
+            case _                          ⇒ false
+        }
+    }
+
+    override def hashCode: Int = ((e.hashCode() * 31 + lb.hashCode()) * 31) + ub.hashCode()
+
+    override def toString: String = {
+        s"InterimLBUBP($e@${System.identityHashCode(e).toHexString},lb=$lb,ub=$ub)"
+    }
+}
+
+object InterimLBUBP {
+
+    def apply[E <: Entity, P <: Property](e: E, lb: P, ub: P): InterimP[E, P] = {
+        assert(lb ne ub)
+        new InterimLBUBP(e, lb, ub)
+    }
+
+    def unapply[E <: Entity, P <: Property](eps: InterimLBUBP[E, P]): Option[(E, P, P)] = {
+        Some((eps.e, eps.lb, eps.ub))
+    }
+}
+
+final class InterimUBP[+E <: Entity, +P <: Property](
+                                                      val e:  E,
+                                                      val ub: P
+                                                    ) extends InterimP[E, P] {
+
+    assert(ub != null)
+
+     override def pk: PropertyKey[P] = ub.key.asInstanceOf[PropertyKey[P]]
+
+    override def hasLBP: Boolean = false
+    override def hasUBP: Boolean = true
+
+    override def lb: Nothing = throw new UnsupportedOperationException();
+
+    override def equals(other: Any): Boolean = {
+        other match {
+            case that: InterimUBP[_, _] ⇒ e == that.e && ub == that.ub
+            case _                          ⇒ false
+        }
+    }
+
+    override def hashCode: Int = e.hashCode() * 31 + ub.hashCode()
+
+    override def toString: String = {
+        s"InterimUBP($e@${System.identityHashCode(e).toHexString},ub=$ub)"
+    }
+}
+
+/**
+ * Factory and extractor for `InterimUBP` objects. The extractor also matches `InterimLBUBP`
+ * objects, but will throw an exception for `InterimLBP` objects. If you want to match
+ * final and interim objects at the same time use the `E(LB|UB)PS` extractors.
+ */
+object InterimUBP {
+
+    def apply[E <: Entity, P <: Property](e: E, ub: P): InterimP[E, P] = {
+        new InterimUBP(e, ub)
+    }
+
+    def unapply[E <: Entity, P <: Property](eps: InterimP[E, P]): Option[(E, P)] = {
+        Some((eps.e, eps.ub))
+    }
+}
+
+final class InterimLBP[+E <: Entity, +P <: Property](
+                                                        val e:  E,
+                                                        val lb: P
+                                                    ) extends InterimP[E, P] {
+
+    assert(lb != null)
+
+     override def pk: PropertyKey[P] = lb.key.asInstanceOf[PropertyKey[P]]
+
+    override def hasLBP: Boolean = true
+    override def hasUBP: Boolean = false
+
+    override def ub: Nothing = throw new UnsupportedOperationException();
+
+    override def equals(other: Any): Boolean = {
+        other match {
+            case that: InterimLBP[_, _] ⇒ e == that.e && lb == that.lb
+            case _                          ⇒ false
+        }
+    }
+
+    override def hashCode: Int = e.hashCode() * 31 + lb.hashCode()
+
+    override def toString: String = {
+        s"InterimUBP($e@${System.identityHashCode(e).toHexString},lb=$lb)"
+    }
+}
+
+/**
+ * Factory and extractor for `InterimLBP` objects. The extractor also matches `InterimLBUBP`
+ * objects, but will throw an exception for `InterimUBP` objects. If you want to match
+ * final and interim objects at the same time use the `E(LB|UB)PS` extractors.
+ */
+object InterimLBP {
+
+    def apply[E <: Entity, P <: Property](e: E, ub: P): InterimP[E, P] = {
+        new InterimLBP(e, ub)
+    }
+
+    def unapply[E <: Entity, P <: Property](eps: InterimP[E, P]): Option[(E, P)] = {
+        Some((eps.e, eps.ub))
+    }
+}
+
+
 /**
  * A simple pair consisting of an [[Entity]] and a [[PropertyKey]].
  *
@@ -329,6 +441,8 @@ final class EPK[+E <: Entity, +P <: Property](
     override def asEPS: EPS[E, P] = throw new ClassCastException();
 
     override def toEPK: this.type = this
+
+    override def toEPS : Option[EPS[E,P]] = None
 
     override def equals(other: Any): Boolean = {
         other match {
@@ -362,10 +476,4 @@ object EPK {
     def unapply[E <: Entity, P <: Property](epk: EPK[E, P]): Option[(E, PropertyKey[P])] = {
         Some((epk.e, epk.pk))
     }
-}
-
-object NoProperty {
-
-    def unapply(eOptP: EOptionP[_, _]): Boolean = eOptP.hasNoProperty
-
 }
