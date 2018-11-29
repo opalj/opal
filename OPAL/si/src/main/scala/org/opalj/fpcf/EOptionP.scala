@@ -29,6 +29,8 @@ sealed trait EOptionP[+E <: Entity, +P <: Property] {
      */
     def pk: PropertyKey[P]
 
+    def isEPK : Boolean
+
     /** This EOptionP as a pair of an entity and a property key. */
     def toEPK: EPK[E, P]
 
@@ -146,6 +148,8 @@ object EOptionP {
  * @author Michael Eichberg
  */
 sealed trait EPS[+E <: Entity, +P <: Property] extends EOptionP[E, P] {
+
+    final override def isEPK : Boolean = false
 
     final override def toEPK: EPK[E, P] = EPK(e, pk)
 
@@ -439,6 +443,8 @@ final class EPK[+E <: Entity, +P <: Property](
     override private[fpcf] def toFinalUBP = throw new UnsupportedOperationException();
 
     override def asEPS: EPS[E, P] = throw new ClassCastException();
+
+    override def isEPK : Boolean = true
 
     override def toEPK: this.type = this
 
