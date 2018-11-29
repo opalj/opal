@@ -201,6 +201,12 @@ object InterimResult {
         new InterimResult[P](e,lb,ub,dependees,c,hint)
     }
 
+    def unapply[P <: Property](
+                                r : InterimResult[P]
+                            ) : Some[(                                Entity,P,P,Traversable[SomeEOptionP],OnUpdateContinuation,PropertyComputationHint                            )]  = {
+        Some(r.e,r.lb,r.ub,r.dependees,r.c,r.hint)
+    }
+
     def forLB[P >: Null <: Property](
                                 e:         Entity,
                                 lb:        P,
