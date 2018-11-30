@@ -56,7 +56,7 @@ class LocalStringDefinitionAnalysis(
                 throw new IllegalStateException("did not find any initializations!")
             }
 
-            val paths = pathFinder.findPaths(initDefSites, data._1.definedBy.head, cfg)
+            val paths = pathFinder.findPaths(initDefSites, cfg)
             val leanPaths = paths.makeLeanPath(data._1, stmts)
             // The following case should only occur if an object is queried that does not occur at
             // all within the CFG
@@ -72,7 +72,7 @@ class LocalStringDefinitionAnalysis(
             }
         } // If not a call to String{Builder, Buffer}.toString, then we deal with pure strings
         else {
-            val paths = pathFinder.findPaths(defSites.toList, data._1.definedBy.head, cfg)
+            val paths = pathFinder.findPaths(defSites.toList, cfg)
             if (paths.elements.isEmpty) {
                 NoResult
             } else {

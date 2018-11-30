@@ -26,9 +26,7 @@ class DefaultPathFinder extends AbstractPathFinder {
      *
      * @see [[AbstractPathFinder.findPaths]]
      */
-    override def findPaths(
-        startSites: List[Int], endSite: Int, cfg: CFG[Stmt[V], TACStmts[V]]
-    ): Path = {
+    override def findPaths(startSites: List[Int], cfg: CFG[Stmt[V], TACStmts[V]]): Path = {
         // path will accumulate all paths
         val path = ListBuffer[SubPath]()
         // TODO: Use Opal IntArrayStack

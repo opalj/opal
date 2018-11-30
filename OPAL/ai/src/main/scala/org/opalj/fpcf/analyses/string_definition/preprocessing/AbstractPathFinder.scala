@@ -130,8 +130,6 @@ trait AbstractPathFinder {
      *
      * @param startSites A list of possible start sites, that is, initializations. Several start
      *                  sites denote that an object is initialized within a conditional.
-     * @param endSite An end site which an implementation might use to early-stop the procedure.
-     *                This site can be the read operation of interest, for instance.
      * @param cfg The underlying control flow graph which servers as the basis to find the paths.
      * @return Returns all found paths as a [[Path]] object. That means, the return object is a flat
      *         structure, however, captures all hierarchies and (nested) flows. Note that a
@@ -140,7 +138,6 @@ trait AbstractPathFinder {
      *         implementations to attach these information to [[NestedPathElement]]s (so that
      *         procedures using results of this function do not need to re-process).
      */
-    // TODO: endSite kann raus
-    def findPaths(startSites: List[Int], endSite: Int, cfg: CFG[Stmt[V], TACStmts[V]]): Path
+    def findPaths(startSites: List[Int], cfg: CFG[Stmt[V], TACStmts[V]]): Path
 
 }
