@@ -5,7 +5,7 @@ package org.opalj.fpcf.string_definition.properties
  * @author Patrick Mell
  */
 case class StringConstancyInformation(
-    constancyLevel: StringConstancyLevel.Value, possibleStrings: String
+        constancyLevel: StringConstancyLevel.Value, possibleStrings: String
 )
 
 object StringConstancyInformation {
