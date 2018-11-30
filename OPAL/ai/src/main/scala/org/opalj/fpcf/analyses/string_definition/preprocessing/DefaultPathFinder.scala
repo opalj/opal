@@ -1,6 +1,7 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.analyses.string_definition.preprocessing
 
+import org.opalj.br.cfg.CatchNode
 import org.opalj.fpcf.analyses.string_definition.V
 import org.opalj.tac.Stmt
 import org.opalj.tac.TACStmts
@@ -8,6 +9,7 @@ import org.opalj.br.cfg.CFG
 import org.opalj.br.cfg.ExitNode
 import org.opalj.collection.mutable.IntArrayStack
 
+import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
 /**
@@ -32,6 +34,9 @@ class DefaultPathFinder extends AbstractPathFinder {
         val path = ListBuffer[SubPath]()
         var stack = IntArrayStack.fromSeq(startSites.reverse)
         val seenElements = ListBuffer[Int]()
+        // For storing the node IDs of all seen catch nodes (they are to be used only once, thus
+        // this store)
+        val seenCatchNodes = mutable.Map[Int, Unit.type]()
         // numSplits serves a queue that stores the number of possible branches (or successors)
         val numSplits = ListBuffer[Int]()
         // Also a queue that stores the indices of which branch of a conditional to take next
@@ -118,9 +123,13 @@ class DefaultPathFinder extends AbstractPathFinder {
                 }
             }
 
+            // Find all regular successors (excluding CatchNodes)
             val successors = bb.successors.filter {
                 !_.isInstanceOf[ExitNode]
-            }.map(_.nodeId).toList.sorted
+            }.map(_.nodeId).filter(_ >= 0).toList.sorted
+            val catchSuccessors = bb.successors.filter { s ⇒
+                s.isInstanceOf[CatchNode] && !seenCatchNodes.contains(s.nodeId)
+            }
             val successorsToAdd = successors.filter { next ⇒
                 !seenElements.contains(next) && !stack.contains(next)
             }
@@ -159,15 +168,22 @@ class DefaultPathFinder extends AbstractPathFinder {
                 newStack.push(IntArrayStack.fromSeq(stack.reverse))
                 stack = newStack
             }
-            // On a split point, prepare the next (nested) element (however, not for loop headers)
-            if (successorsToAdd.length > 1 && !isLoopHeader) {
+            // On a split point, prepare the next (nested) element (however, not for loop headers),
+            // this includes if a node has a catch node as successor
+            if ((successorsToAdd.length > 1 && !isLoopHeader) || catchSuccessors.nonEmpty) {
                 val appendSite = if (numSplits.isEmpty) path else
                     nestedElementsRef(currSplitIndex.head).element
                 var relevantNumSuccessors = successors.size
                 var ifWithElse = true
 
                 if (isCondWithoutElse(popped, cfg)) {
-                    relevantNumSuccessors -= 1
+                    // If there are catch node successors, the number of relevant successor equals
+                    // the number of successors (because catch node are excluded here)
+                    if (catchSuccessors.isEmpty) {
+                        relevantNumSuccessors -= 1
+                    } else {
+                        seenCatchNodes ++= catchSuccessors.map(n ⇒ (n.nodeId, Unit))
+                    }
                     ifWithElse = false
                 }
                 val outerNested = generateNestPathElement(
