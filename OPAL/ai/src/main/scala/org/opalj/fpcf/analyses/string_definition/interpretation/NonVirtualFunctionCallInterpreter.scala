@@ -25,16 +25,15 @@ class NonVirtualFunctionCallInterpreter(
     override type T = NonVirtualFunctionCall[V]
 
     /**
-     * Currently, [[NonVirtualFunctionCall]] are not supported. Thus, this function always returns a
-     * list with a single element consisting of [[StringConstancyLevel.DYNAMIC]] and
+     * Currently, [[NonVirtualFunctionCall]]s are not supported. Thus, this function always returns
+     * a list with a single element consisting of [[StringConstancyLevel.DYNAMIC]] and
      * [[StringConstancyInformation.UnknownWordSymbol]].
      *
      * @see [[AbstractStringInterpreter.interpret]]
      */
-    override def interpret(instr: T): List[StringConstancyInformation] = {
+    override def interpret(instr: T): List[StringConstancyInformation] =
         List(StringConstancyInformation(
             StringConstancyLevel.DYNAMIC, StringConstancyInformation.UnknownWordSymbol
         ))
-    }
 
 }
