@@ -4,6 +4,9 @@ package org.opalj.fpcf.fixtures.string_definition;
 import org.opalj.fpcf.properties.string_definition.StringConstancyLevel;
 import org.opalj.fpcf.properties.string_definition.StringDefinitions;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Random;
 
 /**
@@ -504,6 +507,34 @@ public class TestMethods {
         analyzeString(sb.toString());
     }
 
+    @StringDefinitions(
+            value = "an example with a throw (and no try-catch-finally)",
+            expectedLevel = StringConstancyLevel.PARTIALLY_CONSTANT,
+            expectedStrings = "File Content:\\w"
+    )
+    public void withThrow(String filename) throws IOException {
+        StringBuilder sb = new StringBuilder("File Content:");
+        String data = new String(Files.readAllBytes(Paths.get(filename)));
+        sb.append(data);
+        analyzeString(sb.toString());
+    }
+
+    @StringDefinitions(
+            value = "case with a try-catch-except",
+            expectedLevel = StringConstancyLevel.PARTIALLY_CONSTANT,
+            expectedStrings = "File Content:(\\w)?"
+    )
+    public void withException(String filename) {
+        StringBuilder sb = new StringBuilder("File Content:");
+        try {
+            String data = new String(Files.readAllBytes(Paths.get(filename)));
+            sb.append(data);
+        } catch (Exception ignore) {
+        } finally {
+            analyzeString(sb.toString());
+        }
+    }
+
     //    @StringDefinitions(
     //            value = "a case with a switch with missing breaks",
     //            expectedLevel = StringConstancyLevel.CONSTANT,
@@ -521,8 +552,8 @@ public class TestMethods {
     //            break;
     //        }
     //        analyzeString(sb.toString());
-    //    }
 
+    //    }
     //    //    @StringDefinitions(
     //    //            value = "checks if a string value with > 2 continuous appends and a second "
     //    //                    + "StringBuilder is determined correctly",
@@ -537,22 +568,7 @@ public class TestMethods {
     //    //        sb.append("String");
     //    //        sb.append(sb2.toString());
     //    //        analyzeString(sb.toString());
-    //    //    }
 
-    //    //    @StringDefinitions(
-    //    //            value = "case with an exception",
-    //    //            expectedLevel = StringConstancyLevel.CONSTANT,
-    //    //            expectedStrings = "(File Content: |File Content: *)"
-    //    //    )
-    //    //    public void withException(String filename) {
-    //    //        StringBuilder sb = new StringBuilder("File Content: ");
-    //    //        try {
-    //    //            String data = new String(Files.readAllBytes(Paths.get(filename)));
-    //    //            sb.append(data);
-    //    //        } catch (Exception ignore) {
-    //    //        } finally {
-    //    //            analyzeString(sb.toString());
-    //    //        }
     //    //    }
 
     private String getRuntimeClassName() {

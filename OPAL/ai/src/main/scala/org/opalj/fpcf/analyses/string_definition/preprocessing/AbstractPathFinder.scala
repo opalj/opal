@@ -1,6 +1,7 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.analyses.string_definition.preprocessing
 
+import org.opalj.br.cfg.CatchNode
 import org.opalj.br.cfg.CFG
 import org.opalj.br.cfg.CFGNode
 import org.opalj.fpcf.analyses.string_definition.V
@@ -98,7 +99,13 @@ trait AbstractPathFinder {
      *         ''else'' branch.
      */
     def isCondWithoutElse(branchingSite: Int, cfg: CFG[Stmt[V], TACStmts[V]]): Boolean = {
-        val successors = cfg.bb(branchingSite).successors.map(_.nodeId).toArray.sorted
+        val successorBlocks = cfg.bb(branchingSite).successors
+        // CatchNode exists => Regard it as conditional without alternative
+        if (successorBlocks.exists(_.isInstanceOf[CatchNode])) {
+            return true
+        }
+
+        val successors = successorBlocks.map(_.nodeId).toArray.sorted
         // Separate the last element from all previous ones
         val branches = successors.reverse.tail.reverse
         val lastEle = successors.last
