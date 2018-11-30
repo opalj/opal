@@ -6,6 +6,7 @@ import org.opalj.tac.Stmt
 import org.opalj.tac.TACStmts
 import org.opalj.br.cfg.CFG
 import org.opalj.br.cfg.ExitNode
+import org.opalj.collection.mutable.IntArrayStack
 
 import scala.collection.mutable.ListBuffer
 
@@ -29,8 +30,7 @@ class DefaultPathFinder extends AbstractPathFinder {
     override def findPaths(startSites: List[Int], cfg: CFG[Stmt[V], TACStmts[V]]): Path = {
         // path will accumulate all paths
         val path = ListBuffer[SubPath]()
-        // TODO: Use Opal IntArrayStack
-        val stack = ListBuffer[Int](startSites: _*)
+        var stack = IntArrayStack.fromSeq(startSites.reverse)
         val seenElements = ListBuffer[Int]()
         // numSplits serves a queue that stores the number of possible branches (or successors)
         val numSplits = ListBuffer[Int]()
@@ -53,8 +53,7 @@ class DefaultPathFinder extends AbstractPathFinder {
         }
 
         while (stack.nonEmpty) {
-            val popped = stack.head
-            stack.remove(0)
+            val popped = stack.pop()
             val bb = cfg.bb(popped)
             val isLoopHeader = isHeadOfLoop(popped, natLoops, cfg)
             var isLoopEnding = false
@@ -149,11 +148,16 @@ class DefaultPathFinder extends AbstractPathFinder {
                 }
             }
 
-            // Within a conditional, prepend in order to keep the correct order
             if (numSplits.nonEmpty && (bb.predecessors.size == 1)) {
-                stack.prependAll(successorsToAdd)
+                // Within a conditional, prepend in order to keep the correct order
+                val newStack = IntArrayStack.fromSeq(stack.reverse)
+                newStack.push(IntArrayStack.fromSeq(successorsToAdd.reverse))
+                stack = newStack
             } else {
-                stack.appendAll(successorsToAdd)
+                // Otherwise, append (also retain the correct order)
+                val newStack = IntArrayStack.fromSeq(successorsToAdd.reverse)
+                newStack.push(IntArrayStack.fromSeq(stack.reverse))
+                stack = newStack
             }
             // On a split point, prepare the next (nested) element (however, not for loop headers)
             if (successorsToAdd.length > 1 && !isLoopHeader) {
