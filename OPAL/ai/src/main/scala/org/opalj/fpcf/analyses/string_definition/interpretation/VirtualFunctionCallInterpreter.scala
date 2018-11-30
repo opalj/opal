@@ -59,8 +59,8 @@ class VirtualFunctionCallInterpreter(
         val receiverValues = receiverValuesOfAppendCall(appendCall)
         val appendValue = valueOfAppendCall(appendCall)
 
-        // It might be that we have to go back as much as to a New expression. As they currently do
-        // not produce a result, the if part
+        // It might be that we have to go back as much as to a New expression. As they do not
+        // produce a result (= empty list), the if part
         if (receiverValues.isEmpty) {
             List(appendValue)
         } else {
@@ -95,7 +95,15 @@ class VirtualFunctionCallInterpreter(
         call: VirtualFunctionCall[V]
     ): StringConstancyInformation = {
         // .head because we want to evaluate only the first argument of append
-        val value = exprHandler.processDefSite(call.params.head.asVar.definedBy.head)
+        val defSiteParamHead = call.params.head.asVar.definedBy.head
+        var value = exprHandler.processDefSite(defSiteParamHead)
+        // If defSiteParamHead points to a New, value will be the empty list. In that case, process
+        // the first use site (which is the <init> call
+        if (value.isEmpty) {
+            value = exprHandler.processDefSite(
+                cfg.code.instructions(defSiteParamHead).asAssignment.targetVar.usedBy.toArray.min
+            )
+        }
         call.params.head.asVar.value.computationalType match {
             // For some types, we know the (dynamic) values
             case ComputationalTypeInt ⇒ StringConstancyInformation(

@@ -12,6 +12,7 @@ import org.opalj.tac.ExprStmt
 import org.opalj.tac.New
 import org.opalj.tac.NonVirtualFunctionCall
 import org.opalj.tac.NonVirtualMethodCall
+import org.opalj.tac.StaticFunctionCall
 import org.opalj.tac.Stmt
 import org.opalj.tac.StringConst
 import org.opalj.tac.TACStmts
@@ -60,6 +61,8 @@ class InterpretationHandler(cfg: CFG[Stmt[V], TACStmts[V]]) {
                 new NewInterpreter(cfg, this).interpret(expr.asNew)
             case Assignment(_, _, expr) if expr.isInstanceOf[VirtualFunctionCall[V]] ⇒
                 new VirtualFunctionCallInterpreter(cfg, this).interpret(expr.asVirtualFunctionCall)
+            case Assignment(_, _, expr) if expr.isInstanceOf[StaticFunctionCall[V]] ⇒
+                new StaticFunctionCallInterpreter(cfg, this).interpret(expr.asStaticFunctionCall)
             case Assignment(_, _, expr) if expr.isInstanceOf[BinaryExpr[V]] ⇒
                 new BinaryExprInterpreter(cfg, this).interpret(expr.asBinaryExpr)
             case Assignment(_, _, expr) if expr.isInstanceOf[NonVirtualFunctionCall[V]] ⇒
