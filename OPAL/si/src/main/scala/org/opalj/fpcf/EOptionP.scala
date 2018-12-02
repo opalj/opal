@@ -186,7 +186,11 @@ object EPS {
     def apply[E <: Entity, P <: Property](e: E, lb: P, ub: P): EPS[E, P] = {
         if (lb == ub)
             FinalP(e, ub)
-        else
+        else if(lb == null)
+            InterimUBP(e,  ub)
+        else if (ub == null)
+            InterimLBP(e, lb)
+            else
             InterimLBUBP(e, lb, ub)
     }
 }
