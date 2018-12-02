@@ -89,6 +89,10 @@ package object fpcf {
 
     final type SomePropertyComputation = PropertyComputation[_ <: Entity]
 
+    final type ProperPropertyComputation[E <: Entity] = E ⇒ ProperPropertyComputationResult
+
+    final type SomeProperPropertyComputation = ProperPropertyComputation[_ <: Entity]
+
     final type OnUpdateContinuation = SomeEPS ⇒ ProperPropertyComputationResult
 
     /**
