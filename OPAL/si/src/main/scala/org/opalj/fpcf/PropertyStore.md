@@ -1,7 +1,7 @@
 # The PropertyStore
 
-The property store is responsible storing properties for entities and for (optionally concurrently) executing a set of computations that derive properties of different kinds for some entities.
-Properties computed for entities always have an underlying lattice which puts all properties in a partial order.
+The property store is responsible for storing properties associated with entities and for (optionally concurrently) executing a set of computations that derive properties of different kinds for some entities.
+Properties computed for entities always have an underlying (semi-)lattice which puts all properties in a partial order.
  
 In case that we have entities for which no analyses are scheduled, it is possible to let the store automatically fill in default values (fallback values). Fallbacks are configurable.
 
