@@ -501,7 +501,7 @@ abstract class PropertyStore {
      */
     final def registerLazyPropertyComputation[E <: Entity, P <: Property](
         pk: PropertyKey[P],
-        pc: PropertyComputation[E] // TODO Refine the result type to state that onle "normal" results are allowed!
+        pc: ProperPropertyComputation[E] // TODO add definition of PropertyComputationResult that is parameterized over the kind of Property to specify that we want a PropertyComputationResult with respect to PropertyKey (pk)
     ): Unit = {
         analysesRegistered = true
         doRegisterLazyPropertyComputation(pk, pc)
@@ -509,7 +509,7 @@ abstract class PropertyStore {
 
     protected[this] def doRegisterLazyPropertyComputation[E <: Entity, P <: Property](
         pk: PropertyKey[P],
-        pc: PropertyComputation[E]
+        pc: ProperPropertyComputation[E]
     ): Unit
 
     /**
@@ -535,6 +535,10 @@ abstract class PropertyStore {
      * was set to the fallback due to a depending computation, it may be necessary to distinguish
      * between the case "no callers" and "unknown callers"; in case of the final property
      * "no callers" the result may very well be [[NoResult]].
+     *
+     * @note A computation is guaranteed to be triggered excactly once for every e/pk pair that has
+     *       a concrete property - even if the value was already associated with the e/pk pair
+     *       before the registration is done.
      *
      * @param pk The property key.
      * @param pc The computation that is (potentially concurrently) called to kick-start a
@@ -651,8 +655,8 @@ abstract class PropertyStore {
                 exception.addSuppressed(t)
             }
         } else {
-            // double-checked locking... we don't care about performance if everything falls
-            // apart anyway.
+            // Here, we use double-checked locking... we don't care about performance if
+            // everything falls apart anyway.
             this.synchronized {
                 if (exception ne null) {
                     if (exception ne t) {
