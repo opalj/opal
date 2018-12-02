@@ -11,13 +11,13 @@ import scala.collection.mutable
 import scala.collection.{Map ⇒ SomeMap}
 import scala.collection.mutable.AnyRefMap
 
+import com.fasterxml.jackson.databind.deser.impl.PropertyValue
 import org.opalj.graphs
 
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.info
 import org.opalj.log.OPALLogger.{debug ⇒ trace}
 import org.opalj.log.OPALLogger.error
-
 import org.opalj.fpcf.PropertyKind.SupportedPropertyKinds
 import org.opalj.fpcf.PropertyKey.fallbackPropertyBasedOnPKId
 import org.opalj.fpcf.PropertyKey.fastTrackPropertyBasedOnPKId
@@ -111,12 +111,13 @@ final class PKESequentialPropertyStore private (
     }
 
     // Those computations that will only be scheduled if the result is required
-    private[this] var lazyComputations: Array[SomePropertyComputation] = {
+    private[this] var lazyComputations: Array[SomeProperPropertyComputation] = {
         new Array(PropertyKind.SupportedPropertyKinds)
     }
 
-    private[this] var triggeredComputations: Array[ArrayBuffer[SomePropertyComputation]] = {
-        Array.fill(PropertyKind.SupportedPropertyKinds) { new ArrayBuffer[SomePropertyComputation](1) }
+    // The registered triggered computations along with the set of entities for which the analysis was triggered
+    private[this] var triggeredComputations: Array[mutable.AnyRefMap[SomePropertyComputation,mutable.HashSet[Entity]]] = {
+        Array.fill(PropertyKind.SupportedPropertyKinds) { mutable.AnyRefMap.empty }
     }
 
     // The list of scheduled computations
@@ -251,7 +252,7 @@ final class PKESequentialPropertyStore private (
 
     override def doRegisterLazyPropertyComputation[E <: Entity, P <: Property](
         pk: PropertyKey[P],
-        pc: PropertyComputation[E]
+        pc: ProperPropertyComputation[E]
     ): Unit = {
         if (debug && !tasks.isEmpty) {
             throw new IllegalStateException(
@@ -270,23 +271,31 @@ final class PKESequentialPropertyStore private (
                 "triggered computations should only be registered while no computations are running"
             )
         }
-        triggeredComputations(pk.id) += pc
+        val triggeredEntities =mutable.HashSet.empty[Entity]
+        triggeredComputations(pk.id) += (pc, triggeredEntities)
         // trigger the computation for entities which already have values
         for {
             eOptionP <- ps(pk.id).valuesIterator
             if eOptionP.isEPS
+            e = eOptionP.e
+            if !triggeredEntities.contains(e)
         } {
-            pc(eOptionP.e)
+            triggeredEntities += e
+            tasks.addLast(new PropertyComputationTask(this,e,pc))
+            scheduledTasksCounter += 1
         }
-
     }
 
     private[this] def triggerComputations(e: Entity, pkId: Int): Unit = {
         val triggeredComputations = this.triggeredComputations(pkId)
         if (triggeredComputations != null) {
-            triggeredComputations foreach (pc ⇒
-                scheduleEagerComputationForEntity(e)(pc.asInstanceOf[PropertyComputation[Entity]])
-                )
+            triggeredComputations foreach { pcEntities ⇒
+                val (pc, triggeredEntities) = pcEntities
+                if(!triggeredEntities.contains(e)) {
+                    triggeredEntities += e
+                    scheduleEagerComputationForEntity(e)(pc.asInstanceOf[PropertyComputation[Entity]])
+                }
+            }
         }
     }
 
@@ -308,50 +317,48 @@ final class PKESequentialPropertyStore private (
         tasks.addLast(new PropertyComputationTask(this, e, pc))
     }
 
-    private[this] def clearDependees(pValue: PropertyValue, pValueEPK: SomeEPK): Unit = {
-        // TODO...
-        val dependees = pValue.dependees
-        if (dependees == null)
-            return ;
-
+    private[this] def clearDependees(epk: SomeEPK): Unit = {
+        val pkId = epk.pk.id
+        val e = epk.e
         for {
-            eOptP @ EOptionP(oldDependeeE, oldDependeePK) ← dependees // <= the old ones
+            epkDependees <- dependees(pkId).get(e)
+            EOptionP(oldDependeeE, oldDependeePK) ← epkDependees // <= the old ones
+            oldDependeePKId = oldDependeePK.id
+            dependeeDependers ← dependers(oldDependeePKId).get(oldDependeeE)
         } {
-            val oldDependeePKId = oldDependeePK.id
-            // Please recall, that we don't create support data-structures
-            // (i.e., PropertyValue) eagerly... but they should have been
-            // created by now or the dependees should be empty!
-            val dependeePValue = ps(oldDependeePKId)(oldDependeeE)
-            val dependeeIntermediatePValue = dependeePValue.asIntermediate
-            val dependersOfDependee = dependeeIntermediatePValue.dependers
-            dependeeIntermediatePValue.dependers = dependersOfDependee - pValueEPK
+            dependeeDependers -= epk
         }
-        pValue.asIntermediate.dependees = null
     }
 
     /**
      * Updates the entity; returns true if no property already existed and is also not computed.
      * That is, setting the value was w.r.t. the current state of the property OK.
      */
-    private[this] def update(
-        eps : SomeEPS,
-        newDependees: Traversable[SomeEOptionP]
-    ): Boolean = {
-        if (debug && e == null) {
-            throw new IllegalArgumentException("the entity must not be null");
-        }
-        val pkId = ub.key.id
-        ps(pkId).get(e) match {
+    private[this] def update(eps : SomeEPS,newDependees: Traversable[SomeEOptionP]): Boolean = {
+        val pkId = eps.pk.id
+        val e = eps.e
+        ps(pkId).put(e,eps) match {
             case None ⇒
                 // The entity is unknown (=> there are no dependers/dependees):
-                ps(pkId).put(e, PropertyValue(lb, ub, newDependees))
-                triggerComputations(e, pkId)
+                triggerComputations(e,pkId)
+                dependees(pkId).getOrElseUpdate(e,newDependees)
                 // registration with the new dependees is done when processing InterimResult
                 true
 
+            case Some(_) ⇒
+            // The entity is known and we have a property value for the respective
+            // kind; i.e., we may have (old) dependees and/or also dependers.
+        }
+        ps(pkId).get(eps.e) match {
+            case None ⇒
+
+                ps(pkId).put(e, PropertyValue(lb, ub, newDependees))
+                triggerComputations(e, pkId)
+
+                true
+
             case Some(pValue: IntermediatePropertyValue) ⇒
-                // The entity is known and we have a property value for the respective
-                // kind; i.e., we may have (old) dependees and/or also dependers.
+
                 val oldIsFinal = pValue.isFinal
                 val oldLB = pValue.lb
                 val oldUB = pValue.ub
@@ -522,7 +529,7 @@ final class PKESequentialPropertyStore private (
                 newEPSOption foreach { newEPS ⇒ update(newEPS, Nil) }
 
             case InterimResult.id ⇒
-                val InterimResult(e, lb, ub, processedDependees, c, _) = r
+                val InterimResult(interimP : SomeEPS, processedDependees, c, pcHint) = r
 
                 def checkNonFinal(dependee: SomeEOptionP): Unit = {
                     if (dependee.isFinal) {
@@ -593,11 +600,7 @@ final class PKESequentialPropertyStore private (
                                     else
                                         tasks.addFirst(t)
                                 } else {
-                                    val t =
-                                        OnUpdateComputationTask(this,
-                                            EPK(dependeeE, dependeePK),
-                                            c
-                                        )
+                                    val t = OnUpdateComputationTask(this,processedDependee.toEPK,c)
                                     if (dependeeUpdateHandling.delayHandlingOfNonFinalDependeeUpdates)
                                         tasks.addLast(t)
                                     else
@@ -612,40 +615,26 @@ final class PKESequentialPropertyStore private (
 
                 if (noUpdates) {
                     // 2.1. update the value (trigger dependers/clear old dependees)
-                    update(e, lb, ub, newDependees)
+                    update(interimP, processedDependees)
 
                     // 2.2 The most current value of every dependee was taken into account
-                    //     register with new (!) dependees.
-                    val dependerEPK = EPK(e, ub)
+                    //     register with the (!) dependees.
+                    val dependerEPK = interimP.toEPK
                     val dependency = (dependerEPK, c)
 
-                    newDependees foreach { dependee ⇒
+                    processedDependees foreach { dependee ⇒
                         val dependeeE = dependee.e
                         val dependeePKId = dependee.pk.id
 
-                        ps(dependeePKId).get(dependeeE) match {
-                            case None ⇒
-                                // the dependee is not known
-                                ps(dependeePKId).put(
-                                    dependeeE,
-                                    new IntermediatePropertyValue(dependerEPK, c)
-                                )
-
-                            case Some(dependeePValue: IntermediatePropertyValue) ⇒
-                                val dependeeDependers = dependeePValue.dependers
-                                dependeePValue.dependers = dependeeDependers + dependency
-
-                            case _ /*dependeePValue*/ ⇒
-                                throw new UnknownError(
-                                    "fatal internal error: can't update dependees of final property"
-                                )
-                        }
+                        val dependeeDependers =
+                            dependers(dependeePKId).getOrElseUpdate(dependeeE,AnyRefMap.empty)
+                        dependeeDependers += (dependerEPK,(c,pcHint))
                     }
                 } else {
                     // 2.1. update the value (trigger dependers/clear old dependees)
                     // There was an update and we already scheduled the computation... hence,
                     // we have no live dependees any more.
-                    update(e, lb, ub, Nil)
+                    update(interimP, Nil)
                 }
         }
     }
