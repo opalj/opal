@@ -184,9 +184,13 @@ sealed trait EPS[+E <: Entity, +P <: Property] extends EOptionP[E, P] {
 object EPS {
 
     def apply[E <: Entity, P <: Property](e: E, lb: P, ub: P): EPS[E, P] = {
-        if (lb == ub)
-            FinalP(e, ub)
-        else if(lb == null)
+        if (lb == ub) {
+            if(lb == null /* && | || ub == null*/) {
+                throw new IllegalArgumentException(s"lb and ub are null")
+            } else {
+                FinalP(e, ub)
+            }
+        } else if(lb == null)
             InterimUBP(e,  ub)
         else if (ub == null)
             InterimLBP(e, lb)
@@ -287,6 +291,21 @@ sealed trait InterimP[+E <: Entity, +P <: Property] extends EPS[E, P] {
 
 }
 
+object InterimP {
+
+    def apply[E <: Entity, P <: Property](e: E, lb: P, ub: P): InterimP[E, P] = {
+        if (lb == ub) {
+                throw new IllegalArgumentException(s"lb and ub are equal ($lb)")
+        } else if(lb == null)
+            InterimUBP(e,  ub)
+        else if (ub == null)
+            InterimLBP(e, lb)
+        else
+            InterimLBUBP(e, lb, ub)
+    }
+
+}
+
 
 /**
  * Encapsulates the intermediate lower- and upper bound related to the computation of the respective
@@ -302,6 +321,12 @@ final class InterimLBUBP[+E <: Entity, +P <: Property](
 
     assert(lb != null)
     assert(ub != null)
+
+    if (PropertyStore.Debug && lb /*or ub*/ .isOrderedProperty) {
+                val ubAsOP = ub.asOrderedProperty
+                ubAsOP.checkIsEqualOrBetterThan(e, lb.asInstanceOf[ubAsOP.Self])
+            }
+
 
     override def pk: PropertyKey[P] = ub/* or lb */.key.asInstanceOf[PropertyKey[P]]
 
