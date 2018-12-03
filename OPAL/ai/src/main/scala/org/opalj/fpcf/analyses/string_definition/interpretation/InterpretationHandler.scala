@@ -17,6 +17,7 @@ import org.opalj.tac.Stmt
 import org.opalj.tac.StringConst
 import org.opalj.tac.TACStmts
 import org.opalj.tac.VirtualFunctionCall
+import org.opalj.tac.VirtualMethodCall
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
@@ -75,6 +76,8 @@ class InterpretationHandler(cfg: CFG[Stmt[V], TACStmts[V]]) {
                         new VirtualFunctionCallInterpreter(cfg, this).interpret(vfc)
                     case _ ⇒ List()
                 }
+            case vmc: VirtualMethodCall[V] ⇒
+                new VirtualMethodCallInterpreter(cfg, this).interpret(vmc)
             case nvmc: NonVirtualMethodCall[V] ⇒
                 new NonVirtualMethodCallInterpreter(cfg, this).interpret(nvmc)
             case _ ⇒ List()

@@ -552,6 +552,34 @@ public class TestMethods {
         }
     }
 
+    @StringDefinitions(
+            value = "a simple example with a StringBuilder#clear",
+            expectedLevel = StringConstancyLevel.DYNAMIC,
+            expectedStrings = "\\w"
+    )
+    public void simpleClearExample(int value) {
+        StringBuilder sb = new StringBuilder("init_value:");
+        sb.setLength(0);
+        sb.append(getStringBuilderClassName());
+        analyzeString(sb.toString());
+    }
+
+    @StringDefinitions(
+            value = "a more advanced example with a StringBuilder#clear",
+            expectedLevel = StringConstancyLevel.CONSTANT,
+            expectedStrings = "(init_value:Hello, world!Goodbye|Goodbye)"
+    )
+    public void advancedClearExample(int value) {
+        StringBuilder sb = new StringBuilder("init_value:");
+        if (value < 10) {
+            sb.setLength(0);
+        } else {
+            sb.append("Hello, world!");
+        }
+        sb.append("Goodbye");
+        analyzeString(sb.toString());
+    }
+
     //    @StringDefinitions(
     //            value = "a case with a switch with missing breaks",
     //            expectedLevel = StringConstancyLevel.CONSTANT,

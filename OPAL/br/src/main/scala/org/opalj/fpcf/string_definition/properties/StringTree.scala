@@ -20,49 +20,113 @@ sealed abstract class StringTreeElement(val children: ListBuffer[StringTreeEleme
      * @param subtree The tree (or subtree) to reduce.
      * @return The reduced tree.
      */
-    private def reduceAcc(subtree: StringTreeElement): StringConstancyInformation = {
+    private def reduceAcc(subtree: StringTreeElement): List[StringConstancyInformation] = {
         subtree match {
             case StringTreeRepetition(c, lowerBound, upperBound) ⇒
-                val reduced = reduceAcc(c)
+                val reduced = reduceAcc(c).head
                 val times = if (lowerBound.isDefined && upperBound.isDefined)
                     (upperBound.get - lowerBound.get).toString else InfiniteRepetitionSymbol
-                StringConstancyInformation(
+                List(StringConstancyInformation(
                     reduced.constancyLevel,
+                    reduced.constancyType,
                     s"(${reduced.possibleStrings})$times"
-                )
+                ))
 
             case StringTreeConcat(cs) ⇒
-                cs.map(reduceAcc).reduceLeft { (old, next) ⇒
-                    StringConstancyInformation(
-                        StringConstancyLevel.determineForConcat(
-                            old.constancyLevel, next.constancyLevel
-                        ),
-                        old.possibleStrings + next.possibleStrings
-                    )
+                val reducedLists = cs.map(reduceAcc)
+                val nestingLevel = reducedLists.foldLeft(0) {
+                    (max: Int, next: List[StringConstancyInformation]) ⇒ Math.max(max, next.size)
                 }
+                val scis = ListBuffer[StringConstancyInformation]()
+                // Stores whether the last processed element was of type RESET
+                var wasReset = false
+                reducedLists.foreach { nextList ⇒
+                    nextList.foreach { nextSci ⇒
+                        // Add the first element only if not a reset (otherwise no new information)
+                        if (scis.isEmpty && nextSci.constancyType != StringConstancyType.RESET) {
+                            scis.append(nextSci)
+                        } // No two consecutive resets (does not add any new information either)
+                        else if (!wasReset || nextSci.constancyType != StringConstancyType.RESET) {
+                            // A reset marks a new starting point => Add new element to the list
+                            if (nextSci.constancyType == StringConstancyType.RESET) {
+                                if (nestingLevel == 1) {
+                                    scis.clear()
+                                } else {
+                                    scis.append(StringConstancyInformation(
+                                        StringConstancyLevel.CONSTANT, StringConstancyType.APPEND
+                                    ))
+                                }
+                            } // Otherwise, collapse / combine with seen elements
+                            else {
+                                scis.zipWithIndex.foreach {
+                                    case (sci, index) ⇒
+                                        val collapsed = StringConstancyInformation(
+                                            StringConstancyLevel.determineForConcat(
+                                                sci.constancyLevel, nextSci.constancyLevel
+                                            ),
+                                            StringConstancyType.APPEND,
+                                            sci.possibleStrings + nextSci.possibleStrings
+                                        )
+                                        scis(index) = collapsed
+                                }
+                            }
+                        }
+                        // For the next iteration
+                        wasReset = nextSci.constancyType == StringConstancyType.RESET
+                    }
+                }
+                scis.toList
 
             case StringTreeOr(cs) ⇒
-                val reduced = cs.map(reduceAcc).reduceLeft { (old, next) ⇒
-                    StringConstancyInformation(
-                        StringConstancyLevel.determineMoreGeneral(
-                            old.constancyLevel, next.constancyLevel
-                        ),
-                        old.possibleStrings+"|"+next.possibleStrings
-                    )
-                }
-                StringConstancyInformation(reduced.constancyLevel, s"(${reduced.possibleStrings})")
-
-            case StringTreeCond(c) ⇒
-                val scis = c.map(reduceAcc)
-                val reducedInfo = scis.reduceLeft((o, n) ⇒ StringConstancyInformation(
+                val reduced = cs.flatMap(reduceAcc)
+                val containsReset = reduced.exists(_.constancyType == StringConstancyType.RESET)
+                val appendElements = reduced.filter { _.constancyType == StringConstancyType.APPEND }
+                val reducedInfo = appendElements.reduceLeft((o, n) ⇒ StringConstancyInformation(
                     StringConstancyLevel.determineMoreGeneral(o.constancyLevel, n.constancyLevel),
+                    StringConstancyType.APPEND,
                     s"${o.possibleStrings}|${n.possibleStrings}"
                 ))
-                StringConstancyInformation(
-                    reducedInfo.constancyLevel, s"(${reducedInfo.possibleStrings})?"
-                )
 
-            case StringTreeConst(sci) ⇒ sci
+                val scis = ListBuffer[StringConstancyInformation]()
+                var possibleStrings = s"${reducedInfo.possibleStrings}"
+                if (appendElements.tail.nonEmpty) {
+                    possibleStrings = s"($possibleStrings)"
+                }
+                scis.append(StringConstancyInformation(
+                    reducedInfo.constancyLevel, reducedInfo.constancyType, possibleStrings
+                ))
+                if (containsReset) {
+                    scis.append(StringConstancyInformation(
+                        StringConstancyLevel.CONSTANT, StringConstancyType.RESET
+                    ))
+                }
+                scis.toList
+
+            case StringTreeCond(c) ⇒
+                val reduced = c.flatMap(reduceAcc)
+                val containsReset = reduced.exists(_.constancyType == StringConstancyType.RESET)
+                val reducedInfo = reduced.filter {
+                    _.constancyType == StringConstancyType.APPEND
+                }.reduceLeft((o, n) ⇒ StringConstancyInformation(
+                    StringConstancyLevel.determineMoreGeneral(o.constancyLevel, n.constancyLevel),
+                    StringConstancyType.APPEND,
+                    s"${o.possibleStrings}|${n.possibleStrings}"
+                ))
+
+                val scis = ListBuffer[StringConstancyInformation]()
+                scis.append(StringConstancyInformation(
+                    reducedInfo.constancyLevel,
+                    reducedInfo.constancyType,
+                    s"(${reducedInfo.possibleStrings})?"
+                ))
+                if (containsReset) {
+                    scis.append(StringConstancyInformation(
+                        StringConstancyLevel.CONSTANT, StringConstancyType.APPEND
+                    ))
+                }
+                scis.toList
+
+            case StringTreeConst(sci) ⇒ List(sci)
         }
     }
 
@@ -190,7 +254,13 @@ sealed abstract class StringTreeElement(val children: ListBuffer[StringTreeEleme
      *
      * @return A [[StringConstancyInformation]] instance that flatly describes this tree.
      */
-    def reduce(): StringConstancyInformation = reduceAcc(this)
+    def reduce(): StringConstancyInformation = {
+        reduceAcc(this).reduceLeft((o, n) ⇒ StringConstancyInformation(
+            StringConstancyLevel.determineMoreGeneral(o.constancyLevel, n.constancyLevel),
+            StringConstancyType.APPEND,
+            s"(${o.possibleStrings}|${n.possibleStrings})"
+        ))
+    }
 
     /**
      * Simplifies this tree. Currently, this means that when a (sub) tree has a
