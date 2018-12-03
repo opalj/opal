@@ -202,7 +202,7 @@ case class UselessPartialResult(
 
 case class MetaInformationDeleted(
         eventId: Int,
-        finalP: SomeFinalP
+        finalP:  SomeFinalP
 ) extends StoreEvent {
 
     override def toTxt: String = s"$eventId: MetaInformationDeleted(${finalP.toEPK})"

@@ -105,8 +105,8 @@ final class PKECPropertyStore private (
         def compute(): Unit = processResult(pc(e))
     }
 
-    private[this] class HandleResult( r: PropertyComputationResult    ) extends RecursiveAction {
-        def compute(): Unit =             processResult(r)
+    private[this] class HandleResult(r: PropertyComputationResult) extends RecursiveAction {
+        def compute(): Unit = processResult(r)
     }
 
     def shutdown(): Unit = store.pool.shutdown()
@@ -124,25 +124,27 @@ final class PKECPropertyStore private (
         pc: PropertyComputation[E]
     ): Unit = {
 
-            val pkId = pk.id
-            var oldComputations: Array[SomePropertyComputation] = triggeredComputations(pkId)
-            var newComputations: Array[SomePropertyComputation] = null
+        val pkId = pk.id
+        var oldComputations: Array[SomePropertyComputation] = triggeredComputations(pkId)
+        var newComputations: Array[SomePropertyComputation] = null
 
-            if (oldComputations == null) {
-                newComputations = Array[SomePropertyComputation](pc)
-            } else {
-                newComputations = java.util.Arrays.copyOf(oldComputations, oldComputations.length + 1)
-                newComputations(oldComputations.length) = pc
-            }
-            triggeredComputations(pkId) = newComputations
-        // Let's check if we need to trigger it right away due to already existing values...
-        ???
+        if (oldComputations == null) {
+            newComputations = Array[SomePropertyComputation](pc)
+        } else {
+            newComputations = java.util.Arrays.copyOf(oldComputations, oldComputations.length + 1)
+            newComputations(oldComputations.length) = pc
         }
+        triggeredComputations(pkId) = newComputations
 
+        // Let's check if we need to trigger it right away due to already existing values...
+        println(oldComputations)
+        ???
+
+    }
 
     override def doRegisterLazyPropertyComputation[E <: Entity, P <: Property](
-        pk:       PropertyKey[P],
-        pc:       ProperPropertyComputation[E]
+        pk: PropertyKey[P],
+        pc: ProperPropertyComputation[E]
     ): Unit = {
         ???
     }
@@ -161,9 +163,9 @@ final class PKECPropertyStore private (
     }
 
     override def doPreInitialize[E <: Entity, P <: Property](
-                                                                e: E,
-                                                                pk: PropertyKey[P]
-                                                            )(
+        e:  E,
+        pk: PropertyKey[P]
+    )(
         pc: EOptionP[E, P] ⇒ EPS[E, P]
     ): Unit = {
         ???
@@ -580,5 +582,5 @@ trait State {
 }
 
 case class FinalState(eps: SomeEPS) extends State {
- ???
+    ???
 }

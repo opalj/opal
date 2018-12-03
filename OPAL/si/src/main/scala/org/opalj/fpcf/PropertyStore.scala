@@ -275,7 +275,7 @@ abstract class PropertyStore {
      * If a property is queried for which we have no value, then this information is used
      * to determine which kind of fallback is required.
      */
-    protected[this] var propertyKindsComputedInEarlierPhase : Array[Boolean] = {
+    protected[this] var propertyKindsComputedInEarlierPhase: Array[Boolean] = {
         new Array(PropertyKind.SupportedPropertyKinds)
     }
 
@@ -428,9 +428,9 @@ abstract class PropertyStore {
      *        in a later phase.
      */
     final def setupPhase(
-                               propertyKindsComputedInThisPhase: Set[PropertyKind],
-                               propertyKindsComputedInLaterPhase:  Set[PropertyKind]
-                           ): Unit = handleExceptions {
+        propertyKindsComputedInThisPhase:  Set[PropertyKind],
+        propertyKindsComputedInLaterPhase: Set[PropertyKind]
+    ): Unit = handleExceptions {
         if (!isIdle) {
             throw new IllegalStateException("computations are already running");
         }
@@ -443,8 +443,8 @@ abstract class PropertyStore {
         // Note that "lazy" property computations may be executed accross several phases,
         // however, all "intermediate" values found at the end of a phase can still be executed.
         this.propertyKindsComputedInThisPhase.iterator.zipWithIndex foreach { previousPhaseComputedPK ⇒
-            val (isComputed,pkId) =         previousPhaseComputedPK
-            if(isComputed && !propertyKindsComputedInThisPhase.exists(_.id == pkId)) {
+            val (isComputed, pkId) = previousPhaseComputedPK
+            if (isComputed && !propertyKindsComputedInThisPhase.exists(_.id == pkId)) {
                 propertyKindsComputedInEarlierPhase(pkId) = true
             }
         }
@@ -467,7 +467,7 @@ abstract class PropertyStore {
      *
      * This method is only intended to support bug detection.
      */
-    protected[this] def isIdle : Boolean
+    protected[this] def isIdle: Boolean
 
     /**
      * Returns a snapshot of the properties with the given kind associated with the given entities.

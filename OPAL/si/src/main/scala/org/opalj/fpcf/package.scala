@@ -45,7 +45,7 @@ package object fpcf {
 
     {
         // Log the information whether a production build or a development build is used.
-        implicit val logContext : LogContext = GlobalLogContext
+        implicit val logContext: LogContext = GlobalLogContext
         try {
             assert(false)
             // when we reach this point assertions are turned off

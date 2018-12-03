@@ -15,11 +15,6 @@ sealed abstract class PropertyComputationResult {
         throw new ClassCastException();
     }
 
-    private[fpcf] def isSimplePInterimResult: Boolean = false
-    private[fpcf] def asSimplePInterimResult: SimplePInterimResult[_ <: Property] = {
-        throw new ClassCastException();
-    }
-
 }
 
 /**
@@ -119,29 +114,28 @@ object MultiResult { private[fpcf] final val id = 2 }
  * @note All elements on which the result declares to be dependent on must have been queried
  *      before (using one of the `apply` functions of the property store.)
  */
-final class InterimResult[P >: Null <: Property ] private(
-        val eps:         InterimP[Entity,P],
+final class InterimResult[P >: Null <: Property] private (
+        val eps:       InterimP[Entity, P],
         val dependees: Traversable[SomeEOptionP],
         val c:         OnUpdateContinuation,
-        val hint:      PropertyComputationHint   = DefaultPropertyComputation
-) extends ProperPropertyComputationResult { result =>
+        val hint:      PropertyComputationHint
+) extends ProperPropertyComputationResult { result ⇒
 
-    val key : PropertyKey[P] = eps.pk
-
+    val key: PropertyKey[P] = eps.pk
 
     if (PropertyStore.Debug) {
-                  if (dependees.isEmpty) {
-                    throw new IllegalArgumentException(
-                        s"intermediate result without dependencies: $this"+
-                            " (use PartialResult for collaboratively computed results)"
-                    )
-                }
-                if (dependees.exists(eOptP ⇒ eOptP.e == result.e && eOptP.pk == result.key)) {
-                    throw new IllegalArgumentException(
-                        s"intermediate result with an illegal self-dependency: "+this
-                    )
-                }
-            }
+        if (dependees.isEmpty) {
+            throw new IllegalArgumentException(
+                s"intermediate result without dependencies: $this"+
+                    " (use PartialResult for collaboratively computed results)"
+            )
+        }
+        if (dependees.exists(eOptP ⇒ eOptP.e == result.e && eOptP.pk == result.key)) {
+            throw new IllegalArgumentException(
+                s"intermediate result with an illegal self-dependency: "+this
+            )
+        }
+    }
 
     private[fpcf] def id = InterimResult.id
 
@@ -152,7 +146,7 @@ final class InterimResult[P >: Null <: Property ] private(
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that : InterimResult[_] if this.eps == that.eps ⇒
+            case that: InterimResult[_] if this.eps == that.eps ⇒
                 val dependees = this.dependees
                 dependees.size == that.dependees.size &&
                     dependees.forall(thisDependee ⇒ that.dependees.exists(_ == thisDependee))
@@ -172,40 +166,40 @@ object InterimResult {
     private[fpcf] final val id = 3
 
     def apply[P <: Property](
-                                               e:         Entity,
-                                               lb:        P,
-                                               ub:        P,
-                                               dependees: Traversable[SomeEOptionP],
-                                               c:         OnUpdateContinuation,
-                                               hint:      PropertyComputationHint   = DefaultPropertyComputation
-                                           ) : InterimResult[P] = {
-        new InterimResult[P](InterimP(e,lb,ub),dependees,c,hint)
+        e:         Entity,
+        lb:        P,
+        ub:        P,
+        dependees: Traversable[SomeEOptionP],
+        c:         OnUpdateContinuation,
+        hint:      PropertyComputationHint   = DefaultPropertyComputation
+    ): InterimResult[P] = {
+        new InterimResult[P](InterimP(e, lb, ub), dependees, c, hint)
     }
 
     def unapply[P <: Property](
-                                r : InterimResult[P]
-                            ) : Some[(                                SomeEPS,Traversable[SomeEOptionP],OnUpdateContinuation,PropertyComputationHint                            )]  = {
-        Some(r.eps,r.dependees,r.c,r.hint)
+        r: InterimResult[P]
+    ): Some[(SomeEPS, Traversable[SomeEOptionP], OnUpdateContinuation, PropertyComputationHint)] = {
+        Some((r.eps, r.dependees, r.c, r.hint))
     }
 
     def forLB[P >: Null <: Property](
-                                e:         Entity,
-                                lb:        P,
-                                dependees: Traversable[SomeEOptionP],
-                                c:         OnUpdateContinuation,
-                                hint:      PropertyComputationHint   = DefaultPropertyComputation
-                            ) : InterimResult[P] = {
-        new InterimResult[P](InterimLBP(e,lb),dependees,c,hint)
+        e:         Entity,
+        lb:        P,
+        dependees: Traversable[SomeEOptionP],
+        c:         OnUpdateContinuation,
+        hint:      PropertyComputationHint   = DefaultPropertyComputation
+    ): InterimResult[P] = {
+        new InterimResult[P](InterimLBP(e, lb), dependees, c, hint)
     }
 
     def forUB[P >: Null <: Property](
-                                e:         Entity,
-                                ub:        P,
-                                dependees: Traversable[SomeEOptionP],
-                                c:         OnUpdateContinuation,
-                                hint:      PropertyComputationHint   = DefaultPropertyComputation
-                            ) : InterimResult[P] = {
-        new InterimResult[P](InterimUBP(e, ub),dependees,c,hint)
+        e:         Entity,
+        ub:        P,
+        dependees: Traversable[SomeEOptionP],
+        c:         OnUpdateContinuation,
+        hint:      PropertyComputationHint   = DefaultPropertyComputation
+    ): InterimResult[P] = {
+        new InterimResult[P](InterimUBP(e, ub), dependees, c, hint)
     }
 }
 

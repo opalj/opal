@@ -150,11 +150,12 @@ class AnalysisScenario {
         // 1. check for properties that are not derived
         val underived = uses -- derived
         if (underived.nonEmpty) {
-            underived.find(PropertyKey.isPropertyKindForSimpleProperty).foreach { pk ⇒
+            /*underived.find(PropertyKey.isPropertyKindForSimpleProperty).foreach { pk ⇒
                 val p = PropertyKey.name(pk)
                 val m = "no analysis is scheduled which computes the simple property: "+p
                 throw new IllegalStateException(m)
             }
+            */
 
             val underivedInfo = underived.iterator.map(up ⇒ PropertyKey.name(up)).mkString(", ")
             val message = s"no analyses are scheduled for the properties: $underivedInfo"
