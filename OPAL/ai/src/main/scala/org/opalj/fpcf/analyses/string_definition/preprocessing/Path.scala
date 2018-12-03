@@ -176,7 +176,7 @@ case class Path(elements: List[SubPath]) {
             }
         }
 
-        if (elements.isEmpty) {
+        if (leanPath.isEmpty) {
             None
         } else {
             Some(Path(leanPath.toList))
