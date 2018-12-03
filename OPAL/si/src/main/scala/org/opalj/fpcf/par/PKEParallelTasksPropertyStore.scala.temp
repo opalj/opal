@@ -175,14 +175,6 @@ final class PKEParallelTasksPropertyStore private (
         new Array(SupportedPropertyKinds)
     }
 
-    private[this] var previouslyComputedPropertyKinds: Array[Boolean] = {
-        new Array[Boolean](SupportedPropertyKinds)
-    }
-
-    private[this] var computedPropertyKinds: Array[Boolean] = _ /*null*/
-
-    private[this] var delayedPropertyKinds: Array[Boolean] = _ /*null*/
-
     // ---------------------------------------------------------------------------------------------
     // The following three data-structures are never read or updated concurrently;
     // they are only read/updated by the store updates thread.
@@ -436,7 +428,7 @@ final class PKEParallelTasksPropertyStore private (
 
     override def doRegisterLazyPropertyComputation[E <: Entity, P <: Property](
         pk: PropertyKey[P],
-        pc: PropertyComputation[E]
+        pc: ProperPropertyComputation[E]
     ): Unit = {
         if (openJobs.get() > 0) {
             throw new IllegalStateException(
@@ -467,6 +459,8 @@ final class PKEParallelTasksPropertyStore private (
             newComputations = java.util.Arrays.copyOf(oldComputations, oldComputations.length + 1)
             newComputations(oldComputations.length) = pc
         }
+
+        // FIXME Trigger computations!
         triggeredComputations(pkId) = newComputations
 
     }
@@ -596,7 +590,7 @@ final class PKEParallelTasksPropertyStore private (
         val pkId = pk.id
         if (!isPropertyKeyForSimplePropertyBasedOnPKId(pkId) &&
             useFastTrackPropertyComputations &&
-            (computedPropertyKinds(pkId) || delayedPropertyKinds(pkId))) {
+            (propertyKindsComputedInThisPhase(pkId) || propertyKindsComputedInLaterPhase(pkId))) {
             val p = computeFastTrackPropertyBasedOnPKId(this, e, pkId)
             if (p.isDefined) {
                 if (debug) fastTrackPropertiesCounter.incrementAndGet()
@@ -625,14 +619,14 @@ final class PKEParallelTasksPropertyStore private (
         properties(pkId).get(e) match {
             case null ⇒
                 // the entity is unknown ...
-                if (computedPropertyKinds == null) {
-                    /*&& delayedPropertyKinds ne null (not necessary)*/
+                if (propertyKindsComputedInThisPhase == null) {
+                    /*&& propertyKindsComputedInLaterPhase ne null (not necessary)*/
                     throw new IllegalStateException("setup phase was not called")
                 }
 
                 lazyComputations(pkId) match {
                     case null ⇒
-                        if (!computedPropertyKinds(pkId) && !delayedPropertyKinds(pkId)) {
+                        if (!propertyKindsComputedInThisPhase(pkId) && !propertyKindsComputedInLaterPhase(pkId)) {
                             // ... a property is queried that is not going to be computed;
                             // we directly compute the property and store it to make
                             // it accessible later on.
@@ -641,7 +635,7 @@ final class PKEParallelTasksPropertyStore private (
                             // throw an appropriate exception; hence, we have to handle this
                             // case specifically!
                             val reason = {
-                                if (previouslyComputedPropertyKinds(pkId))
+                                if (propertyKindsComputedInPreviousPhase(pkId))
                                     PropertyIsNotDerivedByPreviouslyExecutedAnalysis
                                 else
                                     PropertyIsNotComputedByAnyAnalysis
@@ -1340,31 +1334,7 @@ final class PKEParallelTasksPropertyStore private (
         } while (forceDependersNotifications.nonEmpty || pcrs.nonEmpty)
     }
 
-    override def setupPhase(
-        computedPropertyKinds: Set[PropertyKind],
-        delayedPropertyKinds:  Set[PropertyKind]
-    ): Unit = handleExceptions {
-        if (debug && openJobs.get > 0) {
-            throw new IllegalStateException(
-                "setup phase can only be called as long as no tasks are scheduled"
-            )
-        }
-        val currentComputedPropertyKinds = this.computedPropertyKinds
-        if (currentComputedPropertyKinds != null) {
-            currentComputedPropertyKinds.iterator.zipWithIndex foreach { e ⇒
-                val (isComputed, pkId) = e
-                previouslyComputedPropertyKinds(pkId) |= isComputed
-            }
-        }
-
-        val newComputedPropertyKinds = new Array[Boolean](SupportedPropertyKinds)
-        computedPropertyKinds foreach { pk ⇒ newComputedPropertyKinds(pk.id) = true }
-        this.computedPropertyKinds = newComputedPropertyKinds
-
-        val newDelayedPropertyKinds = new Array[Boolean](SupportedPropertyKinds)
-        delayedPropertyKinds foreach { pk ⇒ newDelayedPropertyKinds(pk.id) = true }
-        this.delayedPropertyKinds = newDelayedPropertyKinds
-    }
+    protected[this] def isIdle : Boolean = openJobs.get > 0
 
     override def waitOnPhaseCompletion(): Unit = handleExceptions {
         var continueComputation: Boolean = false
@@ -1391,7 +1361,7 @@ final class PKEParallelTasksPropertyStore private (
             quiescenceCounter += 1
             if (tracer.isDefined) tracer.get.reachedQuiescence()
 
-            val maxPKIndex = SupportedPropertyKinds // PropertyKey.maxId // properties.length
+            val maxPKIndex =  PropertyKey.maxId
 
             // 1. Let's search all EPKs for which no values were computed (no analysis was
             //    scheduled) and fill it in.
@@ -1400,8 +1370,8 @@ final class PKEParallelTasksPropertyStore private (
             //     not have a property for a specific entity, if the underlying analysis
             //     doesn't compute one; in that case we need to put in fallback values.)
             var pkId = 0
-            while (pkId < maxPKIndex) {
-                if (!delayedPropertyKinds(pkId)) {
+            while (pkId <= maxPKIndex) {
+                if (!propertyKindsComputedInLaterPhase(pkId)) {
                     val dependersOfEntity = dependers(pkId)
                     val propertiesOfEntity = properties(pkId)
                     if (isPropertyKeyForSimplePropertyBasedOnPKId(pkId)) {
@@ -1423,8 +1393,8 @@ final class PKEParallelTasksPropertyStore private (
                         dependersOfEntity.keySet() forEach { e ⇒
                             if (propertiesOfEntity.get(e) == null) {
                                 val reason = {
-                                    if (previouslyComputedPropertyKinds(pkId) ||
-                                        computedPropertyKinds(pkId))
+                                    if (propertyKindsComputedInPreviousPhase(pkId) ||
+                                        propertyKindsComputedInThisPhase(pkId))
                                         PropertyIsNotDerivedByPreviouslyExecutedAnalysis
                                     else
                                         PropertyIsNotComputedByAnyAnalysis
@@ -1457,7 +1427,7 @@ final class PKEParallelTasksPropertyStore private (
                 // let's search for "unsatisfied computations" related to "forced properties"
                 pkId = 0
                 while (pkId < maxPKIndex) {
-                    if (computedPropertyKinds(pkId)) {
+                    if (propertyKindsComputedInThisPhase(pkId)) {
                         // 2.1. remaining depender/dependee relationships are no longer required:
                         dependees(pkId).clear()
                         dependers(pkId).clear()
