@@ -205,9 +205,7 @@ case class MetaInformationDeleted(
         finalP: SomeFinalP
 ) extends StoreEvent {
 
-    override def toTxt: String = {
-        s"$eventId: MetaInformationDeleted(${finalP.toEPK})"
-    }
+    override def toTxt: String = s"$eventId: MetaInformationDeleted(${finalP.toEPK})"
 
 }
 
@@ -226,9 +224,8 @@ case class FirstException(
 
 case class ReachedQuiescence(eventId: Int) extends StoreEvent {
 
-    override def toTxt: String = {
-        s"$eventId: ReachedQuiescence"
-    }
+    override def toTxt: String = s"$eventId: ReachedQuiescence"
+
 }
 
 class RecordAllPropertyStoreTracer extends PropertyStoreTracer {
