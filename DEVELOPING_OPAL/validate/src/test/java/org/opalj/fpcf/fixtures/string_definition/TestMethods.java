@@ -520,7 +520,7 @@ public class TestMethods {
     }
 
     @StringDefinitions(
-            value = "case with a try-catch-except",
+            value = "case with a try-finally exception",
             expectedLevel = StringConstancyLevel.PARTIALLY_CONSTANT,
             expectedStrings = "File Content:(\\w)?"
     )
@@ -530,6 +530,23 @@ public class TestMethods {
             String data = new String(Files.readAllBytes(Paths.get(filename)));
             sb.append(data);
         } catch (Exception ignore) {
+        } finally {
+            analyzeString(sb.toString());
+        }
+    }
+
+    @StringDefinitions(
+            value = "case with a try-catch-finally exception",
+            expectedLevel = StringConstancyLevel.PARTIALLY_CONSTANT,
+            expectedStrings = "=====(\\w|=====)"
+    )
+    public void tryCatchFinally(String filename) {
+        StringBuilder sb = new StringBuilder("=====");
+        try {
+            String data = new String(Files.readAllBytes(Paths.get(filename)));
+            sb.append(data);
+        } catch (Exception ignore) {
+            sb.append("=====");
         } finally {
             analyzeString(sb.toString());
         }

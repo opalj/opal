@@ -125,8 +125,13 @@ class DefaultPathFinder extends AbstractPathFinder {
 
             // Find all regular successors (excluding CatchNodes)
             val successors = bb.successors.filter {
-                !_.isInstanceOf[ExitNode]
-            }.map(_.nodeId).filter(_ >= 0).toList.sorted
+                case _: ExitNode   ⇒ false
+                case cn: CatchNode ⇒ cn.catchType.isDefined
+                case _             ⇒ true
+            }.map {
+                case cn: CatchNode ⇒ cn.handlerPC
+                case s             ⇒ s.nodeId
+            }.toList.sorted
             val catchSuccessors = bb.successors.filter { s ⇒
                 s.isInstanceOf[CatchNode] && !seenCatchNodes.contains(s.nodeId)
             }
@@ -171,6 +176,7 @@ class DefaultPathFinder extends AbstractPathFinder {
             // On a split point, prepare the next (nested) element (however, not for loop headers),
             // this includes if a node has a catch node as successor
             if ((successorsToAdd.length > 1 && !isLoopHeader) || catchSuccessors.nonEmpty) {
+                seenCatchNodes ++= catchSuccessors.map(n ⇒ (n.nodeId, Unit))
                 val appendSite = if (numSplits.isEmpty) path else
                     nestedElementsRef(currSplitIndex.head).element
                 var relevantNumSuccessors = successors.size
@@ -181,8 +187,6 @@ class DefaultPathFinder extends AbstractPathFinder {
                     // the number of successors (because catch node are excluded here)
                     if (catchSuccessors.isEmpty) {
                         relevantNumSuccessors -= 1
-                    } else {
-                        seenCatchNodes ++= catchSuccessors.map(n ⇒ (n.nodeId, Unit))
                     }
                     ifWithElse = false
                 }

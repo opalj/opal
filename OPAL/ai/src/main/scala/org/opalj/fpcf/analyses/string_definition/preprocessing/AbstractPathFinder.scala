@@ -102,7 +102,7 @@ trait AbstractPathFinder {
         val successorBlocks = cfg.bb(branchingSite).successors
         // CatchNode exists => Regard it as conditional without alternative
         if (successorBlocks.exists(_.isInstanceOf[CatchNode])) {
-            return true
+            return false
         }
 
         val successors = successorBlocks.map(_.nodeId).toArray.sorted
