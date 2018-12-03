@@ -30,6 +30,7 @@ sealed trait EOptionP[+E <: Entity, +P <: Property] {
     def pk: PropertyKey[P]
 
     def isEPK : Boolean
+    def asEPK : EPK[E,P]
 
     /** This EOptionP as a pair of an entity and a property key. */
     def toEPK: EPK[E, P]
@@ -69,6 +70,8 @@ sealed trait EOptionP[+E <: Entity, +P <: Property] {
      * means of an equality check) to the given one.
      */
     def is(p: AnyRef): Boolean = /*this.hasProperty && */ this.isFinal && this.ub == p
+
+    private[fpcf] def toFinalP : FinalP[E,P]
 
     private[fpcf] def toFinalUBP: FinalP[E, P]
 
@@ -126,6 +129,19 @@ sealed trait EOptionP[+E <: Entity, +P <: Property] {
     @throws[UnsupportedOperationException]("if no property is available")
     def lb: P
 
+    @throws[IllegalArgumentException]("if the given eps is not a valid update")
+    private[fpcf] def checkIsValidPropertiesUpdate(
+                                                      eps : SomeEPS,
+                                                      newDependees: Traversable[SomeEOptionP]
+                                                  ) : Unit
+
+    /**
+     * @return `true` if the given eps's bounds are different.
+     */
+    private[fpcf] def hasDifferentProperties(eps : SomeEPS) : Boolean = {
+        (this.hasLBP && this.lb != eps.lb) || (this.hasUBP && this.ub != eps.ub)
+    }
+
 }
 
 /**
@@ -150,6 +166,7 @@ object EOptionP {
 sealed trait EPS[+E <: Entity, +P <: Property] extends EOptionP[E, P] {
 
     final override def isEPK : Boolean = false
+    def asEPK : EPK[E,P] = throw new ClassCastException();
 
     final override def toEPK: EPK[E, P] = EPK(e, pk)
 
@@ -251,6 +268,8 @@ final class FinalP[+E <: Entity, +P <: Property](val e: E, val p: P) extends EPS
     override def isFinal: Boolean = true
     override def asFinal: FinalP[E, P] = this
 
+    override private[fpcf] def toFinalP : FinalP[E,P] = throw new UnsupportedOperationException();
+
     override def hasLBP: Boolean = true
     override def lb: P = p
     override def toFinalLBP: FinalP[E, P] = this
@@ -258,6 +277,13 @@ final class FinalP[+E <: Entity, +P <: Property](val e: E, val p: P) extends EPS
     override def hasUBP: Boolean = true
     override def ub: P = p
     override def toFinalUBP: FinalP[E, P] = this
+
+    private[fpcf] def checkIsValidPropertiesUpdate(
+                                                      eps : SomeEPS,
+                                                   newDependees: Traversable[SomeEOptionP]
+                                                  ) : Unit = {
+        throw new IllegalArgumentException("already final")
+    }
 
     override def equals(other: Any): Boolean = {
         other match {
@@ -289,6 +315,45 @@ sealed trait InterimP[+E <: Entity, +P <: Property] extends EPS[E, P] {
     override def isFinal: Boolean = false
     override def asFinal: FinalP[E, P] = throw new ClassCastException();
 
+    private[fpcf] def checkIsValidLBPropertyUpdate(                                                      eps : SomeEPS                                                  ) : Unit = {
+                            val newLBAsOP = eps.lb.asOrderedProperty
+                val lbAsOP = lb.asInstanceOf[newLBAsOP.Self]
+                newLBAsOP.checkIsEqualOrBetterThan(e,lbAsOP)
+
+    }
+
+     private[fpcf] def checkIsValidUBPropertyUpdate(                                                       eps : SomeEPS                                                   ) : Unit = {
+         val ubAsOP = ub.asOrderedProperty
+         val newUBAsOP = eps.ub.asInstanceOf[ubAsOP.Self]
+         ubAsOP.checkIsEqualOrBetterThan(e,newUBAsOP)
+    }
+
+    override private[fpcf] def checkIsValidPropertiesUpdate(
+                                                               eps : SomeEPS,
+                                                               newDependees: Traversable[SomeEOptionP]
+                                                           ) : Unit = {
+try {
+    if(hasLBP != eps.hasLBP || hasUBP != eps.hasUBP) {
+        throw new IllegalArgumentException("inconsistent property bounds")
+    }
+
+        if(hasLBP && eps.lb.isOrderedProperty) {
+            checkIsValidLBPropertyUpdate(eps)
+        }
+            if(hasUBP && eps.ub.isOrderedProperty) {
+                checkIsValidUBPropertyUpdate(eps)
+            }
+} catch {
+    case t: Throwable ⇒
+        throw new IllegalArgumentException(
+            s"$e: illegal update oldLB: $lb vs. newLB=$eps.lb "+
+                newDependees.mkString("newDependees={", ", ", "}")+
+                "; cause="+t.getMessage,
+            t
+        )
+}
+
+    }
 }
 
 object InterimP {
@@ -330,6 +395,8 @@ final class InterimLBUBP[+E <: Entity, +P <: Property](
 
     override def pk: PropertyKey[P] = ub/* or lb */.key.asInstanceOf[PropertyKey[P]]
 
+    override private[fpcf] def toFinalP : FinalP[E,P] = FinalP(e,ub)
+
     override def hasLBP: Boolean = true
     override def hasUBP: Boolean = true
 
@@ -367,6 +434,8 @@ final class InterimUBP[+E <: Entity, +P <: Property](
     assert(ub != null)
 
      override def pk: PropertyKey[P] = ub.key.asInstanceOf[PropertyKey[P]]
+
+    override private[fpcf] def toFinalP : FinalP[E,P] = FinalP(e,ub)
 
     override def hasLBP: Boolean = false
     override def hasUBP: Boolean = true
@@ -411,6 +480,8 @@ final class InterimLBP[+E <: Entity, +P <: Property](
     assert(lb != null)
 
      override def pk: PropertyKey[P] = lb.key.asInstanceOf[PropertyKey[P]]
+
+    override private[fpcf] def toFinalP : FinalP[E,P] = FinalP(e,lb)
 
     override def hasLBP: Boolean = true
     override def hasUBP: Boolean = false
@@ -460,24 +531,31 @@ final class EPK[+E <: Entity, +P <: Property](
 
     override def hasLBP: Boolean = false
     override def lb: Nothing = throw new UnsupportedOperationException();
-    private[fpcf] def toLBEP: FinalP[E, P] = throw new UnsupportedOperationException();
     override private[fpcf] def toFinalLBP = throw new UnsupportedOperationException();
 
     override def hasUBP: Boolean = false
     override def ub: Nothing = throw new UnsupportedOperationException();
-    private[fpcf] def toUBEP: FinalP[E, P] = throw new UnsupportedOperationException();
+    override private[fpcf] def toFinalUBP = throw new UnsupportedOperationException();
 
     override def isFinal: Boolean = false
     override def asFinal: FinalP[E, P] = throw new ClassCastException();
-    override private[fpcf] def toFinalUBP = throw new UnsupportedOperationException();
 
+    override private[fpcf] def toFinalP : FinalP[E,P] = throw new UnsupportedOperationException();
+
+    override def isEPS: Boolean = false
     override def asEPS: EPS[E, P] = throw new ClassCastException();
 
     override def isEPK : Boolean = true
+    override def asEPK : EPK[E,P] = this
 
     override def toEPK: this.type = this
 
     override def toEPS : Option[EPS[E,P]] = None
+
+    override private[fpcf] def checkIsValidPropertiesUpdate(
+                                                               eps : SomeEPS,
+                                                               newDependees: Traversable[SomeEOptionP]
+                                                           ) : Unit = {}
 
     override def equals(other: Any): Boolean = {
         other match {
