@@ -11,7 +11,6 @@ import scala.collection.mutable
 import scala.collection.{Map ⇒ SomeMap}
 import scala.collection.mutable.AnyRefMap
 
-import com.fasterxml.jackson.databind.deser.impl.PropertyValue
 import org.opalj.graphs
 
 import org.opalj.log.LogContext
@@ -123,14 +122,6 @@ final class PKESequentialPropertyStore private (
     // The list of scheduled computations
     private[this] var tasks: ArrayDeque[QualifiedTask] = new ArrayDeque(50000)
 
-    @volatile private[this] var previouslyComputedPropertyKinds: Array[Boolean] = {
-        new Array[Boolean](SupportedPropertyKinds)
-    }
-
-    private[this] var computedPropertyKinds: Array[Boolean] = _ /*false*/ // has to be set before usage
-
-    private[this] var delayedPropertyKinds: Array[Boolean] = _ /*false*/ // has to be set before usage
-
     override def isKnown(e: Entity): Boolean = ps.contains(e)
 
     override def hasProperty(e: Entity, pk: PropertyKind): Boolean = {
@@ -195,22 +186,23 @@ final class PKESequentialPropertyStore private (
         val pk = epk.pk
         val pkId = pk.id
 
+        if (debug && propertyKindsComputedInLaterPhase(pkId)) {
+            throw new IllegalArgumentException(
+                s"querying of property kind ($pk) computed in a later phase"
+            )
+        }
+
         ps(pkId).get(e) match {
             case None ⇒
                 // the entity is unknown ...
-                if (debug && computedPropertyKinds == null) {
-                    throw new IllegalStateException("setup phase was not called")
-                }
-                val isComputed = computedPropertyKinds(pkId)
-
                 lazyComputations(pkId) match {
                     case null ⇒
-                        if (isComputed || delayedPropertyKinds(pkId)) {
+                        if (propertyKindsComputedInThisPhase(pkId)) {
                             ps(pkId).put(e,epk)
                             epk
                         } else {
                             val reason = {
-                                if (previouslyComputedPropertyKinds(pkId))
+                                if (propertyKindsComputedInEarlierPhase(pkId))
                                     PropertyIsNotDerivedByPreviouslyExecutedAnalysis
                                 else
                                     PropertyIsNotComputedByAnyAnalysis
@@ -223,7 +215,7 @@ final class PKESequentialPropertyStore private (
 
                     case lc: PropertyComputation[E] @unchecked ⇒
                         val fastTrackPropertyOption: Option[P] =
-                            if (isComputed && useFastTrackPropertyComputations)
+                            if (useFastTrackPropertyComputations)
                                 computeFastTrackPropertyBasedOnPKId[P](this, e, pkId)
                             else
                                 None
@@ -335,20 +327,46 @@ final class PKESequentialPropertyStore private (
      * That is, setting the value was w.r.t. the current state of the property OK.
      */
     private[this] def update(eps : SomeEPS,newDependees: Traversable[SomeEOptionP]): Boolean = {
+
+        // TODO check if the result is expected (w.r.t. currently computed property kinds)
+
         val pkId = eps.pk.id
         val e = eps.e
+        var notificationRequired = false
         ps(pkId).put(e,eps) match {
             case None ⇒
-                // The entity is unknown (=> there are no dependers/dependees):
+                // The entity was unknown; i.e., there can't be any dependees - no one queried
+                // the property.
                 triggerComputations(e,pkId)
-                dependees(pkId).getOrElseUpdate(e,newDependees)
+                val oldDependees = dependees(pkId).put(e,newDependees)
+                assert(oldDependees.isEmpty)
                 // registration with the new dependees is done when processing InterimResult
+
+                // let's check if we have dependers!
+                notificationRequired = true
                 true
 
-            case Some(_) ⇒
-            // The entity is known and we have a property value for the respective
-            // kind; i.e., we may have (old) dependees and/or also dependers.
+            case Some(oldEPS) ⇒
+                // The entity is known and we have a property value for the respective
+                // kind; i.e., we may have (old) dependees and/or also dependers.
+                if(oldEPS.isEPK) {
+                    triggerComputations(e,pkId)
+                }
+               if(debug) oldEPS.checkIsValidPropertiesUpdate(eps, newDependees)
+              notificationRequired = eps.isFinal || oldEPS.hasDifferentProperties(eps)
+               dependees(pkId).put(e,newDependees)
         }
+        if (notificationRequired){
+            dependers(pkId).get(e).foreach {
+                _.foreach { cHint ⇒
+                    val (dependerEPK, (c, hint)) = cHint
+
+                    clearDependees(dependerEPK)
+                }
+            }
+        }
+
+
         ps(pkId).get(eps.e) match {
             case None ⇒
 
@@ -364,33 +382,7 @@ final class PKESequentialPropertyStore private (
                 val oldUB = pValue.ub
 
                 // 1. Check and update property:
-                if (debug) {
-                    if (oldIsFinal) {
-                        throw new IllegalStateException(
-                            s"already final: $e@${identityHashCode(e).toHexString}/$ub"
-                        )
-                    }
-                    if (lb.isOrderedProperty) {
-                        try {
-                            val lbAsOP = lb.asOrderedProperty
-                            if (oldLB != null && oldLB != PropertyIsLazilyComputed) {
-                                val oldLBWithUBType = oldLB.asInstanceOf[lbAsOP.Self]
-                                lbAsOP.checkIsEqualOrBetterThan(e, oldLBWithUBType)
-                                val pValueUBAsOP = oldUB.asOrderedProperty
-                                val ubWithOldUBType = ub.asInstanceOf[pValueUBAsOP.Self]
-                                pValueUBAsOP.checkIsEqualOrBetterThan(e, ubWithOldUBType)
-                            }
-                        } catch {
-                            case t: Throwable ⇒
-                                throw new IllegalArgumentException(
-                                    s"entity=$e illegal update to: lb=$lb; ub=$ub; "+
-                                        newDependees.mkString("newDependees={", ", ", "}")+
-                                        "; cause="+t.getMessage,
-                                    t
-                                )
-                        }
-                    }
-                }
+
                 pValue.lb = lb
                 pValue.ub = ub
                 // Updating lb and/or ub MAY CHANGE the PropertyValue's isFinal property!
@@ -400,8 +392,7 @@ final class PKESequentialPropertyStore private (
                     triggerComputations(e, pkId)
                 }
 
-                // 2. Clear old dependees (remove onUpdateContinuation from dependees)
-                //    and then update dependees.
+
                 val epk = pValue.toEPKUnsafe(e)
                 clearDependees(pValue, epk)
                 if (newPValueIsFinal)
@@ -457,7 +448,7 @@ final class PKESequentialPropertyStore private (
                 oldLB == null /*AND/OR oldUB == null*/
 
             case finalPValue ⇒
-                throw new IllegalStateException(s"$e: update of $finalPValue")
+
         }
     }
 
@@ -639,31 +630,7 @@ final class PKESequentialPropertyStore private (
         }
     }
 
-    override def setupPhase(
-        computedPropertyKinds: Set[PropertyKind],
-        delayedPropertyKinds:  Set[PropertyKind]
-    ): Unit = handleExceptions {
-        if (debug && tasks.size > 0) {
-            throw new IllegalStateException(
-                "setup phase can only be called as long as no tasks are scheduled"
-            )
-        }
-        val currentComputedPropertyKinds = this.computedPropertyKinds
-        if (currentComputedPropertyKinds != null) {
-            currentComputedPropertyKinds.iterator.zipWithIndex foreach { e ⇒
-                val (isComputed, pkId) = e
-                previouslyComputedPropertyKinds(pkId) |= isComputed
-            }
-        }
-
-        val newComputedPropertyKinds = new Array[Boolean](PropertyKind.SupportedPropertyKinds)
-        this.computedPropertyKinds = newComputedPropertyKinds
-        computedPropertyKinds foreach { pk ⇒ newComputedPropertyKinds(pk.id) = true }
-
-        val newDelayedPropertyKinds = new Array[Boolean](PropertyKind.SupportedPropertyKinds)
-        this.delayedPropertyKinds = newDelayedPropertyKinds
-        delayedPropertyKinds foreach { pk ⇒ newDelayedPropertyKinds(pk.id) = true }
-    }
+    override protected[this] def isIdle : Boolean = tasks.size == 0
 
     override def waitOnPhaseCompletion(): Unit = handleExceptions {
         var continueComputation: Boolean = false
@@ -680,161 +647,56 @@ final class PKESequentialPropertyStore private (
             if (tasks.isEmpty) quiescenceCounter += 1
 
             if (!isSuspended) {
-                // We have reached quiescence. let's check if we have to
-                // fill in fallbacks or if we have to resolve cyclic computations.
+                // We have reached quiescence.
+                // Let's check if we have to fill in fallbacks.
 
-                // 1. Let's search all EPKs for which we have no analyses scheduled in the
-                //    future and use the fall back for them.
+                // 1. Let's search for all EPKs (not EPS) and use the fall back for them.
                 //    (Recall that we return fallback properties eagerly if no analysis is
-                //     scheduled or will be scheduled; but it is still possible that we will
-                //     not have a property for a specific entity, if the underlying analysis
-                //     doesn't compute one; in that case we need to put in fallback values.)
-                val maxPKIndex = ps.length
+                //     scheduled or will be scheduled, However, it is still possible that we will
+                //     not have computed a property for a specific entity, if the underlying
+                //     analysis doesn't compute one; in that case we need to put in fallback
+                //     values.)
+                val maxPKIndex = PropertyKey.maxId
                 var pkId = 0
-                while (pkId < maxPKIndex) {
-                    if (!delayedPropertyKinds(pkId)) {
-                        ps(pkId) foreach { ePValue ⇒
-                            val (e, pValue) = ePValue
-                            // Check that we have no running computations and that the
-                            // property will not be computed later on.
-                            if (pValue.ub == null) {
-                                assert(pValue.dependees.isEmpty)
-                                val reason = {
-                                    if (previouslyComputedPropertyKinds(pkId) ||
-                                        computedPropertyKinds(pkId))
-                                        PropertyIsNotDerivedByPreviouslyExecutedAnalysis
-                                    else
-                                        PropertyIsNotComputedByAnyAnalysis
-                                }
+                while (pkId <= maxPKIndex) {
+                    if (!propertyKindsComputedInThisPhase(pkId)) {
+                        val epkIterator = ps(pkId).valuesIterator.filter(_.isEPK)
+                        continueComputation ||= epkIterator.hasNext
+                        epkIterator.foreach { eOptionP ⇒
+                            val e = eOptionP.e
+                                val reason = PropertyIsNotDerivedByPreviouslyExecutedAnalysis
                                 val p = fallbackPropertyBasedOnPKId(this, reason, e, pkId)
                                 if (traceFallbacks) {
-                                    val message = s"used fallback $p (reason=$reason) for $e"
-                                    trace("analysis progress", message)
+                                    trace("analysis progress", s"used fallback $p for $e")
                                 }
                                 fallbacksUsedForComputedPropertiesCounter += 1
-                                update(e, p, p, Nil)
-
-                                continueComputation = true
-                            }
+                                update(FinalP(e, p), Nil)
                         }
                     }
                     pkId += 1
                 }
 
-                // 2. let's search for cSCCs that only consist of properties which will not be
-                //    updated later on
                 if (!continueComputation) {
-                    val epks = ArrayBuffer.empty[SomeEOptionP]
-                    val maxPKIndex = ps.length
+                    // We used no fallbacks, but we may still have collaboratively computed or
+                    // cyclic dependent properties (e.g. CallGraph) which are not yet final;
+                    // let's finalize them!
+                    dependees.foreach(_.clear())
+                    dependers.foreach(_.clear())
                     var pkId = 0
                     while (pkId < maxPKIndex) {
-                        ps(pkId) foreach { ePValue ⇒
-                            val (e, pValue) = ePValue
-                            val ub = pValue.ub
-                            if (ub != null // analyses must always commit some value; hence,
-                                // Both of the following tests are necessary because we may have
-                                // properties which are only computed in a later phase; in that
-                                // case we may have EPKs related to entities which are not used.
-                                && pValue.dependees.nonEmpty // Can this node can be part of a cycle?
-                                && pValue.dependers.nonEmpty // Can this node can be part of a cycle?
-                                ) {
-                                assert(ub != PropertyIsLazilyComputed)
-                                epks += (EPK(e, ub.key): SomeEOptionP)
+                        if (propertyKindsComputedInThisPhase(pkId)) {
+                            val interimEPSs= ps(pkId).valuesIterator.filter(_.isRefinable).toList
+                            interimEPSs foreach { eOptionP ⇒
+                                ps(pkId).put(eOptionP.e, eOptionP.toFinalP)
                             }
                         }
                         pkId += 1
-                    }
-
-                    val cSCCs = graphs.closedSCCs(
-                        epks,
-                        (epk: SomeEOptionP) ⇒ ps(epk.pk.id)(epk.e).dependees
-                    )
-                    for (cSCC ← cSCCs) {
-                        // 1. clear all dependees of all members of a cycle to avoid
-                        //    inner cycle notifications!
-                        for (epk ← cSCC) {
-                            val e = epk.e
-                            val pk = epk.pk
-                            val pkId = pk.id
-                            val pValue = ps(pkId)(e)
-                            clearDependees(pValue, EPK(e, pk))
-                        }
-                        // 2. set all values
-                        for (epk ← cSCC) {
-                            val e = epk.e
-                            val pkId = epk.pk.id
-                            val pValue = ps(pkId)(e)
-                            val lb = pValue.lb
-                            val ub = pValue.ub
-                            val headEPS = InterimP(e, lb, ub)
-                            val newP = PropertyKey.resolveCycle(this, headEPS)
-                            if (traceCycleResolutions) {
-                                val cycleAsText =
-                                    if (cSCC.size > 10)
-                                        cSCC.take(10).mkString("", ",", "...")
-                                    else
-                                        cSCC.mkString(",")
-
-                                info(
-                                    "analysis progress",
-                                    s"resolving cycle(iteration:$quiescenceCounter): $cycleAsText by updating $e:ub=$ub with $newP"
-                                )
-                            }
-                            update(e, newP, newP, Nil)
-                        }
-                        continueComputation = true
-                    }
-                }
-
-                if (!continueComputation) {
-                    // We used no fallbacks and found no cycles, but we may still have
-                    // (collaboratively computed) properties (e.g. CallGraph) which are
-                    // not yet final; let's finalize them!
-                    val maxPKIndex = ps.length
-                    var pkId = 0
-                    var toBeFinalized: List[(AnyRef, Property)] = Nil
-                    while (pkId < maxPKIndex) {
-                        if (!delayedPropertyKinds(pkId)) {
-                            ps(pkId) foreach { ePValue ⇒
-                                val (e, pValue) = ePValue
-                                // Check that we have no running computations and that the
-                                // property will not be computed later on.
-                                if (!pValue.isFinal && pValue.lb != pValue.ub && pValue.dependees.isEmpty) {
-                                    toBeFinalized ::= ((e, pValue.ub))
-                                }
-                            }
-                        }
-                        pkId += 1
-                    }
-                    if (toBeFinalized.nonEmpty) {
-                        toBeFinalized foreach { ep ⇒
-                            val (e, p) = ep
-                            update(e, p, p, Nil) // commit as Final value
-                        }
-                        continueComputation = true
                     }
                 }
             }
         } while (continueComputation)
 
-        if (debug && !isSuspended) {
-            // let's search for "unsatisfied computations" related to "forced properties"
-            // TODO support forced properties if we have real lazy evaluation...
-            val maxPKIndex = ps.length
-            var pkId = 0
-            while (pkId < maxPKIndex) {
-                ps(pkId) foreach { ePValue ⇒
-                    val (e, pValue) = ePValue
-                    if (!pValue.isFinal) {
-                        error(
-                            "analysis progress",
-                            s"intermediate property state: $e ⇒ $pValue"
-                        )
-                    }
-                }
-                pkId += 1
-            }
-        }
+        if (exception != null) throw exception;
     }
 
     def shutdown(): Unit = {}

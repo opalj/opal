@@ -3,6 +3,7 @@ package org.opalj
 package fpcf
 
 import java.util.concurrent.ConcurrentHashMap
+import java.util.{Arrays ⇒ JArrays}
 
 import scala.util.control.ControlThrowable
 import scala.collection.{Map ⇒ SomeMap}
@@ -11,6 +12,8 @@ import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.info
 import org.opalj.log.OPALLogger.error
+
+import org.opalj.fpcf.PropertyKind.SupportedPropertyKinds
 
 /**
  * A property store manages the execution of computations of properties related to concrete
@@ -68,10 +71,14 @@ import org.opalj.log.OPALLogger.error
  * ==Thread Safety==
  * The sequential property stores are not thread-safe; the parallelized implementation(s) are
  * thread-safe in the following manner:
- *  - a client has to use the SAME thread (the driver thread) to call the (1) [[setupPhase]],
- *    (2) [[registerLazyPropertyComputation]] or [[registerTriggeredComputation]], (3)
- *    [[scheduleEagerComputationForEntity]] / [[scheduleEagerComputationsForEntities]],
- *    (4) [[force]] and (finally) [[PropertyStore#waitOnPhaseCompletion]] methods.
+ *  - a client has to use the SAME thread (the driver thread) to call
+ *    (0) [[set]] to initialize the property store,
+ *    (1) [[setupPhase]],
+ *    (2) [[registerLazyPropertyComputation]] or [[registerTriggeredComputation]],
+ *    (3) [[scheduleEagerComputationForEntity]] / [[scheduleEagerComputationsForEntities]],
+ *    (4) [[force]] and
+ *    (5) go back to (1)
+ *    (finally) [[PropertyStore#waitOnPhaseCompletion]] methods.
  *    Hence, the previously mentioned methods MUST NOT be called by
  *    PropertyComputation/OnUpdateComputation functions. The methods to query the store (`apply`)
  *    are thread-safe and can be called at any time.
@@ -84,7 +91,7 @@ import org.opalj.log.OPALLogger.error
  *  - lpc =       Lazy Property Computation
  *  - c =         Continuation (The part of the analysis that factors in all properties of dependees)
  *  - EPK =       Entity and a PropertyKey
- *  - EPS =       Entity and an intermediate Property
+ *  - EPS =       Entity, Property and the State (final or intermediate)
  *  - EP =        Entity and some (final or intermediate) Property
  *  - EOptionP =  Entity and either a PropertyKey or (if available) a Property
  *
@@ -95,9 +102,9 @@ import org.opalj.log.OPALLogger.error
  * debugging (and assertions!) off to get the best performance.
  *
  * We will throw `IllegalArgumentException`'s iff a parameter is in itself invalid. E.g., the lower
- * and upper bound do not have the same [[PropertyKind]]. In all other cases
- * `IllegalStateException`s are thrown. All exceptions are either thrown immediately or eventually,
- * when [[PropertyStore#waitOnPhaseCompletion]] is called. In the latter case, the exceptions are
+ * bound is ``above`` the upper bound. In all other cases `IllegalStateException`s are thrown.
+ * All exceptions are either thrown immediately or eventually, when
+ * [[PropertyStore#waitOnPhaseCompletion]] is called. In the latter case, the exceptions are
  * accumulated in the first thrown exception using suppressed exceptions.
  *
  * @author Michael Eichberg
@@ -111,7 +118,7 @@ abstract class PropertyStore {
     //
     //
     // FUNCTIONALITY TO ASSOCIATE SOME INFORMATION WITH THE STORE THAT
-    // (TYPICALLY) HAS THE SAME LIFETIME AS THE PROPERTYSTORE
+    // (TYPICALLY) HAS THE SAME LIFETIME AS THE STORE
     //
     //
 
@@ -191,7 +198,9 @@ abstract class PropertyStore {
 
     /**
      * Should be called when a PropertyStore is no longer going to be used to schedule
-     * computations. Primarily reclaims resources such as "Threads".
+     * computations and resources (such as Threads) should be freed.
+     *
+     * Properties can still be queried after shutdown.
      */
     def shutdown(): Unit
 
@@ -205,7 +214,7 @@ abstract class PropertyStore {
      * If "debug" is `true` and we have an update related to an ordered property,
      * we will then check if the update is correct!
      */
-    final val debug: Boolean = PropertyStore.Debug
+    final val debug: Boolean = PropertyStore.Debug // TODO Rename to "Debug"
 
     final def traceFallbacks: Boolean = PropertyStore.TraceFallbacks
 
@@ -261,6 +270,26 @@ abstract class PropertyStore {
     // CORE FUNCTIONALITY
     //
     //
+
+    /**
+     * If a property is queried for which we have no value, then this information is used
+     * to determine which kind of fallback is required.
+     */
+    protected[this] var propertyKindsComputedInEarlierPhase : Array[Boolean] = {
+        new Array(PropertyKind.SupportedPropertyKinds)
+    }
+
+    protected[this] var propertyKindsComputedInThisPhase: Array[Boolean] = {
+        new Array(SupportedPropertyKinds)
+    }
+
+    /**
+     * Used to identify situations where a property is queried, which is only going to be computed
+     * in the future - in this case, the specification of an analysis is broken!
+     */
+    protected[this] var propertyKindsComputedInLaterPhase: Array[Boolean] = {
+        new Array(SupportedPropertyKinds)
+    }
 
     /**
      * Returns `true` if the given entity is known to the property store. Here, `isKnown` can mean
@@ -386,22 +415,59 @@ abstract class PropertyStore {
 
     /**
      * Needs to be called before an analysis is scheduled to inform the property store which
-     * properties will be computed now and which are computed in a later phase. The later
-     * information is used to decide when we use a fallback.
+     * properties will be computed now and which are computed in a later phase. The
+     * information is used to decide when we use a fallback and which kind of fallback.
      *
      * @note `setupPhase` even needs to be called if just fallback values should be computed; in
      *        this case both sets have to be empty.
      *
-     * @param computedPropertyKinds The kinds of properties for which we will schedule computations.
+     * @param propertyKindsComputedInThisPhase The kinds of properties for which we will schedule
+     *                                         computations.
      *
-     * @param delayedPropertyKinds The set of property kinds which will (also) be computed
-     *        in a later phase; no fallback will be used for dependencies to properties of the
-     *        respective kind.
+     * @param propertyKindsComputedInLaterPhase The set of property kinds which will be computed
+     *        in a later phase.
      */
-    def setupPhase(
-        computedPropertyKinds: Set[PropertyKind],
-        delayedPropertyKinds:  Set[PropertyKind] = Set.empty
-    ): Unit
+    final def setupPhase(
+                               propertyKindsComputedInThisPhase: Set[PropertyKind],
+                               propertyKindsComputedInLaterPhase:  Set[PropertyKind]
+                           ): Unit = handleExceptions {
+        if (!isIdle) {
+            throw new IllegalStateException("computations are already running");
+        }
+
+        // Step 1
+        // Copy all property kinds that were computed in the previous phase that are no
+        // longer computed to the "propertyKindsComputedInEarlierPhase" array.
+        // Afterwards, initialize the "propertyKindsComputedInThisPhase" with the given
+        // information.
+        // Note that "lazy" property computations may be executed accross several phases,
+        // however, all "intermediate" values found at the end of a phase can still be executed.
+        this.propertyKindsComputedInThisPhase.iterator.zipWithIndex foreach { previousPhaseComputedPK ⇒
+            val (isComputed,pkId) =         previousPhaseComputedPK
+            if(isComputed && !propertyKindsComputedInThisPhase.exists(_.id == pkId)) {
+                propertyKindsComputedInEarlierPhase(pkId) = true
+            }
+        }
+        JArrays.fill(this.propertyKindsComputedInThisPhase, false)
+        propertyKindsComputedInThisPhase foreach { pk ⇒
+            this.propertyKindsComputedInThisPhase(pk.id) = true
+        }
+
+        // Step 2
+        // Set the "propertyKindsComputedInLaterPhase" array to the specified values.
+        JArrays.fill(this.propertyKindsComputedInLaterPhase, false)
+        propertyKindsComputedInLaterPhase foreach { pk ⇒
+            this.propertyKindsComputedInLaterPhase(pk.id) = true
+        }
+    }
+
+    /**
+     * Returns `true` if the store does not perform any computations at the time of this method
+     * call.
+     *
+     * This method is only intended to support bug detection.
+     */
+    protected[this] def isIdle : Boolean
 
     /**
      * Returns a snapshot of the properties with the given kind associated with the given entities.
