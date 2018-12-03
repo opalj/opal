@@ -50,12 +50,11 @@ final class PKECPropertyStore private (
     private[this] val lazyComputations: Array[SomePropertyComputation] = {
         new Array(SupportedPropertyKinds)
     }
-    /*
+
     /** Computations that will be triggered when a new property becomes available. */
     private[this] val triggeredComputations: Array[Array[SomePropertyComputation]] = {
         new Array(SupportedPropertyKinds)
     }
-    */
 
     //
     //
@@ -103,18 +102,11 @@ final class PKECPropertyStore private (
             e:  E,
             pc: PropertyComputation[E]
     ) extends RecursiveAction {
-        def compute(): Unit = {
-            val r = pc(e)
-            processResult(r)
-        }
+        def compute(): Unit = processResult(pc(e))
     }
 
-    private[this] class HandleResult(
-            r: PropertyComputationResult
-    ) extends RecursiveAction {
-        def compute(): Unit = {
-            processResult(r)
-        }
+    private[this] class HandleResult( r: PropertyComputationResult    ) extends RecursiveAction {
+        def compute(): Unit =             processResult(r)
     }
 
     def shutdown(): Unit = store.pool.shutdown()
@@ -131,9 +123,22 @@ final class PKECPropertyStore private (
         pk: PropertyKey[P],
         pc: PropertyComputation[E]
     ): Unit = {
+
+            val pkId = pk.id
+            var oldComputations: Array[SomePropertyComputation] = triggeredComputations(pkId)
+            var newComputations: Array[SomePropertyComputation] = null
+
+            if (oldComputations == null) {
+                newComputations = Array[SomePropertyComputation](pc)
+            } else {
+                newComputations = java.util.Arrays.copyOf(oldComputations, oldComputations.length + 1)
+                newComputations(oldComputations.length) = pc
+            }
+            triggeredComputations(pkId) = newComputations
         // Let's check if we need to trigger it right away due to already existing values...
         ???
-    }
+        }
+
 
     override def doRegisterLazyPropertyComputation[E <: Entity, P <: Property](
         pk:       PropertyKey[P],
