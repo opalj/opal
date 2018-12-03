@@ -9,6 +9,7 @@ import org.opalj.br.ComputationalTypeInt
 import org.opalj.fpcf.analyses.string_definition.V
 import org.opalj.fpcf.string_definition.properties.StringConstancyInformation
 import org.opalj.fpcf.string_definition.properties.StringConstancyLevel
+import org.opalj.fpcf.string_definition.properties.StringConstancyType.APPEND
 import org.opalj.tac.VirtualFunctionCall
 
 /**
@@ -69,6 +70,7 @@ class VirtualFunctionCallInterpreter(
                     StringConstancyLevel.determineForConcat(
                         nextSci.constancyLevel, appendValue.constancyLevel
                     ),
+                    APPEND,
                     nextSci.possibleStrings + appendValue.possibleStrings
                 )
             }
@@ -107,10 +109,10 @@ class VirtualFunctionCallInterpreter(
         call.params.head.asVar.value.computationalType match {
             // For some types, we know the (dynamic) values
             case ComputationalTypeInt ⇒ StringConstancyInformation(
-                StringConstancyLevel.DYNAMIC, StringConstancyInformation.IntValue
+                StringConstancyLevel.DYNAMIC, APPEND, StringConstancyInformation.IntValue
             )
             case ComputationalTypeFloat ⇒ StringConstancyInformation(
-                StringConstancyLevel.DYNAMIC, StringConstancyInformation.FloatValue
+                StringConstancyLevel.DYNAMIC, APPEND, StringConstancyInformation.FloatValue
             )
             // Otherwise, try to compute
             case _ ⇒
@@ -121,6 +123,7 @@ class VirtualFunctionCallInterpreter(
                         StringConstancyLevel.determineForConcat(
                             value.head.constancyLevel, value(1).constancyLevel
                         ),
+                        APPEND,
                         value.head.possibleStrings + value(1).possibleStrings
                     )
                 }

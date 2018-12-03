@@ -5,6 +5,7 @@ import org.opalj.br.cfg.CFG
 import org.opalj.fpcf.analyses.string_definition.V
 import org.opalj.fpcf.string_definition.properties.StringConstancyInformation
 import org.opalj.fpcf.string_definition.properties.StringConstancyLevel
+import org.opalj.fpcf.string_definition.properties.StringConstancyType.APPEND
 import org.opalj.tac.TACStmts
 import org.opalj.tac.Stmt
 import org.opalj.tac.StringConst
@@ -30,6 +31,6 @@ class StringConstInterpreter(
      * @see [[AbstractStringInterpreter.interpret]]
      */
     override def interpret(instr: T): List[StringConstancyInformation] =
-        List(StringConstancyInformation(StringConstancyLevel.CONSTANT, instr.value))
+        List(StringConstancyInformation(StringConstancyLevel.CONSTANT, APPEND, instr.value))
 
 }

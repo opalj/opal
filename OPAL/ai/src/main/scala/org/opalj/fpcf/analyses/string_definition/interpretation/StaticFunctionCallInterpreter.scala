@@ -7,6 +7,7 @@ import org.opalj.fpcf.analyses.string_definition.V
 import org.opalj.br.cfg.CFG
 import org.opalj.fpcf.string_definition.properties.StringConstancyInformation
 import org.opalj.fpcf.string_definition.properties.StringConstancyLevel
+import org.opalj.fpcf.string_definition.properties.StringConstancyType.APPEND
 import org.opalj.tac.StaticFunctionCall
 
 /**
@@ -33,7 +34,7 @@ class StaticFunctionCallInterpreter(
      */
     override def interpret(instr: T): List[StringConstancyInformation] =
         List(StringConstancyInformation(
-            StringConstancyLevel.DYNAMIC, StringConstancyInformation.UnknownWordSymbol
+            StringConstancyLevel.DYNAMIC, APPEND, StringConstancyInformation.UnknownWordSymbol
         ))
 
 }
