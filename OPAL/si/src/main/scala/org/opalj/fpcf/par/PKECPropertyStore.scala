@@ -142,7 +142,7 @@ final class PKECPropertyStore private (
 
     override def doRegisterLazyPropertyComputation[E <: Entity, P <: Property](
         pk:       PropertyKey[P],
-        pc:       PropertyComputation[E]
+        pc:       ProperPropertyComputation[E]
     ): Unit = {
         ???
     }
