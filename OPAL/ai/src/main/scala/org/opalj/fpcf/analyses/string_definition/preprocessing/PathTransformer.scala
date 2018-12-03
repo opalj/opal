@@ -68,7 +68,14 @@ class PathTransformer(val cfg: CFG[Stmt[V], TACStmts[V]]) {
                             if (processedSubPaths.nonEmpty) {
                                 npe.elementType.get match {
                                     case NestedPathType.CondWithAlternative ⇒
-                                        Some(StringTreeOr(processedSubPaths))
+                                        // In case there is only one element in the sub path,
+                                        // transform it into a conditional element (as there is no
+                                        // alternative)
+                                        if (processedSubPaths.tail.nonEmpty) {
+                                            Some(StringTreeOr(processedSubPaths))
+                                        } else {
+                                            Some(StringTreeCond(processedSubPaths))
+                                        }
                                     case NestedPathType.CondWithoutAlternative ⇒
                                         Some(StringTreeCond(processedSubPaths))
                                     case _ ⇒ None
