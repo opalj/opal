@@ -9,7 +9,7 @@ import org.opalj.br.ComputationalTypeInt
 import org.opalj.fpcf.analyses.string_definition.V
 import org.opalj.fpcf.string_definition.properties.StringConstancyInformation
 import org.opalj.fpcf.string_definition.properties.StringConstancyLevel
-import org.opalj.fpcf.string_definition.properties.StringConstancyType.APPEND
+import org.opalj.fpcf.string_definition.properties.StringConstancyType
 import org.opalj.tac.VirtualFunctionCall
 
 /**
@@ -70,7 +70,7 @@ class VirtualFunctionCallInterpreter(
                     StringConstancyLevel.determineForConcat(
                         nextSci.constancyLevel, appendValue.constancyLevel
                     ),
-                    APPEND,
+                    StringConstancyType.APPEND,
                     nextSci.possibleStrings + appendValue.possibleStrings
                 )
             }
@@ -108,12 +108,10 @@ class VirtualFunctionCallInterpreter(
         }
         call.params.head.asVar.value.computationalType match {
             // For some types, we know the (dynamic) values
-            case ComputationalTypeInt ⇒ StringConstancyInformation(
-                StringConstancyLevel.DYNAMIC, APPEND, StringConstancyInformation.IntValue
-            )
-            case ComputationalTypeFloat ⇒ StringConstancyInformation(
-                StringConstancyLevel.DYNAMIC, APPEND, StringConstancyInformation.FloatValue
-            )
+            case ComputationalTypeInt ⇒
+                InterpretationHandler.getStringConstancyInformationForInt
+            case ComputationalTypeFloat ⇒
+                InterpretationHandler.getStringConstancyInformationForFloat
             // Otherwise, try to compute
             case _ ⇒
                 // It might be necessary to merge the values of the receiver and of the parameter
@@ -123,7 +121,7 @@ class VirtualFunctionCallInterpreter(
                         StringConstancyLevel.determineForConcat(
                             value.head.constancyLevel, value(1).constancyLevel
                         ),
-                        APPEND,
+                        StringConstancyType.APPEND,
                         value.head.possibleStrings + value(1).possibleStrings
                     )
                 }

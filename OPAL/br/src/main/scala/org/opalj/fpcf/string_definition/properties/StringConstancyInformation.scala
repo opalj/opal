@@ -2,15 +2,19 @@
 package org.opalj.fpcf.string_definition.properties
 
 /**
+ * @param possibleStrings Only relevant for some [[StringConstancyType]]s, i.e., sometimes this
+ *                        parameter can be omitted.
  * @author Patrick Mell
  */
 case class StringConstancyInformation(
-        constancyLevel: StringConstancyLevel.Value,
-        constancyType:  StringConstancyType.Value,
-        // Only relevant for some StringConstancyTypes
-        possibleStrings: String = ""
+        constancyLevel:  StringConstancyLevel.Value,
+        constancyType:   StringConstancyType.Value,
+        possibleStrings: String                     = ""
 )
 
+/**
+ * Provides a collection of instance-independent but string-constancy related values.
+ */
 object StringConstancyInformation {
 
     /**

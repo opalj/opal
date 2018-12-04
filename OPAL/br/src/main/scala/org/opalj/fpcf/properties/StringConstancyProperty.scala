@@ -9,7 +9,7 @@ import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyMetaInformation
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.string_definition.properties.StringConstancyInformation
-import org.opalj.fpcf.string_definition.properties.StringConstancyLevel.DYNAMIC
+import org.opalj.fpcf.string_definition.properties.StringConstancyLevel
 import org.opalj.fpcf.string_definition.properties.StringConstancyType
 import org.opalj.fpcf.string_definition.properties.StringTree
 import org.opalj.fpcf.string_definition.properties.StringTreeConst
@@ -39,9 +39,11 @@ object StringConstancyProperty extends StringConstancyPropertyMetaInformation {
             PropertyKeyName,
             (_: PropertyStore, _: FallbackReason, _: Entity) ⇒ {
                 // TODO: Using simple heuristics, return a better value for some easy cases
-                StringConstancyProperty(StringTreeConst(
-                    StringConstancyInformation(DYNAMIC, StringConstancyType.APPEND, "*")
-                ))
+                StringConstancyProperty(StringTreeConst(StringConstancyInformation(
+                    StringConstancyLevel.DYNAMIC,
+                    StringConstancyType.APPEND,
+                    StringConstancyInformation.UnknownWordSymbol
+                )))
             },
             (_, eps: EPS[Field, StringConstancyProperty]) ⇒ eps.ub,
             (_: PropertyStore, _: Entity) ⇒ None

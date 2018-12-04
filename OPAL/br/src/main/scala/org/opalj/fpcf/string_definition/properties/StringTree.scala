@@ -4,7 +4,6 @@ package org.opalj.fpcf.string_definition.properties
 import org.opalj.fpcf.string_definition.properties.StringConstancyInformation.InfiniteRepetitionSymbol
 
 import scala.collection.mutable
-import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.ListBuffer
 
 /**
@@ -15,117 +14,129 @@ import scala.collection.mutable.ListBuffer
 sealed abstract class StringTreeElement(val children: ListBuffer[StringTreeElement]) {
 
     /**
+     * This is a helper function which processes the `reduce` operation for [[StringTreeOr]] and
+     * [[StringTreeCond]] elements (as both are processed in a very similar fashion). `children`
+     * denotes the children of the [[StringTreeOr]] or [[StringTreeCond]] element and `processOr`
+     * defines whether to process [[StringTreeOr]] or [[StringTreeCond]] (the latter in case `false`
+     * is passed).
+     */
+    private def processReduceCondOrReduceOr(
+        children: List[StringTreeElement], processOr: Boolean = true
+    ): List[StringConstancyInformation] = {
+        val reduced = children.flatMap(reduceAcc)
+        val containsReset = reduced.exists(_.constancyType == StringConstancyType.RESET)
+        val appendElements = reduced.filter { _.constancyType == StringConstancyType.APPEND }
+        val reducedInfo = appendElements.reduceLeft((o, n) ⇒ StringConstancyInformation(
+            StringConstancyLevel.determineMoreGeneral(o.constancyLevel, n.constancyLevel),
+            StringConstancyType.APPEND,
+            s"${o.possibleStrings}|${n.possibleStrings}"
+        ))
+        val scis = ListBuffer[StringConstancyInformation]()
+
+        // The only difference between a Cond and an Or is how the possible strings look like
+        var possibleStrings = s"${reducedInfo.possibleStrings}"
+        if (processOr) {
+            if (appendElements.tail.nonEmpty) {
+                possibleStrings = s"($possibleStrings)"
+            }
+        } else {
+            possibleStrings = s"(${reducedInfo.possibleStrings})?"
+        }
+
+        scis.append(StringConstancyInformation(
+            reducedInfo.constancyLevel, reducedInfo.constancyType, possibleStrings
+        ))
+        if (containsReset) {
+            scis.append(StringConstancyInformation(
+                StringConstancyLevel.CONSTANT, StringConstancyType.RESET
+            ))
+        }
+        scis.toList
+    }
+
+    /**
+     * This is a helper function which processes the `reduce` operation for [[StringTreeConcat]]
+     * elements.
+     */
+    private def processReduceConcat(
+        children: List[StringTreeElement]
+    ): List[StringConstancyInformation] = {
+        val reducedLists = children.map(reduceAcc)
+        // Stores whether we deal with a flat structure or with a nested structure (in the latter
+        // case maxNestingLevel >= 2)
+        val maxNestingLevel = reducedLists.foldLeft(0) {
+            (max: Int, next: List[StringConstancyInformation]) ⇒ Math.max(max, next.size)
+        }
+        val scis = ListBuffer[StringConstancyInformation]()
+        // Stores whether the last processed element was of type RESET
+        var wasReset = false
+
+        reducedLists.foreach { nextSciList ⇒
+            nextSciList.foreach { nextSci ⇒
+                // Add the first element only if not a reset (otherwise no new information)
+                if (scis.isEmpty && nextSci.constancyType != StringConstancyType.RESET) {
+                    scis.append(nextSci)
+                } // No two consecutive resets (as that does not add any new information either)
+                else if (!wasReset || nextSci.constancyType != StringConstancyType.RESET) {
+                    // A reset marks a new starting point
+                    if (nextSci.constancyType == StringConstancyType.RESET) {
+                        // maxNestingLevel == 1 corresponds to n consecutive append call, i.e.,
+                        // clear everything that has been seen so far
+                        if (maxNestingLevel == 1) {
+                            scis.clear()
+                        } // maxNestingLevel >= 2 corresponds to a new starting point (e.g., a clear
+                        // in a if-else construction) => Add a new element
+                        else {
+                            scis.append(StringConstancyInformation(
+                                StringConstancyLevel.CONSTANT, StringConstancyType.APPEND
+                            ))
+                        }
+                    } // Otherwise, collapse / combine with previous elements
+                    else {
+                        scis.zipWithIndex.foreach {
+                            case (innerSci, index) ⇒
+                                val collapsed = StringConstancyInformation(
+                                    StringConstancyLevel.determineForConcat(
+                                        innerSci.constancyLevel, nextSci.constancyLevel
+                                    ),
+                                    StringConstancyType.APPEND,
+                                    innerSci.possibleStrings + nextSci.possibleStrings
+                                )
+                                scis(index) = collapsed
+                        }
+                    }
+                }
+                // For the next iteration
+                wasReset = nextSci.constancyType == StringConstancyType.RESET
+            }
+        }
+        scis.toList
+    }
+
+    /**
      * Accumulator / helper function for reducing a tree.
      *
-     * @param subtree The tree (or subtree) to reduce.
-     * @return The reduced tree.
+     * @param subtree The (sub) tree to reduce.
+     * @return The reduced tree in the form of a list of [[StringConstancyInformation]]. That is, if
+     *         different [[StringConstancyType]]s occur, a single StringConstancyInformation element
+     *         is not sufficient to describe the string approximation for this function. For
+     *         example, a [[StringConstancyType.RESET]] marks the beginning of a new string
+     *         alternative which results in a new list element.
      */
     private def reduceAcc(subtree: StringTreeElement): List[StringConstancyInformation] = {
         subtree match {
             case StringTreeRepetition(c, lowerBound, upperBound) ⇒
-                val reduced = reduceAcc(c).head
                 val times = if (lowerBound.isDefined && upperBound.isDefined)
                     (upperBound.get - lowerBound.get).toString else InfiniteRepetitionSymbol
+                val reduced = reduceAcc(c).head
                 List(StringConstancyInformation(
                     reduced.constancyLevel,
                     reduced.constancyType,
                     s"(${reduced.possibleStrings})$times"
                 ))
-
-            case StringTreeConcat(cs) ⇒
-                val reducedLists = cs.map(reduceAcc)
-                val nestingLevel = reducedLists.foldLeft(0) {
-                    (max: Int, next: List[StringConstancyInformation]) ⇒ Math.max(max, next.size)
-                }
-                val scis = ListBuffer[StringConstancyInformation]()
-                // Stores whether the last processed element was of type RESET
-                var wasReset = false
-                reducedLists.foreach { nextList ⇒
-                    nextList.foreach { nextSci ⇒
-                        // Add the first element only if not a reset (otherwise no new information)
-                        if (scis.isEmpty && nextSci.constancyType != StringConstancyType.RESET) {
-                            scis.append(nextSci)
-                        } // No two consecutive resets (does not add any new information either)
-                        else if (!wasReset || nextSci.constancyType != StringConstancyType.RESET) {
-                            // A reset marks a new starting point => Add new element to the list
-                            if (nextSci.constancyType == StringConstancyType.RESET) {
-                                if (nestingLevel == 1) {
-                                    scis.clear()
-                                } else {
-                                    scis.append(StringConstancyInformation(
-                                        StringConstancyLevel.CONSTANT, StringConstancyType.APPEND
-                                    ))
-                                }
-                            } // Otherwise, collapse / combine with seen elements
-                            else {
-                                scis.zipWithIndex.foreach {
-                                    case (sci, index) ⇒
-                                        val collapsed = StringConstancyInformation(
-                                            StringConstancyLevel.determineForConcat(
-                                                sci.constancyLevel, nextSci.constancyLevel
-                                            ),
-                                            StringConstancyType.APPEND,
-                                            sci.possibleStrings + nextSci.possibleStrings
-                                        )
-                                        scis(index) = collapsed
-                                }
-                            }
-                        }
-                        // For the next iteration
-                        wasReset = nextSci.constancyType == StringConstancyType.RESET
-                    }
-                }
-                scis.toList
-
-            case StringTreeOr(cs) ⇒
-                val reduced = cs.flatMap(reduceAcc)
-                val containsReset = reduced.exists(_.constancyType == StringConstancyType.RESET)
-                val appendElements = reduced.filter { _.constancyType == StringConstancyType.APPEND }
-                val reducedInfo = appendElements.reduceLeft((o, n) ⇒ StringConstancyInformation(
-                    StringConstancyLevel.determineMoreGeneral(o.constancyLevel, n.constancyLevel),
-                    StringConstancyType.APPEND,
-                    s"${o.possibleStrings}|${n.possibleStrings}"
-                ))
-
-                val scis = ListBuffer[StringConstancyInformation]()
-                var possibleStrings = s"${reducedInfo.possibleStrings}"
-                if (appendElements.tail.nonEmpty) {
-                    possibleStrings = s"($possibleStrings)"
-                }
-                scis.append(StringConstancyInformation(
-                    reducedInfo.constancyLevel, reducedInfo.constancyType, possibleStrings
-                ))
-                if (containsReset) {
-                    scis.append(StringConstancyInformation(
-                        StringConstancyLevel.CONSTANT, StringConstancyType.RESET
-                    ))
-                }
-                scis.toList
-
-            case StringTreeCond(c) ⇒
-                val reduced = c.flatMap(reduceAcc)
-                val containsReset = reduced.exists(_.constancyType == StringConstancyType.RESET)
-                val reducedInfo = reduced.filter {
-                    _.constancyType == StringConstancyType.APPEND
-                }.reduceLeft((o, n) ⇒ StringConstancyInformation(
-                    StringConstancyLevel.determineMoreGeneral(o.constancyLevel, n.constancyLevel),
-                    StringConstancyType.APPEND,
-                    s"${o.possibleStrings}|${n.possibleStrings}"
-                ))
-
-                val scis = ListBuffer[StringConstancyInformation]()
-                scis.append(StringConstancyInformation(
-                    reducedInfo.constancyLevel,
-                    reducedInfo.constancyType,
-                    s"(${reducedInfo.possibleStrings})?"
-                ))
-                if (containsReset) {
-                    scis.append(StringConstancyInformation(
-                        StringConstancyLevel.CONSTANT, StringConstancyType.APPEND
-                    ))
-                }
-                scis.toList
-
+            case StringTreeConcat(cs) ⇒ processReduceConcat(cs.toList)
+            case StringTreeOr(cs)     ⇒ processReduceCondOrReduceOr(cs.toList)
+            case StringTreeCond(cs)   ⇒ processReduceCondOrReduceOr(cs.toList, processOr = false)
             case StringTreeConst(sci) ⇒ List(sci)
         }
     }
@@ -255,6 +266,8 @@ sealed abstract class StringTreeElement(val children: ListBuffer[StringTreeEleme
      * @return A [[StringConstancyInformation]] instance that flatly describes this tree.
      */
     def reduce(): StringConstancyInformation = {
+        // The reduceLeft is necessary as reduceAcc might return a list, e.g., a clear occurred. In
+        // such cases, concatenate the values by or-ing them.
         reduceAcc(this).reduceLeft((o, n) ⇒ StringConstancyInformation(
             StringConstancyLevel.determineMoreGeneral(o.constancyLevel, n.constancyLevel),
             StringConstancyType.APPEND,
@@ -290,25 +303,6 @@ sealed abstract class StringTreeElement(val children: ListBuffer[StringTreeEleme
      *       semantically different tree!
      */
     def groupRepetitionElements(): StringTree = groupRepetitionElementsAcc(this)
-
-    /**
-     * @return Returns all leaf elements of this instance.
-     */
-    def getLeafs: Array[StringTreeConst] = {
-        def leafsAcc(root: StringTreeElement, leafs: ArrayBuffer[StringTreeConst]): Unit = {
-            root match {
-                case StringTreeRepetition(c, _, _) ⇒ leafsAcc(c, leafs)
-                case StringTreeConcat(c)           ⇒ c.foreach(leafsAcc(_, leafs))
-                case StringTreeOr(cs)              ⇒ cs.foreach(leafsAcc(_, leafs))
-                case StringTreeCond(cs)            ⇒ cs.foreach(leafsAcc(_, leafs))
-                case stc: StringTreeConst          ⇒ leafs.append(stc)
-            }
-        }
-
-        val leafs = ArrayBuffer[StringTreeConst]()
-        leafsAcc(this, leafs)
-        leafs.toArray
-    }
 
 }
 
