@@ -43,9 +43,7 @@ class PropertyComputationsSchedulerTest extends FunSpec with Matchers with Befor
     (0 to 11).foreach { i ⇒
         pks(i) = PropertyKey.create[Null, Null](
             "p"+(i),
-            (_: PropertyStore, _: FallbackReason, _: Entity) ⇒ ???,
-            (_: PropertyStore, _: SomeEPS) ⇒ ???,
-            (_: PropertyStore, _: Entity) ⇒ None
+            (_: PropertyStore, _: FallbackReason, _: Entity) ⇒ ???
         )
     }
 
@@ -226,11 +224,7 @@ class PropertyComputationsSchedulerTest extends FunSpec with Matchers with Befor
                 override def apply[E <: Entity, P <: Property](e: E, pk: PropertyKey[P]): EOptionP[E, P] = ???
                 override def apply[E <: Entity, P <: Property](epk: EPK[E, P]): EOptionP[E, P] = ???
                 override def force[E <: Entity, P <: Property](e: E, pk: PropertyKey[P]): Unit = ???
-
-                override def doRegisterLazyPropertyComputation[E <: Entity, P <: Property](
-                    pk:       PropertyKey[P],
-                    pc:       PropertyComputation[E]
-                ): Unit = {}
+                override protected[this] def isIdle: Boolean = ???
                 override def doRegisterTriggeredComputation[E <: Entity, P <: Property](
                     pk: PropertyKey[P],
                     pc: PropertyComputation[E]
@@ -239,13 +233,13 @@ class PropertyComputationsSchedulerTest extends FunSpec with Matchers with Befor
                 override def handleResult(r: PropertyComputationResult): Unit = {}
                 override def waitOnPhaseCompletion(): Unit = {}
 
-
                 var phaseConfigurations: List[(Set[PropertyKind], Set[PropertyKind])] = List.empty
-                override def setupPhase(
-                    computedPropertyKinds: Set[PropertyKind],
-                    delayedPropertyKinds:  Set[PropertyKind] = Set.empty
+                override def newPhaseInitialized(
+                    propertyKindsComputedInThisPhase:  Set[PropertyKind],
+                    propertyKindsComputedInLaterPhase: Set[PropertyKind]
                 ): Unit = {
-                    phaseConfigurations ::= ((computedPropertyKinds, delayedPropertyKinds))
+                    phaseConfigurations ::=
+                        ((propertyKindsComputedInThisPhase, propertyKindsComputedInLaterPhase))
                 }
 
             }

@@ -6,7 +6,7 @@ class TrueTrueTruePKESequentialPropertyStoreTest extends PropertyStoreTestWithDe
 
     def createPropertyStore(): PropertyStore = {
         val s = PKESequentialPropertyStore()
-        s.dependeeUpdateHandling = LazyDependeeUpdateHandling(
+        s.dependeeUpdateHandling = DependeeUpdateHandling(
             delayHandlingOfFinalDependeeUpdates = true,
             delayHandlingOfNonFinalDependeeUpdates = true
         )
@@ -21,7 +21,7 @@ class FalseTrueTruePKESequentialPropertyStoreTest extends PropertyStoreTestWithD
 
     def createPropertyStore(): PropertyStore = {
         val s = PKESequentialPropertyStore()
-        s.dependeeUpdateHandling = LazyDependeeUpdateHandling(
+        s.dependeeUpdateHandling = DependeeUpdateHandling(
             delayHandlingOfFinalDependeeUpdates = false,
             delayHandlingOfNonFinalDependeeUpdates = true
         )
@@ -35,7 +35,7 @@ class TrueFalseTruePKESequentialPropertyStoreTest extends PropertyStoreTestWithD
 
     def createPropertyStore(): PropertyStore = {
         val s = PKESequentialPropertyStore()
-        s.dependeeUpdateHandling = LazyDependeeUpdateHandling(
+        s.dependeeUpdateHandling = DependeeUpdateHandling(
             delayHandlingOfFinalDependeeUpdates = true,
             delayHandlingOfNonFinalDependeeUpdates = false
         )
@@ -49,7 +49,7 @@ class TrueTrueFalsePKESequentialPropertyStoreTest extends PropertyStoreTestWithD
 
     def createPropertyStore(): PropertyStore = {
         val s = PKESequentialPropertyStore()
-        s.dependeeUpdateHandling = LazyDependeeUpdateHandling(
+        s.dependeeUpdateHandling = DependeeUpdateHandling(
             delayHandlingOfFinalDependeeUpdates = true,
             delayHandlingOfNonFinalDependeeUpdates = true
         )
@@ -63,7 +63,7 @@ class FalseFalseTruePKESequentialPropertyStoreTest extends PropertyStoreTestWith
 
     def createPropertyStore(): PropertyStore = {
         val s = PKESequentialPropertyStore()
-        s.dependeeUpdateHandling = LazyDependeeUpdateHandling(
+        s.dependeeUpdateHandling = DependeeUpdateHandling(
             delayHandlingOfFinalDependeeUpdates = false,
             delayHandlingOfNonFinalDependeeUpdates = false
         )
@@ -77,7 +77,7 @@ class FalseTrueFalsePKESequentialPropertyStoreTest extends PropertyStoreTestWith
 
     def createPropertyStore(): PropertyStore = {
         val s = PKESequentialPropertyStore()
-        s.dependeeUpdateHandling = LazyDependeeUpdateHandling(
+        s.dependeeUpdateHandling = DependeeUpdateHandling(
             delayHandlingOfFinalDependeeUpdates = false,
             delayHandlingOfNonFinalDependeeUpdates = true
         )
@@ -91,7 +91,7 @@ class TrueFalseFalsePKESequentialPropertyStoreTest extends PropertyStoreTestWith
 
     def createPropertyStore(): PropertyStore = {
         val s = PKESequentialPropertyStore()
-        s.dependeeUpdateHandling = LazyDependeeUpdateHandling(
+        s.dependeeUpdateHandling = DependeeUpdateHandling(
             delayHandlingOfFinalDependeeUpdates = true,
             delayHandlingOfNonFinalDependeeUpdates = false
         )
@@ -105,7 +105,7 @@ class FalseFalseFalsePKESequentialPropertyStoreTest extends PropertyStoreTestWit
 
     def createPropertyStore(): PropertyStore = {
         val s = PKESequentialPropertyStore()
-        s.dependeeUpdateHandling = LazyDependeeUpdateHandling(
+        s.dependeeUpdateHandling = DependeeUpdateHandling(
             delayHandlingOfFinalDependeeUpdates = false,
             delayHandlingOfNonFinalDependeeUpdates = false
         )
@@ -115,24 +115,3 @@ class FalseFalseFalsePKESequentialPropertyStoreTest extends PropertyStoreTestWit
     }
 }
 
-class EagerFalsePKESequentialPropertyStoreTest extends PropertyStoreTestWithDebugging {
-
-    def createPropertyStore(): PropertyStore = {
-        val s = PKESequentialPropertyStore()
-        s.dependeeUpdateHandling = EagerDependeeUpdateHandling
-        s.delayHandlingOfDependerNotification = false
-        s.suppressError = true
-        s
-    }
-}
-
-class EagerTruePKESequentialPropertyStoreTest extends PropertyStoreTestWithDebugging {
-
-    def createPropertyStore(): PropertyStore = {
-        val s = PKESequentialPropertyStore()
-        s.dependeeUpdateHandling = EagerDependeeUpdateHandling
-        s.delayHandlingOfDependerNotification = true
-        s.suppressError = true
-        s
-    }
-}

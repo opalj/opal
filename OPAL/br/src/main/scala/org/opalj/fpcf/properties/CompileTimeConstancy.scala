@@ -39,9 +39,7 @@ object CompileTimeConstancy extends CompileTimeConstancyPropertyMetaInformation 
                 CompileTimeConstantField
             else
                 CompileTimeVaryingField
-        },
-        (_: PropertyStore, eps: EPS[Field, CompileTimeConstancy]) ⇒ eps.ub,
-        (_: PropertyStore, _: Entity) ⇒ None
+        }
     )
 }
 

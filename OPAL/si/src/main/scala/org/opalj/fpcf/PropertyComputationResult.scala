@@ -123,14 +123,14 @@ final class InterimResult[P >: Null <: Property] private (
 
     val key: PropertyKey[P] = eps.pk
 
-    if (PropertyStore.Debug) {
+    if (PropertyStore.Debug) { // TODO move to generic handleResult method ...
         if (dependees.isEmpty) {
             throw new IllegalArgumentException(
                 s"intermediate result without dependencies: $this"+
                     " (use PartialResult for collaboratively computed results)"
             )
         }
-        if (dependees.exists(eOptP ⇒ eOptP.e == result.e && eOptP.pk == result.key)) {
+        if (dependees.exists(eOptP ⇒ eOptP.e == eps.e && eOptP.pk == result.key)) {
             throw new IllegalArgumentException(
                 s"intermediate result with an illegal self-dependency: "+this
             )
@@ -165,7 +165,7 @@ object InterimResult {
 
     private[fpcf] final val id = 3
 
-    def apply[P <: Property](
+    def apply[P >: Null <: Property](
         e:         Entity,
         lb:        P,
         ub:        P,
@@ -176,7 +176,7 @@ object InterimResult {
         new InterimResult[P](InterimP(e, lb, ub), dependees, c, hint)
     }
 
-    def unapply[P <: Property](
+    def unapply[P >: Null <: Property](
         r: InterimResult[P]
     ): Some[(SomeEPS, Traversable[SomeEOptionP], OnUpdateContinuation, PropertyComputationHint)] = {
         Some((r.eps, r.dependees, r.c, r.hint))

@@ -46,11 +46,6 @@ final class PKECPropertyStore private (
     // which are only done while the store is quiescent – are done within the driver thread and
     // are guaranteed to be visible to all relevant fork/join tasks.
 
-    /** Those computations that will only be scheduled if the property is queried/forced. */
-    private[this] val lazyComputations: Array[SomePropertyComputation] = {
-        new Array(SupportedPropertyKinds)
-    }
-
     /** Computations that will be triggered when a new property becomes available. */
     private[this] val triggeredComputations: Array[Array[SomePropertyComputation]] = {
         new Array(SupportedPropertyKinds)
@@ -111,6 +106,8 @@ final class PKECPropertyStore private (
 
     def shutdown(): Unit = store.pool.shutdown()
 
+    override def isIdle: Boolean = store.pool.isQuiescent
+
     override def doScheduleEagerComputationForEntity[E <: Entity](
         e: E
     )(
@@ -125,7 +122,7 @@ final class PKECPropertyStore private (
     ): Unit = {
 
         val pkId = pk.id
-        var oldComputations: Array[SomePropertyComputation] = triggeredComputations(pkId)
+        val oldComputations: Array[SomePropertyComputation] = triggeredComputations(pkId)
         var newComputations: Array[SomePropertyComputation] = null
 
         if (oldComputations == null) {
@@ -140,20 +137,6 @@ final class PKECPropertyStore private (
         println(oldComputations)
         ???
 
-    }
-
-    override def doRegisterLazyPropertyComputation[E <: Entity, P <: Property](
-        pk: PropertyKey[P],
-        pc: ProperPropertyComputation[E]
-    ): Unit = {
-        ???
-    }
-
-    override def setupPhase(
-        computedPropertyKinds: Set[PropertyKind],
-        delayedPropertyKinds:  Set[PropertyKind]
-    ): Unit = {
-        ???
     }
 
     override def force[E <: Entity, P <: Property](e: E, pk: PropertyKey[P]): Unit = this(e, pk)
@@ -582,5 +565,5 @@ trait State {
 }
 
 case class FinalState(eps: SomeEPS) extends State {
-    ???
+    // ???
 }
