@@ -5,7 +5,7 @@ import org.opalj.br.cfg.CFG
 import org.opalj.fpcf.analyses.string_definition.V
 import org.opalj.fpcf.string_definition.properties.StringConstancyInformation
 import org.opalj.fpcf.string_definition.properties.StringConstancyLevel
-import org.opalj.fpcf.string_definition.properties.StringConstancyType.APPEND
+import org.opalj.fpcf.string_definition.properties.StringConstancyType
 import org.opalj.tac.NonVirtualFunctionCall
 import org.opalj.tac.Stmt
 import org.opalj.tac.TACStmts
@@ -27,14 +27,16 @@ class NonVirtualFunctionCallInterpreter(
 
     /**
      * Currently, [[NonVirtualFunctionCall]]s are not supported. Thus, this function always returns
-     * a list with a single element consisting of [[StringConstancyLevel.DYNAMIC]] and
-     * [[StringConstancyInformation.UnknownWordSymbol]].
+     * a list with a single element consisting of [[StringConstancyLevel.DYNAMIC]],
+     * [[StringConstancyType.APPEND]] and [[StringConstancyInformation.UnknownWordSymbol]].
      *
      * @see [[AbstractStringInterpreter.interpret]]
      */
     override def interpret(instr: T): List[StringConstancyInformation] =
         List(StringConstancyInformation(
-            StringConstancyLevel.DYNAMIC, APPEND, StringConstancyInformation.UnknownWordSymbol
+            StringConstancyLevel.DYNAMIC,
+            StringConstancyType.APPEND,
+            StringConstancyInformation.UnknownWordSymbol
         ))
 
 }

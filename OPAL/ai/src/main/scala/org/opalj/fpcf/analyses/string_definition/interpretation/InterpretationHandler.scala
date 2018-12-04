@@ -4,6 +4,8 @@ package org.opalj.fpcf.analyses.string_definition.interpretation
 import org.opalj.br.cfg.CFG
 import org.opalj.fpcf.analyses.string_definition.V
 import org.opalj.fpcf.string_definition.properties.StringConstancyInformation
+import org.opalj.fpcf.string_definition.properties.StringConstancyLevel
+import org.opalj.fpcf.string_definition.properties.StringConstancyType
 import org.opalj.tac.ArrayLoad
 import org.opalj.tac.Assignment
 import org.opalj.tac.BinaryExpr
@@ -177,5 +179,29 @@ object InterpretationHandler {
 
         defSites.sorted.toList
     }
+
+    /**
+     * @return Returns a [[StringConstancyInformation]] element that describes an `int` value.
+     *         That is, the returned element consists of the value [[StringConstancyLevel.DYNAMIC]],
+     *         [[StringConstancyType.APPEND]], and [[StringConstancyInformation.IntValue]].
+     */
+    def getStringConstancyInformationForInt: StringConstancyInformation =
+        StringConstancyInformation(
+            StringConstancyLevel.DYNAMIC,
+            StringConstancyType.APPEND,
+            StringConstancyInformation.IntValue
+        )
+
+    /**
+     * @return Returns a [[StringConstancyInformation]] element that describes a `float` value.
+     *         That is, the returned element consists of the value [[StringConstancyLevel.DYNAMIC]],
+     *         [[StringConstancyType.APPEND]], and [[StringConstancyInformation.IntValue]].
+     */
+    def getStringConstancyInformationForFloat: StringConstancyInformation =
+        StringConstancyInformation(
+            StringConstancyLevel.DYNAMIC,
+            StringConstancyType.APPEND,
+            StringConstancyInformation.FloatValue
+        )
 
 }

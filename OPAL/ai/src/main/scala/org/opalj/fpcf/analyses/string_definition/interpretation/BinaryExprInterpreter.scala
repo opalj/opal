@@ -8,8 +8,6 @@ import org.opalj.br.ComputationalTypeInt
 import org.opalj.tac.Stmt
 import org.opalj.fpcf.analyses.string_definition.V
 import org.opalj.fpcf.string_definition.properties.StringConstancyInformation
-import org.opalj.fpcf.string_definition.properties.StringConstancyLevel
-import org.opalj.fpcf.string_definition.properties.StringConstancyType.APPEND
 import org.opalj.tac.BinaryExpr
 
 /**
@@ -40,12 +38,11 @@ class BinaryExprInterpreter(
      */
     override def interpret(instr: T): List[StringConstancyInformation] =
         instr.cTpe match {
-            case ComputationalTypeInt ⇒ List(StringConstancyInformation(
-                StringConstancyLevel.DYNAMIC, APPEND, StringConstancyInformation.IntValue
-            ))
-            case ComputationalTypeFloat ⇒ List(StringConstancyInformation(
-                StringConstancyLevel.DYNAMIC, APPEND, StringConstancyInformation.FloatValue
-            ))
+            case ComputationalTypeInt ⇒
+                List(InterpretationHandler.getStringConstancyInformationForInt)
+            case ComputationalTypeFloat ⇒
+                List(InterpretationHandler.getStringConstancyInformationForFloat)
+
             case _ ⇒ List()
         }
 

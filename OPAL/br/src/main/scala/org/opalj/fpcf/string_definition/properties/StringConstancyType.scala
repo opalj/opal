@@ -2,7 +2,8 @@
 package org.opalj.fpcf.string_definition.properties
 
 /**
- * Values in this enumeration represent the granularity of used strings.
+ * Values in this enumeration represent how a string / string container, such as [[StringBuilder]],
+ * are changed.
  *
  * @author Patrick Mell
  */
@@ -20,7 +21,7 @@ object StringConstancyType extends Enumeration {
     /**
      * This type is to be used when a string value is reset, that is, the string is set to the empty
      * string (either by manually setting the value to the empty string or using a function like
-     * [[StringBuilder#delete]]).
+     * `StringBuilder.setLength(0)`).
      */
     final val RESET = Value("reset")
 
