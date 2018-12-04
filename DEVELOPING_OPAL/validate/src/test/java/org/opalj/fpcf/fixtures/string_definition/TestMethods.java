@@ -593,6 +593,33 @@ public class TestMethods {
         analyzeString(sb.toString());
     }
 
+    @StringDefinitions(
+            value = "a simple example with a StringBuilder#replace call",
+            expectedLevel = StringConstancyLevel.DYNAMIC,
+            expectedStrings = "\\w"
+    )
+    public void simpleReplaceExample() {
+        StringBuilder sb = new StringBuilder("init_value");
+        sb.replace(0, 5, "replaced_value");
+        analyzeString(sb.toString());
+    }
+
+    @StringDefinitions(
+            value = "a more advanced example with a StringBuilder#replace call",
+            expectedLevel = StringConstancyLevel.PARTIALLY_CONSTANT,
+            expectedStrings = "(init_value:Hello, world!Goodbye|\\wGoodbye)"
+    )
+    public void advancedReplaceExample(int value) {
+        StringBuilder sb = new StringBuilder("init_value:");
+        if (value < 10) {
+            sb.replace(0, value, "...");
+        } else {
+            sb.append("Hello, world!");
+        }
+        sb.append("Goodbye");
+        analyzeString(sb.toString());
+    }
+
     //    @StringDefinitions(
     //            value = "a case with a switch with missing breaks",
     //            expectedLevel = StringConstancyLevel.CONSTANT,

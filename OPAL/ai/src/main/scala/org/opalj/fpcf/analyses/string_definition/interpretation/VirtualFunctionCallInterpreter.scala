@@ -37,6 +37,10 @@ class VirtualFunctionCallInterpreter(
      *     a `toString` call does not change the state of such an object, an empty list will be
      *     returned.
      * </li>
+     * <li>
+     *     `replace`: Calls to the `replace` function of [[StringBuilder]] and [[StringBuffer]]. For
+     *     further information how this operation is processed, see
+     *     [[VirtualFunctionCallInterpreter.interpretReplaceCall]].
      * </ul>
      *
      * @see [[AbstractStringInterpreter.interpret]]
@@ -45,6 +49,7 @@ class VirtualFunctionCallInterpreter(
         instr.name match {
             case "append"   ⇒ interpretAppendCall(instr)
             case "toString" ⇒ interpretToStringCall(instr)
+            case "replace"  ⇒ interpretReplaceCall(instr)
             case _          ⇒ List()
         }
     }
@@ -137,5 +142,16 @@ class VirtualFunctionCallInterpreter(
         call: VirtualFunctionCall[V]
     ): List[StringConstancyInformation] =
         exprHandler.processDefSite(call.receiver.asVar.definedBy.head)
+
+    /**
+     * Function for processing calls to [[StringBuilder#replace]] or [[StringBuffer#replace]].
+     * Currently, this function simply approximates `replace` functions by returning a list with one
+     * element - the element currently is provided by
+     * [[InterpretationHandler.getStringConstancyInformationForReplace]].
+     */
+    private def interpretReplaceCall(
+        instr: VirtualFunctionCall[V]
+    ): List[StringConstancyInformation] =
+        List(InterpretationHandler.getStringConstancyInformationForReplace)
 
 }

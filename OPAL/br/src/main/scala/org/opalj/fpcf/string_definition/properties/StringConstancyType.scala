@@ -25,4 +25,10 @@ object StringConstancyType extends Enumeration {
      */
     final val RESET = Value("reset")
 
+    /**
+     * This type is to be used when a string or part of a string is replaced by another string
+     * (e.g., when calling the `replace` method of [[StringBuilder]]).
+     */
+    final val REPLACE = Value("replace")
+
 }

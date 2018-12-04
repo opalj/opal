@@ -204,4 +204,17 @@ object InterpretationHandler {
             StringConstancyInformation.FloatValue
         )
 
+    /**
+     * @return Returns a [[StringConstancyInformation]] element that describes a the result of a
+     *         `replace` operation. That is, the returned element currently consists of the value
+     *         [[StringConstancyLevel.DYNAMIC]], [[StringConstancyType.REPLACE]], and
+     *         [[StringConstancyInformation.UnknownWordSymbol]].
+     */
+    def getStringConstancyInformationForReplace: StringConstancyInformation =
+        StringConstancyInformation(
+            StringConstancyLevel.DYNAMIC,
+            StringConstancyType.REPLACE,
+            StringConstancyInformation.UnknownWordSymbol
+        )
+
 }
