@@ -24,7 +24,8 @@ sealed abstract class StringTreeElement(val children: ListBuffer[StringTreeEleme
         children: List[StringTreeElement], processOr: Boolean = true
     ): List[StringConstancyInformation] = {
         val reduced = children.flatMap(reduceAcc)
-        val containsReset = reduced.exists(_.constancyType == StringConstancyType.RESET)
+        val resetElement = reduced.find(_.constancyType == StringConstancyType.RESET)
+        val replaceElement = reduced.find(_.constancyType == StringConstancyType.REPLACE)
         val appendElements = reduced.filter { _.constancyType == StringConstancyType.APPEND }
         val reducedInfo = appendElements.reduceLeft((o, n) ⇒ StringConstancyInformation(
             StringConstancyLevel.determineMoreGeneral(o.constancyLevel, n.constancyLevel),
@@ -46,10 +47,11 @@ sealed abstract class StringTreeElement(val children: ListBuffer[StringTreeEleme
         scis.append(StringConstancyInformation(
             reducedInfo.constancyLevel, reducedInfo.constancyType, possibleStrings
         ))
-        if (containsReset) {
-            scis.append(StringConstancyInformation(
-                StringConstancyLevel.CONSTANT, StringConstancyType.RESET
-            ))
+        if (resetElement.isDefined) {
+            scis.append(resetElement.get)
+        }
+        if (replaceElement.isDefined) {
+            scis.append(replaceElement.get)
         }
         scis.toList
     }
@@ -78,18 +80,22 @@ sealed abstract class StringTreeElement(val children: ListBuffer[StringTreeEleme
                     scis.append(nextSci)
                 } // No two consecutive resets (as that does not add any new information either)
                 else if (!wasReset || nextSci.constancyType != StringConstancyType.RESET) {
-                    // A reset marks a new starting point
-                    if (nextSci.constancyType == StringConstancyType.RESET) {
+                    // A reset / replace marks a new starting point
+                    val isReset = nextSci.constancyType == StringConstancyType.RESET
+                    val isReplace = nextSci.constancyType == StringConstancyType.REPLACE
+                    if (isReset || isReplace) {
                         // maxNestingLevel == 1 corresponds to n consecutive append call, i.e.,
                         // clear everything that has been seen so far
                         if (maxNestingLevel == 1) {
                             scis.clear()
+                            // In case of replace, add the replace element
+                            if (isReplace) {
+                                scis.append(nextSci)
+                            }
                         } // maxNestingLevel >= 2 corresponds to a new starting point (e.g., a clear
                         // in a if-else construction) => Add a new element
                         else {
-                            scis.append(StringConstancyInformation(
-                                StringConstancyLevel.CONSTANT, StringConstancyType.APPEND
-                            ))
+                            scis.append(nextSci)
                         }
                     } // Otherwise, collapse / combine with previous elements
                     else {
@@ -268,7 +274,8 @@ sealed abstract class StringTreeElement(val children: ListBuffer[StringTreeEleme
     def reduce(): StringConstancyInformation = {
         // The reduceLeft is necessary as reduceAcc might return a list, e.g., a clear occurred. In
         // such cases, concatenate the values by or-ing them.
-        reduceAcc(this).reduceLeft((o, n) ⇒ StringConstancyInformation(
+        val reduced = reduceAcc(this)
+        reduced.reduceLeft((o, n) ⇒ StringConstancyInformation(
             StringConstancyLevel.determineMoreGeneral(o.constancyLevel, n.constancyLevel),
             StringConstancyType.APPEND,
             s"(${o.possibleStrings}|${n.possibleStrings})"
