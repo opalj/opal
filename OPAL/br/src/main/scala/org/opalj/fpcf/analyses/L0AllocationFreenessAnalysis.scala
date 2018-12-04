@@ -35,11 +35,11 @@ class L0AllocationFreenessAnalysis private[analyses] ( final val project: SomePr
     def baseMethodAllocationFreeness(dm: DefinedMethod): PropertyComputationResult = {
 
         def c(eps: SomeEOptionP): PropertyComputationResult = eps match {
-            case FinalEP(_, af) ⇒ Result(dm, af)
-            case ep @ IntermediateEP(_, lb, ub) ⇒
-                IntermediateResult(dm, lb, ub, Seq(ep), c, CheapPropertyComputation)
+            case FinalP(_, af) ⇒ Result(dm, af)
+            case ep @ InterimP(_, lb, ub) ⇒
+                InterimResult(dm, lb, ub, Seq(ep), c, CheapPropertyComputation)
             case epk ⇒
-                IntermediateResult(
+                InterimResult(
                     dm, MethodWithAllocations, AllocationFreeMethod,
                     Seq(epk), c, CheapPropertyComputation
                 )
@@ -112,10 +112,10 @@ class L0AllocationFreenessAnalysis private[analyses] ( final val project: SomePr
                                     propertyStore(declaredMethods(callee), AllocationFreeness.key)
 
                                 allocationFreeness match {
-                                    case FinalEP(_, AllocationFreeMethod) ⇒ /* Nothing to do */
+                                    case FinalP(_, AllocationFreeMethod) ⇒ /* Nothing to do */
 
                                     // Handling cyclic computations
-                                    case ep @ IntermediateEP(_, _, AllocationFreeMethod) ⇒
+                                    case ep @ InterimP(_, _, AllocationFreeMethod) ⇒
                                         dependees += ep
 
                                     case EPS(_, _, _) ⇒
@@ -193,11 +193,11 @@ class L0AllocationFreenessAnalysis private[analyses] ( final val project: SomePr
             dependees = dependees.filter(_.e ne eps.e)
 
             eps match {
-                case FinalEP(_, AllocationFreeMethod) ⇒
+                case FinalP(_, AllocationFreeMethod) ⇒
                     if (dependees.isEmpty)
                         Result(definedMethod, AllocationFreeMethod)
                     else {
-                        IntermediateResult(
+                        InterimResult(
                             definedMethod,
                             MethodWithAllocations,
                             AllocationFreeMethod,
@@ -206,12 +206,12 @@ class L0AllocationFreenessAnalysis private[analyses] ( final val project: SomePr
                         )
                     }
 
-                case FinalEP(_, MethodWithAllocations) ⇒
+                case FinalP(_, MethodWithAllocations) ⇒
                     Result(definedMethod, MethodWithAllocations)
 
-                case _: IntermediateEP[_, _] ⇒
+                case _: InterimP[_, _] ⇒
                     dependees += eps
-                    IntermediateResult(
+                    InterimResult(
                         definedMethod,
                         MethodWithAllocations,
                         AllocationFreeMethod,
@@ -221,7 +221,7 @@ class L0AllocationFreenessAnalysis private[analyses] ( final val project: SomePr
             }
         }
 
-        IntermediateResult(
+        InterimResult(
             definedMethod, MethodWithAllocations, AllocationFreeMethod,
             dependees, c
         )

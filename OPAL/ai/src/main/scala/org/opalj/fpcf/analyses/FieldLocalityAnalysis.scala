@@ -264,22 +264,22 @@ class FieldLocalityAnalysis private[analyses] (
         state: FieldLocalityState
     ): Boolean = eOptionP match {
 
-        case FinalEP(_, NoEscape | EscapeInCallee) ⇒ false
+        case FinalP(_, NoEscape | EscapeInCallee) ⇒ false
 
         // The field may be leaked by a getter, but only if the field's owning instance is the
         // receiver of the getter method.
-        case FinalEP(_, EscapeViaReturn) ⇒
+        case FinalP(_, EscapeViaReturn) ⇒
             if (isGetFieldOfReceiver) {
                 state.updateWithMeet(LocalFieldWithGetter)
                 false
             } else
                 true
 
-        case IntermediateEP(_, _, NoEscape | EscapeInCallee) ⇒
+        case InterimP(_, _, NoEscape | EscapeInCallee) ⇒
             state.addDefinitionSiteDependee(eOptionP, isGetFieldOfReceiver)
             false
 
-        case IntermediateEP(_, _, EscapeViaReturn) ⇒
+        case InterimP(_, _, EscapeViaReturn) ⇒
             if (isGetFieldOfReceiver) {
                 state.updateWithMeet(LocalFieldWithGetter)
                 state.addDefinitionSiteDependee(eOptionP, isGetFieldOfReceiver)
@@ -425,9 +425,9 @@ class FieldLocalityAnalysis private[analyses] (
         case EPS(_, _, ExtensibleGetter | VExtensibleGetter) ⇒
             true
 
-        case FinalEP(_, FreshReturnValue | VFreshReturnValue) ⇒ false
+        case FinalP(_, FreshReturnValue | VFreshReturnValue) ⇒ false
 
-        case FinalEP(_, PrimitiveReturnValue | VPrimitiveReturnValue) ⇒
+        case FinalP(_, PrimitiveReturnValue | VPrimitiveReturnValue) ⇒
             throw new RuntimeException(s"unexpected property $eOptionP for entity ${state.field}")
 
         case epkOrCnd ⇒
@@ -504,15 +504,15 @@ class FieldLocalityAnalysis private[analyses] (
     private[this] def handleEscapeStateOfResultOfSuperClone(
         eOptionP: EOptionP[DefinitionSiteLike, EscapeProperty]
     )(implicit state: FieldLocalityState): Boolean = eOptionP match {
-        case FinalEP(_, NoEscape | EscapeInCallee) ⇒ false
+        case FinalP(_, NoEscape | EscapeInCallee) ⇒ false
 
-        case IntermediateEP(_, _, NoEscape | EscapeInCallee) ⇒
+        case InterimP(_, _, NoEscape | EscapeInCallee) ⇒
             state.addClonedDefinitionSiteDependee(eOptionP)
             false
 
-        case FinalEP(_, EscapeViaReturn) ⇒ false
+        case FinalP(_, EscapeViaReturn) ⇒ false
 
-        case IntermediateEP(_, _, EscapeViaReturn) ⇒
+        case InterimP(_, _, EscapeViaReturn) ⇒
             state.addClonedDefinitionSiteDependee(eOptionP)
             false
 
@@ -573,7 +573,7 @@ class FieldLocalityAnalysis private[analyses] (
         if (state.hasNoDependees)
             Result(state.field, state.temporaryState)
         else
-            IntermediateResult(
+            InterimResult(
                 state.field,
                 NoLocalField,
                 state.temporaryState,

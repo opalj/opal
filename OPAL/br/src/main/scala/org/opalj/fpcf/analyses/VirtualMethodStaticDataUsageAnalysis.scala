@@ -52,10 +52,10 @@ class VirtualMethodStaticDataUsageAnalysis private[analyses] (
 
         for (method ← methods) {
             propertyStore(declaredMethods(method), StaticDataUsage.key) match {
-                case FinalEP(_, UsesNoStaticData)     ⇒
-                case FinalEP(_, UsesConstantDataOnly) ⇒ maxLevel = UsesConstantDataOnly
-                case FinalEP(_, UsesVaryingData)      ⇒ return Result(dm, VUsesVaryingData);
-                case ep @ IntermediateEP(_, _, UsesConstantDataOnly) ⇒
+                case FinalP(_, UsesNoStaticData)     ⇒
+                case FinalP(_, UsesConstantDataOnly) ⇒ maxLevel = UsesConstantDataOnly
+                case FinalP(_, UsesVaryingData)      ⇒ return Result(dm, VUsesVaryingData);
+                case ep @ InterimP(_, _, UsesConstantDataOnly) ⇒
                     maxLevel = UsesConstantDataOnly
                     dependees += ep
                 case epk ⇒ dependees += epk
@@ -66,10 +66,10 @@ class VirtualMethodStaticDataUsageAnalysis private[analyses] (
             dependees = dependees.filter { _.e ne eps.e }
 
             eps match {
-                case FinalEP(_, UsesNoStaticData)     ⇒
-                case FinalEP(_, UsesConstantDataOnly) ⇒ maxLevel = UsesConstantDataOnly
-                case FinalEP(_, UsesVaryingData)      ⇒ return Result(dm, VUsesVaryingData);
-                case ep @ IntermediateEP(_, _, UsesConstantDataOnly) ⇒
+                case FinalP(_, UsesNoStaticData)     ⇒
+                case FinalP(_, UsesConstantDataOnly) ⇒ maxLevel = UsesConstantDataOnly
+                case FinalP(_, UsesVaryingData)      ⇒ return Result(dm, VUsesVaryingData);
+                case ep @ InterimP(_, _, UsesConstantDataOnly) ⇒
                     maxLevel = UsesConstantDataOnly
                     dependees += ep.asInstanceOf[EOptionP[DeclaredMethod, StaticDataUsage]]
                 case epk ⇒ dependees += epk.asInstanceOf[EOptionP[DeclaredMethod, StaticDataUsage]]
@@ -78,7 +78,7 @@ class VirtualMethodStaticDataUsageAnalysis private[analyses] (
             if (dependees.isEmpty) {
                 Result(dm, maxLevel.aggregatedProperty)
             } else {
-                IntermediateResult(
+                InterimResult(
                     dm, VUsesVaryingData, maxLevel.aggregatedProperty,
                     dependees, c
                 )
@@ -88,7 +88,7 @@ class VirtualMethodStaticDataUsageAnalysis private[analyses] (
         if (dependees.isEmpty) {
             Result(dm, maxLevel.aggregatedProperty)
         } else {
-            IntermediateResult(
+            InterimResult(
                 dm, VUsesVaryingData, maxLevel.aggregatedProperty,
                 dependees, c
             )

@@ -202,9 +202,9 @@ class L1FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
         pcs:    PCs
     )(implicit state: State): Option[TACode[TACMethodParameter, V]] = {
         propertyStore(method, TACAI.key) match {
-            case finalEP: FinalEP[Method, TACAI] ⇒
-                finalEP.ub.tac
-            case eps: IntermediateEP[Method, TACAI] ⇒
+            case finalP: FinalP[Method, TACAI] ⇒
+                finalP.ub.tac
+            case eps: InterimP[Method, TACAI] ⇒
                 state.tacDependees += method → ((eps, pcs))
                 eps.ub.tac
             case epk ⇒
@@ -217,7 +217,7 @@ class L1FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
         if (state.tacDependees.isEmpty && state.escapeDependees.isEmpty)
             Result(state.field, EffectivelyFinalField)
         else
-            IntermediateResult(
+            InterimResult(
                 state.field,
                 NonFinalFieldByAnalysis,
                 EffectivelyFinalField,
@@ -282,23 +282,23 @@ class L1FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
     def handleEscapeProperty(
         ep: EOptionP[DefinitionSite, EscapeProperty]
     )(implicit state: State): Boolean = ep match {
-        case FinalEP(_, NoEscape | EscapeInCallee | EscapeViaReturn) ⇒
+        case FinalP(_, NoEscape | EscapeInCallee | EscapeViaReturn) ⇒
             false
 
-        case FinalEP(_, AtMost(_)) ⇒
+        case FinalP(_, AtMost(_)) ⇒
             true
 
-        case FinalEP(_, _) ⇒
+        case FinalP(_, _) ⇒
             true // Escape state is worse than via return
 
-        case IntermediateEP(_, _, NoEscape | EscapeInCallee | EscapeViaReturn) ⇒
+        case InterimP(_, _, NoEscape | EscapeInCallee | EscapeViaReturn) ⇒
             state.escapeDependees += ep
             false
 
-        case IntermediateEP(_, _, AtMost(_)) ⇒
+        case InterimP(_, _, AtMost(_)) ⇒
             true
 
-        case IntermediateEP(_, _, _) ⇒
+        case InterimP(_, _, _) ⇒
             true // Escape state is worse than via return
 
         case _ ⇒

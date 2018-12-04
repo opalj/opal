@@ -40,7 +40,7 @@ class ThrownExceptionsAnalysisTests extends PropertiesTest {
         } {
             val epk = EPK(e, ThrownExceptions.key)
             ps.scheduleEagerComputationForEntity(e) { e ⇒
-                IntermediateResult(e, new DummyProperty, new DummyProperty, Set(epk), _ ⇒ NoResult)
+                InterimResult(e, new DummyProperty, new DummyProperty, Set(epk), _ ⇒ NoResult)
             }
         }
 

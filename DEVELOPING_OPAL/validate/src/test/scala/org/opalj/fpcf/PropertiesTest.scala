@@ -141,10 +141,10 @@ abstract class PropertiesTest extends FunSpec with Matchers {
                 it(entityIdentifier(s"$annotationTypeName")) {
                     info(s"validator: "+matcherClass.toString.substring(32))
                     val epss = ps.properties(e).toIndexedSeq
-                    val nonFinalEPSs = epss.filter(!_.isFinal)
+                    val nonFinalPSs = epss.filter(!_.isFinal)
                     assert(
-                        nonFinalEPSs.isEmpty,
-                        nonFinalEPSs.mkString("some epss are not final:\n\t", "\n\t", "\n")
+                        nonFinalPSs.isEmpty,
+                        nonFinalPSs.mkString("some epss are not final:\n\t", "\n\t", "\n")
                     )
                     val properties = epss.map(_.toUBEP.p)
                     matcher.validateProperty(p, ats, e, annotation, properties) match {
@@ -289,6 +289,8 @@ abstract class PropertiesTest extends FunSpec with Matchers {
 
         init(p)
 
+        PropertyStore.updateDebug(true)
+
         p.getOrCreateProjectInformationKeyInitializationData(
             PropertyStoreKey,
             (context: List[PropertyStoreContext[AnyRef]]) ⇒ {
@@ -296,7 +298,6 @@ abstract class PropertiesTest extends FunSpec with Matchers {
                     new RecordAllPropertyStoreTracer,
                     context.iterator.map(_.asTuple).toMap
                 )(p.logContext)
-                PropertyStore.updateDebug(true)
                 ps
             }
         )

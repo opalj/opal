@@ -133,14 +133,14 @@ class ReturnValueFreshnessAnalysis private[analyses] (
             def handleReturnValueFreshness(
                 eOptP: SomeEOptionP
             ): PropertyComputationResult = eOptP match {
-                case FinalEP(_, p) ⇒ Result(e, p)
-                case IntermediateEP(_, lb, ub) ⇒
-                    IntermediateResult(
+                case FinalP(_, p) ⇒ Result(e, p)
+                case InterimP(_, lb, ub) ⇒
+                    InterimResult(
                         e, lb, ub,
                         Set(eOptP), handleReturnValueFreshness, CheapPropertyComputation
                     )
                 case _ ⇒
-                    IntermediateResult(
+                    InterimResult(
                         e, NoFreshReturnValue, FreshReturnValue,
                         Set(eOptP), handleReturnValueFreshness, CheapPropertyComputation
                     )
@@ -173,7 +173,7 @@ class ReturnValueFreshnessAnalysis private[analyses] (
         val codeO = getTACAICode(m)
 
         if (codeO.isEmpty)
-            return IntermediateResult(
+            return InterimResult(
                 dm,
                 NoFreshReturnValue,
                 FreshReturnValue,
@@ -353,26 +353,26 @@ class ReturnValueFreshnessAnalysis private[analyses] (
         implicit
         state: ReturnValueFreshnessState
     ): Boolean = ep match {
-        case FinalEP(_, NoEscape | EscapeInCallee) ⇒
+        case FinalP(_, NoEscape | EscapeInCallee) ⇒
             throw new RuntimeException(s"unexpected result $ep for entity ${state.dm}")
 
-        case FinalEP(_, EscapeViaReturn) ⇒ false
+        case FinalP(_, EscapeViaReturn) ⇒ false
 
-        case FinalEP(_, AtMost(_))       ⇒ true
+        case FinalP(_, AtMost(_))       ⇒ true
 
-        case FinalEP(_, _)               ⇒ true // Escape state is worse than via return
+        case FinalP(_, _)               ⇒ true // Escape state is worse than via return
 
-        case IntermediateEP(_, _, NoEscape | EscapeInCallee) ⇒
+        case InterimP(_, _, NoEscape | EscapeInCallee) ⇒
             state.addDefSiteDependee(ep)
             false
 
-        case IntermediateEP(_, _, EscapeViaReturn) ⇒
+        case InterimP(_, _, EscapeViaReturn) ⇒
             state.addDefSiteDependee(ep)
             false
 
-        case IntermediateEP(_, _, AtMost(_)) ⇒ true
+        case InterimP(_, _, AtMost(_)) ⇒ true
 
-        case IntermediateEP(_, _, _)         ⇒ true // Escape state is worse than via return
+        case InterimP(_, _, _)         ⇒ true // Escape state is worse than via return
 
         case _ ⇒
             state.addDefSiteDependee(ep)
@@ -390,28 +390,28 @@ class ReturnValueFreshnessAnalysis private[analyses] (
         implicit
         state: ReturnValueFreshnessState
     ): Boolean = ep match {
-        case FinalEP(_, LocalFieldWithGetter) ⇒
+        case FinalP(_, LocalFieldWithGetter) ⇒
             state.atMost(Getter)
             false
 
-        case IntermediateEP(_, _, LocalFieldWithGetter) ⇒
+        case InterimP(_, _, LocalFieldWithGetter) ⇒
             state.atMost(Getter)
             state.addFieldDependee(ep)
             false
 
-        case FinalEP(_, NoLocalField) ⇒
+        case FinalP(_, NoLocalField) ⇒
             true
 
-        case FinalEP(_, ExtensibleLocalFieldWithGetter) ⇒
+        case FinalP(_, ExtensibleLocalFieldWithGetter) ⇒
             state.atMost(ExtensibleGetter)
             false
 
-        case IntermediateEP(_, _, ExtensibleLocalFieldWithGetter) ⇒
+        case InterimP(_, _, ExtensibleLocalFieldWithGetter) ⇒
             state.atMost(ExtensibleGetter)
             state.addFieldDependee(ep)
             false
 
-        case FinalEP(_, LocalField | ExtensibleLocalField) ⇒
+        case FinalP(_, LocalField | ExtensibleLocalField) ⇒
             // The value is returned, the field can not be local!
             throw new RuntimeException(s"unexpected result $ep for entity ${state.dm}")
 
@@ -428,16 +428,16 @@ class ReturnValueFreshnessAnalysis private[analyses] (
     def handleReturnValueFreshness(
         ep: EOptionP[DeclaredMethod, Property]
     )(implicit state: ReturnValueFreshnessState): Boolean = ep match {
-        case FinalEP(_, NoFreshReturnValue | VNoFreshReturnValue) ⇒ true
+        case FinalP(_, NoFreshReturnValue | VNoFreshReturnValue) ⇒ true
 
-        case FinalEP(_, FreshReturnValue | VFreshReturnValue)     ⇒ false
+        case FinalP(_, FreshReturnValue | VFreshReturnValue)     ⇒ false
 
         //IMPROVE: We can still be a getter if the callee has the same receiver
-        case EPS(_, _, Getter | VGetter)                          ⇒ true
+        case EPS(_, _, Getter | VGetter)                         ⇒ true
 
-        case EPS(_, _, ExtensibleGetter | VExtensibleGetter)      ⇒ true
+        case EPS(_, _, ExtensibleGetter | VExtensibleGetter)     ⇒ true
 
-        case IntermediateEP(_, _, FreshReturnValue | VFreshReturnValue) ⇒
+        case InterimP(_, _, FreshReturnValue | VFreshReturnValue) ⇒
             state.addMethodDependee(ep)
             false
 
@@ -490,7 +490,7 @@ class ReturnValueFreshnessAnalysis private[analyses] (
 
     def returnResult(implicit state: ReturnValueFreshnessState): PropertyComputationResult = {
         if (state.hasDependees)
-            IntermediateResult(
+            InterimResult(
                 state.dm,
                 NoFreshReturnValue,
                 state.ubRVF,

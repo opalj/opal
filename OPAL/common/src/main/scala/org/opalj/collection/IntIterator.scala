@@ -44,28 +44,37 @@ abstract class IntIterator extends AbstractIterator[Int] { self ⇒
         false
     }
 
-    override def foldLeft[B](start: B)(f: (B, Int) ⇒ B): B = {
-        var c = start
-        while (this.hasNext) { c = f(c, next()) }
-        c
-    }
-
     def foldLeft(start: Int)(f: (Int, Int) ⇒ Int): Int = {
         var c = start
         while (this.hasNext) { c = f(c, next()) }
         c
     }
 
+    def foldLeft(start: Long)(f: (Long, Int) ⇒ Long): Long = {
+        var c = start
+        while (this.hasNext) { c = f(c, next()) }
+        c
+    }
+
+    override def foldLeft[T](start: T)(f: (T, Int) ⇒ T): T = {
+        var c = start
+        while (this.hasNext) { c = f(c, next()) }
+        c
+    }
+
+    /**
+     * Executes the given function `f` until an element is found for which `p` evaluates to `false`
+     * or all elements have been processed.
+     */
     def foreachWhile[U](p: Int ⇒ Boolean)(f: Int ⇒ U): Unit = {
-        while (this.hasNext && {
-            val c = this.next()
-            if (p(c)) {
-                f(c)
-                true
+        while (this.hasNext) {
+            val e = this.next()
+            if (p(e)) {
+                f(e)
             } else {
-                false
+                return ;
             }
-        }) {}
+        }
     }
 
     def map(f: Int ⇒ Int): IntIterator = new IntIterator {

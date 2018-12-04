@@ -3,6 +3,8 @@ package org.opalj
 package fpcf
 
 import org.opalj.collection.immutable.Chain
+import org.opalj.util.PerformanceEvaluation.time
+import org.opalj.log.OPALLogger.info
 
 /**
  * Encapsulates a computed schedule and enables the execution of it. Use an [[AnalysisScenario]]
@@ -14,14 +16,15 @@ import org.opalj.collection.immutable.Chain
  */
 case class Schedule(
         batches: Chain[Chain[ComputationSpecification]]
-) extends (PropertyStore ⇒ Unit) {
+) extends ((PropertyStore, Boolean) ⇒ Unit) {
 
     /**
      * Schedules the computation specifications; that is, executes the underlying analysis scenario.
      *
      * @param ps The property store which should be used to execute the analyses.
      */
-    def apply(ps: PropertyStore): Unit = {
+    def apply(ps: PropertyStore, trace: Boolean): Unit = {
+        implicit val logContext = ps.logContext
         val initInfo =
             batches.flatMap { batch ⇒
                 batch.toIterator.map[(ComputationSpecification, Any)] { cs ⇒ cs -> cs.init(ps) }
@@ -75,17 +78,29 @@ case class Schedule(
                 stillUsedLazilyComputedProperties --= cs.derives
             }
             currentLazilyComputedProperties ++= stillUsedLazilyComputedProperties
-            ps.setupPhase(
-                currentLazilyComputedProperties ++ computedProperties,
-                currentLazilyComputedProperties ++ openProperties // this is an overapproximation, but this is safe!
-            )
-            batch foreach { cs ⇒
-                cs.beforeSchedule(ps)
-                cs.schedule(ps, initInfo(cs).asInstanceOf[cs.InitializationData])
-            }
-            ps.waitOnPhaseCompletion()
-            batch foreach { cs ⇒
-                cs.afterPhaseCompletion(ps)
+            val newComputedProperties = currentLazilyComputedProperties ++ computedProperties
+            if (trace)
+                info(
+                    "analysis progress",
+                    newComputedProperties.mkString(
+                        s"analysis phase $currentBatchIndex: ", ", ", ""
+                    )
+                )
+            time {
+                ps.setupPhase(
+                    newComputedProperties,
+                    currentLazilyComputedProperties ++ openProperties // this is an overapproximation, but this is safe!
+                )
+                batch foreach { cs ⇒ cs.beforeSchedule(ps) }
+                batch foreach { cs ⇒ cs.schedule(ps, initInfo(cs).asInstanceOf[cs.InitializationData]) }
+                ps.waitOnPhaseCompletion()
+                batch foreach { cs ⇒ cs.afterPhaseCompletion(ps) }
+            } { t ⇒
+                if (trace)
+                    info(
+                        "analysis progress",
+                        s"analysis phase $currentBatchIndex took ${t.toSeconds}"
+                    )
             }
         }
         // ... we are done now!
@@ -98,3 +113,4 @@ case class Schedule(
     }
 
 }
+

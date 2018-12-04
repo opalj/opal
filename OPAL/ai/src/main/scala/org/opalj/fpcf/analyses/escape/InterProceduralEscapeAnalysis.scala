@@ -63,17 +63,17 @@ class InterProceduralEscapeAnalysis private[analyses] (
             case VirtualFormalParameter(DefinedMethod(dc, m), i) if dc != m.classFile.thisType ⇒
                 def handleEscapeState(eOptionP: SomeEOptionP): PropertyComputationResult = {
                     eOptionP match {
-                        case FinalEP(_, p) ⇒
+                        case FinalP(_, p) ⇒
                             Result(fp, p)
 
-                        case IntermediateEP(_, lb, ub) ⇒
-                            IntermediateResult(
+                        case InterimP(_, lb, ub) ⇒
+                            InterimResult(
                                 fp, lb, ub,
                                 Set(eOptionP), handleEscapeState, CheapPropertyComputation
                             )
 
                         case _ ⇒
-                            IntermediateResult(
+                            InterimResult(
                                 fp, GlobalEscape, NoEscape,
                                 Set(eOptionP), handleEscapeState, CheapPropertyComputation
                             )
@@ -85,12 +85,12 @@ class InterProceduralEscapeAnalysis private[analyses] (
                 handleEscapeState(propertyStore(parameterOfBase, EscapeProperty.key))
 
             case VirtualFormalParameter(DefinedMethod(_, m), _) if m.body.isEmpty ⇒
-                //TODO IntermediateResult(fp, GlobalEscape, AtMost(NoEscape), Seq.empty, (_) ⇒ throw new RuntimeException())
+                //TODO InterimResult(fp, GlobalEscape, AtMost(NoEscape), Seq.empty, (_) ⇒ throw new RuntimeException())
                 Result(fp, AtMost(NoEscape))
 
             // parameters of base types are not considered
             case VirtualFormalParameter(m, i) if i != -1 && m.descriptor.parameterType(-i - 2).isBaseType ⇒
-                //TODO IntermediateResult(fp, GlobalEscape, AtMost(NoEscape), Seq.empty, (_) ⇒ throw new RuntimeException())
+                //TODO InterimResult(fp, GlobalEscape, AtMost(NoEscape), Seq.empty, (_) ⇒ throw new RuntimeException())
                 Result(fp, AtMost(NoEscape))
 
             case VirtualFormalParameter(DefinedMethod(_, m), i) ⇒

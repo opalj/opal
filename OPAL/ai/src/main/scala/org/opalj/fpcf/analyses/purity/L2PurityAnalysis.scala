@@ -450,9 +450,9 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         data: (Expr[V], Purity)
     )(implicit state: State): Boolean = {
         val isLocal = ep match {
-            case FinalEP(_, LocalField | LocalFieldWithGetter) ⇒
+            case FinalP(_, LocalField | LocalFieldWithGetter) ⇒
                 true
-            case FinalEP(_, ExtensibleLocalField | ExtensibleLocalFieldWithGetter) ⇒
+            case FinalP(_, ExtensibleLocalField | ExtensibleLocalFieldWithGetter) ⇒
                 if (data._1.isVar) {
                     val value = data._1.asVar.value.asReferenceValue
                     value.isPrecise &&
@@ -480,10 +480,10 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         ep match {
             case EPS(_, PrimitiveReturnValue | FreshReturnValue |
                 VPrimitiveReturnValue | VFreshReturnValue, _) ⇒
-            case FinalEP(_, Getter | VGetter) ⇒
+            case FinalP(_, Getter | VGetter) ⇒
                 if (data._2 meet state.ubPurity ne state.ubPurity)
                     isLocal(data._1.get, data._2)
-            case FinalEP(_, ExtensibleGetter | VExtensibleGetter) ⇒
+            case FinalP(_, ExtensibleGetter | VExtensibleGetter) ⇒
                 if (data._1.get.isVar) {
                     val value = data._1.get.asVar.value.asReferenceValue
                     if (value.isPrecise && !isSubtypeOf(value.asReferenceType, ObjectType.Cloneable)) {
@@ -878,7 +878,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         if (dependees.isEmpty || (state.lbPurity == state.ubPurity)) {
             Result(state.definedMethod, state.ubPurity)
         } else {
-            IntermediateResult(
+            InterimResult(
                 state.definedMethod,
                 state.lbPurity,
                 state.ubPurity,
@@ -956,7 +956,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         if (dependees.isEmpty || (state.lbPurity == state.ubPurity)) {
             Result(state.definedMethod, state.ubPurity)
         } else {
-            IntermediateResult(state.definedMethod, state.lbPurity, state.ubPurity, dependees, c)
+            InterimResult(state.definedMethod, state.lbPurity, state.ubPurity, dependees, c)
         }
     }
 
@@ -980,7 +980,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         val tacaiO = getTACAI(method)
 
         if (tacaiO.isEmpty)
-            return IntermediateResult(
+            return InterimResult(
                 definedMethod,
                 ImpureByAnalysis,
                 CompileTimePure,

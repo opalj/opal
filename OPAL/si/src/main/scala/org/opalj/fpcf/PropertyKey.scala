@@ -1,9 +1,6 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf
 
-import scala.language.existentials
-
-import java.util.concurrent.atomic.AtomicReferenceArray
 import java.util.concurrent.atomic.AtomicInteger
 
 import org.opalj.fpcf.PropertyKind.SupportedPropertyKinds
@@ -13,6 +10,9 @@ import org.opalj.fpcf.PropertyKind.SupportedPropertyKinds
  * the [[PropertyStore]] must be associated with at most one property per property kind/key.
  *
  * To create a property key use one of the companion object's [[PropertyKey$]].`create` method.
+ *
+ * When a phase finishes all values are committed using the current upper bound unless a property
+ * only has a lower bound.
  *
  * @author Michael Eichberg
  */
@@ -28,41 +28,21 @@ final class PropertyKey[+P] private[fpcf] (val id: Int) extends AnyVal with Prop
  */
 object PropertyKey {
 
-    // TODO additionally pass the cycle to the cycle resolution strategy to enable decisions about the "correct" value
-    type CycleResolutionStrategy[E <: Entity, P <: Property] = (PropertyStore, EPS[E, P]) ⇒ P
-
-    private[this] val propertyKeyNames = new AtomicReferenceArray[String](SupportedPropertyKinds)
+    private[this] val propertyKeyNames = new Array[String](SupportedPropertyKinds)
 
     /*
      * @note [[PropertyKey]]s of simple properties don't have fallback property computations.
      *       This fact is also used to distinguish these two property kinds.
      */
     private[this] val fallbackPropertyComputations = {
-        new AtomicReferenceArray[(PropertyStore, FallbackReason, Entity) ⇒ Property](
-            SupportedPropertyKinds
-        )
-    }
-
-    private[this] val notComputedProperties = {
-        new AtomicReferenceArray[Property](SupportedPropertyKinds)
+        new Array[(PropertyStore, FallbackReason, Entity) ⇒ Property](SupportedPropertyKinds)
     }
 
     /*
      * @note [[PropertyKey]]s of simple properties don't have fastrack property computations.
      */
     private[this] val fastTrackPropertyComputations = {
-        new AtomicReferenceArray[(PropertyStore, Entity) ⇒ Option[Property]](
-            SupportedPropertyKinds
-        )
-    }
-
-    /*
-     * @note [[PropertyKey]]s of simple properties don't have cycle resolution strategies.
-     */
-    private[this] val cycleResolutionStrategies = {
-        new AtomicReferenceArray[CycleResolutionStrategy[_ <: Entity, _ <: Property]](
-            SupportedPropertyKinds
-        )
+        new Array[(PropertyStore, Entity) ⇒ Option[Property]](SupportedPropertyKinds)
     }
 
     private[this] val lastKeyId = new AtomicInteger(-1)
@@ -79,36 +59,13 @@ object PropertyKey {
     }
 
     private[this] def setKeyName(keyId: Int, name: String): Unit = {
-        propertyKeyNames.set(keyId, name)
+        propertyKeyNames(keyId) = name
         var i = 0
         while (i < keyId) {
-            if (propertyKeyNames.get(i) == name)
+            if (propertyKeyNames(i) == name)
                 throw new IllegalArgumentException(s"the property name $name is already used");
             i += 1
         }
-    }
-
-    /**
-     * Creates a new [[PropertyKey]] for a simple property.
-     *
-     * Simple properties are only to be used for properties for which a (meaningful) lower bound
-     * does not exists or is very hard to compute and is – in particular – never of interest for
-     * clients. Additionally, a basic analysis which derives the property has to exist; if no
-     * analysis is scheduled the client would not be able to distinguish between this case where
-     * no analysis is run and the case where an analysis does not derive a value for a specific
-     * entity (e.g., because the entity is unused/dead).
-     *
-     * @param notComputedProperty This property is used as the "fallback" when the property is
-     *        not computed for a specific entity though an analysis is scheduled.
-     */
-    def forSimpleProperty[P <: Property](
-        name:                String,
-        notComputedProperty: P
-    ): PropertyKey[P] = {
-        val thisKeyId = nextKeyId()
-        setKeyName(thisKeyId, name)
-        notComputedProperties.set(thisKeyId, notComputedProperty)
-        new PropertyKey(thisKeyId)
     }
 
     /**
@@ -126,72 +83,61 @@ object PropertyKey {
      *              value can be used. This is in particular relevant for properties which depend
      *              on the reachable code.
      *
-     * @param cycleResolutionStrategy The strategy that will be used to resolve unfinished cyclic
-     *              computations. In the vast majority of cases it is sufficient to just commit
-     *              the given value.
-     *
      * @param fastTrackPropertyComputation (Optionally) called by the property store if the property
      *              is computed in the current phase and is queried the first time
      *              (see `PropertyStore.setupPhase`). This method is expected to either provide
      *              a precise analysis very fast or to not provide a result at all.
      *              I.e., it is expected to derive only those properties that can trivially be
-     *              derived precisely.
+     *              derived precisely. In general, the computation should succeed in at most
+     *              a few hundred steps!
+     *
+     * @note This method is '''not thread-safe''' - the setup of the property store (e.g.,
+     *       using the [[org.opalj.fpcf.FPCFAnalysesManager]] or an [[AnalysisScenario]] has to
+     *       be done by the driver thread and therefore no synchronization is needed.)
      */
     def create[E <: Entity, P <: Property](
         name:                         String,
         fallbackPropertyComputation:  FallbackPropertyComputation[E, P],
-        cycleResolutionStrategy:      CycleResolutionStrategy[E, P],
         fastTrackPropertyComputation: (PropertyStore, E) ⇒ Option[P]
     ): PropertyKey[P] = {
         val thisKeyId = nextKeyId()
         setKeyName(thisKeyId, name)
 
-        fallbackPropertyComputations.set(
-            thisKeyId,
+        fallbackPropertyComputations(thisKeyId) =
             fallbackPropertyComputation.asInstanceOf[(PropertyStore, FallbackReason, Entity) ⇒ Property]
-        )
-        fastTrackPropertyComputations.set(
-            thisKeyId,
+
+        fastTrackPropertyComputations(thisKeyId) =
             fastTrackPropertyComputation.asInstanceOf[(PropertyStore, Entity) ⇒ Option[Property]]
-        )
-        cycleResolutionStrategies.set(
-            thisKeyId,
-            cycleResolutionStrategy.asInstanceOf[CycleResolutionStrategy[Entity, Property]]
-        )
 
         new PropertyKey(thisKeyId)
+    }
+
+    def create[E <: Entity, P <: Property](name: String): PropertyKey[P] = {
+        create(name, fallbackPropertyComputation = null, fastTrackPropertyComputation = null)
+    }
+
+    def create[E <: Entity, P <: Property](
+        name:             String,
+        fallbackProperty: P
+    ): PropertyKey[P] = {
+        val fpc = (_: PropertyStore, _: FallbackReason, _: Entity) ⇒ fallbackProperty
+        create(name, fpc, fastTrackPropertyComputation = null)
+    }
+
+    def create[E <: Entity, P <: Property](
+        name:                        String,
+        fallbackPropertyComputation: FallbackPropertyComputation[E, P]
+    ): PropertyKey[P] = {
+        create(name, fallbackPropertyComputation, fastTrackPropertyComputation = null)
     }
 
     def create[E <: Entity, P <: Property](
         name:                         String,
         fallbackProperty:             P,
-        cycleResolutionStrategy:      CycleResolutionStrategy[E, P]  = (_: PropertyStore, eps: EPS[E, P]) ⇒ eps.ub,
-        fastTrackPropertyComputation: (PropertyStore, E) ⇒ Option[P] = (_: PropertyStore, _: Entity) ⇒ None
+        fastTrackPropertyComputation: (PropertyStore, E) ⇒ Option[P]
     ): PropertyKey[P] = {
-        create(
-            name,
-            (_: PropertyStore, _: FallbackReason, _: Entity) ⇒ fallbackProperty,
-            cycleResolutionStrategy,
-            fastTrackPropertyComputation
-        )
-    }
-
-    /**
-     * Updates the (default) cycle resolution strategy associated with a specific kind of
-     * property. Updating the strategy is typically done by analyses that require a different
-     * strategy than the one defined by the property. For example, an analysis, which just
-     * computes a lower bound, generally has to overwrite the default strategy which picks
-     * the upper bound in case of a closed strongly connected component.
-     *
-     * @return The old strategy.
-     */
-    def updateCycleResolutionStrategy[E <: Entity, P <: Property](
-        key:                     PropertyKey[P],
-        cycleResolutionStrategy: CycleResolutionStrategy[E, P]
-    ): CycleResolutionStrategy[E, P] = {
-        val oldStrategy = cycleResolutionStrategies.get(key.id)
-        cycleResolutionStrategies.set(key.id, cycleResolutionStrategy)
-        oldStrategy.asInstanceOf[CycleResolutionStrategy[E, P]]
+        val fpc = (_: PropertyStore, _: FallbackReason, _: Entity) ⇒ fallbackProperty
+        create(name, fpc, fastTrackPropertyComputation)
     }
 
     //
@@ -199,24 +145,20 @@ object PropertyKey {
     // ===============================================
     //
 
-    def isPropertyKindForSimpleProperty(pk: PropertyKind): Boolean = {
-        fallbackPropertyComputations.get(pk.id) == null
-    }
-
-    def isPropertyKeyForSimpleProperty(pk: SomePropertyKey): Boolean = {
-        fallbackPropertyComputations.get(pk.id) == null
-    }
-
-    def isPropertyKeyForSimplePropertyBasedOnPKId(pkId: Int): Boolean = {
-        fallbackPropertyComputations.get(pkId) == null
-    }
-
     /**
      * Returns the unique name of the kind of properties associated with the given key id.
      */
-    def name(id: Int): String = propertyKeyNames.get(id)
+    def name(id: Int): String = propertyKeyNames(id)
 
     final def name(pKind: PropertyKind): String = name(pKind.id)
+
+    final def hasFallback(propertyKind: PropertyKind): Boolean = {
+        hasFallbackBasedOnPKId(propertyKind.id)
+    }
+
+    final def hasFallbackBasedOnPKId(pkId: Int): Boolean = {
+        fallbackPropertyComputations(pkId) != null
+    }
 
     /**
      * @note This method is intended to be called by the framework.
@@ -236,32 +178,23 @@ object PropertyKey {
         e:    Entity,
         pkId: Int
     ): Property = {
-        val fallbackComputation = fallbackPropertyComputations.get(pkId)
+        val fallbackComputation = fallbackPropertyComputations(pkId)
         if (fallbackComputation == null)
-            throw new IllegalArgumentException(
-                "no fallback computation exists (for simple properties of kind): "+name(pkId)
-            )
+            throw new IllegalArgumentException("no fallback computation exists: "+name(pkId))
         fallbackComputation(ps, fr, e)
     }
 
-    /**
-     * @note This method is intended to be called by the framework.
-     */
-    def notComputedProperty[P <: Property](pk: PropertyKey[P]): P = {
-        notComputedPropertyBasedOnPKId(pk.id).asInstanceOf[P]
+    final def hasFastTrackProperty(propertyKind: PropertyKind): Boolean = {
+        hasFallbackBasedOnPKId(propertyKind.id)
     }
 
-    private[fpcf] def notComputedPropertyBasedOnPKId(pkId: Int): Property = {
-        val notComputedProperty = notComputedProperties.get(pkId)
-        if (notComputedProperty == null)
-            throw new IllegalArgumentException(
-                "no property exists which models the case that no property is computed: "+name(pkId)
-            )
-        notComputedProperty
+    final def hasFastTrackPropertyBasedOnPKId(pkId: Int): Boolean = {
+        fastTrackPropertyComputations(pkId) != null
     }
 
     /**
-     * @note This method is intended to be called by the framework.
+     * @note This method is intended to be called by the framework. It is defined iff a
+     *       fast track property computation was registered.
      */
     def fastTrackProperty[P <: Property](
         ps: PropertyStore,
@@ -270,36 +203,42 @@ object PropertyKey {
     ): Option[P] = {
         fastTrackPropertyBasedOnPKId(ps, e, pk.id).asInstanceOf[Option[P]]
     }
+
     private[fpcf] def fastTrackPropertyBasedOnPKId(
         ps:   PropertyStore,
         e:    Entity,
         pkId: Int
     ): Option[Property] = {
-        val fastTrackPropertyComputation = fastTrackPropertyComputations.get(pkId)
+        val fastTrackPropertyComputation = fastTrackPropertyComputations(pkId)
         if (fastTrackPropertyComputation == null)
-            throw new IllegalArgumentException(
-                "no fast track computation exists (for simple properties of kind): "+name(pkId)
-            )
+            throw new IllegalArgumentException("no fast track computation exists: "+name(pkId))
         fastTrackPropertyComputation(ps, e)
     }
 
-    /**
-     * @note This method is intended to be called by the framework.
-     */
-    def resolveCycle[E <: Entity, P <: Property](ps: PropertyStore, eps: EPS[E, P]): P = {
-        val pkId = eps.pk.id
-        val cycleResolutionStrategy = cycleResolutionStrategies.get(pkId)
-        if (cycleResolutionStrategy == null)
-            throw new IllegalArgumentException(
-                "no cycle resolution strategy exists (for simple properties of kind): "+name(pkId)
-            )
-        cycleResolutionStrategy.asInstanceOf[CycleResolutionStrategy[E, P]](ps, eps)
+    private[fpcf] def computeFastTrackProperty[P <: Property](
+        ps: PropertyStore,
+        e:  Entity,
+        pk: PropertyKey[P]
+    ): Option[P] = {
+        computeFastTrackPropertyBasedOnPKId(ps, e, pk.id)
+    }
+    private[fpcf] def computeFastTrackPropertyBasedOnPKId[P <: Property](
+        ps:   PropertyStore,
+        e:    Entity,
+        pkId: Int
+    ): Option[P] = {
+        val fastTrackPropertyComputation = fastTrackPropertyComputations(pkId)
+        if (fastTrackPropertyComputation == null)
+            None
+        else
+            fastTrackPropertyComputation(ps, e).asInstanceOf[Option[P]]
     }
 
     /**
      * Returns the id associated with the last created property key.
-     * The id associated with the first property kind is `0`;
-     * `-1` is returned if no property key is created so far.
+     *
+     * The id of the first property kind is `0`; `-1` is returned if no property key is created
+     * so far.
      */
     private[fpcf] def maxId: Int = lastKeyId.get
 

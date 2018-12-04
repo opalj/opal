@@ -73,59 +73,59 @@ trait ConstructorSensitiveEscapeAnalysis extends AbstractEscapeAnalysis {
         eOptionP: EOptionP[Entity, Property]
     )(implicit state: AnalysisState): Unit = {
         eOptionP match {
-            case FinalEP(_, NoEscape) ⇒ //NOTHING TO DO
+            case FinalP(_, NoEscape) ⇒ //NOTHING TO DO
 
-            case FinalEP(_, GlobalEscape) ⇒
+            case FinalP(_, GlobalEscape) ⇒
                 state.meetMostRestrictive(GlobalEscape)
 
-            case FinalEP(_, EscapeViaStaticField) ⇒
+            case FinalP(_, EscapeViaStaticField) ⇒
                 state.meetMostRestrictive(EscapeViaStaticField)
 
-            case FinalEP(_, EscapeViaHeapObject) ⇒
+            case FinalP(_, EscapeViaHeapObject) ⇒
                 state.meetMostRestrictive(EscapeViaHeapObject)
 
-            case FinalEP(_, EscapeInCallee) ⇒
+            case FinalP(_, EscapeInCallee) ⇒
                 state.meetMostRestrictive(EscapeInCallee)
 
-            case FinalEP(_, AtMost(EscapeInCallee)) ⇒
+            case FinalP(_, AtMost(EscapeInCallee)) ⇒
                 state.meetMostRestrictive(AtMost(EscapeInCallee))
 
-            case FinalEP(_, EscapeViaParameter) ⇒
+            case FinalP(_, EscapeViaParameter) ⇒
                 state.meetMostRestrictive(AtMost(NoEscape))
 
-            case FinalEP(_, EscapeViaAbnormalReturn) ⇒
+            case FinalP(_, EscapeViaAbnormalReturn) ⇒
                 state.meetMostRestrictive(AtMost(NoEscape))
 
-            case FinalEP(_, EscapeViaParameterAndAbnormalReturn) ⇒
+            case FinalP(_, EscapeViaParameterAndAbnormalReturn) ⇒
                 state.meetMostRestrictive(AtMost(NoEscape))
 
-            case FinalEP(_, AtMost(NoEscape)) ⇒
+            case FinalP(_, AtMost(NoEscape)) ⇒
                 state.meetMostRestrictive(AtMost(NoEscape))
 
-            case FinalEP(_, AtMost(EscapeViaParameter)) ⇒
+            case FinalP(_, AtMost(EscapeViaParameter)) ⇒
                 state.meetMostRestrictive(AtMost(NoEscape))
 
-            case FinalEP(_, AtMost(EscapeViaAbnormalReturn)) ⇒
+            case FinalP(_, AtMost(EscapeViaAbnormalReturn)) ⇒
                 state.meetMostRestrictive(AtMost(NoEscape))
 
-            case FinalEP(_, AtMost(EscapeViaParameterAndAbnormalReturn)) ⇒
+            case FinalP(_, AtMost(EscapeViaParameterAndAbnormalReturn)) ⇒
                 state.meetMostRestrictive(AtMost(NoEscape))
 
-            case FinalEP(_, p) ⇒
+            case FinalP(_, p) ⇒
                 throw new UnknownError(s"unexpected escape property ($p) for constructors")
 
-            case ep @ IntermediateEP(_, _, NoEscape) ⇒
+            case ep @ InterimP(_, _, NoEscape) ⇒
                 state.addDependency(ep)
 
-            case ep @ IntermediateEP(_, _, EscapeInCallee) ⇒
+            case ep @ InterimP(_, _, EscapeInCallee) ⇒
                 state.meetMostRestrictive(EscapeInCallee)
                 state.addDependency(ep)
 
-            case ep @ IntermediateEP(_, _, AtMost(EscapeInCallee)) ⇒
+            case ep @ InterimP(_, _, AtMost(EscapeInCallee)) ⇒
                 state.meetMostRestrictive(AtMost(EscapeInCallee))
                 state.addDependency(ep)
 
-            case ep @ IntermediateEP(_, _, _) ⇒
+            case ep @ InterimP(_, _, _) ⇒
                 state.meetMostRestrictive(AtMost(NoEscape))
                 state.addDependency(ep)
 

@@ -53,7 +53,6 @@ trait PropertyStoreTracer {
 
     def handlingResult(
         r:                               PropertyComputationResult,
-        forceEvaluation:                 Boolean,
         epksWithNotYetNotifiedDependers: Set[SomeEPK]
     ): Unit
 
@@ -62,7 +61,7 @@ trait PropertyStoreTracer {
         oldEOptionP: SomeEOptionP
     ): Unit
 
-    def metaInformationDeleted(finalEP: SomeFinalEP): Unit
+    def metaInformationDeleted(finalP: SomeFinalP): Unit
 
     def reachedQuiescence(): Unit
 
@@ -177,13 +176,11 @@ case class ImmediateDependeeUpdate(
 case class HandlingResult(
         eventId:                         Int,
         r:                               PropertyComputationResult,
-        forceEvaluation:                 Boolean,
         epksWithNotYetNotifiedDependers: Set[SomeEPK]
 ) extends StoreEvent {
 
     override def toTxt: String = {
         s"$eventId: HandlingResult($r,"+
-            s"forceEvaluation=$forceEvaluation,"+
             s"epksWithNotYetNotifiedDependers=$epksWithNotYetNotifiedDependers)"
     }
 
@@ -205,12 +202,10 @@ case class UselessPartialResult(
 
 case class MetaInformationDeleted(
         eventId: Int,
-        finalEP: SomeFinalEP
+        finalP:  SomeFinalP
 ) extends StoreEvent {
 
-    override def toTxt: String = {
-        s"$eventId: MetaInformationDeleted(${finalEP.toEPK})"
-    }
+    override def toTxt: String = s"$eventId: MetaInformationDeleted(${finalP.toEPK})"
 
 }
 
@@ -229,9 +224,8 @@ case class FirstException(
 
 case class ReachedQuiescence(eventId: Int) extends StoreEvent {
 
-    override def toTxt: String = {
-        s"$eventId: ReachedQuiescence"
-    }
+    override def toTxt: String = s"$eventId: ReachedQuiescence"
+
 }
 
 class RecordAllPropertyStoreTracer extends PropertyStoreTracer {
@@ -244,11 +238,11 @@ class RecordAllPropertyStoreTracer extends PropertyStoreTracer {
     // POTENTIALLY CALLED CONCURRENTLY
     //
 
-    def force(e: Entity, pkId: Int): Unit = {
+    override def force(e: Entity, pkId: Int): Unit = {
         events.offer(Force(eventCounter.incrementAndGet(), e, pkId))
     }
 
-    def forceForComputedEPK(e: Entity, pkId: Int): Unit = {
+    override def forceForComputedEPK(e: Entity, pkId: Int): Unit = {
         events.offer(ForceForComputedEPK(eventCounter.incrementAndGet(), e, pkId))
     }
 
@@ -256,23 +250,23 @@ class RecordAllPropertyStoreTracer extends PropertyStoreTracer {
     // CALLED BY THE STORE UPDATES PROCESSOR THREAD
     //
 
-    def schedulingLazyComputation(e: Entity, pkId: Int): Unit = {
+    override def schedulingLazyComputation(e: Entity, pkId: Int): Unit = {
         events offer LazyComputationScheduled(eventCounter.incrementAndGet(), e, pkId)
     }
 
-    def update(oldEPS: SomeEPS, newEPS: SomeEPS): Unit = {
+    override def update(oldEPS: SomeEPS, newEPS: SomeEPS): Unit = {
         events offer PropertyUpdate(eventCounter.incrementAndGet(), oldEPS, newEPS)
     }
 
-    def notification(newEPS: SomeEPS, dependerEPK: SomeEPK): Unit = {
+    override def notification(newEPS: SomeEPS, dependerEPK: SomeEPK): Unit = {
         events offer DependerNotification(eventCounter.incrementAndGet(), newEPS, dependerEPK)
     }
 
-    def delayedNotification(newEPS: SomeEPS): Unit = {
+    override def delayedNotification(newEPS: SomeEPS): Unit = {
         events offer DelayedDependersNotification(eventCounter.incrementAndGet(), newEPS)
     }
 
-    def immediateDependeeUpdate(
+    override def immediateDependeeUpdate(
         e: Entity, pk: SomePropertyKey,
         processedDependee: SomeEOptionP, currentDependee: SomeEPS,
         updateAndNotifyState: UpdateAndNotifyState
@@ -286,16 +280,15 @@ class RecordAllPropertyStoreTracer extends PropertyStoreTracer {
         )
     }
 
-    def handlingResult(
+    override def handlingResult(
         r:                               PropertyComputationResult,
-        forceEvaluation:                 Boolean,
         epksWithNotYetNotifiedDependers: Set[SomeEPK]
     ): Unit = {
         val eventId = eventCounter.incrementAndGet()
-        events offer HandlingResult(eventId, r, forceEvaluation, epksWithNotYetNotifiedDependers)
+        events offer HandlingResult(eventId, r, epksWithNotYetNotifiedDependers)
     }
 
-    def uselessPartialResult(
+    override def uselessPartialResult(
         r:           SomePartialResult,
         oldEOptionP: SomeEOptionP
     ): Unit = {
@@ -303,15 +296,15 @@ class RecordAllPropertyStoreTracer extends PropertyStoreTracer {
         events offer UselessPartialResult(eventId, r, oldEOptionP)
     }
 
-    def metaInformationDeleted(finalEP: SomeFinalEP): Unit = {
-        events offer MetaInformationDeleted(eventCounter.incrementAndGet(), finalEP)
+    override def metaInformationDeleted(finalP: SomeFinalP): Unit = {
+        events offer MetaInformationDeleted(eventCounter.incrementAndGet(), finalP)
     }
 
-    def reachedQuiescence(): Unit = {
+    override def reachedQuiescence(): Unit = {
         events offer ReachedQuiescence(eventCounter.incrementAndGet())
     }
 
-    def firstException(t: Throwable): Unit = {
+    override def firstException(t: Throwable): Unit = {
         events offer FirstException(
             eventCounter.incrementAndGet(),
             t,
@@ -327,11 +320,9 @@ class RecordAllPropertyStoreTracer extends PropertyStoreTracer {
     def allEvents: List[StoreEvent] = events.iterator.asScala.toList.sortWith(_.eventId < _.eventId)
 
     def toTxt: String = {
-        allEvents.map { e ⇒
-            e match {
-                case _: HandlingResult ⇒ "\n"+e.toTxt
-                case e                 ⇒ "\t"+e.toTxt
-            }
+        allEvents.map {
+            case e: HandlingResult ⇒ "\n"+e.toTxt
+            case e                 ⇒ "\t"+e.toTxt
         }.mkString("Events [\n", "\n", "\n]")
     }
 

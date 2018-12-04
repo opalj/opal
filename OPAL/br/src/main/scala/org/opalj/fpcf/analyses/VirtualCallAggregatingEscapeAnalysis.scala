@@ -66,22 +66,22 @@ class VirtualCallAggregatingEscapeAnalysis private[analyses] ( final val project
 
         def handleEscapeState(eOptionP: EOptionP[VirtualFormalParameter, EscapeProperty]): Unit =
             eOptionP match {
-                case ep @ IntermediateEP(_, _, p) ⇒
+                case ep @ InterimP(_, _, p) ⇒
                     escapeState = escapeState meet p
                     dependees += ep
-                case FinalEP(_, p) ⇒ escapeState = escapeState meet p
-                case epk           ⇒ dependees += epk
+                case FinalP(_, p) ⇒ escapeState = escapeState meet p
+                case epk          ⇒ dependees += epk
             }
 
         def returnResult: PropertyComputationResult = {
             if (escapeState.isBottom || dependees.isEmpty)
                 if (escapeState.isInstanceOf[AtMost])
-                    //IntermediateResult(fp, GlobalEscape.asAggregatedProperty, escapeState.asAggregatedProperty, dependees, continuation)
+                    //InterimResult(fp, GlobalEscape.asAggregatedProperty, escapeState.asAggregatedProperty, dependees, continuation)
                     Result(fp, escapeState.asAggregatedProperty)
                 else
                     Result(fp, escapeState.asAggregatedProperty)
             else
-                IntermediateResult(
+                InterimResult(
                     fp, GlobalEscape.asAggregatedProperty, escapeState.asAggregatedProperty,
                     dependees, continuation
                 )

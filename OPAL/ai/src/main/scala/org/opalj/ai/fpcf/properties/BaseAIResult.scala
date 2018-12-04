@@ -70,12 +70,9 @@ object BaseAIResult extends BaseAIResultPropertyMetaInformation {
                 case PropertyIsNotComputedByAnyAnalysis ⇒
                     // we may still have requirements on the domain that we are going to use...
                     val p = ps.context(classOf[SomeProject])
-                    // IMPROVE Find an efficient solution that does not require recurring lookups.
                     AnAIResult(p.get(AIDomainFactoryKey)(m))
             }
         }: BaseAIResult,
-        // cycle resolution strategy...
-        (_: PropertyStore, eps: EPS[Method, BaseAIResult]) ⇒ eps.ub,
         // fast-track property computation...
         (_: PropertyStore, _: Method) ⇒ None
     )

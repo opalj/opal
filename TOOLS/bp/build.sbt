@@ -15,12 +15,6 @@ licenses 		in ThisBuild := Seq("BSD-2-Clause" -> url("http://opensource.org/lice
 version 		in ThisBuild := "1.3.0-Snapshot"
 scalaVersion 	in ThisBuild := "2.12.4"
 
-EclipseKeys.createSrc := EclipseCreateSrc.Default + EclipseCreateSrc.ManagedClasses
-EclipseKeys.eclipseOutput := Some(".target")
-EclipseKeys.executionEnvironment := Some(EclipseExecutionEnvironment.JavaSE18)
-EclipseKeys.withSource := true
-EclipseKeys.withJavadoc := true
-
 scalacOptions in (Compile, doc) := Opts.doc.title("OPAL - BugPicker")
 
 scalacOptions in ThisBuild ++= Seq(

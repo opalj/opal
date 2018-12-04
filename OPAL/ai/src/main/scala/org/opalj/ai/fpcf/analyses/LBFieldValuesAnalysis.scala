@@ -5,7 +5,7 @@ package fpcf
 package analyses
 
 import org.opalj.fpcf.BasicFPCFEagerAnalysisScheduler
-import org.opalj.fpcf.FinalEP
+import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.FPCFAnalysis
 import org.opalj.fpcf.MultiResult
 import org.opalj.fpcf.NoResult
@@ -182,7 +182,7 @@ class LBFieldValuesAnalysis private[analyses] (
                 BaseAI(method, domain) // the state is implicitly accumulated in the domain
             }
 
-            var results: List[FinalEP[Field, FieldValue]] = Nil
+            var results: List[FinalP[Field, FieldValue]] = Nil
             domain.fieldInformation foreach { e ⇒
                 val (field, domainValueOption: Option[IsReferenceValue @unchecked]) = e
                 domainValueOption.foreach { domainValue ⇒
@@ -192,7 +192,7 @@ class LBFieldValuesAnalysis private[analyses] (
                         //      the type is not precise
                         domainValue.leastUpperType.get != field.fieldType) {
                         val vi = ValueBasedFieldValueInformation(domainValue.toCanonicalForm)
-                        results ::= FinalEP(field, vi)
+                        results ::= FinalP(field, vi)
                     }
                 }
             }
@@ -226,7 +226,7 @@ object EagerLBFieldValuesAnalysis extends BasicFPCFEagerAnalysisScheduler {
 
     final override def derives: Set[PropertyKind] = Set(FieldValue.key)
 
-    final override def refinesLowerBound: Boolean = true
+    final override def computesLowerBound: Boolean = true
 
     final override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new LBFieldValuesAnalysis(p)

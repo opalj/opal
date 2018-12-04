@@ -48,9 +48,9 @@ class VirtualMethodAllocationFreenessAnalysis private[analyses] ( final val proj
 
         for (method ← methods) {
             propertyStore(declaredMethods(method), AllocationFreeness.key) match {
-                case FinalEP(_, AllocationFreeMethod)  ⇒
-                case FinalEP(_, MethodWithAllocations) ⇒ return Result(dm, VMethodWithAllocations);
-                case epk                               ⇒ dependees += epk
+                case FinalP(_, AllocationFreeMethod)  ⇒
+                case FinalP(_, MethodWithAllocations) ⇒ return Result(dm, VMethodWithAllocations);
+                case epk                              ⇒ dependees += epk
             }
         }
 
@@ -58,8 +58,8 @@ class VirtualMethodAllocationFreenessAnalysis private[analyses] ( final val proj
             dependees = dependees.filter { _.e ne eps.e }
 
             eps match {
-                case FinalEP(_, AllocationFreeMethod)  ⇒
-                case FinalEP(_, MethodWithAllocations) ⇒ return Result(dm, VMethodWithAllocations);
+                case FinalP(_, AllocationFreeMethod)  ⇒
+                case FinalP(_, MethodWithAllocations) ⇒ return Result(dm, VMethodWithAllocations);
                 case epk ⇒
                     dependees += epk.asInstanceOf[EOptionP[DeclaredMethod, AllocationFreeness]]
             }
@@ -67,14 +67,14 @@ class VirtualMethodAllocationFreenessAnalysis private[analyses] ( final val proj
             if (dependees.isEmpty) {
                 Result(dm, VAllocationFreeMethod)
             } else {
-                IntermediateResult(dm, VMethodWithAllocations, VAllocationFreeMethod, dependees, c)
+                InterimResult(dm, VMethodWithAllocations, VAllocationFreeMethod, dependees, c)
             }
         }
 
         if (dependees.isEmpty) {
             Result(dm, VAllocationFreeMethod)
         } else {
-            IntermediateResult(dm, VMethodWithAllocations, VAllocationFreeMethod, dependees, c)
+            InterimResult(dm, VMethodWithAllocations, VAllocationFreeMethod, dependees, c)
         }
     }
 

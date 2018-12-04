@@ -255,15 +255,15 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                     return Result(state.definedMethod, ImpureByAnalysis)
 
             // Cases that are pure
-            case FinalEP(_, _: FinalField)                   ⇒ // Reading eff. final fields
-            case FinalEP(_, ImmutableType | ImmutableObject) ⇒ // Returning immutable reference
+            case FinalP(_, _: FinalField)                   ⇒ // Reading eff. final fields
+            case FinalP(_, ImmutableType | ImmutableObject) ⇒ // Returning immutable reference
 
             // Cases resulting in side-effect freeness
-            case FinalEP(_, _: FieldMutability | // Reading non-final field
+            case FinalP(_, _: FieldMutability | // Reading non-final field
                 _: TypeImmutability | _: ClassImmutability) ⇒ // Returning mutable reference
                 atMost(SideEffectFree)
 
-            case IntermediateEP(_, _, _) ⇒ state.dependees += eps
+            case InterimP(_, _, _) ⇒ state.dependees += eps
         }
 
         if (state.ubPurity ne oldPurity)
@@ -272,7 +272,7 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         if (state.dependees.isEmpty || (state.lbPurity == state.ubPurity)) {
             Result(state.definedMethod, state.ubPurity)
         } else {
-            IntermediateResult(
+            InterimResult(
                 state.definedMethod,
                 state.lbPurity,
                 state.ubPurity,
@@ -337,7 +337,7 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         if (state.dependees.isEmpty || (state.lbPurity == state.ubPurity)) {
             Result(state.definedMethod, state.ubPurity)
         } else {
-            IntermediateResult(
+            InterimResult(
                 state.definedMethod,
                 state.lbPurity,
                 state.ubPurity,
@@ -371,7 +371,7 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         val tacaiO = getTACAI(method)
 
         if (tacaiO.isEmpty)
-            return IntermediateResult(
+            return InterimResult(
                 definedMethod,
                 ImpureByAnalysis,
                 Pure,

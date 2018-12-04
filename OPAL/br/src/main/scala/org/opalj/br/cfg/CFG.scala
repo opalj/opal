@@ -542,7 +542,7 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
 
 object CFG {
 
-    final val ValidateKey = "org.opalj.debug.br.cfg.CFG.Validate"
+    final val ValidateKey = "org.opalj.br.cfg.CFG.Validate"
 
     private[this] var validate: Boolean = {
         val initialValidate = BaseConfig.getBoolean(ValidateKey)
@@ -554,7 +554,7 @@ object CFG {
     def Validate: Boolean = validate
 
     def updateValidate(newValidate: Boolean): Unit = {
-        implicit val logContext = GlobalLogContext
+        implicit val logContext: GlobalLogContext.type = GlobalLogContext
         validate =
             if (newValidate) {
                 info("OPAL", s"$ValidateKey: validation on")

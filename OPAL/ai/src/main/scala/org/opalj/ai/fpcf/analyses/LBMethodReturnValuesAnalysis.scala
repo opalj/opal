@@ -13,11 +13,12 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.Method
+import org.opalj.br.PC
 import org.opalj.ai.fpcf.properties.MethodReturnValue
 
 /**
- * Computes for each method which returns a reference value an approximation
- * of the values that are potentially returned.
+ * Computes for each method, which returns object values, general information about the potentially
+ * returned values.
  *
  * @author Michael Eichberg
  */
@@ -53,12 +54,15 @@ class LBMethodReturnValuesAnalysis private[analyses] (
 
         override implicit val project: SomeProject = analysis.project
 
-        override protected[this] def doRecordReturnedValue(pc: RefId, value: Value): Unit = {
-            super.doRecordReturnedValue(pc, value)
+        override protected[this] def doRecordReturnedValue(pc: PC, value: Value): Boolean = {
+            val isUpdated = super.doRecordReturnedValue(pc, value)
 
             // The idea is to check if the computed return value can no longer be more
             // precise than the "pure" type information. If this is the case, we simply
             // abort the AI
+            if (!isUpdated)
+                return false;
+
             val returnedReferenceValue = theReturnedValue.asDomainReferenceValue
             if (returnedReferenceValue.isNull.isUnknown &&
                 returnedReferenceValue.upperTypeBound.isSingletonSet &&
@@ -70,6 +74,7 @@ class LBMethodReturnValuesAnalysis private[analyses] (
                     classHierarchy.isKnownToBeFinal(returnedReferenceValue.upperTypeBound.head))) {
                 ai.interrupt()
             }
+            true // <= the information about the returned value was updated
         }
 
         // TODO determine/record the accessed fields
@@ -95,7 +100,7 @@ object EagerLBMethodReturnValuesAnalysis extends BasicFPCFEagerAnalysisScheduler
 
     final override def derives: Set[PropertyKind] = Set(MethodReturnValue.key)
 
-    final override def refinesLowerBound: Boolean = true
+    final override def computesLowerBound: Boolean = true
 
     final override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new LBMethodReturnValuesAnalysis(p)

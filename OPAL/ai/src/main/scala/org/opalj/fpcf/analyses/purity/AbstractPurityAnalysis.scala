@@ -523,7 +523,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
         objRef: Option[Expr[V]]
     )(implicit state: StateType): Unit = ep match {
         case EPS(_, _: FinalField, _) ⇒ // Final fields don't impede purity
-        case FinalEP(_, _) ⇒ // Mutable field
+        case FinalP(_, _) ⇒ // Mutable field
             if (objRef.isDefined) {
                 if (state.ubPurity.isDeterministic)
                     isLocal(objRef.get, SideEffectFree)
@@ -607,7 +607,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
     )(implicit state: StateType): Boolean = ep match {
         // Returning immutable object is pure
         case EPS(_, ImmutableType | ImmutableObject, _) ⇒ true
-        case FinalEP(_, _) ⇒
+        case FinalP(_, _) ⇒
             atMost(Pure) // Can not be compile time pure if mutable object is returned
             if (state.ubPurity.isDeterministic)
                 isLocal(expr, SideEffectFree)
@@ -640,14 +640,14 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
     def baseMethodPurity(dm: DefinedMethod): PropertyComputationResult = {
 
         def c(eps: SomeEOptionP): PropertyComputationResult = eps match {
-            case FinalEP(_, p) ⇒ Result(dm, p)
-            case ep @ IntermediateEP(_, lb, ub) ⇒
-                IntermediateResult(
+            case FinalP(_, p) ⇒ Result(dm, p)
+            case ep @ InterimP(_, lb, ub) ⇒
+                InterimResult(
                     dm, lb, ub,
                     Seq(ep), c, CheapPropertyComputation
                 )
             case epk ⇒
-                IntermediateResult(
+                InterimResult(
                     dm, ImpureByAnalysis, CompileTimePure,
                     Seq(epk), c, CheapPropertyComputation
                 )
@@ -681,10 +681,10 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
         method: Method
     )(implicit state: StateType): Option[TACode[TACMethodParameter, V]] = {
         propertyStore(method, TACAI.key) match {
-            case finalEP: FinalEP[Method, TACAI] ⇒
-                handleTACAI(finalEP)
-                finalEP.ub.tac
-            case eps: IntermediateEP[Method, TACAI] ⇒
+            case finalP: FinalP[Method, TACAI] ⇒
+                handleTACAI(finalP)
+                finalP.ub.tac
+            case eps: InterimP[Method, TACAI] ⇒
                 reducePurityLB(ImpureByAnalysis)
                 handleTACAI(eps)
                 eps.ub.tac

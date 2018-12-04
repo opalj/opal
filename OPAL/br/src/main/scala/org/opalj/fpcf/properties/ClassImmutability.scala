@@ -101,13 +101,8 @@ object ClassImmutability extends ClassImmutabilityPropertyMetaInformation {
      * The key associated with every [[ClassImmutability]] property.
      */
     final val key: PropertyKey[ClassImmutability] = PropertyKey.create(
-        "ClassImmutability",
-        // The default property that will be used if no analysis is able
-        // to (directly) compute the respective property.
-        MutableObjectDueToUnresolvableDependency,
-        // When we have a cycle all properties are necessarily at least conditionally
-        // immutable (type and object wise) hence, we can leverage the "immutability"
-        (_: PropertyStore, eps: EPS[ObjectType, ClassImmutability]) ⇒ eps.ub
+        "org.opalj.ClassImmutability",
+        MutableObjectDueToUnresolvableDependency
     )
 }
 

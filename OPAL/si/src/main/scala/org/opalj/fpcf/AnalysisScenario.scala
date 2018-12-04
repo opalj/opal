@@ -30,6 +30,17 @@ class AnalysisScenario {
             lazilyComputedProperties
     }
 
+    /**
+     * Adds the given computation specification (`cs`) to the set of computation specifications
+     * that should be scheduled.
+     *
+     * @note A property that should be lazily computed can only be computed by exactly one
+     *       analysis.
+     * @note It is possible to schedule multiple eager analysis that collaboratively compute
+     *       a property. This, however, requires that all analyses declare that they collaboratively
+     *       compute the property and every contributing analysis has to be able to provide the
+     *       initial data.
+     */
     def +=(cs: ComputationSpecification): Unit = this.synchronized {
         allCS += cs
         if (cs.isLazy) {
@@ -112,8 +123,8 @@ class AnalysisScenario {
      *   - ... schedules as many completely independent analyses in parallel as possible
      *   - ... does not schedule two analyses A and B at the same time if B has a dependency on
      *         the properties computed by A, but A has no dependency on B. Scheduling the
-     *         computation of B in a later batch potentially minimizes the number of derivations.
-     *   - ... schedules two analyses which collaboratively compute a property in the same batch/
+     *         computation of B in a later batch potentially minimizes the number of notifications.
+     *   - ... schedules analyses which collaboratively compute a property in the same batch/
      *         phase.
      */
     def computeSchedule(
@@ -139,11 +150,12 @@ class AnalysisScenario {
         // 1. check for properties that are not derived
         val underived = uses -- derived
         if (underived.nonEmpty) {
-            underived.find(PropertyKey.isPropertyKindForSimpleProperty).foreach { pk ⇒
+            /*underived.find(PropertyKey.isPropertyKindForSimpleProperty).foreach { pk ⇒
                 val p = PropertyKey.name(pk)
                 val m = "no analysis is scheduled which computes the simple property: "+p
                 throw new IllegalStateException(m)
             }
+            */
 
             val underivedInfo = underived.iterator.map(up ⇒ PropertyKey.name(up)).mkString(", ")
             val message = s"no analyses are scheduled for the properties: $underivedInfo"

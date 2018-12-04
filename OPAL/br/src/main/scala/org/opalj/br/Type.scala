@@ -989,9 +989,9 @@ final class ObjectType private ( // DO NOT MAKE THIS A CASE CLASS!
 
     override def toJava: String = fqn.replace('/', '.')
 
-    override def toBinaryJavaName: String = "L"+toJava+";"
+    override def toBinaryJavaName: String = 'L' + toJava + ';'
 
-    override def toJVMTypeName: String = "L"+fqn+";"
+    override def toJVMTypeName: String = 'L' + fqn + ';'
 
     override def toJavaClass: java.lang.Class[_] = classOf[Type].getClassLoader().loadClass(toJava)
 

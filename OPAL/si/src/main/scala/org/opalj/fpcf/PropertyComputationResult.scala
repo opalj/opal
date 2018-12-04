@@ -10,13 +10,8 @@ sealed abstract class PropertyComputationResult {
 
     private[fpcf] def id: Int
 
-    private[fpcf] def isIntermediateResult: Boolean = false
-    private[fpcf] def asIntermediateResult: IntermediateResult[_ <: Property] = {
-        throw new ClassCastException();
-    }
-
-    private[fpcf] def isSimplePIntermediateResult: Boolean = false
-    private[fpcf] def asSimplePIntermediateResult: SimplePIntermediateResult[_ <: Property] = {
+    private[fpcf] def isInterimResult: Boolean = false
+    private[fpcf] def asInterimResult: InterimResult[_ <: Property] = {
         throw new ClassCastException();
     }
 
@@ -32,6 +27,8 @@ object NoResult extends PropertyComputationResult {
     private[fpcf] final val id = 0
 }
 
+trait ProperPropertyComputationResult extends PropertyComputationResult
+
 /**
  * Encapsulates the final result of the computation of a property. I.e., the analysis
  * determined that the computed property will not be updated in the future.
@@ -44,7 +41,7 @@ object NoResult extends PropertyComputationResult {
  *         to the property store the behavior is undefined and may/will result in immediate and/or
  *         deferred failures!
  */
-sealed abstract class FinalPropertyComputationResult extends PropertyComputationResult
+sealed abstract class FinalPropertyComputationResult extends ProperPropertyComputationResult
 
 /**
  * Encapsulates the '''final result''' of the computation of the property `p` for the given
@@ -98,7 +95,7 @@ object MultiResult { private[fpcf] final val id = 2 }
  *      result. Hence, it is possible to partition the set of entity / properties and to query
  *      each group one after another.
  *
- *      An `IntermediateResult` returned by an `OnUpdateContinuation` must contain the EPS given
+ *      An `InterimResult` returned by an `OnUpdateContinuation` must contain the EPS given
  *      to the continuation function or a newer EPS (i.e., an onUpdateContinuation is allowed
  *      to query the store again).
  *
@@ -111,125 +108,99 @@ object MultiResult { private[fpcf] final val id = 2 }
  *      times for different entities (`e`) which should be avoided and is generally not necessary.
  *      I.e., it is recommended to think about `c` as the function that completes the
  *      computation of the property `p` for the entity `e` identified by `ep`.
- *      In general, `c` can have (mutual) state encapsulates
+ *      In general, `c` can have (mutual) state that encapsulates
  *      (temporary) information required to compute the final property.
  *
  * @note All elements on which the result declares to be dependent on must have been queried
  *      before (using one of the `apply` functions of the property store.)
  */
-case class IntermediateResult[P <: Property](
+final class InterimResult[P >: Null <: Property] private (
+        val eps:       InterimP[Entity, P],
+        val dependees: Traversable[SomeEOptionP],
+        val c:         OnUpdateContinuation,
+        val hint:      PropertyComputationHint
+) extends ProperPropertyComputationResult { result ⇒
+
+    val key: PropertyKey[P] = eps.pk
+
+    if (PropertyStore.Debug) {
+        if (dependees.isEmpty) {
+            throw new IllegalArgumentException(
+                s"intermediate result without dependencies: $this"+
+                    " (use PartialResult for collaboratively computed results)"
+            )
+        }
+        if (dependees.exists(eOptP ⇒ eOptP.e == result.e && eOptP.pk == result.key)) {
+            throw new IllegalArgumentException(
+                s"intermediate result with an illegal self-dependency: "+this
+            )
+        }
+    }
+
+    private[fpcf] def id = InterimResult.id
+
+    private[fpcf] override def isInterimResult: Boolean = true
+    private[fpcf] override def asInterimResult: InterimResult[_ <: Property] = this
+
+    override def hashCode: Int = eps.e.hashCode * 17 + dependees.hashCode
+
+    override def equals(other: Any): Boolean = {
+        other match {
+            case that: InterimResult[_] if this.eps == that.eps ⇒
+                val dependees = this.dependees
+                dependees.size == that.dependees.size &&
+                    dependees.forall(thisDependee ⇒ that.dependees.exists(_ == thisDependee))
+
+            case _ ⇒
+                false
+        }
+    }
+
+    override def toString: String = {
+        s"InterimResult($eps-e@${System.identityHashCode(eps.e).toHexString}"+
+            s"dependees=${dependees.mkString("{", ",", "}")},c=$c)"
+    }
+}
+object InterimResult {
+
+    private[fpcf] final val id = 3
+
+    def apply[P <: Property](
         e:         Entity,
         lb:        P,
         ub:        P,
         dependees: Traversable[SomeEOptionP],
         c:         OnUpdateContinuation,
         hint:      PropertyComputationHint   = DefaultPropertyComputation
-) extends PropertyComputationResult {
-
-    if (PropertyStore.Debug) {
-        if (lb == ub) {
-            throw new IllegalArgumentException(s"intermediate result with equal bounds: $this")
-        }
-        if (dependees.isEmpty) {
-            throw new IllegalArgumentException(
-                s"intermediate result without dependencies: $this"+
-                    " (use PartialResult for collaboratively computed results)"
-            )
-        }
-        if (dependees.exists(eOptP ⇒ eOptP.e == e && eOptP.pk == ub.key)) {
-            throw new IllegalArgumentException(
-                s"intermediate result with an illegal self-dependency: "+this
-            )
-        }
-        if (lb.isOrderedProperty) {
-            val ubAsOP = ub.asOrderedProperty
-            ubAsOP.checkIsEqualOrBetterThan(e, lb.asInstanceOf[ubAsOP.Self])
-        }
-        if (ub.key != lb.key) {
-            throw new IllegalArgumentException(
-                s"property keys for lower ${lb.key} and upper ${ub.key} bound don't match"
-            )
-        }
+    ): InterimResult[P] = {
+        new InterimResult[P](InterimP(e, lb, ub), dependees, c, hint)
     }
 
-    private[fpcf] final def id = IntermediateResult.id
-
-    private[fpcf] final override def isIntermediateResult: Boolean = true
-    private[fpcf] final override def asIntermediateResult: IntermediateResult[_ <: Property] = this
-
-    override def hashCode: Int = e.hashCode * 17 + dependees.hashCode
-
-    override def equals(other: Any): Boolean = {
-        other match {
-            case IntermediateResult(e, lb, ub, otherDependees, _, _) if (
-                this.e == e && this.lb == lb && this.ub == ub
-            ) ⇒
-                val dependees = this.dependees
-                dependees.size == otherDependees.size &&
-                    dependees.forall(thisDependee ⇒ otherDependees.exists(_ == thisDependee))
-
-            case _ ⇒
-                false
-        }
+    def unapply[P <: Property](
+        r: InterimResult[P]
+    ): Some[(SomeEPS, Traversable[SomeEOptionP], OnUpdateContinuation, PropertyComputationHint)] = {
+        Some((r.eps, r.dependees, r.c, r.hint))
     }
 
-    override def toString: String = {
-        s"IntermediateResult($e@${System.identityHashCode(e).toHexString},lb=$lb,ub=$ub,"+
-            s"dependees=${dependees.mkString("{", ",", "}")},c=$c)"
+    def forLB[P >: Null <: Property](
+        e:         Entity,
+        lb:        P,
+        dependees: Traversable[SomeEOptionP],
+        c:         OnUpdateContinuation,
+        hint:      PropertyComputationHint   = DefaultPropertyComputation
+    ): InterimResult[P] = {
+        new InterimResult[P](InterimLBP(e, lb), dependees, c, hint)
     }
-}
-object IntermediateResult {
-    private[fpcf] final val id = 3
-}
 
-case class SimplePIntermediateResult[P <: Property](
+    def forUB[P >: Null <: Property](
         e:         Entity,
         ub:        P,
         dependees: Traversable[SomeEOptionP],
         c:         OnUpdateContinuation,
         hint:      PropertyComputationHint   = DefaultPropertyComputation
-) extends PropertyComputationResult {
-
-    if (PropertyStore.Debug) {
-        if (dependees.isEmpty) {
-            throw new IllegalArgumentException(
-                s"intermediate result without dependencies: $this"+
-                    " (use PartialResult for collaboratively computed results)"
-            )
-        }
-        if (dependees.exists(eOptP ⇒ eOptP.e == e && eOptP.pk == ub.key)) {
-            throw new IllegalArgumentException(
-                s"intermediate result with an illegal self-dependency: "+this
-            )
-        }
+    ): InterimResult[P] = {
+        new InterimResult[P](InterimUBP(e, ub), dependees, c, hint)
     }
-
-    private[fpcf] final def id = SimplePIntermediateResult.id
-
-    private[fpcf] final override def isSimplePIntermediateResult: Boolean = true
-    private[fpcf] final override def asSimplePIntermediateResult: SimplePIntermediateResult[_ <: Property] = this
-
-    override def hashCode: Int = e.hashCode * 33 + dependees.hashCode
-
-    override def equals(other: Any): Boolean = {
-        other match {
-            case SimplePIntermediateResult(e, ub, otherDependees, _, _) if this.e == e ⇒
-                val dependees = this.dependees
-                dependees.size == otherDependees.size &&
-                    dependees.forall(thisDependee ⇒ otherDependees.exists(_ == thisDependee))
-
-            case _ ⇒
-                false
-        }
-    }
-
-    override def toString: String = {
-        s"SimplePIntermediateResult($e@${System.identityHashCode(e).toHexString},ub=$ub,"+
-            s"dependees=${dependees.mkString("{", ",", "}")},c=$c)"
-    }
-}
-object SimplePIntermediateResult {
-    private[fpcf] final val id = 4
 }
 
 /**
@@ -251,33 +222,33 @@ object SimplePIntermediateResult {
  *       computation returns `IncrementalResult` objects.
  */
 case class IncrementalResult[E <: Entity](
-        result:                   PropertyComputationResult,
+        result:                   ProperPropertyComputationResult,
         nextComputations:         Iterator[(PropertyComputation[E], E)],
         propertyComputationsHint: PropertyComputationHint               = DefaultPropertyComputation
-) extends PropertyComputationResult {
+) extends ProperPropertyComputationResult {
 
     private[fpcf] final def id = IncrementalResult.id
 
 }
 
-object IncrementalResult { private[fpcf] final val id = 5 }
+object IncrementalResult { private[fpcf] final val id = 4 }
 
 /**
  * Just a collection of multiple results. The results have to be disjoint w.r.t. the underlying
  * e/pk pairs for which it contains results.
  */
 case class Results(
-        results: TraversableOnce[PropertyComputationResult]
-) extends PropertyComputationResult {
+        results: TraversableOnce[ProperPropertyComputationResult]
+) extends ProperPropertyComputationResult {
 
     private[fpcf] final def id = Results.id
 
 }
 object Results {
 
-    private[fpcf] final val id = 6
+    private[fpcf] final val id = 5
 
-    def apply(results: PropertyComputationResult*): Results = new Results(results)
+    def apply(results: ProperPropertyComputationResult*): Results = new Results(results)
 }
 
 /**
@@ -302,12 +273,12 @@ case class PartialResult[E >: Null <: Entity, P >: Null <: Property](
         e:  E,
         pk: PropertyKey[P],
         u:  EOptionP[E, P] ⇒ Option[EPS[E, P]]
-) extends PropertyComputationResult {
+) extends ProperPropertyComputationResult {
 
     private[fpcf] final def id = PartialResult.id
 
 }
-object PartialResult { private[fpcf] final val id = 7 }
+object PartialResult { private[fpcf] final val id = 6 }
 
 /**************************************************************************************************\
  *
@@ -315,29 +286,10 @@ object PartialResult { private[fpcf] final val id = 7 }
  *
 \**************************************************************************************************/
 
-private[fpcf] case class ExternalResult(
-        e: Entity,
-        p: Property
-) extends FinalPropertyComputationResult {
-
-    private[fpcf] final def id = ExternalResult.id
-
-}
-private[fpcf] object ExternalResult { private[fpcf] final val id = 8 }
-
-private[fpcf] case class CSCCsResult(
-        csccs: List[Iterable[SomeEPK]]
-) extends FinalPropertyComputationResult {
-
-    private[fpcf] final def id = CSCCsResult.id
-
-}
-private[fpcf] object CSCCsResult { private[fpcf] final val id = 9 }
-
 private[fpcf] case class IdempotentResult(
-        finalEP: SomeFinalEP
+        finalP: SomeFinalP
 ) extends FinalPropertyComputationResult {
     private[fpcf] final def id = IdempotentResult.id
 
 }
-private[fpcf] object IdempotentResult { private[fpcf] final val id = 10 }
+private[fpcf] object IdempotentResult { private[fpcf] final val id = 7 }

@@ -60,6 +60,7 @@ trait ValueInformation {
      * @throws IllegalStateException if this value is illegal.
      */
     def isPrimitiveValue: Boolean
+    def asPrimitiveValue: IsPrimitiveValue[_ <: BaseType] = throw new ClassCastException();
 
     /**
      * Returns `true` if the value has a reference type.
@@ -238,12 +239,14 @@ trait ConstantValueInformationProvider[T] {
  * The value has the primitive type.
  */
 sealed trait IsPrimitiveValue[T <: BaseType]
-    extends KnownTypedValue
-    with ConstantValueInformationProvider[T#JType] {
+        extends KnownTypedValue
+        with ConstantValueInformationProvider[T#JType] {
 
     final override def isReferenceValue: Boolean = false
 
     final override def isPrimitiveValue: Boolean = true
+
+    final override def asPrimitiveValue: IsPrimitiveValue[T] = this
 
     def primitiveType: T
 
@@ -257,7 +260,7 @@ object IsPrimitiveValue {
 
 }
 
-trait IsIntegerLikeValue[T <: BaseType] extends IsPrimitiveValue[T] {
+sealed trait IsIntegerLikeValue[T <: BaseType] extends IsPrimitiveValue[T] {
     final override def verificationTypeInfo: VerificationTypeInfo = IntegerVariableInfo
 }
 
@@ -526,7 +529,7 @@ trait IsReferenceValue extends KnownTypedValue {
     def baseValues: Traversable[IsReferenceValue]
 
     /**
-     * The set of base values ([[IsBaseReferenceValue]]) this value abstracts over.
+     * The set of base values (`IsReferenceValue`) this value abstracts over.
      * This set is never empty and contains this value if this value does not (further) abstract
      * over other reference values; otherwise it only contains the base values,
      * but not `this` value.

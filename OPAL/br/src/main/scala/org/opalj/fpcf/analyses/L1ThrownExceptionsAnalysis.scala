@@ -67,7 +67,7 @@ class L1ThrownExceptionsAnalysis private[analyses] (
         final val project: SomeProject
 ) extends FPCFAnalysis {
 
-    final val IntermediateResultsPropertyComputationHint = CheapPropertyComputation
+    final val InterimResultsPropertyComputationHint = CheapPropertyComputation
 
     private[analyses] def lazilyDetermineThrownExceptions(e: Entity): PropertyComputationResult = {
         e match {
@@ -366,9 +366,9 @@ class L1ThrownExceptionsAnalysis private[analyses] (
             if (dependees.isEmpty) {
                 Result(m, new ThrownExceptions(exceptions))
             } else {
-                IntermediateResult(
+                InterimResult(
                     m, SomeException, new ThrownExceptions(exceptions),
-                    dependees, c, IntermediateResultsPropertyComputationHint
+                    dependees, c, InterimResultsPropertyComputationHint
                 )
             }
         }
@@ -376,9 +376,9 @@ class L1ThrownExceptionsAnalysis private[analyses] (
         if (dependees.isEmpty) {
             Result(m, new ThrownExceptions(exceptions))
         } else {
-            IntermediateResult(
+            InterimResult(
                 m, SomeException, new ThrownExceptions(exceptions),
-                dependees, c, IntermediateResultsPropertyComputationHint
+                dependees, c, InterimResultsPropertyComputationHint
             )
         }
     }

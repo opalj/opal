@@ -8,7 +8,7 @@ import java.util.concurrent.ConcurrentLinkedQueue
 
 import scala.collection.JavaConverters._
 
-import org.opalj.fpcf.FinalEP
+import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.FPCFAnalysesManagerKey
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.PropertyStoreKey
@@ -144,7 +144,7 @@ object UnusedResults extends DefaultOneStepAnalysis {
     ): Option[String] = {
         if (callee.hasValue) {
             propertyStore(declaredMethods(callee.value), PurityProperty.key) match {
-                case FinalEP(_, CompileTimePure | Pure | SideEffectFree) ⇒
+                case FinalP(_, CompileTimePure | Pure | SideEffectFree) ⇒
                     createIssue(caller, callee.value, pc)
                 case _ ⇒ None
             }
@@ -190,7 +190,7 @@ object UnusedResults extends DefaultOneStepAnalysis {
                 None // We don't know all overrides, ignore the call (it may be impure)
             } else {
                 propertyStore(callee, VirtualMethodPurity.key) match {
-                    case FinalEP(_, VCompileTimePure | VPure | VSideEffectFree) ⇒
+                    case FinalP(_, VCompileTimePure | VPure | VSideEffectFree) ⇒
                         createIssue(caller, callee.definedMethod, call.pc)
                     case _ ⇒ None
                 }

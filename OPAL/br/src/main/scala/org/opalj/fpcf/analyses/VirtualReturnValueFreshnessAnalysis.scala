@@ -54,10 +54,10 @@ class VirtualReturnValueFreshnessAnalysis private[analyses] (
         def handleReturnValueFreshness(
             eOptionP: EOptionP[DeclaredMethod, ReturnValueFreshness]
         ): Option[PropertyComputationResult] = eOptionP match {
-            case FinalEP(_, NoFreshReturnValue) ⇒
+            case FinalP(_, NoFreshReturnValue) ⇒
                 Some(Result(m, VNoFreshReturnValue))
 
-            case FinalEP(_, PrimitiveReturnValue) ⇒
+            case FinalP(_, PrimitiveReturnValue) ⇒
                 throw new RuntimeException("unexpected property")
 
             case ep @ EPS(_, _, p) ⇒
@@ -75,7 +75,7 @@ class VirtualReturnValueFreshnessAnalysis private[analyses] (
             if (dependees.isEmpty)
                 Result(m, temporary)
             else
-                IntermediateResult(m, VNoFreshReturnValue, temporary, dependees, c)
+                InterimResult(m, VNoFreshReturnValue, temporary, dependees, c)
         }
 
         def c(someEPS: SomeEPS): PropertyComputationResult = {

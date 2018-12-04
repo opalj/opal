@@ -51,8 +51,6 @@ object FieldValue extends FieldValueMetaInformation {
             val vi = ValueInformation.forProperValue(f.fieldType)(p.classHierarchy)
             ValueBasedFieldValueInformation(vi)
         },
-        // cycle resolution strategy...
-        (_: PropertyStore, eps: EPS[Field, FieldValue]) ⇒ eps.ub,
         // fast-track property computation...
         (_: PropertyStore, f: Field) ⇒ {
             f.constantFieldValue.map(ValueBasedFieldValueInformation.apply)
