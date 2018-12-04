@@ -553,11 +553,11 @@ public class TestMethods {
     }
 
     @StringDefinitions(
-            value = "a simple example with a StringBuilder#clear",
+            value = "a simple example with a StringBuilder#setLength to clear it",
             expectedLevel = StringConstancyLevel.DYNAMIC,
             expectedStrings = "\\w"
     )
-    public void simpleClearExample(int value) {
+    public void simpleClearWithSetLengthExample(int value) {
         StringBuilder sb = new StringBuilder("init_value:");
         sb.setLength(0);
         sb.append(getStringBuilderClassName());
@@ -565,11 +565,24 @@ public class TestMethods {
     }
 
     @StringDefinitions(
-            value = "a more advanced example with a StringBuilder#clear",
+            value = "a simple example with a StringBuilder#new to clear it",
+            expectedLevel = StringConstancyLevel.DYNAMIC,
+            expectedStrings = "\\w"
+    )
+    public void simpleClearWithNewExample(int value) {
+        StringBuilder sb = new StringBuilder("init_value:");
+        System.out.println(sb.toString());
+        sb = new StringBuilder();
+        sb.append(getStringBuilderClassName());
+        analyzeString(sb.toString());
+    }
+
+    @StringDefinitions(
+            value = "a more advanced example with a StringBuilder#setLength to clear it",
             expectedLevel = StringConstancyLevel.CONSTANT,
             expectedStrings = "(init_value:Hello, world!Goodbye|Goodbye)"
     )
-    public void advancedClearExample(int value) {
+    public void advancedClearExampleWithSetLength(int value) {
         StringBuilder sb = new StringBuilder("init_value:");
         if (value < 10) {
             sb.setLength(0);
