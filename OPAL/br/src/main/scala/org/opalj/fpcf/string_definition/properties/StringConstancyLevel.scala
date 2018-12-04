@@ -42,7 +42,7 @@ object StringConstancyLevel extends Enumeration {
     ): StringConstancyLevel = {
         if (level1 == DYNAMIC || level2 == DYNAMIC) {
             DYNAMIC
-        } else if (level1 == PARTIALLY_CONSTANT && level2 == PARTIALLY_CONSTANT) {
+        } else if (level1 == PARTIALLY_CONSTANT || level2 == PARTIALLY_CONSTANT) {
             PARTIALLY_CONSTANT
         } else {
             CONSTANT
