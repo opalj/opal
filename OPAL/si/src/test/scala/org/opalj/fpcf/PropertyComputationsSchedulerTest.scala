@@ -224,7 +224,7 @@ class PropertyComputationsSchedulerTest extends FunSpec with Matchers with Befor
                 override def apply[E <: Entity, P <: Property](e: E, pk: PropertyKey[P]): EOptionP[E, P] = ???
                 override def apply[E <: Entity, P <: Property](epk: EPK[E, P]): EOptionP[E, P] = ???
                 override def force[E <: Entity, P <: Property](e: E, pk: PropertyKey[P]): Unit = ???
-                override protected[this] def isIdle: Boolean = ???
+                override protected[this] def isIdle: Boolean = true
                 override def doRegisterTriggeredComputation[E <: Entity, P <: Property](
                     pk: PropertyKey[P],
                     pc: PropertyComputation[E]
