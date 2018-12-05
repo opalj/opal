@@ -7,7 +7,7 @@ package fpcf
  *
  * @author Michael Eichberg
  */
-class PropertyStoreContext[+T <: AnyRef] private (val key: Class[T], val data: T) {
+class PropertyStoreContext[+T <: AnyRef] private (val key: Class[_], val data: T) {
     // FIXME Make the context invariant and then use the tParam T in "asTuple"
     def asTuple: (Class[_], T) = (key, data)
 }

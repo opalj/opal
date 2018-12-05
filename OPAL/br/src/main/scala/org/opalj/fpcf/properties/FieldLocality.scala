@@ -34,9 +34,7 @@ object FieldLocality extends FieldLocalityMetaInformation {
         "FieldLocality",
         (_: PropertyStore, _: FallbackReason, f: Field) ⇒ {
             if (f.fieldType.isBaseType) LocalField else NoLocalField
-        },
-        (_: PropertyStore, eps: EPS[Field, FieldLocality]) ⇒ eps.ub,
-        (_: PropertyStore, _: Entity) ⇒ None
+        }
     )
 }
 

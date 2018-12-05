@@ -3,6 +3,8 @@ package org.opalj
 package fpcf
 package seq
 
+import scala.language.existentials
+
 import java.util.ArrayDeque
 
 import scala.collection.mutable
@@ -46,7 +48,7 @@ final class PKESequentialPropertyStore private (
      *
      * May be changed (concurrently) at any time.
      */
-    @volatile var dependeeUpdateHandling: DependeeUpdateHandling = EagerDependeeUpdateHandling
+    @volatile var dependeeUpdateHandling: DependeeUpdateHandling = new DependeeUpdateHandling
 
     /**
      * Controls in which order dependers are processed/scheduled.
@@ -102,11 +104,6 @@ final class PKESequentialPropertyStore private (
         Array.fill(SupportedPropertyKinds) { new AnyRefMap() }
     }
 
-    // Those computations that will only be scheduled if the result is required
-    private[this] var lazyComputations: Array[SomeProperPropertyComputation] = {
-        new Array(PropertyKind.SupportedPropertyKinds)
-    }
-
     // The registered triggered computations along with the set of entities for which the analysis was triggered
     private[this] var triggeredComputations: Array[mutable.AnyRefMap[SomePropertyComputation, mutable.HashSet[Entity]]] = {
         Array.fill(PropertyKind.SupportedPropertyKinds) { mutable.AnyRefMap.empty }
@@ -119,18 +116,23 @@ final class PKESequentialPropertyStore private (
 
     override def hasProperty(e: Entity, pk: PropertyKind): Boolean = {
         require(e ne null)
-        val pValue = ps(pk.id).get(e)
-        pValue.isDefined && { val ub = pValue.get.ub; ub != null && ub != PropertyIsLazilyComputed }
+        val eOptionPOption = ps(pk.id).get(e)
+        eOptionPOption.isDefined && {
+            val eOptionP = eOptionPOption.get
+            eOptionP.hasUBP || eOptionP.hasLBP
+        }
     }
 
     override def properties[E <: Entity](e: E): Iterator[EPS[E, Property]] = {
         require(e ne null)
         for {
             epks ← ps.iterator
-            eOptionP ← epks.get(e)
-            eps ← eOptionP.toEPS
+            eOptionPOption = epks.get(e)
+            if eOptionPOption.isDefined
+            eOptionP = eOptionPOption.get
+            if eOptionP.isEPS
         } yield {
-            eps
+            eOptionP.asEPS.asInstanceOf[EPS[E, Property]]
         }
     }
 
@@ -164,9 +166,9 @@ final class PKESequentialPropertyStore private (
                 val propertyKindName = PropertyKey.name(pkId)
                 s"$e -> $propertyKindName[$pkId] = $eOptionP"
             }
-            properties.mkString("PropertyStore(\n\t", "\n\t", "\n")
+            properties.mkString("PropertyStore(\n\t\t", "\n\t\t", "\n)")
         } else {
-            s"PropertyStore(properties=${ps.iterator.map(_.size).sum})"
+            s"PropertyStore(#properties=${ps.iterator.map(_.size).sum})"
         }
     }
 
@@ -235,27 +237,10 @@ final class PKESequentialPropertyStore private (
         apply[E, P](EPK(e, pk))
     }
 
-    override def doRegisterLazyPropertyComputation[E <: Entity, P <: Property](
-        pk: PropertyKey[P],
-        pc: ProperPropertyComputation[E]
-    ): Unit = {
-        if (debug && !tasks.isEmpty) {
-            throw new IllegalStateException(
-                "lazy computations should only be registered while no computations are running"
-            )
-        }
-        lazyComputations(pk.id) = pc
-    }
-
-    override def doRegisterTriggeredComputation[E <: Entity, P <: Property](
+    override protected[this] def doRegisterTriggeredComputation[E <: Entity, P <: Property](
         pk: PropertyKey[P],
         pc: PropertyComputation[E]
     ): Unit = {
-        if (debug && !tasks.isEmpty) {
-            throw new IllegalStateException(
-                "triggered computations should only be registered while no computations are running"
-            )
-        }
         val triggeredEntities = mutable.HashSet.empty[Entity]
         triggeredComputations(pk.id) += (pc, triggeredEntities)
         // trigger the computation for entities which already have values
@@ -266,7 +251,9 @@ final class PKESequentialPropertyStore private (
             if !triggeredEntities.contains(e)
         } {
             triggeredEntities += e
-            tasks.addLast(new PropertyComputationTask(this, e, pc))
+            val entityPC = pc.asInstanceOf[PropertyComputation[Entity]]
+            val task = new PropertyComputationTask(this, e, entityPC)
+            tasks.addLast(task)
             scheduledTasksCounter += 1
         }
     }
@@ -389,7 +376,7 @@ final class PKESequentialPropertyStore private (
         val newEPS =
             propertiesOfKind.get(e) match {
                 case None         ⇒ pc(EPK(e, pk))
-                case Some(oldEPS) ⇒ pc(oldEPS)
+                case Some(oldEPS) ⇒ pc(oldEPS.asInstanceOf[EOptionP[E, P]])
             }
         if (newEPS.isFinal) {
             throw new IllegalArgumentException(s"$newEPS must not be final")
@@ -448,77 +435,50 @@ final class PKESequentialPropertyStore private (
                     currentDependee:   SomeEOptionP, // may contain newer info than "newDependee"
                     processedDependee: SomeEOptionP
                 ): Boolean = {
-                    currentDependee.isEPS && (
-                        currentDependee.isFinal ||
-                        currentDependee.lb != processedDependee.lb ||
-                        currentDependee.ub != processedDependee.ub
-                    )
+                    !currentDependee.isEPK && {
+                        processedDependee.isEPK ||
+                            currentDependee.isFinal ||
+                            currentDependee.hasDifferentProperties(processedDependee.asEPS)
+                    }
                 }
 
                 // 1. let's check if a new dependee is already updated...
                 //    If so, we directly schedule a task again to compute the property.
-                val noUpdates = dependeeUpdateHandling match {
-
-                    case EagerDependeeUpdateHandling ⇒
-                        val processedDependeesIterator = processedDependees.toIterator
-                        while (processedDependeesIterator.hasNext) {
-                            val processedDependee = processedDependeesIterator.next()
-                            if (debug) checkNonFinal(processedDependee)
-
-                            val processedDependeeE = processedDependee.e
-                            val processedDependeePKId = processedDependee.pk.id
-                            val dependeeEPS = ps(processedDependeePKId)(processedDependeeE)
-                            if (isDependeeUpdated(dependeeEPS, processedDependee)) {
-                                // => dependeeEPS can't be an EPK...
-                                immediateOnUpdateComputationsCounter += 1
-                                val newR = c(dependeeEPS.asEPS)
-                                if (debug && newR == r) {
-                                    throw new IllegalStateException(
-                                        s"useless on-update continuation:\n\told: $r\n\tnew: $newR"
-                                    )
-                                }
-                                handleResult(newR)
-                                return ;
-                            }
-                        }
-                        true // all updates are handled; otherwise we have an early return
-
-                    case dependeeUpdateHandling: LazyDependeeUpdateHandling ⇒
-                        processedDependees forall { processedDependee ⇒
-                            if (debug) checkNonFinal(processedDependee)
-                            val processedDependeeE = processedDependee.e
-                            val processedDependeePK = processedDependee.pk
-                            val processedDependeePKId = processedDependeePK.id
-                            val dependeeEPS = ps(processedDependeePKId)(processedDependeeE)
-                            if (isDependeeUpdated(dependeeEPS, processedDependee)) {
-                                // There were updates...
-                                // hence, we will update the value for other analyses
-                                // which want to get the most current value in the meantime,
-                                // but we postpone notification of other analyses which are
-                                // depending on it until we have the updated value (minimize
-                                // the overall number of notifications.)
-                                // println(s"update: $e => $p (isFinal=false;notifyDependers=false)")
-                                scheduledOnUpdateComputationsCounter += 1
-                                if (dependeeEPS.isFinal) {
-                                    val dependeeFinalP = dependeeEPS.asFinal
-                                    val t = OnFinalUpdateComputationTask(this, dependeeFinalP, c)
-                                    if (dependeeUpdateHandling.delayHandlingOfFinalDependeeUpdates)
-                                        tasks.addLast(t)
-                                    else
-                                        tasks.addFirst(t)
-                                } else {
-                                    val t = OnUpdateComputationTask(this, processedDependee.toEPK, c)
-                                    if (dependeeUpdateHandling.delayHandlingOfNonFinalDependeeUpdates)
-                                        tasks.addLast(t)
-                                    else
-                                        tasks.addFirst(t)
-                                }
-                                false
+                val noUpdates =
+                    processedDependees forall { processedDependee ⇒
+                        if (debug) checkNonFinal(processedDependee)
+                        val processedDependeeE = processedDependee.e
+                        val processedDependeePK = processedDependee.pk
+                        val processedDependeePKId = processedDependeePK.id
+                        val dependeeEPS = ps(processedDependeePKId)(processedDependeeE)
+                        if (isDependeeUpdated(dependeeEPS, processedDependee)) {
+                            // There were updates...
+                            // hence, we will update the value for other analyses
+                            // which want to get the most current value in the meantime,
+                            // but we postpone notification of other analyses which are
+                            // depending on it until we have the updated value (minimize
+                            // the overall number of notifications.)
+                            // println(s"update: $e => $p (isFinal=false;notifyDependers=false)")
+                            scheduledOnUpdateComputationsCounter += 1
+                            if (dependeeEPS.isFinal) {
+                                val dependeeFinalP = dependeeEPS.asFinal
+                                val t = OnFinalUpdateComputationTask(this, dependeeFinalP, c)
+                                if (dependeeUpdateHandling.delayHandlingOfFinalDependeeUpdates)
+                                    tasks.addLast(t)
+                                else
+                                    tasks.addFirst(t)
                             } else {
-                                true // <= no update
+                                val t = OnUpdateComputationTask(this, processedDependee.toEPK, c)
+                                if (dependeeUpdateHandling.delayHandlingOfNonFinalDependeeUpdates)
+                                    tasks.addLast(t)
+                                else
+                                    tasks.addFirst(t)
                             }
+                            false
+                        } else {
+                            true // <= no update
                         }
-                }
+                    }
 
                 if (noUpdates) {
                     // 2.1. update the value (trigger dependers/clear old dependees)
@@ -527,7 +487,6 @@ final class PKESequentialPropertyStore private (
                     // 2.2 The most current value of every dependee was taken into account
                     //     register with the (!) dependees.
                     val dependerEPK = interimP.toEPK
-                    val dependency = (dependerEPK, c)
 
                     processedDependees foreach { dependee ⇒
                         val dependeeE = dependee.e
@@ -551,65 +510,63 @@ final class PKESequentialPropertyStore private (
     override def waitOnPhaseCompletion(): Unit = handleExceptions {
         var continueComputation: Boolean = false
         // We need a consistent interrupt state for fallback
-        var isSuspended: Boolean = false
         do {
             continueComputation = false
 
-            while (!tasks.isEmpty && !isSuspended) {
+            while (!tasks.isEmpty) {
                 val task = tasks.pollFirst()
+                if (doTerminate) throw new InterruptedException()
                 task.apply()
-                isSuspended = this.isSuspended()
             }
             if (tasks.isEmpty) quiescenceCounter += 1
 
-            if (!isSuspended) {
-                // We have reached quiescence.
-                // Let's check if we have to fill in fallbacks.
+            // We have reached quiescence.
+            // Let's check if we have to fill in fallbacks.
 
-                // 1. Let's search for all EPKs (not EPS) and use the fall back for them.
-                //    (Recall that we return fallback properties eagerly if no analysis is
-                //     scheduled or will be scheduled, However, it is still possible that we will
-                //     not have computed a property for a specific entity, if the underlying
-                //     analysis doesn't compute one; in that case we need to put in fallback
-                //     values.)
-                val maxPKIndex = PropertyKey.maxId
+            // 1. Let's search for all EPKs (not EPS) and use the fall back for them.
+            //    (Recall that we return fallback properties eagerly if no analysis is
+            //     scheduled or will be scheduled, However, it is still possible that we will
+            //     not have computed a property for a specific entity, if the underlying
+            //     analysis doesn't compute one; in that case we need to put in fallback
+            //     values.)
+            val maxPKIndex = PropertyKey.maxId
+            var pkId = 0
+            while (pkId <= maxPKIndex) {
+                if (propertyKindsComputedInThisPhase(pkId)) {
+                    val epkIterator = ps(pkId).valuesIterator.filter(_.isEPK)
+                    continueComputation ||= epkIterator.hasNext
+                    epkIterator.foreach { eOptionP ⇒
+                        val e = eOptionP.e
+                        val reason = PropertyIsNotDerivedByPreviouslyExecutedAnalysis
+                        val p = fallbackPropertyBasedOnPKId(this, reason, e, pkId)
+                        if (traceFallbacks) {
+                            trace("analysis progress", s"used fallback $p for $e")
+                        }
+                        fallbacksUsedForComputedPropertiesCounter += 1
+                        update(FinalP(e, p), Nil)
+                    }
+                }
+                pkId += 1
+            }
+
+            if (!continueComputation) {
+                // We used no fallbacks, but we may still have collaboratively computed or
+                // cyclic dependent properties (e.g. CallGraph) which are not yet final;
+                // let's finalize them!
+                dependees.foreach(_.clear())
+                dependers.foreach(_.clear())
                 var pkId = 0
                 while (pkId <= maxPKIndex) {
-                    if (!propertyKindsComputedInThisPhase(pkId)) {
-                        val epkIterator = ps(pkId).valuesIterator.filter(_.isEPK)
-                        continueComputation ||= epkIterator.hasNext
-                        epkIterator.foreach { eOptionP ⇒
-                            val e = eOptionP.e
-                            val reason = PropertyIsNotDerivedByPreviouslyExecutedAnalysis
-                            val p = fallbackPropertyBasedOnPKId(this, reason, e, pkId)
-                            if (traceFallbacks) {
-                                trace("analysis progress", s"used fallback $p for $e")
-                            }
-                            fallbacksUsedForComputedPropertiesCounter += 1
-                            update(FinalP(e, p), Nil)
+                    if (propertyKindsComputedInThisPhase(pkId)) {
+                        val interimEPSs = ps(pkId).valuesIterator.filter(_.isRefinable).toList
+                        interimEPSs foreach { eOptionP ⇒
+                            ps(pkId).put(eOptionP.e, eOptionP.toFinalP)
                         }
                     }
                     pkId += 1
                 }
-
-                if (!continueComputation) {
-                    // We used no fallbacks, but we may still have collaboratively computed or
-                    // cyclic dependent properties (e.g. CallGraph) which are not yet final;
-                    // let's finalize them!
-                    dependees.foreach(_.clear())
-                    dependers.foreach(_.clear())
-                    var pkId = 0
-                    while (pkId < maxPKIndex) {
-                        if (propertyKindsComputedInThisPhase(pkId)) {
-                            val interimEPSs = ps(pkId).valuesIterator.filter(_.isRefinable).toList
-                            interimEPSs foreach { eOptionP ⇒
-                                ps(pkId).put(eOptionP.e, eOptionP.toFinalP)
-                            }
-                        }
-                        pkId += 1
-                    }
-                }
             }
+
         } while (continueComputation)
 
         if (exception != null) throw exception;

@@ -52,9 +52,7 @@ object MethodReturnValue extends MethodReturnValuePropertyMetaInformation {
             MethodReturnValue(
                 Some(ValueInformation.forProperValue(m.descriptor.returnType)(p.classHierarchy))
             )
-        },
-        (_: PropertyStore, eps: EPS[DeclaredMethod, MethodReturnValue]) ⇒ eps.ub,
-        (_: PropertyStore, _: Entity) ⇒ None
+        }
     )
 
 }

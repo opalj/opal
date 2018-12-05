@@ -11,7 +11,7 @@ sealed abstract class PropertyComputationResult {
     private[fpcf] def id: Int
 
     private[fpcf] def isInterimResult: Boolean = false
-    private[fpcf] def asInterimResult: InterimResult[_ <: Property] = {
+    private[fpcf] def asInterimResult: InterimResult[_ >: Null <: Property] = {
         throw new ClassCastException();
     }
 
@@ -123,24 +123,24 @@ final class InterimResult[P >: Null <: Property] private (
 
     val key: PropertyKey[P] = eps.pk
 
-    if (PropertyStore.Debug) {
+    if (PropertyStore.Debug) { // TODO move to generic handleResult method ...
         if (dependees.isEmpty) {
             throw new IllegalArgumentException(
                 s"intermediate result without dependencies: $this"+
                     " (use PartialResult for collaboratively computed results)"
             )
         }
-        if (dependees.exists(eOptP ⇒ eOptP.e == result.e && eOptP.pk == result.key)) {
+        if (dependees.exists(eOptP ⇒ eOptP.e == eps.e && eOptP.pk == result.key)) {
             throw new IllegalArgumentException(
                 s"intermediate result with an illegal self-dependency: "+this
             )
         }
     }
 
-    private[fpcf] def id = InterimResult.id
+    private[fpcf] def id: Int = InterimResult.id
 
     private[fpcf] override def isInterimResult: Boolean = true
-    private[fpcf] override def asInterimResult: InterimResult[_ <: Property] = this
+    private[fpcf] override def asInterimResult: InterimResult[P] = this
 
     override def hashCode: Int = eps.e.hashCode * 17 + dependees.hashCode
 
@@ -165,7 +165,24 @@ object InterimResult {
 
     private[fpcf] final val id = 3
 
-    def apply[P <: Property](
+    def apply[P >: Null <: Property](
+        eps:       InterimP[Entity, P],
+        dependees: Traversable[SomeEOptionP],
+        c:         OnUpdateContinuation
+    ): InterimResult[P] = {
+        new InterimResult[P](eps, dependees, c, DefaultPropertyComputation)
+    }
+
+    def apply[P >: Null <: Property](
+        eps:       InterimP[Entity, P],
+        dependees: Traversable[SomeEOptionP],
+        c:         OnUpdateContinuation,
+        hint:      PropertyComputationHint
+    ): InterimResult[P] = {
+        new InterimResult[P](eps, dependees, c, hint)
+    }
+
+    def apply[P >: Null <: Property](
         e:         Entity,
         lb:        P,
         ub:        P,
@@ -176,7 +193,7 @@ object InterimResult {
         new InterimResult[P](InterimP(e, lb, ub), dependees, c, hint)
     }
 
-    def unapply[P <: Property](
+    def unapply[P >: Null <: Property](
         r: InterimResult[P]
     ): Some[(SomeEPS, Traversable[SomeEOptionP], OnUpdateContinuation, PropertyComputationHint)] = {
         Some((r.eps, r.dependees, r.c, r.hint))

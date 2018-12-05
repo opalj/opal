@@ -183,18 +183,10 @@ abstract class PropertyStore {
     //
 
     /**
-     * The callback function that is regularly called by the property store to test if
-     * the property store should stop executing new tasks. Given that the given method is
-     * called frequently, it should be reasonably efficient. The method has to be thread-safe.
-     *
-     * The default method tests if the current thread is interrupted.
-     *
-     * Suspending the property store will leave the property store in a consistent state
-     * and the computation can be continued later on by updating this function (if necessary)
-     * and calling `waitOnPhaseCompletion` again. I.e., interruption can be used for debugging
-     * purposes!
+     * If set to `true` no new computations will be scheduled and running computations will
+     * be terminated. Afterwards, the store is no longer useable.
      */
-    @volatile var isSuspended: () ⇒ Boolean = () ⇒ false
+    @volatile var doTerminate: Boolean = false
 
     /**
      * Should be called when a PropertyStore is no longer going to be used to schedule
@@ -289,6 +281,11 @@ abstract class PropertyStore {
      */
     protected[this] var propertyKindsComputedInLaterPhase: Array[Boolean] = {
         new Array(SupportedPropertyKinds)
+    }
+
+    // Those computations that will only be scheduled if the result is required
+    protected[this] var lazyComputations: Array[SomeProperPropertyComputation] = {
+        new Array(PropertyKind.SupportedPropertyKinds)
     }
 
     /**
@@ -459,7 +456,23 @@ abstract class PropertyStore {
         propertyKindsComputedInLaterPhase foreach { pk ⇒
             this.propertyKindsComputedInLaterPhase(pk.id) = true
         }
+
+        // Step 3
+        // Inform the property store that a new phase was setup.
+        newPhaseInitialized(propertyKindsComputedInThisPhase, propertyKindsComputedInLaterPhase)
     }
+
+    /**
+     * Called when a new phase was initialized. Intended to be overridden by subclasses if
+     * special handling is required.
+     *
+     * @param propertyKindsComputedInThisPhase
+     * @param propertyKindsComputedInLaterPhase
+     */
+    protected[this] def newPhaseInitialized(
+        propertyKindsComputedInThisPhase:  Set[PropertyKind],
+        propertyKindsComputedInLaterPhase: Set[PropertyKind]
+    ): Unit = { /*nothing to do*/ }
 
     /**
      * Returns `true` if the store does not perform any computations at the time of this method
@@ -570,13 +583,15 @@ abstract class PropertyStore {
         pc: ProperPropertyComputation[E] // TODO add definition of PropertyComputationResult that is parameterized over the kind of Property to specify that we want a PropertyComputationResult with respect to PropertyKey (pk)
     ): Unit = {
         analysesRegistered = true
-        doRegisterLazyPropertyComputation(pk, pc)
-    }
 
-    protected[this] def doRegisterLazyPropertyComputation[E <: Entity, P <: Property](
-        pk: PropertyKey[P],
-        pc: ProperPropertyComputation[E]
-    ): Unit
+        if (debug && !isIdle) {
+            throw new IllegalStateException(
+                "lazy computations can only be registered while the property store is idle"
+            )
+        }
+
+        lazyComputations(pk.id) = pc
+    }
 
     /**
      * Registers a property computation that is eagerly triggered when a property of the given kind
@@ -615,6 +630,11 @@ abstract class PropertyStore {
         pc: PropertyComputation[E]
     ): Unit = {
         analysesRegistered = true
+        if (debug && !isIdle) {
+            throw new IllegalStateException(
+                "triggered computations can only be registered while no computations are running"
+            )
+        }
         doRegisterTriggeredComputation(pk, pc)
     }
 
@@ -677,19 +697,9 @@ abstract class PropertyStore {
     /**
      * Awaits the completion of all property computations which were previously scheduled.
      * As soon as all initial computations have finished, dependencies on E/P pairs for which
-     * no value was computed and also will not be computed in the future(!) (see `setupPhase`
-     * for details), will be identified and the fallback value will be used. After that, cycle
-     * resolution will be performed. I.e., first all _closed_ strongly connected components
-     * will be identified that do not contain any properties for which we will compute (in a
-     * future phase) any more refined values. Then the values will be made final.
+     * no value was computed, will be identified and the fallback value will be used. After that,
+     * the remaining intermediate values will be made final.
      *
-     * If the store is suspended, waitOnPhaseCompletion will return as soon as all running
-     * computations are finished. By updating the `isSuspended` state and calling
-     * `waitOnPhaseCompletion` again computations can be continued.
-     *
-     * @note If a second thread is used to register [[org.opalj.fpcf.PropertyComputation]] functions
-     *       no guarantees are given; it is recommended to schedule all property computation
-     *       functions using one thread and to also use that thread to call this method.
      * @note If a computation fails with an exception, the property store will stop in due time
      *       and return the thrown exception. No strong guarantees are given which exception
      *       is returned in case of concurrent execution with multiple exceptions.
