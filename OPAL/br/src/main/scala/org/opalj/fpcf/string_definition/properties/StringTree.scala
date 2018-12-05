@@ -269,9 +269,15 @@ sealed abstract class StringTreeElement(val children: ListBuffer[StringTreeEleme
      * Reduces this [[StringTree]] instance to a [[StringConstancyInformation]] object that captures
      * the information stored in this tree.
      *
+     * @param preprocess If set to true, `this` tree will be preprocess, i.e., it will be
+     *                   simplified and repetition elements be grouped. Note that preprocessing
+     *                   changes `this` instance!
      * @return A [[StringConstancyInformation]] instance that flatly describes this tree.
      */
-    def reduce(): StringConstancyInformation = {
+    def reduce(preprocess: Boolean = false): StringConstancyInformation = {
+        if (preprocess) {
+            simplify().groupRepetitionElements()
+        }
         // The call to reduceMultiple is necessary as reduceAcc might return a list, e.g., if a
         // clear occurred
         StringConstancyInformation.reduceMultiple(reduceAcc(this))
