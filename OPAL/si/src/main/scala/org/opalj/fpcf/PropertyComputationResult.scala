@@ -115,7 +115,7 @@ object MultiResult { private[fpcf] final val id = 2 }
  *      before (using one of the `apply` functions of the property store.)
  */
 final class InterimResult[P >: Null <: Property] private (
-        val eps:       InterimP[Entity, P],
+        val eps:       InterimEP[Entity, P],
         val dependees: Traversable[SomeEOptionP],
         val c:         OnUpdateContinuation,
         val hint:      PropertyComputationHint
@@ -166,7 +166,7 @@ object InterimResult {
     private[fpcf] final val id = 3
 
     def apply[P >: Null <: Property](
-        eps:       InterimP[Entity, P],
+        eps:       InterimEP[Entity, P],
         dependees: Traversable[SomeEOptionP],
         c:         OnUpdateContinuation
     ): InterimResult[P] = {
@@ -174,7 +174,7 @@ object InterimResult {
     }
 
     def apply[P >: Null <: Property](
-        eps:       InterimP[Entity, P],
+        eps:       InterimEP[Entity, P],
         dependees: Traversable[SomeEOptionP],
         c:         OnUpdateContinuation,
         hint:      PropertyComputationHint
@@ -190,7 +190,8 @@ object InterimResult {
         c:         OnUpdateContinuation,
         hint:      PropertyComputationHint   = DefaultPropertyComputation
     ): InterimResult[P] = {
-        new InterimResult[P](InterimP(e, lb, ub), dependees, c, hint)
+        require(lb != null && ub != null)
+        new InterimResult[P](InterimELUBP(e, lb, ub), dependees, c, hint)
     }
 
     def unapply[P >: Null <: Property](
@@ -206,7 +207,7 @@ object InterimResult {
         c:         OnUpdateContinuation,
         hint:      PropertyComputationHint   = DefaultPropertyComputation
     ): InterimResult[P] = {
-        new InterimResult[P](InterimLBP(e, lb), dependees, c, hint)
+        new InterimResult[P](InterimELBP(e, lb), dependees, c, hint)
     }
 
     def forUB[P >: Null <: Property](
@@ -216,7 +217,7 @@ object InterimResult {
         c:         OnUpdateContinuation,
         hint:      PropertyComputationHint   = DefaultPropertyComputation
     ): InterimResult[P] = {
-        new InterimResult[P](InterimUBP(e, ub), dependees, c, hint)
+        new InterimResult[P](InterimEUBP(e, ub), dependees, c, hint)
     }
 }
 
@@ -304,7 +305,7 @@ object PartialResult { private[fpcf] final val id = 6 }
 \**************************************************************************************************/
 
 private[fpcf] case class IdempotentResult(
-        finalP: SomeFinalP
+        finalP: SomeFinalEP
 ) extends FinalPropertyComputationResult {
     private[fpcf] final def id = IdempotentResult.id
 

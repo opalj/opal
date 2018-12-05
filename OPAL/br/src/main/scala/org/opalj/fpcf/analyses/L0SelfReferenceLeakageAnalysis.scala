@@ -44,7 +44,7 @@ class L0SelfReferenceLeakageAnalysis(
      */
     private[this] def determineSelfReferenceLeakageContinuation(
         classFile: ClassFile
-    ): PropertyComputationResult = {
+    ): ProperPropertyComputationResult = {
 
         val classHierarchy = project.classHierarchy
 
@@ -159,21 +159,15 @@ class L0SelfReferenceLeakageAnalysis(
             )
         var dependees = Map.empty[Entity, EOptionP[Entity, Property]]
         propertyStore(superTypes, SelfReferenceLeakage) foreach {
-            case epk @ EPK(e, _) ⇒ dependees += ((e, epk))
-
-            case EPS(_, _ /*LeaksSelfReference*/ , LeaksSelfReference) ⇒
-                return Result(classFile, LeaksSelfReference);
-
-            case EPS(e, DoesNotLeakSelfReference, _ /*DoesNotLeakSelfReference*/ ) ⇒
-            // nothing to do ...
-
-            case eps @ EPS(e, _, _)                                                ⇒ dependees += ((e, eps))
-
+            case epk @ EPK(e, _)                   ⇒ dependees += ((e, epk))
+            case UBP(LeaksSelfReference)           ⇒ return Result(classFile, LeaksSelfReference);
+            case ELBP(e, DoesNotLeakSelfReference) ⇒ // nothing to do ...
+            case eps @ EPS(e)                      ⇒ dependees += ((e, eps))
         }
 
         // First, let's wait for the results for the supertypes...
-        def c(eps: SomeEPS): PropertyComputationResult = {
-            val EPS(e, lb, ub) = eps
+        def c(eps: SomeEPS): ProperPropertyComputationResult = {
+            val ELUBP(e, lb, ub) = eps
             if (ub == LeaksSelfReference) {
                 // ... we have a final result
                 return Result(classType, LeaksSelfReference);

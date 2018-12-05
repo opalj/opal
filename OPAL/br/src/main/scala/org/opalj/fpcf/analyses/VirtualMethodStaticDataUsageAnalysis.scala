@@ -24,8 +24,9 @@ class VirtualMethodStaticDataUsageAnalysis private[analyses] (
 ) extends FPCFAnalysis {
     private[this] val declaredMethods = project.get(DeclaredMethodsKey)
 
-    def determineUsage(dm: DeclaredMethod): PropertyComputationResult = {
-        if (!dm.hasSingleDefinedMethod && !dm.hasMultipleDefinedMethods) return Result(dm, VUsesVaryingData);
+    def determineUsage(dm: DeclaredMethod): ProperPropertyComputationResult = {
+        if (!dm.hasSingleDefinedMethod && !dm.hasMultipleDefinedMethods)
+            return Result(dm, VUsesVaryingData);
 
         var dependees: Set[EOptionP[DeclaredMethod, StaticDataUsage]] = Set.empty
 
@@ -52,24 +53,24 @@ class VirtualMethodStaticDataUsageAnalysis private[analyses] (
 
         for (method ← methods) {
             propertyStore(declaredMethods(method), StaticDataUsage.key) match {
-                case FinalP(_, UsesNoStaticData)     ⇒
-                case FinalP(_, UsesConstantDataOnly) ⇒ maxLevel = UsesConstantDataOnly
-                case FinalP(_, UsesVaryingData)      ⇒ return Result(dm, VUsesVaryingData);
-                case ep @ InterimP(_, _, UsesConstantDataOnly) ⇒
+                case FinalP(UsesNoStaticData)     ⇒
+                case FinalP(UsesConstantDataOnly) ⇒ maxLevel = UsesConstantDataOnly
+                case FinalP(UsesVaryingData)      ⇒ return Result(dm, VUsesVaryingData);
+                case ep @ InterimUBP(UsesConstantDataOnly) ⇒
                     maxLevel = UsesConstantDataOnly
                     dependees += ep
                 case epk ⇒ dependees += epk
             }
         }
 
-        def c(eps: SomeEPS): PropertyComputationResult = {
+        def c(eps: SomeEPS): ProperPropertyComputationResult = {
             dependees = dependees.filter { _.e ne eps.e }
 
             eps match {
-                case FinalP(_, UsesNoStaticData)     ⇒
-                case FinalP(_, UsesConstantDataOnly) ⇒ maxLevel = UsesConstantDataOnly
-                case FinalP(_, UsesVaryingData)      ⇒ return Result(dm, VUsesVaryingData);
-                case ep @ InterimP(_, _, UsesConstantDataOnly) ⇒
+                case FinalP(UsesNoStaticData)     ⇒
+                case FinalP(UsesConstantDataOnly) ⇒ maxLevel = UsesConstantDataOnly
+                case FinalP(UsesVaryingData)      ⇒ return Result(dm, VUsesVaryingData);
+                case ep @ InterimUBP(UsesConstantDataOnly) ⇒
                     maxLevel = UsesConstantDataOnly
                     dependees += ep.asInstanceOf[EOptionP[DeclaredMethod, StaticDataUsage]]
                 case epk ⇒ dependees += epk.asInstanceOf[EOptionP[DeclaredMethod, StaticDataUsage]]
@@ -96,12 +97,10 @@ class VirtualMethodStaticDataUsageAnalysis private[analyses] (
     }
 
     /** Called when the analysis is scheduled lazily. */
-    def doDetermineUsage(e: Entity): PropertyComputationResult = {
+    def doDetermineUsage(e: Entity): ProperPropertyComputationResult = {
         e match {
             case m: DeclaredMethod ⇒ determineUsage(m)
-            case _ ⇒ throw new UnknownError(
-                "virtual method static data usage is only defined for declared methods"
-            )
+            case _                 ⇒ throw new IllegalArgumentException(s"$e is not a method")
         }
     }
 

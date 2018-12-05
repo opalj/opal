@@ -71,61 +71,64 @@ trait ConstructorSensitiveEscapeAnalysis extends AbstractEscapeAnalysis {
 
     private[this] def handleEscapeState(
         eOptionP: EOptionP[Entity, Property]
-    )(implicit state: AnalysisState): Unit = {
+    )(
+        implicit
+        state: AnalysisState
+    ): Unit = {
         eOptionP match {
-            case FinalP(_, NoEscape) ⇒ //NOTHING TO DO
+            case FinalP(NoEscape) ⇒ //NOTHING TO DO
 
-            case FinalP(_, GlobalEscape) ⇒
+            case FinalP(GlobalEscape) ⇒
                 state.meetMostRestrictive(GlobalEscape)
 
-            case FinalP(_, EscapeViaStaticField) ⇒
+            case FinalP(EscapeViaStaticField) ⇒
                 state.meetMostRestrictive(EscapeViaStaticField)
 
-            case FinalP(_, EscapeViaHeapObject) ⇒
+            case FinalP(EscapeViaHeapObject) ⇒
                 state.meetMostRestrictive(EscapeViaHeapObject)
 
-            case FinalP(_, EscapeInCallee) ⇒
+            case FinalP(EscapeInCallee) ⇒
                 state.meetMostRestrictive(EscapeInCallee)
 
-            case FinalP(_, AtMost(EscapeInCallee)) ⇒
+            case FinalP(AtMost(EscapeInCallee)) ⇒
                 state.meetMostRestrictive(AtMost(EscapeInCallee))
 
-            case FinalP(_, EscapeViaParameter) ⇒
+            case FinalP(EscapeViaParameter) ⇒
                 state.meetMostRestrictive(AtMost(NoEscape))
 
-            case FinalP(_, EscapeViaAbnormalReturn) ⇒
+            case FinalP(EscapeViaAbnormalReturn) ⇒
                 state.meetMostRestrictive(AtMost(NoEscape))
 
-            case FinalP(_, EscapeViaParameterAndAbnormalReturn) ⇒
+            case FinalP(EscapeViaParameterAndAbnormalReturn) ⇒
                 state.meetMostRestrictive(AtMost(NoEscape))
 
-            case FinalP(_, AtMost(NoEscape)) ⇒
+            case FinalP(AtMost(NoEscape)) ⇒
                 state.meetMostRestrictive(AtMost(NoEscape))
 
-            case FinalP(_, AtMost(EscapeViaParameter)) ⇒
+            case FinalP(AtMost(EscapeViaParameter)) ⇒
                 state.meetMostRestrictive(AtMost(NoEscape))
 
-            case FinalP(_, AtMost(EscapeViaAbnormalReturn)) ⇒
+            case FinalP(AtMost(EscapeViaAbnormalReturn)) ⇒
                 state.meetMostRestrictive(AtMost(NoEscape))
 
-            case FinalP(_, AtMost(EscapeViaParameterAndAbnormalReturn)) ⇒
+            case FinalP(AtMost(EscapeViaParameterAndAbnormalReturn)) ⇒
                 state.meetMostRestrictive(AtMost(NoEscape))
 
-            case FinalP(_, p) ⇒
+            case FinalP(p) ⇒
                 throw new UnknownError(s"unexpected escape property ($p) for constructors")
 
-            case ep @ InterimP(_, _, NoEscape) ⇒
+            case ep @ InterimUBP(NoEscape) ⇒
                 state.addDependency(ep)
 
-            case ep @ InterimP(_, _, EscapeInCallee) ⇒
+            case ep @ InterimUBP(EscapeInCallee) ⇒
                 state.meetMostRestrictive(EscapeInCallee)
                 state.addDependency(ep)
 
-            case ep @ InterimP(_, _, AtMost(EscapeInCallee)) ⇒
+            case ep @ InterimUBP(AtMost(EscapeInCallee)) ⇒
                 state.meetMostRestrictive(AtMost(EscapeInCallee))
                 state.addDependency(ep)
 
-            case ep @ InterimP(_, _, _) ⇒
+            case ep: SomeInterimEP ⇒
                 state.meetMostRestrictive(AtMost(NoEscape))
                 state.addDependency(ep)
 
@@ -135,9 +138,13 @@ trait ConstructorSensitiveEscapeAnalysis extends AbstractEscapeAnalysis {
         }
     }
 
-    abstract override protected[this] def continuation(
+    abstract override protected[this] def c(
         someEPS: SomeEPS
-    )(implicit context: AnalysisContext, state: AnalysisState): PropertyComputationResult = {
+    )(
+        implicit
+        context: AnalysisContext,
+        state:   AnalysisState
+    ): ProperPropertyComputationResult = {
 
         someEPS.e match {
             case VirtualFormalParameter(DefinedMethod(_, method), -1) if method.isConstructor ⇒
@@ -145,7 +152,7 @@ trait ConstructorSensitiveEscapeAnalysis extends AbstractEscapeAnalysis {
                 handleEscapeState(someEPS)
                 returnResult
 
-            case _ ⇒ super.continuation(someEPS)
+            case _ ⇒ super.c(someEPS)
         }
     }
 }

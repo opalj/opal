@@ -36,9 +36,6 @@ class SimpleEscapeAnalysisContext(
  * [[org.opalj.br.analyses.VirtualFormalParameter]]s are marked as
  * [[org.opalj.fpcf.properties.AtMost]]([[org.opalj.fpcf.properties.NoEscape]]).
  *
- *
- *
- *
  * @author Florian Kuebler
  */
 class SimpleEscapeAnalysis( final val project: SomeProject)
@@ -51,7 +48,9 @@ class SimpleEscapeAnalysis( final val project: SomeProject)
     override type AnalysisContext = SimpleEscapeAnalysisContext
     override type AnalysisState = AbstractEscapeAnalysisState
 
-    override def determineEscapeOfFP(fp: VirtualFormalParameter): PropertyComputationResult = {
+    override def determineEscapeOfFP(
+        fp: VirtualFormalParameter
+    ): ProperPropertyComputationResult = {
         fp match {
             case VirtualFormalParameter(DefinedMethod(_, m), _) if m.body.isEmpty ⇒
                 Result(fp, AtMost(NoEscape))
@@ -68,15 +67,17 @@ class SimpleEscapeAnalysis( final val project: SomeProject)
         entity:       Entity,
         defSite:      ValueOrigin,
         targetMethod: Method
-    ): SimpleEscapeAnalysisContext = new SimpleEscapeAnalysisContext(
-        entity,
-        defSite,
-        targetMethod,
-        declaredMethods,
-        virtualFormalParameters,
-        project,
-        propertyStore
-    )
+    ): SimpleEscapeAnalysisContext = {
+        new SimpleEscapeAnalysisContext(
+            entity,
+            defSite,
+            targetMethod,
+            declaredMethods,
+            virtualFormalParameters,
+            project,
+            propertyStore
+        )
+    }
 
     override def createState: AbstractEscapeAnalysisState = new AbstractEscapeAnalysisState {}
 }

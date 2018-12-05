@@ -1,5 +1,6 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf
+package fixtures
 
 import scala.collection.mutable.Set
 

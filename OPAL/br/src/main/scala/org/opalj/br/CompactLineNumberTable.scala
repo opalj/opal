@@ -78,7 +78,7 @@ case class CompactLineNumberTable(rawLineNumbers: Array[Byte]) extends LineNumbe
         other match {
             case that: CompactLineNumberTable ⇒
                 JArrays.equals(this.rawLineNumbers, that.rawLineNumbers)
-            case _                            ⇒
+            case _ ⇒
                 false
         }
     }

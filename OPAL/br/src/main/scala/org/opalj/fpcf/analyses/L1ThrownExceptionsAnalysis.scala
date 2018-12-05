@@ -69,12 +69,12 @@ class L1ThrownExceptionsAnalysis private[analyses] (
 
     final val InterimResultsPropertyComputationHint = CheapPropertyComputation
 
-    private[analyses] def lazilyDetermineThrownExceptions(e: Entity): PropertyComputationResult = {
+    private[analyses] def lazilyDetermineThrownExceptions(
+        e: Entity
+    ): ProperPropertyComputationResult = {
         e match {
-            case m: Method ⇒
-                determineThrownExceptions(m)
-            case e ⇒
-                throw new UnknownError(s"ThrownExceptions is only defined for methods; not $e")
+            case m: Method ⇒ determineThrownExceptions(m)
+            case e         ⇒ throw new UnknownError(s"$e is not a method")
         }
     }
 
@@ -83,7 +83,7 @@ class L1ThrownExceptionsAnalysis private[analyses] (
      * and adds the exceptions thrown by the called method into its own result.
      * The given method must have a body!
      */
-    def determineThrownExceptions(m: Method): PropertyComputationResult = {
+    def determineThrownExceptions(m: Method): ProperPropertyComputationResult = {
         if (m.isNative)
             return Result(m, MethodIsNative);
         if (m.isAbstract)
@@ -143,12 +143,12 @@ class L1ThrownExceptionsAnalysis private[analyses] (
                                     case Success(callee) ⇒
                                         // Query the store for information about the callee
                                         ps(callee, ThrownExceptions.key) match {
-                                            case EPS(_, _, MethodIsAbstract) |
-                                                EPS(_, _, MethodBodyIsNotAvailable) |
-                                                EPS(_, _, MethodIsNative) |
-                                                EPS(_, _, UnknownExceptionIsThrown) |
-                                                EPS(_, _, AnalysisLimitation) |
-                                                EPS(_, _, UnresolvedInvokeDynamicInstruction) ⇒
+                                            case UBP(MethodIsAbstract) |
+                                                UBP(MethodBodyIsNotAvailable) |
+                                                UBP(MethodIsNative) |
+                                                UBP(UnknownExceptionIsThrown) |
+                                                UBP(AnalysisLimitation) |
+                                                UBP(UnresolvedInvokeDynamicInstruction) ⇒
                                                 result = MethodCalledThrowsUnknownExceptions
                                                 false
                                             case eps: EPS[Entity, Property] ⇒
@@ -193,9 +193,9 @@ class L1ThrownExceptionsAnalysis private[analyses] (
                         case Some(callee) ⇒
                             // Check the class hierarchy for thrown exceptions
                             ps(callee, ThrownExceptionsByOverridingMethods.key) match {
-                                case EPS(_, _, ThrownExceptionsByOverridingMethods.MethodIsOverridable) ⇒
+                                case UBP(ThrownExceptionsByOverridingMethods.MethodIsOverridable) ⇒
                                     result = MethodCalledThrowsUnknownExceptions
-                                case EPS(_, _, ThrownExceptionsByOverridingMethods.SomeException) ⇒
+                                case UBP(ThrownExceptionsByOverridingMethods.SomeException) ⇒
                                     result = MethodCalledThrowsUnknownExceptions
                                 case eps: EPS[Entity, Property] ⇒
                                     // Copy the concrete exception types to our initial
@@ -330,7 +330,7 @@ class L1ThrownExceptionsAnalysis private[analyses] (
 
         var exceptions = initialExceptions.toImmutableTypesSet
 
-        def c(eps: SomeEPS): PropertyComputationResult = {
+        def c(eps: SomeEPS): ProperPropertyComputationResult = {
             dependees = dependees.filter { d ⇒
                 d.e != eps.e || d.pk != eps.pk
             }

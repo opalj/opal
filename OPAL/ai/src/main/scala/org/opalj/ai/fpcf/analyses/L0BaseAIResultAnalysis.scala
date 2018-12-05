@@ -11,7 +11,7 @@ import org.opalj.fpcf.Entity
 import org.opalj.fpcf.FPCFAnalysis
 import org.opalj.fpcf.FPCFEagerAnalysisScheduler
 import org.opalj.fpcf.FPCFLazyAnalysisScheduler
-import org.opalj.fpcf.PropertyComputationResult
+import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyKind
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
@@ -29,11 +29,12 @@ import org.opalj.ai.fpcf.properties.ProjectSpecificAIExecutor
  */
 class L0BaseAIResultAnalysis private[analyses] (val project: SomeProject) extends FPCFAnalysis {
 
-    final implicit val aiFactory : ProjectSpecificAIExecutor = project.get(AIDomainFactoryKey)
+    final implicit val aiFactory: ProjectSpecificAIExecutor = project.get(AIDomainFactoryKey)
 
-    def performAI(entity: Entity): PropertyComputationResult = {
+    def performAI(entity: Entity): ProperPropertyComputationResult = {
         entity match {
             case m: Method ⇒ Result(m, AnAIResult(L0BaseAIResultAnalysis.performAI(m)))
+            case e         ⇒ throw new IllegalArgumentException(s"$e is not a method")
         }
     }
 }
@@ -49,10 +50,10 @@ object L0BaseAIResultAnalysis {
      *          bytecode.
      */
     def performAI(
-        m:         Method
+        m: Method
     )(
         implicit
-        aiFactory: ProjectSpecificAIExecutor,
+        aiFactory:  ProjectSpecificAIExecutor,
         logContext: LogContext
     ): AIResult = {
         try {
@@ -89,7 +90,7 @@ sealed trait L0BaseAIResultAnalysisScheduler extends ComputationSpecification {
 
 object EagerL0BaseAIAnalysis
     extends L0BaseAIResultAnalysisScheduler
-        with FPCFEagerAnalysisScheduler {
+    with FPCFEagerAnalysisScheduler {
 
     final override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new L0BaseAIResultAnalysis(p)
@@ -101,15 +102,15 @@ object EagerL0BaseAIAnalysis
 
 object LazyL0BaseAIResultAnalysis
     extends L0BaseAIResultAnalysisScheduler
-        with FPCFLazyAnalysisScheduler {
+    with FPCFLazyAnalysisScheduler {
 
     final override def startLazily(
-                                      p: SomeProject,
-                                      ps: PropertyStore,
-                                      unused: Null
-                                  ): FPCFAnalysis = {
+        p:      SomeProject,
+        ps:     PropertyStore,
+        unused: Null
+    ): FPCFAnalysis = {
         val analysis = new L0BaseAIResultAnalysis(p)
-        ps.registerLazyPropertyComputation(BaseAIResult.key, analysis.performAI, Nil)
+        ps.registerLazyPropertyComputation(BaseAIResult.key, analysis.performAI)
         analysis
     }
 }

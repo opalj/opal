@@ -63,7 +63,7 @@ sealed trait EOptionP[+E <: Entity, +P <: Property] {
      */
     def isFinal: Boolean
     final def isRefinable: Boolean = !isFinal
-    def asFinal: FinalP[E, P]
+    def asFinal: FinalEP[E, P]
 
     /**
      * Combines the test if we have a final property and – if we have one – if it is equal (by
@@ -71,11 +71,11 @@ sealed trait EOptionP[+E <: Entity, +P <: Property] {
      */
     def is(p: AnyRef): Boolean = /*this.hasProperty && */ this.isFinal && this.ub == p
 
-    private[fpcf] def toFinalP: FinalP[E, P]
+    private[fpcf] def toFinalEP: FinalEP[E, P]
 
-    private[fpcf] def toFinalUBP: FinalP[E, P]
+    private[fpcf] def toFinalEUBP: FinalEP[E, P]
 
-    private[fpcf] def toFinalLBP: FinalP[E, P]
+    private[fpcf] def toFinalELBP: FinalEP[E, P]
 
     /**
      * Returns the upper bound of the property if it is available – [[hasUBP]] has to be
@@ -174,7 +174,7 @@ sealed trait EPS[+E <: Entity, +P <: Property] extends EOptionP[E, P] {
      *
      * @note No check is done whether the property is actually final.
      */
-    override def toFinalUBP: FinalP[E, P] = FinalP(e, ub)
+    override def toFinalEUBP: FinalEP[E, P] = FinalEP(e, ub)
 
     /**
      * Creates a [[FinalP]] object using the current lb if the lb is available. If the lb
@@ -182,7 +182,7 @@ sealed trait EPS[+E <: Entity, +P <: Property] extends EOptionP[E, P] {
      *
      * @note No check is done whether the property is actually final.
      */
-    override def toFinalLBP: FinalP[E, P] = FinalP(e, lb)
+    override def toFinalELBP: FinalEP[E, P] = FinalEP(e, lb)
 
     final override def isEPS: Boolean = true
     final override def asEPS: EPS[E, P] = this
@@ -202,15 +202,17 @@ object EPS {
             if (lb == null /* && | || ub == null*/ ) {
                 throw new IllegalArgumentException(s"lb and ub are null")
             } else {
-                FinalP(e, ub)
+                FinalEP(e, ub)
             }
         } else if (lb == null)
-            InterimUBP(e, ub)
+            InterimEUBP(e, ub)
         else if (ub == null)
-            InterimLBP(e, lb)
+            InterimELBP(e, lb)
         else
-            InterimLUBP(e, lb, ub)
+            InterimELUBP(e, lb, ub)
     }
+
+    def unapply[E <: Entity, P <: Property](eps: EPS[E, P]): Some[E] = Some(eps.e)
 }
 
 /**
@@ -231,6 +233,32 @@ object ELUBPS {
     }
 }
 
+object ELUBP {
+
+    /**
+     * Returns the triple `(Entity, lowerBound : Property, upperBound : Property)`.
+     *
+     * @note Using ELUBPS to extract a property for which no lower or upper bound was computed
+     *       will (deliberately) result in an exception!
+     */
+    def unapply[E <: Entity, P <: Property](eps: EPS[E, P]): Some[(E, P, P)] = {
+        Some((eps.e, eps.lb, eps.ub))
+    }
+}
+
+object LUBP {
+
+    /**
+     * Returns the pair `(lowerBound : Property, upperBound : Property)`.
+     *
+     * @note Using LUBP to extract a property for which no lower or upper bound was computed
+     *       will (deliberately) result in an exception!
+     */
+    def unapply[E <: Entity, P <: Property](eps: EPS[E, P]): Some[(P, P)] = {
+        Some((eps.lb, eps.ub))
+    }
+}
+
 object EUBPS {
 
     /**
@@ -239,6 +267,26 @@ object EUBPS {
     def unapply[E <: Entity, P <: Property](eps: EPS[E, P]): Some[(E, P, Boolean)] = {
         Some((eps.e, eps.ub, eps.isFinal))
     }
+
+}
+
+object EUBP {
+
+    /**
+     * Returns the pair `(Entity, upperBound : Property)`.
+     */
+    def unapply[E <: Entity, P <: Property](eps: EPS[E, P]): Some[(E, P)] = {
+        Some((eps.e, eps.ub))
+    }
+
+}
+
+object UBP {
+
+    /**
+     * Returns the `lowerBound : Property`.
+     */
+    def unapply[E <: Entity, P <: Property](eps: EPS[E, P]): Some[P] = Some(eps.ub)
 
 }
 
@@ -253,27 +301,47 @@ object ELBPS {
 
 }
 
+object ELBP {
+
+    /**
+     * Returns the pair `(Entity, lowerBound : Property)`.
+     */
+    def unapply[E <: Entity, P <: Property](eps: EPS[E, P]): Some[(E, P)] = {
+        Some((eps.e, eps.lb))
+    }
+
+}
+
+object LBP {
+
+    /**
+     * Returns the `lowerBound : Property`.
+     */
+    def unapply[E <: Entity, P <: Property](eps: EPS[E, P]): Some[P] = Some(eps.lb)
+
+}
+
 /**
  * Encapsulate the final property `P` for the entity `E`.
  *
  * For a detailed discussion of the semantics of `lb` and `ub` see [[EOptionP.ub]].
  */
-final class FinalP[+E <: Entity, +P <: Property](val e: E, val p: P) extends EPS[E, P] {
+final class FinalEP[+E <: Entity, +P <: Property](val e: E, val p: P) extends EPS[E, P] {
 
     override def pk: PropertyKey[P] = p.key.asInstanceOf[PropertyKey[P]]
 
     override def isFinal: Boolean = true
-    override def asFinal: FinalP[E, P] = this
+    override def asFinal: FinalEP[E, P] = this
 
-    override private[fpcf] def toFinalP: FinalP[E, P] = throw new UnsupportedOperationException();
+    override private[fpcf] def toFinalEP: FinalEP[E, P] = this
 
     override def hasLBP: Boolean = true
     override def lb: P = p
-    override def toFinalLBP: FinalP[E, P] = this
+    override def toFinalELBP: FinalEP[E, P] = this
 
     override def hasUBP: Boolean = true
     override def ub: P = p
-    override def toFinalUBP: FinalP[E, P] = this
+    override def toFinalEUBP: FinalEP[E, P] = this
 
     private[fpcf] def checkIsValidPropertiesUpdate(
         eps:          SomeEPS,
@@ -291,8 +359,8 @@ final class FinalP[+E <: Entity, +P <: Property](val e: E, val p: P) extends EPS
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: FinalP[_, _] ⇒ that.e == this.e && this.p == that.p
-            case _                  ⇒ false
+            case that: FinalEP[_, _] ⇒ that.e == this.e && this.p == that.p
+            case _                   ⇒ false
         }
     }
 
@@ -304,20 +372,26 @@ final class FinalP[+E <: Entity, +P <: Property](val e: E, val p: P) extends EPS
 
 }
 
-object FinalP {
+object FinalEP {
 
-    def apply[E <: Entity, P <: Property](e: E, p: P): FinalP[E, P] = new FinalP(e, p)
+    def apply[E <: Entity, P <: Property](e: E, p: P): FinalEP[E, P] = new FinalEP(e, p)
 
-    def unapply[E <: Entity, P <: Property](eps: FinalP[E, P]): Option[(E, P)] = {
-        Some((eps.e, eps.lb))
+    def unapply[E <: Entity, P <: Property](eps: FinalEP[E, P]): Option[(E, P)] = {
+        Some((eps.e, eps.p))
     }
 
 }
 
-sealed trait InterimP[+E <: Entity, +P <: Property] extends EPS[E, P] {
+object FinalP {
+
+    def unapply[E <: Entity, P >: Null <: Property](eps: FinalEP[E, P]): Option[P] = Some(eps.p)
+
+}
+
+sealed trait InterimEP[+E <: Entity, +P <: Property] extends EPS[E, P] {
 
     override def isFinal: Boolean = false
-    override def asFinal: FinalP[E, P] = throw new ClassCastException();
+    override def asFinal: FinalEP[E, P] = throw new ClassCastException();
 
     private[fpcf] def checkIsValidLBPropertyUpdate(eps: SomeEPS): Unit = {
         val newLBAsOP = eps.lb.asOrderedProperty
@@ -359,17 +433,29 @@ sealed trait InterimP[+E <: Entity, +P <: Property] extends EPS[E, P] {
     }
 }
 
-object InterimP {
+object InterimEP {
 
-    def apply[E <: Entity, P <: Property](e: E, lb: P, ub: P): InterimP[E, P] = {
+    /*
+    def apply[E <: Entity, P <: Property](e: E, lb: P, ub: P): InterimEP[E, P] = {
         if (lb == ub) {
             throw new IllegalArgumentException(s"lb and ub are equal ($lb)")
         } else if (lb == null)
-            InterimUBP(e, ub)
+            InterimEUBP(e, ub)
         else if (ub == null)
-            InterimLBP(e, lb)
+            InterimELBP(e, lb)
         else
-            InterimLUBP(e, lb, ub)
+            InterimELUBP(e, lb, ub)
+    }
+    */
+
+    /**
+     * Extracts the entity of an interim property.
+     *
+     * @note When we just have an InterimP object, we don't know which properties (ub, lb or both)
+     *       are available.
+     */
+    def unapply[E <: Entity, P >: Null <: Property](interimP: InterimEP[E, P]): Some[E] = {
+        Some(interimP.e)
     }
 
 }
@@ -380,11 +466,11 @@ object InterimP {
  *
  * For a detailed discussion of the semantics of `lb` and `ub` see [[EOptionP.lb]].
  */
-final class InterimLUBP[+E <: Entity, +P <: Property](
+final class InterimELUBP[+E <: Entity, +P <: Property](
         val e:  E,
         val lb: P,
         val ub: P
-) extends InterimP[E, P] {
+) extends InterimEP[E, P] {
 
     assert(lb != null)
     assert(ub != null)
@@ -396,7 +482,7 @@ final class InterimLUBP[+E <: Entity, +P <: Property](
 
     override def pk: PropertyKey[P] = ub /* or lb */ .key.asInstanceOf[PropertyKey[P]]
 
-    override private[fpcf] def toFinalP: FinalP[E, P] = FinalP(e, ub)
+    override private[fpcf] def toFinalEP: FinalEP[E, P] = FinalEP(e, ub)
 
     override def hasLBP: Boolean = true
     override def hasUBP: Boolean = true
@@ -407,8 +493,8 @@ final class InterimLUBP[+E <: Entity, +P <: Property](
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: InterimLUBP[_, _] ⇒ e == that.e && lb == that.lb && ub == that.ub
-            case _                       ⇒ false
+            case that: InterimELUBP[_, _] ⇒ e == that.e && lb == that.lb && ub == that.ub
+            case _                        ⇒ false
         }
     }
 
@@ -419,28 +505,35 @@ final class InterimLUBP[+E <: Entity, +P <: Property](
     }
 }
 
-object InterimLUBP {
+object InterimELUBP {
 
-    def apply[E <: Entity, P <: Property](e: E, lb: P, ub: P): InterimP[E, P] = {
+    def apply[E <: Entity, P <: Property](e: E, lb: P, ub: P): InterimELUBP[E, P] = {
         assert(lb ne ub)
-        new InterimLUBP(e, lb, ub)
+        new InterimELUBP(e, lb, ub)
     }
 
-    def unapply[E <: Entity, P <: Property](eps: InterimLUBP[E, P]): Option[(E, P, P)] = {
+    def unapply[E <: Entity, P >: Null <: Property](eps: InterimELUBP[E, P]): Some[(E, P, P)] = {
         Some((eps.e, eps.lb, eps.ub))
     }
 }
 
-final class InterimUBP[+E <: Entity, +P <: Property](
+object InterimLUBP {
+
+    def unapply[E <: Entity, P >: Null <: Property](eps: InterimELUBP[E, P]): Some[(P, P)] = {
+        Some((eps.lb, eps.ub))
+    }
+}
+
+final class InterimEUBP[+E <: Entity, +P <: Property](
         val e:  E,
         val ub: P
-) extends InterimP[E, P] {
+) extends InterimEP[E, P] {
 
     assert(ub != null)
 
     override def pk: PropertyKey[P] = ub.key.asInstanceOf[PropertyKey[P]]
 
-    override private[fpcf] def toFinalP: FinalP[E, P] = FinalP(e, ub)
+    override private[fpcf] def toFinalEP: FinalEP[E, P] = FinalEP(e, ub)
 
     override def hasLBP: Boolean = false
     override def hasUBP: Boolean = true
@@ -453,8 +546,8 @@ final class InterimUBP[+E <: Entity, +P <: Property](
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: InterimUBP[_, _] ⇒ e == that.e && ub == that.ub
-            case _                      ⇒ false
+            case that: InterimEUBP[_, _] ⇒ e == that.e && ub == that.ub
+            case _                       ⇒ false
         }
     }
 
@@ -470,27 +563,33 @@ final class InterimUBP[+E <: Entity, +P <: Property](
  * objects, but will throw an exception for `InterimLBP` objects. If you want to match
  * final and interim objects at the same time use the `E(LB|UB)PS` extractors.
  */
-object InterimUBP {
+object InterimEUBP {
 
-    def apply[E <: Entity, P <: Property](e: E, ub: P): InterimP[E, P] = {
-        new InterimUBP(e, ub)
+    def apply[E <: Entity, P <: Property](e: E, ub: P): InterimEUBP[E, P] = {
+        new InterimEUBP(e, ub)
     }
 
-    def unapply[E <: Entity, P <: Property](eps: InterimP[E, P]): Option[(E, P)] = {
+    def unapply[E <: Entity, P >: Null <: Property](eps: InterimEP[E, P]): Some[(E, P)] = {
         Some((eps.e, eps.ub))
     }
 }
 
-final class InterimLBP[+E <: Entity, +P <: Property](
+object InterimUBP {
+
+    def unapply[E <: Entity, P <: Property](eps: InterimEP[E, P]): Some[P] = Some(eps.ub)
+
+}
+
+final class InterimELBP[+E <: Entity, +P <: Property](
         val e:  E,
         val lb: P
-) extends InterimP[E, P] {
+) extends InterimEP[E, P] {
 
     assert(lb != null)
 
     override def pk: PropertyKey[P] = lb.key.asInstanceOf[PropertyKey[P]]
 
-    override private[fpcf] def toFinalP: FinalP[E, P] = FinalP(e, lb)
+    override private[fpcf] def toFinalEP: FinalEP[E, P] = FinalEP(e, lb)
 
     override def hasLBP: Boolean = true
     override def hasUBP: Boolean = false
@@ -503,8 +602,8 @@ final class InterimLBP[+E <: Entity, +P <: Property](
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: InterimLBP[_, _] ⇒ e == that.e && lb == that.lb
-            case _                      ⇒ false
+            case that: InterimELBP[_, _] ⇒ e == that.e && lb == that.lb
+            case _                       ⇒ false
         }
     }
 
@@ -520,15 +619,21 @@ final class InterimLBP[+E <: Entity, +P <: Property](
  * objects, but will throw an exception for `InterimUBP` objects. If you want to match
  * final and interim objects at the same time use the `E(LB|UB)PS` extractors.
  */
-object InterimLBP {
+object InterimELBP {
 
-    def apply[E <: Entity, P <: Property](e: E, ub: P): InterimP[E, P] = {
-        new InterimLBP(e, ub)
+    def apply[E <: Entity, P <: Property](e: E, ub: P): InterimELBP[E, P] = {
+        new InterimELBP(e, ub)
     }
 
-    def unapply[E <: Entity, P <: Property](eps: InterimP[E, P]): Option[(E, P)] = {
+    def unapply[E <: Entity, P >: Null <: Property](eps: InterimEP[E, P]): Some[(E, P)] = {
         Some((eps.e, eps.ub))
     }
+}
+
+object InterimLBP {
+
+    def unapply[E <: Entity, P >: Null <: Property](eps: InterimEP[E, P]): Some[P] = Some(eps.ub)
+
 }
 
 /**
@@ -543,16 +648,16 @@ final class EPK[+E <: Entity, +P <: Property](
 
     override def hasLBP: Boolean = false
     override def lb: Nothing = throw new UnsupportedOperationException();
-    override private[fpcf] def toFinalLBP = throw new UnsupportedOperationException();
+    override private[fpcf] def toFinalELBP = throw new UnsupportedOperationException();
 
     override def hasUBP: Boolean = false
     override def ub: Nothing = throw new UnsupportedOperationException();
-    override private[fpcf] def toFinalUBP = throw new UnsupportedOperationException();
+    override private[fpcf] def toFinalEUBP = throw new UnsupportedOperationException();
 
     override def isFinal: Boolean = false
-    override def asFinal: FinalP[E, P] = throw new ClassCastException();
+    override def asFinal: FinalEP[E, P] = throw new ClassCastException();
 
-    override private[fpcf] def toFinalP: FinalP[E, P] = throw new UnsupportedOperationException();
+    override private[fpcf] def toFinalEP: FinalEP[E, P] = throw new UnsupportedOperationException();
 
     override def isEPS: Boolean = false
     override def asEPS: EPS[E, P] = throw new ClassCastException();
@@ -600,7 +705,7 @@ object EPK {
         new EPK(e, p.key.asInstanceOf[PropertyKey[P]])
     }
 
-    def unapply[E <: Entity, P <: Property](epk: EPK[E, P]): Option[(E, PropertyKey[P])] = {
+    def unapply[E <: Entity, P >: Null <: Property](epk: EPK[E, P]): Option[(E, PropertyKey[P])] = {
         Some((epk.e, epk.pk))
     }
 }

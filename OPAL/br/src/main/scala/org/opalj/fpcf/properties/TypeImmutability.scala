@@ -3,8 +3,6 @@ package org.opalj
 package fpcf
 package properties
 
-import org.opalj.br.ObjectType
-
 sealed trait TypeImmutabilityPropertyMetaInformation extends PropertyMetaInformation {
 
     final type Self = TypeImmutability

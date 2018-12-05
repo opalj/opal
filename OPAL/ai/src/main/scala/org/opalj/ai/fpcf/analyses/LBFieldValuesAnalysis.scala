@@ -5,7 +5,7 @@ package fpcf
 package analyses
 
 import org.opalj.fpcf.BasicFPCFEagerAnalysisScheduler
-import org.opalj.fpcf.FinalP
+import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.FPCFAnalysis
 import org.opalj.fpcf.MultiResult
 import org.opalj.fpcf.NoResult
@@ -44,14 +44,14 @@ class LBFieldValuesAnalysis private[analyses] (
         val project: SomeProject
 ) extends FPCFAnalysis { analysis ⇒
 
-    val fieldAccessInformation = project.get(FieldAccessInformationKey)
+    final val fieldAccessInformation = project.get(FieldAccessInformationKey)
 
     /**
      *  A very basic domain that we use for analyzing the values stored in a field.
      *
      * One instance of this domain is used to analyze all methods of the respective
      * class. Only after the analysis of all methods, the information returned by
-     * [[fieldsWithRefinedValues]] is guaranteed to be correct.
+     * [[fieldInformation]] is guaranteed to be correct.
      *
      * @author Michael Eichberg
      */
@@ -182,7 +182,7 @@ class LBFieldValuesAnalysis private[analyses] (
                 BaseAI(method, domain) // the state is implicitly accumulated in the domain
             }
 
-            var results: List[FinalP[Field, FieldValue]] = Nil
+            var results: List[FinalEP[Field, FieldValue]] = Nil
             domain.fieldInformation foreach { e ⇒
                 val (field, domainValueOption: Option[IsReferenceValue @unchecked]) = e
                 domainValueOption.foreach { domainValue ⇒
@@ -192,7 +192,7 @@ class LBFieldValuesAnalysis private[analyses] (
                         //      the type is not precise
                         domainValue.leastUpperType.get != field.fieldType) {
                         val vi = ValueBasedFieldValueInformation(domainValue.toCanonicalForm)
-                        results ::= FinalP(field, vi)
+                        results ::= FinalEP(field, vi)
                     }
                 }
             }
@@ -205,6 +205,7 @@ class LBFieldValuesAnalysis private[analyses] (
 }
 
 object FieldValuesAnalysis {
+
     /**
      * The following (final) fields are directly initialized by the JVM or some native code.
      * I.e., the initialization is not visible and if we don't ignore the fields, we would derive

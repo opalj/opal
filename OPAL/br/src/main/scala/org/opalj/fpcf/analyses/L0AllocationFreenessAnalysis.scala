@@ -32,11 +32,11 @@ class L0AllocationFreenessAnalysis private[analyses] ( final val project: SomePr
      * Retrieves and commits the methods allocation freeness as calculated for its declaring class
      * type for the current DefinedMethod that represents the non-overwritten method in a subtype.
      */
-    def baseMethodAllocationFreeness(dm: DefinedMethod): PropertyComputationResult = {
+    def baseMethodAllocationFreeness(dm: DefinedMethod): ProperPropertyComputationResult = {
 
-        def c(eps: SomeEOptionP): PropertyComputationResult = eps match {
-            case FinalP(_, af) ⇒ Result(dm, af)
-            case ep @ InterimP(_, lb, ub) ⇒
+        def c(eps: SomeEOptionP): ProperPropertyComputationResult = eps match {
+            case FinalP(af) ⇒ Result(dm, af)
+            case ep @ InterimLUBP(lb, ub) ⇒
                 InterimResult(dm, lb, ub, Seq(ep), c, CheapPropertyComputation)
             case epk ⇒
                 InterimResult(
@@ -55,7 +55,7 @@ class L0AllocationFreenessAnalysis private[analyses] ( final val project: SomePr
      */
     def determineAllocationFreeness(
         definedMethod: DefinedMethod
-    ): PropertyComputationResult = {
+    ): ProperPropertyComputationResult = {
 
         if (definedMethod.definedMethod.body.isEmpty)
             return Result(definedMethod, MethodWithAllocations);
@@ -112,13 +112,13 @@ class L0AllocationFreenessAnalysis private[analyses] ( final val project: SomePr
                                     propertyStore(declaredMethods(callee), AllocationFreeness.key)
 
                                 allocationFreeness match {
-                                    case FinalP(_, AllocationFreeMethod) ⇒ /* Nothing to do */
+                                    case FinalP(AllocationFreeMethod) ⇒ /* Nothing to do */
 
                                     // Handling cyclic computations
-                                    case ep @ InterimP(_, _, AllocationFreeMethod) ⇒
+                                    case ep @ InterimUBP(AllocationFreeMethod) ⇒
                                         dependees += ep
 
-                                    case EPS(_, _, _) ⇒
+                                    case _: SomeEPS ⇒
                                         return Result(definedMethod, MethodWithAllocations);
 
                                     case epk ⇒
@@ -188,12 +188,12 @@ class L0AllocationFreenessAnalysis private[analyses] ( final val project: SomePr
 
         // This function computes the “allocation freeness for a method based on the allocation
         // freeness of its callees
-        def c(eps: SomeEPS): PropertyComputationResult = {
+        def c(eps: SomeEPS): ProperPropertyComputationResult = {
             // Let's filter the entity.
             dependees = dependees.filter(_.e ne eps.e)
 
             eps match {
-                case FinalP(_, AllocationFreeMethod) ⇒
+                case FinalP(AllocationFreeMethod) ⇒
                     if (dependees.isEmpty)
                         Result(definedMethod, AllocationFreeMethod)
                     else {
@@ -206,10 +206,10 @@ class L0AllocationFreenessAnalysis private[analyses] ( final val project: SomePr
                         )
                     }
 
-                case FinalP(_, MethodWithAllocations) ⇒
+                case FinalP(MethodWithAllocations) ⇒
                     Result(definedMethod, MethodWithAllocations)
 
-                case _: InterimP[_, _] ⇒
+                case _: SomeInterimEP ⇒
                     dependees += eps
                     InterimResult(
                         definedMethod,
@@ -228,12 +228,11 @@ class L0AllocationFreenessAnalysis private[analyses] ( final val project: SomePr
     }
 
     /** Called when the analysis is scheduled lazily. */
-    def doDetermineAllocationFreeness(e: Entity): PropertyComputationResult = {
+    def doDetermineAllocationFreeness(e: Entity): ProperPropertyComputationResult = {
         e match {
             case m: DefinedMethod  ⇒ determineAllocationFreeness(m)
             case m: DeclaredMethod ⇒ Result(m, MethodWithAllocations)
-            case _ ⇒
-                throw new UnknownError("allocation freeness is only defined for methods")
+            case _                 ⇒ throw new UnknownError(s"$e is not a method")
         }
     }
 }

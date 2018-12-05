@@ -1,15 +1,17 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf
 
+import java.util.concurrent.atomic.AtomicInteger
+
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
-import org.scalatest.Matchers
-import org.scalatest.FunSpec
 import org.scalatest.BeforeAndAfterAll
-import java.util.concurrent.atomic.AtomicInteger
+import org.scalatest.FunSpec
+import org.scalatest.Matchers
 
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
+import org.opalj.fpcf.fixtures._
 
 /**
  * Tests the property store.
@@ -28,13 +30,13 @@ sealed abstract class PropertyStoreTest(
     propertyComputationHints foreach { pch ⇒
         describe(s"using a PropertyStore (property computations use the hint=$pch)") {
 
-            import Palindromes.PalindromeKey
-            import Palindromes.NoPalindrome
-            import Palindromes.Palindrome
-            import Palindromes.SuperPalindromeKey
-            import Palindromes.NoSuperPalindrome
-            import Palindromes.SuperPalindrome
-            import Palindromes.PalindromePropertyNotAnalyzed
+            import org.opalj.fpcf.fixtures.Palindromes.NoPalindrome
+            import org.opalj.fpcf.fixtures.Palindromes.NoSuperPalindrome
+            import org.opalj.fpcf.fixtures.Palindromes.Palindrome
+            import org.opalj.fpcf.fixtures.Palindromes.PalindromeKey
+            import org.opalj.fpcf.fixtures.Palindromes.PalindromePropertyNotAnalyzed
+            import org.opalj.fpcf.fixtures.Palindromes.SuperPalindrome
+            import org.opalj.fpcf.fixtures.Palindromes.SuperPalindromeKey
 
             it("should be possible to query an empty property") {
                 val ps = createPropertyStore()
@@ -121,7 +123,7 @@ sealed abstract class PropertyStoreTest(
                 }
                 assertThrows[InterruptedException] { ps.waitOnPhaseCompletion() }
 
-                ps("a", PalindromeKey) should be(InterimLUBP("a", NoPalindrome, Palindrome))
+                ps("a", PalindromeKey) should be(InterimELUBP("a", NoPalindrome, Palindrome))
 
                 ps.shutdown()
             }
@@ -130,7 +132,7 @@ sealed abstract class PropertyStoreTest(
                 "and e2 is set while e1 was not yet executed but had a EPK for e2 in its dependencies "+
                 "(test for a lost updated)") {
 
-                import Palindromes.PalindromeKey
+                import org.opalj.fpcf.fixtures.Palindromes.PalindromeKey
                 val ps = createPropertyStore()
                 info(s"PropertyStore@${System.identityHashCode(ps).toHexString}")
 
@@ -152,9 +154,9 @@ sealed abstract class PropertyStoreTest(
                 }
                 ps.waitOnPhaseCompletion()
 
-                ps("e1", PalindromeKey) should be(FinalP("e1", Palindrome))
-                ps("e2", PalindromeKey) should be(FinalP("e2", Palindrome))
-                ps("e3", PalindromeKey) should be(FinalP("e3", PalindromePropertyNotAnalyzed))
+                ps("e1", PalindromeKey) should be(FinalEP("e1", Palindrome))
+                ps("e2", PalindromeKey) should be(FinalEP("e2", Palindrome))
+                ps("e3", PalindromeKey) should be(FinalEP("e3", PalindromePropertyNotAnalyzed))
 
                 ps.shutdown()
             }
@@ -225,8 +227,8 @@ sealed abstract class PropertyStoreTest(
                 ps.setupPhase(Set(Palindrome.key), Set.empty)
                 ps.waitOnPhaseCompletion()
 
-                ps("aba", PalindromeKey) should be(FinalP("aba", Palindrome))
-                ps("abca", PalindromeKey) should be(FinalP("abca", NoPalindrome))
+                ps("aba", PalindromeKey) should be(FinalEP("aba", Palindrome))
+                ps("abca", PalindromeKey) should be(FinalEP("abca", NoPalindrome))
 
                 ps.shutdown()
             }
@@ -244,11 +246,11 @@ sealed abstract class PropertyStoreTest(
                 ps.setupPhase(Set(Palindrome.key), Set.empty)
                 ps.waitOnPhaseCompletion()
 
-                ps("aba", PalindromeKey) should be(FinalP("aba", Palindrome))
-                ps("aba", SuperPalindromeKey) should be(FinalP("aba", SuperPalindrome))
+                ps("aba", PalindromeKey) should be(FinalEP("aba", Palindrome))
+                ps("aba", SuperPalindromeKey) should be(FinalEP("aba", SuperPalindrome))
 
-                ps("abca", PalindromeKey) should be(FinalP("abca", NoPalindrome))
-                ps("abca", SuperPalindromeKey) should be(FinalP("abca", NoSuperPalindrome))
+                ps("abca", PalindromeKey) should be(FinalEP("abca", NoPalindrome))
+                ps("abca", SuperPalindromeKey) should be(FinalEP("abca", NoSuperPalindrome))
 
                 ps.shutdown()
             }
@@ -268,7 +270,7 @@ sealed abstract class PropertyStoreTest(
                 ps.waitOnPhaseCompletion()
                 ps.entities(ppk).map(_.e).toSet should be(Set("aba", "abca"))
                 ps.entities(sppk).map(_.e).toSet should be(Set("aba", "abca"))
-                val expected = Set(FinalP("aba", Palindrome), FinalP("aba", SuperPalindrome))
+                val expected = Set(FinalEP("aba", Palindrome), FinalEP("aba", SuperPalindrome))
                 ps.properties("aba").toSet should be(expected)
 
                 ps.shutdown()
@@ -279,7 +281,7 @@ sealed abstract class PropertyStoreTest(
                 info(s"PropertyStore@${System.identityHashCode(ps).toHexString}")
 
                 // NOT import Palindromes.PalindromePropertyNotAnalyzed
-                import Palindromes.NoAnalysisForPalindromeProperty
+                import org.opalj.fpcf.fixtures.Palindromes.NoAnalysisForPalindromeProperty
                 ps.setupPhase(Set(Marker.MarkerKey), Set.empty)
 
                 val es = Set("aba", "cc", "d", "fd", "zu", "aaabbbaaa")
@@ -287,7 +289,7 @@ sealed abstract class PropertyStoreTest(
                 ps.scheduleEagerComputationsForEntities[String](es) { e ⇒
                     def c(eps: SomeEOptionP): ProperPropertyComputationResult = {
                         eps match {
-                            case FinalP(_, NoAnalysisForPalindromeProperty) /*<= the test...*/ ⇒
+                            case FinalP(NoAnalysisForPalindromeProperty) /*<= the test...*/ ⇒
                                 Result(e, Marker.NotMarked)
                             case epk: SomeEPK ⇒
                                 InterimResult(e, Marker.IsMarked, Marker.NotMarked, List(epk), c)
@@ -306,9 +308,9 @@ sealed abstract class PropertyStoreTest(
                 val ps = createPropertyStore()
                 info(s"PropertyStore@${System.identityHashCode(ps).toHexString}")
 
-                import Palindromes.Palindrome
-                import Palindromes.NoPalindrome
-                import Palindromes.PalindromePropertyNotAnalyzed
+                import org.opalj.fpcf.fixtures.Palindromes.NoPalindrome
+                import org.opalj.fpcf.fixtures.Palindromes.Palindrome
+                import org.opalj.fpcf.fixtures.Palindromes.PalindromePropertyNotAnalyzed
                 // import Palindromes.NoAnalysisForPalindromeProperty
                 ps.setupPhase(Set(Palindromes.PalindromeKey, Marker.MarkerKey), Set.empty)
 
@@ -319,10 +321,10 @@ sealed abstract class PropertyStoreTest(
                 ps.scheduleEagerComputationsForEntities(es) { e ⇒
                     def c(eps: SomeEOptionP): ProperPropertyComputationResult = {
                         eps match {
-                            case FinalP(_, Palindrome) | FinalP(_, NoPalindrome) ⇒
+                            case FinalP(Palindrome) | FinalP(NoPalindrome) ⇒
                                 Result(e, Marker.IsMarked)
 
-                            case FinalP(_, PalindromePropertyNotAnalyzed) ⇒
+                            case FinalP(PalindromePropertyNotAnalyzed) ⇒
                                 Result(e, Marker.NotMarked)
 
                             case epk: SomeEPK ⇒ InterimResult(
@@ -343,8 +345,8 @@ sealed abstract class PropertyStoreTest(
                 val ps = createPropertyStore()
                 info(s"PropertyStore@${System.identityHashCode(ps).toHexString}")
 
-                import Palindromes.Palindrome
-                import Palindromes.NoPalindrome
+                import org.opalj.fpcf.fixtures.Palindromes.NoPalindrome
+                import org.opalj.fpcf.fixtures.Palindromes.Palindrome
 
                 ps.set("aba", Palindrome)
                 assertThrows[IllegalStateException] { ps.set("aba", NoPalindrome) }
@@ -356,8 +358,8 @@ sealed abstract class PropertyStoreTest(
                 val ps = createPropertyStore()
                 info(s"PropertyStore@${System.identityHashCode(ps).toHexString}")
 
-                import Palindromes.Palindrome
-                import Palindromes.NoPalindrome
+                import org.opalj.fpcf.fixtures.Palindromes.NoPalindrome
+                import org.opalj.fpcf.fixtures.Palindromes.Palindrome
                 ps.setupPhase(Set(Palindromes.PalindromeKey), Set.empty)
 
                 val pk = Palindromes.PalindromeKey
@@ -373,12 +375,12 @@ sealed abstract class PropertyStoreTest(
                 ps.entities(Palindrome, Palindrome).toSet should be(Set("aba", "cc", "d", "aaabbbaaa"))
                 ps.entities(NoPalindrome, NoPalindrome).toSet should be(Set("fd", "zu"))
                 ps.entities(pk).toSet should be(Set(
-                    FinalP("aba", Palindrome),
-                    FinalP("cc", Palindrome),
-                    FinalP("d", Palindrome),
-                    FinalP("fd", NoPalindrome),
-                    FinalP("zu", NoPalindrome),
-                    FinalP("aaabbbaaa", Palindrome)
+                    FinalEP("aba", Palindrome),
+                    FinalEP("cc", Palindrome),
+                    FinalEP("d", Palindrome),
+                    FinalEP("fd", NoPalindrome),
+                    FinalEP("zu", NoPalindrome),
+                    FinalEP("aaabbbaaa", Palindrome)
                 ))
 
                 es.foreach { e ⇒
@@ -394,8 +396,8 @@ sealed abstract class PropertyStoreTest(
                 val ps = createPropertyStore()
                 info(s"PropertyStore@${System.identityHashCode(ps).toHexString}")
 
-                import Palindromes.Palindrome
-                import Palindromes.NoPalindrome
+                import org.opalj.fpcf.fixtures.Palindromes.NoPalindrome
+                import org.opalj.fpcf.fixtures.Palindromes.Palindrome
                 val pk = Palindromes.PalindromeKey
                 ps.setupPhase(Set(pk), Set.empty)
                 ps.registerLazyPropertyComputation(
@@ -411,7 +413,7 @@ sealed abstract class PropertyStoreTest(
                 )
                 ps("aba", pk) should be(EPK("aba", pk))
                 ps.waitOnPhaseCompletion()
-                ps("aba", pk) should be(FinalP("aba", Palindrome))
+                ps("aba", pk) should be(FinalEP("aba", Palindrome))
 
                 ps.shutdown()
             }
@@ -420,8 +422,8 @@ sealed abstract class PropertyStoreTest(
                 val ps = createPropertyStore()
                 info(s"PropertyStore@${System.identityHashCode(ps).toHexString}")
 
-                import Palindromes.Palindrome
-                import Palindromes.NoPalindrome
+                import org.opalj.fpcf.fixtures.Palindromes.NoPalindrome
+                import org.opalj.fpcf.fixtures.Palindromes.Palindrome
                 val pk = Palindromes.PalindromeKey
                 ps.setupPhase(Set(pk), Set.empty)
 
@@ -451,10 +453,10 @@ sealed abstract class PropertyStoreTest(
                 val ps = createPropertyStore()
                 info(s"PropertyStore@${System.identityHashCode(ps).toHexString}")
 
-                import Palindromes.Palindrome
-                import Palindromes.NoPalindrome
-                import Palindromes.NoSuperPalindrome
-                import Palindromes.SuperPalindrome
+                import org.opalj.fpcf.fixtures.Palindromes.NoPalindrome
+                import org.opalj.fpcf.fixtures.Palindromes.NoSuperPalindrome
+                import org.opalj.fpcf.fixtures.Palindromes.Palindrome
+                import org.opalj.fpcf.fixtures.Palindromes.SuperPalindrome
                 val ppk = Palindromes.PalindromeKey
                 val sppk = Palindromes.SuperPalindromeKey
 
@@ -529,15 +531,15 @@ sealed abstract class PropertyStoreTest(
                 }
                 ps.waitOnPhaseCompletion()
 
-                ps("e", ppk) should be(FinalP("e", Palindrome))
-                ps("e", sppk) should be(FinalP("e", SuperPalindrome))
-                ps("e", Marker.MarkerKey) should be(FinalP("e", Marker.IsMarked))
+                ps("e", ppk) should be(FinalEP("e", Palindrome))
+                ps("e", sppk) should be(FinalEP("e", SuperPalindrome))
+                ps("e", Marker.MarkerKey) should be(FinalEP("e", Marker.IsMarked))
 
-                ps("dummyymmud", ppk) should be(FinalP("dummyymmud", Palindrome))
-                ps("dummyBADymmud", ppk) should be(FinalP("dummyBADymmud", NoPalindrome))
+                ps("dummyymmud", ppk) should be(FinalEP("dummyymmud", Palindrome))
+                ps("dummyBADymmud", ppk) should be(FinalEP("dummyBADymmud", NoPalindrome))
 
-                ps("dummyymmud", sppk) should be(FinalP("dummyymmud", SuperPalindrome))
-                ps("dummyBADymmud", sppk) should be(FinalP("dummyBADymmud", NoSuperPalindrome))
+                ps("dummyymmud", sppk) should be(FinalEP("dummyymmud", SuperPalindrome))
+                ps("dummyBADymmud", sppk) should be(FinalEP("dummyBADymmud", NoSuperPalindrome))
 
                 ps.shutdown()
             }
@@ -565,13 +567,12 @@ sealed abstract class PropertyStoreTest(
                                 Result(e, NotMarked)
                             }
                         )
-                        entities foreach {
-                            ps.force(_, MarkerWithFastTrackKey)
-                        }
+                        entities foreach { ps.force(_, MarkerWithFastTrackKey) }
                         ps.waitOnPhaseCompletion()
                         entities foreach { e ⇒
-                            ps(e, MarkerWithFastTrackKey) should be(FinalP(e, IsMarked))
+                            ps(e, MarkerWithFastTrackKey) should be(FinalEP(e, IsMarked))
                         }
+                        MarkerWithFastTrack.fastTrackEvaluationsCount(ps) should be(50)
                     }
 
                     ps.shutdown()
@@ -706,7 +707,7 @@ sealed abstract class PropertyStoreTest(
 
                     def c(eps: SomeEOptionP): ProperPropertyComputationResult = {
                         eps match {
-                            case InterimLUBP(_, _, ReachableNodesCount(otherUB)) ⇒
+                            case InterimUBP(ReachableNodesCount(otherUB)) ⇒
                                 if (ub + otherUB > 4)
                                     Result(n, TooManyNodesReachable)
                                 else {
@@ -719,7 +720,7 @@ sealed abstract class PropertyStoreTest(
                                     )
                                 }
 
-                            case FinalP(_, reachableNodesCount: ReachableNodesCount) ⇒
+                            case FinalP(reachableNodesCount: ReachableNodesCount) ⇒
                                 ub += reachableNodesCount.value
                                 if (ub > 4) {
                                     Result(n, TooManyNodesReachable)
@@ -746,7 +747,7 @@ sealed abstract class PropertyStoreTest(
                                 case epk: EPK[_, _] ⇒
                                     dependees ::= epk
                                     true
-                                case iep @ InterimLUBP(_, _, ReachableNodesCount(otherUB)) ⇒
+                                case iep @ InterimUBP(ReachableNodesCount(otherUB)) ⇒
                                     if (ub + otherUB > 4) {
                                         ub = TooManyNodesReachable.value
                                         false
@@ -755,7 +756,7 @@ sealed abstract class PropertyStoreTest(
                                         dependees ::= iep
                                         true
                                     }
-                                case FinalP(_, reachableNodesCount) ⇒
+                                case FinalP(reachableNodesCount) ⇒
                                     ub += reachableNodesCount.value
                                     true
                             }
@@ -779,14 +780,14 @@ sealed abstract class PropertyStoreTest(
 
                     def c(eps: SomeEOptionP): ProperPropertyComputationResult = {
                         eps match {
-                            case eps @ InterimLUBP(_, _, ReachableNodes(reachableNodes)) ⇒
+                            case eps @ InterimUBP(ReachableNodes(reachableNodes)) ⇒
                                 InterimResult(
                                     n, TooManyNodesReachable, ReachableNodesCount(reachableNodes.size),
                                     List(eps),
                                     c, pch
                                 )
 
-                            case FinalP(_, ReachableNodes(reachableNodes)) ⇒
+                            case FinalP(ReachableNodes(reachableNodes)) ⇒
                                 Result(n, ReachableNodesCount(reachableNodes.size))
                         }
                     }
@@ -840,22 +841,22 @@ sealed abstract class PropertyStoreTest(
                             )
                             try {
                                 ps(nodeA, ReachableNodes.Key) should be(
-                                    FinalP(nodeA, ReachableNodes(nodeEntities.toSet - nodeA))
+                                    FinalEP(nodeA, ReachableNodes(nodeEntities.toSet - nodeA))
                                 )
                                 ps(nodeB, ReachableNodes.Key) should be(
-                                    FinalP(nodeB, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR)))
+                                    FinalEP(nodeB, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR)))
                                 )
                                 ps(nodeC, ReachableNodes.Key) should be(
-                                    FinalP(nodeC, ReachableNodes(Set()))
+                                    FinalEP(nodeC, ReachableNodes(Set()))
                                 )
                                 ps(nodeD, ReachableNodes.Key) should be(
-                                    FinalP(nodeD, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR)))
+                                    FinalEP(nodeD, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR)))
                                 )
                                 ps(nodeE, ReachableNodes.Key) should be(
-                                    FinalP(nodeE, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR)))
+                                    FinalEP(nodeE, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR)))
                                 )
                                 ps(nodeR, ReachableNodes.Key) should be(
-                                    FinalP(nodeR, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR)))
+                                    FinalEP(nodeR, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR)))
                                 )
                             } catch {
                                 case t: Throwable ⇒
@@ -878,22 +879,22 @@ sealed abstract class PropertyStoreTest(
                     ps.force(nodeA, ReachableNodes.Key) // forces the evaluation for all nodes...
                     ps.waitOnPhaseCompletion()
                     ps(nodeA, ReachableNodes.Key) should be(
-                        FinalP(nodeA, ReachableNodes(nodeEntities.toSet - nodeA))
+                        FinalEP(nodeA, ReachableNodes(nodeEntities.toSet - nodeA))
                     )
                     ps(nodeB, ReachableNodes.Key) should be(
-                        FinalP(nodeB, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR)))
+                        FinalEP(nodeB, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR)))
                     )
                     ps(nodeC, ReachableNodes.Key) should be(
-                        FinalP(nodeC, ReachableNodes(Set()))
+                        FinalEP(nodeC, ReachableNodes(Set()))
                     )
                     ps(nodeD, ReachableNodes.Key) should be(
-                        FinalP(nodeD, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR)))
+                        FinalEP(nodeD, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR)))
                     )
                     ps(nodeE, ReachableNodes.Key) should be(
-                        FinalP(nodeE, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR)))
+                        FinalEP(nodeE, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR)))
                     )
                     ps(nodeR, ReachableNodes.Key) should be(
-                        FinalP(nodeR, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR)))
+                        FinalEP(nodeR, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR)))
                     )
 
                     ps.shutdown()
@@ -916,42 +917,42 @@ sealed abstract class PropertyStoreTest(
                     ps.waitOnPhaseCompletion()
                     try {
                         ps(nodeA, ReachableNodes.Key) should be(
-                            FinalP(nodeA, ReachableNodes(nodeEntities.toSet - nodeA))
+                            FinalEP(nodeA, ReachableNodes(nodeEntities.toSet - nodeA))
                         )
                         ps(nodeB, ReachableNodes.Key) should be(
-                            FinalP(nodeB, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR)))
+                            FinalEP(nodeB, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR)))
                         )
                         ps(nodeC, ReachableNodes.Key) should be(
-                            FinalP(nodeC, ReachableNodes(Set()))
+                            FinalEP(nodeC, ReachableNodes(Set()))
                         )
                         ps(nodeD, ReachableNodes.Key) should be(
-                            FinalP(nodeD, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR)))
+                            FinalEP(nodeD, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR)))
                         )
                         ps(nodeE, ReachableNodes.Key) should be(
-                            FinalP(nodeE, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR)))
+                            FinalEP(nodeE, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR)))
                         )
                         ps(nodeR, ReachableNodes.Key) should be(
-                            FinalP(nodeR, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR)))
+                            FinalEP(nodeR, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR)))
                         )
                         // now let's check if we have the correct notification of the
                         // lazily dependent computations
                         ps(nodeA, ReachableNodesCount.Key) should be(
-                            FinalP(nodeA, ReachableNodesCount(nodeEntities.toSet.size - 1))
+                            FinalEP(nodeA, ReachableNodesCount(nodeEntities.toSet.size - 1))
                         )
                         ps(nodeB, ReachableNodesCount.Key) should be(
-                            FinalP(nodeB, ReachableNodesCount(5))
+                            FinalEP(nodeB, ReachableNodesCount(5))
                         )
                         ps(nodeC, ReachableNodesCount.Key) should be(
-                            FinalP(nodeC, ReachableNodesCount(0))
+                            FinalEP(nodeC, ReachableNodesCount(0))
                         )
                         ps(nodeD, ReachableNodesCount.Key) should be(
-                            FinalP(nodeD, ReachableNodesCount(5))
+                            FinalEP(nodeD, ReachableNodesCount(5))
                         )
                         ps(nodeE, ReachableNodesCount.Key) should be(
-                            FinalP(nodeE, ReachableNodesCount(5))
+                            FinalEP(nodeE, ReachableNodesCount(5))
                         )
                         ps(nodeR, ReachableNodesCount.Key) should be(
-                            FinalP(nodeR, ReachableNodesCount(5))
+                            FinalEP(nodeR, ReachableNodesCount(5))
                         )
                     } catch {
                         case t: Throwable ⇒
@@ -975,18 +976,18 @@ sealed abstract class PropertyStoreTest(
 
                     // actually, the "fallback" value
                     ps(nodeA, ReachableNodes.Key) should be(
-                        FinalP(nodeA, ReachableNodes(nodeEntities.toSet))
+                        FinalEP(nodeA, ReachableNodes(nodeEntities.toSet))
                     )
 
                     // now let's check if we have the correct notification of the
                     // of the lazily dependent computations
                     val expected = ReachableNodesCount(11)
-                    ps(nodeA, ReachableNodesCount.Key) should be(FinalP(nodeA, expected))
-                    ps(nodeB, ReachableNodesCount.Key) should be(FinalP(nodeB, expected))
-                    ps(nodeC, ReachableNodesCount.Key) should be(FinalP(nodeC, expected))
-                    ps(nodeD, ReachableNodesCount.Key) should be(FinalP(nodeD, expected))
-                    ps(nodeE, ReachableNodesCount.Key) should be(FinalP(nodeE, expected))
-                    ps(nodeR, ReachableNodesCount.Key) should be(FinalP(nodeR, expected))
+                    ps(nodeA, ReachableNodesCount.Key) should be(FinalEP(nodeA, expected))
+                    ps(nodeB, ReachableNodesCount.Key) should be(FinalEP(nodeB, expected))
+                    ps(nodeC, ReachableNodesCount.Key) should be(FinalEP(nodeC, expected))
+                    ps(nodeD, ReachableNodesCount.Key) should be(FinalEP(nodeD, expected))
+                    ps(nodeE, ReachableNodesCount.Key) should be(FinalEP(nodeE, expected))
+                    ps(nodeR, ReachableNodesCount.Key) should be(FinalEP(nodeR, expected))
 
                     ps.shutdown()
                 }
@@ -1005,18 +1006,18 @@ sealed abstract class PropertyStoreTest(
 
                     // actually, the "fallback" value
                     ps(nodeA, ReachableNodes.Key) should be(
-                        FinalP(nodeA, ReachableNodes(nodeEntities.toSet))
+                        FinalEP(nodeA, ReachableNodes(nodeEntities.toSet))
                     )
 
                     // now let's check if we have the correct notification of the
                     // of the lazily dependent computations
                     val expected = ReachableNodesCount(11)
-                    ps(nodeA, ReachableNodesCount.Key) should be(FinalP(nodeA, expected))
-                    ps(nodeB, ReachableNodesCount.Key) should be(FinalP(nodeB, expected))
-                    ps(nodeC, ReachableNodesCount.Key) should be(FinalP(nodeC, expected))
-                    ps(nodeD, ReachableNodesCount.Key) should be(FinalP(nodeD, expected))
-                    ps(nodeE, ReachableNodesCount.Key) should be(FinalP(nodeE, expected))
-                    ps(nodeR, ReachableNodesCount.Key) should be(FinalP(nodeR, expected))
+                    ps(nodeA, ReachableNodesCount.Key) should be(FinalEP(nodeA, expected))
+                    ps(nodeB, ReachableNodesCount.Key) should be(FinalEP(nodeB, expected))
+                    ps(nodeC, ReachableNodesCount.Key) should be(FinalEP(nodeC, expected))
+                    ps(nodeD, ReachableNodesCount.Key) should be(FinalEP(nodeD, expected))
+                    ps(nodeE, ReachableNodesCount.Key) should be(FinalEP(nodeE, expected))
+                    ps(nodeR, ReachableNodesCount.Key) should be(FinalEP(nodeR, expected))
 
                     ps.shutdown()
                 }
@@ -1082,12 +1083,12 @@ sealed abstract class PropertyStoreTest(
                 ps.scheduleEagerComputationForEntity(nodeRoot)(analysis(0))
                 ps.waitOnPhaseCompletion()
 
-                ps(nodeRoot, TreeLevelKey) should be(FinalP(nodeRoot, TreeLevel(0)))
-                ps(nodeRRoot, TreeLevelKey) should be(FinalP(nodeRRoot, TreeLevel(1)))
-                ps(nodeRRRoot, TreeLevelKey) should be(FinalP(nodeRRRoot, TreeLevel(2)))
-                ps(nodeLRRoot, TreeLevelKey) should be(FinalP(nodeLRRoot, TreeLevel(2)))
-                ps(nodeLRoot, TreeLevelKey) should be(FinalP(nodeLRoot, TreeLevel(1)))
-                ps(nodeLLRoot, TreeLevelKey) should be(FinalP(nodeLLRoot, TreeLevel(2)))
+                ps(nodeRoot, TreeLevelKey) should be(FinalEP(nodeRoot, TreeLevel(0)))
+                ps(nodeRRoot, TreeLevelKey) should be(FinalEP(nodeRRoot, TreeLevel(1)))
+                ps(nodeRRRoot, TreeLevelKey) should be(FinalEP(nodeRRRoot, TreeLevel(2)))
+                ps(nodeLRRoot, TreeLevelKey) should be(FinalEP(nodeLRRoot, TreeLevel(2)))
+                ps(nodeLRoot, TreeLevelKey) should be(FinalEP(nodeLRoot, TreeLevel(1)))
+                ps(nodeLLRoot, TreeLevelKey) should be(FinalEP(nodeLLRoot, TreeLevel(2)))
 
                 ps.shutdown()
             }
@@ -1159,15 +1160,15 @@ sealed abstract class PropertyStoreTest(
                                 case epk: EPK[_, _] ⇒
                                     InterimResult(node, Impure, Pure, Iterable(epk), c, pch)
 
-                                case eps @ InterimLUBP(_, lb: Property, ub: Property) ⇒
+                                case eps @ InterimLUBP(lb: Property, ub: Property) ⇒
                                     InterimResult(node, lb, ub, Iterable(eps), c, pch)
 
                                 // required when we resolve the cycle
-                                case FinalP(_, Pure)           ⇒ Result(node, Pure)
+                                case FinalP(Pure)       ⇒ Result(node, Pure)
 
                                 // the following cases should never happen...
-                                case InterimLUBP(_, Impure, _) ⇒ ???
-                                case FinalP(_, Impure)         ⇒ ???
+                                case InterimLBP(Impure) ⇒ ???
+                                case FinalP(Impure)     ⇒ ???
                             }
                         }
 
@@ -1467,70 +1468,3 @@ abstract class PropertyStoreTestWithoutDebugging(
 
 }
 
-// Test fixture related to a simple marker property
-object Marker {
-    final val MarkerKey = {
-        PropertyKey.create[Entity, MarkerProperty](
-            "Marker",
-            (ps: PropertyStore, reason: FallbackReason, e: Entity) ⇒ NotMarked,
-            (ps: PropertyStore, e: Entity) ⇒ None
-        )
-    }
-
-    sealed trait MarkerProperty extends Property {
-        type Self = MarkerProperty
-        def key = MarkerKey
-    }
-    case object IsMarked extends MarkerProperty
-    case object NotMarked extends MarkerProperty
-}
-
-// Test fixture related to a simple marker property
-object MarkerWithFastTrack {
-
-    final val MarkerWithFastTrackKey = {
-
-        PropertyKey.create[Entity, MarkerWithFastTrackProperty](
-            "MarkerWithFastTrack",
-            (ps: PropertyStore, reason: FallbackReason, e: Entity) ⇒ NotMarked,
-            (ps: PropertyStore, e: Entity) ⇒ {
-                Thread.sleep(System.nanoTime() % 50)
-                Some(IsMarked)
-            }
-        )
-    }
-
-    sealed trait MarkerWithFastTrackProperty extends Property {
-        type Self = MarkerWithFastTrackProperty
-        def key = MarkerWithFastTrackKey
-    }
-    case object IsMarked extends MarkerWithFastTrackProperty
-    case object NotMarked extends MarkerWithFastTrackProperty
-}
-
-object ReachableNodesCount {
-    val Key: PropertyKey[ReachableNodesCount] =
-
-        PropertyKey.create[Node, ReachableNodesCount](
-            s"ReachableNodesCount",
-            (_: PropertyStore, reason: FallbackReason, e: Node) ⇒ TooManyNodesReachable,
-            (ps: PropertyStore, e: Entity) ⇒ None
-        )
-}
-case class ReachableNodesCount(value: Int) extends OrderedProperty {
-    type Self = ReachableNodesCount
-    def key = ReachableNodesCount.Key
-
-    def checkIsEqualOrBetterThan(e: Entity, other: ReachableNodesCount): Unit = {
-        if (this.value > other.value) {
-            throw new IllegalArgumentException(s"$e: $this is not equal or better than $other")
-        }
-    }
-}
-
-object NoNodesReachable extends ReachableNodesCount(0) {
-    override def toString: String = "NoNodesReachable"
-}
-object TooManyNodesReachable extends ReachableNodesCount(64) {
-    override def toString: String = "TooManyNodesReachable"
-}

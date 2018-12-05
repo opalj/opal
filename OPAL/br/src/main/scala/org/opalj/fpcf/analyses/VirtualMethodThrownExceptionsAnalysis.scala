@@ -31,7 +31,7 @@ class VirtualMethodThrownExceptionsAnalysis private[analyses] (
 
     private[analyses] def lazilyAggregateExceptionsThrownByOverridingMethods(
         e: Entity
-    ): PropertyComputationResult = {
+    ): ProperPropertyComputationResult = {
         e match {
             case m: Method ⇒
                 aggregateExceptionsThrownByOverridingMethods(m)
@@ -46,7 +46,7 @@ class VirtualMethodThrownExceptionsAnalysis private[analyses] (
      */
     private[analyses] def aggregateExceptionsThrownByOverridingMethods(
         m: Method
-    ): PropertyComputationResult = {
+    ): ProperPropertyComputationResult = {
         // If an unknown subclass can override this method we cannot gather information about
         // the thrown exceptions. Return the analysis immediately.
         if (project.get(IsOverridableMethodKey)(m).isYesOrUnknown) {
@@ -63,12 +63,12 @@ class VirtualMethodThrownExceptionsAnalysis private[analyses] (
             project.classFile(subType).foreach(_.findMethod(m.name, m.descriptor) match {
                 case Some(subtypeMethod) ⇒
                     ps(subtypeMethod, ThrownExceptions.key) match {
-                        case EPS(_, _, MethodIsAbstract) |
-                            EPS(_, _, MethodBodyIsNotAvailable) |
-                            EPS(_, _, MethodIsNative) |
-                            EPS(_, _, UnknownExceptionIsThrown) |
-                            EPS(_, _, AnalysisLimitation) |
-                            EPS(_, _, UnresolvedInvokeDynamicInstruction) ⇒
+                        case UBP(MethodIsAbstract) |
+                            UBP(MethodBodyIsNotAvailable) |
+                            UBP(MethodIsNative) |
+                            UBP(UnknownExceptionIsThrown) |
+                            UBP(AnalysisLimitation) |
+                            UBP(UnresolvedInvokeDynamicInstruction) ⇒
                             return Result(m, SomeException)
                         case eps: EPS[Entity, Property] ⇒
                             initialExceptions ++= eps.ub.types.concreteTypes
@@ -83,7 +83,7 @@ class VirtualMethodThrownExceptionsAnalysis private[analyses] (
 
         var exceptions = initialExceptions.toImmutableTypesSet
 
-        def c(eps: SomeEPS): PropertyComputationResult = {
+        def c(eps: SomeEPS): ProperPropertyComputationResult = {
             dependees = dependees.filter { d ⇒
                 d.e != eps.e || d.pk != eps.pk
             }

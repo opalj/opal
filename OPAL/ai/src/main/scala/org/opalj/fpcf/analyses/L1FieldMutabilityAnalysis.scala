@@ -74,7 +74,9 @@ class L1FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
      * If the analysis is schedulued using its companion object all class files with
      * native methods are filtered.
      */
-    private[analyses] def determineFieldMutability(field: Field): PropertyComputationResult = {
+    private[analyses] def determineFieldMutability(
+        field: Field
+    ): ProperPropertyComputationResult = {
         if (field.isFinal) {
             return Result(field, DeclaredFinalField)
         }
@@ -155,7 +157,10 @@ class L1FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
         method: Method,
         taCode: TACode[TACMethodParameter, V],
         pcs:    PCs
-    )(implicit state: State): Boolean = {
+    )(
+        implicit
+        state: State
+    ): Boolean = {
         val stmts = taCode.stmts
         for (pc ← pcs) {
             val index = taCode.pcToIndex(pc)
@@ -200,11 +205,14 @@ class L1FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
     def getTACAI(
         method: Method,
         pcs:    PCs
-    )(implicit state: State): Option[TACode[TACMethodParameter, V]] = {
+    )(
+        implicit
+        state: State
+    ): Option[TACode[TACMethodParameter, V]] = {
         propertyStore(method, TACAI.key) match {
-            case finalP: FinalP[Method, TACAI] ⇒
+            case finalP: FinalEP[Method, TACAI] ⇒
                 finalP.ub.tac
-            case eps: InterimP[Method, TACAI] ⇒
+            case eps: InterimEP[Method, TACAI] ⇒
                 state.tacDependees += method → ((eps, pcs))
                 eps.ub.tac
             case epk ⇒
@@ -213,7 +221,7 @@ class L1FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
         }
     }
 
-    def returnResult()(implicit state: State): PropertyComputationResult = {
+    def returnResult()(implicit state: State): ProperPropertyComputationResult = {
         if (state.tacDependees.isEmpty && state.escapeDependees.isEmpty)
             Result(state.field, EffectivelyFinalField)
         else
@@ -222,13 +230,13 @@ class L1FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
                 NonFinalFieldByAnalysis,
                 EffectivelyFinalField,
                 state.escapeDependees ++ state.tacDependees.valuesIterator.map(_._1),
-                continuation,
+                c,
                 if (state.tacDependees.isEmpty) CheapPropertyComputation
                 else DefaultPropertyComputation
             )
     }
 
-    def continuation(eps: SomeEPS)(implicit state: State): PropertyComputationResult = {
+    def c(eps: SomeEPS)(implicit state: State): ProperPropertyComputationResult = {
         val isNonFinal = eps.e match {
             case ds: DefinitionSite ⇒
                 val newEP = eps.asInstanceOf[EOptionP[DefinitionSite, EscapeProperty]]
@@ -282,23 +290,23 @@ class L1FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
     def handleEscapeProperty(
         ep: EOptionP[DefinitionSite, EscapeProperty]
     )(implicit state: State): Boolean = ep match {
-        case FinalP(_, NoEscape | EscapeInCallee | EscapeViaReturn) ⇒
+        case FinalP(NoEscape | EscapeInCallee | EscapeViaReturn) ⇒
             false
 
-        case FinalP(_, AtMost(_)) ⇒
+        case FinalP(AtMost(_)) ⇒
             true
 
-        case FinalP(_, _) ⇒
+        case _: FinalEP[_, _] ⇒
             true // Escape state is worse than via return
 
-        case InterimP(_, _, NoEscape | EscapeInCallee | EscapeViaReturn) ⇒
+        case InterimUBP(NoEscape | EscapeInCallee | EscapeViaReturn) ⇒
             state.escapeDependees += ep
             false
 
-        case InterimP(_, _, AtMost(_)) ⇒
+        case InterimUBP(AtMost(_)) ⇒
             true
 
-        case InterimP(_, _, _) ⇒
+        case _: SomeInterimEP ⇒
             true // Escape state is worse than via return
 
         case _ ⇒

@@ -22,7 +22,7 @@ import org.opalj.fpcf.properties.VirtualMethodPurity.VImpureByLackOfInformation
 class VirtualMethodPurityAnalysis private[analyses] ( final val project: SomeProject) extends FPCFAnalysis {
     private[this] val declaredMethods = project.get(DeclaredMethodsKey)
 
-    def determinePurity(dm: DefinedMethod): PropertyComputationResult = {
+    def determinePurity(dm: DefinedMethod): ProperPropertyComputationResult = {
         if (!dm.hasSingleDefinedMethod && !dm.hasMultipleDefinedMethods)
             return Result(dm, VImpureByLackOfInformation);
 
@@ -50,14 +50,14 @@ class VirtualMethodPurityAnalysis private[analyses] ( final val project: SomePro
 
         for (method ← methods) {
             propertyStore(declaredMethods(method), Purity.key) match {
-                case eps @ EPS(_, _, ub) ⇒
+                case eps @ UBP(ub) ⇒
                     maxPurity = maxPurity meet ub
                     if (eps.isRefinable) dependees += eps
                 case epk ⇒ dependees += epk
             }
         }
 
-        def c(eps: SomeEPS): PropertyComputationResult = {
+        def c(eps: SomeEPS): ProperPropertyComputationResult = {
             dependees = dependees.filter { _.e ne eps.e }
             maxPurity = maxPurity meet eps.ub.asInstanceOf[Purity]
             if (eps.isRefinable) {
@@ -85,12 +85,10 @@ class VirtualMethodPurityAnalysis private[analyses] ( final val project: SomePro
     }
 
     /** Called when the analysis is scheduled lazily. */
-    def doDeterminePurity(e: Entity): PropertyComputationResult = {
+    def doDeterminePurity(e: Entity): ProperPropertyComputationResult = {
         e match {
             case m: DefinedMethod ⇒ determinePurity(m)
-            case _ ⇒ throw new UnknownError(
-                "virtual method purity is only defined for defined methods"
-            )
+            case _                ⇒ throw new IllegalArgumentException(s"$e ist not a DefinedMethod")
         }
     }
 
