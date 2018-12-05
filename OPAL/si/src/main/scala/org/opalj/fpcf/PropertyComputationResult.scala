@@ -11,7 +11,7 @@ sealed abstract class PropertyComputationResult {
     private[fpcf] def id: Int
 
     private[fpcf] def isInterimResult: Boolean = false
-    private[fpcf] def asInterimResult: InterimResult[_ <: Property] = {
+    private[fpcf] def asInterimResult: InterimResult[_ >: Null <: Property] = {
         throw new ClassCastException();
     }
 
@@ -137,10 +137,10 @@ final class InterimResult[P >: Null <: Property] private (
         }
     }
 
-    private[fpcf] def id = InterimResult.id
+    private[fpcf] def id: Int = InterimResult.id
 
     private[fpcf] override def isInterimResult: Boolean = true
-    private[fpcf] override def asInterimResult: InterimResult[_ <: Property] = this
+    private[fpcf] override def asInterimResult: InterimResult[P] = this
 
     override def hashCode: Int = eps.e.hashCode * 17 + dependees.hashCode
 
@@ -164,6 +164,23 @@ final class InterimResult[P >: Null <: Property] private (
 object InterimResult {
 
     private[fpcf] final val id = 3
+
+    def apply[P >: Null <: Property](
+        eps:       InterimP[Entity, P],
+        dependees: Traversable[SomeEOptionP],
+        c:         OnUpdateContinuation
+    ): InterimResult[P] = {
+        new InterimResult[P](eps, dependees, c, DefaultPropertyComputation)
+    }
+
+    def apply[P >: Null <: Property](
+        eps:       InterimP[Entity, P],
+        dependees: Traversable[SomeEOptionP],
+        c:         OnUpdateContinuation,
+        hint:      PropertyComputationHint
+    ): InterimResult[P] = {
+        new InterimResult[P](eps, dependees, c, hint)
+    }
 
     def apply[P >: Null <: Property](
         e:         Entity,

@@ -121,7 +121,7 @@ sealed abstract class PropertyStoreTest(
                 }
                 assertThrows[InterruptedException] { ps.waitOnPhaseCompletion() }
 
-                ps("a", PalindromeKey) should be(InterimLUBP("a",NoPalindrome,                    Palindrome))
+                ps("a", PalindromeKey) should be(InterimLUBP("a", NoPalindrome, Palindrome))
 
                 ps.shutdown()
             }
@@ -185,7 +185,7 @@ sealed abstract class PropertyStoreTest(
 
                 ps.hasProperty("aba", SuperPalindromeKey) should be(false)
 
-                ps.setupPhase(                    Set(PalindromeKey, SuperPalindromeKey),                    Set.empty                )
+                ps.setupPhase(Set(PalindromeKey, SuperPalindromeKey), Set.empty)
                 ps.waitOnPhaseCompletion()
 
                 ps.hasProperty("aba", PalindromeKey) should be(true)
@@ -201,14 +201,14 @@ sealed abstract class PropertyStoreTest(
                         "a",
                         NoPalindrome, Palindrome,
                         Seq(dependee),
-                        _ ⇒  Result("a", Palindrome) ,
+                        _ ⇒ Result("a", Palindrome),
                         pch
                     )
                 }
                 ps.waitOnPhaseCompletion()
 
                 ps.hasProperty("a", PalindromeKey) should be(true)
-                ps.hasProperty("d", PalindromeKey) should be (true)
+                ps.hasProperty("d", PalindromeKey) should be(true)
 
                 ps.shutdown()
             }
