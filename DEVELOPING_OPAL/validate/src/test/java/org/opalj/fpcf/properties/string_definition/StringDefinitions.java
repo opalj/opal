@@ -29,10 +29,10 @@ public @interface StringDefinitions {
     String value() default "N/A";
 
     /**
-     * This value determines the expectedLevel of freedom for a string field or local variable to be
-     * changed. The default value is {@link StringConstancyLevel#DYNAMIC}.
+     * This value determines the expected levels of freedom for a string field or local variable to
+     * be changed.
      */
-    StringConstancyLevel expectedLevel() default StringConstancyLevel.DYNAMIC;
+    StringConstancyLevel[] expectedLevels();
 
     /**
      * A regexp like string that describes the elements that are expected. For the rules, refer to
@@ -40,6 +40,6 @@ public @interface StringDefinitions {
      * For example, "(* | (hello | world)^5)" describes a string which can 1) either be any string
      * or 2) a five time concatenation of "hello" and/or "world".
      */
-    String expectedStrings() default "";
+    String[] expectedStrings();
 
 }

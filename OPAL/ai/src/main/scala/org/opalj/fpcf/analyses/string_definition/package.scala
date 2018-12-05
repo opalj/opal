@@ -21,6 +21,6 @@ package object string_definition {
      * [[LocalStringDefinitionAnalysis]] processes a local variable within the context of a
      * particular context, i.e., the method in which it is declared and used.
      */
-    type P = (V, Method)
+    type P = (List[V], Method)
 
 }

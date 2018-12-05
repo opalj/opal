@@ -272,14 +272,9 @@ sealed abstract class StringTreeElement(val children: ListBuffer[StringTreeEleme
      * @return A [[StringConstancyInformation]] instance that flatly describes this tree.
      */
     def reduce(): StringConstancyInformation = {
-        // The reduceLeft is necessary as reduceAcc might return a list, e.g., a clear occurred. In
-        // such cases, concatenate the values by or-ing them.
-        val reduced = reduceAcc(this)
-        reduced.reduceLeft((o, n) ⇒ StringConstancyInformation(
-            StringConstancyLevel.determineMoreGeneral(o.constancyLevel, n.constancyLevel),
-            StringConstancyType.APPEND,
-            s"(${o.possibleStrings}|${n.possibleStrings})"
-        ))
+        // The call to reduceMultiple is necessary as reduceAcc might return a list, e.g., if a
+        // clear occurred
+        StringConstancyInformation.reduceMultiple(reduceAcc(this))
     }
 
     /**

@@ -88,10 +88,10 @@ class InterpretationHandler(cfg: CFG[Stmt[V], TACStmts[V]]) {
     }
 
     /**
-     * This function serves as a wrapper function for [[InterpretationHandler.processDefSite]] in the
-     * sense that it processes multiple definition sites. Thus, it may throw an exception as well if
-     * an expression referenced by a definition site cannot be processed. The same rules as for
-     * [[InterpretationHandler.processDefSite]] apply.
+     * This function serves as a wrapper function for [[InterpretationHandler.processDefSite]] in
+     * the sense that it processes multiple definition sites. Thus, it may throw an exception as
+     * well if an expression referenced by a definition site cannot be processed. The same rules as
+     * for [[InterpretationHandler.processDefSite]] apply.
      *
      * @param defSites The definition sites to process.
      * @return Returns a list of lists of [[StringConstancyInformation]]. Note that this function
@@ -107,10 +107,10 @@ class InterpretationHandler(cfg: CFG[Stmt[V], TACStmts[V]]) {
         }
 
     /**
-     * The [[InterpretationHandler]] keeps an internal state for correct and faster processing. As long as a
-     * single object within a CFG is analyzed, there is no need to reset the state. However, when
-     * analyzing a second object (even the same object) it is necessary to call `reset` to reset the
-     * internal state. Otherwise, incorrect results will be produced.
+     * The [[InterpretationHandler]] keeps an internal state for correct and faster processing. As
+     * long as a single object within a CFG is analyzed, there is no need to reset the state.
+     * However, when analyzing a second object (even the same object) it is necessary to call
+     * `reset` to reset the internal state. Otherwise, incorrect results will be produced.
      * (Alternatively, you could instantiate another [[InterpretationHandler]] instance.)
      */
     def reset(): Unit = {
@@ -124,7 +124,8 @@ object InterpretationHandler {
     /**
      * @see [[InterpretationHandler]]
      */
-    def apply(cfg: CFG[Stmt[V], TACStmts[V]]): InterpretationHandler = new InterpretationHandler(cfg)
+    def apply(cfg: CFG[Stmt[V], TACStmts[V]]): InterpretationHandler =
+        new InterpretationHandler(cfg)
 
     /**
      * Checks whether an expression contains a call to [[StringBuilder#toString]] or

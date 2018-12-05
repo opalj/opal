@@ -38,4 +38,31 @@ object StringConstancyInformation {
      */
     val InfiniteRepetitionSymbol: String = "*"
 
+    /**
+     * Takes a list of [[StringConstancyInformation]] and reduces them to a single one by or-ing
+     * them together (the level is determined by finding the most general level; the type is set to
+     * [[StringConstancyType.APPEND]] and the possible strings are concatenated using a pipe and
+     * then enclosed by brackets.
+     *
+     * @param scis The information to reduce. If a list with one element is passed, this element is
+     *             returned (without being modified in any way); a list with > 1 element is reduced
+     *             as described above; the empty list will throw an error!
+     * @return Returns the reduced information in the fashion described above.
+     */
+    def reduceMultiple(scis: List[StringConstancyInformation]): StringConstancyInformation = {
+        scis.length match {
+            case 1 ⇒ scis.head
+            case _ ⇒ // Reduce
+                val reduced = scis.reduceLeft((o, n) ⇒ StringConstancyInformation(
+                    StringConstancyLevel.determineMoreGeneral(o.constancyLevel, n.constancyLevel),
+                    StringConstancyType.APPEND,
+                    s"${o.possibleStrings}|${n.possibleStrings}"
+                ))
+                // Modify possibleStrings value
+                StringConstancyInformation(
+                    reduced.constancyLevel, reduced.constancyType, s"(${reduced.possibleStrings})"
+                )
+        }
+    }
+
 }
