@@ -56,11 +56,7 @@ class PathTransformer(val cfg: CFG[Stmt[V], TACStmts[V]]) {
                             val processedSubPath = pathToStringTree(
                                 Path(npe.element.toList), resetExprHandler = false
                             )
-                            if (processedSubPath.isDefined) {
-                                Some(StringTreeRepetition(processedSubPath.get))
-                            } else {
-                                None
-                            }
+                            Some(StringTreeRepetition(processedSubPath))
                         case _ ⇒
                             val processedSubPaths = npe.element.map(
                                 pathToTreeAcc
@@ -115,18 +111,17 @@ class PathTransformer(val cfg: CFG[Stmt[V], TACStmts[V]]) {
      *         i.e., if `path` contains sites that could not be processed (successfully), they will
      *         not occur in the tree.
      */
-    def pathToStringTree(path: Path, resetExprHandler: Boolean = true): Option[StringTree] = {
+    def pathToStringTree(path: Path, resetExprHandler: Boolean = true): StringTree = {
         val tree = path.elements.size match {
-            case 0 ⇒ None
-            case 1 ⇒ pathToTreeAcc(path.elements.head)
+            case 1 ⇒ pathToTreeAcc(path.elements.head).get
             case _ ⇒
-                val concatElement = Some(StringTreeConcat(
+                val concatElement = StringTreeConcat(
                     path.elements.map(pathToTreeAcc).filter(_.isDefined).map(_.get).to[ListBuffer]
-                ))
+                )
                 // It might be that concat has only one child (because some interpreters might have
                 // returned an empty list => In case of one child, return only that one
-                if (concatElement.isDefined && concatElement.get.children.size == 1) {
-                    Some(concatElement.get.children.head)
+                if (concatElement.children.size == 1) {
+                    concatElement.children.head
                 } else {
                     concatElement
                 }
