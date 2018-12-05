@@ -28,9 +28,7 @@ class L0CompileTimeConstancyAnalysis private[analyses] ( final val project: Some
      *
      * This function encapsulates the continuation.
      */
-    def determineConstancy(
-        field: Field
-    ): PropertyComputationResult = {
+    def determineConstancy(field: Field): ProperPropertyComputationResult = {
         if (!field.isStatic || field.constantFieldValue.isEmpty)
             return Result(field, CompileTimeVaryingField);
 
@@ -38,24 +36,24 @@ class L0CompileTimeConstancyAnalysis private[analyses] ( final val project: Some
             return Result(field, CompileTimeConstantField);
 
         var dependee: EOptionP[Entity, Property] = propertyStore(field, FieldMutability.key) match {
-            case FinalP(_, LazyInitializedField) ⇒ return Result(field, CompileTimeVaryingField);
-            case FinalP(_, _: FinalField)        ⇒ return Result(field, CompileTimeConstantField);
-            case FinalP(_, _: NonFinalField)     ⇒ return Result(field, CompileTimeVaryingField);
-            case ep                              ⇒ ep
+            case FinalP(LazyInitializedField) ⇒ return Result(field, CompileTimeVaryingField);
+            case FinalP(_: FinalField)        ⇒ return Result(field, CompileTimeConstantField);
+            case FinalP(_: NonFinalField)     ⇒ return Result(field, CompileTimeVaryingField);
+            case ep                           ⇒ ep
         }
 
         // This function updates the compile-time constancy of the field when the field's
         // mutability is updated
-        def c(eps: SomeEPS): PropertyComputationResult = {
+        def c(eps: SomeEPS): ProperPropertyComputationResult = {
             eps match {
-                case FinalP(_, LazyInitializedField) ⇒
+                case FinalP(LazyInitializedField) ⇒
                     Result(field, CompileTimeVaryingField);
-                case FinalP(_, _: FinalField) ⇒
+                case FinalP(_: FinalField) ⇒
                     Result(field, CompileTimeConstantField);
-                case FinalP(_, _: NonFinalField) ⇒
+                case FinalP(_: NonFinalField) ⇒
                     Result(field, CompileTimeVaryingField);
 
-                case InterimP(_, _, _) ⇒
+                case _: SomeInterimEP ⇒
                     dependee = eps
                     InterimResult(
                         field,
@@ -79,7 +77,7 @@ class L0CompileTimeConstancyAnalysis private[analyses] ( final val project: Some
     }
 
     /** Called when the analysis is scheduled lazily. */
-    def doDetermineConstancy(e: Entity): PropertyComputationResult = {
+    def doDetermineConstancy(e: Entity): ProperPropertyComputationResult = {
         e match {
             case f: Field ⇒ determineConstancy(f)
             case _ ⇒

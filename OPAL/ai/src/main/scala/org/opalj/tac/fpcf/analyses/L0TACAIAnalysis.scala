@@ -11,7 +11,6 @@ import org.opalj.fpcf.FPCFAnalysis
 import org.opalj.fpcf.FPCFEagerAnalysisScheduler
 import org.opalj.fpcf.FPCFLazyAnalysisScheduler
 import org.opalj.fpcf.Result
-import org.opalj.fpcf.PropertyComputationResult
 import org.opalj.fpcf.PropertyKind
 import org.opalj.fpcf.PropertyStore
 import org.opalj.value.ValueInformation
@@ -24,8 +23,9 @@ import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.ai.fpcf.properties.AnAIResult
 import org.opalj.ai.fpcf.properties.BaseAIResult
 import org.opalj.fpcf.EPK
-import org.opalj.fpcf.InterimP
+import org.opalj.fpcf.InterimLUBP
 import org.opalj.fpcf.InterimResult
+import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.ai.fpcf.analyses.L0BaseAIResultAnalysis
 import org.opalj.ai.fpcf.properties.NoAIResult
 import org.opalj.tac.{TACAI ⇒ TACAIFactory}
@@ -41,10 +41,13 @@ import org.opalj.tac.fpcf.properties.TheTACAI
  */
 class L0TACAIAnalysis private[analyses] (val project: SomeProject) extends FPCFAnalysis {
 
-    final val aiFactory = project.get(AIDomainFactoryKey)
+    final implicit val aiFactory = project.get(AIDomainFactoryKey)
 
-    def computeTAC(e: Entity): PropertyComputationResult = {
-        e match { case m: Method ⇒ computeTAC(m) }
+    def computeTAC(e: Entity): ProperPropertyComputationResult = {
+        e match {
+            case m: Method ⇒ computeTAC(m)
+            case _         ⇒ throw new IllegalArgumentException(s"$e is not a method")
+        }
     }
 
     def computeTheTACAI(m: Method, aiResult: AIResult): TheTACAI = {
@@ -54,20 +57,21 @@ class L0TACAIAnalysis private[analyses] (val project: SomeProject) extends FPCFA
             // the following cast is safe - see TACode for details
             taCode.asInstanceOf[TACode[TACMethodParameter, DUVar[ValueInformation]]]
         )
+        tacaiProperty
     }
 
     /**
      * Computes the TAC for the given method `m`.
      */
-    private[analyses] def computeTAC(m: Method): PropertyComputationResult = {
+    private[analyses] def computeTAC(m: Method): ProperPropertyComputationResult = {
         ps(m, BaseAIResult.key) match {
-            case FinalP(_, NoAIResult) ⇒
+            case FinalP(NoAIResult) ⇒
                 Result(m, NoTACAI)
 
-            case FinalP(_, AnAIResult(initialAIResult)) ⇒
+            case FinalP(AnAIResult(initialAIResult)) ⇒
                 Result(m, computeTheTACAI(m, initialAIResult))
 
-            case currentAIResult @ InterimP(_, AnAIResult(initialLBAIResult), ub) ⇒
+            case currentAIResult @ InterimLUBP(AnAIResult(initialLBAIResult), ub) ⇒
                 val newLB =
                     computeTheTACAI(m, initialLBAIResult)
 
@@ -88,7 +92,7 @@ class L0TACAIAnalysis private[analyses] (val project: SomeProject) extends FPCFA
                 )
 
             case epk: EPK[_, _] ⇒
-                val aiResult = L0BaseAIResultAnalysis.performAI(aiFactory, m)
+                val aiResult = L0BaseAIResultAnalysis.performAI(m)
 
                 InterimResult(
                     m,
@@ -143,8 +147,8 @@ object EagerL0TACAIAnalysis extends L0TACAIAnalysisScheduler with FPCFEagerAnaly
 object LazyL0TACAIAnalysis extends L0TACAIAnalysisScheduler with FPCFLazyAnalysisScheduler {
 
     final override def startLazily(
-        p: SomeProject, 
-        ps: PropertyStore, 
+        p:      SomeProject,
+        ps:     PropertyStore,
         unused: Null
     ): FPCFAnalysis = {
         val analysis = new L0TACAIAnalysis(p)

@@ -148,18 +148,18 @@ object FieldAndArrayUsageAnalysis extends DefaultOneStepAnalysis {
                                             for (pc ← pcsOfNewArrays) {
                                                 val as = defSites(m, pc)
                                                 propertyStore(as, EscapeProperty.key) match {
-                                                    case FinalP(_, NoEscape | AtMost(NoEscape)) ⇒
+                                                    case FinalP(NoEscape | AtMost(NoEscape)) ⇒
                                                         maybeNoEscapingArrays += 1
-                                                    case FinalP(_, EscapeInCallee | AtMost(EscapeInCallee)) ⇒
+                                                    case FinalP(EscapeInCallee | AtMost(EscapeInCallee)) ⇒
                                                         maybeInCalleeArrays += 1
-                                                    case FinalP(_, EscapeViaParameter | AtMost(EscapeViaParameter)) ⇒
+                                                    case FinalP(EscapeViaParameter | AtMost(EscapeViaParameter)) ⇒
                                                         maybeViaParamArrays += 1
-                                                    case FinalP(_, EscapeViaReturn | AtMost(EscapeViaReturn)) ⇒
+                                                    case FinalP(EscapeViaReturn | AtMost(EscapeViaReturn)) ⇒
                                                         maybeViaReturn += 1
-                                                    case FinalP(_, EscapeViaAbnormalReturn | AtMost(EscapeViaAbnormalReturn)) ⇒
+                                                    case FinalP(EscapeViaAbnormalReturn | AtMost(EscapeViaAbnormalReturn)) ⇒
                                                         maybeViaAbnormal += 1
-                                                    case FinalP(_, p) if p.isBottom ⇒ globalArrays += 1
-                                                    case _                          ⇒ maybeInCallerArrays += 1
+                                                    case FinalP(p) if p.isBottom ⇒ globalArrays += 1
+                                                    case _                       ⇒ maybeInCallerArrays += 1
                                                 }
                                             }
 

@@ -52,7 +52,7 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
     def doDeterminePurityOfBody(
         definedMethod:    DefinedMethod,
         initialDependees: Set[EOptionP[Entity, Property]]
-    ): PropertyComputationResult = {
+    ): ProperPropertyComputationResult = {
 
         val method = definedMethod.definedMethod
         val declaringClassType = method.classFile.thisType
@@ -83,8 +83,8 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
                             }
                             if (!fieldType.isBaseType) {
                                 propertyStore(fieldType, TypeImmutability.key) match {
-                                    case FinalP(_, ImmutableType) ⇒
-                                    case FinalP(_, _) ⇒
+                                    case FinalP(ImmutableType) ⇒
+                                    case FinalP(_) ⇒
                                         return Result(definedMethod, ImpureByAnalysis);
                                     case ep ⇒
                                         dependees += ep
@@ -92,8 +92,8 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
                             }
                             if (field.isNotFinal) {
                                 propertyStore(field, FieldMutability.key) match {
-                                    case FinalP(_, _: FinalField) ⇒
-                                    case FinalP(_, _) ⇒
+                                    case FinalP(_: FinalField) ⇒
+                                    case FinalP(_) ⇒
                                         return Result(definedMethod, ImpureByAnalysis);
                                     case ep ⇒
                                         dependees += ep
@@ -122,13 +122,12 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
                                 val purity = propertyStore(declaredMethods(callee), Purity.key)
 
                                 purity match {
-                                    case FinalP(_, CompileTimePure | Pure) ⇒ /* Nothing to do */
+                                    case FinalP(CompileTimePure | Pure) ⇒ /* Nothing to do */
 
                                     // Handling cyclic computations
-                                    case ep @ InterimP(_, _, Pure) ⇒
-                                        dependees += ep
+                                    case ep @ InterimUBP(Pure)          ⇒ dependees += ep
 
-                                    case EPS(_, _, _) ⇒
+                                    case _: EPS[_, _] ⇒
                                         return Result(definedMethod, ImpureByAnalysis);
 
                                     case epk ⇒
@@ -190,7 +189,7 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
 
         // This function computes the “purity for a method based on the properties of its dependees:
         // other methods (Purity), types (immutability), fields (effectively final)
-        def c(eps: SomeEPS): PropertyComputationResult = {
+        def c(eps: SomeEPS): ProperPropertyComputationResult = {
             // Let's filter the entity.
             dependees = dependees.filter(_.e ne eps.e)
 
@@ -198,7 +197,7 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
                 // We can't report any real result as long as we don't know that the fields are all
                 // effectively final and the types are immutable.
 
-                case FinalP(_, _: FinalField | ImmutableType) ⇒
+                case FinalP(_: FinalField | ImmutableType) ⇒
                     if (dependees.isEmpty) {
                         Result(definedMethod, Pure)
                     } else {
@@ -207,25 +206,25 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
                         InterimResult(definedMethod, ImpureByAnalysis, Pure, dependees, c)
                     }
 
-                case FinalP(_, ImmutableContainerType) ⇒
+                case FinalP(ImmutableContainerType) ⇒
                     Result(definedMethod, ImpureByAnalysis)
 
                 // The type is at most conditionally immutable.
-                case FinalP(_, _: TypeImmutability) ⇒ Result(definedMethod, ImpureByAnalysis)
-                case FinalP(_, _: NonFinalField)    ⇒ Result(definedMethod, ImpureByAnalysis)
+                case FinalP(_: TypeImmutability) ⇒ Result(definedMethod, ImpureByAnalysis)
+                case FinalP(_: NonFinalField)    ⇒ Result(definedMethod, ImpureByAnalysis)
 
-                case FinalP(_, CompileTimePure | Pure) ⇒
+                case FinalP(CompileTimePure | Pure) ⇒
                     if (dependees.isEmpty)
                         Result(definedMethod, Pure)
                     else {
                         InterimResult(definedMethod, ImpureByAnalysis, Pure, dependees, c)
                     }
 
-                case InterimP(_, _, _) ⇒
+                case _: InterimEP[_, _] ⇒
                     dependees += eps
                     InterimResult(definedMethod, ImpureByAnalysis, Pure, dependees, c)
 
-                case FinalP(_, _: Purity) ⇒
+                case FinalP(_: Purity) ⇒
                     // a called method is impure...
                     Result(definedMethod, ImpureByAnalysis)
             }
@@ -234,7 +233,7 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
         InterimResult(definedMethod, ImpureByAnalysis, Pure, dependees, c)
     }
 
-    def determinePurityStep1(definedMethod: DefinedMethod): PropertyComputationResult = {
+    def determinePurityStep1(definedMethod: DefinedMethod): ProperPropertyComputationResult = {
         val method = definedMethod.definedMethod
 
         // All parameters either have to be base types or have to be immutable.
@@ -256,10 +255,10 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
         var dependees: Set[EOptionP[Entity, Property]] = Set.empty
         referenceTypes foreach { e ⇒
             propertyStore(e, TypeImmutability.key) match {
-                case FinalP(_, ImmutableType) ⇒ /*everything is Ok*/
-                case FinalP(_, _) ⇒
+                case FinalP(ImmutableType) ⇒ /*everything is Ok*/
+                case _: FinalEP[_, _] ⇒
                     return Result(definedMethod, ImpureByAnalysis);
-                case InterimP(_, _, ub) if ub ne ImmutableType ⇒
+                case InterimUBP(ub) if ub ne ImmutableType ⇒
                     return Result(definedMethod, ImpureByAnalysis);
                 case epk ⇒ dependees += epk
             }
@@ -272,12 +271,14 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
      * Retrieves and commits the methods purity as calculated for its declaring class type for the
      * current DefinedMethod that represents the non-overwritten method in a subtype.
      */
-    def baseMethodPurity(dm: DefinedMethod): PropertyComputationResult = {
+    def baseMethodPurity(dm: DefinedMethod): ProperPropertyComputationResult = {
 
-        def c(eps: SomeEOptionP): PropertyComputationResult = eps match {
-            case FinalP(_, p)                   ⇒ Result(dm, p)
-            case ep @ InterimP(_, lb, ub) ⇒ InterimResult(dm, lb, ub, Seq(ep), c)
-            case epk                            ⇒ InterimResult(dm, ImpureByAnalysis, CompileTimePure, Seq(epk), c)
+        def c(eps: SomeEOptionP): ProperPropertyComputationResult = eps match {
+            case FinalP(p)                ⇒ Result(dm, p)
+            case ep @ InterimLUBP(lb, ub) ⇒ InterimResult(dm, lb, ub, Seq(ep), c)
+
+            case epk ⇒
+                InterimResult(dm, ImpureByAnalysis, CompileTimePure, Seq(epk), c)
         }
 
         c(propertyStore(declaredMethods(dm.definedMethod), Purity.key))
@@ -286,7 +287,7 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
     /**
      * Determines the purity of the given method.
      */
-    def determinePurity(definedMethod: DefinedMethod): PropertyComputationResult = {
+    def determinePurity(definedMethod: DefinedMethod): ProperPropertyComputationResult = {
         val method = definedMethod.definedMethod
 
         // If thhis is not the method's declaration, but a non-overwritten method in a subtype,
@@ -305,7 +306,7 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
     }
 
     /** Called when the analysis is scheduled lazily. */
-    def doDeterminePurity(e: Entity): PropertyComputationResult = {
+    def doDeterminePurity(e: Entity): ProperPropertyComputationResult = {
         e match {
             case m: DefinedMethod         ⇒ determinePurity(m)
             case m: VirtualDeclaredMethod ⇒ Result(m, ImpureByLackOfInformation)
@@ -329,9 +330,7 @@ trait L0PurityAnalysisScheduler extends ComputationSpecification {
     def afterPhaseCompletion(p: SomeProject, ps: PropertyStore): Unit = {}
 }
 
-object EagerL0PurityAnalysis
-    extends L0PurityAnalysisScheduler
-    with FPCFEagerAnalysisScheduler {
+object EagerL0PurityAnalysis extends L0PurityAnalysisScheduler with FPCFEagerAnalysisScheduler {
 
     override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new L0PurityAnalysis(p)
@@ -344,9 +343,7 @@ object EagerL0PurityAnalysis
     }
 }
 
-object LazyL0PurityAnalysis
-    extends L0PurityAnalysisScheduler
-    with FPCFLazyAnalysisScheduler {
+object LazyL0PurityAnalysis extends L0PurityAnalysisScheduler with FPCFLazyAnalysisScheduler {
 
     override def startLazily(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new L0PurityAnalysis(p)

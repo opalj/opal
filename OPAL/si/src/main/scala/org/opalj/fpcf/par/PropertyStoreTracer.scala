@@ -61,7 +61,7 @@ trait PropertyStoreTracer {
         oldEOptionP: SomeEOptionP
     ): Unit
 
-    def metaInformationDeleted(finalP: SomeFinalP): Unit
+    def metaInformationDeleted(finalP: SomeFinalEP): Unit
 
     def reachedQuiescence(): Unit
 
@@ -202,7 +202,7 @@ case class UselessPartialResult(
 
 case class MetaInformationDeleted(
         eventId: Int,
-        finalP:  SomeFinalP
+        finalP:  SomeFinalEP
 ) extends StoreEvent {
 
     override def toTxt: String = s"$eventId: MetaInformationDeleted(${finalP.toEPK})"
@@ -296,8 +296,8 @@ class RecordAllPropertyStoreTracer extends PropertyStoreTracer {
         events offer UselessPartialResult(eventId, r, oldEOptionP)
     }
 
-    override def metaInformationDeleted(finalP: SomeFinalP): Unit = {
-        events offer MetaInformationDeleted(eventCounter.incrementAndGet(), finalP)
+    override def metaInformationDeleted(finalEP: SomeFinalEP): Unit = {
+        events offer MetaInformationDeleted(eventCounter.incrementAndGet(), finalEP)
     }
 
     override def reachedQuiescence(): Unit = {

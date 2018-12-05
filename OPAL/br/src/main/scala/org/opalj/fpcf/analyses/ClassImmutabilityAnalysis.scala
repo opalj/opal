@@ -63,7 +63,7 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
         immutability: MutableObject
     ): MultiResult = {
         val allSubtypes = classHierarchy.allSubclassTypes(t, reflexive = true)
-        val r = allSubtypes.map { st ⇒ new FinalP(st, immutability) }.toSeq
+        val r = allSubtypes.map { st ⇒ new FinalEP(st, immutability) }.toSeq
         MultiResult(r)
     }
 
@@ -71,9 +71,9 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
         t:                   ObjectType,
         cfMutability:        EOptionP[Entity, Property],
         cfMutabilityIsFinal: Boolean,
-        result:              PropertyComputationResult
+        result:              ProperPropertyComputationResult
     ): IncrementalResult[ClassFile] = {
-        var results: List[PropertyComputationResult] = List(result)
+        var results: List[ProperPropertyComputationResult] = List(result)
         var nextComputations: List[(PropertyComputation[ClassFile], ClassFile)] = Nil
         val directSubtypes = classHierarchy.directSubtypesOf(t)
         directSubtypes.foreach { t ⇒
@@ -93,7 +93,7 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
         IncrementalResult(Results(results), nextComputations.iterator)
     }
 
-    def doDetermineClassImmutability(e: Entity): PropertyComputationResult = {
+    def doDetermineClassImmutability(e: Entity): ProperPropertyComputationResult = {
         e match {
             case t: ObjectType ⇒
                 //this is safe
@@ -107,7 +107,7 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
                         }
 
                         propertyStore(superClassType, ClassImmutability.key) match {
-                            case EPS(_, _, p: MutableObject) ⇒ Result(t, p)
+                            case UBP(p: MutableObject) ⇒ Result(t, p)
                             case eps: EPS[ObjectType, ClassImmutability] ⇒
                                 determineClassImmutability(
                                     superClassType,
@@ -149,7 +149,7 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
         lazyComputation:             Boolean
     )(
         cf: ClassFile
-    ): PropertyComputationResult = {
+    ): ProperPropertyComputationResult = {
         // assert(superClassMutability.isMutable.isNoOrUnknown)
         val t = cf.thisType
 
@@ -164,13 +164,13 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
 
         val instanceFields = cf.fields.filter { f ⇒ !f.isStatic }
         dependees ++= (propertyStore(instanceFields, FieldMutability) collect {
-            case FinalP(_, _: NonFinalField) ⇒
+            case FinalP(_: NonFinalField) ⇒
                 // <=> The class is definitively mutable and therefore also all subclasses.
                 if (lazyComputation)
                     return Result(t, MutableObjectByAnalysis);
                 else
                     return createResultForAllSubtypes(t, MutableObjectByAnalysis);
-            case ep @ InterimP(e, _, _) ⇒
+            case ep @ InterimEP(e) ⇒
                 hasFieldsWithUnknownMutability = true
                 (e, ep)
             case epk @ EPK(e: Entity, _) ⇒
@@ -189,8 +189,8 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
 
         // NOTE: maxLocalImmutability does not take the super classes' mutability into account!
         var maxLocalImmutability: ClassImmutability = superClassInformation match {
-            case EPS(_, _, ImmutableContainer) ⇒ ImmutableContainer
-            case _                             ⇒ ImmutableObject
+            case UBP(ImmutableContainer) ⇒ ImmutableContainer
+            case _                       ⇒ ImmutableObject
         }
 
         if (cf.fields.exists(f ⇒ !f.isStatic && f.fieldType.isArrayType)) {
@@ -241,7 +241,7 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
         val hasMutableOrConditionallyImmutableField =
             // IMPROVE Use the precise type of the field (if available)!
             fieldTypesImmutability.exists { eOptP ⇒
-                eOptP.hasProperty && (eOptP.ub.isMutable || eOptP.ub.isImmutableContainer)
+                eOptP.hasUBP && (eOptP.ub.isMutable || eOptP.ub.isImmutableContainer)
             }
 
         if (hasMutableOrConditionallyImmutableField) {
@@ -250,7 +250,7 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
             val fieldTypesWithUndecidedMutability: Traversable[EOptionP[Entity, Property]] =
                 // Recall: we don't have fields which are mutable or conditionally immutable
                 fieldTypesImmutability.filterNot { eOptP ⇒
-                    eOptP.hasProperty && eOptP.ub == ImmutableType && eOptP.isFinal
+                    eOptP.hasUBP && eOptP.ub == ImmutableType && eOptP.isFinal
                 }
             fieldTypesWithUndecidedMutability.foreach { eOptP ⇒
                 dependees += (eOptP.e → eOptP)
@@ -268,56 +268,56 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
 
             return createIncrementalResult(
                 t,
-                FinalP(t, maxLocalImmutability),
+                FinalEP(t, maxLocalImmutability),
                 cfMutabilityIsFinal = true,
                 Result(t, maxLocalImmutability)
             );
         }
 
-        def c(someEPS: SomeEPS): PropertyComputationResult = {
+        def c(someEPS: SomeEPS): ProperPropertyComputationResult = {
             //[DEBUG]             val oldDependees = dependees
             someEPS match {
                 // Superclass related dependencies:
                 //
-                case EPS(_, _, _: MutableObject) ⇒ return Result(t, MutableObjectByAnalysis);
+                case UBP(_: MutableObject) ⇒ return Result(t, MutableObjectByAnalysis);
 
-                case EPS(_, ImmutableObject, _) ⇒ // the super class
+                case LBP(ImmutableObject) ⇒ // the super class
                     dependees -= SuperClassKey
 
-                case EPS(_, _, ImmutableContainer) ⇒ // super class is at most immutable container
+                case UBP(ImmutableContainer) ⇒ // super class is at most immutable container
                     if (someEPS.isFinal) dependees -= SuperClassKey
                     maxLocalImmutability = ImmutableContainer
                     dependees = dependees.filterNot(_._2.pk == TypeImmutability.key)
 
-                case EPS(_, ImmutableContainer, _) ⇒ // super class is a least immutable container
+                case LBP(ImmutableContainer) ⇒ // super class is a least immutable container
                     if (minLocalImmutability != ImmutableContainer &&
                         !dependees.valuesIterator.exists(_.pk == FieldMutability.key))
                         minLocalImmutability = ImmutableContainer // Lift lower bound when possible
 
-                case EPS(_, _: MutableObject, ImmutableObject) ⇒ // No information about superclass
+                case LUBP(_: MutableObject, ImmutableObject) ⇒ // No information about superclass
 
                 // Properties related to the type of the class' fields.
                 //
-                case EPS(_, _, ImmutableContainerType | MutableType) ⇒
+                case UBP(ImmutableContainerType | MutableType) ⇒
                     maxLocalImmutability = ImmutableContainer
                     dependees = dependees.filterNot(_._2.pk == TypeImmutability.key)
 
-                case EPS(e, ImmutableType, _) ⇒ // Immutable field type, no influence on mutability
+                case ELBP(e, ImmutableType) ⇒ // Immutable field type, no influence on mutability
                     dependees -= e
 
-                case EPS(_, _, ImmutableType)    ⇒ // No information about field type
+                case UBP(ImmutableType)    ⇒ // No information about field type
 
                 // Field Mutability related dependencies:
                 //
-                case EPS(_, _, _: NonFinalField) ⇒ return Result(t, MutableObjectByAnalysis);
+                case UBP(_: NonFinalField) ⇒ return Result(t, MutableObjectByAnalysis);
 
-                case EPS(e, _: FinalField, _) ⇒
+                case ELBP(e, _: FinalField) ⇒
                     dependees -= e
                     if (minLocalImmutability != ImmutableContainer &&
                         !dependees.valuesIterator.exists(_.pk != TypeImmutability.key))
                         minLocalImmutability = ImmutableContainer // Lift lower bound when possible
 
-                case EPS(_, _, _: FinalField) ⇒ // no information about field mutability
+                case UBP(_: FinalField) ⇒ // no information about field mutability
 
             }
 
@@ -361,19 +361,13 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
                 Result(t, maxLocalImmutability)
 
             } else {
-                InterimResult(
-                    t, minLocalImmutability, maxLocalImmutability,
-                    dependees.values, c
-                )
-
+                InterimResult(t, minLocalImmutability, maxLocalImmutability, dependees.values, c)
             }
         }
 
         //[DEBUG] assert(initialImmutability.isRefinable)
-        val result = InterimResult(
-            t, minLocalImmutability, maxLocalImmutability,
-            dependees.values, c
-        )
+        val result =
+            InterimResult(t, minLocalImmutability, maxLocalImmutability, dependees.values, c)
         if (lazyComputation)
             result
         else {
@@ -414,7 +408,7 @@ trait ClassImmutabilityAnalysisScheduler extends ComputationSpecification {
         // 1.2
         // All (instances of) interfaces are (by their very definition) also immutable.
         val allInterfaces = project.allClassFiles.filter(cf ⇒ cf.isInterfaceDeclaration)
-        handleResult(MultiResult(allInterfaces.map(cf ⇒ new FinalP(cf.thisType, ImmutableObject))))
+        handleResult(MultiResult(allInterfaces.map(cf ⇒ new FinalEP(cf.thisType, ImmutableObject))))
 
         // 2.
         // All classes that do not have complete superclass information are mutable
@@ -473,7 +467,7 @@ object EagerClassImmutabilityAnalysis
         val cfs = setResultsAnComputeEntities(p, ps)
         ps.scheduleEagerComputationsForEntities(cfs)(
             analysis.determineClassImmutability(
-                null, FinalP(ObjectType.Object, ImmutableObject), true, false
+                null, FinalEP(ObjectType.Object, ImmutableObject), true, false
             )
         )
 

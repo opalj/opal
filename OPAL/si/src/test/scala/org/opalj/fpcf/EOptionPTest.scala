@@ -8,7 +8,7 @@ import org.opalj.fpcf.fixtures.NilProperty
 class EOptionPTest extends FunSuite {
 
     test("we can always get the property key") {
-        assert(FinalP(new Object, NilProperty).pk == NilProperty.key)
+        assert(FinalEP(new Object, NilProperty).pk == NilProperty.key)
     }
 
 }

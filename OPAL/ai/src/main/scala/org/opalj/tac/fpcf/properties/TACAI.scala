@@ -11,7 +11,6 @@ import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.Property
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.FallbackReason
-import org.opalj.fpcf.EPS
 import org.opalj.fpcf.PropertyIsNotDerivedByPreviouslyExecutedAnalysis
 import org.opalj.fpcf.PropertyIsNotComputedByAnyAnalysis
 import org.opalj.ai.domain.l0.PrimitiveTACAIDomain

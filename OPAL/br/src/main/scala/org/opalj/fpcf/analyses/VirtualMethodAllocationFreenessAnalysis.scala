@@ -21,7 +21,7 @@ import org.opalj.fpcf.properties.VirtualMethodAllocationFreeness.VAllocationFree
 class VirtualMethodAllocationFreenessAnalysis private[analyses] ( final val project: SomeProject) extends FPCFAnalysis {
     private[this] val declaredMethods = project.get(DeclaredMethodsKey)
 
-    def determineAllocationFreeness(dm: DeclaredMethod): PropertyComputationResult = {
+    def determineAllocationFreeness(dm: DeclaredMethod): ProperPropertyComputationResult = {
         if (!dm.hasSingleDefinedMethod && !dm.hasMultipleDefinedMethods)
             return Result(dm, VMethodWithAllocations);
 
@@ -48,18 +48,18 @@ class VirtualMethodAllocationFreenessAnalysis private[analyses] ( final val proj
 
         for (method ← methods) {
             propertyStore(declaredMethods(method), AllocationFreeness.key) match {
-                case FinalP(_, AllocationFreeMethod)  ⇒
-                case FinalP(_, MethodWithAllocations) ⇒ return Result(dm, VMethodWithAllocations);
-                case epk                              ⇒ dependees += epk
+                case FinalP(AllocationFreeMethod)  ⇒
+                case FinalP(MethodWithAllocations) ⇒ return Result(dm, VMethodWithAllocations);
+                case epk                           ⇒ dependees += epk
             }
         }
 
-        def c(eps: SomeEPS): PropertyComputationResult = {
+        def c(eps: SomeEPS): ProperPropertyComputationResult = {
             dependees = dependees.filter { _.e ne eps.e }
 
             eps match {
-                case FinalP(_, AllocationFreeMethod)  ⇒
-                case FinalP(_, MethodWithAllocations) ⇒ return Result(dm, VMethodWithAllocations);
+                case FinalP(AllocationFreeMethod)  ⇒
+                case FinalP(MethodWithAllocations) ⇒ return Result(dm, VMethodWithAllocations);
                 case epk ⇒
                     dependees += epk.asInstanceOf[EOptionP[DeclaredMethod, AllocationFreeness]]
             }
@@ -79,12 +79,10 @@ class VirtualMethodAllocationFreenessAnalysis private[analyses] ( final val proj
     }
 
     /** Called when the analysis is scheduled lazily. */
-    def doDetermineAllocationFreeness(e: Entity): PropertyComputationResult = {
+    def doDetermineAllocationFreeness(e: Entity): ProperPropertyComputationResult = {
         e match {
             case m: DeclaredMethod ⇒ determineAllocationFreeness(m)
-            case _ ⇒ throw new UnknownError(
-                "virtual method allocation freeness is only defined for declared methods"
-            )
+            case _                 ⇒ throw new IllegalArgumentException(s"$e ist not a method")
         }
     }
 

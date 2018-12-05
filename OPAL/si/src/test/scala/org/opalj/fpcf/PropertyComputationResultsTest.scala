@@ -4,8 +4,8 @@ package org.opalj.fpcf
 import org.scalatest.FunSuite
 
 import org.opalj.fpcf.fixtures.NilProperty
-import org.opalj.fpcf.Palindromes.NoPalindrome
-import org.opalj.fpcf.Palindromes.Palindrome
+import org.opalj.fpcf.fixtures.Palindromes.NoPalindrome
+import org.opalj.fpcf.fixtures.Palindromes.Palindrome
 
 class PropertyComputationResultsTest extends FunSuite {
 
@@ -67,18 +67,18 @@ class ResultTest extends FunSuite {
 class MultiResultTest extends FunSuite {
 
     test("a MultiResult is a proper result") {
-        val r: PropertyComputationResult = MultiResult(List(FinalP(new Object, NilProperty)))
+        val r: PropertyComputationResult = MultiResult(List(FinalEP(new Object, NilProperty)))
         assert(r.isInstanceOf[ProperPropertyComputationResult])
         assert(r.isInstanceOf[FinalPropertyComputationResult])
     }
 
     test("a MultiResult is not an InterimResult") {
-        val r = MultiResult(List(FinalP(new Object, NilProperty)))
+        val r = MultiResult(List(FinalEP(new Object, NilProperty)))
         assert(!r.isInterimResult)
     }
 
     test("a MultiResult cannot be cast to an InterimResult") {
-        val r = MultiResult(List(FinalP(new Object, NilProperty)))
+        val r = MultiResult(List(FinalEP(new Object, NilProperty)))
         assertThrows[ClassCastException](r.asInterimResult)
     }
 
@@ -89,7 +89,7 @@ class InterimResultTest extends FunSuite {
     test("an InterimResult with an upper bound is a proper result") {
         val r: PropertyComputationResult =
             InterimResult(
-                InterimUBP(new Object, NilProperty),
+                InterimEUBP(new Object, NilProperty),
                 List(EPK(new Object, NilProperty.key)),
                 _ ⇒ ???
             )
@@ -100,7 +100,7 @@ class InterimResultTest extends FunSuite {
     test("an InterimResult with a lower bound is a proper result") {
         val r: PropertyComputationResult =
             InterimResult(
-                InterimLBP(new Object, NilProperty),
+                InterimELBP(new Object, NilProperty),
                 List(EPK(new Object, NilProperty.key)),
                 _ ⇒ ???
             )
@@ -111,7 +111,7 @@ class InterimResultTest extends FunSuite {
     test("an InterimResult with a lower and an upper bound is a proper result") {
         val r: PropertyComputationResult =
             InterimResult(
-                InterimLUBP("c", NoPalindrome, Palindrome),
+                InterimELUBP("c", NoPalindrome, Palindrome),
                 List(EPK(new Object, NilProperty.key)),
                 _ ⇒ ???
             )
@@ -122,7 +122,7 @@ class InterimResultTest extends FunSuite {
     test("an InterimResult is an InterimResult") {
         val r: PropertyComputationResult =
             InterimResult(
-                InterimLUBP("c", NoPalindrome, Palindrome),
+                InterimELUBP("c", NoPalindrome, Palindrome),
                 List(EPK(new Object, NilProperty.key)),
                 _ ⇒ ???
             )
@@ -132,7 +132,7 @@ class InterimResultTest extends FunSuite {
     test("an InterimResult can be cast to an InterimResult using asInterimResult") {
         val r: PropertyComputationResult =
             InterimResult(
-                InterimLUBP("c", NoPalindrome, Palindrome),
+                InterimELUBP("c", NoPalindrome, Palindrome),
                 List(EPK(new Object, NilProperty.key)),
                 _ ⇒ ???
             )
@@ -142,28 +142,28 @@ class InterimResultTest extends FunSuite {
     test("the specialized factory method for InterimResults with a lower and and upper bound creates the same EPS as if the EPS was created explicitly") {
         val dependees = List(EPK(new Object, NilProperty.key))
         val r: PropertyComputationResult =
-            InterimResult(                InterimLUBP("c", NoPalindrome, Palindrome),dependees,                _ ⇒ ???            )
+            InterimResult(InterimELUBP("c", NoPalindrome, Palindrome), dependees, _ ⇒ ???)
         val rFactory: PropertyComputationResult =
-            InterimResult(                "c", NoPalindrome, Palindrome,dependees,                _ ⇒ ???            )
-        assert(r == rFactory )
+            InterimResult("c", NoPalindrome, Palindrome, dependees, _ ⇒ ???)
+        assert(r == rFactory)
     }
 
     test("two InterimResults for upper bounds are equal when property and dependency lists are equal") {
         val dependees = List(EPK(new Object, NilProperty.key))
         val r: PropertyComputationResult =
-            InterimResult(                InterimUBP("c", Palindrome),dependees,                _ ⇒ ???            )
+            InterimResult(InterimEUBP("c", Palindrome), dependees, _ ⇒ ???)
         val rFactory: PropertyComputationResult =
-            InterimResult.forUB("c", Palindrome,dependees,_ ⇒ ???)
-        assert(r == rFactory )
+            InterimResult.forUB("c", Palindrome, dependees, _ ⇒ ???)
+        assert(r == rFactory)
     }
 
     test("two InterimResults for lower bounds are equal when property and dependency lists are equal") {
         val dependees = List(EPK(new Object, NilProperty.key))
         val r: PropertyComputationResult =
-            InterimResult(                InterimLBP("c", Palindrome),dependees,                _ ⇒ ???            )
+            InterimResult(InterimELBP("c", Palindrome), dependees, _ ⇒ ???)
         val rFactory: PropertyComputationResult =
-            InterimResult.forLB("c", Palindrome,dependees,_ ⇒ ???)
-        assert(r == rFactory )
+            InterimResult.forLB("c", Palindrome, dependees, _ ⇒ ???)
+        assert(r == rFactory)
     }
 
     // TOOD test the Debug functionality...

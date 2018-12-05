@@ -158,10 +158,10 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         ep:     EOptionP[DeclaredMethod, Property],
         params: Seq[Expr[V]]
     )(implicit state: State): Boolean = ep match {
-        case EPS(_, _, _: ClassifiedImpure | VirtualMethodPurity(_: ClassifiedImpure)) ⇒
+        case UBP(_: ClassifiedImpure | VirtualMethodPurity(_: ClassifiedImpure)) ⇒
             atMost(ImpureByAnalysis)
             false
-        case eps @ EPS(_, lb: Purity, ub: Purity) ⇒
+        case eps @ LUBP(lb: Purity, ub: Purity) ⇒
             if (ub.modifiesParameters) {
                 atMost(ImpureByAnalysis)
                 false
@@ -173,7 +173,7 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                 atMost(ub)
                 true
             }
-        case eps @ EPS(_, VirtualMethodPurity(lb: Purity), VirtualMethodPurity(ub: Purity)) ⇒
+        case eps @ LUBP(VirtualMethodPurity(lb: Purity), VirtualMethodPurity(ub: Purity)) ⇒
             if (ub.modifiesParameters) {
                 atMost(ImpureByAnalysis)
                 false
@@ -219,7 +219,7 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
     override def handleTACAI(ep: EOptionP[Method, TACAI])(implicit state: State): Unit = {
         if (ep.isRefinable)
             state.dependees += ep
-        if (ep.hasProperty)
+        if (ep.hasUBP)
             state.code = ep.ub.tac.get.stmts
     }
 
@@ -240,30 +240,30 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
      *     - fields read (for their mutability)
      *     - classes files for class types returned (for their mutability)
      */
-    def continuation(eps: SomeEPS)(implicit state: State): PropertyComputationResult = {
+    def c(eps: SomeEPS)(implicit state: State): ProperPropertyComputationResult = {
         state.dependees = state.dependees.filter(_.e ne eps.e)
         val oldPurity = state.ubPurity
 
         eps match {
-            case EPS(_, _, tacai: TACAI) ⇒
+            case UBP(tacai: TACAI) ⇒
                 handleTACAI(eps.asInstanceOf[EOptionP[Method, TACAI]])
                 return determineMethodPurity(tacai.tac.get.cfg);
 
             // Cases dealing with other purity values
-            case EPS(_, _, _: Purity | _: VirtualMethodPurity) ⇒
+            case UBP(_: Purity | _: VirtualMethodPurity) ⇒
                 if (!checkMethodPurity(eps.asInstanceOf[EOptionP[DeclaredMethod, Property]]))
                     return Result(state.definedMethod, ImpureByAnalysis)
 
             // Cases that are pure
-            case FinalP(_, _: FinalField)                   ⇒ // Reading eff. final fields
-            case FinalP(_, ImmutableType | ImmutableObject) ⇒ // Returning immutable reference
+            case FinalP(_: FinalField)                   ⇒ // Reading eff. final fields
+            case FinalP(ImmutableType | ImmutableObject) ⇒ // Returning immutable reference
 
             // Cases resulting in side-effect freeness
-            case FinalP(_, _: FieldMutability | // Reading non-final field
+            case FinalP(_: FieldMutability | // Reading non-final field
                 _: TypeImmutability | _: ClassImmutability) ⇒ // Returning mutable reference
                 atMost(SideEffectFree)
 
-            case InterimP(_, _, _) ⇒ state.dependees += eps
+            case _: SomeInterimEP ⇒ state.dependees += eps
         }
 
         if (state.ubPurity ne oldPurity)
@@ -277,7 +277,7 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                 state.lbPurity,
                 state.ubPurity,
                 state.dependees,
-                continuation
+                c
             )
         }
     }
@@ -287,7 +287,10 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
      */
     def determineMethodPurity(
         cfg: CFG[Stmt[V], TACStmts[V]]
-    )(implicit state: State): PropertyComputationResult = {
+    )(
+        implicit
+        state: State
+    ): ProperPropertyComputationResult = {
         // Special case: The Throwable constructor is `LBSideEffectFree`, but subtype constructors
         // may not be because of overridable fillInStackTrace method
         if (state.method.isConstructor && state.declClass.isSubtypeOf(ObjectType.Throwable))
@@ -342,7 +345,7 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                 state.lbPurity,
                 state.ubPurity,
                 state.dependees,
-                continuation
+                c
             )
         }
     }
@@ -352,7 +355,7 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
      *
      * @param definedMethod a defined method with body.
      */
-    def determinePurity(definedMethod: DefinedMethod): PropertyComputationResult = {
+    def determinePurity(definedMethod: DefinedMethod): ProperPropertyComputationResult = {
         val method = definedMethod.definedMethod
         val declClass = method.classFile.thisType
 
@@ -370,14 +373,10 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
 
         val tacaiO = getTACAI(method)
 
-        if (tacaiO.isEmpty)
-            return InterimResult(
-                definedMethod,
-                ImpureByAnalysis,
-                Pure,
-                state.dependees,
-                continuation
-            );
+        if (tacaiO.isEmpty) {
+            val interimELUBP = InterimELUBP(definedMethod, ImpureByAnalysis, Pure)
+            return InterimResult(interimELUBP, state.dependees, c);
+        }
 
         determineMethodPurity(tacaiO.get.cfg)
     }

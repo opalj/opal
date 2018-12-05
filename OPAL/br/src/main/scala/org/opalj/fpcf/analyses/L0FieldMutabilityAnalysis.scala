@@ -31,14 +31,11 @@ class L0FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
      * considered [[org.opalj.fpcf.properties.NonFinalFieldByAnalysis]].
      * For all other cases the call is delegated to [[determineFieldMutability]].
      */
-    def determineFieldMutabilityLazy(e: Entity): PropertyComputationResult = {
+    def determineFieldMutabilityLazy(e: Entity): ProperPropertyComputationResult = {
         e match {
-            case field: Field ⇒
-                determineFieldMutability(field)
+            case field: Field ⇒ determineFieldMutability(field)
 
-            case _ ⇒
-                val m = e.getClass.getSimpleName+" is not an org.opalj.br.Field"
-                throw new IllegalArgumentException(m)
+            case _            ⇒ throw new IllegalArgumentException(s"$e is not a Field")
         }
     }
 
@@ -53,7 +50,7 @@ class L0FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
      * @param field A field without native methods and where the method body of all
      *                  non-abstract methods is available.
      */
-    def determineFieldMutability(field: Field): PropertyComputationResult = {
+    def determineFieldMutability(field: Field): ProperPropertyComputationResult = {
         if (field.isFinal)
             return Result(field, DeclaredFinalField)
 

@@ -4,7 +4,6 @@ package ai
 package fpcf
 package properties
 
-import org.opalj.fpcf.EPS
 import org.opalj.fpcf.FallbackReason
 import org.opalj.fpcf.Property
 import org.opalj.fpcf.PropertyKey

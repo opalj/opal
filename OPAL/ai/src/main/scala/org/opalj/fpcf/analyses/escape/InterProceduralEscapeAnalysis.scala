@@ -35,7 +35,9 @@ class InterProceduralEscapeAnalysisContext(
     with DeclaredMethodsContainer
 
 class InterProceduralEscapeAnalysisState
-    extends AbstractEscapeAnalysisState with DependeeCache with ReturnValueUseSites
+    extends AbstractEscapeAnalysisState
+    with DependeeCache
+    with ReturnValueUseSites
 
 /**
  * A flow-sensitive inter-procedural escape analysis.
@@ -56,17 +58,19 @@ class InterProceduralEscapeAnalysis private[analyses] (
 
     private[this] val isMethodOverridable: Method ⇒ Answer = project.get(IsOverridableMethodKey)
 
-    override def determineEscapeOfFP(fp: VirtualFormalParameter): PropertyComputationResult = {
+    override def determineEscapeOfFP(
+        fp: VirtualFormalParameter
+    ): ProperPropertyComputationResult = {
         fp match {
             // if the underlying method is inherited, we avoid recomputation and query the
             // result of the method for its defining class.
             case VirtualFormalParameter(DefinedMethod(dc, m), i) if dc != m.classFile.thisType ⇒
-                def handleEscapeState(eOptionP: SomeEOptionP): PropertyComputationResult = {
+                def handleEscapeState(eOptionP: SomeEOptionP): ProperPropertyComputationResult = {
                     eOptionP match {
-                        case FinalP(_, p) ⇒
+                        case FinalP(p) ⇒
                             Result(fp, p)
 
-                        case InterimP(_, lb, ub) ⇒
+                        case InterimLUBP(lb, ub) ⇒
                             InterimResult(
                                 fp, lb, ub,
                                 Set(eOptionP), handleEscapeState, CheapPropertyComputation

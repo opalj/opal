@@ -28,7 +28,7 @@ class VirtualCallAggregatingEscapeAnalysis private[analyses] ( final val project
     private[this] val formalParameters = project.get(VirtualFormalParametersKey)
     private[this] val declaredMethods = project.get(DeclaredMethodsKey)
 
-    def determineEscape(fp: VirtualFormalParameter): PropertyComputationResult = {
+    def determineEscape(fp: VirtualFormalParameter): ProperPropertyComputationResult = {
         val dm = fp.method
         assert(!dm.isInstanceOf[VirtualDeclaredMethod])
 
@@ -66,14 +66,14 @@ class VirtualCallAggregatingEscapeAnalysis private[analyses] ( final val project
 
         def handleEscapeState(eOptionP: EOptionP[VirtualFormalParameter, EscapeProperty]): Unit =
             eOptionP match {
-                case ep @ InterimP(_, _, p) ⇒
+                case ep @ InterimUBP(p) ⇒
                     escapeState = escapeState meet p
                     dependees += ep
-                case FinalP(_, p) ⇒ escapeState = escapeState meet p
-                case epk          ⇒ dependees += epk
+                case FinalP(p) ⇒ escapeState = escapeState meet p
+                case epk       ⇒ dependees += epk
             }
 
-        def returnResult: PropertyComputationResult = {
+        def returnResult: ProperPropertyComputationResult = {
             if (escapeState.isBottom || dependees.isEmpty)
                 if (escapeState.isInstanceOf[AtMost])
                     //InterimResult(fp, GlobalEscape.asAggregatedProperty, escapeState.asAggregatedProperty, dependees, continuation)
@@ -83,11 +83,11 @@ class VirtualCallAggregatingEscapeAnalysis private[analyses] ( final val project
             else
                 InterimResult(
                     fp, GlobalEscape.asAggregatedProperty, escapeState.asAggregatedProperty,
-                    dependees, continuation
+                    dependees, c
                 )
         }
 
-        def continuation(someEPS: SomeEPS): PropertyComputationResult = {
+        def c(someEPS: SomeEPS): ProperPropertyComputationResult = {
             val other = someEPS.e
 
             assert(dependees.count(_.e eq other) <= 1)

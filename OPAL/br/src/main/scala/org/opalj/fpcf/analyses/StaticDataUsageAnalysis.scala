@@ -37,15 +37,12 @@ class StaticDataUsageAnalysis private[analyses] ( final val project: SomeProject
      * Retrieves and commits the methods static data usage as calculated for its declaring class
      * type for the current DefinedMethod that represents the non-overwritten method in a subtype.
      */
-    def baseMethodStaticDataUsage(dm: DefinedMethod): PropertyComputationResult = {
+    def baseMethodStaticDataUsage(dm: DefinedMethod): ProperPropertyComputationResult = {
 
-        def c(eps: SomeEOptionP): PropertyComputationResult = eps match {
-            case FinalP(_, sdu) ⇒ Result(dm, sdu)
-            case ep @ InterimP(_, lb, ub) ⇒
-                InterimResult(
-                    dm, lb, ub,
-                    Seq(ep), c, CheapPropertyComputation
-                )
+        def c(eps: SomeEOptionP): ProperPropertyComputationResult = eps match {
+            case FinalP(sdu) ⇒ Result(dm, sdu)
+            case ep @ InterimLUBP(lb, ub) ⇒
+                InterimResult(dm, lb, ub, Seq(ep), c, CheapPropertyComputation)
             case epk ⇒
                 InterimResult(
                     dm, UsesVaryingData, UsesNoStaticData,
@@ -61,7 +58,7 @@ class StaticDataUsageAnalysis private[analyses] ( final val project: SomeProject
      *
      * This function encapsulates the continuation.
      */
-    def determineUsage(definedMethod: DefinedMethod): PropertyComputationResult = {
+    def determineUsage(definedMethod: DefinedMethod): ProperPropertyComputationResult = {
 
         if (definedMethod.definedMethod.body.isEmpty)
             return Result(definedMethod, UsesVaryingData);
@@ -97,8 +94,8 @@ class StaticDataUsageAnalysis private[analyses] ( final val project: SomeProject
                         // ... we have no support for arrays at the moment
                         case Some(field) ⇒
                             propertyStore(field, CompileTimeConstancy.key) match {
-                                case FinalP(_, CompileTimeConstantField) ⇒
-                                case FinalP(_, _) ⇒
+                                case FinalP(CompileTimeConstantField) ⇒
+                                case _: FinalEP[_, _] ⇒
                                     return Result(definedMethod, UsesVaryingData);
                                 case ep ⇒
                                     dependees += ep
@@ -124,16 +121,16 @@ class StaticDataUsageAnalysis private[analyses] ( final val project: SomeProject
                                     propertyStore(declaredMethods(callee), StaticDataUsage.key)
 
                                 constantUsage match {
-                                    case FinalP(_, UsesNoStaticData) ⇒ /* Nothing to do */
+                                    case FinalP(UsesNoStaticData) ⇒ /* Nothing to do */
 
-                                    case FinalP(_, UsesConstantDataOnly) ⇒
+                                    case FinalP(UsesConstantDataOnly) ⇒
                                         maxLevel = UsesConstantDataOnly
 
                                     // Handling cyclic computations
-                                    case ep @ InterimP(_, _, _: NoVaryingDataUse) ⇒
+                                    case ep @ InterimUBP(_: NoVaryingDataUse) ⇒
                                         dependees += ep
 
-                                    case EPS(_, _, _) ⇒
+                                    case _: EPS[_, _] ⇒
                                         return Result(definedMethod, UsesVaryingData);
 
                                     case epk ⇒
@@ -163,12 +160,12 @@ class StaticDataUsageAnalysis private[analyses] ( final val project: SomeProject
 
         // This function computes the “static data usage" for a method based on the usage of its
         // callees and the compile-time constancy of its static field reads
-        def c(eps: SomeEPS): PropertyComputationResult = {
+        def c(eps: SomeEPS): ProperPropertyComputationResult = {
             // Let's filter the entity.
             dependees = dependees.filter(_.e ne eps.e)
 
             eps match {
-                case FinalP(_, du: NoVaryingDataUse) ⇒
+                case FinalP(du: NoVaryingDataUse) ⇒
                     if (du eq UsesConstantDataOnly) maxLevel = UsesConstantDataOnly
                     if (dependees.isEmpty)
                         Result(definedMethod, maxLevel)
@@ -179,9 +176,9 @@ class StaticDataUsageAnalysis private[analyses] ( final val project: SomeProject
                         )
                     }
 
-                case FinalP(_, UsesVaryingData) ⇒ Result(definedMethod, UsesVaryingData)
+                case FinalP(UsesVaryingData) ⇒ Result(definedMethod, UsesVaryingData)
 
-                case FinalP(_, CompileTimeConstantField) ⇒
+                case FinalP(CompileTimeConstantField) ⇒
                     if (dependees.isEmpty)
                         Result(definedMethod, maxLevel)
                     else {
@@ -191,9 +188,9 @@ class StaticDataUsageAnalysis private[analyses] ( final val project: SomeProject
                         )
                     }
 
-                case FinalP(_, CompileTimeVaryingField) ⇒ Result(definedMethod, UsesVaryingData)
+                case FinalP(CompileTimeVaryingField) ⇒ Result(definedMethod, UsesVaryingData)
 
-                case InterimP(_, _, UsesConstantDataOnly) ⇒
+                case InterimUBP(UsesConstantDataOnly) ⇒
                     maxLevel = UsesConstantDataOnly
                     dependees += eps
                     InterimResult(
@@ -201,7 +198,7 @@ class StaticDataUsageAnalysis private[analyses] ( final val project: SomeProject
                         dependees, c, CheapPropertyComputation
                     )
 
-                case InterimP(_, _, _) ⇒
+                case _: InterimEP[_, _] ⇒
                     dependees += eps
                     InterimResult(
                         definedMethod, UsesVaryingData, maxLevel,
@@ -217,12 +214,11 @@ class StaticDataUsageAnalysis private[analyses] ( final val project: SomeProject
     }
 
     /** Called when the analysis is scheduled lazily. */
-    def doDetermineUsage(e: Entity): PropertyComputationResult = {
+    def doDetermineUsage(e: Entity): ProperPropertyComputationResult = {
         e match {
             case m: DefinedMethod  ⇒ determineUsage(m)
             case m: DeclaredMethod ⇒ Result(m, UsesVaryingData)
-            case _ ⇒
-                throw new UnknownError("static constant usage is only defined for methods")
+            case _                 ⇒ throw new UnknownError(s"$e is not a method")
         }
     }
 }

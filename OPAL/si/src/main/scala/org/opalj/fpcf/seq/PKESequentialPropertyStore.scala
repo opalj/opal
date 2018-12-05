@@ -203,7 +203,7 @@ final class PKESequentialPropertyStore private (
                                     PropertyIsNotComputedByAnyAnalysis
                             }
                             val p = fallbackPropertyBasedOnPKId(this, reason, e, pkId)
-                            val finalP = FinalP(e, p.asInstanceOf[P])
+                            val finalP = FinalEP(e, p.asInstanceOf[P])
                             update(finalP, Nil)
                             finalP
                         }
@@ -216,7 +216,7 @@ final class PKESequentialPropertyStore private (
                                 None
                         fastTrackPropertyOption match {
                             case Some(p) ⇒
-                                val finalP = FinalP(e, p.asInstanceOf[P])
+                                val finalP = FinalEP(e, p.asInstanceOf[P])
                                 update(finalP, Nil)
                                 finalP
                             case None ⇒
@@ -359,7 +359,7 @@ final class PKESequentialPropertyStore private (
         val key = p.key
         val pkId = key.id
 
-        val oldPV = ps(pkId).put(e, new FinalP(e, p))
+        val oldPV = ps(pkId).put(e, new FinalEP(e, p))
         if (oldPV.isDefined) {
             throw new IllegalStateException(s"$e has already a property $oldPV")
         }
@@ -403,7 +403,7 @@ final class PKESequentialPropertyStore private (
 
             case MultiResult.id ⇒
                 val MultiResult(results) = r
-                results foreach { ep ⇒ update(FinalP(ep.e, ep.p), newDependees = Nil) }
+                results foreach { ep ⇒ update(FinalEP(ep.e, ep.p), newDependees = Nil) }
 
             //
             // Methods which actually store results...
@@ -412,7 +412,7 @@ final class PKESequentialPropertyStore private (
             case Result.id ⇒
                 // IMPROVE The Result should take the FinalP
                 val Result(e, p) = r
-                update(FinalP(e, p), Nil)
+                update(FinalEP(e, p), Nil)
 
             case PartialResult.id ⇒
                 val PartialResult(e, pk, u) = r
@@ -543,7 +543,7 @@ final class PKESequentialPropertyStore private (
                             trace("analysis progress", s"used fallback $p for $e")
                         }
                         fallbacksUsedForComputedPropertiesCounter += 1
-                        update(FinalP(e, p), Nil)
+                        update(FinalEP(e, p), Nil)
                     }
                 }
                 pkId += 1
@@ -560,7 +560,7 @@ final class PKESequentialPropertyStore private (
                     if (propertyKindsComputedInThisPhase(pkId)) {
                         val interimEPSs = ps(pkId).valuesIterator.filter(_.isRefinable).toList
                         interimEPSs foreach { eOptionP ⇒
-                            ps(pkId).put(eOptionP.e, eOptionP.toFinalP)
+                            ps(pkId).put(eOptionP.e, eOptionP.toFinalEP)
                         }
                     }
                     pkId += 1

@@ -144,7 +144,7 @@ object UnusedResults extends DefaultOneStepAnalysis {
     ): Option[String] = {
         if (callee.hasValue) {
             propertyStore(declaredMethods(callee.value), PurityProperty.key) match {
-                case FinalP(_, CompileTimePure | Pure | SideEffectFree) ⇒
+                case FinalP(CompileTimePure | Pure | SideEffectFree) ⇒
                     createIssue(caller, callee.value, pc)
                 case _ ⇒ None
             }
@@ -190,7 +190,7 @@ object UnusedResults extends DefaultOneStepAnalysis {
                 None // We don't know all overrides, ignore the call (it may be impure)
             } else {
                 propertyStore(callee, VirtualMethodPurity.key) match {
-                    case FinalP(_, VCompileTimePure | VPure | VSideEffectFree) ⇒
+                    case FinalP(VCompileTimePure | VPure | VSideEffectFree) ⇒
                         createIssue(caller, callee.definedMethod, call.pc)
                     case _ ⇒ None
                 }

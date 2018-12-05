@@ -7,6 +7,7 @@ import org.scalatest.FunSpec
 import java.net.URL
 import java.io.File
 
+import org.opalj.log.LogContext
 import org.opalj.ai.common.DefinitionSite
 import org.opalj.ai.common.DefinitionSitesKey
 import org.opalj.br.DefinedMethod
@@ -29,9 +30,8 @@ import org.opalj.br.TAOfNew
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.fpcf.par.PKEParallelTasksPropertyStore
-import org.opalj.fpcf.par.RecordAllPropertyStoreTracer
 import org.opalj.fpcf.properties.PropertyMatcher
+import org.opalj.fpcf.seq.PKESequentialPropertyStore
 
 /**
  * Framework to test if the properties specified in the test project (the classes in the
@@ -146,7 +146,7 @@ abstract class PropertiesTest extends FunSpec with Matchers {
                         nonFinalPSs.isEmpty,
                         nonFinalPSs.mkString("some epss are not final:\n\t", "\n\t", "\n")
                     )
-                    val properties = epss.map(_.toUBEP.p)
+                    val properties = epss.map(_.toFinalEP.p)
                     matcher.validateProperty(p, ats, e, annotation, properties) match {
                         case Some(error: String) ⇒
                             val propertiesAsStrings = properties.map(_.toString)
@@ -286,7 +286,7 @@ abstract class PropertiesTest extends FunSpec with Matchers {
         val p = FixtureProject.recreate { piKeyUnidueId ⇒
             piKeyUnidueId != PropertyStoreKey.uniqueId
         } // to ensure that this project is not "polluted"
-
+        implicit val logContext: LogContext = p.logContext
         init(p)
 
         PropertyStore.updateDebug(true)
@@ -294,10 +294,13 @@ abstract class PropertiesTest extends FunSpec with Matchers {
         p.getOrCreateProjectInformationKeyInitializationData(
             PropertyStoreKey,
             (context: List[PropertyStoreContext[AnyRef]]) ⇒ {
+                /*
                 val ps = PKEParallelTasksPropertyStore.create(
                     new RecordAllPropertyStoreTracer,
                     context.iterator.map(_.asTuple).toMap
-                )(p.logContext)
+                )
+                */
+                val ps = PKESequentialPropertyStore(context: _*)
                 ps
             }
         )
