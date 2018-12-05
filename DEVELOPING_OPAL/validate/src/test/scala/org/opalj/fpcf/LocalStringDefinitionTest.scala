@@ -7,15 +7,18 @@ import java.io.File
 import org.opalj.br.analyses.Project
 import org.opalj.br.Annotation
 import org.opalj.br.Method
+import org.opalj.br.cfg.CFG
 import org.opalj.fpcf.analyses.cg.V
 import org.opalj.fpcf.analyses.string_definition.LazyStringDefinitionAnalysis
 import org.opalj.fpcf.analyses.string_definition.LocalStringDefinitionAnalysis
 import org.opalj.fpcf.properties.StringConstancyProperty
 import org.opalj.tac.DefaultTACAIKey
 import org.opalj.tac.Stmt
+import org.opalj.tac.TACStmts
 import org.opalj.tac.VirtualMethodCall
 
 import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
 
 /**
  * Tests whether the StringTrackingAnalysis works correctly.
@@ -39,27 +42,21 @@ class LocalStringDefinitionTest extends PropertiesTest {
     }
 
     /**
-     * Extracts a [[org.opalj.tac.UVar]] from a set of statements. The location of the UVar is
-     * identified the argument to the very first call to TestMethods#analyzeString.
+     * Extracts [[org.opalj.tac.UVar]]s from a set of statements. The locations of the UVars are
+     * identified by the argument to the very first call to TestMethods#analyzeString.
      *
-     * @param stmts The statements from which to extract the UVar, usually the method that contains
-     *              the call to TestMethods#analyzeString.
-     * @return Returns the argument of the TestMethods#analyzeString as a DUVar. In case the
-     *         expected analyze method is not present, None is returned.
+     * @param cfg The control flow graph from which to extract the UVar, usually derived from the
+     *            method that contains the call(s) to TestMethods#analyzeString.
+     * @return Returns the arguments of the TestMethods#analyzeString as a DUVars list in the order
+     *         in which they occurred in the given statements.
      */
-    private def extractUVar(stmts: Array[Stmt[V]]): Option[V] = {
-        val relMethodCalls = stmts.filter {
+    private def extractUVars(cfg: CFG[Stmt[V], TACStmts[V]]): List[V] = {
+        cfg.code.instructions.filter {
             case VirtualMethodCall(_, declClass, _, name, _, _, _) ⇒
                 declClass.toJavaClass.getName == LocalStringDefinitionTest.fqTestMethodsClass &&
                     name == LocalStringDefinitionTest.nameTestMethod
             case _ ⇒ false
-        }
-
-        if (relMethodCalls.isEmpty) {
-            return None
-        }
-
-        Some(relMethodCalls.head.asVirtualMethodCall.params.head.asVar)
+        }.map(_.asVirtualMethodCall.params.head.asVar).toList
     }
 
     /**
@@ -70,7 +67,6 @@ class LocalStringDefinitionTest extends PropertiesTest {
      * @return True if the `a` is of type StringDefinitions and false otherwise.
      */
     private def isStringUsageAnnotation(a: Annotation): Boolean =
-        // TODO: Is there a better way than string comparison?
         a.annotationType.toJavaClass.getName == LocalStringDefinitionTest.fqStringDefAnnotation
 
     describe("the org.opalj.fpcf.StringTrackingAnalysis is started") {
@@ -84,18 +80,20 @@ class LocalStringDefinitionTest extends PropertiesTest {
         // We need a "method to entity" matching for the evaluation (see further below)
         val m2e = mutable.HashMap[Method, (Entity, Method)]()
         val tacProvider = p.get(DefaultTACAIKey)
+
         p.allMethodsWithBody.filter {
             _.runtimeInvisibleAnnotations.foldLeft(false)(
                 (exists, a) ⇒ exists || isStringUsageAnnotation(a)
             )
         } foreach { m ⇒
-            extractUVar(tacProvider(m).stmts) match {
-                case Some(uvar) ⇒
-                    val e = Tuple2(uvar, m)
-                    ps.force(e, StringConstancyProperty.key)
-                    m2e += (m → e)
-                case _ ⇒
+            extractUVars(tacProvider(m).cfg).foreach { uvar ⇒
+                if (!m2e.contains(m)) {
+                    m2e += (m → Tuple2(ListBuffer(uvar), m))
+                } else {
+                    m2e(m)._1.asInstanceOf[ListBuffer[V]].append(uvar)
+                }
             }
+            ps.force((m2e(m)._1.asInstanceOf[ListBuffer[V]].toList, m), StringConstancyProperty.key)
         }
 
         // As entity, we need not the method but a tuple (DUVar, Method), thus this transformation

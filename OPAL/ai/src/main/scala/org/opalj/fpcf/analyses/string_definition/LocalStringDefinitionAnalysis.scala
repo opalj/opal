@@ -9,14 +9,16 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.properties.StringConstancyProperty
 import org.opalj.fpcf.FPCFLazyAnalysisScheduler
 import org.opalj.fpcf.ComputationSpecification
-import org.opalj.fpcf.NoResult
 import org.opalj.fpcf.analyses.string_definition.preprocessing.AbstractPathFinder
 import org.opalj.fpcf.analyses.string_definition.preprocessing.DefaultPathFinder
 import org.opalj.fpcf.analyses.string_definition.preprocessing.PathTransformer
 import org.opalj.fpcf.Result
 import org.opalj.fpcf.analyses.string_definition.interpretation.InterpretationHandler
+import org.opalj.fpcf.string_definition.properties.StringConstancyInformation
 import org.opalj.tac.SimpleTACAIKey
 import org.opalj.tac.Stmt
+
+import scala.collection.mutable.ListBuffer
 
 class StringTrackingAnalysisContext(
         val stmts: Array[Stmt[V]]
@@ -41,49 +43,40 @@ class LocalStringDefinitionAnalysis(
 ) extends FPCFAnalysis {
 
     def analyze(data: P): PropertyComputationResult = {
+        val scis = ListBuffer[StringConstancyInformation]()
+
         val tacProvider = p.get(SimpleTACAIKey)
         val stmts = tacProvider(data._2).stmts
         val cfg = tacProvider(data._2).cfg
 
-        val defSites = data._1.definedBy.toArray.sorted
-        val expr = stmts(defSites.head).asAssignment.expr
-        val pathFinder: AbstractPathFinder = new DefaultPathFinder()
-        if (InterpretationHandler.isStringBuilderBufferToStringCall(expr)) {
-            val initDefSites = InterpretationHandler.findDefSiteOfInit(
-                expr.asVirtualFunctionCall, stmts
-            )
-            if (initDefSites.isEmpty) {
-                throw new IllegalStateException("did not find any initializations!")
-            }
-
-            val paths = pathFinder.findPaths(initDefSites, cfg)
-            val leanPaths = paths.makeLeanPath(data._1, stmts)
-            // The following case should only occur if an object is queried that does not occur at
-            // all within the CFG
-            if (leanPaths.isEmpty) {
-                return NoResult
-            }
-
-            val tree = new PathTransformer(cfg).pathToStringTree(leanPaths.get)
-            if (tree.isDefined) {
-                Result(data, StringConstancyProperty(tree.get))
-            } else {
-                NoResult
-            }
-        } // If not a call to String{Builder, Buffer}.toString, then we deal with pure strings
-        else {
-            val paths = pathFinder.findPaths(defSites.toList, cfg)
-            if (paths.elements.isEmpty) {
-                NoResult
-            } else {
-                val tree = new PathTransformer(cfg).pathToStringTree(paths)
-                if (tree.isDefined) {
-                    Result(data, StringConstancyProperty(tree.get))
-                } else {
-                    NoResult
+        data._1.foreach { nextUVar ⇒
+            val defSites = nextUVar.definedBy.toArray.sorted
+            val expr = stmts(defSites.head).asAssignment.expr
+            val pathFinder: AbstractPathFinder = new DefaultPathFinder()
+            if (InterpretationHandler.isStringBuilderBufferToStringCall(expr)) {
+                val initDefSites = InterpretationHandler.findDefSiteOfInit(
+                    expr.asVirtualFunctionCall, stmts
+                )
+                if (initDefSites.isEmpty) {
+                    throw new IllegalStateException("did not find any initializations!")
                 }
+
+                val paths = pathFinder.findPaths(initDefSites, cfg)
+                val leanPaths = paths.makeLeanPath(nextUVar, stmts)
+                val tree = new PathTransformer(cfg).pathToStringTree(leanPaths.get)
+                if (tree.isDefined) {
+                    scis.append(tree.get.simplify().groupRepetitionElements().reduce())
+                }
+            } // If not a call to String{Builder, Buffer}.toString, then we deal with pure strings
+            else {
+                val interHandler = InterpretationHandler(cfg)
+                scis.append(StringConstancyInformation.reduceMultiple(
+                    nextUVar.definedBy.toArray.sorted.flatMap { interHandler.processDefSite }.toList
+                ))
             }
         }
+
+        Result(data, StringConstancyProperty(scis.toList))
     }
 
 }

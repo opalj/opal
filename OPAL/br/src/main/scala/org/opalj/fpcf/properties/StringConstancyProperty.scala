@@ -11,21 +11,19 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.string_definition.properties.StringConstancyInformation
 import org.opalj.fpcf.string_definition.properties.StringConstancyLevel
 import org.opalj.fpcf.string_definition.properties.StringConstancyType
-import org.opalj.fpcf.string_definition.properties.StringTree
-import org.opalj.fpcf.string_definition.properties.StringTreeConst
 
 sealed trait StringConstancyPropertyMetaInformation extends PropertyMetaInformation {
     type Self = StringConstancyProperty
 }
 
 class StringConstancyProperty(
-        val stringTree: StringTree
+        val stringConstancyInformation: List[StringConstancyInformation]
 ) extends Property with StringConstancyPropertyMetaInformation {
 
     final def key: PropertyKey[StringConstancyProperty] = StringConstancyProperty.key
 
     override def toString: String = {
-        stringTree.reduce().toString
+        stringConstancyInformation.toString
     }
 
 }
@@ -39,7 +37,7 @@ object StringConstancyProperty extends StringConstancyPropertyMetaInformation {
             PropertyKeyName,
             (_: PropertyStore, _: FallbackReason, _: Entity) ⇒ {
                 // TODO: Using simple heuristics, return a better value for some easy cases
-                StringConstancyProperty(StringTreeConst(StringConstancyInformation(
+                StringConstancyProperty(List(StringConstancyInformation(
                     StringConstancyLevel.DYNAMIC,
                     StringConstancyType.APPEND,
                     StringConstancyInformation.UnknownWordSymbol
@@ -51,7 +49,7 @@ object StringConstancyProperty extends StringConstancyPropertyMetaInformation {
     }
 
     def apply(
-        stringTree: StringTree
-    ): StringConstancyProperty = new StringConstancyProperty(stringTree)
+        stringConstancyInformation: List[StringConstancyInformation]
+    ): StringConstancyProperty = new StringConstancyProperty(stringConstancyInformation)
 
 }
