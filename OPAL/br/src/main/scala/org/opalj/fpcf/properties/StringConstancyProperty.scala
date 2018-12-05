@@ -23,7 +23,11 @@ class StringConstancyProperty(
     final def key: PropertyKey[StringConstancyProperty] = StringConstancyProperty.key
 
     override def toString: String = {
-        stringConstancyInformation.toString
+        val levels = stringConstancyInformation.map(
+            _.constancyLevel.toString.toLowerCase
+        ).mkString("{", ",", "}")
+        val strings = stringConstancyInformation.map(_.possibleStrings).mkString("{", ",", "}")
+        s"Levels: $levels, Strings: $strings"
     }
 
 }

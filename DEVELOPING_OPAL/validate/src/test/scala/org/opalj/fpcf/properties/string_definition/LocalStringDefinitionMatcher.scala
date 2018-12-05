@@ -70,8 +70,8 @@ class LocalStringDefinitionMatcher extends AbstractPropertyMatcher {
 
         val expLevels = getExpectedConstancyLevels(a)
         val expStrings = getExpectedStrings(a)
-        val errorMsg = s"Levels: ${actLevels.mkString("{", ",", "}")}, "+
-            s"Strings: ${actStrings.mkString("{", ",", "}")}"
+        val errorMsg = s"Levels: ${expLevels.mkString("{", ",", "}")}, "+
+            s"Strings: ${expStrings.mkString("{", ",", "}")}"
 
         // The lists need to have the same sizes and need to match element-wise
         if (actLevels.size != expLevels.size || actStrings.size != expStrings.size) {
