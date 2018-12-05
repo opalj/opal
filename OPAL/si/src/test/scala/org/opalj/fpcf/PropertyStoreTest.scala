@@ -121,7 +121,7 @@ sealed abstract class PropertyStoreTest(
                 }
                 assertThrows[InterruptedException] { ps.waitOnPhaseCompletion() }
 
-                ps("a", PalindromeKey) should be(InterimLUBP("a",NoPalindrome,                    Palindrome))
+                ps("a", PalindromeKey) should be(InterimLUBP("a", NoPalindrome, Palindrome))
 
                 ps.shutdown()
             }
@@ -185,7 +185,7 @@ sealed abstract class PropertyStoreTest(
 
                 ps.hasProperty("aba", SuperPalindromeKey) should be(false)
 
-                ps.setupPhase(                    Set(PalindromeKey, SuperPalindromeKey),                    Set.empty                )
+                ps.setupPhase(Set(PalindromeKey, SuperPalindromeKey), Set.empty)
                 ps.waitOnPhaseCompletion()
 
                 ps.hasProperty("aba", PalindromeKey) should be(true)
@@ -201,14 +201,14 @@ sealed abstract class PropertyStoreTest(
                         "a",
                         NoPalindrome, Palindrome,
                         Seq(dependee),
-                        _ ⇒  Result("a", Palindrome) ,
+                        _ ⇒ Result("a", Palindrome),
                         pch
                     )
                 }
                 ps.waitOnPhaseCompletion()
 
                 ps.hasProperty("a", PalindromeKey) should be(true)
-                ps.hasProperty("d", PalindromeKey) should be (true)
+                ps.hasProperty("d", PalindromeKey) should be(true)
 
                 ps.shutdown()
             }
@@ -1507,83 +1507,6 @@ object MarkerWithFastTrack {
     case object IsMarked extends MarkerWithFastTrackProperty
     case object NotMarked extends MarkerWithFastTrackProperty
 }
-
-// Test fixture related to Palindromes.
-object Palindromes {
-
-    final val PalindromeKey: PropertyKey[PalindromeProperty] = {
-        PropertyKey.create[Entity, PalindromeProperty](
-            "Palindrome",
-            (ps: PropertyStore, reason: FallbackReason, e: Entity) ⇒ {
-                reason match {
-                    case PropertyIsNotComputedByAnyAnalysis ⇒
-                        NoAnalysisForPalindromeProperty
-                    case PropertyIsNotDerivedByPreviouslyExecutedAnalysis ⇒
-                        PalindromePropertyNotAnalyzed
-                }
-            }
-        )
-    }
-
-    sealed trait PalindromeProperty extends Property {
-        type Self = PalindromeProperty
-        def key = PalindromeKey
-    }
-    case object Palindrome extends PalindromeProperty
-    case object NoPalindrome extends PalindromeProperty
-    case object PalindromePropertyNotAnalyzed extends PalindromeProperty
-    case object NoAnalysisForPalindromeProperty extends PalindromeProperty
-
-    // We consider a Palindrome a SuperPalindrome if also the first half
-    // is a Palindrome. If the entities' size is odd, the middle element
-    // is ignored.
-    final val SuperPalindromeKey = {
-        PropertyKey.create[Entity, SuperPalindromeProperty](
-            "SuperPalindrome",
-            (ps: PropertyStore, reason: FallbackReason, e: Entity) ⇒ NoSuperPalindrome
-        )
-    }
-
-    sealed trait SuperPalindromeProperty extends Property {
-        type Self = SuperPalindromeProperty
-        def key = SuperPalindromeKey
-    }
-    case object SuperPalindrome extends SuperPalindromeProperty
-    case object NoSuperPalindrome extends SuperPalindromeProperty
-}
-
-sealed trait Purity extends OrderedProperty {
-    final type Self = Purity
-    final def key = Purity.Key
-}
-object Purity {
-    final val Key = PropertyKey.create[Entity, Purity]("Purity", Impure)
-}
-case object Pure extends Purity {
-    def checkIsEqualOrBetterThan(e: Entity, other: Purity): Unit = { /* always true */ }
-}
-case object Impure extends Purity {
-    def checkIsEqualOrBetterThan(e: Entity, other: Purity): Unit = {
-        if (other != Impure) {
-            throw new IllegalArgumentException(s"$e: $this is not equal or better than $other")
-        }
-    }
-}
-
-final class Node(
-        val name:    String,
-        val targets: scala.collection.mutable.Set[Node] = scala.collection.mutable.Set.empty
-) {
-
-    override def hashCode: Int = name.hashCode()
-    override def equals(other: Any): Boolean = other match {
-        case that: Node ⇒ this.name equals that.name
-        case _          ⇒ false
-    }
-
-    override def toString: String = name // RECALL: Nodes are potentially used in cycles.
-}
-object Node { def apply(name: String) = new Node(name) }
 
 object ReachableNodesCount {
     val Key: PropertyKey[ReachableNodesCount] =
