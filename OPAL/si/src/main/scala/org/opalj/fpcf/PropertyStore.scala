@@ -438,7 +438,7 @@ abstract class PropertyStore {
     final def setupPhase(
         propertyKindsComputedInThisPhase:  Set[PropertyKind],
         propertyKindsComputedInLaterPhase: Set[PropertyKind]                    = Set.empty,
-        suppressInterimUpdates:             Map[PropertyKind, Set[PropertyKind]] = Map.empty
+        suppressInterimUpdates:            Map[PropertyKind, Set[PropertyKind]] = Map.empty
     ): Unit = handleExceptions {
         if (!isIdle) {
             throw new IllegalStateException("computations are already running");
