@@ -15,6 +15,9 @@ sealed abstract class PropertyComputationResult {
         throw new ClassCastException();
     }
 
+    private[fpcf] def asResult: Result = {
+        throw new ClassCastException();
+    }
 }
 
 /**
@@ -50,8 +53,13 @@ sealed abstract class FinalPropertyComputationResult extends ProperPropertyCompu
  * @see [[FinalPropertyComputationResult]] for further information.
  */
 case class Result(e: Entity, p: Property) extends FinalPropertyComputationResult {
+    // IMPROVE The Result should take the FinalEP
 
     private[fpcf] final def id = Result.id
+
+    override private[fpcf] def asResult: Result = this
+
+    def finalEP: FinalEP[Entity, Property] = FinalEP(e, p)
 
     override def toString: String = s"Result($e@${System.identityHashCode(e).toHexString},p=$p)"
 }
