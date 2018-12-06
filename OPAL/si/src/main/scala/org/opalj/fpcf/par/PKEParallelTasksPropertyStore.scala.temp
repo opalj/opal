@@ -210,7 +210,7 @@ final class PKEParallelTasksPropertyStore private (
         if (v == 0) { latch = new CountDownLatch(0) }
     }
     /**
-     * MUST BE CALLED AFTER the respective task was processed and all effects have be applied.
+     * MUST BE CALLED AFTER the respective task was processed and all effects have been applied.
      */
     private[this] def decOpenJobs(): Unit = {
         val v = openJobs.decrementAndGet()
