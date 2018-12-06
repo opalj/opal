@@ -1093,7 +1093,7 @@ sealed abstract class PropertyStoreTest(
                 ps.shutdown()
             }
 
-            it("should never pass a `PropertyIsLazilyComputed` to clients") {
+            it("should never pass a null property to clients") {
                 val ps = createPropertyStore()
                 info(s"PropertyStore@${System.identityHashCode(ps).toHexString}")
 
