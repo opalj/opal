@@ -183,7 +183,7 @@ abstract class PropertyStore {
 
     /**
      * If set to `true` no new computations will be scheduled and running computations will
-     * be terminated. Afterwards, the store is no longer useable.
+     * be terminated. Afterwards, the store is no longer usable.
      */
     @volatile var doTerminate: Boolean = false
 
@@ -320,8 +320,7 @@ abstract class PropertyStore {
      * This method is the preferred way to get a snapshot of all properties of an entity and should
      * be used if you know that all properties are already computed.
      *
-     * @note The returned traversable operates on a snapshot.
-     *
+     * @note Only to be called when the store is quiescent.
      * @note Does not trigger lazy property computations.
      *
      * @param e An entity stored in the property store.
@@ -333,6 +332,7 @@ abstract class PropertyStore {
      * undefined if this method is called while the property store still performs
      * (concurrent) computations.
      *
+     * @note Only to be called when the store is quiescent.
      * @note Does not trigger lazy property computations.
      */
     def entities[P <: Property](pk: PropertyKey[P]): Iterator[EPS[Entity, P]]
@@ -343,16 +343,20 @@ abstract class PropertyStore {
      * If some analysis only computes an upper or a lower bound and no final results exists,
      * that entity will be ignored.
      *
+     * @note Only to be called when the store is quiescent.
      * @note Does not trigger lazy property computations.
      */
     def entities[P <: Property](lb: P, ub: P): Iterator[Entity]
 
+    def entitiesWithLB[P <: Property](lb: P): Iterator[Entity]
+
+    def entitiesWithUB[P <: Property](ub: P): Iterator[Entity]
+
     /**
-     * The set of all entities which already have an entity property state that passes
+     * The set of all entities which have an entity property state that passes
      * the given filter.
      *
-     * This method returns a snapshot.
-     *
+     * @note Only to be called when the store is quiescent.
      * @note Does not trigger lazy property computations.
      */
     def entities(propertyFilter: SomeEPS ⇒ Boolean): Iterator[Entity]
@@ -360,9 +364,10 @@ abstract class PropertyStore {
     /**
      * Returns all final entities with the given property.
      *
+     * @note Only to be called when the store is quiescent.
      * @note Does not trigger lazy property computations.
      */
-    def finalEntities[P <: Property](p: P): Iterator[Entity] = entities(p, p)
+    def finalEntities[P <: Property](p: P): Iterator[Entity]
 
     /**
      * Associates the given property `p` with property kind `pk` with the given entity

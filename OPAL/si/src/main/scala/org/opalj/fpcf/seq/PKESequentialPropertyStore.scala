@@ -144,6 +144,7 @@ final class PKESequentialPropertyStore private (
     }
 
     override def entities(propertyFilter: SomeEPS ⇒ Boolean): Iterator[Entity] = {
+        // We have no further EPKs when we are quiescent!
         for {
             epks ← ps.iterator
             (e, eOptionP) ← epks.iterator
@@ -157,11 +158,27 @@ final class PKESequentialPropertyStore private (
     override def entities[P <: Property](lb: P, ub: P): Iterator[Entity] = {
         require(lb ne null)
         require(ub ne null)
-        entities((otherEPS: SomeEPS) ⇒ lb == otherEPS.lb && ub == otherEPS.ub)
+        assert(lb.key == ub.key)
+        for { ELUBP(e, `lb`, `ub`) ← ps(lb.key.id).valuesIterator } yield { e }
+    }
+
+    override def entitiesWithLB[P <: Property](lb: P): Iterator[Entity] = {
+        require(lb ne null)
+        for { ELBP(e, `lb`) ← ps(lb.key.id).valuesIterator } yield { e }
+        entities { otherEPS: SomeEPS ⇒ otherEPS.hasLBP && lb == otherEPS.lb }
+    }
+
+    override def entitiesWithUB[P <: Property](ub: P): Iterator[Entity] = {
+        require(ub ne null)
+        for { EUBP(e, `ub`) ← ps(ub.key.id).valuesIterator } yield { e }
     }
 
     override def entities[P <: Property](pk: PropertyKey[P]): Iterator[EPS[Entity, P]] = {
         ps(pk.id).valuesIterator.collect { case eps: SomeEPS ⇒ eps.asInstanceOf[EPS[Entity, P]] }
+    }
+
+    override def finalEntities[P <: Property](p: P): Iterator[Entity] = {
+        entities((otherEPS: SomeEPS) ⇒ otherEPS.isFinal && otherEPS.asFinal.p == p)
     }
 
     override def toString(printProperties: Boolean): String = {
