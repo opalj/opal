@@ -427,7 +427,7 @@ abstract class PropertyStore {
      *
      * @param propertyKindsComputedInLaterPhase The set of property kinds which will be computed
      *        in a later phase.
-     * @param noIterimUpdates Specifies which iterim updates should not be passed to which
+     * @param suppressInterimUpdates Specifies which iterim updates should not be passed to which
      *        kind of dependers.
      *        A depender will only be informed about the final update. The key of the map
      *        identifies the target of a notification about an update (the depender) and the value
