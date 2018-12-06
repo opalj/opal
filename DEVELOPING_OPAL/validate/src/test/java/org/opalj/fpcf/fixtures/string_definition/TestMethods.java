@@ -528,6 +528,47 @@ public class TestMethods {
         analyzeString(sb1.toString());
     }
 
+    @StringDefinitions(
+            value = "loops that use breaks and continues (or both)",
+            expectedLevels = { CONSTANT, CONSTANT, DYNAMIC },
+            expectedStrings = { "abc((d)?)*", "", "((\\w)?)*" }
+    )
+    public void breakContinueExamples(int value) {
+        StringBuilder sb1 = new StringBuilder("abc");
+        for (int i = 0; i < value; i++) {
+            if (i % 7 == 1) {
+                break;
+            } else if (i % 3 == 0) {
+                continue;
+            } else {
+                sb1.append("d");
+            }
+        }
+        analyzeString(sb1.toString());
+
+        StringBuilder sb2 = new StringBuilder("");
+        for (int i = 0; i < value; i++) {
+            if (i % 2 == 0) {
+                break;
+            }
+            sb2.append("some_value");
+        }
+        analyzeString(sb2.toString());
+
+        StringBuilder sb3 = new StringBuilder();
+        for (int i = 0; i < 10; i++) {
+            if (sb3.toString().equals("")) {
+                // The analysis currently does not detect, that this statement is executed at
+                // most / exactly once as it fully relies on the three-address code and does not
+                // infer any semantics of conditionals
+                sb3.append(getRuntimeClassName());
+            } else {
+                continue;
+            }
+        }
+        analyzeString(sb3.toString());
+    }
+
     //    @StringDefinitions(
     //            value = "a case with a switch with missing breaks",
     //            expectedLevels = {StringConstancyLevel.CONSTANT},
