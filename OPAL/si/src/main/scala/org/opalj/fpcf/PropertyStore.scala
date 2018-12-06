@@ -430,6 +430,8 @@ abstract class PropertyStore {
      *        A depender will only be informed about the final update. The key of the map
      *        identifies the target of a notification about an update (the depender) and the value
      *        specifies which dependee updates should be ignored unless it is a final update.
+     *        This is an optimization related to lazy computations eventually triggered by
+     *        eager computations; it is not a conceptual thing!
      */
     final def setupPhase(
         propertyKindsComputedInThisPhase:  Set[PropertyKind],
