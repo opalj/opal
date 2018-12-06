@@ -569,6 +569,20 @@ public class TestMethods {
         analyzeString(sb3.toString());
     }
 
+    @StringDefinitions(
+            value = "an example where in the condition of an 'if', a string is appended to a "
+                    + "StringBuilder",
+            expectedLevels = { CONSTANT },
+            expectedStrings = { "java.lang.Runtime" }
+    )
+    public void ifConditionAppendsToString(String className) {
+        StringBuilder sb = new StringBuilder();
+        if (sb.append("java.lang.Runtime").toString().equals(className)) {
+            System.out.println("Yep, got the correct class!");
+        }
+        analyzeString(sb.toString());
+    }
+
     //    @StringDefinitions(
     //            value = "a case with a switch with missing breaks",
     //            expectedLevels = {StringConstancyLevel.CONSTANT},
