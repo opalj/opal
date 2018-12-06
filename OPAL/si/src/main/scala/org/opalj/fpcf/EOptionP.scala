@@ -65,6 +65,8 @@ sealed trait EOptionP[+E <: Entity, +P <: Property] {
     final def isRefinable: Boolean = !isFinal
     def asFinal: FinalEP[E, P]
 
+    def asInterim: InterimEP[E, P]
+
     /**
      * Combines the test if we have a final property and – if we have one – if it is equal (by
      * means of an equality check) to the given one.
@@ -343,6 +345,8 @@ final class FinalEP[+E <: Entity, +P <: Property](val e: E, val p: P) extends EP
     override def ub: P = p
     override def toFinalEUBP: FinalEP[E, P] = this
 
+    override def asInterim: InterimEP[E, P] = throw new ClassCastException();
+
     private[fpcf] def checkIsValidPropertiesUpdate(
         eps:          SomeEPS,
         newDependees: Traversable[SomeEOptionP]
@@ -392,6 +396,8 @@ sealed trait InterimEP[+E <: Entity, +P <: Property] extends EPS[E, P] {
 
     override def isFinal: Boolean = false
     override def asFinal: FinalEP[E, P] = throw new ClassCastException();
+
+    override def asInterim: InterimEP[E, P] = this
 
     private[fpcf] def checkIsValidLBPropertyUpdate(eps: SomeEPS): Unit = {
         val newLBAsOP = eps.lb.asOrderedProperty
@@ -546,7 +552,7 @@ final class InterimEUBP[+E <: Entity, +P <: Property](
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: InterimEUBP[_, _] ⇒ e == that.e && ub == that.ub
+            case that: InterimEUBP[_, _] ⇒ ub == that.ub && e == that.e
             case _                       ⇒ false
         }
     }
@@ -602,7 +608,7 @@ final class InterimELBP[+E <: Entity, +P <: Property](
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: InterimELBP[_, _] ⇒ e == that.e && lb == that.lb
+            case that: InterimELBP[_, _] ⇒ lb == that.lb && e == that.e
             case _                       ⇒ false
         }
     }
@@ -669,6 +675,8 @@ final class EPK[+E <: Entity, +P <: Property](
 
     override def toEPS: Option[EPS[E, P]] = None
 
+    override def asInterim: InterimEP[E, P] = throw new ClassCastException();
+
     override private[fpcf] def hasDifferentProperties(eps: SomeEPS): Boolean = eps.isEPS
 
     override private[fpcf] def checkIsValidPropertiesUpdate(
@@ -678,7 +686,7 @@ final class EPK[+E <: Entity, +P <: Property](
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: EPK[_, _] ⇒ that.e == this.e && this.pk == that.pk
+            case that: EPK[_, _] ⇒ this.pk == that.pk && that.e == this.e
             case _               ⇒ false
         }
     }

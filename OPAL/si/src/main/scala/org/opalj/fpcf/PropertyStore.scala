@@ -207,7 +207,9 @@ abstract class PropertyStore {
      */
     final val debug: Boolean = PropertyStore.Debug // TODO Rename to "Debug"
 
-    final def traceFallbacks: Boolean = PropertyStore.TraceFallbacks
+    final val traceFallbacks: Boolean = PropertyStore.TraceFallbacks // TODO Rename to "TraceFallbacks"
+
+    final val traceSuppressedNotifications: Boolean = PropertyStore.TraceSuppressedNotifications // TODO Rename to "TraceSuppressedNotifications"
 
     def supportsFastTrackPropertyComputations: Boolean
 
@@ -282,7 +284,7 @@ abstract class PropertyStore {
         new Array(SupportedPropertyKinds)
     }
 
-    protected[this] final val suppressIterimUpdates: Array[Array[Boolean]] = {
+    protected[this] final val suppressInterimUpdates: Array[Array[Boolean]] = {
         Array.fill(SupportedPropertyKinds) { new Array[Boolean](SupportedPropertyKinds) }
     }
 
@@ -442,6 +444,14 @@ abstract class PropertyStore {
             throw new IllegalStateException("computations are already running");
         }
 
+        assert(
+            suppressIterimUpdates.forall { e ⇒
+                val (dependerPK, dependeePKs) = e
+                !dependeePKs.contains(dependerPK)
+            },
+            "illegal self dependency"
+        )
+
         // Step 1
         // Copy all property kinds that were computed in the previous phase that are no
         // longer computed to the "propertyKindsComputedInEarlierPhase" array.
@@ -472,7 +482,7 @@ abstract class PropertyStore {
         suppressIterimUpdates foreach { dependerDependees ⇒
             val (depender, dependees) = dependerDependees
             dependees foreach { dependee ⇒
-                this.suppressIterimUpdates(depender.id)(dependee.id) = true
+                this.suppressInterimUpdates(depender.id)(dependee.id) = true
             }
         }
 
@@ -822,7 +832,9 @@ object PropertyStore {
     // about debugging analyses.
     //
 
-    final val TraceFallbacksKey = "org.opalj.fpcf.PropertyStore.TraceFallbacks"
+    final val TraceFallbacksKey = {
+        "org.opalj.fpcf.PropertyStore.TraceFallbacks"
+    }
 
     private[this] var traceFallbacks: Boolean = {
         val initialTraceFallbacks = BaseConfig.getBoolean(TraceFallbacksKey)
@@ -837,10 +849,47 @@ object PropertyStore {
         implicit val logContext: LogContext = GlobalLogContext
         traceFallbacks =
             if (newTraceFallbacks) {
-                info("OPAL", s"$TraceFallbacksKey: usages of fallbacks are reported")
+                info(
+                    "OPAL - new PropertyStores",
+                    s"$TraceFallbacksKey: usages of fallbacks are reported"
+                )
                 true
             } else {
-                info("OPAL", s"$TraceFallbacksKey: fallbacks are not reported")
+                info(
+                    "OPAL - new PropertyStores",
+                    s"$TraceFallbacksKey: fallbacks are not reported"
+                )
+                false
+            }
+    }
+
+    final val TraceSuppressedNotificationsKey = {
+        "org.opalj.fpcf.PropertyStore.TraceSuppressedNotifications"
+    }
+
+    private[this] var traceSuppressedNotifications: Boolean = {
+        val initialTraceSuppressedNotifications = BaseConfig.getBoolean(TraceSuppressedNotificationsKey)
+        updateTraceFallbacks(initialTraceSuppressedNotifications)
+        initialTraceSuppressedNotifications
+    }
+
+    // We think of it as a runtime constant (which can be changed for testing purposes).
+    def TraceSuppressedNotifications: Boolean = traceSuppressedNotifications
+
+    def updateTraceDependersNotificationsKey(newTraceSuppressedNotifications: Boolean): Unit = {
+        implicit val logContext: LogContext = GlobalLogContext
+        traceSuppressedNotifications =
+            if (newTraceSuppressedNotifications) {
+                info(
+                    "OPAL - new PropertyStores",
+                    s"$TraceSuppressedNotificationsKey: suppressed notifications are reported"
+                )
+                true
+            } else {
+                info(
+                    "OPAL - new PropertyStores",
+                    s"$TraceSuppressedNotificationsKey: suppressed notifications are not reported"
+                )
                 false
             }
     }

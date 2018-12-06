@@ -152,6 +152,8 @@ object PropertyKey {
 
     final def name(pKind: PropertyKind): String = name(pKind.id)
 
+    final def name(eOptionP: SomeEOptionP): String = name(eOptionP.pk.id)
+
     final def hasFallback(propertyKind: PropertyKind): Boolean = {
         hasFallbackBasedOnPKId(propertyKind.id)
     }

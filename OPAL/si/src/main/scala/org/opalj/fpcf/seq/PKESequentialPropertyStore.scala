@@ -10,6 +10,7 @@ import java.util.ArrayDeque
 import scala.collection.mutable
 import scala.collection.{Map ⇒ SomeMap}
 import scala.collection.mutable.AnyRefMap
+import scala.collection.mutable.ArrayBuffer
 
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.{debug ⇒ trace}
@@ -203,6 +204,9 @@ final class PKESequentialPropertyStore private (
                                     PropertyIsNotComputedByAnyAnalysis
                             }
                             val p = fallbackPropertyBasedOnPKId(this, reason, e, pkId)
+                            if (traceFallbacks) {
+                                trace("analysis progress", s"used fallback $p for $e")
+                            }
                             val finalP = FinalEP(e, p.asInstanceOf[P])
                             update(finalP, Nil)
                             finalP
@@ -289,7 +293,7 @@ final class PKESequentialPropertyStore private (
         tasks.addLast(new PropertyComputationTask(this, e, pc))
     }
 
-    private[this] def clearDependees(epk: SomeEPK): Unit = {
+    private[this] def removeDependerFromDependees(epk: SomeEPK): Unit = {
         val pkId = epk.pk.id
         val e = epk.e
         for {
@@ -338,7 +342,7 @@ final class PKESequentialPropertyStore private (
             dependers(pkId).get(e).foreach { dependersOfEPK ⇒
                 dependersOfEPK foreach { cHint ⇒
                     val (dependerEPK, (c, hint)) = cHint
-                    if (isFinal || !suppressIterimUpdates(dependerEPK.pk.id)(pkId)) {
+                    if (isFinal || !suppressInterimUpdates(dependerEPK.pk.id)(pkId)) {
                         if (hint == DefaultPropertyComputation) {
                             val t: QualifiedTask =
                                 if (isFinal) {
@@ -354,7 +358,9 @@ final class PKESequentialPropertyStore private (
                             tasks.addFirst(new HandleResultTask(this, c(eps)))
                         }
                         scheduledOnUpdateComputationsCounter += 1
-                        clearDependees(dependerEPK)
+                        removeDependerFromDependees(dependerEPK)
+                    } else if (traceSuppressedNotifications) {
+                        trace("analysis progress", s"suppressed notification: $dependerEPK ← $eps")
                     }
                 }
             }
@@ -555,10 +561,41 @@ final class PKESequentialPropertyStore private (
                 pkId += 1
             }
 
+            // 2. Let's search for entities with interim properties where some dependers
+            //    were not yet notified about intermediate updates. In this case, the
+            //    current results of the dependers cannot be finalized; instead, we need
+            //    to finalize (the cyclic dependent) depeends first and notify the
+            //    dependers.
+            if (!continueComputation && suppressInterimUpdates.exists(_.contains(true))) {
+                // Collect all InterimEPs to find cycles.
+                val interimEPs = ArrayBuffer.empty[SomeEOptionP]
+                var pkId = 0
+                while (pkId <= maxPKIndex) {
+                    if (propertyKindsComputedInThisPhase(pkId)) {
+                        ps(pkId).valuesIterator foreach { eps ⇒
+                            if (eps.isRefinable) interimEPs += eps
+                        }
+                    }
+                    pkId += 1
+                }
+
+                val successors = (interimEP: SomeEOptionP) ⇒ dependees(interimEP.pk.id)(interimEP.e)
+                val cSCCs = graphs.closedSCCs(interimEPs, successors)
+                continueComputation = cSCCs.nonEmpty
+                for (cSCC ← cSCCs) {
+                    // Clear all dependees of all members of a cycle to avoid inner cycle
+                    // notifications!
+                    for (interimEP ← cSCC) { removeDependerFromDependees(interimEP.toEPK) }
+                    // 2. set all values
+                    for (interimEP ← cSCC) { update(interimEP.toFinalEP, Nil) }
+                }
+            }
+
+            // 3. Let's finalize all remaining interim EPS; e.g., those related to
+            //    collaboratively computed properties.
             if (!continueComputation) {
-                // We used no fallbacks, but we may still have collaboratively computed or
-                // cyclic dependent properties (e.g. CallGraph) which are not yet final;
-                // let's finalize them!
+                // We used no fallbacks, but we may still have collaboratively computed properties
+                // (e.g. CallGraph) which are not yet final; let's finalize them!
                 dependees.foreach(_.clear())
                 dependers.foreach(_.clear())
                 var pkId = 0
