@@ -84,12 +84,13 @@ object PropertyKey {
      *              on the reachable code.
      *
      * @param fastTrackPropertyComputation (Optionally) called by the property store if the property
-     *              is computed in the current phase and is queried the first time
-     *              (see `PropertyStore.setupPhase`). This method is expected to either provide
+     *              is queried for the first time (see `PropertyStore.setupPhase`).
+     *              This method is expected to either provide
      *              a precise analysis very fast or to not provide a result at all.
      *              I.e., it is expected to derive only those properties that can trivially be
      *              derived precisely. In general, the computation should succeed in at most
-     *              a few hundred steps!
+     *              a few hundred steps. The computation must NOT query any properties and
+     *              must be idempotent.
      *
      * @note This method is '''not thread-safe''' - the setup of the property store (e.g.,
      *       using the [[org.opalj.fpcf.FPCFAnalysesManager]] or an [[AnalysisScenario]] has to
