@@ -963,7 +963,7 @@ sealed abstract class PropertyStoreTest(
                     ps.shutdown()
                 }
 
-                it("should be possible to use lazily scheduled mutually dependent computations without itermediate results") {
+                it("should be possible to use lazily scheduled mutually dependent computations without intermediate results propagation") {
                     val ps = createPropertyStore()
                     info(s"PropertyStore@${System.identityHashCode(ps).toHexString}")
 
