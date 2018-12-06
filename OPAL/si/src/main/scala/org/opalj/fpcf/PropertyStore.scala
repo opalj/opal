@@ -438,14 +438,14 @@ abstract class PropertyStore {
     final def setupPhase(
         propertyKindsComputedInThisPhase:  Set[PropertyKind],
         propertyKindsComputedInLaterPhase: Set[PropertyKind]                    = Set.empty,
-        suppressIterimUpdates:             Map[PropertyKind, Set[PropertyKind]] = Map.empty
+        suppressInterimUpdates:             Map[PropertyKind, Set[PropertyKind]] = Map.empty
     ): Unit = handleExceptions {
         if (!isIdle) {
             throw new IllegalStateException("computations are already running");
         }
 
         assert(
-            suppressIterimUpdates.forall { e ⇒
+            suppressInterimUpdates.forall { e ⇒
                 val (dependerPK, dependeePKs) = e
                 !dependeePKs.contains(dependerPK)
             },
@@ -479,7 +479,7 @@ abstract class PropertyStore {
 
         // Step 3
         // Collect the information about which interim results should be suppressed.
-        suppressIterimUpdates foreach { dependerDependees ⇒
+        suppressInterimUpdates foreach { dependerDependees ⇒
             val (depender, dependees) = dependerDependees
             dependees foreach { dependee ⇒
                 this.suppressInterimUpdates(depender.id)(dependee.id) = true
