@@ -1,7 +1,6 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.string_definition;
 
-import org.opalj.fpcf.properties.string_definition.StringConstancyLevel;
 import org.opalj.fpcf.properties.string_definition.StringDefinitions;
 
 import java.io.IOException;
@@ -9,8 +8,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Random;
 
-import static org.opalj.fpcf.properties.string_definition.StringConstancyLevel.CONSTANT;
-import static org.opalj.fpcf.properties.string_definition.StringConstancyLevel.PARTIALLY_CONSTANT;
+import static org.opalj.fpcf.properties.string_definition.StringConstancyLevel.*;
 
 /**
  * This file contains various tests for the StringDefinitionAnalysis. The following things are to be
@@ -61,7 +59,7 @@ public class TestMethods {
             expectedLevels = { CONSTANT, CONSTANT },
             expectedStrings = { "java.lang.String", "java.lang.String" }
     )
-    public void constantStringVariable() {
+    public void constantStringReads() {
         analyzeString("java.lang.String");
 
         String className = "java.lang.String";
@@ -69,29 +67,22 @@ public class TestMethods {
     }
 
     @StringDefinitions(
-            value = "checks if a string value with one append is determined correctly",
-            expectedLevels = { CONSTANT },
-            expectedStrings = { "java.lang.string" }
+            value = "checks if a string value with append(s) is determined correctly",
+            expectedLevels = { CONSTANT, CONSTANT },
+            expectedStrings = { "java.lang.String", "java.lang.Object" }
     )
     public void simpleStringConcat() {
-        String className = "java.lang.";
-        System.out.println(className);
-        className += "string";
-        analyzeString(className);
-    }
+        String className1 = "java.lang.";
+        System.out.println(className1);
+        className1 += "String";
+        analyzeString(className1);
 
-    @StringDefinitions(
-            value = "checks if a string value with > 1 appends is determined correctly",
-            expectedLevels = { CONSTANT },
-            expectedStrings = { "java.lang.string" }
-    )
-    public void advStringConcat() {
-        String className = "java.";
-        System.out.println(className);
-        className += "lang.";
-        System.out.println(className);
-        className += "string";
-        analyzeString(className);
+        String className2 = "java.";
+        System.out.println(className2);
+        className2 += "lang.";
+        System.out.println(className2);
+        className2 += "Object";
+        analyzeString(className2);
     }
 
     @StringDefinitions(
@@ -107,7 +98,7 @@ public class TestMethods {
 
     @StringDefinitions(
             value = "at this point, function call cannot be handled => DYNAMIC",
-            expectedLevels = { StringConstancyLevel.DYNAMIC },
+            expectedLevels = { DYNAMIC },
             expectedStrings = { "\\w" }
     )
     public void fromFunctionCall() {
@@ -161,7 +152,7 @@ public class TestMethods {
     @StringDefinitions(
             value = "a more comprehensive case where multiple definition sites have to be "
                     + "considered each with a different string generation mechanism",
-            expectedLevels = { StringConstancyLevel.DYNAMIC },
+            expectedLevels = { DYNAMIC },
             expectedStrings = { "(java.lang.Object|\\w|java.lang.System|java.lang.\\w|\\w)" }
     )
     public void multipleDefSites(int value) {
@@ -189,67 +180,67 @@ public class TestMethods {
     }
 
     @StringDefinitions(
-            value = "if-else control structure which append to a string builder with an int expr",
-            expectedLevels = { StringConstancyLevel.DYNAMIC },
-            expectedStrings = { "(x|[AnIntegerValue])" }
+            value = "a case where multiple optional definition sites have to be considered.",
+            expectedLevels = { CONSTANT },
+            expectedStrings = { "a(b|c)?" }
+    )
+    public void multipleOptionalAppendSites(int value) {
+        StringBuilder sb = new StringBuilder("a");
+        switch (value) {
+        case 0:
+            sb.append("b");
+            break;
+        case 1:
+            sb.append("c");
+            break;
+        case 3:
+            break;
+        case 4:
+            break;
+        }
+        analyzeString(sb.toString());
+    }
+
+    @StringDefinitions(
+            value = "if-else control structure which append to a string builder with an int expr "
+                    + "and an int",
+            expectedLevels = { DYNAMIC, DYNAMIC },
+            expectedStrings = { "(x|[AnIntegerValue])", "([AnIntegerValue]|x)" }
     )
     public void ifElseWithStringBuilderWithIntExpr() {
-        StringBuilder sb = new StringBuilder();
+        StringBuilder sb1 = new StringBuilder();
+        StringBuilder sb2 = new StringBuilder();
         int i = new Random().nextInt();
         if (i % 2 == 0) {
-            sb.append("x");
+            sb1.append("x");
+            sb2.append(i);
         } else {
-            sb.append(i + 1);
+            sb1.append(i + 1);
+            sb2.append("x");
         }
-        analyzeString(sb.toString());
-    }
-
-    @StringDefinitions(
-            value = "if-else control structure which append to a string builder with an int",
-            expectedLevels = { StringConstancyLevel.DYNAMIC },
-            expectedStrings = { "([AnIntegerValue]|x)" }
-    )
-    public void ifElseWithStringBuilderWithConstantInt() {
-        StringBuilder sb = new StringBuilder();
-        int i = new Random().nextInt();
-        if (i % 2 == 0) {
-            sb.append(i);
-        } else {
-            sb.append("x");
-        }
-        analyzeString(sb.toString());
+        analyzeString(sb1.toString());
+        analyzeString(sb2.toString());
     }
 
     @StringDefinitions(
             value = "if-else control structure which append to a string builder",
-            expectedLevels = { CONSTANT },
-            expectedStrings = { "(a|b)" }
+            expectedLevels = { CONSTANT, CONSTANT },
+            expectedStrings = { "(a|b)", "a(b|c)" }
     )
     public void ifElseWithStringBuilder1() {
-        StringBuilder sb;
-        int i = new Random().nextInt();
-        if (i % 2 == 0) {
-            sb = new StringBuilder("a");
-        } else {
-            sb = new StringBuilder("b");
-        }
-        analyzeString(sb.toString());
-    }
+        StringBuilder sb1;
+        StringBuilder sb2 = new StringBuilder("a");
 
-    @StringDefinitions(
-            value = "if-else control structure which append to a string builder",
-            expectedLevels = { CONSTANT },
-            expectedStrings = { "a(b|c)" }
-    )
-    public void ifElseWithStringBuilder2() {
-        StringBuilder sb = new StringBuilder("a");
         int i = new Random().nextInt();
         if (i % 2 == 0) {
-            sb.append("b");
+            sb1 = new StringBuilder("a");
+            sb2.append("b");
         } else {
-            sb.append("c");
+            sb1 = new StringBuilder("b");
+            sb2.append("c");
         }
-        analyzeString(sb.toString());
+        analyzeString(sb1.toString());
+        analyzeString(sb2.toString());
     }
 
     @StringDefinitions(
@@ -273,10 +264,10 @@ public class TestMethods {
     }
 
     @StringDefinitions(
-            value = "simple for loop with known bounds",
-            expectedLevels = { CONSTANT },
+            value = "simple for loops with known and unknown bounds",
+            expectedLevels = { CONSTANT, CONSTANT },
             // Currently, the analysis does not support determining loop ranges => a(b)*
-            expectedStrings = { "a(b)*" }
+            expectedStrings = { "a(b)*", "a(b)*" }
     )
     public void simpleForLoopWithKnownBounds() {
         StringBuilder sb = new StringBuilder("a");
@@ -284,37 +275,12 @@ public class TestMethods {
             sb.append("b");
         }
         analyzeString(sb.toString());
-    }
 
-    @StringDefinitions(
-            value = "simple for loop with unknown bounds",
-            expectedLevels = { CONSTANT },
-            expectedStrings = { "a(b)*" }
-    )
-    public void simpleForLoopWithUnknownBounds() {
         int limit = new Random().nextInt();
-        StringBuilder sb = new StringBuilder("a");
+        sb = new StringBuilder("a");
         for (int i = 0; i < limit; i++) {
             sb.append("b");
         }
-        analyzeString(sb.toString());
-    }
-
-    @StringDefinitions(
-            value = "if-else control structure within a for loop with known loop bounds",
-            expectedLevels = { StringConstancyLevel.DYNAMIC },
-            expectedStrings = { "((x|[AnIntegerValue]))*" }
-    )
-    public void ifElseInLoopWithKnownBounds() {
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < 20; i++) {
-            if (i % 2 == 0) {
-                sb.append("x");
-            } else {
-                sb.append(i + 1);
-            }
-        }
-
         analyzeString(sb.toString());
     }
 
@@ -347,28 +313,6 @@ public class TestMethods {
         int i = new Random().nextInt();
         if (i % 2 == 0) {
             sb.append("b");
-        }
-        analyzeString(sb.toString());
-    }
-
-    @StringDefinitions(
-            value = "a case where multiple optional definition sites have to be considered.",
-            expectedLevels = { CONSTANT },
-            expectedStrings = { "a(b|c)?" }
-    )
-    public void multipleOptionalAppendSites(int value) {
-        StringBuilder sb = new StringBuilder("a");
-        switch (value) {
-        case 0:
-            sb.append("b");
-            break;
-        case 1:
-            sb.append("c");
-            break;
-        case 3:
-            break;
-        case 4:
-            break;
         }
         analyzeString(sb.toString());
     }
@@ -530,28 +474,22 @@ public class TestMethods {
     }
 
     @StringDefinitions(
-            value = "a simple example with a StringBuilder#setLength to clear it",
-            expectedLevels = { StringConstancyLevel.DYNAMIC },
-            expectedStrings = { "\\w" }
+            value = "simple examples to clear a StringBuilder",
+            expectedLevels = { DYNAMIC, DYNAMIC },
+            expectedStrings = { "\\w", "\\w" }
     )
-    public void simpleClearWithSetLengthExample(int value) {
-        StringBuilder sb = new StringBuilder("init_value:");
-        sb.setLength(0);
-        sb.append(getStringBuilderClassName());
-        analyzeString(sb.toString());
-    }
+    public void simpleClearExamples() {
+        StringBuilder sb1 = new StringBuilder("init_value:");
+        sb1.setLength(0);
+        sb1.append(getStringBuilderClassName());
 
-    @StringDefinitions(
-            value = "a simple example with a StringBuilder#new to clear it",
-            expectedLevels = { StringConstancyLevel.DYNAMIC },
-            expectedStrings = { "\\w" }
-    )
-    public void simpleClearWithNewExample(int value) {
-        StringBuilder sb = new StringBuilder("init_value:");
-        System.out.println(sb.toString());
-        sb = new StringBuilder();
-        sb.append(getStringBuilderClassName());
-        analyzeString(sb.toString());
+        StringBuilder sb2 = new StringBuilder("init_value:");
+        System.out.println(sb2.toString());
+        sb2 = new StringBuilder();
+        sb2.append(getStringBuilderClassName());
+
+        analyzeString(sb1.toString());
+        analyzeString(sb2.toString());
     }
 
     @StringDefinitions(
@@ -571,30 +509,23 @@ public class TestMethods {
     }
 
     @StringDefinitions(
-            value = "a simple example with a StringBuilder#replace call",
-            expectedLevels = { StringConstancyLevel.DYNAMIC },
-            expectedStrings = { "\\w" }
+            value = "a simple and a little more advanced example with a StringBuilder#replace call",
+            expectedLevels = { DYNAMIC, PARTIALLY_CONSTANT },
+            expectedStrings = { "\\w", "(init_value:Hello, world!Goodbye|\\wGoodbye)" }
     )
-    public void simpleReplaceExample() {
-        StringBuilder sb = new StringBuilder("init_value");
-        sb.replace(0, 5, "replaced_value");
-        analyzeString(sb.toString());
-    }
+    public void replaceExamples(int value) {
+        StringBuilder sb1 = new StringBuilder("init_value");
+        sb1.replace(0, 5, "replaced_value");
+        analyzeString(sb1.toString());
 
-    @StringDefinitions(
-            value = "a more advanced example with a StringBuilder#replace call",
-            expectedLevels = { PARTIALLY_CONSTANT },
-            expectedStrings = { "(init_value:Hello, world!Goodbye|\\wGoodbye)" }
-    )
-    public void advancedReplaceExample(int value) {
-        StringBuilder sb = new StringBuilder("init_value:");
+        sb1 = new StringBuilder("init_value:");
         if (value < 10) {
-            sb.replace(0, value, "...");
+            sb1.replace(0, value, "...");
         } else {
-            sb.append("Hello, world!");
+            sb1.append("Hello, world!");
         }
-        sb.append("Goodbye");
-        analyzeString(sb.toString());
+        sb1.append("Goodbye");
+        analyzeString(sb1.toString());
     }
 
     //    @StringDefinitions(
