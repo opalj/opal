@@ -338,18 +338,24 @@ final class PKESequentialPropertyStore private (
             dependers(pkId).get(e).foreach { dependersOfEPK ⇒
                 dependersOfEPK foreach { cHint ⇒
                     val (dependerEPK, (c, hint)) = cHint
-                    val t: QualifiedTask =
-                        if (isFinal) {
-                            new OnFinalUpdateComputationTask(this, eps.asFinal, c)
-                        } else {
-                            new OnUpdateComputationTask(this, eps.toEPK, c)
+                    if (isFinal || !suppressIterimUpdates(dependerEPK.pk.id)(pkId)) {
+                        if (hint == DefaultPropertyComputation) {
+                            val t: QualifiedTask =
+                                if (isFinal) {
+                                    new OnFinalUpdateComputationTask(this, eps.asFinal, c)
+                                } else {
+                                    new OnUpdateComputationTask(this, eps.toEPK, c)
+                                }
+                            if (delayHandlingOfDependerNotification)
+                                tasks.addLast(t)
+                            else
+                                tasks.addFirst(t)
+                        } else { // we have a cheap property computation
+                            tasks.addFirst(new HandleResultTask(this, c(eps)))
                         }
-                    scheduledOnUpdateComputationsCounter += 1
-                    if (delayHandlingOfDependerNotification)
-                        tasks.addLast(t)
-                    else
-                        tasks.addFirst(t)
-                    clearDependees(dependerEPK)
+                        scheduledOnUpdateComputationsCounter += 1
+                        clearDependees(dependerEPK)
+                    }
                 }
             }
         }

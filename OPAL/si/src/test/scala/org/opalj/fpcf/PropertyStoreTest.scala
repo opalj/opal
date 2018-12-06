@@ -911,10 +911,78 @@ sealed abstract class PropertyStoreTest(
                     ps.registerLazyPropertyComputation(
                         ReachableNodesCount.Key, reachableNodesCountViaReachableNodesAnalysis(ps)
                     )
-                    nodeEntities foreach { node ⇒
-                        ps.force(node, ReachableNodesCount.Key)
-                    }
+                    nodeEntities foreach { node ⇒ ps.force(node, ReachableNodesCount.Key) }
                     ps.waitOnPhaseCompletion()
+                    info("scheduledTasksCount="+ps.scheduledTasksCount)
+                    info("scheduledOnUpdateComputationsCount="+ps.scheduledOnUpdateComputationsCount)
+
+                    try {
+                        ps(nodeA, ReachableNodes.Key) should be(
+                            FinalEP(nodeA, ReachableNodes(nodeEntities.toSet - nodeA))
+                        )
+                        ps(nodeB, ReachableNodes.Key) should be(
+                            FinalEP(nodeB, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR)))
+                        )
+                        ps(nodeC, ReachableNodes.Key) should be(
+                            FinalEP(nodeC, ReachableNodes(Set()))
+                        )
+                        ps(nodeD, ReachableNodes.Key) should be(
+                            FinalEP(nodeD, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR)))
+                        )
+                        ps(nodeE, ReachableNodes.Key) should be(
+                            FinalEP(nodeE, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR)))
+                        )
+                        ps(nodeR, ReachableNodes.Key) should be(
+                            FinalEP(nodeR, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR)))
+                        )
+                        // now let's check if we have the correct notification of the
+                        // lazily dependent computations
+                        ps(nodeA, ReachableNodesCount.Key) should be(
+                            FinalEP(nodeA, ReachableNodesCount(nodeEntities.toSet.size - 1))
+                        )
+                        ps(nodeB, ReachableNodesCount.Key) should be(
+                            FinalEP(nodeB, ReachableNodesCount(5))
+                        )
+                        ps(nodeC, ReachableNodesCount.Key) should be(
+                            FinalEP(nodeC, ReachableNodesCount(0))
+                        )
+                        ps(nodeD, ReachableNodesCount.Key) should be(
+                            FinalEP(nodeD, ReachableNodesCount(5))
+                        )
+                        ps(nodeE, ReachableNodesCount.Key) should be(
+                            FinalEP(nodeE, ReachableNodesCount(5))
+                        )
+                        ps(nodeR, ReachableNodesCount.Key) should be(
+                            FinalEP(nodeR, ReachableNodesCount(5))
+                        )
+                    } catch {
+                        case t: Throwable ⇒
+                            throw t;
+                    }
+
+                    ps.shutdown()
+                }
+
+                it("should be possible to use lazily scheduled mutually dependent computations without itermediate results") {
+                    val ps = createPropertyStore()
+                    info(s"PropertyStore@${System.identityHashCode(ps).toHexString}")
+
+                    ps.setupPhase(
+                        Set(ReachableNodes.Key, ReachableNodesCount.Key),
+                        Set.empty,
+                        Map(ReachableNodesCount.Key → Set(ReachableNodes.Key))
+                    )
+                    ps.registerLazyPropertyComputation(
+                        ReachableNodes.Key, reachableNodesAnalysis(ps)
+                    )
+                    ps.registerLazyPropertyComputation(
+                        ReachableNodesCount.Key, reachableNodesCountViaReachableNodesAnalysis(ps)
+                    )
+                    nodeEntities foreach { node ⇒ ps.force(node, ReachableNodesCount.Key) }
+                    ps.waitOnPhaseCompletion()
+                    info("scheduledTasksCount="+ps.scheduledTasksCount)
+                    info("scheduledOnUpdateComputationsCount="+ps.scheduledOnUpdateComputationsCount)
+
                     try {
                         ps(nodeA, ReachableNodes.Key) should be(
                             FinalEP(nodeA, ReachableNodes(nodeEntities.toSet - nodeA))
@@ -1202,7 +1270,7 @@ sealed abstract class PropertyStoreTest(
 }
 
 abstract class PropertyStoreTestWithDebugging(
-        propertyComputationHints: Seq[PropertyComputationHint] = List(DefaultPropertyComputation)
+        propertyComputationHints: Seq[PropertyComputationHint] = List(CheapPropertyComputation, DefaultPropertyComputation)
 ) extends PropertyStoreTest(propertyComputationHints) {
 
     private[this] var oldPropertyStoreUpdateSetting = PropertyStore.Debug

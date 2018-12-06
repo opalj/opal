@@ -12,7 +12,6 @@ import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.info
 import org.opalj.log.OPALLogger.error
-
 import org.opalj.fpcf.PropertyKind.SupportedPropertyKinds
 
 /**
@@ -267,11 +266,11 @@ abstract class PropertyStore {
      * If a property is queried for which we have no value, then this information is used
      * to determine which kind of fallback is required.
      */
-    protected[this] var propertyKindsComputedInEarlierPhase: Array[Boolean] = {
+    protected[this] final val propertyKindsComputedInEarlierPhase: Array[Boolean] = {
         new Array(PropertyKind.SupportedPropertyKinds)
     }
 
-    protected[this] var propertyKindsComputedInThisPhase: Array[Boolean] = {
+    protected[this] final val propertyKindsComputedInThisPhase: Array[Boolean] = {
         new Array(SupportedPropertyKinds)
     }
 
@@ -279,12 +278,18 @@ abstract class PropertyStore {
      * Used to identify situations where a property is queried, which is only going to be computed
      * in the future - in this case, the specification of an analysis is broken!
      */
-    protected[this] var propertyKindsComputedInLaterPhase: Array[Boolean] = {
+    protected[this] final val propertyKindsComputedInLaterPhase: Array[Boolean] = {
         new Array(SupportedPropertyKinds)
     }
 
-    // Those computations that will only be scheduled if the result is required
-    protected[this] var lazyComputations: Array[SomeProperPropertyComputation] = {
+    protected[this] final val suppressIterimUpdates: Array[Array[Boolean]] = {
+        Array.fill(SupportedPropertyKinds) { new Array[Boolean](SupportedPropertyKinds) }
+    }
+
+    /**
+     * The set of computations that will only be scheduled if the result is required.
+     */
+    protected[this] final val lazyComputations: Array[SomeProperPropertyComputation] = {
         new Array(PropertyKind.SupportedPropertyKinds)
     }
 
@@ -308,25 +313,23 @@ abstract class PropertyStore {
     def hasProperty(e: Entity, pk: PropertyKind): Boolean
 
     /**
-     * Returns an iterator of the different properties associated with the given element.
+     * Returns an iterator of the different properties associated with the given entity.
      *
      * This method is the preferred way to get a snapshot of all properties of an entity and should
-     * be used if you know that all properties are already computed. Using this method '''will not
-     * trigger''' the computation of a property.
+     * be used if you know that all properties are already computed.
      *
      * @note The returned traversable operates on a snapshot.
      *
      * @note Does not trigger lazy property computations.
      *
      * @param e An entity stored in the property store.
-     * @return `Iterator[Property]`
      */
     def properties[E <: Entity](e: E): Iterator[EPS[E, Property]]
 
     /**
-     * Returns all entities which have a property of the respective kind. This method
-     * returns a consistent snapshot view of the store w.r.t. the given
-     * [[PropertyKey]].
+     * Returns all entities which have a property of the respective kind. The result is
+     * undefined if this method is called while the property store still performs
+     * (concurrent) computations.
      *
      * @note Does not trigger lazy property computations.
      */
@@ -334,8 +337,7 @@ abstract class PropertyStore {
 
     /**
      * Returns all entities that currently have the given property bounds based on an "==" (equals)
-     * comparison.
-     * (In case of final properties the bounds are equal.)
+     * comparison. (In case of final properties the bounds are equal.)
      * If some analysis only computes an upper or a lower bound and no final results exists,
      * that entity will be ignored.
      *
@@ -423,10 +425,16 @@ abstract class PropertyStore {
      *
      * @param propertyKindsComputedInLaterPhase The set of property kinds which will be computed
      *        in a later phase.
+     * @param noIterimUpdates Specifies which iterim updates should not be passed to which
+     *        kind of dependers.
+     *        A depender will only be informed about the final update. The key of the map
+     *        identifies the target of a notification about an update (the depender) and the value
+     *        specifies which dependee updates should be ignored unless it is a final update.
      */
     final def setupPhase(
         propertyKindsComputedInThisPhase:  Set[PropertyKind],
-        propertyKindsComputedInLaterPhase: Set[PropertyKind] = Set.empty
+        propertyKindsComputedInLaterPhase: Set[PropertyKind]                    = Set.empty,
+        suppressIterimUpdates:             Map[PropertyKind, Set[PropertyKind]] = Map.empty
     ): Unit = handleExceptions {
         if (!isIdle) {
             throw new IllegalStateException("computations are already running");
@@ -458,6 +466,15 @@ abstract class PropertyStore {
         }
 
         // Step 3
+        // Collect the information about which interim results should be suppressed.
+        suppressIterimUpdates foreach { dependerDependees ⇒
+            val (depender, dependees) = dependerDependees
+            dependees foreach { dependee ⇒
+                this.suppressIterimUpdates(depender.id)(dependee.id) = true
+            }
+        }
+
+        // Step 4
         // Inform the property store that a new phase was setup.
         newPhaseInitialized(propertyKindsComputedInThisPhase, propertyKindsComputedInLaterPhase)
     }
@@ -465,9 +482,6 @@ abstract class PropertyStore {
     /**
      * Called when a new phase was initialized. Intended to be overridden by subclasses if
      * special handling is required.
-     *
-     * @param propertyKindsComputedInThisPhase
-     * @param propertyKindsComputedInLaterPhase
      */
     protected[this] def newPhaseInitialized(
         propertyKindsComputedInThisPhase:  Set[PropertyKind],
