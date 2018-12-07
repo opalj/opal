@@ -63,7 +63,7 @@ class LocalStringDefinitionAnalysis(
 
                 val paths = pathFinder.findPaths(initDefSites, cfg)
                 val leanPaths = paths.makeLeanPath(nextUVar, stmts)
-                val tree = new PathTransformer(cfg).pathToStringTree(leanPaths.get)
+                val tree = new PathTransformer(cfg).pathToStringTree(leanPaths)
                 scis.append(tree.reduce(true))
             } // If not a call to String{Builder, Buffer}.toString, then we deal with pure strings
             else {
