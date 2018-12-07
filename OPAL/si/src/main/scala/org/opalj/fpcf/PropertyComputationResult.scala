@@ -52,18 +52,27 @@ sealed abstract class FinalPropertyComputationResult extends ProperPropertyCompu
  *
  * @see [[FinalPropertyComputationResult]] for further information.
  */
-case class Result(e: Entity, p: Property) extends FinalPropertyComputationResult {
-    // IMPROVE The Result should take the FinalEP
+case class Result(finalEP: FinalEP[Entity, Property]) extends FinalPropertyComputationResult {
+
+    def this(e: Entity, p: Property) = this(FinalEP(e, p))
 
     private[fpcf] final def id = Result.id
 
     override private[fpcf] def asResult: Result = this
 
-    def finalEP: FinalEP[Entity, Property] = FinalEP(e, p)
-
-    override def toString: String = s"Result($e@${System.identityHashCode(e).toHexString},p=$p)"
+    override def toString: String = {
+        val e = finalEP.e
+        val p = finalEP.p
+        s"Result($e@${System.identityHashCode(e).toHexString},p=$p)"
+    }
 }
-object Result { private[fpcf] final val id = 1 }
+object Result {
+
+    def apply(e: Entity, p: Property): Result = Result(FinalEP(e, p))
+
+    private[fpcf] final val id = 1
+
+}
 
 /**
  * Encapsulates the '''final results''' of the computation of a set of properties. Hence, all
