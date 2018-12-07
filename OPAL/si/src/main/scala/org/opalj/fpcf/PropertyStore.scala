@@ -296,6 +296,16 @@ abstract class PropertyStore {
     }
 
     /**
+     * The set of transformers that will only be executed when required.
+     */
+    protected[this] final val transformersByTargetPK: Array[( /*source*/ PropertyKey[Property], (Entity, Property) ⇒ FinalEP[Entity, Property])] = {
+        new Array(PropertyKind.SupportedPropertyKinds)
+    }
+    protected[this] final val transformersBySourcePK: Array[( /*target*/ PropertyKey[Property], (Entity, Property) ⇒ FinalEP[Entity, Property])] = {
+        new Array(PropertyKind.SupportedPropertyKinds)
+    }
+
+    /**
      * Returns `true` if the given entity is known to the property store. Here, `isKnown` can mean
      *  - that we actually have a property, or
      *  - a computation is scheduled/running to compute some property, or
@@ -404,7 +414,7 @@ abstract class PropertyStore {
         e:  E,
         pk: PropertyKey[P]
     )(
-        pc: EOptionP[E, P] ⇒ EPS[E, P]
+        pc: EOptionP[E, P] ⇒ InterimEP[E, P]
     ): Unit = {
         if (analysesRegistered) {
             throw new IllegalStateException("analyses are already registered/scheduled")
@@ -416,7 +426,7 @@ abstract class PropertyStore {
         e:  E,
         pk: PropertyKey[P]
     )(
-        pc: EOptionP[E, P] ⇒ EPS[E, P]
+        pc: EOptionP[E, P] ⇒ InterimEP[E, P]
     ): Unit
 
     /**
@@ -622,6 +632,31 @@ abstract class PropertyStore {
         }
 
         lazyComputations(pk.id) = pc
+    }
+
+    /**
+     * Registers a total function that takes a given final property and computes a new final
+     * property; the function must not query the property store.
+     */
+    final def registerTransformer[SourceP <: Property, TargetP <: Property, E <: Entity](
+        sourcePK: PropertyKey[SourceP],
+        targetPK: PropertyKey[TargetP]
+    )(
+        pc: (E, SourceP) ⇒ FinalEP[E, TargetP]
+    ): Unit = {
+        analysesRegistered = true
+
+        if (debug && !isIdle) {
+            throw new IllegalStateException(
+                "transformers can only be registered while the property store is idle"
+            )
+        }
+
+        transformersByTargetPK(targetPK.id) =
+            (sourcePK, pc.asInstanceOf[(Entity, Property) ⇒ FinalEP[Entity, Property]])
+
+        transformersBySourcePK(sourcePK.id) =
+            (targetPK, pc.asInstanceOf[(Entity, Property) ⇒ FinalEP[Entity, Property]])
     }
 
     /**

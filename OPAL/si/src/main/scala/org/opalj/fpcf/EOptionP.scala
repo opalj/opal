@@ -73,6 +73,9 @@ sealed trait EOptionP[+E <: Entity, +P <: Property] {
      */
     def is(p: AnyRef): Boolean = /*this.hasProperty && */ this.isFinal && this.ub == p
 
+    /**
+     * Converts an `InterimEP` to a `FinalEP`; fails otherwise.
+     */
     private[fpcf] def toFinalEP: FinalEP[E, P]
 
     private[fpcf] def toFinalEUBP: FinalEP[E, P]
@@ -112,7 +115,7 @@ sealed trait EOptionP[+E <: Entity, +P <: Property] {
      * }}}
      * In that case – assuming we do not perform context sensitive analyses –
      * if the lower bound for `f` for the set of thrown exceptions is determined
-     * to be `Set(IllegalArgumentException,UnkownError)`, the catch of the
+     * to be `Set(IllegalArgumentException,UnkownError)`, then the catch of the
      * `NumberFormatException` can be ruled out and a final result for `m` can be
      * computed.
      *
@@ -131,16 +134,22 @@ sealed trait EOptionP[+E <: Entity, +P <: Property] {
     @throws[UnsupportedOperationException]("if no property is available")
     def lb: P
 
+    /**
+     * Returns `true` if this `EOptionP` is updated when compared with the given `oldEOptionP`,
+     * provided that this `EOptionP` is guaranteed to be at most as old as `oldEOptionP`.
+     * That is, this EPS is considered to be newer if the properties are different.
+     *
+     * @note The caller has to ensure that this EOptionP and and the given EOptionP are
+     *       comparable. That is, they define properties of the same kind associated with
+     *       the same entity.
+     */
+    private[fpcf] def isUpdatedComparedTo(oldEOptionP: EOptionP[Entity, Property]): Boolean
+
     @throws[IllegalArgumentException]("if the given eps is not a valid update")
     private[fpcf] def checkIsValidPropertiesUpdate(
         eps:          SomeEPS,
         newDependees: Traversable[SomeEOptionP]
     ): Unit
-
-    /**
-     * @return `true` if the given eps's bounds are different.
-     */
-    private[fpcf] def hasDifferentProperties(eps: SomeEPS): Boolean
 
 }
 
@@ -347,18 +356,17 @@ final class FinalEP[+E <: Entity, +P <: Property](val e: E, val p: P) extends EP
 
     override def asInterim: InterimEP[E, P] = throw new ClassCastException();
 
+    override private[fpcf] def isUpdatedComparedTo(
+        oldEOptionP: EOptionP[Entity, Property]
+    ): Boolean = {
+        oldEOptionP.isRefinable
+    }
+
     private[fpcf] def checkIsValidPropertiesUpdate(
         eps:          SomeEPS,
         newDependees: Traversable[SomeEOptionP]
     ): Unit = {
         throw new IllegalArgumentException("already final")
-    }
-
-    override private[fpcf] def hasDifferentProperties(eps: SomeEPS): Boolean = {
-        // Here, we don't do any further checks whether the given eps object can be a
-        // valid successor of this eps object; such checks are done – if required/desired –
-        // done by "checkIsValidPropertiesUpdate"
-        eps.isRefinable || eps.asFinal.p != this.p
     }
 
     override def equals(other: Any): Boolean = {
@@ -441,19 +449,6 @@ sealed trait InterimEP[+E <: Entity, +P <: Property] extends EPS[E, P] {
 
 object InterimEP {
 
-    /*
-    def apply[E <: Entity, P <: Property](e: E, lb: P, ub: P): InterimEP[E, P] = {
-        if (lb == ub) {
-            throw new IllegalArgumentException(s"lb and ub are equal ($lb)")
-        } else if (lb == null)
-            InterimEUBP(e, ub)
-        else if (ub == null)
-            InterimELBP(e, lb)
-        else
-            InterimELUBP(e, lb, ub)
-    }
-    */
-
     /**
      * Extracts the entity of an interim property.
      *
@@ -493,8 +488,10 @@ final class InterimELUBP[+E <: Entity, +P <: Property](
     override def hasLBP: Boolean = true
     override def hasUBP: Boolean = true
 
-    override private[fpcf] def hasDifferentProperties(eps: SomeEPS): Boolean = {
-        eps.isEPK || (eps.lb != this.lb || eps.ub != this.ub)
+    override private[fpcf] def isUpdatedComparedTo(
+        oldEOptionP: EOptionP[Entity, Property]
+    ): Boolean = {
+        oldEOptionP.isEPK || oldEOptionP.lb != this.lb || oldEOptionP.ub != this.ub
     }
 
     override def equals(other: Any): Boolean = {
@@ -546,8 +543,10 @@ final class InterimEUBP[+E <: Entity, +P <: Property](
 
     override def lb: Nothing = throw new UnsupportedOperationException();
 
-    override private[fpcf] def hasDifferentProperties(eps: SomeEPS): Boolean = {
-        eps.isEPK || eps.ub != this.ub
+    override private[fpcf] def isUpdatedComparedTo(
+        oldEOptionP: EOptionP[Entity, Property]
+    ): Boolean = {
+        oldEOptionP.isEPK || oldEOptionP.ub != this.ub
     }
 
     override def equals(other: Any): Boolean = {
@@ -602,8 +601,10 @@ final class InterimELBP[+E <: Entity, +P <: Property](
 
     override def ub: Nothing = throw new UnsupportedOperationException();
 
-    override private[fpcf] def hasDifferentProperties(eps: SomeEPS): Boolean = {
-        eps.isEPK || eps.lb != this.lb
+    override private[fpcf] def isUpdatedComparedTo(
+        oldEOptionP: EOptionP[Entity, Property]
+    ): Boolean = {
+        oldEOptionP.isEPK || oldEOptionP.lb != this.lb
     }
 
     override def equals(other: Any): Boolean = {
@@ -677,7 +678,11 @@ final class EPK[+E <: Entity, +P <: Property](
 
     override def asInterim: InterimEP[E, P] = throw new ClassCastException();
 
-    override private[fpcf] def hasDifferentProperties(eps: SomeEPS): Boolean = eps.isEPS
+    override private[fpcf] def isUpdatedComparedTo(
+        oldEOptionP: EOptionP[Entity, Property]
+    ): Boolean = {
+        false
+    }
 
     override private[fpcf] def checkIsValidPropertiesUpdate(
         eps:          SomeEPS,

@@ -81,6 +81,9 @@ final class PKECPropertyStore private (
     override def entities(propertyFilter: SomeEPS ⇒ Boolean): Iterator[Entity] = ???
     override def entities[P <: Property](lb: P, ub: P): Iterator[Entity] = ???
     override def entities[P <: Property](pk: PropertyKey[P]): Iterator[EPS[Entity, P]] = ???
+    override def entitiesWithLB[P <: Property](lb: P): Iterator[Entity] = ???
+    override def entitiesWithUB[P <: Property](ub: P): Iterator[Entity] = ???
+    override def finalEntities[P <: Property](p: P): Iterator[Entity] = ???
     override def properties[E <: Entity](e: E): Iterator[EPS[E, Property]] = ???
     override def hasProperty(e: Entity, pk: PropertyKind): Boolean = ???
     override def isKnown(e: Entity): Boolean = ???
@@ -149,7 +152,7 @@ final class PKECPropertyStore private (
         e:  E,
         pk: PropertyKey[P]
     )(
-        pc: EOptionP[E, P] ⇒ EPS[E, P]
+        pc: EOptionP[E, P] ⇒ InterimEP[E, P]
     ): Unit = {
         ???
     }

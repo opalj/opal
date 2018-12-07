@@ -214,12 +214,15 @@ class PropertyComputationsSchedulerTest extends FunSpec with Matchers with Befor
                 override def entities[P <: Property](pk: PropertyKey[P]): Iterator[EPS[Entity, P]] = ???
                 override def entities[P <: Property](lb: P, ub: P): Iterator[Entity] = ???
                 override def entities(propertyFilter: SomeEPS ⇒ Boolean): Iterator[Entity] = ???
-                def doSet(e: Entity, p: Property): Unit = ???
-                def doPreInitialize[E <: Entity, P <: Property](
+                override def entitiesWithLB[P <: Property](lb: P): Iterator[Entity] = ???
+                override def entitiesWithUB[P <: Property](ub: P): Iterator[Entity] = ???
+                override def finalEntities[P <: Property](p: P): Iterator[Entity] = ???
+                override def doSet(e: Entity, p: Property): Unit = ???
+                override def doPreInitialize[E <: Entity, P <: Property](
                     e:  E,
                     pk: PropertyKey[P]
                 )(
-                    pc: EOptionP[E, P] ⇒ EPS[E, P]
+                    pc: EOptionP[E, P] ⇒ InterimEP[E, P]
                 ): Unit = ???
                 override def apply[E <: Entity, P <: Property](e: E, pk: PropertyKey[P]): EOptionP[E, P] = ???
                 override def apply[E <: Entity, P <: Property](epk: EPK[E, P]): EOptionP[E, P] = ???
