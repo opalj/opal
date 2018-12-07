@@ -138,6 +138,12 @@ final class InterimResult[P >: Null <: Property] private (
                     " (use PartialResult for collaboratively computed results)"
             )
         }
+
+        if (dependees.exists(_.isFinal)) {
+            val m = dependees.mkString("contains final dependee: ", ",", "")
+            throw new IllegalArgumentException(m)
+        }
+
         if (dependees.exists(eOptP ⇒ eOptP.e == eps.e && eOptP.pk == result.key)) {
             throw new IllegalArgumentException(
                 s"intermediate result with an illegal self-dependency: "+this

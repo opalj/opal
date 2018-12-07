@@ -458,11 +458,6 @@ final class PKESequentialPropertyStore private (
             case InterimResult.id ⇒
                 val InterimResult(interimP: SomeEPS, processedDependees, c, pcHint) = r
 
-                def checkNonFinal(dependee: SomeEOptionP): Unit = {
-                    if (dependee.isFinal) {
-                        throw new IllegalArgumentException(s"$r: final dependee: $dependee")
-                    }
-                }
 
                 def isDependeeUpdated(
                     currentDependee:   SomeEOptionP, // may contain newer info than "newDependee"
