@@ -27,7 +27,7 @@ import org.opalj.fpcf.PropertyKey.fallbackPropertyBasedOnPKId
 import org.opalj.fpcf.PropertyKey.computeFastTrackPropertyBasedOnPKId
 
 /**
- * A concurrent implementation of the property store which parallels the execution of the scheduled
+ * Property store implementation which parallels the execution of the scheduled
  * computations.
  *
  * Entities are stored after computation.
@@ -165,11 +165,6 @@ final class PKEParallelTasksPropertyStore private (
     // which necessarily will be called to start some computations/process some result –
     // do establish the required happens-before relation.
 
-    /** Those computations that will only be scheduled if the property is required. */
-    private[this] val lazyComputations: Array[SomePropertyComputation] = {
-        new Array(SupportedPropertyKinds)
-    }
-
     /** Computations that will be triggered when a new property becomes available. */
     private[this] val triggeredComputations: Array[Array[SomePropertyComputation]] = {
         new Array(SupportedPropertyKinds)
@@ -216,6 +211,8 @@ final class PKEParallelTasksPropertyStore private (
         val v = openJobs.decrementAndGet()
         if (v == 0) { latch.countDown() }
     }
+
+    protected[this] def isIdle: Boolean = openJobs.get > 0
 
     // --------------------------------------------------------------------------------------------
     //
@@ -286,15 +283,7 @@ final class PKEParallelTasksPropertyStore private (
         for { i ← 1 to NumberOfThreadsForProcessingPropertyComputations } {
             val t = new Thread(tg, s"OPAL - Property Computations Processor $i") {
                 override def run(): Unit = gatherExceptions {
-                    do {
-                        while (!store.isSuspended()) {
-                            processTask()
-                            if (exception != null)
-                                return ;
-                        }
-                        // The store is suspended; hence, we want to keep the thread alive.
-                        Thread.sleep(1000)
-                    } while (exception == null)
+                    while (!store.doTerminate && exception == null) { processTask() }
                 }
             }
             t.setDaemon(true)
@@ -359,15 +348,7 @@ final class PKEParallelTasksPropertyStore private (
 
         val t = new Thread(propertyStoreThreads, "OPAL - Property Updates Processor") {
             override def run(): Unit = gatherExceptions {
-                do {
-                    while (!store.isSuspended()) {
-                        if (exception != null)
-                            return ;
-                        processUpdate()
-                    }
-                    // The store is suspended; hence, we want to keep the thread alive.
-                    Thread.sleep(1000)
-                } while (exception == null)
+                while (!store.doTerminate && exception == null) { processUpdate() }
             }
         }
         t.setDaemon(true)
@@ -426,28 +407,10 @@ final class PKEParallelTasksPropertyStore private (
     //
     // --------------------------------------------------------------------------------------------
 
-    override def doRegisterLazyPropertyComputation[E <: Entity, P <: Property](
-        pk: PropertyKey[P],
-        pc: ProperPropertyComputation[E]
-    ): Unit = {
-        if (openJobs.get() > 0) {
-            throw new IllegalStateException(
-                "lazy computations can only be registered while no computations are running"
-            )
-        }
-
-        lazyComputations(pk.id) = pc
-    }
-
     override def doRegisterTriggeredComputation[E <: Entity, P <: Property](
         pk: PropertyKey[P],
         pc: PropertyComputation[E]
     ): Unit = {
-        if (openJobs.get() > 0) {
-            throw new IllegalStateException(
-                "triggered computations can only be registered while no computations are running"
-            )
-        }
         val pkId = pk.id
         var oldComputations: Array[SomePropertyComputation] = null
         var newComputations: Array[SomePropertyComputation] = null
@@ -496,8 +459,8 @@ final class PKEParallelTasksPropertyStore private (
 
     override def properties[E <: Entity](e: E): Iterator[EPS[E, Property]] = {
         for {
-            propertiesOfEntity ← properties.iterator
-            property = propertiesOfEntity.get(e)
+            propertiesOfEntities ← properties.iterator
+            property = propertiesOfEntities.get(e)
             if property != null
         } yield {
             property.asInstanceOf[EPS[E, Property]]
@@ -505,14 +468,13 @@ final class PKEParallelTasksPropertyStore private (
     }
 
     override def entities(propertyFilter: SomeEPS ⇒ Boolean): Iterator[Entity] = {
-        val entities = ArrayBuffer.empty[Entity]
-        val max = properties.length
-        var i = 0
-        while (i < max) {
-            properties(i) forEach { (e, eps) ⇒ if (propertyFilter(eps)) entities += e }
-            i += 1
+        for {
+            propertiesOfEntities ← properties.iterator
+            eps ←  propertiesOfEntities.elements().asScala
+            if propertyFilter(eps)
+        } yield {
+            eps.e
         }
-        entities.toIterator
     }
 
     /**
@@ -520,22 +482,21 @@ final class PKEParallelTasksPropertyStore private (
      * on an "==" (equals) comparison.
      */
     override def entities[P <: Property](lb: P, ub: P): Iterator[Entity] = {
-        properties.iterator.zipWithIndex.
-            filter { propertiesPerKind ⇒
-                val (_ /*propertiesPerEntity*/ , pkId) = propertiesPerKind
-                !PropertyKey.isPropertyKeyForSimplePropertyBasedOnPKId(pkId)
-            }.
-            flatMap { propertiesPerKind ⇒
-                val (propertiesPerEntity, _ /*pkId*/ ) = propertiesPerKind
-                propertiesPerEntity.entrySet().iterator().asScala.filter { mapEntry ⇒
-                    val eps = mapEntry.getValue
-                    eps.lb == lb && eps.ub == ub
-                }.map(_.getKey)
-            }
+        val pkId = lb.key.id
+        properties(pkId)
+            .elements().asScala
+            .filter(eps ⇒ eps.hasUBP && eps.hasLBP && eps.lb == lb && eps.ub == ub)
+                .map(_.e)
     }
 
     override def entities[P <: Property](pk: PropertyKey[P]): Iterator[EPS[Entity, P]] = {
-        properties(pk.id).values().iterator().asScala.asInstanceOf[Iterator[EPS[Entity, P]]]
+        properties(pk.id).elements().asScala.asInstanceOf[Iterator[EPS[Entity, P]]]
+    }
+
+    override def finalEntities[P <: Property](p: P): Iterator[Entity] = {
+        properties(p.key.id)
+            .elements().asScala
+            .filter{ eps ⇒ eps.isFinal && eps.asFinal.p == p}
     }
 
     override def doSet(e: Entity, p: Property): Unit = handleExceptions {
@@ -551,7 +512,7 @@ final class PKEParallelTasksPropertyStore private (
         e:  E,
         pk: PropertyKey[P]
     )(
-        pc: EOptionP[E, P] ⇒ EPS[E, P]
+        pc: EOptionP[E, P] ⇒ InterimEP[E, P]
     ): Unit = {
         val pkId = pk.id
         val propertiesOfKind = properties(pkId)
@@ -560,9 +521,6 @@ final class PKEParallelTasksPropertyStore private (
                 case null                                    ⇒ pc(EPK(e, pk))
                 case oldEPS: EPS[E @unchecked, P @unchecked] ⇒ pc(oldEPS)
             }
-        if (newEPS.isFinal) {
-            throw new IllegalArgumentException(s"$newEPS must not be final")
-        }
         propertiesOfKind.put(e, newEPS)
     }
 
@@ -647,7 +605,7 @@ final class PKEParallelTasksPropertyStore private (
                                     fallbackPropertyBasedOnPKId(store, reason, e, pkId)
                                 }
                             if (traceFallbacks) {
-                                val message = s"used fallback $p (reason=$reason) for $e"
+                                val message = s"$e: used fallback $p (reason=$reason)"
                                 trace("analysis progress", message)
                             }
                             if (debug) fallbacksUsedCounter.incrementAndGet()
@@ -1334,8 +1292,6 @@ final class PKEParallelTasksPropertyStore private (
         } while (forceDependersNotifications.nonEmpty || pcrs.nonEmpty)
     }
 
-    protected[this] def isIdle : Boolean = openJobs.get > 0
-
     override def waitOnPhaseCompletion(): Unit = handleExceptions {
         var continueComputation: Boolean = false
         // We need a consistent interrupt state for handling fallbacks:
@@ -1361,7 +1317,7 @@ final class PKEParallelTasksPropertyStore private (
             quiescenceCounter += 1
             if (tracer.isDefined) tracer.get.reachedQuiescence()
 
-            val maxPKIndex =  PropertyKey.maxId
+            val maxPKIndex = PropertyKey.maxId
 
             // 1. Let's search all EPKs for which no values were computed (no analysis was
             //    scheduled) and fill it in.
