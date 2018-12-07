@@ -579,6 +579,47 @@ object InterimEUBP {
     }
 }
 
+/**
+ * Defines an extractor that matches EPKs and Interim properties where the latter only defines an
+ * upper bound, but does not define a lower bound.
+ *
+ * For example, an analysis which declares that it can only handle lower bounds, but can't process
+ * EPSs which only define an upper bound, may still see EPS which define only the upper bound
+ * but can process them in the same way as an EPK; that is, it can basically ignore the
+ * upper bound information. The scheduler ensures that the analysis scenario is a valid one
+ * and no cyclic dependent computations may arise.
+ * {{{
+ * def continuation(eps : EPS) : ... = eps match {
+ *   case FinalEP(...) => // Matches only final properties.
+ *   case LBP(...)     => // Matches final  and interim properties which define a lower bound.
+ *   case NoLBP(...)   => // Matches EPKs and EPS which just define an upper bound.
+ * }
+ * }}}
+ */
+object NoLBP {
+
+    def unapply[E <: Entity, P >: Null <: Property](eps: EOptionP[E, P]): Option[EOptionP[E, P]] = {
+        if (!eps.hasLBP)
+            Some(eps)
+        else
+            None
+    }
+}
+
+/**
+ * Defines an extractor that matches EPKs and Interim properties where the latter only defines a
+ * lower bound, but does not define an upper bound.
+ */
+object NoUBP {
+
+    def unapply[E <: Entity, P >: Null <: Property](eps: EOptionP[E, P]): Option[EOptionP[E, P]] = {
+        if (!eps.hasUBP)
+            Some(eps)
+        else
+            None
+    }
+}
+
 object InterimUBP {
 
     def unapply[E <: Entity, P <: Property](eps: InterimEP[E, P]): Some[P] = Some(eps.ub)
