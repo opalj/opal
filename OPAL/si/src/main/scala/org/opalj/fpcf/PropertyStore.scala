@@ -442,13 +442,14 @@ abstract class PropertyStore {
      *
      * @param propertyKindsComputedInLaterPhase The set of property kinds which will be computed
      *        in a later phase.
-     * @param suppressInterimUpdates Specifies which iterim updates should not be passed to which
+     * @param suppressInterimUpdates Specifies which interim updates should not be passed to which
      *        kind of dependers.
      *        A depender will only be informed about the final update. The key of the map
      *        identifies the target of a notification about an update (the depender) and the value
      *        specifies which dependee updates should be ignored unless it is a final update.
-     *        This is an optimization related to lazy computations eventually triggered by
-     *        eager computations; it is not a conceptual thing!
+     *        This is an optimization related to lazy computations, but also enables the
+     *        implementation of transformers and the scheduling of analyses which compute different
+     *        kinds of bounds unless the analyses have cyclic dependencies.
      */
     final def setupPhase(
         propertyKindsComputedInThisPhase:  Set[PropertyKind],
@@ -636,7 +637,8 @@ abstract class PropertyStore {
 
     /**
      * Registers a total function that takes a given final property and computes a new final
-     * property; the function must not query the property store.
+     * property of a different kind; the function must not query the property store. Furthermore,
+     * [[setupPhase]] must specify that notifications about interim updates have to be suppressed.
      */
     final def registerTransformer[SourceP <: Property, TargetP <: Property, E <: Entity](
         sourcePK: PropertyKey[SourceP],

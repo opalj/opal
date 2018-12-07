@@ -228,15 +228,31 @@ final class PKESequentialPropertyStore private (
                                     val FinalP(sourceP) = sourceEOptionP.get
                                     val finalEP = transform(e, sourceP).asInstanceOf[FinalEP[E, P]]
                                     update(finalEP, Nil)
-                                    finalEP
+                                    return finalEP;
                                 } else {
-                                    ps(pkId).put(e, epk)
-                                    epk
+                                    val sourceEPK = EPK(e, sourcePK)
+                                    if (sourceEOptionP.isEmpty) {
+                                        // We have to "apply" to ensure that all necessary lazy analyses
+                                        // get triggered!
+                                        apply(sourceEPK)
+                                    }
+                                    // Add this transformer as a depender to the transformer's
+                                    // source; this works, because notifications about intermediate
+                                    // values are suppressed.
+                                    // This will happen only once, because afterwards an EPK
+                                    // will be stored in the properties data structure and
+                                    // then returned.
+                                    val c: OnUpdateContinuation = {
+                                        case FinalP(p) ⇒ Result(transform(e, p))
+                                    }
+                                    dependers(sourcePK.id)
+                                        .getOrElseUpdate(e, AnyRefMap.empty)
+                                        .put(epk, (c, DefaultPropertyComputation))
+                                    dependees(pkId).put(e, List(sourceEPK))
                                 }
-                            } else {
-                                ps(pkId).put(e, epk)
-                                epk
                             }
+                            ps(pkId).put(e, epk)
+                            epk
                         } else {
                             val reason = {
                                 if (propertyKindsComputedInEarlierPhase(pkId))
@@ -404,7 +420,7 @@ final class PKESequentialPropertyStore private (
                         scheduledOnUpdateComputationsCounter += 1
                         removeDependerFromDependees(dependerEPK)
                     } else if (traceSuppressedNotifications) {
-                        trace("analysis progress", s"suppressed notification: $dependerEPK ← $eps")
+                        trace("analysis progress", s"suppressed notification: $eps → $dependerEPK")
                     }
                 }
             }
@@ -554,6 +570,7 @@ final class PKESequentialPropertyStore private (
     override protected[this] def isIdle: Boolean = tasks.size == 0
 
     override def waitOnPhaseCompletion(): Unit = handleExceptions {
+        val maxPKIndex = PropertyKey.maxId
         var continueComputation: Boolean = false
         // We need a consistent interrupt state for fallback
         do {
@@ -576,11 +593,17 @@ final class PKESequentialPropertyStore private (
             //     not have computed a property for a specific entity, if the underlying
             //     analysis doesn't compute one; in that case we need to put in fallback
             //     values.)
-            val maxPKIndex = PropertyKey.maxId
             var pkId = 0
             while (pkId <= maxPKIndex) {
                 if (propertyKindsComputedInThisPhase(pkId)) {
-                    val epkIterator = ps(pkId).valuesIterator.filter(_.isEPK)
+                    val epkIterator =
+                        ps(pkId)
+                            .valuesIterator
+                            .filter { eOptionP ⇒
+                                eOptionP.isEPK &&
+                                    // It is not a transformer which still waits...
+                                    dependees(pkId).get(eOptionP.e).isEmpty
+                            }
                     continueComputation ||= epkIterator.hasNext
                     epkIterator.foreach { eOptionP ⇒
                         val e = eOptionP.e
@@ -599,7 +622,7 @@ final class PKESequentialPropertyStore private (
             // 2. Let's search for entities with interim properties where some dependers
             //    were not yet notified about intermediate updates. In this case, the
             //    current results of the dependers cannot be finalized; instead, we need
-            //    to finalize (the cyclic dependent) depeends first and notify the
+            //    to finalize (the cyclic dependent) dependees first and notify the
             //    dependers.
             if (!continueComputation && suppressInterimUpdates.exists(_.contains(true))) {
                 // Collect all InterimEPs to find cycles.
