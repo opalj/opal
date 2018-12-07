@@ -1323,6 +1323,12 @@ sealed abstract class PropertyStoreTest(
                     )
                 }
             }
+
+            // TODO Add tests related to collaboratively computed properties including pre-initialized values!
+
+            // TODO Add a test, where we have a property with a fast-track and an eager analysis
+
+            // TODO Add test related to transformers
         }
     }
 }
