@@ -145,14 +145,13 @@ case class Path(elements: List[SubPath]) {
      * @return Returns a lean path of `this` path. That means, `this` instance will be stripped to
      *         contain only [[FlatPathElement]]s and [[NestedPathElement]]s that contain a
      *         definition or usage of `obj`. This includes the removal of [[NestedPathElement]]s
-     *         not containing `obj`. In case `this` path does not contain `obj` at all, `None` will
-     *         be returned.
+     *         not containing `obj`.
      *
      * @note This function does not change the underlying `this` instance. Furthermore, all relevant
      *       elements for the lean path will be copied, i.e., `this` instance and the returned
      *       instance do not share any references.
      */
-    def makeLeanPath(obj: DUVar[ValueInformation], stmts: Array[Stmt[V]]): Option[Path] = {
+    def makeLeanPath(obj: DUVar[ValueInformation], stmts: Array[Stmt[V]]): Path = {
         // Transform the list into a map to have a constant access time
         val siteMap = Map(getAllDefAndUseSites(obj, stmts) map { s ⇒ (s, Unit) }: _*)
         val leanPath = ListBuffer[SubPath]()
@@ -176,11 +175,7 @@ case class Path(elements: List[SubPath]) {
             }
         }
 
-        if (leanPath.isEmpty) {
-            None
-        } else {
-            Some(Path(leanPath.toList))
-        }
+        Path(leanPath.toList)
     }
 
 }
