@@ -583,6 +583,44 @@ public class TestMethods {
         analyzeString(sb.toString());
     }
 
+    @StringDefinitions(
+            value = "checks if a string value with > 2 continuous appends and a second "
+                    + "StringBuilder is determined correctly",
+            expectedLevels = { CONSTANT },
+            expectedStrings = { "java.langStringB." }
+    )
+    public void directAppendConcatsWith2ndStringBuilder() {
+        StringBuilder sb = new StringBuilder("java");
+        StringBuilder sb2 = new StringBuilder("B");
+        sb.append(".").append("lang");
+        sb2.append(".");
+        sb.append("String");
+        sb.append(sb2.toString());
+        analyzeString(sb.toString());
+    }
+
+    @StringDefinitions(
+            value = "checks if the case, where the value of a StringBuilder depends on the "
+                    + "complex construction of a second StringBuilder is determined correctly.",
+            expectedLevels = { CONSTANT },
+            expectedStrings = { "java.lang.(Object|Runtime)" }
+    )
+    public void secondStringBuilderRead(String className) {
+        StringBuilder sbObj = new StringBuilder("Object");
+        StringBuilder sbRun = new StringBuilder("Runtime");
+
+        StringBuilder sb1 = new StringBuilder();
+        if (sb1.length() == 0) {
+            sb1.append(sbObj.toString());
+        } else {
+            sb1.append(sbRun.toString());
+        }
+
+        StringBuilder sb2 = new StringBuilder("java.lang.");
+        sb2.append(sb1.toString());
+        analyzeString(sb2.toString());
+    }
+
     //    @StringDefinitions(
     //            value = "a case with a switch with missing breaks",
     //            expectedLevels = {StringConstancyLevel.CONSTANT},
@@ -600,24 +638,7 @@ public class TestMethods {
     //            break;
     //        }
     //        analyzeString(sb.toString());
-
     //    }
-    //    //    @StringDefinitions(
-    //    //            value = "checks if a string value with > 2 continuous appends and a second "
-    //    //                    + "StringBuilder is determined correctly",
-    //    //            expectedLevels = {StringConstancyLevel.CONSTANT},
-    //    //            expectedStrings ={ "java.langStringB." }
-    //    //    )
-    //    //    public void directAppendConcats2() {
-    //    //        StringBuilder sb = new StringBuilder("java");
-    //    //        StringBuilder sb2 = new StringBuilder("B");
-    //    //        sb.append(".").append("lang");
-    //    //        sb2.append(".");
-    //    //        sb.append("String");
-    //    //        sb.append(sb2.toString());
-    //    //        analyzeString(sb.toString());
-
-    //    //    }
 
     private String getRuntimeClassName() {
         return "java.lang.Runtime";
