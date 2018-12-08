@@ -1144,6 +1144,55 @@ sealed abstract class PropertyStoreTest(
                     }
 
                 it(
+                    "should be possible to force the results of a lazy property which depends "+
+                        "on the results of a transformer backed by an eager analysis"
+                ) {
+                        val ps = createPropertyStore()
+                        info(s"PropertyStore@${System.identityHashCode(ps).toHexString}")
+
+                        ps.setupPhase(
+                            Set(ReachableNodes.Key, ReachableNodesCount.Key, Marker.Key),
+                            Set.empty,
+                            Map(
+                                ReachableNodesCount.Key → Set(ReachableNodes.Key),
+                                Marker.Key → Set(ReachableNodesCount.Key)
+                            )
+                        )
+                        ps.registerTransformer(RNKey, RNCKey) { (e: Entity, p) ⇒
+                            val ReachableNodes(nodes) = p
+                            FinalEP(e, ReachableNodesCount(nodes.size))
+                        }
+                        def handleEOptionP(eOptionP: SomeEOptionP): ProperPropertyComputationResult = {
+                            eOptionP match {
+                                case FinalP(ReachableNodesCount(value)) ⇒
+                                    val p = if (value > 3) Marker.IsMarked else Marker.NotMarked
+                                    Result(eOptionP.e, p)
+                                case eOptionP ⇒
+                                    val interimELBP = InterimELBP(eOptionP.e, Marker.NotMarked)
+                                    InterimResult(interimELBP, List(eOptionP), handleEOptionP)
+                            }
+                        }
+                        ps.registerLazyPropertyComputation(
+                            Marker.Key,
+                            (e: Entity) ⇒ handleEOptionP(ps(e, RNCKey))
+                        )
+                        ps.scheduleEagerComputationsForEntities(nodeEntities)(reachableNodesAnalysis(ps))
+                        nodeEntities foreach { node ⇒ ps.force(node, Marker.Key) }
+                        ps.waitOnPhaseCompletion()
+                        info("scheduledTasksCount="+ps.scheduledTasksCount)
+                        info("scheduledOnUpdateComputationsCount="+ps.scheduledOnUpdateComputationsCount)
+                        val MKey = Marker.Key
+                        ps(nodeA, MKey) should be(FinalEP(nodeA, Marker.IsMarked))
+                        ps(nodeB, MKey) should be(FinalEP(nodeB, Marker.IsMarked))
+                        ps(nodeC, MKey) should be(FinalEP(nodeC, Marker.NotMarked))
+                        ps(nodeD, MKey) should be(FinalEP(nodeD, Marker.IsMarked))
+                        ps(nodeE, MKey) should be(FinalEP(nodeE, Marker.IsMarked))
+                        ps(nodeR, MKey) should be(FinalEP(nodeR, Marker.IsMarked))
+
+                        ps.shutdown()
+                    }
+
+                it(
                     "should be possible when a lazy computation depends on properties "+
                         "for which no analysis is scheduled"
                 ) {
@@ -1452,13 +1501,7 @@ sealed abstract class PropertyStoreTest(
             }
 
             // TODO Add tests related to collaboratively computed properties including pre-initialized values!
-
-            // TODO Add a test, where we have a property with a fast-track and an eager analysis
-
-            // TODO Add test related to transformer chains
-
-            // TODO Add test related to transformer chains based on lazy computations, where the head is forced...
-
+            
         }
     }
 }

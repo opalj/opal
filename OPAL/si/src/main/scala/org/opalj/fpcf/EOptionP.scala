@@ -425,8 +425,8 @@ sealed trait InterimEP[+E <: Entity, +P <: Property] extends EPS[E, P] {
         newDependees: Traversable[SomeEOptionP]
     ): Unit = {
         try {
-            if (hasLBP != eps.hasLBP || hasUBP != eps.hasUBP) {
-                throw new IllegalArgumentException("inconsistent property bounds")
+            if (eps.isRefinable && (hasLBP != eps.hasLBP || hasUBP != eps.hasUBP)) {
+                throw new IllegalArgumentException(s"inconsistent property bounds: $this vs. $eps")
             }
 
             if (hasLBP && eps.lb.isOrderedProperty) {
