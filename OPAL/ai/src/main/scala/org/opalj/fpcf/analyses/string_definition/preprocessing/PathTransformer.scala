@@ -4,6 +4,7 @@ package org.opalj.fpcf.analyses.string_definition.preprocessing
 import org.opalj.br.cfg.CFG
 import org.opalj.fpcf.analyses.string_definition.V
 import org.opalj.fpcf.analyses.string_definition.interpretation.InterpretationHandler
+import org.opalj.fpcf.string_definition.properties.StringConstancyInformation
 import org.opalj.fpcf.string_definition.properties.StringTree
 import org.opalj.fpcf.string_definition.properties.StringTreeConcat
 import org.opalj.fpcf.string_definition.properties.StringTreeCond
@@ -33,10 +34,14 @@ class PathTransformer(val cfg: CFG[Stmt[V], TACStmts[V]]) {
     /**
      * Accumulator function for transforming a path into a StringTree element.
      */
-    private def pathToTreeAcc(subpath: SubPath): Option[StringTree] = {
+    private def pathToTreeAcc(
+        subpath: SubPath, fpe2Sci: Map[Int, List[StringConstancyInformation]]
+    ): Option[StringTree] = {
         subpath match {
             case fpe: FlatPathElement ⇒
-                val sciList = exprHandler.processDefSite(fpe.element)
+                val sciList = fpe2Sci.getOrElse(
+                    fpe.element, exprHandler.processDefSite(fpe.element)
+                )
                 sciList.length match {
                     case 0 ⇒ None
                     case 1 ⇒ Some(StringTreeConst(sciList.head))
@@ -58,9 +63,9 @@ class PathTransformer(val cfg: CFG[Stmt[V], TACStmts[V]]) {
                             )
                             Some(StringTreeRepetition(processedSubPath))
                         case _ ⇒
-                            val processedSubPaths = npe.element.map(
-                                pathToTreeAcc
-                            ).filter(_.isDefined).map(_.get)
+                            val processedSubPaths = npe.element.map { ne ⇒
+                                pathToTreeAcc(ne, fpe2Sci)
+                            }.filter(_.isDefined).map(_.get)
                             if (processedSubPaths.nonEmpty) {
                                 npe.elementType.get match {
                                     case NestedPathType.CondWithAlternative ⇒
@@ -83,10 +88,11 @@ class PathTransformer(val cfg: CFG[Stmt[V], TACStmts[V]]) {
                 } else {
                     npe.element.size match {
                         case 0 ⇒ None
-                        case 1 ⇒ pathToTreeAcc(npe.element.head)
+                        case 1 ⇒ pathToTreeAcc(npe.element.head, fpe2Sci)
                         case _ ⇒
-                            val processed =
-                                npe.element.map(pathToTreeAcc).filter(_.isDefined).map(_.get)
+                            val processed = npe.element.map { ne ⇒
+                                pathToTreeAcc(ne, fpe2Sci)
+                            }.filter(_.isDefined).map(_.get)
                             if (processed.isEmpty) {
                                 None
                             } else {
@@ -102,21 +108,35 @@ class PathTransformer(val cfg: CFG[Stmt[V], TACStmts[V]]) {
      * Takes a [[Path]] and transforms it into a [[StringTree]]. This implies an interpretation of
      * how to handle methods called on the object of interest (like `append`).
      *
-     * @param path             The path element to be transformed.
-     * @param resetExprHandler Whether to reset the underlying [[InterpretationHandler]] or not. When calling
-     *                         this function from outside, the default value should do fine in most
-     *                         of the cases. For further information, see [[InterpretationHandler.reset]].
+     * @param path The path element to be transformed.
+     * @param fpe2Sci A mapping from [[FlatPathElement.element]] values to
+     *                [[StringConstancyInformation]]. Make use of this mapping if some
+     *                StringConstancyInformation need to be used that the [[InterpretationHandler]]
+     *                cannot infer / derive. For instance, if the exact value of an expression needs
+     *                to be determined by calling the
+     *                [[org.opalj.fpcf.analyses.string_definition.LocalStringDefinitionAnalysis]] on
+     *                another instance, store this information in fpe2Sci.
+     * @param resetExprHandler Whether to reset the underlying [[InterpretationHandler]] or not.
+     *                         When calling this function from outside, the default value should do
+     *                         fine in most of the cases. For further information, see
+     *                         [[InterpretationHandler.reset]].
      * @return If an empty [[Path]] is given, `None` will be returned. Otherwise, the transformed
      *         [[StringTree]] will be returned. Note that all elements of the tree will be defined,
      *         i.e., if `path` contains sites that could not be processed (successfully), they will
      *         not occur in the tree.
      */
-    def pathToStringTree(path: Path, resetExprHandler: Boolean = true): StringTree = {
+    def pathToStringTree(
+        path:             Path,
+        fpe2Sci:          Map[Int, List[StringConstancyInformation]] = Map.empty,
+        resetExprHandler: Boolean                                    = true
+    ): StringTree = {
         val tree = path.elements.size match {
-            case 1 ⇒ pathToTreeAcc(path.elements.head).get
+            case 1 ⇒ pathToTreeAcc(path.elements.head, fpe2Sci).get
             case _ ⇒
                 val concatElement = StringTreeConcat(
-                    path.elements.map(pathToTreeAcc).filter(_.isDefined).map(_.get).to[ListBuffer]
+                    path.elements.map { ne ⇒
+                        pathToTreeAcc(ne, fpe2Sci)
+                    }.filter(_.isDefined).map(_.get).to[ListBuffer]
                 )
                 // It might be that concat has only one child (because some interpreters might have
                 // returned an empty list => In case of one child, return only that one

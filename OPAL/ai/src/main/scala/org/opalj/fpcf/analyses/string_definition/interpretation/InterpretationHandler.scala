@@ -145,6 +145,24 @@ object InterpretationHandler {
         }
 
     /**
+     * Checks whether an expression contains a call to [[StringBuilder#append]] or
+     * [[StringBuffer#append]].
+     *
+     * @param expr The expression that is to be checked.
+     * @return Returns true if `expr` is a call to `append` of [[StringBuilder]] or
+     *         [[StringBuffer]].
+     */
+    def isStringBuilderBufferAppendCall(expr: Expr[V]): Boolean = {
+        expr match {
+            case VirtualFunctionCall(_, clazz, _, name, _, _, _) ⇒
+                val className = clazz.toJavaClass.getName
+                (className == "java.lang.StringBuilder" || className == "java.lang.StringBuffer") &&
+                    name == "append"
+            case _ ⇒ false
+        }
+    }
+
+    /**
      * Determines the definition site of the initialization of the base object that belongs to a
      * ''toString'' call.
      *

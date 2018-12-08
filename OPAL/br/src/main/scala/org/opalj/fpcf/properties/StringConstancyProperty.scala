@@ -41,11 +41,7 @@ object StringConstancyProperty extends StringConstancyPropertyMetaInformation {
             PropertyKeyName,
             (_: PropertyStore, _: FallbackReason, _: Entity) ⇒ {
                 // TODO: Using simple heuristics, return a better value for some easy cases
-                StringConstancyProperty(List(StringConstancyInformation(
-                    StringConstancyLevel.DYNAMIC,
-                    StringConstancyType.APPEND,
-                    StringConstancyInformation.UnknownWordSymbol
-                )))
+                lowerBound
             },
             (_, eps: EPS[Field, StringConstancyProperty]) ⇒ eps.ub,
             (_: PropertyStore, _: Entity) ⇒ None
@@ -55,5 +51,23 @@ object StringConstancyProperty extends StringConstancyPropertyMetaInformation {
     def apply(
         stringConstancyInformation: List[StringConstancyInformation]
     ): StringConstancyProperty = new StringConstancyProperty(stringConstancyInformation)
+
+    /**
+     * @return Returns the upper bound from a lattice-point of view.
+     */
+    def upperBound: StringConstancyProperty =
+        StringConstancyProperty(List(StringConstancyInformation(
+            StringConstancyLevel.CONSTANT, StringConstancyType.APPEND
+        )))
+
+    /**
+     * @return Returns the lower bound from a lattice-point of view.
+     */
+    def lowerBound: StringConstancyProperty =
+        StringConstancyProperty(List(StringConstancyInformation(
+            StringConstancyLevel.DYNAMIC,
+            StringConstancyType.APPEND,
+            StringConstancyInformation.UnknownWordSymbol
+        )))
 
 }

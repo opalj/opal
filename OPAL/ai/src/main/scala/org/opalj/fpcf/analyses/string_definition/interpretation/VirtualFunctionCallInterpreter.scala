@@ -47,7 +47,7 @@ class VirtualFunctionCallInterpreter(
      */
     override def interpret(instr: T): List[StringConstancyInformation] = {
         instr.name match {
-            case "append"   ⇒ interpretAppendCall(instr)
+            case "append"   ⇒ interpretAppendCall(instr).getOrElse(List())
             case "toString" ⇒ interpretToStringCall(instr)
             case "replace"  ⇒ interpretReplaceCall(instr)
             case _          ⇒ List()
@@ -61,24 +61,30 @@ class VirtualFunctionCallInterpreter(
      */
     private def interpretAppendCall(
         appendCall: VirtualFunctionCall[V]
-    ): List[StringConstancyInformation] = {
+    ): Option[List[StringConstancyInformation]] = {
         val receiverValues = receiverValuesOfAppendCall(appendCall)
         val appendValue = valueOfAppendCall(appendCall)
 
-        // It might be that we have to go back as much as to a New expression. As they do not
+        // The case can occur that receiver and append value are empty; although, it is
+        // counter-intuitive, this case may occur if both, the receiver and the parameter, have been
+        // processed before
+        if (receiverValues.isEmpty && appendValue.isEmpty) {
+            None
+        } // It might be that we have to go back as much as to a New expression. As they do not
         // produce a result (= empty list), the if part
-        if (receiverValues.isEmpty) {
-            List(appendValue)
-        } else {
-            receiverValues.map { nextSci ⇒
+        else if (receiverValues.isEmpty) {
+            Some(List(appendValue.get))
+        } // Receiver and parameter information are available => Combine them
+        else {
+            Some(receiverValues.map { nextSci ⇒
                 StringConstancyInformation(
                     StringConstancyLevel.determineForConcat(
-                        nextSci.constancyLevel, appendValue.constancyLevel
+                        nextSci.constancyLevel, appendValue.get.constancyLevel
                     ),
                     StringConstancyType.APPEND,
-                    nextSci.possibleStrings + appendValue.possibleStrings
+                    nextSci.possibleStrings + appendValue.get.possibleStrings
                 )
-            }
+            })
         }
     }
 
@@ -100,12 +106,12 @@ class VirtualFunctionCallInterpreter(
      */
     private def valueOfAppendCall(
         call: VirtualFunctionCall[V]
-    ): StringConstancyInformation = {
+    ): Option[StringConstancyInformation] = {
         // .head because we want to evaluate only the first argument of append
         val defSiteParamHead = call.params.head.asVar.definedBy.head
         var value = exprHandler.processDefSite(defSiteParamHead)
         // If defSiteParamHead points to a New, value will be the empty list. In that case, process
-        // the first use site (which is the <init> call
+        // the first use site (which is the <init> call)
         if (value.isEmpty) {
             value = exprHandler.processDefSite(
                 cfg.code.instructions(defSiteParamHead).asAssignment.targetVar.usedBy.toArray.min
@@ -114,21 +120,22 @@ class VirtualFunctionCallInterpreter(
         call.params.head.asVar.value.computationalType match {
             // For some types, we know the (dynamic) values
             case ComputationalTypeInt ⇒
-                InterpretationHandler.getStringConstancyInformationForInt
+                Some(InterpretationHandler.getStringConstancyInformationForInt)
             case ComputationalTypeFloat ⇒
-                InterpretationHandler.getStringConstancyInformationForFloat
+                Some(InterpretationHandler.getStringConstancyInformationForFloat)
             // Otherwise, try to compute
             case _ ⇒
                 // It might be necessary to merge the values of the receiver and of the parameter
                 value.size match {
-                    case 1 ⇒ value.head
-                    case _ ⇒ StringConstancyInformation(
+                    case 0 ⇒ None
+                    case 1 ⇒ Some(value.head)
+                    case _ ⇒ Some(StringConstancyInformation(
                         StringConstancyLevel.determineForConcat(
                             value.head.constancyLevel, value(1).constancyLevel
                         ),
                         StringConstancyType.APPEND,
                         value.head.possibleStrings + value(1).possibleStrings
-                    )
+                    ))
                 }
         }
     }
