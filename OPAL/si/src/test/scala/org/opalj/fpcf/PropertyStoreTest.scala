@@ -633,6 +633,8 @@ sealed abstract class PropertyStoreTest(
                 object AllNodes extends ReachableNodes(nodeEntities) {
                     override def toString: String = "AllNodes"
                 }
+                val RNCKey = ReachableNodesCount.Key
+                val RNKey = ReachableNodes.Key
 
                 // The following analysis only uses the new information given to it and updates
                 // the set of observed dependees.
@@ -814,7 +816,7 @@ sealed abstract class PropertyStoreTest(
 
                             ps.setupPhase(Set(ReachableNodesCount.Key, ReachableNodes.Key), Set.empty)
                             ps.registerLazyPropertyComputation(
-                                ReachableNodesCount.Key, reachableNodesCountAnalysis(ps)
+                                RNCKey, reachableNodesCountAnalysis(ps)
                             )
                             ps.scheduleEagerComputationsForEntities(nodeEntitiesPermutation)(reachableNodesAnalysis(ps))
                             ps(nodeA, ReachableNodesCount.Key) // forces the evaluation for all nodes...
@@ -831,24 +833,24 @@ sealed abstract class PropertyStoreTest(
                                     ps.immediateOnUpdateComputationsCount
                             )
                             try {
-                                ps(nodeA, ReachableNodes.Key) should be(
-                                    FinalEP(nodeA, ReachableNodes(nodeEntities.toSet - nodeA))
-                                )
-                                ps(nodeB, ReachableNodes.Key) should be(
-                                    FinalEP(nodeB, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR)))
-                                )
-                                ps(nodeC, ReachableNodes.Key) should be(
-                                    FinalEP(nodeC, ReachableNodes(Set()))
-                                )
-                                ps(nodeD, ReachableNodes.Key) should be(
-                                    FinalEP(nodeD, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR)))
-                                )
-                                ps(nodeE, ReachableNodes.Key) should be(
-                                    FinalEP(nodeE, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR)))
-                                )
-                                ps(nodeR, ReachableNodes.Key) should be(
-                                    FinalEP(nodeR, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR)))
-                                )
+                                ps(nodeA, ReachableNodes.Key) should be(FinalEP(
+                                    nodeA, ReachableNodes(nodeEntities.toSet - nodeA)
+                                ))
+                                ps(nodeB, ReachableNodes.Key) should be(FinalEP(
+                                    nodeB, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))
+                                ))
+                                ps(nodeC, ReachableNodes.Key) should be(FinalEP(
+                                    nodeC, ReachableNodes(Set())
+                                ))
+                                ps(nodeD, ReachableNodes.Key) should be(FinalEP(
+                                    nodeD, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))
+                                ))
+                                ps(nodeE, ReachableNodes.Key) should be(FinalEP(
+                                    nodeE, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))
+                                ))
+                                ps(nodeR, ReachableNodes.Key) should be(FinalEP(
+                                    nodeR, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR))
+                                ))
                             } catch {
                                 case t: Throwable ⇒
                                     throw t;
@@ -869,6 +871,7 @@ sealed abstract class PropertyStoreTest(
                     )
                     ps.force(nodeA, ReachableNodes.Key) // forces the evaluation for all nodes...
                     ps.waitOnPhaseCompletion()
+
                     ps(nodeA, ReachableNodes.Key) should be(
                         FinalEP(nodeA, ReachableNodes(nodeEntities - nodeA))
                     )
@@ -954,162 +957,224 @@ sealed abstract class PropertyStoreTest(
                     ps.shutdown()
                 }
 
-                it("should be possible to use lazily scheduled mutually dependent computations without intermediate results propagation") {
-                    val ps = createPropertyStore()
-                    info(s"PropertyStore@${System.identityHashCode(ps).toHexString}")
+                it(
+                    "should be possible to use lazily scheduled mutually dependent computations "+
+                        "without intermediate results propagation"
+                ) {
+                        val ps = createPropertyStore()
+                        info(s"PropertyStore@${System.identityHashCode(ps).toHexString}")
 
-                    ps.setupPhase(
-                        Set(ReachableNodes.Key, ReachableNodesCount.Key),
-                        Set.empty,
-                        Map(ReachableNodesCount.Key → Set(ReachableNodes.Key))
-                    )
-                    ps.registerLazyPropertyComputation(
-                        ReachableNodes.Key, reachableNodesAnalysis(ps)
-                    )
-                    ps.registerLazyPropertyComputation(
-                        ReachableNodesCount.Key, reachableNodesCountViaReachableNodesAnalysis(ps)
-                    )
-                    nodeEntities foreach { node ⇒ ps.force(node, ReachableNodesCount.Key) }
-                    ps.waitOnPhaseCompletion()
-                    info("scheduledTasksCount="+ps.scheduledTasksCount)
-                    info("scheduledOnUpdateComputationsCount="+ps.scheduledOnUpdateComputationsCount)
-
-                    val RNKey = ReachableNodes.Key
-                    val RNCKey = ReachableNodesCount.Key
-
-                    ps(nodeA, RNKey) should be(
-                        FinalEP(nodeA, ReachableNodes(nodeEntities - nodeA))
-                    )
-                    ps(nodeB, RNKey) should be(
-                        FinalEP(nodeB, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR)))
-                    )
-                    ps(nodeC, RNKey) should be(
-                        FinalEP(nodeC, ReachableNodes(Set()))
-                    )
-                    ps(nodeD, RNKey) should be(
-                        FinalEP(nodeD, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR)))
-                    )
-                    ps(nodeE, RNKey) should be(
-                        FinalEP(nodeE, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR)))
-                    )
-                    ps(nodeR, RNKey) should be(
-                        FinalEP(nodeR, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR)))
-                    )
-                    // now let's check if we have the correct notification of the
-                    // lazily dependent computations
-                    ps(nodeA, RNCKey) should be(
-                        FinalEP(nodeA, ReachableNodesCount(nodeEntities.size - 1))
-                    )
-                    ps(nodeB, RNCKey) should be(FinalEP(nodeB, ReachableNodesCount(5)))
-                    ps(nodeC, RNCKey) should be(FinalEP(nodeC, ReachableNodesCount(0)))
-                    ps(nodeD, RNCKey) should be(FinalEP(nodeD, ReachableNodesCount(5)))
-                    ps(nodeE, RNCKey) should be(FinalEP(nodeE, ReachableNodesCount(5)))
-                    ps(nodeR, RNCKey) should be(FinalEP(nodeR, ReachableNodesCount(5)))
-
-                    ps.shutdown()
-                }
-
-                it("should be possible to force the results of transformers based on lazy properties") {
-                    val ps = createPropertyStore()
-                    info(s"PropertyStore@${System.identityHashCode(ps).toHexString}")
-
-                    ps.setupPhase(
-                        Set(ReachableNodes.Key, ReachableNodesCount.Key),
-                        Set.empty,
-                        Map(ReachableNodesCount.Key → Set(ReachableNodes.Key))
-                    )
-                    ps.registerLazyPropertyComputation(
-                        ReachableNodes.Key, reachableNodesAnalysis(ps)
-                    )
-                    ps.registerTransformer(ReachableNodes.Key, ReachableNodesCount.Key) { (e: Entity, p) ⇒
-                        val ReachableNodes(nodes) = p
-                        FinalEP(e, ReachableNodesCount(nodes.size))
-                    }
-                    nodeEntities foreach { node ⇒ ps.force(node, ReachableNodesCount.Key) }
-                    ps.waitOnPhaseCompletion()
-                    info("scheduledTasksCount="+ps.scheduledTasksCount)
-                    info("scheduledOnUpdateComputationsCount="+ps.scheduledOnUpdateComputationsCount)
-
-                    val RNCKey = ReachableNodesCount.Key
-                    ps(nodeA, RNCKey) should be(
-                        FinalEP(nodeA, ReachableNodesCount(nodeEntities.size - 1))
-                    )
-                    ps(nodeB, RNCKey) should be(FinalEP(nodeB, ReachableNodesCount(5)))
-                    ps(nodeC, RNCKey) should be(FinalEP(nodeC, ReachableNodesCount(0)))
-                    ps(nodeD, RNCKey) should be(FinalEP(nodeD, ReachableNodesCount(5)))
-                    ps(nodeE, RNCKey) should be(FinalEP(nodeE, ReachableNodesCount(5)))
-                    ps(nodeR, RNCKey) should be(FinalEP(nodeR, ReachableNodesCount(5)))
-
-                    ps.shutdown()
-                }
-
-                it("should be possible to force the results of a chain of transformers based on lazy properties") {
-                    val ps = createPropertyStore()
-                    info(s"PropertyStore@${System.identityHashCode(ps).toHexString}")
-
-                    ps.setupPhase(
-                        Set(ReachableNodes.Key, ReachableNodesCount.Key, Marker.Key),
-                        Set.empty,
-                        Map(
-                            ReachableNodesCount.Key → Set(ReachableNodes.Key),
-                            Marker.Key → Set(ReachableNodesCount.Key)
+                        ps.setupPhase(
+                            Set(ReachableNodes.Key, ReachableNodesCount.Key),
+                            Set.empty,
+                            Map(ReachableNodesCount.Key → Set(ReachableNodes.Key))
                         )
-                    )
-                    ps.registerLazyPropertyComputation(
-                        ReachableNodes.Key, reachableNodesAnalysis(ps)
-                    )
-                    ps.registerTransformer(ReachableNodes.Key, ReachableNodesCount.Key) { (e: Entity, p) ⇒
-                        val ReachableNodes(nodes) = p
-                        FinalEP(e, ReachableNodesCount(nodes.size))
+                        ps.registerLazyPropertyComputation(
+                            ReachableNodes.Key, reachableNodesAnalysis(ps)
+                        )
+                        ps.registerLazyPropertyComputation(
+                            ReachableNodesCount.Key, reachableNodesCountViaReachableNodesAnalysis(ps)
+                        )
+                        nodeEntities foreach { node ⇒ ps.force(node, ReachableNodesCount.Key) }
+                        ps.waitOnPhaseCompletion()
+                        info("scheduledTasksCount="+ps.scheduledTasksCount)
+                        info("scheduledOnUpdateComputationsCount="+ps.scheduledOnUpdateComputationsCount)
+
+                        val RNKey = ReachableNodes.Key
+                        val RNCKey = ReachableNodesCount.Key
+
+                        ps(nodeA, RNKey) should be(
+                            FinalEP(nodeA, ReachableNodes(nodeEntities - nodeA))
+                        )
+                        ps(nodeB, RNKey) should be(
+                            FinalEP(nodeB, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR)))
+                        )
+                        ps(nodeC, RNKey) should be(
+                            FinalEP(nodeC, ReachableNodes(Set()))
+                        )
+                        ps(nodeD, RNKey) should be(
+                            FinalEP(nodeD, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR)))
+                        )
+                        ps(nodeE, RNKey) should be(
+                            FinalEP(nodeE, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR)))
+                        )
+                        ps(nodeR, RNKey) should be(
+                            FinalEP(nodeR, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR)))
+                        )
+                        // now let's check if we have the correct notification of the
+                        // lazily dependent computations
+                        ps(nodeA, RNCKey) should be(
+                            FinalEP(nodeA, ReachableNodesCount(nodeEntities.size - 1))
+                        )
+                        ps(nodeB, RNCKey) should be(FinalEP(nodeB, ReachableNodesCount(5)))
+                        ps(nodeC, RNCKey) should be(FinalEP(nodeC, ReachableNodesCount(0)))
+                        ps(nodeD, RNCKey) should be(FinalEP(nodeD, ReachableNodesCount(5)))
+                        ps(nodeE, RNCKey) should be(FinalEP(nodeE, ReachableNodesCount(5)))
+                        ps(nodeR, RNCKey) should be(FinalEP(nodeR, ReachableNodesCount(5)))
+
+                        ps.shutdown()
                     }
-                    ps.registerTransformer(ReachableNodesCount.Key, Marker.Key) { (e: Entity, p) ⇒
-                        val ReachableNodesCount(count) = p
-                        FinalEP(e, if (count > 3) Marker.IsMarked else Marker.NotMarked)
+
+                it(
+                    "should be possible to force the results of transformers "+
+                        "based on lazy properties"
+                ) {
+                        val ps = createPropertyStore()
+                        info(s"PropertyStore@${System.identityHashCode(ps).toHexString}")
+
+                        ps.setupPhase(
+                            Set(ReachableNodes.Key, ReachableNodesCount.Key),
+                            Set.empty,
+                            Map(ReachableNodesCount.Key → Set(ReachableNodes.Key))
+                        )
+                        ps.registerLazyPropertyComputation(
+                            ReachableNodes.Key, reachableNodesAnalysis(ps)
+                        )
+                        ps.registerTransformer(ReachableNodes.Key, ReachableNodesCount.Key) { (e: Entity, p) ⇒
+                            val ReachableNodes(nodes) = p
+                            FinalEP(e, ReachableNodesCount(nodes.size))
+                        }
+                        nodeEntities foreach { node ⇒ ps.force(node, ReachableNodesCount.Key) }
+                        ps.waitOnPhaseCompletion()
+                        info("scheduledTasksCount="+ps.scheduledTasksCount)
+                        info("scheduledOnUpdateComputationsCount="+ps.scheduledOnUpdateComputationsCount)
+
+                        ps(nodeA, RNCKey) should be(
+                            FinalEP(nodeA, ReachableNodesCount(nodeEntities.size - 1))
+                        )
+                        ps(nodeB, RNCKey) should be(FinalEP(nodeB, ReachableNodesCount(5)))
+                        ps(nodeC, RNCKey) should be(FinalEP(nodeC, ReachableNodesCount(0)))
+                        ps(nodeD, RNCKey) should be(FinalEP(nodeD, ReachableNodesCount(5)))
+                        ps(nodeE, RNCKey) should be(FinalEP(nodeE, ReachableNodesCount(5)))
+                        ps(nodeR, RNCKey) should be(FinalEP(nodeR, ReachableNodesCount(5)))
+
+                        ps.shutdown()
                     }
-                    nodeEntities foreach { node ⇒ ps.force(node, Marker.Key) }
-                    ps.waitOnPhaseCompletion()
-                    info("scheduledTasksCount="+ps.scheduledTasksCount)
-                    info("scheduledOnUpdateComputationsCount="+ps.scheduledOnUpdateComputationsCount)
-                    val MKey = Marker.Key
-                    ps(nodeA, MKey) should be(FinalEP(nodeA, Marker.IsMarked))
-                    ps(nodeB, MKey) should be(FinalEP(nodeB, Marker.IsMarked))
-                    ps(nodeC, MKey) should be(FinalEP(nodeC, Marker.NotMarked))
-                    ps(nodeD, MKey) should be(FinalEP(nodeD, Marker.IsMarked))
-                    ps(nodeE, MKey) should be(FinalEP(nodeE, Marker.IsMarked))
-                    ps(nodeR, MKey) should be(FinalEP(nodeR, Marker.IsMarked))
 
-                    ps.shutdown()
-                }
+                it(
+                    "should be possible to force the results of "+
+                        "multiple transformers based on a lazy property"
+                ) {
+                        val ps = createPropertyStore()
+                        info(s"PropertyStore@${System.identityHashCode(ps).toHexString}")
 
-                it("should be possible when a lazy computation depends on properties for which no analysis is scheduled") {
-                    val ps = createPropertyStore()
-                    info(s"PropertyStore@${System.identityHashCode(ps).toHexString}")
+                        ps.setupPhase(
+                            Set(ReachableNodes.Key, ReachableNodesCount.Key, Marker.Key),
+                            Set.empty,
+                            Map(
+                                ReachableNodesCount.Key → Set(ReachableNodes.Key),
+                                Marker.Key → Set(ReachableNodes.Key)
+                            )
+                        )
+                        ps.registerLazyPropertyComputation(
+                            ReachableNodes.Key, reachableNodesAnalysis(ps)
+                        )
+                        ps.registerTransformer(RNKey, RNCKey) { (e: Entity, p) ⇒
+                            val ReachableNodes(nodes) = p
+                            FinalEP(e, ReachableNodesCount(nodes.size))
+                        }
+                        ps.registerTransformer(RNKey, Marker.Key) { (e: Entity, p) ⇒
+                            val ReachableNodes(nodes) = p
+                            FinalEP(e, if (nodes.size > 3) Marker.IsMarked else Marker.NotMarked)
+                        }
+                        nodeEntities foreach { node ⇒ ps.force(node, Marker.Key) }
+                        ps.waitOnPhaseCompletion()
+                        info("scheduledTasksCount="+ps.scheduledTasksCount)
+                        info("scheduledOnUpdateComputationsCount="+ps.scheduledOnUpdateComputationsCount)
 
-                    ps.setupPhase(Set(ReachableNodesCount.Key), Set.empty)
-                    // WE DO NOT SCHEDULE ReachableNodes
-                    ps.registerLazyPropertyComputation(
-                        ReachableNodesCount.Key, reachableNodesCountViaReachableNodesAnalysis(ps)
-                    )
-                    nodeEntities.foreach { node ⇒ ps(node, ReachableNodesCount.Key) }
-                    ps.waitOnPhaseCompletion()
+                        ps(nodeA, RNCKey) should be(
+                            FinalEP(nodeA, ReachableNodesCount(nodeEntities.size - 1))
+                        )
+                        ps(nodeB, RNCKey) should be(FinalEP(nodeB, ReachableNodesCount(5)))
+                        ps(nodeC, RNCKey) should be(FinalEP(nodeC, ReachableNodesCount(0)))
+                        ps(nodeD, RNCKey) should be(FinalEP(nodeD, ReachableNodesCount(5)))
+                        ps(nodeE, RNCKey) should be(FinalEP(nodeE, ReachableNodesCount(5)))
+                        ps(nodeR, RNCKey) should be(FinalEP(nodeR, ReachableNodesCount(5)))
 
-                    // actually, the "fallback" value
-                    ps(nodeA, ReachableNodes.Key) should be(
-                        FinalEP(nodeA, ReachableNodes(nodeEntities.toSet))
-                    )
+                        val MKey = Marker.Key
+                        ps(nodeA, MKey) should be(FinalEP(nodeA, Marker.IsMarked))
+                        ps(nodeB, MKey) should be(FinalEP(nodeB, Marker.IsMarked))
+                        ps(nodeC, MKey) should be(FinalEP(nodeC, Marker.NotMarked))
+                        ps(nodeD, MKey) should be(FinalEP(nodeD, Marker.IsMarked))
+                        ps(nodeE, MKey) should be(FinalEP(nodeE, Marker.IsMarked))
+                        ps(nodeR, MKey) should be(FinalEP(nodeR, Marker.IsMarked))
 
-                    // now let's check if we have the correct notification of the
-                    // of the lazily dependent computations
-                    val expected = ReachableNodesCount(11)
-                    ps(nodeA, ReachableNodesCount.Key) should be(FinalEP(nodeA, expected))
-                    ps(nodeB, ReachableNodesCount.Key) should be(FinalEP(nodeB, expected))
-                    ps(nodeC, ReachableNodesCount.Key) should be(FinalEP(nodeC, expected))
-                    ps(nodeD, ReachableNodesCount.Key) should be(FinalEP(nodeD, expected))
-                    ps(nodeE, ReachableNodesCount.Key) should be(FinalEP(nodeE, expected))
-                    ps(nodeR, ReachableNodesCount.Key) should be(FinalEP(nodeR, expected))
+                        ps.shutdown()
+                    }
 
-                    ps.shutdown()
-                }
+                it(
+                    "should be possible to force the results of "+
+                        "a chain of transformers based on lazy properties"
+                ) {
+                        val ps = createPropertyStore()
+                        info(s"PropertyStore@${System.identityHashCode(ps).toHexString}")
+
+                        ps.setupPhase(
+                            Set(ReachableNodes.Key, ReachableNodesCount.Key, Marker.Key),
+                            Set.empty,
+                            Map(
+                                ReachableNodesCount.Key → Set(ReachableNodes.Key),
+                                Marker.Key → Set(ReachableNodesCount.Key)
+                            )
+                        )
+                        ps.registerLazyPropertyComputation(
+                            ReachableNodes.Key, reachableNodesAnalysis(ps)
+                        )
+                        ps.registerTransformer(RNKey, RNCKey) { (e: Entity, p) ⇒
+                            val ReachableNodes(nodes) = p
+                            FinalEP(e, ReachableNodesCount(nodes.size))
+                        }
+                        ps.registerTransformer(RNCKey, Marker.Key) { (e: Entity, p) ⇒
+                            val ReachableNodesCount(count) = p
+                            FinalEP(e, if (count > 3) Marker.IsMarked else Marker.NotMarked)
+                        }
+                        nodeEntities foreach { node ⇒ ps.force(node, Marker.Key) }
+                        ps.waitOnPhaseCompletion()
+                        info("scheduledTasksCount="+ps.scheduledTasksCount)
+                        info("scheduledOnUpdateComputationsCount="+ps.scheduledOnUpdateComputationsCount)
+                        val MKey = Marker.Key
+                        ps(nodeA, MKey) should be(FinalEP(nodeA, Marker.IsMarked))
+                        ps(nodeB, MKey) should be(FinalEP(nodeB, Marker.IsMarked))
+                        ps(nodeC, MKey) should be(FinalEP(nodeC, Marker.NotMarked))
+                        ps(nodeD, MKey) should be(FinalEP(nodeD, Marker.IsMarked))
+                        ps(nodeE, MKey) should be(FinalEP(nodeE, Marker.IsMarked))
+                        ps(nodeR, MKey) should be(FinalEP(nodeR, Marker.IsMarked))
+
+                        ps.shutdown()
+                    }
+
+                it(
+                    "should be possible when a lazy computation depends on properties "+
+                        "for which no analysis is scheduled"
+                ) {
+                        val ps = createPropertyStore()
+                        info(s"PropertyStore@${System.identityHashCode(ps).toHexString}")
+
+                        ps.setupPhase(Set(ReachableNodesCount.Key), Set.empty)
+                        // WE DO NOT SCHEDULE ReachableNodes
+                        ps.registerLazyPropertyComputation(
+                            ReachableNodesCount.Key, reachableNodesCountViaReachableNodesAnalysis(ps)
+                        )
+                        nodeEntities.foreach { node ⇒ ps(node, ReachableNodesCount.Key) }
+                        ps.waitOnPhaseCompletion()
+
+                        // actually, the "fallback" value
+                        ps(nodeA, ReachableNodes.Key) should be(
+                            FinalEP(nodeA, ReachableNodes(nodeEntities.toSet))
+                        )
+
+                        // now let's check if we have the correct notification of the
+                        // of the lazily dependent computations
+                        val expected = ReachableNodesCount(11)
+                        ps(nodeA, ReachableNodesCount.Key) should be(FinalEP(nodeA, expected))
+                        ps(nodeB, ReachableNodesCount.Key) should be(FinalEP(nodeB, expected))
+                        ps(nodeC, ReachableNodesCount.Key) should be(FinalEP(nodeC, expected))
+                        ps(nodeD, ReachableNodesCount.Key) should be(FinalEP(nodeD, expected))
+                        ps(nodeE, ReachableNodesCount.Key) should be(FinalEP(nodeE, expected))
+                        ps(nodeR, ReachableNodesCount.Key) should be(FinalEP(nodeR, expected))
+
+                        ps.shutdown()
+                    }
 
                 it("should be possible when a lazy computation depends on properties "+
                     "for which an analysis is seemingly scheduled, "+
@@ -1271,8 +1336,8 @@ sealed abstract class PropertyStoreTest(
                     val ps = createPropertyStore()
                     info(s"PropertyStore@${System.identityHashCode(ps).toHexString}")
 
+                    // 3. setup
                     ps.setupPhase(Set(Purity.Key), Set.empty)
-
                     def purityAnalysis(node: Node): PropertyComputationResult = {
                         def c(successorNode: SomeEOptionP): ProperPropertyComputationResult = {
                             // HERE - For this test case only, we can simple get to the previous
@@ -1292,6 +1357,7 @@ sealed abstract class PropertyStoreTest(
                         val nextNode = node.targets.head // HERE: we always have only one successor
                         c(ps(nextNode, Purity.Key))
                     }
+
                     // 4. execute analysis
                     ps.scheduleEagerComputationsForEntities(allNodes)(purityAnalysis)
                     ps.waitOnPhaseCompletion()
