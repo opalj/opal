@@ -37,7 +37,7 @@ import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
 class StringTrackingAnalysisContext(
-        val stmts: Array[Stmt[V]]
+    val stmts: Array[Stmt[V]]
 )
 
 /**
@@ -64,14 +64,20 @@ class LocalStringDefinitionAnalysis(
      * have all required information ready for a final result.
      */
     private case class ComputationState(
-            // The lean path that was computed
-            computedLeanPath: Path,
-            // A mapping from DUVar elements to the corresponding indices of the FlatPathElements
-            var2IndexMapping: mutable.LinkedHashMap[V, Int],
-            // The control flow graph on which the computedLeanPath is based
-            cfg: CFG[Stmt[V], TACStmts[V]]
+        // The lean path that was computed
+        computedLeanPath: Path,
+        // A mapping from DUVar elements to the corresponding indices of the FlatPathElements
+        var2IndexMapping: mutable.LinkedHashMap[V, Int],
+        // The control flow graph on which the computedLeanPath is based
+        cfg: CFG[Stmt[V], TACStmts[V]]
     )
 
+    /**
+     * As executions of this analysis can be nested (since it may start itself), there might be
+     * several states to capture. In order to do so and enable each analysis instance to access its
+     * information, a map is used where the keys are the values fed into the analysis (which
+     * uniquely identify an analysis run) and the values the corresponding states.
+     */
     private[this] val states = mutable.Map[P, ComputationState]()
 
     def analyze(data: P): PropertyComputationResult = {
