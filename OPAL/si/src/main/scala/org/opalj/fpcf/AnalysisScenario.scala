@@ -11,10 +11,15 @@ import org.opalj.collection.immutable.Chain
 import org.opalj.collection.immutable.:&:
 
 /**
- * Provides functionality to compute an optimal schedule to execute a set of analyses. Here,
- * optimal means that the schedule will try to minimize the number of notifications due to updated
- * properties. It will run analyses that just use information provided by earlier analyses,
- * but which do not provide information required by the earlier ones, in a later batch/phase.
+ * Provides functionality to determine whether a set of analyses is compatible and to compute
+ * a schedule to execute a set of analyses.
+ *
+ * Constraints:
+ * - an analysis which derives a property lazily only derives that property (lazily)
+ * - a collaboratively computed property is derived in one phase
+ * - a triggered analysis is dependent on an eager analysis (that is, the property
+ *   that triggers the analysis is derived eagerly)
+ * - a property
  *
  * @author Michael Eichberg
  */
@@ -127,10 +132,7 @@ class AnalysisScenario {
      *   - ... schedules analyses which collaboratively compute a property in the same batch/
      *         phase.
      */
-    def computeSchedule(
-        implicit
-        logContext: LogContext
-    ): Schedule = this.synchronized {
+    def computeSchedule(        implicit        logContext: LogContext    ): Schedule = {
         if (eagerCS.isEmpty) {
             if (lazyCS.isEmpty) {
                 return Schedule(Chain.empty)

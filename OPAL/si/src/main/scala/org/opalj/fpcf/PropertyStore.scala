@@ -429,6 +429,15 @@ abstract class PropertyStore {
         pc: EOptionP[E, P] ⇒ InterimEP[E, P]
     ): Unit
 
+
+    final def setupPhase(configuration : PhaseConfiguration) : Unit = {
+        setupPhase(
+            configuration.propertyKindsComputedInThisPhase,
+            configuration.propertyKindsComputedInLaterPhase,
+            configuration.suppressInterimUpdates
+        )
+    }
+
     /**
      * Needs to be called before an analysis is scheduled to inform the property store which
      * properties will be computed now and which are computed in a later phase. The
@@ -503,8 +512,13 @@ abstract class PropertyStore {
         }
 
         // Step 4
-        // Inform the property store that a new phase was setup.
-        newPhaseInitialized(propertyKindsComputedInThisPhase, propertyKindsComputedInLaterPhase)
+        // Call `newPhaseInitialized` to enable subclasses to perform custom initialization steps
+        // when a phase was setup.
+        newPhaseInitialized(
+            propertyKindsComputedInThisPhase,
+            propertyKindsComputedInLaterPhase,
+            suppressInterimUpdates
+        )
     }
 
     /**
@@ -513,7 +527,8 @@ abstract class PropertyStore {
      */
     protected[this] def newPhaseInitialized(
         propertyKindsComputedInThisPhase:  Set[PropertyKind],
-        propertyKindsComputedInLaterPhase: Set[PropertyKind]
+        propertyKindsComputedInLaterPhase: Set[PropertyKind],
+        suppressInterimUpdates:            Map[PropertyKind, Set[PropertyKind]]
     ): Unit = { /*nothing to do*/ }
 
     /**
