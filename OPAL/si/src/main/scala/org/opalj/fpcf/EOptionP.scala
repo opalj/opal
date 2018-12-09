@@ -425,8 +425,8 @@ sealed trait InterimEP[+E <: Entity, +P <: Property] extends EPS[E, P] {
         newDependees: Traversable[SomeEOptionP]
     ): Unit = {
         try {
-            if (hasLBP != eps.hasLBP || hasUBP != eps.hasUBP) {
-                throw new IllegalArgumentException("inconsistent property bounds")
+            if (eps.isRefinable && (hasLBP != eps.hasLBP || hasUBP != eps.hasUBP)) {
+                throw new IllegalArgumentException(s"inconsistent property bounds: $this vs. $eps")
             }
 
             if (hasLBP && eps.lb.isOrderedProperty) {
@@ -504,7 +504,7 @@ final class InterimELUBP[+E <: Entity, +P <: Property](
     override def hashCode: Int = ((e.hashCode() * 31 + lb.hashCode()) * 31) + ub.hashCode()
 
     override def toString: String = {
-        s"InterimLUBP($e@${System.identityHashCode(e).toHexString},lb=$lb,ub=$ub)"
+        s"InterimELUBP($e@${System.identityHashCode(e).toHexString},lb=$lb,ub=$ub)"
     }
 }
 
@@ -559,7 +559,7 @@ final class InterimEUBP[+E <: Entity, +P <: Property](
     override def hashCode: Int = e.hashCode() * 31 + ub.hashCode()
 
     override def toString: String = {
-        s"InterimUBP($e@${System.identityHashCode(e).toHexString},ub=$ub)"
+        s"InterimEUBP($e@${System.identityHashCode(e).toHexString},ub=$ub)"
     }
 }
 
@@ -658,7 +658,7 @@ final class InterimELBP[+E <: Entity, +P <: Property](
     override def hashCode: Int = e.hashCode() * 31 + lb.hashCode()
 
     override def toString: String = {
-        s"InterimUBP($e@${System.identityHashCode(e).toHexString},lb=$lb)"
+        s"InterimELBP($e@${System.identityHashCode(e).toHexString},lb=$lb)"
     }
 }
 

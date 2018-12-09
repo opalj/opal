@@ -424,19 +424,6 @@ final class PKESequentialPropertyStore private (
                     }
                 }
             }
-
-            // Let's check if we have a transformer and the result is actually required.
-            // (Note that `apply` also triggers the transformer if required!)
-            if (isFinal) {
-                val transformerSpecification = transformersBySourcePK(pkId)
-                if (transformerSpecification != null) {
-                    val (targetPK, transform) = transformerSpecification
-                    if (dependers(targetPK.id).get(e).isDefined) {
-                        // ... it makes sense to run the transformer!
-                        update(transform(e, eps.asFinal.p), Nil)
-                    }
-                }
-            }
         }
     }
 
