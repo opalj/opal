@@ -37,6 +37,10 @@ import static org.opalj.fpcf.properties.string_definition.StringConstancyLevel.*
  * Thus, you should avoid the following characters / strings to occur in "expectedStrings":
  * {*, ?, \w, |}. In the future, "expectedStrings" might be parsed back into a StringTree. Thus, to
  * be on the safe side, brackets should be avoided as well.
+ * <p>
+ * On order to trigger the analysis for a particular string or String{Buffer, Builder} call the
+ * <i>analyzeString</i> method with the variable to be analyzed. It is legal to have multiple
+ * calls to <i>analyzeString</i> within the same test method.
  *
  * @author Patrick Mell
  */
