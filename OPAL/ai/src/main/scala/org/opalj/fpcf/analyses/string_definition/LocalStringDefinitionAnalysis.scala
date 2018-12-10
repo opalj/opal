@@ -36,10 +36,6 @@ import org.opalj.tac.TACStmts
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
-class StringTrackingAnalysisContext(
-    val stmts: Array[Stmt[V]]
-)
-
 /**
  * LocalStringDefinitionAnalysis processes a read operation of a local string variable at a program
  * position, ''pp'', in a way that it finds the set of possible strings that can be read at ''pp''.
@@ -253,8 +249,8 @@ sealed trait LocalStringDefinitionAnalysisScheduler extends ComputationSpecifica
  * Executor for the lazy analysis.
  */
 object LazyStringDefinitionAnalysis
-    extends LocalStringDefinitionAnalysisScheduler
-    with FPCFLazyAnalysisScheduler {
+        extends LocalStringDefinitionAnalysisScheduler
+        with FPCFLazyAnalysisScheduler {
 
     final override def startLazily(
         p: SomeProject, ps: PropertyStore, unused: Null
