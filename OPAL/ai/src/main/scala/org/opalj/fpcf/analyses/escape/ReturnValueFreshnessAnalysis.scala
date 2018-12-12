@@ -526,8 +526,8 @@ sealed trait ReturnValueFreshnessAnalysisScheduler extends ComputationSpecificat
 }
 
 object EagerReturnValueFreshnessAnalysis
-        extends ReturnValueFreshnessAnalysisScheduler
-        with BasicFPCFEagerAnalysisScheduler {
+    extends ReturnValueFreshnessAnalysisScheduler
+    with BasicFPCFEagerAnalysisScheduler {
 
     override def derivesCollaboratively: Set[PropertyBounds] = Set.empty
 
@@ -543,8 +543,8 @@ object EagerReturnValueFreshnessAnalysis
 }
 
 object LazyReturnValueFreshnessAnalysis
-        extends ReturnValueFreshnessAnalysisScheduler
-        with BasicFPCFLazyAnalysisScheduler {
+    extends ReturnValueFreshnessAnalysisScheduler
+    with BasicFPCFLazyAnalysisScheduler {
 
     override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 

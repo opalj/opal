@@ -76,13 +76,13 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
      * @param code The code of the currently analyzed method
      */
     class State(
-        var lbPurity:      Purity,
-        var ubPurity:      Purity,
-        var dependees:     Set[EOptionP[Entity, Property]],
-        val method:        Method,
-        val definedMethod: DeclaredMethod,
-        val declClass:     ObjectType,
-        var code:          Array[Stmt[V]]                  = Array.empty
+            var lbPurity:      Purity,
+            var ubPurity:      Purity,
+            var dependees:     Set[EOptionP[Entity, Property]],
+            val method:        Method,
+            val definedMethod: DeclaredMethod,
+            val declClass:     ObjectType,
+            var code:          Array[Stmt[V]]                  = Array.empty
     ) extends AnalysisState
 
     override type StateType = State
@@ -413,8 +413,8 @@ trait L1PurityAnalysisScheduler extends ComputationSpecification {
 }
 
 object EagerL1PurityAnalysis
-        extends L1PurityAnalysisScheduler
-        with BasicFPCFEagerAnalysisScheduler {
+    extends L1PurityAnalysisScheduler
+    with BasicFPCFEagerAnalysisScheduler {
 
     override def derivesCollaboratively: Set[PropertyBounds] = Set.empty
 
@@ -434,8 +434,8 @@ object EagerL1PurityAnalysis
 }
 
 object LazyL1PurityAnalysis
-        extends L1PurityAnalysisScheduler
-        with BasicFPCFLazyAnalysisScheduler {
+    extends L1PurityAnalysisScheduler
+    with BasicFPCFLazyAnalysisScheduler {
 
     override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 

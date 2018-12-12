@@ -1031,8 +1031,8 @@ trait L2PurityAnalysisScheduler extends ComputationSpecification {
 }
 
 object EagerL2PurityAnalysis
-        extends L2PurityAnalysisScheduler
-        with BasicFPCFEagerAnalysisScheduler {
+    extends L2PurityAnalysisScheduler
+    with BasicFPCFEagerAnalysisScheduler {
 
     override def derivesCollaboratively: Set[PropertyBounds] = Set.empty
 
@@ -1052,8 +1052,8 @@ object EagerL2PurityAnalysis
 }
 
 object LazyL2PurityAnalysis
-        extends L2PurityAnalysisScheduler
-        with BasicFPCFLazyAnalysisScheduler {
+    extends L2PurityAnalysisScheduler
+    with BasicFPCFLazyAnalysisScheduler {
 
     override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 

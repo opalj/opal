@@ -628,8 +628,8 @@ sealed trait FieldLocalityAnalysisScheduler extends ComputationSpecification {
 }
 
 object EagerFieldLocalityAnalysis
-        extends FieldLocalityAnalysisScheduler
-        with BasicFPCFEagerAnalysisScheduler {
+    extends FieldLocalityAnalysisScheduler
+    with BasicFPCFEagerAnalysisScheduler {
 
     override def derivesCollaboratively: Set[PropertyBounds] = Set.empty
 
@@ -644,8 +644,8 @@ object EagerFieldLocalityAnalysis
 }
 
 object LazyFieldLocalityAnalysis
-        extends FieldLocalityAnalysisScheduler
-        with BasicFPCFLazyAnalysisScheduler {
+    extends FieldLocalityAnalysisScheduler
+    with BasicFPCFLazyAnalysisScheduler {
 
     override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 

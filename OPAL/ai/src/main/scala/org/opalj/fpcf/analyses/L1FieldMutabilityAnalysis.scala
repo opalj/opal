@@ -46,9 +46,9 @@ import org.opalj.value.ValueInformation
 class L1FieldMutabilityAnalysis private[analyses] (val project: SomeProject) extends FPCFAnalysis {
 
     class State(
-        val field:           Field,
-        var tacDependees:    Map[Method, (EOptionP[Method, TACAI], PCs)]   = Map.empty,
-        var escapeDependees: Set[EOptionP[DefinitionSite, EscapeProperty]] = Set.empty
+            val field:           Field,
+            var tacDependees:    Map[Method, (EOptionP[Method, TACAI], PCs)]   = Map.empty,
+            var escapeDependees: Set[EOptionP[DefinitionSite, EscapeProperty]] = Set.empty
     )
 
     type V = DUVar[ValueInformation]
@@ -330,8 +330,8 @@ sealed trait L1FieldMutabilityAnalysisScheduler extends ComputationSpecification
  * Executor for the field mutability analysis.
  */
 object EagerL1FieldMutabilityAnalysis
-        extends L1FieldMutabilityAnalysisScheduler
-        with BasicFPCFEagerAnalysisScheduler {
+    extends L1FieldMutabilityAnalysisScheduler
+    with BasicFPCFEagerAnalysisScheduler {
 
     override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
 
@@ -349,8 +349,8 @@ object EagerL1FieldMutabilityAnalysis
  * Executor for the lazy field mutability analysis.
  */
 object LazyL1FieldMutabilityAnalysis
-        extends L1FieldMutabilityAnalysisScheduler
-        with BasicFPCFLazyAnalysisScheduler {
+    extends L1FieldMutabilityAnalysisScheduler
+    with BasicFPCFLazyAnalysisScheduler {
 
     override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 
