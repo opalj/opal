@@ -16,10 +16,9 @@ import org.opalj.br.analyses.Project
 import org.opalj.fpcf.analyses.ifds.AbstractIFDSAnalysis.V
 import org.opalj.tac.fpcf.analyses.LazyL0TACAIAnalysis
 import org.opalj.tac.fpcf.properties.TACAI
-import org.opalj.fpcf.par.PKEParallelTasksPropertyStore
+//import org.opalj.fpcf.par.PKEParallelTasksPropertyStore
 //import org.opalj.fpcf.par.RecordAllPropertyStoreTracer
-//import org.opalj.fpcf.seq.EPKSequentialPropertyStore
-//import org.opalj.fpcf.seq.PKESequentialPropertyStore
+import org.opalj.fpcf.seq.PKESequentialPropertyStore
 import org.opalj.fpcf.properties.IFDSProperty
 import org.opalj.fpcf.properties.IFDSPropertyMetaInformation
 import org.opalj.tac.Assignment
@@ -356,7 +355,7 @@ class Taint(val flows: Map[Statement, Set[Fact]]) extends IFDSProperty[Fact] {
 object Taint extends IFDSPropertyMetaInformation[Fact] {
     override type Self = Taint
 
-    val key: PropertyKey[Taint] = PropertyKey.forSimpleProperty[Taint](
+    val key: PropertyKey[Taint] = PropertyKey.create(
         "TestTaint",
         new Taint(Map.empty)
     )
@@ -377,17 +376,16 @@ object TestTaintAnalysisRunner {
                     context.iterator.map(_.asTuple).toMap
                 )(p.logContext)*/
                     implicit val lg = p.logContext
-                    val ps = PKEParallelTasksPropertyStore(context: _*)
-                    //val ps = PKESequentialPropertyStore.apply(context: _*)
-                    PropertyStore.updateTraceCycleResolutions(true)
+                    //val ps = PKEParallelTasksPropertyStore(context: _*)
+                    val ps = PKESequentialPropertyStore.apply(context: _*)
                     PropertyStore.updateDebug(true)
                     ps
                 }
             )
             val ps = p.get(PropertyStoreKey)
-            ps.setupPhase(Set(BaseAIResult, TACAI, TestTaintAnalysis.property))
+            ps.setupPhase(Set(BaseAIResult, /*TACAI,*/ TestTaintAnalysis.property))
             LazyL0TACAIAnalysis.init(ps)
-            LazyL0TACAIAnalysis.schedule(ps, null)
+            //LazyL0TACAIAnalysis.schedule(ps, null)
             val analysis = TestTaintAnalysis.startLazily(p, ps, TestTaintAnalysis.init(p, ps))
             val entryPoints = analysis.asInstanceOf[TestTaintAnalysis].entryPoints
             for (e ← entryPoints) {

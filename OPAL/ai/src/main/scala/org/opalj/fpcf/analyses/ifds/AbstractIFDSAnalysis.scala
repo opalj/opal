@@ -4,10 +4,17 @@ package fpcf
 package analyses
 package ifds
 
+import scala.annotation.tailrec
+
 import java.util.concurrent.ConcurrentHashMap
 
 import scala.collection.{Set ⇒ SomeSet}
+import scala.collection.mutable
 
+import org.opalj.fpcf.analyses.ifds.AbstractIFDSAnalysis.V
+import org.opalj.fpcf.properties.IFDSProperty
+import org.opalj.fpcf.properties.IFDSPropertyMetaInformation
+import org.opalj.value.ValueInformation
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
@@ -17,9 +24,6 @@ import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.cfg.BasicBlock
 import org.opalj.br.cfg.CFG
 import org.opalj.br.cfg.CFGNode
-import org.opalj.fpcf.analyses.ifds.AbstractIFDSAnalysis.V
-import org.opalj.fpcf.properties.IFDSProperty
-import org.opalj.fpcf.properties.IFDSPropertyMetaInformation
 import org.opalj.tac.DUVar
 import org.opalj.tac.Stmt
 import org.opalj.tac.VirtualMethodCall
@@ -34,11 +38,6 @@ import org.opalj.tac.Expr
 import org.opalj.tac.Call
 import org.opalj.tac.ExprStmt
 import org.opalj.tac.fpcf.properties.TACAI
-import scala.annotation.tailrec
-
-import scala.collection.mutable
-
-import org.opalj.value.ValueInformation
 
 /**
  * A framework for IFDS analyses.
@@ -104,7 +103,7 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
     /**
      * Performs IFDS aAnalysis for one specific entity, i.e. one DeclaredMethod/DataFlowFact pair.
      */
-    def performAnalysis(source: (DeclaredMethod, DataFlowFact)): PropertyComputationResult = {
+    def performAnalysis(source: (DeclaredMethod, DataFlowFact)): ProperPropertyComputationResult = {
         val (declaredMethod, sourceFact) = source
 
         // Deal only with single defined methods for now
@@ -121,11 +120,11 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
 
         val (code, cfg) = propertyStore(method, TACAI.key) match {
             case finalEP: FinalEP[Method, TACAI] ⇒
-                val tac = finalEP.ub.tac.get
+                val tac = finalEP.p.tac.get
                 (tac.stmts, tac.cfg)
-            case _: IntermediateEP[Method, TACAI] ⇒
+            case _: InterimEP[Method, TACAI] ⇒
                 throw new UnknownError("Can not handle intermediate TAC")
-            case epk ⇒ return SimplePIntermediateResult(
+            case epk ⇒ return InterimResult.forUB(
                 source,
                 createProperty(Map.empty),
                 Seq(epk),
@@ -218,7 +217,7 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
     /**
      * Creates the analysis result from the current state.
      */
-    def createResult()(implicit state: State): PropertyComputationResult = {
+    def createResult()(implicit state: State): ProperPropertyComputationResult = {
 
         val result = mergeMaps(
             collectResult(state.cfg.normalReturnNode),
@@ -233,7 +232,7 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
                 createProperty(result)
             )
         } else {
-            SimplePIntermediateResult(
+            InterimResult.forUB(
                 state.source,
                 createProperty(result),
                 dependees,
@@ -243,18 +242,18 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
         }
     }
 
-    def c(eps: SomeEPS)(implicit state: State): PropertyComputationResult = {
+    def c(eps: SomeEPS)(implicit state: State): ProperPropertyComputationResult = {
 
         eps match {
             case FinalEP(e, _: IFDSProperty[_]) ⇒
                 handleCallUpdate(e.asInstanceOf[(DeclaredMethod, DataFlowFact)])
-            case IntermediateESimpleP(e, _: IFDSProperty[_]) ⇒
+            case InterimEUBP(e, _: IFDSProperty[_]) ⇒
                 handleCallUpdate(e.asInstanceOf[(DeclaredMethod, DataFlowFact)])
             case FinalEP(m: Method, tac: TACAI) ⇒
                 handleCallUpdate(m)
                 state.tacData -= m
                 state.tacDependees -= m
-            case IntermediateEP(_, _, _: TACAI) ⇒
+            case InterimUBP(_: TACAI) ⇒
                 throw new UnknownError("Can not handle intermediate TAC")
         }
 
@@ -488,7 +487,7 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
                                 case ep: FinalEP[_, IFDSProperty[DataFlowFact]] ⇒
                                     state.ifdsDependees -= e
                                     ep.p.flows
-                                case ep: IntermediateESimpleP[_, IFDSProperty[DataFlowFact]] ⇒
+                                case ep: InterimEUBP[_, IFDSProperty[DataFlowFact]] ⇒
                                     val newDependee =
                                         state.ifdsData.getOrElse(e, Set.empty) + ((callBB, call.index))
                                     state.ifdsData = state.ifdsData.updated(e, newDependee)
@@ -503,7 +502,7 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
                             },
                             if (oldState.isDefined)
                                 oldState.get match {
-                                case ep: IntermediateESimpleP[_, IFDSProperty[DataFlowFact]] ⇒
+                                case ep: InterimEUBP[_, IFDSProperty[DataFlowFact]] ⇒
                                     ep.ub.flows
                                 case _ ⇒ Map.empty
                             }
@@ -596,7 +595,7 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
                 case finalEP: FinalEP[Method, TACAI] ⇒
                     val tac = finalEP.ub.tac.get
                     (tac.stmts, tac.cfg)
-                case _: IntermediateEP[Method, TACAI] ⇒
+                case _: InterimEP[Method, TACAI] ⇒
                     throw new UnknownError("Can not handle intermediate TAC")
                 case epk ⇒
                     state.tacDependees += method → epk
@@ -619,15 +618,15 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
      * Retrieves and commits the methods result as calculated for its declaring class type for the
      * current DefinedMethod that represents the non-overwritten method in a subtype.
      */
-    def baseMethodResult(source: (DeclaredMethod, DataFlowFact)): PropertyComputationResult = {
-        def c(eps: SomeEOptionP): PropertyComputationResult = eps match {
+    def baseMethodResult(source: (DeclaredMethod, DataFlowFact)): ProperPropertyComputationResult = {
+        def c(eps: SomeEOptionP): ProperPropertyComputationResult = eps match {
             case ep: FinalEP[_, _] ⇒ Result(source, ep.p)
-            case ep: IntermediateESimpleP[_, _] ⇒
-                SimplePIntermediateResult(
+            case ep: InterimEUBP[_, Property] ⇒
+                InterimResult.forUB(
                     source, ep.ub, Seq(ep), c, CheapPropertyComputation
                 )
             case epk ⇒
-                SimplePIntermediateResult(
+                InterimResult.forUB(
                     source, createProperty(Map.empty), Seq(epk), c, CheapPropertyComputation
                 )
         }
