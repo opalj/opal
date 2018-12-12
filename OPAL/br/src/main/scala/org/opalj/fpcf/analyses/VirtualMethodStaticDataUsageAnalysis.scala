@@ -3,16 +3,16 @@ package org.opalj
 package fpcf
 package analyses
 
-import org.opalj.br.DeclaredMethod
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.fpcf.properties.VirtualMethodAllocationFreeness
-import org.opalj.fpcf.properties.VirtualMethodStaticDataUsage
 import org.opalj.fpcf.properties.StaticDataUsage
+import org.opalj.fpcf.properties.UsesConstantDataOnly
 import org.opalj.fpcf.properties.UsesNoStaticData
 import org.opalj.fpcf.properties.UsesVaryingData
-import org.opalj.fpcf.properties.UsesConstantDataOnly
+import org.opalj.fpcf.properties.VirtualMethodAllocationFreeness
+import org.opalj.fpcf.properties.VirtualMethodStaticDataUsage
 import org.opalj.fpcf.properties.VirtualMethodStaticDataUsage.VUsesVaryingData
+import org.opalj.br.DeclaredMethod
+import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.SomeProject
 
 /**
  * Determines the aggregated static data usage for virtual methods.
@@ -108,22 +108,19 @@ class VirtualMethodStaticDataUsageAnalysis private[analyses] (
 
 trait VirtualMethodStaticDataUsageAnalysisScheduler extends ComputationSpecification {
 
-    final override def derives: Set[PropertyKind] = Set(VirtualMethodStaticDataUsage)
+    final def derivedProperty: PropertyBounds = PropertyBounds.lub(VirtualMethodStaticDataUsage)
 
-    final override def uses: Set[PropertyKind] = Set(StaticDataUsage)
-
-    final override type InitializationData = Null
-    final def init(p: SomeProject, ps: PropertyStore): Null = null
-
-    def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
-
-    def afterPhaseCompletion(p: SomeProject, ps: PropertyStore): Unit = {}
+    final override def uses: Set[PropertyBounds] = Set(PropertyBounds.lub(StaticDataUsage))
 
 }
 
 object EagerVirtualMethodStaticDataUsageAnalysis
     extends VirtualMethodStaticDataUsageAnalysisScheduler
-    with FPCFEagerAnalysisScheduler {
+    with BasicFPCFEagerAnalysisScheduler {
+
+    override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
+
+    override def derivesCollaboratively: Set[PropertyBounds] = Set.empty
 
     def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new VirtualMethodStaticDataUsageAnalysis(p)
@@ -135,7 +132,9 @@ object EagerVirtualMethodStaticDataUsageAnalysis
 
 object LazyVirtualMethodStaticDataUsageAnalysis
     extends VirtualMethodStaticDataUsageAnalysisScheduler
-    with FPCFLazyAnalysisScheduler {
+    with BasicFPCFLazyAnalysisScheduler {
+
+    override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 
     def startLazily(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new VirtualMethodStaticDataUsageAnalysis(p)

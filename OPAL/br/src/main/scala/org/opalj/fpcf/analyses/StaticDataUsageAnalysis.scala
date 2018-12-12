@@ -225,21 +225,22 @@ class StaticDataUsageAnalysis private[analyses] ( final val project: SomeProject
 
 trait StaticDataUsageAnalysisScheduler extends ComputationSpecification {
 
-    final override def derives: Set[PropertyKind] = Set(StaticDataUsage)
+    final def derivedProperty: PropertyBounds = {
+        // FIXME Just seems to derive the upper bound...
+        PropertyBounds.lub(StaticDataUsage)
+    }
 
-    final override def uses: Set[PropertyKind] = Set(CompileTimeConstancy)
+    final override def uses: Set[PropertyBounds] = Set(PropertyBounds.lub(CompileTimeConstancy))
 
-    final override type InitializationData = Null
-    final def init(p: SomeProject, ps: PropertyStore): Null = null
-
-    def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
-
-    def afterPhaseCompletion(p: SomeProject, ps: PropertyStore): Unit = {}
 }
 
 object EagerStaticDataUsageAnalysis
     extends StaticDataUsageAnalysisScheduler
-    with FPCFEagerAnalysisScheduler {
+    with BasicFPCFEagerAnalysisScheduler {
+
+    override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
+
+    override def derivesCollaboratively: Set[PropertyBounds] = Set.empty
 
     override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new StaticDataUsageAnalysis(p)
@@ -253,7 +254,9 @@ object EagerStaticDataUsageAnalysis
 
 object LazyStaticDataUsageAnalysis
     extends StaticDataUsageAnalysisScheduler
-    with FPCFLazyAnalysisScheduler {
+    with BasicFPCFLazyAnalysisScheduler {
+
+    override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 
     override def startLazily(
         p: SomeProject, ps: PropertyStore, unused: Null

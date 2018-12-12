@@ -11,7 +11,9 @@ import org.opalj.br.analyses.SomeProject
  */
 trait FPCFEagerAnalysisScheduler extends AbstractFPCFAnalysisScheduler {
 
-    final override def isLazy: Boolean = false
+    final override def computationType: ComputationType = EagerComputation
+
+    final override def derivesLazily: Option[PropertyBounds] = None
 
     final override def schedule(ps: PropertyStore, i: InitializationData): Unit = {
         start(ps.context(classOf[SomeProject]), ps, i)
@@ -26,8 +28,13 @@ trait FPCFEagerAnalysisScheduler extends AbstractFPCFAnalysisScheduler {
     }
 
     /**
-     * Starts the analysis for the given `project`. This method is typically implicitly
-     * called by the [[org.opalj.fpcf.FPCFAnalysesManager]].
+     * Called when a schedule is executed and when this analysis shall register itself
+     * with the property store using [[PropertyStore.scheduleEagerComputationForEntity]] or
+     * a variant thereof.
+     * This method is typically implicitly called by the [[org.opalj.fpcf.FPCFAnalysesManager]].
+     *
+     * @note This analysis must not call `registerTriggeredComputation` or
+     *       `registerLazyPropertyComputation`.
      */
     def start(p: SomeProject, ps: PropertyStore, i: InitializationData): FPCFAnalysis
 }
@@ -36,6 +43,7 @@ trait FPCFEagerAnalysisScheduler extends AbstractFPCFAnalysisScheduler {
  * A simple eager analysis scheduler for those analyses that do not perform special initialization
  * steps.
  */
+// TODO Rename => Simple...
 trait BasicFPCFEagerAnalysisScheduler extends FPCFEagerAnalysisScheduler {
 
     final override type InitializationData = Null

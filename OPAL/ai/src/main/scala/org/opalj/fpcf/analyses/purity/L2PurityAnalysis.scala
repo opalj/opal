@@ -1011,31 +1011,30 @@ object L2PurityAnalysis {
 
 trait L2PurityAnalysisScheduler extends ComputationSpecification {
 
-    final override def derives: Set[PropertyKind] = Set(Purity)
+    final def derivedProperty: PropertyBounds = PropertyBounds.lub(Purity)
 
-    final override def uses: Set[PropertyKind] = {
+    final override def uses: Set[PropertyBounds] = {
         Set(
-            TACAI,
-            FieldMutability,
-            ClassImmutability,
-            TypeImmutability,
-            VirtualMethodPurity,
-            FieldLocality,
-            ReturnValueFreshness,
-            VirtualMethodReturnValueFreshness
+            PropertyBounds.lub(TACAI),
+            PropertyBounds.lub(FieldMutability),
+            PropertyBounds.lub(ClassImmutability),
+            PropertyBounds.lub(TypeImmutability),
+            PropertyBounds.lub(VirtualMethodPurity),
+            PropertyBounds.lub(FieldLocality),
+            PropertyBounds.lub(ReturnValueFreshness),
+            PropertyBounds.lub(VirtualMethodReturnValueFreshness)
         )
     }
 
-    final override type InitializationData = Null
-    final def init(p: SomeProject, ps: PropertyStore): Null = null
-
-    def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
-
-    def afterPhaseCompletion(p: SomeProject, ps: PropertyStore): Unit = {}
-
 }
 
-object EagerL2PurityAnalysis extends L2PurityAnalysisScheduler with FPCFEagerAnalysisScheduler {
+object EagerL2PurityAnalysis
+    extends L2PurityAnalysisScheduler
+    with BasicFPCFEagerAnalysisScheduler {
+
+    override def derivesCollaboratively: Set[PropertyBounds] = Set.empty
+
+    override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
 
     override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new L2PurityAnalysis(p)
@@ -1050,7 +1049,11 @@ object EagerL2PurityAnalysis extends L2PurityAnalysisScheduler with FPCFEagerAna
     }
 }
 
-object LazyL2PurityAnalysis extends L2PurityAnalysisScheduler with FPCFLazyAnalysisScheduler {
+object LazyL2PurityAnalysis
+    extends L2PurityAnalysisScheduler
+    with BasicFPCFLazyAnalysisScheduler {
+
+    override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 
     override def startLazily(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new L2PurityAnalysis(p)

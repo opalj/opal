@@ -381,16 +381,11 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
 
 trait ClassImmutabilityAnalysisScheduler extends ComputationSpecification {
 
-    final override def derives: Set[PropertyKind] = Set(ClassImmutability)
+    final def derivedProperty: PropertyBounds = PropertyBounds.lub(ClassImmutability)
 
-    final override def uses: Set[PropertyKind] = Set(TypeImmutability, FieldMutability)
-
-    final override type InitializationData = Null
-    final def init(p: SomeProject, ps: PropertyStore): Null = null
-
-    def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
-
-    def afterPhaseCompletion(p: SomeProject, ps: PropertyStore): Unit = {}
+    final override def uses: Set[PropertyBounds] = {
+        Set(PropertyBounds.lub(TypeImmutability), PropertyBounds.lub(FieldMutability))
+    }
 
     def setResultsAnComputeEntities(
         project: SomeProject, propertyStore: PropertyStore
@@ -458,19 +453,23 @@ trait ClassImmutabilityAnalysisScheduler extends ComputationSpecification {
  */
 object EagerClassImmutabilityAnalysis
     extends ClassImmutabilityAnalysisScheduler
-    with FPCFEagerAnalysisScheduler {
+    with BasicFPCFEagerAnalysisScheduler {
+
+    override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
+
+    override def derivesCollaboratively: Set[PropertyBounds] = Set.empty
 
     override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
-
         val analysis = new ClassImmutabilityAnalysis(p)
-
         val cfs = setResultsAnComputeEntities(p, ps)
         ps.scheduleEagerComputationsForEntities(cfs)(
             analysis.determineClassImmutability(
-                null, FinalEP(ObjectType.Object, ImmutableObject), true, false
+                superClassType = null,
+                FinalEP(ObjectType.Object, ImmutableObject),
+                superClassMutabilityIsFinal = true,
+                lazyComputation = false
             )
         )
-
         analysis
     }
 }
@@ -482,7 +481,9 @@ object EagerClassImmutabilityAnalysis
  */
 object LazyClassImmutabilityAnalysis
     extends ClassImmutabilityAnalysisScheduler
-    with FPCFLazyAnalysisScheduler {
+    with BasicFPCFLazyAnalysisScheduler {
+
+    override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 
     override def startLazily(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new ClassImmutabilityAnalysis(p)

@@ -226,7 +226,7 @@ final class PKECPropertyStore private (
             //
 
             case Result.id ⇒
-                val Result(e, p) = r
+                val Result(FinalEP(e, p)) = r
             /*val pk = p.key
                     val epk = EPK(e, pk)
                     clearDependees(epk)

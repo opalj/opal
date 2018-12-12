@@ -317,16 +317,11 @@ class L1FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
 
 sealed trait L1FieldMutabilityAnalysisScheduler extends ComputationSpecification {
 
-    final override def uses: Set[PropertyKind] = Set(TACAI, EscapeProperty)
+    final override def uses: Set[PropertyBounds] = {
+        Set(PropertyBounds.lub(TACAI), PropertyBounds.lub(EscapeProperty))
+    }
 
-    final override def derives: Set[PropertyKind] = Set(FieldMutability)
-
-    final override type InitializationData = Null
-    final def init(p: SomeProject, ps: PropertyStore): Null = null
-
-    def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
-
-    def afterPhaseCompletion(p: SomeProject, ps: PropertyStore): Unit = {}
+    final def derivedProperty: PropertyBounds = PropertyBounds.lub(FieldMutability)
 
 }
 
@@ -335,9 +330,13 @@ sealed trait L1FieldMutabilityAnalysisScheduler extends ComputationSpecification
  */
 object EagerL1FieldMutabilityAnalysis
     extends L1FieldMutabilityAnalysisScheduler
-    with FPCFEagerAnalysisScheduler {
+    with BasicFPCFEagerAnalysisScheduler {
 
-    final override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+    override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
+
+    override def derivesCollaboratively: Set[PropertyBounds] = Set.empty
+
+    override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new L1FieldMutabilityAnalysis(p)
         val fields = p.allFields
         ps.scheduleEagerComputationsForEntities(fields)(analysis.determineFieldMutability)
@@ -350,9 +349,11 @@ object EagerL1FieldMutabilityAnalysis
  */
 object LazyL1FieldMutabilityAnalysis
     extends L1FieldMutabilityAnalysisScheduler
-    with FPCFLazyAnalysisScheduler {
+    with BasicFPCFLazyAnalysisScheduler {
 
-    final override def startLazily(
+    override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
+
+    override def startLazily(
         p:      SomeProject,
         ps:     PropertyStore,
         unused: Null

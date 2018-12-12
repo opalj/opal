@@ -7,8 +7,8 @@ package analyses
 import org.opalj.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.fpcf.FPCFAnalysis
 import org.opalj.fpcf.NoResult
+import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyComputationResult
-import org.opalj.fpcf.PropertyKind
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
 import org.opalj.br.analyses.SomeProject
@@ -96,13 +96,15 @@ class LBMethodReturnValuesAnalysis private[analyses] (
 
 object EagerLBMethodReturnValuesAnalysis extends BasicFPCFEagerAnalysisScheduler {
 
-    final override def uses: Set[PropertyKind] = Set()
+    override def uses: Set[PropertyBounds] = Set.empty
 
-    final override def derives: Set[PropertyKind] = Set(MethodReturnValue.key)
+    def derivedProperty: PropertyBounds = PropertyBounds.lub(MethodReturnValue.key)
 
-    final override def computesLowerBound: Boolean = true
+    override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
 
-    final override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+    override def derivesCollaboratively: Set[PropertyBounds] = Set.empty
+
+    override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new LBMethodReturnValuesAnalysis(p)
         val methods = p.allMethodsWithBody.iterator.filter(m ⇒ m.returnType.isObjectType)
         ps.scheduleEagerComputationsForEntities(methods)(analysis.analyze)

@@ -397,37 +397,46 @@ object L1PurityAnalysis {
 
 trait L1PurityAnalysisScheduler extends ComputationSpecification {
 
-    final override def derives: Set[PropertyKind] = Set(Purity)
+    final def derivedProperty: PropertyBounds = PropertyBounds.lub(Purity)
 
-    final override def uses: Set[PropertyKind] = {
-        Set(TACAI, VirtualMethodPurity, FieldMutability, ClassImmutability, TypeImmutability)
+    final override def uses: Set[PropertyBounds] = {
+        Set(
+            PropertyBounds.lub(TACAI),
+            PropertyBounds.lub(VirtualMethodPurity),
+            PropertyBounds.lub(FieldMutability),
+            PropertyBounds.lub(ClassImmutability),
+            PropertyBounds.lub(TypeImmutability)
+        )
     }
-
-    final override type InitializationData = Null
-    final def init(p: SomeProject, ps: PropertyStore): Null = null
-
-    def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
-
-    def afterPhaseCompletion(p: SomeProject, ps: PropertyStore): Unit = {}
 
 }
 
-object EagerL1PurityAnalysis extends L1PurityAnalysisScheduler with FPCFEagerAnalysisScheduler {
+object EagerL1PurityAnalysis
+    extends L1PurityAnalysisScheduler
+    with BasicFPCFEagerAnalysisScheduler {
+
+    override def derivesCollaboratively: Set[PropertyBounds] = Set.empty
+
+    override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
 
     override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new L1PurityAnalysis(p)
         val dms = p.get(DeclaredMethodsKey).declaredMethods
         val methodsWithBody = dms.collect {
-            case dm if dm.hasSingleDefinedMethod && dm.definedMethod.body.isDefined ⇒ dm.asDefinedMethod
+            case dm if dm.hasSingleDefinedMethod && dm.definedMethod.body.isDefined ⇒
+                dm.asDefinedMethod
         }
-        ps.scheduleEagerComputationsForEntities(methodsWithBody.filterNot(analysis.configuredPurity.wasSet))(
-            analysis.determinePurity
-        )
+        val methodsWithoutPurity = methodsWithBody.filterNot(analysis.configuredPurity.wasSet)
+        ps.scheduleEagerComputationsForEntities(methodsWithoutPurity)(analysis.determinePurity)
         analysis
     }
 }
 
-object LazyL1PurityAnalysis extends L1PurityAnalysisScheduler with FPCFLazyAnalysisScheduler {
+object LazyL1PurityAnalysis
+    extends L1PurityAnalysisScheduler
+    with BasicFPCFLazyAnalysisScheduler {
+
+    override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 
     override def startLazily(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new L1PurityAnalysis(p)

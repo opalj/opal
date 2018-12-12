@@ -16,38 +16,48 @@ import org.opalj.util.PerformanceEvaluation.time
  * @author Michael Eichberg
  */
 case class Schedule(
-        batches: Chain[(PhaseConfiguration,Chain[ComputationSpecification])]
-) extends ((PropertyStore, Boolean) ⇒ Unit) {
+        batches: Chain[BatchConfiguration]
+) extends ((PropertyStore, Boolean, PhaseConfiguration ⇒ Unit, Chain[ComputationSpecification] ⇒ Unit) ⇒ Unit) {
 
     /**
      * Schedules the computation specifications; that is, executes the underlying analysis scenario.
      *
      * @param ps The property store which should be used to execute the analyses.
+     * @param afterPhaseSetup Called back after the phase with the given configuration was set up.
+     * @param afterPhaseScheduling Called back after all analyses of a specific phase have been
+     *        schedule (i.e., before calling waitOnPhaseCompletion).
      */
-    def apply(ps: PropertyStore, trace: Boolean): Unit = {
-        implicit val logContext : LogContext = ps.logContext
+    def apply(
+        ps:                   PropertyStore,
+        trace:                Boolean                                = false,
+        afterPhaseSetup:      PhaseConfiguration ⇒ Unit = _ ⇒ (),
+        afterPhaseScheduling: Chain[ComputationSpecification] ⇒ Unit = _ ⇒ ()
+    ): Unit = {
+        implicit val logContext: LogContext = ps.logContext
 
         val initInfo =
-            batches.flatMap { case (_,css) ⇒
-                css.toIterator.map { cs ⇒ cs -> cs.init(ps) }
+            batches.flatMap {
+                case BatchConfiguration(_, css) ⇒
+                    css.toIterator.map { cs ⇒ cs -> cs.init(ps) }
             }.toMap
 
-
         batches.toIterator.zipWithIndex foreach { batchId ⇒
-            val ((configuration, css), id) = batchId
+            val (BatchConfiguration(configuration, css), id) = batchId
 
             if (trace) {
                 info("analysis progress", s"setting up analysis phase $id: $configuration")
             }
             time {
                 ps.setupPhase(configuration)
+                afterPhaseSetup(configuration)
 
-                css.foreach ( cs ⇒                    cs.beforeSchedule(ps)                    )
-                css.foreach( cs ⇒ cs.schedule(ps, initInfo(cs).asInstanceOf[cs.InitializationData]))
+                css.foreach(cs ⇒ cs.beforeSchedule(ps))
+                css.foreach(cs ⇒ cs.schedule(ps, initInfo(cs).asInstanceOf[cs.InitializationData]))
+                afterPhaseScheduling(css)
 
                 ps.waitOnPhaseCompletion()
 
-                css.foreach(cs ⇒                    cs.afterPhaseCompletion(ps) )
+                css.foreach(cs ⇒ cs.afterPhaseCompletion(ps))
             } { t ⇒
                 if (trace)
                     info(
@@ -61,9 +71,13 @@ case class Schedule(
     }
 
     override def toString: String = {
-        batches.map(_._2.map(_.name).mkString("{", ", ", "}")).
+        batches.map(_.batch.map(_.name).mkString("{", ", ", "}")).
             mkString("Schedule(\n\t", "\n\t", "\n)")
     }
 
 }
 
+case class BatchConfiguration(
+        phaseConfiguration: PhaseConfiguration,
+        batch:              Chain[ComputationSpecification]
+)

@@ -90,22 +90,21 @@ class VirtualMethodAllocationFreenessAnalysis private[analyses] ( final val proj
 
 trait VirtualMethodAllocationFreenessAnalysisScheduler extends ComputationSpecification {
 
-    final override def derives: Set[PropertyKind] = Set(VirtualMethodAllocationFreeness)
+    final def derivedProperty: PropertyBounds = {
+        PropertyBounds.lub(VirtualMethodAllocationFreeness)
+    }
 
-    final override def uses: Set[PropertyKind] = Set(AllocationFreeness)
-
-    final override type InitializationData = Null
-    final def init(p: SomeProject, ps: PropertyStore): Null = null
-
-    def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
-
-    def afterPhaseCompletion(p: SomeProject, ps: PropertyStore): Unit = {}
+    final override def uses: Set[PropertyBounds] = Set(PropertyBounds.lub(AllocationFreeness))
 
 }
 
 object EagerVirtualMethodAllocationFreenessAnalysis
     extends VirtualMethodAllocationFreenessAnalysisScheduler
-    with FPCFEagerAnalysisScheduler {
+    with BasicFPCFEagerAnalysisScheduler {
+
+    override def derivesEagerly: Set[PropertyBounds] = Set.empty
+
+    override def derivesCollaboratively: Set[PropertyBounds] = Set.empty
 
     override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new VirtualMethodAllocationFreenessAnalysis(p)
@@ -117,7 +116,9 @@ object EagerVirtualMethodAllocationFreenessAnalysis
 
 object LazyVirtualMethodAllocationFreenessAnalysis
     extends VirtualMethodAllocationFreenessAnalysisScheduler
-    with FPCFLazyAnalysisScheduler {
+    with BasicFPCFLazyAnalysisScheduler {
+
+    override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 
     override def startLazily(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new VirtualMethodAllocationFreenessAnalysis(p)

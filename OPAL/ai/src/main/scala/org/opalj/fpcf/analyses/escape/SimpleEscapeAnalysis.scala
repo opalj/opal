@@ -84,16 +84,9 @@ class SimpleEscapeAnalysis( final val project: SomeProject)
 
 trait SimpleEscapeAnalysisScheduler extends ComputationSpecification {
 
-    final override def derives: Set[PropertyKind] = Set(EscapeProperty)
+    final def derivedProperty: PropertyBounds = PropertyBounds.lub(EscapeProperty)
 
-    final override def uses: Set[PropertyKind] = Set.empty
-
-    final override type InitializationData = Null
-    final def init(p: SomeProject, ps: PropertyStore): Null = null
-
-    def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
-
-    def afterPhaseCompletion(p: SomeProject, ps: PropertyStore): Unit = {}
+    final override def uses: Set[PropertyBounds] = Set.empty
 
 }
 
@@ -102,7 +95,11 @@ trait SimpleEscapeAnalysisScheduler extends ComputationSpecification {
  */
 object EagerSimpleEscapeAnalysis
     extends SimpleEscapeAnalysisScheduler
-    with FPCFEagerAnalysisScheduler {
+    with BasicFPCFEagerAnalysisScheduler {
+
+    override def derivesCollaboratively: Set[PropertyBounds] = Set.empty
+
+    override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
 
     override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val fps = p.get(VirtualFormalParametersKey).virtualFormalParameters
@@ -115,7 +112,9 @@ object EagerSimpleEscapeAnalysis
 
 object LazySimpleEscapeAnalysis
     extends SimpleEscapeAnalysisScheduler
-    with FPCFLazyAnalysisScheduler {
+    with BasicFPCFLazyAnalysisScheduler {
+
+    override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 
     /**
      * Registers the analysis as a lazy computation, that is, the method

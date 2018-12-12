@@ -124,18 +124,14 @@ class VirtualMethodThrownExceptionsAnalysis private[analyses] (
     }
 }
 
-trait VirtualMethodThrownExceptionsAnalysisScheduler {
+trait VirtualMethodThrownExceptionsAnalysisScheduler extends ComputationSpecification {
 
-    final def uses: Set[PropertyKind] = Set(ThrownExceptions)
+    final def derivedProperty: PropertyBounds = {
+        PropertyBounds.lub(ThrownExceptionsByOverridingMethods)
+    }
 
-    final def derives: Set[PropertyKind] = Set(ThrownExceptionsByOverridingMethods)
+    final override def uses: Set[PropertyBounds] = Set(PropertyBounds.lub(ThrownExceptions))
 
-    final type InitializationData = Null
-    final def init(p: SomeProject, ps: PropertyStore): Null = null
-
-    def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
-
-    def afterPhaseCompletion(p: SomeProject, ps: PropertyStore): Unit = {}
 }
 
 /**
@@ -146,7 +142,11 @@ trait VirtualMethodThrownExceptionsAnalysisScheduler {
  */
 object EagerVirtualMethodThrownExceptionsAnalysis
     extends VirtualMethodThrownExceptionsAnalysisScheduler
-    with FPCFEagerAnalysisScheduler {
+    with BasicFPCFEagerAnalysisScheduler {
+
+    override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
+
+    override def derivesCollaboratively: Set[PropertyBounds] = Set.empty
 
     override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new VirtualMethodThrownExceptionsAnalysis(p)
@@ -167,7 +167,9 @@ object EagerVirtualMethodThrownExceptionsAnalysis
  */
 object LazyVirtualMethodThrownExceptionsAnalysis
     extends VirtualMethodThrownExceptionsAnalysisScheduler
-    with FPCFLazyAnalysisScheduler {
+    with BasicFPCFLazyAnalysisScheduler {
+
+    override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 
     /** Registers an analysis to compute the exceptions thrown by overriding methods lazily. */
     override def startLazily(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {

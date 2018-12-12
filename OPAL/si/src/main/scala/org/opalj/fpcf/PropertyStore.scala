@@ -72,7 +72,7 @@ import org.opalj.fpcf.PropertyKind.SupportedPropertyKinds
  * thread-safe in the following manner:
  *  - a client has to use the SAME thread (the driver thread) to call
  *    (0) [[set]] to initialize the property store,
- *    (1) [[setupPhase]],
+ *    (1) [[setupPhase(PhaseConfiguration)]],
  *    (2) [[registerLazyPropertyComputation]] or [[registerTriggeredComputation]],
  *    (3) [[scheduleEagerComputationForEntity]] / [[scheduleEagerComputationsForEntities]],
  *    (4) [[force]] and
@@ -429,8 +429,7 @@ abstract class PropertyStore {
         pc: EOptionP[E, P] ⇒ InterimEP[E, P]
     ): Unit
 
-
-    final def setupPhase(configuration : PhaseConfiguration) : Unit = {
+    final def setupPhase(configuration: PhaseConfiguration): Unit = {
         setupPhase(
             configuration.propertyKindsComputedInThisPhase,
             configuration.propertyKindsComputedInLaterPhase,
@@ -653,7 +652,7 @@ abstract class PropertyStore {
     /**
      * Registers a total function that takes a given final property and computes a new final
      * property of a different kind; the function must not query the property store. Furthermore,
-     * [[setupPhase]] must specify that notifications about interim updates have to be suppressed.
+     * `setupPhase` must specify that notifications about interim updates have to be suppressed.
      */
     final def registerTransformer[SourceP <: Property, TargetP <: Property, E <: Entity](
         sourcePK: PropertyKey[SourceP],

@@ -30,14 +30,14 @@ sealed abstract class PropertyStoreTest(
     propertyComputationHints foreach { pch ⇒
         describe(s"using a PropertyStore (property computations use the hint=$pch)") {
 
-            import Palindromes.NoPalindrome
-            import Palindromes.NoSuperPalindrome
-            import Palindromes.Palindrome
-            import Palindromes.PalindromeKey
-            import Palindromes.PalindromePropertyNotAnalyzed
-            import Palindromes.NoAnalysisForPalindromeProperty
-            import Palindromes.SuperPalindrome
-            import Palindromes.SuperPalindromeKey
+            import org.opalj.fpcf.fixtures.Palindromes.NoAnalysisForPalindromeProperty
+            import org.opalj.fpcf.fixtures.Palindromes.NoPalindrome
+            import org.opalj.fpcf.fixtures.Palindromes.NoSuperPalindrome
+            import org.opalj.fpcf.fixtures.Palindromes.Palindrome
+            import org.opalj.fpcf.fixtures.Palindromes.PalindromeKey
+            import org.opalj.fpcf.fixtures.Palindromes.PalindromePropertyNotAnalyzed
+            import org.opalj.fpcf.fixtures.Palindromes.SuperPalindrome
+            import org.opalj.fpcf.fixtures.Palindromes.SuperPalindromeKey
 
             it("should be possible to query an empty property") {
                 val ps = createPropertyStore()
@@ -344,8 +344,8 @@ sealed abstract class PropertyStoreTest(
                 val ps = createPropertyStore()
                 info(s"PropertyStore@${System.identityHashCode(ps).toHexString}")
 
-                import Palindromes.NoPalindrome
-                import Palindromes.Palindrome
+                import org.opalj.fpcf.fixtures.Palindromes.NoPalindrome
+                import org.opalj.fpcf.fixtures.Palindromes.Palindrome
 
                 ps.set("aba", Palindrome)
                 assertThrows[IllegalStateException] { ps.set("aba", NoPalindrome) }
@@ -547,7 +547,7 @@ sealed abstract class PropertyStoreTest(
                         ps.useFastTrackPropertyComputations = true
                         assert(ps.useFastTrackPropertyComputations)
 
-                        import MarkerWithFastTrack._
+                        import org.opalj.fpcf.fixtures.MarkerWithFastTrack._
                         ps.setupPhase(Set(MarkerWithFastTrackKey), Set.empty)
 
                         val entities = (1 to 50).map(i ⇒ "e"+i)
@@ -973,12 +973,16 @@ sealed abstract class PropertyStoreTest(
                             ReachableNodes.Key, reachableNodesAnalysis(ps)
                         )
                         ps.registerLazyPropertyComputation(
-                            ReachableNodesCount.Key, reachableNodesCountViaReachableNodesAnalysis(ps)
+                            ReachableNodesCount.Key,
+                            reachableNodesCountViaReachableNodesAnalysis(ps)
                         )
                         nodeEntities foreach { node ⇒ ps.force(node, ReachableNodesCount.Key) }
                         ps.waitOnPhaseCompletion()
                         info("scheduledTasksCount="+ps.scheduledTasksCount)
-                        info("scheduledOnUpdateComputationsCount="+ps.scheduledOnUpdateComputationsCount)
+                        info(
+                            "scheduledOnUpdateComputationsCount="+
+                                ps.scheduledOnUpdateComputationsCount
+                        )
 
                         val RNKey = ReachableNodes.Key
                         val RNCKey = ReachableNodesCount.Key
@@ -1501,7 +1505,7 @@ sealed abstract class PropertyStoreTest(
             }
 
             // TODO Add tests related to collaboratively computed properties including pre-initialized values!
-            
+
         }
     }
 }
