@@ -6,6 +6,7 @@ package analyses
 
 import org.opalj.fpcf.AbstractFPCFAnalysisScheduler
 import org.opalj.fpcf.Entity
+import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPK
 import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.FPCFAnalysis
@@ -42,7 +43,7 @@ import org.opalj.tac.fpcf.properties.TheTACAI
  */
 class L0TACAIAnalysis private[analyses] (val project: SomeProject) extends FPCFAnalysis {
 
-    import TACAIAnalysis.computeTheTACAI
+    import org.opalj.tac.fpcf.analyses.TACAIAnalysis.computeTheTACAI
 
     final implicit val aiFactory: ProjectSpecificAIExecutor = project.get(AIDomainFactoryKey)
 
@@ -57,14 +58,17 @@ class L0TACAIAnalysis private[analyses] (val project: SomeProject) extends FPCFA
      * Computes the TAC for the given method `m`.
      */
     private[analyses] def computeTAC(m: Method): ProperPropertyComputationResult = {
-        ps(m, BaseAIResult.key) match {
-            case FinalP(NoAIResult)           ⇒ Result(m, NoTACAI)
+        c(ps[Method, BaseAIResult](m, BaseAIResult.key))
+    }
 
+    def c(eOptionP: EOptionP[Method, BaseAIResult]): ProperPropertyComputationResult = {
+        val m = eOptionP.e
+        eOptionP match {
+            case FinalP(NoAIResult)           ⇒ Result(m, NoTACAI)
             case FinalP(AnAIResult(aiResult)) ⇒ Result(m, computeTheTACAI(m, aiResult))
 
             case currentAIResult @ InterimLUBP(AnAIResult(initialLBAIResult), ub) ⇒
                 val newLB = computeTheTACAI(m, initialLBAIResult)
-
                 val newUB =
                     if (ub == NoAIResult)
                         NoTACAI
@@ -73,28 +77,27 @@ class L0TACAIAnalysis private[analyses] (val project: SomeProject) extends FPCFA
                         computeTheTACAI(m, initialUBAIResult)
                     }
 
-                InterimResult(
+                InterimResult.create(
                     m,
                     newLB,
                     newUB,
                     List(currentAIResult),
-                    c = null
+                    c = c
                 )
 
-            case epk: EPK[_, _] ⇒
+            case epk @ EPK(m: Method, _) ⇒
                 val aiResult = L0BaseAIResultAnalysis.performAI(m)
 
-                InterimResult(
+                InterimResult.create(
                     m,
                     computeTheTACAI(m, aiResult),
                     NoTACAI,
                     List(epk),
-                    c = null
+                    c = c
                 )
-
         }
-
     }
+
 }
 
 object TACAIAnalysis {
