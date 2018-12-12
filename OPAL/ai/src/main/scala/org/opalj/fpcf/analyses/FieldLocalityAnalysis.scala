@@ -585,7 +585,9 @@ class FieldLocalityAnalysis private[analyses] (
                 val newEP = someEPS.asInstanceOf[EOptionP[Method, TACAI]]
                 state.removeTACDependee(newEP)
                 if (newEP.isRefinable) state.addTACDependee(newEP)
-                !isLocalForMethod(m, newEP.ub.tac.get)
+                if (newEP.ub.tac.isDefined)
+                    !isLocalForMethod(m, newEP.ub.tac.get)
+                else false
         }
         if (isNotLocal) {
             Result(state.field, NoLocalField)
@@ -626,8 +628,8 @@ sealed trait FieldLocalityAnalysisScheduler extends ComputationSpecification {
 }
 
 object EagerFieldLocalityAnalysis
-    extends FieldLocalityAnalysisScheduler
-    with BasicFPCFEagerAnalysisScheduler {
+        extends FieldLocalityAnalysisScheduler
+        with BasicFPCFEagerAnalysisScheduler {
 
     override def derivesCollaboratively: Set[PropertyBounds] = Set.empty
 
@@ -642,8 +644,8 @@ object EagerFieldLocalityAnalysis
 }
 
 object LazyFieldLocalityAnalysis
-    extends FieldLocalityAnalysisScheduler
-    with BasicFPCFLazyAnalysisScheduler {
+        extends FieldLocalityAnalysisScheduler
+        with BasicFPCFLazyAnalysisScheduler {
 
     override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 
