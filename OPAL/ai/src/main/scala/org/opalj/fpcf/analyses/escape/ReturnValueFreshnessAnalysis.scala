@@ -488,7 +488,8 @@ class ReturnValueFreshnessAnalysis private[analyses] (
             case _: Method ⇒
                 val newEP = someEPS.asInstanceOf[EOptionP[Method, TACAI]]
                 state.updateTacaiDependee(newEP)
-                return determineFreshnessForMethod(dm, newEP.ub.tac.get.stmts);
+                if (newEP.ub.tac.isDefined)
+                    return determineFreshnessForMethod(dm, newEP.ub.tac.get.stmts);
         }
 
         returnResult
@@ -525,8 +526,8 @@ sealed trait ReturnValueFreshnessAnalysisScheduler extends ComputationSpecificat
 }
 
 object EagerReturnValueFreshnessAnalysis
-    extends ReturnValueFreshnessAnalysisScheduler
-    with BasicFPCFEagerAnalysisScheduler {
+        extends ReturnValueFreshnessAnalysisScheduler
+        with BasicFPCFEagerAnalysisScheduler {
 
     override def derivesCollaboratively: Set[PropertyBounds] = Set.empty
 
@@ -542,8 +543,8 @@ object EagerReturnValueFreshnessAnalysis
 }
 
 object LazyReturnValueFreshnessAnalysis
-    extends ReturnValueFreshnessAnalysisScheduler
-    with BasicFPCFLazyAnalysisScheduler {
+        extends ReturnValueFreshnessAnalysisScheduler
+        with BasicFPCFLazyAnalysisScheduler {
 
     override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 

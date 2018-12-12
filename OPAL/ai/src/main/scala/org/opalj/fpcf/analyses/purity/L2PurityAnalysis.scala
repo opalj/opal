@@ -262,7 +262,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         def updateTacai(eps: EOptionP[Method, TACAI]): Unit = {
             if (eps.isFinal) tacai = None
             else tacai = Some(eps)
-            if (eps.hasUBP)
+            if (eps.hasUBP && eps.ub.tac.isDefined)
                 code = eps.ub.tac.get.stmts
         }
     }
@@ -866,8 +866,10 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
             case StaticDataUsage.key ⇒
                 checkStaticDataUsage(eps.asInstanceOf[EOptionP[DeclaredMethod, StaticDataUsage]])
             case TACAI.key ⇒
-                state.updateTacai(eps.asInstanceOf[EOptionP[Method, TACAI]])
-                return determineMethodPurity(eps.ub.asInstanceOf[TACAI].tac.get.cfg);
+                val newEP = eps.asInstanceOf[EOptionP[Method, TACAI]]
+                state.updateTacai(newEP)
+                if (newEP.ub.tac.isDefined)
+                    return determineMethodPurity(newEP.ub.tac.get.cfg);
         }
 
         if (state.ubPurity ne oldPurity)
@@ -1029,8 +1031,8 @@ trait L2PurityAnalysisScheduler extends ComputationSpecification {
 }
 
 object EagerL2PurityAnalysis
-    extends L2PurityAnalysisScheduler
-    with BasicFPCFEagerAnalysisScheduler {
+        extends L2PurityAnalysisScheduler
+        with BasicFPCFEagerAnalysisScheduler {
 
     override def derivesCollaboratively: Set[PropertyBounds] = Set.empty
 
@@ -1050,8 +1052,8 @@ object EagerL2PurityAnalysis
 }
 
 object LazyL2PurityAnalysis
-    extends L2PurityAnalysisScheduler
-    with BasicFPCFLazyAnalysisScheduler {
+        extends L2PurityAnalysisScheduler
+        with BasicFPCFLazyAnalysisScheduler {
 
     override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 

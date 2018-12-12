@@ -107,7 +107,7 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
             state.addDependency(tacai)
         }
 
-        if (tacai.hasUBP) {
+        if (tacai.hasUBP && tacai.ub.tac.isDefined) {
             state.updateTACAI(tacai.ub.tac.get)
         }
     }
@@ -402,8 +402,18 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
                 if (someEPS.isRefinable) {
                     state.addDependency(someEPS)
                 }
-                state.updateTACAI(ub.tac.get)
-                analyzeTAC()
+                if (ub.tac.isDefined) {
+                    state.updateTACAI(ub.tac.get)
+                    analyzeTAC()
+                } else {
+                    InterimResult(
+                        context.entity,
+                        GlobalEscape,
+                        state.mostRestrictiveProperty,
+                        state.dependees,
+                        c
+                    )
+                }
             case _ ⇒
                 throw new UnknownError(s"unhandled escape property (${someEPS.ub} for ${someEPS.e}")
         }
