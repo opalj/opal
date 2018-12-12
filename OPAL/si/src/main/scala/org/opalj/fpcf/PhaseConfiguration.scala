@@ -31,4 +31,18 @@ case class PhaseConfiguration(
         propertyKindsComputedInThisPhase:  Set[PropertyKind],
         propertyKindsComputedInLaterPhase: Set[PropertyKind]                    = Set.empty,
         suppressInterimUpdates:            Map[PropertyKind, Set[PropertyKind]] = Map.empty
-)
+) {
+
+    override def toString: String = {
+        s"PhaseConfiguration(\n\t"+
+            propertyKindsComputedInThisPhase.map(PropertyKey.name).mkString("computedInThisPhase={", ", ", "}\n\t") +
+            propertyKindsComputedInLaterPhase.map(PropertyKey.name).mkString("computedInLaterPhase={", ", ", "}\n\t") +
+            suppressInterimUpdates.map {
+                case (targetPK, sourcePKs) ⇒
+                    PropertyKey.name(targetPK)+
+                        "<-"+
+                        sourcePKs.map(PropertyKey.name).mkString("{", ", ", "}")
+            }.mkString("suppressInterimUpdates={", ",", "}\n")+
+            ")"
+    }
+}
