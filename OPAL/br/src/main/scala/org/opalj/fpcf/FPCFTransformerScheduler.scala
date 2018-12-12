@@ -24,7 +24,7 @@ trait FPCFTransformerScheduler extends AbstractFPCFAnalysisScheduler {
         register(ps.context(classOf[SomeProject]), ps, i)
     }
 
-    final def register(project: SomeProject, i: InitializationData): FPCFAnalysis = {
+    final def register(project: SomeProject, i: InitializationData): Unit = {
         register(project, project.get(PropertyStoreKey), i)
     }
 
@@ -40,5 +40,12 @@ trait FPCFTransformerScheduler extends AbstractFPCFAnalysisScheduler {
         project:       SomeProject,
         propertyStore: PropertyStore,
         i:             InitializationData
-    ): FPCFAnalysis
+    ): Unit
+}
+
+trait BasicFPCFTransformerScheduler extends FPCFTransformerScheduler {
+    final override type InitializationData = Null
+    def init(p: SomeProject, ps: PropertyStore): Null = null
+    def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
+    def afterPhaseCompletion(p: SomeProject, ps: PropertyStore): Unit = {}
 }

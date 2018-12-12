@@ -42,3 +42,10 @@ trait FPCFTriggeredAnalysisScheduler extends AbstractFPCFAnalysisScheduler {
     ): FPCFAnalysis
 
 }
+
+trait BasicFPCFTriggeredAnalysisScheduler extends FPCFTriggeredAnalysisScheduler {
+    final override type InitializationData = Null
+    def init(p: SomeProject, ps: PropertyStore): Null = null
+    def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
+    def afterPhaseCompletion(p: SomeProject, ps: PropertyStore): Unit = {}
+}

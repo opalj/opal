@@ -18,9 +18,7 @@ import org.opalj.br.analyses.SomeProject
  * @author Michael Reif
  * @author Michael Eichberg
  */
-class FPCFAnalysesManager private[fpcf] (
-        val project: SomeProject
-) {
+class FPCFAnalysesManager private[fpcf] (val project: SomeProject) {
 
     // caching (by means of using local fields) is not necessary
     private[this] implicit final def logContext: LogContext = project.logContext
