@@ -217,6 +217,23 @@ object InterimResult {
         new InterimResult[P](InterimELUBP(e, lb, ub), dependees, c, hint)
     }
 
+    def create[DependeeE <: Entity, DependeeP <: Property, P >: Null <: Property](
+        e:         Entity,
+        lb:        P,
+        ub:        P,
+        dependees: Traversable[EOptionP[DependeeE, DependeeP]],
+        c:         QualifiedOnUpdateContinuation[DependeeE, DependeeP],
+        hint:      PropertyComputationHint                             = DefaultPropertyComputation
+    ): InterimResult[P] = {
+        require(lb != null && ub != null)
+        new InterimResult[P](
+            InterimELUBP(e, lb, ub),
+            dependees,
+            c.asInstanceOf[OnUpdateContinuation],
+            hint
+        )
+    }
+
     def unapply[P >: Null <: Property](
         r: InterimResult[P]
     ): Some[(SomeEPS, Traversable[SomeEOptionP], OnUpdateContinuation, PropertyComputationHint)] = {
