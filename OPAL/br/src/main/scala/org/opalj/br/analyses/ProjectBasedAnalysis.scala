@@ -16,11 +16,11 @@ import org.opalj.log.LogContext
  */
 trait ProjectBasedAnalysis {
 
-    implicit val project: SomeProject
-    final def p: SomeProject = project
+    val project: SomeProject
+    implicit final def p: SomeProject = project
 
-    implicit final def classHierarchy: ClassHierarchy = project.classHierarchy
     final def ch: ClassHierarchy = classHierarchy
+    implicit final def classHierarchy: ClassHierarchy = project.classHierarchy
 
     implicit final def logContext: LogContext = project.logContext
 

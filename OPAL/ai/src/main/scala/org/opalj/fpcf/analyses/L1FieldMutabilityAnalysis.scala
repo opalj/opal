@@ -210,8 +210,7 @@ class L1FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
         state: State
     ): Option[TACode[TACMethodParameter, V]] = {
         propertyStore(method, TACAI.key) match {
-            case finalP: FinalEP[Method, TACAI] ⇒
-                finalP.ub.tac
+            case FinalP(tacai) ⇒ tacai.tac
             case eps: InterimEP[Method, TACAI] ⇒
                 state.tacDependees += method → ((eps, pcs))
                 eps.ub.tac
@@ -243,6 +242,7 @@ class L1FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
                 state.escapeDependees = state.escapeDependees.filter(_.e ne ds)
                 handleEscapeProperty(newEP)
             case method: Method ⇒
+                // FIXME
                 val newEP = eps.asInstanceOf[EOptionP[Method, TACAI]]
                 val pcs = state.tacDependees(method)._2
                 state.tacDependees -= method

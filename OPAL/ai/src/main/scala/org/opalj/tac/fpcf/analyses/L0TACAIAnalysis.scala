@@ -42,6 +42,8 @@ import org.opalj.tac.fpcf.properties.TheTACAI
  */
 class L0TACAIAnalysis private[analyses] (val project: SomeProject) extends FPCFAnalysis {
 
+    import TACAIAnalysis.computeTheTACAI
+
     final implicit val aiFactory: ProjectSpecificAIExecutor = project.get(AIDomainFactoryKey)
 
     def computeTAC(e: Entity): ProperPropertyComputationResult = {
@@ -51,30 +53,17 @@ class L0TACAIAnalysis private[analyses] (val project: SomeProject) extends FPCFA
         }
     }
 
-    def computeTheTACAI(m: Method, aiResult: AIResult): TheTACAI = {
-        val typedAIResult = aiResult.asInstanceOf[AIResult { val domain: Domain with RecordDefUse }]
-        val taCode = TACAIFactory(m, p.classHierarchy, typedAIResult)(Nil)
-        val tacaiProperty = TheTACAI(
-            // the following cast is safe - see TACode for details
-            taCode.asInstanceOf[TACode[TACMethodParameter, DUVar[ValueInformation]]]
-        )
-        tacaiProperty
-    }
-
     /**
      * Computes the TAC for the given method `m`.
      */
     private[analyses] def computeTAC(m: Method): ProperPropertyComputationResult = {
         ps(m, BaseAIResult.key) match {
-            case FinalP(NoAIResult) ⇒
-                Result(m, NoTACAI)
+            case FinalP(NoAIResult)           ⇒ Result(m, NoTACAI)
 
-            case FinalP(AnAIResult(initialAIResult)) ⇒
-                Result(m, computeTheTACAI(m, initialAIResult))
+            case FinalP(AnAIResult(aiResult)) ⇒ Result(m, computeTheTACAI(m, aiResult))
 
             case currentAIResult @ InterimLUBP(AnAIResult(initialLBAIResult), ub) ⇒
-                val newLB =
-                    computeTheTACAI(m, initialLBAIResult)
+                val newLB = computeTheTACAI(m, initialLBAIResult)
 
                 val newUB =
                     if (ub == NoAIResult)
@@ -106,6 +95,20 @@ class L0TACAIAnalysis private[analyses] (val project: SomeProject) extends FPCFA
         }
 
     }
+}
+
+object TACAIAnalysis {
+
+    def computeTheTACAI(m: Method, aiResult: AIResult)(implicit p: SomeProject): TheTACAI = {
+        val typedAIResult = aiResult.asInstanceOf[AIResult { val domain: Domain with RecordDefUse }]
+        val taCode = TACAIFactory(m, p.classHierarchy, typedAIResult)(Nil)
+        val tacaiProperty = TheTACAI(
+            // the following cast is safe - see TACode for details
+            taCode.asInstanceOf[TACode[TACMethodParameter, DUVar[ValueInformation]]]
+        )
+        tacaiProperty
+    }
+
 }
 
 sealed trait L0TACAIAnalysisScheduler extends AbstractFPCFAnalysisScheduler {
