@@ -5,10 +5,13 @@ package analyses
 package cg
 
 import net.ceedubs.ficus.Ficus._
+import org.opalj.collection.immutable.Chain
+import org.opalj.log.OPALLogger
 
 /**
  *
  * @author Florian Kuebler
+ * @author Michael Reif
  */
 sealed trait InstantiatedTypesFinder {
 
@@ -36,9 +39,54 @@ trait LibraryInstantiatedTypesFinder extends InstantiatedTypesFinder {
 }
 
 trait ConfigurationInstantiatedTypesFinder extends InstantiatedTypesFinder {
+
+    // don't make this a val for initialization reasons
+    @inline private[this] def additionalInstantiatedTypesKey: String = {
+        InitialInstantiatedTypesKey.ConfigKeyPrefix+"instantiatedTypes"
+    }
+
     override def collectInstantiatedTypes(project: SomeProject): Traversable[ObjectType] = {
-        // todo
-        super.collectInstantiatedTypes(project)
+        implicit val logContext = project.logContext
+        var instantiatedTypes = Set.empty[ObjectType]
+
+        if (!project.config.hasPath(additionalInstantiatedTypesKey)) {
+            OPALLogger.info(
+                "project configuration",
+                s"configuration key $additionalInstantiatedTypesKey is missing; "+
+                    "no additional types are considered instantiated configured"
+            )
+            return instantiatedTypes;
+        }
+        val configInstantiatedTypes: List[String] =
+            try {
+                project.config.as[List[String]](additionalInstantiatedTypesKey)
+            } catch {
+                case e: Throwable ⇒
+                    OPALLogger.error(
+                        "project configuration - recoverable",
+                        s"configuration key $additionalInstantiatedTypesKey is invalid; "+
+                            "see InstantiatedTypesFinder documentation",
+                        e
+                    )
+                    return instantiatedTypes;
+            }
+
+        configInstantiatedTypes foreach { configuredType ⇒
+            val considerSubtypes = configuredType.endsWith("+")
+            val typeName = if (considerSubtypes) {
+                configuredType.substring(0, configuredType.size - 1)
+            } else {
+                configuredType
+            }
+
+            val objectType = ObjectType(typeName)
+            if(considerSubtypes)
+                instantiatedTypes += objectType
+            else
+                instantiatedTypes = project.classHierarchy.allSubtypes(objectType, true)
+        }
+
+        super.collectInstantiatedTypes(project) ++ instantiatedTypes
     }
 }
 
