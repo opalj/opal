@@ -5,25 +5,25 @@ package info
 
 import java.net.URL
 
-import org.opalj.br.ClassFile
-import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.DefaultOneStepAnalysis
-import org.opalj.br.analyses.Project
+import org.opalj.util.PerformanceEvaluation.time
+import org.opalj.util.Seconds
 import org.opalj.fpcf.PropertyStoreKey
 import org.opalj.fpcf.analyses.EagerClassImmutabilityAnalysis
 import org.opalj.fpcf.analyses.EagerL0FieldMutabilityAnalysis
 import org.opalj.fpcf.analyses.EagerTypeImmutabilityAnalysis
 import org.opalj.fpcf.properties.ClassImmutability
 import org.opalj.fpcf.properties.TypeImmutability
-import org.opalj.util.PerformanceEvaluation.time
-import org.opalj.util.Seconds
+import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.DefaultOneStepAnalysis
+import org.opalj.br.analyses.Project
+import org.opalj.br.ObjectType
 
 /**
  * Determines the immutability of the classes of a project.
  *
  * @author Michael Eichberg
  */
-object ImmutabilityAnalysisRunner extends DefaultOneStepAnalysis {
+object ImmutabilityAnalysis extends DefaultOneStepAnalysis {
 
     override def title: String = "Immutability Analysis"
 
@@ -51,14 +51,14 @@ object ImmutabilityAnalysisRunner extends DefaultOneStepAnalysis {
 
         val immutableClasses =
             ps.entities(ClassImmutability.key).toSeq.
-                filter(ep ⇒ !ep.e.asInstanceOf[ClassFile].isInterfaceDeclaration).
+                filter(ep ⇒ project.classHierarchy.isInterface(ep.e.asInstanceOf[ObjectType]).isNo).
                 groupBy { _.ub }.map { kv ⇒
                     (
                         kv._1,
                         kv._2.toList.sortWith { (a, b) ⇒
-                            val cfA = a.e.asInstanceOf[ClassFile]
-                            val cfB = b.e.asInstanceOf[ClassFile]
-                            cfA.thisType.toJava < cfB.thisType.toJava
+                            val cfA = a.e.asInstanceOf[ObjectType]
+                            val cfB = b.e.asInstanceOf[ObjectType]
+                            cfA.toJava < cfB.toJava
                         }
                     )
                 }
@@ -68,19 +68,20 @@ object ImmutabilityAnalysisRunner extends DefaultOneStepAnalysis {
 
         val immutableTypes =
             ps.entities(TypeImmutability.key).toSeq.
-                filter(ep ⇒ !ep.e.asInstanceOf[ClassFile].isInterfaceDeclaration).
+                filter(ep ⇒ project.classHierarchy.isInterface(ep.e.asInstanceOf[ObjectType]).isNo).
                 groupBy { _.ub }.map { kv ⇒ (kv._1, kv._2.size) }
         val immutableTypesPerCategory =
             immutableTypes.map(kv ⇒ "\t\t"+kv._1+": "+kv._2).toList.sorted.mkString("\n")
 
         val immutableClassesInfo =
-            immutableClasses.values.flatten.filter { ep ⇒
-                !ep.e.asInstanceOf[ClassFile].isInterfaceDeclaration
-            }.map { ep ⇒
-                ep.e.asInstanceOf[ClassFile].thisType.toJava+
-                    " => "+ep.ub+
-                    " => "+ps(ep.e, TypeImmutability.key).ub
-            }.mkString("\tImmutability:\n\t\t", "\n\t\t", "\n")
+            immutableClasses.values.flatten
+                .filter(ep ⇒ project.classHierarchy.isInterface(ep.e.asInstanceOf[ObjectType]).isNo)
+                .map { ep ⇒
+                    ep.e.asInstanceOf[ObjectType].toJava+
+                        " => "+ep.ub+
+                        " => "+ps(ep.e, TypeImmutability.key).ub
+                }
+                .mkString("\tImmutability:\n\t\t", "\n\t\t", "\n")
 
         BasicReport(
             "\nImmutability Information:\n"+
