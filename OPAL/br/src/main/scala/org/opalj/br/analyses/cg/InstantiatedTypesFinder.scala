@@ -5,7 +5,6 @@ package analyses
 package cg
 
 import net.ceedubs.ficus.Ficus._
-import org.opalj.collection.immutable.Chain
 import org.opalj.log.OPALLogger
 
 /**
