@@ -13,8 +13,12 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.cg.ClassExtensibilityKey
+import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.fpcf.properties.Purity
 
+/**
+ * @author Dominik Helm
+ */
 class ConfiguredPurity(
         project:         SomeProject,
         propertyStore:   PropertyStore,
@@ -77,14 +81,13 @@ class ConfiguredPurity(
 
     propertyStore.waitOnPhaseCompletion() // wait until setting configured purities is completed
 
-    def wasSet(dm: DeclaredMethod): Boolean = {
-        methods.contains(dm)
-    }
+    def wasSet(dm: DeclaredMethod): Boolean = methods.contains(dm)
+
 }
 
 object ConfiguredPurityKey extends ProjectInformationKey[ConfiguredPurity, Nothing] {
 
-    def requirements = Seq(PropertyStoreKey, DeclaredMethodsKey)
+    override def requirements : ProjectInformationKeys = Seq(PropertyStoreKey, DeclaredMethodsKey)
 
     override protected def compute(project: SomeProject): ConfiguredPurity = {
         new ConfiguredPurity(
