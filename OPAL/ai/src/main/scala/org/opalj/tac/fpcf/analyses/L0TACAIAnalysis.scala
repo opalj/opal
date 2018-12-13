@@ -100,40 +100,11 @@ class L0TACAIAnalysis private[analyses] (val project: SomeProject) extends FPCFA
 
 }
 
-object TACAIAnalysis {
-
-    def computeTheTACAI(m: Method, aiResult: AIResult)(implicit p: SomeProject): TheTACAI = {
-        val typedAIResult = aiResult.asInstanceOf[AIResult { val domain: Domain with RecordDefUse }]
-        val taCode = TACAIFactory(m, p.classHierarchy, typedAIResult)(Nil)
-        val tacaiProperty = TheTACAI(
-            // the following cast is safe - see TACode for details
-            taCode.asInstanceOf[TACode[TACMethodParameter, DUVar[ValueInformation]]]
-        )
-        tacaiProperty
-    }
-
-}
-
-sealed trait L0TACAIAnalysisScheduler extends AbstractFPCFAnalysisScheduler {
+sealed trait L0TACAIAnalysisScheduler extends TACAIInitializer with AbstractFPCFAnalysisScheduler {
 
     final override def uses: Set[PropertyBounds] = Set(PropertyBounds.lub(BaseAIResult))
 
     final def derivedProperty: PropertyBounds = PropertyBounds.lub(TACAI)
-
-    override type InitializationData = Null
-    override def init(p: SomeProject, ps: PropertyStore): Null = {
-        // To compute the TAC, we (at least) need def-use information; hence, we state
-        // this as a requirement.
-        val key = AIDomainFactoryKey
-        p.updateProjectInformationKeyInitializationData(
-            key,
-            (i: Option[Set[Class[_ <: AnyRef]]]) ⇒ (i match {
-                case None               ⇒ Set(classOf[RecordDefUse])
-                case Some(requirements) ⇒ requirements + classOf[RecordDefUse]
-            }): Set[Class[_ <: AnyRef]]
-        )
-        null
-    }
 
     override def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
 
