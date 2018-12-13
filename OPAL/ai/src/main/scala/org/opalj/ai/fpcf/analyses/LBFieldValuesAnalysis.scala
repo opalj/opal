@@ -9,8 +9,8 @@ import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.FPCFAnalysis
 import org.opalj.fpcf.MultiResult
 import org.opalj.fpcf.NoResult
+import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyComputationResult
-import org.opalj.fpcf.PropertyKind
 import org.opalj.fpcf.PropertyStore
 import org.opalj.value.IsReferenceValue
 import org.opalj.br.analyses.SomeProject
@@ -223,13 +223,15 @@ object FieldValuesAnalysis {
 
 object EagerLBFieldValuesAnalysis extends BasicFPCFEagerAnalysisScheduler {
 
-    final override def uses: Set[PropertyKind] = Set()
+    override def uses: Set[PropertyBounds] = Set()
 
-    final override def derives: Set[PropertyKind] = Set(FieldValue.key)
+    def derivedProperty: PropertyBounds = PropertyBounds.lub(FieldValue.key)
 
-    final override def computesLowerBound: Boolean = true
+    override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
 
-    final override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+    override def derivesCollaboratively: Set[PropertyBounds] = Set.empty
+
+    override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new LBFieldValuesAnalysis(p)
         val classFiles = p.allClassFiles
         ps.scheduleEagerComputationsForEntities(classFiles)(analysis.analyze)

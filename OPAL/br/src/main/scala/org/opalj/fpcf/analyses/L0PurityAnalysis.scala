@@ -42,6 +42,15 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
 
     private[this] val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
 
+    /** Called when the analysis is scheduled lazily. */
+    def doDeterminePurity(e: Entity): ProperPropertyComputationResult = {
+        e match {
+            case m: DefinedMethod         ⇒ determinePurity(m)
+            case m: VirtualDeclaredMethod ⇒ Result(m, ImpureByLackOfInformation)
+            case _                        ⇒ throw new IllegalArgumentException(s"$e is not a method")
+        }
+    }
+
     /**
      * Determines the purity of the method starting with the instruction with the given
      * pc. If the given pc is larger than 0 then all previous instructions (in particular
@@ -305,32 +314,25 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
         determinePurityStep1(definedMethod.asDefinedMethod)
     }
 
-    /** Called when the analysis is scheduled lazily. */
-    def doDeterminePurity(e: Entity): ProperPropertyComputationResult = {
-        e match {
-            case m: DefinedMethod         ⇒ determinePurity(m)
-            case m: VirtualDeclaredMethod ⇒ Result(m, ImpureByLackOfInformation)
-            case _ ⇒
-                throw new UnknownError("purity is only defined for methods")
-        }
-    }
 }
 
 trait L0PurityAnalysisScheduler extends ComputationSpecification {
 
-    final override def derives: Set[PropertyKind] = Set(Purity)
+    final def derivedProperty: PropertyBounds = PropertyBounds.lub(Purity)
 
-    final override def uses: Set[PropertyKind] = Set(TypeImmutability, FieldMutability)
+    final override def uses: Set[PropertyBounds] = {
+        Set(PropertyBounds.ub(TypeImmutability), PropertyBounds.ub(FieldMutability))
+    }
 
-    final override type InitializationData = Null
-    final def init(p: SomeProject, ps: PropertyStore): Null = null
-
-    def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
-
-    def afterPhaseCompletion(p: SomeProject, ps: PropertyStore): Unit = {}
 }
 
-object EagerL0PurityAnalysis extends L0PurityAnalysisScheduler with FPCFEagerAnalysisScheduler {
+object EagerL0PurityAnalysis
+    extends L0PurityAnalysisScheduler
+    with BasicFPCFEagerAnalysisScheduler {
+
+    override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
+
+    override def derivesCollaboratively: Set[PropertyBounds] = Set.empty
 
     override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new L0PurityAnalysis(p)
@@ -343,7 +345,11 @@ object EagerL0PurityAnalysis extends L0PurityAnalysisScheduler with FPCFEagerAna
     }
 }
 
-object LazyL0PurityAnalysis extends L0PurityAnalysisScheduler with FPCFLazyAnalysisScheduler {
+object LazyL0PurityAnalysis
+    extends L0PurityAnalysisScheduler
+    with BasicFPCFLazyAnalysisScheduler {
+
+    override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 
     override def startLazily(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new L0PurityAnalysis(p)

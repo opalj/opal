@@ -43,3 +43,14 @@ private[seq] final case class OnUpdateComputationTask[E <: Entity, P <: Property
 
 }
 
+private[seq] final case class HandleResultTask[E <: Entity, P <: Property](
+        ps: PropertyStore,
+        r:  PropertyComputationResult
+) extends QualifiedTask {
+
+    override def apply(): Unit = {
+        // Get the most current property when the depender is eventually evaluated.
+        ps.handleResult(r)
+    }
+
+}

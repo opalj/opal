@@ -65,12 +65,17 @@ sealed trait EOptionP[+E <: Entity, +P <: Property] {
     final def isRefinable: Boolean = !isFinal
     def asFinal: FinalEP[E, P]
 
+    def asInterim: InterimEP[E, P]
+
     /**
      * Combines the test if we have a final property and – if we have one – if it is equal (by
      * means of an equality check) to the given one.
      */
     def is(p: AnyRef): Boolean = /*this.hasProperty && */ this.isFinal && this.ub == p
 
+    /**
+     * Converts an `InterimEP` to a `FinalEP`; fails otherwise.
+     */
     private[fpcf] def toFinalEP: FinalEP[E, P]
 
     private[fpcf] def toFinalEUBP: FinalEP[E, P]
@@ -110,7 +115,7 @@ sealed trait EOptionP[+E <: Entity, +P <: Property] {
      * }}}
      * In that case – assuming we do not perform context sensitive analyses –
      * if the lower bound for `f` for the set of thrown exceptions is determined
-     * to be `Set(IllegalArgumentException,UnkownError)`, the catch of the
+     * to be `Set(IllegalArgumentException,UnkownError)`, then the catch of the
      * `NumberFormatException` can be ruled out and a final result for `m` can be
      * computed.
      *
@@ -129,16 +134,22 @@ sealed trait EOptionP[+E <: Entity, +P <: Property] {
     @throws[UnsupportedOperationException]("if no property is available")
     def lb: P
 
+    /**
+     * Returns `true` if this `EOptionP` is updated when compared with the given `oldEOptionP`,
+     * provided that this `EOptionP` is guaranteed to be at most as old as `oldEOptionP`.
+     * That is, this EPS is considered to be newer if the properties are different.
+     *
+     * @note The caller has to ensure that this EOptionP and and the given EOptionP are
+     *       comparable. That is, they define properties of the same kind associated with
+     *       the same entity.
+     */
+    private[fpcf] def isUpdatedComparedTo(oldEOptionP: EOptionP[Entity, Property]): Boolean
+
     @throws[IllegalArgumentException]("if the given eps is not a valid update")
     private[fpcf] def checkIsValidPropertiesUpdate(
         eps:          SomeEPS,
         newDependees: Traversable[SomeEOptionP]
     ): Unit
-
-    /**
-     * @return `true` if the given eps's bounds are different.
-     */
-    private[fpcf] def hasDifferentProperties(eps: SomeEPS): Boolean
 
 }
 
@@ -343,18 +354,19 @@ final class FinalEP[+E <: Entity, +P <: Property](val e: E, val p: P) extends EP
     override def ub: P = p
     override def toFinalEUBP: FinalEP[E, P] = this
 
+    override def asInterim: InterimEP[E, P] = throw new ClassCastException();
+
+    override private[fpcf] def isUpdatedComparedTo(
+        oldEOptionP: EOptionP[Entity, Property]
+    ): Boolean = {
+        oldEOptionP.isRefinable
+    }
+
     private[fpcf] def checkIsValidPropertiesUpdate(
         eps:          SomeEPS,
         newDependees: Traversable[SomeEOptionP]
     ): Unit = {
         throw new IllegalArgumentException("already final")
-    }
-
-    override private[fpcf] def hasDifferentProperties(eps: SomeEPS): Boolean = {
-        // Here, we don't do any further checks whether the given eps object can be a
-        // valid successor of this eps object; such checks are done – if required/desired –
-        // done by "checkIsValidPropertiesUpdate"
-        eps.isRefinable || eps.asFinal.p != this.p
     }
 
     override def equals(other: Any): Boolean = {
@@ -393,6 +405,8 @@ sealed trait InterimEP[+E <: Entity, +P <: Property] extends EPS[E, P] {
     override def isFinal: Boolean = false
     override def asFinal: FinalEP[E, P] = throw new ClassCastException();
 
+    override def asInterim: InterimEP[E, P] = this
+
     private[fpcf] def checkIsValidLBPropertyUpdate(eps: SomeEPS): Unit = {
         val newLBAsOP = eps.lb.asOrderedProperty
         val lbAsOP = lb.asInstanceOf[newLBAsOP.Self]
@@ -411,8 +425,8 @@ sealed trait InterimEP[+E <: Entity, +P <: Property] extends EPS[E, P] {
         newDependees: Traversable[SomeEOptionP]
     ): Unit = {
         try {
-            if (hasLBP != eps.hasLBP || hasUBP != eps.hasUBP) {
-                throw new IllegalArgumentException("inconsistent property bounds")
+            if (eps.isRefinable && (hasLBP != eps.hasLBP || hasUBP != eps.hasUBP)) {
+                throw new IllegalArgumentException(s"inconsistent property bounds: $this vs. $eps")
             }
 
             if (hasLBP && eps.lb.isOrderedProperty) {
@@ -434,19 +448,6 @@ sealed trait InterimEP[+E <: Entity, +P <: Property] extends EPS[E, P] {
 }
 
 object InterimEP {
-
-    /*
-    def apply[E <: Entity, P <: Property](e: E, lb: P, ub: P): InterimEP[E, P] = {
-        if (lb == ub) {
-            throw new IllegalArgumentException(s"lb and ub are equal ($lb)")
-        } else if (lb == null)
-            InterimEUBP(e, ub)
-        else if (ub == null)
-            InterimELBP(e, lb)
-        else
-            InterimELUBP(e, lb, ub)
-    }
-    */
 
     /**
      * Extracts the entity of an interim property.
@@ -487,8 +488,10 @@ final class InterimELUBP[+E <: Entity, +P <: Property](
     override def hasLBP: Boolean = true
     override def hasUBP: Boolean = true
 
-    override private[fpcf] def hasDifferentProperties(eps: SomeEPS): Boolean = {
-        eps.isEPK || (eps.lb != this.lb || eps.ub != this.ub)
+    override private[fpcf] def isUpdatedComparedTo(
+        oldEOptionP: EOptionP[Entity, Property]
+    ): Boolean = {
+        oldEOptionP.isEPK || oldEOptionP.lb != this.lb || oldEOptionP.ub != this.ub
     }
 
     override def equals(other: Any): Boolean = {
@@ -501,7 +504,7 @@ final class InterimELUBP[+E <: Entity, +P <: Property](
     override def hashCode: Int = ((e.hashCode() * 31 + lb.hashCode()) * 31) + ub.hashCode()
 
     override def toString: String = {
-        s"InterimLUBP($e@${System.identityHashCode(e).toHexString},lb=$lb,ub=$ub)"
+        s"InterimELUBP($e@${System.identityHashCode(e).toHexString},lb=$lb,ub=$ub)"
     }
 }
 
@@ -540,13 +543,15 @@ final class InterimEUBP[+E <: Entity, +P <: Property](
 
     override def lb: Nothing = throw new UnsupportedOperationException();
 
-    override private[fpcf] def hasDifferentProperties(eps: SomeEPS): Boolean = {
-        eps.isEPK || eps.ub != this.ub
+    override private[fpcf] def isUpdatedComparedTo(
+        oldEOptionP: EOptionP[Entity, Property]
+    ): Boolean = {
+        oldEOptionP.isEPK || oldEOptionP.ub != this.ub
     }
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: InterimEUBP[_, _] ⇒ e == that.e && ub == that.ub
+            case that: InterimEUBP[_, _] ⇒ ub == that.ub && e == that.e
             case _                       ⇒ false
         }
     }
@@ -554,7 +559,7 @@ final class InterimEUBP[+E <: Entity, +P <: Property](
     override def hashCode: Int = e.hashCode() * 31 + ub.hashCode()
 
     override def toString: String = {
-        s"InterimUBP($e@${System.identityHashCode(e).toHexString},ub=$ub)"
+        s"InterimEUBP($e@${System.identityHashCode(e).toHexString},ub=$ub)"
     }
 }
 
@@ -571,6 +576,47 @@ object InterimEUBP {
 
     def unapply[E <: Entity, P >: Null <: Property](eps: InterimEP[E, P]): Some[(E, P)] = {
         Some((eps.e, eps.ub))
+    }
+}
+
+/**
+ * Defines an extractor that matches EPKs and Interim properties where the latter only defines an
+ * upper bound, but does not define a lower bound.
+ *
+ * For example, an analysis which declares that it can only handle lower bounds, but can't process
+ * EPSs which only define an upper bound, may still see EPS which define only the upper bound
+ * but can process them in the same way as an EPK; that is, it can basically ignore the
+ * upper bound information. The scheduler ensures that the analysis scenario is a valid one
+ * and no cyclic dependent computations may arise.
+ * {{{
+ * def continuation(eps : EPS) : ... = eps match {
+ *   case FinalEP(...) => // Matches only final properties.
+ *   case LBP(...)     => // Matches final  and interim properties which define a lower bound.
+ *   case NoLBP(...)   => // Matches EPKs and EPS which just define an upper bound.
+ * }
+ * }}}
+ */
+object NoLBP {
+
+    def unapply[E <: Entity, P >: Null <: Property](eps: EOptionP[E, P]): Option[EOptionP[E, P]] = {
+        if (!eps.hasLBP)
+            Some(eps)
+        else
+            None
+    }
+}
+
+/**
+ * Defines an extractor that matches EPKs and Interim properties where the latter only defines a
+ * lower bound, but does not define an upper bound.
+ */
+object NoUBP {
+
+    def unapply[E <: Entity, P >: Null <: Property](eps: EOptionP[E, P]): Option[EOptionP[E, P]] = {
+        if (!eps.hasUBP)
+            Some(eps)
+        else
+            None
     }
 }
 
@@ -596,13 +642,15 @@ final class InterimELBP[+E <: Entity, +P <: Property](
 
     override def ub: Nothing = throw new UnsupportedOperationException();
 
-    override private[fpcf] def hasDifferentProperties(eps: SomeEPS): Boolean = {
-        eps.isEPK || eps.lb != this.lb
+    override private[fpcf] def isUpdatedComparedTo(
+        oldEOptionP: EOptionP[Entity, Property]
+    ): Boolean = {
+        oldEOptionP.isEPK || oldEOptionP.lb != this.lb
     }
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: InterimELBP[_, _] ⇒ e == that.e && lb == that.lb
+            case that: InterimELBP[_, _] ⇒ lb == that.lb && e == that.e
             case _                       ⇒ false
         }
     }
@@ -610,7 +658,7 @@ final class InterimELBP[+E <: Entity, +P <: Property](
     override def hashCode: Int = e.hashCode() * 31 + lb.hashCode()
 
     override def toString: String = {
-        s"InterimUBP($e@${System.identityHashCode(e).toHexString},lb=$lb)"
+        s"InterimELBP($e@${System.identityHashCode(e).toHexString},lb=$lb)"
     }
 }
 
@@ -669,7 +717,13 @@ final class EPK[+E <: Entity, +P <: Property](
 
     override def toEPS: Option[EPS[E, P]] = None
 
-    override private[fpcf] def hasDifferentProperties(eps: SomeEPS): Boolean = eps.isEPS
+    override def asInterim: InterimEP[E, P] = throw new ClassCastException();
+
+    override private[fpcf] def isUpdatedComparedTo(
+        oldEOptionP: EOptionP[Entity, Property]
+    ): Boolean = {
+        false
+    }
 
     override private[fpcf] def checkIsValidPropertiesUpdate(
         eps:          SomeEPS,
@@ -678,7 +732,7 @@ final class EPK[+E <: Entity, +P <: Property](
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: EPK[_, _] ⇒ that.e == this.e && this.pk == that.pk
+            case that: EPK[_, _] ⇒ this.pk == that.pk && that.e == this.e
             case _               ⇒ false
         }
     }

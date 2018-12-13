@@ -15,6 +15,9 @@ sealed abstract class PropertyComputationResult {
         throw new ClassCastException();
     }
 
+    private[fpcf] def asResult: Result = {
+        throw new ClassCastException();
+    }
 }
 
 /**
@@ -49,13 +52,27 @@ sealed abstract class FinalPropertyComputationResult extends ProperPropertyCompu
  *
  * @see [[FinalPropertyComputationResult]] for further information.
  */
-case class Result(e: Entity, p: Property) extends FinalPropertyComputationResult {
+case class Result(finalEP: FinalEP[Entity, Property]) extends FinalPropertyComputationResult {
+
+    def this(e: Entity, p: Property) = this(FinalEP(e, p))
 
     private[fpcf] final def id = Result.id
 
-    override def toString: String = s"Result($e@${System.identityHashCode(e).toHexString},p=$p)"
+    override private[fpcf] def asResult: Result = this
+
+    override def toString: String = {
+        val e = finalEP.e
+        val p = finalEP.p
+        s"Result($e@${System.identityHashCode(e).toHexString},p=$p)"
+    }
 }
-object Result { private[fpcf] final val id = 1 }
+object Result {
+
+    def apply(e: Entity, p: Property): Result = Result(FinalEP(e, p))
+
+    private[fpcf] final val id = 1
+
+}
 
 /**
  * Encapsulates the '''final results''' of the computation of a set of properties. Hence, all
@@ -130,6 +147,12 @@ final class InterimResult[P >: Null <: Property] private (
                     " (use PartialResult for collaboratively computed results)"
             )
         }
+
+        if (dependees.exists(_.isFinal)) {
+            val m = dependees.mkString("contains final dependee: ", ",", "")
+            throw new IllegalArgumentException(m)
+        }
+
         if (dependees.exists(eOptP ⇒ eOptP.e == eps.e && eOptP.pk == result.key)) {
             throw new IllegalArgumentException(
                 s"intermediate result with an illegal self-dependency: "+this
@@ -192,6 +215,23 @@ object InterimResult {
     ): InterimResult[P] = {
         require(lb != null && ub != null)
         new InterimResult[P](InterimELUBP(e, lb, ub), dependees, c, hint)
+    }
+
+    def create[DependeeE <: Entity, DependeeP <: Property, P >: Null <: Property](
+        e:         Entity,
+        lb:        P,
+        ub:        P,
+        dependees: Traversable[EOptionP[DependeeE, DependeeP]],
+        c:         QualifiedOnUpdateContinuation[DependeeE, DependeeP],
+        hint:      PropertyComputationHint                             = DefaultPropertyComputation
+    ): InterimResult[P] = {
+        require(lb != null && ub != null)
+        new InterimResult[P](
+            InterimELUBP(e, lb, ub),
+            dependees,
+            c.asInstanceOf[OnUpdateContinuation],
+            hint
+        )
     }
 
     def unapply[P >: Null <: Property](

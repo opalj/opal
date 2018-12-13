@@ -386,16 +386,11 @@ class L1ThrownExceptionsAnalysis private[analyses] (
 
 abstract class ThrownExceptionsAnalysisScheduler extends ComputationSpecification {
 
-    final override def uses: Set[PropertyKind] = Set(ThrownExceptionsByOverridingMethods)
+    final override def uses: Set[PropertyBounds] = {
+        Set(PropertyBounds.lub(ThrownExceptionsByOverridingMethods))
+    }
 
-    final override def derives: Set[PropertyKind] = Set(ThrownExceptions)
-
-    final override type InitializationData = Null
-    final def init(p: SomeProject, ps: PropertyStore): Null = null
-
-    def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
-
-    def afterPhaseCompletion(p: SomeProject, ps: PropertyStore): Unit = {}
+    final def derivedProperty: PropertyBounds = PropertyBounds.lub(ThrownExceptions)
 
 }
 
@@ -407,7 +402,11 @@ abstract class ThrownExceptionsAnalysisScheduler extends ComputationSpecificatio
  */
 object EagerL1ThrownExceptionsAnalysis
     extends ThrownExceptionsAnalysisScheduler
-    with FPCFEagerAnalysisScheduler {
+    with BasicFPCFEagerAnalysisScheduler {
+
+    override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
+
+    override def derivesCollaboratively: Set[PropertyBounds] = Set.empty
 
     /**
      * Eagerly schedules the computation of the thrown exceptions for all methods with bodies;
@@ -429,7 +428,9 @@ object EagerL1ThrownExceptionsAnalysis
  */
 object LazyL1ThrownExceptionsAnalysis
     extends ThrownExceptionsAnalysisScheduler
-    with FPCFLazyAnalysisScheduler {
+    with BasicFPCFLazyAnalysisScheduler {
+
+    override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 
     /** Registers an analysis to compute the thrown exceptions lazily. */
     override def startLazily(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {

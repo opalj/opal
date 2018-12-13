@@ -34,7 +34,6 @@ class L0FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
     def determineFieldMutabilityLazy(e: Entity): ProperPropertyComputationResult = {
         e match {
             case field: Field ⇒ determineFieldMutability(field)
-
             case _            ⇒ throw new IllegalArgumentException(s"$e is not a Field")
         }
     }
@@ -52,16 +51,16 @@ class L0FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
      */
     def determineFieldMutability(field: Field): ProperPropertyComputationResult = {
         if (field.isFinal)
-            return Result(field, DeclaredFinalField)
+            return Result(field, DeclaredFinalField);
 
         if (!field.isPrivate)
-            return Result(field, NonFinalFieldByLackOfInformation)
+            return Result(field, NonFinalFieldByLackOfInformation);
 
         if (!field.isStatic)
-            return Result(field, NonFinalFieldByLackOfInformation)
+            return Result(field, NonFinalFieldByLackOfInformation);
 
         if (field.classFile.methods.exists(_.isNative))
-            return Result(field, NonFinalFieldByLackOfInformation)
+            return Result(field, NonFinalFieldByLackOfInformation);
 
         val classFile = field.classFile
         val thisType = classFile.thisType
@@ -92,16 +91,13 @@ class L0FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
 
 trait L0FieldMutabilityAnalysisScheduler extends ComputationSpecification {
 
-    final override def uses: Set[PropertyKind] = Set.empty
+    final override def uses: Set[PropertyBounds] = Set.empty
 
-    final override def derives: Set[PropertyKind] = Set(FieldMutability)
+    final def derivedProperty: PropertyBounds = {
+        // currently, the analysis will derive the final result in a single step
+        PropertyBounds.finalP(FieldMutability)
+    }
 
-    final override type InitializationData = Null
-    final def init(p: SomeProject, ps: PropertyStore): Null = null
-
-    def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
-
-    def afterPhaseCompletion(p: SomeProject, ps: PropertyStore): Unit = {}
 }
 
 /**
@@ -109,7 +105,11 @@ trait L0FieldMutabilityAnalysisScheduler extends ComputationSpecification {
  */
 object EagerL0FieldMutabilityAnalysis
     extends L0FieldMutabilityAnalysisScheduler
-    with FPCFEagerAnalysisScheduler {
+    with BasicFPCFEagerAnalysisScheduler {
+
+    override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
+
+    override def derivesCollaboratively: Set[PropertyBounds] = Set.empty
 
     override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new L0FieldMutabilityAnalysis(p)
@@ -118,11 +118,9 @@ object EagerL0FieldMutabilityAnalysis
                 p.allProjectClassFiles
             else
                 p.allClassFiles
-
         val fields = {
             classFileCandidates.filter(cf ⇒ cf.methods.forall(m ⇒ !m.isNative)).flatMap(_.fields)
         }
-
         ps.scheduleEagerComputationsForEntities(fields)(analysis.determineFieldMutability)
         analysis
     }
@@ -130,7 +128,9 @@ object EagerL0FieldMutabilityAnalysis
 
 object LazyL0FieldMutabilityAnalysis
     extends L0FieldMutabilityAnalysisScheduler
-    with FPCFLazyAnalysisScheduler {
+    with BasicFPCFLazyAnalysisScheduler {
+
+    override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 
     override def startLazily(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new L0FieldMutabilityAnalysis(p)

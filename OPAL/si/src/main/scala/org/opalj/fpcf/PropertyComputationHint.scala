@@ -14,8 +14,9 @@ case object DefaultPropertyComputation extends PropertyComputationHint
 
 /**
  * The property computation is extremely cheap. Therefore, the computation can/should be
- * processed in the current thread, it is extremely unlikely that we will gain anything
- * from parallelization. Here, `cheap` means that the computation requires at most a few
- * hundred bytecode instructions overall!
+ * processed right away, because it is extremely unlikely that we will gain anything
+ * from parallelization or postponing the computation.
+ * Here, `cheap` means that the computation requires ''at most a few hundred bytecode instructions''
+ * overall and that the computation in particular '''will not query further properties'''.
  */
 case object CheapPropertyComputation extends PropertyComputationHint

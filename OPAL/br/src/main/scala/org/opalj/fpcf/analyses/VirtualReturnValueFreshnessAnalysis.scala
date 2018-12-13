@@ -98,22 +98,21 @@ class VirtualReturnValueFreshnessAnalysis private[analyses] (
 
 sealed trait VirtualReturnValueFreshnessAnalysisScheduler extends ComputationSpecification {
 
-    final override def derives: Set[PropertyKind] = Set(VirtualMethodReturnValueFreshness)
+    final def derivedProperty: PropertyBounds = {
+        PropertyBounds.lub(VirtualMethodReturnValueFreshness)
+    }
 
-    final override def uses: Set[PropertyKind] = Set(ReturnValueFreshness)
-
-    final type InitializationData = Null
-    final def init(p: SomeProject, ps: PropertyStore): Null = null
-
-    def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
-
-    def afterPhaseCompletion(p: SomeProject, ps: PropertyStore): Unit = {}
+    final override def uses: Set[PropertyBounds] = Set(PropertyBounds.lub(ReturnValueFreshness))
 
 }
 
 object EagerVirtualReturnValueFreshnessAnalysis
     extends VirtualReturnValueFreshnessAnalysisScheduler
-    with FPCFEagerAnalysisScheduler {
+    with BasicFPCFEagerAnalysisScheduler {
+
+    override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
+
+    override def derivesCollaboratively: Set[PropertyBounds] = Set.empty
 
     override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val declaredMethods = p.get(DeclaredMethodsKey).declaredMethods
@@ -127,7 +126,9 @@ object EagerVirtualReturnValueFreshnessAnalysis
 
 object LazyVirtualReturnValueFreshnessAnalysis
     extends VirtualReturnValueFreshnessAnalysisScheduler
-    with FPCFLazyAnalysisScheduler {
+    with BasicFPCFLazyAnalysisScheduler {
+
+    override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 
     override def startLazily(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new VirtualReturnValueFreshnessAnalysis(p)

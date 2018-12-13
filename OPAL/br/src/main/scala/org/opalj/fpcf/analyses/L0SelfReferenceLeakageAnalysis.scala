@@ -6,6 +6,7 @@ package analyses
 import org.opalj.log.OPALLogger.{debug ⇒ trace}
 
 import org.opalj.br.ClassFile
+import org.opalj.br.Code
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
@@ -62,7 +63,7 @@ class L0SelfReferenceLeakageAnalysis(
             if (returnType.isObjectType && thisIsSubtypeOf(returnType.asObjectType))
                 return true;
 
-            implicit val code = method.body.get
+            implicit val code: Code = method.body.get
             val instructions = code.instructions
             val max = instructions.length
             var pc = 0
@@ -93,7 +94,7 @@ class L0SelfReferenceLeakageAnalysis(
                 pc = instruction.indexOfNextInstruction(pc)
             }
 
-            return false;
+            false
         }
 
         val doesLeakSelfReference =
@@ -200,18 +201,16 @@ class L0SelfReferenceLeakageAnalysis(
     }
 }
 
-object L0SelfReferenceLeakageAnalysis extends FPCFEagerAnalysisScheduler {
+object L0SelfReferenceLeakageAnalysis extends BasicFPCFEagerAnalysisScheduler {
 
-    override def uses: Set[PropertyKind] = Set.empty
+    override def uses: Set[PropertyBounds] = Set.empty
 
-    override def derives: Set[PropertyKind] = Set(SelfReferenceLeakage.Key)
+    override def derivesCollaboratively: Set[PropertyBounds] = Set.empty
 
-    override type InitializationData = Null
-    override def init(p: SomeProject, ps: PropertyStore): Null = null
-
-    override def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
-
-    override def afterPhaseCompletion(p: SomeProject, ps: PropertyStore): Unit = {}
+    override def derivesEagerly: Set[PropertyBounds] = {
+        // FIXME It actually derives only the upper bound!
+        Set(PropertyBounds.lub(SelfReferenceLeakage.Key))
+    }
 
     /**
      * Starts the analysis for the given `project`. This method is typically implicitly

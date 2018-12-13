@@ -28,7 +28,8 @@ trait ComputationSpecification {
     //
 
     /**
-     * Returns a short descriptive name of the computation which is described by this specification.
+     * Identifies this computation specification; typlically the name of the class
+     * which implements the underlying analysis.
      *
      * The default name is the name of `this` class.
      *
@@ -49,48 +50,65 @@ trait ComputationSpecification {
      *
      * @note   Self usages should also be documented.
      */
-    def uses: Set[PropertyKind]
+    def uses: Set[PropertyBounds]
 
     /**
-     * Returns the set of property kinds derived by the underlying analysis.
+     * Returns the kind of the property that is lazily (on-demand) derived.
      */
-    def derives: Set[PropertyKind]
-
-    require(derives.nonEmpty, "the computation does not derive any information")
+    def derivesLazily: Option[PropertyBounds]
 
     /**
-     * Has to be true if a computation is performed lazily, that is, only if a property
-     * is queried for a specific entity, the analysis is actually executed.
-     * This information is used to check that we never schedule multiple lazy analyses
-     * which compute the same kind of property.
-     *
-     * @note    Collaboratively computed properties can only be computed by eager analyses, which
-     *         - however - can use lazy analyses.
+     * Returns the set of property kinds eagerly derived by the underlying analysis.
      */
-    def isLazy: Boolean
+    def derivesEagerly: Set[PropertyBounds]
+
+    def derivesCollaboratively: Set[PropertyBounds]
+
+    def derives: Iterator[PropertyBounds] = {
+        derivesEagerly.iterator ++ derivesCollaboratively.iterator ++ derivesLazily.iterator
+    }
+
+    require(
+        (derivesCollaboratively intersect derivesEagerly).isEmpty,
+        "a property either has to be derived eagerly or collaboratively, but not both: "+
+            (derivesCollaboratively intersect derivesEagerly).mkString(", ")
+    )
+
+    require(
+        derivesLazily.isDefined || derivesEagerly.nonEmpty || derivesCollaboratively.nonEmpty,
+        "the computation does not derive any information"
+    )
+
+    require(
+        derivesLazily.isEmpty || (derivesEagerly.isEmpty && derivesCollaboratively.isEmpty),
+        "a lazy analysis cannot also derive information eagerly and/or collaboratively "
+    )
 
     /**
-     * Returns `true` if this analysis computes the lower bound of a specific property,
-     * the default is `false`.
-     *
-     * Analyses which compute the lower bound cannot be run in the same phase with analyses that
-     * use a property computed by `this` analysis when this analysis computes the upper bounds
-     * related to other property kinds.
-     *
-     * @note The lower bound generally models the set of all possible states that may be
-     *       conceivable. For example, the lower bound for an analyses which computes the set
-     *       of thrown exceptions is the set of all exception types. Therefore, a refinement –
-     *       w.r.t. a certain method – means that some exceptions are guaranteed to never be thrown
-     *       by that method.
+     * Specifies the kind of the computation that is performed. The kind restricts in which
+     * way the analysis is allowed to interact with the property store/other analyses.
      */
-    def computesLowerBound: Boolean = false
+    def computationType: ComputationType
 
     override def toString: String = {
-        val uses =
-            this.uses.iterator.map(u ⇒ PropertyKey.name(u)).mkString("uses={", ", ", "}")
-        val derives =
-            this.derives.iterator.map(d ⇒ PropertyKey.name(d)).mkString("derives={", ", ", "}")
-        s"ComputationSpecification(name=$name,lazy=$isLazy,$uses,$derives)"
+        val uses = this.uses.iterator.map(_.toSpecification).mkString("uses={", ", ", "}")
+
+        val derivesLazily =
+            this.derivesLazily.iterator.
+                map(_.toSpecification).
+                mkString("derivesLazily={", ", ", "}")
+        val derivesEagerly =
+            this.derivesEagerly.iterator.
+                map(_.toSpecification).
+                mkString("derivesEagerly={", ", ", "}")
+        val derivesCollaboratively =
+            this.derivesCollaboratively.iterator.
+                map(_.toSpecification).
+                mkString("derivesCollaboratively={", ", ", "}")
+
+        s"ComputationSpecification(name=$name,type=$computationType,"+
+            s"$uses,$derivesLazily,$derivesEagerly,$derivesCollaboratively)"
+
     }
 
     //
@@ -98,14 +116,11 @@ trait ComputationSpecification {
     //
 
     /**
-     * Called – at the latest – before any analysis is called/scheduled that will be executed in
-     * the same phase.
+     * Called before any analysis belonging to the same analysis scenario is scheduled –
+     * independent of the batch in which it will run.
+     *
      * This enables further initialization of the computations that will eventually be executed.
      * For example to initialize global configuration information.
-     *
-     * If an [[org.opalj.fpcf.AnalysisScenario]] is used to compute a schedule and to execute
-     * it later on, `init` will be called before any analysis is scheduled – independent of
-     * the batch in which it will run.
      *
      * A computation specification does not have to call any methods of the property store that
      * may trigger or schedule computations; i.e., it must – in particular – not call
@@ -122,9 +137,7 @@ trait ComputationSpecification {
     def beforeSchedule(ps: PropertyStore): Unit
 
     /**
-     * Called by the scheduler to start execution of this analysis.
-     *
-     * The analysis may very well be a lazy computation.
+     * Called by the scheduler to let the analysis register itself or to start execution.
      */
     def schedule(ps: PropertyStore, i: InitializationData): Unit
 
@@ -132,5 +145,14 @@ trait ComputationSpecification {
      * Called after phase completion.
      */
     def afterPhaseCompletion(ps: PropertyStore): Unit
+
+}
+
+trait SimpleComputationSpecification extends ComputationSpecification {
+
+    final override type InitializationData = Null
+    final override def init(ps: PropertyStore): Null = null
+    final override def beforeSchedule(ps: PropertyStore): Unit = {}
+    final override def afterPhaseCompletion(ps: PropertyStore): Unit = {}
 
 }

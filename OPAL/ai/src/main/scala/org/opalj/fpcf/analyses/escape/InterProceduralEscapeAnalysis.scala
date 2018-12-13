@@ -4,8 +4,7 @@ package fpcf
 package analyses
 package escape
 
-import org.opalj.ai.ValueOrigin
-import org.opalj.ai.common.DefinitionSitesKey
+import org.opalj.fpcf.properties._
 import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
 import org.opalj.br.VirtualDeclaredMethod
@@ -15,9 +14,8 @@ import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.br.analyses.VirtualFormalParameters
 import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.br.analyses.cg.IsOverridableMethodKey
-import org.opalj.fpcf.properties._
-import org.opalj.value.ValueInformation
-import org.opalj.tac.DUVar
+import org.opalj.ai.ValueOrigin
+import org.opalj.ai.common.DefinitionSitesKey
 
 class InterProceduralEscapeAnalysisContext(
         val entity:                  Entity,
@@ -126,23 +124,21 @@ class InterProceduralEscapeAnalysis private[analyses] (
 
 sealed trait InterProceduralEscapeAnalysisScheduler extends ComputationSpecification {
 
-    final override def derives: Set[PropertyKind] = Set(EscapeProperty)
+    final def derivedProperty: PropertyBounds = PropertyBounds.lub(EscapeProperty)
 
-    final override def uses: Set[PropertyKind] = Set(VirtualMethodEscapeProperty)
-
-    final override type InitializationData = Null
-    final def init(p: SomeProject, ps: PropertyStore): Null = null
-
-    def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
-
-    def afterPhaseCompletion(p: SomeProject, ps: PropertyStore): Unit = {}
+    final override def uses: Set[PropertyBounds] = {
+        Set(PropertyBounds.lub(VirtualMethodEscapeProperty))
+    }
 
 }
 
 object EagerInterProceduralEscapeAnalysis
     extends InterProceduralEscapeAnalysisScheduler
-    with FPCFEagerAnalysisScheduler {
-    type V = DUVar[ValueInformation]
+    with BasicFPCFEagerAnalysisScheduler {
+
+    override def derivesCollaboratively: Set[PropertyBounds] = Set.empty
+
+    override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
 
     override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new InterProceduralEscapeAnalysis(p)
@@ -155,7 +151,9 @@ object EagerInterProceduralEscapeAnalysis
 
 object LazyInterProceduralEscapeAnalysis
     extends InterProceduralEscapeAnalysisScheduler
-    with FPCFLazyAnalysisScheduler {
+    with BasicFPCFLazyAnalysisScheduler {
+
+    override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 
     /**
      * Registers the analysis as a lazy computation, that is, the method

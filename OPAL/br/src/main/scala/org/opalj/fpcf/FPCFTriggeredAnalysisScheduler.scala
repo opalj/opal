@@ -1,43 +1,41 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj
-package fpcf
+package org.opalj.fpcf
 
 import org.opalj.br.analyses.SomeProject
 
 /**
  *  The underlying analysis will only be registered with the property store and
- *  scheduled for a specific entity if queried.
+ *  will be triggered if a property of the specified kind is derived for a specific entity.
+ *  The analysis computing the property which triggers this analysis has to be another
+ *  triggered analysis, an eager analysis or a transformer; in the latter case the
+ *  transformer's source property must not depend (neither directly nor indirectly) on
+ *  a lazy analysis.
  *
  * @author Michael Eichberg
  */
-trait FPCFLazyAnalysisScheduler extends AbstractFPCFAnalysisScheduler {
+trait FPCFTriggeredAnalysisScheduler extends AbstractFPCFAnalysisScheduler {
 
-    final override def computationType: ComputationType = LazyComputation
+    final override def computationType: ComputationType = TriggeredComputation
 
-    override def derivesLazily: Some[PropertyBounds]
-
-    final override def derivesEagerly: Set[PropertyBounds] = Set.empty
-
-    final override def derivesCollaboratively: Set[PropertyBounds] = Set.empty
+    final override def derivesLazily: Option[PropertyBounds] = None
 
     final override def schedule(ps: PropertyStore, i: InitializationData): Unit = {
-        startLazily(ps.context(classOf[SomeProject]), ps, i)
+        register(ps.context(classOf[SomeProject]), ps, i)
     }
 
     final def register(project: SomeProject, i: InitializationData): FPCFAnalysis = {
-        startLazily(project, project.get(PropertyStoreKey), i)
+        register(project, project.get(PropertyStoreKey), i)
     }
 
     /**
      * Called when a schedule is executed and when this analysis shall register itself
-     * with the property store using [[PropertyStore.registerLazyPropertyComputation]].
+     * with the property store using [[PropertyStore.registerTriggeredComputation]].
      * This method is typically called by the [[org.opalj.fpcf.FPCFAnalysesManager]].
      *
-     * @note This analysis must not call `registerTriggeredComputation` or a variant of
+     * @note This analysis must not call `registerLazyPropertyComputation` or a variant of
      *       `scheduleEagerComputationForEntity`.
      */
-    // TODO Rename to "register"
-    def startLazily(
+    def register(
         project:       SomeProject,
         propertyStore: PropertyStore,
         i:             InitializationData
@@ -45,13 +43,7 @@ trait FPCFLazyAnalysisScheduler extends AbstractFPCFAnalysisScheduler {
 
 }
 
-/**
- * A simple eager analysis scheduler for those analyses that do not perform special initialization
- * steps.
- */
-// TODO Rename => Simple...
-trait BasicFPCFLazyAnalysisScheduler extends FPCFLazyAnalysisScheduler {
-
+trait BasicFPCFTriggeredAnalysisScheduler extends FPCFTriggeredAnalysisScheduler {
     final override type InitializationData = Null
     def init(p: SomeProject, ps: PropertyStore): Null = null
     def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}

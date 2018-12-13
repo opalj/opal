@@ -9,7 +9,7 @@ package fixtures
  */
 object Marker {
 
-    final val MarkerKey = {
+    final val Key = {
         PropertyKey.create[Entity, MarkerProperty](
             "Marker",
             (ps: PropertyStore, reason: FallbackReason, e: Entity) ⇒ NotMarked,
@@ -21,7 +21,7 @@ object Marker {
 
     sealed trait MarkerProperty extends Property {
         type Self = MarkerProperty
-        def key: PropertyKey[MarkerProperty] = MarkerKey
+        def key: PropertyKey[MarkerProperty] = Marker.Key
     }
 
     case object IsMarked extends MarkerProperty

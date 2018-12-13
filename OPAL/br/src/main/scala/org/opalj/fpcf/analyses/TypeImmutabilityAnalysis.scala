@@ -3,9 +3,6 @@ package org.opalj
 package fpcf
 package analyses
 
-import org.opalj.br.ObjectType
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.cg.TypeExtensibilityKey
 import org.opalj.fpcf.properties.ClassImmutability
 import org.opalj.fpcf.properties.ImmutableContainer
 import org.opalj.fpcf.properties.ImmutableContainerType
@@ -14,6 +11,9 @@ import org.opalj.fpcf.properties.ImmutableType
 import org.opalj.fpcf.properties.MutableObject
 import org.opalj.fpcf.properties.MutableType
 import org.opalj.fpcf.properties.TypeImmutability
+import org.opalj.br.ObjectType
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.cg.TypeExtensibilityKey
 
 /**
  * Determines the mutability of a specific type by checking if all subtypes of a specific
@@ -29,9 +29,7 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
         e: Entity
     ): ProperPropertyComputationResult = e match {
         case t: ObjectType ⇒ step1(typeExtensibility)(t)
-        case _ ⇒
-            val m = e.getClass.getSimpleName+" is not an org.opalj.br.ObjectType"
-            throw new IllegalArgumentException(m)
+        case _             ⇒ throw new IllegalArgumentException(s"$e is not an ObjectType")
     }
 
     /**
@@ -164,7 +162,8 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
                                         case lb: TypeImmutability ⇒
                                             joinedImmutability = joinedImmutability.meet(lb)
                                         case lb: ClassImmutability ⇒
-                                            joinedImmutability = joinedImmutability.meet(lb.correspondingTypeImmutability)
+                                            joinedImmutability =
+                                                joinedImmutability.meet(lb.correspondingTypeImmutability)
                                     }
                                 else {
                                     joinedImmutability = MutableType
@@ -197,14 +196,13 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
                             nextResult()
 
                         case eps @ InterimEUBP(e, subtypeP) ⇒
-                            dependencies = dependencies.updated(
-                                e, eps
-                            )
+                            dependencies = dependencies.updated(e, eps)
                             subtypeP match {
                                 case subtypeP: TypeImmutability ⇒
                                     maxImmutability = maxImmutability.meet(subtypeP)
                                 case subtypeP: ClassImmutability ⇒
-                                    maxImmutability = maxImmutability.meet(subtypeP.correspondingTypeImmutability)
+                                    maxImmutability =
+                                        maxImmutability.meet(subtypeP.correspondingTypeImmutability)
                             }
                             nextResult()
                     }
@@ -218,22 +216,10 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
 
 trait TypeImmutabilityAnalysisScheduler extends ComputationSpecification {
 
-    final override def derives: Set[PropertyKind] = Set(TypeImmutability)
+    final def derivedProperty: PropertyBounds = PropertyBounds.lub(TypeImmutability)
 
-    final override def uses: Set[PropertyKind] = Set(ClassImmutability)
+    final override def uses: Set[PropertyBounds] = Set(PropertyBounds.ub(ClassImmutability))
 
-    final override type InitializationData = Null
-
-    final def init(p: SomeProject, ps: PropertyStore): Null = {
-        // An optimization, if the analysis also includes the JDK.
-        ps.set(ObjectType.Object, MutableType)
-
-        null
-    }
-
-    def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
-
-    def afterPhaseCompletion(p: SomeProject, ps: PropertyStore): Unit = {}
 }
 
 /**
@@ -243,7 +229,11 @@ trait TypeImmutabilityAnalysisScheduler extends ComputationSpecification {
  */
 object EagerTypeImmutabilityAnalysis
     extends TypeImmutabilityAnalysisScheduler
-    with FPCFEagerAnalysisScheduler {
+    with BasicFPCFEagerAnalysisScheduler {
+
+    override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
+
+    override def derivesCollaboratively: Set[PropertyBounds] = Set.empty
 
     override def start(project: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val typeExtensibility = project.get(TypeExtensibilityKey)
@@ -262,8 +252,9 @@ object EagerTypeImmutabilityAnalysis
 
 object LazyTypeImmutabilityAnalysis
     extends TypeImmutabilityAnalysisScheduler
-    with FPCFLazyAnalysisScheduler {
+    with BasicFPCFLazyAnalysisScheduler {
 
+    override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
     /**
      * Registers the analysis as a lazy computation, that is, the method
      * will call `ProperytStore.scheduleLazyComputation`.

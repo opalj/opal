@@ -3,15 +3,15 @@ package org.opalj
 package fpcf
 package analyses
 
-import org.opalj.br.Field
-import org.opalj.br.analyses.SomeProject
+import org.opalj.fpcf.properties.CompileTimeConstancy
+import org.opalj.fpcf.properties.CompileTimeConstantField
+import org.opalj.fpcf.properties.CompileTimeVaryingField
 import org.opalj.fpcf.properties.FieldMutability
 import org.opalj.fpcf.properties.FinalField
-import org.opalj.fpcf.properties.NonFinalField
-import org.opalj.fpcf.properties.CompileTimeVaryingField
-import org.opalj.fpcf.properties.CompileTimeConstancy
 import org.opalj.fpcf.properties.LazyInitializedField
-import org.opalj.fpcf.properties.CompileTimeConstantField
+import org.opalj.fpcf.properties.NonFinalField
+import org.opalj.br.Field
+import org.opalj.br.analyses.SomeProject
 
 /**
  * A simple analysis that identifies constant (effectively) final static fields that are
@@ -88,21 +88,19 @@ class L0CompileTimeConstancyAnalysis private[analyses] ( final val project: Some
 
 trait L0CompileTimeConstancyAnalysisScheduler extends ComputationSpecification {
 
-    final override def derives: Set[PropertyKind] = Set(CompileTimeConstancy)
+    final def derivedProperty: PropertyBounds = PropertyBounds.lub(CompileTimeConstancy)
 
-    final override def uses: Set[PropertyKind] = Set(FieldMutability)
+    final override def uses: Set[PropertyBounds] = Set(PropertyBounds.lub(FieldMutability))
 
-    final override type InitializationData = Null
-    final def init(p: SomeProject, ps: PropertyStore): Null = null
-
-    def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
-
-    def afterPhaseCompletion(p: SomeProject, ps: PropertyStore): Unit = {}
 }
 
 object EagerL0CompileTimeConstancyAnalysis
     extends L0CompileTimeConstancyAnalysisScheduler
-    with FPCFEagerAnalysisScheduler {
+    with BasicFPCFEagerAnalysisScheduler {
+
+    override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
+
+    override def derivesCollaboratively: Set[PropertyBounds] = Set.empty
 
     override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new L0CompileTimeConstancyAnalysis(p)
@@ -111,8 +109,11 @@ object EagerL0CompileTimeConstancyAnalysis
     }
 }
 
-object LazyL0CompileTimeConstancyAnalysis extends L0CompileTimeConstancyAnalysisScheduler
-    with FPCFLazyAnalysisScheduler {
+object LazyL0CompileTimeConstancyAnalysis
+    extends L0CompileTimeConstancyAnalysisScheduler
+    with BasicFPCFLazyAnalysisScheduler {
+
+    override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 
     override def startLazily(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new L0CompileTimeConstancyAnalysis(p)

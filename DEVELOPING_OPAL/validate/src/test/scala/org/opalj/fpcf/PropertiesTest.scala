@@ -311,9 +311,7 @@ abstract class PropertiesTest extends FunSpec with Matchers {
             cs → cs.init(ps)
         }.toMap
 
-        ps.setupPhase((eagerAnalysisRunners ++ lazyAnalysisRunners).flatMap(
-            _.derives.map(_.asInstanceOf[PropertyMetaInformation].key)
-        ))
+        ps.setupPhase((eagerAnalysisRunners ++ lazyAnalysisRunners).flatMap(_.derives.map(_.pk)))
         val las = lazyAnalysisRunners.map { ar ⇒
             ar.beforeSchedule(ps)
             ar.startLazily(p, ps, initInfo(ar).asInstanceOf[ar.InitializationData])

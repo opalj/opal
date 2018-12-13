@@ -18,9 +18,7 @@ import org.opalj.br.analyses.SomeProject
  * @author Michael Reif
  * @author Michael Eichberg
  */
-class FPCFAnalysesManager private[fpcf] (
-        val project: SomeProject
-) {
+class FPCFAnalysesManager private[fpcf] (val project: SomeProject) {
 
     // caching (by means of using local fields) is not necessary
     private[this] implicit final def logContext: LogContext = project.logContext
@@ -46,7 +44,7 @@ class FPCFAnalysesManager private[fpcf] (
         val scenario = AnalysisScenario(analyses)
         val properties = scenario.allProperties
         if (properties exists { p ⇒
-            if (derivedProperties(p.id)) {
+            if (derivedProperties(p.pk.id)) {
                 error(
                     "analysis progress",
                     s"$p was computed in a previous run; no analyses were executed"
@@ -59,7 +57,7 @@ class FPCFAnalysesManager private[fpcf] (
             // ... some property (kind) was already computed/scheduled
             return propertyStore;
         }
-        properties foreach { p ⇒ derivedProperties(p.id) = true }
+        properties foreach { p ⇒ derivedProperties(p.pk.id) = true }
 
         val schedule = scenario.computeSchedule
         schedules ::= schedule
@@ -73,7 +71,7 @@ class FPCFAnalysesManager private[fpcf] (
         if (trace) {
             debug(
                 "analysis progress",
-                properties.map(p ⇒ PropertyKey.name(p.id)).mkString(
+                properties.map(p ⇒ PropertyKey.name(p.pk.id)).mkString(
                     "used and derived properties = {", ", ", "}"
                 )
             )

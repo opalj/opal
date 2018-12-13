@@ -239,22 +239,19 @@ class L0AllocationFreenessAnalysis private[analyses] ( final val project: SomePr
 
 trait L0AllocationFreenessAnalysisScheduler extends ComputationSpecification {
 
-    final override def derives: Set[PropertyKind] = Set(AllocationFreeness)
+    final def derivedProperty: PropertyBounds = PropertyBounds.lub(AllocationFreeness)
 
-    final override def uses: Set[PropertyKind] = Set.empty
-
-    final override type InitializationData = Null
-    final def init(p: SomeProject, ps: PropertyStore): Null = null
-
-    def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
-
-    def afterPhaseCompletion(p: SomeProject, ps: PropertyStore): Unit = {}
+    final override def uses: Set[PropertyBounds] = Set.empty
 
 }
 
 object EagerL0AllocationFreenessAnalysis
     extends L0AllocationFreenessAnalysisScheduler
-    with FPCFEagerAnalysisScheduler {
+    with BasicFPCFEagerAnalysisScheduler {
+
+    override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
+
+    override def derivesCollaboratively: Set[PropertyBounds] = Set.empty
 
     override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new L0AllocationFreenessAnalysis(p)
@@ -268,7 +265,9 @@ object EagerL0AllocationFreenessAnalysis
 
 object LazyL0AllocationFreenessAnalysis
     extends L0AllocationFreenessAnalysisScheduler
-    with FPCFLazyAnalysisScheduler {
+    with BasicFPCFLazyAnalysisScheduler {
+
+    override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 
     override def startLazily(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new L0AllocationFreenessAnalysis(p)
