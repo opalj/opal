@@ -132,7 +132,7 @@ object LazyVirtualCallAggregatingEscapeAnalysis
 
     override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 
-    override def startLazily(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+    override def register(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new VirtualCallAggregatingEscapeAnalysis(p)
         ps.registerLazyPropertyComputation(VirtualMethodEscapeProperty.key, analysis.determineEscape)
         analysis

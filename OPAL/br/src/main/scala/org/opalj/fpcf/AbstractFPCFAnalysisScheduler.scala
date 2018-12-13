@@ -19,14 +19,14 @@ import org.opalj.br.analyses.SomeProject
  * @author Michael Reif
  * @author Michael Eichberg
  */
-trait AbstractFPCFAnalysisScheduler extends ComputationSpecification {
+trait FPCFAnalysisScheduler extends ComputationSpecification {
 
     /**
      * The unique id of this factory.
      *
      * Every factory for a specific analysis is automatically associated with a unique id.
      */
-    final val uniqueId: Int = AbstractFPCFAnalysisScheduler.nextId
+    final val uniqueId: Int = FPCFAnalysisScheduler.nextId
 
     final override def init(ps: PropertyStore): InitializationData = {
         init(ps.context(classOf[SomeProject]), ps)
@@ -49,15 +49,15 @@ trait AbstractFPCFAnalysisScheduler extends ComputationSpecification {
 }
 
 /**
- * Companion object of [[AbstractFPCFAnalysisScheduler]] that defines internal helper functions and
+ * Companion object of [[FPCFAnalysisScheduler]] that defines internal helper functions and
  * values.
  *
  * @author Michael Reif
  */
-private[fpcf] object AbstractFPCFAnalysisScheduler {
+private[fpcf] object FPCFAnalysisScheduler {
 
     private[this] val idGenerator: AtomicInteger = new AtomicInteger(0)
 
-    private[AbstractFPCFAnalysisScheduler] def nextId: Int = idGenerator.getAndIncrement()
+    private[FPCFAnalysisScheduler] def nextId: Int = idGenerator.getAndIncrement()
 
 }

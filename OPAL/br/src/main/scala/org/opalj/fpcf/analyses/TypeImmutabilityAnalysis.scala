@@ -259,7 +259,7 @@ object LazyTypeImmutabilityAnalysis
      * Registers the analysis as a lazy computation, that is, the method
      * will call `ProperytStore.scheduleLazyComputation`.
      */
-    override def startLazily(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+    override def register(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val typeExtensibility = p.get(TypeExtensibilityKey)
         val analysis = new TypeImmutabilityAnalysis(p)
         val analysisRunner: ProperPropertyComputation[Entity] =

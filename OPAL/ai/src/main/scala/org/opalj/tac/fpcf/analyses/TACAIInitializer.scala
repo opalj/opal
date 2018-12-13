@@ -4,7 +4,7 @@ package tac
 package fpcf
 package analyses
 
-import org.opalj.fpcf.AbstractFPCFAnalysisScheduler
+import org.opalj.fpcf.FPCFAnalysisScheduler
 import org.opalj.fpcf.PropertyStore
 import org.opalj.br.analyses.SomeProject
 import org.opalj.ai.domain.RecordDefUse
@@ -15,7 +15,7 @@ import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
  *
  * @author Michael Eichberg
  */
-trait TACAIInitializer extends AbstractFPCFAnalysisScheduler {
+trait TACAIInitializer extends FPCFAnalysisScheduler {
 
     override type InitializationData = Null
 
@@ -32,6 +32,5 @@ trait TACAIInitializer extends AbstractFPCFAnalysisScheduler {
         )
         null
     }
-
 
 }

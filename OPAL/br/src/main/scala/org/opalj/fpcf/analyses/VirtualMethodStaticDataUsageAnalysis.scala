@@ -136,7 +136,7 @@ object LazyVirtualMethodStaticDataUsageAnalysis
 
     override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 
-    def startLazily(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+    def register(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new VirtualMethodStaticDataUsageAnalysis(p)
         ps.registerLazyPropertyComputation(
             VirtualMethodAllocationFreeness.key,

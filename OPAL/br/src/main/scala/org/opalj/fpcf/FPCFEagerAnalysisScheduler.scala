@@ -9,7 +9,7 @@ import org.opalj.br.analyses.SomeProject
  *
  * @author Michael Eichberg
  */
-trait FPCFEagerAnalysisScheduler extends AbstractFPCFAnalysisScheduler {
+trait FPCFEagerAnalysisScheduler extends FPCFAnalysisScheduler {
 
     final override def computationType: ComputationType = EagerComputation
 
@@ -45,8 +45,7 @@ trait FPCFEagerAnalysisScheduler extends AbstractFPCFAnalysisScheduler {
  */
 // TODO Rename => Simple...
 trait BasicFPCFEagerAnalysisScheduler extends FPCFEagerAnalysisScheduler {
-
-    final override type InitializationData = Null
+    override type InitializationData = Null
     def init(p: SomeProject, ps: PropertyStore): Null = null
     def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
     def afterPhaseCompletion(p: SomeProject, ps: PropertyStore): Unit = {}

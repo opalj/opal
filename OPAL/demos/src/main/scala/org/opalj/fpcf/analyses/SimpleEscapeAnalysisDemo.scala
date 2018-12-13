@@ -5,12 +5,9 @@ package analyses
 
 import java.net.URL
 
-import org.opalj.ai.common.DefinitionSite
-import org.opalj.br.DefinedMethod
-import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.DefaultOneStepAnalysis
-import org.opalj.br.analyses.Project
-import org.opalj.br.analyses.VirtualFormalParameter
+import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger.info
+import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.fpcf.analyses.escape.EagerSimpleEscapeAnalysis
 import org.opalj.fpcf.properties.AtMost
 import org.opalj.fpcf.properties.EscapeInCallee
@@ -26,10 +23,14 @@ import org.opalj.fpcf.properties.EscapeViaReturn
 import org.opalj.fpcf.properties.EscapeViaStaticField
 import org.opalj.fpcf.properties.GlobalEscape
 import org.opalj.fpcf.properties.NoEscape
-import org.opalj.log.LogContext
-import org.opalj.log.OPALLogger.info
-import org.opalj.tac.fpcf.analyses.LazyL0TACAIAnalysis
-import org.opalj.util.PerformanceEvaluation.time
+import org.opalj.br.DefinedMethod
+import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.DefaultOneStepAnalysis
+import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.VirtualFormalParameter
+import org.opalj.ai.common.DefinitionSite
+import org.opalj.ai.fpcf.analyses.LazyL0BaseAIResultAnalysis
+import org.opalj.tac.fpcf.analyses.TACAITransformer
 
 /**
  * A small demo that shows how to use the [[org.opalj.fpcf.analyses.escape.SimpleEscapeAnalysis]]
@@ -60,7 +61,10 @@ object SimpleEscapeAnalysisDemo extends DefaultOneStepAnalysis {
 
         time {
             val manager = project.get(FPCFAnalysesManagerKey)
-            manager.runAll(EagerSimpleEscapeAnalysis, LazyL0TACAIAnalysis)
+            manager.runAll(
+                EagerSimpleEscapeAnalysis,
+                LazyL0BaseAIResultAnalysis,
+                TACAITransformer /* LazyL0TACAIAnalysis */ )
             propertyStore.waitOnPhaseCompletion()
         } { t ⇒ info("progress", s"escape analysis took ${t.toSeconds}") }
 

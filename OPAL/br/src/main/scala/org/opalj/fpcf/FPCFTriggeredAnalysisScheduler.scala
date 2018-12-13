@@ -13,7 +13,7 @@ import org.opalj.br.analyses.SomeProject
  *
  * @author Michael Eichberg
  */
-trait FPCFTriggeredAnalysisScheduler extends AbstractFPCFAnalysisScheduler {
+trait FPCFTriggeredAnalysisScheduler extends FPCFAnalysisScheduler {
 
     final override def computationType: ComputationType = TriggeredComputation
 
@@ -44,7 +44,7 @@ trait FPCFTriggeredAnalysisScheduler extends AbstractFPCFAnalysisScheduler {
 }
 
 trait BasicFPCFTriggeredAnalysisScheduler extends FPCFTriggeredAnalysisScheduler {
-    final override type InitializationData = Null
+    override type InitializationData = Null
     def init(p: SomeProject, ps: PropertyStore): Null = null
     def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
     def afterPhaseCompletion(p: SomeProject, ps: PropertyStore): Unit = {}

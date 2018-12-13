@@ -433,7 +433,7 @@ object LazyL1ThrownExceptionsAnalysis
     override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 
     /** Registers an analysis to compute the thrown exceptions lazily. */
-    override def startLazily(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+    override def register(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new L1ThrownExceptionsAnalysis(p)
         ps.registerLazyPropertyComputation(
             ThrownExceptions.key,
