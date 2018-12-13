@@ -5,8 +5,10 @@ package fpcf
 package analyses
 
 import org.opalj.fpcf.BasicFPCFTransformerScheduler
+import org.opalj.fpcf.DefaultFPCFAnalysis
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.FinalEP
+import org.opalj.fpcf.FPCFAnalysis
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyStore
 import org.opalj.br.Method
@@ -20,7 +22,7 @@ import org.opalj.tac.fpcf.properties.TACAI
  *
  * @author Michael Eichberg
  */
-object TACAITransformer extends TACAIInitializer with BasicFPCFTransformerScheduler {
+object TACAITransformer extends BasicFPCFTransformerScheduler with TACAIInitializer {
 
     def derivedProperty: PropertyBounds = PropertyBounds.finalP(TACAI)
 
@@ -28,19 +30,27 @@ object TACAITransformer extends TACAIInitializer with BasicFPCFTransformerSchedu
 
     override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 
-    override def register(p: SomeProject, ps: PropertyStore, i: Null): Unit = {
-        ps.registerTransformer(BaseAIResult.key, TACAI.key) { (e: Entity, baseAIResult) ⇒
-            e match {
-                case m: Method ⇒
-                    FinalEP(
-                        e,
-                        baseAIResult.aiResult match {
-                            case Some(aiResult) ⇒ TACAIAnalysis.computeTheTACAI(m, aiResult)(p)
-                            case None           ⇒ NoTACAI
-                        }
-                    )
+    override def register(p: SomeProject, ps: PropertyStore, i: Null): FPCFAnalysis = {
+        class TheTACAITransformer
+            extends DefaultFPCFAnalysis(p)
+            with ((Entity, BaseAIResult) ⇒ FinalEP[Method, TACAI]) {
+
+            def apply(e: Entity, baseAIResult: BaseAIResult): FinalEP[Method, TACAI] = {
+                e match {
+                    case m: Method ⇒
+                        FinalEP(
+                            m,
+                            baseAIResult.aiResult match {
+                                case Some(aiResult) ⇒ TACAIAnalysis.computeTheTACAI(m, aiResult)(p)
+                                case None           ⇒ NoTACAI
+                            }
+                        )
+                }
             }
         }
+        val analysis = new TheTACAITransformer
+        ps.registerTransformer(BaseAIResult.key, TACAI.key) { analysis }
+        analysis
     }
 
 }
