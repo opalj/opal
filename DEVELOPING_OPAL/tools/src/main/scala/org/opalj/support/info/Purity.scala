@@ -125,7 +125,7 @@ object Purity {
         cp:                    File,
         projectDir:            Option[String],
         libDir:                Option[String],
-        analysis:              FPCFLazyAnalysisScheduler { type InitializationData = Null },
+        analysis:              FPCFLazyAnalysisScheduler,
         domain:                Class[_ <: Domain with RecordDefUse],
         rater:                 DomainSpecificRater,
         withoutJDK:            Boolean,
@@ -427,7 +427,7 @@ object Purity {
             return ;
         }
 
-        val analysis: FPCFLazyAnalysisScheduler { type InitializationData = Null } = analysisName match {
+        val analysis: FPCFLazyAnalysisScheduler = analysisName match {
             case Some("L0")        ⇒ LazyL0PurityAnalysis
             case Some("L1")        ⇒ LazyL1PurityAnalysis
             case None | Some("L2") ⇒ LazyL2PurityAnalysis
