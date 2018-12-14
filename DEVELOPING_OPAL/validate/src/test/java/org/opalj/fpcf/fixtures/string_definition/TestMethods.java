@@ -46,6 +46,9 @@ import static org.opalj.fpcf.properties.string_definition.StringConstancyLevel.*
  */
 public class TestMethods {
 
+    private String someStringField = "";
+    public static final String MY_CONSTANT = "mine";
+
     /**
      * This method represents the test method which is serves as the trigger point for the
      * {@link org.opalj.fpcf.LocalStringDefinitionTest} to know which string read operation to
@@ -601,6 +604,31 @@ public class TestMethods {
         sb.append("String");
         sb.append(sb2.toString());
         analyzeString(sb2.toString());
+        analyzeString(sb.toString());
+    }
+
+    @StringDefinitions(
+            value = "an example that uses a non final field",
+            expectedLevels = { PARTIALLY_CONSTANT },
+            expectedStrings = { "Field Value:\\w" }
+    )
+    public void nonFinalFieldRead() {
+        StringBuilder sb = new StringBuilder("Field Value:");
+        System.out.println(sb);
+        sb.append(someStringField);
+        analyzeString(sb.toString());
+    }
+
+    @StringDefinitions(
+            value = "an example that reads a public final static field; for these, the string "
+                    + "information are available (at lease on modern compilers)",
+            expectedLevels = { CONSTANT },
+            expectedStrings = { "Field Value:mine" }
+    )
+    public void finalFieldRead() {
+        StringBuilder sb = new StringBuilder("Field Value:");
+        System.out.println(sb);
+        sb.append(MY_CONSTANT);
         analyzeString(sb.toString());
     }
 

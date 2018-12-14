@@ -11,6 +11,7 @@ import org.opalj.tac.Assignment
 import org.opalj.tac.BinaryExpr
 import org.opalj.tac.Expr
 import org.opalj.tac.ExprStmt
+import org.opalj.tac.GetField
 import org.opalj.tac.New
 import org.opalj.tac.NonVirtualFunctionCall
 import org.opalj.tac.NonVirtualMethodCall
@@ -70,6 +71,8 @@ class InterpretationHandler(cfg: CFG[Stmt[V], TACStmts[V]]) {
                 new BinaryExprInterpreter(cfg, this).interpret(expr)
             case Assignment(_, _, expr: NonVirtualFunctionCall[V]) ⇒
                 new NonVirtualFunctionCallInterpreter(cfg, this).interpret(expr)
+            case Assignment(_, _, expr: GetField[V]) ⇒
+                new FieldInterpreter(cfg, this).interpret(expr)
             case ExprStmt(_, expr: VirtualFunctionCall[V]) ⇒
                 new VirtualFunctionCallInterpreter(cfg, this).interpret(expr)
             case vmc: VirtualMethodCall[V] ⇒
