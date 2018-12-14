@@ -87,7 +87,7 @@ class ConfiguredPurity(
 
 object ConfiguredPurityKey extends ProjectInformationKey[ConfiguredPurity, Nothing] {
 
-    override def requirements : ProjectInformationKeys = Seq(PropertyStoreKey, DeclaredMethodsKey)
+    override def requirements: ProjectInformationKeys = Seq(PropertyStoreKey, DeclaredMethodsKey)
 
     override protected def compute(project: SomeProject): ConfiguredPurity = {
         new ConfiguredPurity(
