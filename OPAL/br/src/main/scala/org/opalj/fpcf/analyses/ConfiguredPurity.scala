@@ -24,6 +24,7 @@ class ConfiguredPurity(
         propertyStore:   PropertyStore,
         declaredMethods: DeclaredMethods
 ) {
+
     private case class PurityValue(
             cf:    String,
             m:     String,
@@ -90,10 +91,8 @@ object ConfiguredPurityKey extends ProjectInformationKey[ConfiguredPurity, Nothi
     override def requirements: ProjectInformationKeys = Seq(PropertyStoreKey, DeclaredMethodsKey)
 
     override protected def compute(project: SomeProject): ConfiguredPurity = {
-        new ConfiguredPurity(
-            project,
-            project.get(PropertyStoreKey),
-            project.get(DeclaredMethodsKey)
-        )
+        val ps = project.get(PropertyStoreKey)
+        val declaredMethods = project.get(DeclaredMethodsKey)
+        new ConfiguredPurity(project, ps, declaredMethods)
     }
 }
