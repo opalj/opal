@@ -165,8 +165,7 @@ object InterpretationHandler {
      *                 [[AbstractStringBuilder]].
      * @param stmts A list of statements which will be used to lookup which one the initialization
      *              is.
-     * @return Returns the definition site of the base object of the call. If something goes wrong,
-     *         e.g., no initialization is found, ''None'' is returned.
+     * @return Returns the definition sites of the base object of the call.
      */
     def findDefSiteOfInit(toString: VirtualFunctionCall[V], stmts: Array[Stmt[V]]): List[Int] = {
         // TODO: Check that we deal with an instance of AbstractStringBuilder
@@ -191,6 +190,34 @@ object InterpretationHandler {
         }
 
         defSites.sorted.toList
+    }
+
+    /**
+     * Determines the [[New]] expressions that belongs to a given `duvar`.
+     *
+     * @param duvar The [[org.opalj.tac.DUVar]] to get the [[New]]s for.
+     * @param stmts The context to search in, e.g., the surrounding method.
+     * @return Returns all found [[New]] expressions.
+     */
+    def findNewOfVar(duvar: V, stmts: Array[Stmt[V]]): List[New] = {
+        val news = ListBuffer[New]()
+
+        // TODO: It might be that the search has to be extended to further cases
+        duvar.definedBy.foreach { ds ⇒
+            stmts(ds) match {
+                // E.g., a call to `toString`
+                case Assignment(_, _, vfc: VirtualFunctionCall[V]) ⇒
+                    vfc.receiver.asVar.definedBy.foreach { innerDs ⇒
+                        stmts(innerDs) match {
+                            case Assignment(_, _, expr: New) ⇒ news.append(expr)
+                            case _                           ⇒
+                        }
+                    }
+                case _ ⇒
+            }
+        }
+
+        news.toList
     }
 
     /**

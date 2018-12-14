@@ -7,8 +7,8 @@ package org.opalj.fpcf.string_definition.properties
  * @author Patrick Mell
  */
 case class StringConstancyInformation(
-        constancyLevel:  StringConstancyLevel.Value,
-        constancyType:   StringConstancyType.Value,
+        constancyLevel:  StringConstancyLevel.Value = StringConstancyLevel.DYNAMIC,
+        constancyType:   StringConstancyType.Value  = StringConstancyType.APPEND,
         possibleStrings: String                     = ""
 )
 
