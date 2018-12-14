@@ -102,8 +102,13 @@ class LocalStringDefinitionAnalysis(
                 if (dependentVars.nonEmpty) {
                     val toAnalyze = (dependentVars.keys.toList, data._2)
                     val ep = propertyStore(toAnalyze, StringConstancyProperty.key)
-                    dependees.put(toAnalyze, ep)
-                    states.put(data, ComputationState(leanPaths, dependentVars, cfg))
+                    ep match {
+                        case FinalEP(_, p) ⇒
+                            scis.appendAll(p.stringConstancyInformation)
+                        case _ ⇒
+                            dependees.put(toAnalyze, ep)
+                            states.put(data, ComputationState(leanPaths, dependentVars, cfg))
+                    }
                 } else {
                     scis.append(new PathTransformer(cfg).pathToStringTree(leanPaths).reduce(true))
                 }
