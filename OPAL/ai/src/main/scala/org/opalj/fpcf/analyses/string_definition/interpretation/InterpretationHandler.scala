@@ -56,28 +56,22 @@ class InterpretationHandler(cfg: CFG[Stmt[V], TACStmts[V]]) {
         processedDefSites.append(defSite)
 
         stmts(defSite) match {
-            case Assignment(_, _, expr) if expr.isInstanceOf[StringConst] ⇒
-                new StringConstInterpreter(cfg, this).interpret(expr.asStringConst)
-            case Assignment(_, _, expr) if expr.isInstanceOf[ArrayLoad[V]] ⇒
-                new ArrayLoadInterpreter(cfg, this).interpret(expr.asArrayLoad)
-            case Assignment(_, _, expr) if expr.isInstanceOf[New] ⇒
-                new NewInterpreter(cfg, this).interpret(expr.asNew)
-            case Assignment(_, _, expr) if expr.isInstanceOf[VirtualFunctionCall[V]] ⇒
-                new VirtualFunctionCallInterpreter(cfg, this).interpret(expr.asVirtualFunctionCall)
-            case Assignment(_, _, expr) if expr.isInstanceOf[StaticFunctionCall[V]] ⇒
-                new StaticFunctionCallInterpreter(cfg, this).interpret(expr.asStaticFunctionCall)
-            case Assignment(_, _, expr) if expr.isInstanceOf[BinaryExpr[V]] ⇒
-                new BinaryExprInterpreter(cfg, this).interpret(expr.asBinaryExpr)
-            case Assignment(_, _, expr) if expr.isInstanceOf[NonVirtualFunctionCall[V]] ⇒
-                new NonVirtualFunctionCallInterpreter(
-                    cfg, this
-                ).interpret(expr.asNonVirtualFunctionCall)
-            case ExprStmt(_, expr) ⇒
-                expr match {
-                    case vfc: VirtualFunctionCall[V] ⇒
-                        new VirtualFunctionCallInterpreter(cfg, this).interpret(vfc)
-                    case _ ⇒ List()
-                }
+            case Assignment(_, _, expr: StringConst) ⇒
+                new StringConstInterpreter(cfg, this).interpret(expr)
+            case Assignment(_, _, expr: ArrayLoad[V]) ⇒
+                new ArrayLoadInterpreter(cfg, this).interpret(expr)
+            case Assignment(_, _, expr: New) ⇒
+                new NewInterpreter(cfg, this).interpret(expr)
+            case Assignment(_, _, expr: VirtualFunctionCall[V]) ⇒
+                new VirtualFunctionCallInterpreter(cfg, this).interpret(expr)
+            case Assignment(_, _, expr: StaticFunctionCall[V]) ⇒
+                new StaticFunctionCallInterpreter(cfg, this).interpret(expr)
+            case Assignment(_, _, expr: BinaryExpr[V]) ⇒
+                new BinaryExprInterpreter(cfg, this).interpret(expr)
+            case Assignment(_, _, expr: NonVirtualFunctionCall[V]) ⇒
+                new NonVirtualFunctionCallInterpreter(cfg, this).interpret(expr)
+            case ExprStmt(_, expr: VirtualFunctionCall[V]) ⇒
+                new VirtualFunctionCallInterpreter(cfg, this).interpret(expr)
             case vmc: VirtualMethodCall[V] ⇒
                 new VirtualMethodCallInterpreter(cfg, this).interpret(vmc)
             case nvmc: NonVirtualMethodCall[V] ⇒
