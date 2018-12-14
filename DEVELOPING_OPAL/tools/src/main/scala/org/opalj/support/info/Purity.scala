@@ -213,15 +213,17 @@ object Purity {
                 yield declaredMethods(m)
 
         time {
-            val as = AnalysisScenario(support) += LazyVirtualMethodPurityAnalysis
+            val as = AnalysisScenario(support) += LazyVirtualMethodPurityAnalysis += analysis
             val schedule = as.computeSchedule(project.logContext)
             schedule(
                 ps,
                 trace = true,
-                afterPhaseScheduling = (phaseConfiguration) ⇒ {
-                    if (phaseConfiguration.contains(LazyVirtualMethodPurityAnalysis))
-                        projMethods foreach { dm ⇒ ps.force(dm, fpcf.properties.Purity.key) }
-                }
+                afterPhaseScheduling =
+                    computationSpecifications ⇒ {
+                        if (computationSpecifications.contains(LazyVirtualMethodPurityAnalysis)) {
+                            projMethods foreach { dm ⇒ ps.force(dm, fpcf.properties.Purity.key) }
+                        }
+                    }
             )
         } { t ⇒ analysisTime = t.toSeconds }
         ps.shutdown()
