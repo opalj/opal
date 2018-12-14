@@ -98,7 +98,7 @@ class LocalStringDefinitionAnalysis(
                 val leanPaths = paths.makeLeanPath(nextUVar, stmts)
 
                 // Find DUVars, that the analysis of the current entity depends on
-                val dependentVars = findDependentVars(leanPaths, stmts, data._1)
+                val dependentVars = findDependentVars(leanPaths, stmts, List(nextUVar))
                 if (dependentVars.nonEmpty) {
                     val toAnalyze = (dependentVars.keys.toList, data._2)
                     val ep = propertyStore(toAnalyze, StringConstancyProperty.key)
@@ -127,7 +127,7 @@ class LocalStringDefinitionAnalysis(
                 StringConstancyProperty.upperBound,
                 StringConstancyProperty.lowerBound,
                 dependees.values,
-                continuation(data, dependees.values)
+                continuation(data, dependees.values, scis)
             )
         } else {
             Result(data, StringConstancyProperty(scis.toList))
@@ -139,10 +139,16 @@ class LocalStringDefinitionAnalysis(
      *
      * @param data The data that was passed to the `analyze` function.
      * @param dependees A list of dependencies that this analysis run depends on.
+     * @param currentResults If the result of other read operations has been computed (only in case
+     *                       the first value of the `data` given to the `analyze` function contains
+     *                       more than one value), pass it using this object in order not to lose
+     *                       it.
      * @return This function can either produce a final result or another intermediate result.
      */
     private def continuation(
-        data: P, dependees: Iterable[EOptionP[Entity, Property]]
+        data:           P,
+        dependees:      Iterable[EOptionP[Entity, Property]],
+        currentResults: ListBuffer[StringConstancyInformation]
     )(eps: SomeEPS): PropertyComputationResult = {
         val relevantState = states.get(data)
         // For mapping the index of a FlatPathElement to StringConstancyInformation
@@ -158,10 +164,11 @@ class LocalStringDefinitionAnalysis(
                 val sci = new PathTransformer(relevantState.get.cfg).pathToStringTree(
                     relevantState.get.computedLeanPath, fpe2Sci.toMap
                 ).reduce(true)
-                Result(data, StringConstancyProperty(List(sci)))
+                currentResults.append(sci)
+                Result(data, StringConstancyProperty(currentResults.toList))
             case IntermediateEP(_, lb, ub) ⇒
                 IntermediateResult(
-                    data, lb, ub, dependees, continuation(data, dependees)
+                    data, lb, ub, dependees, continuation(data, dependees, currentResults)
                 )
             case _ ⇒ NoResult
         }
@@ -207,8 +214,8 @@ class LocalStringDefinitionAnalysis(
     }
 
     /**
-     * Takes a path, this should be the lean path of a [[Path]], as well as a context in the form of
-     * statements, stmts, and detects all dependees within `path`. ''Dependees'' are found by
+     * Takes a `path`, this should be the lean path of a [[Path]], as well as a context in the form
+     * of statements, `stmts`, and detects all dependees within `path`. Dependees are found by
      * looking at all elements in the path, and check whether the argument of an `append` call is a
      * value that stems from a `toString` call of a [[StringBuilder]] or [[StringBuffer]]. This
      * function then returns the found UVars along with the indices of those append statements.
@@ -220,9 +227,15 @@ class LocalStringDefinitionAnalysis(
         path: Path, stmts: Array[Stmt[V]], ignore: List[V]
     ): mutable.LinkedHashMap[V, Int] = {
         val dependees = mutable.LinkedHashMap[V, Int]()
+        val ignoreNews = ignore.map { i ⇒
+            InterpretationHandler.findNewOfVar(i, stmts)
+        }.distinct
+        identity(ignoreNews)
+
         path.elements.foreach { nextSubpath ⇒
             findDependeesAcc(nextSubpath, stmts, ListBuffer()).foreach { nextPair ⇒
-                if (!ignore.contains(nextPair._1)) {
+                val newExprs = InterpretationHandler.findNewOfVar(nextPair._1, stmts)
+                if (!ignore.contains(nextPair._1) && !ignoreNews.contains(newExprs)) {
                     dependees.put(nextPair._1, nextPair._2)
                 }
             }
