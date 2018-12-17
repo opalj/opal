@@ -7,15 +7,14 @@ package ifds
 //import java.io.File
 
 import org.opalj.collection.immutable.RefArray
-import org.opalj.ai.fpcf.properties.BaseAIResult
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.ObjectType
 import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.Project
 import org.opalj.fpcf.analyses.ifds.AbstractIFDSAnalysis.V
-import org.opalj.tac.fpcf.analyses.LazyL0TACAIAnalysis
-import org.opalj.tac.fpcf.properties.TACAI
+import org.opalj.ai.fpcf.analyses.LazyL0BaseAIResultAnalysis
+import org.opalj.tac.fpcf.analyses.TACAITransformer
 //import org.opalj.fpcf.par.PKEParallelTasksPropertyStore
 //import org.opalj.fpcf.par.RecordAllPropertyStoreTracer
 import org.opalj.fpcf.seq.PKESequentialPropertyStore
@@ -272,8 +271,11 @@ class TestTaintAnalysis private[ifds] (
                         flows ++= param.asVar.definedBy.iterator.map(InstanceField(_, declClass, taintedField))
                     //case sf: StaticField ⇒ flows += sf
                     case FlowFact(flow) ⇒
-                        if (!entryPoints.contains(declaredMethods(exit.method)))
-                            flows += FlowFact(flow + stmt.method)
+                        val newFlow = flow + stmt.method
+                        if (entryPoints.contains(declaredMethods(exit.method)))
+                            println(s"flow: "+newFlow.map(_.toJava).mkString(", "))
+                        else
+                            flows += FlowFact(newFlow)
                     case _ ⇒
                 }
             }
@@ -318,8 +320,12 @@ class TestTaintAnalysis private[ifds] (
                 case Variable(index) ⇒
                     asCall(stmt.stmt).params.exists(p ⇒ p.asVar.definedBy.contains(index))
                 case _ ⇒ false
-            }){
-                in ++ Set(FlowFact(ListSet(stmt.method)))
+            }) {
+                if (entryPoints.contains(declaredMethods(stmt.method))) {
+                    println(s"flow: "+stmt.method.toJava)
+                    in
+                } else
+                    in ++ Set(FlowFact(ListSet(stmt.method)))
             } else {
                 in
             }
@@ -341,8 +347,6 @@ object TestTaintAnalysis extends LazyIFDSAnalysis[Fact] {
     override def init(p: SomeProject, ps: PropertyStore) = new TestTaintAnalysis()(p)
 
     override def property: IFDSPropertyMetaInformation[Fact] = Taint
-
-    override val uses: Set[PropertyKind] = Set(BaseAIResult, TACAI)
 }
 
 class Taint(val flows: Map[Statement, Set[Fact]]) extends IFDSProperty[Fact] {
@@ -383,26 +387,9 @@ object TestTaintAnalysisRunner {
                 }
             )
             val ps = p.get(PropertyStoreKey)
-            ps.setupPhase(Set(BaseAIResult, /*TACAI,*/ TestTaintAnalysis.property))
-            LazyL0TACAIAnalysis.init(ps)
-            //LazyL0TACAIAnalysis.schedule(ps, null)
-            val analysis = TestTaintAnalysis.startLazily(p, ps, TestTaintAnalysis.init(p, ps))
-            val entryPoints = analysis.asInstanceOf[TestTaintAnalysis].entryPoints
-            for (e ← entryPoints) {
-                ps.force(e, TestTaintAnalysis.property.key)
-            }
-            println(entryPoints.size)
+            val manager = p.get(FPCFAnalysesManagerKey)
+            manager.runAll(LazyL0BaseAIResultAnalysis, TACAITransformer, TestTaintAnalysis)
             ps.waitOnPhaseCompletion()
-            for {
-                e ← entryPoints
-                flows = ps(e, TestTaintAnalysis.property.key)
-                fact ← flows.ub.asInstanceOf[IFDSProperty[Fact]].flows.values.flatten.toSet[Fact]
-            } {
-                fact match {
-                    case FlowFact(flow) ⇒ println(s"flow: "+flow.map(_.toJava).mkString(", "))
-                    case _              ⇒
-                }
-            }
         } { t ⇒ println(s"Time: ${t.toSeconds}") }
     }
 }

@@ -346,7 +346,6 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
      * Gets the set of all methods possibly called by `stmt` or None if `stmt` contains no call.
      */
     def getCallees(stmt: Stmt[V])(implicit state: State): Option[SomeSet[Method]] = {
-        implicit val project: SomeProject = p
         stmt.astID match {
             case StaticMethodCall.ASTID ⇒
                 Some(stmt.asStaticMethodCall.resolveCallTarget.toSet.filter(_.body.isDefined))
@@ -632,6 +631,8 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
         }
         c(propertyStore((declaredMethods(source._1.definedMethod), source._2), property.key))
     }
+
+    val entryPoints: Map[DeclaredMethod, Fact]
 }
 
 /**
@@ -673,7 +674,9 @@ sealed trait IFDSAnalysisScheduler[DataFlowFact] extends ComputationSpecificatio
 abstract class LazyIFDSAnalysis[DataFlowFact] extends IFDSAnalysisScheduler[DataFlowFact]
         with FPCFLazyAnalysisScheduler {
 
-    final override def derives: Set[PropertyKind] = Set(property)
+    final override def derivesLazily: Some[PropertyBounds] = Some(PropertyBounds.ub(property))
+
+    override val uses: Set[PropertyBounds] = Set(PropertyBounds.finalP(TACAI))
 
     /**
      * Registers the analysis as a lazy computation, that is, the method
@@ -687,6 +690,9 @@ abstract class LazyIFDSAnalysis[DataFlowFact] extends IFDSAnalysisScheduler[Data
         ps.registerLazyPropertyComputation(
             property.key, analysis.performAnalysis
         )
+        for (e ← analysis.entryPoints) {
+            ps.force(e, TestTaintAnalysis.property.key)
+        }
         analysis
     }
 

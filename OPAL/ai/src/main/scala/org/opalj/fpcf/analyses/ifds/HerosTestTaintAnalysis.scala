@@ -49,7 +49,7 @@ import org.opalj.util.PerformanceEvaluation.time
 case object NullFact extends Fact
 
 class HerosTestTaintAnalysis(p: SomeProject, icfg: OpalICFG)
-        extends DefaultIFDSTabulationProblem[Statement, Fact, Method, OpalICFG](icfg) {
+    extends DefaultIFDSTabulationProblem[Statement, Fact, Method, OpalICFG](icfg) {
 
     override def numThreads(): Int = 4
 
@@ -297,7 +297,7 @@ class HerosTestTaintAnalysis(p: SomeProject, icfg: OpalICFG)
                             source match {
                                 case Variable(index) if call.allParams.exists(p ⇒ p.asVar.definedBy.contains(index)) ⇒
                                     if (HerosTestTaintAnalysis.initialMethods.contains(stmt.method)) {
-                                        println(s"flow: " + stmt.method.toJava)
+                                        println(s"flow: "+stmt.method.toJava)
                                         Collections.singleton(source)
                                     } else {
                                         TwoElementSet.twoElementSet(source, FlowFact(ListSet(stmt.method)))
