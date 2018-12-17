@@ -330,13 +330,38 @@ object Results {
 case class PartialResult[E >: Null <: Entity, P >: Null <: Property](
         e:  E,
         pk: PropertyKey[P],
-        u:  EOptionP[E, P] ⇒ Option[EPS[E, P]]
+        u:  UpdateComputation[E, P]
 ) extends ProperPropertyComputationResult {
 
     private[fpcf] final def id = PartialResult.id
 
 }
 object PartialResult { private[fpcf] final val id = 6 }
+
+/**
+ * `InterimPartialResult`s are used for properties of entities which are computed
+ * collaboratively where the individual contribution to the final result depends on the
+ * given dependees.
+ *
+ * @param e The entity for which we have a partial result.
+ * @param pk The kind of the property for which we have a partial result.
+ * @param u The function which is given the current property (if any) and which computes the
+ *          new property. `u` has to return `None` if the update does not change the property
+ *          and `Some(NewProperty)` otherwise.
+ * @tparam P The type of the property.
+ */
+case class InterimPartialResult[E >: Null <: Entity, P >: Null <: Property](
+        e:         E,
+        pk:        PropertyKey[P],
+        u:         UpdateComputation[E, P],
+        dependees: Traversable[SomeEOptionP],
+        c:         OnUpdateContinuation
+) extends ProperPropertyComputationResult {
+
+    private[fpcf] final def id = InterimPartialResult.id
+
+}
+object InterimPartialResult { private[fpcf] final val id = 7 }
 
 /**************************************************************************************************\
  *
@@ -350,4 +375,4 @@ private[fpcf] case class IdempotentResult(
     private[fpcf] final def id = IdempotentResult.id
 
 }
-private[fpcf] object IdempotentResult { private[fpcf] final val id = 7 }
+private[fpcf] object IdempotentResult { private[fpcf] final val id = 8 }

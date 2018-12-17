@@ -5,9 +5,6 @@ package info
 
 import java.net.URL
 
-import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.DefaultOneStepAnalysis
-import org.opalj.br.analyses.Project
 import org.opalj.fpcf.FPCFAnalysesManagerKey
 import org.opalj.fpcf.analyses.LazyFieldLocalityAnalysis
 import org.opalj.fpcf.analyses.LazyVirtualCallAggregatingEscapeAnalysis
@@ -24,7 +21,11 @@ import org.opalj.fpcf.properties.VFreshReturnValue
 import org.opalj.fpcf.properties.VGetter
 import org.opalj.fpcf.properties.VNoFreshReturnValue
 import org.opalj.fpcf.properties.VPrimitiveReturnValue
-import org.opalj.tac.fpcf.analyses.LazyL0TACAIAnalysis
+import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.DefaultOneStepAnalysis
+import org.opalj.br.analyses.Project
+import org.opalj.ai.fpcf.analyses.LazyL0BaseAIResultAnalysis
+import org.opalj.tac.fpcf.analyses.TACAITransformer
 
 /**
  * Computes return value freshness information; see
@@ -48,7 +49,8 @@ object ReturnValueFreshness extends DefaultOneStepAnalysis {
     ): BasicReport = {
 
         val ps = project.get(FPCFAnalysesManagerKey).runAll(
-            LazyL0TACAIAnalysis,
+            LazyL0BaseAIResultAnalysis,
+            TACAITransformer, // LazyL0TACAIAnalysis,
             LazyInterProceduralEscapeAnalysis,
             LazyFieldLocalityAnalysis,
             LazyVirtualCallAggregatingEscapeAnalysis,

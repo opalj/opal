@@ -552,7 +552,7 @@ object LazyReturnValueFreshnessAnalysis
      * Registers the analysis as a lazy computation, that is, the method
      * will call `ProperytStore.scheduleLazyComputation`.
      */
-    override def startLazily(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+    override def register(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new ReturnValueFreshnessAnalysis(p)
         ps.registerLazyPropertyComputation(ReturnValueFreshness.key, analysis.determineFreshness)
         analysis

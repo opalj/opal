@@ -281,7 +281,7 @@ abstract class PropertiesTest extends FunSpec with Matchers {
 
     def executeAnalyses(
         eagerAnalysisRunners: Set[FPCFEagerAnalysisScheduler],
-        lazyAnalysisRunners:  Set[FPCFLazyAnalysisScheduler]  = Set.empty
+        lazyAnalysisRunners:  Set[FPCFLazyLikeAnalysisScheduler] = Set.empty
     ): TestContext = {
         val p = FixtureProject.recreate { piKeyUnidueId ⇒
             piKeyUnidueId != PropertyStoreKey.uniqueId
@@ -314,7 +314,7 @@ abstract class PropertiesTest extends FunSpec with Matchers {
         ps.setupPhase((eagerAnalysisRunners ++ lazyAnalysisRunners).flatMap(_.derives.map(_.pk)))
         val las = lazyAnalysisRunners.map { ar ⇒
             ar.beforeSchedule(ps)
-            ar.startLazily(p, ps, initInfo(ar).asInstanceOf[ar.InitializationData])
+            ar.schedule(ps, initInfo(ar).asInstanceOf[ar.InitializationData])
         }
         val as = eagerAnalysisRunners.map { ar ⇒
             ar.beforeSchedule(ps)

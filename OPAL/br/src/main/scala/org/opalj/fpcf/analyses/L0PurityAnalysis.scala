@@ -351,7 +351,7 @@ object LazyL0PurityAnalysis
 
     override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 
-    override def startLazily(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+    override def register(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new L0PurityAnalysis(p)
         ps.registerLazyPropertyComputation(Purity.key, analysis.doDeterminePurity)
         analysis

@@ -80,14 +80,11 @@ sealed trait ClassImmutability
     extends OrderedProperty
     with ClassImmutabilityPropertyMetaInformation {
 
-    /**
-     * Returns the key used by all `ClassImmutability` properties.
-     */
-    final def key = ClassImmutability.key
+    final def key: PropertyKey[ClassImmutability] = ClassImmutability.key
 
     def correspondingTypeImmutability: TypeImmutability
 
-    /** `true` if instances of the class are mutable */
+    /** `true` if instances of the class are mutable. */
     def isMutable: Boolean
 }
 /**
@@ -99,7 +96,7 @@ object ClassImmutability extends ClassImmutabilityPropertyMetaInformation {
      * The key associated with every [[ClassImmutability]] property.
      */
     final val key: PropertyKey[ClassImmutability] = PropertyKey.create(
-        "org.opalj.ClassImmutability",
+        "opalj.ClassImmutability",
         MutableObjectDueToUnresolvableDependency
     )
 }

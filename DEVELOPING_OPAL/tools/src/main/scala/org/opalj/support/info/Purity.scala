@@ -50,6 +50,7 @@ import org.opalj.fpcf.properties.ImpureByAnalysis
 import org.opalj.fpcf.properties.ImpureByLackOfInformation
 import org.opalj.fpcf.properties.Pure
 import org.opalj.fpcf.properties.SideEffectFree
+import org.opalj.fpcf.FPCFAnalysisScheduler
 import org.opalj.fpcf.AnalysisScenario
 import org.opalj.fpcf.FinalEP
 import org.opalj.bytecode.JRELibraryFolder
@@ -62,9 +63,10 @@ import org.opalj.ai.domain
 import org.opalj.ai.Domain
 import org.opalj.ai.common.SimpleAIKey
 import org.opalj.ai.domain.RecordDefUse
+import org.opalj.ai.fpcf.analyses.LazyL0BaseAIResultAnalysis
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.tac.DefaultTACAIKey
-import org.opalj.tac.fpcf.analyses.LazyL0TACAIAnalysis
+import org.opalj.tac.fpcf.analyses.TACAITransformer
 
 /**
  * Executes a purity analysis (L2 by default) along with necessary supporting analysis.
@@ -92,18 +94,19 @@ object Purity {
     }
 
     val supportingAnalyses = IndexedSeq(
-        List[FPCFLazyAnalysisScheduler { type InitializationData = Null }](
+        List[FPCFAnalysisScheduler](
             LazyL0FieldMutabilityAnalysis,
             LazyClassImmutabilityAnalysis,
             LazyTypeImmutabilityAnalysis
         ),
-        List[FPCFLazyAnalysisScheduler { type InitializationData = Null }](
+        List[FPCFAnalysisScheduler](
             LazyL1FieldMutabilityAnalysis,
             LazyClassImmutabilityAnalysis,
             LazyTypeImmutabilityAnalysis
         ),
-        List[FPCFLazyAnalysisScheduler { type InitializationData = Null }](
-            LazyL0TACAIAnalysis,
+        List[FPCFAnalysisScheduler](
+            LazyL0BaseAIResultAnalysis,
+            TACAITransformer, //LazyL0TACAIAnalysis,
             LazyL0CompileTimeConstancyAnalysis,
             LazyStaticDataUsageAnalysis,
             LazyVirtualMethodStaticDataUsageAnalysis,
@@ -122,7 +125,7 @@ object Purity {
         cp:                    File,
         projectDir:            Option[String],
         libDir:                Option[String],
-        analysis:              FPCFLazyAnalysisScheduler { type InitializationData = Null },
+        analysis:              FPCFLazyAnalysisScheduler,
         domain:                Class[_ <: Domain with RecordDefUse],
         rater:                 DomainSpecificRater,
         withoutJDK:            Boolean,
@@ -210,15 +213,17 @@ object Purity {
                 yield declaredMethods(m)
 
         time {
-            val as = AnalysisScenario(support) += LazyVirtualMethodPurityAnalysis
+            val as = AnalysisScenario(support) += LazyVirtualMethodPurityAnalysis += analysis
             val schedule = as.computeSchedule(project.logContext)
             schedule(
                 ps,
                 trace = true,
-                afterPhaseScheduling = (phaseConfiguration) ⇒ {
-                    if (phaseConfiguration.contains(LazyVirtualMethodPurityAnalysis))
-                        projMethods foreach { dm ⇒ ps.force(dm, fpcf.properties.Purity.key) }
-                }
+                afterPhaseScheduling =
+                    computationSpecifications ⇒ {
+                        if (computationSpecifications.contains(LazyVirtualMethodPurityAnalysis)) {
+                            projMethods foreach { dm ⇒ ps.force(dm, fpcf.properties.Purity.key) }
+                        }
+                    }
             )
         } { t ⇒ analysisTime = t.toSeconds }
         ps.shutdown()
@@ -422,7 +427,7 @@ object Purity {
             return ;
         }
 
-        val analysis: FPCFLazyAnalysisScheduler { type InitializationData = Null } = analysisName match {
+        val analysis: FPCFLazyAnalysisScheduler = analysisName match {
             case Some("L0")        ⇒ LazyL0PurityAnalysis
             case Some("L1")        ⇒ LazyL1PurityAnalysis
             case None | Some("L2") ⇒ LazyL2PurityAnalysis

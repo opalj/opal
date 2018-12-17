@@ -44,14 +44,15 @@ import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.cg.IsOverridableMethodKey
-import org.opalj.tac.DefaultTACAIKey
+import org.opalj.ai.fpcf.analyses.LazyL0BaseAIResultAnalysis
 import org.opalj.tac.DUVar
 import org.opalj.tac.ExprStmt
 import org.opalj.tac.NonVirtualFunctionCall
 import org.opalj.tac.StaticFunctionCall
-import org.opalj.tac.TACMethodParameter
 import org.opalj.tac.TACode
 import org.opalj.tac.VirtualFunctionCall
+import org.opalj.tac.fpcf.analyses.TACAITransformer
+import org.opalj.tac.fpcf.properties.TACAI
 
 /**
  * Identifies calls to pure/side-effect free methods where the results are not used subsequently.
@@ -76,12 +77,13 @@ object UnusedResults extends DefaultOneStepAnalysis {
         val issues = new ConcurrentLinkedQueue[String]
 
         implicit val p: SomeProject = project
-        implicit val propertyStore: PropertyStore = project.get(PropertyStoreKey)
-        implicit val tacai: Method ⇒ TACode[TACMethodParameter, V] = project.get(DefaultTACAIKey)
+        implicit val ps: PropertyStore = project.get(PropertyStoreKey)
         implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
         implicit val isMethodOverridable: Method ⇒ Answer = project.get(IsOverridableMethodKey)
 
         project.get(FPCFAnalysesManagerKey).runAll(
+            LazyL0BaseAIResultAnalysis,
+            TACAITransformer,
             LazyL0CompileTimeConstancyAnalysis,
             LazyStaticDataUsageAnalysis,
             LazyVirtualMethodStaticDataUsageAnalysis,
@@ -97,27 +99,30 @@ object UnusedResults extends DefaultOneStepAnalysis {
             EagerL2PurityAnalysis
         )
 
-        project.parForeachMethodWithBody() { methodInfo ⇒
-            val method = methodInfo.method
-            issues.addAll(
-                analyzeMethod(method).asJava
-            )
+        project.parForeachMethodWithBody() { mi ⇒
+            val method = mi.method
+            val tacai = (m: Method) ⇒ { val FinalP(taCode) = ps(method, TACAI.key); taCode.tac }
+            issues.addAll(analyzeMethod(method, tacai = tacai).asJava)
         }
 
         BasicReport(issues.asScala)
     }
 
     def analyzeMethod(
-        method: Method
+        method: Method,
+        tacai:  Method ⇒ Option[TACode[_, V]]
     )(
         implicit
         project:             SomeProject,
         propertyStore:       PropertyStore,
-        tacai:               Method ⇒ TACode[_, V],
         declaredMethods:     DeclaredMethods,
         isMethodOverridable: Method ⇒ Answer
     ): Seq[String] = {
-        val code = tacai(method).stmts
+        val taCodeOption = tacai(method)
+        if (taCodeOption.isEmpty)
+            return Nil;
+
+        val code = taCodeOption.get.stmts
 
         val issues = code collect {
             case ExprStmt(_, call: StaticFunctionCall[V]) ⇒

@@ -201,6 +201,10 @@ final class Field private[br] (
     def toJava(message: String): String = {
         s"${declaringClassFile.thisType.toJava}{ ${signatureToJava(true)} $message }"
     }
+
+    override def toString(): String = {
+        super.toString()+" // in "+declaringClassFile.thisType.toJava
+    }
 }
 
 /**

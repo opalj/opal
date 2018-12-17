@@ -51,7 +51,6 @@ import org.opalj.br.Field
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
-import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.ai.isImmediateVMException
 import org.opalj.tac.ArrayStore
@@ -93,7 +92,9 @@ import org.opalj.tac.fpcf.properties.TACAI
  *       as `ExternallyPure`.
  * @author Dominik Helm
  */
-class L2PurityAnalysis private[analyses] (val project: SomeProject) extends AbstractPurityAnalysis {
+class L2PurityAnalysis private[analyses] (
+        val project: SomeProject
+) extends AbstractPurityAnalysis {
 
     /**
      * Holds the state of this analysis.
@@ -1011,7 +1012,7 @@ object L2PurityAnalysis {
     }
 }
 
-trait L2PurityAnalysisScheduler extends ComputationSpecification {
+trait L2PurityAnalysisScheduler extends FPCFAnalysisScheduler {
 
     final def derivedProperty: PropertyBounds = PropertyBounds.lub(Purity)
 
@@ -1028,23 +1029,31 @@ trait L2PurityAnalysisScheduler extends ComputationSpecification {
         )
     }
 
+    override type InitializationData = L2PurityAnalysis
+    override def init(p: SomeProject, ps: PropertyStore): InitializationData = {
+        new L2PurityAnalysis(p)
+    }
+    override def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
+    override def afterPhaseCompletion(p: SomeProject, ps: PropertyStore): Unit = {}
+
 }
 
 object EagerL2PurityAnalysis
     extends L2PurityAnalysisScheduler
-    with BasicFPCFEagerAnalysisScheduler {
+    with FPCFEagerAnalysisScheduler {
 
     override def derivesCollaboratively: Set[PropertyBounds] = Set.empty
 
     override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
 
-    override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
-        val analysis = new L2PurityAnalysis(p)
-        val dms = p.get(DeclaredMethodsKey).declaredMethods
-        val methodsWithBody = dms.collect {
-            case dm if dm.hasSingleDefinedMethod && dm.definedMethod.body.isDefined ⇒ dm.asDefinedMethod
+    override def start(p: SomeProject, ps: PropertyStore, analysis: L2PurityAnalysis): FPCFAnalysis = {
+        val methodsWithBody = analysis.declaredMethods.declaredMethods collect {
+            case dm if {
+                dm.hasSingleDefinedMethod && dm.definedMethod.body.isDefined
+            } ⇒ dm.asDefinedMethod
         }
-        ps.scheduleEagerComputationsForEntities(methodsWithBody.filterNot(analysis.configuredPurity.wasSet))(
+        import analysis.configuredPurity
+        ps.scheduleEagerComputationsForEntities(methodsWithBody.filterNot(configuredPurity.wasSet))(
             analysis.determinePurity
         )
         analysis
@@ -1053,12 +1062,15 @@ object EagerL2PurityAnalysis
 
 object LazyL2PurityAnalysis
     extends L2PurityAnalysisScheduler
-    with BasicFPCFLazyAnalysisScheduler {
+    with FPCFLazyAnalysisScheduler {
 
     override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 
-    override def startLazily(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
-        val analysis = new L2PurityAnalysis(p)
+    override def register(
+        p:        SomeProject,
+        ps:       PropertyStore,
+        analysis: L2PurityAnalysis
+    ): FPCFAnalysis = {
         ps.registerLazyPropertyComputation(Purity.key, analysis.doDeterminePurity)
         analysis
     }

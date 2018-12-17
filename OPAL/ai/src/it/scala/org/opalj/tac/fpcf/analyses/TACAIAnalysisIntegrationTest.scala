@@ -10,6 +10,7 @@ import org.junit.runner.RunWith
 import org.scalatest.FunSpec
 import org.scalatest.Matchers
 import org.scalatest.junit.JUnitRunner
+
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.TestSupport
 import org.opalj.ai.fpcf.properties.BaseAIResult
@@ -18,6 +19,7 @@ import org.opalj.fpcf.FPCFAnalysesManagerKey
 import org.opalj.fpcf.PropertyStoreKey
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.util.PerformanceEvaluation.time
+import org.opalj.ai.fpcf.analyses.LazyL0BaseAIResultAnalysis
 
 /**
  * Tests that all methods of OPAL's test projects + the JDK can be converted to the ai-based
@@ -38,8 +40,11 @@ class TACAIAnalysisIntegrationTest extends FunSpec with Matchers {
             val counter = new AtomicInteger()
             val ps = p.get(PropertyStoreKey)
             ps.setupPhase(Set(BaseAIResult, TACAI), Set.empty)
-            LazyL0TACAIAnalysis.init(ps)
-            LazyL0TACAIAnalysis.schedule(ps, null)
+            // LazyL0TACAIAnalysis.init(ps)
+            // LazyL0TACAIAnalysis.schedule(ps, null)
+            LazyL0BaseAIResultAnalysis.register(p,ps,null)
+            TACAITransformer.init(ps)
+            TACAITransformer.register(p,ps,null)
             try {
                 p.parForeachMethodWithBody() { mi ⇒
                     counter.incrementAndGet() % 3 match {

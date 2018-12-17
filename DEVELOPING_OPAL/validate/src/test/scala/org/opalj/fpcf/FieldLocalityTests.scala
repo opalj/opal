@@ -12,12 +12,15 @@ import org.opalj.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
 import org.opalj.fpcf.analyses.LazyVirtualCallAggregatingEscapeAnalysis
 import org.opalj.fpcf.analyses.LazyVirtualReturnValueFreshnessAnalysis
 import org.opalj.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
+import org.opalj.ai.fpcf.analyses.LazyL0BaseAIResultAnalysis
 import org.opalj.tac.fpcf.analyses.LazyL0TACAIAnalysis
+import org.opalj.tac.fpcf.analyses.TACAITransformer
 
 class FieldLocalityTests extends PropertiesTest {
 
-    val lazyAnalysisSchedulers = Set[FPCFLazyAnalysisScheduler](
-        LazyL0TACAIAnalysis,
+    val lazyAnalysisSchedulers = Set[AbstractFPCFLazyLikeAnalysisScheduler](
+        LazyL0BaseAIResultAnalysis,
+        TACAITransformer, //LazyL0TACAIAnalysis,
         LazyInterProceduralEscapeAnalysis,
         LazyVirtualCallAggregatingEscapeAnalysis,
         LazyVirtualReturnValueFreshnessAnalysis,

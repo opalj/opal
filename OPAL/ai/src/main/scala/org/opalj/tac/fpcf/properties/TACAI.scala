@@ -33,10 +33,7 @@ sealed trait TACAIPropertyMetaInformation extends PropertyMetaInformation {
  */
 sealed trait TACAI extends Property with TACAIPropertyMetaInformation {
 
-    /**
-     * Returns the key used by all `BaseAIResult` properties.
-     */
-    final def key = TACAI.key
+    final def key : PropertyKey[TACAI] = TACAI.key
 
     /**
      * @return The three-address code if the method is reachable; `None` otherwise.
@@ -45,7 +42,7 @@ sealed trait TACAI extends Property with TACAIPropertyMetaInformation {
 }
 
 /**
- * Models the TOP of the lattice. Used iff the method is not reachable, which generally requires
+ * Models the top of the lattice; used iff the method is not reachable, which generally requires
  * the computation of a call graph.
  */
 case object NoTACAI extends TACAI {
@@ -67,8 +64,7 @@ object TACAI extends TACAIPropertyMetaInformation {
      * The key associated with every [[TACAI]] property.
      */
     final val key: PropertyKey[TACAI] = PropertyKey.create[Method, TACAI](
-        "org.opalj.tac.AIBasedTAC",
-        // fallback property computation...
+        "org.opalj.tac.fpcf.TACAI",
         (ps: PropertyStore, r: FallbackReason, m: Method) ⇒ {
             r match {
                 case PropertyIsNotDerivedByPreviouslyExecutedAnalysis ⇒

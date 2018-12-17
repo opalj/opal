@@ -172,7 +172,7 @@ object LazyVirtualMethodThrownExceptionsAnalysis
     override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 
     /** Registers an analysis to compute the exceptions thrown by overriding methods lazily. */
-    override def startLazily(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+    override def register(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new VirtualMethodThrownExceptionsAnalysis(p)
         ps.registerLazyPropertyComputation(
             ThrownExceptionsByOverridingMethods.key,

@@ -27,7 +27,9 @@ import org.opalj.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
 import org.opalj.fpcf.analyses.LazyStaticDataUsageAnalysis
 import org.opalj.fpcf.analyses.LazyVirtualMethodStaticDataUsageAnalysis
 import org.opalj.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
+import org.opalj.ai.fpcf.analyses.LazyL0BaseAIResultAnalysis
 import org.opalj.tac.fpcf.analyses.LazyL0TACAIAnalysis
+import org.opalj.tac.fpcf.analyses.TACAITransformer
 
 /**
  * Tests if the properties specified in the test project (the classes in the (sub-)package of
@@ -72,7 +74,8 @@ class PurityTests extends PropertiesTest {
         val as = executeAnalyses(
             Set(EagerL1PurityAnalysis),
             Set(
-                LazyL0TACAIAnalysis,
+                LazyL0BaseAIResultAnalysis,
+                TACAITransformer, // LazyL0TACAIAnalysis,
                 LazyL1FieldMutabilityAnalysis,
                 LazyClassImmutabilityAnalysis,
                 LazyTypeImmutabilityAnalysis,
@@ -88,7 +91,8 @@ class PurityTests extends PropertiesTest {
         val as = executeAnalyses(
             Set(EagerL2PurityAnalysis),
             Set(
-                LazyL0TACAIAnalysis,
+                LazyL0BaseAIResultAnalysis,
+                TACAITransformer, // LazyL0TACAIAnalysis,
                 LazyL0CompileTimeConstancyAnalysis,
                 LazyStaticDataUsageAnalysis,
                 LazyVirtualMethodStaticDataUsageAnalysis,

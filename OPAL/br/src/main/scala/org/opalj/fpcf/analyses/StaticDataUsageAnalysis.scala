@@ -258,9 +258,7 @@ object LazyStaticDataUsageAnalysis
 
     override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 
-    override def startLazily(
-        p: SomeProject, ps: PropertyStore, unused: Null
-    ): FPCFAnalysis = {
+    override def register(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new StaticDataUsageAnalysis(p)
         ps.registerLazyPropertyComputation(StaticDataUsage.key, analysis.doDetermineUsage)
         analysis

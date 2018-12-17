@@ -150,8 +150,7 @@ object DomainRegistry {
         config.getString(configStrategySelectionKey) match {
             case "cheapest" ⇒ selectCheapest(requirements)
             case "best"     ⇒ selectBest(requirements)
-            case s ⇒
-                throw new UnsupportedOperationException(s"the specified strategy is unkonwn: $s")
+            case s          ⇒ throw new UnsupportedOperationException(s"unknown strategy: $s")
         }
     }
 

@@ -8,13 +8,14 @@ import org.scalatest.FunSpec
 import org.scalatest.Matchers
 import org.scalatest.junit.JUnitRunner
 
+import org.opalj.util.Nanoseconds
+import org.opalj.util.PerformanceEvaluation.time
+import org.opalj.fpcf.analyses.escape.EagerSimpleEscapeAnalysis
 import org.opalj.br.TestSupport.allBIProjects
 import org.opalj.br.TestSupport.createJREProject
 import org.opalj.br.analyses.SomeProject
-import org.opalj.fpcf.analyses.escape.EagerSimpleEscapeAnalysis
-import org.opalj.tac.fpcf.analyses.LazyL0TACAIAnalysis
-import org.opalj.util.Nanoseconds
-import org.opalj.util.PerformanceEvaluation.time
+import org.opalj.ai.fpcf.analyses.LazyL0BaseAIResultAnalysis
+import org.opalj.tac.fpcf.analyses.TACAITransformer
 
 /**
  * Tests that the [[EagerSimpleEscapeAnalysis]] does not throw exceptions.
@@ -30,7 +31,12 @@ class SimpleEscapeAnalysisSmokeTest extends FunSpec with Matchers {
         val ps = p.get(PropertyStoreKey)
         try {
             val manager = p.get(FPCFAnalysesManagerKey)
-            manager.runAll(EagerSimpleEscapeAnalysis, LazyL0TACAIAnalysis)
+            manager.runAll(
+                // LazyL0TACAIAnalysis,
+                LazyL0BaseAIResultAnalysis,
+                TACAITransformer,
+                EagerSimpleEscapeAnalysis
+            )
             ps.waitOnPhaseCompletion()
         } finally {
             ps.shutdown()

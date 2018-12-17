@@ -85,7 +85,7 @@ object ImmutabilityAnalysisDemo extends DefaultOneStepAnalysis {
             propertyStore.setupPhase(Set[PropertyKind](
                 FieldMutability.key, ClassImmutability.key, TypeImmutability.key
             ))
-            LazyL0FieldMutabilityAnalysis.startLazily(project, propertyStore, null)
+            LazyL0FieldMutabilityAnalysis.register(project, propertyStore, null)
             EagerClassImmutabilityAnalysis.start(project, propertyStore, null)
             EagerTypeImmutabilityAnalysis.start(project, propertyStore, null)
 

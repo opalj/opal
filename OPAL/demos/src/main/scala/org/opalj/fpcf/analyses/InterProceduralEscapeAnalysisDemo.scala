@@ -5,13 +5,9 @@ package analyses
 
 import java.net.URL
 
-import org.opalj.ai.common.DefinitionSite
-import org.opalj.ai.domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse
-import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
-import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.DefaultOneStepAnalysis
-import org.opalj.br.analyses.Project
-import org.opalj.br.analyses.VirtualFormalParameter
+import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger.info
+import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.fpcf.analyses.escape.EagerInterProceduralEscapeAnalysis
 import org.opalj.fpcf.properties.AtMost
 import org.opalj.fpcf.properties.EscapeInCallee
@@ -27,9 +23,15 @@ import org.opalj.fpcf.properties.EscapeViaReturn
 import org.opalj.fpcf.properties.EscapeViaStaticField
 import org.opalj.fpcf.properties.GlobalEscape
 import org.opalj.fpcf.properties.NoEscape
-import org.opalj.log.OPALLogger.info
-import org.opalj.tac.fpcf.analyses.LazyL0TACAIAnalysis
-import org.opalj.util.PerformanceEvaluation.time
+import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.DefaultOneStepAnalysis
+import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.VirtualFormalParameter
+import org.opalj.ai.common.DefinitionSite
+import org.opalj.ai.domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse
+import org.opalj.ai.fpcf.analyses.LazyL0BaseAIResultAnalysis
+import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
+import org.opalj.tac.fpcf.analyses.TACAITransformer
 
 /**
  * A small demo that shows how to use the
@@ -50,7 +52,7 @@ object InterProceduralEscapeAnalysisDemo extends DefaultOneStepAnalysis {
         parameters:    Seq[String],
         isInterrupted: () ⇒ Boolean
     ): BasicReport = {
-        implicit val logContext = project.logContext
+        implicit val logContext: LogContext = project.logContext
 
         val propertyStore = time {
             val performInvocationsDomain = classOf[DefaultPerformInvocationsDomainWithCFGAndDefUse[_]]
@@ -69,7 +71,9 @@ object InterProceduralEscapeAnalysisDemo extends DefaultOneStepAnalysis {
             val manager = project.get(FPCFAnalysesManagerKey)
             manager.runAll(
                 LazyVirtualCallAggregatingEscapeAnalysis,
-                LazyL0TACAIAnalysis,
+                // LazyL0TACAIAnalysis,
+                LazyL0BaseAIResultAnalysis,
+                TACAITransformer,
                 EagerInterProceduralEscapeAnalysis
             )
         } { t ⇒ info("progress", s"escape analysis took ${t.toSeconds}") }

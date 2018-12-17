@@ -11,6 +11,7 @@ import org.opalj.fpcf.properties.VirtualMethodPurity.VImpureByAnalysis
 import org.opalj.fpcf.properties.VirtualMethodPurity.VImpureByLackOfInformation
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
+import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.SomeProject
 
@@ -104,18 +105,30 @@ trait VirtualMethodPurityAnalysisScheduler extends ComputationSpecification {
 
 object EagerVirtualMethodPurityAnalysis
     extends VirtualMethodPurityAnalysisScheduler
-    with BasicFPCFEagerAnalysisScheduler {
+    with FPCFEagerAnalysisScheduler {
 
     override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
 
     override def derivesCollaboratively: Set[PropertyBounds] = Set.empty
 
-    override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+    override type InitializationData = (DeclaredMethods, ConfiguredPurity)
+
+    override def init(p: SomeProject, ps: PropertyStore): (DeclaredMethods, ConfiguredPurity) = {
+        (p.get(DeclaredMethodsKey), p.get(ConfiguredPurityKey))
+    }
+
+    override def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
+    override def afterPhaseCompletion(p: SomeProject, ps: PropertyStore): Unit = {}
+
+    override def start(
+        p:    SomeProject,
+        ps:   PropertyStore,
+        data: InitializationData
+    ): FPCFAnalysis = {
         val analysis = new VirtualMethodPurityAnalysis(p)
-        val vms = p.get(DeclaredMethodsKey)
-        val configuredPurity = p.get(ConfiguredPurityKey)
+        val (declaredMethods, configuredPurity) = data
         ps.scheduleEagerComputationsForEntities(
-            vms.declaredMethods.filter { dm ⇒
+            declaredMethods.declaredMethods.filter { dm ⇒
                 !configuredPurity.wasSet(dm) && dm.isInstanceOf[DefinedMethod]
             }.map(_.asInstanceOf[DefinedMethod])
         )(analysis.determinePurity)
@@ -129,7 +142,7 @@ object LazyVirtualMethodPurityAnalysis
 
     override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 
-    override def startLazily(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+    override def register(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new VirtualMethodPurityAnalysis(p)
         ps.registerLazyPropertyComputation(VirtualMethodPurity.key, analysis.doDeterminePurity)
         analysis
