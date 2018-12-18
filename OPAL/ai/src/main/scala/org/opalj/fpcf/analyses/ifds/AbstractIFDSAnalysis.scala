@@ -682,7 +682,7 @@ abstract class LazyIFDSAnalysis[DataFlowFact] extends IFDSAnalysisScheduler[Data
      * Registers the analysis as a lazy computation, that is, the method
      * will call `ProperytStore.scheduleLazyComputation`.
      */
-    final override def startLazily(
+    final override def register(
         p:        SomeProject,
         ps:       PropertyStore,
         analysis: AbstractIFDSAnalysis[DataFlowFact]
