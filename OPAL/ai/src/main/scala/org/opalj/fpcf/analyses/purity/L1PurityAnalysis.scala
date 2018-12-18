@@ -396,7 +396,7 @@ object L1PurityAnalysis {
     }
 }
 
-trait L1PurityAnalysisScheduler extends ComputationSpecification[FPCFAnalysis] {
+trait L1PurityAnalysisScheduler extends FPCFAnalysisScheduler {
 
     final def derivedProperty: PropertyBounds = PropertyBounds.lub(Purity)
 
@@ -410,18 +410,27 @@ trait L1PurityAnalysisScheduler extends ComputationSpecification[FPCFAnalysis] {
         )
     }
 
+    override type InitializationData = L1PurityAnalysis
+    override def init(p: SomeProject, ps: PropertyStore): InitializationData = {
+        new L1PurityAnalysis(p)
+    }
+    override def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
+    override def afterPhaseCompletion(p: SomeProject, ps: PropertyStore): Unit = {}
 }
 
 object EagerL1PurityAnalysis
     extends L1PurityAnalysisScheduler
-    with BasicFPCFEagerAnalysisScheduler {
+    with FPCFEagerAnalysisScheduler {
 
     override def derivesCollaboratively: Set[PropertyBounds] = Set.empty
 
     override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
 
-    override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
-        val analysis = new L1PurityAnalysis(p)
+    override def start(
+        p:        SomeProject,
+        ps:       PropertyStore,
+        analysis: L1PurityAnalysis
+    ): FPCFAnalysis = {
         val dms = p.get(DeclaredMethodsKey).declaredMethods
         val methodsWithBody = dms.collect {
             case dm if dm.hasSingleDefinedMethod && dm.definedMethod.body.isDefined ⇒
@@ -435,12 +444,11 @@ object EagerL1PurityAnalysis
 
 object LazyL1PurityAnalysis
     extends L1PurityAnalysisScheduler
-    with BasicFPCFLazyAnalysisScheduler {
+    with FPCFLazyAnalysisScheduler {
 
     override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 
-    override def register(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
-        val analysis = new L1PurityAnalysis(p)
+    override def register(p: SomeProject, ps: PropertyStore, analysis: L1PurityAnalysis): FPCFAnalysis = {
         ps.registerLazyPropertyComputation(Purity.key, analysis.doDeterminePurity)
         analysis
     }
