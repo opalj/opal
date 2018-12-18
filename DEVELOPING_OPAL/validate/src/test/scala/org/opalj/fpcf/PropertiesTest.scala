@@ -289,8 +289,6 @@ abstract class PropertiesTest extends FunSpec with Matchers {
     def executeAnalyses(
         analysisRunners: Iterable[ComputationSpecification[FPCFAnalysis]]
     ): TestContext = {
-        require(analysisRunners.nonEmpty)
-
         val p = FixtureProject.recreate { piKeyUnidueId ⇒
             piKeyUnidueId != PropertyStoreKey.uniqueId
         } // to ensure that this project is not "polluted"
