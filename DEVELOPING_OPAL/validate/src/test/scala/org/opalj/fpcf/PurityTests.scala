@@ -4,9 +4,6 @@ package fpcf
 
 import java.net.URL
 
-import org.opalj.ai.domain.l1
-import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
-import org.opalj.br.analyses.Project
 import org.opalj.concurrent.ConcurrentExceptions
 import org.opalj.fpcf.analyses.EagerL0PurityAnalysis
 import org.opalj.fpcf.analyses.purity.EagerL1PurityAnalysis
@@ -22,13 +19,15 @@ import org.opalj.fpcf.analyses.LazyVirtualCallAggregatingEscapeAnalysis
 import org.opalj.fpcf.analyses.LazyVirtualMethodPurityAnalysis
 import org.opalj.fpcf.analyses.LazyVirtualReturnValueFreshnessAnalysis
 import org.opalj.fpcf.analyses.purity.SystemOutLoggingAllExceptionRater
-import org.opalj.fpcf.analyses.LazyL0FieldMutabilityAnalysis
 import org.opalj.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
+import org.opalj.fpcf.analyses.LazyL0FieldMutabilityAnalysis
 import org.opalj.fpcf.analyses.LazyStaticDataUsageAnalysis
 import org.opalj.fpcf.analyses.LazyVirtualMethodStaticDataUsageAnalysis
 import org.opalj.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
+import org.opalj.br.analyses.Project
+import org.opalj.ai.domain.l1
 import org.opalj.ai.fpcf.analyses.LazyL0BaseAIResultAnalysis
-import org.opalj.tac.fpcf.analyses.LazyL0TACAIAnalysis
+import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.tac.fpcf.analyses.TACAITransformer
 
 /**
