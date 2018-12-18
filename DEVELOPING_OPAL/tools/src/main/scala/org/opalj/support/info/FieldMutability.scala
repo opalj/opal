@@ -17,7 +17,7 @@ import org.opalj.fpcf.properties.LazyInitializedField
 import org.opalj.fpcf.properties.EffectivelyFinalField
 import org.opalj.fpcf.properties.NonFinalFieldByAnalysis
 import org.opalj.fpcf.properties.NonFinalFieldByLackOfInformation
-import org.opalj.ai.fpcf.analyses.LazyL0BaseAIResultAnalysis
+import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
 import org.opalj.tac.fpcf.analyses.TACAITransformer
 //import org.opalj.tac.fpcf.analyses.LazyL0TACAIAnalysis
 
@@ -41,7 +41,7 @@ object FieldMutability extends DefaultOneStepAnalysis {
     ): BasicReport = {
 
         val (ps, _ /*executed analyses*/ ) = project.get(FPCFAnalysesManagerKey).runAll(
-            LazyL0BaseAIResultAnalysis,
+            LazyL0BaseAIAnalysis,
             //LazyL0TACAIAnalysis, // <= Works, but is less efficient as long as it is not required
             TACAITransformer,
             LazyInterProceduralEscapeAnalysis,

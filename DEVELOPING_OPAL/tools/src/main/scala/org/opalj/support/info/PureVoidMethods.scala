@@ -28,7 +28,7 @@ import org.opalj.fpcf.properties.Pure
 import org.opalj.fpcf.properties.SideEffectFree
 import org.opalj.fpcf.properties.CompileTimePure
 import org.opalj.fpcf.FinalEP
-import org.opalj.ai.fpcf.analyses.LazyL0BaseAIResultAnalysis
+import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
 import org.opalj.tac.fpcf.analyses.TACAITransformer
 
 /**
@@ -51,7 +51,7 @@ object PureVoidMethods extends DefaultOneStepAnalysis {
         val propertyStore = project.get(PropertyStoreKey)
 
         project.get(FPCFAnalysesManagerKey).runAll(
-            LazyL0BaseAIResultAnalysis,
+            LazyL0BaseAIAnalysis,
             TACAITransformer,
             LazyL0CompileTimeConstancyAnalysis,
             LazyStaticDataUsageAnalysis,

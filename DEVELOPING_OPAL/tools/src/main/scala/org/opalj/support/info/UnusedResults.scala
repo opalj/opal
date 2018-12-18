@@ -44,7 +44,7 @@ import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.cg.IsOverridableMethodKey
-import org.opalj.ai.fpcf.analyses.LazyL0BaseAIResultAnalysis
+import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
 import org.opalj.tac.DUVar
 import org.opalj.tac.ExprStmt
 import org.opalj.tac.NonVirtualFunctionCall
@@ -82,7 +82,7 @@ object UnusedResults extends DefaultOneStepAnalysis {
         implicit val isMethodOverridable: Method ⇒ Answer = project.get(IsOverridableMethodKey)
 
         project.get(FPCFAnalysesManagerKey).runAll(
-            LazyL0BaseAIResultAnalysis,
+            LazyL0BaseAIAnalysis,
             TACAITransformer,
             LazyL0CompileTimeConstancyAnalysis,
             LazyStaticDataUsageAnalysis,

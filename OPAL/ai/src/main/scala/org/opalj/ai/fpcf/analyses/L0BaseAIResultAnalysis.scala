@@ -96,7 +96,7 @@ object EagerL0BaseAIAnalysis
     }
 }
 
-object LazyL0BaseAIResultAnalysis
+object LazyL0BaseAIAnalysis
     extends L0BaseAIResultAnalysisScheduler
     with BasicFPCFLazyAnalysisScheduler {
 

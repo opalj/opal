@@ -26,7 +26,7 @@ import org.opalj.fpcf.analyses.LazyVirtualMethodStaticDataUsageAnalysis
 import org.opalj.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.ai.domain.l1
-import org.opalj.ai.fpcf.analyses.LazyL0BaseAIResultAnalysis
+import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.tac.fpcf.analyses.TACAITransformer
 
@@ -72,7 +72,7 @@ class PurityTests extends PropertiesTest {
         val as = executeAnalyses(
             EagerL1PurityAnalysis,
             // Lazy ones
-            LazyL0BaseAIResultAnalysis,
+            LazyL0BaseAIAnalysis,
             TACAITransformer, // LazyL0TACAIAnalysis,
             LazyL1FieldMutabilityAnalysis,
             LazyClassImmutabilityAnalysis,
@@ -88,7 +88,7 @@ class PurityTests extends PropertiesTest {
         val as = executeAnalyses(
             EagerL2PurityAnalysis,
             // Lazy analyses
-            LazyL0BaseAIResultAnalysis,
+            LazyL0BaseAIAnalysis,
             TACAITransformer, // LazyL0TACAIAnalysis,
             LazyL0CompileTimeConstancyAnalysis,
             LazyStaticDataUsageAnalysis,
