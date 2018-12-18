@@ -30,14 +30,16 @@ sealed abstract class PropertyStoreTest(
     propertyComputationHints foreach { pch ⇒
         describe(s"using a PropertyStore (property computations use the hint=$pch)") {
 
-            import org.opalj.fpcf.fixtures.Palindromes.NoAnalysisForPalindromeProperty
-            import org.opalj.fpcf.fixtures.Palindromes.NoPalindrome
-            import org.opalj.fpcf.fixtures.Palindromes.NoSuperPalindrome
-            import org.opalj.fpcf.fixtures.Palindromes.Palindrome
-            import org.opalj.fpcf.fixtures.Palindromes.PalindromeKey
-            import org.opalj.fpcf.fixtures.Palindromes.PalindromePropertyNotAnalyzed
-            import org.opalj.fpcf.fixtures.Palindromes.SuperPalindrome
-            import org.opalj.fpcf.fixtures.Palindromes.SuperPalindromeKey
+            import Palindromes.NoAnalysisForPalindromeProperty
+            import Palindromes.NoPalindrome
+            import Palindromes.NoSuperPalindrome
+            import Palindromes.Palindrome
+            import Palindromes.PalindromeKey
+            import Palindromes.PalindromePropertyNotAnalyzed
+            import Palindromes.SuperPalindrome
+            import Palindromes.SuperPalindromeKey
+            import Palindromes.PalindromeFragmentsKey
+            import Palindromes.PalindromeFragments
 
             it("should be possible to query an empty property") {
                 val ps = createPropertyStore()
@@ -133,7 +135,6 @@ sealed abstract class PropertyStoreTest(
                 "while e1 was not yet executed but had an EPK for e2 in its dependencies "+
                 "(test for a lost updated)") {
 
-                import org.opalj.fpcf.fixtures.Palindromes.PalindromeKey
                 val ps = createPropertyStore()
                 info(s"PropertyStore@${System.identityHashCode(ps).toHexString}")
 
@@ -344,9 +345,6 @@ sealed abstract class PropertyStoreTest(
                 val ps = createPropertyStore()
                 info(s"PropertyStore@${System.identityHashCode(ps).toHexString}")
 
-                import org.opalj.fpcf.fixtures.Palindromes.NoPalindrome
-                import org.opalj.fpcf.fixtures.Palindromes.Palindrome
-
                 ps.set("aba", Palindrome)
                 assertThrows[IllegalStateException] { ps.set("aba", NoPalindrome) }
 
@@ -418,8 +416,6 @@ sealed abstract class PropertyStoreTest(
                 val ps = createPropertyStore()
                 info(s"PropertyStore@${System.identityHashCode(ps).toHexString}")
 
-                import org.opalj.fpcf.fixtures.Palindromes.NoPalindrome
-                import org.opalj.fpcf.fixtures.Palindromes.Palindrome
                 val pk = Palindromes.PalindromeKey
                 ps.setupPhase(Set(pk), Set.empty)
 
@@ -533,6 +529,56 @@ sealed abstract class PropertyStoreTest(
                     FinalEP("dummyBADymmud", NoSuperPalindrome)
                 )
 
+                ps.shutdown()
+            }
+
+            it("should correctly handle PartialResults") {
+                val ps = createPropertyStore()
+                info(s"PropertyStore@${System.identityHashCode(ps).toHexString}")
+
+                ps.set("aBa", Palindrome)
+                ps.set("aNOa", NoPalindrome)
+
+                ps.setupPhase(Set(PalindromeKey, PalindromeFragmentsKey), Set.empty)
+
+                ps.registerTriggeredComputation(
+                    PalindromeKey,
+                    (e: Entity) ⇒ {
+                        PartialResult(
+                            "fragments",
+                            PalindromeFragmentsKey,
+                            (eOptionP: EOptionP[Entity, PalindromeFragments]) ⇒
+                                (eOptionP: @unchecked) match {
+                                    case _: EPK[_, _] ⇒
+                                        Some(
+                                            InterimEUBP(
+                                                "fragments",
+                                                PalindromeFragments(Set(e.toString.substring(0, 1)))
+                                            )
+                                        )
+                                    case InterimUBP(PalindromeFragments(fs)) ⇒
+                                        val newFs = fs + e.toString.substring(0, 1)
+                                        if (newFs != fs)
+                                            Some(InterimEUBP("fragments", PalindromeFragments(newFs)))
+                                        else
+                                            None
+                                }
+                        )
+                    }
+                )
+
+                ps.scheduleEagerComputationsForEntities(List("eBe", "eNOe"))(
+                    (e: Entity) ⇒ {
+                        val s = e.toString
+                        Result(e, if (s.reverse == s) Palindrome else NoPalindrome)
+                    }
+                )
+
+                ps.waitOnPhaseCompletion()
+
+                ps("fragments", PalindromeFragmentsKey) should be(
+                    FinalEP("fragments", PalindromeFragments(Set("a", "e")))
+                )
                 ps.shutdown()
             }
 
@@ -1461,7 +1507,7 @@ sealed abstract class PropertyStoreTest(
 
                     def purityAnalysis(node: Node): PropertyComputationResult = {
                         def c(successorNode: SomeEOptionP): ProperPropertyComputationResult = {
-                            // HERE - For this test case only, we can simple get to the previous
+                            // HERE - for this test case only - we can simply get the previous
                             // node from the one that was updated.
                             (successorNode: @unchecked) match {
                                 case epk: EPK[_, _] ⇒
@@ -1503,9 +1549,6 @@ sealed abstract class PropertyStoreTest(
                     )
                 }
             }
-
-            // TODO Add tests related to collaboratively computed properties including pre-initialized values!
-
         }
     }
 }
