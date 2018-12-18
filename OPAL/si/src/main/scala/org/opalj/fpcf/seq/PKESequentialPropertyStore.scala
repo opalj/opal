@@ -615,6 +615,8 @@ final class PKESequentialPropertyStore private (
     override protected[this] def isIdle: Boolean = tasks.size == 0
 
     override def waitOnPhaseCompletion(): Unit = handleExceptions {
+        require(subPhaseId == 0, "unpaired waitOnPhaseCompletion call")
+
         val maxPKIndex = PropertyKey.maxId
         var continueComputation: Boolean = false
         // We need a consistent interrupt state for fallback
