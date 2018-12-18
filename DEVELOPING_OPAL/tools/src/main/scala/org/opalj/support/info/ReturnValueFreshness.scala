@@ -48,7 +48,7 @@ object ReturnValueFreshness extends DefaultOneStepAnalysis {
         isInterrupted: () ⇒ Boolean
     ): BasicReport = {
 
-        val ps = project.get(FPCFAnalysesManagerKey).runAll(
+        val (ps, _ /*executed analyses*/ ) = project.get(FPCFAnalysesManagerKey).runAll(
             LazyL0BaseAIResultAnalysis,
             TACAITransformer, // LazyL0TACAIAnalysis,
             LazyInterProceduralEscapeAnalysis,

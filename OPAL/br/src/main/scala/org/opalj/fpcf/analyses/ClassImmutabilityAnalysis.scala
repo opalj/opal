@@ -379,7 +379,7 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
     }
 }
 
-trait ClassImmutabilityAnalysisScheduler extends ComputationSpecification {
+trait ClassImmutabilityAnalysisScheduler extends ComputationSpecification[FPCFAnalysis] {
 
     final def derivedProperty: PropertyBounds = PropertyBounds.lub(ClassImmutability)
 

@@ -88,7 +88,7 @@ class VirtualMethodAllocationFreenessAnalysis private[analyses] ( final val proj
 
 }
 
-trait VirtualMethodAllocationFreenessAnalysisScheduler extends ComputationSpecification {
+trait VirtualMethodAllocationFreenessAnalysisScheduler extends ComputationSpecification[FPCFAnalysis] {
 
     final def derivedProperty: PropertyBounds = {
         PropertyBounds.lub(VirtualMethodAllocationFreeness)

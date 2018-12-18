@@ -40,7 +40,7 @@ object FieldMutability extends DefaultOneStepAnalysis {
         isInterrupted: () ⇒ Boolean
     ): BasicReport = {
 
-        val ps = project.get(FPCFAnalysesManagerKey).runAll(
+        val (ps, _ /*executed analyses*/ ) = project.get(FPCFAnalysesManagerKey).runAll(
             LazyL0BaseAIResultAnalysis,
             //LazyL0TACAIAnalysis, // <= Works, but is less efficient as long as it is not required
             TACAITransformer,

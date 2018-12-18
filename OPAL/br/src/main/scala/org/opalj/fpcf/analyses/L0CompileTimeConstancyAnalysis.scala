@@ -86,7 +86,7 @@ class L0CompileTimeConstancyAnalysis private[analyses] ( final val project: Some
     }
 }
 
-trait L0CompileTimeConstancyAnalysisScheduler extends ComputationSpecification {
+trait L0CompileTimeConstancyAnalysisScheduler extends ComputationSpecification[FPCFAnalysis] {
 
     final def derivedProperty: PropertyBounds = PropertyBounds.lub(CompileTimeConstancy)
 

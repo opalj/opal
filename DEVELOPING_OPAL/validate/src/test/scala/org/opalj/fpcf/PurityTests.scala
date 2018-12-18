@@ -52,12 +52,11 @@ class PurityTests extends PropertiesTest {
     describe("the org.opalj.fpcf.analyses.L0PurityAnalysis is executed") {
         val as = try {
             executeAnalyses(
-                Set(EagerL0PurityAnalysis),
-                Set(
-                    LazyL0FieldMutabilityAnalysis,
-                    LazyClassImmutabilityAnalysis,
-                    LazyTypeImmutabilityAnalysis
-                )
+                EagerL0PurityAnalysis,
+                LazyL0FieldMutabilityAnalysis,
+                LazyClassImmutabilityAnalysis,
+                LazyTypeImmutabilityAnalysis
+
             )
         } catch {
             case ce: ConcurrentExceptions ⇒
@@ -71,15 +70,14 @@ class PurityTests extends PropertiesTest {
     describe("the org.opalj.fpcf.analyses.L1PurityAnalysis is executed") {
         L1PurityAnalysis.setRater(Some(SystemOutLoggingAllExceptionRater))
         val as = executeAnalyses(
-            Set(EagerL1PurityAnalysis),
-            Set(
-                LazyL0BaseAIResultAnalysis,
-                TACAITransformer, // LazyL0TACAIAnalysis,
-                LazyL1FieldMutabilityAnalysis,
-                LazyClassImmutabilityAnalysis,
-                LazyTypeImmutabilityAnalysis,
-                LazyVirtualMethodPurityAnalysis
-            )
+            EagerL1PurityAnalysis,
+            // Lazy ones
+            LazyL0BaseAIResultAnalysis,
+            TACAITransformer, // LazyL0TACAIAnalysis,
+            LazyL1FieldMutabilityAnalysis,
+            LazyClassImmutabilityAnalysis,
+            LazyTypeImmutabilityAnalysis,
+            LazyVirtualMethodPurityAnalysis
         )
         as.propertyStore.shutdown()
         validateProperties(as, declaredMethodsWithAnnotations(as.project), Set("Purity"))
@@ -88,23 +86,22 @@ class PurityTests extends PropertiesTest {
     describe("the org.opalj.fpcf.analyses.L2PurityAnalysis is executed") {
         L2PurityAnalysis.setRater(Some(SystemOutLoggingAllExceptionRater))
         val as = executeAnalyses(
-            Set(EagerL2PurityAnalysis),
-            Set(
-                LazyL0BaseAIResultAnalysis,
-                TACAITransformer, // LazyL0TACAIAnalysis,
-                LazyL0CompileTimeConstancyAnalysis,
-                LazyStaticDataUsageAnalysis,
-                LazyVirtualMethodStaticDataUsageAnalysis,
-                LazyInterProceduralEscapeAnalysis,
-                LazyVirtualCallAggregatingEscapeAnalysis,
-                LazyReturnValueFreshnessAnalysis,
-                LazyVirtualReturnValueFreshnessAnalysis,
-                LazyFieldLocalityAnalysis,
-                LazyL1FieldMutabilityAnalysis,
-                LazyClassImmutabilityAnalysis,
-                LazyTypeImmutabilityAnalysis,
-                LazyVirtualMethodPurityAnalysis
-            )
+            EagerL2PurityAnalysis,
+            // Lazy analyses
+            LazyL0BaseAIResultAnalysis,
+            TACAITransformer, // LazyL0TACAIAnalysis,
+            LazyL0CompileTimeConstancyAnalysis,
+            LazyStaticDataUsageAnalysis,
+            LazyVirtualMethodStaticDataUsageAnalysis,
+            LazyInterProceduralEscapeAnalysis,
+            LazyVirtualCallAggregatingEscapeAnalysis,
+            LazyReturnValueFreshnessAnalysis,
+            LazyVirtualReturnValueFreshnessAnalysis,
+            LazyFieldLocalityAnalysis,
+            LazyL1FieldMutabilityAnalysis,
+            LazyClassImmutabilityAnalysis,
+            LazyTypeImmutabilityAnalysis,
+            LazyVirtualMethodPurityAnalysis
         )
         as.propertyStore.shutdown()
         validateProperties(as, declaredMethodsWithAnnotations(as.project), Set("Purity"))

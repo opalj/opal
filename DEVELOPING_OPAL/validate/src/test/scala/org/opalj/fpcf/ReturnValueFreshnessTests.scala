@@ -19,17 +19,18 @@ import org.opalj.tac.fpcf.analyses.TACAITransformer
  */
 class ReturnValueFreshnessTests extends PropertiesTest {
 
-    val lazyAnalysisSchedulers = Set[FPCFLazyLikeAnalysisScheduler](
+    val analysisSchedulers = Set[FPCFAnalysisScheduler](
         LazyL0BaseAIResultAnalysis,
         TACAITransformer, // LazyL0TACAIAnalysis,
         LazyInterProceduralEscapeAnalysis,
         LazyVirtualCallAggregatingEscapeAnalysis,
         LazyVirtualReturnValueFreshnessAnalysis,
-        LazyFieldLocalityAnalysis
+        LazyFieldLocalityAnalysis,
+        EagerReturnValueFreshnessAnalysis
     )
 
     describe("return value freshness analysis is executed") {
-        val as = executeAnalyses(Set(EagerReturnValueFreshnessAnalysis), lazyAnalysisSchedulers)
+        val as = executeAnalyses(analysisSchedulers)
         as.propertyStore.shutdown()
         validateProperties(
             as,

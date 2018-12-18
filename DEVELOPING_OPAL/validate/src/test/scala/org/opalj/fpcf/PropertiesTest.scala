@@ -124,8 +124,9 @@ abstract class PropertiesTest extends FunSpec with Matchers {
         eas:           TraversableOnce[(Entity, /*the processed annotation*/ String ⇒ String /* a String identifying the entity */ , Traversable[AnnotationLike])],
         propertyKinds: Set[String]
     ): Unit = {
-        val TestContext(p: Project[URL], ps: PropertyStore, as: Set[FPCFAnalysis]) = context
-        val ats = as.map(a ⇒ ObjectType(a.getClass.getName.replace('.', '/')))
+        val TestContext(p: Project[URL], ps: PropertyStore, as: List[FPCFAnalysis]) = context
+        val ats =
+            as.map(a ⇒ ObjectType(a.getClass.getName.replace('.', '/'))).toSet
 
         for {
             (e, entityIdentifier, annotations) ← eas
@@ -280,9 +281,16 @@ abstract class PropertiesTest extends FunSpec with Matchers {
     def init(p: Project[URL]): Unit = {}
 
     def executeAnalyses(
-        eagerAnalysisRunners: Set[FPCFEagerAnalysisScheduler],
-        lazyAnalysisRunners:  Set[FPCFLazyLikeAnalysisScheduler] = Set.empty
+        analysisRunners: ComputationSpecification[FPCFAnalysis]*
     ): TestContext = {
+        executeAnalyses(analysisRunners.toIterable)
+    }
+
+    def executeAnalyses(
+        analysisRunners: Iterable[ComputationSpecification[FPCFAnalysis]]
+    ): TestContext = {
+        require(analysisRunners.nonEmpty)
+
         val p = FixtureProject.recreate { piKeyUnidueId ⇒
             piKeyUnidueId != PropertyStoreKey.uniqueId
         } // to ensure that this project is not "polluted"
@@ -307,31 +315,13 @@ abstract class PropertiesTest extends FunSpec with Matchers {
 
         val ps = p.get(PropertyStoreKey)
 
-        val initInfo = (eagerAnalysisRunners ++ lazyAnalysisRunners).map { cs ⇒
-            cs → cs.init(ps)
-        }.toMap
-
-        // CURRENTLY THE PROPERTIES TEST DOES NOT SUPPORT ANALYSIS CONFIGURATIONS WHICH
-        // REQUIRED SUPPRESSED NOTIFICATIONS!
-        ps.setupPhase((eagerAnalysisRunners ++ lazyAnalysisRunners).flatMap(_.derives.map(_.pk)))
-        val las = lazyAnalysisRunners.map { ar ⇒
-            ar.beforeSchedule(ps)
-            ar.register(p, ps, initInfo(ar).asInstanceOf[ar.InitializationData])
-        }
-        val as = eagerAnalysisRunners.map { ar ⇒
-            ar.beforeSchedule(ps)
-            ar.start(p, ps, initInfo(ar).asInstanceOf[ar.InitializationData])
-        }
-        ps.waitOnPhaseCompletion()
-
-        (eagerAnalysisRunners ++ lazyAnalysisRunners).foreach(_.afterPhaseCompletion(ps))
-
-        TestContext(p, ps, as ++ las)
+        val (_, as) = p.get(FPCFAnalysesManagerKey).runAll(analysisRunners)
+        TestContext(p, ps, as)
     }
 }
 
 case class TestContext(
         project:       Project[URL],
         propertyStore: PropertyStore,
-        analyses:      Set[FPCFAnalysis]
+        analyses:      List[FPCFAnalysis]
 )

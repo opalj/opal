@@ -95,7 +95,7 @@ class VirtualMethodPurityAnalysis private[analyses] ( final val project: SomePro
 
 }
 
-trait VirtualMethodPurityAnalysisScheduler extends ComputationSpecification {
+trait VirtualMethodPurityAnalysisScheduler extends ComputationSpecification[FPCFAnalysis] {
 
     final def derivedProperty: PropertyBounds = PropertyBounds.lub(VirtualMethodPurity)
 

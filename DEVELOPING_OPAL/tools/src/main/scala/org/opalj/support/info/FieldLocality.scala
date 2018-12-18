@@ -39,7 +39,7 @@ object FieldLocality extends DefaultOneStepAnalysis {
         isInterrupted: () ⇒ Boolean
     ): BasicReport = {
 
-        val ps = project.get(FPCFAnalysesManagerKey).runAll(
+        val (ps, _ /*executed analyses*/ ) = project.get(FPCFAnalysesManagerKey).runAll(
             //LazyL0TACAIAnalysis,
             LazyL0BaseAIResultAnalysis,
             TACAITransformer,

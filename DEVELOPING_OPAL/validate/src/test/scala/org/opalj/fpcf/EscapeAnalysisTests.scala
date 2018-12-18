@@ -44,7 +44,7 @@ class EscapeAnalysisTests extends PropertiesTest {
     }
 
     describe("the org.opalj.fpcf.analyses.escape.SimpleEscapeAnalysis is executed") {
-        val as = executeAnalyses(Set(EagerSimpleEscapeAnalysis), Set(LazyL0TACAIAnalysis))
+        val as = executeAnalyses(EagerSimpleEscapeAnalysis, LazyL0TACAIAnalysis)
         as.propertyStore.shutdown()
         validateProperties(
             as,
@@ -56,8 +56,8 @@ class EscapeAnalysisTests extends PropertiesTest {
 
     describe("the org.opalj.fpcf.analyses.escape.InterProceduralEscapeAnalysis is executed") {
         val as = executeAnalyses(
-            Set(EagerInterProceduralEscapeAnalysis),
-            Set(LazyL0TACAIAnalysis, LazyVirtualCallAggregatingEscapeAnalysis)
+            EagerInterProceduralEscapeAnalysis,
+            LazyL0TACAIAnalysis, LazyVirtualCallAggregatingEscapeAnalysis
         )
         as.propertyStore.shutdown()
         validateProperties(

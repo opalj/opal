@@ -396,7 +396,7 @@ object L1PurityAnalysis {
     }
 }
 
-trait L1PurityAnalysisScheduler extends ComputationSpecification {
+trait L1PurityAnalysisScheduler extends ComputationSpecification[FPCFAnalysis] {
 
     final def derivedProperty: PropertyBounds = PropertyBounds.lub(Purity)
 

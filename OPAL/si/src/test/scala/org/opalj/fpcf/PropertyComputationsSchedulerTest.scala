@@ -27,7 +27,7 @@ class PropertyComputationsSchedulerTest extends FunSpec with Matchers with Befor
             derivesLazily:          Option[PropertyBounds] = None,
             derivesEagerly:         Set[PropertyBounds]    = Set.empty,
             derivesCollaboratively: Set[PropertyBounds]    = Set.empty
-    ) extends SimpleComputationSpecification {
+    ) extends SimpleComputationSpecification[Unit] {
         override def schedule(ps: PropertyStore, unused: Null): Unit = {}
 
     }

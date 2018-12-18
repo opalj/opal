@@ -82,7 +82,7 @@ class TACAIAnalysisIntegrationTest extends FunSpec with Matchers {
             val p = theProject.recreate()
             val counter = new AtomicInteger()
             val fpcfManager = p.get(FPCFAnalysesManagerKey)
-            val ps = fpcfManager.runAll(EagerL0TACAIAnalysis)
+            val (ps,_/*executed analyses*/) = fpcfManager.runAll(EagerL0TACAIAnalysis)
             p.parForeachMethodWithBody() { mi ⇒
                 val m = mi.method
                 val aiResultProperty = ps(m, BaseAIResult.key)

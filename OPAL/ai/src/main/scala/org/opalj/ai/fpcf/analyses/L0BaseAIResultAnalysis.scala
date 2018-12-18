@@ -72,7 +72,7 @@ object L0BaseAIResultAnalysis {
     }
 }
 
-sealed trait L0BaseAIResultAnalysisScheduler extends ComputationSpecification {
+sealed trait L0BaseAIResultAnalysisScheduler extends ComputationSpecification[FPCFAnalysis] {
 
     final override def uses: Set[PropertyBounds] = Set.empty
 

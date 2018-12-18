@@ -15,9 +15,9 @@ import org.opalj.util.PerformanceEvaluation.time
  *
  * @author Michael Eichberg
  */
-case class Schedule(
-        batches: Chain[BatchConfiguration]
-) extends ((PropertyStore, Boolean, PhaseConfiguration ⇒ Unit, Chain[ComputationSpecification] ⇒ Unit) ⇒ Unit) {
+case class Schedule[A](
+        batches: Chain[BatchConfiguration[A]]
+) extends ((PropertyStore, Boolean, PhaseConfiguration ⇒ Unit, Chain[ComputationSpecification[A]] ⇒ Unit) ⇒ List[A]) {
 
     /**
      * Schedules the computation specifications; that is, executes the underlying analysis scenario.
@@ -29,11 +29,13 @@ case class Schedule(
      */
     def apply(
         ps:                   PropertyStore,
-        trace:                Boolean                                = false,
+        trace:                Boolean                                   = false,
         afterPhaseSetup:      PhaseConfiguration ⇒ Unit = _ ⇒ (),
-        afterPhaseScheduling: Chain[ComputationSpecification] ⇒ Unit = _ ⇒ ()
-    ): Unit = {
+        afterPhaseScheduling: Chain[ComputationSpecification[A]] ⇒ Unit = _ ⇒ ()
+    ): List[A] = {
         implicit val logContext: LogContext = ps.logContext
+
+        var executedAnalyses: List[A] = Nil
 
         val initInfo =
             batches.flatMap {
@@ -52,7 +54,10 @@ case class Schedule(
                 afterPhaseSetup(configuration)
 
                 css.foreach(cs ⇒ cs.beforeSchedule(ps))
-                css.foreach(cs ⇒ cs.schedule(ps, initInfo(cs).asInstanceOf[cs.InitializationData]))
+                css.foreach { cs ⇒
+                    val as = cs.schedule(ps, initInfo(cs).asInstanceOf[cs.InitializationData])
+                    executedAnalyses ::= as
+                }
                 afterPhaseScheduling(css)
 
                 ps.waitOnPhaseCompletion()
@@ -68,6 +73,8 @@ case class Schedule(
         }
         // ... we are done now!
         ps.setupPhase(Set.empty, Set.empty)
+
+        executedAnalyses.reverse
     }
 
     override def toString: String = {
@@ -77,7 +84,7 @@ case class Schedule(
 
 }
 
-case class BatchConfiguration(
+case class BatchConfiguration[A](
         phaseConfiguration: PhaseConfiguration,
-        batch:              Chain[ComputationSpecification]
+        batch:              Chain[ComputationSpecification[A]]
 )

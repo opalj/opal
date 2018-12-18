@@ -31,17 +31,23 @@ class FPCFAnalysesManager private[fpcf] (val project: SomeProject) {
         new Array[Boolean](PropertyKind.SupportedPropertyKinds)
     }
 
-    private[this] var schedules: List[Schedule] = Nil
+    private[this] var schedules: List[Schedule[FPCFAnalysis]] = Nil
 
     /**
      * Returns the executed schedules. The head is the latest executed schedule.
      */
-    def executedSchedules: List[Schedule] = schedules
+    def executedSchedules: List[Schedule[FPCFAnalysis]] = schedules
 
-    final def runAll(analyses: ComputationSpecification*): PropertyStore = runAll(analyses.toSet)
+    final def runAll(analyses: ComputationSpecification[FPCFAnalysis]*): (PropertyStore, List[FPCFAnalysis]) = {
+        runAll(analyses.toIterable)
+    }
 
-    final def runAll(analyses: Set[ComputationSpecification]): PropertyStore = this.synchronized {
+    final def runAll(
+        analyses: Iterable[ComputationSpecification[FPCFAnalysis]]
+    ): (PropertyStore, List[FPCFAnalysis]) = this.synchronized {
+
         val scenario = AnalysisScenario(analyses)
+
         val properties = scenario.allProperties
         if (properties exists { p ⇒
             if (derivedProperties(p.pk.id)) {
@@ -55,18 +61,21 @@ class FPCFAnalysesManager private[fpcf] (val project: SomeProject) {
             }
         }) {
             // ... some property (kind) was already computed/scheduled
-            return propertyStore;
+            return (propertyStore, Nil);
         }
+
         properties foreach { p ⇒ derivedProperties(p.pk.id) = true }
 
         val schedule = scenario.computeSchedule
         schedules ::= schedule
 
         if (trace) { debug("analysis progress", "executing "+schedule) }
-        time {
+        val as = time {
             schedule(propertyStore, trace)
         } { t ⇒
-            if (trace) debug("analysis progress", s"execution of schedule took ${t.toSeconds}")
+            if (trace) {
+                debug("analysis progress", s"execution of schedule took ${t.toSeconds}")
+            }
         }
         if (trace) {
             debug(
@@ -76,7 +85,7 @@ class FPCFAnalysesManager private[fpcf] (val project: SomeProject) {
                 )
             )
         }
-        propertyStore
+        (propertyStore, as)
     }
 }
 

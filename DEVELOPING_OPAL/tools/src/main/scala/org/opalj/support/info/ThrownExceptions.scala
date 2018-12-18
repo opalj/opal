@@ -69,10 +69,11 @@ object ThrownExceptions extends DefaultOneStepAnalysis {
                 ps.waitOnPhaseCompletion()
                 ps
             } else /* if no analysis level is specified or L1 */ {
-                project.get(FPCFAnalysesManagerKey).runAll(
+                val (ps, _) = project.get(FPCFAnalysesManagerKey).runAll(
                     LazyVirtualMethodThrownExceptionsAnalysis,
                     EagerL1ThrownExceptionsAnalysis
                 )
+                ps
             }
         } { t ⇒ executionTime = t }
 

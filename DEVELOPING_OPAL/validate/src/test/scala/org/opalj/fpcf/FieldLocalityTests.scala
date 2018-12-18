@@ -17,7 +17,7 @@ import org.opalj.tac.fpcf.analyses.TACAITransformer
 
 class FieldLocalityTests extends PropertiesTest {
 
-    val lazyAnalysisSchedulers = Set[FPCFLazyLikeAnalysisScheduler](
+    val lazyAnalysisSchedulers = List[FPCFLazyLikeAnalysisScheduler](
         LazyL0BaseAIResultAnalysis,
         TACAITransformer, //LazyL0TACAIAnalysis,
         LazyInterProceduralEscapeAnalysis,
@@ -35,7 +35,7 @@ class FieldLocalityTests extends PropertiesTest {
     }
 
     describe("field locality analysis is executed") {
-        val as = executeAnalyses(Set(EagerFieldLocalityAnalysis), lazyAnalysisSchedulers)
+        val as = executeAnalyses(EagerFieldLocalityAnalysis :: lazyAnalysisSchedulers)
         as.propertyStore.shutdown()
         validateProperties(
             as,

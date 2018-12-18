@@ -19,7 +19,7 @@ import org.opalj.br.analyses.SomeProject
  * @author Michael Reif
  * @author Michael Eichberg
  */
-trait FPCFAnalysisScheduler extends ComputationSpecification {
+trait FPCFAnalysisScheduler extends ComputationSpecification[FPCFAnalysis] {
 
     /**
      * The unique id of this factory.

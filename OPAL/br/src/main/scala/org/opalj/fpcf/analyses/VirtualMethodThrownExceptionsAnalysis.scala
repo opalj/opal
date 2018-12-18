@@ -124,7 +124,7 @@ class VirtualMethodThrownExceptionsAnalysis private[analyses] (
     }
 }
 
-trait VirtualMethodThrownExceptionsAnalysisScheduler extends ComputationSpecification {
+trait VirtualMethodThrownExceptionsAnalysisScheduler extends ComputationSpecification[FPCFAnalysis] {
 
     final def derivedProperty: PropertyBounds = {
         PropertyBounds.lub(ThrownExceptionsByOverridingMethods)
