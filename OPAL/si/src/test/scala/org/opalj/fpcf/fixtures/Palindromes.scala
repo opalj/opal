@@ -48,4 +48,16 @@ object Palindromes {
     }
     case object SuperPalindrome extends SuperPalindromeProperty
     case object NoSuperPalindrome extends SuperPalindromeProperty
+
+    /**
+     * A collection of the first halfs of palindromes.
+     */
+    final val PalindromeFragmentsKey = {
+        PropertyKey.create[String, PalindromeFragments]("PalindromeFragments")
+    }
+
+    case class PalindromeFragments(fragments: Set[String]) extends Property {
+        type Self = PalindromeFragments
+        def key: PropertyKey[PalindromeFragments] = PalindromeFragmentsKey
+    }
 }
