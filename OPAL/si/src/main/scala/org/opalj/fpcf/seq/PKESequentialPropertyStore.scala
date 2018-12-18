@@ -119,6 +119,9 @@ final class PKESequentialPropertyStore private (
     // The list of scheduled computations
     private[this] var tasks: ArrayDeque[QualifiedTask] = new ArrayDeque(50000)
 
+    private[this] var subPhaseId: Int = 0
+    private[this] var hasSuppressedNotifications: Boolean = false
+
     override def isKnown(e: Entity): Boolean = ps.contains(e)
 
     override def hasProperty(e: Entity, pk: PropertyKind): Boolean = {
@@ -194,6 +197,16 @@ final class PKESequentialPropertyStore private (
         } else {
             s"PropertyStore(#properties=${ps.iterator.map(_.size).sum})"
         }
+    }
+
+    override protected[this] def newPhaseInitialized(
+        propertyKindsComputedInThisPhase:  Set[PropertyKind],
+        propertyKindsComputedInLaterPhase: Set[PropertyKind],
+        suppressInterimUpdates:            Map[PropertyKind, Set[PropertyKind]],
+        finalizationOrder:                 List[List[PropertyKind]]
+    ): Unit = {
+        subPhaseId = 0
+        hasSuppressedNotifications = suppressInterimUpdates.nonEmpty
     }
 
     override def apply[E <: Entity, P <: Property](e: E, pk: PropertyKey[P]): EOptionP[E, P] = {
@@ -353,16 +366,16 @@ final class PKESequentialPropertyStore private (
         tasks.addLast(new PropertyComputationTask(this, e, pc))
     }
 
-    private[this] def removeDependerFromDependees(epk: SomeEPK): Unit = {
-        val pkId = epk.pk.id
-        val e = epk.e
+    private[this] def removeDependerFromDependees(dependerEPK: SomeEPK): Unit = {
+        val dependerPKId = dependerEPK.pk.id
+        val e = dependerEPK.e
         for {
-            epkDependees ← dependees(pkId).get(e)
+            epkDependees ← dependees(dependerPKId).get(e)
             EOptionP(oldDependeeE, oldDependeePK) ← epkDependees // <= the old ones
             oldDependeePKId = oldDependeePK.id
             dependeeDependers ← dependers(oldDependeePKId).get(oldDependeeE)
         } {
-            dependeeDependers -= epk
+            dependeeDependers -= dependerEPK
         }
     }
 
@@ -560,7 +573,8 @@ final class PKESequentialPropertyStore private (
                 handlePartialResult(e, pk, u, Nil)
 
             case InterimPartialResult.id ⇒
-                val InterimPartialResult(e, pk, u, processedDependees, c) = r
+                val InterimPartialResult(e, pk, u, processedDependee, c) = r
+                val processedDependees = List(processedDependee)
                 // 1. let's check if a new dependee is already updated...
                 //    If so, we directly schedule a task again to compute the property.
                 val noUpdates = processDependees(processedDependees, c)
@@ -655,7 +669,7 @@ final class PKESequentialPropertyStore private (
             //    current results of the dependers cannot be finalized; instead, we need
             //    to finalize (the cyclic dependent) dependees first and notify the
             //    dependers.
-            if (!continueComputation && suppressInterimUpdates.exists(_.contains(true))) {
+            if (!continueComputation && hasSuppressedNotifications) {
                 // Collect all InterimEPs to find cycles.
                 val interimEPs = ArrayBuffer.empty[SomeEOptionP]
                 var pkId = 0
@@ -680,25 +694,39 @@ final class PKESequentialPropertyStore private (
                 }
             }
 
-            // 3. Let's finalize all remaining interim EPS; e.g., those related to
-            //    collaboratively computed properties.
-            if (!continueComputation) {
-                // We used no fallbacks, but we may still have collaboratively computed properties
-                // (e.g. CallGraph) which are not yet final; let's finalize them!
-                dependees.foreach(_.clear())
-                dependers.foreach(_.clear())
-                var pkId = 0
-                while (pkId <= maxPKIndex) {
-                    if (propertyKindsComputedInThisPhase(pkId)) {
-                        val interimEPSs = ps(pkId).valuesIterator.filter(_.isRefinable).toList
-                        interimEPSs foreach { eOptionP ⇒
-                            ps(pkId).put(eOptionP.e, eOptionP.toFinalEP)
-                        }
-                    }
-                    pkId += 1
+            // 3. Let's finalize remaining interim EPS; e.g., those related to
+            //    collaboratively computed properties or "just all" if we don't have suppressed
+            //    notifications. Recall that we may have cycles if we have no suppressed
+            //    notifications, because in the latter case, we may dependencies.
+            //    We used no fallbacks, but we may still have collaboratively computed properties
+            //    (e.g. CallGraph) which are not yet final; let's finalize them in the specified
+            //    order (i.e., let's finalize the subphase)!
+            while (!continueComputation && subPhaseId < subPhaseFinalizationOrder.length) {
+                val pksToFinalize = subPhaseFinalizationOrder(subPhaseId)
+                if (debug) {
+                    trace(
+                        "analysis progress",
+                        pksToFinalize.map(PropertyKey.name).mkString("finalization of: ", ",", "")
+                    )
                 }
+                pksToFinalize foreach { pk ⇒
+                    val interimEPSs = ps(pk.id).valuesIterator.filter(_.isRefinable).toList
+                    continueComputation = interimEPSs.nonEmpty
+                    interimEPSs foreach { interimEP ⇒ removeDependerFromDependees(interimEP.toEPK) }
+                }
+                pksToFinalize foreach { pk ⇒
+                    val interimEPSs = ps(pk.id).valuesIterator.filter(_.isRefinable).toList
+                    interimEPSs foreach { interimEP ⇒ update(interimEP.toFinalEP, Nil) }
+                }
+                subPhaseId += 1
             }
-
+            if (debug && continueComputation) {
+                trace(
+                    "analysis progress",
+                    s"finalization of sub phase $subPhaseId "+
+                        s"of ${subPhaseFinalizationOrder.length} led to new results"
+                )
+            }
         } while (continueComputation)
 
         if (exception != null) throw exception;

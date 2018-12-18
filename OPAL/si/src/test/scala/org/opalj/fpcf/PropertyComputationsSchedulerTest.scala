@@ -144,7 +144,8 @@ class PropertyComputationsSchedulerTest extends FunSpec with Matchers with Befor
                 override def newPhaseInitialized(
                     propertyKindsComputedInThisPhase:  Set[PropertyKind],
                     propertyKindsComputedInLaterPhase: Set[PropertyKind],
-                    suppressInterimUpdates:            Map[PropertyKind, Set[PropertyKind]]
+                    suppressInterimUpdates:            Map[PropertyKind, Set[PropertyKind]],
+                    finalizationOrder:                 List[List[PropertyKind]]
                 ): Unit = {
                     phaseConfigurations ::=
                         ((
