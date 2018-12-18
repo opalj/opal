@@ -102,7 +102,7 @@ object EagerVirtualMethodAllocationFreenessAnalysis
     extends VirtualMethodAllocationFreenessAnalysisScheduler
     with BasicFPCFEagerAnalysisScheduler {
 
-    override def derivesEagerly: Set[PropertyBounds] = Set.empty
+    override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
 
     override def derivesCollaboratively: Set[PropertyBounds] = Set.empty
 
