@@ -60,65 +60,66 @@ class LocalStringDefinitionAnalysis(
      * have all required information ready for a final result.
      */
     private case class ComputationState(
-        // The lean path that was computed
-        computedLeanPath: Path,
-        // A mapping from DUVar elements to the corresponding indices of the FlatPathElements
-        var2IndexMapping: mutable.LinkedHashMap[V, Int],
-        // The control flow graph on which the computedLeanPath is based
-        cfg: CFG[Stmt[V], TACStmts[V]]
+            // The lean path that was computed
+            computedLeanPath: Path,
+            // A mapping from DUVar elements to the corresponding indices of the FlatPathElements
+            var2IndexMapping: mutable.LinkedHashMap[V, Int],
+            // A mapping from values of FlatPathElements to StringConstancyInformation
+            fpe2sci: mutable.Map[Int, StringConstancyInformation],
+            // The control flow graph on which the computedLeanPath is based
+            cfg: CFG[Stmt[V], TACStmts[V]]
     )
 
-    /**
-     * As executions of this analysis can be nested (since it may start itself), there might be
-     * several states to capture. In order to do so and enable each analysis instance to access its
-     * information, a map is used where the keys are the values fed into the analysis (which
-     * uniquely identify an analysis run) and the values the corresponding states.
-     */
-    private[this] val states = mutable.Map[P, ComputationState]()
-
     def analyze(data: P): PropertyComputationResult = {
-        // scis stores the final StringConstancyInformation
-        val scis = ListBuffer[StringConstancyInformation]()
+        // sci stores the final StringConstancyInformation (if it can be determined now at all)
+        var sci = StringConstancyProperty.lowerBound.stringConstancyInformation
         val tacProvider = p.get(SimpleTACAIKey)
         val stmts = tacProvider(data._2).stmts
         val cfg = tacProvider(data._2).cfg
 
-        // If not empty, this routine can only produce an intermediate result
+        val uvar = data._1
+        val defSites = uvar.definedBy.toArray.sorted
+        val expr = stmts(defSites.head).asAssignment.expr
+        val pathFinder: AbstractPathFinder = new DefaultPathFinder()
+
+        // If not empty, this very routine can only produce an intermediate result
         val dependees = mutable.Map[Entity, EOptionP[Entity, Property]]()
+        // state will be set to a non-null value if this analysis needs to call other analyses /
+        // itself; only in the case it calls itself, will state be used, thus, it is valid to
+        // initialize it with null
+        var state: ComputationState = null
 
-        data._1.foreach { nextUVar ⇒
-            val defSites = nextUVar.definedBy.toArray.sorted
-            val expr = stmts(defSites.head).asAssignment.expr
-            val pathFinder: AbstractPathFinder = new DefaultPathFinder()
-            if (InterpretationHandler.isStringBuilderBufferToStringCall(expr)) {
-                val initDefSites = InterpretationHandler.findDefSiteOfInit(
-                    expr.asVirtualFunctionCall, stmts
-                )
-                val paths = pathFinder.findPaths(initDefSites, cfg)
-                val leanPaths = paths.makeLeanPath(nextUVar, stmts)
+        if (InterpretationHandler.isStringBuilderBufferToStringCall(expr)) {
+            val initDefSites = InterpretationHandler.findDefSiteOfInit(
+                expr.asVirtualFunctionCall, stmts
+            )
+            val paths = pathFinder.findPaths(initDefSites, cfg)
+            val leanPaths = paths.makeLeanPath(uvar, stmts)
 
-                // Find DUVars, that the analysis of the current entity depends on
-                val dependentVars = findDependentVars(leanPaths, stmts, List(nextUVar))
-                if (dependentVars.nonEmpty) {
-                    val toAnalyze = (dependentVars.keys.toList, data._2)
+            // Find DUVars, that the analysis of the current entity depends on
+            val dependentVars = findDependentVars(leanPaths, stmts, List(uvar))
+            if (dependentVars.nonEmpty) {
+                dependentVars.keys.foreach { nextVar ⇒
+                    val toAnalyze = (nextVar, data._2)
+                    val fpe2sci = mutable.Map[Int, StringConstancyInformation]()
+                    state = ComputationState(leanPaths, dependentVars, fpe2sci, cfg)
                     val ep = propertyStore(toAnalyze, StringConstancyProperty.key)
                     ep match {
-                        case FinalEP(_, p) ⇒
-                            scis.appendAll(p.stringConstancyInformation)
+                        case FinalEP(e, p) ⇒
+                            return processFinalEP(data, dependees.values, state, e, p)
                         case _ ⇒
                             dependees.put(toAnalyze, ep)
-                            states.put(data, ComputationState(leanPaths, dependentVars, cfg))
                     }
-                } else {
-                    scis.append(new PathTransformer(cfg).pathToStringTree(leanPaths).reduce(true))
                 }
-            } // If not a call to String{Builder, Buffer}.toString, then we deal with pure strings
-            else {
-                val interHandler = InterpretationHandler(cfg)
-                scis.append(StringConstancyInformation.reduceMultiple(
-                    nextUVar.definedBy.toArray.sorted.flatMap { interHandler.processDefSite }.toList
-                ))
+            } else {
+                sci = new PathTransformer(cfg).pathToStringTree(leanPaths).reduce(true)
             }
+        } // If not a call to String{Builder, Buffer}.toString, then we deal with pure strings
+        else {
+            val interHandler = InterpretationHandler(cfg)
+            sci = StringConstancyInformation.reduceMultiple(
+                uvar.definedBy.toArray.sorted.flatMap { interHandler.processDefSite }.toList
+            )
         }
 
         if (dependees.nonEmpty) {
@@ -127,10 +128,42 @@ class LocalStringDefinitionAnalysis(
                 StringConstancyProperty.upperBound,
                 StringConstancyProperty.lowerBound,
                 dependees.values,
-                continuation(data, dependees.values, scis)
+                continuation(data, dependees.values, state)
             )
         } else {
-            Result(data, StringConstancyProperty(scis.toList))
+            Result(data, StringConstancyProperty(sci))
+        }
+    }
+
+    /**
+     * `processFinalEP` is responsible for handling the case that the `propertyStore` outputs a
+     * [[FinalEP]].
+     */
+    private def processFinalEP(
+        data:      P,
+        dependees: Iterable[EOptionP[Entity, Property]],
+        state:     ComputationState,
+        e:         Entity,
+        p:         Property
+    ): PropertyComputationResult = {
+        // Add mapping information (which will be used for computing the final result)
+        val currentSci = p.asInstanceOf[StringConstancyProperty].stringConstancyInformation
+        state.fpe2sci.put(state.var2IndexMapping(e.asInstanceOf[P]._1), currentSci)
+
+        val remDependees = dependees.filter(_.e != e)
+        if (remDependees.isEmpty) {
+            val finalSci = new PathTransformer(state.cfg).pathToStringTree(
+                state.computedLeanPath, state.fpe2sci.toMap
+            ).reduce(true)
+            Result(data, StringConstancyProperty(finalSci))
+        } else {
+            IntermediateResult(
+                data,
+                StringConstancyProperty.upperBound,
+                StringConstancyProperty.lowerBound,
+                remDependees,
+                continuation(data, remDependees, state)
+            )
         }
     }
 
@@ -139,36 +172,21 @@ class LocalStringDefinitionAnalysis(
      *
      * @param data The data that was passed to the `analyze` function.
      * @param dependees A list of dependencies that this analysis run depends on.
-     * @param currentResults If the result of other read operations has been computed (only in case
-     *                       the first value of the `data` given to the `analyze` function contains
-     *                       more than one value), pass it using this object in order not to lose
-     *                       it.
+     * @param state The computation state (which was originally captured by `analyze` and possibly
+     *              extended / updated by other methods involved in computing the final result.
      * @return This function can either produce a final result or another intermediate result.
      */
     private def continuation(
-        data:           P,
-        dependees:      Iterable[EOptionP[Entity, Property]],
-        currentResults: ListBuffer[StringConstancyInformation]
+        data:      P,
+        dependees: Iterable[EOptionP[Entity, Property]],
+        state:     ComputationState
     )(eps: SomeEPS): PropertyComputationResult = {
-        val relevantState = states.get(data)
-        // For mapping the index of a FlatPathElement to StringConstancyInformation
-        val fpe2Sci = mutable.Map[Int, List[StringConstancyInformation]]()
         eps match {
             case FinalEP(e, p) ⇒
-                val scis = p.asInstanceOf[StringConstancyProperty].stringConstancyInformation
-                // Add mapping information
-                e.asInstanceOf[(List[V], _)]._1.asInstanceOf[List[V]].foreach { nextVar ⇒
-                    fpe2Sci.put(relevantState.get.var2IndexMapping(nextVar), scis)
-                }
-                // Compute final result
-                val sci = new PathTransformer(relevantState.get.cfg).pathToStringTree(
-                    relevantState.get.computedLeanPath, fpe2Sci.toMap
-                ).reduce(true)
-                currentResults.append(sci)
-                Result(data, StringConstancyProperty(currentResults.toList))
+                processFinalEP(data, dependees, state, e, p)
             case IntermediateEP(_, lb, ub) ⇒
                 IntermediateResult(
-                    data, lb, ub, dependees, continuation(data, dependees, currentResults)
+                    data, lb, ub, dependees, continuation(data, dependees, state)
                 )
             case _ ⇒ NoResult
         }
@@ -230,7 +248,6 @@ class LocalStringDefinitionAnalysis(
         val ignoreNews = ignore.map { i ⇒
             InterpretationHandler.findNewOfVar(i, stmts)
         }.distinct
-        identity(ignoreNews)
 
         path.elements.foreach { nextSubpath ⇒
             findDependeesAcc(nextSubpath, stmts, ListBuffer()).foreach { nextPair ⇒
@@ -267,8 +284,8 @@ sealed trait LocalStringDefinitionAnalysisScheduler extends ComputationSpecifica
  * Executor for the lazy analysis.
  */
 object LazyStringDefinitionAnalysis
-        extends LocalStringDefinitionAnalysisScheduler
-        with FPCFLazyAnalysisScheduler {
+    extends LocalStringDefinitionAnalysisScheduler
+    with FPCFLazyAnalysisScheduler {
 
     final override def startLazily(
         p: SomeProject, ps: PropertyStore, unused: Null

@@ -3,15 +3,10 @@ package org.opalj.fpcf.properties.string_definition
 
 import org.opalj.br.analyses.Project
 import org.opalj.br.AnnotationLike
-import org.opalj.br.EnumValue
 import org.opalj.br.ObjectType
-import org.opalj.br.StringValue
-import org.opalj.collection.immutable.RefArray
 import org.opalj.fpcf.properties.AbstractPropertyMatcher
 import org.opalj.fpcf.Property
 import org.opalj.fpcf.properties.StringConstancyProperty
-
-import scala.collection.mutable.ListBuffer
 
 /**
  * Matches local variable's `StringConstancy` property. The match is successful if the
@@ -22,28 +17,36 @@ import scala.collection.mutable.ListBuffer
 class LocalStringDefinitionMatcher extends AbstractPropertyMatcher {
 
     /**
-     * Returns the constancy levels specified in the annotation as a list of lower-cased strings.
+     * @param a An annotation like of type
+     *          [[org.opalj.fpcf.properties.string_definition.StringDefinitions]].
+     * @return Returns the constancy level specified in the annotation as a string. In case an
+     *         annotation other than StringDefinitions is passed, an [[IllegalArgumentException]]
+     *         will be thrown (since it cannot be processed).
      */
-    private def getExpectedConstancyLevels(a: AnnotationLike): List[String] =
-        a.elementValuePairs.find(_.name == "expectedLevels") match {
-            case Some(el) ⇒
-                el.value.asArrayValue.values.asInstanceOf[RefArray[EnumValue]].map {
-                    ev: EnumValue ⇒ ev.constName.toLowerCase
-                }.toList
-            case None ⇒ List()
+    private def getConstancyLevel(a: AnnotationLike): String = {
+        a.elementValuePairs.find(_.name == "expectedLevel") match {
+            case Some(el) ⇒ el.value.asEnumValue.constName
+            case None ⇒ throw new IllegalArgumentException(
+                "Can only extract the constancy level from a StringDefinitions annotation"
+            )
         }
+    }
 
     /**
-     * Returns the expected strings specified in the annotation as a list.
+     * @param a An annotation like of type
+     *          [[org.opalj.fpcf.properties.string_definition.StringDefinitions]].
+     * @return Returns the ''expectedStrings'' value from the annotation. In case an annotation
+     *         other than StringDefinitions is passed, an [[IllegalArgumentException]] will be
+     *         thrown (since it cannot be processed).
      */
-    private def getExpectedStrings(a: AnnotationLike): List[String] =
+    private def getExpectedStrings(a: AnnotationLike): String = {
         a.elementValuePairs.find(_.name == "expectedStrings") match {
-            case Some(el) ⇒
-                el.value.asArrayValue.values.asInstanceOf[RefArray[StringValue]].map {
-                    sc: StringValue ⇒ sc.value
-                }.toList
-            case None ⇒ List()
+            case Some(el) ⇒ el.value.asStringValue.value
+            case None ⇒ throw new IllegalArgumentException(
+                "Can only extract the possible strings from a StringDefinitions annotation"
+            )
         }
+    }
 
     /**
      * @inheritdoc
@@ -55,32 +58,22 @@ class LocalStringDefinitionMatcher extends AbstractPropertyMatcher {
         a:          AnnotationLike,
         properties: Traversable[Property]
     ): Option[String] = {
-        val actLevels = ListBuffer[String]()
-        val actStrings = ListBuffer[String]()
-        if (properties.nonEmpty) {
-            properties.head match {
-                case prop: StringConstancyProperty ⇒
-                    prop.stringConstancyInformation.foreach { nextSci ⇒
-                        actLevels.append(nextSci.constancyLevel.toString.toLowerCase)
-                        actStrings.append(nextSci.possibleStrings.toString)
-                    }
-                case _ ⇒
-            }
+        var actLevel = ""
+        var actString = ""
+        properties.head match {
+            case prop: StringConstancyProperty ⇒
+                val sci = prop.stringConstancyInformation
+                actLevel = sci.constancyLevel.toString.toLowerCase
+                actString = sci.possibleStrings
+            case _ ⇒
         }
 
-        val expLevels = getExpectedConstancyLevels(a)
+        val expLevel = getConstancyLevel(a).toLowerCase
         val expStrings = getExpectedStrings(a)
-        val errorMsg = s"Levels: ${expLevels.mkString("{", ",", "}")}, "+
-            s"Strings: ${expStrings.mkString("{", ",", "}")}"
+        val errorMsg = s"Level: $expLevel, Strings: $expStrings"
 
-        // The lists need to have the same sizes and need to match element-wise
-        if (actLevels.size != expLevels.size || actStrings.size != expStrings.size) {
+        if (expLevel != actLevel || expStrings != actString) {
             return Some(errorMsg)
-        }
-        for (i ← actLevels.indices) {
-            if (expLevels(i) != actLevels(i) || expStrings(i) != actStrings(i)) {
-                return Some(errorMsg)
-            }
         }
 
         None

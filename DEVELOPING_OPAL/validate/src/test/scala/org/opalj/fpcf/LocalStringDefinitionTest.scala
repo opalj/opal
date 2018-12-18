@@ -8,6 +8,7 @@ import org.opalj.br.analyses.Project
 import org.opalj.br.Annotation
 import org.opalj.br.Method
 import org.opalj.br.cfg.CFG
+import org.opalj.br.Annotations
 import org.opalj.fpcf.analyses.cg.V
 import org.opalj.fpcf.analyses.string_definition.LazyStringDefinitionAnalysis
 import org.opalj.fpcf.analyses.string_definition.LocalStringDefinitionAnalysis
@@ -69,6 +70,19 @@ class LocalStringDefinitionTest extends PropertiesTest {
     private def isStringUsageAnnotation(a: Annotation): Boolean =
         a.annotationType.toJavaClass.getName == LocalStringDefinitionTest.fqStringDefAnnotation
 
+    /**
+     * Extracts a `StringDefinitions` annotation from a `StringDefinitionsCollection` annotation.
+     * Make sure that you pass an instance of `StringDefinitionsCollection` and that the element at
+     * the given index really exists. Otherwise an exception will be thrown.
+     *
+     * @param a The `StringDefinitionsCollection` to extract a `StringDefinitions` from.
+     * @param index The index of the element from the `StringDefinitionsCollection` annotation to
+     *              get.
+     * @return Returns the desired `StringDefinitions` annotation.
+     */
+    private def getStringDefinitionsFromCollection(a: Annotations, index: Int): Annotation =
+        a.head.elementValuePairs(1).value.asArrayValue.values(index).asAnnotationValue.annotation
+
     describe("the org.opalj.fpcf.StringTrackingAnalysis is started") {
         val p = Project(getRelevantProjectFiles, Array[File]())
         val ps = p.get(org.opalj.fpcf.PropertyStoreKey)
@@ -78,7 +92,7 @@ class LocalStringDefinitionTest extends PropertiesTest {
         LazyStringDefinitionAnalysis.schedule(ps, null)
 
         // We need a "method to entity" matching for the evaluation (see further below)
-        val m2e = mutable.HashMap[Method, (Entity, Method)]()
+        val m2e = mutable.HashMap[Method, Entity]()
         val tacProvider = p.get(DefaultTACAIKey)
 
         p.allMethodsWithBody.filter {
@@ -88,17 +102,24 @@ class LocalStringDefinitionTest extends PropertiesTest {
         } foreach { m ⇒
             extractUVars(tacProvider(m).cfg).foreach { uvar ⇒
                 if (!m2e.contains(m)) {
-                    m2e += (m → Tuple2(ListBuffer(uvar), m))
+                    m2e += m → ListBuffer(uvar)
                 } else {
-                    m2e(m)._1.asInstanceOf[ListBuffer[V]].append(uvar)
+                    m2e(m).asInstanceOf[ListBuffer[V]].append(uvar)
                 }
+                ps.force((uvar, m), StringConstancyProperty.key)
             }
-            ps.force((m2e(m)._1.asInstanceOf[ListBuffer[V]].toList, m), StringConstancyProperty.key)
         }
 
         // As entity, we need not the method but a tuple (DUVar, Method), thus this transformation
-        val eas = methodsWithAnnotations(p).map { next ⇒
-            Tuple3(m2e(next._1), next._2, next._3)
+        val eas = methodsWithAnnotations(p).filter(am ⇒ m2e.contains(am._1)).flatMap { am ⇒
+            m2e(am._1).asInstanceOf[ListBuffer[V]].zipWithIndex.map {
+                case (duvar, index) ⇒
+                    Tuple3(
+                        (duvar, am._1),
+                        { s: String ⇒ s"${am._2(s)} (#$index)" },
+                        List(getStringDefinitionsFromCollection(am._3, index))
+                    )
+            }
         }
         validateProperties(
             TestContext(p, ps, Set(new LocalStringDefinitionAnalysis(p))),
@@ -111,7 +132,7 @@ class LocalStringDefinitionTest extends PropertiesTest {
 
 object LocalStringDefinitionTest {
 
-    val fqStringDefAnnotation = "org.opalj.fpcf.properties.string_definition.StringDefinitions"
+    val fqStringDefAnnotation = "org.opalj.fpcf.properties.string_definition.StringDefinitionsCollection"
     val fqTestMethodsClass = "org.opalj.fpcf.fixtures.string_definition.TestMethods"
     // The name of the method from which to extract DUVars to analyze
     val nameTestMethod = "analyzeString"

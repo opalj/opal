@@ -17,17 +17,14 @@ sealed trait StringConstancyPropertyMetaInformation extends PropertyMetaInformat
 }
 
 class StringConstancyProperty(
-        val stringConstancyInformation: List[StringConstancyInformation]
+        val stringConstancyInformation: StringConstancyInformation
 ) extends Property with StringConstancyPropertyMetaInformation {
 
     final def key: PropertyKey[StringConstancyProperty] = StringConstancyProperty.key
 
     override def toString: String = {
-        val levels = stringConstancyInformation.map(
-            _.constancyLevel.toString.toLowerCase
-        ).mkString("{", ",", "}")
-        val strings = stringConstancyInformation.map(_.possibleStrings).mkString("{", ",", "}")
-        s"Levels: $levels, Strings: $strings"
+        val level = stringConstancyInformation.constancyLevel.toString.toLowerCase
+        s"Level: $level, Possible Strings: ${stringConstancyInformation.possibleStrings}"
     }
 
 }
@@ -49,25 +46,25 @@ object StringConstancyProperty extends StringConstancyPropertyMetaInformation {
     }
 
     def apply(
-        stringConstancyInformation: List[StringConstancyInformation]
+        stringConstancyInformation: StringConstancyInformation
     ): StringConstancyProperty = new StringConstancyProperty(stringConstancyInformation)
 
     /**
      * @return Returns the upper bound from a lattice-point of view.
      */
     def upperBound: StringConstancyProperty =
-        StringConstancyProperty(List(StringConstancyInformation(
+        StringConstancyProperty(StringConstancyInformation(
             StringConstancyLevel.CONSTANT, StringConstancyType.APPEND
-        )))
+        ))
 
     /**
      * @return Returns the lower bound from a lattice-point of view.
      */
     def lowerBound: StringConstancyProperty =
-        StringConstancyProperty(List(StringConstancyInformation(
+        StringConstancyProperty(StringConstancyInformation(
             StringConstancyLevel.DYNAMIC,
             StringConstancyType.APPEND,
             StringConstancyInformation.UnknownWordSymbol
-        )))
+        ))
 
 }

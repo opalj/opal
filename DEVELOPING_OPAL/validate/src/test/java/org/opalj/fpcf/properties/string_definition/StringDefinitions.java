@@ -20,26 +20,21 @@ import java.lang.annotation.*;
 @PropertyValidator(key = "StringConstancy", validator = LocalStringDefinitionMatcher.class)
 @Documented
 @Retention(RetentionPolicy.CLASS)
-@Target({ ElementType.METHOD })
+@Target({ ElementType.ANNOTATION_TYPE })
 public @interface StringDefinitions {
 
     /**
-     * A short reasoning of this property.
-     */
-    String value() default "N/A";
-
-    /**
-     * This value determines the expected levels of freedom for a string field or local variable to
+     * This value determines the expected level of freedom for a local variable to
      * be changed.
      */
-    StringConstancyLevel[] expectedLevels();
+    StringConstancyLevel expectedLevel();
 
     /**
-     * A regexp like string that describes the elements that are expected. For the rules, refer to
+     * A regexp like string that describes the element(s) that are expected. For the rules, refer to
      * {@link org.opalj.fpcf.string_definition.properties.StringTreeElement}.
      * For example, "(* | (hello | world)^5)" describes a string which can 1) either be any string
      * or 2) a five time concatenation of "hello" and/or "world".
      */
-    String[] expectedStrings();
+    String expectedStrings();
 
 }
