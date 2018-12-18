@@ -311,10 +311,12 @@ abstract class PropertiesTest extends FunSpec with Matchers {
             cs → cs.init(ps)
         }.toMap
 
+        // CURRENTLY THE PROPERTIES TEST DOES NOT SUPPORT ANALYSIS CONFIGURATIONS WHICH
+        // REQUIRED SUPPRESSED NOTIFICATIONS!
         ps.setupPhase((eagerAnalysisRunners ++ lazyAnalysisRunners).flatMap(_.derives.map(_.pk)))
         val las = lazyAnalysisRunners.map { ar ⇒
             ar.beforeSchedule(ps)
-            ar.schedule(ps, initInfo(ar).asInstanceOf[ar.InitializationData])
+            ar.register(p, ps, initInfo(ar).asInstanceOf[ar.InitializationData])
         }
         val as = eagerAnalysisRunners.map { ar ⇒
             ar.beforeSchedule(ps)
