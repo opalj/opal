@@ -2,6 +2,7 @@
 package org.opalj.fpcf.fixtures.string_definition;
 
 import org.opalj.fpcf.properties.string_definition.StringDefinitions;
+import org.opalj.fpcf.properties.string_definition.StringDefinitionsCollection;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -61,10 +62,16 @@ public class TestMethods {
     public void analyzeString(String s) {
     }
 
-    @StringDefinitions(
+    @StringDefinitionsCollection(
             value = "read-only string variable, trivial case",
-            expectedLevels = { CONSTANT, CONSTANT },
-            expectedStrings = { "java.lang.String", "java.lang.String" }
+            stringDefinitions = {
+                    @StringDefinitions(
+                            expectedLevel = CONSTANT, expectedStrings = "java.lang.String"
+                    ),
+                    @StringDefinitions(
+                            expectedLevel = CONSTANT, expectedStrings = "java.lang.String"
+                    )
+            }
     )
     public void constantStringReads() {
         analyzeString("java.lang.String");
@@ -73,10 +80,16 @@ public class TestMethods {
         analyzeString(className);
     }
 
-    @StringDefinitions(
+    @StringDefinitionsCollection(
             value = "checks if a string value with append(s) is determined correctly",
-            expectedLevels = { CONSTANT, CONSTANT },
-            expectedStrings = { "java.lang.String", "java.lang.Object" }
+            stringDefinitions = {
+                    @StringDefinitions(
+                            expectedLevel = CONSTANT, expectedStrings = "java.lang.String"
+                    ),
+                    @StringDefinitions(
+                            expectedLevel = CONSTANT, expectedStrings = "java.lang.Object"
+                    )
+            }
     )
     public void simpleStringConcat() {
         String className1 = "java.lang.";
@@ -92,32 +105,38 @@ public class TestMethods {
         analyzeString(className2);
     }
 
-    @StringDefinitions(
+    @StringDefinitionsCollection(
             value = "checks if a string value with > 2 continuous appends is determined correctly",
-            expectedLevels = { CONSTANT },
-            expectedStrings = { "java.lang.String" }
-    )
+            stringDefinitions = {
+                    @StringDefinitions(
+                            expectedLevel = CONSTANT, expectedStrings = "java.lang.String"
+                    )
+            })
     public void directAppendConcats() {
         StringBuilder sb = new StringBuilder("java");
         sb.append(".").append("lang").append(".").append("String");
         analyzeString(sb.toString());
     }
 
-    @StringDefinitions(
+    @StringDefinitionsCollection(
             value = "at this point, function call cannot be handled => DYNAMIC",
-            expectedLevels = { DYNAMIC },
-            expectedStrings = { "\\w" }
-    )
+            stringDefinitions = {
+                    @StringDefinitions(
+                            expectedLevel = DYNAMIC, expectedStrings = "\\w"
+                    )
+            })
     public void fromFunctionCall() {
         String className = getStringBuilderClassName();
         analyzeString(className);
     }
 
-    @StringDefinitions(
+    @StringDefinitionsCollection(
             value = "constant string + string from function call => PARTIALLY_CONSTANT",
-            expectedLevels = { PARTIALLY_CONSTANT },
-            expectedStrings = { "java.lang.\\w" }
-    )
+            stringDefinitions = {
+                    @StringDefinitions(
+                            expectedLevel = PARTIALLY_CONSTANT, expectedStrings = "java.lang.\\w"
+                    )
+            })
     public void fromConstantAndFunctionCall() {
         String className = "java.lang.";
         System.out.println(className);
@@ -125,12 +144,14 @@ public class TestMethods {
         analyzeString(className);
     }
 
-    @StringDefinitions(
+    @StringDefinitionsCollection(
             value = "array access with unknown index",
-            expectedLevels = { CONSTANT },
-            expectedStrings = { "(java.lang.String|java.lang.StringBuilder|"
-                    + "java.lang.System|java.lang.Runnable)" }
-    )
+            stringDefinitions = {
+                    @StringDefinitions(
+                            expectedLevel = CONSTANT, expectedStrings = "(java.lang.String|"
+                            + "java.lang.StringBuilder|java.lang.System|java.lang.Runnable)"
+                    )
+            })
     public void fromStringArray(int index) {
         String[] classes = {
                 "java.lang.String", "java.lang.StringBuilder",
@@ -141,11 +162,14 @@ public class TestMethods {
         }
     }
 
-    @StringDefinitions(
+    @StringDefinitionsCollection(
             value = "a simple case where multiple definition sites have to be considered",
-            expectedLevels = { CONSTANT },
-            expectedStrings = { "(java.lang.System|java.lang.Runtime)" }
-    )
+            stringDefinitions = {
+                    @StringDefinitions(
+                            expectedLevel = CONSTANT,
+                            expectedStrings = "(java.lang.System|java.lang.Runtime)"
+                    )
+            })
     public void multipleConstantDefSites(boolean cond) {
         String s;
         if (cond) {
@@ -156,12 +180,16 @@ public class TestMethods {
         analyzeString(s);
     }
 
-    @StringDefinitions(
+    @StringDefinitionsCollection(
             value = "a more comprehensive case where multiple definition sites have to be "
                     + "considered each with a different string generation mechanism",
-            expectedLevels = { DYNAMIC },
-            expectedStrings = { "(java.lang.Object|\\w|java.lang.System|java.lang.\\w|\\w)" }
-    )
+            stringDefinitions = {
+                    @StringDefinitions(
+                            expectedLevel = DYNAMIC,
+                            expectedStrings = "(java.lang.Object|\\w|java.lang.System|"
+                                    + "java.lang.\\w|\\w)"
+                    )
+            })
     public void multipleDefSites(int value) {
         String[] arr = new String[] { "java.lang.Object", getRuntimeClassName() };
 
@@ -186,11 +214,13 @@ public class TestMethods {
         analyzeString(s);
     }
 
-    @StringDefinitions(
+    @StringDefinitionsCollection(
             value = "a case where multiple optional definition sites have to be considered.",
-            expectedLevels = { CONSTANT },
-            expectedStrings = { "a(b|c)?" }
-    )
+            stringDefinitions = {
+                    @StringDefinitions(
+                            expectedLevel = CONSTANT, expectedStrings = "a(b|c)?"
+                    )
+            })
     public void multipleOptionalAppendSites(int value) {
         StringBuilder sb = new StringBuilder("a");
         switch (value) {
@@ -208,12 +238,17 @@ public class TestMethods {
         analyzeString(sb.toString());
     }
 
-    @StringDefinitions(
+    @StringDefinitionsCollection(
             value = "if-else control structure which append to a string builder with an int expr "
                     + "and an int",
-            expectedLevels = { DYNAMIC, DYNAMIC },
-            expectedStrings = { "(x|[AnIntegerValue])", "([AnIntegerValue]|x)" }
-    )
+            stringDefinitions = {
+                    @StringDefinitions(
+                            expectedLevel = DYNAMIC, expectedStrings = "(x|[AnIntegerValue])"
+                    ),
+                    @StringDefinitions(
+                            expectedLevel = DYNAMIC, expectedStrings = "([AnIntegerValue]|x)"
+                    )
+            })
     public void ifElseWithStringBuilderWithIntExpr() {
         StringBuilder sb1 = new StringBuilder();
         StringBuilder sb2 = new StringBuilder();
@@ -229,11 +264,16 @@ public class TestMethods {
         analyzeString(sb2.toString());
     }
 
-    @StringDefinitions(
+    @StringDefinitionsCollection(
             value = "if-else control structure which append to a string builder",
-            expectedLevels = { CONSTANT, CONSTANT },
-            expectedStrings = { "(a|b)", "a(b|c)" }
-    )
+            stringDefinitions = {
+                    @StringDefinitions(
+                            expectedLevel = CONSTANT, expectedStrings = "(a|b)"
+                    ),
+                    @StringDefinitions(
+                            expectedLevel = CONSTANT, expectedStrings = "a(b|c)"
+                    )
+            })
     public void ifElseWithStringBuilder1() {
         StringBuilder sb1;
         StringBuilder sb2 = new StringBuilder("a");
@@ -250,11 +290,13 @@ public class TestMethods {
         analyzeString(sb2.toString());
     }
 
-    @StringDefinitions(
+    @StringDefinitionsCollection(
             value = "if-else control structure which append to a string builder multiple times",
-            expectedLevels = { CONSTANT },
-            expectedStrings = { "a(bcd|xyz)" }
-    )
+            stringDefinitions = {
+                    @StringDefinitions(
+                            expectedLevel = CONSTANT, expectedStrings = "a(bcd|xyz)"
+                    )
+            })
     public void ifElseWithStringBuilder3() {
         StringBuilder sb = new StringBuilder("a");
         int i = new Random().nextInt();
@@ -270,12 +312,17 @@ public class TestMethods {
         analyzeString(sb.toString());
     }
 
-    @StringDefinitions(
+    @StringDefinitionsCollection(
             value = "simple for loops with known and unknown bounds",
-            expectedLevels = { CONSTANT, CONSTANT },
-            // Currently, the analysis does not support determining loop ranges => a(b)*
-            expectedStrings = { "a(b)*", "a(b)*" }
-    )
+            stringDefinitions = {
+                    // Currently, the analysis does not support determining loop ranges => a(b)*
+                    @StringDefinitions(
+                            expectedLevel = CONSTANT, expectedStrings = "a(b)*"
+                    ),
+                    @StringDefinitions(
+                            expectedLevel = CONSTANT, expectedStrings = "a(b)*"
+                    )
+            })
     public void simpleForLoopWithKnownBounds() {
         StringBuilder sb = new StringBuilder("a");
         for (int i = 0; i < 10; i++) {
@@ -291,11 +338,14 @@ public class TestMethods {
         analyzeString(sb.toString());
     }
 
-    @StringDefinitions(
+    @StringDefinitionsCollection(
             value = "if-else control structure within a for loop and with an append afterwards",
-            expectedLevels = { PARTIALLY_CONSTANT },
-            expectedStrings = { "((x|[AnIntegerValue]))*yz" }
-    )
+            stringDefinitions = {
+                    @StringDefinitions(
+                            expectedLevel = PARTIALLY_CONSTANT,
+                            expectedStrings = "((x|[AnIntegerValue]))*yz"
+                    )
+            })
     public void ifElseInLoopWithAppendAfterwards() {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < 20; i++) {
@@ -310,11 +360,13 @@ public class TestMethods {
         analyzeString(sb.toString());
     }
 
-    @StringDefinitions(
+    @StringDefinitionsCollection(
             value = "if control structure without an else",
-            expectedLevels = { CONSTANT },
-            expectedStrings = { "a(b)?" }
-    )
+            stringDefinitions = {
+                    @StringDefinitions(
+                            expectedLevel = CONSTANT, expectedStrings = "a(b)?"
+                    )
+            })
     public void ifWithoutElse() {
         StringBuilder sb = new StringBuilder("a");
         int i = new Random().nextInt();
@@ -324,12 +376,14 @@ public class TestMethods {
         analyzeString(sb.toString());
     }
 
-    @StringDefinitions(
+    @StringDefinitionsCollection(
             value = "case with a nested loop where in the outer loop a StringBuilder is created "
                     + "that is later read",
-            expectedLevels = { CONSTANT },
-            expectedStrings = { "a(b)*" }
-    )
+            stringDefinitions = {
+                    @StringDefinitions(
+                            expectedLevel = CONSTANT, expectedStrings = "a(b)*"
+                    )
+            })
     public void nestedLoops(int range) {
         for (int i = 0; i < range; i++) {
             StringBuilder sb = new StringBuilder("a");
@@ -340,11 +394,14 @@ public class TestMethods {
         }
     }
 
-    @StringDefinitions(
+    @StringDefinitionsCollection(
             value = "some example that makes use of a StringBuffer instead of a StringBuilder",
-            expectedLevels = { PARTIALLY_CONSTANT },
-            expectedStrings = { "((x|[AnIntegerValue]))*yz" }
-    )
+            stringDefinitions = {
+                    @StringDefinitions(
+                            expectedLevel = PARTIALLY_CONSTANT,
+                            expectedStrings = "((x|[AnIntegerValue]))*yz"
+                    )
+            })
     public void stringBufferExample() {
         StringBuffer sb = new StringBuffer();
         for (int i = 0; i < 20; i++) {
@@ -359,11 +416,13 @@ public class TestMethods {
         analyzeString(sb.toString());
     }
 
-    @StringDefinitions(
+    @StringDefinitionsCollection(
             value = "while-true example",
-            expectedLevels = { CONSTANT },
-            expectedStrings = { "a(b)*" }
-    )
+            stringDefinitions = {
+                    @StringDefinitions(
+                            expectedLevel = CONSTANT, expectedStrings = "a(b)*"
+                    )
+            })
     public void whileWithBreak() {
         StringBuilder sb = new StringBuilder("a");
         while (true) {
@@ -375,11 +434,13 @@ public class TestMethods {
         analyzeString(sb.toString());
     }
 
-    @StringDefinitions(
+    @StringDefinitionsCollection(
             value = "an example with a non-while-true loop containing a break",
-            expectedLevels = { CONSTANT },
-            expectedStrings = { "a(b)*" }
-    )
+            stringDefinitions = {
+                    @StringDefinitions(
+                            expectedLevel = CONSTANT, expectedStrings = "a(b)*"
+                    )
+            })
     public void whileWithBreak(int i) {
         StringBuilder sb = new StringBuilder("a");
         int j = 0;
@@ -393,11 +454,17 @@ public class TestMethods {
         analyzeString(sb.toString());
     }
 
-    @StringDefinitions(
+    @StringDefinitionsCollection(
             value = "an extensive example with many control structures",
-            expectedLevels = { CONSTANT, PARTIALLY_CONSTANT },
-            expectedStrings = { "(iv1|iv2): ", "(iv1|iv2): (great!)*(\\w)?" }
-    )
+            stringDefinitions = {
+                    @StringDefinitions(
+                            expectedLevel = CONSTANT, expectedStrings = "(iv1|iv2): "
+                    ),
+                    @StringDefinitions(
+                            expectedLevel = PARTIALLY_CONSTANT,
+                            expectedStrings = "(iv1|iv2): (great!)*(\\w)?"
+                    )
+            })
     public void extensive(boolean cond) {
         StringBuilder sb = new StringBuilder();
         if (cond) {
@@ -424,11 +491,13 @@ public class TestMethods {
         analyzeString(sb.toString());
     }
 
-    @StringDefinitions(
+    @StringDefinitionsCollection(
             value = "an example with a throw (and no try-catch-finally)",
-            expectedLevels = { PARTIALLY_CONSTANT },
-            expectedStrings = { "File Content:\\w" }
-    )
+            stringDefinitions = {
+                    @StringDefinitions(
+                            expectedLevel = PARTIALLY_CONSTANT, expectedStrings = "File Content:\\w"
+                    )
+            })
     public void withThrow(String filename) throws IOException {
         StringBuilder sb = new StringBuilder("File Content:");
         String data = new String(Files.readAllBytes(Paths.get(filename)));
@@ -436,18 +505,25 @@ public class TestMethods {
         analyzeString(sb.toString());
     }
 
-    @StringDefinitions(
+    @StringDefinitionsCollection(
             value = "case with a try-finally exception",
             // Currently, multiple expectedLevels and expectedStrings values are necessary because
             // the three-address code contains multiple calls to 'analyzeString' which are currently
             // not filtered out
-            expectedLevels = {
-                    PARTIALLY_CONSTANT, PARTIALLY_CONSTANT, PARTIALLY_CONSTANT
-            },
-            expectedStrings = {
-                    "File Content:(\\w)?", "File Content:(\\w)?", "File Content:(\\w)?"
-            }
-    )
+            stringDefinitions = {
+                    @StringDefinitions(
+                            expectedLevel = PARTIALLY_CONSTANT,
+                            expectedStrings = "File Content:(\\w)?"
+                    ),
+                    @StringDefinitions(
+                            expectedLevel = PARTIALLY_CONSTANT,
+                            expectedStrings = "File Content:(\\w)?"
+                    ),
+                    @StringDefinitions(
+                            expectedLevel = PARTIALLY_CONSTANT,
+                            expectedStrings = "File Content:(\\w)?"
+                    )
+            })
     public void withException(String filename) {
         StringBuilder sb = new StringBuilder("File Content:");
         try {
@@ -459,15 +535,19 @@ public class TestMethods {
         }
     }
 
-    @StringDefinitions(
+    @StringDefinitionsCollection(
             value = "case with a try-catch-finally exception",
-            expectedLevels = {
-                    PARTIALLY_CONSTANT, PARTIALLY_CONSTANT, PARTIALLY_CONSTANT
-            },
-            expectedStrings = {
-                    "=====(\\w|=====)", "=====(\\w|=====)", "=====(\\w|=====)"
-            }
-    )
+            stringDefinitions = {
+                    @StringDefinitions(
+                            expectedLevel = PARTIALLY_CONSTANT, expectedStrings = "=====(\\w|=====)"
+                    ),
+                    @StringDefinitions(
+                            expectedLevel = PARTIALLY_CONSTANT, expectedStrings = "=====(\\w|=====)"
+                    ),
+                    @StringDefinitions(
+                            expectedLevel = PARTIALLY_CONSTANT, expectedStrings = "=====(\\w|=====)"
+                    )
+            })
     public void tryCatchFinally(String filename) {
         StringBuilder sb = new StringBuilder("=====");
         try {
@@ -480,11 +560,16 @@ public class TestMethods {
         }
     }
 
-    @StringDefinitions(
+    @StringDefinitionsCollection(
             value = "simple examples to clear a StringBuilder",
-            expectedLevels = { DYNAMIC, DYNAMIC },
-            expectedStrings = { "\\w", "\\w" }
-    )
+            stringDefinitions = {
+                    @StringDefinitions(
+                            expectedLevel = DYNAMIC, expectedStrings = "\\w"
+                    ),
+                    @StringDefinitions(
+                            expectedLevel = DYNAMIC, expectedStrings = "\\w"
+                    )
+            })
     public void simpleClearExamples() {
         StringBuilder sb1 = new StringBuilder("init_value:");
         sb1.setLength(0);
@@ -499,11 +584,14 @@ public class TestMethods {
         analyzeString(sb2.toString());
     }
 
-    @StringDefinitions(
+    @StringDefinitionsCollection(
             value = "a more advanced example with a StringBuilder#setLength to clear it",
-            expectedLevels = { CONSTANT },
-            expectedStrings = { "(init_value:Hello, world!Goodbye|Goodbye)" }
-    )
+            stringDefinitions = {
+                    @StringDefinitions(
+                            expectedLevel = CONSTANT,
+                            expectedStrings = "(init_value:Hello, world!Goodbye|Goodbye)"
+                    )
+            })
     public void advancedClearExampleWithSetLength(int value) {
         StringBuilder sb = new StringBuilder("init_value:");
         if (value < 10) {
@@ -515,11 +603,17 @@ public class TestMethods {
         analyzeString(sb.toString());
     }
 
-    @StringDefinitions(
+    @StringDefinitionsCollection(
             value = "a simple and a little more advanced example with a StringBuilder#replace call",
-            expectedLevels = { DYNAMIC, PARTIALLY_CONSTANT },
-            expectedStrings = { "\\w", "(init_value:Hello, world!Goodbye|\\wGoodbye)" }
-    )
+            stringDefinitions = {
+                    @StringDefinitions(
+                            expectedLevel = DYNAMIC, expectedStrings = "\\w"
+                    ),
+                    @StringDefinitions(
+                            expectedLevel = PARTIALLY_CONSTANT,
+                            expectedStrings = "(init_value:Hello, world!Goodbye|\\wGoodbye)"
+                    )
+            })
     public void replaceExamples(int value) {
         StringBuilder sb1 = new StringBuilder("init_value");
         sb1.replace(0, 5, "replaced_value");
@@ -535,11 +629,19 @@ public class TestMethods {
         analyzeString(sb1.toString());
     }
 
-    @StringDefinitions(
+    @StringDefinitionsCollection(
             value = "loops that use breaks and continues (or both)",
-            expectedLevels = { CONSTANT, CONSTANT, DYNAMIC },
-            expectedStrings = { "abc((d)?)*", "", "((\\w)?)*" }
-    )
+            stringDefinitions = {
+                    @StringDefinitions(
+                            expectedLevel = CONSTANT, expectedStrings = "abc((d)?)*"
+                    ),
+                    @StringDefinitions(
+                            expectedLevel = CONSTANT, expectedStrings = ""
+                    ),
+                    @StringDefinitions(
+                            expectedLevel = DYNAMIC, expectedStrings = "((\\w)?)*"
+                    )
+            })
     public void breakContinueExamples(int value) {
         StringBuilder sb1 = new StringBuilder("abc");
         for (int i = 0; i < value; i++) {
@@ -576,12 +678,14 @@ public class TestMethods {
         analyzeString(sb3.toString());
     }
 
-    @StringDefinitions(
+    @StringDefinitionsCollection(
             value = "an example where in the condition of an 'if', a string is appended to a "
                     + "StringBuilder",
-            expectedLevels = { CONSTANT },
-            expectedStrings = { "java.lang.Runtime" }
-    )
+            stringDefinitions = {
+                    @StringDefinitions(
+                            expectedLevel = CONSTANT, expectedStrings = "java.lang.Runtime"
+                    )
+            })
     public void ifConditionAppendsToString(String className) {
         StringBuilder sb = new StringBuilder();
         if (sb.append("java.lang.Runtime").toString().equals(className)) {
@@ -590,12 +694,17 @@ public class TestMethods {
         analyzeString(sb.toString());
     }
 
-    @StringDefinitions(
+    @StringDefinitionsCollection(
             value = "checks if a string value with > 2 continuous appends and a second "
                     + "StringBuilder is determined correctly",
-            expectedLevels = { CONSTANT, CONSTANT },
-            expectedStrings = { "B.", "java.langStringB." }
-    )
+            stringDefinitions = {
+                    @StringDefinitions(
+                            expectedLevel = CONSTANT, expectedStrings = "B."
+                    ),
+                    @StringDefinitions(
+                            expectedLevel = CONSTANT, expectedStrings = "java.langStringB."
+                    )
+            })
     public void directAppendConcatsWith2ndStringBuilder() {
         StringBuilder sb = new StringBuilder("java");
         StringBuilder sb2 = new StringBuilder("B");
@@ -607,11 +716,41 @@ public class TestMethods {
         analyzeString(sb.toString());
     }
 
-    @StringDefinitions(
+    @StringDefinitionsCollection(
+            value = "checks if the case, where the value of a StringBuilder depends on the "
+                    + "complex construction of a second StringBuilder is determined correctly.",
+            stringDefinitions = {
+                    @StringDefinitions(
+                            expectedLevel = CONSTANT, expectedStrings = "(Object|Runtime)"
+                    ),
+                    @StringDefinitions(
+                            expectedLevel = CONSTANT, expectedStrings = "java.lang.(Object|Runtime)"
+                    )
+            })
+    public void secondStringBuilderRead(String className) {
+        StringBuilder sbObj = new StringBuilder("Object");
+        StringBuilder sbRun = new StringBuilder("Runtime");
+
+        StringBuilder sb1 = new StringBuilder();
+        if (sb1.length() == 0) {
+            sb1.append(sbObj.toString());
+        } else {
+            sb1.append(sbRun.toString());
+        }
+
+        analyzeString(sb1.toString());
+        StringBuilder sb2 = new StringBuilder("java.lang.");
+        sb2.append(sb1.toString());
+        analyzeString(sb2.toString());
+    }
+
+    @StringDefinitionsCollection(
             value = "an example that uses a non final field",
-            expectedLevels = { PARTIALLY_CONSTANT },
-            expectedStrings = { "Field Value:\\w" }
-    )
+            stringDefinitions = {
+                    @StringDefinitions(
+                            expectedLevel = PARTIALLY_CONSTANT, expectedStrings = "Field Value:\\w"
+                    )
+            })
     public void nonFinalFieldRead() {
         StringBuilder sb = new StringBuilder("Field Value:");
         System.out.println(sb);
@@ -619,12 +758,14 @@ public class TestMethods {
         analyzeString(sb.toString());
     }
 
-    @StringDefinitions(
+    @StringDefinitionsCollection(
             value = "an example that reads a public final static field; for these, the string "
                     + "information are available (at lease on modern compilers)",
-            expectedLevels = { CONSTANT },
-            expectedStrings = { "Field Value:mine" }
-    )
+            stringDefinitions = {
+                    @StringDefinitions(
+                            expectedLevel = CONSTANT, expectedStrings = "Field Value:mine"
+                    )
+            })
     public void finalFieldRead() {
         StringBuilder sb = new StringBuilder("Field Value:");
         System.out.println(sb);
@@ -632,9 +773,33 @@ public class TestMethods {
         analyzeString(sb.toString());
     }
 
+    //    @StringDefinitionsCollection(
+    //            value = "A case with a criss-cross append on two StringBuilders",
+    //            stringDefinitions = {
+    //                    @StringDefinitions(
+    //                            expectedLevel = CONSTANT, expectedStrings = "Object(Runtime)?"
+    //                    ),
+    //                    @StringDefinitions(
+    //                            expectedLevel = CONSTANT, expectedStrings = "Runtime(Object)?"
+    //                    )
+    //            })
+    //    public void crissCrossExample(String className) {
+    //        StringBuilder sbObj = new StringBuilder("Object");
+    //        StringBuilder sbRun = new StringBuilder("Runtime");
+    //
+    //        if (className.length() == 0) {
+    //            sbRun.append(sbObj.toString());
+    //        } else {
+    //            sbObj.append(sbRun.toString());
+    //        }
+    //
+    //        analyzeString(sbObj.toString());
+    //        analyzeString(sbRun.toString());
+    //    }
+
     //    @StringDefinitions(
     //            value = "a case with a switch with missing breaks",
-    //            expectedLevels = {StringConstancyLevel.CONSTANT},
+    //            expectedLevel = StringConstancyLevel.CONSTANT},
     //            expectedStrings ={ "a(bc|c)?" }
     //    )
     //    public void switchWithMissingBreak(int value) {
