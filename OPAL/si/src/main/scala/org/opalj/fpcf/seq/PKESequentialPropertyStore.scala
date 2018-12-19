@@ -572,25 +572,6 @@ final class PKESequentialPropertyStore private (
                 val PartialResult(e, pk, u) = r
                 handlePartialResult(e, pk, u, Nil)
 
-            case InterimPartialResult.id ⇒
-                val InterimPartialResult(e, pk, u, processedDependee, c) = r
-                val processedDependees = List(processedDependee)
-                // 1. let's check if a new dependee is already updated...
-                //    If so, we directly schedule a task again to compute the property.
-                val noUpdates = processDependees(processedDependees, c)
-
-                if (noUpdates) {
-                    // 2. update the value and trigger dependers/clear old dependees;
-                    //    the most current value of every dependee was taken into account
-                    //    register with the (!) dependees.
-                    handlePartialResult(e, pk, u, processedDependees, c, DefaultPropertyComputation)
-                } else {
-                    // 2. update the value (trigger dependers/clear old dependees)
-                    //    There was an update and we already scheduled the computation... hence,
-                    //     we have no live dependees any more.
-                    handlePartialResult(e, pk, u, Nil)
-                }
-
             case InterimResult.id ⇒
                 val InterimResult(interimP: SomeEPS, processedDependees, c, pcHint) = r
 
