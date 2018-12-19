@@ -97,7 +97,7 @@ class LocalStringDefinitionAnalysis(
             val leanPaths = paths.makeLeanPath(uvar, stmts)
 
             // Find DUVars, that the analysis of the current entity depends on
-            val dependentVars = findDependentVars(leanPaths, stmts, List(uvar))
+            val dependentVars = findDependentVars(leanPaths, stmts, uvar)
             if (dependentVars.nonEmpty) {
                 dependentVars.keys.foreach { nextVar ⇒
                     val toAnalyze = (nextVar, data._2)
@@ -199,10 +199,18 @@ class LocalStringDefinitionAnalysis(
      * [[FlatPathElement.element]] in which it occurs.
      */
     private def findDependeesAcc(
-        subpath: SubPath, stmts: Array[Stmt[V]], foundDependees: ListBuffer[(V, Int)]
-    ): ListBuffer[(V, Int)] = {
+        subpath:           SubPath,
+        stmts:             Array[Stmt[V]],
+        target:            V,
+        foundDependees:    ListBuffer[(V, Int)],
+        hasTargetBeenSeen: Boolean
+    ): (ListBuffer[(V, Int)], Boolean) = {
+        var encounteredTarget = false
         subpath match {
             case fpe: FlatPathElement ⇒
+                if (target.definedBy.contains(fpe.element)) {
+                    encounteredTarget = true
+                }
                 // For FlatPathElements, search for DUVars on which the toString method is called
                 // and where these toString calls are the parameter of an append call
                 stmts(fpe.element) match {
@@ -221,13 +229,18 @@ class LocalStringDefinitionAnalysis(
                         }
                     case _ ⇒
                 }
-                foundDependees
+                (foundDependees, encounteredTarget)
             case npe: NestedPathElement ⇒
                 npe.element.foreach { nextSubpath ⇒
-                    findDependeesAcc(nextSubpath, stmts, foundDependees)
+                    if (!encounteredTarget) {
+                        val (_, seen) = findDependeesAcc(
+                            nextSubpath, stmts, target, foundDependees, encounteredTarget
+                        )
+                        encounteredTarget = seen
+                    }
                 }
-                foundDependees
-            case _ ⇒ foundDependees
+                (foundDependees, encounteredTarget)
+            case _ ⇒ (foundDependees, encounteredTarget)
         }
     }
 
@@ -238,22 +251,27 @@ class LocalStringDefinitionAnalysis(
      * value that stems from a `toString` call of a [[StringBuilder]] or [[StringBuffer]]. This
      * function then returns the found UVars along with the indices of those append statements.
      *
-     * @note In order to make sure that a [[org.opalj.tac.DUVar]] does not depend on itself, pass a
-     *       `ignore` list (elements in `ignore` will not be added to the dependees list).
+     * @note In order to make sure that a [[org.opalj.tac.DUVar]] does not depend on itself, pass
+     *       this variable as `ignore`.
      */
     private def findDependentVars(
-        path: Path, stmts: Array[Stmt[V]], ignore: List[V]
+        path: Path, stmts: Array[Stmt[V]], ignore: V
     ): mutable.LinkedHashMap[V, Int] = {
         val dependees = mutable.LinkedHashMap[V, Int]()
-        val ignoreNews = ignore.map { i ⇒
-            InterpretationHandler.findNewOfVar(i, stmts)
-        }.distinct
+        val ignoreNews = InterpretationHandler.findNewOfVar(ignore, stmts)
+        var wasTargetSeen = false
 
         path.elements.foreach { nextSubpath ⇒
-            findDependeesAcc(nextSubpath, stmts, ListBuffer()).foreach { nextPair ⇒
-                val newExprs = InterpretationHandler.findNewOfVar(nextPair._1, stmts)
-                if (!ignore.contains(nextPair._1) && !ignoreNews.contains(newExprs)) {
-                    dependees.put(nextPair._1, nextPair._2)
+            if (!wasTargetSeen) {
+                val (currentDeps, encounteredTarget) = findDependeesAcc(
+                    nextSubpath, stmts, ignore, ListBuffer(), false
+                )
+                wasTargetSeen = encounteredTarget
+                currentDeps.foreach { nextPair ⇒
+                    val newExprs = InterpretationHandler.findNewOfVar(nextPair._1, stmts)
+                    if (ignore != nextPair._1 && ignoreNews != newExprs) {
+                        dependees.put(nextPair._1, nextPair._2)
+                    }
                 }
             }
         }
