@@ -175,7 +175,7 @@ sealed abstract class PropertyStoreTest(
                 ps.shutdown()
             }
 
-            it("should be possible to test if a store has a property") {
+            it("should be possible to test if a store has a property even if it was only queried") {
                 val ps = createPropertyStore()
                 info(s"PropertyStore@${System.identityHashCode(ps).toHexString}")
 
@@ -198,6 +198,26 @@ sealed abstract class PropertyStoreTest(
 
                 ps.hasProperty("cbc", PalindromeKey) should be(false)
                 ps.hasProperty("aba", SuperPalindromeKey) should be(false)
+
+                ps.shutdown()
+            }
+
+            it("should be possible to test if a store has a property even if the analysis is scheduled later") {
+                val ps = createPropertyStore()
+                info(s"PropertyStore@${System.identityHashCode(ps).toHexString}")
+
+                ps.hasProperty("aba", PalindromeKey) should be(false)
+                ps.hasProperty("aba", SuperPalindromeKey) should be(false)
+
+                ps.set("aba", Palindrome)
+                ps.set("zzYzz", SuperPalindrome)
+
+                ps.hasProperty("aba", PalindromeKey) should be(true)
+                ps.hasProperty("zzYzz", SuperPalindromeKey) should be(true)
+
+                ps.hasProperty("aba", SuperPalindromeKey) should be(false)
+
+                ps.setupPhase(Set(PalindromeKey, SuperPalindromeKey), Set.empty)
 
                 ps.scheduleEagerComputationForEntity("a") { e ⇒
                     val dependee = EPK("d", PalindromeKey)
@@ -539,32 +559,35 @@ sealed abstract class PropertyStoreTest(
                 ps.set("aBa", Palindrome)
                 ps.set("aNOa", NoPalindrome)
 
+                val processedStrings = scala.collection.concurrent.TrieMap.empty[String, Boolean]
+
                 ps.setupPhase(Set(PalindromeKey, PalindromeFragmentsKey), Set.empty)
 
+                def uc(
+                    e: String
+                )(
+                    fragmentsEOptionP: EOptionP[Entity, PalindromeFragments]
+                ): Option[EPS[String, PalindromeFragments]] = {
+                    processedStrings.put(e, true)
+                    (fragmentsEOptionP: @unchecked) match {
+                        case _: EPK[_, _] ⇒
+                            Some(
+                                InterimEUBP(
+                                    "fragments",
+                                    PalindromeFragments(Set(e.substring(0, 1)))
+                                )
+                            )
+                        case InterimUBP(PalindromeFragments(fs)) ⇒
+                            val newFs = fs + e.substring(0, 1)
+                            if (newFs != fs)
+                                Some(InterimEUBP("fragments", PalindromeFragments(newFs)))
+                            else
+                                None
+                    }
+                }
                 ps.registerTriggeredComputation(
                     PalindromeKey,
-                    (e: Entity) ⇒ {
-                        PartialResult(
-                            "fragments",
-                            PalindromeFragmentsKey,
-                            (eOptionP: EOptionP[Entity, PalindromeFragments]) ⇒
-                                (eOptionP: @unchecked) match {
-                                    case _: EPK[_, _] ⇒
-                                        Some(
-                                            InterimEUBP(
-                                                "fragments",
-                                                PalindromeFragments(Set(e.toString.substring(0, 1)))
-                                            )
-                                        )
-                                    case InterimUBP(PalindromeFragments(fs)) ⇒
-                                        val newFs = fs + e.toString.substring(0, 1)
-                                        if (newFs != fs)
-                                            Some(InterimEUBP("fragments", PalindromeFragments(newFs)))
-                                        else
-                                            None
-                                }
-                        )
-                    }
+                    (e: Entity) ⇒ PartialResult("fragments", PalindromeFragmentsKey, uc(e.toString))
                 )
 
                 ps.scheduleEagerComputationsForEntities(List("eBe", "eNOe"))(
@@ -579,6 +602,7 @@ sealed abstract class PropertyStoreTest(
                 ps("fragments", PalindromeFragmentsKey) should be(
                     FinalEP("fragments", PalindromeFragments(Set("a", "e")))
                 )
+                processedStrings.keySet should be(Set("aNOa", "eNOe", "aBa", "eBe"))
                 ps.shutdown()
             }
 
