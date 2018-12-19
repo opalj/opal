@@ -14,7 +14,8 @@
 - moved the `isValueASubtypeOf` methods to the _value framework (`org.opalj.value`)_ (i.e., the methods are moved up in the class hierarchy)
 - moved the `verificationTypeInfo` methods to the _value framework_ (i.e., they are moved up in the class hierarchy)
 - the domain classes (e.g., `org.opalj.ai.domain.l0.TypeLevelReferenceValue` or `...l1.ReferenceValues`) which define the framework for handling reference values now use traits instead of classes; the concrete classes are now found in the `...DefaultBinding...` classes
-- `javaâ€¦Comparable|Cloneable|Serializable` now get fixed ObjectType ids
+- `java…Comparable|Cloneable|Serializable` now get fixed ObjectType ids
+- improved PropertyStore
 
 ## 2.0.1 - Released Oct. 10th 2018
 
