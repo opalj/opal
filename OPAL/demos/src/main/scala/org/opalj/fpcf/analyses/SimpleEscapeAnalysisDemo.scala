@@ -29,7 +29,7 @@ import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.ai.common.DefinitionSite
-import org.opalj.ai.fpcf.analyses.LazyL0BaseAIResultAnalysis
+import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
 import org.opalj.tac.fpcf.analyses.TACAITransformer
 
 /**
@@ -63,7 +63,7 @@ object SimpleEscapeAnalysisDemo extends DefaultOneStepAnalysis {
             val manager = project.get(FPCFAnalysesManagerKey)
             manager.runAll(
                 EagerSimpleEscapeAnalysis,
-                LazyL0BaseAIResultAnalysis,
+                LazyL0BaseAIAnalysis,
                 TACAITransformer /* LazyL0TACAIAnalysis */ )
             propertyStore.waitOnPhaseCompletion()
         } { t ⇒ info("progress", s"escape analysis took ${t.toSeconds}") }

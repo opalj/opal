@@ -88,7 +88,7 @@ class VirtualMethodAllocationFreenessAnalysis private[analyses] ( final val proj
 
 }
 
-trait VirtualMethodAllocationFreenessAnalysisScheduler extends ComputationSpecification {
+trait VirtualMethodAllocationFreenessAnalysisScheduler extends ComputationSpecification[FPCFAnalysis] {
 
     final def derivedProperty: PropertyBounds = {
         PropertyBounds.lub(VirtualMethodAllocationFreeness)
@@ -102,7 +102,7 @@ object EagerVirtualMethodAllocationFreenessAnalysis
     extends VirtualMethodAllocationFreenessAnalysisScheduler
     with BasicFPCFEagerAnalysisScheduler {
 
-    override def derivesEagerly: Set[PropertyBounds] = Set.empty
+    override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
 
     override def derivesCollaboratively: Set[PropertyBounds] = Set.empty
 

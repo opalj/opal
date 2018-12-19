@@ -24,7 +24,7 @@ import org.opalj.fpcf.properties.VPrimitiveReturnValue
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
-import org.opalj.ai.fpcf.analyses.LazyL0BaseAIResultAnalysis
+import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
 import org.opalj.tac.fpcf.analyses.TACAITransformer
 
 /**
@@ -48,8 +48,8 @@ object ReturnValueFreshness extends DefaultOneStepAnalysis {
         isInterrupted: () ⇒ Boolean
     ): BasicReport = {
 
-        val ps = project.get(FPCFAnalysesManagerKey).runAll(
-            LazyL0BaseAIResultAnalysis,
+        val (ps, _ /*executed analyses*/ ) = project.get(FPCFAnalysesManagerKey).runAll(
+            LazyL0BaseAIAnalysis,
             TACAITransformer, // LazyL0TACAIAnalysis,
             LazyInterProceduralEscapeAnalysis,
             LazyFieldLocalityAnalysis,

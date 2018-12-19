@@ -17,7 +17,7 @@ import org.opalj.fpcf.properties.NoLocalField
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
-import org.opalj.ai.fpcf.analyses.LazyL0BaseAIResultAnalysis
+import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
 import org.opalj.tac.fpcf.analyses.TACAITransformer
 
 /**
@@ -39,9 +39,9 @@ object FieldLocality extends DefaultOneStepAnalysis {
         isInterrupted: () ⇒ Boolean
     ): BasicReport = {
 
-        val ps = project.get(FPCFAnalysesManagerKey).runAll(
+        val (ps, _ /*executed analyses*/ ) = project.get(FPCFAnalysesManagerKey).runAll(
             //LazyL0TACAIAnalysis,
-            LazyL0BaseAIResultAnalysis,
+            LazyL0BaseAIAnalysis,
             TACAITransformer,
             LazyInterProceduralEscapeAnalysis,
             LazyVirtualCallAggregatingEscapeAnalysis,

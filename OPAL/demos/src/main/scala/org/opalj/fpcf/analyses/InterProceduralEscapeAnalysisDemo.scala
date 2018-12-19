@@ -29,7 +29,7 @@ import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.ai.common.DefinitionSite
 import org.opalj.ai.domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse
-import org.opalj.ai.fpcf.analyses.LazyL0BaseAIResultAnalysis
+import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.tac.fpcf.analyses.TACAITransformer
 
@@ -72,7 +72,7 @@ object InterProceduralEscapeAnalysisDemo extends DefaultOneStepAnalysis {
             manager.runAll(
                 LazyVirtualCallAggregatingEscapeAnalysis,
                 // LazyL0TACAIAnalysis,
-                LazyL0BaseAIResultAnalysis,
+                LazyL0BaseAIAnalysis,
                 TACAITransformer,
                 EagerInterProceduralEscapeAnalysis
             )

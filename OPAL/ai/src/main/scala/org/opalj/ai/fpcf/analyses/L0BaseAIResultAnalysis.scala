@@ -72,7 +72,7 @@ object L0BaseAIResultAnalysis {
     }
 }
 
-sealed trait L0BaseAIResultAnalysisScheduler extends ComputationSpecification {
+sealed trait L0BaseAIResultAnalysisScheduler extends ComputationSpecification[FPCFAnalysis] {
 
     final override def uses: Set[PropertyBounds] = Set.empty
 
@@ -96,7 +96,7 @@ object EagerL0BaseAIAnalysis
     }
 }
 
-object LazyL0BaseAIResultAnalysis
+object LazyL0BaseAIAnalysis
     extends L0BaseAIResultAnalysisScheduler
     with BasicFPCFLazyAnalysisScheduler {
 

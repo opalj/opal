@@ -14,7 +14,7 @@ trait FPCFLazyLikeAnalysisScheduler extends FPCFAnalysisScheduler {
 
     final override def derivesCollaboratively: Set[PropertyBounds] = Set.empty
 
-    final override def schedule(ps: PropertyStore, i: InitializationData): Unit = {
+    final override def schedule(ps: PropertyStore, i: InitializationData): FPCFAnalysis = {
         register(ps.context(classOf[SomeProject]), ps, i)
     }
 

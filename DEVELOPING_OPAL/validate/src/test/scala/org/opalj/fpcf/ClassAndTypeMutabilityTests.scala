@@ -17,8 +17,7 @@ class ClassAndTypeMutabilityTests extends PropertiesTest {
 
     describe("the field, class and type mutability analyses are executed") {
         val as = executeAnalyses(Set(
-            EagerClassImmutabilityAnalysis, EagerTypeImmutabilityAnalysis
-        ), Set(
+            EagerClassImmutabilityAnalysis, EagerTypeImmutabilityAnalysis,
             LazyL1FieldMutabilityAnalysis, LazyL0TACAIAnalysis
         ))
         as.propertyStore.shutdown()

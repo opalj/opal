@@ -27,8 +27,7 @@ import org.opalj.fpcf.PropertyKey.fallbackPropertyBasedOnPKId
 import org.opalj.fpcf.PropertyKey.computeFastTrackPropertyBasedOnPKId
 
 /**
- * Property store implementation which parallels the execution of the scheduled
- * computations.
+ * A property store which parallels the execution of the scheduled computations.
  *
  * Entities are stored after computation.
  *

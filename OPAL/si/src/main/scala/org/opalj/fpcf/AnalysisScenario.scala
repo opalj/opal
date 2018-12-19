@@ -14,9 +14,9 @@ import org.opalj.collection.immutable.Chain
  *
  * @author Michael Eichberg
  */
-class AnalysisScenario {
+class AnalysisScenario[A] {
 
-    private[this] var allCS: Set[ComputationSpecification] = Set.empty
+    private[this] var allCS: Set[ComputationSpecification[A]] = Set.empty
 
     private[this] var derivedProperties: Set[PropertyBounds] = Set.empty
     private[this] var eagerlyDerivedProperties: Set[PropertyBounds] = Set.empty
@@ -25,12 +25,12 @@ class AnalysisScenario {
 
     private[this] var usedProperties: Set[PropertyBounds] = Set.empty
 
-    private[this] var eagerCS: Set[ComputationSpecification] = Set.empty
-    private[this] var lazyCS: Set[ComputationSpecification] = Set.empty
-    private[this] var triggeredCS: Set[ComputationSpecification] = Set.empty
-    private[this] var transformersCS: Set[ComputationSpecification] = Set.empty
+    private[this] var eagerCS: Set[ComputationSpecification[A]] = Set.empty
+    private[this] var lazyCS: Set[ComputationSpecification[A]] = Set.empty
+    private[this] var triggeredCS: Set[ComputationSpecification[A]] = Set.empty
+    private[this] var transformersCS: Set[ComputationSpecification[A]] = Set.empty
 
-    private[this] var derivedBy: Map[PropertyKind, (PropertyBounds, Set[ComputationSpecification])] =
+    private[this] var derivedBy: Map[PropertyKind, (PropertyBounds, Set[ComputationSpecification[A]])] =
         Map.empty
 
     def allProperties: Set[PropertyBounds] = derivedProperties ++ usedProperties
@@ -39,7 +39,7 @@ class AnalysisScenario {
      * Adds the given computation specification (`cs`) to the set of computation specifications
      * that should be scheduled.
      */
-    def +=(cs: ComputationSpecification): this.type = {
+    def +=(cs: ComputationSpecification[A]): this.type = {
         // 1. check the most basic constraints
         cs.derivesLazily.foreach { lazilyDerivedProperty ⇒
             if (derivedProperties.contains(lazilyDerivedProperty)) {
@@ -143,10 +143,10 @@ class AnalysisScenario {
     /**
      * Returns the dependencies between the computations.
      */
-    def computationDependencies: Graph[ComputationSpecification] = {
-        val compDeps = Graph.empty[ComputationSpecification]
-        val derivedBy: Map[PropertyBounds, Set[ComputationSpecification]] = {
-            var derivedBy: Map[PropertyBounds, Set[ComputationSpecification]] = Map.empty
+    def computationDependencies: Graph[ComputationSpecification[A]] = {
+        val compDeps = Graph.empty[ComputationSpecification[A]]
+        val derivedBy: Map[PropertyBounds, Set[ComputationSpecification[A]]] = {
+            var derivedBy: Map[PropertyBounds, Set[ComputationSpecification[A]]] = Map.empty
             allCS foreach { cs ⇒
                 cs.derives foreach { derives ⇒
                     derivedBy += derives -> (derivedBy.getOrElse(derives, Set.empty) + cs)
@@ -198,7 +198,7 @@ class AnalysisScenario {
      *  1. when the phase has finished, all analyses' afterPhaseCompletion methods are called.
      *
      */
-    def computeSchedule(implicit logContext: LogContext): Schedule = {
+    def computeSchedule(implicit logContext: LogContext): Schedule[A] = {
 
         // 1. check for properties that are not derived (and which require an analysis)
         val underivedProperties = usedProperties -- derivedProperties
@@ -219,7 +219,7 @@ class AnalysisScenario {
         var suppressInterimUpdates: Map[PropertyKind, Set[PropertyKind]] = Map.empty
 
         // 3. create the batch
-        val batchBuilder = Chain.newBuilder[ComputationSpecification]
+        val batchBuilder = Chain.newBuilder[ComputationSpecification[A]]
         batchBuilder ++= lazyCS
         batchBuilder ++= transformersCS
         batchBuilder ++= triggeredCS
@@ -254,8 +254,8 @@ object AnalysisScenario {
     /**
      * @param analyses The set of analyses that should be executed as part of this analysis scenario.
      */
-    def apply(analyses: Iterable[ComputationSpecification]): AnalysisScenario = {
-        val as = new AnalysisScenario
+    def apply[A](analyses: Iterable[ComputationSpecification[A]]): AnalysisScenario[A] = {
+        val as = new AnalysisScenario[A]
         analyses.foreach(as.+=)
         as
     }

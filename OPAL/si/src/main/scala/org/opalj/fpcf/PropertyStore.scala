@@ -288,6 +288,8 @@ abstract class PropertyStore {
         Array.fill(SupportedPropertyKinds) { new Array[Boolean](SupportedPropertyKinds) }
     }
 
+    protected[this] final var subPhaseFinalizationOrder: Array[List[PropertyKind]] = Array.empty
+
     /**
      * The set of computations that will only be scheduled if the result is required.
      */
@@ -433,7 +435,8 @@ abstract class PropertyStore {
         setupPhase(
             configuration.propertyKindsComputedInThisPhase,
             configuration.propertyKindsComputedInLaterPhase,
-            configuration.suppressInterimUpdates
+            configuration.suppressInterimUpdates,
+            configuration.collaborativelyComputedPropertyKindsFinalizationOrder
         )
     }
 
@@ -462,7 +465,8 @@ abstract class PropertyStore {
     final def setupPhase(
         propertyKindsComputedInThisPhase:  Set[PropertyKind],
         propertyKindsComputedInLaterPhase: Set[PropertyKind]                    = Set.empty,
-        suppressInterimUpdates:            Map[PropertyKind, Set[PropertyKind]] = Map.empty
+        suppressInterimUpdates:            Map[PropertyKind, Set[PropertyKind]] = Map.empty,
+        finalizationOrder:                 List[List[PropertyKind]]             = List.empty
     ): Unit = handleExceptions {
         if (!isIdle) {
             throw new IllegalStateException("computations are already running");
@@ -505,18 +509,31 @@ abstract class PropertyStore {
         // Collect the information about which interim results should be suppressed.
         suppressInterimUpdates foreach { dependerDependees ⇒
             val (depender, dependees) = dependerDependees
+            require(dependees.nonEmpty)
             dependees foreach { dependee ⇒
                 this.suppressInterimUpdates(depender.id)(dependee.id) = true
             }
         }
 
         // Step 4
+        // Save the information about the finalization order (of properties which are
+        // collaboratively computed).
+        val cleanUpSubPhase = propertyKindsComputedInThisPhase -- finalizationOrder.flatten.toSet
+        this.subPhaseFinalizationOrder =
+            if (cleanUpSubPhase.isEmpty) {
+                finalizationOrder.toArray
+            } else {
+                (finalizationOrder :+ cleanUpSubPhase.toList).toArray
+            }
+
+        // Step 5
         // Call `newPhaseInitialized` to enable subclasses to perform custom initialization steps
         // when a phase was setup.
         newPhaseInitialized(
             propertyKindsComputedInThisPhase,
             propertyKindsComputedInLaterPhase,
-            suppressInterimUpdates
+            suppressInterimUpdates,
+            finalizationOrder
         )
     }
 
@@ -527,7 +544,8 @@ abstract class PropertyStore {
     protected[this] def newPhaseInitialized(
         propertyKindsComputedInThisPhase:  Set[PropertyKind],
         propertyKindsComputedInLaterPhase: Set[PropertyKind],
-        suppressInterimUpdates:            Map[PropertyKind, Set[PropertyKind]]
+        suppressInterimUpdates:            Map[PropertyKind, Set[PropertyKind]],
+        finalizationOrder:                 List[List[PropertyKind]]
     ): Unit = { /*nothing to do*/ }
 
     /**

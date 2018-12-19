@@ -15,7 +15,7 @@ case class SpecificationViolation(message: String) extends Exception(message)
  *
  * @author Michael Eichberg
  */
-trait ComputationSpecification {
+trait ComputationSpecification[A] {
 
     /**
      * The type of the data used by the analysis at initialization time.
@@ -139,7 +139,7 @@ trait ComputationSpecification {
     /**
      * Called by the scheduler to let the analysis register itself or to start execution.
      */
-    def schedule(ps: PropertyStore, i: InitializationData): Unit
+    def schedule(ps: PropertyStore, i: InitializationData): A
 
     /**
      * Called after phase completion.
@@ -148,7 +148,7 @@ trait ComputationSpecification {
 
 }
 
-trait SimpleComputationSpecification extends ComputationSpecification {
+trait SimpleComputationSpecification[A] extends ComputationSpecification[A] {
 
     final override type InitializationData = Null
     final override def init(ps: PropertyStore): Null = null

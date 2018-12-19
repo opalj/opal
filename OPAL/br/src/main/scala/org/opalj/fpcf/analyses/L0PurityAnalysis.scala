@@ -316,7 +316,7 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
 
 }
 
-trait L0PurityAnalysisScheduler extends ComputationSpecification {
+trait L0PurityAnalysisScheduler extends ComputationSpecification[FPCFAnalysis] {
 
     final def derivedProperty: PropertyBounds = PropertyBounds.lub(Purity)
 

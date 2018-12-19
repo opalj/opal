@@ -15,7 +15,7 @@ trait FPCFEagerAnalysisScheduler extends FPCFAnalysisScheduler {
 
     final override def derivesLazily: Option[PropertyBounds] = None
 
-    final override def schedule(ps: PropertyStore, i: InitializationData): Unit = {
+    final override def schedule(ps: PropertyStore, i: InitializationData): FPCFAnalysis = {
         start(ps.context(classOf[SomeProject]), ps, i)
     }
 

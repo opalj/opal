@@ -28,12 +28,12 @@ class L1PuritySmokeTest extends FunSpec with Matchers {
 
     def reportAnalysisTime(t: Nanoseconds): Unit = { info(s"analysis took ${t.toSeconds}") }
 
-    val primaryAnalyses: Set[ComputationSpecification] = Set(
+    val primaryAnalyses: Set[ComputationSpecification[FPCFAnalysis]] = Set(
         EagerL1PurityAnalysis,
         EagerVirtualMethodPurityAnalysis
     )
 
-    val supportAnalyses: Set[ComputationSpecification] = Set(
+    val supportAnalyses: Set[ComputationSpecification[FPCFAnalysis]] = Set(
         EagerL1FieldMutabilityAnalysis,
         EagerClassImmutabilityAnalysis,
         EagerTypeImmutabilityAnalysis

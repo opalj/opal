@@ -33,7 +33,7 @@ sealed trait TACAIPropertyMetaInformation extends PropertyMetaInformation {
  */
 sealed trait TACAI extends Property with TACAIPropertyMetaInformation {
 
-    final def key : PropertyKey[TACAI] = TACAI.key
+    final def key: PropertyKey[TACAI] = TACAI.key
 
     /**
      * @return The three-address code if the method is reachable; `None` otherwise.

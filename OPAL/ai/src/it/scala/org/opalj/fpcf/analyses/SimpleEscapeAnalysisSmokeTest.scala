@@ -14,7 +14,7 @@ import org.opalj.fpcf.analyses.escape.EagerSimpleEscapeAnalysis
 import org.opalj.br.TestSupport.allBIProjects
 import org.opalj.br.TestSupport.createJREProject
 import org.opalj.br.analyses.SomeProject
-import org.opalj.ai.fpcf.analyses.LazyL0BaseAIResultAnalysis
+import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
 import org.opalj.tac.fpcf.analyses.TACAITransformer
 
 /**
@@ -33,7 +33,7 @@ class SimpleEscapeAnalysisSmokeTest extends FunSpec with Matchers {
             val manager = p.get(FPCFAnalysesManagerKey)
             manager.runAll(
                 // LazyL0TACAIAnalysis,
-                LazyL0BaseAIResultAnalysis,
+                LazyL0BaseAIAnalysis,
                 TACAITransformer,
                 EagerSimpleEscapeAnalysis
             )

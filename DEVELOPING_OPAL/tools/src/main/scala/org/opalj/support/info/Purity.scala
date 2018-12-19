@@ -63,7 +63,7 @@ import org.opalj.ai.domain
 import org.opalj.ai.Domain
 import org.opalj.ai.common.SimpleAIKey
 import org.opalj.ai.domain.RecordDefUse
-import org.opalj.ai.fpcf.analyses.LazyL0BaseAIResultAnalysis
+import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.tac.DefaultTACAIKey
 import org.opalj.tac.fpcf.analyses.TACAITransformer
@@ -105,7 +105,7 @@ object Purity {
             LazyTypeImmutabilityAnalysis
         ),
         List[FPCFAnalysisScheduler](
-            LazyL0BaseAIResultAnalysis,
+            LazyL0BaseAIAnalysis,
             TACAITransformer, //LazyL0TACAIAnalysis,
             LazyL0CompileTimeConstancyAnalysis,
             LazyStaticDataUsageAnalysis,

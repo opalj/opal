@@ -82,7 +82,7 @@ class SimpleEscapeAnalysis( final val project: SomeProject)
     override def createState: AbstractEscapeAnalysisState = new AbstractEscapeAnalysisState {}
 }
 
-trait SimpleEscapeAnalysisScheduler extends ComputationSpecification {
+trait SimpleEscapeAnalysisScheduler extends ComputationSpecification[FPCFAnalysis] {
 
     final def derivedProperty: PropertyBounds = PropertyBounds.lub(EscapeProperty)
 

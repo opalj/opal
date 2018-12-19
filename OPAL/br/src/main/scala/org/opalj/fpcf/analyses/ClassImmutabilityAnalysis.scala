@@ -379,7 +379,7 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
     }
 }
 
-trait ClassImmutabilityAnalysisScheduler extends ComputationSpecification {
+trait ClassImmutabilityAnalysisScheduler extends FPCFAnalysisScheduler {
 
     final def derivedProperty: PropertyBounds = PropertyBounds.lub(ClassImmutability)
 
@@ -387,23 +387,25 @@ trait ClassImmutabilityAnalysisScheduler extends ComputationSpecification {
         Set(PropertyBounds.lub(TypeImmutability), PropertyBounds.lub(FieldMutability))
     }
 
-    def setResultsAnComputeEntities(
+    override type InitializationData = TraversableOnce[ClassFile]
+
+    private[this] def setResultsAndComputeEntities(
         project: SomeProject, propertyStore: PropertyStore
     ): TraversableOnce[ClassFile] = {
         val classHierarchy = project.classHierarchy
         import classHierarchy.allSubtypes
         import classHierarchy.rootClassTypes
-        import propertyStore.handleResult
+        import propertyStore.set
         implicit val logContext: LogContext = project.logContext
 
         // 1.1
         // java.lang.Object is by definition immutable.
-        handleResult(Result(ObjectType.Object, ImmutableObject))
+        set(ObjectType.Object, ImmutableObject)
 
         // 1.2
         // All (instances of) interfaces are (by their very definition) also immutable.
         val allInterfaces = project.allClassFiles.filter(cf ⇒ cf.isInterfaceDeclaration)
-        handleResult(MultiResult(allInterfaces.map(cf ⇒ new FinalEP(cf.thisType, ImmutableObject))))
+        allInterfaces.map(cf ⇒ set(cf.thisType, ImmutableObject))
 
         // 2.
         // All classes that do not have complete superclass information are mutable
@@ -416,7 +418,7 @@ trait ClassImmutabilityAnalysisScheduler extends ComputationSpecification {
         unexpectedRootClassTypes foreach { rt ⇒
             allSubtypes(rt, reflexive = true) foreach { ot ⇒
                 project.classFile(ot) foreach { cf ⇒
-                    handleResult(Result(cf.thisType, MutableObjectDueToUnknownSupertypes))
+                    set(cf.thisType, MutableObjectDueToUnknownSupertypes)
                 }
             }
         }
@@ -439,11 +441,19 @@ trait ClassImmutabilityAnalysisScheduler extends ComputationSpecification {
                         s"${t.toJava}'s class file is not available"
                     )
                     allSubtypes(t, reflexive = true).foreach(project.classFile(_).foreach { cf ⇒
-                        handleResult(Result(cf.thisType, MutableObjectDueToUnknownSupertypes))
+                        set(cf.thisType, MutableObjectDueToUnknownSupertypes)
                     })
             }
         cfs
     }
+
+    def init(p: SomeProject, ps: PropertyStore): InitializationData = {
+        setResultsAndComputeEntities(p, ps)
+    }
+
+    def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
+
+    def afterPhaseCompletion(p: SomeProject, ps: PropertyStore): Unit = {}
 }
 
 /**
@@ -453,15 +463,14 @@ trait ClassImmutabilityAnalysisScheduler extends ComputationSpecification {
  */
 object EagerClassImmutabilityAnalysis
     extends ClassImmutabilityAnalysisScheduler
-    with BasicFPCFEagerAnalysisScheduler {
+    with FPCFEagerAnalysisScheduler {
 
     override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
 
     override def derivesCollaboratively: Set[PropertyBounds] = Set.empty
 
-    override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+    override def start(p: SomeProject, ps: PropertyStore, cfs: InitializationData): FPCFAnalysis = {
         val analysis = new ClassImmutabilityAnalysis(p)
-        val cfs = setResultsAnComputeEntities(p, ps)
         ps.scheduleEagerComputationsForEntities(cfs)(
             analysis.determineClassImmutability(
                 superClassType = null,
@@ -481,15 +490,16 @@ object EagerClassImmutabilityAnalysis
  */
 object LazyClassImmutabilityAnalysis
     extends ClassImmutabilityAnalysisScheduler
-    with BasicFPCFLazyAnalysisScheduler {
+    with FPCFLazyAnalysisScheduler {
 
     override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 
-    override def register(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+    override def register(
+        p:      SomeProject,
+        ps:     PropertyStore,
+        unused: InitializationData
+    ): FPCFAnalysis = {
         val analysis = new ClassImmutabilityAnalysis(p)
-
-        setResultsAnComputeEntities(p, ps)
-        ps.waitOnPhaseCompletion() // wait for completion of setting results
         ps.registerLazyPropertyComputation(
             ClassImmutability.key, analysis.doDetermineClassImmutability
         )

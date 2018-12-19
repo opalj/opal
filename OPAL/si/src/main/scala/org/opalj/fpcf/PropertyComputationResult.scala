@@ -351,11 +351,13 @@ object PartialResult { private[fpcf] final val id = 6 }
  * @tparam P The type of the property.
  */
 case class InterimPartialResult[E >: Null <: Entity, P >: Null <: Property](
-        e:         E,
-        pk:        PropertyKey[P],
-        u:         UpdateComputation[E, P],
-        dependees: Traversable[SomeEOptionP],
-        c:         OnUpdateContinuation
+        e:  E,
+        pk: PropertyKey[P],
+        u:  UpdateComputation[E, P],
+        // We can't have a list of dependees, because we wouldn't be able to effectively
+        // prevent multiple concurrent notifications!
+        dependee: SomeEOptionP,
+        c:        OnUpdateContinuation
 ) extends ProperPropertyComputationResult {
 
     private[fpcf] final def id = InterimPartialResult.id

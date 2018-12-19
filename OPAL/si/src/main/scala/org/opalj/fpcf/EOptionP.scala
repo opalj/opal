@@ -465,7 +465,7 @@ object InterimEP {
  * Encapsulates the intermediate lower- and upper bound related to the computation of the respective
  * property kind for the entity `E`.
  *
- * For a detailed discussion of the semantics of `lb` and `ub` see [[EOptionP.lb]].
+ * For a detailed discussion of the semantics of `lb` and `ub` see [[EOptionP.ub]].
  */
 final class InterimELUBP[+E <: Entity, +P <: Property](
         val e:  E,

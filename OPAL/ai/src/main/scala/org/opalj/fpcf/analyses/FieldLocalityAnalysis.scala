@@ -613,7 +613,7 @@ class FieldLocalityAnalysis private[analyses] (
     }
 }
 
-sealed trait FieldLocalityAnalysisScheduler extends ComputationSpecification {
+sealed trait FieldLocalityAnalysisScheduler extends ComputationSpecification[FPCFAnalysis] {
 
     final def derivedProperty: PropertyBounds = PropertyBounds.lub(FieldLocality)
 

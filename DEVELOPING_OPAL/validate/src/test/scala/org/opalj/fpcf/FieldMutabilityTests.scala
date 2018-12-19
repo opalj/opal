@@ -22,13 +22,13 @@ class FieldMutabilityTests extends PropertiesTest {
     }
 
     describe("the org.opalj.fpcf.analyses.L0FieldMutabilityAnalysis is executed") {
-        val as = executeAnalyses(Set(EagerL0FieldMutabilityAnalysis))
+        val as = executeAnalyses(EagerL0FieldMutabilityAnalysis)
         as.propertyStore.shutdown()
         validateProperties(as, fieldsWithAnnotations(as.project), Set("FieldMutability"))
     }
 
     describe("the org.opalj.fpcf.analyses.L1FieldMutabilityAnalysis is executed") {
-        val as = executeAnalyses(Set(EagerL1FieldMutabilityAnalysis), Set(LazyL0TACAIAnalysis))
+        val as = executeAnalyses(EagerL1FieldMutabilityAnalysis, LazyL0TACAIAnalysis)
         as.propertyStore.shutdown()
         validateProperties(as, fieldsWithAnnotations(as.project), Set("FieldMutability"))
     }

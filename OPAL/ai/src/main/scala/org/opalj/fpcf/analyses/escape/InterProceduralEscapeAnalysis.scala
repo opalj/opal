@@ -122,7 +122,7 @@ class InterProceduralEscapeAnalysis private[analyses] (
     override def createState: InterProceduralEscapeAnalysisState = new InterProceduralEscapeAnalysisState()
 }
 
-sealed trait InterProceduralEscapeAnalysisScheduler extends ComputationSpecification {
+sealed trait InterProceduralEscapeAnalysisScheduler extends ComputationSpecification[FPCFAnalysis] {
 
     final def derivedProperty: PropertyBounds = PropertyBounds.lub(EscapeProperty)
 

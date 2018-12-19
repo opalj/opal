@@ -214,7 +214,7 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
     }
 }
 
-trait TypeImmutabilityAnalysisScheduler extends ComputationSpecification {
+trait TypeImmutabilityAnalysisScheduler extends ComputationSpecification[FPCFAnalysis] {
 
     final def derivedProperty: PropertyBounds = PropertyBounds.lub(TypeImmutability)
 
