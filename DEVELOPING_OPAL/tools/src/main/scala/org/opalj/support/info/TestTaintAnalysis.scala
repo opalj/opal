@@ -1,39 +1,43 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
-package fpcf
-package analyses
-package ifds
+package support
+package info
 
-//import java.io.File
+import scala.collection.immutable.ListSet
 
+import org.opalj.log.LogContext
+import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.collection.immutable.RefArray
+import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.PropertyStoreKey
+import org.opalj.fpcf.FPCFAnalysesManagerKey
+import org.opalj.fpcf.PropertyStoreContext
+import org.opalj.fpcf.PropertyKey
+import org.opalj.fpcf.analyses.AbstractIFDSAnalysis
+import org.opalj.fpcf.analyses.Statement
+import org.opalj.fpcf.analyses.IFDSAnalysis
+import org.opalj.fpcf.analyses.AbstractIFDSAnalysis.V
+import org.opalj.fpcf.properties.IFDSProperty
+import org.opalj.fpcf.properties.IFDSPropertyMetaInformation
+import org.opalj.fpcf.seq.PKESequentialPropertyStore
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.ObjectType
 import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.Project
-import org.opalj.fpcf.analyses.ifds.AbstractIFDSAnalysis.V
-import org.opalj.ai.fpcf.analyses.LazyL0BaseAIResultAnalysis
-import org.opalj.tac.fpcf.analyses.TACAITransformer
-//import org.opalj.fpcf.par.PKEParallelTasksPropertyStore
-//import org.opalj.fpcf.par.RecordAllPropertyStoreTracer
-import org.opalj.fpcf.seq.PKESequentialPropertyStore
-import org.opalj.fpcf.properties.IFDSProperty
-import org.opalj.fpcf.properties.IFDSPropertyMetaInformation
+import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
 import org.opalj.tac.Assignment
 import org.opalj.tac.Expr
 import org.opalj.tac.Var
-//import org.opalj.tac.PutStatic
-//import org.opalj.tac.GetStatic
-//import org.opalj.tac.PutField
-//import org.opalj.tac.GetField
 import org.opalj.tac.ArrayLoad
 import org.opalj.tac.ArrayStore
 import org.opalj.tac.Stmt
 import org.opalj.tac.ReturnValue
-
-import scala.collection.immutable.ListSet
-import org.opalj.util.PerformanceEvaluation.time
+//import org.opalj.tac.PutStatic
+//import org.opalj.tac.GetStatic
+//import org.opalj.tac.PutField
+//import org.opalj.tac.GetField
+import org.opalj.tac.fpcf.analyses.TACAITransformer
 
 trait Fact
 
@@ -50,7 +54,7 @@ case class FlowFact(flow: ListSet[Method]) extends Fact {
  *
  * @author Dominik Helm
  */
-class TestTaintAnalysis private[ifds] (
+class TestTaintAnalysis private (
         implicit
         val project: SomeProject
 ) extends AbstractIFDSAnalysis[Fact] {
@@ -240,7 +244,7 @@ class TestTaintAnalysis private[ifds] (
             if (index == -1) true
             else {
                 callee.descriptor.parameterType(
-                    paramToIndex(index, false)
+                    paramToIndex(index, includeThis = false)
                 ).isReferenceType
             }
 
@@ -272,10 +276,11 @@ class TestTaintAnalysis private[ifds] (
                     //case sf: StaticField ⇒ flows += sf
                     case FlowFact(flow) ⇒
                         val newFlow = flow + stmt.method
-                        if (entryPoints.contains(declaredMethods(exit.method)))
-                            println(s"flow: "+newFlow.map(_.toJava).mkString(", "))
-                        else
+                        if (entryPoints.contains(declaredMethods(exit.method))) {
+                            //println(s"flow: "+newFlow.map(_.toJava).mkString(", "))
+                        } else {
                             flows += FlowFact(newFlow)
+                        }
                     case _ ⇒
                 }
             }
@@ -321,11 +326,11 @@ class TestTaintAnalysis private[ifds] (
                     asCall(stmt.stmt).params.exists(p ⇒ p.asVar.definedBy.contains(index))
                 case _ ⇒ false
             }) {
-                if (entryPoints.contains(declaredMethods(stmt.method))) {
+                /*if (entryPoints.contains(declaredMethods(stmt.method))) {
                     println(s"flow: "+stmt.method.toJava)
                     in
-                } else
-                    in ++ Set(FlowFact(ListSet(stmt.method)))
+                } else*/
+                in ++ Set(FlowFact(ListSet(stmt.method)))
             } else {
                 in
             }
@@ -343,7 +348,7 @@ class TestTaintAnalysis private[ifds] (
 
 }
 
-object TestTaintAnalysis extends LazyIFDSAnalysis[Fact] {
+object TestTaintAnalysis extends IFDSAnalysis[Fact] {
     override def init(p: SomeProject, ps: PropertyStore) = new TestTaintAnalysis()(p)
 
     override def property: IFDSPropertyMetaInformation[Fact] = Taint
@@ -368,28 +373,32 @@ object Taint extends IFDSPropertyMetaInformation[Fact] {
 object TestTaintAnalysisRunner {
 
     def main(args: Array[String]): Unit = {
-        //val p = Project(new File("/home/dominik/Desktop/test"))
-        //val p = Project(new File("/home/dominik/Work/opal/OPAL/bi/src/test/resources/classfiles/OPAL-MultiJar-SNAPSHOT-01-04-2018.jar"))
         time {
             val p = Project(bytecode.RTJar)
             p.getOrCreateProjectInformationKeyInitializationData(
                 PropertyStoreKey,
                 (context: List[PropertyStoreContext[AnyRef]]) ⇒ {
-                    /*val ps = PKEParallelTasksPropertyStore.create(
-                    new RecordAllPropertyStoreTracer,
-                    context.iterator.map(_.asTuple).toMap
-                )(p.logContext)*/
-                    implicit val lg = p.logContext
-                    //val ps = PKEParallelTasksPropertyStore(context: _*)
+                    implicit val lg: LogContext = p.logContext
                     val ps = PKESequentialPropertyStore.apply(context: _*)
-                    PropertyStore.updateDebug(true)
+                    PropertyStore.updateDebug(false)
                     ps
                 }
             )
             val ps = p.get(PropertyStoreKey)
             val manager = p.get(FPCFAnalysesManagerKey)
-            manager.runAll(LazyL0BaseAIResultAnalysis, TACAITransformer, TestTaintAnalysis)
-            ps.waitOnPhaseCompletion()
+            val (_, analyses) =
+                manager.runAll(LazyL0BaseAIAnalysis, TACAITransformer, TestTaintAnalysis)
+            val entryPoints = analyses.collect { case a: TestTaintAnalysis ⇒ a.entryPoints }.head
+            for {
+                e ← entryPoints
+                flows = ps(e, TestTaintAnalysis.property.key)
+                fact ← flows.ub.asInstanceOf[IFDSProperty[Fact]].flows.values.flatten.toSet[Fact]
+            } {
+                fact match {
+                    case FlowFact(flow) ⇒ println(s"flow: "+flow.map(_.toJava).mkString(", "))
+                    case _              ⇒
+                }
+            }
         } { t ⇒ println(s"Time: ${t.toSeconds}") }
     }
 }

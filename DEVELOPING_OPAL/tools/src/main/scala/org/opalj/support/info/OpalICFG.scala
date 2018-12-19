@@ -1,21 +1,22 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj
-package fpcf
-package analyses
-package ifds
+package org.opalj.support.info
 
-import scala.collection.JavaConverters._
 import java.util.{List ⇒ JList}
 import java.util.{Collection ⇒ JCollection}
 import java.util.{Set ⇒ JSet}
 import java.util.Collections
 import java.util.concurrent.ConcurrentLinkedQueue
 
+import scala.collection.JavaConverters._
+
 import heros.InterproceduralCFG
 
+import org.opalj.fpcf.analyses.Statement
+import org.opalj.fpcf.analyses.AbstractIFDSAnalysis.V
+import org.opalj.value.ValueInformation
 import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
-import org.opalj.fpcf.analyses.ifds.AbstractIFDSAnalysis.V
+import org.opalj.br.analyses.ProjectLike
 import org.opalj.tac.StaticMethodCall
 import org.opalj.tac.Assignment
 import org.opalj.tac.ExprStmt
@@ -32,7 +33,6 @@ import org.opalj.tac.DefaultTACAIKey
 import org.opalj.tac.TACMethodParameter
 import org.opalj.tac.DUVar
 import org.opalj.tac.TACode
-import org.opalj.value.ValueInformation
 
 class OpalICFG(project: SomeProject) extends InterproceduralCFG[Statement, Method] {
 
@@ -92,7 +92,7 @@ class OpalICFG(project: SomeProject) extends InterproceduralCFG[Statement, Metho
     def getCalleesOfCallAt(callInstr: Statement): JCollection[Method] = {
         val stmt = callInstr.stmt
         val declClass = callInstr.method.classFile.thisType
-        implicit val p = project
+        implicit val p: ProjectLike = project
         (stmt.astID match {
             case StaticMethodCall.ASTID ⇒
                 stmt.asStaticMethodCall.resolveCallTarget.toSet.filter(_.body.isDefined)

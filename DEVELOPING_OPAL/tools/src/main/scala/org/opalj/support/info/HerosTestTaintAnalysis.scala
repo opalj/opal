@@ -1,12 +1,11 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj
-package fpcf
-package analyses
-package ifds
+package org.opalj.support.info
 
-import scala.collection.JavaConverters._
 import java.util
 import java.util.Collections
+
+import scala.collection.JavaConverters._
+import scala.collection.immutable.ListSet
 
 import heros.FlowFunctions
 import heros.FlowFunction
@@ -18,14 +17,20 @@ import heros.flowfunc.Union
 import heros.flowfunc.Kill
 import heros.solver.IFDSSolver
 import heros.template.DefaultIFDSTabulationProblem
+import org.opalj.bytecode
 
+import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.collection.immutable.RefArray
+import org.opalj.fpcf.PropertyStoreKey
+import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.analyses.Statement
+import org.opalj.fpcf.analyses.AbstractIFDSAnalysis.V
+import org.opalj.value.ValueInformation
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
 import org.opalj.br.ClassHierarchy
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.Project
-import org.opalj.fpcf.analyses.ifds.AbstractIFDSAnalysis.V
 import org.opalj.tac.ExprStmt
 import org.opalj.tac.Call
 import org.opalj.tac.Stmt
@@ -35,21 +40,17 @@ import org.opalj.tac.TACode
 import org.opalj.tac.TACMethodParameter
 import org.opalj.tac.DefaultTACAIKey
 import org.opalj.tac.DUVar
-import org.opalj.value.ValueInformation
-//import org.opalj.tac.PutField
 import org.opalj.tac.ArrayStore
 import org.opalj.tac.Expr
 import org.opalj.tac.ArrayLoad
-//import org.opalj.tac.GetField
 import org.opalj.tac.Var
-
-import scala.collection.immutable.ListSet
-import org.opalj.util.PerformanceEvaluation.time
+//import org.opalj.tac.GetField
+//import org.opalj.tac.PutField
 
 case object NullFact extends Fact
 
 class HerosTestTaintAnalysis(p: SomeProject, icfg: OpalICFG)
-    extends DefaultIFDSTabulationProblem[Statement, Fact, Method, OpalICFG](icfg) {
+        extends DefaultIFDSTabulationProblem[Statement, Fact, Method, OpalICFG](icfg) {
 
     override def numThreads(): Int = 4
 
@@ -80,7 +81,7 @@ class HerosTestTaintAnalysis(p: SomeProject, icfg: OpalICFG)
                                         case ArrayElement(stmt.index, `idx`) ⇒ Collections.emptySet()
                                         case _                               ⇒ Collections.singleton(source)
                                     }
-                                } else Collections.singleton((source))
+                                } else Collections.singleton(source)
                             }
                         }
                     /*case PutStatic.ASTID ⇒
@@ -315,7 +316,7 @@ class HerosTestTaintAnalysis(p: SomeProject, icfg: OpalICFG)
 
     override def createZeroValue(): Fact = NullFact
 
-    val propertyStore = p.get(PropertyStoreKey)
+    val propertyStore: PropertyStore = p.get(PropertyStoreKey)
 
     override val initialSeeds: util.Map[Statement, util.Set[Fact]] = {
         var result: Map[Statement, util.Set[Fact]] = Map.empty
@@ -391,7 +392,7 @@ object HerosTestTaintAnalysis {
                     case (pType, index) if pType == ObjectType.String ⇒ index
                 } foreach { index ⇒
                     val facts = result.getOrElse(m, new util.HashSet[Fact]())
-                    facts.add(Variable(paramToIndex(index, false)))
+                    facts.add(Variable(paramToIndex(index, includeThis = false)))
                     result = result.updated(m, facts)
                 }
             }

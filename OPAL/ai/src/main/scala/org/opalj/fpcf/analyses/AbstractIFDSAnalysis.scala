@@ -2,7 +2,6 @@
 package org.opalj
 package fpcf
 package analyses
-package ifds
 
 import scala.annotation.tailrec
 
@@ -11,7 +10,7 @@ import java.util.concurrent.ConcurrentHashMap
 import scala.collection.{Set ⇒ SomeSet}
 import scala.collection.mutable
 
-import org.opalj.fpcf.analyses.ifds.AbstractIFDSAnalysis.V
+import org.opalj.fpcf.analyses.AbstractIFDSAnalysis.V
 import org.opalj.fpcf.properties.IFDSProperty
 import org.opalj.fpcf.properties.IFDSPropertyMetaInformation
 import org.opalj.value.ValueInformation
@@ -249,7 +248,7 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
                 handleCallUpdate(e.asInstanceOf[(DeclaredMethod, DataFlowFact)])
             case InterimEUBP(e, _: IFDSProperty[_]) ⇒
                 handleCallUpdate(e.asInstanceOf[(DeclaredMethod, DataFlowFact)])
-            case FinalEP(m: Method, tac: TACAI) ⇒
+            case FinalEP(m: Method, _: TACAI) ⇒
                 handleCallUpdate(m)
                 state.tacData -= m
                 state.tacDependees -= m
@@ -550,8 +549,6 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
     /**
      * Gets the Call for a statement that contains a call (MethodCall Stmt or ExprStmt/Assigment
      * with FunctionCall)
-     * @param stmt
-     * @return
      */
     def asCall(stmt: Stmt[V]): Call[V] = stmt.astID match {
         case Assignment.ASTID ⇒ stmt.asAssignment.expr.asFunctionCall
@@ -632,7 +629,7 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
         c(propertyStore((declaredMethods(source._1.definedMethod), source._2), property.key))
     }
 
-    val entryPoints: Map[DeclaredMethod, Fact]
+    val entryPoints: Map[DeclaredMethod, DataFlowFact]
 }
 
 /**
@@ -665,14 +662,10 @@ object AbstractIFDSAnalysis {
     type V = DUVar[ValueInformation]
 }
 
-sealed trait IFDSAnalysisScheduler[DataFlowFact] extends ComputationSpecification {
+abstract class IFDSAnalysis[DataFlowFact] extends FPCFLazyAnalysisScheduler {
     final override type InitializationData = AbstractIFDSAnalysis[DataFlowFact]
 
     def property: IFDSPropertyMetaInformation[DataFlowFact]
-}
-
-abstract class LazyIFDSAnalysis[DataFlowFact] extends IFDSAnalysisScheduler[DataFlowFact]
-        with FPCFLazyAnalysisScheduler {
 
     final override def derivesLazily: Some[PropertyBounds] = Some(PropertyBounds.ub(property))
 
@@ -691,7 +684,7 @@ abstract class LazyIFDSAnalysis[DataFlowFact] extends IFDSAnalysisScheduler[Data
             property.key, analysis.performAnalysis
         )
         for (e ← analysis.entryPoints) {
-            ps.force(e, TestTaintAnalysis.property.key)
+            ps.force(e, analysis.property.key)
         }
         analysis
     }

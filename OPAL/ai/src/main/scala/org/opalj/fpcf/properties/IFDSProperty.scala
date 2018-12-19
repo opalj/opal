@@ -3,14 +3,14 @@ package org.opalj
 package fpcf
 package properties
 
-import org.opalj.fpcf.analyses.ifds.Statement
-import org.opalj.tac.DUVar
+import org.opalj.fpcf.analyses.Statement
 import org.opalj.value.KnownTypedValue
+import org.opalj.tac.DUVar
 
 trait IFDSPropertyMetaInformation[DataFlowFact] extends PropertyMetaInformation
 
 abstract class IFDSProperty[DataFlowFact] extends Property
-    with IFDSPropertyMetaInformation[DataFlowFact] {
+        with IFDSPropertyMetaInformation[DataFlowFact] {
 
     /** The type of the TAC domain. */
     type V = DUVar[KnownTypedValue]
