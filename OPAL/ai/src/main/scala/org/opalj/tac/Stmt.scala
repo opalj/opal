@@ -577,6 +577,7 @@ sealed abstract class MethodCall[+V <: Var[V]] extends Stmt[V] with Call[V] {
 sealed abstract class InstanceMethodCall[+V <: Var[V]] extends MethodCall[V] {
 
     def receiver: Expr[V]
+    final override def receiverOption: Some[Expr[V]] = Some(receiver)
     final override def asInstanceMethodCall: this.type = this
     final override def forallSubExpressions[W >: V <: Var[W]](p: Expr[W] ⇒ Boolean): Boolean = {
         p(receiver) && params.forall(param ⇒ p(param))
@@ -651,15 +652,15 @@ object NonVirtualMethodCall {
 }
 
 case class VirtualMethodCall[+V <: Var[V]](
-        pc:             Int,
-        declaringClass: ReferenceType,
-        isInterface:    Boolean,
-        name:           String,
-        descriptor:     MethodDescriptor,
-        receiver:       Expr[V],
-        params:         Seq[Expr[V]]
+    pc:             Int,
+    declaringClass: ReferenceType,
+    isInterface:    Boolean,
+    name:           String,
+    descriptor:     MethodDescriptor,
+    receiver:       Expr[V],
+    params:         Seq[Expr[V]]
 ) extends InstanceMethodCall[V]
-    with VirtualCall[V] {
+        with VirtualCall[V] {
 
     final override def asVirtualMethodCall: this.type = this
     final override def astID: Int = VirtualMethodCall.ASTID
@@ -686,6 +687,7 @@ case class StaticMethodCall[+V <: Var[V]](
 
     final override def asStaticMethodCall: this.type = this
     final override def astID: Int = StaticMethodCall.ASTID
+    final override def receiverOption: Option[Expr[V]] = None
     final override def forallSubExpressions[W >: V <: Var[W]](p: Expr[W] ⇒ Boolean): Boolean = {
         params.forall(param ⇒ p(param))
     }
