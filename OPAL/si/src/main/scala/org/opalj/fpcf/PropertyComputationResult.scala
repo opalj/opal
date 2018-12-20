@@ -134,7 +134,7 @@ object MultiResult { private[fpcf] final val id = 2 }
 final class InterimResult[P >: Null <: Property] private (
         val eps:       InterimEP[Entity, P],
         val dependees: Traversable[SomeEOptionP],
-        val c:         OnUpdateContinuation,
+        val c:         ProperOnUpdateContinuation,
         val hint:      PropertyComputationHint
 ) extends ProperPropertyComputationResult { result ⇒
 
@@ -191,7 +191,7 @@ object InterimResult {
     def apply[P >: Null <: Property](
         eps:       InterimEP[Entity, P],
         dependees: Traversable[SomeEOptionP],
-        c:         OnUpdateContinuation
+        c:         ProperOnUpdateContinuation
     ): InterimResult[P] = {
         new InterimResult[P](eps, dependees, c, DefaultPropertyComputation)
     }
@@ -199,7 +199,7 @@ object InterimResult {
     def apply[P >: Null <: Property](
         eps:       InterimEP[Entity, P],
         dependees: Traversable[SomeEOptionP],
-        c:         OnUpdateContinuation,
+        c:         ProperOnUpdateContinuation,
         hint:      PropertyComputationHint
     ): InterimResult[P] = {
         new InterimResult[P](eps, dependees, c, hint)
@@ -210,8 +210,8 @@ object InterimResult {
         lb:        P,
         ub:        P,
         dependees: Traversable[SomeEOptionP],
-        c:         OnUpdateContinuation,
-        hint:      PropertyComputationHint   = DefaultPropertyComputation
+        c:         ProperOnUpdateContinuation,
+        hint:      PropertyComputationHint    = DefaultPropertyComputation
     ): InterimResult[P] = {
         require(lb != null && ub != null)
         new InterimResult[P](InterimELUBP(e, lb, ub), dependees, c, hint)
@@ -244,8 +244,8 @@ object InterimResult {
         e:         Entity,
         lb:        P,
         dependees: Traversable[SomeEOptionP],
-        c:         OnUpdateContinuation,
-        hint:      PropertyComputationHint   = DefaultPropertyComputation
+        c:         ProperOnUpdateContinuation,
+        hint:      PropertyComputationHint    = DefaultPropertyComputation
     ): InterimResult[P] = {
         new InterimResult[P](InterimELBP(e, lb), dependees, c, hint)
     }
@@ -254,8 +254,8 @@ object InterimResult {
         e:         Entity,
         ub:        P,
         dependees: Traversable[SomeEOptionP],
-        c:         OnUpdateContinuation,
-        hint:      PropertyComputationHint   = DefaultPropertyComputation
+        c:         ProperOnUpdateContinuation,
+        hint:      PropertyComputationHint    = DefaultPropertyComputation
     ): InterimResult[P] = {
         new InterimResult[P](InterimEUBP(e, ub), dependees, c, hint)
     }
@@ -390,7 +390,7 @@ case class PartialResultUpdateComputation[E >: Null <: Entity, P >: Null <: Prop
 
 /**************************************************************************************************\
  *
- *                              ONLY USED INTERNALLY BY THE FRAMEWORK! 
+ *                              ONLY USED INTERNALLY BY THE FRAMEWORK!
  *
 \**************************************************************************************************/
 

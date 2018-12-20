@@ -103,6 +103,8 @@ package object fpcf {
 
     final type OnUpdateContinuation = SomeEPS ⇒ ProperPropertyComputationResult
 
+    final type ProperOnUpdateContinuation = SomeEPS ⇒ ProperPropertyComputationResult
+
     final type QualifiedOnUpdateContinuation[E <: Entity, P <: Property] = EOptionP[E, P] ⇒ ProperPropertyComputationResult
 
     /**

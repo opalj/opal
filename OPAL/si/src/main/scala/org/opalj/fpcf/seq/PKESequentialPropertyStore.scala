@@ -19,8 +19,8 @@ import org.opalj.fpcf.PropertyKey.fallbackPropertyBasedOnPKId
 import org.opalj.fpcf.PropertyKey.computeFastTrackPropertyBasedOnPKId
 
 /**
- * A reasonable optimized, complete, but non-concurrent implementation of the property store.
- * Primarily intended to be used for evaluation and prototyping purposes.
+ * A reasonably optimized, complete, but non-concurrent implementation of the property store.
+ * Primarily intended to be used for evaluation, debugging and prototyping purposes.
  *
  * @author Michael Eichberg
  */
