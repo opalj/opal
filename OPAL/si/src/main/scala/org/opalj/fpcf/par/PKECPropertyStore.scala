@@ -567,6 +567,6 @@ trait State {
     def eps: SomeEPS
 }
 
-case class FinalState(eps: SomeEPS) extends State {
+case class FinalState(eps: SomeEPS) extends State /* {
     // ???
-}
+}*/
