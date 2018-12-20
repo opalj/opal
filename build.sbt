@@ -315,7 +315,7 @@ lazy val `OPAL-Validate` = (project in file("DEVELOPING_OPAL/validate"))
   .configs(IntegrationTest)
 
 lazy val demos = `Demos`
-lazy val `Demos` = (project in file("OPAL/demos"))
+lazy val `Demos` = (project in file("DEVELOPING_OPAL/demos"))
   .settings(buildSettings: _*)
   .settings(
     name := "Demos",

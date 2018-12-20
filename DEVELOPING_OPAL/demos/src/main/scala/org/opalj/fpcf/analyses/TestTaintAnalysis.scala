@@ -1,21 +1,13 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
-package support
-package info
+package fpcf
+package analyses
 
 import scala.collection.immutable.ListSet
 
 import org.opalj.log.LogContext
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.collection.immutable.RefArray
-import org.opalj.fpcf.PropertyStore
-import org.opalj.fpcf.PropertyStoreKey
-import org.opalj.fpcf.FPCFAnalysesManagerKey
-import org.opalj.fpcf.PropertyStoreContext
-import org.opalj.fpcf.PropertyKey
-import org.opalj.fpcf.analyses.AbstractIFDSAnalysis
-import org.opalj.fpcf.analyses.Statement
-import org.opalj.fpcf.analyses.IFDSAnalysis
 import org.opalj.fpcf.analyses.AbstractIFDSAnalysis.V
 import org.opalj.fpcf.properties.IFDSProperty
 import org.opalj.fpcf.properties.IFDSPropertyMetaInformation
