@@ -83,7 +83,7 @@ class FieldLocalityAnalysis private[analyses] (
      * Checks if the field locality can be determined trivially.
      * Otherwise it forwards to `FieldLocalityAnalysis.step2`.
      */
-    def step1(field: Field): PropertyComputationResult = {
+    def step1(field: Field): ProperPropertyComputationResult = {
         val fieldType = field.fieldType
         val thisType = field.classFile.thisType
         // base types can be considered to be local
@@ -125,7 +125,7 @@ class FieldLocalityAnalysis private[analyses] (
      *
      * Afterwards it calls [[step3]].
      */
-    private[this] def step2(field: Field): PropertyComputationResult = {
+    private[this] def step2(field: Field): ProperPropertyComputationResult = {
         implicit val state: FieldLocalityState = new FieldLocalityState(field)
 
         val thisType = field.classFile.thisType
@@ -166,7 +166,10 @@ class FieldLocalityAnalysis private[analyses] (
      * has to overwritten to prevent it from being leaked by the shallow copy created through
      * `java.lang.Object.clone`.
      */
-    private[this] def step3()(implicit state: FieldLocalityState): PropertyComputationResult = {
+    private[this] def step3()(
+        implicit
+        state: FieldLocalityState
+    ): ProperPropertyComputationResult = {
         for {
             method ← allMethodsHavingAccess(state.field)
             tacai ← getTACAI(method)
@@ -264,22 +267,22 @@ class FieldLocalityAnalysis private[analyses] (
         state: FieldLocalityState
     ): Boolean = eOptionP match {
 
-        case FinalEP(_, NoEscape | EscapeInCallee) ⇒ false
+        case FinalP(NoEscape | EscapeInCallee) ⇒ false
 
         // The field may be leaked by a getter, but only if the field's owning instance is the
         // receiver of the getter method.
-        case FinalEP(_, EscapeViaReturn) ⇒
+        case FinalP(EscapeViaReturn) ⇒
             if (isGetFieldOfReceiver) {
                 state.updateWithMeet(LocalFieldWithGetter)
                 false
             } else
                 true
 
-        case IntermediateEP(_, _, NoEscape | EscapeInCallee) ⇒
+        case InterimUBP(NoEscape | EscapeInCallee) ⇒
             state.addDefinitionSiteDependee(eOptionP, isGetFieldOfReceiver)
             false
 
-        case IntermediateEP(_, _, EscapeViaReturn) ⇒
+        case InterimUBP(EscapeViaReturn) ⇒
             if (isGetFieldOfReceiver) {
                 state.updateWithMeet(LocalFieldWithGetter)
                 state.addDefinitionSiteDependee(eOptionP, isGetFieldOfReceiver)
@@ -288,7 +291,7 @@ class FieldLocalityAnalysis private[analyses] (
                 true
 
         // The escape state is worse than [[org.opalj.fpcf.properties.EscapeViaReturn]].
-        case _: EPS[_, _] ⇒
+        case _: SomeEPS ⇒
             true
 
         case _ ⇒
@@ -301,8 +304,14 @@ class FieldLocalityAnalysis private[analyses] (
      * @return false if the value may be fresh and non-escaping, true otherwise
      */
     private[this] def checkFreshnessAndEscapeOfValue(
-        value: Expr[V], putField: Int, stmts: Array[Stmt[V]], method: Method
-    )(implicit state: FieldLocalityState): Boolean = {
+        value:    Expr[V],
+        putField: Int,
+        stmts:    Array[Stmt[V]],
+        method:   Method
+    )(
+        implicit
+        state: FieldLocalityState
+    ): Boolean = {
         value.asVar.definedBy exists { defSite ⇒
             if (defSite < 0)
                 true // Parameters are not fresh
@@ -329,7 +338,10 @@ class FieldLocalityAnalysis private[analyses] (
      */
     private[this] def checkFreshnessOfDef(
         stmt: Stmt[V], caller: Method
-    )(implicit state: FieldLocalityState): Boolean = {
+    )(
+        implicit
+        state: FieldLocalityState
+    ): Boolean = {
         // the object stored in the field is fresh
         stmt match {
             case Assignment(_, _, New(_, _) | NewArray(_, _, _)) ⇒
@@ -413,21 +425,24 @@ class FieldLocalityAnalysis private[analyses] (
      */
     private[this] def handleReturnValueFreshness(
         eOptionP: EOptionP[DeclaredMethod, Property]
-    )(implicit state: FieldLocalityState): Boolean = eOptionP match {
-        case EPS(_, _, NoFreshReturnValue | VNoFreshReturnValue) ⇒
+    )(
+        implicit
+        state: FieldLocalityState
+    ): Boolean = eOptionP match {
+        case UBP(NoFreshReturnValue | VNoFreshReturnValue) ⇒
             true
 
         //IMPROVE - we might treat values returned from a getter as fresh in some cases
         // e.g. if the method's receiver is the same as the analyzed field's owning instance.
-        case EPS(_, _, Getter | VGetter) ⇒
+        case UBP(Getter | VGetter) ⇒
             true
 
-        case EPS(_, _, ExtensibleGetter | VExtensibleGetter) ⇒
+        case UBP(ExtensibleGetter | VExtensibleGetter) ⇒
             true
 
-        case FinalEP(_, FreshReturnValue | VFreshReturnValue) ⇒ false
+        case FinalP(FreshReturnValue | VFreshReturnValue) ⇒ false
 
-        case FinalEP(_, PrimitiveReturnValue | VPrimitiveReturnValue) ⇒
+        case FinalP(PrimitiveReturnValue | VPrimitiveReturnValue) ⇒
             throw new RuntimeException(s"unexpected property $eOptionP for entity ${state.field}")
 
         case epkOrCnd ⇒
@@ -448,7 +463,10 @@ class FieldLocalityAnalysis private[analyses] (
         method:  Method,
         uses:    IntTrieSet,
         tacai:   TACode[TACMethodParameter, V]
-    )(implicit state: FieldLocalityState): Boolean = {
+    )(
+        implicit
+        state: FieldLocalityState
+    ): Boolean = {
         val field = state.field
         val thisType = field.classFile.thisType
         val fieldName = field.name
@@ -504,15 +522,15 @@ class FieldLocalityAnalysis private[analyses] (
     private[this] def handleEscapeStateOfResultOfSuperClone(
         eOptionP: EOptionP[DefinitionSiteLike, EscapeProperty]
     )(implicit state: FieldLocalityState): Boolean = eOptionP match {
-        case FinalEP(_, NoEscape | EscapeInCallee) ⇒ false
+        case FinalP(NoEscape | EscapeInCallee) ⇒ false
 
-        case IntermediateEP(_, _, NoEscape | EscapeInCallee) ⇒
+        case InterimUBP(NoEscape | EscapeInCallee) ⇒
             state.addClonedDefinitionSiteDependee(eOptionP)
             false
 
-        case FinalEP(_, EscapeViaReturn) ⇒ false
+        case FinalP(EscapeViaReturn) ⇒ false
 
-        case IntermediateEP(_, _, EscapeViaReturn) ⇒
+        case InterimUBP(EscapeViaReturn) ⇒
             state.addClonedDefinitionSiteDependee(eOptionP)
             false
 
@@ -529,19 +547,25 @@ class FieldLocalityAnalysis private[analyses] (
      */
     def getTACAI(
         method: Method
-    )(implicit state: FieldLocalityState): Option[TACode[TACMethodParameter, V]] = {
+    )(
+        implicit
+        state: FieldLocalityState
+    ): Option[TACode[TACMethodParameter, V]] = {
         val tacai = propertyStore(method, TACAI.key)
 
         if (tacai.isRefinable)
             state.addTACDependee(tacai)
 
-        if (tacai.hasProperty) tacai.ub.tac
+        if (tacai.hasUBP) tacai.ub.tac
         else None
     }
 
-    private[this] def continuation(
+    private[this] def c(
         someEPS: SomeEPS
-    )(implicit state: FieldLocalityState): PropertyComputationResult = {
+    )(
+        implicit
+        state: FieldLocalityState
+    ): ProperPropertyComputationResult = {
         val isNotLocal = someEPS.e match {
             case _: DeclaredMethod ⇒
                 val newEP = someEPS.asInstanceOf[EOptionP[DeclaredMethod, Property]]
@@ -561,7 +585,9 @@ class FieldLocalityAnalysis private[analyses] (
                 val newEP = someEPS.asInstanceOf[EOptionP[Method, TACAI]]
                 state.removeTACDependee(newEP)
                 if (newEP.isRefinable) state.addTACDependee(newEP)
-                !isLocalForMethod(m, newEP.ub.tac.get)
+                if (newEP.ub.tac.isDefined)
+                    !isLocalForMethod(m, newEP.ub.tac.get)
+                else false
         }
         if (isNotLocal) {
             Result(state.field, NoLocalField)
@@ -569,42 +595,47 @@ class FieldLocalityAnalysis private[analyses] (
             returnResult
     }
 
-    private[this] def returnResult(implicit state: FieldLocalityState): PropertyComputationResult = {
+    private[this] def returnResult(
+        implicit
+        state: FieldLocalityState
+    ): ProperPropertyComputationResult = {
         if (state.hasNoDependees)
             Result(state.field, state.temporaryState)
         else
-            IntermediateResult(
+            InterimResult(
                 state.field,
                 NoLocalField,
                 state.temporaryState,
                 state.dependees,
-                continuation,
+                c,
                 if (state.hasTacDependees) DefaultPropertyComputation else CheapPropertyComputation
             )
     }
 }
 
-sealed trait FieldLocalityAnalysisScheduler extends ComputationSpecification {
+sealed trait FieldLocalityAnalysisScheduler extends ComputationSpecification[FPCFAnalysis] {
 
-    final override def derives: Set[PropertyKind] = Set(FieldLocality)
+    final def derivedProperty: PropertyBounds = PropertyBounds.lub(FieldLocality)
 
-    final override def uses: Set[PropertyKind] = {
-        Set(TACAI, ReturnValueFreshness, VirtualMethodReturnValueFreshness)
+    final override def uses: Set[PropertyBounds] = {
+        Set(
+            PropertyBounds.lub(TACAI),
+            PropertyBounds.lub(ReturnValueFreshness),
+            PropertyBounds.lub(VirtualMethodReturnValueFreshness)
+        )
     }
 
-    final override type InitializationData = Null
-    final def init(p: SomeProject, ps: PropertyStore): Null = null
-
-    def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
-
-    def afterPhaseCompletion(p: SomeProject, ps: PropertyStore): Unit = {}
 }
 
 object EagerFieldLocalityAnalysis
     extends FieldLocalityAnalysisScheduler
-    with FPCFEagerAnalysisScheduler {
+    with BasicFPCFEagerAnalysisScheduler {
 
-    final override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+    override def derivesCollaboratively: Set[PropertyBounds] = Set.empty
+
+    override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
+
+    override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val allFields = p.allFields
         val analysis = new FieldLocalityAnalysis(p)
         ps.scheduleEagerComputationsForEntities(allFields)(analysis.step1)
@@ -614,13 +645,15 @@ object EagerFieldLocalityAnalysis
 
 object LazyFieldLocalityAnalysis
     extends FieldLocalityAnalysisScheduler
-    with FPCFLazyAnalysisScheduler {
+    with BasicFPCFLazyAnalysisScheduler {
+
+    override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 
     /**
      * Registers the analysis as a lazy computation, that is, the method
      * will call `ProperytStore.scheduleLazyComputation`.
      */
-    final override def startLazily(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+    override def register(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new FieldLocalityAnalysis(p)
         ps.registerLazyPropertyComputation(
             FieldLocality.key, analysis.step1

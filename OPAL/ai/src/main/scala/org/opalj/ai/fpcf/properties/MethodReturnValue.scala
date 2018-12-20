@@ -4,8 +4,6 @@ package ai
 package fpcf
 package properties
 
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.EPS
 import org.opalj.fpcf.FallbackReason
 import org.opalj.fpcf.Property
 import org.opalj.fpcf.PropertyKey
@@ -52,9 +50,7 @@ object MethodReturnValue extends MethodReturnValuePropertyMetaInformation {
             MethodReturnValue(
                 Some(ValueInformation.forProperValue(m.descriptor.returnType)(p.classHierarchy))
             )
-        },
-        (_: PropertyStore, eps: EPS[DeclaredMethod, MethodReturnValue]) ⇒ eps.ub,
-        (_: PropertyStore, _: Entity) ⇒ None
+        }
     )
 
 }

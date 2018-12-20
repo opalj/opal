@@ -141,7 +141,7 @@ class FPCFAnalysesIntegrationTest extends FunSpec {
 
     def reportAnalysisTime(t: Nanoseconds): Unit = { info(s"analysis took ${t.toSeconds}") }
 
-    def getAnalysis(id: String): ComputationSpecification = {
+    def getAnalysis(id: String): ComputationSpecification[FPCFAnalysis] = {
         FPCFAnalysesRegistry.eagerFactory(id.trim)
     }
 
@@ -151,15 +151,15 @@ class FPCFAnalysesIntegrationTest extends FunSpec {
         mirror.reflectModule(module).instance.asInstanceOf[PropertyMetaInformation]
     }
 
-    def getConfig: Seq[(String, Set[ComputationSpecification], Seq[PropertyMetaInformation])] = {
+    def getConfig: Seq[(String, Set[ComputationSpecification[FPCFAnalysis]], Seq[PropertyMetaInformation])] = {
         val configInputStream =
             this.getClass.getResourceAsStream("FPCFAnalysesIntegrationTest.config")
         val configLines = Source.fromInputStream(configInputStream).getLines()
 
-        var curConfig: (String, Set[ComputationSpecification], Seq[PropertyMetaInformation]) = null
+        var curConfig: (String, Set[ComputationSpecification[FPCFAnalysis]], Seq[PropertyMetaInformation]) = null
         var readProperties = false
 
-        var configurations: Seq[(String, Set[ComputationSpecification], Seq[PropertyMetaInformation])] =
+        var configurations: Seq[(String, Set[ComputationSpecification[FPCFAnalysis]], Seq[PropertyMetaInformation])] =
             List.empty
 
         for (line ← configLines) {

@@ -43,17 +43,3 @@ trait Property extends PropertyMetaInformation {
     final def asOrderedProperty: OrderedProperty = this.asInstanceOf[OrderedProperty]
 
 }
-
-//
-//
-// FRAMEWORK INTERNAL PROPERTIES
-//
-//
-
-private[fpcf] case object PropertyIsLazilyComputed extends Property {
-
-    type Self = PropertyIsLazilyComputed.type
-
-    final override def key: Nothing = throw new UnsupportedOperationException
-
-}

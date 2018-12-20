@@ -60,6 +60,7 @@ trait ValueInformation {
      * @throws IllegalStateException if this value is illegal.
      */
     def isPrimitiveValue: Boolean
+    def asPrimitiveValue: IsPrimitiveValue[_ <: BaseType] = throw new ClassCastException();
 
     /**
      * Returns `true` if the value has a reference type.
@@ -244,6 +245,8 @@ sealed trait IsPrimitiveValue[T <: BaseType]
     final override def isReferenceValue: Boolean = false
 
     final override def isPrimitiveValue: Boolean = true
+
+    final override def asPrimitiveValue: IsPrimitiveValue[T] = this
 
     def primitiveType: T
 

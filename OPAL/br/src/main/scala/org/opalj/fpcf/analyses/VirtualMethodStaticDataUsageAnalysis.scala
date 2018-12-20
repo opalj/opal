@@ -3,16 +3,16 @@ package org.opalj
 package fpcf
 package analyses
 
-import org.opalj.br.DeclaredMethod
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.fpcf.properties.VirtualMethodAllocationFreeness
-import org.opalj.fpcf.properties.VirtualMethodStaticDataUsage
 import org.opalj.fpcf.properties.StaticDataUsage
+import org.opalj.fpcf.properties.UsesConstantDataOnly
 import org.opalj.fpcf.properties.UsesNoStaticData
 import org.opalj.fpcf.properties.UsesVaryingData
-import org.opalj.fpcf.properties.UsesConstantDataOnly
+import org.opalj.fpcf.properties.VirtualMethodAllocationFreeness
+import org.opalj.fpcf.properties.VirtualMethodStaticDataUsage
 import org.opalj.fpcf.properties.VirtualMethodStaticDataUsage.VUsesVaryingData
+import org.opalj.br.DeclaredMethod
+import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.SomeProject
 
 /**
  * Determines the aggregated static data usage for virtual methods.
@@ -24,8 +24,9 @@ class VirtualMethodStaticDataUsageAnalysis private[analyses] (
 ) extends FPCFAnalysis {
     private[this] val declaredMethods = project.get(DeclaredMethodsKey)
 
-    def determineUsage(dm: DeclaredMethod): PropertyComputationResult = {
-        if (!dm.hasSingleDefinedMethod && !dm.hasMultipleDefinedMethods) return Result(dm, VUsesVaryingData);
+    def determineUsage(dm: DeclaredMethod): ProperPropertyComputationResult = {
+        if (!dm.hasSingleDefinedMethod && !dm.hasMultipleDefinedMethods)
+            return Result(dm, VUsesVaryingData);
 
         var dependees: Set[EOptionP[DeclaredMethod, StaticDataUsage]] = Set.empty
 
@@ -52,24 +53,24 @@ class VirtualMethodStaticDataUsageAnalysis private[analyses] (
 
         for (method ← methods) {
             propertyStore(declaredMethods(method), StaticDataUsage.key) match {
-                case FinalEP(_, UsesNoStaticData)     ⇒
-                case FinalEP(_, UsesConstantDataOnly) ⇒ maxLevel = UsesConstantDataOnly
-                case FinalEP(_, UsesVaryingData)      ⇒ return Result(dm, VUsesVaryingData);
-                case ep @ IntermediateEP(_, _, UsesConstantDataOnly) ⇒
+                case FinalP(UsesNoStaticData)     ⇒
+                case FinalP(UsesConstantDataOnly) ⇒ maxLevel = UsesConstantDataOnly
+                case FinalP(UsesVaryingData)      ⇒ return Result(dm, VUsesVaryingData);
+                case ep @ InterimUBP(UsesConstantDataOnly) ⇒
                     maxLevel = UsesConstantDataOnly
                     dependees += ep
                 case epk ⇒ dependees += epk
             }
         }
 
-        def c(eps: SomeEPS): PropertyComputationResult = {
+        def c(eps: SomeEPS): ProperPropertyComputationResult = {
             dependees = dependees.filter { _.e ne eps.e }
 
             eps match {
-                case FinalEP(_, UsesNoStaticData)     ⇒
-                case FinalEP(_, UsesConstantDataOnly) ⇒ maxLevel = UsesConstantDataOnly
-                case FinalEP(_, UsesVaryingData)      ⇒ return Result(dm, VUsesVaryingData);
-                case ep @ IntermediateEP(_, _, UsesConstantDataOnly) ⇒
+                case FinalP(UsesNoStaticData)     ⇒
+                case FinalP(UsesConstantDataOnly) ⇒ maxLevel = UsesConstantDataOnly
+                case FinalP(UsesVaryingData)      ⇒ return Result(dm, VUsesVaryingData);
+                case ep @ InterimUBP(UsesConstantDataOnly) ⇒
                     maxLevel = UsesConstantDataOnly
                     dependees += ep.asInstanceOf[EOptionP[DeclaredMethod, StaticDataUsage]]
                 case epk ⇒ dependees += epk.asInstanceOf[EOptionP[DeclaredMethod, StaticDataUsage]]
@@ -78,7 +79,7 @@ class VirtualMethodStaticDataUsageAnalysis private[analyses] (
             if (dependees.isEmpty) {
                 Result(dm, maxLevel.aggregatedProperty)
             } else {
-                IntermediateResult(
+                InterimResult(
                     dm, VUsesVaryingData, maxLevel.aggregatedProperty,
                     dependees, c
                 )
@@ -88,7 +89,7 @@ class VirtualMethodStaticDataUsageAnalysis private[analyses] (
         if (dependees.isEmpty) {
             Result(dm, maxLevel.aggregatedProperty)
         } else {
-            IntermediateResult(
+            InterimResult(
                 dm, VUsesVaryingData, maxLevel.aggregatedProperty,
                 dependees, c
             )
@@ -96,35 +97,30 @@ class VirtualMethodStaticDataUsageAnalysis private[analyses] (
     }
 
     /** Called when the analysis is scheduled lazily. */
-    def doDetermineUsage(e: Entity): PropertyComputationResult = {
+    def doDetermineUsage(e: Entity): ProperPropertyComputationResult = {
         e match {
             case m: DeclaredMethod ⇒ determineUsage(m)
-            case _ ⇒ throw new UnknownError(
-                "virtual method static data usage is only defined for declared methods"
-            )
+            case _                 ⇒ throw new IllegalArgumentException(s"$e is not a method")
         }
     }
 
 }
 
-trait VirtualMethodStaticDataUsageAnalysisScheduler extends ComputationSpecification {
+trait VirtualMethodStaticDataUsageAnalysisScheduler extends ComputationSpecification[FPCFAnalysis] {
 
-    final override def derives: Set[PropertyKind] = Set(VirtualMethodStaticDataUsage)
+    final def derivedProperty: PropertyBounds = PropertyBounds.lub(VirtualMethodStaticDataUsage)
 
-    final override def uses: Set[PropertyKind] = Set(StaticDataUsage)
-
-    final override type InitializationData = Null
-    final def init(p: SomeProject, ps: PropertyStore): Null = null
-
-    def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
-
-    def afterPhaseCompletion(p: SomeProject, ps: PropertyStore): Unit = {}
+    final override def uses: Set[PropertyBounds] = Set(PropertyBounds.lub(StaticDataUsage))
 
 }
 
 object EagerVirtualMethodStaticDataUsageAnalysis
     extends VirtualMethodStaticDataUsageAnalysisScheduler
-    with FPCFEagerAnalysisScheduler {
+    with BasicFPCFEagerAnalysisScheduler {
+
+    override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
+
+    override def derivesCollaboratively: Set[PropertyBounds] = Set.empty
 
     def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new VirtualMethodStaticDataUsageAnalysis(p)
@@ -136,9 +132,11 @@ object EagerVirtualMethodStaticDataUsageAnalysis
 
 object LazyVirtualMethodStaticDataUsageAnalysis
     extends VirtualMethodStaticDataUsageAnalysisScheduler
-    with FPCFLazyAnalysisScheduler {
+    with BasicFPCFLazyAnalysisScheduler {
 
-    def startLazily(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+    override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
+
+    def register(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new VirtualMethodStaticDataUsageAnalysis(p)
         ps.registerLazyPropertyComputation(
             VirtualMethodAllocationFreeness.key,

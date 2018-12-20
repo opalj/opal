@@ -12,12 +12,14 @@ import org.opalj.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
 import org.opalj.fpcf.analyses.LazyVirtualCallAggregatingEscapeAnalysis
 import org.opalj.fpcf.analyses.LazyVirtualReturnValueFreshnessAnalysis
 import org.opalj.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
-import org.opalj.tac.fpcf.analyses.LazyL0TACAIAnalysis
+import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
+import org.opalj.tac.fpcf.analyses.TACAITransformer
 
 class FieldLocalityTests extends PropertiesTest {
 
-    val lazyAnalysisSchedulers = Set[FPCFLazyAnalysisScheduler](
-        LazyL0TACAIAnalysis,
+    val lazyAnalysisSchedulers = List[FPCFLazyLikeAnalysisScheduler](
+        LazyL0BaseAIAnalysis,
+        TACAITransformer, //LazyL0TACAIAnalysis,
         LazyInterProceduralEscapeAnalysis,
         LazyVirtualCallAggregatingEscapeAnalysis,
         LazyVirtualReturnValueFreshnessAnalysis,
@@ -33,7 +35,7 @@ class FieldLocalityTests extends PropertiesTest {
     }
 
     describe("field locality analysis is executed") {
-        val as = executeAnalyses(Set(EagerFieldLocalityAnalysis), lazyAnalysisSchedulers)
+        val as = executeAnalyses(EagerFieldLocalityAnalysis :: lazyAnalysisSchedulers)
         as.propertyStore.shutdown()
         validateProperties(
             as,

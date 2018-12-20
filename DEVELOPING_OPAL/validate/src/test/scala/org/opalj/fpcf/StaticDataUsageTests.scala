@@ -15,10 +15,7 @@ import org.opalj.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
 class StaticDataUsageTests extends PropertiesTest {
 
     describe("the org.opalj.fpcf.analyses.StaticDataUsageAnalysis is executed") {
-        val as = executeAnalyses(
-            Set(EagerStaticDataUsageAnalysis),
-            Set(LazyL0CompileTimeConstancyAnalysis)
-        )
+        val as = executeAnalyses(EagerStaticDataUsageAnalysis, LazyL0CompileTimeConstancyAnalysis)
         as.propertyStore.shutdown()
         validateProperties(as, declaredMethodsWithAnnotations(as.project), Set("StaticDataUsage"))
     }

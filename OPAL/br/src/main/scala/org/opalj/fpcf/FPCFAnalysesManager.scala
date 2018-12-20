@@ -18,9 +18,7 @@ import org.opalj.br.analyses.SomeProject
  * @author Michael Reif
  * @author Michael Eichberg
  */
-class FPCFAnalysesManager private[fpcf] (
-        val project: SomeProject
-) {
+class FPCFAnalysesManager private[fpcf] (val project: SomeProject) {
 
     // caching (by means of using local fields) is not necessary
     private[this] implicit final def logContext: LogContext = project.logContext
@@ -33,20 +31,26 @@ class FPCFAnalysesManager private[fpcf] (
         new Array[Boolean](PropertyKind.SupportedPropertyKinds)
     }
 
-    private[this] var schedules: List[Schedule] = Nil
+    private[this] var schedules: List[Schedule[FPCFAnalysis]] = Nil
 
     /**
      * Returns the executed schedules. The head is the latest executed schedule.
      */
-    def executedSchedules: List[Schedule] = schedules
+    def executedSchedules: List[Schedule[FPCFAnalysis]] = schedules
 
-    final def runAll(analyses: ComputationSpecification*): PropertyStore = runAll(analyses.toSet)
+    final def runAll(analyses: ComputationSpecification[FPCFAnalysis]*): (PropertyStore, List[FPCFAnalysis]) = {
+        runAll(analyses.toIterable)
+    }
 
-    final def runAll(analyses: Set[ComputationSpecification]): PropertyStore = this.synchronized {
+    final def runAll(
+        analyses: Iterable[ComputationSpecification[FPCFAnalysis]]
+    ): (PropertyStore, List[FPCFAnalysis]) = this.synchronized {
+
         val scenario = AnalysisScenario(analyses)
+
         val properties = scenario.allProperties
         if (properties exists { p ⇒
-            if (derivedProperties(p.id)) {
+            if (derivedProperties(p.pk.id)) {
                 error(
                     "analysis progress",
                     s"$p was computed in a previous run; no analyses were executed"
@@ -57,28 +61,31 @@ class FPCFAnalysesManager private[fpcf] (
             }
         }) {
             // ... some property (kind) was already computed/scheduled
-            return propertyStore;
+            return (propertyStore, Nil);
         }
-        properties foreach { p ⇒ derivedProperties(p.id) = true }
+
+        properties foreach { p ⇒ derivedProperties(p.pk.id) = true }
 
         val schedule = scenario.computeSchedule
         schedules ::= schedule
 
         if (trace) { debug("analysis progress", "executing "+schedule) }
-        time {
+        val as = time {
             schedule(propertyStore, trace)
         } { t ⇒
-            if (trace) debug("analysis progress", s"execution of schedule took ${t.toSeconds}")
+            if (trace) {
+                debug("analysis progress", s"execution of schedule took ${t.toSeconds}")
+            }
         }
         if (trace) {
             debug(
                 "analysis progress",
-                properties.map(p ⇒ PropertyKey.name(p.id)).mkString(
+                properties.map(p ⇒ PropertyKey.name(p.pk.id)).mkString(
                     "used and derived properties = {", ", ", "}"
                 )
             )
         }
-        propertyStore
+        (propertyStore, as)
     }
 }
 

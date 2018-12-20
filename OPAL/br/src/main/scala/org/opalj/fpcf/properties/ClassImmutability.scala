@@ -3,8 +3,6 @@ package org.opalj
 package fpcf
 package properties
 
-import org.opalj.br.ObjectType
-
 sealed trait ClassImmutabilityPropertyMetaInformation extends PropertyMetaInformation {
 
     final type Self = ClassImmutability
@@ -82,14 +80,11 @@ sealed trait ClassImmutability
     extends OrderedProperty
     with ClassImmutabilityPropertyMetaInformation {
 
-    /**
-     * Returns the key used by all `ClassImmutability` properties.
-     */
-    final def key = ClassImmutability.key
+    final def key: PropertyKey[ClassImmutability] = ClassImmutability.key
 
     def correspondingTypeImmutability: TypeImmutability
 
-    /** `true` if instances of the class are mutable */
+    /** `true` if instances of the class are mutable. */
     def isMutable: Boolean
 }
 /**
@@ -101,13 +96,8 @@ object ClassImmutability extends ClassImmutabilityPropertyMetaInformation {
      * The key associated with every [[ClassImmutability]] property.
      */
     final val key: PropertyKey[ClassImmutability] = PropertyKey.create(
-        "ClassImmutability",
-        // The default property that will be used if no analysis is able
-        // to (directly) compute the respective property.
-        MutableObjectDueToUnresolvableDependency,
-        // When we have a cycle all properties are necessarily at least conditionally
-        // immutable (type and object wise) hence, we can leverage the "immutability"
-        (_: PropertyStore, eps: EPS[ObjectType, ClassImmutability]) ⇒ eps.ub
+        "opalj.ClassImmutability",
+        MutableObjectDueToUnresolvableDependency
     )
 }
 

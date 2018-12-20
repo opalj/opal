@@ -3,15 +3,15 @@ package org.opalj
 package fpcf
 package analyses
 
-import org.opalj.br.Field
-import org.opalj.br.analyses.SomeProject
+import org.opalj.fpcf.properties.CompileTimeConstancy
+import org.opalj.fpcf.properties.CompileTimeConstantField
+import org.opalj.fpcf.properties.CompileTimeVaryingField
 import org.opalj.fpcf.properties.FieldMutability
 import org.opalj.fpcf.properties.FinalField
-import org.opalj.fpcf.properties.NonFinalField
-import org.opalj.fpcf.properties.CompileTimeVaryingField
-import org.opalj.fpcf.properties.CompileTimeConstancy
 import org.opalj.fpcf.properties.LazyInitializedField
-import org.opalj.fpcf.properties.CompileTimeConstantField
+import org.opalj.fpcf.properties.NonFinalField
+import org.opalj.br.Field
+import org.opalj.br.analyses.SomeProject
 
 /**
  * A simple analysis that identifies constant (effectively) final static fields that are
@@ -28,9 +28,7 @@ class L0CompileTimeConstancyAnalysis private[analyses] ( final val project: Some
      *
      * This function encapsulates the continuation.
      */
-    def determineConstancy(
-        field: Field
-    ): PropertyComputationResult = {
+    def determineConstancy(field: Field): ProperPropertyComputationResult = {
         if (!field.isStatic || field.constantFieldValue.isEmpty)
             return Result(field, CompileTimeVaryingField);
 
@@ -38,26 +36,26 @@ class L0CompileTimeConstancyAnalysis private[analyses] ( final val project: Some
             return Result(field, CompileTimeConstantField);
 
         var dependee: EOptionP[Entity, Property] = propertyStore(field, FieldMutability.key) match {
-            case FinalEP(_, LazyInitializedField) ⇒ return Result(field, CompileTimeVaryingField);
-            case FinalEP(_, _: FinalField)        ⇒ return Result(field, CompileTimeConstantField);
-            case FinalEP(_, _: NonFinalField)     ⇒ return Result(field, CompileTimeVaryingField);
-            case ep                               ⇒ ep
+            case FinalP(LazyInitializedField) ⇒ return Result(field, CompileTimeVaryingField);
+            case FinalP(_: FinalField)        ⇒ return Result(field, CompileTimeConstantField);
+            case FinalP(_: NonFinalField)     ⇒ return Result(field, CompileTimeVaryingField);
+            case ep                           ⇒ ep
         }
 
         // This function updates the compile-time constancy of the field when the field's
         // mutability is updated
-        def c(eps: SomeEPS): PropertyComputationResult = {
+        def c(eps: SomeEPS): ProperPropertyComputationResult = {
             eps match {
-                case FinalEP(_, LazyInitializedField) ⇒
+                case FinalP(LazyInitializedField) ⇒
                     Result(field, CompileTimeVaryingField);
-                case FinalEP(_, _: FinalField) ⇒
+                case FinalP(_: FinalField) ⇒
                     Result(field, CompileTimeConstantField);
-                case FinalEP(_, _: NonFinalField) ⇒
+                case FinalP(_: NonFinalField) ⇒
                     Result(field, CompileTimeVaryingField);
 
-                case IntermediateEP(_, _, _) ⇒
+                case _: SomeInterimEP ⇒
                     dependee = eps
-                    IntermediateResult(
+                    InterimResult(
                         field,
                         CompileTimeVaryingField,
                         CompileTimeConstantField,
@@ -68,7 +66,7 @@ class L0CompileTimeConstancyAnalysis private[analyses] ( final val project: Some
             }
         }
 
-        IntermediateResult(
+        InterimResult(
             field,
             CompileTimeVaryingField,
             CompileTimeConstantField,
@@ -79,7 +77,7 @@ class L0CompileTimeConstancyAnalysis private[analyses] ( final val project: Some
     }
 
     /** Called when the analysis is scheduled lazily. */
-    def doDetermineConstancy(e: Entity): PropertyComputationResult = {
+    def doDetermineConstancy(e: Entity): ProperPropertyComputationResult = {
         e match {
             case f: Field ⇒ determineConstancy(f)
             case _ ⇒
@@ -88,23 +86,21 @@ class L0CompileTimeConstancyAnalysis private[analyses] ( final val project: Some
     }
 }
 
-trait L0CompileTimeConstancyAnalysisScheduler extends ComputationSpecification {
+trait L0CompileTimeConstancyAnalysisScheduler extends ComputationSpecification[FPCFAnalysis] {
 
-    final override def derives: Set[PropertyKind] = Set(CompileTimeConstancy)
+    final def derivedProperty: PropertyBounds = PropertyBounds.lub(CompileTimeConstancy)
 
-    final override def uses: Set[PropertyKind] = Set(FieldMutability)
+    final override def uses: Set[PropertyBounds] = Set(PropertyBounds.lub(FieldMutability))
 
-    final override type InitializationData = Null
-    final def init(p: SomeProject, ps: PropertyStore): Null = null
-
-    def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
-
-    def afterPhaseCompletion(p: SomeProject, ps: PropertyStore): Unit = {}
 }
 
 object EagerL0CompileTimeConstancyAnalysis
     extends L0CompileTimeConstancyAnalysisScheduler
-    with FPCFEagerAnalysisScheduler {
+    with BasicFPCFEagerAnalysisScheduler {
+
+    override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
+
+    override def derivesCollaboratively: Set[PropertyBounds] = Set.empty
 
     override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new L0CompileTimeConstancyAnalysis(p)
@@ -113,10 +109,13 @@ object EagerL0CompileTimeConstancyAnalysis
     }
 }
 
-object LazyL0CompileTimeConstancyAnalysis extends L0CompileTimeConstancyAnalysisScheduler
-    with FPCFLazyAnalysisScheduler {
+object LazyL0CompileTimeConstancyAnalysis
+    extends L0CompileTimeConstancyAnalysisScheduler
+    with BasicFPCFLazyAnalysisScheduler {
 
-    override def startLazily(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+    override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
+
+    override def register(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new L0CompileTimeConstancyAnalysis(p)
         ps.registerLazyPropertyComputation(CompileTimeConstancy.key, analysis.doDetermineConstancy)
         analysis

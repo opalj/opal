@@ -7,6 +7,7 @@ import org.scalatest.FunSpec
 import java.net.URL
 import java.io.File
 
+import org.opalj.log.LogContext
 import org.opalj.ai.common.DefinitionSite
 import org.opalj.ai.common.DefinitionSitesKey
 import org.opalj.br.DefinedMethod
@@ -29,9 +30,8 @@ import org.opalj.br.TAOfNew
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.fpcf.par.PKEParallelTasksPropertyStore
-import org.opalj.fpcf.par.RecordAllPropertyStoreTracer
 import org.opalj.fpcf.properties.PropertyMatcher
+import org.opalj.fpcf.seq.PKESequentialPropertyStore
 
 /**
  * Framework to test if the properties specified in the test project (the classes in the
@@ -124,8 +124,9 @@ abstract class PropertiesTest extends FunSpec with Matchers {
         eas:           TraversableOnce[(Entity, /*the processed annotation*/ String ⇒ String /* a String identifying the entity */ , Traversable[AnnotationLike])],
         propertyKinds: Set[String]
     ): Unit = {
-        val TestContext(p: Project[URL], ps: PropertyStore, as: Set[FPCFAnalysis]) = context
-        val ats = as.map(a ⇒ ObjectType(a.getClass.getName.replace('.', '/')))
+        val TestContext(p: Project[URL], ps: PropertyStore, as: List[FPCFAnalysis]) = context
+        val ats =
+            as.map(a ⇒ ObjectType(a.getClass.getName.replace('.', '/'))).toSet
 
         for {
             (e, entityIdentifier, annotations) ← eas
@@ -141,12 +142,12 @@ abstract class PropertiesTest extends FunSpec with Matchers {
                 it(entityIdentifier(s"$annotationTypeName")) {
                     info(s"validator: "+matcherClass.toString.substring(32))
                     val epss = ps.properties(e).toIndexedSeq
-                    val nonFinalEPSs = epss.filter(!_.isFinal)
+                    val nonFinalPSs = epss.filter(!_.isFinal)
                     assert(
-                        nonFinalEPSs.isEmpty,
-                        nonFinalEPSs.mkString("some epss are not final:\n\t", "\n\t", "\n")
+                        nonFinalPSs.isEmpty,
+                        nonFinalPSs.mkString("some epss are not final:\n\t", "\n\t", "\n")
                     )
-                    val properties = epss.map(_.toUBEP.p)
+                    val properties = epss.map(_.toFinalEP.p)
                     matcher.validateProperty(p, ats, e, annotation, properties) match {
                         case Some(error: String) ⇒
                             val propertiesAsStrings = properties.map(_.toString)
@@ -280,13 +281,18 @@ abstract class PropertiesTest extends FunSpec with Matchers {
     def init(p: Project[URL]): Unit = {}
 
     def executeAnalyses(
-        eagerAnalysisRunners: Set[FPCFEagerAnalysisScheduler],
-        lazyAnalysisRunners:  Set[FPCFLazyAnalysisScheduler]  = Set.empty
+        analysisRunners: ComputationSpecification[FPCFAnalysis]*
+    ): TestContext = {
+        executeAnalyses(analysisRunners.toIterable)
+    }
+
+    def executeAnalyses(
+        analysisRunners: Iterable[ComputationSpecification[FPCFAnalysis]]
     ): TestContext = {
         val p = FixtureProject.recreate { piKeyUnidueId ⇒
             piKeyUnidueId != PropertyStoreKey.uniqueId
         } // to ensure that this project is not "polluted"
-
+        implicit val logContext: LogContext = p.logContext
         init(p)
 
         PropertyStore.updateDebug(true)
@@ -294,41 +300,26 @@ abstract class PropertiesTest extends FunSpec with Matchers {
         p.getOrCreateProjectInformationKeyInitializationData(
             PropertyStoreKey,
             (context: List[PropertyStoreContext[AnyRef]]) ⇒ {
+                /*
                 val ps = PKEParallelTasksPropertyStore.create(
                     new RecordAllPropertyStoreTracer,
                     context.iterator.map(_.asTuple).toMap
-                )(p.logContext)
+                )
+                */
+                val ps = PKESequentialPropertyStore(context: _*)
                 ps
             }
         )
 
         val ps = p.get(PropertyStoreKey)
 
-        val initInfo = (eagerAnalysisRunners ++ lazyAnalysisRunners).map { cs ⇒
-            cs → cs.init(ps)
-        }.toMap
-
-        ps.setupPhase((eagerAnalysisRunners ++ lazyAnalysisRunners).flatMap(
-            _.derives.map(_.asInstanceOf[PropertyMetaInformation].key)
-        ))
-        val las = lazyAnalysisRunners.map { ar ⇒
-            ar.beforeSchedule(ps)
-            ar.startLazily(p, ps, initInfo(ar).asInstanceOf[ar.InitializationData])
-        }
-        val as = eagerAnalysisRunners.map { ar ⇒
-            ar.beforeSchedule(ps)
-            ar.start(p, ps, initInfo(ar).asInstanceOf[ar.InitializationData])
-        }
-        ps.waitOnPhaseCompletion()
-
-        (eagerAnalysisRunners ++ lazyAnalysisRunners).foreach(_.afterPhaseCompletion(ps))
-
-        TestContext(p, ps, as ++ las)
+        val (_, as) = p.get(FPCFAnalysesManagerKey).runAll(analysisRunners)
+        TestContext(p, ps, as)
     }
 }
 
 case class TestContext(
         project:       Project[URL],
         propertyStore: PropertyStore,
-        analyses:      Set[FPCFAnalysis]
+        analyses:      List[FPCFAnalysis]
 )

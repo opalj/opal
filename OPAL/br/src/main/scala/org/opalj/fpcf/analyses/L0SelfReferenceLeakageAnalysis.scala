@@ -6,6 +6,7 @@ package analyses
 import org.opalj.log.OPALLogger.{debug ⇒ trace}
 
 import org.opalj.br.ClassFile
+import org.opalj.br.Code
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
@@ -44,7 +45,7 @@ class L0SelfReferenceLeakageAnalysis(
      */
     private[this] def determineSelfReferenceLeakageContinuation(
         classFile: ClassFile
-    ): PropertyComputationResult = {
+    ): ProperPropertyComputationResult = {
 
         val classHierarchy = project.classHierarchy
 
@@ -62,7 +63,7 @@ class L0SelfReferenceLeakageAnalysis(
             if (returnType.isObjectType && thisIsSubtypeOf(returnType.asObjectType))
                 return true;
 
-            implicit val code = method.body.get
+            implicit val code: Code = method.body.get
             val instructions = code.instructions
             val max = instructions.length
             var pc = 0
@@ -93,7 +94,7 @@ class L0SelfReferenceLeakageAnalysis(
                 pc = instruction.indexOfNextInstruction(pc)
             }
 
-            return false;
+            false
         }
 
         val doesLeakSelfReference =
@@ -159,21 +160,15 @@ class L0SelfReferenceLeakageAnalysis(
             )
         var dependees = Map.empty[Entity, EOptionP[Entity, Property]]
         propertyStore(superTypes, SelfReferenceLeakage) foreach {
-            case epk @ EPK(e, _) ⇒ dependees += ((e, epk))
-
-            case EPS(_, _ /*LeaksSelfReference*/ , LeaksSelfReference) ⇒
-                return Result(classFile, LeaksSelfReference);
-
-            case EPS(e, DoesNotLeakSelfReference, _ /*DoesNotLeakSelfReference*/ ) ⇒
-            // nothing to do ...
-
-            case eps @ EPS(e, _, _)                                                ⇒ dependees += ((e, eps))
-
+            case epk @ EPK(e, _)                   ⇒ dependees += ((e, epk))
+            case UBP(LeaksSelfReference)           ⇒ return Result(classFile, LeaksSelfReference);
+            case ELBP(e, DoesNotLeakSelfReference) ⇒ // nothing to do ...
+            case eps @ EPS(e)                      ⇒ dependees += ((e, eps))
         }
 
         // First, let's wait for the results for the supertypes...
-        def c(eps: SomeEPS): PropertyComputationResult = {
-            val EPS(e, lb, ub) = eps
+        def c(eps: SomeEPS): ProperPropertyComputationResult = {
+            val ELUBP(e, lb, ub) = eps
             if (ub == LeaksSelfReference) {
                 // ... we have a final result
                 return Result(classType, LeaksSelfReference);
@@ -188,14 +183,14 @@ class L0SelfReferenceLeakageAnalysis(
             if (dependees.isEmpty) {
                 determineSelfReferenceLeakageContinuation(classFile)
             } else {
-                IntermediateResult(classType, lb, ub, dependees.values, c)
+                InterimResult(classType, lb, ub, dependees.values, c)
             }
         }
 
         if (dependees.isEmpty) {
             determineSelfReferenceLeakageContinuation(classFile)
         } else {
-            IntermediateResult(
+            InterimResult(
                 classFile,
                 lb = LeaksSelfReference, ub = DoesNotLeakSelfReference,
                 dependees.values,
@@ -206,18 +201,16 @@ class L0SelfReferenceLeakageAnalysis(
     }
 }
 
-object L0SelfReferenceLeakageAnalysis extends FPCFEagerAnalysisScheduler {
+object L0SelfReferenceLeakageAnalysis extends BasicFPCFEagerAnalysisScheduler {
 
-    override def uses: Set[PropertyKind] = Set.empty
+    override def uses: Set[PropertyBounds] = Set.empty
 
-    override def derives: Set[PropertyKind] = Set(SelfReferenceLeakage.Key)
+    override def derivesCollaboratively: Set[PropertyBounds] = Set.empty
 
-    override type InitializationData = Null
-    override def init(p: SomeProject, ps: PropertyStore): Null = null
-
-    override def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
-
-    override def afterPhaseCompletion(p: SomeProject, ps: PropertyStore): Unit = {}
+    override def derivesEagerly: Set[PropertyBounds] = {
+        // FIXME It actually derives only the upper bound!
+        Set(PropertyBounds.lub(SelfReferenceLeakage.Key))
+    }
 
     /**
      * Starts the analysis for the given `project`. This method is typically implicitly

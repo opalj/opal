@@ -3,6 +3,7 @@ package org.opalj
 package fpcf
 
 import org.opalj.br.analyses.ProjectBasedAnalysis
+import org.opalj.br.analyses.SomeProject
 
 /**
  * Common super-trait of all analysis which use MISAF.
@@ -15,3 +16,5 @@ trait FPCFAnalysis extends ProjectBasedAnalysis {
     final def ps: PropertyStore = propertyStore
 
 }
+
+abstract class DefaultFPCFAnalysis(val project: SomeProject) extends FPCFAnalysis
