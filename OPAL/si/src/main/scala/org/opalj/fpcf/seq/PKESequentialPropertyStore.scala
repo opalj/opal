@@ -710,7 +710,7 @@ final class PKESequentialPropertyStore private (
             // 3. Let's finalize remaining interim EPS; e.g., those related to
             //    collaboratively computed properties or "just all" if we don't have suppressed
             //    notifications. Recall that we may have cycles if we have no suppressed
-            //    notifications, because in the latter case, we may dependencies.
+            //    notifications, because in the latter case, we may have dependencies.
             //    We used no fallbacks, but we may still have collaboratively computed properties
             //    (e.g. CallGraph) which are not yet final; let's finalize them in the specified
             //    order (i.e., let's finalize the subphase)!

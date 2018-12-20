@@ -5,6 +5,8 @@ package common
 
 import scala.collection.concurrent.TrieMap
 
+import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger
 import org.opalj.br.Method
 import org.opalj.br.analyses.ProjectInformationKey
 import org.opalj.br.analyses.SomeProject
@@ -55,10 +57,25 @@ object SimpleAIKey
     override protected def compute(
         project: SomeProject
     ): Method ⇒ AIResult { val domain: Domain with RecordDefUse } = {
+    implicit val logContext : LogContext = project.logContext
 
-        val domainFactory = project.
-            getProjectInformationKeyInitializationData(this).
-            getOrElse((m: Method) ⇒ new DefaultDomainWithCFGAndDefUse(project, m))
+        val domainFactory =
+            project.getProjectInformationKeyInitializationData(this) match {
+                case Some(f) ⇒
+                    OPALLogger.info(
+                        "project configuration",
+                        s"using configured domain factory ($f) for abstract interpretations"
+                    )
+                    f
+                case None ⇒
+                    OPALLogger.info(
+                        "project configuration",
+                        "using l1.DefaultDomainWithCFGAndDefUse for abstract interpretations"
+                    )
+                    (m: Method) ⇒ new DefaultDomainWithCFGAndDefUse(project, m)
+            }
+
+
 
         val aiResults = TrieMap.empty[Method, AIResult { val domain: Domain with RecordDefUse }]
         (m: Method) ⇒ aiResults.getOrElseUpdate(m, BaseAI(m, domainFactory(m)))
