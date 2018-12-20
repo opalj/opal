@@ -24,7 +24,7 @@ organization in ThisBuild := "de.opal-project"
 homepage in ThisBuild := Some(url("http://www.opal-project.de"))
 licenses in ThisBuild := Seq("BSD-2-Clause" -> url("http://opensource.org/licenses/BSD-2-Clause"))
 
-scalaVersion  in ThisBuild := "2.12.7"
+scalaVersion  in ThisBuild := "2.12.8"
 
 ScalacConfiguration.globalScalacOptions
 
@@ -315,7 +315,7 @@ lazy val `OPAL-Validate` = (project in file("DEVELOPING_OPAL/validate"))
   .configs(IntegrationTest)
 
 lazy val demos = `Demos`
-lazy val `Demos` = (project in file("OPAL/demos"))
+lazy val `Demos` = (project in file("DEVELOPING_OPAL/demos"))
   .settings(buildSettings: _*)
   .settings(
     name := "Demos",

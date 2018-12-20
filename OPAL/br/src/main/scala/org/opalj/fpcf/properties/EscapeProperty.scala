@@ -179,9 +179,8 @@ sealed abstract class FinalEscapeProperty extends EscapeProperty {
 object EscapeProperty extends EscapePropertyMetaInformation {
 
     final lazy val key: PropertyKey[EscapeProperty] = PropertyKey.create(
-        // Name of the property
-        "EscapeProperty",
-        // fallback value
+        "org.opalj.EscapeProperty",
+        // Fallback value:
         AtMost(NoEscape)
     )
 }

@@ -3120,17 +3120,19 @@ object ClassHierarchy {
             var allNoneObjectClassTypes = UIDSet.empty[ObjectType]
             var allInterfaceType = UIDSet.empty[ObjectType]
             var allNoneObjectTypes = UIDSet.empty[ObjectType]
-            for { t ← knownTypesMap } {
-                if (t ne null) {
-                    val tid = t.id
-                    val theSubtypes = subtypes(tid)
-                    if (isInterfaceTypeMap(tid)) {
-                        allInterfaceType ++= theSubtypes.interfaceTypes
-                        allNoneObjectTypes ++= theSubtypes.allTypes
-                    } else if (t ne ObjectType.Object) {
-                        allNoneObjectClassTypes ++= theSubtypes.classTypes
-                        allNoneObjectTypes ++= theSubtypes.allTypes
-                    }
+            for {
+                t ← knownTypesMap
+                if t ne null
+            } {
+                val tid = t.id
+                val theSubtypes = subtypes(tid)
+                if (isInterfaceTypeMap(tid)) {
+                    allInterfaceType ++= theSubtypes.interfaceTypes
+                    allNoneObjectTypes ++= theSubtypes.allTypes
+                } else if (t ne ObjectType.Object) {
+                    allNoneObjectClassTypes ++= theSubtypes.classTypes
+                    allNoneObjectClassTypes += t
+                    allNoneObjectTypes ++= theSubtypes.allTypes
                 }
             }
             subtypes(ObjectType.ObjectId) =

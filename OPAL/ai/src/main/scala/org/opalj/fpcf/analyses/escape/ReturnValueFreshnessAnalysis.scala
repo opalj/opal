@@ -124,7 +124,7 @@ class ReturnValueFreshnessAnalysis private[analyses] (
     /**
      * Ensures that we invoke [[doDetermineFreshness]] for [[org.opalj.br.DefinedMethod]]s only.
      */
-    def determineFreshness(e: Entity): PropertyComputationResult = e match {
+    def determineFreshness(e: Entity): ProperPropertyComputationResult = e match {
         case dm @ DefinedMethod(dc, m) if m.classFile.thisType == dc ⇒ doDetermineFreshness(dm)
 
         // if the method is inherited, query the result for the one in its defining class
@@ -132,15 +132,15 @@ class ReturnValueFreshnessAnalysis private[analyses] (
 
             def handleReturnValueFreshness(
                 eOptP: SomeEOptionP
-            ): PropertyComputationResult = eOptP match {
-                case FinalP(_, p) ⇒ Result(e, p)
-                case IntermediateEP(_, lb, ub) ⇒
-                    IntermediateResult(
+            ): ProperPropertyComputationResult = eOptP match {
+                case FinalP(p) ⇒ Result(e, p)
+                case InterimLUBP(lb, ub) ⇒
+                    InterimResult(
                         e, lb, ub,
                         Set(eOptP), handleReturnValueFreshness, CheapPropertyComputation
                     )
                 case _ ⇒
-                    IntermediateResult(
+                    InterimResult(
                         e, NoFreshReturnValue, FreshReturnValue,
                         Set(eOptP), handleReturnValueFreshness, CheapPropertyComputation
                     )
@@ -154,7 +154,7 @@ class ReturnValueFreshnessAnalysis private[analyses] (
     /**
      * Determines the return value freshness for an [[org.opalj.br.DefinedMethod]].
      */
-    def doDetermineFreshness(dm: DefinedMethod): PropertyComputationResult = {
+    def doDetermineFreshness(dm: DefinedMethod): ProperPropertyComputationResult = {
         if (dm.descriptor.returnType.isBaseType || dm.descriptor.returnType.isVoidType)
             return Result(dm, PrimitiveReturnValue);
 
@@ -173,12 +173,12 @@ class ReturnValueFreshnessAnalysis private[analyses] (
         val codeO = getTACAICode(m)
 
         if (codeO.isEmpty)
-            return IntermediateResult(
+            return InterimResult(
                 dm,
                 NoFreshReturnValue,
                 FreshReturnValue,
                 state.dependees,
-                continuation
+                c
             );
 
         determineFreshnessForMethod(dm, codeO.get)
@@ -187,7 +187,10 @@ class ReturnValueFreshnessAnalysis private[analyses] (
     def determineFreshnessForMethod(
         dm:   DefinedMethod,
         code: Array[Stmt[V]]
-    )(implicit state: ReturnValueFreshnessState): PropertyComputationResult = {
+    )(
+        implicit
+        state: ReturnValueFreshnessState
+    ): ProperPropertyComputationResult = {
         val m = dm.definedMethod
         implicit val p: SomeProject = project
 
@@ -268,7 +271,7 @@ class ReturnValueFreshnessAnalysis private[analyses] (
 
         state.updateTacaiDependee(tacai)
 
-        if (tacai.hasProperty) tacai.ub.tac.map(_.stmts)
+        if (tacai.hasUBP) tacai.ub.tac.map(_.stmts)
         else None
     }
 
@@ -353,26 +356,26 @@ class ReturnValueFreshnessAnalysis private[analyses] (
         implicit
         state: ReturnValueFreshnessState
     ): Boolean = ep match {
-        case FinalP(_, NoEscape | EscapeInCallee) ⇒
+        case FinalP(NoEscape | EscapeInCallee) ⇒
             throw new RuntimeException(s"unexpected result $ep for entity ${state.dm}")
 
-        case FinalP(_, EscapeViaReturn) ⇒ false
+        case FinalP(EscapeViaReturn) ⇒ false
 
-        case FinalP(_, AtMost(_))       ⇒ true
+        case FinalP(AtMost(_))       ⇒ true
 
-        case FinalP(_, _)               ⇒ true // Escape state is worse than via return
+        case _: FinalEP[_, _]        ⇒ true // Escape state is worse than via return
 
-        case IntermediateEP(_, _, NoEscape | EscapeInCallee) ⇒
+        case InterimUBP(NoEscape | EscapeInCallee) ⇒
             state.addDefSiteDependee(ep)
             false
 
-        case IntermediateEP(_, _, EscapeViaReturn) ⇒
+        case InterimUBP(EscapeViaReturn) ⇒
             state.addDefSiteDependee(ep)
             false
 
-        case IntermediateEP(_, _, AtMost(_)) ⇒ true
+        case InterimUBP(AtMost(_)) ⇒ true
 
-        case IntermediateEP(_, _, _)         ⇒ true // Escape state is worse than via return
+        case _: SomeInterimEP      ⇒ true // Escape state is worse than via return
 
         case _ ⇒
             state.addDefSiteDependee(ep)
@@ -390,28 +393,28 @@ class ReturnValueFreshnessAnalysis private[analyses] (
         implicit
         state: ReturnValueFreshnessState
     ): Boolean = ep match {
-        case FinalP(_, LocalFieldWithGetter) ⇒
+        case FinalP(LocalFieldWithGetter) ⇒
             state.atMost(Getter)
             false
 
-        case IntermediateEP(_, _, LocalFieldWithGetter) ⇒
+        case InterimUBP(LocalFieldWithGetter) ⇒
             state.atMost(Getter)
             state.addFieldDependee(ep)
             false
 
-        case FinalP(_, NoLocalField) ⇒
+        case FinalP(NoLocalField) ⇒
             true
 
-        case FinalP(_, ExtensibleLocalFieldWithGetter) ⇒
+        case FinalP(ExtensibleLocalFieldWithGetter) ⇒
             state.atMost(ExtensibleGetter)
             false
 
-        case IntermediateEP(_, _, ExtensibleLocalFieldWithGetter) ⇒
+        case InterimUBP(ExtensibleLocalFieldWithGetter) ⇒
             state.atMost(ExtensibleGetter)
             state.addFieldDependee(ep)
             false
 
-        case FinalP(_, LocalField | ExtensibleLocalField) ⇒
+        case FinalP(LocalField | ExtensibleLocalField) ⇒
             // The value is returned, the field can not be local!
             throw new RuntimeException(s"unexpected result $ep for entity ${state.dm}")
 
@@ -428,16 +431,16 @@ class ReturnValueFreshnessAnalysis private[analyses] (
     def handleReturnValueFreshness(
         ep: EOptionP[DeclaredMethod, Property]
     )(implicit state: ReturnValueFreshnessState): Boolean = ep match {
-        case FinalP(_, NoFreshReturnValue | VNoFreshReturnValue) ⇒ true
+        case FinalP(NoFreshReturnValue | VNoFreshReturnValue) ⇒ true
 
-        case FinalP(_, FreshReturnValue | VFreshReturnValue)     ⇒ false
+        case FinalP(FreshReturnValue | VFreshReturnValue)     ⇒ false
 
         //IMPROVE: We can still be a getter if the callee has the same receiver
-        case EPS(_, _, Getter | VGetter)                         ⇒ true
+        case UBP(Getter | VGetter)                            ⇒ true
 
-        case EPS(_, _, ExtensibleGetter | VExtensibleGetter)     ⇒ true
+        case UBP(ExtensibleGetter | VExtensibleGetter)        ⇒ true
 
-        case IntermediateEP(_, _, FreshReturnValue | VFreshReturnValue) ⇒
+        case InterimUBP(FreshReturnValue | VFreshReturnValue) ⇒
             state.addMethodDependee(ep)
             false
 
@@ -455,9 +458,12 @@ class ReturnValueFreshnessAnalysis private[analyses] (
     /**
      * A continuation function, that handles updates for the escape state.
      */
-    def continuation(
+    def c(
         someEPS: SomeEPS
-    )(implicit state: ReturnValueFreshnessState): PropertyComputationResult = {
+    )(
+        implicit
+        state: ReturnValueFreshnessState
+    ): ProperPropertyComputationResult = {
         val dm = state.dm
 
         someEPS.e match {
@@ -482,20 +488,21 @@ class ReturnValueFreshnessAnalysis private[analyses] (
             case _: Method ⇒
                 val newEP = someEPS.asInstanceOf[EOptionP[Method, TACAI]]
                 state.updateTacaiDependee(newEP)
-                return determineFreshnessForMethod(dm, newEP.ub.tac.get.stmts);
+                if (newEP.ub.tac.isDefined)
+                    return determineFreshnessForMethod(dm, newEP.ub.tac.get.stmts);
         }
 
         returnResult
     }
 
-    def returnResult(implicit state: ReturnValueFreshnessState): PropertyComputationResult = {
+    def returnResult(implicit state: ReturnValueFreshnessState): ProperPropertyComputationResult = {
         if (state.hasDependees)
-            IntermediateResult(
+            InterimResult(
                 state.dm,
                 NoFreshReturnValue,
                 state.ubRVF,
                 state.dependees,
-                continuation,
+                c,
                 if (state.hasTacaiDependee) DefaultPropertyComputation else CheapPropertyComputation
             )
         else
@@ -503,26 +510,28 @@ class ReturnValueFreshnessAnalysis private[analyses] (
     }
 }
 
-sealed trait ReturnValueFreshnessAnalysisScheduler extends ComputationSpecification {
+sealed trait ReturnValueFreshnessAnalysisScheduler extends ComputationSpecification[FPCFAnalysis] {
 
-    final override def derives: Set[PropertyKind] = Set(ReturnValueFreshness)
+    final def derivedProperty: PropertyBounds = PropertyBounds.lub(ReturnValueFreshness)
 
-    final override def uses: Set[PropertyKind] = {
-        Set(TACAI, EscapeProperty, VirtualMethodReturnValueFreshness, FieldLocality)
+    final override def uses: Set[PropertyBounds] = {
+        Set(
+            PropertyBounds.lub(TACAI),
+            PropertyBounds.lub(EscapeProperty),
+            PropertyBounds.lub(VirtualMethodReturnValueFreshness),
+            PropertyBounds.lub(FieldLocality)
+        )
     }
-
-    final override type InitializationData = Null
-    final def init(p: SomeProject, ps: PropertyStore): Null = null
-
-    def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
-
-    def afterPhaseCompletion(p: SomeProject, ps: PropertyStore): Unit = {}
 
 }
 
 object EagerReturnValueFreshnessAnalysis
     extends ReturnValueFreshnessAnalysisScheduler
-    with FPCFEagerAnalysisScheduler {
+    with BasicFPCFEagerAnalysisScheduler {
+
+    override def derivesCollaboratively: Set[PropertyBounds] = Set.empty
+
+    override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
 
     override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val declaredMethods =
@@ -535,13 +544,15 @@ object EagerReturnValueFreshnessAnalysis
 
 object LazyReturnValueFreshnessAnalysis
     extends ReturnValueFreshnessAnalysisScheduler
-    with FPCFLazyAnalysisScheduler {
+    with BasicFPCFLazyAnalysisScheduler {
+
+    override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 
     /**
      * Registers the analysis as a lazy computation, that is, the method
      * will call `ProperytStore.scheduleLazyComputation`.
      */
-    override def startLazily(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+    override def register(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new ReturnValueFreshnessAnalysis(p)
         ps.registerLazyPropertyComputation(ReturnValueFreshness.key, analysis.determineFreshness)
         analysis

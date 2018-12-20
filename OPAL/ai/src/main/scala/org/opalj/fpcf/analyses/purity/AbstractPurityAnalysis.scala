@@ -47,7 +47,6 @@ import org.opalj.tac.CaughtException
 import org.opalj.tac.Checkcast
 import org.opalj.tac.ClassConst
 import org.opalj.tac.Compare
-import org.opalj.tac.DefaultTACAIKey
 import org.opalj.tac.DoubleConst
 import org.opalj.tac.DUVar
 import org.opalj.tac.Expr
@@ -129,13 +128,8 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
 
     val rater: DomainSpecificRater
 
-    protected[this] val tacai: Method ⇒ TACode[TACMethodParameter, V] = {
-        project.get(DefaultTACAIKey)
-    }
-
-    protected[this] val isMethodOverridable: Method ⇒ Answer = project.get(IsOverridableMethodKey)
-    protected[this] val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
-
+    val isMethodOverridable: Method ⇒ Answer = project.get(IsOverridableMethodKey)
+    val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
     val configuredPurity: ConfiguredPurity = project.get(ConfiguredPurityKey)
 
     /**
@@ -521,9 +515,12 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
     def checkFieldMutability(
         ep:     EOptionP[Field, FieldMutability],
         objRef: Option[Expr[V]]
-    )(implicit state: StateType): Unit = ep match {
-        case EPS(_, _: FinalField, _) ⇒ // Final fields don't impede purity
-        case FinalP(_, _) ⇒ // Mutable field
+    )(
+        implicit
+        state: StateType
+    ): Unit = ep match {
+        case LBP(_: FinalField) ⇒ // Final fields don't impede purity
+        case _: FinalEP[_, _] ⇒ // Mutable field
             if (objRef.isDefined) {
                 if (state.ubPurity.isDeterministic)
                     isLocal(objRef.get, SideEffectFree)
@@ -541,7 +538,10 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
     def handleUnknownFieldMutability(
         ep:     EOptionP[Field, FieldMutability],
         objRef: Option[Expr[V]]
-    )(implicit state: StateType): Unit
+    )(
+        implicit
+        state: StateType
+    ): Unit
 
     /**
      * Examines the effect of returning a value on the method's purity.
@@ -606,8 +606,8 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
         expr: Expr[V]
     )(implicit state: StateType): Boolean = ep match {
         // Returning immutable object is pure
-        case EPS(_, ImmutableType | ImmutableObject, _) ⇒ true
-        case FinalP(_, _) ⇒
+        case LBP(ImmutableType | ImmutableObject) ⇒ true
+        case _: FinalEP[_, _] ⇒
             atMost(Pure) // Can not be compile time pure if mutable object is returned
             if (state.ubPurity.isDeterministic)
                 isLocal(expr, SideEffectFree)
@@ -637,17 +637,17 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
      * Retrieves and commits the methods purity as calculated for its declaring class type for the
      * current DefinedMethod that represents the non-overwritten method in a subtype.
      */
-    def baseMethodPurity(dm: DefinedMethod): PropertyComputationResult = {
+    def baseMethodPurity(dm: DefinedMethod): ProperPropertyComputationResult = {
 
-        def c(eps: SomeEOptionP): PropertyComputationResult = eps match {
-            case FinalP(_, p) ⇒ Result(dm, p)
-            case ep @ IntermediateEP(_, lb, ub) ⇒
-                IntermediateResult(
+        def c(eps: SomeEOptionP): ProperPropertyComputationResult = eps match {
+            case FinalP(p) ⇒ Result(dm, p)
+            case ep @ InterimLUBP(lb, ub) ⇒
+                InterimResult(
                     dm, lb, ub,
                     Seq(ep), c, CheapPropertyComputation
                 )
             case epk ⇒
-                IntermediateResult(
+                InterimResult(
                     dm, ImpureByAnalysis, CompileTimePure,
                     Seq(epk), c, CheapPropertyComputation
                 )
@@ -661,16 +661,17 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
      *
      * @param definedMethod A defined method with a body.
      */
-    def determinePurity(definedMethod: DefinedMethod): PropertyComputationResult
+    def determinePurity(definedMethod: DefinedMethod): ProperPropertyComputationResult
 
     /** Called when the analysis is scheduled lazily. */
-    def doDeterminePurity(e: Entity): PropertyComputationResult = {
+    def doDeterminePurity(e: Entity): ProperPropertyComputationResult = {
         e match {
             case dm: DefinedMethod if dm.definedMethod.body.isDefined ⇒
                 determinePurity(dm)
-            case dm: DeclaredMethod ⇒ Result(dm, ImpureByLackOfInformation)
-            case _ ⇒
-                throw new UnknownError("purity is only defined for declared methods")
+            case dm: DeclaredMethod ⇒
+                Result(dm, ImpureByLackOfInformation)
+            case e ⇒
+                throw new IllegalArgumentException(s"$e is not a declared method")
         }
     }
 
@@ -681,10 +682,10 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
         method: Method
     )(implicit state: StateType): Option[TACode[TACMethodParameter, V]] = {
         propertyStore(method, TACAI.key) match {
-            case finalEP: FinalP[Method, TACAI] ⇒
-                handleTACAI(finalEP)
-                finalEP.ub.tac
-            case eps: IntermediateEP[Method, TACAI] ⇒
+            case finalP: FinalEP[Method, TACAI] ⇒
+                handleTACAI(finalP)
+                finalP.ub.tac
+            case eps: InterimEP[Method, TACAI] ⇒
                 reducePurityLB(ImpureByAnalysis)
                 handleTACAI(eps)
                 eps.ub.tac

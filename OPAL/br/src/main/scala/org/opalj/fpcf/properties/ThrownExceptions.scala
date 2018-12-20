@@ -79,9 +79,7 @@ object ThrownExceptions extends ThrownExceptionsPropertyMetaInformation {
     final val key: PropertyKey[ThrownExceptions] = {
         PropertyKey.create[br.DeclaredMethod, ThrownExceptions](
             "ThrownExceptions",
-            ThrownExceptionsFallback,
-            (_: PropertyStore, eps: EPS[br.DeclaredMethod, ThrownExceptions]) ⇒ eps.ub,
-            (_: PropertyStore, _: Entity) ⇒ None
+            ThrownExceptionsFallback
         )
     }
 

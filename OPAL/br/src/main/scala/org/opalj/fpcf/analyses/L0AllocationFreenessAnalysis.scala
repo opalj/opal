@@ -32,14 +32,14 @@ class L0AllocationFreenessAnalysis private[analyses] ( final val project: SomePr
      * Retrieves and commits the methods allocation freeness as calculated for its declaring class
      * type for the current DefinedMethod that represents the non-overwritten method in a subtype.
      */
-    def baseMethodAllocationFreeness(dm: DefinedMethod): PropertyComputationResult = {
+    def baseMethodAllocationFreeness(dm: DefinedMethod): ProperPropertyComputationResult = {
 
-        def c(eps: SomeEOptionP): PropertyComputationResult = eps match {
-            case FinalP(_, af) ⇒ Result(dm, af)
-            case ep @ IntermediateEP(_, lb, ub) ⇒
-                IntermediateResult(dm, lb, ub, Seq(ep), c, CheapPropertyComputation)
+        def c(eps: SomeEOptionP): ProperPropertyComputationResult = eps match {
+            case FinalP(af) ⇒ Result(dm, af)
+            case ep @ InterimLUBP(lb, ub) ⇒
+                InterimResult(dm, lb, ub, Seq(ep), c, CheapPropertyComputation)
             case epk ⇒
-                IntermediateResult(
+                InterimResult(
                     dm, MethodWithAllocations, AllocationFreeMethod,
                     Seq(epk), c, CheapPropertyComputation
                 )
@@ -55,7 +55,7 @@ class L0AllocationFreenessAnalysis private[analyses] ( final val project: SomePr
      */
     def determineAllocationFreeness(
         definedMethod: DefinedMethod
-    ): PropertyComputationResult = {
+    ): ProperPropertyComputationResult = {
 
         if (definedMethod.definedMethod.body.isEmpty)
             return Result(definedMethod, MethodWithAllocations);
@@ -112,13 +112,13 @@ class L0AllocationFreenessAnalysis private[analyses] ( final val project: SomePr
                                     propertyStore(declaredMethods(callee), AllocationFreeness.key)
 
                                 allocationFreeness match {
-                                    case FinalP(_, AllocationFreeMethod) ⇒ /* Nothing to do */
+                                    case FinalP(AllocationFreeMethod) ⇒ /* Nothing to do */
 
                                     // Handling cyclic computations
-                                    case ep @ IntermediateEP(_, _, AllocationFreeMethod) ⇒
+                                    case ep @ InterimUBP(AllocationFreeMethod) ⇒
                                         dependees += ep
 
-                                    case EPS(_, _, _) ⇒
+                                    case _: SomeEPS ⇒
                                         return Result(definedMethod, MethodWithAllocations);
 
                                     case epk ⇒
@@ -188,16 +188,16 @@ class L0AllocationFreenessAnalysis private[analyses] ( final val project: SomePr
 
         // This function computes the “allocation freeness for a method based on the allocation
         // freeness of its callees
-        def c(eps: SomeEPS): PropertyComputationResult = {
+        def c(eps: SomeEPS): ProperPropertyComputationResult = {
             // Let's filter the entity.
             dependees = dependees.filter(_.e ne eps.e)
 
             eps match {
-                case FinalP(_, AllocationFreeMethod) ⇒
+                case FinalP(AllocationFreeMethod) ⇒
                     if (dependees.isEmpty)
                         Result(definedMethod, AllocationFreeMethod)
                     else {
-                        IntermediateResult(
+                        InterimResult(
                             definedMethod,
                             MethodWithAllocations,
                             AllocationFreeMethod,
@@ -206,12 +206,12 @@ class L0AllocationFreenessAnalysis private[analyses] ( final val project: SomePr
                         )
                     }
 
-                case FinalP(_, MethodWithAllocations) ⇒
+                case FinalP(MethodWithAllocations) ⇒
                     Result(definedMethod, MethodWithAllocations)
 
-                case _: IntermediateEP[_, _] ⇒
+                case _: SomeInterimEP ⇒
                     dependees += eps
-                    IntermediateResult(
+                    InterimResult(
                         definedMethod,
                         MethodWithAllocations,
                         AllocationFreeMethod,
@@ -221,41 +221,37 @@ class L0AllocationFreenessAnalysis private[analyses] ( final val project: SomePr
             }
         }
 
-        IntermediateResult(
+        InterimResult(
             definedMethod, MethodWithAllocations, AllocationFreeMethod,
             dependees, c
         )
     }
 
     /** Called when the analysis is scheduled lazily. */
-    def doDetermineAllocationFreeness(e: Entity): PropertyComputationResult = {
+    def doDetermineAllocationFreeness(e: Entity): ProperPropertyComputationResult = {
         e match {
             case m: DefinedMethod  ⇒ determineAllocationFreeness(m)
             case m: DeclaredMethod ⇒ Result(m, MethodWithAllocations)
-            case _ ⇒
-                throw new UnknownError("allocation freeness is only defined for methods")
+            case _                 ⇒ throw new UnknownError(s"$e is not a method")
         }
     }
 }
 
-trait L0AllocationFreenessAnalysisScheduler extends ComputationSpecification {
+trait L0AllocationFreenessAnalysisScheduler extends ComputationSpecification[FPCFAnalysis] {
 
-    final override def derives: Set[PropertyKind] = Set(AllocationFreeness)
+    final def derivedProperty: PropertyBounds = PropertyBounds.lub(AllocationFreeness)
 
-    final override def uses: Set[PropertyKind] = Set.empty
-
-    final override type InitializationData = Null
-    final def init(p: SomeProject, ps: PropertyStore): Null = null
-
-    def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
-
-    def afterPhaseCompletion(p: SomeProject, ps: PropertyStore): Unit = {}
+    final override def uses: Set[PropertyBounds] = Set.empty
 
 }
 
 object EagerL0AllocationFreenessAnalysis
     extends L0AllocationFreenessAnalysisScheduler
-    with FPCFEagerAnalysisScheduler {
+    with BasicFPCFEagerAnalysisScheduler {
+
+    override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
+
+    override def derivesCollaboratively: Set[PropertyBounds] = Set.empty
 
     override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new L0AllocationFreenessAnalysis(p)
@@ -269,9 +265,11 @@ object EagerL0AllocationFreenessAnalysis
 
 object LazyL0AllocationFreenessAnalysis
     extends L0AllocationFreenessAnalysisScheduler
-    with FPCFLazyAnalysisScheduler {
+    with BasicFPCFLazyAnalysisScheduler {
 
-    override def startLazily(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+    override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
+
+    override def register(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new L0AllocationFreenessAnalysis(p)
         ps.registerLazyPropertyComputation(
             AllocationFreeness.key,

@@ -73,7 +73,7 @@ sealed abstract class PurityMatcher(val property: Purity) extends AbstractProper
         val propertyStore = project.get(PropertyStoreKey)
 
         def checkProperty(eop: EOptionP[Entity, Property]): Boolean = {
-            if (eop.hasProperty)
+            if (eop.hasUBP)
                 eop.ub.toString == p
             else {
                 // Here, the reason actually doesn't matter, because the fallback is always the

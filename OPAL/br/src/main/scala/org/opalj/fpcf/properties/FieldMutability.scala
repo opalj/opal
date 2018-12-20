@@ -60,29 +60,24 @@ sealed trait FieldMutabilityPropertyMetaInformation extends PropertyMetaInformat
  */
 sealed trait FieldMutability extends Property with FieldMutabilityPropertyMetaInformation {
 
-    final def key = FieldMutability.key // All instances have to share the SAME key!
+    final def key: PropertyKey[FieldMutability] = FieldMutability.key
 
     def isEffectivelyFinal: Boolean
 }
 
 object FieldMutability extends FieldMutabilityPropertyMetaInformation {
 
-    final val PropertyKeyName = "FieldMutability"
+    final val PropertyKeyName = "opalj.FieldMutability"
 
     final val key: PropertyKey[FieldMutability] = {
         PropertyKey.create(
             PropertyKeyName,
             (_: PropertyStore, _: FallbackReason, e: Entity) ⇒ {
                 e match {
-                    case f: Field ⇒
-                        if (f.isFinal) DeclaredFinalField else NonFinalFieldByAnalysis
-                    case x ⇒
-                        val m = x.getClass.getSimpleName+" is not an org.opalj.br.Field"
-                        throw new IllegalArgumentException(m)
+                    case f: Field ⇒ if (f.isFinal) DeclaredFinalField else NonFinalFieldByAnalysis
+                    case x        ⇒ throw new IllegalArgumentException(s"$e is not a field")
                 }
-            },
-            (_, eps: EPS[Field, FieldMutability]) ⇒ eps.ub,
-            (_: PropertyStore, _: Entity) ⇒ None
+            }
         )
     }
 

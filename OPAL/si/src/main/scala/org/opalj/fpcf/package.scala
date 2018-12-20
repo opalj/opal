@@ -2,6 +2,7 @@
 package org.opalj
 
 import org.opalj.log.GlobalLogContext
+import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.info
 
 /**
@@ -44,7 +45,7 @@ package object fpcf {
 
     {
         // Log the information whether a production build or a development build is used.
-        implicit val logContext = GlobalLogContext
+        implicit val logContext: LogContext = GlobalLogContext
         try {
             assert(false)
             // when we reach this point assertions are turned off
@@ -53,6 +54,8 @@ package object fpcf {
             case _: AssertionError ⇒ info(FrameworkName, "Development Build with Assertions")
         }
     }
+
+    final type AnalysisKey = PropertyKey[Null]
 
     /**
      * The type of the values stored in a property store.
@@ -67,9 +70,15 @@ package object fpcf {
 
     final type SomeEPS = EPS[_ <: Entity, _ <: Property]
 
-    final type SomeFinalP = FinalP[_ <: Entity, _ <: Property]
+    final type SomeFinalEP = FinalEP[_ <: Entity, _ <: Property]
+
+    final type SomeInterimEP = InterimEP[_ <: Entity, _ <: Property]
 
     final type SomePartialResult = PartialResult[_ >: Null <: Entity, _ >: Null <: Property]
+
+    final type UpdateComputation[E <: Entity, P <: Property] = EOptionP[E, P] ⇒ Option[EPS[E, P]]
+
+    final type SomePartialResultUpdateComputation = PartialResultUpdateComputation[_ <: Entity, _ <: Property]
 
     /**
      * A function that takes an entity and returns a result. The result maybe:
@@ -88,7 +97,13 @@ package object fpcf {
 
     final type SomePropertyComputation = PropertyComputation[_ <: Entity]
 
-    final type OnUpdateContinuation = SomeEPS ⇒ PropertyComputationResult
+    final type ProperPropertyComputation[E <: Entity] = E ⇒ ProperPropertyComputationResult
+
+    final type SomeProperPropertyComputation = ProperPropertyComputation[_ <: Entity]
+
+    final type OnUpdateContinuation = SomeEPS ⇒ ProperPropertyComputationResult
+
+    final type QualifiedOnUpdateContinuation[E <: Entity, P <: Property] = EOptionP[E, P] ⇒ ProperPropertyComputationResult
 
     /**
      * The [[FallbackReason]] specifies the reason why a fallback property is required. This
@@ -112,6 +127,11 @@ package object fpcf {
     /**
      * The result of a computation if the computation derives multiple properties at the same time.
      */
-    final type ComputationResults = TraversableOnce[SomeFinalP]
+    final type ComputationResults = TraversableOnce[SomeFinalEP]
 
+    private[fpcf] final val AnalysisKeyName = "[internal] org.opalj.fpcf.PartialResultUpdateComputation"
+
+    private[fpcf] final val AnalysisKey = PropertyKey.create[Entity, Null](AnalysisKeyName)
+
+    private[fpcf] final val AnalysisKeyId = AnalysisKey.id
 }

@@ -67,14 +67,12 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
         implicit
         context: AnalysisContext,
         state:   AnalysisState
-    ): PropertyComputationResult = {
+    ): ProperPropertyComputationResult = {
         retrieveTAC(context.targetMethod)
         if (state.tacai.isDefined) {
             analyzeTAC()
         } else {
-            IntermediateResult(
-                context.entity, GlobalEscape, NoEscape, state.dependees, continuation
-            )
+            InterimResult(context.entity, GlobalEscape, NoEscape, state.dependees, c)
         }
     }
 
@@ -86,7 +84,7 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
         implicit
         context: AnalysisContext,
         state:   AnalysisState
-    ): PropertyComputationResult = {
+    ): ProperPropertyComputationResult = {
         assert(state.tacai.isDefined)
         // for every use-site, check its escape state
         for (use ← state.uses) {
@@ -101,14 +99,15 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
      * If the TAC is non-final, a dependency to it will be added to the `state`.
      */
     private[this] def retrieveTAC(
-        method: Method
+        m: Method
     )(implicit context: AnalysisContext, state: AnalysisState): Unit = {
-        val tacai = propertyStore(method, TACAI.key)
+        val tacai = propertyStore(m, TACAI.key)
 
-        if (tacai.isRefinable)
+        if (tacai.isRefinable) {
             state.addDependency(tacai)
+        }
 
-        if (tacai.hasProperty) {
+        if (tacai.hasUBP && tacai.ub.tac.isDefined) {
             state.updateTACAI(tacai.ub.tac.get)
         }
     }
@@ -362,27 +361,28 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
      * This method is called, after the entity has been analyzed. If there is no dependee left or
      * the entity escapes globally, the result is returned directly.
      * Otherwise, the `maybe` version of the current escape state is returned as
-     * [[IntermediateResult]].
+     * [[InterimResult]].
      */
     protected[this] def returnResult(
         implicit
-        context: AnalysisContext, state: AnalysisState
-    ): PropertyComputationResult = {
+        context: AnalysisContext,
+        state:   AnalysisState
+    ): ProperPropertyComputationResult = {
         // if we do not depend on other entities, or are globally escaping, return the result
         // note: replace by global escape
         if (state.dependees.isEmpty || state.mostRestrictiveProperty.isBottom) {
             // that is, mostRestrictiveProperty is an AtMost
             if (state.mostRestrictiveProperty.isInstanceOf[AtMost]) {
-                //TODO IntermediateResult(context.entity, GlobalEscape, state.mostRestrictiveProperty, Seq.empty, continuation)
+                //TODO InterimResult(context.entity, GlobalEscape, state.mostRestrictiveProperty, Seq.empty, continuation)
                 Result(context.entity, state.mostRestrictiveProperty)
             } else {
                 Result(context.entity, state.mostRestrictiveProperty)
             }
         } else {
-            IntermediateResult(
+            InterimResult(
                 context.entity,
                 GlobalEscape, state.mostRestrictiveProperty,
-                state.dependees, continuation
+                state.dependees, c
             )
         }
     }
@@ -390,20 +390,30 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
     /**
      * A continuation function, that handles the updates of property values for entity `other`.
      */
-    protected[this] def continuation(
+    protected[this] def c(
         someEPS: SomeEPS
     )(
         implicit
         context: AnalysisContext, state: AnalysisState
-    ): PropertyComputationResult = {
+    ): ProperPropertyComputationResult = {
         someEPS match {
-            case EPS(_, _, ub: TACAI) ⇒
+            case UBP(ub: TACAI) ⇒
                 state.removeDependency(someEPS)
                 if (someEPS.isRefinable) {
                     state.addDependency(someEPS)
                 }
-                state.updateTACAI(ub.tac.get)
-                analyzeTAC()
+                if (ub.tac.isDefined) {
+                    state.updateTACAI(ub.tac.get)
+                    analyzeTAC()
+                } else {
+                    InterimResult(
+                        context.entity,
+                        GlobalEscape,
+                        state.mostRestrictiveProperty,
+                        state.dependees,
+                        c
+                    )
+                }
             case _ ⇒
                 throw new UnknownError(s"unhandled escape property (${someEPS.ub} for ${someEPS.e}")
         }
@@ -413,31 +423,30 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
      * Extracts information from the given entity and should call [[doDetermineEscape]] afterwards.
      * For some entities a result might be returned immediately.
      */
-    def determineEscape(e: Entity): PropertyComputationResult = e match {
-        case dsl: DefinitionSiteLike ⇒
-            determineEscapeOfDS(dsl)
-
-        case vfp: VirtualFormalParameter ⇒
-            determineEscapeOfFP(vfp)
-
-        case _ ⇒ throw new RuntimeException(s"unsupported entity $e")
+    def determineEscape(e: Entity): ProperPropertyComputationResult = e match {
+        case dsl: DefinitionSiteLike     ⇒ determineEscapeOfDS(dsl)
+        case vfp: VirtualFormalParameter ⇒ determineEscapeOfFP(vfp)
+        case _                           ⇒ throw new IllegalArgumentException(s"$e is unsupported")
     }
 
-    protected[this] def determineEscapeOfDS(dsl: DefinitionSiteLike): PropertyComputationResult = {
+    protected[this] def determineEscapeOfDS(
+        dsl: DefinitionSiteLike
+    ): ProperPropertyComputationResult = {
         val ctx = createContext(dsl, dsl.pc, dsl.method)
         doDetermineEscape(ctx, createState)
     }
 
-    protected[this] def determineEscapeOfFP(fp: VirtualFormalParameter): PropertyComputationResult
+    protected[this] def determineEscapeOfFP(
+        fp: VirtualFormalParameter
+    ): ProperPropertyComputationResult
 
     protected[this] def createState: AnalysisState
 
     protected[this] lazy val virtualFormalParameters: VirtualFormalParameters = {
         project.get(VirtualFormalParametersKey)
     }
-    protected[this] val declaredMethods: DeclaredMethods = {
-        project.get(DeclaredMethodsKey)
-    }
+
+    protected[this] val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
 
     protected[this] def createContext(
         entity:       Entity,

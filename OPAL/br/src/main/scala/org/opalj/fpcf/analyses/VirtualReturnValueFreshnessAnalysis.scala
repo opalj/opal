@@ -24,9 +24,10 @@ import org.opalj.fpcf.properties.VirtualMethodReturnValueFreshness
 class VirtualReturnValueFreshnessAnalysis private[analyses] (
         final val project: SomeProject
 ) extends FPCFAnalysis {
+
     private[this] val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
 
-    def determineFreshness(m: DeclaredMethod): PropertyComputationResult = {
+    def determineFreshness(m: DeclaredMethod): ProperPropertyComputationResult = {
         if (m.descriptor.returnType.isBaseType || m.descriptor.returnType.isVoidType) {
             return Result(m, VPrimitiveReturnValue)
         }
@@ -53,14 +54,14 @@ class VirtualReturnValueFreshnessAnalysis private[analyses] (
 
         def handleReturnValueFreshness(
             eOptionP: EOptionP[DeclaredMethod, ReturnValueFreshness]
-        ): Option[PropertyComputationResult] = eOptionP match {
-            case FinalP(_, NoFreshReturnValue) ⇒
+        ): Option[ProperPropertyComputationResult] = eOptionP match {
+            case FinalP(NoFreshReturnValue) ⇒
                 Some(Result(m, VNoFreshReturnValue))
 
-            case FinalP(_, PrimitiveReturnValue) ⇒
+            case FinalP(PrimitiveReturnValue) ⇒
                 throw new RuntimeException("unexpected property")
 
-            case ep @ EPS(_, _, p) ⇒
+            case ep @ UBP(p) ⇒
                 temporary = temporary meet p.asVirtualMethodReturnValueFreshness
                 if (ep.isRefinable)
                     dependees += ep
@@ -71,20 +72,21 @@ class VirtualReturnValueFreshnessAnalysis private[analyses] (
                 None
         }
 
-        def returnResult(): PropertyComputationResult = {
+        def returnResult(): ProperPropertyComputationResult = {
             if (dependees.isEmpty)
                 Result(m, temporary)
             else
-                IntermediateResult(m, VNoFreshReturnValue, temporary, dependees, c)
+                InterimResult(m, VNoFreshReturnValue, temporary, dependees, c)
         }
 
-        def c(someEPS: SomeEPS): PropertyComputationResult = {
+        def c(someEPS: SomeEPS): ProperPropertyComputationResult = {
 
             dependees = dependees.filter(_.e ne someEPS.e)
 
-            handleReturnValueFreshness(
+            val r = handleReturnValueFreshness(
                 someEPS.asInstanceOf[EOptionP[DeclaredMethod, ReturnValueFreshness]]
-            ).foreach(return _)
+            )
+            if (r.isDefined) return r.get;
 
             returnResult()
         }
@@ -94,24 +96,23 @@ class VirtualReturnValueFreshnessAnalysis private[analyses] (
 
 }
 
-sealed trait VirtualReturnValueFreshnessAnalysisScheduler extends ComputationSpecification {
+sealed trait VirtualReturnValueFreshnessAnalysisScheduler extends ComputationSpecification[FPCFAnalysis] {
 
-    final override def derives: Set[PropertyKind] = Set(VirtualMethodReturnValueFreshness)
+    final def derivedProperty: PropertyBounds = {
+        PropertyBounds.lub(VirtualMethodReturnValueFreshness)
+    }
 
-    final override def uses: Set[PropertyKind] = Set(ReturnValueFreshness)
-
-    final type InitializationData = Null
-    final def init(p: SomeProject, ps: PropertyStore): Null = null
-
-    def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
-
-    def afterPhaseCompletion(p: SomeProject, ps: PropertyStore): Unit = {}
+    final override def uses: Set[PropertyBounds] = Set(PropertyBounds.lub(ReturnValueFreshness))
 
 }
 
 object EagerVirtualReturnValueFreshnessAnalysis
     extends VirtualReturnValueFreshnessAnalysisScheduler
-    with FPCFEagerAnalysisScheduler {
+    with BasicFPCFEagerAnalysisScheduler {
+
+    override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
+
+    override def derivesCollaboratively: Set[PropertyBounds] = Set.empty
 
     override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val declaredMethods = p.get(DeclaredMethodsKey).declaredMethods
@@ -125,9 +126,11 @@ object EagerVirtualReturnValueFreshnessAnalysis
 
 object LazyVirtualReturnValueFreshnessAnalysis
     extends VirtualReturnValueFreshnessAnalysisScheduler
-    with FPCFLazyAnalysisScheduler {
+    with BasicFPCFLazyAnalysisScheduler {
 
-    override def startLazily(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+    override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
+
+    override def register(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new VirtualReturnValueFreshnessAnalysis(p)
         ps.registerLazyPropertyComputation(
             VirtualMethodReturnValueFreshness.key,

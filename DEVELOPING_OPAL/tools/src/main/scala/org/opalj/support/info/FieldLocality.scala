@@ -3,12 +3,9 @@ package org.opalj.support.info
 
 import java.net.URL
 
-import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.DefaultOneStepAnalysis
-import org.opalj.br.analyses.Project
 import org.opalj.fpcf.FPCFAnalysesManagerKey
-import org.opalj.fpcf.analyses.LazyVirtualCallAggregatingEscapeAnalysis
 import org.opalj.fpcf.analyses.EagerFieldLocalityAnalysis
+import org.opalj.fpcf.analyses.LazyVirtualCallAggregatingEscapeAnalysis
 import org.opalj.fpcf.analyses.LazyVirtualReturnValueFreshnessAnalysis
 import org.opalj.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
@@ -17,7 +14,11 @@ import org.opalj.fpcf.properties.ExtensibleLocalFieldWithGetter
 import org.opalj.fpcf.properties.LocalField
 import org.opalj.fpcf.properties.LocalFieldWithGetter
 import org.opalj.fpcf.properties.NoLocalField
-import org.opalj.tac.fpcf.analyses.LazyL0TACAIAnalysis
+import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.DefaultOneStepAnalysis
+import org.opalj.br.analyses.Project
+import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
+import org.opalj.tac.fpcf.analyses.TACAITransformer
 
 /**
  * Computes the field locality; see [[org.opalj.fpcf.properties.FieldLocality]] for details.
@@ -38,8 +39,10 @@ object FieldLocality extends DefaultOneStepAnalysis {
         isInterrupted: () ⇒ Boolean
     ): BasicReport = {
 
-        val ps = project.get(FPCFAnalysesManagerKey).runAll(
-            LazyL0TACAIAnalysis,
+        val (ps, _ /*executed analyses*/ ) = project.get(FPCFAnalysesManagerKey).runAll(
+            //LazyL0TACAIAnalysis,
+            LazyL0BaseAIAnalysis,
+            TACAITransformer,
             LazyInterProceduralEscapeAnalysis,
             LazyVirtualCallAggregatingEscapeAnalysis,
             LazyVirtualReturnValueFreshnessAnalysis,

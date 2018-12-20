@@ -308,42 +308,42 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
 
         val e = escapeState.e.asInstanceOf[VirtualFormalParameter]
         escapeState match {
-            case FinalP(_, NoEscape | VirtualMethodEscapeProperty(NoEscape)) ⇒
+            case FinalP(NoEscape | VirtualMethodEscapeProperty(NoEscape)) ⇒
                 state.meetMostRestrictive(EscapeInCallee)
 
-            case FinalP(_, EscapeInCallee | VirtualMethodEscapeProperty(EscapeInCallee)) ⇒
+            case FinalP(EscapeInCallee | VirtualMethodEscapeProperty(EscapeInCallee)) ⇒
                 state.meetMostRestrictive(EscapeInCallee)
 
-            case FinalP(_, GlobalEscape | VirtualMethodEscapeProperty(GlobalEscape)) ⇒
+            case FinalP(GlobalEscape | VirtualMethodEscapeProperty(GlobalEscape)) ⇒
                 state.meetMostRestrictive(GlobalEscape)
 
-            case FinalP(_, EscapeViaStaticField | VirtualMethodEscapeProperty(EscapeViaStaticField)) ⇒
+            case FinalP(EscapeViaStaticField | VirtualMethodEscapeProperty(EscapeViaStaticField)) ⇒
                 state.meetMostRestrictive(EscapeViaStaticField)
 
-            case FinalP(_, EscapeViaHeapObject | VirtualMethodEscapeProperty(EscapeViaHeapObject)) ⇒
+            case FinalP(EscapeViaHeapObject | VirtualMethodEscapeProperty(EscapeViaHeapObject)) ⇒
                 state.meetMostRestrictive(EscapeViaHeapObject)
 
-            case FinalP(_, EscapeViaReturn | VirtualMethodEscapeProperty(EscapeViaReturn)) if hasAssignment ⇒
+            case FinalP(EscapeViaReturn | VirtualMethodEscapeProperty(EscapeViaReturn)) if hasAssignment ⇒
                 state.meetMostRestrictive(AtMost(EscapeInCallee))
 
-            case FinalP(_, EscapeViaReturn | VirtualMethodEscapeProperty(EscapeViaReturn)) ⇒
+            case FinalP(EscapeViaReturn | VirtualMethodEscapeProperty(EscapeViaReturn)) ⇒
                 state.meetMostRestrictive(EscapeInCallee)
 
             // we do not track parameters or exceptions in the callee side
-            case FinalP(_, p) if !p.isInstanceOf[AtMost] ⇒
+            case FinalP(p) if !p.isInstanceOf[AtMost] ⇒
                 state.meetMostRestrictive(AtMost(EscapeInCallee))
 
-            case FinalP(_, AtMost(_) | VirtualMethodEscapeProperty(AtMost(_))) ⇒
+            case FinalP(AtMost(_) | VirtualMethodEscapeProperty(AtMost(_))) ⇒
                 state.meetMostRestrictive(AtMost(EscapeInCallee))
 
-            case FinalP(_, p) ⇒
+            case FinalP(p) ⇒
                 throw new UnknownError(s"unexpected escape property ($p) for $e")
 
-            case ep @ IntermediateEP(_, _, AtMost(_) | VirtualMethodEscapeProperty(AtMost(_))) ⇒
+            case ep @ InterimUBP(AtMost(_) | VirtualMethodEscapeProperty(AtMost(_))) ⇒
                 state.meetMostRestrictive(AtMost(EscapeInCallee))
                 state.addDependency(ep)
 
-            case ep @ IntermediateEP(_, _, EscapeViaReturn | VirtualMethodEscapeProperty(EscapeViaReturn)) ⇒
+            case ep @ InterimUBP(EscapeViaReturn | VirtualMethodEscapeProperty(EscapeViaReturn)) ⇒
                 if (hasAssignment) {
                     state.meetMostRestrictive(AtMost(EscapeInCallee))
                     state.hasReturnValueUseSites += e
@@ -352,13 +352,13 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
 
                 state.addDependency(ep)
 
-            case ep @ IntermediateEP(_, _, NoEscape | VirtualMethodEscapeProperty(NoEscape)) ⇒
+            case ep @ InterimUBP(NoEscape | VirtualMethodEscapeProperty(NoEscape)) ⇒
                 caseConditionalNoEscape(ep, hasAssignment)
 
-            case ep @ IntermediateEP(_, _, EscapeInCallee | VirtualMethodEscapeProperty(EscapeInCallee)) ⇒
+            case ep @ InterimUBP(EscapeInCallee | VirtualMethodEscapeProperty(EscapeInCallee)) ⇒
                 caseConditionalNoEscape(ep, hasAssignment)
 
-            case ep @ IntermediateEP(_, _, _) ⇒
+            case ep: SomeInterimEP ⇒
                 state.meetMostRestrictive(AtMost(EscapeInCallee))
                 if (hasAssignment)
                     state.hasReturnValueUseSites += e
@@ -370,13 +370,13 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
         }
     }
 
-    abstract override protected[this] def continuation(
+    abstract override protected[this] def c(
         someEPS: SomeEPS
     )(
         implicit
         context: AnalysisContext,
         state:   AnalysisState
-    ): PropertyComputationResult = {
+    ): ProperPropertyComputationResult = {
         someEPS.e match {
             case VirtualFormalParameter(DefinedMethod(_, m), -1) if m.isConstructor ⇒
                 throw new RuntimeException("can't handle the this-reference of the constructor")
@@ -387,7 +387,7 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
                 handleEscapeState(someEPS, state.hasReturnValueUseSites contains other)
                 returnResult
 
-            case _ ⇒ super.continuation(someEPS)
+            case _ ⇒ super.c(someEPS)
         }
     }
 }

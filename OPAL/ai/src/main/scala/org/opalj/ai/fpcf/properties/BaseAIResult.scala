@@ -4,7 +4,6 @@ package ai
 package fpcf
 package properties
 
-import org.opalj.fpcf.EPS
 import org.opalj.fpcf.FallbackReason
 import org.opalj.fpcf.Property
 import org.opalj.fpcf.PropertyIsNotComputedByAnyAnalysis
@@ -61,7 +60,6 @@ object BaseAIResult extends BaseAIResultPropertyMetaInformation {
      */
     final val key: PropertyKey[BaseAIResult] = PropertyKey.create[Method, BaseAIResult](
         "org.opalj.ai.fpcf.properties.BaseAIResult",
-        // fallback property computation...
         (ps: PropertyStore, r: FallbackReason, m: Method) ⇒ {
             r match {
                 case PropertyIsNotDerivedByPreviouslyExecutedAnalysis ⇒
@@ -70,13 +68,8 @@ object BaseAIResult extends BaseAIResultPropertyMetaInformation {
                 case PropertyIsNotComputedByAnyAnalysis ⇒
                     // we may still have requirements on the domain that we are going to use...
                     val p = ps.context(classOf[SomeProject])
-                    // IMPROVE Find an efficient solution that does not require recurring lookups.
                     AnAIResult(p.get(AIDomainFactoryKey)(m))
             }
-        }: BaseAIResult,
-        // cycle resolution strategy...
-        (_: PropertyStore, eps: EPS[Method, BaseAIResult]) ⇒ eps.ub,
-        // fast-track property computation...
-        (_: PropertyStore, _: Method) ⇒ None
+        }: BaseAIResult
     )
 }

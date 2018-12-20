@@ -2,10 +2,11 @@
 package org.opalj
 package fpcf
 
-import org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.ProjectInformationKey
+import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
+import org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks
+import org.opalj.br.analyses.ProjectInformationKey
+import org.opalj.br.analyses.SomeProject
 
 /**
  * The ''key'' object to get the project's [[org.opalj.fpcf.PropertyStore]].
@@ -38,7 +39,7 @@ object PropertyStoreKey
      * Creates a new empty property store using the current [[parallelismLevel]].
      */
     override protected def compute(project: SomeProject): PropertyStore = {
-        implicit val logContext = project.logContext
+        implicit val logContext: LogContext = project.logContext
 
         val context: List[PropertyStoreContext[AnyRef]] = List(
             PropertyStoreContext(classOf[SomeProject], project)
@@ -51,8 +52,8 @@ object PropertyStoreKey
                 )(project.logContext)
                 psFactory(context)
             case None ⇒
-                // val ps = seq.PKESequentialPropertyStore(context: _*)
-                val ps = par.PKEParallelTasksPropertyStore(context: _*)
+                val ps = seq.PKESequentialPropertyStore(context: _*)
+                // val ps = par.PKEParallelTasksPropertyStore(context: _*)
                 ps
         }
     }

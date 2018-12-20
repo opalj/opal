@@ -3,11 +3,7 @@ package org.opalj
 package fpcf
 package seq
 
-sealed abstract class DependeeUpdateHandling
-
-final case object EagerDependeeUpdateHandling extends DependeeUpdateHandling
-
-final case class LazyDependeeUpdateHandling(
+final case class DependeeUpdateHandling(
         delayHandlingOfNonFinalDependeeUpdates: Boolean = true,
         delayHandlingOfFinalDependeeUpdates:    Boolean = false
-) extends DependeeUpdateHandling
+)

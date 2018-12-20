@@ -4,7 +4,6 @@ package ai
 package fpcf
 package properties
 
-import org.opalj.fpcf.EPS
 import org.opalj.fpcf.FallbackReason
 import org.opalj.fpcf.Property
 import org.opalj.fpcf.PropertyKey
@@ -51,8 +50,6 @@ object FieldValue extends FieldValueMetaInformation {
             val vi = ValueInformation.forProperValue(f.fieldType)(p.classHierarchy)
             ValueBasedFieldValueInformation(vi)
         },
-        // cycle resolution strategy...
-        (_: PropertyStore, eps: EPS[Field, FieldValue]) ⇒ eps.ub,
         // fast-track property computation...
         (_: PropertyStore, f: Field) ⇒ {
             f.constantFieldValue.map(ValueBasedFieldValueInformation.apply)

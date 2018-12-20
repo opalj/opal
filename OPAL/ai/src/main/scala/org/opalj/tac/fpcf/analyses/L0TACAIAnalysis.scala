@@ -4,29 +4,29 @@ package tac
 package fpcf
 package analyses
 
-import org.opalj.fpcf.ComputationSpecification
 import org.opalj.fpcf.Entity
+import org.opalj.fpcf.EOptionP
+import org.opalj.fpcf.EPK
 import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.FPCFAnalysis
 import org.opalj.fpcf.FPCFEagerAnalysisScheduler
 import org.opalj.fpcf.FPCFLazyAnalysisScheduler
-import org.opalj.fpcf.MultiResult
-import org.opalj.fpcf.PropertyComputationResult
-import org.opalj.fpcf.PropertyKind
+import org.opalj.fpcf.InterimLUBP
+import org.opalj.fpcf.InterimResult
+import org.opalj.fpcf.ProperPropertyComputationResult
+import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyStore
-import org.opalj.value.ValueInformation
+import org.opalj.fpcf.Result
 import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
-import org.opalj.ai.AIResult
-import org.opalj.ai.Domain
-import org.opalj.ai.domain.RecordDefUse
+import org.opalj.ai.fpcf.analyses.L0BaseAIResultAnalysis
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.ai.fpcf.properties.AnAIResult
 import org.opalj.ai.fpcf.properties.BaseAIResult
-import org.opalj.log.OPALLogger.warn
-import org.opalj.tac.{TACAI ⇒ TACAIFactory}
+import org.opalj.ai.fpcf.properties.NoAIResult
+import org.opalj.ai.fpcf.properties.ProjectSpecificAIExecutor
+import org.opalj.tac.fpcf.properties.NoTACAI
 import org.opalj.tac.fpcf.properties.TACAI
-import org.opalj.tac.fpcf.properties.TheTACAI
 
 /**
  * Basically just (re)creates the tac of a method if the result of the underlying
@@ -36,82 +36,82 @@ import org.opalj.tac.fpcf.properties.TheTACAI
  */
 class L0TACAIAnalysis private[analyses] (val project: SomeProject) extends FPCFAnalysis {
 
-    final val aiFactory = project.get(AIDomainFactoryKey)
+    import org.opalj.tac.fpcf.analyses.TACAIAnalysis.computeTheTACAI
 
-    def computeTAC(entity: Entity): PropertyComputationResult = {
-        entity match {
-            case m: Method ⇒
-                computeTAC(m, m)
-            case e ⇒
-                val m = "expected org.opalj.br.Method; given "+e.getClass.getSimpleName
-                throw new IllegalArgumentException(m)
+    final implicit val aiFactory: ProjectSpecificAIExecutor = project.get(AIDomainFactoryKey)
+
+    def computeTAC(e: Entity): ProperPropertyComputationResult = {
+        e match {
+            case m: Method ⇒ computeTAC(m)
+            case _         ⇒ throw new IllegalArgumentException(s"$e is not a method")
         }
     }
 
     /**
-     * Computes the TAC for the given method.
-     *
-     * @param e The method that is used as the entity for the result.
-     * @param m The method that is analyzed.
-     * @note `e` and `m` are typically identical, unless the interpretation of the method fails
-     *      and the `error throwing fake method` is analyzed.
+     * Computes the TAC for the given method `m`.
      */
-    private[analyses] def computeTAC(e: Method, m: Method): PropertyComputationResult = {
-        try {
-            val aiResult = aiFactory(m).asInstanceOf[AIResult { val domain: Domain with RecordDefUse }]
-            val aiResultProperty = AnAIResult(aiResult)
-            val taCode = TACAIFactory(m, p.classHierarchy, aiResult)(Nil)
-            val tacaiProperty = TheTACAI(
-                // the following cast is safe - see TACode for details
-                // IMPROVE Get rid of nasty type checks/casts related to TACode once we use ConstCovariantArray in TACode.. (here and elsewhere)
-                taCode.asInstanceOf[TACode[TACMethodParameter, DUVar[ValueInformation]]]
-            )
-            MultiResult(List(FinalP(e, aiResultProperty), FinalP(e, tacaiProperty)))
-        } catch {
-            case t: Throwable ⇒
-                warn(
-                    "project configuration",
-                    s"interpretation of ${m.toJava} failed; "+
-                        " replacing method body with a generic error throwing body"
+    private[analyses] def computeTAC(m: Method): ProperPropertyComputationResult = {
+        c(ps[Method, BaseAIResult](m, BaseAIResult.key))
+    }
+
+    def c(eOptionP: EOptionP[Method, BaseAIResult]): ProperPropertyComputationResult = {
+        val m = eOptionP.e
+        eOptionP match {
+            case FinalP(NoAIResult)           ⇒ Result(m, NoTACAI)
+            case FinalP(AnAIResult(aiResult)) ⇒ Result(m, computeTheTACAI(m, aiResult))
+
+            case currentAIResult @ InterimLUBP(AnAIResult(initialLBAIResult), ub) ⇒
+                val newLB = computeTheTACAI(m, initialLBAIResult)
+                val newUB =
+                    if (ub == NoAIResult)
+                        NoTACAI
+                    else {
+                        val AnAIResult(initialUBAIResult) = ub
+                        computeTheTACAI(m, initialUBAIResult)
+                    }
+
+                InterimResult.create(
+                    m,
+                    newLB,
+                    newUB,
+                    List(currentAIResult),
+                    c = c
                 )
-                computeTAC(
-                    e,
-                    m.invalidBytecode(Some("replaced due to invalid bytecode\n"+t.getMessage))
+
+            case epk @ EPK(m: Method, _) ⇒
+                val aiResult = L0BaseAIResultAnalysis.performAI(m)
+
+                InterimResult.create(
+                    m,
+                    computeTheTACAI(m, aiResult),
+                    NoTACAI,
+                    List(epk),
+                    c = c
                 )
         }
     }
+
 }
 
-sealed trait L0TACAIAnalysisScheduler extends ComputationSpecification {
+sealed trait L0TACAIAnalysisScheduler extends TACAIInitializer {
 
-    final override def uses: Set[PropertyKind] = Set()
+    final override def uses: Set[PropertyBounds] = Set(PropertyBounds.lub(BaseAIResult))
 
-    final override def derives: Set[PropertyKind] = Set(BaseAIResult, TACAI)
+    final def derivedProperty: PropertyBounds = PropertyBounds.lub(TACAI)
 
-    final override type InitializationData = Null
-    final def init(p: SomeProject, ps: PropertyStore): Null = {
-        // To compute the TAC, we (at least) need def-use information; hence, we state
-        // this as a requirement.
-        val key = AIDomainFactoryKey
-        p.updateProjectInformationKeyInitializationData(
-            key,
-            (i: Option[Set[Class[_ <: AnyRef]]]) ⇒ (i match {
-                case None               ⇒ Set(classOf[RecordDefUse])
-                case Some(requirements) ⇒ requirements + classOf[RecordDefUse]
-            }): Set[Class[_ <: AnyRef]]
-        )
-        null
-    }
+    override def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
 
-    def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
-
-    def afterPhaseCompletion(p: SomeProject, ps: PropertyStore): Unit = {}
+    override def afterPhaseCompletion(p: SomeProject, ps: PropertyStore): Unit = {}
 
 }
 
 object EagerL0TACAIAnalysis extends L0TACAIAnalysisScheduler with FPCFEagerAnalysisScheduler {
 
-    final override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+    override def derivesCollaboratively: Set[PropertyBounds] = Set.empty
+
+    override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
+
+    override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new L0TACAIAnalysis(p)
         val methods = p.allMethodsWithBody
         ps.scheduleEagerComputationsForEntities(methods)(analysis.computeTAC)
@@ -121,9 +121,11 @@ object EagerL0TACAIAnalysis extends L0TACAIAnalysisScheduler with FPCFEagerAnaly
 
 object LazyL0TACAIAnalysis extends L0TACAIAnalysisScheduler with FPCFLazyAnalysisScheduler {
 
-    final override def startLazily(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+    override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
+
+    override def register(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new L0TACAIAnalysis(p)
-        ps.registerLazyMultiPropertyComputation(analysis.computeTAC, BaseAIResult.key, TACAI.key)
+        ps.registerLazyPropertyComputation(TACAI.key, analysis.computeTAC)
         analysis
     }
 }

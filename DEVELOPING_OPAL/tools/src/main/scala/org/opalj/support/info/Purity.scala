@@ -8,27 +8,17 @@ import java.io.FileOutputStream
 import java.io.PrintWriter
 import java.util.Calendar
 
+import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory
-import com.typesafe.config.Config
-import org.opalj.ai.domain
-import org.opalj.ai.Domain
-import org.opalj.ai.common.SimpleAIKey
-import org.opalj.ai.domain.RecordDefUse
-import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
-import org.opalj.br.DefinedMethod
-import org.opalj.br.Method
-import org.opalj.br.analyses.Project
-import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.analyses.Project.JavaClassFileReader
-import org.opalj.bytecode.JRELibraryFolder
+
+import org.opalj.util.PerformanceEvaluation.time
+import org.opalj.util.Seconds
 import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.fpcf.PropertyMetaInformation
-import org.opalj.fpcf.PropertyStoreKey
-import org.opalj.fpcf.PropertyKind
 import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.FPCFLazyAnalysisScheduler
 import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.PropertyStoreKey
 import org.opalj.fpcf.analyses.purity.L1PurityAnalysis
 import org.opalj.fpcf.analyses.purity.L2PurityAnalysis
 import org.opalj.fpcf.analyses.LazyClassImmutabilityAnalysis
@@ -42,14 +32,14 @@ import org.opalj.fpcf.analyses.LazyTypeImmutabilityAnalysis
 import org.opalj.fpcf.analyses.LazyVirtualCallAggregatingEscapeAnalysis
 import org.opalj.fpcf.analyses.LazyVirtualMethodPurityAnalysis
 import org.opalj.fpcf.analyses.LazyVirtualReturnValueFreshnessAnalysis
-import org.opalj.fpcf.analyses.purity.SystemOutLoggingAllExceptionRater
 import org.opalj.fpcf.analyses.purity.DomainSpecificRater
+import org.opalj.fpcf.analyses.purity.SystemOutLoggingAllExceptionRater
 import org.opalj.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
 import org.opalj.fpcf.analyses.LazyStaticDataUsageAnalysis
 import org.opalj.fpcf.analyses.LazyVirtualMethodStaticDataUsageAnalysis
 import org.opalj.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
-import org.opalj.fpcf.properties.ImpureByLackOfInformation
+import org.opalj.fpcf.properties.CompileTimePure
 import org.opalj.fpcf.properties.ContextuallyPure
 import org.opalj.fpcf.properties.ContextuallySideEffectFree
 import org.opalj.fpcf.properties.DContextuallyPure
@@ -57,14 +47,26 @@ import org.opalj.fpcf.properties.DContextuallySideEffectFree
 import org.opalj.fpcf.properties.DPure
 import org.opalj.fpcf.properties.DSideEffectFree
 import org.opalj.fpcf.properties.ImpureByAnalysis
+import org.opalj.fpcf.properties.ImpureByLackOfInformation
 import org.opalj.fpcf.properties.Pure
 import org.opalj.fpcf.properties.SideEffectFree
-import org.opalj.fpcf.properties.VirtualMethodPurity
-import org.opalj.fpcf.properties.CompileTimePure
+import org.opalj.fpcf.FPCFAnalysisScheduler
+import org.opalj.fpcf.AnalysisScenario
+import org.opalj.fpcf.FinalEP
+import org.opalj.bytecode.JRELibraryFolder
+import org.opalj.br.DefinedMethod
+import org.opalj.br.Method
+import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.Project.JavaClassFileReader
+import org.opalj.ai.domain
+import org.opalj.ai.Domain
+import org.opalj.ai.common.SimpleAIKey
+import org.opalj.ai.domain.RecordDefUse
+import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
+import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.tac.DefaultTACAIKey
-import org.opalj.tac.fpcf.analyses.LazyL0TACAIAnalysis
-import org.opalj.util.PerformanceEvaluation.time
-import org.opalj.util.Seconds
+import org.opalj.tac.fpcf.analyses.TACAITransformer
 
 /**
  * Executes a purity analysis (L2 by default) along with necessary supporting analysis.
@@ -92,18 +94,19 @@ object Purity {
     }
 
     val supportingAnalyses = IndexedSeq(
-        List[FPCFLazyAnalysisScheduler { type InitializationData = Null }](
+        List[FPCFAnalysisScheduler](
             LazyL0FieldMutabilityAnalysis,
             LazyClassImmutabilityAnalysis,
             LazyTypeImmutabilityAnalysis
         ),
-        List[FPCFLazyAnalysisScheduler { type InitializationData = Null }](
+        List[FPCFAnalysisScheduler](
             LazyL1FieldMutabilityAnalysis,
             LazyClassImmutabilityAnalysis,
             LazyTypeImmutabilityAnalysis
         ),
-        List[FPCFLazyAnalysisScheduler { type InitializationData = Null }](
-            LazyL0TACAIAnalysis,
+        List[FPCFAnalysisScheduler](
+            LazyL0BaseAIAnalysis,
+            TACAITransformer, //LazyL0TACAIAnalysis,
             LazyL0CompileTimeConstancyAnalysis,
             LazyStaticDataUsageAnalysis,
             LazyVirtualMethodStaticDataUsageAnalysis,
@@ -122,7 +125,7 @@ object Purity {
         cp:                    File,
         projectDir:            Option[String],
         libDir:                Option[String],
-        analysis:              FPCFLazyAnalysisScheduler { type InitializationData = Null },
+        analysis:              FPCFLazyAnalysisScheduler,
         domain:                Class[_ <: Domain with RecordDefUse],
         rater:                 DomainSpecificRater,
         withoutJDK:            Boolean,
@@ -190,9 +193,7 @@ object Purity {
         }
 
         PropertyStore.updateDebug(debug)
-        val propertyStore = time {
-            project.get(PropertyStoreKey)
-        } { t ⇒ propertyStoreTime = t.toSeconds }
+        val ps = time { project.get(PropertyStoreKey) } { t ⇒ propertyStoreTime = t.toSeconds }
 
         analysis match {
             case LazyL0PurityAnalysis ⇒
@@ -207,34 +208,25 @@ object Purity {
         }
 
         val declaredMethods = project.get(DeclaredMethodsKey)
-        val projMethods = for (cf ← project.allProjectClassFiles; m ← cf.methodsWithBody)
-            yield declaredMethods(m)
+        val projMethods =
+            for (cf ← project.allProjectClassFiles; m ← cf.methodsWithBody)
+                yield declaredMethods(m)
 
         time {
-            val pks: Set[PropertyKind] = support.flatMap(
-                _.derives.map(_.asInstanceOf[PropertyMetaInformation].key)
-            ).toSet +
-                VirtualMethodPurity.key.asInstanceOf[PropertyKind] +
-                fpcf.properties.Purity.key.asInstanceOf[PropertyKind]
-            propertyStore.setupPhase(pks)
-
-            for (supportAnalysis ← support) {
-                supportAnalysis.init(propertyStore)
-            }
-
-            for (supportAnalysis ← support) {
-                supportAnalysis.startLazily(project, propertyStore, null)
-            }
-
-            LazyVirtualMethodPurityAnalysis.startLazily(project, propertyStore, null)
-            analysis.startLazily(project, propertyStore, null)
-
-            projMethods.foreach { dm ⇒
-                propertyStore.force(dm, fpcf.properties.Purity.key)
-            }
-            propertyStore.waitOnPhaseCompletion()
+            val as = AnalysisScenario(support) += LazyVirtualMethodPurityAnalysis += analysis
+            val schedule = as.computeSchedule(project.logContext)
+            schedule(
+                ps,
+                trace = true,
+                afterPhaseScheduling =
+                    computationSpecifications ⇒ {
+                        if (computationSpecifications.contains(LazyVirtualMethodPurityAnalysis)) {
+                            projMethods foreach { dm ⇒ ps.force(dm, fpcf.properties.Purity.key) }
+                        }
+                    }
+            )
         } { t ⇒ analysisTime = t.toSeconds }
-        propertyStore.shutdown()
+        ps.shutdown()
 
         if (projectEvalDir.isDefined) {
             val runtime = new File(projectEvalDir.get, "runtime.csv")
@@ -251,29 +243,29 @@ object Purity {
             }
         }
 
-        val purityEs = propertyStore(projMethods, fpcf.properties.Purity.key).filter {
-            case FinalP(_, p) ⇒ p ne ImpureByLackOfInformation
-            case ep           ⇒ throw new RuntimeException(s"non final purity result $ep")
+        val purityEs = ps(projMethods, fpcf.properties.Purity.key).filter {
+            case FinalP(p) ⇒ p ne ImpureByLackOfInformation
+            case ep        ⇒ throw new RuntimeException(s"non final purity result $ep")
         }
 
         def isExternal(dm: DefinedMethod, p: IntTrieSet): Boolean = {
             !dm.definedMethod.isStatic && p.size == 1 && p.head == 0
         }
 
-        val compileTimePure = purityEs.collect { case FinalP(m: DefinedMethod, CompileTimePure) ⇒ m }
-        val pure = purityEs.collect { case FinalP(m: DefinedMethod, Pure) ⇒ m }
-        val sideEffectFree = purityEs.collect { case FinalP(m: DefinedMethod, SideEffectFree) ⇒ m }
-        val externallyPure = purityEs.collect { case FinalP(m: DefinedMethod, ContextuallyPure(p)) if isExternal(m, p) ⇒ m }
-        val externallySideEffectFree = purityEs.collect { case FinalP(m: DefinedMethod, ContextuallySideEffectFree(p)) if isExternal(m, p) ⇒ m }
-        val contextuallyPure = purityEs.collect { case FinalP(m: DefinedMethod, ContextuallyPure(p)) if !isExternal(m, p) ⇒ (m, p) }
-        val contextuallySideEffectFree = purityEs.collect { case FinalP(m: DefinedMethod, ContextuallySideEffectFree(p)) if !isExternal(m, p) ⇒ (m, p) }
-        val dPure = purityEs.collect { case FinalP(m: DefinedMethod, DPure) ⇒ m }
-        val dSideEffectFree = purityEs.collect { case FinalP(m: DefinedMethod, DSideEffectFree) ⇒ m }
-        val dExternallyPure = purityEs.collect { case FinalP(m: DefinedMethod, DContextuallyPure(p)) if isExternal(m, p) ⇒ m }
-        val dExternallySideEffectFree = purityEs.collect { case FinalP(m: DefinedMethod, DContextuallySideEffectFree(p)) if isExternal(m, p) ⇒ m }
-        val dContextuallyPure = purityEs.collect { case FinalP(m: DefinedMethod, DContextuallyPure(p)) if !isExternal(m, p) ⇒ (m, p) }
-        val dContextuallySideEffectFree = purityEs.collect { case FinalP(m: DefinedMethod, DContextuallySideEffectFree(p)) if !isExternal(m, p) ⇒ (m, p) }
-        val lbImpure = purityEs.collect { case FinalP(m: DefinedMethod, ImpureByAnalysis) ⇒ m }
+        val compileTimePure = purityEs.collect { case FinalEP(m: DefinedMethod, CompileTimePure) ⇒ m }
+        val pure = purityEs.collect { case FinalEP(m: DefinedMethod, Pure) ⇒ m }
+        val sideEffectFree = purityEs.collect { case FinalEP(m: DefinedMethod, SideEffectFree) ⇒ m }
+        val externallyPure = purityEs.collect { case FinalEP(m: DefinedMethod, ContextuallyPure(p)) if isExternal(m, p) ⇒ m }
+        val externallySideEffectFree = purityEs.collect { case FinalEP(m: DefinedMethod, ContextuallySideEffectFree(p)) if isExternal(m, p) ⇒ m }
+        val contextuallyPure = purityEs.collect { case FinalEP(m: DefinedMethod, ContextuallyPure(p)) if !isExternal(m, p) ⇒ (m, p) }
+        val contextuallySideEffectFree = purityEs.collect { case FinalEP(m: DefinedMethod, ContextuallySideEffectFree(p)) if !isExternal(m, p) ⇒ (m, p) }
+        val dPure = purityEs.collect { case FinalEP(m: DefinedMethod, DPure) ⇒ m }
+        val dSideEffectFree = purityEs.collect { case FinalEP(m: DefinedMethod, DSideEffectFree) ⇒ m }
+        val dExternallyPure = purityEs.collect { case FinalEP(m: DefinedMethod, DContextuallyPure(p)) if isExternal(m, p) ⇒ m }
+        val dExternallySideEffectFree = purityEs.collect { case FinalEP(m: DefinedMethod, DContextuallySideEffectFree(p)) if isExternal(m, p) ⇒ m }
+        val dContextuallyPure = purityEs.collect { case FinalEP(m: DefinedMethod, DContextuallyPure(p)) if !isExternal(m, p) ⇒ (m, p) }
+        val dContextuallySideEffectFree = purityEs.collect { case FinalEP(m: DefinedMethod, DContextuallySideEffectFree(p)) if !isExternal(m, p) ⇒ (m, p) }
+        val lbImpure = purityEs.collect { case FinalEP(m: DefinedMethod, ImpureByAnalysis) ⇒ m }
 
         if (projectEvalDir.isDefined) {
             val results = new File(projectEvalDir.get, "method-results.csv")
@@ -353,7 +345,7 @@ object Purity {
             }
         } else {
             val result =
-                propertyStore.toString(false)+
+                ps.toString(false)+
                     "\ncompile-time pure:                     "+compileTimePure.size+
                     "\nAt least pure:                         "+pure.size+
                     "\nAt least domain-specficic pure:        "+dPure.size+
@@ -435,7 +427,7 @@ object Purity {
             return ;
         }
 
-        val analysis: FPCFLazyAnalysisScheduler { type InitializationData = Null } = analysisName match {
+        val analysis: FPCFLazyAnalysisScheduler = analysisName match {
             case Some("L0")        ⇒ LazyL0PurityAnalysis
             case Some("L1")        ⇒ LazyL1PurityAnalysis
             case None | Some("L2") ⇒ LazyL2PurityAnalysis

@@ -9,7 +9,8 @@ import org.opalj.br.analyses.Project
 import org.opalj.fpcf.analyses.LazyVirtualCallAggregatingEscapeAnalysis
 import org.opalj.fpcf.analyses.escape.EagerInterProceduralEscapeAnalysis
 import org.opalj.fpcf.analyses.escape.EagerSimpleEscapeAnalysis
-import org.opalj.tac.fpcf.analyses.LazyL0TACAIAnalysis
+import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
+import org.opalj.tac.fpcf.analyses.TACAITransformer
 
 /**
  * Tests if the escape properties specified in the test project (the classes in the (sub-)package of
@@ -44,7 +45,7 @@ class EscapeAnalysisTests extends PropertiesTest {
     }
 
     describe("the org.opalj.fpcf.analyses.escape.SimpleEscapeAnalysis is executed") {
-        val as = executeAnalyses(Set(EagerSimpleEscapeAnalysis), Set(LazyL0TACAIAnalysis))
+        val as = executeAnalyses(LazyL0BaseAIAnalysis, TACAITransformer, EagerSimpleEscapeAnalysis)
         as.propertyStore.shutdown()
         validateProperties(
             as,
@@ -56,8 +57,10 @@ class EscapeAnalysisTests extends PropertiesTest {
 
     describe("the org.opalj.fpcf.analyses.escape.InterProceduralEscapeAnalysis is executed") {
         val as = executeAnalyses(
-            Set(EagerInterProceduralEscapeAnalysis),
-            Set(LazyL0TACAIAnalysis, LazyVirtualCallAggregatingEscapeAnalysis)
+            EagerInterProceduralEscapeAnalysis,
+            LazyL0BaseAIAnalysis,
+            TACAITransformer,
+            LazyVirtualCallAggregatingEscapeAnalysis
         )
         as.propertyStore.shutdown()
         validateProperties(

@@ -2,6 +2,8 @@
 package org.opalj
 package br
 
+import java.util.{Arrays ⇒ JArrays}
+
 import org.opalj.collection.immutable.RefArray
 
 /**
@@ -16,6 +18,8 @@ import org.opalj.collection.immutable.RefArray
  *              }
  *          }
  *          </pre>
+ *          The array must not be mutated by callers!
+ *
  * @author Michael Eichberg
  */
 case class CompactLineNumberTable(rawLineNumbers: Array[Byte]) extends LineNumberTable {
@@ -70,8 +74,17 @@ case class CompactLineNumberTable(rawLineNumbers: Array[Byte]) extends LineNumbe
         Some(lns.min)
     }
 
-    override def toString: String = {
-        lineNumbers.mkString("CompactLineNumber({ ", ", ", " })")
+    override def equals(other: Any): Boolean = {
+        other match {
+            case that: CompactLineNumberTable ⇒
+                JArrays.equals(this.rawLineNumbers, that.rawLineNumbers)
+            case _ ⇒
+                false
+        }
     }
+
+    override def hashCode(): Opcode = JArrays.hashCode(rawLineNumbers)
+
+    override def toString: String = lineNumbers.mkString("CompactLineNumber({ ", ", ", " })")
 
 }

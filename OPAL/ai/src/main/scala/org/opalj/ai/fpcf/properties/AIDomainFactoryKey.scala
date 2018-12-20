@@ -57,30 +57,36 @@ object AIDomainFactoryKey
      * instantiated using the desired domain.
      */
     override protected def compute(project: SomeProject): ProjectSpecificAIExecutor = {
+        compute(project, DomainRegistry.selectConfigured(project.config, _))
+    }
+
+    def compute(
+        project:         SomeProject,
+        domainFactories: Traversable[Class[_ <: AnyRef]] ⇒ Set[Class[_ <: Domain]]
+    ): ProjectSpecificAIExecutor = {
         implicit val logContext: LogContext = project.logContext
 
         val domainFactoryRequirements = project.
             getProjectInformationKeyInitializationData(this).
             getOrElse(Set.empty)
 
-        val domainFactories =
-            DomainRegistry.selectConfigured(project.config, domainFactoryRequirements)
+        val theDomainFactories = domainFactories(domainFactoryRequirements)
 
-        if (domainFactories.isEmpty) {
+        if (theDomainFactories.isEmpty) {
             val message = domainFactoryRequirements.mkString(
                 "no abstract domain that satisfies the requirements: {", ", ", "} exists."
             )
             throw new IllegalArgumentException(message)
         }
-        if (domainFactories.size > 1) {
+        if (theDomainFactories.size > 1) {
             OPALLogger.info(
                 "analysis configuration",
-                s"multiple domains ${domainFactories.mkString(", ")} "+
+                s"multiple domains ${theDomainFactories.mkString(", ")} "+
                     s"satisfy the requirements ${domainFactoryRequirements.mkString(", ")} "
             )
         }
 
-        val domainClass = domainFactories.head
+        val domainClass = theDomainFactories.head
         OPALLogger.info(
             "analysis configuration",
             s"the domain $domainClass will be used for performing abstract interpretations"
