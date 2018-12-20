@@ -42,9 +42,9 @@ class TACAIAnalysisIntegrationTest extends FunSpec with Matchers {
             ps.setupPhase(Set(BaseAIResult, TACAI), Set.empty)
             // LazyL0TACAIAnalysis.init(ps)
             // LazyL0TACAIAnalysis.schedule(ps, null)
-            LazyL0BaseAIAnalysis.register(p,ps,null)
+            LazyL0BaseAIAnalysis.register(p, ps, null)
             TACAITransformer.init(ps)
-            TACAITransformer.register(p,ps,null)
+            TACAITransformer.register(p, ps, null)
             try {
                 p.parForeachMethodWithBody() { mi ⇒
                     counter.incrementAndGet() % 3 match {
@@ -82,7 +82,7 @@ class TACAIAnalysisIntegrationTest extends FunSpec with Matchers {
             val p = theProject.recreate()
             val counter = new AtomicInteger()
             val fpcfManager = p.get(FPCFAnalysesManagerKey)
-            val (ps,_/*executed analyses*/) = fpcfManager.runAll(EagerL0TACAIAnalysis)
+            val (ps, _ /*executed analyses*/ ) = fpcfManager.runAll(EagerL0TACAIAnalysis)
             p.parForeachMethodWithBody() { mi ⇒
                 val m = mi.method
                 val aiResultProperty = ps(m, BaseAIResult.key)
