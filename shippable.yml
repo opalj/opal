@@ -1,7 +1,16 @@
+build:
+  pre_ci_boot:
+    image_name: opalj/sbt_scala_javafx
+    image_tag: latest
+    pull: true
+
 reset_minion: true
+
 language: scala
+
 scala:
    - 2.12.8
+
 jdk:
   - oraclejdk8
 
