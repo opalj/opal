@@ -338,6 +338,56 @@ case class PartialResult[E >: Null <: Entity, P >: Null <: Property](
 }
 object PartialResult { private[fpcf] final val id = 6 }
 
+/**
+ * `InterimPartialResult`s are used for properties of entities which are computed
+ * collaboratively where the individual contribution to the final result depends on the
+ * given dependees. For example an analysis which analyzes a method to determine the set
+ * of all instantiated types will use an `InterimPartialResult` to commit those results.
+ *
+ * @param ak The key of the analysis which created this interim result.
+ */
+case class InterimPartialResult[SE >: Null <: Entity](
+        us: Traversable[SomePartialResultUpdateComputation],
+        // We can't have a list of dependees, because we wouldn't be able to effectively
+        // prevent multiple concurrent notifications!
+        dependees: Traversable[SomeEOptionP],
+        c:         OnUpdateContinuation
+) extends ProperPropertyComputationResult {
+
+    private[fpcf] final def id = InterimPartialResult.id
+
+}
+object InterimPartialResult {
+
+    private[fpcf] final val id = 7
+
+    /**
+     * Creates a new `InterimPartialResult`s
+     *
+     * @param uE The entity for which we have a partial result.
+     * @param uPK The kind of the property for which we have a partial result.
+     * @param u The function which is given the current property (if any) and which computes the
+     *          new property. `u` has to return `None` if the update does not change the property
+     *          and `Some(NewProperty)` otherwise.
+     */
+    def apply[SE >: Null <: Entity, UE >: Null <: Entity, UP >: Null <: Property](
+        uE:        UE,
+        uPK:       PropertyKey[UP],
+        u:         UpdateComputation[UE, UP],
+        dependees: Traversable[SomeEOptionP],
+        c:         OnUpdateContinuation
+    ): InterimPartialResult[SE] = {
+        val pruc = PartialResultUpdateComputation(uE, uPK, u)
+        new InterimPartialResult[SE](List(pruc), dependees, c)
+    }
+}
+
+case class PartialResultUpdateComputation[E >: Null <: Entity, P >: Null <: Property](
+        e:  E,
+        pk: PropertyKey[P],
+        u:  UpdateComputation[E, P]
+)
+
 /**************************************************************************************************\
  *
  *                              ONLY USED INTERNALLY BY THE FRAMEWORK! 

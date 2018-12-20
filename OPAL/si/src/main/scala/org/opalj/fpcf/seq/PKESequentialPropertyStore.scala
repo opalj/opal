@@ -376,7 +376,11 @@ final class PKESequentialPropertyStore private (
             dependeeDependers ← dependers(oldDependeePKId).get(oldDependeeE)
         } {
             dependeeDependers -= dependerEPK
+            if (dependeeDependers.isEmpty) {
+                dependers(oldDependeePKId).remove(oldDependeeE)
+            }
         }
+        dependees(dependerPKId).remove(e)
     }
 
     /**
@@ -384,12 +388,11 @@ final class PKESequentialPropertyStore private (
      * That is, setting the value was w.r.t. the current state of the property OK.
      */
     private[this] def update(
-        eps:          SomeEPS,
-        newDependees: Traversable[SomeEOptionP],
-        c:            OnUpdateContinuation      = null,
-        pcHint:       PropertyComputationHint   = null
+        eps: SomeEPS,
+        // RECALL, IF THE EPS IS THE RESULT OF A PARTIAL RESULT UPDATE COMPUTATION, THEN
+        // NEWDEPENDEES WILL ALWAYS BE EMPTY!
+        newDependees: Traversable[SomeEOptionP]
     ): Unit = {
-        assert(newDependees.isEmpty || (c != null && pcHint != null))
         val pkId = eps.pk.id
         val e = eps.e
         val isFinal = eps.isFinal
@@ -398,8 +401,10 @@ final class PKESequentialPropertyStore private (
                 // The entity was unknown; i.e., there can't be any dependees - no one queried
                 // the property.
                 triggerComputations(e, pkId)
-                val oldDependees = dependees(pkId).put(e, newDependees)
-                assert(oldDependees.isEmpty)
+                if (newDependees.nonEmpty) {
+                    val oldDependees = dependees(pkId).put(e, newDependees)
+                    assert(oldDependees.isEmpty)
+                }
                 // registration with the new dependees is done when processing InterimResult
 
                 // let's check if we have dependers!
@@ -412,7 +417,10 @@ final class PKESequentialPropertyStore private (
                     triggerComputations(e, pkId)
                 }
                 if (debug) oldEOptionP.checkIsValidPropertiesUpdate(eps, newDependees)
-                dependees(pkId).put(e, newDependees)
+                if (newDependees.isEmpty)
+                    dependees(pkId).remove(e)
+                else
+                    dependees(pkId).put(e, newDependees)
                 eps.isUpdatedComparedTo(oldEOptionP)
         }
         if (notificationRequired) {
@@ -440,21 +448,6 @@ final class PKESequentialPropertyStore private (
                         trace("analysis progress", s"suppressed notification: $eps → $dependerEPK")
                     }
                 }
-            }
-        }
-
-        if (newDependees.nonEmpty) {
-            val dependerEPK = eps.toEPK
-            assert(c != null)
-            assert(pcHint != null)
-
-            newDependees foreach { dependee ⇒
-                val dependeeE = dependee.e
-                val dependeePKId = dependee.pk.id
-
-                val dependeeDependers =
-                    dependers(dependeePKId).getOrElseUpdate(dependeeE, AnyRefMap.empty)
-                dependeeDependers += (dependerEPK, (c, pcHint))
             }
         }
     }
@@ -487,19 +480,24 @@ final class PKESequentialPropertyStore private (
 
     override def handleResult(r: PropertyComputationResult): Unit = handleExceptions {
 
+        def handlePartialResults(
+            prucs: Traversable[SomePartialResultUpdateComputation]
+        ): Unit = {
+            prucs foreach { pruc ⇒
+                handlePartialResult(pruc.e, pruc.pk, pruc.u)
+            }
+        }
+
         def handlePartialResult(
-            e:            Entity,
-            pk:           SomePropertyKey,
-            u:            UpdateComputation[_ <: Entity, _ <: Property],
-            newDependees: Traversable[SomeEOptionP],
-            c:            OnUpdateContinuation                          = null,
-            pcHint:       PropertyComputationHint                       = null
+            e:  Entity,
+            pk: SomePropertyKey,
+            u:  UpdateComputation[_ <: Entity, _ <: Property]
         ): Unit = {
             type E = e.type
             type P = Property
             val eOptionP = apply[E, P](e: E, pk: PropertyKey[P])
             val newEPSOption = u.asInstanceOf[EOptionP[E, P] ⇒ Option[EPS[E, P]]](eOptionP)
-            newEPSOption foreach { newEPS ⇒ update(newEPS, newDependees, c, pcHint) }
+            newEPSOption foreach { newEPS ⇒ update(newEPS, Nil /*<= w.r.t. the "newEPS"!*/ ) }
         }
 
         /* Returns `true`if no dependee was updated in the meantime. */
@@ -570,7 +568,33 @@ final class PKESequentialPropertyStore private (
 
             case PartialResult.id ⇒
                 val PartialResult(e, pk, u) = r
-                handlePartialResult(e, pk, u, Nil)
+                handlePartialResult(e, pk, u)
+
+            case InterimPartialResult.id ⇒
+                val InterimPartialResult(prucs, processedDependees, c) = r
+                // 1. let's check if a new dependee is already updated...
+                //    If so, we directly schedule a task again to compute the property.
+                val noUpdates = processDependees(processedDependees, c)
+
+                val sourceE = new Object() // an arbitrary, but unique object
+                if (noUpdates) {
+                    // 2. update the value and trigger dependers/clear old dependees;
+                    //    the most current value of every dependee was taken into account
+                    //    register with the (!) dependees.
+                    handlePartialResults(prucs)
+                    val dependerAK = EPK(sourceE, AnalysisKey)
+                    processedDependees foreach { dependee ⇒
+                        val dependeeDependers =
+                            dependers(dependee.pk.id).getOrElseUpdate(dependee.e, AnyRefMap.empty)
+                        dependeeDependers += (dependerAK, (c, DefaultPropertyComputation))
+                    }
+                } else {
+                    // 2. update the value (trigger dependers/clear old dependees)
+                    //    There was an update and we already scheduled the computation... hence,
+                    //     we have no live dependees any more.
+                    handlePartialResults(prucs)
+                }
+                dependees(AnalysisKeyId).put(sourceE, processedDependees)
 
             case InterimResult.id ⇒
                 val InterimResult(interimP: SomeEPS, processedDependees, c, pcHint) = r
@@ -583,7 +607,13 @@ final class PKESequentialPropertyStore private (
                     // 2. update the value and trigger dependers/clear old dependees;
                     //    the most current value of every dependee was taken into account
                     //    register with the (!) dependees.
-                    update(interimP, processedDependees, c, pcHint)
+                    update(interimP, processedDependees)
+                    val dependerEPK = interimP.toEPK
+                    processedDependees foreach { dependee ⇒
+                        val dependeeDependers =
+                            dependers(dependee.pk.id).getOrElseUpdate(dependee.e, AnyRefMap.empty)
+                        dependeeDependers += (dependerEPK, (c, pcHint))
+                    }
                 } else {
                     // 2. update the value (trigger dependers/clear old dependees)
                     //    There was an update and we already scheduled the computation... hence,
@@ -700,6 +730,11 @@ final class PKESequentialPropertyStore private (
                 pksToFinalize foreach { pk ⇒
                     val interimEPSs = ps(pk.id).valuesIterator.filter(_.isRefinable).toList
                     interimEPSs foreach { interimEP ⇒ update(interimEP.toFinalEP, Nil) }
+                }
+                // Clear "dangling" maps in the depender/dependee data structures:
+                pksToFinalize foreach { pk ⇒
+                    dependees(pk.id) == null // <= we are really done
+                    dependers(pk.id) == null // <= we are really done
                 }
                 subPhaseId += 1
             }

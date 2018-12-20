@@ -55,6 +55,8 @@ package object fpcf {
         }
     }
 
+    final type AnalysisKey = PropertyKey[Null]
+
     /**
      * The type of the values stored in a property store.
      *
@@ -75,6 +77,8 @@ package object fpcf {
     final type SomePartialResult = PartialResult[_ >: Null <: Entity, _ >: Null <: Property]
 
     final type UpdateComputation[E <: Entity, P <: Property] = EOptionP[E, P] ⇒ Option[EPS[E, P]]
+
+    final type SomePartialResultUpdateComputation = PartialResultUpdateComputation[_ <: Entity, _ <: Property]
 
     /**
      * A function that takes an entity and returns a result. The result maybe:
@@ -125,4 +129,9 @@ package object fpcf {
      */
     final type ComputationResults = TraversableOnce[SomeFinalEP]
 
+    private[fpcf] final val AnalysisKeyName = "[internal] org.opalj.fpcf.PartialResultUpdateComputation"
+
+    private[fpcf] final val AnalysisKey = PropertyKey.create[Entity, Null](AnalysisKeyName)
+
+    private[fpcf] final val AnalysisKeyId = AnalysisKey.id
 }
