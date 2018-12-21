@@ -131,6 +131,25 @@ sealed abstract class PropertyStoreTest(
                 ps.shutdown()
             }
 
+            it("should be possible to call setupPhase after waitOnPhaseCompletion") {
+                val ps = createPropertyStore()
+                info(s"PropertyStore@${System.identityHashCode(ps).toHexString}")
+
+                ps.setupPhase(Set(PalindromeKey), Set.empty)
+                ps.scheduleEagerComputationForEntity("a") { e ⇒
+                    val dependee = EPK("d", Palindromes.PalindromeKey)
+                    ps(dependee) // we use a fake dependency...
+                    Result("a", NoPalindrome)
+                }
+                ps.waitOnPhaseCompletion()
+
+                ps.setupPhase(Set.empty, Set.empty)
+
+                ps("a", PalindromeKey) should be(FinalEP("a", NoPalindrome))
+
+                ps.shutdown()
+            }
+
             it("should not crash when e1 has two dependencies e2 and e3 and e2 is set "+
                 "while e1 was not yet executed but had an EPK for e2 in its dependencies "+
                 "(test for a lost updated)") {
@@ -353,6 +372,7 @@ sealed abstract class PropertyStoreTest(
                 }
 
                 ps.waitOnPhaseCompletion()
+                ps.setupPhase(Set.empty, Set.empty)
 
                 val notMarkedEntities = ps.entities(Marker.NotMarked, Marker.NotMarked).toSet
                 notMarkedEntities should be(Set("fd", "zu", "aaabbbaaa"))
@@ -384,6 +404,7 @@ sealed abstract class PropertyStoreTest(
                 }
 
                 ps.waitOnPhaseCompletion()
+                ps.setupPhase(Set.empty, Set.empty)
 
                 ps.entities(pk).map(_.e).toSet should be(es)
                 ps.entities(_.lb == Palindrome).toSet should be(Set("aba", "cc", "d", "aaabbbaaa"))
@@ -427,6 +448,8 @@ sealed abstract class PropertyStoreTest(
                 )
                 ps("aba", pk) should be(EPK("aba", pk))
                 ps.waitOnPhaseCompletion()
+                ps.setupPhase(Set.empty, Set.empty) // <= not strictly required, but a best practice
+
                 ps("aba", pk) should be(FinalEP("aba", Palindrome))
 
                 ps.shutdown()
@@ -453,6 +476,7 @@ sealed abstract class PropertyStoreTest(
                 ps("aba", pk) // just trigger it again...
 
                 ps.waitOnPhaseCompletion()
+                ps.setupPhase(Set.empty, Set.empty) // <= not strictly required, but a best practice
 
                 if (invocationCount.get != 1) {
                     fail(s"invocation count should be 1; was ${invocationCount.get}")
@@ -534,6 +558,7 @@ sealed abstract class PropertyStoreTest(
                     )
                 }
                 ps.waitOnPhaseCompletion()
+                ps.setupPhase(Set.empty, Set.empty) // <= not strictly required, but a best practice
 
                 ps("e", PalindromeKey) should be(FinalEP("e", Palindrome))
                 ps("e", SuperPalindromeKey) should be(FinalEP("e", SuperPalindrome))
@@ -598,6 +623,7 @@ sealed abstract class PropertyStoreTest(
                 )
 
                 ps.waitOnPhaseCompletion()
+                ps.setupPhase(Set.empty, Set.empty) // <= not strictly required, but a best practice
 
                 ps("fragments", PalindromeFragmentsKey) should be(
                     FinalEP("fragments", PalindromeFragments(Set("a", "e")))
@@ -630,7 +656,10 @@ sealed abstract class PropertyStoreTest(
                             }
                         )
                         entities foreach { ps.force(_, MarkerWithFastTrackKey) }
+
                         ps.waitOnPhaseCompletion()
+                        ps.setupPhase(Set.empty, Set.empty)
+
                         entities foreach { e ⇒
                             ps(e, MarkerWithFastTrackKey) should be(FinalEP(e, IsMarked))
                         }
@@ -892,6 +921,7 @@ sealed abstract class PropertyStoreTest(
                             ps(nodeA, ReachableNodesCount.Key) // forces the evaluation for all nodes...
 
                             ps.waitOnPhaseCompletion()
+                            ps.setupPhase(Set.empty, Set.empty)
 
                             info(
                                 s"(id of first permutation = ${dropCount + 1}; this permutation="+
