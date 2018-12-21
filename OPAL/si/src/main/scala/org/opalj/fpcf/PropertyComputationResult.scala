@@ -311,6 +311,8 @@ case class Results(
         results: TraversableOnce[ProperPropertyComputationResult]
 ) extends ProperPropertyComputationResult {
 
+    assert(results.nonEmpty)
+
     private[fpcf] final def id = Results.id
 
 }
@@ -365,6 +367,8 @@ case class InterimPartialResult[SE >: Null <: Entity](
         dependees: Traversable[SomeEOptionP],
         c:         OnUpdateContinuation
 ) extends ProperPropertyComputationResult {
+
+    assert(dependees.nonEmpty)
 
     private[fpcf] final def id = InterimPartialResult.id
 
