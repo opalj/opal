@@ -290,9 +290,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                 invocationPCs = invocationPCs,
                 _tacaiDependee = tacEPOpt
             )
-            InterimResult(
-                InterimEUBP(definedMethod, NoReflectionRelatedCallees), tacEPOpt, continuation
-            )
+            InterimResult.forUB(definedMethod, NoReflectionRelatedCallees, tacEPOpt, continuation)
         }
     }
 
@@ -1202,7 +1200,8 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                                     !indices.isSingletonSet || indices.head < 0)
                                     false
                                 else {
-                                    val typeDef = state.tacode.stmts(typeDefs.head).asAssignment.expr
+                                    val typeDef =
+                                        state.tacode.stmts(typeDefs.head).asAssignment.expr
                                     val index = state.tacode.stmts(indices.head).asAssignment.expr
                                     if (!typeDef.isClassConst && !isBaseTypeLoad(typeDef))
                                         false
@@ -1288,8 +1287,10 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         }
     }
 
-    private[this] def continuation(eps: SomeEPS)(implicit state: State): ProperPropertyComputationResult = eps match {
-        case EUBPS(_, ub: SystemProperties, isFinal) ⇒
+    private[this] def continuation(
+        eps: SomeEPS
+    )(implicit state: State): ProperPropertyComputationResult = eps match {
+        case UBPS(ub: SystemProperties, isFinal) ⇒
             val newEPS =
                 if (isFinal) None else Some(eps.asInstanceOf[EPS[SomeProject, SystemProperties]])
             // Create new state that reflects changes that may have happened in the meantime
@@ -1315,10 +1316,12 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
             processMethod(state)
 
         case UBP(_: TACAI) ⇒
-            InterimResult(
-                InterimEUBP(state.definedMethod, NoReflectionRelatedCallees), Some(eps), continuation
+            InterimResult.forUB(
+                state.definedMethod,
+                NoReflectionRelatedCallees,
+                Some(eps),
+                continuation
             )
-
     }
 
     /**
@@ -1347,8 +1350,12 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         (loadedClassesUB, instantiatedTypesUB)
     }
 
-    @inline private[this] def returnResult()(implicit state: State): ProperPropertyComputationResult = {
-        var res: List[ProperPropertyComputationResult] = state.calleesAndCallers.partialResultsForCallers
+    @inline private[this] def returnResult()(
+        implicit
+        state: State
+    ): ProperPropertyComputationResult = {
+        var res: List[ProperPropertyComputationResult] =
+            state.calleesAndCallers.partialResultsForCallers
 
         val calleeUB = if (state.calleesAndCallers.callees.isEmpty)
             NoReflectionRelatedCallees
@@ -1361,8 +1368,9 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
 
         val calleesResult =
             if (state.hasOpenDependee) {
-                InterimResult(
-                    InterimEUBP(state.definedMethod, calleeUB),
+                InterimResult.forUB(
+                    state.definedMethod,
+                    calleeUB,
                     state.systemPropertiesDependee ++ state.tacaiDependee,
                     continuation
                 )

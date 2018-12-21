@@ -150,8 +150,9 @@ class CalleesAnalysis private[analyses] (
         if (dependees.isEmpty) {
             Result(declaredMethod, ub)
         } else {
-            InterimResult(
-                InterimEUBP(declaredMethod, ub),
+            InterimResult.forUB(
+                declaredMethod,
+                ub,
                 dependees,
                 continuation(declaredMethod, directKeys, indirectKeys, dependees)
             )

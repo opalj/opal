@@ -526,7 +526,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
     )(implicit state: StateType): Boolean = {
         handleCalleesUpdate(calleesEOptP)
         calleesEOptP match {
-            case EUBPS(_, p, isFinal) ⇒
+            case UBPS(p, isFinal) ⇒
                 if (!isFinal) reducePurityLB(ImpureByAnalysis)
 
                 val hasIncompleteCallSites =

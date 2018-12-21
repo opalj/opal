@@ -6,6 +6,7 @@ package analyses
 import scala.annotation.switch
 import org.opalj.br.ArrayType
 import org.opalj.br.DefinedMethod
+import org.opalj.br.Field
 import org.opalj.br.ObjectType
 import org.opalj.br.VirtualDeclaredMethod
 import org.opalj.br.analyses.SomeProject
@@ -93,7 +94,7 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
                             if (!fieldType.isBaseType) {
                                 propertyStore(fieldType, TypeImmutability.key) match {
                                     case FinalP(ImmutableType) ⇒
-                                    case FinalP(_) ⇒
+                                    case _: FinalEP[_, TypeImmutability] ⇒
                                         return Result(definedMethod, ImpureByAnalysis);
                                     case ep ⇒
                                         dependees += ep
@@ -102,7 +103,7 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
                             if (field.isNotFinal) {
                                 propertyStore(field, FieldMutability.key) match {
                                     case FinalP(_: FinalField) ⇒
-                                    case FinalP(_) ⇒
+                                    case _: FinalEP[Field, FieldMutability] ⇒
                                         return Result(definedMethod, ImpureByAnalysis);
                                     case ep ⇒
                                         dependees += ep
@@ -327,8 +328,8 @@ trait L0PurityAnalysisScheduler extends ComputationSpecification[FPCFAnalysis] {
 }
 
 object EagerL0PurityAnalysis
-    extends L0PurityAnalysisScheduler
-    with BasicFPCFEagerAnalysisScheduler {
+        extends L0PurityAnalysisScheduler
+        with BasicFPCFEagerAnalysisScheduler {
 
     override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
 
@@ -346,8 +347,8 @@ object EagerL0PurityAnalysis
 }
 
 object LazyL0PurityAnalysis
-    extends L0PurityAnalysisScheduler
-    with BasicFPCFLazyAnalysisScheduler {
+        extends L0PurityAnalysisScheduler
+        with BasicFPCFLazyAnalysisScheduler {
 
     override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 

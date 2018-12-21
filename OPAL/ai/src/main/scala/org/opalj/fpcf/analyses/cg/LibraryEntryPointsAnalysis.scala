@@ -38,7 +38,7 @@ class LibraryEntryPointsAnalysis private[analyses] (
         numProcessedTypes: Int
     ): PropertyComputationResult = {
         val (newReachableMethods, isFinal, size) = instantiatedTypes match {
-            case EUBPS(_, initialTypes, isFinal) ⇒
+            case UBPS(initialTypes, isFinal) ⇒
                 (
                     analyzeTypes(initialTypes.getNewTypes(numProcessedTypes)),
                     isFinal,

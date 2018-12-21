@@ -69,8 +69,9 @@ class FinalizerAnalysis private[analyses] (
 
         val result = if (instantiatedTypesDependee.isEmpty)
             Result(p, new VMReachableFinalizers(state.vmReachableFinalizers))
-        else InterimResult(
-            InterimEUBP(p, new VMReachableFinalizers(state.vmReachableFinalizers)),
+        else InterimResult.forUB(
+            p,
+            new VMReachableFinalizers(state.vmReachableFinalizers),
             instantiatedTypesDependee,
             handleInstantiatedTypesUpdate
         )

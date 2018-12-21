@@ -326,10 +326,10 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
                 state.calleesCache.update(dm, someEPS.asInstanceOf[EPS[DeclaredMethod, Callees]])
                 analyzeTAC()
 
-            case EUBP(VirtualFormalParameter(dm: DefinedMethod, -1), _) if dm.definedMethod.isConstructor ⇒
+            case EPS(VirtualFormalParameter(dm: DefinedMethod, -1)) if dm.definedMethod.isConstructor ⇒
                 throw new RuntimeException("can't handle the this-reference of the constructor")
 
-            case EUBP(other: VirtualFormalParameter, _) ⇒
+            case EPS(other: VirtualFormalParameter) ⇒
                 state.removeDependency(someEPS)
                 // todo think about a nicer way and the reason we need this
                 state.dependeeCache.update(other, someEPS.asInstanceOf[EPS[Entity, EscapeProperty]])

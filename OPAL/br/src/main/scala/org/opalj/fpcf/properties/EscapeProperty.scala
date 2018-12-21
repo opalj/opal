@@ -118,15 +118,15 @@ sealed trait EscapePropertyMetaInformation extends PropertyMetaInformation {
  * @author Florian Kuebler
  */
 sealed abstract class EscapeProperty
-    extends OrderedProperty
-    with ExplicitlyNamedProperty
-    with EscapePropertyMetaInformation {
+        extends OrderedProperty
+        with ExplicitlyNamedProperty
+        with EscapePropertyMetaInformation {
 
     final def key: PropertyKey[EscapeProperty] = EscapeProperty.key
 
     override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {
         other match {
-            case AtMost(_)                                                  ⇒ //TODO this is not correct -> fix me!
+            case _: AtMost                                                  ⇒ //TODO this is not correct -> fix me!
             case other: EscapeProperty if other lessOrEqualRestrictive this ⇒
             case p ⇒
                 throw new IllegalArgumentException(s"$e: illegal refinement of property $p to $this")

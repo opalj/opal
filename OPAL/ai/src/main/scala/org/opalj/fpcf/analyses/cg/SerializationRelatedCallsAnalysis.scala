@@ -114,8 +114,9 @@ class SerializationRelatedCallsAnalysis private[analyses] (
         if (tacEP.hasUBP && tacEP.ub.tac.isDefined) {
             processMethod(definedMethod, relevantPCs, tacEP.asEPS)
         } else {
-            InterimResult(
-                InterimEUBP(declaredMethod, NoSerializationRelatedCallees),
+            InterimResult.forUB(
+                declaredMethod,
+                NoSerializationRelatedCallees,
                 Some(tacEP),
                 continuation(definedMethod, relevantPCs)
             )
@@ -442,8 +443,9 @@ class SerializationRelatedCallsAnalysis private[analyses] (
 
         val calleesResult =
             if (tacaiEP.isRefinable)
-                InterimResult(
-                    InterimEUBP(definedMethod, tmpResult),
+                InterimResult.forUB(
+                    definedMethod,
+                    tmpResult,
                     Some(tacaiEP),
                     continuation(definedMethod, relevantPCs)
                 )
@@ -468,8 +470,9 @@ class SerializationRelatedCallsAnalysis private[analyses] (
         case UBP(tac: TACAI) if tac.tac.isDefined ⇒
             processMethod(definedMethod, relevantPCs, eps.asInstanceOf[EPS[Method, TACAI]])
         case UBP(_: TACAI) ⇒
-            InterimResult(
-                InterimEUBP(definedMethod, NoSerializationRelatedCallees),
+            InterimResult.forUB(
+                definedMethod,
+                NoSerializationRelatedCallees,
                 Some(eps),
                 continuation(definedMethod, relevantPCs)
             )

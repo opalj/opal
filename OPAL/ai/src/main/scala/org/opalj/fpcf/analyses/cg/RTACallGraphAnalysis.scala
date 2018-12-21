@@ -251,8 +251,9 @@ class RTACallGraphAnalysis private[analyses] (
         if (tacEP.hasUBP && tacEP.ub.tac.isDefined)
             processMethod(state)
         else {
-            InterimResult(
-                InterimEUBP(declaredMethod, NoStandardInvokeCallees),
+            InterimResult.forUB(
+                declaredMethod,
+                NoStandardInvokeCallees,
                 Seq(tacEP),
                 continuation(state)
             )
@@ -577,8 +578,9 @@ class RTACallGraphAnalysis private[analyses] (
                 processMethod(state)
 
             case UBP(_: TACAI) ⇒
-                InterimResult(
-                    InterimEUBP(state.method, NoStandardInvokeCallees),
+                InterimResult.forUB(
+                    state.method,
+                    NoStandardInvokeCallees,
                     Seq(eps),
                     continuation(state)
                 )
@@ -614,8 +616,9 @@ class RTACallGraphAnalysis private[analyses] (
         if (state.virtualCallSites.isEmpty || !state.hasOpenDependees) {
             Result(state.method, newCallees)
         } else {
-            InterimResult(
-                InterimEUBP(state.method, newCallees),
+            InterimResult.forUB(
+                state.method,
+                newCallees,
                 state.dependees(),
                 continuation(state)
             )

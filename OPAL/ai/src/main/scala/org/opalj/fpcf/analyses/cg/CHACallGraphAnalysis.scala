@@ -70,8 +70,9 @@ class CHACallGraphAnalysis private[analyses] ( final val project: SomeProject) e
         if (tacEP.hasUBP && tacEP.ub.tac.isDefined) {
             processMethod(declaredMethod, tacEP)
         } else {
-            InterimResult(
-                InterimEUBP(declaredMethod, NoStandardInvokeCallees),
+            InterimResult.forUB(
+                declaredMethod,
+                NoStandardInvokeCallees,
                 Seq(tacEP),
                 continuationForTAC(declaredMethod)
             )
@@ -84,8 +85,9 @@ class CHACallGraphAnalysis private[analyses] ( final val project: SomeProject) e
         case UBP(tac: TACAI) if tac.tac.isDefined ⇒
             processMethod(declaredMethod, someEPS.asInstanceOf[EPS[Method, TACAI]])
         case _ ⇒
-            InterimResult(
-                InterimEUBP(declaredMethod, NoStandardInvokeCallees),
+            InterimResult.forUB(
+                declaredMethod,
+                NoStandardInvokeCallees,
                 Seq(someEPS),
                 continuationForTAC(declaredMethod)
             )
@@ -173,9 +175,10 @@ class CHACallGraphAnalysis private[analyses] ( final val project: SomeProject) e
 
         val calleesResult = if (tacEP.isFinal)
             Result(declaredMethod, callees)
-        else InterimResult(
-            InterimEUBP(declaredMethod, callees), Seq(tacEP), continuationForTAC(declaredMethod)
-        )
+        else
+            InterimResult.forUB(
+                declaredMethod, callees, Seq(tacEP), continuationForTAC(declaredMethod)
+            )
 
         Results(
             calleesResult :: calleesAndCallers.partialResultsForCallers
