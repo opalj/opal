@@ -122,6 +122,21 @@ final class PKESequentialPropertyStore private (
     private[this] var subPhaseId: Int = 0
     private[this] var hasSuppressedNotifications: Boolean = false
 
+    override def toString(printProperties: Boolean): String = {
+        if (printProperties) {
+            val properties = for {
+                (epks, pkId) ← ps.iterator.zipWithIndex
+                (e, eOptionP) ← epks.iterator
+            } yield {
+                val propertyKindName = PropertyKey.name(pkId)
+                s"$e -> $propertyKindName[$pkId] = $eOptionP"
+            }
+            properties.mkString("PropertyStore(\n\t\t", "\n\t\t", "\n)")
+        } else {
+            s"PropertyStore(#properties=${ps.iterator.map(_.size).sum})"
+        }
+    }
+
     override def isKnown(e: Entity): Boolean = ps.contains(e)
 
     override def hasProperty(e: Entity, pk: PropertyKind): Boolean = {
@@ -182,21 +197,6 @@ final class PKESequentialPropertyStore private (
 
     override def finalEntities[P <: Property](p: P): Iterator[Entity] = {
         entities((otherEPS: SomeEPS) ⇒ otherEPS.isFinal && otherEPS.asFinal.p == p)
-    }
-
-    override def toString(printProperties: Boolean): String = {
-        if (printProperties) {
-            val properties = for {
-                (epks, pkId) ← ps.iterator.zipWithIndex
-                (e, eOptionP) ← epks.iterator
-            } yield {
-                val propertyKindName = PropertyKey.name(pkId)
-                s"$e -> $propertyKindName[$pkId] = $eOptionP"
-            }
-            properties.mkString("PropertyStore(\n\t\t", "\n\t\t", "\n)")
-        } else {
-            s"PropertyStore(#properties=${ps.iterator.map(_.size).sum})"
-        }
     }
 
     override protected[this] def newPhaseInitialized(
@@ -692,7 +692,9 @@ final class PKESequentialPropertyStore private (
                     pkId += 1
                 }
 
-                val successors = (interimEP: SomeEOptionP) ⇒ dependees(interimEP.pk.id)(interimEP.e)
+                val successors = (interimEP: SomeEOptionP) ⇒ {
+                    dependees(interimEP.pk.id).getOrElse(interimEP.e, Nil)
+                }
                 val cSCCs = graphs.closedSCCs(interimEPs, successors)
                 continueComputation = cSCCs.nonEmpty
                 for (cSCC ← cSCCs) {
