@@ -357,8 +357,6 @@ object PartialResult { private[fpcf] final val id = 6 }
  * collaboratively where the individual contribution to the final result depends on the
  * given dependees. For example an analysis which analyzes a method to determine the set
  * of all instantiated types will use an `InterimPartialResult` to commit those results.
- *
- * @param ak The key of the analysis which created this interim result.
  */
 case class InterimPartialResult[SE >: Null <: Entity](
         us: Traversable[SomePartialResult], // can be empty!
