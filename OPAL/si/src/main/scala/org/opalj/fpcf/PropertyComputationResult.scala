@@ -374,6 +374,17 @@ object InterimPartialResult {
     private[fpcf] final val id = 7
 
     /**
+     * Creates a new `InterimPartialResult` for the case where we just want to (re)register
+     * a depending computation.
+     */
+    def apply[SE >: Null <: Entity](
+        dependees: Traversable[SomeEOptionP],
+        c:         OnUpdateContinuation
+    ): InterimPartialResult[SE] = {
+        new InterimPartialResult[SE](Nil, dependees, c)
+    }
+
+    /**
      * Creates a new `InterimPartialResult`s
      *
      * @param uE The entity for which we have a partial result.
