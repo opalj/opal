@@ -57,7 +57,7 @@ object SimpleAIKey
     override protected def compute(
         project: SomeProject
     ): Method ⇒ AIResult { val domain: Domain with RecordDefUse } = {
-    implicit val logContext : LogContext = project.logContext
+        implicit val logContext: LogContext = project.logContext
 
         val domainFactory =
             project.getProjectInformationKeyInitializationData(this) match {
@@ -74,8 +74,6 @@ object SimpleAIKey
                     )
                     (m: Method) ⇒ new DefaultDomainWithCFGAndDefUse(project, m)
             }
-
-
 
         val aiResults = TrieMap.empty[Method, AIResult { val domain: Domain with RecordDefUse }]
         (m: Method) ⇒ aiResults.getOrElseUpdate(m, BaseAI(m, domainFactory(m)))
