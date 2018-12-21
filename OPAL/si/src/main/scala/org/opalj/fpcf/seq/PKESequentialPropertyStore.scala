@@ -19,8 +19,8 @@ import org.opalj.fpcf.PropertyKey.fallbackPropertyBasedOnPKId
 import org.opalj.fpcf.PropertyKey.computeFastTrackPropertyBasedOnPKId
 
 /**
- * A reasonable optimized, complete, but non-concurrent implementation of the property store.
- * Primarily intended to be used for evaluation and prototyping purposes.
+ * A reasonably optimized, complete, but non-concurrent implementation of the property store.
+ * Primarily intended to be used for evaluation, debugging and prototyping purposes.
  *
  * @author Michael Eichberg
  */
@@ -480,12 +480,9 @@ final class PKESequentialPropertyStore private (
 
     override def handleResult(r: PropertyComputationResult): Unit = handleExceptions {
 
-        def handlePartialResults(
-            prucs: Traversable[SomePartialResultUpdateComputation]
-        ): Unit = {
-            prucs foreach { pruc ⇒
-                handlePartialResult(pruc.e, pruc.pk, pruc.u)
-            }
+        def handlePartialResults(prs: Traversable[SomePartialResult]): Unit = {
+            // It is ok if prs is empty!
+            prs foreach { pr ⇒ handlePartialResult(pr.e, pr.pk, pr.u) }
         }
 
         def handlePartialResult(
@@ -571,7 +568,7 @@ final class PKESequentialPropertyStore private (
                 handlePartialResult(e, pk, u)
 
             case InterimPartialResult.id ⇒
-                val InterimPartialResult(prucs, processedDependees, c) = r
+                val InterimPartialResult(prs, processedDependees, c) = r
                 // 1. let's check if a new dependee is already updated...
                 //    If so, we directly schedule a task again to compute the property.
                 val noUpdates = processDependees(processedDependees, c)
@@ -581,7 +578,7 @@ final class PKESequentialPropertyStore private (
                     // 2. update the value and trigger dependers/clear old dependees;
                     //    the most current value of every dependee was taken into account
                     //    register with the (!) dependees.
-                    handlePartialResults(prucs)
+                    handlePartialResults(prs)
                     val dependerAK = EPK(sourceE, AnalysisKey)
                     processedDependees foreach { dependee ⇒
                         val dependeeDependers =
@@ -592,7 +589,7 @@ final class PKESequentialPropertyStore private (
                     // 2. update the value (trigger dependers/clear old dependees)
                     //    There was an update and we already scheduled the computation... hence,
                     //     we have no live dependees any more.
-                    handlePartialResults(prucs)
+                    handlePartialResults(prs)
                 }
                 dependees(AnalysisKeyId).put(sourceE, processedDependees)
 
@@ -710,7 +707,7 @@ final class PKESequentialPropertyStore private (
             // 3. Let's finalize remaining interim EPS; e.g., those related to
             //    collaboratively computed properties or "just all" if we don't have suppressed
             //    notifications. Recall that we may have cycles if we have no suppressed
-            //    notifications, because in the latter case, we may dependencies.
+            //    notifications, because in the latter case, we may have dependencies.
             //    We used no fallbacks, but we may still have collaboratively computed properties
             //    (e.g. CallGraph) which are not yet final; let's finalize them in the specified
             //    order (i.e., let's finalize the subphase)!

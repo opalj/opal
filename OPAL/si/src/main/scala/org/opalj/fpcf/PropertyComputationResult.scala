@@ -20,6 +20,18 @@ sealed abstract class PropertyComputationResult {
     }
 }
 
+object PropertyComputationResult {
+
+    def apply(results: ProperPropertyComputationResult*): PropertyComputationResult = {
+        if (results.isEmpty)
+            NoResult
+        else if(results.size == 1)
+            results.head
+        else
+            new Results(results)
+    }
+}
+
 /**
  * Used if the analysis found no entities for which a property could be computed.
  *
@@ -134,7 +146,7 @@ object MultiResult { private[fpcf] final val id = 2 }
 final class InterimResult[P >: Null <: Property] private (
         val eps:       InterimEP[Entity, P],
         val dependees: Traversable[SomeEOptionP],
-        val c:         OnUpdateContinuation,
+        val c:         ProperOnUpdateContinuation,
         val hint:      PropertyComputationHint
 ) extends ProperPropertyComputationResult { result ⇒
 
@@ -191,7 +203,7 @@ object InterimResult {
     def apply[P >: Null <: Property](
         eps:       InterimEP[Entity, P],
         dependees: Traversable[SomeEOptionP],
-        c:         OnUpdateContinuation
+        c:         ProperOnUpdateContinuation
     ): InterimResult[P] = {
         new InterimResult[P](eps, dependees, c, DefaultPropertyComputation)
     }
@@ -199,7 +211,7 @@ object InterimResult {
     def apply[P >: Null <: Property](
         eps:       InterimEP[Entity, P],
         dependees: Traversable[SomeEOptionP],
-        c:         OnUpdateContinuation,
+        c:         ProperOnUpdateContinuation,
         hint:      PropertyComputationHint
     ): InterimResult[P] = {
         new InterimResult[P](eps, dependees, c, hint)
@@ -210,8 +222,8 @@ object InterimResult {
         lb:        P,
         ub:        P,
         dependees: Traversable[SomeEOptionP],
-        c:         OnUpdateContinuation,
-        hint:      PropertyComputationHint   = DefaultPropertyComputation
+        c:         ProperOnUpdateContinuation,
+        hint:      PropertyComputationHint    = DefaultPropertyComputation
     ): InterimResult[P] = {
         require(lb != null && ub != null)
         new InterimResult[P](InterimELUBP(e, lb, ub), dependees, c, hint)
@@ -229,7 +241,7 @@ object InterimResult {
         new InterimResult[P](
             InterimELUBP(e, lb, ub),
             dependees,
-            c.asInstanceOf[OnUpdateContinuation],
+            c.asInstanceOf[ProperOnUpdateContinuation],
             hint
         )
     }
@@ -244,8 +256,8 @@ object InterimResult {
         e:         Entity,
         lb:        P,
         dependees: Traversable[SomeEOptionP],
-        c:         OnUpdateContinuation,
-        hint:      PropertyComputationHint   = DefaultPropertyComputation
+        c:         ProperOnUpdateContinuation,
+        hint:      PropertyComputationHint    = DefaultPropertyComputation
     ): InterimResult[P] = {
         new InterimResult[P](InterimELBP(e, lb), dependees, c, hint)
     }
@@ -254,8 +266,8 @@ object InterimResult {
         e:         Entity,
         ub:        P,
         dependees: Traversable[SomeEOptionP],
-        c:         OnUpdateContinuation,
-        hint:      PropertyComputationHint   = DefaultPropertyComputation
+        c:         ProperOnUpdateContinuation,
+        hint:      PropertyComputationHint    = DefaultPropertyComputation
     ): InterimResult[P] = {
         new InterimResult[P](InterimEUBP(e, ub), dependees, c, hint)
     }
@@ -298,6 +310,8 @@ object IncrementalResult { private[fpcf] final val id = 4 }
 case class Results(
         results: TraversableOnce[ProperPropertyComputationResult]
 ) extends ProperPropertyComputationResult {
+
+    assert(results.nonEmpty)
 
     private[fpcf] final def id = Results.id
 
@@ -343,16 +357,16 @@ object PartialResult { private[fpcf] final val id = 6 }
  * collaboratively where the individual contribution to the final result depends on the
  * given dependees. For example an analysis which analyzes a method to determine the set
  * of all instantiated types will use an `InterimPartialResult` to commit those results.
- *
- * @param ak The key of the analysis which created this interim result.
  */
 case class InterimPartialResult[SE >: Null <: Entity](
-        us: Traversable[SomePartialResultUpdateComputation],
+        us: Traversable[SomePartialResult], // can be empty!
         // We can't have a list of dependees, because we wouldn't be able to effectively
         // prevent multiple concurrent notifications!
         dependees: Traversable[SomeEOptionP],
         c:         OnUpdateContinuation
 ) extends ProperPropertyComputationResult {
+
+    assert(dependees.nonEmpty)
 
     private[fpcf] final def id = InterimPartialResult.id
 
@@ -360,6 +374,17 @@ case class InterimPartialResult[SE >: Null <: Entity](
 object InterimPartialResult {
 
     private[fpcf] final val id = 7
+
+    /**
+     * Creates a new `InterimPartialResult` for the case where we just want to (re)register
+     * a depending computation.
+     */
+    def apply[SE >: Null <: Entity](
+        dependees: Traversable[SomeEOptionP],
+        c:         OnUpdateContinuation
+    ): InterimPartialResult[SE] = {
+        new InterimPartialResult[SE](Nil, dependees, c)
+    }
 
     /**
      * Creates a new `InterimPartialResult`s
@@ -377,20 +402,14 @@ object InterimPartialResult {
         dependees: Traversable[SomeEOptionP],
         c:         OnUpdateContinuation
     ): InterimPartialResult[SE] = {
-        val pruc = PartialResultUpdateComputation(uE, uPK, u)
+        val pruc = PartialResult(uE, uPK, u)
         new InterimPartialResult[SE](List(pruc), dependees, c)
     }
 }
 
-case class PartialResultUpdateComputation[E >: Null <: Entity, P >: Null <: Property](
-        e:  E,
-        pk: PropertyKey[P],
-        u:  UpdateComputation[E, P]
-)
-
 /**************************************************************************************************\
  *
- *                              ONLY USED INTERNALLY BY THE FRAMEWORK! 
+ *                              ONLY USED INTERNALLY BY THE FRAMEWORK!
  *
 \**************************************************************************************************/
 

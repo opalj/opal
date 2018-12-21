@@ -226,6 +226,47 @@ object EPS {
     def unapply[E <: Entity, P <: Property](eps: EPS[E, P]): Some[E] = Some(eps.e)
 }
 
+object LBPS {
+
+    /**
+     * Returns the tuple `(LowerBound, Boolean)`.
+     *
+     * @note Using LBPS to extract a property for which no lower bound was computed
+     *       will (deliberately) result in an exception!
+     */
+    def unapply[P <: Property](eps: EPS[_ <: Entity, P]): Some[(P, Boolean)] = {
+        Some((eps.lb, eps.isFinal))
+    }
+
+}
+
+object UBPS {
+
+    /**
+     * Returns the tuple `(UpperBound, Boolean)`.
+     *
+     * @note Using UBPS to extract a property for which no upper bound was computed
+     *       will (deliberately) result in an exception!
+     */
+    def unapply[P <: Property](eps: EPS[_ <: Entity, P]): Some[(P, Boolean)] = {
+        Some((eps.ub, eps.isFinal))
+    }
+}
+
+object LUBPS {
+
+    /**
+     * Returns the triple `(LowerBound, UpperBound, Boolean)`.
+     *
+     * @note Using LUBPS to extract a property for which no lower or upper bound was computed
+     *       will (deliberately) result in an exception!
+     */
+    def unapply[P <: Property](eps: EPS[_ <: Entity, P]): Some[(P, P, Boolean)] = {
+        Some((eps.lb, eps.ub, eps.isFinal))
+    }
+
+}
+
 /**
  * Provides an extractor for [[EPS]] objects.
  *
@@ -249,7 +290,7 @@ object ELUBP {
     /**
      * Returns the triple `(Entity, lowerBound : Property, upperBound : Property)`.
      *
-     * @note Using ELUBPS to extract a property for which no lower or upper bound was computed
+     * @note Using ELUBP to extract a property for which no lower or upper bound was computed
      *       will (deliberately) result in an exception!
      */
     def unapply[E <: Entity, P <: Property](eps: EPS[E, P]): Some[(E, P, P)] = {
