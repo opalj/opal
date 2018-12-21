@@ -1,21 +1,13 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
-package support
-package info
+package fpcf
+package analyses
 
 import scala.collection.immutable.ListSet
 
 import org.opalj.log.LogContext
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.collection.immutable.RefArray
-import org.opalj.fpcf.PropertyStore
-import org.opalj.fpcf.PropertyStoreKey
-import org.opalj.fpcf.FPCFAnalysesManagerKey
-import org.opalj.fpcf.PropertyStoreContext
-import org.opalj.fpcf.PropertyKey
-import org.opalj.fpcf.analyses.AbstractIFDSAnalysis
-import org.opalj.fpcf.analyses.Statement
-import org.opalj.fpcf.analyses.IFDSAnalysis
 import org.opalj.fpcf.analyses.AbstractIFDSAnalysis.V
 import org.opalj.fpcf.properties.IFDSProperty
 import org.opalj.fpcf.properties.IFDSPropertyMetaInformation
@@ -38,6 +30,9 @@ import org.opalj.tac.ReturnValue
 //import org.opalj.tac.PutField
 //import org.opalj.tac.GetField
 import org.opalj.tac.fpcf.analyses.TACAITransformer
+import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
+//import org.opalj.ai.domain.l1
+import org.opalj.ai.domain.l2
 
 trait Fact
 
@@ -385,6 +380,22 @@ object TestTaintAnalysisRunner {
                     PropertyStore.updateDebug(false)
                     ps
                 }
+            )
+            /*
+            p.updateProjectInformationKeyInitializationData(
+                AIDomainFactoryKey,
+                (i: Option[Set[Class[_ <: AnyRef]]]) ⇒ (i match {
+                    case None               ⇒ Set(classOf[l1.DefaultDomainWithCFGAndDefUse[_]])
+                    case Some(requirements) ⇒ requirements + classOf[l1.DefaultDomainWithCFGAndDefUse[_]]
+                }): Set[Class[_ <: AnyRef]]
+            )
+            */
+            p.updateProjectInformationKeyInitializationData(
+                AIDomainFactoryKey,
+                (i: Option[Set[Class[_ <: AnyRef]]]) ⇒ (i match {
+                    case None               ⇒ Set(classOf[l2.DefaultPerformInvocationsDomainWithCFGAndDefUse[_]])
+                    case Some(requirements) ⇒ requirements + classOf[l2.DefaultPerformInvocationsDomainWithCFGAndDefUse[_]]
+                }): Set[Class[_ <: AnyRef]]
             )
             val ps = p.get(PropertyStoreKey)
             val manager = p.get(FPCFAnalysesManagerKey)

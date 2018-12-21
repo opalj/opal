@@ -78,8 +78,6 @@ package object fpcf {
 
     final type UpdateComputation[E <: Entity, P <: Property] = EOptionP[E, P] ⇒ Option[EPS[E, P]]
 
-    final type SomePartialResultUpdateComputation = PartialResultUpdateComputation[_ <: Entity, _ <: Property]
-
     /**
      * A function that takes an entity and returns a result. The result maybe:
      *  - the final derived property,
