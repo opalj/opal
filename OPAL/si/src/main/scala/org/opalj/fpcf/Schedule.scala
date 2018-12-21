@@ -71,7 +71,7 @@ case class Schedule[A](
                     )
             }
         }
-        // ... we are done now!
+        // ... we are done now; the computed properties will no longer be computed!
         ps.setupPhase(Set.empty, Set.empty)
 
         executedAnalyses.reverse
