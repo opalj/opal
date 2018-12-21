@@ -468,8 +468,7 @@ class RefArray[+T /* "<: AnyRef" this constraint is ONLY enforced by the factory
     override def equals(other: Any): Boolean = {
         other match {
             case that: RefArray[_] ⇒ JArrays.equals(this.data, that.data)
-            case _ ⇒
-                false
+            case _                 ⇒ false
         }
     }
 

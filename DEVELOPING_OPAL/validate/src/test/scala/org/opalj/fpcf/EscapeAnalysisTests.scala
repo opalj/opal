@@ -4,23 +4,24 @@ package org.opalj.fpcf
 import java.net.URL
 
 import org.opalj.ai.domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse
+import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.br.analyses.Project
-import org.opalj.fpcf.analyses.LazyVirtualCallAggregatingEscapeAnalysis
 import org.opalj.fpcf.analyses.SystemPropertiesAnalysis
 import org.opalj.fpcf.analyses.cg.EagerFinalizerAnalysisScheduler
-import org.opalj.fpcf.analyses.cg.EagerLoadedClassesAnalysis
+import org.opalj.fpcf.analyses.cg.EagerStaticInitializerAnalysis
 import org.opalj.fpcf.analyses.cg.EagerRTACallGraphAnalysisScheduler
 import org.opalj.fpcf.analyses.cg.EagerSerializationRelatedCallsAnalysis
 import org.opalj.fpcf.analyses.cg.EagerThreadRelatedCallsAnalysis
 import org.opalj.fpcf.analyses.cg.LazyCalleesAnalysis
+import org.opalj.fpcf.analyses.cg.TriggeredLoadedClassesAnalysis
 import org.opalj.fpcf.analyses.cg.reflection.EagerReflectionRelatedCallsAnalysis
 import org.opalj.fpcf.analyses.escape.EagerInterProceduralEscapeAnalysis
 import org.opalj.fpcf.analyses.escape.EagerSimpleEscapeAnalysis
 import org.opalj.fpcf.cg.properties.ReflectionRelatedCallees
 import org.opalj.fpcf.cg.properties.SerializationRelatedCallees
 import org.opalj.fpcf.cg.properties.StandardInvokeCallees
-import org.opalj.tac.fpcf.analyses.LazyL0TACAIAnalysis
+import org.opalj.tac.fpcf.analyses.TACAITransformer
 
 /**
  * Tests if the escape properties specified in the test project (the classes in the (sub-)package of
@@ -31,18 +32,17 @@ import org.opalj.tac.fpcf.analyses.LazyL0TACAIAnalysis
  */
 class EscapeAnalysisTests extends PropertiesTest {
 
-    val eagerAnalyses: Set[FPCFEagerAnalysisScheduler] = Set(
+    val analyses: List[FPCFAnalysisScheduler] = List(
         EagerRTACallGraphAnalysisScheduler,
-        EagerLoadedClassesAnalysis,
+        EagerStaticInitializerAnalysis,
+        TriggeredLoadedClassesAnalysis,
         EagerFinalizerAnalysisScheduler,
         EagerThreadRelatedCallsAnalysis,
         EagerSerializationRelatedCallsAnalysis,
         EagerReflectionRelatedCallsAnalysis,
-        SystemPropertiesAnalysis
-    )
-
-    val lazyAnalyses: Set[FPCFLazyAnalysisScheduler] = Set(
-        LazyL0TACAIAnalysis,
+        SystemPropertiesAnalysis,
+        LazyL0BaseAIAnalysis,
+        TACAITransformer,
         new LazyCalleesAnalysis(
             Set(StandardInvokeCallees, SerializationRelatedCallees, ReflectionRelatedCallees)
         )
@@ -72,7 +72,7 @@ class EscapeAnalysisTests extends PropertiesTest {
     }
 
     describe("the org.opalj.fpcf.analyses.escape.SimpleEscapeAnalysis is executed") {
-        val as = executeAnalyses(eagerAnalyses + EagerSimpleEscapeAnalysis, lazyAnalyses)
+        val as = executeAnalyses(EagerSimpleEscapeAnalysis :: analyses)
         as.propertyStore.shutdown()
         validateProperties(
             as,
@@ -83,10 +83,7 @@ class EscapeAnalysisTests extends PropertiesTest {
     }
 
     describe("the org.opalj.fpcf.analyses.escape.InterProceduralEscapeAnalysis is executed") {
-        val as = executeAnalyses(
-            eagerAnalyses + EagerInterProceduralEscapeAnalysis,
-            lazyAnalyses + LazyVirtualCallAggregatingEscapeAnalysis
-        )
+        val as = executeAnalyses(EagerInterProceduralEscapeAnalysis :: analyses)
         as.propertyStore.shutdown()
         validateProperties(
             as,

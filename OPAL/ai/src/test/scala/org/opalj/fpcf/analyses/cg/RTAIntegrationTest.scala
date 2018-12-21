@@ -51,7 +51,8 @@ class RTAIntegrationTest extends FlatSpec with Matchers {
     val manager: FPCFAnalysesManager = project.get(FPCFAnalysesManagerKey)
     /*val propertyStore = */ manager.runAll(
         EagerRTACallGraphAnalysisScheduler,
-        EagerLoadedClassesAnalysis,
+        EagerStaticInitializerAnalysis,
+        TriggeredLoadedClassesAnalysis,
         EagerFinalizerAnalysisScheduler,
         EagerThreadRelatedCallsAnalysis,
         EagerSerializationRelatedCallsAnalysis,
@@ -112,7 +113,7 @@ class RTAIntegrationTest extends FlatSpec with Matchers {
             m ← project.allMethodsWithBody
             dm = declaredMethods(m)
             methodRepresentation = convertMethod(dm)
-            FinalEP(_, computedCallees) = propertyStore(dm, Callees.key).asFinal
+            FinalP(computedCallees) = propertyStore(dm, Callees.key).asFinal
             CallSite(declaredTgt, line, _, tgts) ← callSites.filter(_.method == methodRepresentation)
             computedCallSites = computedCallees.directCallSites().filter {
                 case (pc, computedTgt) ⇒
@@ -140,7 +141,7 @@ class RTAIntegrationTest extends FlatSpec with Matchers {
             (pc, tgts) ← callees.callSites()
             callee ← tgts
         } {
-            val FinalEP(_, callersProperty) = propertyStore(callee, CallersProperty.key).asFinal
+            val FinalP(callersProperty) = propertyStore(callee, CallersProperty.key).asFinal
             assert(callersProperty.callers.toSet.contains(dm → pc))
         }
 
@@ -148,7 +149,7 @@ class RTAIntegrationTest extends FlatSpec with Matchers {
             FinalEP(dm: DeclaredMethod, callers) ← propertyStore.entities(CallersProperty.key).map(_.asFinal)
             (caller, pc) ← callers.callers
         } {
-            val FinalEP(_, calleesProperty) = propertyStore(caller, Callees.key).asFinal
+            val FinalP(calleesProperty) = propertyStore(caller, Callees.key).asFinal
             assert(calleesProperty.callees(pc).contains(dm))
         }
     }

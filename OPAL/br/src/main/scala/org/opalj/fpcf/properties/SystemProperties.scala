@@ -13,19 +13,22 @@ sealed trait SystemPropertiesPropertyMetaInformation extends PropertyMetaInforma
 }
 
 class SystemProperties(val properties: Map[String, Set[String]])
-    extends Property with SystemPropertiesPropertyMetaInformation {
+        extends Property with SystemPropertiesPropertyMetaInformation {
     final def key: PropertyKey[SystemProperties] = SystemProperties.key
 }
 
 object SystemProperties extends SystemPropertiesPropertyMetaInformation {
-    final val PropertyKeyName = "SystemProperties"
+    final val PropertyKeyName = "opalj.SystemProperties"
 
     final val key: PropertyKey[SystemProperties] = {
-        PropertyKey.forSimpleProperty(
+        PropertyKey.create(
             PropertyKeyName,
-            new SystemProperties(Map.empty) //: FallbackPropertyComputation[SomeProject, SystemProperties],
-        //(_: PropertyStore, eps: EPS[SomeProject, SystemProperties]) ⇒ eps.ub,
-        //(_: PropertyStore, _: Entity) ⇒ None
+            (_: PropertyStore, reason: FallbackReason, _: Entity) ⇒ reason match {
+                case PropertyIsNotDerivedByPreviouslyExecutedAnalysis ⇒
+                    new SystemProperties(Map.empty)
+                case _ ⇒
+                    throw new IllegalStateException(s"No analysis is scheduled for property: $PropertyKeyName")
+            }
         )
     }
 }

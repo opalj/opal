@@ -74,7 +74,9 @@ class L1FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
      * If the analysis is schedulued using its companion object all class files with
      * native methods are filtered.
      */
-    private[analyses] def determineFieldMutability(field: Field): PropertyComputationResult = {
+    private[analyses] def determineFieldMutability(
+        field: Field
+    ): ProperPropertyComputationResult = {
         if (field.isFinal) {
             return Result(field, DeclaredFinalField)
         }
@@ -155,7 +157,10 @@ class L1FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
         method: Method,
         taCode: TACode[TACMethodParameter, V],
         pcs:    PCs
-    )(implicit state: State): Boolean = {
+    )(
+        implicit
+        state: State
+    ): Boolean = {
         val stmts = taCode.stmts
         for (pc ← pcs) {
             val index = taCode.pcToIndex(pc)
@@ -200,11 +205,13 @@ class L1FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
     def getTACAI(
         method: Method,
         pcs:    PCs
-    )(implicit state: State): Option[TACode[TACMethodParameter, V]] = {
+    )(
+        implicit
+        state: State
+    ): Option[TACode[TACMethodParameter, V]] = {
         propertyStore(method, TACAI.key) match {
-            case finalEP: FinalEP[Method, TACAI] ⇒
-                finalEP.ub.tac
-            case eps: IntermediateEP[Method, TACAI] ⇒
+            case FinalP(tacai) ⇒ tacai.tac
+            case eps: InterimEP[Method, TACAI] ⇒
                 state.tacDependees += method → ((eps, pcs))
                 eps.ub.tac
             case epk ⇒
@@ -213,22 +220,22 @@ class L1FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
         }
     }
 
-    def returnResult()(implicit state: State): PropertyComputationResult = {
+    def returnResult()(implicit state: State): ProperPropertyComputationResult = {
         if (state.tacDependees.isEmpty && state.escapeDependees.isEmpty)
             Result(state.field, EffectivelyFinalField)
         else
-            IntermediateResult(
+            InterimResult(
                 state.field,
                 NonFinalFieldByAnalysis,
                 EffectivelyFinalField,
                 state.escapeDependees ++ state.tacDependees.valuesIterator.map(_._1),
-                continuation,
+                c,
                 if (state.tacDependees.isEmpty) CheapPropertyComputation
                 else DefaultPropertyComputation
             )
     }
 
-    def continuation(eps: SomeEPS)(implicit state: State): PropertyComputationResult = {
+    def c(eps: SomeEPS)(implicit state: State): ProperPropertyComputationResult = {
         val isNonFinal = eps.e match {
             case ds: DefinitionSite ⇒
                 val newEP = eps.asInstanceOf[EOptionP[DefinitionSite, EscapeProperty]]
@@ -240,7 +247,9 @@ class L1FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
                 state.tacDependees -= method
                 if (eps.isRefinable)
                     state.tacDependees += method → ((newEP, pcs))
-                methodUpdatesField(method, newEP.ub.tac.get, pcs)
+                if (newEP.ub.tac.isDefined)
+                    methodUpdatesField(method, newEP.ub.tac.get, pcs)
+                else false
         }
 
         if (isNonFinal)
@@ -282,23 +291,23 @@ class L1FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
     def handleEscapeProperty(
         ep: EOptionP[DefinitionSite, EscapeProperty]
     )(implicit state: State): Boolean = ep match {
-        case FinalEP(_, NoEscape | EscapeInCallee | EscapeViaReturn) ⇒
+        case FinalP(NoEscape | EscapeInCallee | EscapeViaReturn) ⇒
             false
 
-        case FinalEP(_, AtMost(_)) ⇒
+        case FinalP(AtMost(_)) ⇒
             true
 
-        case FinalEP(_, _) ⇒
+        case _: FinalEP[_, _] ⇒
             true // Escape state is worse than via return
 
-        case IntermediateEP(_, _, NoEscape | EscapeInCallee | EscapeViaReturn) ⇒
+        case InterimUBP(NoEscape | EscapeInCallee | EscapeViaReturn) ⇒
             state.escapeDependees += ep
             false
 
-        case IntermediateEP(_, _, AtMost(_)) ⇒
+        case InterimUBP(AtMost(_)) ⇒
             true
 
-        case IntermediateEP(_, _, _) ⇒
+        case _: SomeInterimEP ⇒
             true // Escape state is worse than via return
 
         case _ ⇒
@@ -307,18 +316,13 @@ class L1FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
     }
 }
 
-sealed trait L1FieldMutabilityAnalysisScheduler extends ComputationSpecification {
+sealed trait L1FieldMutabilityAnalysisScheduler extends ComputationSpecification[FPCFAnalysis] {
 
-    final override def uses: Set[PropertyKind] = Set(TACAI, EscapeProperty)
+    final override def uses: Set[PropertyBounds] = {
+        Set(PropertyBounds.lub(TACAI), PropertyBounds.lub(EscapeProperty))
+    }
 
-    final override def derives: Set[PropertyKind] = Set(FieldMutability)
-
-    final override type InitializationData = Null
-    final def init(p: SomeProject, ps: PropertyStore): Null = null
-
-    def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
-
-    def afterPhaseCompletion(p: SomeProject, ps: PropertyStore): Unit = {}
+    final def derivedProperty: PropertyBounds = PropertyBounds.lub(FieldMutability)
 
 }
 
@@ -327,9 +331,13 @@ sealed trait L1FieldMutabilityAnalysisScheduler extends ComputationSpecification
  */
 object EagerL1FieldMutabilityAnalysis
     extends L1FieldMutabilityAnalysisScheduler
-    with FPCFEagerAnalysisScheduler {
+    with BasicFPCFEagerAnalysisScheduler {
 
-    final override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+    override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
+
+    override def derivesCollaboratively: Set[PropertyBounds] = Set.empty
+
+    override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new L1FieldMutabilityAnalysis(p)
         val fields = p.allFields
         ps.scheduleEagerComputationsForEntities(fields)(analysis.determineFieldMutability)
@@ -342,13 +350,11 @@ object EagerL1FieldMutabilityAnalysis
  */
 object LazyL1FieldMutabilityAnalysis
     extends L1FieldMutabilityAnalysisScheduler
-    with FPCFLazyAnalysisScheduler {
+    with BasicFPCFLazyAnalysisScheduler {
 
-    final override def startLazily(
-        p:      SomeProject,
-        ps:     PropertyStore,
-        unused: Null
-    ): FPCFAnalysis = {
+    override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
+
+    override def register(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new L1FieldMutabilityAnalysis(p)
         ps.registerLazyPropertyComputation(
             FieldMutability.key, analysis.determineFieldMutability

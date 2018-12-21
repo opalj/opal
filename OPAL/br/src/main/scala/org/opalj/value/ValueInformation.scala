@@ -239,8 +239,8 @@ trait ConstantValueInformationProvider[T] {
  * The value has the primitive type.
  */
 sealed trait IsPrimitiveValue[T <: BaseType]
-        extends KnownTypedValue
-        with ConstantValueInformationProvider[T#JType] {
+    extends KnownTypedValue
+    with ConstantValueInformationProvider[T#JType] {
 
     final override def isReferenceValue: Boolean = false
 

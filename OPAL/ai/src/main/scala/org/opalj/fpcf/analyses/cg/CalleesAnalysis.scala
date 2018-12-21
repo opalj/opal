@@ -34,7 +34,7 @@ class CalleesAnalysis private[analyses] (
 
     implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
 
-    def doAnalysis(dm: DeclaredMethod): PropertyComputationResult = {
+    def doAnalysis(dm: DeclaredMethod): ProperPropertyComputationResult = {
         var dependees: Set[EOptionP[DeclaredMethod, CalleesLike]] = Set.empty
         var isReachable = false
         var directKeys = directCalleesPropertyKeys
@@ -59,16 +59,16 @@ class CalleesAnalysis private[analyses] (
         indirectKeys: Set[PropertyKey[CalleesLike]]
     ): (Boolean, Set[EOptionP[DeclaredMethod, CalleesLike]], Set[PropertyKey[CalleesLike]], Set[PropertyKey[CalleesLike]]) = {
         eOptionP match {
-            case ep @ FinalEP(_, p: CalleesLikeNotReachable) ⇒
+            case ep @ FinalP(p: CalleesLikeNotReachable) ⇒
                 if (p.isIndirect)
                     (false, updateDependee(ep, dependees), directKeys, indirectKeys - p.key)
                 else
                     (false, updateDependee(ep, dependees), directKeys - p.key, indirectKeys)
 
-            case IntermediateESimpleP(_, _: CalleesLikeNotReachable) ⇒
+            case InterimUBP(_: CalleesLikeNotReachable) ⇒
                 throw new IllegalArgumentException("non reachable methods must have final property")
 
-            case ep: EPS[_, _] ⇒
+            case ep: EPS[DeclaredMethod, CalleesLike] ⇒
                 (true, updateDependee(ep, dependees), directKeys, indirectKeys)
 
             case epk: EPK[DeclaredMethod, CalleesLike] ⇒
@@ -81,7 +81,7 @@ class CalleesAnalysis private[analyses] (
         directKeys:     Set[PropertyKey[CalleesLike]],
         indirectKeys:   Set[PropertyKey[CalleesLike]],
         dependees:      Set[EOptionP[DeclaredMethod, CalleesLike]]
-    )(eOptionP: SomeEPS): PropertyComputationResult = {
+    )(eOptionP: SomeEPS): ProperPropertyComputationResult = {
         val (_, newDependees, newDirectKeys, newIndirectKeys) =
             handleEOptP(
                 eOptionP.asInstanceOf[EPS[DeclaredMethod, CalleesLike]],
@@ -105,7 +105,7 @@ class CalleesAnalysis private[analyses] (
         directKeys:     Set[PropertyKey[CalleesLike]],
         indirectKeys:   Set[PropertyKey[CalleesLike]],
         isReachable:    Boolean
-    ): PropertyComputationResult = {
+    ): ProperPropertyComputationResult = {
         if (!isReachable) {
             assert(dependees.isEmpty)
             return Result(declaredMethod, NoCalleesDueToNotReachableMethod);
@@ -122,7 +122,7 @@ class CalleesAnalysis private[analyses] (
                 declaredMethod,
                 key
             )
-            if (p.hasProperty) {
+            if (p.hasUBP) {
                 val callees = p.ub
                 if (callees.isIndirect) {
                     indirectCalleeIds =
@@ -150,9 +150,8 @@ class CalleesAnalysis private[analyses] (
         if (dependees.isEmpty) {
             Result(declaredMethod, ub)
         } else {
-            SimplePIntermediateResult(
-                declaredMethod,
-                ub,
+            InterimResult(
+                InterimEUBP(declaredMethod, ub),
                 dependees,
                 continuation(declaredMethod, directKeys, indirectKeys, dependees)
             )
@@ -170,19 +169,13 @@ class CalleesAnalysis private[analyses] (
 
 }
 
-class LazyCalleesAnalysis(calleesProperties: Set[CalleesLikePropertyMetaInformation]) extends FPCFLazyAnalysisScheduler {
+class LazyCalleesAnalysis(calleesProperties: Set[CalleesLikePropertyMetaInformation]) extends BasicFPCFLazyAnalysisScheduler {
 
-    override type InitializationData = Null
+    override def uses: Set[PropertyBounds] = calleesProperties.map(PropertyBounds.ub)
 
-    override def uses: Set[PropertyKind] = calleesProperties.asInstanceOf[Set[PropertyKind]]
+    override def derivesLazily: Some[PropertyBounds] = Some(PropertyBounds.ub(Callees))
 
-    override def derives: Set[PropertyKind] = Set(Callees)
-
-    override def init(p: SomeProject, ps: PropertyStore): Null = { null }
-
-    override def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
-
-    override def startLazily(
+    override def register(
         project: SomeProject, propertyStore: PropertyStore, unused: Null
     ): FPCFAnalysis = {
         val (indirectCalleesProperties, directCalleesProperties) =
@@ -195,7 +188,5 @@ class LazyCalleesAnalysis(calleesProperties: Set[CalleesLikePropertyMetaInformat
         propertyStore.registerLazyPropertyComputation(Callees.key, analysis.doAnalysis)
         analysis
     }
-
-    override def afterPhaseCompletion(p: SomeProject, ps: PropertyStore): Unit = {}
 }
 

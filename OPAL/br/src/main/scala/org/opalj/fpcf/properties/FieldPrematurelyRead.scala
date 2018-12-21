@@ -26,13 +26,13 @@ sealed trait FieldPrematurelyReadPropertyMetaInformation extends PropertyMetaInf
  */
 sealed trait FieldPrematurelyRead extends Property with FieldPrematurelyReadPropertyMetaInformation {
 
-    final def key = FieldPrematurelyRead.key // All instances have to share the SAME key!
+    final def key: PropertyKey[FieldPrematurelyRead] = FieldPrematurelyRead.key
 
 }
 
 object FieldPrematurelyRead extends FieldPrematurelyReadPropertyMetaInformation {
 
-    final val PropertyKeyName = "FieldPrematurelyRead"
+    final val PropertyKeyName = "opalj.FieldPrematurelyRead"
 
     final val key: PropertyKey[FieldPrematurelyRead] = {
         PropertyKey.create(
@@ -41,9 +41,7 @@ object FieldPrematurelyRead extends FieldPrematurelyReadPropertyMetaInformation 
                 val p = ps.context(classOf[SomeProject])
                 if (isPrematurelyReadFallback(p, f)) PrematurelyReadField
                 else NotPrematurelyReadField
-            },
-            (_: PropertyStore, eps: EPS[Field, FieldPrematurelyRead]) ⇒ eps.ub,
-            (_: PropertyStore, _: Entity) ⇒ None
+            }
         )
     }
 

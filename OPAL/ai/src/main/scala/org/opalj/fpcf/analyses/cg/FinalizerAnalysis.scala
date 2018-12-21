@@ -55,12 +55,12 @@ class FinalizerAnalysis private[analyses] (
     def handleInstantiatedTypesUpdate(eps: SomeEPS)(
         implicit
         state: FinalizerAnalysisState
-    ): PropertyComputationResult = {
+    ): ProperPropertyComputationResult = {
         var instantiatedTypesDependee: Option[SomeEPS] = None
         val (newFinalizers, results) = eps match {
-            case FinalEP(_, instantiatedTypes: InstantiatedTypes) ⇒
+            case FinalP(instantiatedTypes: InstantiatedTypes) ⇒
                 handleNewInstantiatedTypes(instantiatedTypes)
-            case eps @ IntermediateESimpleP(_, ub: InstantiatedTypes) ⇒
+            case eps @ InterimUBP(ub: InstantiatedTypes) ⇒
                 instantiatedTypesDependee = Some(eps)
                 handleNewInstantiatedTypes(ub)
         }
@@ -69,10 +69,10 @@ class FinalizerAnalysis private[analyses] (
 
         val result = if (instantiatedTypesDependee.isEmpty)
             Result(p, new VMReachableFinalizers(state.vmReachableFinalizers))
-        else SimplePIntermediateResult(
-            p,
-            new VMReachableFinalizers(state.vmReachableFinalizers),
-            instantiatedTypesDependee, handleInstantiatedTypesUpdate
+        else InterimResult(
+            InterimEUBP(p, new VMReachableFinalizers(state.vmReachableFinalizers)),
+            instantiatedTypesDependee,
+            handleInstantiatedTypesUpdate
         )
 
         Results(results ++ Iterator(result))
@@ -99,14 +99,13 @@ class FinalizerAnalysis private[analyses] (
 
                         val finalizer = declaredMethods(finalizers.head)
                         val result = PartialResult[DeclaredMethod, CallersProperty](finalizer, CallersProperty.key, {
-                            case IntermediateESimpleP(e, ub) if !ub.hasVMLevelCallers ⇒
-                                Some(IntermediateESimpleP(e, ub.updatedWithVMLevelCall()))
+                            case InterimUBP(ub) if !ub.hasVMLevelCallers ⇒
+                                Some(InterimEUBP(finalizer, ub.updatedWithVMLevelCall()))
 
-                            case _: IntermediateESimpleP[_, _] ⇒ None
+                            case _: InterimEP[DeclaredMethod, CallersProperty] ⇒ None
 
-                            case EPK(e, _) ⇒ Some(
-                                IntermediateESimpleP(e, OnlyVMLevelCallers)
-                            )
+                            case _: EPK[DeclaredMethod, CallersProperty] ⇒
+                                Some(InterimEUBP(finalizer, OnlyVMLevelCallers))
 
                             case r ⇒ throw new IllegalStateException(s"unexpected previous result $r")
                         })
@@ -121,27 +120,22 @@ class FinalizerAnalysis private[analyses] (
 
 }
 
-object EagerFinalizerAnalysisScheduler extends FPCFEagerAnalysisScheduler {
+object EagerFinalizerAnalysisScheduler extends BasicFPCFTriggeredAnalysisScheduler {
 
-    override type InitializationData = FinalizerAnalysis
+    override def uses: Set[PropertyBounds] = Set(
+        PropertyBounds.ub(InstantiatedTypes)
+    )
 
-    override def start(
-        project: SomeProject, propertyStore: PropertyStore, finalizerAnalysis: FinalizerAnalysis
-    ): FPCFAnalysis = {
-        finalizerAnalysis
-    }
+    override def derivesCollaboratively: Set[PropertyBounds] = Set(
+        PropertyBounds.ub(VMReachableFinalizers),
+        PropertyBounds.ub(CallersProperty)
+    )
 
-    override def uses: Set[PropertyKind] = Set(InstantiatedTypes)
+    override def derivesEagerly: Set[PropertyBounds] = Set.empty
 
-    override def derives: Set[PropertyKind] = Set(VMReachableFinalizers, CallersProperty)
-
-    override def init(p: SomeProject, ps: PropertyStore): FinalizerAnalysis = {
+    override def register(p: SomeProject, ps: PropertyStore, unused: Null): FinalizerAnalysis = {
         val analysis = new FinalizerAnalysis(p)
         ps.registerTriggeredComputation(InstantiatedTypes.key, analysis.analyze)
         analysis
     }
-
-    override def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
-
-    override def afterPhaseCompletion(p: SomeProject, ps: PropertyStore): Unit = {}
 }

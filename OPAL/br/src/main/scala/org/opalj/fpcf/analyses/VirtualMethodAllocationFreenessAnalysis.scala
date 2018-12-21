@@ -21,7 +21,7 @@ import org.opalj.fpcf.properties.VirtualMethodAllocationFreeness.VAllocationFree
 class VirtualMethodAllocationFreenessAnalysis private[analyses] ( final val project: SomeProject) extends FPCFAnalysis {
     private[this] val declaredMethods = project.get(DeclaredMethodsKey)
 
-    def determineAllocationFreeness(dm: DeclaredMethod): PropertyComputationResult = {
+    def determineAllocationFreeness(dm: DeclaredMethod): ProperPropertyComputationResult = {
         if (!dm.hasSingleDefinedMethod && !dm.hasMultipleDefinedMethods)
             return Result(dm, VMethodWithAllocations);
 
@@ -48,18 +48,18 @@ class VirtualMethodAllocationFreenessAnalysis private[analyses] ( final val proj
 
         for (method ← methods) {
             propertyStore(declaredMethods(method), AllocationFreeness.key) match {
-                case FinalEP(_, AllocationFreeMethod)  ⇒
-                case FinalEP(_, MethodWithAllocations) ⇒ return Result(dm, VMethodWithAllocations);
-                case epk                               ⇒ dependees += epk
+                case FinalP(AllocationFreeMethod)  ⇒
+                case FinalP(MethodWithAllocations) ⇒ return Result(dm, VMethodWithAllocations);
+                case epk                           ⇒ dependees += epk
             }
         }
 
-        def c(eps: SomeEPS): PropertyComputationResult = {
+        def c(eps: SomeEPS): ProperPropertyComputationResult = {
             dependees = dependees.filter { _.e ne eps.e }
 
             eps match {
-                case FinalEP(_, AllocationFreeMethod)  ⇒
-                case FinalEP(_, MethodWithAllocations) ⇒ return Result(dm, VMethodWithAllocations);
+                case FinalP(AllocationFreeMethod)  ⇒
+                case FinalP(MethodWithAllocations) ⇒ return Result(dm, VMethodWithAllocations);
                 case epk ⇒
                     dependees += epk.asInstanceOf[EOptionP[DeclaredMethod, AllocationFreeness]]
             }
@@ -67,47 +67,44 @@ class VirtualMethodAllocationFreenessAnalysis private[analyses] ( final val proj
             if (dependees.isEmpty) {
                 Result(dm, VAllocationFreeMethod)
             } else {
-                IntermediateResult(dm, VMethodWithAllocations, VAllocationFreeMethod, dependees, c)
+                InterimResult(dm, VMethodWithAllocations, VAllocationFreeMethod, dependees, c)
             }
         }
 
         if (dependees.isEmpty) {
             Result(dm, VAllocationFreeMethod)
         } else {
-            IntermediateResult(dm, VMethodWithAllocations, VAllocationFreeMethod, dependees, c)
+            InterimResult(dm, VMethodWithAllocations, VAllocationFreeMethod, dependees, c)
         }
     }
 
     /** Called when the analysis is scheduled lazily. */
-    def doDetermineAllocationFreeness(e: Entity): PropertyComputationResult = {
+    def doDetermineAllocationFreeness(e: Entity): ProperPropertyComputationResult = {
         e match {
             case m: DeclaredMethod ⇒ determineAllocationFreeness(m)
-            case _ ⇒ throw new UnknownError(
-                "virtual method allocation freeness is only defined for declared methods"
-            )
+            case _                 ⇒ throw new IllegalArgumentException(s"$e ist not a method")
         }
     }
 
 }
 
-trait VirtualMethodAllocationFreenessAnalysisScheduler extends ComputationSpecification {
+trait VirtualMethodAllocationFreenessAnalysisScheduler extends ComputationSpecification[FPCFAnalysis] {
 
-    final override def derives: Set[PropertyKind] = Set(VirtualMethodAllocationFreeness)
+    final def derivedProperty: PropertyBounds = {
+        PropertyBounds.lub(VirtualMethodAllocationFreeness)
+    }
 
-    final override def uses: Set[PropertyKind] = Set(AllocationFreeness)
-
-    final override type InitializationData = Null
-    final def init(p: SomeProject, ps: PropertyStore): Null = null
-
-    def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
-
-    def afterPhaseCompletion(p: SomeProject, ps: PropertyStore): Unit = {}
+    final override def uses: Set[PropertyBounds] = Set(PropertyBounds.lub(AllocationFreeness))
 
 }
 
 object EagerVirtualMethodAllocationFreenessAnalysis
     extends VirtualMethodAllocationFreenessAnalysisScheduler
-    with FPCFEagerAnalysisScheduler {
+    with BasicFPCFEagerAnalysisScheduler {
+
+    override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
+
+    override def derivesCollaboratively: Set[PropertyBounds] = Set.empty
 
     override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new VirtualMethodAllocationFreenessAnalysis(p)
@@ -119,9 +116,11 @@ object EagerVirtualMethodAllocationFreenessAnalysis
 
 object LazyVirtualMethodAllocationFreenessAnalysis
     extends VirtualMethodAllocationFreenessAnalysisScheduler
-    with FPCFLazyAnalysisScheduler {
+    with BasicFPCFLazyAnalysisScheduler {
 
-    override def startLazily(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+    override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
+
+    override def register(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new VirtualMethodAllocationFreenessAnalysis(p)
         ps.registerLazyPropertyComputation(
             VirtualMethodAllocationFreeness.key,

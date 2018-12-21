@@ -25,11 +25,11 @@ class ConfiguredNativeMethodsAnalysis private[analyses] (
         final val project: SomeProject
 ) extends FPCFAnalysis {
     private case class NativeMethodData(
-            cf:                String,
-            m:                 String,
-            desc:              String,
-            instantiatedTypes: Option[Seq[String]],
-            reachableMethods:  Option[Seq[ReachableMethod]]
+        cf:                String,
+        m:                 String,
+        desc:              String,
+        instantiatedTypes: Option[Seq[String]],
+        reachableMethods:  Option[Seq[ReachableMethod]]
     )
     private case class ReachableMethod(cf: String, m: String, desc: String)
 
@@ -58,7 +58,7 @@ class ConfiguredNativeMethodsAnalysis private[analyses] (
 
     def analyze(declaredMethod: DeclaredMethod): PropertyComputationResult = {
         propertyStore(declaredMethod, CallersProperty.key) match {
-            case FinalEP(_, NoCallers) ⇒
+            case FinalP(NoCallers) ⇒
                 // nothing to do, since there is no caller
                 return NoResult;
 
@@ -94,20 +94,25 @@ class ConfiguredNativeMethodsAnalysis private[analyses] (
         /**
          * Creates partial results for instantiated types given by their FQNs.
          */
-        def instantiatedTypesResults(fqns: Seq[String]): List[PropertyComputationResult] = {
+        def instantiatedTypesResults(fqns: Seq[String]): Option[ProperPropertyComputationResult] = {
             val instantiatedTypesUB =
                 getInstantiatedTypesUB(propertyStore(project, InstantiatedTypes.key))
 
             val newInstantiatedTypes =
                 UIDSet(fqns.map(ObjectType(_)).filterNot(instantiatedTypesUB.contains): _*)
 
-            val instantiatedTypesResultList =
-                List(InstantiatedTypesAnalysis.partialResultForInstantiatedTypes(
-                    p, newInstantiatedTypes, initialInstantiatedTypes
+            if (newInstantiatedTypes.nonEmpty)
+                Some(PartialResult(
+                    p,
+                    InstantiatedTypes.key,
+                    InstantiatedTypesAnalysis.update(
+                        p,
+                        newInstantiatedTypes,
+                        initialInstantiatedTypes
+                    )
                 ))
-
-            if (newInstantiatedTypes.isEmpty) List.empty
-            else instantiatedTypesResultList
+            else
+                None
         }
 
         /**
@@ -115,7 +120,7 @@ class ConfiguredNativeMethodsAnalysis private[analyses] (
          */
         def calleesResults(
             reachableMethods: Seq[ReachableMethod]
-        ): List[PropertyComputationResult] = {
+        ): List[ProperPropertyComputationResult] = {
             val calleesAndCallers = new CalleesAndCallers()
             for (reachableMethod ← reachableMethods.iterator) {
                 val classType = ObjectType(reachableMethod.cf)
@@ -142,7 +147,7 @@ class ConfiguredNativeMethodsAnalysis private[analyses] (
             val callResults = calleesResults(reachableMethodsO.get)
             if (instantiatedTypesO.isDefined) {
                 val typesResult = instantiatedTypesResults(instantiatedTypesO.get)
-                Results(typesResult ::: callResults)
+                Results(callResults ++ typesResult)
             } else Results(callResults)
         } else if (instantiatedTypesO.isDefined) {
             Results(instantiatedTypesResults(instantiatedTypesO.get))
@@ -152,26 +157,26 @@ class ConfiguredNativeMethodsAnalysis private[analyses] (
     }
 }
 
-object EagerConfiguredNativeMethodsAnalysis extends FPCFEagerAnalysisScheduler {
-    override type InitializationData = ConfiguredNativeMethodsAnalysis
+object EagerConfiguredNativeMethodsAnalysis extends BasicFPCFTriggeredAnalysisScheduler {
+    override def uses: Set[PropertyBounds] = Set(
+        PropertyBounds.ub(CallersProperty),
+        PropertyBounds.ub(InstantiatedTypes)
+    )
 
-    override def uses: Set[PropertyKind] = Set(CallersProperty, InstantiatedTypes)
+    override def derivesCollaboratively: Set[PropertyBounds] = Set(
+        PropertyBounds.ub(CallersProperty),
+        PropertyBounds.ub(InstantiatedTypes)
+    )
 
-    override def derives: Set[PropertyKind] = Set(CallersProperty, InstantiatedTypes)
+    override def derivesEagerly: Set[PropertyBounds] = Set.empty
 
-    override def start(
-        p: SomeProject, ps: PropertyStore, analysis: ConfiguredNativeMethodsAnalysis
-    ): FPCFAnalysis = analysis
-
-    override def init(p: SomeProject, ps: PropertyStore): ConfiguredNativeMethodsAnalysis = {
+    override def register(
+        p: SomeProject, ps: PropertyStore, unused: Null
+    ): ConfiguredNativeMethodsAnalysis = {
         val analysis = new ConfiguredNativeMethodsAnalysis(p)
 
         ps.registerTriggeredComputation(CallersProperty.key, analysis.analyze)
 
         analysis
     }
-
-    override def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
-
-    override def afterPhaseCompletion(p: SomeProject, ps: PropertyStore): Unit = {}
 }

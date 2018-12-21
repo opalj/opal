@@ -4,17 +4,22 @@ package fpcf
 package analyses
 package purity
 
-import scala.annotation.switch
-
-import scala.collection.immutable.IntMap
-
 import net.ceedubs.ficus.Ficus._
-
+import org.opalj.ai.isImmediateVMException
+import org.opalj.br.ComputationalTypeReference
+import org.opalj.br.DeclaredMethod
+import org.opalj.br.DefinedMethod
+import org.opalj.br.Field
+import org.opalj.br.Method
+import org.opalj.br.ObjectType
+import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.cfg.CFG
 import org.opalj.collection.immutable.EmptyIntTrieSet
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.cg.properties.Callees
-import org.opalj.fpcf.properties.ClassifiedImpure
 import org.opalj.fpcf.properties.ClassImmutability
+import org.opalj.fpcf.properties.ClassifiedImpure
 import org.opalj.fpcf.properties.CompileTimePure
 import org.opalj.fpcf.properties.ContextuallyPure
 import org.opalj.fpcf.properties.ExtensibleGetter
@@ -39,21 +44,6 @@ import org.opalj.fpcf.properties.TypeImmutability
 import org.opalj.fpcf.properties.UsesConstantDataOnly
 import org.opalj.fpcf.properties.UsesNoStaticData
 import org.opalj.fpcf.properties.UsesVaryingData
-import org.opalj.fpcf.properties.VExtensibleGetter
-import org.opalj.fpcf.properties.VFreshReturnValue
-import org.opalj.fpcf.properties.VGetter
-import org.opalj.fpcf.properties.VNoFreshReturnValue
-import org.opalj.fpcf.properties.VPrimitiveReturnValue
-import org.opalj.br.ComputationalTypeReference
-import org.opalj.br.DeclaredMethod
-import org.opalj.br.DefinedMethod
-import org.opalj.br.Field
-import org.opalj.br.Method
-import org.opalj.br.ObjectType
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.cfg.CFG
-import org.opalj.ai.isImmediateVMException
 import org.opalj.tac.ArrayStore
 import org.opalj.tac.Assignment
 import org.opalj.tac.Expr
@@ -72,6 +62,9 @@ import org.opalj.tac.TACStmts
 import org.opalj.tac.UVar
 import org.opalj.tac.VirtualFunctionCall
 import org.opalj.tac.fpcf.properties.TACAI
+
+import scala.annotation.switch
+import scala.collection.immutable.IntMap
 
 /**
  * An inter-procedural analysis to determine a method's purity.
@@ -211,7 +204,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         def updateCalleesDependee(eps: EOptionP[DeclaredMethod, Callees]): Unit = {
             if (eps.isFinal) calleesDependee = None
             else calleesDependee = Some(eps)
-            if (eps.hasProperty)
+            if (eps.hasUBP)
                 callees = Some(eps.ub)
         }
 
@@ -242,7 +235,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         def updateTacai(eps: EOptionP[Method, TACAI]): Unit = {
             if (eps.isFinal) tacai = None
             else tacai = Some(eps)
-            if (eps.hasProperty) {
+            if (eps.hasUBP && eps.ub.tac.isDefined) {
                 val tac = eps.ub.tac.get
                 pcToIndex = tac.pcToIndex
                 code = tac.stmts
@@ -420,16 +413,16 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         data: (Expr[V], Purity)
     )(implicit state: State): Boolean = {
         val isLocal = ep match {
-            case FinalEP(_, LocalField | LocalFieldWithGetter) ⇒
+            case FinalP(LocalField | LocalFieldWithGetter) ⇒
                 true
-            case FinalEP(_, ExtensibleLocalField | ExtensibleLocalFieldWithGetter) ⇒
+            case FinalP(ExtensibleLocalField | ExtensibleLocalFieldWithGetter) ⇒
                 if (data._1.isVar) {
                     val value = data._1.asVar.value.asReferenceValue
                     value.isPrecise &&
                         !classHierarchy.isSubtypeOf(value.asReferenceType, ObjectType.Cloneable)
                 } else
                     false
-            case EPS(_, _, NoLocalField) ⇒
+            case UBP(NoLocalField) ⇒
                 false
             case _ ⇒
                 reducePurityLB(data._2)
@@ -448,12 +441,11 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
     )(implicit state: State): Unit = {
         import project.classHierarchy.isSubtypeOf
         ep match {
-            case EPS(_, PrimitiveReturnValue | FreshReturnValue |
-                VPrimitiveReturnValue | VFreshReturnValue, _) ⇒
-            case FinalEP(_, Getter | VGetter) ⇒
+            case LBP(PrimitiveReturnValue | FreshReturnValue) ⇒
+            case FinalP(Getter) ⇒
                 if (data._2 meet state.ubPurity ne state.ubPurity)
                     isLocal(data._1.get, data._2)
-            case FinalEP(_, ExtensibleGetter | VExtensibleGetter) ⇒
+            case FinalP(ExtensibleGetter) ⇒
                 if (data._1.get.isVar) {
                     val value = data._1.get.asVar.value.asReferenceValue
                     if (value.isPrecise && !isSubtypeOf(value.asReferenceType, ObjectType.Cloneable)) {
@@ -465,13 +457,13 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                 } else {
                     atMost(data._2)
                 }
-            case EPS(_, _, NoFreshReturnValue | VNoFreshReturnValue) ⇒
+            case UBP(NoFreshReturnValue) ⇒
                 atMost(data._2)
-            case EOptionP(e, pk) ⇒
+            case _: SomeEOptionP ⇒
                 reducePurityLB(data._2)
                 if (data._2 meet state.ubPurity ne state.ubPurity) {
                     state.addRVFDependee(
-                        e,
+                        ep.e,
                         ep.asInstanceOf[EOptionP[DeclaredMethod, ReturnValueFreshness]],
                         data
                     )
@@ -535,10 +527,10 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         ep:     EOptionP[DeclaredMethod, Purity],
         params: Seq[Expr[V]]
     )(implicit state: State): Boolean = ep match {
-        case EPS(_, _, _: ClassifiedImpure) ⇒
+        case UBP(_: ClassifiedImpure) ⇒
             atMost(ImpureByAnalysis)
             false
-        case eps @ EPS(_, lb, ub) ⇒
+        case eps @ LUBP(lb, ub) ⇒
             if (eps.isRefinable && ((lb meet state.ubPurity) ne state.ubPurity)) {
                 // On conditional, keep dependence
                 state.addPurityDependee(ep.e, ep, params)
@@ -553,7 +545,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                     param ⇒ ContextuallyPure(IntTrieSet(param)),
                     treatParamsAsFresh = true
                 ))
-        case EOptionP(_, pk) ⇒
+        case _: SomeEOptionP ⇒
             reducePurityLB(ImpureByAnalysis)
             state.addPurityDependee(ep.e, ep, params)
             true
@@ -566,9 +558,9 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
      */
     def checkStaticDataUsage(ep: EOptionP[DeclaredMethod, StaticDataUsage])(implicit state: State): Unit = {
         ep match {
-            case EPS(_, UsesNoStaticData | UsesConstantDataOnly, _) ⇒
+            case LBP(UsesNoStaticData | UsesConstantDataOnly) ⇒
                 state.updateStaticDataUsage(None)
-            case EPS(_, _, UsesVaryingData) ⇒
+            case UBP(UsesVaryingData) ⇒
                 state.updateStaticDataUsage(None)
                 atMost(Pure)
             case _ ⇒
@@ -663,7 +655,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
 
         var newPurityDependees: Map[DeclaredMethod, (EOptionP[DeclaredMethod, Purity], Set[Seq[Expr[V]]])] = Map.empty
         for ((dependee, eAndD) ← state.purityDependees) {
-            if (eAndD._1.hasNoProperty || (eAndD._1.lb meet state.ubPurity ne state.ubPurity))
+            if (eAndD._1.isEPK || (eAndD._1.lb meet state.ubPurity ne state.ubPurity))
                 newPurityDependees += ((dependee, eAndD))
         }
         state.purityDependees = newPurityDependees
@@ -682,7 +674,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
 
         for ((eop, _) ← state.purityDependees.valuesIterator) {
             eop match {
-                case EPS(_, lb, _) ⇒ newLowerBound = newLowerBound meet lb
+                case LBP(lb) ⇒ newLowerBound = newLowerBound meet lb
                 case _ ⇒
                     return ; // Nothing to be done, lower bound is still LBImpure
             }
@@ -726,7 +718,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
      *     - fields read (for their mutability)
      *     - classes files for class types returned (for their mutability)
      */
-    def c(eps: SomeEPS)(implicit state: State): PropertyComputationResult = {
+    def c(eps: SomeEPS)(implicit state: State): ProperPropertyComputationResult = {
         val oldPurity = state.ubPurity
         eps.ub.key match {
             case Purity.key ⇒
@@ -801,7 +793,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         if (dependees.isEmpty || (state.lbPurity == state.ubPurity)) {
             Result(state.definedMethod, state.ubPurity)
         } else {
-            IntermediateResult(
+            InterimResult(
                 state.definedMethod,
                 state.lbPurity,
                 state.ubPurity,
@@ -816,7 +808,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
      */
     def determineMethodPurity(
         cfg: CFG[Stmt[V], TACStmts[V]]
-    )(implicit state: State): PropertyComputationResult = {
+    )(implicit state: State): ProperPropertyComputationResult = {
         // Special case: The Throwable constructor is `LBSideEffectFree`, but subtype constructors
         // may not be because of overridable fillInStackTrace method
         if (state.method.isConstructor && state.declClass.isSubtypeOf(ObjectType.Throwable))
@@ -854,7 +846,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         if (!checkPurityOfCallees(callees))
             return Result(state.definedMethod, state.ubPurity)
 
-        if (callees.hasProperty)
+        if (callees.hasUBP)
             state.rvfCallSites.foreach {
                 case (pc, data) ⇒
                     checkFreshnessOfReturn(pc, data, callees.ub)
@@ -883,7 +875,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         if (dependees.isEmpty || (state.lbPurity == state.ubPurity)) {
             Result(state.definedMethod, state.ubPurity)
         } else {
-            IntermediateResult(state.definedMethod, state.lbPurity, state.ubPurity, dependees, c)
+            InterimResult(state.definedMethod, state.lbPurity, state.ubPurity, dependees, c)
         }
     }
 
@@ -892,7 +884,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
      *
      * @param definedMethod A defined method with a body.
      */
-    def determinePurity(definedMethod: DefinedMethod): PropertyComputationResult = {
+    def determinePurity(definedMethod: DefinedMethod): ProperPropertyComputationResult = {
         val method = definedMethod.definedMethod
         val declClass = method.classFile.thisType
 
@@ -907,7 +899,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         val tacaiO = getTACAI(method)
 
         if (tacaiO.isEmpty)
-            return IntermediateResult(
+            return InterimResult(
                 definedMethod,
                 ImpureByAnalysis,
                 CompileTimePure,
@@ -933,24 +925,25 @@ object L2PurityAnalysis {
     }
 }
 
-trait L2PurityAnalysisScheduler extends ComputationSpecification {
+trait L2PurityAnalysisScheduler extends ComputationSpecification[FPCFAnalysis] {
 
-    final override def derives: Set[PropertyKind] = Set(Purity)
+    final def derivedProperty: PropertyBounds = PropertyBounds.lub(Purity)
 
-    final override def uses: Set[PropertyKind] = {
+    final override def uses: Set[PropertyBounds] = {
         Set(
-            TACAI,
-            FieldMutability,
-            ClassImmutability,
-            TypeImmutability,
-            FieldLocality,
-            ReturnValueFreshness,
-            Callees
+            PropertyBounds.lub(FieldMutability),
+            PropertyBounds.lub(ClassImmutability),
+            PropertyBounds.lub(TypeImmutability),
+            PropertyBounds.lub(StaticDataUsage),
+            PropertyBounds.lub(ReturnValueFreshness),
+            PropertyBounds.ub(FieldLocality),
+            PropertyBounds.ub(TACAI),
+            PropertyBounds.ub(Callees)
         )
     }
 
-    final override type InitializationData = Null
-    final def init(p: SomeProject, ps: PropertyStore): Null = null
+    final override type InitializationData = L2PurityAnalysis
+    final def init(p: SomeProject, ps: PropertyStore): InitializationData = new L2PurityAnalysis(p)
 
     def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
 
@@ -960,24 +953,33 @@ trait L2PurityAnalysisScheduler extends ComputationSpecification {
 
 object EagerL2PurityAnalysis extends L2PurityAnalysisScheduler with FPCFEagerAnalysisScheduler {
 
-    override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
-        val analysis = new L2PurityAnalysis(p)
+    override def start(
+        p: SomeProject, ps: PropertyStore, analysis: InitializationData
+    ): FPCFAnalysis = {
         val dms = p.get(DeclaredMethodsKey).declaredMethods
-        val methodsWithBody = dms.collect {
-            case dm if dm.hasSingleDefinedMethod && dm.definedMethod.body.isDefined ⇒ dm.asDefinedMethod
+        val methods = dms.collect {
+            case dm if dm.hasSingleDefinedMethod && dm.definedMethod.body.isDefined && !analysis.configuredPurity.wasSet(dm) ⇒
+                dm.asDefinedMethod
         }
-        ps.scheduleEagerComputationsForEntities(methodsWithBody.filterNot(analysis.configuredPurity.wasSet))(
+        ps.scheduleEagerComputationsForEntities(methods)(
             analysis.determinePurity
         )
         analysis
     }
+
+    override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
+
+    override def derivesCollaboratively: Set[PropertyBounds] = Set.empty
 }
 
 object LazyL2PurityAnalysis extends L2PurityAnalysisScheduler with FPCFLazyAnalysisScheduler {
 
-    override def startLazily(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
-        val analysis = new L2PurityAnalysis(p)
+    override def register(
+        p: SomeProject, ps: PropertyStore, analysis: InitializationData
+    ): FPCFAnalysis = {
         ps.registerLazyPropertyComputation(Purity.key, analysis.doDeterminePurity)
         analysis
     }
+
+    override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 }

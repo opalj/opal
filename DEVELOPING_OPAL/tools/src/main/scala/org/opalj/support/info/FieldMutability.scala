@@ -5,6 +5,7 @@ package info
 
 import java.net.URL
 
+import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
@@ -18,7 +19,7 @@ import org.opalj.fpcf.properties.LazyInitializedField
 import org.opalj.fpcf.properties.EffectivelyFinalField
 import org.opalj.fpcf.properties.NonFinalFieldByAnalysis
 import org.opalj.fpcf.properties.NonFinalFieldByLackOfInformation
-import org.opalj.tac.fpcf.analyses.LazyL0TACAIAnalysis
+import org.opalj.tac.fpcf.analyses.TACAITransformer
 
 /**
  * Computes the field mutability; see [[org.opalj.fpcf.properties.FieldMutability]] for details.
@@ -38,15 +39,14 @@ object FieldMutability extends DefaultOneStepAnalysis {
         parameters:    Seq[String],
         isInterrupted: () ⇒ Boolean
     ): BasicReport = {
-        val ps = project.get(FPCFAnalysesManagerKey).runAll(
-            LazyL0TACAIAnalysis,
+        val (ps,_) = project.get(FPCFAnalysesManagerKey).runAll(
+            LazyL0BaseAIAnalysis,
+            TACAITransformer,
             LazyUnsoundPrematurelyReadFieldsAnalysis,
             LazyInterProceduralEscapeAnalysis,
             LazyL2PurityAnalysis,
             EagerL1FieldMutabilityAnalysis
         )
-
-        ps.waitOnPhaseCompletion()
 
         val declaredFinal = ps.finalEntities(DeclaredFinalField).toSeq
         val effectivelyFinal = ps.finalEntities(EffectivelyFinalField).toSeq

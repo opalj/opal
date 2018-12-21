@@ -64,7 +64,15 @@ object InstantiatedTypes extends InstantiatedTypesPropertyMetaInformation {
     }
 
     final val key: PropertyKey[InstantiatedTypes] = {
-        PropertyKey.forSimpleProperty("InstantiatedTypes", NoTypes)
+        val name = "opalj.InstantiatedTypes"
+        PropertyKey.create(
+            name,
+            (_: PropertyStore, reason: FallbackReason, _: Entity) ⇒ reason match {
+                case PropertyIsNotDerivedByPreviouslyExecutedAnalysis ⇒ NoTypes
+                case _ ⇒
+                    throw new IllegalStateException(s"No analysis is scheduled for property: $name")
+            }
+        )
     }
 }
 

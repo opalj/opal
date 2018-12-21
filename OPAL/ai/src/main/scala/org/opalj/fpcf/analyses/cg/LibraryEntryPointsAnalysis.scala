@@ -8,9 +8,6 @@ import org.opalj.collection.RefIterator
 import org.opalj.fpcf.cg.properties.InstantiatedTypes
 import org.opalj.fpcf.cg.properties.CallersProperty
 import org.opalj.fpcf.cg.properties.OnlyCallersWithUnknownContext
-import org.opalj.fpcf.cg.properties.LibraryEntryPointsFakeProperty
-import org.opalj.fpcf.cg.properties.LibraryEntryPointsFakePropertyFinal
-import org.opalj.fpcf.cg.properties.LibraryEntryPointsFakePropertyNonFinal
 import org.opalj.br.ObjectType
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.analyses.SomeProject
@@ -20,6 +17,8 @@ import org.opalj.br.analyses.DeclaredMethods
 /**
  * In a library analysis scenario, this analysis complements the call graph by marking public
  * methods of instantiated types reachable by unknown callers from outside the library.
+ *
+ * @author Dominik Helm
  */
 class LibraryEntryPointsAnalysis private[analyses] (
         final val project: SomeProject
@@ -39,7 +38,7 @@ class LibraryEntryPointsAnalysis private[analyses] (
         numProcessedTypes: Int
     ): PropertyComputationResult = {
         val (newReachableMethods, isFinal, size) = instantiatedTypes match {
-            case ESimplePS(_, initialTypes, isFinal) ⇒
+            case EUBPS(_, initialTypes, isFinal) ⇒
                 (
                     analyzeTypes(initialTypes.getNewTypes(numProcessedTypes)),
                     isFinal,
@@ -48,16 +47,17 @@ class LibraryEntryPointsAnalysis private[analyses] (
             case _ ⇒ (Iterator.empty, false, 0)
         }
 
-        val fakeResult =
-            if (isFinal) Result(project, LibraryEntryPointsFakePropertyFinal)
-            else SimplePIntermediateResult(
-                project,
-                LibraryEntryPointsFakePropertyNonFinal,
-                Traversable(instantiatedTypes),
+        val c = if (!isFinal)
+            Some(InterimPartialResult(
+                Nil,
+                Some(instantiatedTypes),
                 continuation(size)
-            )
+            ))
+        else
+            None
 
-        Results(resultsForReachableMethods(newReachableMethods) ++ Iterator(fakeResult))
+        // todo use other factory
+        Results(resultsForReachableMethods(newReachableMethods) ++ c)
     }
 
     private[this] def continuation(
@@ -66,7 +66,7 @@ class LibraryEntryPointsAnalysis private[analyses] (
         eps: SomeEPS
     ): PropertyComputationResult = {
         eps match {
-            case ESimplePS(_, _: InstantiatedTypes, _) ⇒
+            case UBP(_: InstantiatedTypes) ⇒
                 handleInstantiatedTypes(
                     eps.asInstanceOf[EOptionP[SomeProject, InstantiatedTypes]],
                     numProcessedTypes
@@ -85,16 +85,16 @@ class LibraryEntryPointsAnalysis private[analyses] (
 
     def resultsForReachableMethods(
         reachableMethods: Iterator[DeclaredMethod]
-    ): Iterator[PropertyComputationResult] = {
+    ): Iterator[ProperPropertyComputationResult] = {
         reachableMethods.map { method ⇒
             PartialResult[DeclaredMethod, CallersProperty](method, CallersProperty.key, {
-                case IntermediateESimpleP(_, ub) if !ub.hasCallersWithUnknownContext ⇒
-                    Some(IntermediateESimpleP(method, ub.updatedWithUnknownContext()))
+                case InterimUBP(ub) if !ub.hasCallersWithUnknownContext ⇒
+                    Some(InterimEUBP(method, ub.updatedWithUnknownContext()))
 
-                case _: IntermediateESimpleP[_, _] ⇒ None
+                case _: InterimEP[_, _] ⇒ None
 
                 case _: EPK[_, _] ⇒
-                    Some(IntermediateESimpleP(method, OnlyCallersWithUnknownContext))
+                    Some(InterimEUBP(method, OnlyCallersWithUnknownContext))
 
                 case r ⇒
                     throw new IllegalStateException(s"unexpected previous result $r")
@@ -103,9 +103,7 @@ class LibraryEntryPointsAnalysis private[analyses] (
     }
 }
 
-object EagerLibraryEntryPointsAnalysis extends FPCFEagerAnalysisScheduler {
-
-    override type InitializationData = Null
+object EagerLibraryEntryPointsAnalysis extends BasicFPCFEagerAnalysisScheduler {
 
     override def start(
         project:       SomeProject,
@@ -117,13 +115,13 @@ object EagerLibraryEntryPointsAnalysis extends FPCFEagerAnalysisScheduler {
         analysis
     }
 
-    override def uses: Set[PropertyKind] = Set(InstantiatedTypes)
+    override def uses: Set[PropertyBounds] = Set(
+        PropertyBounds.ub(InstantiatedTypes)
+    )
 
-    override def derives: Set[PropertyKind] = Set(CallersProperty, LibraryEntryPointsFakeProperty)
+    override def derivesCollaboratively: Set[PropertyBounds] = Set(
+        PropertyBounds.ub(CallersProperty)
+    )
 
-    override def init(p: SomeProject, ps: PropertyStore): Null = null
-
-    override def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
-
-    override def afterPhaseCompletion(p: SomeProject, ps: PropertyStore): Unit = {}
+    override def derivesEagerly: Set[PropertyBounds] = Set.empty
 }

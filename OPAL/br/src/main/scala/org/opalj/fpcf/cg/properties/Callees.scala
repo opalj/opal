@@ -348,9 +348,14 @@ object NoCalleesDueToNotReachableMethod extends Callees {
 object Callees extends CalleesPropertyMetaInformation {
 
     final val key: PropertyKey[Callees] = {
-        PropertyKey.forSimpleProperty(
-            "Callees",
-            NoCalleesDueToNotReachableMethod
+        val name = "opalj.Callees"
+        PropertyKey.create(
+            name,
+            (_: PropertyStore, reason: FallbackReason, _: Entity) ⇒ reason match {
+                case PropertyIsNotDerivedByPreviouslyExecutedAnalysis ⇒ NoCalleesDueToNotReachableMethod
+                case _                                                ⇒
+                    throw new IllegalStateException(s"No analysis is scheduled for property: $name")
+            }
         )
     }
 }

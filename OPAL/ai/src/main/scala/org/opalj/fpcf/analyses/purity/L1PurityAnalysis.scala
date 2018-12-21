@@ -76,14 +76,14 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
      * @param code The code of the currently analyzed method
      */
     class State(
-            var dependees:     Set[EOptionP[Entity, Property]],
-            val method:        Method,
-            val definedMethod: DeclaredMethod,
-            val declClass:     ObjectType,
-            var pcToIndex:     Array[Int]                      = Array.empty,
-            var code:          Array[Stmt[V]]                  = Array.empty,
-            var lbPurity:      Purity                          = Pure,
-            var ubPurity:      Purity                          = Pure
+        var dependees:     Set[EOptionP[Entity, Property]],
+        val method:        Method,
+        val definedMethod: DeclaredMethod,
+        val declClass:     ObjectType,
+        var pcToIndex:     Array[Int]                      = Array.empty,
+        var code:          Array[Stmt[V]]                  = Array.empty,
+        var lbPurity:      Purity                          = Pure,
+        var ubPurity:      Purity                          = Pure
     ) extends AnalysisState
 
     override type StateType = State
@@ -159,10 +159,10 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         ep:     EOptionP[DeclaredMethod, Purity],
         params: Seq[Expr[V]]
     )(implicit state: State): Boolean = ep match {
-        case EPS(_, _, _: ClassifiedImpure) ⇒
+        case UBP(_: ClassifiedImpure) ⇒
             atMost(ImpureByAnalysis)
             false
-        case eps @ EPS(_, lb, ub) ⇒
+        case eps @ LUBP(lb, ub) ⇒
             if (ub.modifiesParameters) {
                 atMost(ImpureByAnalysis)
                 false
@@ -217,7 +217,7 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
     override def handleTACAI(ep: EOptionP[Method, TACAI])(implicit state: State): Unit = {
         if (ep.isRefinable)
             state.dependees += ep
-        if (ep.hasProperty) {
+        if (ep.hasUBP && ep.ub.tac.isDefined) {
             val tac = ep.ub.tac.get
             state.pcToIndex = tac.pcToIndex
             state.code = tac.stmts
@@ -242,34 +242,34 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
      *     - fields read (for their mutability)
      *     - classes files for class types returned (for their mutability)
      */
-    def continuation(eps: SomeEPS)(implicit state: State): PropertyComputationResult = {
+    def continuation(eps: SomeEPS)(implicit state: State): ProperPropertyComputationResult = {
         state.dependees = state.dependees.filter(_.e ne eps.e)
         val oldPurity = state.ubPurity
 
         eps match {
-            case ESimplePS(_, _: Callees, _) ⇒
+            case UBP(_: Callees) ⇒
                 if (!checkPurityOfCallees(eps.asInstanceOf[EOptionP[DeclaredMethod, Callees]]))
                     return Result(state.definedMethod, ImpureByAnalysis)
 
-            case EPS(_, _, tacai: TACAI) ⇒
+            case UBP(tacai: TACAI) ⇒
                 handleTACAI(eps.asInstanceOf[EOptionP[Method, TACAI]])
                 return determineMethodPurity(tacai.tac.get.cfg);
 
             // Cases dealing with other purity values
-            case EPS(_, _, _: Purity) ⇒
+            case UBP(_: Purity) ⇒
                 if (!checkMethodPurity(eps.asInstanceOf[EOptionP[DeclaredMethod, Purity]]))
                     return Result(state.definedMethod, ImpureByAnalysis)
 
             // Cases that are pure
-            case FinalEP(_, _: FinalField)                   ⇒ // Reading eff. final fields
-            case FinalEP(_, ImmutableType | ImmutableObject) ⇒ // Returning immutable reference
+            case FinalP(_: FinalField)                   ⇒ // Reading eff. final fields
+            case FinalP(ImmutableType | ImmutableObject) ⇒ // Returning immutable reference
 
             // Cases resulting in side-effect freeness
-            case FinalEP(_, _: FieldMutability | // Reading non-final field
+            case FinalP(_: FieldMutability | // Reading non-final field
                 _: TypeImmutability | _: ClassImmutability) ⇒ // Returning mutable reference
                 atMost(SideEffectFree)
 
-            case IntermediateEP(_, _, _) ⇒ state.dependees += eps
+            case _: SomeInterimEP ⇒ state.dependees += eps
         }
 
         if (state.ubPurity ne oldPurity)
@@ -278,7 +278,7 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         if (state.dependees.isEmpty || (state.lbPurity == state.ubPurity)) {
             Result(state.definedMethod, state.ubPurity)
         } else {
-            IntermediateResult(
+            InterimResult(
                 state.definedMethod,
                 state.lbPurity,
                 state.ubPurity,
@@ -293,7 +293,7 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
      */
     def determineMethodPurity(
         cfg: CFG[Stmt[V], TACStmts[V]]
-    )(implicit state: State): PropertyComputationResult = {
+    )(implicit state: State): ProperPropertyComputationResult = {
         // Special case: The Throwable constructor is `LBSideEffectFree`, but subtype constructors
         // may not be because of overridable fillInStackTrace method
         if (state.method.isConstructor && state.declClass.isSubtypeOf(ObjectType.Throwable))
@@ -341,7 +341,7 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         if (state.dependees.isEmpty || (state.lbPurity == state.ubPurity)) {
             Result(state.definedMethod, state.ubPurity)
         } else {
-            IntermediateResult(
+            InterimResult(
                 state.definedMethod,
                 state.lbPurity,
                 state.ubPurity,
@@ -356,7 +356,7 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
      *
      * @param definedMethod a defined method with body.
      */
-    def determinePurity(definedMethod: DefinedMethod): PropertyComputationResult = {
+    def determinePurity(definedMethod: DefinedMethod): ProperPropertyComputationResult = {
         val method = definedMethod.definedMethod
         val declClass = method.classFile.thisType
 
@@ -375,7 +375,7 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         val tacaiO = getTACAI(method)
 
         if (tacaiO.isEmpty)
-            return IntermediateResult(
+            return InterimResult(
                 definedMethod,
                 ImpureByAnalysis,
                 Pure,
@@ -400,16 +400,22 @@ object L1PurityAnalysis {
     }
 }
 
-trait L1PurityAnalysisScheduler extends ComputationSpecification {
+trait L1PurityAnalysisScheduler extends ComputationSpecification[FPCFAnalysis] {
 
-    final override def derives: Set[PropertyKind] = Set(Purity)
+    final def derivedProperty: PropertyBounds = PropertyBounds.lub(Purity)
 
-    final override def uses: Set[PropertyKind] = {
-        Set(TACAI, Callees, FieldMutability, ClassImmutability, TypeImmutability)
+    final override def uses: Set[PropertyBounds] = {
+        Set(
+            PropertyBounds.ub(TACAI),
+            PropertyBounds.ub(Callees),
+            PropertyBounds.lub(FieldMutability),
+            PropertyBounds.lub(ClassImmutability),
+            PropertyBounds.lub(TypeImmutability)
+        )
     }
 
-    final override type InitializationData = Null
-    final def init(p: SomeProject, ps: PropertyStore): Null = null
+    final override type InitializationData = L1PurityAnalysis
+    final def init(p: SomeProject, ps: PropertyStore): InitializationData = new L1PurityAnalysis(p)
 
     def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
 
@@ -419,24 +425,34 @@ trait L1PurityAnalysisScheduler extends ComputationSpecification {
 
 object EagerL1PurityAnalysis extends L1PurityAnalysisScheduler with FPCFEagerAnalysisScheduler {
 
-    override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
-        val analysis = new L1PurityAnalysis(p)
+    override def start(
+        p: SomeProject, ps: PropertyStore, analysis: InitializationData
+    ): FPCFAnalysis = {
         val dms = p.get(DeclaredMethodsKey).declaredMethods
-        val methodsWithBody = dms.collect {
-            case dm if dm.hasSingleDefinedMethod && dm.definedMethod.body.isDefined ⇒ dm.asDefinedMethod
+        val methods = dms.collect {
+            case dm if dm.hasSingleDefinedMethod && dm.definedMethod.body.isDefined && !analysis.configuredPurity.wasSet(dm) ⇒
+                dm.asDefinedMethod
         }
-        ps.scheduleEagerComputationsForEntities(methodsWithBody.filterNot(analysis.configuredPurity.wasSet))(
+
+        ps.scheduleEagerComputationsForEntities(methods)(
             analysis.determinePurity
         )
         analysis
     }
+
+    override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
+
+    override def derivesCollaboratively: Set[PropertyBounds] = Set.empty
 }
 
 object LazyL1PurityAnalysis extends L1PurityAnalysisScheduler with FPCFLazyAnalysisScheduler {
 
-    override def startLazily(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
-        val analysis = new L1PurityAnalysis(p)
+    override def register(
+        p: SomeProject, ps: PropertyStore, analysis: InitializationData
+    ): FPCFAnalysis = {
         ps.registerLazyPropertyComputation(Purity.key, analysis.doDeterminePurity)
         analysis
     }
+
+    override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 }

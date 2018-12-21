@@ -15,7 +15,7 @@ object Dependencies {
         val scalacheck = "1.14.0"
 
         val scalaxml = "1.1.1"
-        val playjson = "2.6.10"
+        val playjson = "2.6.11"
         val ficus = "1.4.4"
         val commonstext = "1.6"
         val scalaparsercombinators = "1.1.1"
@@ -24,8 +24,8 @@ object Dependencies {
         val controlsfx = "8.40.14"
         //val controlsfx = "9.0.0" requires Java 9
         val txtmark = "0.16"
-        val jacksonDF = "2.9.7"
-        val chocosolver = "4.0.9"
+        val jacksonDF = "2.9.8"
+        val chocosolver = "4.10.0"
         val fastutil = "8.2.2"
     }
 

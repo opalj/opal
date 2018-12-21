@@ -19,17 +19,17 @@ import org.opalj.fpcf.properties.NoEscape
 import org.opalj.tac.fpcf.properties.TACAI
 
 class SimpleEscapeAnalysisContext(
-        val entity:                  Entity,
-        val defSitePC:               ValueOrigin,
-        val targetMethod:            Method,
-        val declaredMethods:         DeclaredMethods,
-        val virtualFormalParameters: VirtualFormalParameters,
-        val project:                 SomeProject,
-        val propertyStore:           PropertyStore
+    val entity:                  Entity,
+    val defSitePC:               ValueOrigin,
+    val targetMethod:            Method,
+    val declaredMethods:         DeclaredMethods,
+    val virtualFormalParameters: VirtualFormalParameters,
+    val project:                 SomeProject,
+    val propertyStore:           PropertyStore
 ) extends AbstractEscapeAnalysisContext
-    with PropertyStoreContainer
-    with VirtualFormalParametersContainer
-    with DeclaredMethodsContainer
+        with PropertyStoreContainer
+        with VirtualFormalParametersContainer
+        with DeclaredMethodsContainer
 
 /**
  * A simple escape analysis that can handle [[org.opalj.ai.common.DefinitionSiteLike]]s and
@@ -43,16 +43,16 @@ class SimpleEscapeAnalysisContext(
  * @author Florian Kuebler
  */
 class SimpleEscapeAnalysis( final val project: SomeProject)
-    extends DefaultEscapeAnalysis
-    with ConstructorSensitiveEscapeAnalysis
-    with ConfigurationBasedConstructorEscapeAnalysis
-    with SimpleFieldAwareEscapeAnalysis
-    with ExceptionAwareEscapeAnalysis {
+        extends DefaultEscapeAnalysis
+        with ConstructorSensitiveEscapeAnalysis
+        with ConfigurationBasedConstructorEscapeAnalysis
+        with SimpleFieldAwareEscapeAnalysis
+        with ExceptionAwareEscapeAnalysis {
 
     override type AnalysisContext = SimpleEscapeAnalysisContext
     override type AnalysisState = AbstractEscapeAnalysisState
 
-    override def determineEscapeOfFP(fp: VirtualFormalParameter): PropertyComputationResult = {
+    override def determineEscapeOfFP(fp: VirtualFormalParameter): ProperPropertyComputationResult = {
         fp match {
             case VirtualFormalParameter(dm: DefinedMethod, _) if dm.definedMethod.body.isEmpty ⇒
                 Result(fp, AtMost(NoEscape))
@@ -82,27 +82,22 @@ class SimpleEscapeAnalysis( final val project: SomeProject)
     override def createState: AbstractEscapeAnalysisState = new AbstractEscapeAnalysisState {}
 }
 
-trait SimpleEscapeAnalysisScheduler extends ComputationSpecification {
+trait SimpleEscapeAnalysisScheduler extends ComputationSpecification[FPCFAnalysis] {
 
-    final override def derives: Set[PropertyKind] = Set(EscapeProperty)
+    final def derivedProperty: PropertyBounds = PropertyBounds.lub(EscapeProperty)
 
-    final override def uses: Set[PropertyKind] = Set(EscapeProperty, TACAI)
-
-    final override type InitializationData = Null
-    final def init(p: SomeProject, ps: PropertyStore): Null = null
-
-    def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
-
-    def afterPhaseCompletion(p: SomeProject, ps: PropertyStore): Unit = {}
-
+    final override def uses: Set[PropertyBounds] = Set(
+        PropertyBounds.lub(EscapeProperty),
+        PropertyBounds.ub(TACAI)
+    )
 }
 
 /**
  * A companion object used to start the analysis.
  */
 object EagerSimpleEscapeAnalysis
-    extends SimpleEscapeAnalysisScheduler
-    with FPCFEagerAnalysisScheduler {
+        extends SimpleEscapeAnalysisScheduler
+        with BasicFPCFEagerAnalysisScheduler {
 
     override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val fps = p.get(VirtualFormalParametersKey).virtualFormalParameters
@@ -111,19 +106,21 @@ object EagerSimpleEscapeAnalysis
         ps.scheduleEagerComputationsForEntities(fps ++ ass)(analysis.determineEscape)
         analysis
     }
+
+    override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
+
+    override def derivesCollaboratively: Set[PropertyBounds] = Set.empty
 }
 
 object LazySimpleEscapeAnalysis
-    extends SimpleEscapeAnalysisScheduler
-    with FPCFLazyAnalysisScheduler {
+        extends SimpleEscapeAnalysisScheduler
+        with BasicFPCFLazyAnalysisScheduler {
 
-    /**
-     * Registers the analysis as a lazy computation, that is, the method
-     * will call `ProperytStore.scheduleLazyComputation`.
-     */
-    override def startLazily(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+    override def register(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new SimpleEscapeAnalysis(p)
         ps.registerLazyPropertyComputation(EscapeProperty.key, analysis.determineEscape)
         analysis
     }
+
+    override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 }

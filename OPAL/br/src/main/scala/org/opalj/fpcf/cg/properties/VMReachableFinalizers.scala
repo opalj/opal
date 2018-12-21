@@ -15,7 +15,7 @@ sealed trait VMReachableFinalizersMetaInformation extends PropertyMetaInformatio
  * @author Florian Kuebler
  */
 sealed class VMReachableFinalizers(override protected val reachableMethods: IntTrieSet)
-    extends VMReachableMethods with VMReachableFinalizersMetaInformation {
+        extends VMReachableMethods with VMReachableFinalizersMetaInformation {
 
     override def key: PropertyKey[VMReachableFinalizers] = VMReachableFinalizers.key
 
@@ -26,6 +26,14 @@ object NoVMReachableFinalizers extends VMReachableFinalizers(reachableMethods = 
 
 object VMReachableFinalizers extends VMReachableFinalizersMetaInformation {
     final val key: PropertyKey[VMReachableFinalizers] = {
-        PropertyKey.forSimpleProperty("VMReachableFinalizers", NoVMReachableFinalizers)
+        val name = "opalj.VMReachableFinalizers"
+        PropertyKey.create(
+            name,
+            (_: PropertyStore, reason: FallbackReason, _: Entity) ⇒ reason match {
+                case PropertyIsNotDerivedByPreviouslyExecutedAnalysis ⇒ NoVMReachableFinalizers
+                case _ ⇒
+                    throw new IllegalStateException(s"No analysis is scheduled for property: $name")
+            }
+        )
     }
 }

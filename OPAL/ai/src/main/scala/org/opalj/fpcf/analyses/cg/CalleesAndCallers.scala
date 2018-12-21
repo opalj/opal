@@ -80,17 +80,17 @@ private[cg] class CalleesAndCallers(
         caller: DeclaredMethod, callee: DeclaredMethod, pc: Int
     ): PartialResult[DeclaredMethod, CallersProperty] = {
         PartialResult[DeclaredMethod, CallersProperty](callee, CallersProperty.key, {
-            case IntermediateESimpleP(_, ub) ⇒
+            case InterimUBP(ub) ⇒
                 val newCallers = ub.updated(caller, pc)
                 // here we assert that update returns the identity if there is no change
                 if (ub ne newCallers)
-                    Some(IntermediateESimpleP(callee, newCallers))
+                    Some(InterimEUBP(callee, newCallers))
                 else
                     None
 
             case _: EPK[_, _] ⇒
                 val set = LongTrieSet(CallersProperty.toLong(caller.id, pc))
-                Some(IntermediateESimpleP(
+                Some(InterimEUBP(
                     callee,
                     new CallersOnlyWithConcreteCallers(set)
                 ))

@@ -14,6 +14,7 @@ import org.opalj.ai.Domain
 import org.opalj.ai.common.SimpleAIKey
 import org.opalj.ai.domain
 import org.opalj.ai.domain.RecordDefUse
+import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
@@ -25,8 +26,11 @@ import org.opalj.bytecode.JRELibraryFolder
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.ComputationSpecification
 import org.opalj.fpcf.FPCFAnalysesManagerKey
+import org.opalj.fpcf.FPCFAnalysis
+import org.opalj.fpcf.FPCFAnalysisScheduler
 import org.opalj.fpcf.FPCFLazyAnalysisScheduler
 import org.opalj.fpcf.FinalEP
+import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.PropertyStoreKey
 import org.opalj.fpcf.analyses.LazyClassImmutabilityAnalysis
@@ -42,13 +46,13 @@ import org.opalj.fpcf.analyses.cg.EagerConfiguredNativeMethodsAnalysis
 import org.opalj.fpcf.analyses.cg.EagerFinalizerAnalysisScheduler
 import org.opalj.fpcf.analyses.cg.EagerInstantiatedTypesAnalysis
 import org.opalj.fpcf.analyses.cg.EagerLibraryEntryPointsAnalysis
-import org.opalj.fpcf.analyses.cg.EagerLoadedClassesAnalysis
 import org.opalj.fpcf.analyses.cg.EagerRTACallGraphAnalysisScheduler
 import org.opalj.fpcf.analyses.cg.EagerSerializationRelatedCallsAnalysis
+import org.opalj.fpcf.analyses.cg.EagerStaticInitializerAnalysis
 import org.opalj.fpcf.analyses.cg.EagerThreadRelatedCallsAnalysis
 import org.opalj.fpcf.analyses.cg.LazyCalleesAnalysis
+import org.opalj.fpcf.analyses.cg.TriggeredLoadedClassesAnalysis
 import org.opalj.fpcf.analyses.cg.reflection.EagerReflectionRelatedCallsAnalysis
-import org.opalj.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
 import org.opalj.fpcf.analyses.purity.DomainSpecificRater
 import org.opalj.fpcf.analyses.purity.L1PurityAnalysis
@@ -73,7 +77,7 @@ import org.opalj.fpcf.properties.ImpureByLackOfInformation
 import org.opalj.fpcf.properties.Pure
 import org.opalj.fpcf.properties.SideEffectFree
 import org.opalj.tac.DefaultTACAIKey
-import org.opalj.tac.fpcf.analyses.LazyL0TACAIAnalysis
+import org.opalj.tac.fpcf.analyses.TACAITransformer
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
 
@@ -102,9 +106,10 @@ object Purity {
             "Example:\n\tjava …PurityAnalysisEvaluation -JDK -individual -closedWorld"
     }
 
-    val cgAnalyses = Set[ComputationSpecification](
+    val cgAnalyses = Set[ComputationSpecification[FPCFAnalysis]](
         EagerRTACallGraphAnalysisScheduler,
-        EagerLoadedClassesAnalysis,
+        EagerStaticInitializerAnalysis,
+        TriggeredLoadedClassesAnalysis,
         EagerFinalizerAnalysisScheduler,
         EagerThreadRelatedCallsAnalysis,
         EagerSerializationRelatedCallsAnalysis,
@@ -118,18 +123,17 @@ object Purity {
     )
 
     val supportingAnalyses = IndexedSeq(
-        Set[ComputationSpecification](
+        List[FPCFAnalysisScheduler](
             LazyL0FieldMutabilityAnalysis,
             LazyClassImmutabilityAnalysis,
             LazyTypeImmutabilityAnalysis
         ),
-        Set[ComputationSpecification](
+        List[FPCFAnalysisScheduler](
             LazyL1FieldMutabilityAnalysis,
             LazyClassImmutabilityAnalysis,
             LazyTypeImmutabilityAnalysis
         ),
-        Set[ComputationSpecification](
-            LazyInterProceduralEscapeAnalysis,
+        List[FPCFAnalysisScheduler](
             LazyL0CompileTimeConstancyAnalysis,
             LazyStaticDataUsageAnalysis,
             LazyReturnValueFreshnessAnalysis,
@@ -232,9 +236,7 @@ object Purity {
         }
 
         PropertyStore.updateDebug(debug)
-        val propertyStore = time {
-            project.get(PropertyStoreKey)
-        } { t ⇒ propertyStoreTime = t.toSeconds }
+        val ps = time { project.get(PropertyStoreKey) } { t ⇒ propertyStoreTime = t.toSeconds }
 
         analysis match {
             case LazyL0PurityAnalysis ⇒
@@ -249,39 +251,41 @@ object Purity {
         }
 
         val declaredMethods = project.get(DeclaredMethodsKey)
+
         val projMethods: Seq[DefinedMethod] =
-            for (cf ← project.allProjectClassFiles; m ← cf.methodsWithBody) yield declaredMethods(m)
+            for (cf ← project.allProjectClassFiles; m ← cf.methodsWithBody)
+                yield declaredMethods(m)
 
         time {
             val manager = project.get(FPCFAnalysesManagerKey)
 
             if (isLibrary) {
-                manager.runAll(cgAnalyses + EagerLibraryEntryPointsAnalysis + LazyL0TACAIAnalysis)
+                manager.runAll(cgAnalyses + EagerLibraryEntryPointsAnalysis + LazyL0BaseAIAnalysis + TACAITransformer)
             } else {
-                manager.runAll(cgAnalyses + LazyL0TACAIAnalysis)
+                manager.runAll(cgAnalyses + LazyL0BaseAIAnalysis + TACAITransformer)
             }
         } { t ⇒ callGraphTime = t.toSeconds }
 
         val reachableMethods =
-            propertyStore.entities(CallersProperty.key).collect {
+            ps.entities(CallersProperty.key).collect {
                 case FinalEP(e: DeclaredMethod, c: CallersProperty) if c ne NoCallers ⇒ e
             }.toSet
 
         val analyzedMethods = projMethods.filter(reachableMethods.contains)
 
         time {
-            val analyses = support + analysis
+            val analyses = analysis :: support
 
             val manager = project.get(FPCFAnalysesManagerKey)
 
+            analyzedMethods.foreach { dm ⇒
+                ps.force(dm, fpcf.properties.Purity.key)
+            }
+
             manager.runAll(analyses)
 
-            analyzedMethods.foreach { dm ⇒
-                propertyStore.force(dm, fpcf.properties.Purity.key)
-            }
-            propertyStore.waitOnPhaseCompletion()
         } { t ⇒ analysisTime = t.toSeconds }
-        propertyStore.shutdown()
+        ps.shutdown()
 
         if (projectEvalDir.isDefined) {
             val runtime = new File(projectEvalDir.get, "runtime.csv")
@@ -298,9 +302,9 @@ object Purity {
             }
         }
 
-        val purityEs = propertyStore(analyzedMethods, fpcf.properties.Purity.key).filter {
-            case FinalEP(_, p) ⇒ p ne ImpureByLackOfInformation
-            case ep            ⇒ throw new RuntimeException(s"non final purity result $ep")
+        val purityEs = ps(analyzedMethods, fpcf.properties.Purity.key).filter {
+            case FinalP(p) ⇒ p ne ImpureByLackOfInformation
+            case ep        ⇒ throw new RuntimeException(s"non final purity result $ep")
         }
 
         def isExternal(dm: DefinedMethod, p: IntTrieSet): Boolean = {
@@ -400,7 +404,7 @@ object Purity {
             }
         } else {
             val result =
-                propertyStore.toString(false)+
+                ps.toString(false)+
                     "\ncompile-time pure:                     "+compileTimePure.size+
                     "\nAt least pure:                         "+pure.size+
                     "\nAt least domain-specficic pure:        "+dPure.size+
@@ -483,7 +487,7 @@ object Purity {
             return ;
         }
 
-        val analysis: FPCFLazyAnalysisScheduler { type InitializationData = Null } = analysisName match {
+        val analysis: FPCFLazyAnalysisScheduler = analysisName match {
             case Some("L0")        ⇒ LazyL0PurityAnalysis
             case Some("L1")        ⇒ LazyL1PurityAnalysis
             case None | Some("L2") ⇒ LazyL2PurityAnalysis

@@ -61,6 +61,14 @@ object LoadedClasses extends LoadedClassesMetaInformation {
     }
 
     final val key: PropertyKey[LoadedClasses] = {
-        PropertyKey.forSimpleProperty("LoadedClasses", NoLoadedClasses)
+        val name = "opalj.LoadedClasses"
+        PropertyKey.create(
+            name,
+            (_: PropertyStore, reason: FallbackReason, _: Entity) ⇒ reason match {
+                case PropertyIsNotDerivedByPreviouslyExecutedAnalysis ⇒ NoLoadedClasses
+                case _ ⇒
+                    throw new IllegalStateException(s"No analysis is scheduled for property: $name")
+            }
+        )
     }
 }

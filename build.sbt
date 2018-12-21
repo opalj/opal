@@ -24,7 +24,7 @@ organization in ThisBuild := "de.opal-project"
 homepage in ThisBuild := Some(url("http://www.opal-project.de"))
 licenses in ThisBuild := Seq("BSD-2-Clause" -> url("http://opensource.org/licenses/BSD-2-Clause"))
 
-scalaVersion  in ThisBuild := "2.12.7"
+scalaVersion  in ThisBuild := "2.12.8"
 
 ScalacConfiguration.globalScalacOptions
 
@@ -178,7 +178,7 @@ lazy val `BytecodeInfrastructure` = (project in file("OPAL/bi"))
         )
     )
   )
-  .dependsOn(si % "it->test;test->test;compile->compile")
+  .dependsOn(common % "it->test;test->test;compile->compile")
   .configs(IntegrationTest)
   .enablePlugins(JavaFixtureCompiler)
 
@@ -190,6 +190,7 @@ lazy val `BytecodeRepresentation` = (project in file("OPAL/br"))
     scalacOptions in(Compile, doc) ++= Opts.doc.title("OPAL - Bytecode Representation"),
     libraryDependencies ++= Dependencies.br
   )
+  .dependsOn(si % "it->it;it->test;test->test;compile->compile")
   .dependsOn(bi % "it->it;it->test;test->test;compile->compile")
   .configs(IntegrationTest)
 

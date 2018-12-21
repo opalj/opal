@@ -15,13 +15,13 @@ import scala.collection.immutable.IntMap
  * @author Florian Kuebler
  */
 sealed trait StandardInvokeCalleesPropertyMetaInformation
-    extends DirectCalleesPropertyMetaInformation {
+        extends DirectCalleesPropertyMetaInformation {
 
     final type Self = StandardInvokeCallees
 }
 
 sealed trait StandardInvokeCallees extends CalleesLike
-    with StandardInvokeCalleesPropertyMetaInformation {
+        with StandardInvokeCalleesPropertyMetaInformation {
 
     override def toString: String = {
         s"StandardInvokeCallees(size=${this.size})"
@@ -31,8 +31,8 @@ sealed trait StandardInvokeCallees extends CalleesLike
 }
 
 sealed class StandardInvokeCalleesImplementation(
-        val calleesIds:          IntMap[IntTrieSet],
-        val incompleteCallsites: IntTrieSet
+    val calleesIds:          IntMap[IntTrieSet],
+    val incompleteCallsites: IntTrieSet
 ) extends AbstractCalleesLike with StandardInvokeCallees
 
 object NoStandardInvokeCallees
@@ -44,9 +44,15 @@ object NoStandardInvokeCalleesDueToNotReachableMethod
 object StandardInvokeCallees extends StandardInvokeCalleesPropertyMetaInformation {
 
     final val key: PropertyKey[StandardInvokeCallees] = {
-        PropertyKey.forSimpleProperty(
-            "StandardInvokeCallees",
-            NoStandardInvokeCalleesDueToNotReachableMethod
+        val name = "opalj.StandardInvokeCallees"
+        PropertyKey.create(
+            name,
+            (_: PropertyStore, reason: FallbackReason, _: Entity) ⇒ reason match {
+                case PropertyIsNotDerivedByPreviouslyExecutedAnalysis ⇒
+                    NoStandardInvokeCalleesDueToNotReachableMethod
+                case _ ⇒
+                    throw new IllegalStateException(s"No analysis is scheduled for property: $name")
+            }
         )
     }
 }

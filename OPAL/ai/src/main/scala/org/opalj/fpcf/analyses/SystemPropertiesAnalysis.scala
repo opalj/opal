@@ -3,23 +3,20 @@ package org.opalj
 package fpcf
 package analyses
 
-import org.opalj.fpcf.cg.properties.CallersProperty
-import org.opalj.fpcf.cg.properties.NoCallers
-import org.opalj.fpcf.properties.SystemProperties
-import org.opalj.fpcf.properties.SystemPropertiesFakeProperty
-import org.opalj.fpcf.properties.SystemPropertiesFakePropertyFinal
-import org.opalj.fpcf.properties.SystemPropertiesFakePropertyNonFinal
-import org.opalj.value.ValueInformation
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
+import org.opalj.fpcf.cg.properties.CallersProperty
+import org.opalj.fpcf.cg.properties.NoCallers
+import org.opalj.fpcf.properties.SystemProperties
 import org.opalj.tac.DUVar
 import org.opalj.tac.Expr
 import org.opalj.tac.StaticMethodCall
 import org.opalj.tac.Stmt
 import org.opalj.tac.VirtualFunctionCallStatement
 import org.opalj.tac.fpcf.properties.TACAI
+import org.opalj.value.ValueInformation
 
 class SystemPropertiesAnalysis private[analyses] (
         final val project: SomeProject
@@ -28,7 +25,7 @@ class SystemPropertiesAnalysis private[analyses] (
     def analyze(declaredMethod: DeclaredMethod): PropertyComputationResult = {
         // todo this is copy & past code from the RTACallGraphAnalysis -> refactor
         propertyStore(declaredMethod, CallersProperty.key) match {
-            case FinalEP(_, NoCallers) ⇒
+            case FinalP(NoCallers) ⇒
                 // nothing to do, since there is no caller
                 return NoResult;
 
@@ -56,12 +53,11 @@ class SystemPropertiesAnalysis private[analyses] (
             return NoResult;
 
         val tacaiEP = propertyStore(method, TACAI.key)
-        if (tacaiEP.hasProperty) {
+        if (tacaiEP.hasUBP && tacaiEP.ub.tac.isDefined) {
             processMethod(declaredMethod, tacaiEP.asEPS)
         } else {
-            SimplePIntermediateResult(
-                declaredMethod,
-                SystemPropertiesFakePropertyNonFinal,
+            InterimPartialResult(
+                None,
                 Some(tacaiEP),
                 continuation(declaredMethod)
             )
@@ -71,13 +67,15 @@ class SystemPropertiesAnalysis private[analyses] (
 
     def continuation(declaredMethod: DeclaredMethod)(eps: SomeEPS): PropertyComputationResult = {
         eps match {
-            case ESimplePS(_, _: TACAI, _) ⇒
+            case UBP(_: TACAI) ⇒
                 processMethod(declaredMethod, eps.asInstanceOf[EPS[Method, TACAI]])
         }
     }
 
-    def processMethod(declaredMethod: DeclaredMethod, tacaiEP: EPS[Method, TACAI]): PropertyComputationResult = {
-        assert(tacaiEP.hasProperty)
+    def processMethod(
+        declaredMethod: DeclaredMethod, tacaiEP: EPS[Method, TACAI]
+    ): PropertyComputationResult = {
+        assert(tacaiEP.hasUBP && tacaiEP.ub.tac.isDefined)
         val stmts = tacaiEP.ub.tac.get.stmts
 
         var propertyMap: Map[String, Set[String]] = Map.empty
@@ -94,8 +92,10 @@ class SystemPropertiesAnalysis private[analyses] (
             return NoResult;
         }
 
-        val partialResult = PartialResult[SomeProject, SystemProperties](project, SystemProperties.key, {
-            case ESimplePS(_, ub, _) ⇒
+        def update(
+            currentVal: EOptionP[SomeProject, SystemProperties]
+        ): Option[EPS[SomeProject, SystemProperties]] = currentVal match {
+            case UBP(ub) ⇒
                 var oldProperties = ub.properties
                 val noNewProperty = propertyMap.forall {
                     case (key, values) ⇒
@@ -112,24 +112,26 @@ class SystemPropertiesAnalysis private[analyses] (
                         val oldValues = oldProperties.getOrElse(key, Set.empty)
                         oldProperties = oldProperties.updated(key, oldValues ++ values)
                     }
-                    Some(IntermediateESimpleP(project, new SystemProperties(propertyMap)))
+                    Some(InterimEUBP(project, new SystemProperties(propertyMap)))
                 }
-            case _: EPK[_, _] ⇒ Some(IntermediateESimpleP(project, new SystemProperties(propertyMap)))
-        })
+            case _: EPK[SomeProject, SystemProperties] ⇒ Some(InterimEUBP(project, new SystemProperties(propertyMap)))
+        }
 
-        val fakeResult =
-            if (tacaiEP.isFinal) {
-                Result(declaredMethod, SystemPropertiesFakePropertyFinal)
-            } else {
-                SimplePIntermediateResult(
-                    declaredMethod,
-                    SystemPropertiesFakePropertyNonFinal,
-                    Some(tacaiEP),
-                    continuation(declaredMethod)
-                )
-            }
-
-        Results(partialResult, fakeResult)
+        if (tacaiEP.isFinal) {
+            PartialResult[SomeProject, SystemProperties](
+                project,
+                SystemProperties.key,
+                update
+            )
+        } else {
+            InterimPartialResult(
+                project,
+                SystemProperties.key,
+                update,
+                Some(tacaiEP),
+                continuation(declaredMethod)
+            )
+        }
     }
 
     def computeProperties(
@@ -161,28 +163,22 @@ class SystemPropertiesAnalysis private[analyses] (
 
 }
 
-object SystemPropertiesAnalysis extends FPCFEagerAnalysisScheduler {
-    override type InitializationData = SystemPropertiesAnalysis
+object SystemPropertiesAnalysis extends BasicFPCFTriggeredAnalysisScheduler {
 
-    override def start(
-        project:       SomeProject,
-        propertyStore: PropertyStore,
-        analysis:      SystemPropertiesAnalysis
-    ): FPCFAnalysis = {
-        analysis
-    }
+    override def uses: Set[PropertyBounds] = Set(
+        PropertyBounds.ub(CallersProperty),
+        PropertyBounds.ub(TACAI)
+    )
 
-    override def uses: Set[PropertyKind] = Set(CallersProperty, TACAI)
-
-    override def derives: Set[PropertyKind] = Set(SystemProperties, SystemPropertiesFakeProperty)
-
-    override def init(p: SomeProject, ps: PropertyStore): SystemPropertiesAnalysis = {
+    override def register(p: SomeProject, ps: PropertyStore, unused: Null): SystemPropertiesAnalysis = {
         val analysis = new SystemPropertiesAnalysis(p)
         ps.registerTriggeredComputation(CallersProperty.key, analysis.analyze)
         analysis
     }
 
-    override def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
+    override def derivesEagerly: Set[PropertyBounds] = Set.empty
 
-    override def afterPhaseCompletion(p: SomeProject, ps: PropertyStore): Unit = {}
+    override def derivesCollaboratively: Set[PropertyBounds] = Set(
+        PropertyBounds.ub(SystemProperties)
+    )
 }

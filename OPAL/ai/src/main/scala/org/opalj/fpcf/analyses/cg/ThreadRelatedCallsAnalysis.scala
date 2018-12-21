@@ -18,9 +18,6 @@ import org.opalj.collection.immutable.RefArray
 import org.opalj.fpcf.cg.properties.CallersProperty
 import org.opalj.fpcf.cg.properties.NoCallers
 import org.opalj.fpcf.cg.properties.OnlyVMLevelCallers
-import org.opalj.fpcf.cg.properties.ThreadRelatedCalleesFakeProperty
-import org.opalj.fpcf.cg.properties.ThreadRelatedCalleesFinal
-import org.opalj.fpcf.cg.properties.ThreadRelatedCalleesNonFinal
 import org.opalj.log.OPALLogger
 import org.opalj.tac.Assignment
 import org.opalj.tac.Expr
@@ -57,7 +54,7 @@ class ThreadRelatedCallsAnalysis private[analyses] (
     }
 
     /**
-     * This method is triggered each time the property store has a first [[CallerProperty]] value
+     * This method is triggered each time the property store has a first [[CallersProperty]] value
      * for the `declaredMethod`. If the method is reachable, it is being checked for calls into the
      * `Thead` API and add the corresponding implicit/evantual method call.
      * It do so by calling `processMethod`.
@@ -66,7 +63,7 @@ class ThreadRelatedCallsAnalysis private[analyses] (
 
         // todo this is copy & past code from the RTACallGraphAnalysis -> refactor
         propertyStore(declaredMethod, CallersProperty.key) match {
-            case FinalEP(_, NoCallers) ⇒
+            case FinalP(NoCallers) ⇒
                 // nothing to do, since there is no caller
                 return NoResult;
 
@@ -97,12 +94,11 @@ class ThreadRelatedCallsAnalysis private[analyses] (
 
         // if we have a tac already we can start the analysis. otherwise we wait for updates.
         val tacaiEP = propertyStore(method, TACAI.key)
-        if (tacaiEP.hasProperty) {
+        if (tacaiEP.hasUBP && tacaiEP.ub.tac.isDefined) {
             processMethod(definedMethod, tacaiEP.asEPS)
         } else {
-            SimplePIntermediateResult(
-                definedMethod,
-                ThreadRelatedCalleesNonFinal,
+            InterimPartialResult(
+                Nil,
                 Some(tacaiEP),
                 continuation(definedMethod)
             )
@@ -116,8 +112,14 @@ class ThreadRelatedCallsAnalysis private[analyses] (
         method: DefinedMethod
     )(eps: SomeEPS): PropertyComputationResult = {
         eps match {
-            case ESimplePS(_, _: TACAI, _) ⇒
+            case UBP(tac: TACAI) if tac.tac.isDefined ⇒
                 processMethod(method, eps.asInstanceOf[EPS[Method, TACAI]])
+            case UBP(_: TACAI) ⇒
+                InterimPartialResult(
+                    Nil,
+                    Some(eps),
+                    continuation(method)
+                )
         }
     }
 
@@ -129,7 +131,7 @@ class ThreadRelatedCallsAnalysis private[analyses] (
     private[this] def processMethod(
         definedMethod: DefinedMethod, tacaiEPS: EPS[Method, TACAI]
     ): PropertyComputationResult = {
-        assert(tacaiEPS.hasProperty)
+        assert(tacaiEPS.hasUBP && tacaiEPS.ub.tac.isDefined)
         val stmts = tacaiEPS.ub.tac.get.stmts
 
         var threadRelatedMethods: Set[DeclaredMethod] = Set.empty
@@ -156,34 +158,33 @@ class ThreadRelatedCallsAnalysis private[analyses] (
         }
 
         // partial results for all methods that should be made vm reachable
-        val results: Iterator[PropertyComputationResult] = threadRelatedMethods.iterator.map { method ⇒
+        val results: Iterator[ProperPropertyComputationResult] = threadRelatedMethods.iterator.map { method ⇒
             PartialResult[DeclaredMethod, CallersProperty](method, CallersProperty.key, {
-                case IntermediateESimpleP(_, ub) if !ub.hasVMLevelCallers ⇒
-                    Some(IntermediateESimpleP(method, ub.updatedWithVMLevelCall()))
+                case InterimUBP(ub) if !ub.hasVMLevelCallers ⇒
+                    Some(InterimEUBP(method, ub.updatedWithVMLevelCall()))
 
-                case _: IntermediateESimpleP[_, _] ⇒ None
+                case _: InterimEP[_, _] ⇒ None
 
                 case _: EPK[_, _] ⇒
-                    Some(IntermediateESimpleP(method, OnlyVMLevelCallers))
+                    Some(InterimEUBP(method, OnlyVMLevelCallers))
 
                 case r ⇒
                     throw new IllegalStateException(s"unexpected previous result $r")
             })
         }
 
-        // do we still depend on the tac?
-        val fakeResult =
-            if (tacaiEPS.isFinal)
-                Result(definedMethod, ThreadRelatedCalleesFinal)
-            else SimplePIntermediateResult(
-                definedMethod,
-                ThreadRelatedCalleesNonFinal,
+        // todo use other factory
+        val c = if (tacaiEPS.isRefinable)
+            Some(InterimPartialResult(
+                Nil,
                 Some(tacaiEPS),
                 continuation(definedMethod)
-            )
+            ))
+        else
+            None
 
         Results(
-            results ++ Iterator(fakeResult)
+            results ++ c
         )
     }
 
@@ -428,27 +429,22 @@ class ThreadRelatedCallsAnalysis private[analyses] (
     }
 }
 
-object EagerThreadRelatedCallsAnalysis extends FPCFEagerAnalysisScheduler {
+object EagerThreadRelatedCallsAnalysis extends BasicFPCFTriggeredAnalysisScheduler {
 
-    override type InitializationData = ThreadRelatedCallsAnalysis
+    override def uses: Set[PropertyBounds] = Set(
+        PropertyBounds.ub(CallersProperty),
+        PropertyBounds.ub(TACAI)
+    )
 
-    override def start(
-        project: SomeProject, propertyStore: PropertyStore, analysis: ThreadRelatedCallsAnalysis
-    ): FPCFAnalysis = {
-        analysis
-    }
+    override def derivesCollaboratively: Set[PropertyBounds] = Set(
+        PropertyBounds.ub(CallersProperty)
+    )
 
-    override def uses: Set[PropertyKind] = Set(CallersProperty, TACAI)
+    override def derivesEagerly: Set[PropertyBounds] = Set.empty
 
-    override def derives: Set[PropertyKind] = Set(CallersProperty, ThreadRelatedCalleesFakeProperty)
-
-    override def init(p: SomeProject, ps: PropertyStore): ThreadRelatedCallsAnalysis = {
+    override def register(p: SomeProject, ps: PropertyStore, unused: Null): ThreadRelatedCallsAnalysis = {
         val analysis = new ThreadRelatedCallsAnalysis(p)
         ps.registerTriggeredComputation(CallersProperty.key, analysis.analyze)
         analysis
     }
-
-    override def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
-
-    override def afterPhaseCompletion(p: SomeProject, ps: PropertyStore): Unit = {}
 }

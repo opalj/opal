@@ -1,8 +1,10 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
-package fpcf
+package collection
+package eval
 
-import util.PerformanceEvaluation.time
+import org.opalj.util
+import org.opalj.util.PerformanceEvaluation.time
 
 /**
  * A small evaluation of the performance of the different map implementations supported by
@@ -25,9 +27,8 @@ import util.PerformanceEvaluation.time
  * immutable HashMap.get: 1,8304 s
  * immutable TreeMap.get: 19,0907 s
  * </pre>
- *
  */
-private[fpcf] object MapsEval extends App {
+object MapsEval extends App {
 
     util.gc();
 

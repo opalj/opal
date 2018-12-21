@@ -89,19 +89,19 @@ sealed trait EmptyConcreteCallers extends CallersProperty {
 }
 
 object NoCallers
-    extends EmptyConcreteCallers with CallersWithoutUnknownContext with CallersWithoutVMLevelCall {
+        extends EmptyConcreteCallers with CallersWithoutUnknownContext with CallersWithoutVMLevelCall {
     override def updatedWithVMLevelCall(): CallersWithVMLevelCall = OnlyVMLevelCallers
 
     override def updatedWithUnknownContext(): CallersWithUnknownContext = OnlyCallersWithUnknownContext
 }
 
 object OnlyCallersWithUnknownContext
-    extends EmptyConcreteCallers with CallersWithUnknownContext with CallersWithoutVMLevelCall {
+        extends EmptyConcreteCallers with CallersWithUnknownContext with CallersWithoutVMLevelCall {
     override def updatedWithVMLevelCall(): CallersWithVMLevelCall = OnlyVMCallersAndWithUnknownContext
 }
 
 object OnlyVMLevelCallers
-    extends EmptyConcreteCallers with CallersWithoutUnknownContext with CallersWithVMLevelCall {
+        extends EmptyConcreteCallers with CallersWithoutUnknownContext with CallersWithVMLevelCall {
     override def updatedWithUnknownContext(): CallersWithUnknownContext = OnlyVMCallersAndWithUnknownContext
 }
 
@@ -207,7 +207,15 @@ object CallersImplWithOtherCalls {
 object CallersProperty extends CallersPropertyMetaInformation {
 
     final val key: PropertyKey[CallersProperty] = {
-        PropertyKey.forSimpleProperty("CallersProperty", NoCallers)
+        val name = "opalj.CallersProperty"
+        PropertyKey.create(
+            name,
+            (_: PropertyStore, reason: FallbackReason, _: Entity) ⇒ reason match {
+                case PropertyIsNotDerivedByPreviouslyExecutedAnalysis ⇒ NoCallers
+                case _ ⇒
+                    throw new IllegalStateException(s"No analysis is scheduled for property: $name")
+            }
+        )
     }
 
     def toLong(methodId: Int, pc: Int): Long = {

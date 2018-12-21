@@ -14,8 +14,6 @@ import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.cg.properties.CallersProperty
 import org.opalj.fpcf.cg.properties.InstantiatedTypes
-import org.opalj.fpcf.cg.properties.InstantiatedTypesFakePropertyFinal
-import org.opalj.fpcf.cg.properties.InstantiatedTypesFakePropertyNonFinal
 import org.opalj.fpcf.cg.properties.NoCallers
 import org.opalj.tac.Assignment
 import org.opalj.tac.ExprStmt
@@ -32,7 +30,7 @@ class InstantiatedTypesAnalysis private[analyses] (
 
     def analyze(declaredMethod: DeclaredMethod): PropertyComputationResult = {
         propertyStore(declaredMethod, CallersProperty.key) match {
-            case FinalEP(_, NoCallers) ⇒
+            case FinalP(NoCallers) ⇒
                 // nothing to do, since there is no caller
                 return NoResult;
 
@@ -61,12 +59,11 @@ class InstantiatedTypesAnalysis private[analyses] (
 
         val tacEP = propertyStore(method, TACAI.key)
 
-        if (tacEP.hasProperty)
+        if (tacEP.hasUBP && tacEP.ub.tac.isDefined)
             processMethod(declaredMethod, tacEP)
         else {
-            SimplePIntermediateResult(
-                declaredMethod,
-                InstantiatedTypesFakePropertyNonFinal,
+            InterimPartialResult(
+                None,
                 Seq(tacEP),
                 continuationForTAC(declaredMethod)
             )
@@ -76,8 +73,14 @@ class InstantiatedTypesAnalysis private[analyses] (
     private[this] def continuationForTAC(declaredMethod: DeclaredMethod)(
         someEPS: SomeEPS
     ): PropertyComputationResult = someEPS match {
-        case ESimplePS(_, _: TACAI, _) ⇒
+        case UBP(tac: TACAI) if tac.tac.isDefined ⇒
             processMethod(declaredMethod, someEPS.asInstanceOf[EPS[Method, TACAI]])
+        case UBP(_: TACAI) ⇒
+            InterimPartialResult(
+                None,
+                Seq(someEPS),
+                continuationForTAC(declaredMethod)
+            )
         case _ ⇒ throw new RuntimeException(s"unexpected update $someEPS")
     }
 
@@ -119,73 +122,74 @@ class InstantiatedTypesAnalysis private[analyses] (
             case _ ⇒
         }
 
-        val fakeResult = if (tacEP.isFinal)
-            Result(declaredMethod, InstantiatedTypesFakePropertyFinal)
-        else
-            SimplePIntermediateResult(
-                declaredMethod,
-                InstantiatedTypesFakePropertyNonFinal,
-                Seq(tacEP), continuationForTAC(declaredMethod)
+        if (tacEP.isRefinable) {
+            InterimPartialResult(
+                if (newInstantiatedTypes.nonEmpty || instantiatedTypesEOptP.isEPK)
+                    Some(PartialResultUpdateComputation(
+                    p,
+                    InstantiatedTypes.key,
+                    InstantiatedTypesAnalysis.update(
+                        p, newInstantiatedTypes, initialInstantiatedTypes
+                    )
+                ))
+                else
+                    None,
+                Some(tacEP),
+                continuationForTAC(declaredMethod)
             )
-
-        if (newInstantiatedTypes.nonEmpty || instantiatedTypesEOptP.hasNoProperty)
-            Results(
-                fakeResult,
-                InstantiatedTypesAnalysis.partialResultForInstantiatedTypes(
-                    p, newInstantiatedTypes, initialInstantiatedTypes
-                )
+        } else if (newInstantiatedTypes.nonEmpty || instantiatedTypesEOptP.isEPK) {
+            PartialResult(
+                project,
+                InstantiatedTypes.key,
+                InstantiatedTypesAnalysis.update(p, newInstantiatedTypes, initialInstantiatedTypes)
             )
-        else fakeResult
+        } else {
+            NoResult
+        }
     }
 }
 
 object InstantiatedTypesAnalysis {
-    def partialResultForInstantiatedTypes(
+    def update(
         p:                        SomeProject,
         newInstantiatedTypes:     UIDSet[ObjectType],
         initialInstantiatedTypes: UIDSet[ObjectType]
-    ): PartialResult[SomeProject, InstantiatedTypes] = {
-        PartialResult[SomeProject, InstantiatedTypes](p, InstantiatedTypes.key,
-            {
-                case IntermediateESimpleP(_, ub) ⇒
-                    Some(IntermediateESimpleP(
-                        p,
-                        ub.updated(newInstantiatedTypes)
-                    ))
+    )(
+        eop: EOptionP[SomeProject, InstantiatedTypes]
+    ): Option[EPS[SomeProject, InstantiatedTypes]] = eop match {
+        case InterimUBP(ub) ⇒
+            Some(InterimEUBP(p, ub.updated(newInstantiatedTypes)))
 
-                case _: EPK[_, _] ⇒
-                    Some(IntermediateESimpleP(
-                        p,
-                        InstantiatedTypes.initial(newInstantiatedTypes, initialInstantiatedTypes)
-                    ))
+        case _: EPK[_, _] ⇒
+            Some(InterimEUBP(
+                p,
+                InstantiatedTypes.initial(newInstantiatedTypes, initialInstantiatedTypes)
+            ))
 
-                case r ⇒ throw new IllegalStateException(s"unexpected previous result $r")
-            })
+        case r ⇒ throw new IllegalStateException(s"unexpected previous result $r")
     }
 }
 
-object EagerInstantiatedTypesAnalysis extends FPCFEagerAnalysisScheduler {
-    override type InitializationData = InstantiatedTypesAnalysis
+object EagerInstantiatedTypesAnalysis extends BasicFPCFTriggeredAnalysisScheduler {
 
-    override def uses: Set[PropertyKind] = Set(InstantiatedTypes, CallersProperty)
+    override def uses: Set[PropertyBounds] = Set(
+        PropertyBounds.ub(InstantiatedTypes),
+        PropertyBounds.ub(CallersProperty)
+    )
 
-    override def derives: Set[PropertyKind] = Set(InstantiatedTypes)
+    override def derivesCollaboratively: Set[PropertyBounds] = Set(
+        PropertyBounds.ub(InstantiatedTypes)
+    )
 
-    override def start(
-        p: SomeProject, ps: PropertyStore, analysis: InstantiatedTypesAnalysis
-    ): FPCFAnalysis = {
-        analysis
-    }
+    override def derivesEagerly: Set[PropertyBounds] = Set.empty
 
-    override def init(p: SomeProject, ps: PropertyStore): InstantiatedTypesAnalysis = {
+    override def register(
+        p: SomeProject, ps: PropertyStore, unused: Null
+    ): InstantiatedTypesAnalysis = {
         val analysis = new InstantiatedTypesAnalysis(p)
 
         ps.registerTriggeredComputation(CallersProperty.key, analysis.analyze)
 
         analysis
     }
-
-    override def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
-
-    override def afterPhaseCompletion(p: SomeProject, ps: PropertyStore): Unit = {}
 }

@@ -6,6 +6,8 @@ import org.opalj.log.LogContext
 
 /**
  * Common interface implemented by all [[PropertyStore]] factories.
+ *
+ * @author Michael Eichberg
  */
 trait PropertyStoreFactory {
 
@@ -19,7 +21,7 @@ trait PropertyStoreFactory {
         apply(PropertyStoreContext(key, context))
     }
 
-    def apply(
+    /* abstract */ def apply(
         context: PropertyStoreContext[_ <: AnyRef]*
     )(
         implicit

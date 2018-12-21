@@ -30,9 +30,9 @@ import org.opalj.tac.Stmt
 import org.opalj.tac.VirtualFunctionCall
 import org.opalj.tac.VirtualMethodCall
 import org.opalj.tac.fpcf.properties.TACAI
+
 import scala.annotation.tailrec
 import scala.language.existentials
-
 import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
 
 /**
@@ -56,7 +56,7 @@ class SerializationRelatedCallsAnalysis private[analyses] (
     def analyze(declaredMethod: DeclaredMethod): PropertyComputationResult = {
         // todo this is copy & past code from the RTACallGraphAnalysis -> refactor
         propertyStore(declaredMethod, CallersProperty.key) match {
-            case FinalEP(_, NoCallers) ⇒
+            case FinalP(NoCallers) ⇒
                 // nothing to do, since there is no caller
                 return NoResult;
 
@@ -111,12 +111,11 @@ class SerializationRelatedCallsAnalysis private[analyses] (
 
         val tacEP = propertyStore(method, TACAI.key)
 
-        if (tacEP.hasProperty) {
+        if (tacEP.hasUBP && tacEP.ub.tac.isDefined) {
             processMethod(definedMethod, relevantPCs, tacEP.asEPS)
         } else {
-            SimplePIntermediateResult(
-                declaredMethod,
-                NoSerializationRelatedCallees,
+            InterimResult(
+                InterimEUBP(declaredMethod, NoSerializationRelatedCallees),
                 Some(tacEP),
                 continuation(definedMethod, relevantPCs)
             )
@@ -125,7 +124,7 @@ class SerializationRelatedCallsAnalysis private[analyses] (
 
     private[this] def processMethod(
         definedMethod: DefinedMethod, relevantPCs: IntTrieSet, tacEP: EPS[Method, TACAI]
-    ): PropertyComputationResult = {
+    ): ProperPropertyComputationResult = {
         val tacode = tacEP.ub.tac.get
 
         // the set of types that are definitely initialized at this point in time
@@ -429,8 +428,8 @@ class SerializationRelatedCallsAnalysis private[analyses] (
         calleesAndCallers:    IndirectCalleesAndCallers,
         newInstantiatedTypes: UIDSet[ObjectType],
         tacaiEP:              EOptionP[Method, TACAI]
-    ): PropertyComputationResult = {
-        var res: List[PropertyComputationResult] = calleesAndCallers.partialResultsForCallers
+    ): ProperPropertyComputationResult = {
+        var res: List[ProperPropertyComputationResult] = calleesAndCallers.partialResultsForCallers
 
         val tmpResult =
             if (calleesAndCallers.callees.isEmpty) NoSerializationRelatedCallees
@@ -443,9 +442,8 @@ class SerializationRelatedCallsAnalysis private[analyses] (
 
         val calleesResult =
             if (tacaiEP.isRefinable)
-                SimplePIntermediateResult(
-                    definedMethod,
-                    tmpResult,
+                InterimResult(
+                    InterimEUBP(definedMethod, tmpResult),
                     Some(tacaiEP),
                     continuation(definedMethod, relevantPCs)
                 )
@@ -455,8 +453,10 @@ class SerializationRelatedCallsAnalysis private[analyses] (
         res ::= calleesResult
 
         if (newInstantiatedTypes.nonEmpty)
-            res ::= InstantiatedTypesAnalysis.partialResultForInstantiatedTypes(
-                p, newInstantiatedTypes, initialInstantiatedTypes
+            res ::= PartialResult(
+                p,
+                InstantiatedTypes.key,
+                InstantiatedTypesAnalysis.update(p, newInstantiatedTypes, initialInstantiatedTypes)
             )
 
         Results(res)
@@ -464,9 +464,15 @@ class SerializationRelatedCallsAnalysis private[analyses] (
 
     private[this] def continuation(
         definedMethod: DefinedMethod, relevantPCs: IntTrieSet
-    )(eps: SomeEPS): PropertyComputationResult = eps match {
-        case ESimplePS(_, _: TACAI, _) ⇒
+    )(eps: SomeEPS): ProperPropertyComputationResult = eps match {
+        case UBP(tac: TACAI) if tac.tac.isDefined ⇒
             processMethod(definedMethod, relevantPCs, eps.asInstanceOf[EPS[Method, TACAI]])
+        case UBP(_: TACAI) ⇒
+            InterimResult(
+                InterimEUBP(definedMethod, NoSerializationRelatedCallees),
+                Some(eps),
+                continuation(definedMethod, relevantPCs)
+            )
         case _ ⇒ throw new IllegalStateException(s"unexpected update $eps")
     }
 }
@@ -475,30 +481,32 @@ object SerializationRelatedCallsAnalysis {
     final val UnknownParam = Seq(None)
 }
 
-object EagerSerializationRelatedCallsAnalysis extends FPCFEagerAnalysisScheduler {
+object EagerSerializationRelatedCallsAnalysis extends BasicFPCFTriggeredAnalysisScheduler {
 
-    override type InitializationData = SerializationRelatedCallsAnalysis
+    override def uses: Set[PropertyBounds] = Set(
+        PropertyBounds.ub(CallersProperty),
+        PropertyBounds.ub(InstantiatedTypes),
+        PropertyBounds.ub(TACAI)
+    )
 
-    override def start(
-        project:       SomeProject,
-        propertyStore: PropertyStore,
-        analysis:      SerializationRelatedCallsAnalysis
+    override def derivesCollaboratively: Set[PropertyBounds] =
+        Set(
+            PropertyBounds.ub(CallersProperty),
+            PropertyBounds.ub(InstantiatedTypes)
+        )
+
+    override def derivesEagerly: Set[PropertyBounds] = Set(
+        PropertyBounds.ub(SerializationRelatedCallees)
+    )
+
+    override def register(
+        p:      SomeProject,
+        ps:     PropertyStore,
+        unused: Null
     ): FPCFAnalysis = {
-        analysis
-    }
-
-    override def uses: Set[PropertyKind] = Set(CallersProperty, InstantiatedTypes, TACAI)
-
-    override def derives: Set[PropertyKind] =
-        Set(CallersProperty, InstantiatedTypes, SerializationRelatedCallees)
-
-    override def init(p: SomeProject, ps: PropertyStore): SerializationRelatedCallsAnalysis = {
         val analysis = new SerializationRelatedCallsAnalysis(p)
         ps.registerTriggeredComputation(CallersProperty.key, analysis.analyze)
         analysis
     }
 
-    override def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
-
-    override def afterPhaseCompletion(p: SomeProject, ps: PropertyStore): Unit = {}
 }

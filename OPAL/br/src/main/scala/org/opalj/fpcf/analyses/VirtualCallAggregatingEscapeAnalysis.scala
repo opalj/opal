@@ -28,7 +28,7 @@ class VirtualCallAggregatingEscapeAnalysis private[analyses] ( final val project
     private[this] val formalParameters = project.get(VirtualFormalParametersKey)
     private[this] val declaredMethods = project.get(DeclaredMethodsKey)
 
-    def determineEscape(fp: VirtualFormalParameter): PropertyComputationResult = {
+    def determineEscape(fp: VirtualFormalParameter): ProperPropertyComputationResult = {
         val dm = fp.method
         assert(!dm.isInstanceOf[VirtualDeclaredMethod])
 
@@ -66,28 +66,28 @@ class VirtualCallAggregatingEscapeAnalysis private[analyses] ( final val project
 
         def handleEscapeState(eOptionP: EOptionP[VirtualFormalParameter, EscapeProperty]): Unit =
             eOptionP match {
-                case ep @ IntermediateEP(_, _, p) ⇒
+                case ep @ InterimUBP(p) ⇒
                     escapeState = escapeState meet p
                     dependees += ep
-                case FinalEP(_, p) ⇒ escapeState = escapeState meet p
-                case epk           ⇒ dependees += epk
+                case FinalP(p) ⇒ escapeState = escapeState meet p
+                case epk       ⇒ dependees += epk
             }
 
-        def returnResult: PropertyComputationResult = {
+        def returnResult: ProperPropertyComputationResult = {
             if (escapeState.isBottom || dependees.isEmpty)
                 if (escapeState.isInstanceOf[AtMost])
-                    //IntermediateResult(fp, GlobalEscape.asAggregatedProperty, escapeState.asAggregatedProperty, dependees, continuation)
+                    //InterimResult(fp, GlobalEscape.asAggregatedProperty, escapeState.asAggregatedProperty, dependees, continuation)
                     Result(fp, escapeState.asAggregatedProperty)
                 else
                     Result(fp, escapeState.asAggregatedProperty)
             else
-                IntermediateResult(
+                InterimResult(
                     fp, GlobalEscape.asAggregatedProperty, escapeState.asAggregatedProperty,
-                    dependees, continuation
+                    dependees, c
                 )
         }
 
-        def continuation(someEPS: SomeEPS): PropertyComputationResult = {
+        def c(someEPS: SomeEPS): ProperPropertyComputationResult = {
             val other = someEPS.e
 
             assert(dependees.count(_.e eq other) <= 1)
@@ -102,24 +102,21 @@ class VirtualCallAggregatingEscapeAnalysis private[analyses] ( final val project
 
 }
 
-sealed trait VirtualCallAggregatingEscapeAnalysisScheduler extends ComputationSpecification {
+sealed trait VirtualCallAggregatingEscapeAnalysisScheduler extends ComputationSpecification[FPCFAnalysis] {
 
-    final override def derives: Set[PropertyKind] = Set(VirtualMethodEscapeProperty)
+    final def derivedProperty: PropertyBounds = PropertyBounds.lub(VirtualMethodEscapeProperty)
 
-    final override def uses: Set[PropertyKind] = Set(EscapeProperty)
-
-    final override type InitializationData = Null
-    final def init(p: SomeProject, ps: PropertyStore): Null = null
-
-    def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
-
-    def afterPhaseCompletion(p: SomeProject, ps: PropertyStore): Unit = {}
+    final override def uses: Set[PropertyBounds] = Set(PropertyBounds.lub(EscapeProperty))
 
 }
 
 object EagerVirtualCallAggregatingEscapeAnalysis
     extends VirtualCallAggregatingEscapeAnalysisScheduler
-    with FPCFEagerAnalysisScheduler {
+    with BasicFPCFEagerAnalysisScheduler {
+
+    override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
+
+    override def derivesCollaboratively: Set[PropertyBounds] = Set.empty
 
     override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new VirtualCallAggregatingEscapeAnalysis(p)
@@ -131,9 +128,11 @@ object EagerVirtualCallAggregatingEscapeAnalysis
 
 object LazyVirtualCallAggregatingEscapeAnalysis
     extends VirtualCallAggregatingEscapeAnalysisScheduler
-    with FPCFLazyAnalysisScheduler {
+    with BasicFPCFLazyAnalysisScheduler {
 
-    override def startLazily(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+    override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
+
+    override def register(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new VirtualCallAggregatingEscapeAnalysis(p)
         ps.registerLazyPropertyComputation(VirtualMethodEscapeProperty.key, analysis.determineEscape)
         analysis

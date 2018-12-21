@@ -13,11 +13,12 @@ import org.opalj.br.analyses.ReportableAnalysisResult
 import org.opalj.fpcf.analyses.cg.EagerConfiguredNativeMethodsAnalysis
 import org.opalj.fpcf.analyses.cg.EagerFinalizerAnalysisScheduler
 import org.opalj.fpcf.analyses.cg.EagerInstantiatedTypesAnalysis
-import org.opalj.fpcf.analyses.cg.EagerLoadedClassesAnalysis
+import org.opalj.fpcf.analyses.cg.EagerStaticInitializerAnalysis
 import org.opalj.fpcf.analyses.cg.EagerRTACallGraphAnalysisScheduler
 import org.opalj.fpcf.analyses.cg.EagerSerializationRelatedCallsAnalysis
 import org.opalj.fpcf.analyses.cg.EagerThreadRelatedCallsAnalysis
 import org.opalj.fpcf.analyses.cg.LazyCalleesAnalysis
+import org.opalj.fpcf.analyses.cg.TriggeredLoadedClassesAnalysis
 import org.opalj.fpcf.analyses.cg.reflection.EagerReflectionRelatedCallsAnalysis
 import org.opalj.fpcf.cg.properties.LoadedClasses
 import org.opalj.fpcf.cg.properties.CallersProperty
@@ -63,7 +64,8 @@ object RTADemo extends DefaultOneStepAnalysis {
             val manager = project.get(FPCFAnalysesManagerKey)
             manager.runAll(
                 EagerRTACallGraphAnalysisScheduler,
-                EagerLoadedClassesAnalysis,
+                EagerStaticInitializerAnalysis,
+                TriggeredLoadedClassesAnalysis,
                 EagerFinalizerAnalysisScheduler,
                 EagerThreadRelatedCallsAnalysis,
                 EagerSerializationRelatedCallsAnalysis,

@@ -673,9 +673,9 @@ sealed abstract class FunctionCall[+V <: Var[V]] extends Expr[V] with Call[V] {
 sealed abstract class InstanceFunctionCall[+V <: Var[V]] extends FunctionCall[V] {
 
     final override def allParams: Seq[Expr[V]] = receiver +: params
-    final override def receiverOption: Option[Expr[V]] = Some(receiver)
 
     def receiver: Expr[V]
+    final override def receiverOption: Some[Expr[V]] = Some(receiver)
     final override def subExprCount: Int = params.size + 1
     final override def subExpr(index: Int): Expr[V] = if (index == 0) receiver else params(index - 1)
     final override def forallSubExpressions[W >: V <: Var[W]](p: Expr[W] ⇒ Boolean): Boolean = {
@@ -809,12 +809,12 @@ case class StaticFunctionCall[+V <: Var[V]](
 ) extends FunctionCall[V] {
 
     final override def allParams: Seq[Expr[V]] = params
-    final override def receiverOption: Option[Expr[V]] = None
 
     final override def isStaticFunctionCall: Boolean = true
     final override def asStaticFunctionCall: this.type = this
     final override def astID: Int = StaticFunctionCall.ASTID
     final override def isSideEffectFree: Boolean = false
+    final override def receiverOption: Option[Expr[V]] = None
     final override def subExprCount: Int = params.size
     final override def subExpr(index: Int): Expr[V] = params(index)
     final override def forallSubExpressions[W >: V <: Var[W]](p: Expr[W] ⇒ Boolean): Boolean = {

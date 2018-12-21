@@ -9,7 +9,6 @@ import org.opalj.br.DefinedMethod
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.BasicReport
-import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.PropertyStoreKey
 import org.opalj.fpcf.FPCFAnalysesManagerKey
 import org.opalj.fpcf.analyses.LazyStaticDataUsageAnalysis
@@ -28,6 +27,9 @@ import org.opalj.fpcf.analyses.purity.EagerL2PurityAnalysis
 import org.opalj.fpcf.properties.Pure
 import org.opalj.fpcf.properties.SideEffectFree
 import org.opalj.fpcf.properties.CompileTimePure
+import org.opalj.fpcf.FinalEP
+import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
+import org.opalj.tac.fpcf.analyses.TACAITransformer
 
 /**
  * Identifies pure/side-effect free methods with a void return type.
@@ -49,6 +51,8 @@ object PureVoidMethods extends DefaultOneStepAnalysis {
         val propertyStore = project.get(PropertyStoreKey)
 
         project.get(FPCFAnalysesManagerKey).runAll(
+            LazyL0BaseAIAnalysis,
+            TACAITransformer,
             LazyL0CompileTimeConstancyAnalysis,
             LazyStaticDataUsageAnalysis,
             LazyVirtualMethodStaticDataUsageAnalysis,

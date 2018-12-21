@@ -15,32 +15,25 @@ import org.opalj.fpcf.properties.NotPrematurelyReadField
  * @author Dominik Helm
  */
 class UnsoundPrematurelyReadFieldsAnalysis private[analyses] (val project: SomeProject)
-    extends FPCFAnalysis {
+        extends FPCFAnalysis {
 
-    def determinePrematureReads(field: Field): PropertyComputationResult = {
+    def determinePrematureReads(field: Field): ProperPropertyComputationResult = {
         Result(field, NotPrematurelyReadField)
     }
 }
 
-trait UnsoundPrematurelyReadFieldsAnalysisScheduler extends ComputationSpecification {
-    def uses: Set[PropertyKind] = Set.empty
+trait UnsoundPrematurelyReadFieldsAnalysisScheduler extends ComputationSpecification[FPCFAnalysis] {
+    final override def uses: Set[PropertyBounds] = Set.empty
 
-    def derives: Set[PropertyKind] = Set(FieldPrematurelyRead)
-
-    final override type InitializationData = Null
-    final def init(p: SomeProject, ps: PropertyStore): Null = null
-
-    def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
-
-    def afterPhaseCompletion(p: SomeProject, ps: PropertyStore): Unit = {}
+    final def derivedProperty: PropertyBounds = PropertyBounds.finalP(FieldPrematurelyRead)
 }
 
 /**
  * Factory object to create instances of the FieldMutabilityAnalysis.
  */
 object EagerUnsoundPrematurelyReadFieldsAnalysis
-    extends UnsoundPrematurelyReadFieldsAnalysisScheduler
-    with FPCFEagerAnalysisScheduler {
+        extends UnsoundPrematurelyReadFieldsAnalysisScheduler
+        with BasicFPCFEagerAnalysisScheduler {
 
     def start(project: SomeProject, propertyStore: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new UnsoundPrematurelyReadFieldsAnalysis(project)
@@ -50,13 +43,17 @@ object EagerUnsoundPrematurelyReadFieldsAnalysis
         )
         analysis
     }
+
+    override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
+
+    override def derivesCollaboratively: Set[PropertyBounds] = Set.empty
 }
 
 object LazyUnsoundPrematurelyReadFieldsAnalysis
-    extends UnsoundPrematurelyReadFieldsAnalysisScheduler
-    with FPCFLazyAnalysisScheduler {
+        extends UnsoundPrematurelyReadFieldsAnalysisScheduler
+        with BasicFPCFLazyAnalysisScheduler {
 
-    def startLazily(
+    def register(
         project:       SomeProject,
         propertyStore: PropertyStore,
         unused:        Null
@@ -69,4 +66,5 @@ object LazyUnsoundPrematurelyReadFieldsAnalysis
         analysis
     }
 
+    override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 }

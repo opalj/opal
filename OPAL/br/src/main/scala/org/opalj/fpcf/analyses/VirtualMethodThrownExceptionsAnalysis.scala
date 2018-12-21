@@ -31,7 +31,7 @@ class VirtualMethodThrownExceptionsAnalysis private[analyses] (
 
     private[analyses] def lazilyAggregateExceptionsThrownByOverridingMethods(
         e: Entity
-    ): PropertyComputationResult = {
+    ): ProperPropertyComputationResult = {
         e match {
             case m: Method ⇒
                 aggregateExceptionsThrownByOverridingMethods(m)
@@ -46,7 +46,7 @@ class VirtualMethodThrownExceptionsAnalysis private[analyses] (
      */
     private[analyses] def aggregateExceptionsThrownByOverridingMethods(
         m: Method
-    ): PropertyComputationResult = {
+    ): ProperPropertyComputationResult = {
         // If an unknown subclass can override this method we cannot gather information about
         // the thrown exceptions. Return the analysis immediately.
         if (project.get(IsOverridableMethodKey)(m).isYesOrUnknown) {
@@ -63,12 +63,12 @@ class VirtualMethodThrownExceptionsAnalysis private[analyses] (
             project.classFile(subType).foreach(_.findMethod(m.name, m.descriptor) match {
                 case Some(subtypeMethod) ⇒
                     ps(subtypeMethod, ThrownExceptions.key) match {
-                        case EPS(_, _, MethodIsAbstract) |
-                            EPS(_, _, MethodBodyIsNotAvailable) |
-                            EPS(_, _, MethodIsNative) |
-                            EPS(_, _, UnknownExceptionIsThrown) |
-                            EPS(_, _, AnalysisLimitation) |
-                            EPS(_, _, UnresolvedInvokeDynamicInstruction) ⇒
+                        case UBP(MethodIsAbstract) |
+                            UBP(MethodBodyIsNotAvailable) |
+                            UBP(MethodIsNative) |
+                            UBP(UnknownExceptionIsThrown) |
+                            UBP(AnalysisLimitation) |
+                            UBP(UnresolvedInvokeDynamicInstruction) ⇒
                             return Result(m, SomeException)
                         case eps: EPS[Entity, Property] ⇒
                             initialExceptions ++= eps.ub.types.concreteTypes
@@ -83,7 +83,7 @@ class VirtualMethodThrownExceptionsAnalysis private[analyses] (
 
         var exceptions = initialExceptions.toImmutableTypesSet
 
-        def c(eps: SomeEPS): PropertyComputationResult = {
+        def c(eps: SomeEPS): ProperPropertyComputationResult = {
             dependees = dependees.filter { d ⇒
                 d.e != eps.e || d.pk != eps.pk
             }
@@ -111,7 +111,7 @@ class VirtualMethodThrownExceptionsAnalysis private[analyses] (
                 Result(m, new ThrownExceptionsByOverridingMethods(exceptions))
             } else {
                 val result = new ThrownExceptionsByOverridingMethods(exceptions)
-                IntermediateResult(m, SomeException, result, dependees, c)
+                InterimResult(m, SomeException, result, dependees, c)
             }
         }
 
@@ -119,23 +119,19 @@ class VirtualMethodThrownExceptionsAnalysis private[analyses] (
             Result(m, new ThrownExceptionsByOverridingMethods(exceptions))
         } else {
             val result = new ThrownExceptionsByOverridingMethods(exceptions)
-            IntermediateResult(m, SomeException, result, dependees, c)
+            InterimResult(m, SomeException, result, dependees, c)
         }
     }
 }
 
-trait VirtualMethodThrownExceptionsAnalysisScheduler {
+trait VirtualMethodThrownExceptionsAnalysisScheduler extends ComputationSpecification[FPCFAnalysis] {
 
-    final def uses: Set[PropertyKind] = Set(ThrownExceptions)
+    final def derivedProperty: PropertyBounds = {
+        PropertyBounds.lub(ThrownExceptionsByOverridingMethods)
+    }
 
-    final def derives: Set[PropertyKind] = Set(ThrownExceptionsByOverridingMethods)
+    final override def uses: Set[PropertyBounds] = Set(PropertyBounds.lub(ThrownExceptions))
 
-    final type InitializationData = Null
-    final def init(p: SomeProject, ps: PropertyStore): Null = null
-
-    def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
-
-    def afterPhaseCompletion(p: SomeProject, ps: PropertyStore): Unit = {}
 }
 
 /**
@@ -146,7 +142,11 @@ trait VirtualMethodThrownExceptionsAnalysisScheduler {
  */
 object EagerVirtualMethodThrownExceptionsAnalysis
     extends VirtualMethodThrownExceptionsAnalysisScheduler
-    with FPCFEagerAnalysisScheduler {
+    with BasicFPCFEagerAnalysisScheduler {
+
+    override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
+
+    override def derivesCollaboratively: Set[PropertyBounds] = Set.empty
 
     override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new VirtualMethodThrownExceptionsAnalysis(p)
@@ -167,10 +167,12 @@ object EagerVirtualMethodThrownExceptionsAnalysis
  */
 object LazyVirtualMethodThrownExceptionsAnalysis
     extends VirtualMethodThrownExceptionsAnalysisScheduler
-    with FPCFLazyAnalysisScheduler {
+    with BasicFPCFLazyAnalysisScheduler {
+
+    override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 
     /** Registers an analysis to compute the exceptions thrown by overriding methods lazily. */
-    override def startLazily(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+    override def register(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new VirtualMethodThrownExceptionsAnalysis(p)
         ps.registerLazyPropertyComputation(
             ThrownExceptionsByOverridingMethods.key,

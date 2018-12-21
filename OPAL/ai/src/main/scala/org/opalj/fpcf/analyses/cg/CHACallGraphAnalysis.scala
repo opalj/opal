@@ -39,11 +39,11 @@ class CHACallGraphAnalysis private[analyses] ( final val project: SomeProject) e
     def analyze(declaredMethod: DeclaredMethod): PropertyComputationResult = {
 
         propertyStore(declaredMethod, CallersProperty.key) match {
-            case FinalEP(_, NoCallers) ⇒
+            case FinalP(NoCallers) ⇒
                 // nothing to do, since there is no caller
                 return NoResult;
 
-            case eps: EPS[_, _] ⇒
+            case eps: SomeEPS ⇒
                 if (eps.ub eq NoCallers) {
                     // we can not create a dependency here, so the analysis is not allowed to create
                     // such a result
@@ -67,12 +67,11 @@ class CHACallGraphAnalysis private[analyses] ( final val project: SomeProject) e
 
         val tacEP = propertyStore(method, TACAI.key)
 
-        if (tacEP.hasProperty) {
+        if (tacEP.hasUBP && tacEP.ub.tac.isDefined) {
             processMethod(declaredMethod, tacEP)
         } else {
-            SimplePIntermediateResult(
-                declaredMethod,
-                NoStandardInvokeCallees,
+            InterimResult(
+                InterimEUBP(declaredMethod, NoStandardInvokeCallees),
                 Seq(tacEP),
                 continuationForTAC(declaredMethod)
             )
@@ -81,15 +80,20 @@ class CHACallGraphAnalysis private[analyses] ( final val project: SomeProject) e
 
     private[this] def continuationForTAC(declaredMethod: DeclaredMethod)(
         someEPS: SomeEPS
-    ): PropertyComputationResult = someEPS match {
-        case ESimplePS(_, _: TACAI, _) ⇒
+    ): ProperPropertyComputationResult = someEPS match {
+        case UBP(tac: TACAI) if tac.tac.isDefined ⇒
             processMethod(declaredMethod, someEPS.asInstanceOf[EPS[Method, TACAI]])
-        case _ ⇒ throw new RuntimeException(s"unexpected update $someEPS")
+        case _ ⇒
+            InterimResult(
+                InterimEUBP(declaredMethod, NoStandardInvokeCallees),
+                Seq(someEPS),
+                continuationForTAC(declaredMethod)
+            )
     }
 
     private[this] def processMethod(
         declaredMethod: DeclaredMethod, tacEP: EOptionP[Method, TACAI]
-    ): PropertyComputationResult = {
+    ): ProperPropertyComputationResult = {
         val tac = tacEP.ub.tac.get
 
         // for each call site in the current method, the set of methods that might called
@@ -169,8 +173,8 @@ class CHACallGraphAnalysis private[analyses] ( final val project: SomeProject) e
 
         val calleesResult = if (tacEP.isFinal)
             Result(declaredMethod, callees)
-        else SimplePIntermediateResult(
-            declaredMethod, callees, Seq(tacEP), continuationForTAC(declaredMethod)
+        else InterimResult(
+            InterimEUBP(declaredMethod, callees), Seq(tacEP), continuationForTAC(declaredMethod)
         )
 
         Results(
@@ -180,24 +184,34 @@ class CHACallGraphAnalysis private[analyses] ( final val project: SomeProject) e
 
 }
 
-object EagerCHACallGraphAnalysisScheduler extends FPCFEagerAnalysisScheduler {
-    override type InitializationData = CHACallGraphAnalysis
+object EagerCHACallGraphAnalysisScheduler extends FPCFTriggeredAnalysisScheduler {
+    override type InitializationData = Null
 
-    override def uses: Set[PropertyKind] = Set(CallersProperty, TACAI)
-
-    override def derives: Set[PropertyKind] = Set(
-        CallersProperty, StandardInvokeCallees
+    override def uses: Set[PropertyBounds] = Set(
+        PropertyBounds.ub(CallersProperty),
+        PropertyBounds.ub(TACAI)
     )
 
-    override def init(p: SomeProject, ps: PropertyStore): CHACallGraphAnalysis = {
+    override def derivesEagerly: Set[PropertyBounds] = Set(
+        PropertyBounds.ub(StandardInvokeCallees)
+    )
+
+    override def derivesCollaboratively: Set[PropertyBounds] = Set(
+        PropertyBounds.ub(CallersProperty)
+    )
+
+    override def register(p: SomeProject, ps: PropertyStore, unused: Null): CHACallGraphAnalysis = {
         val analysis = new CHACallGraphAnalysis(p)
         ps.registerTriggeredComputation(CallersProperty.key, analysis.analyze)
         analysis
     }
 
-    override def start(
-        p: SomeProject, ps: PropertyStore, analysis: CHACallGraphAnalysis
-    ): FPCFAnalysis = {
+    /**
+     * Updates the caller properties of the initial entry points ([[InitialEntryPointsKey]]) to be
+     * called from an unknown context.
+     * This will trigger the computation of the callees for these methods (see `processMethod`).
+     */
+    def processEntryPoints(p: SomeProject, ps: PropertyStore): Unit = {
         val declaredMethods = p.get(DeclaredMethodsKey)
         val entryPoints = p.get(InitialEntryPointsKey).map(declaredMethods.apply)
 
@@ -206,20 +220,20 @@ object EagerCHACallGraphAnalysisScheduler extends FPCFEagerAnalysisScheduler {
                 Error("project configuration", "the project has no entry points")
             )(p.logContext)
 
-        ps.scheduleEagerComputationsForEntities(entryPoints)(handleEntryPoint)
-        analysis
+        entryPoints.foreach { ep ⇒
+            ps.preInitialize(ep, CallersProperty.key) {
+                case _: EPK[_, _] ⇒
+                    InterimEUBP(ep, OnlyCallersWithUnknownContext)
+                case InterimUBP(ub) ⇒
+                    InterimEUBP(ep, ub.updatedWithUnknownContext())
+                case r ⇒ throw new IllegalStateException(s"unexpected previous result $r")
+            }
+        }
     }
 
-    private def handleEntryPoint(dm: DeclaredMethod): PropertyComputationResult = {
-        PartialResult[DeclaredMethod, CallersProperty](dm, CallersProperty.key, {
-            case EPK(_, _) ⇒ Some(IntermediateESimpleP(
-                dm,
-                OnlyCallersWithUnknownContext
-            ))
-            case IntermediateESimpleP(_, ub) ⇒
-                Some(IntermediateESimpleP(dm, ub.updatedWithUnknownContext()))
-            case r ⇒ throw new IllegalStateException(s"unexpected previous result $r")
-        })
+    override def init(p: SomeProject, ps: PropertyStore): Null = {
+        processEntryPoints(p, ps)
+        null
     }
 
     override def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}

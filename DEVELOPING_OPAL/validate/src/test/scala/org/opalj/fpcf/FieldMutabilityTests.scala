@@ -2,25 +2,27 @@
 package org.opalj
 package fpcf
 
+import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
 import org.opalj.fpcf.analyses.EagerL0FieldMutabilityAnalysis
 import org.opalj.fpcf.analyses.EagerL1FieldMutabilityAnalysis
-import org.opalj.fpcf.analyses.LazyUnsoundPrematurelyReadFieldsAnalysis
 import org.opalj.fpcf.analyses.EagerL2FieldMutabilityAnalysis
+import org.opalj.fpcf.analyses.LazyUnsoundPrematurelyReadFieldsAnalysis
 import org.opalj.fpcf.analyses.SystemPropertiesAnalysis
 import org.opalj.fpcf.analyses.cg.EagerFinalizerAnalysisScheduler
-import org.opalj.fpcf.analyses.cg.EagerThreadRelatedCallsAnalysis
+import org.opalj.fpcf.analyses.cg.EagerInstantiatedTypesAnalysis
+import org.opalj.fpcf.analyses.cg.EagerStaticInitializerAnalysis
 import org.opalj.fpcf.analyses.cg.EagerRTACallGraphAnalysisScheduler
 import org.opalj.fpcf.analyses.cg.EagerSerializationRelatedCallsAnalysis
-import org.opalj.fpcf.analyses.cg.EagerLoadedClassesAnalysis
-import org.opalj.fpcf.analyses.cg.EagerInstantiatedTypesAnalysis
+import org.opalj.fpcf.analyses.cg.EagerThreadRelatedCallsAnalysis
 import org.opalj.fpcf.analyses.cg.LazyCalleesAnalysis
+import org.opalj.fpcf.analyses.cg.TriggeredLoadedClassesAnalysis
 import org.opalj.fpcf.analyses.cg.reflection.EagerReflectionRelatedCallsAnalysis
 import org.opalj.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.fpcf.analyses.purity.LazyL2PurityAnalysis
-import org.opalj.fpcf.cg.properties.StandardInvokeCallees
-import org.opalj.fpcf.cg.properties.SerializationRelatedCallees
 import org.opalj.fpcf.cg.properties.ReflectionRelatedCallees
-import org.opalj.tac.fpcf.analyses.LazyL0TACAIAnalysis
+import org.opalj.fpcf.cg.properties.SerializationRelatedCallees
+import org.opalj.fpcf.cg.properties.StandardInvokeCallees
+import org.opalj.tac.fpcf.analyses.TACAITransformer
 
 /**
  * Tests if the properties specified in the test project (the classes in the (sub-)package of
@@ -39,8 +41,12 @@ class FieldMutabilityTests extends PropertiesTest {
 
     describe("the org.opalj.fpcf.analyses.L0FieldMutabilityAnalysis is executed") {
         val as = executeAnalyses(
-            Set(EagerL0FieldMutabilityAnalysis),
-            Set(LazyUnsoundPrematurelyReadFieldsAnalysis, LazyL0TACAIAnalysis)
+            Set(
+                EagerL0FieldMutabilityAnalysis,
+                LazyUnsoundPrematurelyReadFieldsAnalysis,
+                LazyL0BaseAIAnalysis,
+                TACAITransformer
+            )
         )
         as.propertyStore.shutdown()
         validateProperties(as, fieldsWithAnnotations(as.project), Set("FieldMutability"))
@@ -51,16 +57,16 @@ class FieldMutabilityTests extends PropertiesTest {
             Set(
                 EagerL1FieldMutabilityAnalysis,
                 EagerRTACallGraphAnalysisScheduler,
-                EagerLoadedClassesAnalysis,
+                EagerStaticInitializerAnalysis,
+                TriggeredLoadedClassesAnalysis,
                 EagerFinalizerAnalysisScheduler,
                 EagerThreadRelatedCallsAnalysis,
                 EagerSerializationRelatedCallsAnalysis,
                 EagerReflectionRelatedCallsAnalysis,
                 EagerInstantiatedTypesAnalysis,
-                SystemPropertiesAnalysis
-            ),
-            Set(
-                LazyL0TACAIAnalysis,
+                SystemPropertiesAnalysis,
+                LazyL0BaseAIAnalysis,
+                TACAITransformer,
                 LazyUnsoundPrematurelyReadFieldsAnalysis,
                 LazyInterProceduralEscapeAnalysis,
                 new LazyCalleesAnalysis(Set(
@@ -79,19 +85,19 @@ class FieldMutabilityTests extends PropertiesTest {
             Set(
                 EagerL2FieldMutabilityAnalysis,
                 EagerRTACallGraphAnalysisScheduler,
-                EagerLoadedClassesAnalysis,
+                EagerStaticInitializerAnalysis,
+                TriggeredLoadedClassesAnalysis,
                 EagerFinalizerAnalysisScheduler,
                 EagerThreadRelatedCallsAnalysis,
                 EagerSerializationRelatedCallsAnalysis,
                 EagerReflectionRelatedCallsAnalysis,
                 EagerInstantiatedTypesAnalysis,
-                SystemPropertiesAnalysis
-            ),
-            Set(
+                SystemPropertiesAnalysis,
                 LazyUnsoundPrematurelyReadFieldsAnalysis,
                 LazyL2PurityAnalysis,
                 LazyInterProceduralEscapeAnalysis,
-                LazyL0TACAIAnalysis,
+                LazyL0BaseAIAnalysis,
+                TACAITransformer,
                 new LazyCalleesAnalysis(Set(
                     StandardInvokeCallees,
                     SerializationRelatedCallees,

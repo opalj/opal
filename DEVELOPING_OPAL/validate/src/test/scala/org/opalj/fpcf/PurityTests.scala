@@ -33,7 +33,8 @@ import org.opalj.fpcf.analyses.cg.EagerFinalizerAnalysisScheduler
 import org.opalj.fpcf.analyses.cg.LazyCalleesAnalysis
 import org.opalj.fpcf.analyses.cg.EagerSerializationRelatedCallsAnalysis
 import org.opalj.fpcf.analyses.cg.EagerRTACallGraphAnalysisScheduler
-import org.opalj.fpcf.analyses.cg.EagerLoadedClassesAnalysis
+import org.opalj.fpcf.analyses.cg.EagerStaticInitializerAnalysis
+import org.opalj.fpcf.analyses.cg.TriggeredLoadedClassesAnalysis
 import org.opalj.fpcf.analyses.cg.reflection.EagerReflectionRelatedCallsAnalysis
 import org.opalj.fpcf.cg.properties.StandardInvokeCallees
 import org.opalj.fpcf.cg.properties.ReflectionRelatedCallees
@@ -61,8 +62,7 @@ class PurityTests extends PropertiesTest {
     describe("the org.opalj.fpcf.analyses.L0PurityAnalysis is executed") {
         val as = try {
             executeAnalyses(
-                Set(EagerL0PurityAnalysis),
-                Set(
+                Set(EagerL0PurityAnalysis,
                     LazyL0FieldMutabilityAnalysis,
                     LazyClassImmutabilityAnalysis,
                     LazyTypeImmutabilityAnalysis
@@ -83,14 +83,13 @@ class PurityTests extends PropertiesTest {
             Set(
                 EagerL1PurityAnalysis,
                 EagerRTACallGraphAnalysisScheduler,
-                EagerLoadedClassesAnalysis,
+                EagerStaticInitializerAnalysis,
+                TriggeredLoadedClassesAnalysis,
                 EagerFinalizerAnalysisScheduler,
                 EagerThreadRelatedCallsAnalysis,
                 EagerSerializationRelatedCallsAnalysis,
                 EagerReflectionRelatedCallsAnalysis,
-                SystemPropertiesAnalysis
-            ),
-            Set(
+                SystemPropertiesAnalysis,
                 LazyL0TACAIAnalysis,
                 LazyL1FieldMutabilityAnalysis,
                 LazyClassImmutabilityAnalysis,
@@ -110,14 +109,13 @@ class PurityTests extends PropertiesTest {
             Set(
                 EagerL2PurityAnalysis,
                 EagerRTACallGraphAnalysisScheduler,
-                EagerLoadedClassesAnalysis,
+                EagerStaticInitializerAnalysis,
+                TriggeredLoadedClassesAnalysis,
                 EagerFinalizerAnalysisScheduler,
                 EagerThreadRelatedCallsAnalysis,
                 EagerSerializationRelatedCallsAnalysis,
                 EagerReflectionRelatedCallsAnalysis,
-                SystemPropertiesAnalysis
-            ),
-            Set(
+                SystemPropertiesAnalysis,
                 LazyL0TACAIAnalysis,
                 LazyL0CompileTimeConstancyAnalysis,
                 LazyStaticDataUsageAnalysis,

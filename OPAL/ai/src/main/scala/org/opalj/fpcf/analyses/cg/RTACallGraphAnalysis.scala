@@ -109,7 +109,7 @@ class RTAState private (
             _tacDependee = Some(tacDependee)
         }
 
-        if (tacDependee.hasProperty) {
+        if (tacDependee.hasUBP) {
             _tac = tacDependee.ub.tac
         }
     }
@@ -176,7 +176,7 @@ object RTAState {
             _virtualCallSites = new mutable.LongMap[Set[CallSiteT]](),
             _calleesAndCallers = new CalleesAndCallers(),
             if (tacDependee.isFinal) None else Some(tacDependee),
-            if (tacDependee.hasProperty) tacDependee.ub.tac else None,
+            if (tacDependee.hasUBP) tacDependee.ub.tac else None,
             None
         )
     }
@@ -217,7 +217,7 @@ class RTACallGraphAnalysis private[analyses] (
         declaredMethod: DeclaredMethod
     ): PropertyComputationResult = {
         propertyStore(declaredMethod, CallersProperty.key) match {
-            case FinalEP(_, NoCallers) ⇒
+            case FinalP(NoCallers) ⇒
                 // nothing to do, since there is no caller
                 return NoResult;
 
@@ -248,12 +248,11 @@ class RTACallGraphAnalysis private[analyses] (
 
         val state = RTAState(declaredMethod.asDefinedMethod, tacEP)
 
-        if (tacEP.hasProperty)
+        if (tacEP.hasUBP && tacEP.ub.tac.isDefined)
             processMethod(state)
         else {
-            SimplePIntermediateResult(
-                declaredMethod,
-                NoStandardInvokeCallees,
+            InterimResult(
+                InterimEUBP(declaredMethod, NoStandardInvokeCallees),
                 Seq(tacEP),
                 continuation(state)
             )
@@ -262,7 +261,7 @@ class RTACallGraphAnalysis private[analyses] (
 
     private[this] def processMethod(
         state: RTAState
-    ): PropertyComputationResult = {
+    ): ProperPropertyComputationResult = {
         assert(state.tac().isDefined)
         val tac = state.tac().get
 
@@ -271,7 +270,7 @@ class RTACallGraphAnalysis private[analyses] (
 
         // the upper bound for type instantiations, seen so far
         // in case they are not yet computed, we use the initialTypes
-        val instantiatedTypesUB: UIDSet[ObjectType] = if (instantiatedTypesEOptP.hasProperty)
+        val instantiatedTypesUB: UIDSet[ObjectType] = if (instantiatedTypesEOptP.hasUBP)
             instantiatedTypesEOptP.ub.types
         else UIDSet.empty
 
@@ -559,7 +558,7 @@ class RTACallGraphAnalysis private[analyses] (
         }
     }
 
-    private[this] def returnResult(implicit state: RTAState): PropertyComputationResult = {
+    private[this] def returnResult(implicit state: RTAState): ProperPropertyComputationResult = {
         val results = Results(
             resultForStandardInvokeCallees(state) :: state.partialResultsForCallers
         )
@@ -571,13 +570,19 @@ class RTACallGraphAnalysis private[analyses] (
         state: RTAState
     )(
         eps: SomeEPS
-    ): PropertyComputationResult = {
+    ): ProperPropertyComputationResult = {
         eps match {
-            case ESimplePS(_, _: TACAI, _) ⇒
+            case UBP(tac: TACAI) if tac.tac.isDefined ⇒
                 state.updateTACDependee(eps.asInstanceOf[EPS[Method, TACAI]])
                 processMethod(state)
 
-            case ESimplePS(_, ub: InstantiatedTypes, _) ⇒
+            case UBP(_: TACAI) ⇒
+                InterimResult(
+                    InterimEUBP(state.method, NoStandardInvokeCallees),
+                    Seq(eps),
+                    continuation(state)
+                )
+            case UBP(ub: InstantiatedTypes) ⇒
                 state.updateInstantiatedTypesDependee(
                     eps.asInstanceOf[EPS[SomeProject, InstantiatedTypes]]
                 )
@@ -597,7 +602,7 @@ class RTACallGraphAnalysis private[analyses] (
 
     private[this] def resultForStandardInvokeCallees(
         state: RTAState
-    ): PropertyComputationResult = {
+    ): ProperPropertyComputationResult = {
 
         // here we need a immutable copy of the current state
         val newCallees =
@@ -609,9 +614,8 @@ class RTACallGraphAnalysis private[analyses] (
         if (state.virtualCallSites.isEmpty || !state.hasOpenDependees) {
             Result(state.method, newCallees)
         } else {
-            SimplePIntermediateResult(
-                state.method,
-                newCallees,
+            InterimResult(
+                InterimEUBP(state.method, newCallees),
                 state.dependees(),
                 continuation(state)
             )
@@ -619,24 +623,29 @@ class RTACallGraphAnalysis private[analyses] (
     }
 }
 
-object EagerRTACallGraphAnalysisScheduler extends FPCFEagerAnalysisScheduler {
+object EagerRTACallGraphAnalysisScheduler extends FPCFTriggeredAnalysisScheduler {
+    override type InitializationData = Null
 
-    override type InitializationData = RTACallGraphAnalysis
-
-    override def uses: Set[PropertyKind] = Set(InstantiatedTypes, CallersProperty, TACAI)
-
-    override def derives: Set[PropertyKind] = Set(
-        CallersProperty, StandardInvokeCallees
+    override def uses: Set[PropertyBounds] = Set(
+        PropertyBounds.ub(InstantiatedTypes),
+        PropertyBounds.ub(CallersProperty),
+        PropertyBounds.ub(TACAI)
     )
 
-    override def init(p: SomeProject, ps: PropertyStore): RTACallGraphAnalysis = {
+    override def derivesCollaboratively: Set[PropertyBounds] = Set(
+        PropertyBounds.ub(CallersProperty)
+    )
+
+    override def derivesEagerly: Set[PropertyBounds] = Set(
+        PropertyBounds.ub(StandardInvokeCallees)
+    )
+
+    override def register(p: SomeProject, ps: PropertyStore, unused: Null): RTACallGraphAnalysis = {
         val analysis = new RTACallGraphAnalysis(p)
         // register the analysis for initial values for callers (i.e. methods becoming reachable)
         ps.registerTriggeredComputation(CallersProperty.key, analysis.analyze)
         analysis
     }
-
-    override def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
 
     /**
      * Updates the caller properties of the initial entry points ([[InitialEntryPointsKey]]) to be
@@ -653,29 +662,22 @@ object EagerRTACallGraphAnalysisScheduler extends FPCFEagerAnalysisScheduler {
             )(p.logContext)
 
         entryPoints.foreach { ep ⇒
-            ps.handleResult(
-                PartialResult[DeclaredMethod, CallersProperty](ep, CallersProperty.key, {
-                    case EPK(_, _) ⇒ Some(IntermediateESimpleP(
-                        ep,
-                        OnlyCallersWithUnknownContext
-                    ))
-                    case IntermediateESimpleP(_, ub) ⇒
-                        Some(IntermediateESimpleP(ep, ub.updatedWithUnknownContext()))
-                    case r ⇒ throw new IllegalStateException(s"unexpected previous result $r")
-                })
-            )
+            ps.preInitialize(ep, CallersProperty.key) {
+                case _: EPK[_, _] ⇒
+                    InterimEUBP(ep, OnlyCallersWithUnknownContext)
+                case InterimUBP(ub) ⇒
+                    InterimEUBP(ep, ub.updatedWithUnknownContext())
+                case r ⇒ throw new IllegalStateException(s"unexpected previous result $r")
+            }
         }
-
     }
 
-    override def start(
-        project: SomeProject, propertyStore: PropertyStore, rtaAnalysis: RTACallGraphAnalysis
-    ): FPCFAnalysis = {
-        // let the entry points become reachable
-        processEntryPoints(project, propertyStore)
-        rtaAnalysis
+    override def init(p: SomeProject, ps: PropertyStore): Null = {
+        processEntryPoints(p, ps)
+        null
     }
+
+    override def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
 
     override def afterPhaseCompletion(p: SomeProject, ps: PropertyStore): Unit = {}
-
 }

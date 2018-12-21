@@ -15,13 +15,13 @@ import scala.collection.immutable.IntMap
  * @author Florian Kuebler
  */
 sealed trait SerializationRelatedCalleesPropertyMetaInformation
-    extends IndirectCalleesPropertyMetaInformation {
+        extends IndirectCalleesPropertyMetaInformation {
 
     final type Self = SerializationRelatedCallees
 }
 
 sealed trait SerializationRelatedCallees extends IndirectCallees
-    with SerializationRelatedCalleesPropertyMetaInformation {
+        with SerializationRelatedCalleesPropertyMetaInformation {
 
     override def toString: String = {
         s"SerializationRelatedCallees(size=${this.size})"
@@ -31,16 +31,16 @@ sealed trait SerializationRelatedCallees extends IndirectCallees
 }
 
 sealed class SerializationRelatedCalleesImplementation(
-        protected[this] val calleesIds:          IntMap[IntTrieSet],
-        protected[this] val incompleteCallsites: IntTrieSet,
-        val parameters:                          IntMap[Map[DeclaredMethod, Seq[Option[(ValueInformation, IntTrieSet)]]]]
+    protected[this] val calleesIds:          IntMap[IntTrieSet],
+    protected[this] val incompleteCallsites: IntTrieSet,
+    val parameters:                          IntMap[Map[DeclaredMethod, Seq[Option[(ValueInformation, IntTrieSet)]]]]
 ) extends AbstractCalleesLike with SerializationRelatedCallees
 
 object NoSerializationRelatedCallees
     extends SerializationRelatedCalleesImplementation(IntMap.empty, IntTrieSet.empty, IntMap.empty)
 
 object NoSerializationRelatedCalleesDueToNotReachableMethod
-    extends CalleesLikeNotReachable with SerializationRelatedCallees {
+        extends CalleesLikeNotReachable with SerializationRelatedCallees {
 
     override val parameters: IntMap[Map[DeclaredMethod, Seq[Option[(ValueInformation, IntTrieSet)]]]] = IntMap.empty
 }
@@ -48,9 +48,15 @@ object NoSerializationRelatedCalleesDueToNotReachableMethod
 object SerializationRelatedCallees extends SerializationRelatedCalleesPropertyMetaInformation {
 
     final val key: PropertyKey[SerializationRelatedCallees] = {
-        PropertyKey.forSimpleProperty(
-            "SerializationRelatedCallees",
-            NoSerializationRelatedCalleesDueToNotReachableMethod
+        val name = "opalj.SerializationRelatedCallees"
+        PropertyKey.create(
+            name,
+            (_: PropertyStore, reason: FallbackReason, _: Entity) ⇒ reason match {
+                case PropertyIsNotDerivedByPreviouslyExecutedAnalysis ⇒
+                    NoSerializationRelatedCalleesDueToNotReachableMethod
+                case _ ⇒
+                    throw new IllegalStateException(s"No analysis is scheduled for property: $name")
+            }
         )
     }
 }

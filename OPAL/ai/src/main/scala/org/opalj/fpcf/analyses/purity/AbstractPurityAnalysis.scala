@@ -408,8 +408,8 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
         ep:     EOptionP[Field, FieldMutability],
         objRef: Option[Expr[V]]
     )(implicit state: StateType): Unit = ep match {
-        case EPS(_, _: FinalField, _) ⇒ // Final fields don't impede purity
-        case FinalEP(_, _) ⇒ // Mutable field
+        case LBP(_: FinalField) ⇒ // Final fields don't impede purity
+        case _: FinalEP[Field, FieldMutability] ⇒ // Mutable field
             if (objRef.isDefined) {
                 if (state.ubPurity.isDeterministic)
                     isLocal(objRef.get, SideEffectFree)
@@ -496,8 +496,8 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
         returnValue: Expr[V]
     )(implicit state: StateType): Boolean = ep match {
         // Returning immutable object is pure
-        case EPS(_, ImmutableType | ImmutableObject, _) ⇒ true
-        case FinalEP(_, _) ⇒
+        case LBP(ImmutableType | ImmutableObject) ⇒ true
+        case _: FinalEP[ObjectType, Property] ⇒
             atMost(Pure) // Can not be compile time pure if mutable object is returned
             if (state.ubPurity.isDeterministic)
                 isLocal(returnValue, SideEffectFree)
@@ -526,7 +526,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
     )(implicit state: StateType): Boolean = {
         handleCalleesUpdate(calleesEOptP)
         calleesEOptP match {
-            case ESimplePS(_, p, isFinal) ⇒
+            case EUBPS(_, p, isFinal) ⇒
                 if (!isFinal) reducePurityLB(ImpureByAnalysis)
 
                 val hasIncompleteCallSites =
@@ -601,19 +601,27 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
      * Retrieves and commits the methods purity as calculated for its declaring class type for the
      * current DefinedMethod that represents the non-overwritten method in a subtype.
      */
-    def baseMethodPurity(dm: DefinedMethod): PropertyComputationResult = {
+    def baseMethodPurity(dm: DefinedMethod): ProperPropertyComputationResult = {
 
-        def c(eps: SomeEOptionP): PropertyComputationResult = eps match {
-            case FinalEP(_, p) ⇒ Result(dm, p)
-            case ep @ IntermediateEP(_, lb, ub) ⇒
-                IntermediateResult(
-                    dm, lb, ub,
-                    Seq(ep), c, CheapPropertyComputation
+        def c(eps: SomeEOptionP): ProperPropertyComputationResult = eps match {
+            case FinalP(p) ⇒ Result(dm, p)
+            case ep @ InterimLUBP(lb, ub) ⇒
+                InterimResult.create(
+                    dm,
+                    lb,
+                    ub,
+                    Seq(ep),
+                    c,
+                    CheapPropertyComputation
                 )
             case epk ⇒
-                IntermediateResult(
-                    dm, ImpureByAnalysis, CompileTimePure,
-                    Seq(epk), c, CheapPropertyComputation
+                InterimResult(
+                    dm,
+                    ImpureByAnalysis,
+                    CompileTimePure,
+                    Seq(epk),
+                    c,
+                    CheapPropertyComputation
                 )
         }
 
@@ -625,16 +633,16 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
      *
      * @param definedMethod A defined method with a body.
      */
-    def determinePurity(definedMethod: DefinedMethod): PropertyComputationResult
+    def determinePurity(definedMethod: DefinedMethod): ProperPropertyComputationResult
 
     /** Called when the analysis is scheduled lazily. */
-    def doDeterminePurity(e: Entity): PropertyComputationResult = {
+    def doDeterminePurity(e: Entity): ProperPropertyComputationResult = {
         e match {
             case dm: DefinedMethod if dm.definedMethod.body.isDefined ⇒
                 determinePurity(dm)
             case dm: DeclaredMethod ⇒ Result(dm, ImpureByLackOfInformation)
             case _ ⇒
-                throw new UnknownError("purity is only defined for declared methods")
+                throw new IllegalArgumentException(s"$e is not a declared method")
         }
     }
 
@@ -648,10 +656,10 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
             case finalEP: FinalEP[Method, TACAI] ⇒
                 handleTACAI(finalEP)
                 finalEP.ub.tac
-            case eps: IntermediateEP[Method, TACAI] ⇒
+            case eps @ InterimUBP(ub: TACAI) ⇒
                 reducePurityLB(ImpureByAnalysis)
                 handleTACAI(eps)
-                eps.ub.tac
+                ub.tac
             case epk ⇒
                 reducePurityLB(ImpureByAnalysis)
                 handleTACAI(epk)

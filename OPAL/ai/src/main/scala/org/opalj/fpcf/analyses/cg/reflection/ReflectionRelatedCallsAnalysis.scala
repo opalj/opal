@@ -1,5 +1,9 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.fpcf.analyses.cg.reflection
+package org.opalj
+package fpcf
+package analyses
+package cg
+package reflection
 
 import org.opalj.br.BaseType
 import org.opalj.br.DeclaredMethod
@@ -27,27 +31,6 @@ import org.opalj.collection.immutable.IntArraySetBuilder
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.RefArray
 import org.opalj.collection.immutable.UIDSet
-import org.opalj.fpcf.EOptionP
-import org.opalj.fpcf.EPK
-import org.opalj.fpcf.EPS
-import org.opalj.fpcf.ESimplePS
-import org.opalj.fpcf.FPCFAnalysis
-import org.opalj.fpcf.FPCFEagerAnalysisScheduler
-import org.opalj.fpcf.FinalEP
-import org.opalj.fpcf.IntermediateESimpleP
-import org.opalj.fpcf.NoResult
-import org.opalj.fpcf.PartialResult
-import org.opalj.fpcf.PropertyComputationResult
-import org.opalj.fpcf.PropertyKind
-import org.opalj.fpcf.PropertyStore
-import org.opalj.fpcf.Result
-import org.opalj.fpcf.Results
-import org.opalj.fpcf.SimplePIntermediateResult
-import org.opalj.fpcf.SomeEPS
-import org.opalj.fpcf.analyses.cg.IndirectCalleesAndCallers
-import org.opalj.fpcf.analyses.cg.InstantiatedTypesAnalysis
-import org.opalj.fpcf.analyses.cg.V
-import org.opalj.fpcf.analyses.cg.persistentUVar
 import org.opalj.fpcf.cg.properties.CallersProperty
 import org.opalj.fpcf.cg.properties.InstantiatedTypes
 import org.opalj.fpcf.cg.properties.LoadedClasses
@@ -84,7 +67,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         final val project: SomeProject
 ) extends FPCFAnalysis {
 
-    val HIGHSOUNDNESS = true
+    val HIGHSOUNDNESS = false
 
     val ConstructorT = ObjectType("java/lang/reflect/Constructor")
     val MethodT = ObjectType("java/lang/reflect/Method")
@@ -117,7 +100,9 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
             private[this] var _systemProperties:         Option[Map[String, Set[String]]]                = None
     ) {
 
-        if (_tacaiDependee.isDefined && _tacaiDependee.get.hasProperty)
+        if (_tacaiDependee.isDefined &&
+            _tacaiDependee.get.hasUBP &&
+            _tacaiDependee.get.ub.tac.isDefined)
             assert(_tacaiDependee.get.ub.tac == _tacode)
 
         private[cg] def copy(
@@ -173,7 +158,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
             if (ep.isRefinable) {
                 _tacaiDependee = Some(ep)
             }
-            if (ep.hasProperty) {
+            if (ep.hasUBP && ep.ub.tac.isDefined) {
                 _tacode = ep.ub.tac
             }
         }
@@ -191,7 +176,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
             if (ep.isRefinable) {
                 _systemPropertiesDependee = Some(ep)
             }
-            if (ep.hasProperty) {
+            if (ep.hasUBP) {
                 _systemProperties = Some(ep.ub.properties)
             }
         }
@@ -222,7 +207,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
     def analyze(declaredMethod: DeclaredMethod): PropertyComputationResult = {
         // todo this is copy & past code from the RTACallGraphAnalysis -> refactor
         propertyStore(declaredMethod, CallersProperty.key) match {
-            case FinalEP(_, NoCallers) ⇒
+            case FinalP(NoCallers) ⇒
                 // nothing to do, since there is no caller
                 return NoResult;
 
@@ -289,7 +274,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         val tacEP = propertyStore(method, TACAI.key)
         val tacEPOpt = if (tacEP.isFinal) None else Some(tacEP)
 
-        if (tacEP.hasProperty) {
+        if (tacEP.hasUBP && tacEP.ub.tac.isDefined) {
             implicit val state: State = new State(
                 definedMethod,
                 forNamePCs = forNamePCs,
@@ -305,15 +290,15 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                 invocationPCs = invocationPCs,
                 _tacaiDependee = tacEPOpt
             )
-            SimplePIntermediateResult(
-                definedMethod, NoReflectionRelatedCallees, tacEPOpt, continuation
+            InterimResult(
+                InterimEUBP(definedMethod, NoReflectionRelatedCallees), tacEPOpt, continuation
             )
         }
     }
 
     private[this] def processMethod(
         state: State
-    ): PropertyComputationResult = {
+    ): ProperPropertyComputationResult = {
         assert(state.isTACDefined)
         val (loadedClassesUB, instantiatedTypesUB) = loadedClassesAndInstantiatedTypes()
 
@@ -1303,8 +1288,8 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         }
     }
 
-    private[this] def continuation(eps: SomeEPS)(implicit state: State): PropertyComputationResult = eps match {
-        case ESimplePS(_, ub: SystemProperties, isFinal) ⇒
+    private[this] def continuation(eps: SomeEPS)(implicit state: State): ProperPropertyComputationResult = eps match {
+        case EUBPS(_, ub: SystemProperties, isFinal) ⇒
             val newEPS =
                 if (isFinal) None else Some(eps.asInstanceOf[EPS[SomeProject, SystemProperties]])
             // Create new state that reflects changes that may have happened in the meantime
@@ -1324,10 +1309,15 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
             analyzeMethod()(newState)
             returnResult()(newState)
 
-        case ESimplePS(_, _: TACAI, isFinal) ⇒
+        case UBP(tac: TACAI) if tac.tac.isDefined ⇒
             state.removeTACDependee()
             state.addTACDependee(eps.asInstanceOf[EPS[Method, TACAI]])
             processMethod(state)
+
+        case UBP(_: TACAI) ⇒
+            InterimResult(
+                InterimEUBP(state.definedMethod, NoReflectionRelatedCallees), Some(eps), continuation
+            )
 
     }
 
@@ -1357,8 +1347,8 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         (loadedClassesUB, instantiatedTypesUB)
     }
 
-    @inline private[this] def returnResult()(implicit state: State): PropertyComputationResult = {
-        var res: List[PropertyComputationResult] = state.calleesAndCallers.partialResultsForCallers
+    @inline private[this] def returnResult()(implicit state: State): ProperPropertyComputationResult = {
+        var res: List[ProperPropertyComputationResult] = state.calleesAndCallers.partialResultsForCallers
 
         val calleeUB = if (state.calleesAndCallers.callees.isEmpty)
             NoReflectionRelatedCallees
@@ -1371,9 +1361,8 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
 
         val calleesResult =
             if (state.hasOpenDependee) {
-                SimplePIntermediateResult(
-                    state.definedMethod,
-                    calleeUB,
+                InterimResult(
+                    InterimEUBP(state.definedMethod, calleeUB),
                     state.systemPropertiesDependee ++ state.tacaiDependee,
                     continuation
                 )
@@ -1386,55 +1375,60 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         // todo here we should compare to the current loaded classes ub
         if (state.newLoadedClasses.nonEmpty) {
             res ::= PartialResult[SomeProject, LoadedClasses](project, LoadedClasses.key, {
-                case IntermediateESimpleP(p, ub) ⇒
+                case InterimEUBP(p, ub) ⇒
                     val newUb = ub.classes ++ state.newLoadedClasses
                     // due to monotonicity:
                     // the size check sufficiently replaces the subset check
                     if (newUb.size > ub.classes.size)
-                        Some(IntermediateESimpleP(p, ub.updated(state.newLoadedClasses)))
+                        Some(InterimEUBP(p, ub.updated(state.newLoadedClasses)))
                     else
                         None
 
                 case EPK(p, _) ⇒
-                    Some(IntermediateESimpleP(p, LoadedClasses.initial(state.newLoadedClasses)))
+                    Some(InterimEUBP(p, LoadedClasses.initial(state.newLoadedClasses)))
 
                 case r ⇒ throw new IllegalStateException(s"unexpected previous result $r")
             })
         }
 
         if (state.newInstantiatedTypes.nonEmpty)
-            res ::= InstantiatedTypesAnalysis.partialResultForInstantiatedTypes(
-                p, state.newInstantiatedTypes, initialInstantiatedTypes
+            res ::= PartialResult(
+                p,
+                InstantiatedTypes.key,
+                InstantiatedTypesAnalysis.update(
+                    p, state.newInstantiatedTypes, initialInstantiatedTypes
+                )
             )
 
         Results(res)
     }
 }
 
-object EagerReflectionRelatedCallsAnalysis extends FPCFEagerAnalysisScheduler {
-    override type InitializationData = ReflectionRelatedCallsAnalysis
+object EagerReflectionRelatedCallsAnalysis extends BasicFPCFTriggeredAnalysisScheduler {
 
-    override def start(
-        project:       SomeProject,
-        propertyStore: PropertyStore,
-        analysis:      ReflectionRelatedCallsAnalysis
-    ): FPCFAnalysis = {
-        analysis
-    }
+    override def uses: Set[PropertyBounds] =
+        Set(
+            PropertyBounds.ub(CallersProperty),
+            PropertyBounds.ub(SystemProperties),
+            PropertyBounds.ub(LoadedClasses),
+            PropertyBounds.ub(InstantiatedTypes),
+            PropertyBounds.ub(TACAI)
+        )
 
-    override def uses: Set[PropertyKind] =
-        Set(CallersProperty, SystemProperties, LoadedClasses, InstantiatedTypes, TACAI)
+    override def derivesCollaboratively: Set[PropertyBounds] =
+        Set(
+            PropertyBounds.ub(CallersProperty),
+            PropertyBounds.ub(LoadedClasses),
+            PropertyBounds.ub(InstantiatedTypes)
+        )
 
-    override def derives: Set[PropertyKind] =
-        Set(CallersProperty, ReflectionRelatedCallees, LoadedClasses, InstantiatedTypes)
-
-    override def init(p: SomeProject, ps: PropertyStore): ReflectionRelatedCallsAnalysis = {
+    override def register(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new ReflectionRelatedCallsAnalysis(p)
         ps.registerTriggeredComputation(CallersProperty.key, analysis.analyze)
         analysis
     }
 
-    override def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
-
-    override def afterPhaseCompletion(p: SomeProject, ps: PropertyStore): Unit = {}
+    override def derivesEagerly: Set[PropertyBounds] = Set(
+        PropertyBounds.ub(ReflectionRelatedCallees)
+    )
 }

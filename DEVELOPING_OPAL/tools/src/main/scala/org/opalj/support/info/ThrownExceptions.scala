@@ -19,6 +19,7 @@ import org.opalj.fpcf.analyses.EagerL1ThrownExceptionsAnalysis
 import org.opalj.fpcf.properties.{ThrownExceptions ⇒ ThrownExceptionsProperty}
 import org.opalj.util.Nanoseconds
 import org.opalj.util.PerformanceEvaluation.time
+import org.opalj.fpcf.PropertyKind
 
 /**
  * Prints out the information about the exceptions thrown by methods.
@@ -62,16 +63,17 @@ object ThrownExceptions extends DefaultOneStepAnalysis {
             if (parameters.contains(AnalysisLevelL0)) {
                 // We are relying on/using the "FallbackAnalysis":
                 val ps = project.get(PropertyStoreKey)
-                ps.setupPhase(Set.empty) // <= ALWAYS REQUIRED.
+                ps.setupPhase(Set.empty[PropertyKind]) // <= ALWAYS REQUIRED.
                 // We have to query the properties...
                 project.allMethods foreach { m ⇒ ps.force(m, ThrownExceptionsProperty.key) }
                 ps.waitOnPhaseCompletion()
                 ps
             } else /* if no analysis level is specified or L1 */ {
-                project.get(FPCFAnalysesManagerKey).runAll(
+                val (ps, _) = project.get(FPCFAnalysesManagerKey).runAll(
                     LazyVirtualMethodThrownExceptionsAnalysis,
                     EagerL1ThrownExceptionsAnalysis
                 )
+                ps
             }
         } { t ⇒ executionTime = t }
 
