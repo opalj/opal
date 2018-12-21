@@ -30,6 +30,9 @@ import org.opalj.tac.ReturnValue
 //import org.opalj.tac.PutField
 //import org.opalj.tac.GetField
 import org.opalj.tac.fpcf.analyses.TACAITransformer
+import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
+//import org.opalj.ai.domain.l1
+import org.opalj.ai.domain.l2
 
 trait Fact
 
@@ -377,6 +380,22 @@ object TestTaintAnalysisRunner {
                     PropertyStore.updateDebug(false)
                     ps
                 }
+            )
+            /*
+            p.updateProjectInformationKeyInitializationData(
+                AIDomainFactoryKey,
+                (i: Option[Set[Class[_ <: AnyRef]]]) ⇒ (i match {
+                    case None               ⇒ Set(classOf[l1.DefaultDomainWithCFGAndDefUse[_]])
+                    case Some(requirements) ⇒ requirements + classOf[l1.DefaultDomainWithCFGAndDefUse[_]]
+                }): Set[Class[_ <: AnyRef]]
+            )
+            */
+            p.updateProjectInformationKeyInitializationData(
+                AIDomainFactoryKey,
+                (i: Option[Set[Class[_ <: AnyRef]]]) ⇒ (i match {
+                    case None               ⇒ Set(classOf[l2.DefaultPerformInvocationsDomainWithCFGAndDefUse[_]])
+                    case Some(requirements) ⇒ requirements + classOf[l2.DefaultPerformInvocationsDomainWithCFGAndDefUse[_]]
+                }): Set[Class[_ <: AnyRef]]
             )
             val ps = p.get(PropertyStoreKey)
             val manager = p.get(FPCFAnalysesManagerKey)
