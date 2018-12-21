@@ -229,7 +229,7 @@ object InterimResult {
         new InterimResult[P](
             InterimELUBP(e, lb, ub),
             dependees,
-            c.asInstanceOf[OnUpdateContinuation],
+            c.asInstanceOf[ProperOnUpdateContinuation],
             hint
         )
     }
