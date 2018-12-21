@@ -2,12 +2,22 @@
 package org.opalj
 package fpcf
 
-import org.opalj.fpcf.analyses.escape.EagerReturnValueFreshnessAnalysis
-import org.opalj.fpcf.analyses.LazyFieldLocalityAnalysis
-import org.opalj.fpcf.analyses.LazyVirtualCallAggregatingEscapeAnalysis
-import org.opalj.fpcf.analyses.LazyVirtualReturnValueFreshnessAnalysis
-import org.opalj.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
+import org.opalj.fpcf.analyses.LazyFieldLocalityAnalysis
+import org.opalj.fpcf.analyses.TriggeredSystemPropertiesAnalysis
+import org.opalj.fpcf.analyses.cg.LazyCalleesAnalysis
+import org.opalj.fpcf.analyses.cg.TriggeredFinalizerAnalysisScheduler
+import org.opalj.fpcf.analyses.cg.TriggeredLoadedClassesAnalysis
+import org.opalj.fpcf.analyses.cg.TriggeredRTACallGraphAnalysisScheduler
+import org.opalj.fpcf.analyses.cg.TriggeredSerializationRelatedCallsAnalysis
+import org.opalj.fpcf.analyses.cg.TriggeredStaticInitializerAnalysis
+import org.opalj.fpcf.analyses.cg.TriggeredThreadRelatedCallsAnalysis
+import org.opalj.fpcf.analyses.cg.reflection.TriggeredReflectionRelatedCallsAnalysis
+import org.opalj.fpcf.analyses.escape.EagerReturnValueFreshnessAnalysis
+import org.opalj.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
+import org.opalj.fpcf.cg.properties.ReflectionRelatedCallees
+import org.opalj.fpcf.cg.properties.SerializationRelatedCallees
+import org.opalj.fpcf.cg.properties.StandardInvokeCallees
 import org.opalj.tac.fpcf.analyses.TACAITransformer
 
 /**
@@ -20,11 +30,21 @@ import org.opalj.tac.fpcf.analyses.TACAITransformer
 class ReturnValueFreshnessTests extends PropertiesTest {
 
     val analysisSchedulers = Set[FPCFAnalysisScheduler](
+        TriggeredRTACallGraphAnalysisScheduler,
+        TriggeredStaticInitializerAnalysis,
+        TriggeredLoadedClassesAnalysis,
+        TriggeredFinalizerAnalysisScheduler,
+        TriggeredThreadRelatedCallsAnalysis,
+        TriggeredSerializationRelatedCallsAnalysis,
+        TriggeredReflectionRelatedCallsAnalysis,
+        TriggeredSystemPropertiesAnalysis,
         LazyL0BaseAIAnalysis,
-        TACAITransformer, // LazyL0TACAIAnalysis,
+        TACAITransformer,
         LazyInterProceduralEscapeAnalysis,
-        LazyVirtualCallAggregatingEscapeAnalysis,
-        LazyVirtualReturnValueFreshnessAnalysis,
+        new LazyCalleesAnalysis(Set(
+            StandardInvokeCallees, SerializationRelatedCallees, ReflectionRelatedCallees
+        )),
+        LazyInterProceduralEscapeAnalysis,
         LazyFieldLocalityAnalysis,
         EagerReturnValueFreshnessAnalysis
     )
