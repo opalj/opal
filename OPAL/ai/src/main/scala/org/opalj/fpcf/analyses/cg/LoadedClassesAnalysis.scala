@@ -130,7 +130,7 @@ class LoadedClassesAnalysis(
         if (tacaiEP.isRefinable) {
             InterimPartialResult(
                 if (newLoadedClasses.nonEmpty)
-                    Some(PartialResultUpdateComputation(propertyStore, LoadedClasses.key, update))
+                    Some(PartialResult(propertyStore, LoadedClasses.key, update))
                 else
                     None,
                 Some(tacaiEP),

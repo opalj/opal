@@ -125,7 +125,7 @@ class InstantiatedTypesAnalysis private[analyses] (
         if (tacEP.isRefinable) {
             InterimPartialResult(
                 if (newInstantiatedTypes.nonEmpty || instantiatedTypesEOptP.isEPK)
-                    Some(PartialResultUpdateComputation(
+                    Some(PartialResult(
                     p,
                     InstantiatedTypes.key,
                     InstantiatedTypesAnalysis.update(
