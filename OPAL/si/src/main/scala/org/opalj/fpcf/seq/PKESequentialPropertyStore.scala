@@ -320,19 +320,6 @@ final class PKESequentialPropertyStore private (
     ): Unit = {
         val triggeredEntities = mutable.HashSet.empty[Entity]
         triggeredComputations(pk.id) += (pc, triggeredEntities)
-        // trigger the computation for entities which already have values
-        for {
-            eOptionP ← ps(pk.id).valuesIterator
-            if eOptionP.isEPS
-            e = eOptionP.e
-            if !triggeredEntities.contains(e)
-        } {
-            triggeredEntities += e
-            val entityPC = pc.asInstanceOf[PropertyComputation[Entity]]
-            val task = new PropertyComputationTask(this, e, entityPC)
-            tasks.addLast(task)
-            scheduledTasksCounter += 1
-        }
     }
 
     private[this] def triggerComputations(e: Entity, pkId: Int): Unit = {
@@ -624,6 +611,17 @@ final class PKESequentialPropertyStore private (
 
     override def waitOnPhaseCompletion(): Unit = handleExceptions {
         require(subPhaseId == 0, "unpaired waitOnPhaseCompletion call")
+
+        // Let's trigger triggered computations for those entities, which have values!
+        ps.map(_.clone()).zipWithIndex.foreach { epssPKId ⇒
+            val (epss, pkId) = epssPKId
+            epss foreach { eps ⇒
+                val (e, eOptionP) = eps
+                if (eOptionP.isEPS) {
+                    triggerComputations(e, pkId)
+                }
+            }
+        }
 
         val maxPKIndex = PropertyKey.maxId
         var continueComputation: Boolean = false
