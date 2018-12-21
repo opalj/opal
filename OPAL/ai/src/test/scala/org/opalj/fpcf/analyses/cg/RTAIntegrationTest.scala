@@ -12,7 +12,7 @@ import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.Project
 import org.opalj.br.instructions.MethodInvocationInstruction
 import org.opalj.br.reader.Java8Framework.ClassFiles
-import org.opalj.fpcf.analyses.cg.reflection.EagerReflectionRelatedCallsAnalysis
+import org.opalj.fpcf.analyses.cg.reflection.TriggeredReflectionRelatedCallsAnalysis
 import org.opalj.fpcf.cg.properties.CallersProperty
 import org.opalj.fpcf.cg.properties.Callees
 import org.opalj.fpcf.cg.properties.ReflectionRelatedCallees
@@ -50,16 +50,16 @@ class RTAIntegrationTest extends FlatSpec with Matchers {
 
     val manager: FPCFAnalysesManager = project.get(FPCFAnalysesManagerKey)
     /*val propertyStore = */ manager.runAll(
-        EagerRTACallGraphAnalysisScheduler,
-        EagerStaticInitializerAnalysis,
+        TriggeredRTACallGraphAnalysisScheduler,
+        TriggeredStaticInitializerAnalysis,
         TriggeredLoadedClassesAnalysis,
-        EagerFinalizerAnalysisScheduler,
-        EagerThreadRelatedCallsAnalysis,
-        EagerSerializationRelatedCallsAnalysis,
-        EagerReflectionRelatedCallsAnalysis,
-        SystemPropertiesAnalysis,
-        EagerConfiguredNativeMethodsAnalysis,
-        EagerInstantiatedTypesAnalysis,
+        TriggeredFinalizerAnalysisScheduler,
+        TriggeredThreadRelatedCallsAnalysis,
+        TriggeredSerializationRelatedCallsAnalysis,
+        TriggeredReflectionRelatedCallsAnalysis,
+        TriggeredSystemPropertiesAnalysis,
+        TriggeredConfiguredNativeMethodsAnalysis,
+        TriggeredInstantiatedTypesAnalysis,
         LazyL0TACAIAnalysis,
         new LazyCalleesAnalysis(
             Set(StandardInvokeCallees, SerializationRelatedCallees, ReflectionRelatedCallees)

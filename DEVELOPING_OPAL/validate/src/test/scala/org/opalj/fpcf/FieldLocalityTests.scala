@@ -9,15 +9,15 @@ import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.br.analyses.Project
 import org.opalj.fpcf.analyses.EagerFieldLocalityAnalysis
-import org.opalj.fpcf.analyses.SystemPropertiesAnalysis
-import org.opalj.fpcf.analyses.cg.EagerFinalizerAnalysisScheduler
-import org.opalj.fpcf.analyses.cg.EagerRTACallGraphAnalysisScheduler
-import org.opalj.fpcf.analyses.cg.EagerSerializationRelatedCallsAnalysis
-import org.opalj.fpcf.analyses.cg.EagerStaticInitializerAnalysis
-import org.opalj.fpcf.analyses.cg.EagerThreadRelatedCallsAnalysis
+import org.opalj.fpcf.analyses.TriggeredSystemPropertiesAnalysis
+import org.opalj.fpcf.analyses.cg.TriggeredFinalizerAnalysisScheduler
+import org.opalj.fpcf.analyses.cg.TriggeredRTACallGraphAnalysisScheduler
+import org.opalj.fpcf.analyses.cg.TriggeredSerializationRelatedCallsAnalysis
+import org.opalj.fpcf.analyses.cg.TriggeredStaticInitializerAnalysis
+import org.opalj.fpcf.analyses.cg.TriggeredThreadRelatedCallsAnalysis
 import org.opalj.fpcf.analyses.cg.LazyCalleesAnalysis
 import org.opalj.fpcf.analyses.cg.TriggeredLoadedClassesAnalysis
-import org.opalj.fpcf.analyses.cg.reflection.EagerReflectionRelatedCallsAnalysis
+import org.opalj.fpcf.analyses.cg.reflection.TriggeredReflectionRelatedCallsAnalysis
 import org.opalj.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
 import org.opalj.fpcf.cg.properties.ReflectionRelatedCallees
@@ -29,14 +29,14 @@ class FieldLocalityTests extends PropertiesTest {
 
     val analyses = Set[FPCFAnalysisScheduler](
         EagerFieldLocalityAnalysis,
-        EagerRTACallGraphAnalysisScheduler,
-        EagerStaticInitializerAnalysis,
+        TriggeredRTACallGraphAnalysisScheduler,
+        TriggeredStaticInitializerAnalysis,
         TriggeredLoadedClassesAnalysis,
-        EagerFinalizerAnalysisScheduler,
-        EagerThreadRelatedCallsAnalysis,
-        EagerSerializationRelatedCallsAnalysis,
-        EagerReflectionRelatedCallsAnalysis,
-        SystemPropertiesAnalysis,
+        TriggeredFinalizerAnalysisScheduler,
+        TriggeredThreadRelatedCallsAnalysis,
+        TriggeredSerializationRelatedCallsAnalysis,
+        TriggeredReflectionRelatedCallsAnalysis,
+        TriggeredSystemPropertiesAnalysis,
         LazyL0BaseAIAnalysis,
         TACAITransformer,
         LazyInterProceduralEscapeAnalysis,

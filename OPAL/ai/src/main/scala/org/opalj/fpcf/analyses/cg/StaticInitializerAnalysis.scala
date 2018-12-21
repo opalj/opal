@@ -193,7 +193,7 @@ class StaticInitializerAnalysis(
     }
 }
 
-object EagerStaticInitializerAnalysis extends BasicFPCFEagerAnalysisScheduler {
+object TriggeredStaticInitializerAnalysis extends BasicFPCFEagerAnalysisScheduler {
 
     override def uses: Set[PropertyBounds] =
         Set(
@@ -209,7 +209,9 @@ object EagerStaticInitializerAnalysis extends BasicFPCFEagerAnalysisScheduler {
 
     override def derivesEagerly: Set[PropertyBounds] = Set.empty
 
-    override def start(p: SomeProject, ps: PropertyStore, unused: Null): StaticInitializerAnalysis = {
+    override def start(
+        p: SomeProject, ps: PropertyStore, unused: Null
+    ): StaticInitializerAnalysis = {
         val analysis = new StaticInitializerAnalysis(p)
 
         ps.scheduleEagerComputationForEntity(p)(

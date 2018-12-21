@@ -7,16 +7,16 @@ import org.opalj.fpcf.analyses.EagerL0FieldMutabilityAnalysis
 import org.opalj.fpcf.analyses.EagerL1FieldMutabilityAnalysis
 import org.opalj.fpcf.analyses.EagerL2FieldMutabilityAnalysis
 import org.opalj.fpcf.analyses.LazyUnsoundPrematurelyReadFieldsAnalysis
-import org.opalj.fpcf.analyses.SystemPropertiesAnalysis
-import org.opalj.fpcf.analyses.cg.EagerFinalizerAnalysisScheduler
-import org.opalj.fpcf.analyses.cg.EagerInstantiatedTypesAnalysis
-import org.opalj.fpcf.analyses.cg.EagerStaticInitializerAnalysis
-import org.opalj.fpcf.analyses.cg.EagerRTACallGraphAnalysisScheduler
-import org.opalj.fpcf.analyses.cg.EagerSerializationRelatedCallsAnalysis
-import org.opalj.fpcf.analyses.cg.EagerThreadRelatedCallsAnalysis
+import org.opalj.fpcf.analyses.TriggeredSystemPropertiesAnalysis
+import org.opalj.fpcf.analyses.cg.TriggeredFinalizerAnalysisScheduler
+import org.opalj.fpcf.analyses.cg.TriggeredInstantiatedTypesAnalysis
+import org.opalj.fpcf.analyses.cg.TriggeredStaticInitializerAnalysis
+import org.opalj.fpcf.analyses.cg.TriggeredRTACallGraphAnalysisScheduler
+import org.opalj.fpcf.analyses.cg.TriggeredSerializationRelatedCallsAnalysis
+import org.opalj.fpcf.analyses.cg.TriggeredThreadRelatedCallsAnalysis
 import org.opalj.fpcf.analyses.cg.LazyCalleesAnalysis
 import org.opalj.fpcf.analyses.cg.TriggeredLoadedClassesAnalysis
-import org.opalj.fpcf.analyses.cg.reflection.EagerReflectionRelatedCallsAnalysis
+import org.opalj.fpcf.analyses.cg.reflection.TriggeredReflectionRelatedCallsAnalysis
 import org.opalj.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.fpcf.analyses.purity.LazyL2PurityAnalysis
 import org.opalj.fpcf.cg.properties.ReflectionRelatedCallees
@@ -56,15 +56,15 @@ class FieldMutabilityTests extends PropertiesTest {
         val as = executeAnalyses(
             Set(
                 EagerL1FieldMutabilityAnalysis,
-                EagerRTACallGraphAnalysisScheduler,
-                EagerStaticInitializerAnalysis,
+                TriggeredRTACallGraphAnalysisScheduler,
+                TriggeredStaticInitializerAnalysis,
                 TriggeredLoadedClassesAnalysis,
-                EagerFinalizerAnalysisScheduler,
-                EagerThreadRelatedCallsAnalysis,
-                EagerSerializationRelatedCallsAnalysis,
-                EagerReflectionRelatedCallsAnalysis,
-                EagerInstantiatedTypesAnalysis,
-                SystemPropertiesAnalysis,
+                TriggeredFinalizerAnalysisScheduler,
+                TriggeredThreadRelatedCallsAnalysis,
+                TriggeredSerializationRelatedCallsAnalysis,
+                TriggeredReflectionRelatedCallsAnalysis,
+                TriggeredInstantiatedTypesAnalysis,
+                TriggeredSystemPropertiesAnalysis,
                 LazyL0BaseAIAnalysis,
                 TACAITransformer,
                 LazyUnsoundPrematurelyReadFieldsAnalysis,
@@ -84,15 +84,15 @@ class FieldMutabilityTests extends PropertiesTest {
         val as = executeAnalyses(
             Set(
                 EagerL2FieldMutabilityAnalysis,
-                EagerRTACallGraphAnalysisScheduler,
-                EagerStaticInitializerAnalysis,
+                TriggeredRTACallGraphAnalysisScheduler,
+                TriggeredStaticInitializerAnalysis,
                 TriggeredLoadedClassesAnalysis,
-                EagerFinalizerAnalysisScheduler,
-                EagerThreadRelatedCallsAnalysis,
-                EagerSerializationRelatedCallsAnalysis,
-                EagerReflectionRelatedCallsAnalysis,
-                EagerInstantiatedTypesAnalysis,
-                SystemPropertiesAnalysis,
+                TriggeredFinalizerAnalysisScheduler,
+                TriggeredThreadRelatedCallsAnalysis,
+                TriggeredSerializationRelatedCallsAnalysis,
+                TriggeredReflectionRelatedCallsAnalysis,
+                TriggeredInstantiatedTypesAnalysis,
+                TriggeredSystemPropertiesAnalysis,
                 LazyUnsoundPrematurelyReadFieldsAnalysis,
                 LazyL2PurityAnalysis,
                 LazyInterProceduralEscapeAnalysis,

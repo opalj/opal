@@ -27,15 +27,15 @@ import org.opalj.fpcf.analyses.LazyStaticDataUsageAnalysis
 import org.opalj.fpcf.analyses.LazyVirtualMethodStaticDataUsageAnalysis
 import org.opalj.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.LazyL0TACAIAnalysis
-import org.opalj.fpcf.analyses.SystemPropertiesAnalysis
-import org.opalj.fpcf.analyses.cg.EagerThreadRelatedCallsAnalysis
-import org.opalj.fpcf.analyses.cg.EagerFinalizerAnalysisScheduler
+import org.opalj.fpcf.analyses.TriggeredSystemPropertiesAnalysis
+import org.opalj.fpcf.analyses.cg.TriggeredThreadRelatedCallsAnalysis
+import org.opalj.fpcf.analyses.cg.TriggeredFinalizerAnalysisScheduler
 import org.opalj.fpcf.analyses.cg.LazyCalleesAnalysis
-import org.opalj.fpcf.analyses.cg.EagerSerializationRelatedCallsAnalysis
-import org.opalj.fpcf.analyses.cg.EagerRTACallGraphAnalysisScheduler
-import org.opalj.fpcf.analyses.cg.EagerStaticInitializerAnalysis
+import org.opalj.fpcf.analyses.cg.TriggeredSerializationRelatedCallsAnalysis
+import org.opalj.fpcf.analyses.cg.TriggeredRTACallGraphAnalysisScheduler
+import org.opalj.fpcf.analyses.cg.TriggeredStaticInitializerAnalysis
 import org.opalj.fpcf.analyses.cg.TriggeredLoadedClassesAnalysis
-import org.opalj.fpcf.analyses.cg.reflection.EagerReflectionRelatedCallsAnalysis
+import org.opalj.fpcf.analyses.cg.reflection.TriggeredReflectionRelatedCallsAnalysis
 import org.opalj.fpcf.cg.properties.StandardInvokeCallees
 import org.opalj.fpcf.cg.properties.ReflectionRelatedCallees
 import org.opalj.fpcf.cg.properties.SerializationRelatedCallees
@@ -83,14 +83,14 @@ class PurityTests extends PropertiesTest {
         val as = executeAnalyses(
             Set(
                 EagerL1PurityAnalysis,
-                EagerRTACallGraphAnalysisScheduler,
-                EagerStaticInitializerAnalysis,
+                TriggeredRTACallGraphAnalysisScheduler,
+                TriggeredStaticInitializerAnalysis,
                 TriggeredLoadedClassesAnalysis,
-                EagerFinalizerAnalysisScheduler,
-                EagerThreadRelatedCallsAnalysis,
-                EagerSerializationRelatedCallsAnalysis,
-                EagerReflectionRelatedCallsAnalysis,
-                SystemPropertiesAnalysis,
+                TriggeredFinalizerAnalysisScheduler,
+                TriggeredThreadRelatedCallsAnalysis,
+                TriggeredSerializationRelatedCallsAnalysis,
+                TriggeredReflectionRelatedCallsAnalysis,
+                TriggeredSystemPropertiesAnalysis,
                 LazyL0TACAIAnalysis,
                 LazyL1FieldMutabilityAnalysis,
                 LazyClassImmutabilityAnalysis,
@@ -109,14 +109,14 @@ class PurityTests extends PropertiesTest {
         val as = executeAnalyses(
             Set(
                 EagerL2PurityAnalysis,
-                EagerRTACallGraphAnalysisScheduler,
-                EagerStaticInitializerAnalysis,
+                TriggeredRTACallGraphAnalysisScheduler,
+                TriggeredStaticInitializerAnalysis,
                 TriggeredLoadedClassesAnalysis,
-                EagerFinalizerAnalysisScheduler,
-                EagerThreadRelatedCallsAnalysis,
-                EagerSerializationRelatedCallsAnalysis,
-                EagerReflectionRelatedCallsAnalysis,
-                SystemPropertiesAnalysis,
+                TriggeredFinalizerAnalysisScheduler,
+                TriggeredThreadRelatedCallsAnalysis,
+                TriggeredSerializationRelatedCallsAnalysis,
+                TriggeredReflectionRelatedCallsAnalysis,
+                TriggeredSystemPropertiesAnalysis,
                 LazyL0TACAIAnalysis,
                 LazyL0CompileTimeConstancyAnalysis,
                 LazyStaticDataUsageAnalysis,

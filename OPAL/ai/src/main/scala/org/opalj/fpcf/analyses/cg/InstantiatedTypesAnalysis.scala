@@ -170,7 +170,7 @@ object InstantiatedTypesAnalysis {
     }
 }
 
-object EagerInstantiatedTypesAnalysis extends BasicFPCFTriggeredAnalysisScheduler {
+object TriggeredInstantiatedTypesAnalysis extends BasicFPCFTriggeredAnalysisScheduler {
 
     override def uses: Set[PropertyBounds] = Set(
         PropertyBounds.ub(InstantiatedTypes),

@@ -7,15 +7,10 @@ import org.opalj.ai.domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse
 import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.br.analyses.Project
-import org.opalj.fpcf.analyses.SystemPropertiesAnalysis
-import org.opalj.fpcf.analyses.cg.EagerFinalizerAnalysisScheduler
-import org.opalj.fpcf.analyses.cg.EagerStaticInitializerAnalysis
-import org.opalj.fpcf.analyses.cg.EagerRTACallGraphAnalysisScheduler
-import org.opalj.fpcf.analyses.cg.EagerSerializationRelatedCallsAnalysis
-import org.opalj.fpcf.analyses.cg.EagerThreadRelatedCallsAnalysis
 import org.opalj.fpcf.analyses.cg.LazyCalleesAnalysis
 import org.opalj.fpcf.analyses.cg.TriggeredLoadedClassesAnalysis
-import org.opalj.fpcf.analyses.cg.reflection.EagerReflectionRelatedCallsAnalysis
+import org.opalj.fpcf.analyses.cg.TriggeredRTACallGraphAnalysisScheduler
+import org.opalj.fpcf.analyses.cg.TriggeredStaticInitializerAnalysis
 import org.opalj.fpcf.analyses.escape.EagerInterProceduralEscapeAnalysis
 import org.opalj.fpcf.analyses.escape.EagerSimpleEscapeAnalysis
 import org.opalj.fpcf.cg.properties.ReflectionRelatedCallees
@@ -33,14 +28,9 @@ import org.opalj.tac.fpcf.analyses.TACAITransformer
 class EscapeAnalysisTests extends PropertiesTest {
 
     val analyses: List[FPCFAnalysisScheduler] = List(
-        EagerRTACallGraphAnalysisScheduler,
-        EagerStaticInitializerAnalysis,
+        TriggeredRTACallGraphAnalysisScheduler,
+        TriggeredStaticInitializerAnalysis,
         TriggeredLoadedClassesAnalysis,
-        EagerFinalizerAnalysisScheduler,
-        EagerThreadRelatedCallsAnalysis,
-        EagerSerializationRelatedCallsAnalysis,
-        EagerReflectionRelatedCallsAnalysis,
-        SystemPropertiesAnalysis,
         LazyL0BaseAIAnalysis,
         TACAITransformer,
         new LazyCalleesAnalysis(

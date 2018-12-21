@@ -626,7 +626,7 @@ class RTACallGraphAnalysis private[analyses] (
     }
 }
 
-object EagerRTACallGraphAnalysisScheduler extends FPCFTriggeredAnalysisScheduler {
+object TriggeredRTACallGraphAnalysisScheduler extends FPCFTriggeredAnalysisScheduler {
     override type InitializationData = Null
 
     override def uses: Set[PropertyBounds] = Set(

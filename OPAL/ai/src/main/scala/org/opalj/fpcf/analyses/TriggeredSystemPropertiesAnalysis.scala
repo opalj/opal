@@ -18,7 +18,7 @@ import org.opalj.tac.VirtualFunctionCallStatement
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.value.ValueInformation
 
-class SystemPropertiesAnalysis private[analyses] (
+class TriggeredSystemPropertiesAnalysis private[analyses] (
         final val project: SomeProject
 ) extends FPCFAnalysis {
 
@@ -163,15 +163,17 @@ class SystemPropertiesAnalysis private[analyses] (
 
 }
 
-object SystemPropertiesAnalysis extends BasicFPCFTriggeredAnalysisScheduler {
+object TriggeredSystemPropertiesAnalysis extends BasicFPCFTriggeredAnalysisScheduler {
 
     override def uses: Set[PropertyBounds] = Set(
         PropertyBounds.ub(CallersProperty),
         PropertyBounds.ub(TACAI)
     )
 
-    override def register(p: SomeProject, ps: PropertyStore, unused: Null): SystemPropertiesAnalysis = {
-        val analysis = new SystemPropertiesAnalysis(p)
+    override def register(
+        p: SomeProject, ps: PropertyStore, unused: Null
+    ): TriggeredSystemPropertiesAnalysis = {
+        val analysis = new TriggeredSystemPropertiesAnalysis(p)
         ps.registerTriggeredComputation(CallersProperty.key, analysis.analyze)
         analysis
     }

@@ -426,7 +426,7 @@ class ThreadRelatedCallsAnalysis private[analyses] (
     }
 }
 
-object EagerThreadRelatedCallsAnalysis extends BasicFPCFTriggeredAnalysisScheduler {
+object TriggeredThreadRelatedCallsAnalysis extends BasicFPCFTriggeredAnalysisScheduler {
 
     override def uses: Set[PropertyBounds] = Set(
         PropertyBounds.ub(CallersProperty),
@@ -439,7 +439,9 @@ object EagerThreadRelatedCallsAnalysis extends BasicFPCFTriggeredAnalysisSchedul
 
     override def derivesEagerly: Set[PropertyBounds] = Set.empty
 
-    override def register(p: SomeProject, ps: PropertyStore, unused: Null): ThreadRelatedCallsAnalysis = {
+    override def register(
+        p: SomeProject, ps: PropertyStore, unused: Null
+    ): ThreadRelatedCallsAnalysis = {
         val analysis = new ThreadRelatedCallsAnalysis(p)
         ps.registerTriggeredComputation(CallersProperty.key, analysis.analyze)
         analysis

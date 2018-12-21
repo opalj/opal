@@ -484,7 +484,7 @@ object SerializationRelatedCallsAnalysis {
     final val UnknownParam = Seq(None)
 }
 
-object EagerSerializationRelatedCallsAnalysis extends BasicFPCFTriggeredAnalysisScheduler {
+object TriggeredSerializationRelatedCallsAnalysis extends BasicFPCFTriggeredAnalysisScheduler {
 
     override def uses: Set[PropertyBounds] = Set(
         PropertyBounds.ub(CallersProperty),

@@ -1412,7 +1412,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
     }
 }
 
-object EagerReflectionRelatedCallsAnalysis extends BasicFPCFTriggeredAnalysisScheduler {
+object TriggeredReflectionRelatedCallsAnalysis extends BasicFPCFTriggeredAnalysisScheduler {
 
     override def uses: Set[PropertyBounds] =
         Set(
