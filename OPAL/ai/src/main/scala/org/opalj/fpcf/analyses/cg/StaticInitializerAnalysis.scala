@@ -35,15 +35,15 @@ class StaticInitializerAnalysis(
     private val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
 
     private case class LCState(
-            // only present for non-final values
-            var lcDependee:      Option[EOptionP[SomeProject, LoadedClasses]],
-            var loadedClassesUB: Option[LoadedClasses],
-            var seenClasses:     Int,
+        // only present for non-final values
+        var lcDependee:      Option[EOptionP[SomeProject, LoadedClasses]],
+        var loadedClassesUB: Option[LoadedClasses],
+        var seenClasses:     Int,
 
-            // only present for non-final values
-            var itDependee:            Option[EOptionP[SomeProject, InstantiatedTypes]],
-            var instantiatedTypesUB:   Option[InstantiatedTypes],
-            var seenInstantiatedTypes: Int
+        // only present for non-final values
+        var itDependee:            Option[EOptionP[SomeProject, InstantiatedTypes]],
+        var instantiatedTypesUB:   Option[InstantiatedTypes],
+        var seenInstantiatedTypes: Int
     )
 
     /**
@@ -76,7 +76,7 @@ class StaticInitializerAnalysis(
     private[this] def handleInstantiatedTypesAndLoadedClasses()(
         implicit
         state: LCState
-    ): ProperPropertyComputationResult = {
+    ): PropertyComputationResult = {
         val loadedClassesUB = state.loadedClassesUB.map(_.classes).getOrElse(UIDSet.empty)
 
         val unseenLoadedClasses =
@@ -114,7 +114,6 @@ class StaticInitializerAnalysis(
                 throw new IllegalStateException(s"unexpected previous result $r")
         }
 
-        // todo use proper factory
         val lcResult = if (state.itDependee.isDefined || state.lcDependee.isDefined)
             Some(InterimPartialResult(
                 p,
@@ -152,12 +151,12 @@ class StaticInitializerAnalysis(
             })
         }
 
-        Results(callersResult ++ lcResult)
+        PropertyComputationResult((callersResult ++ lcResult).toSeq: _*)
     }
 
     private[this] def continuation(
         someEPS: SomeEPS
-    )(implicit state: LCState): ProperPropertyComputationResult = someEPS match {
+    )(implicit state: LCState): PropertyComputationResult = someEPS match {
         case FinalP(loadedClasses: LoadedClasses) ⇒
             state.lcDependee = None
             state.loadedClassesUB = Some(loadedClasses)

@@ -56,8 +56,7 @@ class LibraryEntryPointsAnalysis private[analyses] (
         else
             None
 
-        // todo use other factory
-        Results(resultsForReachableMethods(newReachableMethods) ++ c)
+        PropertyComputationResult((resultsForReachableMethods(newReachableMethods) ++ c).toSeq: _*)
     }
 
     private[this] def continuation(

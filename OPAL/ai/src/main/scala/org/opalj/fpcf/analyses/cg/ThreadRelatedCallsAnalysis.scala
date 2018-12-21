@@ -173,7 +173,6 @@ class ThreadRelatedCallsAnalysis private[analyses] (
             })
         }
 
-        // todo use other factory
         val c = if (tacaiEPS.isRefinable)
             Some(InterimPartialResult(
                 Nil,
@@ -183,9 +182,7 @@ class ThreadRelatedCallsAnalysis private[analyses] (
         else
             None
 
-        Results(
-            results ++ c
-        )
+        PropertyComputationResult((results ++ c).toSeq: _*)
     }
 
     /**
