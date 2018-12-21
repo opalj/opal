@@ -488,8 +488,8 @@ sealed trait ReturnValueFreshnessAnalysisScheduler extends ComputationSpecificat
 }
 
 object EagerReturnValueFreshnessAnalysis
-        extends ReturnValueFreshnessAnalysisScheduler
-        with BasicFPCFEagerAnalysisScheduler {
+    extends ReturnValueFreshnessAnalysisScheduler
+    with BasicFPCFEagerAnalysisScheduler {
 
     override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val declaredMethods =
@@ -505,8 +505,8 @@ object EagerReturnValueFreshnessAnalysis
 }
 
 object LazyReturnValueFreshnessAnalysis
-        extends ReturnValueFreshnessAnalysisScheduler
-        with BasicFPCFLazyAnalysisScheduler {
+    extends ReturnValueFreshnessAnalysisScheduler
+    with BasicFPCFLazyAnalysisScheduler {
 
     override def register(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new ReturnValueFreshnessAnalysis(p)

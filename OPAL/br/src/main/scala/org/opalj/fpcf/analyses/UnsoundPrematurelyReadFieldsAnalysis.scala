@@ -15,7 +15,7 @@ import org.opalj.fpcf.properties.NotPrematurelyReadField
  * @author Dominik Helm
  */
 class UnsoundPrematurelyReadFieldsAnalysis private[analyses] (val project: SomeProject)
-        extends FPCFAnalysis {
+    extends FPCFAnalysis {
 
     def determinePrematureReads(field: Field): ProperPropertyComputationResult = {
         Result(field, NotPrematurelyReadField)
@@ -32,8 +32,8 @@ trait UnsoundPrematurelyReadFieldsAnalysisScheduler extends ComputationSpecifica
  * Factory object to create instances of the FieldMutabilityAnalysis.
  */
 object EagerUnsoundPrematurelyReadFieldsAnalysis
-        extends UnsoundPrematurelyReadFieldsAnalysisScheduler
-        with BasicFPCFEagerAnalysisScheduler {
+    extends UnsoundPrematurelyReadFieldsAnalysisScheduler
+    with BasicFPCFEagerAnalysisScheduler {
 
     def start(project: SomeProject, propertyStore: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new UnsoundPrematurelyReadFieldsAnalysis(project)
@@ -50,8 +50,8 @@ object EagerUnsoundPrematurelyReadFieldsAnalysis
 }
 
 object LazyUnsoundPrematurelyReadFieldsAnalysis
-        extends UnsoundPrematurelyReadFieldsAnalysisScheduler
-        with BasicFPCFLazyAnalysisScheduler {
+    extends UnsoundPrematurelyReadFieldsAnalysisScheduler
+    with BasicFPCFLazyAnalysisScheduler {
 
     def register(
         project:       SomeProject,

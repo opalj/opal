@@ -211,7 +211,7 @@ object InterimResult {
         ub:        P,
         dependees: Traversable[SomeEOptionP],
         c:         ProperOnUpdateContinuation,
-        hint:      PropertyComputationHint   = DefaultPropertyComputation
+        hint:      PropertyComputationHint    = DefaultPropertyComputation
     ): InterimResult[P] = {
         require(lb != null && ub != null)
         new InterimResult[P](InterimELUBP(e, lb, ub), dependees, c, hint)
@@ -245,7 +245,7 @@ object InterimResult {
         lb:        P,
         dependees: Traversable[SomeEOptionP],
         c:         ProperOnUpdateContinuation,
-        hint:      PropertyComputationHint   = DefaultPropertyComputation
+        hint:      PropertyComputationHint    = DefaultPropertyComputation
     ): InterimResult[P] = {
         new InterimResult[P](InterimELBP(e, lb), dependees, c, hint)
     }
@@ -255,7 +255,7 @@ object InterimResult {
         ub:        P,
         dependees: Traversable[SomeEOptionP],
         c:         ProperOnUpdateContinuation,
-        hint:      PropertyComputationHint   = DefaultPropertyComputation
+        hint:      PropertyComputationHint    = DefaultPropertyComputation
     ): InterimResult[P] = {
         new InterimResult[P](InterimEUBP(e, ub), dependees, c, hint)
     }

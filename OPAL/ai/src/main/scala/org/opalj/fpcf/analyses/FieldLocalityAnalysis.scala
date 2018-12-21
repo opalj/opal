@@ -649,8 +649,8 @@ sealed trait FieldLocalityAnalysisScheduler extends ComputationSpecification[FPC
 }
 
 object EagerFieldLocalityAnalysis
-        extends FieldLocalityAnalysisScheduler
-        with BasicFPCFEagerAnalysisScheduler {
+    extends FieldLocalityAnalysisScheduler
+    with BasicFPCFEagerAnalysisScheduler {
 
     final override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val allFields = p.allFields
@@ -665,8 +665,8 @@ object EagerFieldLocalityAnalysis
 }
 
 object LazyFieldLocalityAnalysis
-        extends FieldLocalityAnalysisScheduler
-        with BasicFPCFLazyAnalysisScheduler {
+    extends FieldLocalityAnalysisScheduler
+    with BasicFPCFLazyAnalysisScheduler {
 
     final override def register(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new FieldLocalityAnalysis(p)

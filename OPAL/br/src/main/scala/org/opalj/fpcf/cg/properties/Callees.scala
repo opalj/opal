@@ -353,7 +353,7 @@ object Callees extends CalleesPropertyMetaInformation {
             name,
             (_: PropertyStore, reason: FallbackReason, _: Entity) ⇒ reason match {
                 case PropertyIsNotDerivedByPreviouslyExecutedAnalysis ⇒ NoCalleesDueToNotReachableMethod
-                case _                                                ⇒
+                case _ ⇒
                     throw new IllegalStateException(s"No analysis is scheduled for property: $name")
             }
         )

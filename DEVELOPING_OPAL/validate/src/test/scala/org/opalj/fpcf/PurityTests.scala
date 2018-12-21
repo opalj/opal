@@ -62,7 +62,8 @@ class PurityTests extends PropertiesTest {
     describe("the org.opalj.fpcf.analyses.L0PurityAnalysis is executed") {
         val as = try {
             executeAnalyses(
-                Set(EagerL0PurityAnalysis,
+                Set(
+                    EagerL0PurityAnalysis,
                     LazyL0FieldMutabilityAnalysis,
                     LazyClassImmutabilityAnalysis,
                     LazyTypeImmutabilityAnalysis

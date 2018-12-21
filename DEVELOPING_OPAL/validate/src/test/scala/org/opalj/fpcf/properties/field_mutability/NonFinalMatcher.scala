@@ -40,7 +40,7 @@ class NonFinalMatcher extends AbstractPropertyMatcher {
             val propertyStore = p.get(PropertyStoreKey)
             propertyStore(e, FieldPrematurelyRead.key) match {
                 case FinalP(PrematurelyReadField) ⇒ true
-                case _                                ⇒ false
+                case _                            ⇒ false
             }
         } else {
             true

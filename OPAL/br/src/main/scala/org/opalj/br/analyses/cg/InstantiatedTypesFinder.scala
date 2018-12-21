@@ -81,7 +81,7 @@ trait ConfigurationInstantiatedTypesFinder extends InstantiatedTypesFinder {
             }
 
             val objectType = ObjectType(typeName)
-            if(considerSubtypes)
+            if (considerSubtypes)
                 instantiatedTypes += objectType
             else
                 instantiatedTypes = project.classHierarchy.allSubtypes(objectType, true)

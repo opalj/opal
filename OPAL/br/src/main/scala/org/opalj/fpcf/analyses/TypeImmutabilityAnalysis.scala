@@ -52,7 +52,7 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
         val cf = project.classFile(t)
         if (cf.exists(_.isFinal) || directSubtypes.isEmpty /*... the type is not extensible*/ ) {
 
-            val c = new OnUpdateContinuation { c ⇒
+            val c = new ProperOnUpdateContinuation { c ⇒
                 def apply(eps: SomeEPS): ProperPropertyComputationResult = {
                     eps match {
                         case ELUBP(_, lb: ClassImmutability, ub: ClassImmutability) ⇒
@@ -62,8 +62,12 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
                                 Result(t, thisUB)
                             else
                                 InterimResult(
-                                    t, thisLB, thisUB,
-                                    Seq(eps), c, CheapPropertyComputation
+                                    t,
+                                    thisLB,
+                                    thisUB,
+                                    Seq(eps),
+                                    c,
+                                    CheapPropertyComputation
                                 )
                     }
                 }

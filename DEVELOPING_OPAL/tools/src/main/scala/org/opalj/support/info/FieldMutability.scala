@@ -39,7 +39,7 @@ object FieldMutability extends DefaultOneStepAnalysis {
         parameters:    Seq[String],
         isInterrupted: () ⇒ Boolean
     ): BasicReport = {
-        val (ps,_) = project.get(FPCFAnalysesManagerKey).runAll(
+        val (ps, _) = project.get(FPCFAnalysesManagerKey).runAll(
             LazyL0BaseAIAnalysis,
             TACAITransformer,
             LazyUnsoundPrematurelyReadFieldsAnalysis,

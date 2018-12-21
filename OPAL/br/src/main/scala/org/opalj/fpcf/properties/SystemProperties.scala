@@ -13,7 +13,7 @@ sealed trait SystemPropertiesPropertyMetaInformation extends PropertyMetaInforma
 }
 
 class SystemProperties(val properties: Map[String, Set[String]])
-        extends Property with SystemPropertiesPropertyMetaInformation {
+    extends Property with SystemPropertiesPropertyMetaInformation {
     final def key: PropertyKey[SystemProperties] = SystemProperties.key
 }
 
