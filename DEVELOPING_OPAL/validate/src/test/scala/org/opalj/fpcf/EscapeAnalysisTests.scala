@@ -8,13 +8,12 @@ import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.br.analyses.Project
 import org.opalj.fpcf.analyses.cg.LazyCalleesAnalysis
+import org.opalj.fpcf.analyses.cg.TriggeredInstantiatedTypesAnalysis
 import org.opalj.fpcf.analyses.cg.TriggeredLoadedClassesAnalysis
 import org.opalj.fpcf.analyses.cg.TriggeredRTACallGraphAnalysisScheduler
 import org.opalj.fpcf.analyses.cg.TriggeredStaticInitializerAnalysis
 import org.opalj.fpcf.analyses.escape.EagerInterProceduralEscapeAnalysis
 import org.opalj.fpcf.analyses.escape.EagerSimpleEscapeAnalysis
-import org.opalj.fpcf.cg.properties.ReflectionRelatedCallees
-import org.opalj.fpcf.cg.properties.SerializationRelatedCallees
 import org.opalj.fpcf.cg.properties.StandardInvokeCallees
 import org.opalj.tac.fpcf.analyses.TACAITransformer
 
@@ -30,11 +29,12 @@ class EscapeAnalysisTests extends PropertiesTest {
     val analyses: List[FPCFAnalysisScheduler] = List(
         TriggeredRTACallGraphAnalysisScheduler,
         TriggeredStaticInitializerAnalysis,
+        TriggeredInstantiatedTypesAnalysis,
         TriggeredLoadedClassesAnalysis,
         LazyL0BaseAIAnalysis,
         TACAITransformer,
         new LazyCalleesAnalysis(
-            Set(StandardInvokeCallees, SerializationRelatedCallees, ReflectionRelatedCallees)
+            Set(StandardInvokeCallees)
         )
     )
 
