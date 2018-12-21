@@ -692,7 +692,9 @@ final class PKESequentialPropertyStore private (
                     pkId += 1
                 }
 
-                val successors = (interimEP: SomeEOptionP) ⇒ dependees(interimEP.pk.id)(interimEP.e)
+                val successors = (interimEP: SomeEOptionP) ⇒ {
+                    dependees(interimEP.pk.id).getOrElse(interimEP.e, Nil)
+                }
                 val cSCCs = graphs.closedSCCs(interimEPs, successors)
                 continueComputation = cSCCs.nonEmpty
                 for (cSCC ← cSCCs) {
