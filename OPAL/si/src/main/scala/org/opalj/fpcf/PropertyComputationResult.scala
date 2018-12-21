@@ -25,7 +25,7 @@ object PropertyComputationResult {
     def apply(results: ProperPropertyComputationResult*): PropertyComputationResult = {
         if (results.isEmpty)
             NoResult
-        else if(results.size == 1)
+        else if (results.size == 1)
             results.head
         else
             new Results(results)
