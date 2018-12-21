@@ -359,7 +359,7 @@ object PartialResult { private[fpcf] final val id = 6 }
  * @param ak The key of the analysis which created this interim result.
  */
 case class InterimPartialResult[SE >: Null <: Entity](
-        us: Traversable[SomePartialResultUpdateComputation],
+        us: Traversable[SomePartialResult], // can be empty!
         // We can't have a list of dependees, because we wouldn't be able to effectively
         // prevent multiple concurrent notifications!
         dependees: Traversable[SomeEOptionP],
@@ -389,16 +389,10 @@ object InterimPartialResult {
         dependees: Traversable[SomeEOptionP],
         c:         OnUpdateContinuation
     ): InterimPartialResult[SE] = {
-        val pruc = PartialResultUpdateComputation(uE, uPK, u)
+        val pruc = PartialResult(uE, uPK, u)
         new InterimPartialResult[SE](List(pruc), dependees, c)
     }
 }
-
-case class PartialResultUpdateComputation[E >: Null <: Entity, P >: Null <: Property](
-        e:  E,
-        pk: PropertyKey[P],
-        u:  UpdateComputation[E, P]
-)
 
 /**************************************************************************************************\
  *
