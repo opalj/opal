@@ -38,12 +38,16 @@ object PropertyBounds {
         }
     }
 
+    def finalPs(pks: PropertyKind*): Set[PropertyBounds] = pks.map(finalP).toSet
+
     def lub(pk: PropertyKind): PropertyBounds = {
         new PropertyBounds(pk) {
             override def lowerBound: Boolean = true
             override def upperBound: Boolean = true
         }
     }
+
+    def lubs(pks: PropertyKind*): Set[PropertyBounds] = pks.map(lub).toSet
 
     def lb(pk: PropertyKind): PropertyBounds = {
         new PropertyBounds(pk) {
@@ -52,10 +56,15 @@ object PropertyBounds {
         }
     }
 
+    def lbs(pks: PropertyKind*): Set[PropertyBounds] = pks.map(lb).toSet
+
     def ub(pk: PropertyKind): PropertyBounds = {
         new PropertyBounds(pk) {
             override def lowerBound: Boolean = false
             override def upperBound: Boolean = true
         }
     }
+
+    def ubs(pks: PropertyKind*): Set[PropertyBounds] = pks.map(ub).toSet
+
 }
