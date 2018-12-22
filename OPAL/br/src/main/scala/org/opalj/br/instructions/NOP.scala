@@ -10,7 +10,7 @@ import org.opalj.collection.immutable.Chain
  *
  * @author Michael Eichberg
  */
-case object NOP extends Instruction with ConstantLengthInstruction with NoLabels {
+case object NOP extends ConstantLengthInstruction with NoLabels with InstructionMetaInformation {
 
     final val opcode = 0
 

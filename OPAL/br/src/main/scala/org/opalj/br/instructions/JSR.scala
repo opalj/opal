@@ -29,7 +29,7 @@ case class JSR(branchoffset: Int) extends JSRInstruction with JSRLike {
  *
  * @author Malte Limmeroth
  */
-object JSR {
+object JSR extends InstructionMetaInformation {
 
     final val opcode = 168
 

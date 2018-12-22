@@ -15,3 +15,8 @@ object IStoreInstruction {
     def unapply(istore: IStoreInstruction): Some[Int] = Some(istore.lvIndex)
 
 }
+
+trait ConstantIndexIStoreInstruction
+    extends IStoreInstruction
+    with ImplicitLocalVariableIndex
+    with InstructionMetaInformation

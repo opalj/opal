@@ -38,7 +38,7 @@ case class IF_ICMPLT(branchoffset: Int) extends IFICMPInstruction[IF_ICMPLT] wit
  *
  * @author Malte Limmeroth
  */
-object IF_ICMPLT {
+object IF_ICMPLT extends InstructionMetaInformation {
 
     final val opcode = 161
 

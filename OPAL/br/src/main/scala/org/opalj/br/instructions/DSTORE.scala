@@ -16,7 +16,7 @@ case class DSTORE(lvIndex: Int) extends DStoreInstruction with ExplicitLocalVari
 
 }
 
-object DSTORE {
+object DSTORE extends InstructionMetaInformation {
 
     final val opcode = 57
 

@@ -10,7 +10,9 @@ import org.opalj.collection.immutable.Chain
  *
  * @author Michael Eichberg
  */
-abstract class PrimitiveArrayStoreInstruction extends ArrayStoreInstruction {
+abstract class PrimitiveArrayStoreInstruction
+    extends ArrayStoreInstruction
+    with InstructionMetaInformation {
 
     final def jvmExceptions: List[ObjectType] =
         PrimitiveArrayAccess.jvmExceptions

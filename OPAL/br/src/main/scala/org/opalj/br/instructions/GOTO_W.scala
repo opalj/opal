@@ -31,7 +31,7 @@ case class GOTO_W(branchoffset: Int) extends GotoInstruction with GOTO_WLike {
  *
  * @author Malte Limmeroth
  */
-object GOTO_W {
+object GOTO_W extends InstructionMetaInformation {
 
     final val opcode = 200
 

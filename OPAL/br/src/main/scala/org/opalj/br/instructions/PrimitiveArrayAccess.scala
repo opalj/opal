@@ -4,11 +4,11 @@ package br
 package instructions
 
 /**
- * Trait that can be mixed in if the value of a instruction is implicitly defined.
+ * Trait that is mixed in by all primitive array access instructions.
  *
  * @author Michael Eichberg
  */
-trait PrimitiveArrayAccess
+trait PrimitiveArrayAccess extends InstructionMetaInformation
 
 object PrimitiveArrayAccess {
 

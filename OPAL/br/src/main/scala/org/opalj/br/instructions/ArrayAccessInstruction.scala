@@ -8,10 +8,7 @@ package instructions
  *
  * @author Michael Eichberg
  */
-abstract class ArrayAccessInstruction
-    extends Instruction
-    with ConstantLengthInstruction
-    with NoLabels {
+abstract class ArrayAccessInstruction extends ConstantLengthInstruction with NoLabels {
 
     final def mayThrowExceptions: Boolean = true
 

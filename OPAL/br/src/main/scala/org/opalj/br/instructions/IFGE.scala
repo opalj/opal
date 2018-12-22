@@ -38,7 +38,7 @@ case class IFGE(branchoffset: Int) extends IF0Instruction[IFGE] with IFGELike {
  *
  * @author Malte Limmeroth
  */
-object IFGE {
+object IFGE extends InstructionMetaInformation {
 
     final val opcode = 156
 

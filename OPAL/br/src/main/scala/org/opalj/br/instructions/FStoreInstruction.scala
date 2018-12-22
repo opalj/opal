@@ -19,3 +19,8 @@ object FStoreInstruction {
 
     def unapply(fstore: FStoreInstruction): Some[Int] = Some(fstore.lvIndex)
 }
+
+trait ConstantIndexFStoreInstruction
+    extends FStoreInstruction
+    with ImplicitLocalVariableIndex
+    with InstructionMetaInformation

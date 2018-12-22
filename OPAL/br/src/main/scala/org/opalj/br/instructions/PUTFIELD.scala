@@ -56,7 +56,7 @@ case class PUTFIELD(
  *
  * @author Malte Limmeroth
  */
-object PUTFIELD {
+object PUTFIELD extends InstructionMetaInformation {
 
     final val opcode = 181
 

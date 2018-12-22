@@ -51,7 +51,7 @@ case class INVOKESTATIC(
  *
  * @author Malte Limmeroth
  */
-object INVOKESTATIC {
+object INVOKESTATIC extends InstructionMetaInformation {
 
     final val opcode = 184
 

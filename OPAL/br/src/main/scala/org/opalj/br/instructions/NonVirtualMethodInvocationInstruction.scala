@@ -8,7 +8,9 @@ package instructions
  *
  * @author Michael Eichberg
  */
-abstract class NonVirtualMethodInvocationInstruction extends MethodInvocationInstruction {
+abstract class NonVirtualMethodInvocationInstruction
+    extends MethodInvocationInstruction
+    with InstructionMetaInformation {
 
     override def isVirtualMethodCall: Boolean = false
 

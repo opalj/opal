@@ -8,7 +8,7 @@ package instructions
  *
  * @author Michael Eichberg
  */
-trait ImplicitValue extends ConstantLengthInstruction {
+trait ImplicitValue extends ConstantLengthInstruction with InstructionMetaInformation {
 
     final def length: Int = 1
 

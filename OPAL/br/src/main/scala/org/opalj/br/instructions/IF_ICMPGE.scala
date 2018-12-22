@@ -33,7 +33,7 @@ case class IF_ICMPGE(branchoffset: Int) extends IFICMPInstruction[IF_ICMPGE] wit
     }
 }
 
-object IF_ICMPGE {
+object IF_ICMPGE extends InstructionMetaInformation {
 
     final val opcode = 162
 
