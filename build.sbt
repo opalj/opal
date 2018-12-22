@@ -142,7 +142,7 @@ lazy val si = `StaticAnalysisInfrastructure`
 lazy val `StaticAnalysisInfrastructure` = (project in file("OPAL/si"))
     .settings(buildSettings: _*)
     .settings(
-        name := "StaticAnalysisInfrastructure",
+        name := "Static Analysis Infrastructure",
         scalacOptions in(Compile, doc) ++= Opts.doc.title("OPAL - Static Analysis Infrastructure"),
         libraryDependencies ++= Dependencies.si
     )
