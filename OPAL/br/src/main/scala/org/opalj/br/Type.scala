@@ -1484,7 +1484,21 @@ object ArrayType {
  * @author Michael Eichberg
  */
 object ArrayElementType {
+
     def unapply(at: ArrayType): Option[FieldType] = Some(at.elementType)
+
+}
+
+object ElementReferenceType {
+
+    def unapply(rt: ReferenceType): Option[ObjectType] = {
+        rt match {
+            case ot: ObjectType                   ⇒ Some(ot)
+            case ArrayElementType(ot: ObjectType) ⇒ Some(ot)
+            case _                                ⇒ None
+        }
+    }
+
 }
 
 /**
