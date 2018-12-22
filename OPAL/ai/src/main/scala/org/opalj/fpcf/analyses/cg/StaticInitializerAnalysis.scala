@@ -4,6 +4,8 @@ package fpcf
 package analyses
 package cg
 
+import scala.language.existentials
+
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
 import org.opalj.br.ObjectType
@@ -16,8 +18,6 @@ import org.opalj.fpcf.cg.properties.InstantiatedTypes
 import org.opalj.fpcf.cg.properties.LoadedClasses
 import org.opalj.fpcf.cg.properties.OnlyVMLevelCallers
 
-import scala.language.existentials
-
 /**
  * Extends the call graph analysis (e.g. [[RTACallGraphAnalysis]]) to include calls to static
  * initializers from within the JVM for each loaded class ([[LoadedClasses]]).
@@ -29,9 +29,8 @@ import scala.language.existentials
  */
 // TODO: This class represents two analyses, please split them up!
 // TODO: Instead of added the clinits for all super types, add all super types to be loaded
-class StaticInitializerAnalysis(
-        val project: SomeProject
-) extends FPCFAnalysis {
+class StaticInitializerAnalysis(val project: SomeProject) extends FPCFAnalysis {
+
     private val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
 
     private case class LCState(
