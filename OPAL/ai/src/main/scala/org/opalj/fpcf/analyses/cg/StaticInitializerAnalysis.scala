@@ -144,9 +144,6 @@ class StaticInitializerAnalysis(val project: SomeProject) extends FPCFAnalysis {
 
                 case _: EPK[_, _] ⇒
                     Some(InterimEUBP(clInit, OnlyVMLevelCallers))
-
-                case r ⇒
-                    throw new IllegalStateException(s"unexpected previous result $r")
             })
         }
 
