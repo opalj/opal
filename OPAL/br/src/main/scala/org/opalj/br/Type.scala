@@ -372,6 +372,13 @@ sealed abstract class ReferenceType extends FieldType {
     final override def computationalType: ComputationalType = ComputationalTypeReference
 
     /**
+     * Returns the most precise object type that represents this reference type. In
+     * case of an `ArrayType`, the `ObjectType` of `java.lang.Object` is returned;
+     * other the current `ObjectType`.
+     */
+    def mostPreciseObjectType: ObjectType
+
+    /**
      * Each reference type is associated with a unique id. Object types get ids &gt;= 0
      * and array types get ids &lt; 0.
      */
@@ -977,6 +984,8 @@ final class ObjectType private ( // DO NOT MAKE THIS A CASE CLASS!
 
     override def asObjectType: ObjectType = this
 
+    override def mostPreciseObjectType: ObjectType = this
+
     @inline final def isPrimitiveTypeWrapper: Boolean = {
         val thisId = this.id
         thisId <= ObjectType.javaLangDoubleId && thisId >= ObjectType.javaLangBooleanId
@@ -1361,9 +1370,11 @@ final class ArrayType private ( // DO NOT MAKE THIS A CASE CLASS!
         val componentType: FieldType
 ) extends ReferenceType {
 
-    final override def isArrayType = true
+    override def isArrayType = true
 
-    final override def asArrayType = this
+    override def asArrayType = this
+
+    override def mostPreciseObjectType: ObjectType = ObjectType.Object
 
     /**
      * Returns this array type's element type. E.g., the element type of an
