@@ -150,7 +150,10 @@ class StaticInitializerAnalysis(val project: SomeProject) extends FPCFAnalysis {
 
     private[this] def continuation(
         someEPS: SomeEPS
-    )(implicit state: LCState): PropertyComputationResult = someEPS match {
+    )(
+        implicit
+        state: LCState
+    ): PropertyComputationResult = someEPS match {
         case FinalP(loadedClasses: LoadedClasses) ⇒
             state.lcDependee = None
             state.loadedClassesUB = Some(loadedClasses)
@@ -201,15 +204,11 @@ object TriggeredStaticInitializerAnalysis extends BasicFPCFEagerAnalysisSchedule
 
     override def derivesEagerly: Set[PropertyBounds] = Set.empty
 
-    override def start(
-        p: SomeProject, ps: PropertyStore, unused: Null
-    ): StaticInitializerAnalysis = {
+    override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new StaticInitializerAnalysis(p)
-
         ps.scheduleEagerComputationForEntity(p)(
             analysis.registerToInstantiatedTypesAndLoadedClasses
         )
-
         analysis
     }
 
