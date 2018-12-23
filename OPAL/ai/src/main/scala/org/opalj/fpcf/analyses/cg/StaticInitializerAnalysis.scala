@@ -172,9 +172,6 @@ class StaticInitializerAnalysis(val project: SomeProject) extends FPCFAnalysis {
             handleInstantiatedTypesAndLoadedClasses()
     }
 
-    /**
-     * Retrieves the static initializer of the given type if present.
-     */
     private[this] def retrieveStaticInitializers(
     ): Set[DefinedMethod] = {
         declaringClassType: ObjectType
