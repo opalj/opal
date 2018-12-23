@@ -328,8 +328,8 @@ trait L0PurityAnalysisScheduler extends ComputationSpecification[FPCFAnalysis] {
 }
 
 object EagerL0PurityAnalysis
-        extends L0PurityAnalysisScheduler
-        with BasicFPCFEagerAnalysisScheduler {
+    extends L0PurityAnalysisScheduler
+    with BasicFPCFEagerAnalysisScheduler {
 
     override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
 
@@ -347,8 +347,8 @@ object EagerL0PurityAnalysis
 }
 
 object LazyL0PurityAnalysis
-        extends L0PurityAnalysisScheduler
-        with BasicFPCFLazyAnalysisScheduler {
+    extends L0PurityAnalysisScheduler
+    with BasicFPCFLazyAnalysisScheduler {
 
     override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 
