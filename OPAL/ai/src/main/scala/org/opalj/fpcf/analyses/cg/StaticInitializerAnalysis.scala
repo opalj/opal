@@ -129,9 +129,7 @@ class StaticInitializerAnalysis(val project: SomeProject) extends FPCFAnalysis {
         var newCLInits = Set.empty[DeclaredMethod]
         for (newLoadedClass ← unseenLoadedClasses) {
             // todo create result for static initializers
-            newCLInits ++= retrieveStaticInitializers(
-                newLoadedClass, declaredMethods, project
-            )
+            newCLInits ++= retrieveStaticInitializers(newLoadedClass)
         }
 
         val callersResult = newCLInits.iterator map { clInit ⇒
@@ -175,8 +173,8 @@ class StaticInitializerAnalysis(val project: SomeProject) extends FPCFAnalysis {
      * Retrieves the static initializer of the given type if present.
      */
     private[this] def retrieveStaticInitializers(
-        declaringClassType: ObjectType, declaredMethods: DeclaredMethods, project: SomeProject
     ): Set[DefinedMethod] = {
+        declaringClassType: ObjectType
         // todo only for interfaces with default methods
         project.classHierarchy.allSupertypes(declaringClassType, reflexive = true) flatMap { t ⇒
             project.classFile(t) flatMap { cf ⇒
