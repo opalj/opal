@@ -2,8 +2,10 @@
 package org.opalj.fpcf.analyses.string_definition.preprocessing
 
 import org.opalj.fpcf.analyses.string_definition.V
+import org.opalj.fpcf.analyses.string_definition.interpretation.InterpretationHandler
 import org.opalj.tac.Assignment
 import org.opalj.tac.DUVar
+import org.opalj.tac.ExprStmt
 import org.opalj.tac.New
 import org.opalj.tac.Stmt
 import org.opalj.tac.VirtualFunctionCall
@@ -51,6 +53,11 @@ object NestedPathType extends Enumeration {
      * mapped to low-level representations as well.
      */
     val CondWithoutAlternative: NestedPathType.Value = Value
+
+    /**
+     * This type is to mark `try-catch` or `try-catch-finally` constructs.
+     */
+    val TryCatchFinally: NestedPathType.Value = Value
 
 }
 
@@ -103,33 +110,110 @@ case class Path(elements: List[SubPath]) {
     }
 
     /**
+     * Takes a `subpath` and checks whether the given `element` is contained. This function does a
+     * deep search, i.e., will also find the element if it is contained within
+     * [[NestedPathElement]]s.
+     */
+    private def containsPathElement(subpath: NestedPathElement, element: Int): Boolean = {
+        subpath.element.foldLeft(false) { (old: Boolean, nextSubpath: SubPath) ⇒
+            old || (nextSubpath match {
+                case fpe: FlatPathElement   ⇒ fpe.element == element
+                case npe: NestedPathElement ⇒ containsPathElement(npe, element)
+                // For the SubPath type (should never be the case, but the compiler wants it)
+                case _                      ⇒ false
+            })
+        }
+    }
+
+    /**
+     * Takes a [[NestedPathElement]], `npe`, and an `endSite` and strips all branches that do not
+     * contain `endSite`. ''Stripping'' here means to clear the other branches.
+     * For example, assume `npe=[[3, 5], [7, 9]]` and `endSite=7`, the this function will return
+     * `[[], [7, 9]]`. This function can handle deeply nested [[NestedPathElement]] expressions as
+     * well.
+     */
+    private def stripUnnecessaryBranches(
+        npe: NestedPathElement, endSite: Int
+    ): NestedPathElement = {
+        npe.element.foreach {
+            case innerNpe: NestedPathElement ⇒
+                if (innerNpe.elementType.isEmpty) {
+                    if (!containsPathElement(innerNpe, endSite)) {
+                        innerNpe.element.clear()
+                    }
+                } else {
+                    stripUnnecessaryBranches(innerNpe, endSite)
+                }
+            case _ ⇒
+        }
+        npe
+    }
+
+    /**
      * Accumulator function for transforming a path into its lean equivalent. This function turns
-     * [[NestedPathElement]]s into lean [[NestedPathElement]]s. In case a (sub) path is empty,
-     * `None` is returned and otherwise the lean (sub) path.
+     * [[NestedPathElement]]s into lean [[NestedPathElement]]s and is a helper function of
+     * [[makeLeanPath]].
+     *
+     * @param toProcess The NestedPathElement to turn into its lean equivalent.
+     * @param siteMap Serves as a look-up table to include only elements that are of interest, in
+     *                this case: That belong to some object.
+     * @param endSite `endSite` is an denotes an element which is sort of a border between elements
+     *               to include into the lean path and which not to include. For example, if a read
+     *               operation, which is of interest, occurs not at the end of the given `toProcess`
+     *               path, the rest can be safely omitted (as the paths already are in a
+     *               happens-before relationship). If all elements are included, pass an int value
+     *               that is greater than the greatest index of the elements in `toProcess`.
+     * @param includeAlternatives For cases where an operation of interest happens within a branch
+     *                            of an `if-else` constructions , it is not necessary to include the
+     *                            other branches (as they are mutually exclusive anyway).
+     *                            `includeAlternatives = false` represents this behavior. However,
+     *                            sometimes it is desired to include all alternatives as in the case
+     *                            of `try-catch(-finally)` constructions).
+     * @return In case a (sub) path is empty, `None` is returned and otherwise the lean (sub) path.
      */
     private def makeLeanPathAcc(
-        toProcess: NestedPathElement, siteMap: Map[Int, Unit.type]
-    ): Option[NestedPathElement] = {
+        toProcess:           NestedPathElement,
+        siteMap:             Map[Int, Unit.type],
+        endSite:             Int,
+        includeAlternatives: Boolean             = false
+    ): (Option[NestedPathElement], Boolean) = {
         val elements = ListBuffer[SubPath]()
+        var hasTargetBeenSeen = false
+        val isTryCatch = includeAlternatives || (toProcess.elementType.isDefined &&
+            toProcess.elementType.get == NestedPathType.TryCatchFinally)
 
         toProcess.element.foreach {
-            case fpe: FlatPathElement ⇒
-                if (siteMap.contains(fpe.element)) {
+            case fpe: FlatPathElement if !hasTargetBeenSeen ⇒
+                if (siteMap.contains(fpe.element) && !hasTargetBeenSeen) {
                     elements.append(fpe.copy())
                 }
-            case npe: NestedPathElement ⇒
-                val nested = makeLeanPathAcc(npe, siteMap)
-                if (nested.isDefined) {
-                    elements.append(nested.get)
+                if (fpe.element == endSite) {
+                    hasTargetBeenSeen = true
                 }
-            // For the case the element is a SubPath (should never happen but the compiler want it)
+            case npe: NestedPathElement if isTryCatch ⇒
+                val (leanedSubPath, _) = makeLeanPathAcc(
+                    npe, siteMap, endSite, includeAlternatives = true
+                )
+                if (leanedSubPath.isDefined) {
+                    elements.append(leanedSubPath.get)
+                }
+            case npe: NestedPathElement ⇒
+                if (!hasTargetBeenSeen) {
+                    val (leanedSubPath, wasTargetSeen) = makeLeanPathAcc(npe, siteMap, endSite)
+                    if (leanedSubPath.isDefined) {
+                        elements.append(leanedSubPath.get)
+                    }
+                    if (wasTargetSeen) {
+                        hasTargetBeenSeen = true
+                    }
+                }
             case _ ⇒
         }
 
         if (elements.nonEmpty) {
-            Some(NestedPathElement(elements, toProcess.elementType))
+            (Some(NestedPathElement(elements, toProcess.elementType)), hasTargetBeenSeen)
         } else {
-            None
+            (None, false)
         }
     }
 
@@ -152,11 +236,21 @@ case class Path(elements: List[SubPath]) {
      *       instance do not share any references.
      */
     def makeLeanPath(obj: DUVar[ValueInformation], stmts: Array[Stmt[V]]): Path = {
-        // Transform the list into a map to have a constant access time
-        val siteMap = Map(getAllDefAndUseSites(obj, stmts) map { s ⇒ (s, Unit) }: _*)
+        val newOfObj = InterpretationHandler.findNewOfVar(obj, stmts)
+        // Transform the list of relevant sites into a map to have a constant access time
+        val siteMap = getAllDefAndUseSites(obj, stmts).filter { nextSite ⇒
+            stmts(nextSite) match {
+                case Assignment(_, _, expr: VirtualFunctionCall[V]) ⇒
+                    newOfObj == InterpretationHandler.findNewOfVar(expr.receiver.asVar, stmts)
+                case ExprStmt(_, expr: VirtualFunctionCall[V]) ⇒
+                    newOfObj == InterpretationHandler.findNewOfVar(expr.receiver.asVar, stmts)
+                case _ ⇒ true
+            }
+        }.map { s ⇒ (s, Unit) }.toMap
         val leanPath = ListBuffer[SubPath]()
         val endSite = obj.definedBy.head
         var reachedEndSite = false
+
         elements.foreach { next ⇒
             if (!reachedEndSite) {
                 next match {
@@ -166,13 +260,28 @@ case class Path(elements: List[SubPath]) {
                             reachedEndSite = true
                         }
                     case npe: NestedPathElement ⇒
-                        val leanedPath = makeLeanPathAcc(npe, siteMap)
+                        val (leanedPath, wasTargetSeen) = makeLeanPathAcc(npe, siteMap, endSite)
+                        if (npe.elementType.isDefined &&
+                            npe.elementType.get != NestedPathType.TryCatchFinally) {
+                            reachedEndSite = wasTargetSeen
+                        }
                         if (leanedPath.isDefined) {
                             leanPath.append(leanedPath.get)
                         }
                     case _ ⇒
                 }
             }
+        }
+
+        // If the last element is a conditional, keep only the relevant branch (the other is not
+        // necessary and stripping it simplifies further steps; explicitly exclude try-catch here!)
+        leanPath.last match {
+            case npe: NestedPathElement if npe.elementType.isDefined &&
+                (npe.elementType.get != NestedPathType.TryCatchFinally) ⇒
+                val newLast = stripUnnecessaryBranches(npe, endSite)
+                leanPath.remove(leanPath.size - 1)
+                leanPath.append(newLast)
+            case _ ⇒
         }
 
         Path(leanPath.toList)

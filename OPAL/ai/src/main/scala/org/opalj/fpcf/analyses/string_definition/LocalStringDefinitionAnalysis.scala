@@ -63,7 +63,7 @@ class LocalStringDefinitionAnalysis(
             // The lean path that was computed
             computedLeanPath: Path,
             // A mapping from DUVar elements to the corresponding indices of the FlatPathElements
-            var2IndexMapping: mutable.LinkedHashMap[V, Int],
+            var2IndexMapping: mutable.Map[V, Int],
             // A mapping from values of FlatPathElements to StringConstancyInformation
             fpe2sci: mutable.Map[Int, StringConstancyInformation],
             // The control flow graph on which the computedLeanPath is based
@@ -147,9 +147,11 @@ class LocalStringDefinitionAnalysis(
         p:         Property
     ): PropertyComputationResult = {
         // Add mapping information (which will be used for computing the final result)
-        val currentSci = p.asInstanceOf[StringConstancyProperty].stringConstancyInformation
+        val retrievedProperty = p.asInstanceOf[StringConstancyProperty]
+        val currentSci = retrievedProperty.stringConstancyInformation
         state.fpe2sci.put(state.var2IndexMapping(e.asInstanceOf[P]._1), currentSci)
 
+        // No more dependees => Return the result for this analysis run
         val remDependees = dependees.filter(_.e != e)
         if (remDependees.isEmpty) {
             val finalSci = new PathTransformer(state.cfg).pathToStringTree(
@@ -190,7 +192,6 @@ class LocalStringDefinitionAnalysis(
                 )
             case _ ⇒ NoResult
         }
-
     }
 
     /**
@@ -264,7 +265,7 @@ class LocalStringDefinitionAnalysis(
         path.elements.foreach { nextSubpath ⇒
             if (!wasTargetSeen) {
                 val (currentDeps, encounteredTarget) = findDependeesAcc(
-                    nextSubpath, stmts, ignore, ListBuffer(), false
+                    nextSubpath, stmts, ignore, ListBuffer(), hasTargetBeenSeen = false
                 )
                 wasTargetSeen = encounteredTarget
                 currentDeps.foreach { nextPair ⇒

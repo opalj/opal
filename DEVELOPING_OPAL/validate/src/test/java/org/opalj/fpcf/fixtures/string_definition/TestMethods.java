@@ -773,29 +773,29 @@ public class TestMethods {
         analyzeString(sb.toString());
     }
 
-    //    @StringDefinitionsCollection(
-    //            value = "A case with a criss-cross append on two StringBuilders",
-    //            stringDefinitions = {
-    //                    @StringDefinitions(
-    //                            expectedLevel = CONSTANT, expectedStrings = "Object(Runtime)?"
-    //                    ),
-    //                    @StringDefinitions(
-    //                            expectedLevel = CONSTANT, expectedStrings = "Runtime(Object)?"
-    //                    )
-    //            })
-    //    public void crissCrossExample(String className) {
-    //        StringBuilder sbObj = new StringBuilder("Object");
-    //        StringBuilder sbRun = new StringBuilder("Runtime");
-    //
-    //        if (className.length() == 0) {
-    //            sbRun.append(sbObj.toString());
-    //        } else {
-    //            sbObj.append(sbRun.toString());
-    //        }
-    //
-    //        analyzeString(sbObj.toString());
-    //        analyzeString(sbRun.toString());
-    //    }
+    @StringDefinitionsCollection(
+            value = "A case with a criss-cross append on two StringBuilders",
+            stringDefinitions = {
+                    @StringDefinitions(
+                            expectedLevel = CONSTANT, expectedStrings = "Object(Runtime)?"
+                    ),
+                    @StringDefinitions(
+                            expectedLevel = CONSTANT, expectedStrings = "Runtime(Object)?"
+                    )
+            })
+    public void crissCrossExample(String className) {
+        StringBuilder sbObj = new StringBuilder("Object");
+        StringBuilder sbRun = new StringBuilder("Runtime");
+
+        if (className.length() == 0) {
+            sbRun.append(sbObj.toString());
+        } else {
+            sbObj.append(sbRun.toString());
+        }
+
+        analyzeString(sbObj.toString());
+        analyzeString(sbRun.toString());
+    }
 
     //    @StringDefinitions(
     //            value = "a case with a switch with missing breaks",

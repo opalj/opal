@@ -113,9 +113,10 @@ class DefaultPathFinder extends AbstractPathFinder {
                 else {
                     // For loops
                     var ref: NestedPathElement = nestedElementsRef.head
-                    // Refine for conditionals
+                    // Refine for conditionals and try-catch(-finally)
                     ref.elementType match {
-                        case Some(t) if t == NestedPathType.CondWithAlternative ⇒
+                        case Some(t) if t == NestedPathType.CondWithAlternative ||
+                            t == NestedPathType.TryCatchFinally ⇒
                             ref = ref.element(currSplitIndex.head).asInstanceOf[NestedPathElement]
                         case _ ⇒
                     }
@@ -190,11 +191,11 @@ class DefaultPathFinder extends AbstractPathFinder {
                     }
                     ifWithElse = false
                 }
-                val outerNested = generateNestPathElement(
-                    relevantNumSuccessors,
-                    if (ifWithElse) NestedPathType.CondWithAlternative else
-                        NestedPathType.CondWithoutAlternative
-                )
+
+                val outerNestedType = if (catchSuccessors.nonEmpty) NestedPathType.TryCatchFinally
+                else if (ifWithElse) NestedPathType.CondWithAlternative
+                else NestedPathType.CondWithoutAlternative
+                val outerNested = generateNestPathElement(relevantNumSuccessors, outerNestedType)
 
                 numSplits.prepend(relevantNumSuccessors)
                 currSplitIndex.prepend(0)
