@@ -53,7 +53,7 @@ class StaticInitializerAnalysis(val project: SomeProject) extends FPCFAnalysis {
      *     // TODO split this into two methods and schedule both!
      */
     // FIXME "register to" doesn't make sense, here!
-    def registerToInstantiatedTypesAndLoadedClasses(p : SomeProject): PropertyComputationResult = {
+    def registerToInstantiatedTypesAndLoadedClasses(p: SomeProject): PropertyComputationResult = {
         val (lcDependee, loadedClassesUB) = propertyStore(project, LoadedClasses.key) match {
             case FinalP(loadedClasses)           ⇒ None → Some(loadedClasses)
             case eps @ InterimUBP(loadedClasses) ⇒ Some(eps) → Some(loadedClasses)
