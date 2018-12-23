@@ -25,10 +25,10 @@ import org.opalj.fpcf.cg.properties.OnlyVMLevelCallers
  * Furthermore, for each instantiated type ([[InstantiatedTypes]]), it ensures, that its class
  * is also a loaded class.
  *
- * @author Florian Kuebler
+ * @author Florian Kübler
  */
-// TODO: This class represents two analyses, please split them up!
-// TODO: Instead of added the clinits for all super types, add all super types to be loaded
+// TODO This class represents two analyses, please split them up!
+// TODO Instead of added the clinits for all super types, add all super types to be loaded
 class StaticInitializerAnalysis(val project: SomeProject) extends FPCFAnalysis {
 
     private val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
@@ -50,9 +50,10 @@ class StaticInitializerAnalysis(val project: SomeProject) extends FPCFAnalysis {
      * and ensures that:
      *     1. For each loaded class, its static initializer is called (see [[CallersProperty]])
      *     2. For each instantiated type, the type is also a loaded class
-     *     // todo split this into two methods and schedule both!
+     *     // TODO split this into two methods and schedule both!
      */
-    def registerToInstantiatedTypesAndLoadedClasses(project: SomeProject): PropertyComputationResult = {
+    // FIXME "register to" doesn't make sense, here!
+    def registerToInstantiatedTypesAndLoadedClasses(p : SomeProject): PropertyComputationResult = {
         val (lcDependee, loadedClassesUB) = propertyStore(project, LoadedClasses.key) match {
             case FinalP(loadedClasses)           ⇒ None → Some(loadedClasses)
             case eps @ InterimUBP(loadedClasses) ⇒ Some(eps) → Some(loadedClasses)
@@ -175,7 +176,7 @@ class StaticInitializerAnalysis(val project: SomeProject) extends FPCFAnalysis {
     private[this] def retrieveStaticInitializers(
         declaringClassType: ObjectType
     ): Iterator[DefinedMethod] = {
-        // todo only for interfaces with default methods
+        // TODO only for interfaces with default methods
         ch.allSuperclassesIterator(declaringClassType, reflexive = true).flatMap { cf ⇒
             // IMPROVE Only return the static initializer if it is not already present
             cf.staticInitializer map { clInit ⇒ declaredMethods(clInit) }
