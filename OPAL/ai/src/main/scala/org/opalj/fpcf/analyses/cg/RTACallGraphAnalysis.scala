@@ -465,16 +465,35 @@ class RTACallGraphAnalysis private[analyses] (
                     }
 
                     // the intersection of all (instantiable) subtypes of the type bounds
-                    val typeIntersection = typeBounds.iterator.map[Set[ObjectType]] { typeBound ⇒
-                        if (typeBound.isArrayType)
-                            Set.empty // already handled
-                        else {
-                            classHierarchy.allSubtypes(typeBound.asObjectType, true).filter { subtype ⇒
-                                val cf = project.classFile(subtype)
-                                cf.isDefined && !cf.get.isInterfaceDeclaration && !cf.get.isAbstract
+                    val typeIntersection = {
+                        // The following algorithm takes ~16secs. for 100000 queries related to
+                        // Serializable and Clonable:
+                        // typeBounds.iterator.map[Set[ObjectType]] { typeBound ⇒
+                        //    if (typeBound.isArrayType)
+                        //        Set.empty // already handled
+                        //    else {
+                        //        classHierarchy.allSubtypes(typeBound.asObjectType, true).filter { subtype ⇒
+                        //            val cf = project.classFile(subtype)
+                        //            cf.isDefined && !cf.get.isInterfaceDeclaration && !cf.get.isAbstract
+                        //        }
+                        //    }
+                        // }.reduce((x, y) ⇒ x intersect y)
+
+                        // This implementation requires ~10secs. (including the traversable
+                        // of the iterator!) when compared to the above one:
+                        val remainingTypeBounds = typeBounds.tail
+                        val firstTypeBound = typeBounds.head.asObjectType
+                        ch.allSubtypesIterator(firstTypeBound, reflexive = true).filter { subtype ⇒
+                            val cfOption = project.classFile(subtype)
+                            cfOption.isDefined && {
+                                val cf = cfOption.get
+                                !cf.isInterfaceDeclaration && !cf.isAbstract &&
+                                    remainingTypeBounds.forall { supertype ⇒
+                                        ch.isSubtypeOf(subtype, supertype.asObjectType)
+                                    }
                             }
                         }
-                    }.reduce((x, y) ⇒ x intersect y)
+                    }
 
                     for (possibleTgtType ← typeIntersection) {
                         if (instantiatedTypesUB.contains(possibleTgtType)) {

@@ -539,6 +539,17 @@ class ClassHierarchy private (
             subtypeInformationMap(oid).allTypes
     }
 
+    def allSubtypesIterator(objectType: ObjectType, reflexive: Boolean): Iterator[ObjectType] = {
+        val oid = objectType.id
+        if (isUnknown(oid))
+            return if (reflexive) Iterator.single(objectType) else Iterator.empty;
+
+        if (reflexive)
+            subtypeInformationMap(oid).allTypes.iterator ++ Iterator.single(objectType)
+        else
+            subtypeInformationMap(oid).allTypes.iterator
+    }
+
     /**
      * Enables the guided processing of all subtypes of the given type. This function enables you
      * to compute some value based on the subtypes of the given type and – at the same time – to
@@ -721,7 +732,7 @@ class ClassHierarchy private (
     }
 
     /**
-     * Returns all (direct and indirect) subclasses of the given class type.
+     * Returns all (direct and indirect) subclass types of the given class type.
      *
      * @note    No explicit `isKnown` check is required; if the type is unknown, an empty
      *          iterator is returned.
