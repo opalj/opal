@@ -58,7 +58,7 @@ package object bi {
      * class file.
      */
     def jdkVersion(majorVersion: Int): String = {
-        // 54 == 10, 53 == 9, 52 == 8; ... 50 == 6
+        // 55 == 11, 54 == 10, 53 == 9, 52 == 8; ... 50 == 6
         if (majorVersion >= 49) {
             "Java "+(majorVersion - 44)
         } else if (majorVersion > 45) {
@@ -82,12 +82,14 @@ package object bi {
     final val Java9Version = UShortPair(0, Java9MajorVersion)
     final val Java10MajorVersion = 54
     final val Java10Version = UShortPair(0, Java10MajorVersion)
+    final val Java11MajorVersion = 55
+    final val Java11Version = UShortPair(0, Java11MajorVersion)
 
     /**
      * The latest major version supported by OPAL; this constant is adapted whenever a new version
      * is supported.
      */
-    final val LatestSupportedJavaMajorVersion = Java10MajorVersion
+    final val LatestSupportedJavaMajorVersion = Java11MajorVersion
     /**
      * The latest version supported by OPAL; this constant is adapted whenever a new version
      * is supported.
