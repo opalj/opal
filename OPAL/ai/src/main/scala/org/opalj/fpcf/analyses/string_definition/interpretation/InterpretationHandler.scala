@@ -205,17 +205,22 @@ object InterpretationHandler {
     def findNewOfVar(duvar: V, stmts: Array[Stmt[V]]): List[New] = {
         val news = ListBuffer[New]()
 
-        // TODO: It might be that the search has to be extended to further cases
+        // HINT: It might be that the search has to be extended to further cases
         duvar.definedBy.foreach { ds ⇒
             stmts(ds) match {
-                // E.g., a call to `toString`
+                // E.g., a call to `toString` or `append`
                 case Assignment(_, _, vfc: VirtualFunctionCall[V]) ⇒
                     vfc.receiver.asVar.definedBy.foreach { innerDs ⇒
                         stmts(innerDs) match {
-                            case Assignment(_, _, expr: New) ⇒ news.append(expr)
-                            case _                           ⇒
+                            case Assignment(_, _, expr: New) ⇒
+                                news.append(expr)
+                            case Assignment(_, _, expr: VirtualFunctionCall[V]) ⇒
+                                news.appendAll(findNewOfVar(expr.receiver.asVar, stmts))
+                            case _ ⇒
                         }
                     }
+                case Assignment(_, _, newExpr: New) ⇒
+                    news.append(newExpr)
                 case _ ⇒
             }
         }
