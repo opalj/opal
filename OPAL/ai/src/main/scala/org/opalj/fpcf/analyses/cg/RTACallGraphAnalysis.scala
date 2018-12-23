@@ -663,12 +663,6 @@ object TriggeredRTACallGraphAnalysisScheduler extends FPCFTriggeredAnalysisSched
         PropertyBounds.ub(StandardInvokeCallees)
     )
 
-    override def register(p: SomeProject, ps: PropertyStore, unused: Null): RTACallGraphAnalysis = {
-        val analysis = new RTACallGraphAnalysis(p)
-        // register the analysis for initial values for callers (i.e. methods becoming reachable)
-        ps.registerTriggeredComputation(CallersProperty.key, analysis.analyze)
-        analysis
-    }
 
     /**
      * Updates the caller properties of the initial entry points ([[InitialEntryPointsKey]]) to be
@@ -701,6 +695,13 @@ object TriggeredRTACallGraphAnalysisScheduler extends FPCFTriggeredAnalysisSched
     }
 
     override def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
+
+    override def register(p: SomeProject, ps: PropertyStore, unused: Null): RTACallGraphAnalysis = {
+        val analysis = new RTACallGraphAnalysis(p)
+        // register the analysis for initial values for callers (i.e. methods becoming reachable)
+        ps.registerTriggeredComputation(CallersProperty.key, analysis.analyze)
+        analysis
+    }
 
     override def afterPhaseCompletion(p: SomeProject, ps: PropertyStore): Unit = {}
 }
