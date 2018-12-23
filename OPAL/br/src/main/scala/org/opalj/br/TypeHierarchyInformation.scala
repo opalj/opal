@@ -26,6 +26,8 @@ sealed abstract class TypeHierarchyInformation {
         interfaceTypes.foreach(f)
     }
 
+    def iterator: Iterator[ObjectType] = classTypes.iterator ++ interfaceTypes.iterator
+
     def forall(f: ObjectType ⇒ Boolean): Boolean = {
         classTypes.forall(f) && interfaceTypes.forall(f)
     }

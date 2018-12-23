@@ -834,8 +834,14 @@ class ClassHierarchy private (
      *
      * This function is not reflexive.
      */
-    def foreachSupertype(objectType: ObjectType)(f: ObjectType ⇒ Unit): Unit = {
-        val oid = objectType.id
+    def foreachSupertype(
+        ot:        ObjectType,
+        reflexive: Boolean    = false
+    )(
+        f: ObjectType ⇒ Unit
+    ): Unit = {
+        val oid = ot.id
+        if (reflexive) f(ot)
         if (isKnown(oid)) {
             supertypeInformationMap(oid).foreach(f)
         }
@@ -918,7 +924,7 @@ class ClassHierarchy private (
         if (supertypeInformation == null) {
             // The following is thread-safe, because we will always compute the same
             // information!
-            // this happens ONLY in case of broken project where
+            // This happens ONLY in case of broken project where
             // the sub-supertype information is totally broken;
             // e.g., a sub type `extends C` but C is an interface.
             supertypeInformation = interpolateSupertypeInformation(objectType)
@@ -964,16 +970,12 @@ class ClassHierarchy private (
             superinterfacetypes
     }
 
-    private[this] def interpolateSupertypeInformation(
-        o: ObjectType
-    ): SupertypeInformation = {
+    private[this] def interpolateSupertypeInformation(o: ObjectType): SupertypeInformation = {
         val allClassTypes = UIDSet.empty[ObjectType] ++ allSuperclassTypesInInitializationOrder(o).s
 
         var allInterfaceTypes = UIDSet.empty[ObjectType]
-        foreachSuperinterfaceType(o) { supertype ⇒
-            allInterfaceTypes += supertype
-            true
-        }
+        foreachSuperinterfaceType(o) { supertype ⇒ allInterfaceTypes += supertype; true }
+
         SupertypeInformation.forSubtypesOfObject(
             isKnownTypeMap,
             isInterfaceTypeMap,
@@ -1029,6 +1031,31 @@ class ClassHierarchy private (
                 classFiles = classFiles.updated(classFile.thisType, classFile)
         }
         classFiles.values
+    }
+
+    /**
+     * Efficient, best-effort iterator over all super types of the given type.
+     */
+    def allSuperclassesIterator(
+        ot:        ObjectType,
+        reflexive: Boolean    = false
+    )(
+        implicit
+        project: ClassFileRepository
+    ): Iterator[ClassFile] = {
+        val oid = ot.id
+
+        val baseTypes = if (isKnown(oid)) {
+            supertypeInformationMap(oid).iterator
+        } else {
+            Iterator.empty
+        }
+
+        val allTypes = if (reflexive) baseTypes ++ Iterator(ot) else baseTypes
+
+        allTypes
+            .filter(t ⇒ project.classFile(t).isDefined)
+            .map(t ⇒ project.classFile(t).get)
     }
 
     /**

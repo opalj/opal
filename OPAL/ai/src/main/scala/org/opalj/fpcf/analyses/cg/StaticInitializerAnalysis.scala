@@ -173,18 +173,15 @@ class StaticInitializerAnalysis(val project: SomeProject) extends FPCFAnalysis {
     }
 
     private[this] def retrieveStaticInitializers(
-    ): Set[DefinedMethod] = {
         declaringClassType: ObjectType
+    ): Iterator[DefinedMethod] = {
         // todo only for interfaces with default methods
-        project.classHierarchy.allSupertypes(declaringClassType, reflexive = true) flatMap { t ⇒
-            project.classFile(t) flatMap { cf ⇒
-                cf.staticInitializer map { clInit ⇒
-                    // IMPROVE: Only return the static initializer if it is not already present
-                    declaredMethods(clInit)
-                }
-            }
+        ch.allSuperclassesIterator(declaringClassType, reflexive = true).flatMap { cf ⇒
+            // IMPROVE Only return the static initializer if it is not already present
+            cf.staticInitializer map { clInit ⇒ declaredMethods(clInit) }
         }
     }
+
 }
 
 object TriggeredStaticInitializerAnalysis extends BasicFPCFEagerAnalysisScheduler {
