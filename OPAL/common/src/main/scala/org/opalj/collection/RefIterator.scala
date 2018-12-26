@@ -251,7 +251,7 @@ object RefIterator {
         override def toArray[X >: T: ClassTag]: Array[X] = Array[X](v1, v2, v3)
     }
 
-    def fromNonNullValues[T <: AnyRef](data: Array[T]): RefIterator[T] = new RefIterator[T] {
+    def fromNonNullValues[T <: AnyRef](data: Array[_ <: T]): RefIterator[T] = new RefIterator[T] {
         private[this] var i = -1
         private[this] def advanceIterator(): Unit = {
             i += 1
