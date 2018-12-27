@@ -394,7 +394,7 @@ trait ClassImmutabilityAnalysisScheduler extends FPCFAnalysisScheduler {
     ): TraversableOnce[ClassFile] = {
         val classHierarchy = project.classHierarchy
         import classHierarchy.allSubtypes
-        import classHierarchy.rootClassTypes
+        import classHierarchy.rootClassTypesIterator
         import propertyStore.set
         implicit val logContext: LogContext = project.logContext
 
@@ -413,7 +413,7 @@ trait ClassImmutabilityAnalysisScheduler extends FPCFAnalysisScheduler {
         // But, for classes that directly inherit from Object, but which also
         // implement unknown interface types it is possible to compute the class
         // immutability
-        val unexpectedRootClassTypes = rootClassTypes.filter(rt ⇒ rt ne ObjectType.Object)
+        val unexpectedRootClassTypes = rootClassTypesIterator.filter(rt ⇒ rt ne ObjectType.Object)
 
         unexpectedRootClassTypes foreach { rt ⇒
             allSubtypes(rt, reflexive = true) foreach { ot ⇒
