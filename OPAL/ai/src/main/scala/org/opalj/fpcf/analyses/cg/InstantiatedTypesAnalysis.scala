@@ -6,15 +6,15 @@ package cg
 
 import scala.language.existentials
 
+import org.opalj.collection.immutable.UIDSet
+import org.opalj.fpcf.cg.properties.CallersProperty
+import org.opalj.fpcf.cg.properties.InstantiatedTypes
+import org.opalj.fpcf.cg.properties.NoCallers
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
-import org.opalj.collection.immutable.UIDSet
-import org.opalj.fpcf.cg.properties.CallersProperty
-import org.opalj.fpcf.cg.properties.InstantiatedTypes
-import org.opalj.fpcf.cg.properties.NoCallers
 import org.opalj.tac.Assignment
 import org.opalj.tac.ExprStmt
 import org.opalj.tac.New
@@ -150,6 +150,7 @@ class InstantiatedTypesAnalysis private[analyses] (
 }
 
 object InstantiatedTypesAnalysis {
+
     def update(
         p:                        SomeProject,
         newInstantiatedTypes:     UIDSet[ObjectType],
@@ -168,28 +169,20 @@ object InstantiatedTypesAnalysis {
 
         case r ⇒ throw new IllegalStateException(s"unexpected previous result $r")
     }
+
 }
 
 object TriggeredInstantiatedTypesAnalysis extends BasicFPCFTriggeredAnalysisScheduler {
 
-    override def uses: Set[PropertyBounds] = Set(
-        PropertyBounds.ub(InstantiatedTypes),
-        PropertyBounds.ub(CallersProperty)
-    )
+    override def uses: Set[PropertyBounds] = PropertyBounds.ubs(InstantiatedTypes, CallersProperty)
 
-    override def derivesCollaboratively: Set[PropertyBounds] = Set(
-        PropertyBounds.ub(InstantiatedTypes)
-    )
+    override def derivesCollaboratively: Set[PropertyBounds] = PropertyBounds.ubs(InstantiatedTypes)
 
     override def derivesEagerly: Set[PropertyBounds] = Set.empty
 
-    override def register(
-        p: SomeProject, ps: PropertyStore, unused: Null
-    ): InstantiatedTypesAnalysis = {
+    override def register(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new InstantiatedTypesAnalysis(p)
-
         ps.registerTriggeredComputation(CallersProperty.key, analysis.analyze)
-
         analysis
     }
 }

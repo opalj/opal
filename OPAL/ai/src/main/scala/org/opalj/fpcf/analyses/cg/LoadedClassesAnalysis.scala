@@ -4,14 +4,14 @@ package fpcf
 package analyses
 package cg
 
-import org.opalj.br.DeclaredMethod
-import org.opalj.br.Method
-import org.opalj.br.ObjectType
-import org.opalj.br.analyses.SomeProject
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.cg.properties.CallersProperty
 import org.opalj.fpcf.cg.properties.LoadedClasses
 import org.opalj.fpcf.cg.properties.NoCallers
+import org.opalj.br.DeclaredMethod
+import org.opalj.br.Method
+import org.opalj.br.ObjectType
+import org.opalj.br.analyses.SomeProject
 import org.opalj.tac.Assignment
 import org.opalj.tac.ExprStmt
 import org.opalj.tac.GetStatic
@@ -202,24 +202,20 @@ class LoadedClassesAnalysis(
 
 object TriggeredLoadedClassesAnalysis extends BasicFPCFTriggeredAnalysisScheduler {
 
-    override def register(
-        p: SomeProject, ps: PropertyStore, unused: Null
-    ): FPCFAnalysis = {
+    override def uses: Set[PropertyBounds] = PropertyBounds.ubs(
+        LoadedClasses,
+        CallersProperty,
+        TACAI
+    )
+
+    override def derivesEagerly: Set[PropertyBounds] = Set.empty
+
+    override def derivesCollaboratively: Set[PropertyBounds] = PropertyBounds.ubs(LoadedClasses)
+
+    override def register(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new LoadedClassesAnalysis(p)
         ps.registerTriggeredComputation(CallersProperty.key, analysis.handleCaller)
         analysis
     }
-
-    override def uses: Set[PropertyBounds] =
-        Set(
-            PropertyBounds.ub(LoadedClasses),
-            PropertyBounds.ub(CallersProperty),
-            PropertyBounds.ub(TACAI)
-        )
-
-    override def derivesEagerly: Set[PropertyBounds] = Set.empty
-
-    override def derivesCollaboratively: Set[PropertyBounds] =
-        Set(PropertyBounds.ub(LoadedClasses))
 
 }
