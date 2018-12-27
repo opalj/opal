@@ -607,7 +607,7 @@ final class PKESequentialPropertyStore private (
         }
     }
 
-    override protected[this] def isIdle: Boolean = tasks.size == 0
+    override def isIdle: Boolean = tasks.size == 0
 
     override def waitOnPhaseCompletion(): Unit = handleExceptions {
         require(subPhaseId == 0, "unpaired waitOnPhaseCompletion call")
