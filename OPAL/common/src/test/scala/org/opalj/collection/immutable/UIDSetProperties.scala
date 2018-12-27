@@ -530,14 +530,14 @@ class UIDSetTest extends FunSpec with Matchers {
             import p.time
             var foundCount = 0
             var entriesCount = 0
-            val minSetSize = 4
-            val maxSetSize = 50
+            val minSetSize = 10
+            val maxSetSize = 40
 
-            for (warmUpRuns ← 1 to 2) {
+            for (warmUpRuns ← 1 to 3) {
                 p.resetAll()
                 for {
                     i ← minSetSize to maxSetSize // determines the target set's size
-                    j ← 1 to Math.max(2500 - Math.pow(i.toDouble, 1.75d).toInt, 3) // repeats at size i
+                    j ← 1 to Math.max(1000 - Math.pow(i.toDouble, 2d).toInt, 3) // repeats at size i
                 } {
                     var s = UIDSet.empty[SUID]
                     time('init) {
@@ -551,29 +551,34 @@ class UIDSetTest extends FunSpec with Matchers {
 
                     val rnd = new java.util.Random(0)
 
-                    var foundInTrieSetCount: Int = 0
-                    time('UIDTrieSet) {
-                        for { z ← 1 to 10000 /*#lookups*/ } {
+                    val foundInTrieSetCount: Int = time('UIDTrieSet) {
+                        var foundInTrieSetCount: Int = 0
+                        var z = 1
+                        while (z < 1000 /* #lookups */ ) {
                             val v = rnd.nextInt(60000)
-                            if (s.contains(SUID(v))) {
-                                foundCount += 1
-                                foundInTrieSetCount += 1
-                            }
+                            if (s.contains(SUID(v))) { foundInTrieSetCount += 1 }
+
+                            z += 1
                         }
+                        foundInTrieSetCount
                     }
 
                     rnd.setSeed(0)
 
-                    var foundInLinearProbingSetCount: Int = 0
-                    time('UIDLinearProbingSet) {
-                        for { z ← 1 to 10000 /*#lookups*/ } {
+                    val foundInLinearProbingSetCount = time('UIDLinearProbingSet) {
+                        var foundInLinearProbingSetCount: Int = 0
+                        var z = 1
+                        while (z < 1000 /* #lookups */ ) {
                             val v = rnd.nextInt(60000)
-                            if (linearProbingSet.contains(SUID(v))) {
-                                foundCount += 1
-                                foundInLinearProbingSetCount += 1
-                            }
+                            if (linearProbingSet.contains(SUID(v))) { foundInLinearProbingSetCount += 1 }
+                            z += 1
                         }
+                        foundInLinearProbingSetCount
                     }
+
+                    foundCount += foundInTrieSetCount
+                    foundCount += foundInLinearProbingSetCount
+
                     assert(
                         foundInTrieSetCount == foundInLinearProbingSetCount,
                         s"run $i: \n"+

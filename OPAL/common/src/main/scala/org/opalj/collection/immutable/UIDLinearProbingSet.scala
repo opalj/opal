@@ -74,7 +74,7 @@ private[immutable] class UIDArrayLinearProbingSet[+T <: UID] private[immutable] 
 
     override def containsId(eid: Int): Boolean = {
         val length = data.length // length is always >= 1
-        val id = eid
+        val id = eid * 3
         var key = id % length
         if (key < 0) key = -key // this is safe, because key will never be Int.MinValue
         var e = data(key)
@@ -134,7 +134,7 @@ private[immutable] class UIDLinearProbingSetBuilder[T <: UID](size: Int) {
     private[this] val data = new Array[UID](length)
 
     def +=(e: T): this.type = {
-        val id = e.id
+        val id = e.id * 3
         var key = id % length
         if (key < 0) key = -key // this is safe, because key will never be Int.MinValue
         while (data(key) != null) {
