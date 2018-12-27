@@ -23,6 +23,10 @@ import org.opalj.fpcf.cg.properties.NoStandardInvokeCallees
 import org.opalj.fpcf.cg.properties.OnlyCallersWithUnknownContext
 import org.opalj.fpcf.cg.properties.StandardInvokeCallees
 import org.opalj.fpcf.cg.properties.StandardInvokeCalleesImplementation
+import org.opalj.value.IsMObjectValue
+import org.opalj.value.IsNullValue
+import org.opalj.value.IsSArrayValue
+import org.opalj.value.IsSObjectValue
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
@@ -416,110 +420,104 @@ class RTACallGraphAnalysis private[analyses] (
         val callerType = caller.definedMethod.classFile.thisType
 
         val rvs = call.receiver.asVar.value.asReferenceValue.allValues
-        for (rv ← rvs) { //TODO filter duplicates
-            // for null there is no call
-            // FIXME Descibe what we do with the call to the constructor of the NullPointerException...
-            if (rv.isNull.isNoOrUnknown) {
-                // for precise types we can directly add the call edge here
-                if (rv.isPrecise) {
-                    val tgt = project.instanceCall(
-                        callerType,
-                        rv.leastUpperType.get,
-                        call.name,
-                        call.descriptor
-                    )
-                    handleCall(caller, call, pc, tgt)
-                } else {
-                    // the set of all type bounds, that must be a super type of the concrete type
-                    val typeBounds = rv.upperTypeBound
-
-                    // may the receiver be an array?
-                    if (typeBounds.forall(t ⇒ t.isArrayType ||
-                        (t eq ObjectType.Serializable) ||
-                        (t eq ObjectType.Cloneable) ||
-                        (t eq ObjectType.Object))) {
-                        val tgtR = project.instanceCall(
-                            caller.declaringClassType.asObjectType,
-                            ObjectType.Object,
-                            call.name,
-                            call.descriptor
-                        )
-                        handleCall(caller, call, pc, tgtR)
+        for (rv ← rvs) rv match {
+            case av: IsSArrayValue ⇒
+                val tgtR = project.instanceCall(
+                    caller.declaringClassType.asObjectType,
+                    ObjectType.Object,
+                    call.name,
+                    call.descriptor
+                )
+                handleCall(caller, call, pc, tgtR)
+            case ov: IsSObjectValue if ov.isPrecise ⇒
+                val tgt = project.instanceCall(
+                    callerType,
+                    rv.leastUpperType.get,
+                    call.name,
+                    call.descriptor
+                )
+                handleCall(caller, call, pc, tgt)
+            case ov: IsSObjectValue ⇒
+                val potentialTypes = classHierarchy.allSubtypesIterator(
+                    ov.theUpperTypeBound, reflexive = true
+                ).filter { subtype ⇒
+                        val cfOption = project.classFile(subtype)
+                        cfOption.isDefined && {
+                            val cf = cfOption.get
+                            !cf.isInterfaceDeclaration && !cf.isAbstract
+                        }
                     }
 
-                    // the intersection of all (instantiable) subtypes of the type bounds
-                    val typeIntersection = {
-                        // The following algorithm takes ~16secs. for 100000 queries related to
-                        // Serializable and Clonable:
-                        // typeBounds.iterator.map[Set[ObjectType]] { typeBound ⇒
-                        //    if (typeBound.isArrayType)
-                        //        Set.empty // already handled
-                        //    else {
-                        //        classHierarchy.allSubtypes(typeBound.asObjectType, true).filter { subtype ⇒
-                        //            val cf = project.classFile(subtype)
-                        //            cf.isDefined && !cf.get.isInterfaceDeclaration && !cf.get.isAbstract
-                        //        }
-                        //    }
-                        // }.reduce((x, y) ⇒ x intersect y)
+                handleImpreciseCall(caller, call, pc, instantiatedTypesUB, potentialTypes)
 
-                        // This implementation requires ~10secs. (including the traversable
-                        // of the iterator!) when compared to the above one:
-                        val remainingTypeBounds = typeBounds.tail
-                        val firstTypeBound = typeBounds.head.asObjectType
-                        ch.allSubtypesIterator(firstTypeBound, reflexive = true).filter { subtype ⇒
-                            val cfOption = project.classFile(subtype)
-                            cfOption.isDefined && {
-                                val cf = cfOption.get
-                                !cf.isInterfaceDeclaration && !cf.isAbstract &&
-                                    remainingTypeBounds.forall { supertype ⇒
-                                        ch.isSubtypeOf(subtype, supertype.asObjectType)
-                                    }
+            case mv: IsMObjectValue ⇒
+                val typeBounds = mv.upperTypeBound
+                val remainingTypeBounds = typeBounds.tail
+                val firstTypeBound = typeBounds.head
+                val potentialTypes = ch.allSubtypesIterator(
+                    firstTypeBound, reflexive = true
+                ).filter { subtype ⇒
+                    val cfOption = project.classFile(subtype)
+                    cfOption.isDefined && {
+                        val cf = cfOption.get
+                        !cf.isInterfaceDeclaration && !cf.isAbstract &&
+                            remainingTypeBounds.forall { supertype ⇒
+                                ch.isSubtypeOf(subtype, supertype)
                             }
-                        }
                     }
-
-                    for (possibleTgtType ← typeIntersection) {
-                        if (instantiatedTypesUB.contains(possibleTgtType)) {
-                            val tgtR = project.instanceCall(
-                                caller.declaringClassType.asObjectType,
-                                possibleTgtType,
-                                call.name,
-                                call.descriptor
-                            )
-                            handleCall(caller, call, pc, tgtR)
-                        } else {
-                            state.addVirtualCallSite(
-                                possibleTgtType, (pc, call.name, call.descriptor)
-                            )
-                        }
-                    }
-
-                    // IMPROVE we would like to have s.th. like if(typeBounds.forall(... isMethodOverridable)
-                    if (call.declaringClass.isObjectType) {
-                        val declType = call.declaringClass.asObjectType
-                        val m =
-                            if (call.isInterface)
-                                org.opalj.Result(project.resolveInterfaceMethodReference(
-                                    declType, call.name, call.descriptor
-                                ))
-                            else
-                                project.resolveClassMethodReference(
-                                    declType, call.name, call.descriptor
-                                )
-
-                        if (m.isEmpty || isMethodOverridable(m.value).isYesOrUnknown) {
-                            // todo isn't addIncompleteCallSite sufficient?
-                            unknownLibraryCall(
-                                caller,
-                                call,
-                                declType,
-                                callerType.packageName,
-                                pc
-                            )
-                        }
-                    }
-                    // FIXME What happens if call.declaringClass is an ArrayType?
                 }
+
+                handleImpreciseCall(caller, call, pc, instantiatedTypesUB, potentialTypes)
+            case _: IsNullValue ⇒
+            // for now, we ignore the implicit calls to NullPointerException.<init>
+        }
+    }
+
+    private[this] def handleImpreciseCall(
+        caller:              DefinedMethod,
+        call:                Call[V] with VirtualCall[V],
+        pc:                  Int,
+        instantiatedTypesUB: UIDSet[ObjectType],
+        potentialTargets:    Iterator[ObjectType]
+    )(implicit state: RTAState): Unit = {
+        for (possibleTgtType ← potentialTargets) {
+            if (instantiatedTypesUB.contains(possibleTgtType)) {
+                val tgtR = project.instanceCall(
+                    caller.declaringClassType.asObjectType,
+                    possibleTgtType,
+                    call.name,
+                    call.descriptor
+                )
+                handleCall(caller, call, pc, tgtR)
+            } else {
+                state.addVirtualCallSite(
+                    possibleTgtType, (pc, call.name, call.descriptor)
+                )
+            }
+        }
+
+        if (call.declaringClass.isObjectType) {
+            val declType = call.declaringClass.asObjectType
+            val m =
+                if (call.isInterface)
+                    org.opalj.Result(project.resolveInterfaceMethodReference(
+                        declType, call.name, call.descriptor
+                    ))
+                else
+                    project.resolveClassMethodReference(
+                        declType, call.name, call.descriptor
+                    )
+
+            if (m.isEmpty) {
+                unknownLibraryCall(
+                    caller,
+                    call,
+                    declType,
+                    caller.definedMethod.classFile.thisType.packageName,
+                    pc
+                )
+            } else if (isMethodOverridable(m.value).isYesOrUnknown) {
+                state.addIncompleteCallSite(pc)
             }
         }
     }
