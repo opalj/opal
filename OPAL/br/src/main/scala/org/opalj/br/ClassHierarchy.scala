@@ -174,6 +174,7 @@ class ClassHierarchy private (
      *          to Eclipse classes which are not part of the JDK.
      */
     def rootClassTypesIterator: Iterator[ObjectType] = {
+        // TODO Use RefIterator.fromNonNullValues(....)
         knownTypesMap.iterator filter { objectType ⇒
             (objectType ne null) && {
                 val oid = objectType.id
