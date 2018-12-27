@@ -2,6 +2,7 @@
 package org.opalj
 package br
 
+import org.opalj.collection.RefIterator
 import org.opalj.collection.immutable.UIDSet
 
 /**
@@ -15,30 +16,21 @@ sealed abstract class TypeHierarchyInformation {
     def classTypes: UIDSet[ObjectType]
     def interfaceTypes: UIDSet[ObjectType]
     /**
-     * The set of all types; cached if usefull.
+     * The set of all types; cached if useful.
      */
     def allTypes: UIDSet[ObjectType]
 
-    def size: Int = classTypes.size + interfaceTypes.size
+    final def size: Int = allTypes.size
 
-    def foreach[T](f: ObjectType ⇒ T): Unit = {
-        classTypes.foreach(f)
-        interfaceTypes.foreach(f)
-    }
+    def foreach[T](f: ObjectType ⇒ T): Unit = allTypes.foreach(f)
 
     def iterator: RefIterator[ObjectType]
 
-    def forall(f: ObjectType ⇒ Boolean): Boolean = {
-        classTypes.forall(f) && interfaceTypes.forall(f)
-    }
+    def forall(f: ObjectType ⇒ Boolean): Boolean = allTypes.forall(f)
 
-    def exists(f: ObjectType ⇒ Boolean): Boolean = {
-        classTypes.exists(f) || interfaceTypes.exists(f)
-    }
+    def exists(f: ObjectType ⇒ Boolean): Boolean = allTypes.exists(f)
 
-    def foldLeft[B](z: B)(op: (B, ObjectType) ⇒ B): B = {
-        interfaceTypes.foldLeft(classTypes.foldLeft(z)(op))(op)
-    }
+    def foldLeft[B](z: B)(op: (B, ObjectType) ⇒ B): B = allTypes.foldLeft(z)(op)
 
     /**
      * Tests if the given type belongs to the super/subtype of `this` type; this
