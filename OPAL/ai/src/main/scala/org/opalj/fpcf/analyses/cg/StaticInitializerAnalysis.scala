@@ -34,15 +34,15 @@ class StaticInitializerAnalysis(val project: SomeProject) extends FPCFAnalysis {
     private val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
 
     private case class LCState(
-            // only present for non-final values
-            var lcDependee:      Option[EOptionP[SomeProject, LoadedClasses]],
-            var loadedClassesUB: Option[LoadedClasses],
-            var seenClasses:     Int,
+        // only present for non-final values
+        var lcDependee:      Option[EOptionP[SomeProject, LoadedClasses]],
+        var loadedClassesUB: Option[LoadedClasses],
+        var seenClasses:     Int,
 
-            // only present for non-final values
-            var itDependee:            Option[EOptionP[SomeProject, InstantiatedTypes]],
-            var instantiatedTypesUB:   Option[InstantiatedTypes],
-            var seenInstantiatedTypes: Int
+        // only present for non-final values
+        var itDependee:            Option[EOptionP[SomeProject, InstantiatedTypes]],
+        var instantiatedTypesUB:   Option[InstantiatedTypes],
+        var seenInstantiatedTypes: Int
     )
 
     /**
@@ -95,35 +95,35 @@ class StaticInitializerAnalysis(val project: SomeProject) extends FPCFAnalysis {
             }
         }
 
-        def update(
-            eps: EOptionP[_, LoadedClasses]
-        ): Option[EPS[SomeProject, LoadedClasses]] = eps match {
-            case InterimUBP(ub) ⇒
-                val newUb = ub.classes ++ newLoadedClasses
-                // due to monotonicity:
-                // the size check sufficiently replaces the subset check
-                if (newUb.size > ub.classes.size)
-                    Some(InterimEUBP(project, ub.updated(newLoadedClasses)))
-                else
-                    None
+        val loadedClassesPartialResult = Some(PartialResult[SomeProject, LoadedClasses](
+            p,
+            LoadedClasses.key,
+            {
+                case InterimUBP(ub) ⇒
+                    val newUb = ub.classes ++ newLoadedClasses
+                    // due to monotonicity:
+                    // the size check sufficiently replaces the subset check
+                    if (newUb.size > ub.classes.size)
+                        Some(InterimEUBP(project, ub.updated(newLoadedClasses)))
+                    else
+                        None
 
-            case _: EPK[_, LoadedClasses] ⇒
-                Some(InterimEUBP(project, LoadedClasses.initial(newLoadedClasses)))
+                case _: EPK[_, LoadedClasses] ⇒
+                    Some(InterimEUBP(project, LoadedClasses.initial(newLoadedClasses)))
 
-            case r ⇒
-                throw new IllegalStateException(s"unexpected previous result $r")
-        }
+                case r ⇒
+                    throw new IllegalStateException(s"unexpected previous result $r")
+            }
+        ))
 
         val lcResult = if (state.itDependee.isDefined || state.lcDependee.isDefined)
             Some(InterimPartialResult(
-                p,
-                LoadedClasses.key,
-                update,
+                if (newLoadedClasses.nonEmpty) loadedClassesPartialResult else None,
                 state.itDependee ++ state.lcDependee,
                 continuation
             ))
         else if (newLoadedClasses.nonEmpty)
-            Some(PartialResult(p, LoadedClasses.key, update))
+            loadedClassesPartialResult
         else
             None
 
