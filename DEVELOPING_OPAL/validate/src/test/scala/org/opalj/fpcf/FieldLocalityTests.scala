@@ -41,9 +41,9 @@ class FieldLocalityTests extends PropertiesTest {
         TACAITransformer,
         LazyInterProceduralEscapeAnalysis,
         LazyReturnValueFreshnessAnalysis,
-        new LazyCalleesAnalysis(Set(
-            StandardInvokeCallees, SerializationRelatedCallees, ReflectionRelatedCallees
-        ))
+        LazyCalleesAnalysis(
+            Set(StandardInvokeCallees, SerializationRelatedCallees, ReflectionRelatedCallees)
+        )
     )
 
     override def init(p: Project[URL]): Unit = {

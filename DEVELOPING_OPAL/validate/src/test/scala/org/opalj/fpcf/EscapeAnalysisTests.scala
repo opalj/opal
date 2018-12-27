@@ -3,10 +3,6 @@ package org.opalj.fpcf
 
 import java.net.URL
 
-import org.opalj.ai.domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse
-import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
-import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
-import org.opalj.br.analyses.Project
 import org.opalj.fpcf.analyses.cg.LazyCalleesAnalysis
 import org.opalj.fpcf.analyses.cg.TriggeredInstantiatedTypesAnalysis
 import org.opalj.fpcf.analyses.cg.TriggeredLoadedClassesAnalysis
@@ -15,6 +11,10 @@ import org.opalj.fpcf.analyses.cg.TriggeredStaticInitializerAnalysis
 import org.opalj.fpcf.analyses.escape.EagerInterProceduralEscapeAnalysis
 import org.opalj.fpcf.analyses.escape.EagerSimpleEscapeAnalysis
 import org.opalj.fpcf.cg.properties.StandardInvokeCallees
+import org.opalj.br.analyses.Project
+import org.opalj.ai.domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse
+import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
+import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.tac.fpcf.analyses.TACAITransformer
 
 /**
@@ -33,9 +33,7 @@ class EscapeAnalysisTests extends PropertiesTest {
         TriggeredLoadedClassesAnalysis,
         LazyL0BaseAIAnalysis,
         TACAITransformer,
-        new LazyCalleesAnalysis(
-            Set(StandardInvokeCallees)
-        )
+        LazyCalleesAnalysis(Set(StandardInvokeCallees))
     )
 
     override def init(p: Project[URL]): Unit = {
