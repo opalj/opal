@@ -68,7 +68,6 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
         context: AnalysisContext,
         state:   AnalysisState
     ): Unit = {
-
         checkCall(call.pc, Some(call.receiver), call.params, hasAssignment = false)
     }
 
