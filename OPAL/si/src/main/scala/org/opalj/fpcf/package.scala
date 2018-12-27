@@ -129,7 +129,7 @@ package object fpcf {
      */
     final type ComputationResults = TraversableOnce[SomeFinalEP]
 
-    private[fpcf] final val AnalysisKeyName = "[internal] org.opalj.fpcf.PartialResultUpdateComputation"
+    private[fpcf] final val AnalysisKeyName = "<internal>opalj.PartialResultUpdateComputation"
 
     private[fpcf] final val AnalysisKey = PropertyKey.create[Entity, Null](AnalysisKeyName)
 

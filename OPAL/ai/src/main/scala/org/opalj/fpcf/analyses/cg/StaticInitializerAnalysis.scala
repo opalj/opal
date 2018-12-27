@@ -187,10 +187,7 @@ class StaticInitializerAnalysis(val project: SomeProject) extends FPCFAnalysis {
 
 object TriggeredStaticInitializerAnalysis extends BasicFPCFEagerAnalysisScheduler {
 
-    override def uses: Set[PropertyBounds] = PropertyBounds.ubs(
-        LoadedClasses,
-        InstantiatedTypes
-    )
+    override def uses: Set[PropertyBounds] = PropertyBounds.ubs(LoadedClasses, InstantiatedTypes)
 
     override def derivesCollaboratively: Set[PropertyBounds] = PropertyBounds.ubs(
         LoadedClasses,

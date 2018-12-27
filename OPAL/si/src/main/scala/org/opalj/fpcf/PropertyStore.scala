@@ -518,7 +518,9 @@ abstract class PropertyStore {
         // Step 4
         // Save the information about the finalization order (of properties which are
         // collaboratively computed).
-        val cleanUpSubPhase = propertyKindsComputedInThisPhase -- finalizationOrder.flatten.toSet
+        val cleanUpSubPhase =
+            (propertyKindsComputedInThisPhase -- finalizationOrder.flatten.toSet) +
+                AnalysisKey
         this.subPhaseFinalizationOrder =
             if (cleanUpSubPhase.isEmpty) {
                 finalizationOrder.toArray
@@ -554,7 +556,7 @@ abstract class PropertyStore {
      *
      * This method is only intended to support bug detection.
      */
-    protected[this] def isIdle: Boolean
+    def isIdle: Boolean
 
     /**
      * Returns a snapshot of the properties with the given kind associated with the given entities.
@@ -893,10 +895,10 @@ object PropertyStore {
         implicit val logContext: LogContext = GlobalLogContext
         debug =
             if (newDebug) {
-                info("OPAL", s"$DebugKey: debugging support on for new PropertyStores")
+                info("OPAL - new PropertyStores", s"$DebugKey: debugging support on")
                 true
             } else {
-                info("OPAL", s"$DebugKey: debugging support off for new PropertyStores")
+                info("OPAL - new PropertyStores", s"$DebugKey: debugging support off")
                 false
             }
     }
@@ -906,9 +908,7 @@ object PropertyStore {
     // about debugging analyses.
     //
 
-    final val TraceFallbacksKey = {
-        "org.opalj.fpcf.PropertyStore.TraceFallbacks"
-    }
+    final val TraceFallbacksKey = "org.opalj.fpcf.PropertyStore.TraceFallbacks"
 
     private[this] var traceFallbacks: Boolean = {
         val initialTraceFallbacks = BaseConfig.getBoolean(TraceFallbacksKey)

@@ -39,8 +39,7 @@ case class Schedule[A](
 
         val initInfo =
             batches.flatMap {
-                case BatchConfiguration(_, css) ⇒
-                    css.toIterator.map { cs ⇒ cs -> cs.init(ps) }
+                case BatchConfiguration(_, css) ⇒ css.toIterator.map { cs ⇒ cs -> cs.init(ps) }
             }.toMap
 
         batches.toIterator.zipWithIndex foreach { batchId ⇒
@@ -52,6 +51,7 @@ case class Schedule[A](
             time {
                 ps.setupPhase(configuration)
                 afterPhaseSetup(configuration)
+                assert(ps.isIdle, "the property store is not idle after phase setup")
 
                 css.foreach(cs ⇒ cs.beforeSchedule(ps))
                 css.foreach { cs ⇒
@@ -61,8 +61,10 @@ case class Schedule[A](
                 afterPhaseScheduling(css)
 
                 ps.waitOnPhaseCompletion()
+                assert(ps.isIdle, "the property store is not idle after phase completion")
 
                 css.foreach(cs ⇒ cs.afterPhaseCompletion(ps))
+                assert(ps.isIdle, "the property store is not idle after phase completion")
             } { t ⇒
                 if (trace)
                     info(
@@ -83,8 +85,3 @@ case class Schedule[A](
     }
 
 }
-
-case class BatchConfiguration[A](
-        phaseConfiguration: PhaseConfiguration,
-        batch:              Chain[ComputationSpecification[A]]
-)

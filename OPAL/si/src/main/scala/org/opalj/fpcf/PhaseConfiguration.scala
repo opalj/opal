@@ -21,7 +21,7 @@ package fpcf
  *           Map(ReachableNodesCount.Key → Set(ReachableNodes.Key))
  *         )
  *         }}}
- *         will suppress notification about interim updates from `ReachableNodes` to
+ *         will suppress notifications about interim updates from `ReachableNodes` to
  *         `ReachableNodesCount`
  *
  *

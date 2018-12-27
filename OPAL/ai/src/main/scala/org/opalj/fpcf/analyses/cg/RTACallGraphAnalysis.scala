@@ -4,6 +4,29 @@ package fpcf
 package analyses
 package cg
 
+import scala.language.existentials
+
+import scala.collection.immutable.IntMap
+import scala.collection.mutable
+
+import org.opalj.log.Error
+import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger
+import org.opalj.log.OPALLogger.logOnce
+import org.opalj.log.Warn
+import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.collection.immutable.UIDSet
+import org.opalj.fpcf.cg.properties.CallersProperty
+import org.opalj.fpcf.cg.properties.InstantiatedTypes
+import org.opalj.fpcf.cg.properties.NoCallers
+import org.opalj.fpcf.cg.properties.NoStandardInvokeCallees
+import org.opalj.fpcf.cg.properties.OnlyCallersWithUnknownContext
+import org.opalj.fpcf.cg.properties.StandardInvokeCallees
+import org.opalj.fpcf.cg.properties.StandardInvokeCalleesImplementation
+import org.opalj.value.IsMObjectValue
+import org.opalj.value.IsNullValue
+import org.opalj.value.IsSArrayValue
+import org.opalj.value.IsSObjectValue
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
@@ -14,18 +37,6 @@ import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.InitialEntryPointsKey
 import org.opalj.br.analyses.cg.IsOverridableMethodKey
-import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.collection.immutable.UIDSet
-import org.opalj.fpcf.cg.properties.CallersProperty
-import org.opalj.fpcf.cg.properties.InstantiatedTypes
-import org.opalj.fpcf.cg.properties.NoCallers
-import org.opalj.fpcf.cg.properties.NoStandardInvokeCallees
-import org.opalj.fpcf.cg.properties.OnlyCallersWithUnknownContext
-import org.opalj.fpcf.cg.properties.StandardInvokeCallees
-import org.opalj.fpcf.cg.properties.StandardInvokeCalleesImplementation
-import org.opalj.log.Error
-import org.opalj.log.OPALLogger
-import org.opalj.log.Warn
 import org.opalj.tac.Assignment
 import org.opalj.tac.Call
 import org.opalj.tac.ExprStmt
@@ -41,14 +52,6 @@ import org.opalj.tac.VirtualCall
 import org.opalj.tac.VirtualFunctionCallStatement
 import org.opalj.tac.VirtualMethodCall
 import org.opalj.tac.fpcf.properties.TACAI
-import org.opalj.value.IsMObjectValue
-import org.opalj.value.IsNullValue
-import org.opalj.value.IsSArrayValue
-import org.opalj.value.IsSObjectValue
-
-import scala.collection.immutable.IntMap
-import scala.collection.mutable
-import scala.language.existentials
 
 class RTAState private (
         private[cg] val method:                       DefinedMethod,
@@ -600,7 +603,6 @@ class RTACallGraphAnalysis private[analyses] (
                 handleVirtualCallSites(state, ub.types, newInstantiatedTypes)
 
                 returnResult(state)
-
         }
     }
 
@@ -648,13 +650,12 @@ object TriggeredRTACallGraphAnalysisScheduler extends FPCFTriggeredAnalysisSched
      * This will trigger the computation of the callees for these methods (see `processMethod`).
      */
     def processEntryPoints(p: SomeProject, ps: PropertyStore): Unit = {
+        implicit val logContext: LogContext = p.logContext
         val declaredMethods = p.get(DeclaredMethodsKey)
         val entryPoints = p.get(InitialEntryPointsKey).map(declaredMethods.apply)
 
         if (entryPoints.isEmpty)
-            OPALLogger.logOnce(
-                Error("project configuration", "the project has no entry points")
-            )(p.logContext)
+            logOnce(Error("project configuration", "the project has no entry points"))
 
         entryPoints.foreach { ep ⇒
             ps.preInitialize(ep, CallersProperty.key) {

@@ -64,7 +64,7 @@ object TACAI extends TACAIPropertyMetaInformation {
      * The key associated with every [[TACAI]] property.
      */
     final val key: PropertyKey[TACAI] = PropertyKey.create[Method, TACAI](
-        "org.opalj.tac.fpcf.TACAI",
+        "opalj.TACAI",
         (ps: PropertyStore, r: FallbackReason, m: Method) ⇒ {
             r match {
                 case PropertyIsNotDerivedByPreviouslyExecutedAnalysis ⇒

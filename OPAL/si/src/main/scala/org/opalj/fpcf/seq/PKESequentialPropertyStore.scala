@@ -607,13 +607,13 @@ final class PKESequentialPropertyStore private (
         }
     }
 
-    override protected[this] def isIdle: Boolean = tasks.size == 0
+    override def isIdle: Boolean = tasks.size == 0
 
     override def waitOnPhaseCompletion(): Unit = handleExceptions {
         require(subPhaseId == 0, "unpaired waitOnPhaseCompletion call")
 
         // Let's trigger triggered computations for those entities, which have values!
-        ps.map(_.clone()).zipWithIndex.foreach { epssPKId ⇒
+        ps.map(_.clone()).zipWithIndex foreach { epssPKId ⇒
             val (epss, pkId) = epssPKId
             epss foreach { eps ⇒
                 val (e, eOptionP) = eps
@@ -636,6 +636,9 @@ final class PKESequentialPropertyStore private (
             }
             assert(tasks.isEmpty)
             quiescenceCounter += 1
+            if (debug) {
+                trace("analysis progress", s"reached quiescence $quiescenceCounter")
+            }
 
             // We have reached quiescence.
             // Let's check if we have to fill in fallbacks.
@@ -657,7 +660,7 @@ final class PKESequentialPropertyStore private (
                                     // It is not a transformer which still waits...
                                     dependees(pkId).get(eOptionP.e).isEmpty
                             }
-                    continueComputation ||= epkIterator.hasNext
+                    continueComputation |= epkIterator.hasNext
                     epkIterator.foreach { eOptionP ⇒
                         val e = eOptionP.e
                         val reason = PropertyIsNotDerivedByPreviouslyExecutedAnalysis
@@ -719,14 +722,19 @@ final class PKESequentialPropertyStore private (
                         pksToFinalize.map(PropertyKey.name).mkString("finalization of: ", ",", "")
                     )
                 }
+                // The following will also kill dependers related to anonymous computations using
+                // the generic property key: "AnalysisKey"; i.e., those without explicit properties!
                 pksToFinalize foreach { pk ⇒
-                    val interimEPSs = ps(pk.id).valuesIterator.filter(_.isRefinable).toList
-                    continueComputation = interimEPSs.nonEmpty
-                    interimEPSs foreach { interimEP ⇒ removeDependerFromDependees(interimEP.toEPK) }
+                    val dependeesIt = dependees(pk.id).keysIterator
+                    continueComputation |= dependeesIt.nonEmpty
+                    dependeesIt foreach { e ⇒ removeDependerFromDependees(EPK(e, PropertyKey.key(pk.id))) }
                 }
                 pksToFinalize foreach { pk ⇒
-                    val interimEPSs = ps(pk.id).valuesIterator.filter(_.isRefinable).toList
-                    interimEPSs foreach { interimEP ⇒ update(interimEP.toFinalEP, Nil) }
+                    val interimEPSs = ps(pk.id).valuesIterator.filter(_.isRefinable)
+                    interimEPSs foreach { interimEP ⇒
+                        val finalEP = interimEP.toFinalEP
+                        update(finalEP, Nil)
+                    }
                 }
                 // Clear "dangling" maps in the depender/dependee data structures:
                 pksToFinalize foreach { pk ⇒
@@ -738,8 +746,9 @@ final class PKESequentialPropertyStore private (
             if (debug && continueComputation) {
                 trace(
                     "analysis progress",
-                    s"finalization of sub phase $subPhaseId "+
-                        s"of ${subPhaseFinalizationOrder.length} led to new results"
+                    s"finalization of sub phase $subPhaseId of "+
+                        s"${subPhaseFinalizationOrder.length} led to updates "+
+                        s"${tasks.toArray().mkString("[", ",", "]")}"
                 )
             }
         } while (continueComputation)
