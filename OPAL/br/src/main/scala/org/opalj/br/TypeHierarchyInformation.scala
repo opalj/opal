@@ -110,7 +110,7 @@ object SubtypeInformation {
                     final override def iterator: RefIterator[ObjectType] = interfaceTypes.iterator
                     final override def contains(t: ObjectType): Boolean = {
                         val tid = t.id
-                            tid < isInterfaceType.length && isInterfaceType(tid) &&
+                        tid < isInterfaceType.length && isInterfaceType(tid) &&
                             interfaceTypes.containsId(tid)
                     }
                     final override private[br] def containsId(objectTypeId: Int): Boolean = {

@@ -26,7 +26,7 @@ import org.opalj.value.ValueInformation
  * @author Florian Kuebler
  * @author Dominik Helm
  */
-class CalleesAnalysis private[analyses] (
+final class CalleesAnalysis private[analyses] (
         final val project:           SomeProject,
         directCalleesPropertyKeys:   Set[PropertyKey[CalleesLike]],
         indirectCalleesPropertyKeys: Set[PropertyKey[CalleesLike]]
@@ -81,7 +81,9 @@ class CalleesAnalysis private[analyses] (
         directKeys:     Set[PropertyKey[CalleesLike]],
         indirectKeys:   Set[PropertyKey[CalleesLike]],
         dependees:      Set[EOptionP[DeclaredMethod, CalleesLike]]
-    )(eOptionP: SomeEPS): ProperPropertyComputationResult = {
+    )(
+        eOptionP: SomeEPS
+    ): ProperPropertyComputationResult = {
         val (_, newDependees, newDirectKeys, newIndirectKeys) =
             handleEOptP(
                 eOptionP.asInstanceOf[EPS[DeclaredMethod, CalleesLike]],
@@ -118,10 +120,7 @@ class CalleesAnalysis private[analyses] (
             IntMap.empty
 
         for (key ← directKeys.toIterator ++ indirectKeys.toIterator) {
-            val p = propertyStore(
-                declaredMethod,
-                key
-            )
+            val p = propertyStore(declaredMethod, key)
             if (p.hasUBP) {
                 val callees = p.ub
                 if (callees.isIndirect) {
@@ -159,7 +158,7 @@ class CalleesAnalysis private[analyses] (
         }
     }
 
-    @inline def updateDependee(
+    @inline protected[this] def updateDependee(
         eOptionP:  EOptionP[DeclaredMethod, CalleesLike],
         dependees: Set[EOptionP[DeclaredMethod, CalleesLike]]
     ): Set[EOptionP[DeclaredMethod, CalleesLike]] = {
@@ -170,24 +169,23 @@ class CalleesAnalysis private[analyses] (
 
 }
 
-class LazyCalleesAnalysis(calleesProperties: Set[CalleesLikePropertyMetaInformation]) extends BasicFPCFLazyAnalysisScheduler {
+case class LazyCalleesAnalysis(
+        calleesProperties: Set[CalleesLikePropertyMetaInformation]
+) extends BasicFPCFLazyAnalysisScheduler {
 
     override def uses: Set[PropertyBounds] = calleesProperties.map(PropertyBounds.ub)
 
     override def derivesLazily: Some[PropertyBounds] = Some(PropertyBounds.ub(Callees))
 
-    override def register(
-        project: SomeProject, propertyStore: PropertyStore, unused: Null
-    ): FPCFAnalysis = {
+    override def register(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val (indirectCalleesProperties, directCalleesProperties) =
             calleesProperties.partition(_.isIndirect)
         val analysis = new CalleesAnalysis(
-            project,
+            p,
             directCalleesProperties.map(_.key),
             indirectCalleesProperties.map(_.key)
         )
-        propertyStore.registerLazyPropertyComputation(Callees.key, analysis.doAnalysis)
+        ps.registerLazyPropertyComputation(Callees.key, analysis.doAnalysis)
         analysis
     }
 }
-

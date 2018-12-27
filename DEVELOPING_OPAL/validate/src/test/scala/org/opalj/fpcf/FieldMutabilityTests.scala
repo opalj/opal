@@ -69,11 +69,9 @@ class FieldMutabilityTests extends PropertiesTest {
                 TACAITransformer,
                 LazyUnsoundPrematurelyReadFieldsAnalysis,
                 LazyInterProceduralEscapeAnalysis,
-                new LazyCalleesAnalysis(Set(
-                    StandardInvokeCallees,
-                    SerializationRelatedCallees,
-                    ReflectionRelatedCallees
-                ))
+                LazyCalleesAnalysis(
+                    Set(StandardInvokeCallees, SerializationRelatedCallees, ReflectionRelatedCallees)
+                )
             )
         )
         as.propertyStore.shutdown()
