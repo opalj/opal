@@ -4,6 +4,6 @@ package org.opalj.fpcf
 import org.opalj.collection.immutable.Chain
 
 case class BatchConfiguration[A](
-                                    phaseConfiguration: PhaseConfiguration,
-                                    batch:              Chain[ComputationSpecification[A]]
-                                )
+        phaseConfiguration: PhaseConfiguration,
+        batch:              Chain[ComputationSpecification[A]]
+)
