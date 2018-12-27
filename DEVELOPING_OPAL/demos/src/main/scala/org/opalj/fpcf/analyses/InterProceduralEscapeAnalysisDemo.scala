@@ -31,6 +31,19 @@ import org.opalj.ai.common.DefinitionSite
 import org.opalj.ai.domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse
 import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
+import org.opalj.fpcf.analyses.cg.LazyCalleesAnalysis
+import org.opalj.fpcf.analyses.cg.TriggeredConfiguredNativeMethodsAnalysis
+import org.opalj.fpcf.analyses.cg.TriggeredFinalizerAnalysisScheduler
+import org.opalj.fpcf.analyses.cg.TriggeredInstantiatedTypesAnalysis
+import org.opalj.fpcf.analyses.cg.TriggeredLoadedClassesAnalysis
+import org.opalj.fpcf.analyses.cg.TriggeredRTACallGraphAnalysisScheduler
+import org.opalj.fpcf.analyses.cg.TriggeredSerializationRelatedCallsAnalysis
+import org.opalj.fpcf.analyses.cg.TriggeredStaticInitializerAnalysis
+import org.opalj.fpcf.analyses.cg.TriggeredThreadRelatedCallsAnalysis
+import org.opalj.fpcf.analyses.cg.reflection.TriggeredReflectionRelatedCallsAnalysis
+import org.opalj.fpcf.cg.properties.ReflectionRelatedCallees
+import org.opalj.fpcf.cg.properties.SerializationRelatedCallees
+import org.opalj.fpcf.cg.properties.StandardInvokeCallees
 import org.opalj.tac.fpcf.analyses.TACAITransformer
 
 /**
@@ -70,8 +83,19 @@ object InterProceduralEscapeAnalysisDemo extends DefaultOneStepAnalysis {
         time {
             val manager = project.get(FPCFAnalysesManagerKey)
             manager.runAll(
-                LazyVirtualCallAggregatingEscapeAnalysis,
-                // LazyL0TACAIAnalysis,
+                TriggeredRTACallGraphAnalysisScheduler,
+                TriggeredStaticInitializerAnalysis,
+                TriggeredLoadedClassesAnalysis,
+                TriggeredFinalizerAnalysisScheduler,
+                TriggeredThreadRelatedCallsAnalysis,
+                TriggeredSerializationRelatedCallsAnalysis,
+                TriggeredReflectionRelatedCallsAnalysis,
+                TriggeredInstantiatedTypesAnalysis,
+                TriggeredConfiguredNativeMethodsAnalysis,
+                TriggeredSystemPropertiesAnalysis,
+                new LazyCalleesAnalysis(
+                    Set(StandardInvokeCallees, SerializationRelatedCallees, ReflectionRelatedCallees)
+                ),
                 LazyL0BaseAIAnalysis,
                 TACAITransformer,
                 EagerInterProceduralEscapeAnalysis
