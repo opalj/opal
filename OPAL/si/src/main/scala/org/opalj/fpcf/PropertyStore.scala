@@ -518,7 +518,9 @@ abstract class PropertyStore {
         // Step 4
         // Save the information about the finalization order (of properties which are
         // collaboratively computed).
-        val cleanUpSubPhase = propertyKindsComputedInThisPhase -- finalizationOrder.flatten.toSet
+        val cleanUpSubPhase =
+            (propertyKindsComputedInThisPhase -- finalizationOrder.flatten.toSet) +
+                AnalysisKey
         this.subPhaseFinalizationOrder =
             if (cleanUpSubPhase.isEmpty) {
                 finalizationOrder.toArray
