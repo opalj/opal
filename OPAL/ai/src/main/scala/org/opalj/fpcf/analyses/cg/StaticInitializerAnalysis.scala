@@ -4,6 +4,8 @@ package fpcf
 package analyses
 package cg
 
+import scala.language.existentials
+
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
 import org.opalj.br.ObjectType
@@ -16,8 +18,6 @@ import org.opalj.fpcf.cg.properties.InstantiatedTypes
 import org.opalj.fpcf.cg.properties.LoadedClasses
 import org.opalj.fpcf.cg.properties.OnlyVMLevelCallers
 
-import scala.language.existentials
-
 /**
  * Extends the call graph analysis (e.g. [[RTACallGraphAnalysis]]) to include calls to static
  * initializers from within the JVM for each loaded class ([[LoadedClasses]]).
@@ -25,13 +25,12 @@ import scala.language.existentials
  * Furthermore, for each instantiated type ([[InstantiatedTypes]]), it ensures, that its class
  * is also a loaded class.
  *
- * @author Florian Kuebler
+ * @author Florian Kübler
  */
-// TODO: This class represents two analyses, please split them up!
-// TODO: Instead of added the clinits for all super types, add all super types to be loaded
-class StaticInitializerAnalysis(
-        val project: SomeProject
-) extends FPCFAnalysis {
+// TODO This class represents two analyses, please split them up!
+// TODO Instead of added the clinits for all super types, add all super types to be loaded
+class StaticInitializerAnalysis(val project: SomeProject) extends FPCFAnalysis {
+
     private val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
 
     private case class LCState(
@@ -51,9 +50,10 @@ class StaticInitializerAnalysis(
      * and ensures that:
      *     1. For each loaded class, its static initializer is called (see [[CallersProperty]])
      *     2. For each instantiated type, the type is also a loaded class
-     *     // todo split this into two methods and schedule both!
+     *     // TODO split this into two methods and schedule both!
      */
-    def registerToInstantiatedTypesAndLoadedClasses(project: SomeProject): PropertyComputationResult = {
+    // FIXME "register to" doesn't make sense, here!
+    def registerToInstantiatedTypesAndLoadedClasses(p: SomeProject): PropertyComputationResult = {
         val (lcDependee, loadedClassesUB) = propertyStore(project, LoadedClasses.key) match {
             case FinalP(loadedClasses)           ⇒ None → Some(loadedClasses)
             case eps @ InterimUBP(loadedClasses) ⇒ Some(eps) → Some(loadedClasses)
@@ -130,9 +130,7 @@ class StaticInitializerAnalysis(
         var newCLInits = Set.empty[DeclaredMethod]
         for (newLoadedClass ← unseenLoadedClasses) {
             // todo create result for static initializers
-            newCLInits ++= retrieveStaticInitializers(
-                newLoadedClass, declaredMethods, project
-            )
+            newCLInits ++= retrieveStaticInitializers(newLoadedClass)
         }
 
         val callersResult = newCLInits.iterator map { clInit ⇒
@@ -145,9 +143,6 @@ class StaticInitializerAnalysis(
 
                 case _: EPK[_, _] ⇒
                     Some(InterimEUBP(clInit, OnlyVMLevelCallers))
-
-                case r ⇒
-                    throw new IllegalStateException(s"unexpected previous result $r")
             })
         }
 
@@ -156,7 +151,10 @@ class StaticInitializerAnalysis(
 
     private[this] def continuation(
         someEPS: SomeEPS
-    )(implicit state: LCState): PropertyComputationResult = someEPS match {
+    )(
+        implicit
+        state: LCState
+    ): PropertyComputationResult = someEPS match {
         case FinalP(loadedClasses: LoadedClasses) ⇒
             state.lcDependee = None
             state.loadedClassesUB = Some(loadedClasses)
@@ -175,49 +173,37 @@ class StaticInitializerAnalysis(
             handleInstantiatedTypesAndLoadedClasses()
     }
 
-    /**
-     * Retrieves the static initializer of the given type if present.
-     */
     private[this] def retrieveStaticInitializers(
-        declaringClassType: ObjectType, declaredMethods: DeclaredMethods, project: SomeProject
-    ): Set[DefinedMethod] = {
-        // todo only for interfaces with default methods
-        project.classHierarchy.allSupertypes(declaringClassType, reflexive = true) flatMap { t ⇒
-            project.classFile(t) flatMap { cf ⇒
-                cf.staticInitializer map { clInit ⇒
-                    // IMPROVE: Only return the static initializer if it is not already present
-                    declaredMethods(clInit)
-                }
-            }
+        declaringClassType: ObjectType
+    ): Iterator[DefinedMethod] = {
+        // TODO only for interfaces with default methods
+        ch.allSuperclassesIterator(declaringClassType, reflexive = true).flatMap { cf ⇒
+            // IMPROVE Only return the static initializer if it is not already present
+            cf.staticInitializer map { clInit ⇒ declaredMethods(clInit) }
         }
     }
+
 }
 
 object TriggeredStaticInitializerAnalysis extends BasicFPCFEagerAnalysisScheduler {
 
-    override def uses: Set[PropertyBounds] =
-        Set(
-            PropertyBounds.ub(LoadedClasses),
-            PropertyBounds.ub(InstantiatedTypes)
-        )
+    override def uses: Set[PropertyBounds] = PropertyBounds.ubs(
+        LoadedClasses,
+        InstantiatedTypes
+    )
 
-    override def derivesCollaboratively: Set[PropertyBounds] =
-        Set(
-            PropertyBounds.ub(LoadedClasses),
-            PropertyBounds.ub(CallersProperty)
-        )
+    override def derivesCollaboratively: Set[PropertyBounds] = PropertyBounds.ubs(
+        LoadedClasses,
+        CallersProperty
+    )
 
     override def derivesEagerly: Set[PropertyBounds] = Set.empty
 
-    override def start(
-        p: SomeProject, ps: PropertyStore, unused: Null
-    ): StaticInitializerAnalysis = {
+    override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new StaticInitializerAnalysis(p)
-
         ps.scheduleEagerComputationForEntity(p)(
             analysis.registerToInstantiatedTypesAndLoadedClasses
         )
-
         analysis
     }
 

@@ -37,7 +37,7 @@ case class IFGT(branchoffset: Int) extends IF0Instruction[IFGT] with IFGTLike {
  *
  * @author Malte Limmeroth
  */
-object IFGT {
+object IFGT extends InstructionMetaInformation {
 
     final val opcode = 157
 

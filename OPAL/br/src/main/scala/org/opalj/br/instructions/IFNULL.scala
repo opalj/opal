@@ -38,7 +38,7 @@ case class IFNULL(branchoffset: Int) extends IFXNullInstruction[IFNULL] with IFN
  *
  * @author Malte Limmeroth
  */
-object IFNULL {
+object IFNULL extends InstructionMetaInformation {
 
     final val opcode = 198
 

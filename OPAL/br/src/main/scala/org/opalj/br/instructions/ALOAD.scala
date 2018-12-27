@@ -23,13 +23,13 @@ case class ALOAD(lvIndex: Int) extends ALoadInstruction with ExplicitLocalVariab
 
     override def toString: String = s"ALOAD($lvIndex)"
 }
-object ALOAD {
+object ALOAD extends InstructionMetaInformation {
 
     final val opcode = 25
 
     final val mnemonic = "aload"
 
-    def canonicalRepresentation(lvIndex: Int): LoadLocalVariableInstruction =
+    def canonicalRepresentation(lvIndex: Int): LoadLocalVariableInstruction = {
         lvIndex match {
             case 0 ⇒ ALOAD_0
             case 1 ⇒ ALOAD_1
@@ -37,5 +37,6 @@ object ALOAD {
             case 3 ⇒ ALOAD_3
             case _ ⇒ new ALOAD(lvIndex)
         }
+    }
 
 }

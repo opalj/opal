@@ -73,7 +73,7 @@ case class CHECKCAST(
  *
  * @author Malte Limmeroth
  */
-object CHECKCAST {
+object CHECKCAST extends InstructionMetaInformation {
 
     final val opcode = 192
 

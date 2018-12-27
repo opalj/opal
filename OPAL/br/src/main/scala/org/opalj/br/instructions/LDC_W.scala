@@ -10,7 +10,7 @@ import org.opalj.bytecode.BytecodeProcessingFailedException
  *
  * @author Michael Eichberg
  */
-sealed abstract class LDC_W[T] extends LoadConstantInstruction[T] {
+sealed abstract class LDC_W[T] extends LoadConstantInstruction[T] with InstructionMetaInformation {
 
     final def opcode: Opcode = LDC_W.opcode
 

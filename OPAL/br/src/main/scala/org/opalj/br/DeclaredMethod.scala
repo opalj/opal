@@ -25,6 +25,8 @@ sealed abstract class DeclaredMethod {
 
     def toJava: String = s"${declaringClassType.toJava}{ ${descriptor.toJava(name)} }"
 
+    def isVirtualOrHasSingleDefinedMethod: Boolean
+
     /**
      * If `true`, the method which actually defines this method (which may still be abstract!),
      * is unique, known and is available using [[asDefinedMethod]].
@@ -95,6 +97,8 @@ final class VirtualDeclaredMethod private[br] (
         override val id:                 Int
 ) extends DeclaredMethod {
 
+    override def isVirtualOrHasSingleDefinedMethod: Boolean = true
+
     override def hasSingleDefinedMethod: Boolean = false
     override def definedMethod: Method = throw new UnsupportedOperationException();
     override def asDefinedMethod: DefinedMethod = throw new ClassCastException();
@@ -125,6 +129,8 @@ final class DefinedMethod private[br] (
     override def name: String = definedMethod.name
     override def descriptor: MethodDescriptor = definedMethod.descriptor
 
+    override def isVirtualOrHasSingleDefinedMethod: Boolean = true
+
     override def hasSingleDefinedMethod: Boolean = true
     override def asDefinedMethod: DefinedMethod = this
 
@@ -147,6 +153,8 @@ final class MultipleDefinedMethods private[br] (
 
     override def name: String = definedMethods.head.name
     override def descriptor: MethodDescriptor = definedMethods.head.descriptor
+
+    override def isVirtualOrHasSingleDefinedMethod: Boolean = false
 
     override def hasSingleDefinedMethod: Boolean = false
     override def asDefinedMethod: DefinedMethod = throw new ClassCastException();

@@ -1,7 +1,9 @@
 # Changes
 
-## Upcoming (most likely 2.1.0)
-
+## Upcoming (3.0.0)
+- fixed the name of the static analysis infrastructure project (the name of the project on Maven Central has changed)
+- vastly improved PropertyStore with support for Transformers
+- the demos subproject was moved to the OPAL-DeveloperTools subfolder
 - fixed the computation of `allSubtypes` of for `java.lang.Object`
 - fixed several issues related to the handling of methods with subroutines (JSR/RET)
 - fixed the toString method of `StaticMethodCall`
@@ -15,9 +17,7 @@
 - moved the `isValueASubtypeOf` methods to the _value framework (`org.opalj.value`)_ (i.e., the methods are moved up in the class hierarchy)
 - moved the `verificationTypeInfo` methods to the _value framework_ (i.e., they are moved up in the class hierarchy)
 - the domain classes (e.g., `org.opalj.ai.domain.l0.TypeLevelReferenceValue` or `...l1.ReferenceValues`) which define the framework for handling reference values now use traits instead of classes; the concrete classes are now found in the `...DefaultBinding...` classes
-- `java�Comparable|Cloneable|Serializable` now get fixed ObjectType ids
-- vastly improved PropertyStore with support for Transformers
-- the demos subproject was moved to the OPAL-DeveloperTools subfolder
+- `java.*.Comparable|Cloneable|Serializable` now get fixed ObjectType ids
 
 ## 2.0.1 - Released Oct. 10th 2018
 

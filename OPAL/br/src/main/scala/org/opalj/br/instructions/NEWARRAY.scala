@@ -58,7 +58,7 @@ private object NEWARRAY_Long extends NEWARRAY {
     final override def elementType: BaseType = LongType
 }
 
-object NEWARRAY {
+object NEWARRAY extends InstructionMetaInformation {
 
     final val opcode = 188
 

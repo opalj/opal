@@ -25,7 +25,7 @@ case class ILOAD(lvIndex: Int) extends ILoadInstruction with ExplicitLocalVariab
     override def toString: String = s"ILOAD($lvIndex)"
 }
 
-object ILOAD {
+object ILOAD extends InstructionMetaInformation {
 
     final val opcode = 21
 

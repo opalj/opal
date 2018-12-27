@@ -136,7 +136,7 @@ case class TABLESWITCH(
  *
  * @author Malte Limmeroth
  */
-object TABLESWITCH {
+object TABLESWITCH extends InstructionMetaInformation {
 
     final val opcode = 170
 

@@ -19,3 +19,8 @@ object LStoreInstruction {
 
     def unapply(lstore: LStoreInstruction): Some[Int] = Some(lstore.lvIndex)
 }
+
+trait ConstantIndexLStoreInstruction
+    extends LStoreInstruction
+    with ImplicitLocalVariableIndex
+    with InstructionMetaInformation

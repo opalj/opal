@@ -19,3 +19,8 @@ object DStoreInstruction {
 
     def unapply(dstore: DStoreInstruction): Option[Int] = Some(dstore.lvIndex)
 }
+
+trait ConstantIndexDStoreInstruction
+    extends DStoreInstruction
+    with ImplicitLocalVariableIndex
+    with InstructionMetaInformation

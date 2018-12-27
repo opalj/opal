@@ -23,3 +23,8 @@ object ALoadInstruction {
     def unapply(li: ALoadInstruction): Some[Int] = Some(li.lvIndex)
 
 }
+
+trait ConstantALoadInstruction
+    extends ALoadInstruction
+    with ImplicitLocalVariableIndex
+    with InstructionMetaInformation

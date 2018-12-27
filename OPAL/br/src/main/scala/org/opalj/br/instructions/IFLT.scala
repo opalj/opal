@@ -37,7 +37,7 @@ case class IFLT(branchoffset: Int) extends IF0Instruction[IFLT] with IFLTLike {
  *
  * @author Malte Limmeroth
  */
-object IFLT {
+object IFLT extends InstructionMetaInformation {
 
     final val opcode = 155
 

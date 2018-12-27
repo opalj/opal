@@ -36,7 +36,7 @@ case class INVOKEVIRTUAL(
  *
  * @author Malte Limmeroth
  */
-object INVOKEVIRTUAL {
+object INVOKEVIRTUAL extends InstructionMetaInformation {
 
     final val opcode = 182
 

@@ -238,11 +238,14 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
         // let's make sure that we support this class file's version
         if (!(
             major_version >= 45 && // at least JDK 1.1
-            (major_version < 54 /* Java 8 = 52.0 */ ||
-                (major_version == 54 && minor_version == 0 /*Java 10 == 54.0*/ ))
+            (major_version < LatestSupportedJavaMajorVersion || (
+                major_version == LatestSupportedJavaMajorVersion
+                && minor_version <= LatestSupportedJavaVersion.minor
+            ))
         )) throw BytecodeProcessingFailedException(
             s"unsupported class file version: $major_version.$minor_version"+
-                " (Supported: 45(Java 1.1) <= version <= 54(Java 10))"
+                " (Supported: 45(Java 1.1) <= version <= "+
+                s"$LatestSupportedJavaMajorVersion(${jdkVersion(LatestSupportedJavaMajorVersion)}))"
         )
 
         val cp = Constant_Pool(in)

@@ -34,7 +34,7 @@ trait INVOKEDYNAMIC extends InvocationInstruction {
 /**
  * Common constants and extractor methods related to [[INVOKEDYNAMIC]] instructions.
  */
-object INVOKEDYNAMIC {
+object INVOKEDYNAMIC extends InstructionMetaInformation {
 
     final val jvmExceptions = List(ObjectType.BootstrapMethodError)
 

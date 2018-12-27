@@ -10,7 +10,7 @@ import org.opalj.collection.immutable.Chain
  *
  * @author Michael Eichberg
  */
-case object AASTORE extends ArrayStoreInstruction {
+case object AASTORE extends ArrayStoreInstruction with InstructionMetaInformation {
 
     final val opcode = 83
 

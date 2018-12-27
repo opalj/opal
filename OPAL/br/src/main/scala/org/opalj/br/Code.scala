@@ -696,6 +696,24 @@ final class Code private (
         }
     }
 
+    /**
+     * Iterates over all instructions with the given opcode and calls the given function `f` for every instruction.
+     */
+    @inline final def iterate[U](
+        instuctionType: InstructionMetaInformation
+    )(
+        f: ( /*pc:*/ Int, Instruction) ⇒ U
+    ): Unit = {
+        val opcode = instuctionType.opcode
+        val instructionsLength = instructions.length
+        var pc = 0
+        while (pc < instructionsLength) {
+            val instruction = instructions(pc)
+            if (instruction.opcode == opcode) f(pc, instruction)
+            pc = pcOfNextInstruction(pc)
+        }
+    }
+
     @inline final def forall(f: ( /*pc:*/ Int, Instruction) ⇒ Boolean): Boolean = {
         val instructionsLength = instructions.length
         var pc = 0

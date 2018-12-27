@@ -8,7 +8,7 @@ package instructions
  *
  * @author Michael Eichberg
  */
-case object DSTORE_2 extends DStoreInstruction with ImplicitLocalVariableIndex {
+case object DSTORE_2 extends ConstantIndexDStoreInstruction {
 
     final val lvIndex = 2
 

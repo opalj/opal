@@ -56,13 +56,12 @@ case class NamedLabel(name: String) extends InstructionLabel {
     override def toString: String = s"'$name"
 }
 
-trait InstructionLabelFactory {
+object InstructionLabel {
+
     final implicit def symbolToInstructionLabel(l: Symbol): InstructionLabel = InstructionLabel(l)
     final implicit def nameToInstructionLabel(l: String): InstructionLabel = InstructionLabel(l)
     final implicit def pcToInstructionLabel(l: PC): InstructionLabel = InstructionLabel(l)
-}
 
-object InstructionLabel extends InstructionLabelFactory {
     def apply(s: Symbol): NamedLabel = new NamedLabel(s.name)
     def apply(name: String): NamedLabel = new NamedLabel(name)
     def apply(pc: Int): PCLabel = new PCLabel(pc)

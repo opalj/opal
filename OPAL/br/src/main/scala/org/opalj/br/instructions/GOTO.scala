@@ -31,7 +31,7 @@ case class GOTO(branchoffset: Int) extends GotoInstruction with GOTOLike {
  *
  * @author Malte Limmeroth
  */
-object GOTO {
+object GOTO extends InstructionMetaInformation {
 
     final val opcode = 167
 

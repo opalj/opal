@@ -135,7 +135,7 @@ case class LOOKUPSWITCH(
  *
  * @author Malte Limmeroth
  */
-object LOOKUPSWITCH {
+object LOOKUPSWITCH extends InstructionMetaInformation {
 
     final val opcode = 171
 

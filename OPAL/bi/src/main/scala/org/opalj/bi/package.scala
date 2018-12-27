@@ -94,7 +94,7 @@ package object bi {
      * The latest version supported by OPAL; this constant is adapted whenever a new version
      * is supported.
      */
-    final val LatestSupportedJavaVersion = Java10Version
+    final val LatestSupportedJavaVersion = Java11Version
 
     /**
      * Returns `true` if the current JRE is at least Java 8 or a newer version.

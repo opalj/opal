@@ -41,7 +41,7 @@ class BIPUSH private (val value: Int) extends LoadConstantInstruction[Int] {
     override def toString = "BIPUSH("+value+")"
 }
 
-object BIPUSH {
+object BIPUSH extends InstructionMetaInformation {
 
     final val opcode = 16
 
