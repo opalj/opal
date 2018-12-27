@@ -217,6 +217,11 @@ class AnalysisScenario[A] {
         // 2. compute the phase configuration; i.e., find those properties for which we must
         //    suppress interim updates.
         var suppressInterimUpdates: Map[PropertyKind, Set[PropertyKind]] = Map.empty
+        // Interim updates have to be suppressed when an analysis uses a property for which
+        // the wrong bounds/not enough bounds are computed.
+        transformersCS foreach { cs ⇒
+            suppressInterimUpdates += (cs.derivesLazily.get.pk → cs.uses.map(_.pk))
+        }
 
         // 3. create the batch
         val batchBuilder = Chain.newBuilder[ComputationSpecification[A]]
@@ -224,12 +229,6 @@ class AnalysisScenario[A] {
         batchBuilder ++= transformersCS
         batchBuilder ++= triggeredCS
         batchBuilder ++= eagerCS
-
-        transformersCS foreach { cs ⇒
-            suppressInterimUpdates += (cs.derivesLazily.get.pk → cs.uses.map(_.pk))
-        }
-        // Interim updates have to be suppressed when an analysis uses a property for which
-        // the wrong bounds/not enough bounds are computed.
 
         // FIXME...
 
