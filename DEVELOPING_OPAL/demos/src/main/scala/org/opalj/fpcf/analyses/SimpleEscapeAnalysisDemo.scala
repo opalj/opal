@@ -65,7 +65,6 @@ object SimpleEscapeAnalysisDemo extends DefaultOneStepAnalysis {
                 EagerSimpleEscapeAnalysis,
                 LazyL0BaseAIAnalysis,
                 TACAITransformer /* LazyL0TACAIAnalysis */ )
-            propertyStore.waitOnPhaseCompletion()
         } { t ⇒ info("progress", s"escape analysis took ${t.toSeconds}") }
 
         def countAS(entities: Iterator[Entity]) = entities.count(_.isInstanceOf[DefinitionSite])
