@@ -83,8 +83,3 @@ case class Schedule[A](
     }
 
 }
-
-case class BatchConfiguration[A](
-        phaseConfiguration: PhaseConfiguration,
-        batch:              Chain[ComputationSpecification[A]]
-)
