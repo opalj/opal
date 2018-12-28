@@ -11,6 +11,7 @@ import scala.reflect.runtime.universe.runtimeMirror
 import scala.io.Source
 import org.junit.runner.RunWith
 import org.opalj.ai.domain.l1
+import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.br.DeclaredMethod
 import org.scalatest.FunSpec
@@ -20,9 +21,23 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.fpcf.analyses.FPCFAnalysesIntegrationTest.p
 import org.opalj.fpcf.analyses.FPCFAnalysesIntegrationTest.factory
 import org.opalj.fpcf.analyses.FPCFAnalysesIntegrationTest.ps
+import org.opalj.fpcf.analyses.cg.LazyCalleesAnalysis
+import org.opalj.fpcf.analyses.cg.RTACallGraphAnalysisScheduler
+import org.opalj.fpcf.analyses.cg.TriggeredConfiguredNativeMethodsAnalysis
+import org.opalj.fpcf.analyses.cg.TriggeredFinalizerAnalysisScheduler
+import org.opalj.fpcf.analyses.cg.TriggeredInstantiatedTypesAnalysis
+import org.opalj.fpcf.analyses.cg.TriggeredLoadedClassesAnalysis
+import org.opalj.fpcf.analyses.cg.TriggeredSerializationRelatedCallsAnalysis
+import org.opalj.fpcf.analyses.cg.TriggeredStaticInitializerAnalysis
+import org.opalj.fpcf.analyses.cg.TriggeredThreadRelatedCallsAnalysis
+import org.opalj.fpcf.analyses.cg.reflection.TriggeredReflectionRelatedCallsAnalysis
+import org.opalj.fpcf.cg.properties.ReflectionRelatedCallees
+import org.opalj.fpcf.cg.properties.SerializationRelatedCallees
+import org.opalj.fpcf.cg.properties.StandardInvokeCallees
 import org.opalj.util.Nanoseconds
 import org.scalatest.junit.JUnitRunner
 import org.opalj.fpcf.properties.Purity
+import org.opalj.tac.fpcf.analyses.TACAITransformer
 
 /**
  * Simple test to ensure that the FPFC analyses do not cause exceptions and that their results
@@ -67,6 +82,31 @@ class FPCFAnalysesIntegrationTest extends FunSpec {
 
                     PropertyStore.updateDebug(true)
                     ps = p.get(PropertyStoreKey)
+
+                    val manager = p.get(FPCFAnalysesManagerKey)
+
+                    time {
+                        // todo do not want to run this for every setting
+                        manager.runAll(
+                            RTACallGraphAnalysisScheduler,
+                            TriggeredStaticInitializerAnalysis,
+                            TriggeredLoadedClassesAnalysis,
+                            TriggeredFinalizerAnalysisScheduler,
+                            TriggeredThreadRelatedCallsAnalysis,
+                            TriggeredSerializationRelatedCallsAnalysis,
+                            TriggeredReflectionRelatedCallsAnalysis,
+                            TriggeredInstantiatedTypesAnalysis,
+                            TriggeredConfiguredNativeMethodsAnalysis,
+                            TriggeredSystemPropertiesAnalysis,
+                            LazyCalleesAnalysis(
+                                Set(StandardInvokeCallees, SerializationRelatedCallees, ReflectionRelatedCallees)
+                            ),
+                            LazyL0BaseAIAnalysis,
+                            TACAITransformer
+                        )
+                    } {
+                        t ⇒ info(s"call graph and tac analysis took ${t.toSeconds}")
+                    }
 
                     time {
                         p.get(FPCFAnalysesManagerKey).runAll(analyses)
