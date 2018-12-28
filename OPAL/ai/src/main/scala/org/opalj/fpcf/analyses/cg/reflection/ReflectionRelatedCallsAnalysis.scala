@@ -117,7 +117,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
             tacode:                   Option[TACode[TACMethodParameter, V]]           = _tacode,
             tacaiDependee:            Option[EOptionP[Method, TACAI]]                 = _tacaiDependee,
             systemPropertiesDependee: Option[EOptionP[SomeProject, SystemProperties]] = _systemPropertiesDependee,
-            systemProperties:         Option[Map[String, Set[String]]]                = None
+            systemProperties:         Option[Map[String, Set[String]]]                = _systemProperties
         ): State = {
             new State(
                 definedMethod,
