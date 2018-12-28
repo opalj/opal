@@ -826,12 +826,14 @@ case class ASArrayWithLengthValue(
 
 }
 
-trait IsPreciseReferenceValue extends IsSReferenceValue[ObjectType] {
+private[value] trait IsPreciseNonNullReferenceValue extends IsSObjectValue {
     override def isNull: No.type = No
     override def isPrecise: Boolean = true
 }
 
-trait IsStringValue extends IsPreciseReferenceValue with ConstantValueInformationProvider[String] {
+trait IsStringValue
+    extends IsPreciseNonNullReferenceValue
+    with ConstantValueInformationProvider[String] {
 
     def value: String
 
@@ -862,7 +864,9 @@ case class TheStringValue(value: String) extends IsStringValue {
     override def toCanonicalForm: TheStringValue = this
 }
 
-trait IsClassValue extends IsPreciseReferenceValue with ConstantValueInformationProvider[Type] {
+trait IsClassValue
+    extends IsPreciseNonNullReferenceValue
+    with ConstantValueInformationProvider[Type] {
 
     // We hard-code the type hierarchy related to "java.lang.Class".
     val AnnotatedElement = ObjectType("java/lang/reflect/AnnotatedElement")
