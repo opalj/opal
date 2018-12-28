@@ -68,7 +68,7 @@ class FPCFAnalysesManager private[fpcf] (val project: SomeProject) {
 
         properties foreach { p ⇒ derivedProperties(p.pk.id) = true }
 
-        val schedule = scenario.computeSchedule
+        val schedule = scenario.computeSchedule(propertyStore)
         schedules ::= schedule
 
         if (trace) { debug("analysis progress", "executing "+schedule) }

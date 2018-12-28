@@ -12,11 +12,9 @@ import org.opalj.collection.immutable.Chain
  * Provides functionality to determine whether a set of analyses is compatible and to compute
  * a schedule to execute a set of analyses.
  *
- * @param propertyStore required to determine which properties are already computed!
- *
  * @author Michael Eichberg
  */
-class AnalysisScenario[A] /* FIXME (propertyStore : PropertyStore)*/ {
+class AnalysisScenario[A] {
 
     private[this] var allCS: Set[ComputationSpecification[A]] = Set.empty
 
@@ -42,8 +40,9 @@ class AnalysisScenario[A] /* FIXME (propertyStore : PropertyStore)*/ {
      * that should be scheduled.
      */
     def +=(cs: ComputationSpecification[A]): this.type = {
+
         // 1. check the most basic constraints
-        cs.derivesLazily.foreach { lazilyDerivedProperty ⇒
+        cs.derivesLazily foreach { lazilyDerivedProperty ⇒
             if (derivedProperties.contains(lazilyDerivedProperty)) {
                 val pkName = PropertyKey.name(lazilyDerivedProperty.pk.id)
                 val m = s"can not register $cs: $pkName is already computed by another analysis"
@@ -51,7 +50,7 @@ class AnalysisScenario[A] /* FIXME (propertyStore : PropertyStore)*/ {
             }
         }
 
-        cs.derivesCollaboratively.foreach { collaborativelyDerivedProperty ⇒
+        cs.derivesCollaboratively foreach { collaborativelyDerivedProperty ⇒
             if (eagerlyDerivedProperties.contains(collaborativelyDerivedProperty) ||
                 lazilyDerivedProperties.contains(collaborativelyDerivedProperty)) {
                 val pkName = PropertyKey.name(collaborativelyDerivedProperty.pk.id)
@@ -60,7 +59,7 @@ class AnalysisScenario[A] /* FIXME (propertyStore : PropertyStore)*/ {
             }
         }
 
-        cs.derivesEagerly.foreach { eagerlyDerivedProperty ⇒
+        cs.derivesEagerly foreach { eagerlyDerivedProperty ⇒
             if (derivedProperties.contains(eagerlyDerivedProperty)) {
                 val pkName = PropertyKey.name(eagerlyDerivedProperty.pk.id)
                 val m = s"can not register $cs: $pkName is already computed by another analysis"
@@ -68,7 +67,7 @@ class AnalysisScenario[A] /* FIXME (propertyStore : PropertyStore)*/ {
             }
         }
 
-        // TODO Check inner consistency: that is, if an analysis specifies to derive multiple properties, they have to be compatible
+        // TODO Check inner consistency: that is, if an analysis derives multiple properties, they have to be compatible
 
         // 2. register the analysis
         def handleDerivedProperties(derivedProperties: Set[PropertyBounds]): Unit = {
@@ -103,18 +102,10 @@ class AnalysisScenario[A] /* FIXME (propertyStore : PropertyStore)*/ {
         handleDerivedProperties(cs.derivesLazily.toSet)
 
         cs.computationType match {
-            case EagerComputation ⇒
-                eagerCS += cs
-
-            case TriggeredComputation ⇒
-                triggeredCS += cs
-
-            case LazyComputation ⇒
-                lazyCS += cs
-
-            case Transformer ⇒
-                transformersCS += cs
-
+            case EagerComputation     ⇒ eagerCS += cs
+            case TriggeredComputation ⇒ triggeredCS += cs
+            case LazyComputation      ⇒ lazyCS += cs
+            case Transformer          ⇒ transformersCS += cs
         }
 
         this
@@ -199,20 +190,42 @@ class AnalysisScenario[A] /* FIXME (propertyStore : PropertyStore)*/ {
      *     (Immediately before registration, beforeSchedule is called.)
      *  1. when the phase has finished, all analyses' afterPhaseCompletion methods are called.
      *
+     * @param propertyStore required to determine which properties are already computed!
      */
-    def computeSchedule(implicit logContext: LogContext): Schedule[A] = {
+    def computeSchedule(
+        propertyStore: PropertyStore
+    )(
+        implicit
+        logContext: LogContext
+    ): Schedule[A] = {
+        val alreadyComputedPropertyKinds = propertyStore.alreadyComputedPropertyKindIds.toSet
+
+        // 0. check that the property is not already derived
+        allCS.foreach { cs ⇒
+            cs.derives foreach { derivedProperty ⇒
+                if (alreadyComputedPropertyKinds.contains(derivedProperty.pk.id)) {
+                    val pkName = PropertyKey.name(derivedProperty.pk.id)
+                    val m = s"can not register $cs: $pkName was computed in a previous phase"
+                    throw new SpecificationViolation(m)
+                }
+            }
+        }
 
         // 1. check for properties that are not derived (and which require an analysis)
         val underivedProperties = usedProperties -- derivedProperties
-        underivedProperties foreach { underivedProperty ⇒
-            val underivedPropertyName = PropertyKey.name(underivedProperty.pk.id)
-            if (PropertyKey.hasFallback(underivedProperty.pk)) {
-                val message = s"no analyses scheduled for: $underivedPropertyName; using fallback"
-                OPALLogger.warn("analysis configuration", message)
-            } else {
-                throw new IllegalStateException(s"no analysis scheduled for $underivedPropertyName")
+        underivedProperties
+            .filterNot { underivedProperty ⇒
+                alreadyComputedPropertyKinds.contains(underivedProperty.pk.id)
             }
-        }
+            .foreach { underivedProperty ⇒
+                val underivedPropertyName = PropertyKey.name(underivedProperty.pk.id)
+                if (PropertyKey.hasFallback(underivedProperty.pk)) {
+                    val message = s"no analyses scheduled for: $underivedPropertyName; using fallback"
+                    OPALLogger.warn("analysis configuration", message)
+                } else {
+                    throw new IllegalStateException(s"no analysis scheduled for $underivedPropertyName")
+                }
+            }
 
         // TODO check all further constraints (in particular those related to cyclic dependencies between analysis...)
 
@@ -236,13 +249,14 @@ class AnalysisScenario[A] /* FIXME (propertyStore : PropertyStore)*/ {
 
         // Interim updates can be suppressed when the depender and dependee are not in a cyclic
         // relation; however, this could have a negative impact on the effect of deep laziness -
-        // once we are actually implementing it. For the time being, suppress message is always
+        // once we are actually implementing it. For the time being, suppress notifications is always
         // advantageous.
 
         val phase1Configuration = PhaseConfiguration(
             propertyKindsComputedInThisPhase = derivedProperties.map(_.pk),
             suppressInterimUpdates = suppressInterimUpdates
         )
+
         Schedule(Chain(BatchConfiguration(phase1Configuration, batchBuilder.result())))
     }
 }

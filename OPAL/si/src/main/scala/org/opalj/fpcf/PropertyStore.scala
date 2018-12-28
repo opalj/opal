@@ -12,6 +12,7 @@ import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.info
 import org.opalj.log.OPALLogger.error
+import org.opalj.collection.IntIterator
 import org.opalj.fpcf.PropertyKind.SupportedPropertyKinds
 
 /**
@@ -269,7 +270,11 @@ abstract class PropertyStore {
      * to determine which kind of fallback is required.
      */
     protected[this] final val propertyKindsComputedInEarlierPhase: Array[Boolean] = {
-        new Array(PropertyKind.SupportedPropertyKinds)
+        new Array(SupportedPropertyKinds)
+    }
+
+    def alreadyComputedPropertyKindIds: IntIterator = {
+        IntIterator.upUntil(0, SupportedPropertyKinds).filter(propertyKindsComputedInEarlierPhase)
     }
 
     protected[this] final val propertyKindsComputedInThisPhase: Array[Boolean] = {
