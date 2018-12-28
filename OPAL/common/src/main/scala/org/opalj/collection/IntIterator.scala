@@ -245,11 +245,29 @@ object IntIterator {
      * @param end The last value (inclusive).
      * @return An iterator over the given values.
      */
-    def inclusive(start: Int, end: Int): IntIterator = new IntIterator {
+    def upTo(start: Int, end: Int): IntIterator = new IntIterator {
         private[this] var i: Int = start
         override def hasNext: Boolean = i <= end
         override def next(): Int = {
             if (i > end) IntIterator.empty.next(); // <= will throw the expected exception
+            val r = i
+            i += 1
+            r
+        }
+    }
+
+    /**
+     * Creates a new iterator to iterate over the values in the defined range.
+     *
+     * @param start The first value (inclusive).
+     * @param end The last value (exclusive).
+     * @return An iterator over the given values.
+     */
+    def upUntil(start: Int, end: Int): IntIterator = new IntIterator {
+        private[this] var i: Int = start
+        override def hasNext: Boolean = i < end
+        override def next(): Int = {
+            if (i >= end) IntIterator.empty.next(); // <= will throw the expected exception
             val r = i
             i += 1
             r
