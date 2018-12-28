@@ -53,6 +53,9 @@ class DefaultPathFinder extends AbstractPathFinder {
                 generateNestPathElement(startSites.size, NestedPathType.CondWithAlternative)
             numSplits.append(startSites.size)
             currSplitIndex.append(0)
+            outerNested.element.reverse.foreach { next ⇒
+                nestedElementsRef.prepend(next.asInstanceOf[NestedPathElement])
+            }
             nestedElementsRef.append(outerNested)
             path.append(outerNested)
         }
@@ -112,7 +115,7 @@ class DefaultPathFinder extends AbstractPathFinder {
                 } // Within a nested structure => append to an inner element
                 else {
                     // For loops
-                    var ref: NestedPathElement = nestedElementsRef.head
+                    var ref: NestedPathElement = nestedElementsRef(currSplitIndex.head)
                     // Refine for conditionals and try-catch(-finally)
                     ref.elementType match {
                         case Some(t) if t == NestedPathType.CondWithAlternative ||
@@ -124,11 +127,9 @@ class DefaultPathFinder extends AbstractPathFinder {
                 }
             }
 
-            // Find all regular successors (excluding CatchNodes)
             val successors = bb.successors.filter {
-                case _: ExitNode   ⇒ false
-                case cn: CatchNode ⇒ cn.catchType.isDefined
-                case _             ⇒ true
+                case _: ExitNode ⇒ false
+                case _           ⇒ true
             }.map {
                 case cn: CatchNode ⇒ cn.handlerPC
                 case s             ⇒ s.nodeId
@@ -145,25 +146,31 @@ class DefaultPathFinder extends AbstractPathFinder {
 
             // Clean a loop from the stacks if the end of a loop was reached
             if (loopEndingIndex != -1) {
-                numSplits.remove(loopEndingIndex)
-                currSplitIndex.remove(loopEndingIndex)
+                // For finding the corresponding element ref, we can use the loopEndingIndex;
+                // however, for numSplits and currSplitIndex we need to find the correct position in
+                // the array first; we do this by finding the first element with only one branch
+                // which will correspond to the loop
+                val deletePos = numSplits.indexOf(1)
+                numSplits.remove(deletePos)
+                currSplitIndex.remove(deletePos)
                 nestedElementsRef.remove(loopEndingIndex)
                 numBackedgesLoop.remove(0)
                 backedgeLoopCounter.remove(0)
-            }
-
-            // At the join point of a branching, do some housekeeping
-            if (currSplitIndex.nonEmpty &&
-                ((bb.predecessors.size > 1 && !isLoopHeader) || hasSeenSuccessor)) {
-                currSplitIndex(0) += 1
-                if (currSplitIndex.head == numSplits.head) {
-                    numSplits.remove(0)
-                    currSplitIndex.remove(0)
-                    nestedElementsRef.remove(0)
+            } // For join points of branchings, do some housekeeping (explicitly excluding loops)
+            else if (currSplitIndex.nonEmpty &&
+                (hasSuccessorWithAtLeastNPredecessors(bb) || hasSeenSuccessor)) {
+                if (nestedElementsRef.head.elementType.getOrElse(NestedPathType.TryCatchFinally) !=
+                    NestedPathType.Repetition) {
+                    currSplitIndex(0) += 1
+                    if (currSplitIndex.head == numSplits.head) {
+                        numSplits.remove(0)
+                        currSplitIndex.remove(0)
+                        nestedElementsRef.remove(0)
+                    }
                 }
             }
 
-            if (numSplits.nonEmpty && (bb.predecessors.size == 1)) {
+            if ((numSplits.nonEmpty || backedgeLoopCounter.nonEmpty) && (bb.predecessors.size == 1)) {
                 // Within a conditional, prepend in order to keep the correct order
                 val newStack = IntArrayStack.fromSeq(stack.reverse)
                 newStack.push(IntArrayStack.fromSeq(successorsToAdd.reverse))
@@ -199,7 +206,10 @@ class DefaultPathFinder extends AbstractPathFinder {
 
                 numSplits.prepend(relevantNumSuccessors)
                 currSplitIndex.prepend(0)
-                nestedElementsRef.prepend(outerNested)
+                outerNested.element.reverse.foreach { next ⇒
+                    nestedElementsRef.prepend(next.asInstanceOf[NestedPathElement])
+                }
+                //                nestedElementsRef.prepend(outerNested)
                 appendSite.append(outerNested)
             }
         }

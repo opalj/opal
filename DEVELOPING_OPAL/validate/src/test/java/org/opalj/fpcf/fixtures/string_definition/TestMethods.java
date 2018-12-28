@@ -462,7 +462,7 @@ public class TestMethods {
                     ),
                     @StringDefinitions(
                             expectedLevel = PARTIALLY_CONSTANT,
-                            expectedStrings = "(iv1|iv2): (great!)*(\\w)?"
+                            expectedStrings = "(iv1|iv2): ((great!)?)*(\\w)?"
                     )
             })
     public void extensive(boolean cond) {
@@ -555,6 +555,31 @@ public class TestMethods {
             sb.append(data);
         } catch (Exception ignore) {
             sb.append("=====");
+        } finally {
+            analyzeString(sb.toString());
+        }
+    }
+
+    @StringDefinitionsCollection(
+            value = "case with a try-catch-finally throwable",
+            stringDefinitions = {
+                    @StringDefinitions(
+                            expectedLevel = PARTIALLY_CONSTANT, expectedStrings = "BOS:(\\w|:EOS)"
+                    ),
+                    @StringDefinitions(
+                            expectedLevel = PARTIALLY_CONSTANT, expectedStrings = "BOS:(\\w|:EOS)"
+                    ),
+                    @StringDefinitions(
+                            expectedLevel = PARTIALLY_CONSTANT, expectedStrings = "BOS:(\\w|:EOS)"
+                    )
+            })
+    public void tryCatchFinallyWithThrowable(String filename) {
+        StringBuilder sb = new StringBuilder("BOS:");
+        try {
+            String data = new String(Files.readAllBytes(Paths.get(filename)));
+            sb.append(data);
+        } catch (Throwable t) {
+            sb.append(":EOS");
         } finally {
             analyzeString(sb.toString());
         }
