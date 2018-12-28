@@ -28,7 +28,7 @@ trait ComputationSpecification[A] {
     //
 
     /**
-     * Identifies this computation specification; typlically the name of the class
+     * Identifies this computation specification; typically the name of the class
      * which implements the underlying analysis.
      *
      * The default name is the name of `this` class.
