@@ -26,11 +26,6 @@ class FPCFAnalysesManager private[fpcf] (val project: SomeProject) {
     private[this] final def propertyStore: PropertyStore = project.get(PropertyStoreKey)
     private[this] final def trace: Boolean = config.getBoolean(FPCFAnalysesManager.TraceConfigKey)
 
-    // Accesses to the following fields have to be synchronized
-    private[this] final val derivedProperties: Array[Boolean] = {
-        new Array[Boolean](PropertyKind.SupportedPropertyKinds)
-    }
-
     private[this] var schedules: List[Schedule[FPCFAnalysis]] = Nil
 
     /**
@@ -50,24 +45,6 @@ class FPCFAnalysesManager private[fpcf] (val project: SomeProject) {
 
         val scenario = AnalysisScenario(analyses)
 
-        val properties = scenario.allProperties
-        if (properties exists { p ⇒
-            if (derivedProperties(p.pk.id)) {
-                error(
-                    "analysis progress",
-                    s"$p was computed in a previous run; no analyses were executed"
-                )
-                true // <=> previously executed
-            } else {
-                false // <=> not previously executed
-            }
-        }) {
-            // ... some property (kind) was already computed/scheduled
-            return (propertyStore, Nil);
-        }
-
-        properties foreach { p ⇒ derivedProperties(p.pk.id) = true }
-
         val schedule = scenario.computeSchedule(propertyStore)
         schedules ::= schedule
 
@@ -82,7 +59,7 @@ class FPCFAnalysesManager private[fpcf] (val project: SomeProject) {
         if (trace) {
             debug(
                 "analysis progress",
-                properties.map(p ⇒ PropertyKey.name(p.pk.id)).mkString(
+                scenario.allProperties.map(p ⇒ PropertyKey.name(p.pk.id)).mkString(
                     "used and derived properties = {", ", ", "}"
                 )
             )
