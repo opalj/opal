@@ -318,7 +318,7 @@ abstract class PropertyStore {
      *  - a computation is scheduled/running to compute some property, or
      *  - an analysis has a dependency on some (not yet finally computed) property, or
      *  - that the store just eagerly created the data structures necessary to associate
-     *    properties with the entity.
+     *    properties with the entity because the entity was queried
      */
     def isKnown(e: Entity): Boolean
 
@@ -365,8 +365,17 @@ abstract class PropertyStore {
      */
     def entities[P <: Property](lb: P, ub: P): Iterator[Entity]
 
+    /**
+    * @note Only to be called when the store is quiescent.
+    * @note Does not trigger lazy property computations.
+    */
     def entitiesWithLB[P <: Property](lb: P): Iterator[Entity]
 
+    /**
+     *
+     * @note Only to be called when the store is quiescent.
+     * @note Does not trigger lazy property computations.
+     */
     def entitiesWithUB[P <: Property](ub: P): Iterator[Entity]
 
     /**
