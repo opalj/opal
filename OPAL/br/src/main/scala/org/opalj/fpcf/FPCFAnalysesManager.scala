@@ -38,7 +38,9 @@ class FPCFAnalysesManager private[fpcf] (val project: SomeProject) {
      */
     def executedSchedules: List[Schedule[FPCFAnalysis]] = schedules
 
-    final def runAll(analyses: ComputationSpecification[FPCFAnalysis]*): (PropertyStore, List[FPCFAnalysis]) = {
+    final def runAll(
+        analyses: ComputationSpecification[FPCFAnalysis]*
+    ): (PropertyStore, List[FPCFAnalysis]) = {
         runAll(analyses.toIterable)
     }
 
