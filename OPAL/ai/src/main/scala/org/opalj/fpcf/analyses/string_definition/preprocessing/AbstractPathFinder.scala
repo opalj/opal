@@ -1,6 +1,7 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.analyses.string_definition.preprocessing
 
+import org.opalj.br.cfg.BasicBlock
 import org.opalj.br.cfg.CatchNode
 import org.opalj.br.cfg.CFG
 import org.opalj.br.cfg.CFGNode
@@ -63,7 +64,9 @@ trait AbstractPathFinder {
         // if (again, respect structures as produces by while-true loops)
         if (!belongsToLoopHeader) {
             loops.foreach { nextLoop ⇒
-                if (!belongsToLoopHeader) {
+                // The second condition is to regard only those elements as headers which  have a
+                // backedge
+                if (!belongsToLoopHeader && cfg.bb(site).asBasicBlock.predecessors.size > 1) {
                     val start = nextLoop.head
                     var end = start
                     while (!cfg.code.instructions(end).isInstanceOf[If[V]]) {
@@ -85,6 +88,23 @@ trait AbstractPathFinder {
      */
     protected def isEndOfLoop(site: Int, loops: List[List[Int]]): Boolean =
         loops.foldLeft(false)((old: Boolean, nextLoop: List[Int]) ⇒ old || nextLoop.last == site)
+
+    /**
+     * Checks whether a given [[BasicBlock]] has one (or several) successors which have at least n
+     * predecessors.
+     *
+     * @param bb The basic block to check whether it has a successor with at least n predecessors.
+     * @param n The number of required predecessors.
+     * @return Returns ''true'' if ''bb'' has a successor which has at least ''n'' predecessors.
+     *
+     * @note This function regards as successors and predecessors only [[BasicBlock]]s.
+     */
+    protected def hasSuccessorWithAtLeastNPredecessors(bb: BasicBlock, n: Int = 2): Boolean =
+        bb.successors.filter(
+            _.isInstanceOf[BasicBlock]
+        ).foldLeft(false)((prev: Boolean, next: CFGNode) ⇒ {
+                prev || (next.predecessors.count(_.isInstanceOf[BasicBlock]) >= n)
+            })
 
     /**
      * This function checks if a branching corresponds to an if (or if-elseif) structure that has no
