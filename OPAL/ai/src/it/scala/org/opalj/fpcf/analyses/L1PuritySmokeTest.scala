@@ -4,12 +4,27 @@ package fpcf
 package analyses
 
 import org.junit.runner.RunWith
+import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
 import org.opalj.br.TestSupport.allBIProjects
 import org.opalj.br.TestSupport.createJREProject
 import org.opalj.br.analyses.SomeProject
+import org.opalj.fpcf.analyses.cg.LazyCalleesAnalysis
+import org.opalj.fpcf.analyses.cg.RTACallGraphAnalysisScheduler
+import org.opalj.fpcf.analyses.cg.TriggeredConfiguredNativeMethodsAnalysis
+import org.opalj.fpcf.analyses.cg.TriggeredFinalizerAnalysisScheduler
+import org.opalj.fpcf.analyses.cg.TriggeredInstantiatedTypesAnalysis
+import org.opalj.fpcf.analyses.cg.TriggeredLoadedClassesAnalysis
+import org.opalj.fpcf.analyses.cg.TriggeredSerializationRelatedCallsAnalysis
+import org.opalj.fpcf.analyses.cg.TriggeredStaticInitializerAnalysis
+import org.opalj.fpcf.analyses.cg.TriggeredThreadRelatedCallsAnalysis
+import org.opalj.fpcf.analyses.cg.reflection.TriggeredReflectionRelatedCallsAnalysis
 import org.opalj.fpcf.analyses.purity.EagerL1PurityAnalysis
+import org.opalj.fpcf.cg.properties.ReflectionRelatedCallees
+import org.opalj.fpcf.cg.properties.SerializationRelatedCallees
+import org.opalj.fpcf.cg.properties.StandardInvokeCallees
 import org.opalj.fpcf.properties.Purity
 import org.opalj.fpcf.properties.VirtualMethodPurity
+import org.opalj.tac.fpcf.analyses.TACAITransformer
 import org.opalj.util.Nanoseconds
 import org.opalj.util.PerformanceEvaluation.time
 import org.scalatest.FunSpec
@@ -39,13 +54,35 @@ class L1PuritySmokeTest extends FunSpec with Matchers {
         EagerTypeImmutabilityAnalysis
     )
 
+    val baseAnalyses: Set[FPCFAnalysisScheduler] = Set(
+        RTACallGraphAnalysisScheduler,
+        TriggeredStaticInitializerAnalysis,
+        TriggeredLoadedClassesAnalysis,
+        TriggeredFinalizerAnalysisScheduler,
+        TriggeredThreadRelatedCallsAnalysis,
+        TriggeredSerializationRelatedCallsAnalysis,
+        TriggeredReflectionRelatedCallsAnalysis,
+        TriggeredInstantiatedTypesAnalysis,
+        TriggeredConfiguredNativeMethodsAnalysis,
+        TriggeredSystemPropertiesAnalysis,
+        LazyCalleesAnalysis(
+            Set(StandardInvokeCallees, SerializationRelatedCallees, ReflectionRelatedCallees)
+        ),
+        LazyL0BaseAIAnalysis,
+        TACAITransformer
+    )
+
     def checkProject(p: SomeProject, withSupportAnalyses: Boolean): Unit = {
+        val manager = p.get(FPCFAnalysesManagerKey)
+
+        manager.runAll(baseAnalyses)
+
         val analyses =
             if (withSupportAnalyses)
                 primaryAnalyses ++ supportAnalyses
             else
                 primaryAnalyses
-        p.get(FPCFAnalysesManagerKey).runAll(analyses)
+        manager.runAll(analyses)
 
         val propertyStore = p.get(PropertyStoreKey)
         try {

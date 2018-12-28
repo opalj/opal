@@ -39,22 +39,22 @@ class TACAIAnalysisIntegrationTest extends FunSpec with Matchers {
             val p = theProject.recreate()
             val counter = new AtomicInteger()
             val ps = p.get(PropertyStoreKey)
-            ps.setupPhase(Set(BaseAIResult, TACAI), Set.empty)
-            // LazyL0TACAIAnalysis.init(ps)
-            // LazyL0TACAIAnalysis.schedule(ps, null)
-            LazyL0BaseAIAnalysis.register(p, ps, null)
+
             TACAITransformer.init(ps)
+            ps.setupPhase(Set(BaseAIResult, TACAI), Set.empty)
+            LazyL0BaseAIAnalysis.register(p, ps, null)
             TACAITransformer.register(p, ps, null)
+
             try {
-                p.parForeachMethodWithBody() { mi ⇒
+                p.allMethodsWithBody foreach  { method ⇒
                     counter.incrementAndGet() % 3 match {
                         case 0 ⇒
-                            ps.force(mi.method, BaseAIResult.key)
+                            ps.force(method, BaseAIResult.key)
                         case 1 ⇒
-                            ps.force(mi.method, TACAI.key)
+                            ps.force(method, TACAI.key)
                         case 2 ⇒
-                            ps.force(mi.method, BaseAIResult.key)
-                            ps.force(mi.method, TACAI.key)
+                            ps.force(method, BaseAIResult.key)
+                            ps.force(method, TACAI.key)
                     }
                 }
             } catch {
@@ -63,12 +63,11 @@ class TACAIAnalysisIntegrationTest extends FunSpec with Matchers {
                     throw t;
             }
             ps.waitOnPhaseCompletion()
-            p.parForeachMethodWithBody() { mi ⇒
-                val m = mi.method
-                val aiResultProperty = ps(m, BaseAIResult.key)
+            p.allMethodsWithBody foreach { method ⇒
+                val aiResultProperty = ps(method, BaseAIResult.key)
                 val Some(aiResult) = aiResultProperty.asFinal.p.aiResult
                 // ... smoke test...
-                val tacaiProperty = ps(m, TACAI.key)
+                val tacaiProperty = ps(method, TACAI.key)
                 val Some(tac) = tacaiProperty.asFinal.p.tac
                 // ... smoke test...
                 counter.incrementAndGet()
@@ -83,12 +82,11 @@ class TACAIAnalysisIntegrationTest extends FunSpec with Matchers {
             val counter = new AtomicInteger()
             val fpcfManager = p.get(FPCFAnalysesManagerKey)
             val (ps, _ /*executed analyses*/ ) = fpcfManager.runAll(EagerL0TACAIAnalysis)
-            p.parForeachMethodWithBody() { mi ⇒
-                val m = mi.method
-                val aiResultProperty = ps(m, BaseAIResult.key)
+            p.allMethodsWithBody foreach  { method ⇒
+                val aiResultProperty = ps(method, BaseAIResult.key)
                 val Some(aiResult) = aiResultProperty.asFinal.p.aiResult
                 // ... smoke test...
-                val tacaiProperty = ps(m, TACAI.key)
+                val tacaiProperty = ps(method, TACAI.key)
                 val Some(tac) = tacaiProperty.asFinal.p.tac
                 // ... smoke test...
                 counter.incrementAndGet()

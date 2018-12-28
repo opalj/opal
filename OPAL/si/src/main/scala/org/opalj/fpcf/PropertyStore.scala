@@ -113,8 +113,6 @@ abstract class PropertyStore {
 
     implicit val logContext: LogContext
 
-    private[this] var analysesRegistered: Boolean = false
-
     //
     //
     // FUNCTIONALITY TO ASSOCIATE SOME INFORMATION WITH THE STORE THAT
@@ -410,8 +408,11 @@ abstract class PropertyStore {
      *         as a result'''.
      */
     final def set(e: Entity, p: Property): Unit = {
-        if (analysesRegistered) {
-            throw new IllegalStateException("analyses are already registered/scheduled")
+        if (!isIdle) {
+            throw new IllegalStateException("analyses are already running")
+        }
+        if (propertyKindsComputedInEarlierPhase(p.key.id)) {
+            throw new IllegalStateException(s"property kind (of $p) was computed in previous phase")
         }
         doSet(e, p)
     }
@@ -432,8 +433,11 @@ abstract class PropertyStore {
     )(
         pc: EOptionP[E, P] ⇒ InterimEP[E, P]
     ): Unit = {
-        if (analysesRegistered) {
-            throw new IllegalStateException("analyses are already registered/scheduled")
+        if (!isIdle) {
+            throw new IllegalStateException("analyses are already running")
+        }
+        if (propertyKindsComputedInEarlierPhase(pk.id)) {
+            throw new IllegalStateException(s"property kind ($pk) was computed in previous phase")
         }
         doPreInitialize(e, pk)(pc)
     }
@@ -672,8 +676,6 @@ abstract class PropertyStore {
         pk: PropertyKey[P],
         pc: ProperPropertyComputation[E] // TODO add definition of PropertyComputationResult that is parameterized over the kind of Property to specify that we want a PropertyComputationResult with respect to PropertyKey (pk)
     ): Unit = {
-        analysesRegistered = true
-
         if (debug && !isIdle) {
             throw new IllegalStateException(
                 "lazy computations can only be registered while the property store is idle"
@@ -687,6 +689,7 @@ abstract class PropertyStore {
      * Registers a total function that takes a given final property and computes a new final
      * property of a different kind; the function must not query the property store. Furthermore,
      * `setupPhase` must specify that notifications about interim updates have to be suppressed.
+      * A transformer is conceptually a special kind of lazy analysis.
      */
     final def registerTransformer[SourceP <: Property, TargetP <: Property, E <: Entity](
         sourcePK: PropertyKey[SourceP],
@@ -694,8 +697,6 @@ abstract class PropertyStore {
     )(
         pc: (E, SourceP) ⇒ FinalEP[E, TargetP]
     ): Unit = {
-        analysesRegistered = true
-
         if (debug && !isIdle) {
             throw new IllegalStateException(
                 "transformers can only be registered while the property store is idle"
@@ -745,7 +746,6 @@ abstract class PropertyStore {
         pk: PropertyKey[P],
         pc: PropertyComputation[E]
     ): Unit = {
-        analysesRegistered = true
         if (debug && !isIdle) {
             throw new IllegalStateException(
                 "triggered computations can only be registered while no computations are running"
@@ -788,7 +788,6 @@ abstract class PropertyStore {
     )(
         pc: PropertyComputation[E]
     ): Unit = {
-        analysesRegistered = true
         doScheduleEagerComputationForEntity(e)(pc)
     }
 
