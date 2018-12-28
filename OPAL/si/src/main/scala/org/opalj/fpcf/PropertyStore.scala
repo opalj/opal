@@ -680,7 +680,7 @@ abstract class PropertyStore {
      * Registers a total function that takes a given final property and computes a new final
      * property of a different kind; the function must not query the property store. Furthermore,
      * `setupPhase` must specify that notifications about interim updates have to be suppressed.
-      * A transformer is conceptually a special kind of lazy analysis.
+     * A transformer is conceptually a special kind of lazy analysis.
      */
     final def registerTransformer[SourceP <: Property, TargetP <: Property, E <: Entity](
         sourcePK: PropertyKey[SourceP],
