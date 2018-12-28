@@ -79,11 +79,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         MethodDescriptor(RefArray(ObjectType.String, ObjectType.String), ObjectType.String)
     val GetDescriptor = MethodDescriptor(ObjectType.Object, ObjectType.Object)
 
-    private[this] val allMethodsMatcher = new AllMethodsMatcher(project)
-    private[this] var publicMethodsMatcher = new PublicMethodMatcher(project)
-    private[this] var staticMethodsMatcher = new StaticMethodMatcher(project)
-    private[this] var nonStaticMethodsMatcher = new NonStaticMethodMatcher(project)
-    private[this] val constructorMatcher = new NameBasedMethodMatcher(Set("<init>"), project)
+    private[this] val constructorMatcher = new NameBasedMethodMatcher(Set("<init>"))
 
     final class State(
             val definedMethod:                           DefinedMethod,
@@ -451,7 +447,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
     ): MethodMatcher = {
         if (v.isEmpty) {
             if (HIGHSOUNDNESS) {
-                allMethodsMatcher
+                AllMethodsMatcher
             } else {
                 state.calleesAndCallers.addIncompleteCallsite(pc)
                 NoMethodsMatcher
@@ -470,7 +466,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         v: Option[A], f: (A) ⇒ MethodMatcher
     ): MethodMatcher = {
         if (v.isEmpty) {
-            allMethodsMatcher
+            AllMethodsMatcher
         } else {
             f(v.get)
         }
@@ -485,7 +481,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         retrieveSuitableMatcher[Set[ObjectType]](
             typesOpt,
             pc,
-            v ⇒ new ClassBasedMethodMatcher(v, project)
+            v ⇒ new ClassBasedMethodMatcher(v)
         )
     }
 
@@ -496,7 +492,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         retrieveSuitableMatcher[Set[String]](
             namesO,
             pc,
-            v ⇒ new NameBasedMethodMatcher(v, project)
+            v ⇒ new NameBasedMethodMatcher(v)
         )
     }
 
@@ -524,7 +520,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         retrieveSuitableMatcher[Set[MethodDescriptor]](
             actualDescriptorOpt,
             pc,
-            v ⇒ new DescriptorBasedMethodMatcher(v, project)
+            v ⇒ new DescriptorBasedMethodMatcher(v)
 
         )
     }
@@ -536,7 +532,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         retrieveSuitableMatcher[FieldTypes](
             paramTypesO,
             pc,
-            v ⇒ new ParameterTypesBasedMethodMatcher(v, project)
+            v ⇒ new ParameterTypesBasedMethodMatcher(v)
         )
     }
 
@@ -558,15 +554,14 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                         MethodDescriptor(desc.parameterTypes, VoidType)
                     else
                         MethodDescriptor(desc.parameterTypes.tail, desc.returnType)
-                ),
-                project
+                )
             ),
-            new NameBasedMethodMatcher(Set(name), project),
+            new NameBasedMethodMatcher(Set(name)),
             if (receiver.isArrayType) new ClassBasedMethodMatcher(
-                Set(ObjectType.Object), project
+                Set(ObjectType.Object)
             )
             else new ClassBasedMethodMatcher(
-                Set(receiver.asObjectType), project
+                Set(receiver.asObjectType)
             )
 
         )
@@ -617,7 +612,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
     )(implicit state: State): Unit = {
         var matchers: Set[MethodMatcher] = Set(
             constructorMatcher,
-            new ParameterTypesBasedMethodMatcher(RefArray.empty, project)
+            new ParameterTypesBasedMethodMatcher(RefArray.empty)
         )
 
         matchers += retrieveClassBasedMethodMatcher(classExpr, pc)
@@ -640,7 +635,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                 constructorMatcher,
                 retrieveSuitableNonEssentialMatcher[Seq[V]](
                     actualParamsNewInstanceOpt,
-                    v ⇒ new ActualParamBasedMethodMatcher(v, project)
+                    v ⇒ new ActualParamBasedMethodMatcher(v)
                 )
             )
 
@@ -649,7 +644,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                     case call @ VirtualFunctionCall(_, ObjectType.Class, _, "getConstructor" | "getDeclaredConstructor", _, receiver, params) ⇒
 
                         if (call.name == "getConstructor") {
-                            matchers += publicMethodsMatcher
+                            matchers += PublicMethodMatcher
                         }
 
                         matchers += retrieveParameterTypesBasedMethodMatcher(params.head, pc)
@@ -661,14 +656,14 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                      */
 
                     case _ if HIGHSOUNDNESS ⇒
-                        matchers += allMethodsMatcher
+                        matchers += AllMethodsMatcher
 
                     case _ ⇒
                         state.calleesAndCallers.addIncompleteCallsite(pc)
                         matchers += NoMethodsMatcher
                 }
             } else if (HIGHSOUNDNESS) {
-                matchers += allMethodsMatcher
+                matchers += AllMethodsMatcher
             } else {
                 state.calleesAndCallers.addIncompleteCallsite(pc)
             }
@@ -696,10 +691,10 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                 retrieveSuitableMatcher[Seq[V]](
                     methodInvokeActualParamsOpt,
                     pc,
-                    v ⇒ new ActualParamBasedMethodMatcher(v, project)
+                    v ⇒ new ActualParamBasedMethodMatcher(v)
                 ),
                 new ActualReceiverBasedMethodMatcher(
-                    methodInvokeReceiver.asVar.value.asReferenceValue, project
+                    methodInvokeReceiver.asVar.value.asReferenceValue
                 )
             )
 
@@ -708,7 +703,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                 definition match {
                     case call @ VirtualFunctionCall(_, ObjectType.Class, _, "getDeclaredMethod" | "getMethod", _, receiver, params) ⇒
                         if (call.name == "getMethod") {
-                            matchers += publicMethodsMatcher
+                            matchers += PublicMethodMatcher
                         }
 
                         matchers += retrieveNameBasedMethodMatcher(params.head, pc)
@@ -721,14 +716,14 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                     // todo here we can handle getMethods
 
                     case _ if HIGHSOUNDNESS ⇒
-                        matchers += allMethodsMatcher
+                        matchers += AllMethodsMatcher
 
                     case _ ⇒
                         state.calleesAndCallers.addIncompleteCallsite(pc)
                         matchers += NoMethodsMatcher
                 }
             } else if (HIGHSOUNDNESS) {
-                matchers += allMethodsMatcher
+                matchers += AllMethodsMatcher
             } else {
                 state.calleesAndCallers.addIncompleteCallsite(pc)
             }
@@ -792,7 +787,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                 } else if (definition.isVirtualFunctionCall) {
                     definition.asVirtualFunctionCall match {
                         case VirtualFunctionCall(_, ObjectType.MethodHandles$Lookup, _, "findStatic", _, _, params) ⇒
-                            matchers += staticMethodsMatcher
+                            matchers += StaticMethodMatcher
 
                             val Seq(refc, name, methodType) = params
                             matchers ++= retrieveMethodHandleLookupMatchers(
@@ -800,7 +795,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                             )
 
                         case VirtualFunctionCall(_, ObjectType.MethodHandles$Lookup, _, "findVirtual", _, _, params) ⇒
-                            matchers += nonStaticMethodsMatcher
+                            matchers += NonStaticMethodMatcher
 
                             val Seq(refc, name, methodType) = params
                             matchers ++= retrieveMethodHandleLookupMatchers(
@@ -808,7 +803,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                             )
 
                         case VirtualFunctionCall(_, ObjectType.MethodHandles$Lookup, _, "findSpecial", _, _, params) ⇒
-                            matchers += nonStaticMethodsMatcher
+                            matchers += NonStaticMethodMatcher
 
                             // todo we can ignore the 4ths param? Does it work for super calls?
                             val Seq(refc, name, methodType, _) = params
@@ -817,11 +812,11 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                             )
 
                         case VirtualFunctionCall(_, ObjectType.MethodHandles$Lookup, _, "findConstructor", _, _, params) ⇒
-                            matchers += nonStaticMethodsMatcher
+                            matchers += NonStaticMethodMatcher
 
                             val Seq(refc, methodType) = params
 
-                            matchers += new NameBasedMethodMatcher(Set("<init>"), project)
+                            matchers += new NameBasedMethodMatcher(Set("<init>"))
 
                             matchers += retrieveClassBasedMethodMatcher(refc, pc)
 
@@ -840,17 +835,17 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                             md.parameterTypes.tail, md.returnType
                         )
                         matchers += new DescriptorBasedMethodMatcher(
-                            Set(md, nonStaticDescriptor), project
+                            Set(md, nonStaticDescriptor)
                         )
                     }
-                    matchers += allMethodsMatcher
+                    matchers += AllMethodsMatcher
                 } else {
                     matchers += NoMethodsMatcher
                     state.calleesAndCallers.addIncompleteCallsite(pc)
                 }
                 // todo we should use the descriptor here
             } else if (HIGHSOUNDNESS) {
-                matchers += allMethodsMatcher
+                matchers += AllMethodsMatcher
             } else {
                 matchers += NoMethodsMatcher
                 state.calleesAndCallers.addIncompleteCallsite(pc)
@@ -1436,7 +1431,7 @@ object TriggeredReflectionRelatedCallsAnalysis extends BasicFPCFTriggeredAnalysi
         )
 
     override def register(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
-        val analysis = new ReflectionRelatedCallsAnalysis(p)
+        val analysis: ReflectionRelatedCallsAnalysis = new ReflectionRelatedCallsAnalysis()(p)
         ps.registerTriggeredComputation(CallersProperty.key, analysis.analyze)
         analysis
     }
