@@ -25,7 +25,7 @@ import org.opalj.fpcf.analyses.cg.TriggeredConfiguredNativeMethodsAnalysis
 import org.opalj.fpcf.analyses.cg.TriggeredFinalizerAnalysisScheduler
 import org.opalj.fpcf.analyses.cg.TriggeredInstantiatedTypesAnalysis
 import org.opalj.fpcf.analyses.cg.TriggeredLoadedClassesAnalysis
-import org.opalj.fpcf.analyses.cg.TriggeredRTACallGraphAnalysisScheduler
+import org.opalj.fpcf.analyses.cg.RTACallGraphAnalysisScheduler
 import org.opalj.fpcf.analyses.cg.TriggeredSerializationRelatedCallsAnalysis
 import org.opalj.fpcf.analyses.cg.TriggeredStaticInitializerAnalysis
 import org.opalj.fpcf.analyses.cg.TriggeredThreadRelatedCallsAnalysis
@@ -64,7 +64,7 @@ object PureVoidMethods extends DefaultOneStepAnalysis {
             LazyL0BaseAIAnalysis,
             TACAITransformer,
             /* Call Graph Analyses */
-            TriggeredRTACallGraphAnalysisScheduler,
+            RTACallGraphAnalysisScheduler,
             TriggeredStaticInitializerAnalysis,
             TriggeredLoadedClassesAnalysis,
             TriggeredFinalizerAnalysisScheduler,

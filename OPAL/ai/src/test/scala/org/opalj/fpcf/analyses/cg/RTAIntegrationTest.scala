@@ -50,7 +50,7 @@ class RTAIntegrationTest extends FlatSpec with Matchers {
 
     val manager: FPCFAnalysesManager = project.get(FPCFAnalysesManagerKey)
     /*val propertyStore = */ manager.runAll(
-        TriggeredRTACallGraphAnalysisScheduler,
+        RTACallGraphAnalysisScheduler,
         TriggeredStaticInitializerAnalysis,
         TriggeredLoadedClassesAnalysis,
         TriggeredFinalizerAnalysisScheduler,

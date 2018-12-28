@@ -8,7 +8,7 @@ import org.opalj.fpcf.analyses.TriggeredSystemPropertiesAnalysis
 import org.opalj.fpcf.analyses.cg.LazyCalleesAnalysis
 import org.opalj.fpcf.analyses.cg.TriggeredFinalizerAnalysisScheduler
 import org.opalj.fpcf.analyses.cg.TriggeredLoadedClassesAnalysis
-import org.opalj.fpcf.analyses.cg.TriggeredRTACallGraphAnalysisScheduler
+import org.opalj.fpcf.analyses.cg.RTACallGraphAnalysisScheduler
 import org.opalj.fpcf.analyses.cg.TriggeredSerializationRelatedCallsAnalysis
 import org.opalj.fpcf.analyses.cg.TriggeredStaticInitializerAnalysis
 import org.opalj.fpcf.analyses.cg.TriggeredThreadRelatedCallsAnalysis
@@ -30,7 +30,7 @@ import org.opalj.tac.fpcf.analyses.TACAITransformer
 class ReturnValueFreshnessTests extends PropertiesTest {
 
     val analysisSchedulers = Set[FPCFAnalysisScheduler](
-        TriggeredRTACallGraphAnalysisScheduler,
+        RTACallGraphAnalysisScheduler,
         TriggeredStaticInitializerAnalysis,
         TriggeredLoadedClassesAnalysis,
         TriggeredFinalizerAnalysisScheduler,
