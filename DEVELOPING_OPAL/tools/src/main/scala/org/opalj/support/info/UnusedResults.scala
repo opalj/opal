@@ -51,7 +51,7 @@ import org.opalj.fpcf.properties.VirtualMethodPurity
 import org.opalj.fpcf.properties.VirtualMethodPurity.VCompileTimePure
 import org.opalj.fpcf.properties.VirtualMethodPurity.VPure
 import org.opalj.fpcf.properties.VirtualMethodPurity.VSideEffectFree
-import org.opalj.fpcf.properties.{Purity => PurityProperty}
+import org.opalj.fpcf.properties.{Purity ⇒ PurityProperty}
 import org.opalj.tac.DUVar
 import org.opalj.tac.ExprStmt
 import org.opalj.tac.NonVirtualFunctionCall
