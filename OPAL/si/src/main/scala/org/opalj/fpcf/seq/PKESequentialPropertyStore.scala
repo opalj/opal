@@ -311,6 +311,9 @@ final class PKESequentialPropertyStore private (
     }
 
     override def force[E <: Entity, P <: Property](e: E, pk: PropertyKey[P]): Unit = {
+        if(lazyComputations(pk.id) == null) {
+            throw new IllegalArgumentException(s"force for a non-lazily computed property: $pk")
+        }
         apply[E, P](EPK(e, pk))
     }
 
