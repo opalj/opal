@@ -12,7 +12,6 @@ import org.opalj.value.IsSArrayValue
 import org.opalj.value.IsSObjectValue
 import org.opalj.value.TypeOfReferenceValue
 import org.opalj.br.ArrayType
-import org.opalj.br.ClassHierarchy
 import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
 
@@ -304,7 +303,9 @@ trait DefaultTypeLevelReferenceValues
     protected trait MObjectValue extends ObjectValue with IsMObjectValue {
         value: DomainObjectValue ⇒
 
-        final override def classHierarchy: ClassHierarchy = domain.classHierarchy
+        override def leastUpperType: Option[ReferenceType] = {
+            Some(classHierarchy.joinObjectTypesUntilSingleUpperBound(upperTypeBound))
+        }
 
         override protected def doJoin(pc: Int, other: DomainValue): Update[DomainValue] = {
             val thisUTB = this.upperTypeBound

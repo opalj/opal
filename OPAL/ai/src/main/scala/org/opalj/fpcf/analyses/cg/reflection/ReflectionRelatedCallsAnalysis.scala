@@ -64,7 +64,7 @@ import scala.language.existentials
  * @author Florian Kuebler
  */
 class ReflectionRelatedCallsAnalysis private[analyses] (
-        final implicit val project: SomeProject
+        final val project: SomeProject
 ) extends FPCFAnalysis {
 
     val HIGHSOUNDNESS = false
@@ -1431,7 +1431,7 @@ object TriggeredReflectionRelatedCallsAnalysis extends BasicFPCFTriggeredAnalysi
         )
 
     override def register(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
-        val analysis: ReflectionRelatedCallsAnalysis = new ReflectionRelatedCallsAnalysis()(p)
+        val analysis = new ReflectionRelatedCallsAnalysis(p)
         ps.registerTriggeredComputation(CallersProperty.key, analysis.analyze)
         analysis
     }

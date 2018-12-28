@@ -33,6 +33,8 @@ trait DataFlowProblem[Source, P] {
 
     val project: Project[Source]
 
+    final implicit def ch: ClassHierarchy = project.classHierarchy
+
     // __________________________________________________________________________________
     //
     // Functionality required to specify the taint-information flow
@@ -45,14 +47,14 @@ trait DataFlowProblem[Source, P] {
      * Encapsultates taint information about a(n implicit) value.
      */
     protected[this] trait TaintInformation {
-        def isTainted(): Boolean
+        def isTainted: Boolean
     }
 
     /**
      * The (implicitly referred to) value is not tainted.
      */
     case object NotTainted extends TaintInformation {
-        final override def isTainted(): Boolean = false
+        final override def isTainted: Boolean = false
     }
 
     /**
@@ -65,7 +67,7 @@ trait DataFlowProblem[Source, P] {
      * Representation of a tainted value.
      */
     protected[this] trait TaintedValue extends TaintInformation {
-        final override def isTainted(): Boolean = true
+        final override def isTainted: Boolean = true
 
         def valueInformation: ValueInformation
         def domainValue: DomainValue

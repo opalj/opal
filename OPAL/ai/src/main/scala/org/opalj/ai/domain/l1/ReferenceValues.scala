@@ -18,7 +18,6 @@ import org.opalj.collection.immutable.UIDSet1
 import org.opalj.collection.immutable.UIDSet2
 import org.opalj.value.IsMultipleReferenceValue
 import org.opalj.br.ArrayType
-import org.opalj.br.ClassHierarchy
 import org.opalj.br.ComputationalType
 import org.opalj.br.ComputationalTypeReference
 import org.opalj.br.ObjectType
@@ -1104,7 +1103,12 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             s"invalid upper type bound: $upperTypeBound for: ${values.mkString("[", ";", "]")}"
         )
 
-        override def classHierarchy: ClassHierarchy = domain.classHierarchy
+        override def leastUpperType: Option[ReferenceType] = {
+            if (isNull.isYes)
+                None
+            else
+                Some(classHierarchy.joinReferenceTypesUntilSingleUpperBound(upperTypeBound))
+        }
 
         override def baseValues: Traversable[DomainSingleOriginReferenceValue] = values
 
