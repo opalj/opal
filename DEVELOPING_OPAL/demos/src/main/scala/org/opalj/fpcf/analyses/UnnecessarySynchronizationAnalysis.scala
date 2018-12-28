@@ -6,10 +6,7 @@ package analyses
 import java.net.URL
 
 import org.opalj.ai.common.DefinitionSitesKey
-import org.opalj.ai.common.SimpleAIKey
-import org.opalj.ai.domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse
 import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
-import org.opalj.br.Method
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
@@ -61,15 +58,11 @@ object UnnecessarySynchronizationAnalysis extends DefaultOneStepAnalysis {
         implicit val logContext: LogContext = project.logContext
 
         val propertyStore = time {
-
-            val domain = (m: Method) ⇒ new DefaultPerformInvocationsDomainWithCFGAndDefUse(project, m)
-            project.getOrCreateProjectInformationKeyInitializationData(SimpleAIKey, domain)
-
             project.get(PropertyStoreKey)
         } { t ⇒ info("progress", s"initialization of property store took ${t.toSeconds}") }
 
+        val manager = project.get(FPCFAnalysesManagerKey)
         time {
-            val manager = project.get(FPCFAnalysesManagerKey)
             manager.runAll(
                 TriggeredRTACallGraphAnalysisScheduler,
                 TriggeredStaticInitializerAnalysis,
@@ -85,7 +78,11 @@ object UnnecessarySynchronizationAnalysis extends DefaultOneStepAnalysis {
                     Set(StandardInvokeCallees, SerializationRelatedCallees, ReflectionRelatedCallees)
                 ),
                 LazyL0BaseAIAnalysis,
-                TACAITransformer,
+                TACAITransformer
+            )
+        }{ t ⇒ info("progress", s"computing call graph and tac took ${t.toSeconds}") }
+        time {
+            manager.runAll(
                 EagerInterProceduralEscapeAnalysis
             )
         } { t ⇒ info("progress", s"escape analysis took ${t.toSeconds}") }
@@ -97,7 +94,7 @@ object UnnecessarySynchronizationAnalysis extends DefaultOneStepAnalysis {
                 method = as.method
                 FinalP(escape) = propertyStore(as, EscapeProperty.key)
                 if EscapeViaNormalAndAbnormalReturn lessOrEqualRestrictive escape
-                FinalP(tacai) = propertyStore(as.method, TACAI.key)
+                FinalP(tacai) = propertyStore(method, TACAI.key)
                 code = tacai.tac.get.stmts
                 defSite = code indexWhere (stmt ⇒ stmt.pc == as.pc)
                 if defSite != -1

@@ -80,8 +80,8 @@ object InterProceduralEscapeAnalysisDemo extends DefaultOneStepAnalysis {
             project.get(PropertyStoreKey)
         } { t ⇒ info("progress", s"initialization of property store took ${t.toSeconds}") }
 
+        val manager = project.get(FPCFAnalysesManagerKey)
         time {
-            val manager = project.get(FPCFAnalysesManagerKey)
             manager.runAll(
                 TriggeredRTACallGraphAnalysisScheduler,
                 TriggeredStaticInitializerAnalysis,
@@ -97,7 +97,11 @@ object InterProceduralEscapeAnalysisDemo extends DefaultOneStepAnalysis {
                     Set(StandardInvokeCallees, SerializationRelatedCallees, ReflectionRelatedCallees)
                 ),
                 LazyL0BaseAIAnalysis,
-                TACAITransformer,
+                TACAITransformer
+            )
+        }{ t ⇒ info("progress", s"computing call graph and tac took ${t.toSeconds}") }
+        time {
+            manager.runAll(
                 EagerInterProceduralEscapeAnalysis
             )
         } { t ⇒ info("progress", s"escape analysis took ${t.toSeconds}") }
