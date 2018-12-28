@@ -5,30 +5,40 @@ package info
 
 import java.net.URL
 
+import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
 import org.opalj.br.DefinedMethod
+import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
-import org.opalj.br.analyses.BasicReport
-import org.opalj.fpcf.PropertyStoreKey
 import org.opalj.fpcf.FPCFAnalysesManagerKey
-import org.opalj.fpcf.analyses.LazyStaticDataUsageAnalysis
-import org.opalj.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
-import org.opalj.fpcf.analyses.LazyFieldLocalityAnalysis
+import org.opalj.fpcf.FinalEP
+import org.opalj.fpcf.PropertyStoreKey
 import org.opalj.fpcf.analyses.LazyClassImmutabilityAnalysis
-import org.opalj.fpcf.analyses.LazyTypeImmutabilityAnalysis
-import org.opalj.fpcf.analyses.LazyVirtualMethodStaticDataUsageAnalysis
-import org.opalj.fpcf.analyses.LazyVirtualCallAggregatingEscapeAnalysis
-import org.opalj.fpcf.analyses.LazyVirtualReturnValueFreshnessAnalysis
+import org.opalj.fpcf.analyses.LazyFieldLocalityAnalysis
+import org.opalj.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
 import org.opalj.fpcf.analyses.LazyL1FieldMutabilityAnalysis
-import org.opalj.fpcf.analyses.LazyVirtualMethodPurityAnalysis
+import org.opalj.fpcf.analyses.LazyStaticDataUsageAnalysis
+import org.opalj.fpcf.analyses.LazyTypeImmutabilityAnalysis
+import org.opalj.fpcf.analyses.TriggeredSystemPropertiesAnalysis
+import org.opalj.fpcf.analyses.cg.LazyCalleesAnalysis
+import org.opalj.fpcf.analyses.cg.TriggeredConfiguredNativeMethodsAnalysis
+import org.opalj.fpcf.analyses.cg.TriggeredFinalizerAnalysisScheduler
+import org.opalj.fpcf.analyses.cg.TriggeredInstantiatedTypesAnalysis
+import org.opalj.fpcf.analyses.cg.TriggeredLoadedClassesAnalysis
+import org.opalj.fpcf.analyses.cg.TriggeredRTACallGraphAnalysisScheduler
+import org.opalj.fpcf.analyses.cg.TriggeredSerializationRelatedCallsAnalysis
+import org.opalj.fpcf.analyses.cg.TriggeredStaticInitializerAnalysis
+import org.opalj.fpcf.analyses.cg.TriggeredThreadRelatedCallsAnalysis
+import org.opalj.fpcf.analyses.cg.reflection.TriggeredReflectionRelatedCallsAnalysis
 import org.opalj.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
 import org.opalj.fpcf.analyses.purity.EagerL2PurityAnalysis
+import org.opalj.fpcf.cg.properties.ReflectionRelatedCallees
+import org.opalj.fpcf.cg.properties.SerializationRelatedCallees
+import org.opalj.fpcf.cg.properties.StandardInvokeCallees
+import org.opalj.fpcf.properties.CompileTimePure
 import org.opalj.fpcf.properties.Pure
 import org.opalj.fpcf.properties.SideEffectFree
-import org.opalj.fpcf.properties.CompileTimePure
-import org.opalj.fpcf.FinalEP
-import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
 import org.opalj.tac.fpcf.analyses.TACAITransformer
 
 /**
@@ -53,18 +63,28 @@ object PureVoidMethods extends DefaultOneStepAnalysis {
         project.get(FPCFAnalysesManagerKey).runAll(
             LazyL0BaseAIAnalysis,
             TACAITransformer,
+            /* Call Graph Analyses */
+            TriggeredRTACallGraphAnalysisScheduler,
+            TriggeredStaticInitializerAnalysis,
+            TriggeredLoadedClassesAnalysis,
+            TriggeredFinalizerAnalysisScheduler,
+            TriggeredThreadRelatedCallsAnalysis,
+            TriggeredSerializationRelatedCallsAnalysis,
+            TriggeredReflectionRelatedCallsAnalysis,
+            TriggeredInstantiatedTypesAnalysis,
+            TriggeredConfiguredNativeMethodsAnalysis,
+            TriggeredSystemPropertiesAnalysis,
+            LazyCalleesAnalysis(
+                Set(StandardInvokeCallees, SerializationRelatedCallees, ReflectionRelatedCallees)
+            ),
             LazyL0CompileTimeConstancyAnalysis,
             LazyStaticDataUsageAnalysis,
-            LazyVirtualMethodStaticDataUsageAnalysis,
             LazyInterProceduralEscapeAnalysis,
-            LazyVirtualCallAggregatingEscapeAnalysis,
             LazyReturnValueFreshnessAnalysis,
-            LazyVirtualReturnValueFreshnessAnalysis,
             LazyFieldLocalityAnalysis,
             LazyL1FieldMutabilityAnalysis,
             LazyClassImmutabilityAnalysis,
             LazyTypeImmutabilityAnalysis,
-            LazyVirtualMethodPurityAnalysis,
             EagerL2PurityAnalysis
         )
 

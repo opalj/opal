@@ -41,8 +41,8 @@ public class Main {
 
     public static void callBarA(A a) {
         Object o = new
-                @EscapeViaStaticField(
-                        value = "default implementation let it escape",
+                @AtMostEscapeInCallee(
+                        value = "default implementation let it escape, but is overridden",
                         analyses = InterProceduralEscapeAnalysis.class
                 ) Object();
         a.bar(o);
@@ -54,7 +54,7 @@ public class Main {
                         value = "B#foo let it escape",
                         analyses = InterProceduralEscapeAnalysis.class
                 ) Object();
-        a.bar(o);
+        a.foo(o);
     }
 
     public static void callBazzB(B a) {

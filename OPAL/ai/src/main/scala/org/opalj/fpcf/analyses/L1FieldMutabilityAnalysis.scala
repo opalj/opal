@@ -140,7 +140,7 @@ class L1FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
 
         for {
             (method, pcs) ← fieldAccessInformation.writeAccesses(field)
-            taCode ← getTACAI(method, pcs)
+            taCode ← getTACAIOption(method, pcs)
         } {
             if (methodUpdatesField(method, taCode, pcs))
                 return Result(field, NonFinalFieldByAnalysis);
@@ -202,7 +202,7 @@ class L1FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
     /**
      * Returns the TACode for a method if available, registering dependencies as necessary.
      */
-    def getTACAI(
+    def getTACAIOption(
         method: Method,
         pcs:    PCs
     )(

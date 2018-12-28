@@ -3,21 +3,33 @@ package org.opalj.support.info
 
 import java.net.URL
 
+import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
+import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.DefaultOneStepAnalysis
+import org.opalj.br.analyses.Project
 import org.opalj.fpcf.FPCFAnalysesManagerKey
 import org.opalj.fpcf.analyses.EagerFieldLocalityAnalysis
-import org.opalj.fpcf.analyses.LazyVirtualCallAggregatingEscapeAnalysis
-import org.opalj.fpcf.analyses.LazyVirtualReturnValueFreshnessAnalysis
+import org.opalj.fpcf.analyses.TriggeredSystemPropertiesAnalysis
+import org.opalj.fpcf.analyses.cg.LazyCalleesAnalysis
+import org.opalj.fpcf.analyses.cg.TriggeredConfiguredNativeMethodsAnalysis
+import org.opalj.fpcf.analyses.cg.TriggeredFinalizerAnalysisScheduler
+import org.opalj.fpcf.analyses.cg.TriggeredInstantiatedTypesAnalysis
+import org.opalj.fpcf.analyses.cg.TriggeredLoadedClassesAnalysis
+import org.opalj.fpcf.analyses.cg.TriggeredRTACallGraphAnalysisScheduler
+import org.opalj.fpcf.analyses.cg.TriggeredSerializationRelatedCallsAnalysis
+import org.opalj.fpcf.analyses.cg.TriggeredStaticInitializerAnalysis
+import org.opalj.fpcf.analyses.cg.TriggeredThreadRelatedCallsAnalysis
+import org.opalj.fpcf.analyses.cg.reflection.TriggeredReflectionRelatedCallsAnalysis
 import org.opalj.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
+import org.opalj.fpcf.cg.properties.ReflectionRelatedCallees
+import org.opalj.fpcf.cg.properties.SerializationRelatedCallees
+import org.opalj.fpcf.cg.properties.StandardInvokeCallees
 import org.opalj.fpcf.properties.ExtensibleLocalField
 import org.opalj.fpcf.properties.ExtensibleLocalFieldWithGetter
 import org.opalj.fpcf.properties.LocalField
 import org.opalj.fpcf.properties.LocalFieldWithGetter
 import org.opalj.fpcf.properties.NoLocalField
-import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.DefaultOneStepAnalysis
-import org.opalj.br.analyses.Project
-import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
 import org.opalj.tac.fpcf.analyses.TACAITransformer
 
 /**
@@ -43,9 +55,21 @@ object FieldLocality extends DefaultOneStepAnalysis {
             //LazyL0TACAIAnalysis,
             LazyL0BaseAIAnalysis,
             TACAITransformer,
+            /* Call Graph Analyses */
+            TriggeredRTACallGraphAnalysisScheduler,
+            TriggeredStaticInitializerAnalysis,
+            TriggeredLoadedClassesAnalysis,
+            TriggeredFinalizerAnalysisScheduler,
+            TriggeredThreadRelatedCallsAnalysis,
+            TriggeredSerializationRelatedCallsAnalysis,
+            TriggeredReflectionRelatedCallsAnalysis,
+            TriggeredInstantiatedTypesAnalysis,
+            TriggeredConfiguredNativeMethodsAnalysis,
+            TriggeredSystemPropertiesAnalysis,
+            LazyCalleesAnalysis(
+                Set(StandardInvokeCallees, SerializationRelatedCallees, ReflectionRelatedCallees)
+            ),
             LazyInterProceduralEscapeAnalysis,
-            LazyVirtualCallAggregatingEscapeAnalysis,
-            LazyVirtualReturnValueFreshnessAnalysis,
             LazyReturnValueFreshnessAnalysis,
             EagerFieldLocalityAnalysis
         )
