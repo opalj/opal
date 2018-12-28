@@ -111,7 +111,7 @@ object StringAnalysisReflectiveCalls extends DefaultOneStepAnalysis {
             val duvar = call.params.head.asVar
             ps((List(duvar), method), StringConstancyProperty.key) match {
                 case FinalEP(_, prop) ⇒
-                    resultMap(call.name).appendAll(prop.stringConstancyInformation)
+                    resultMap(call.name).append(prop.stringConstancyInformation)
                 case _ ⇒
             }
         }
