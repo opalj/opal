@@ -40,9 +40,10 @@ object RTACallGraph extends DefaultOneStepAnalysis {
     override def title: String = "Field Locality"
 
     override def description: String = {
-        "Provides lifetime information about the values stored in instance fields."
+        "Provides the number of reachable methods and call edges in the give project."
     }
 
+    // todo: we would like to print the edges for a given method
     override def doAnalyze(
         project:       Project[URL],
         parameters:    Seq[String],
