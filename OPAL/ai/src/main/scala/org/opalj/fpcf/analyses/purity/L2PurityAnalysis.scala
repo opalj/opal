@@ -18,6 +18,8 @@ import org.opalj.br.cfg.CFG
 import org.opalj.collection.immutable.EmptyIntTrieSet
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.cg.properties.Callees
+import org.opalj.fpcf.cg.properties.CallersProperty
+import org.opalj.fpcf.cg.properties.NoCallers
 import org.opalj.fpcf.properties.ClassImmutability
 import org.opalj.fpcf.properties.ClassifiedImpure
 import org.opalj.fpcf.properties.CompileTimePure
@@ -929,7 +931,7 @@ trait L2PurityAnalysisScheduler extends ComputationSpecification[FPCFAnalysis] {
 
     final def derivedProperty: PropertyBounds = PropertyBounds.lub(Purity)
 
-    final override def uses: Set[PropertyBounds] = {
+    override def uses: Set[PropertyBounds] = {
         Set(
             PropertyBounds.lub(FieldMutability),
             PropertyBounds.lub(ClassImmutability),
@@ -958,7 +960,7 @@ object EagerL2PurityAnalysis extends L2PurityAnalysisScheduler with FPCFEagerAna
     ): FPCFAnalysis = {
         val dms = p.get(DeclaredMethodsKey).declaredMethods
         val methods = dms.collect {
-            case dm if dm.hasSingleDefinedMethod && dm.definedMethod.body.isDefined && !analysis.configuredPurity.wasSet(dm) ⇒
+            case dm if dm.hasSingleDefinedMethod && dm.definedMethod.body.isDefined && !analysis.configuredPurity.wasSet(dm) && ps(dm, CallersProperty.key).ub != NoCallers ⇒
                 dm.asDefinedMethod
         }
         ps.scheduleEagerComputationsForEntities(methods)(
@@ -966,6 +968,8 @@ object EagerL2PurityAnalysis extends L2PurityAnalysisScheduler with FPCFEagerAna
         )
         analysis
     }
+
+    override def uses: Set[PropertyBounds] = super.uses + PropertyBounds.finalP(CallersProperty)
 
     override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
 
