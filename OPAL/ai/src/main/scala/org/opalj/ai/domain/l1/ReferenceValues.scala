@@ -563,11 +563,11 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
         }
 
         override def doRefineIsNull(isNull: Answer): DomainSingleOriginReferenceValue = {
-            throw new ImpossibleRefinement(this, "nullness property of null value")
+            throw ImpossibleRefinement(this, "nullness property of null value")
         }
 
         def doRefineUpperTypeBound(supertype: ReferenceType): DomainSingleOriginReferenceValue = {
-            throw new ImpossibleRefinement(this, "refinement of type of null value")
+            throw ImpossibleRefinement(this, "refinement of type of null value")
         }
 
         protected override def doJoinWithNonNullValueWithSameOrigin(
