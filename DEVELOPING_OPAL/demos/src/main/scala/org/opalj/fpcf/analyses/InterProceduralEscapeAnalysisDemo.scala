@@ -99,7 +99,7 @@ object InterProceduralEscapeAnalysisDemo extends DefaultOneStepAnalysis {
                 LazyL0BaseAIAnalysis,
                 TACAITransformer
             )
-        }{ t ⇒ info("progress", s"computing call graph and tac took ${t.toSeconds}") }
+        } { t ⇒ info("progress", s"computing call graph and tac took ${t.toSeconds}") }
         time {
             manager.runAll(
                 EagerInterProceduralEscapeAnalysis
