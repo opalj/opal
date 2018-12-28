@@ -40,9 +40,10 @@ object RTACallGraph extends DefaultOneStepAnalysis {
     override def title: String = "Field Locality"
 
     override def description: String = {
-        "Provides lifetime information about the values stored in instance fields."
+        "Provides the number of reachable methods and call edges in the give project."
     }
 
+    // todo: we would like to print the edges for a given method
     override def doAnalyze(
         project:       Project[URL],
         parameters:    Seq[String],
@@ -71,9 +72,9 @@ object RTACallGraph extends DefaultOneStepAnalysis {
 
         implicit val declaredMethods = project.get(DeclaredMethodsKey)
 
-        val allMethods = declaredMethods.declaredMethods
+        val allMethods = declaredMethods.declaredMethods.toTraversable
 
-        val callersProperties = ps(allMethods.toTraversable, CallersProperty.key)
+        val callersProperties = ps(allMethods, CallersProperty.key)
         assert(callersProperties.forall(_.isFinal))
 
         val reachableMethods = callersProperties.filterNot(_.ub eq NoCallers).map(_.ub)
