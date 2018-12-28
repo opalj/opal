@@ -11,7 +11,7 @@ import org.opalj.br.analyses.Project
 import org.opalj.fpcf.analyses.EagerFieldLocalityAnalysis
 import org.opalj.fpcf.analyses.TriggeredSystemPropertiesAnalysis
 import org.opalj.fpcf.analyses.cg.TriggeredFinalizerAnalysisScheduler
-import org.opalj.fpcf.analyses.cg.TriggeredRTACallGraphAnalysisScheduler
+import org.opalj.fpcf.analyses.cg.RTACallGraphAnalysisScheduler
 import org.opalj.fpcf.analyses.cg.TriggeredSerializationRelatedCallsAnalysis
 import org.opalj.fpcf.analyses.cg.TriggeredStaticInitializerAnalysis
 import org.opalj.fpcf.analyses.cg.TriggeredThreadRelatedCallsAnalysis
@@ -29,7 +29,7 @@ class FieldLocalityTests extends PropertiesTest {
 
     val analyses = Set[FPCFAnalysisScheduler](
         EagerFieldLocalityAnalysis,
-        TriggeredRTACallGraphAnalysisScheduler,
+        RTACallGraphAnalysisScheduler,
         TriggeredStaticInitializerAnalysis,
         TriggeredLoadedClassesAnalysis,
         TriggeredFinalizerAnalysisScheduler,

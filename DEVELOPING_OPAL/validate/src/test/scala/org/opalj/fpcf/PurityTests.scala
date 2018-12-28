@@ -32,7 +32,7 @@ import org.opalj.fpcf.analyses.cg.TriggeredThreadRelatedCallsAnalysis
 import org.opalj.fpcf.analyses.cg.TriggeredFinalizerAnalysisScheduler
 import org.opalj.fpcf.analyses.cg.LazyCalleesAnalysis
 import org.opalj.fpcf.analyses.cg.TriggeredSerializationRelatedCallsAnalysis
-import org.opalj.fpcf.analyses.cg.TriggeredRTACallGraphAnalysisScheduler
+import org.opalj.fpcf.analyses.cg.RTACallGraphAnalysisScheduler
 import org.opalj.fpcf.analyses.cg.TriggeredStaticInitializerAnalysis
 import org.opalj.fpcf.analyses.cg.TriggeredLoadedClassesAnalysis
 import org.opalj.fpcf.analyses.cg.reflection.TriggeredReflectionRelatedCallsAnalysis
@@ -83,7 +83,7 @@ class PurityTests extends PropertiesTest {
         val as = executeAnalyses(
             Set(
                 EagerL1PurityAnalysis,
-                TriggeredRTACallGraphAnalysisScheduler,
+                RTACallGraphAnalysisScheduler,
                 TriggeredStaticInitializerAnalysis,
                 TriggeredLoadedClassesAnalysis,
                 TriggeredFinalizerAnalysisScheduler,
@@ -109,7 +109,7 @@ class PurityTests extends PropertiesTest {
         val as = executeAnalyses(
             Set(
                 EagerL2PurityAnalysis,
-                TriggeredRTACallGraphAnalysisScheduler,
+                RTACallGraphAnalysisScheduler,
                 TriggeredStaticInitializerAnalysis,
                 TriggeredLoadedClassesAnalysis,
                 TriggeredFinalizerAnalysisScheduler,

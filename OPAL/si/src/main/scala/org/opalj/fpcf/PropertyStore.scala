@@ -273,7 +273,7 @@ abstract class PropertyStore {
         new Array(SupportedPropertyKinds)
     }
 
-    def alreadyComputedPropertyKindIds: IntIterator = {
+    final def alreadyComputedPropertyKindIds: IntIterator = {
         IntIterator.upUntil(0, SupportedPropertyKinds).filter(propertyKindsComputedInEarlierPhase)
     }
 

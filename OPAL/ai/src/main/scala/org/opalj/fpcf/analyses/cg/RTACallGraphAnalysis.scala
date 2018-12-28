@@ -615,7 +615,7 @@ class RTACallGraphAnalysis private[analyses] ( final val project: SomeProject) e
     }
 }
 
-object TriggeredRTACallGraphAnalysisScheduler extends FPCFTriggeredAnalysisScheduler {
+object RTACallGraphAnalysisScheduler extends FPCFTriggeredAnalysisScheduler {
 
     override type InitializationData = Null
 

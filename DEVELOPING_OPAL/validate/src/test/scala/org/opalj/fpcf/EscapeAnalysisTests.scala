@@ -6,7 +6,7 @@ import java.net.URL
 import org.opalj.fpcf.analyses.cg.LazyCalleesAnalysis
 import org.opalj.fpcf.analyses.cg.TriggeredInstantiatedTypesAnalysis
 import org.opalj.fpcf.analyses.cg.TriggeredLoadedClassesAnalysis
-import org.opalj.fpcf.analyses.cg.TriggeredRTACallGraphAnalysisScheduler
+import org.opalj.fpcf.analyses.cg.RTACallGraphAnalysisScheduler
 import org.opalj.fpcf.analyses.cg.TriggeredStaticInitializerAnalysis
 import org.opalj.fpcf.analyses.escape.EagerInterProceduralEscapeAnalysis
 import org.opalj.fpcf.analyses.escape.EagerSimpleEscapeAnalysis
@@ -27,7 +27,7 @@ import org.opalj.tac.fpcf.analyses.TACAITransformer
 class EscapeAnalysisTests extends PropertiesTest {
 
     val analyses: List[FPCFAnalysisScheduler] = List(
-        TriggeredRTACallGraphAnalysisScheduler,
+        RTACallGraphAnalysisScheduler,
         TriggeredStaticInitializerAnalysis,
         TriggeredInstantiatedTypesAnalysis,
         TriggeredLoadedClassesAnalysis,
