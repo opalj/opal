@@ -69,7 +69,9 @@ object RTACallGraph extends DefaultOneStepAnalysis {
             )
         )
 
-        val allMethods = project.get(DeclaredMethodsKey).declaredMethods
+        implicit val declaredMethods = project.get(DeclaredMethodsKey)
+
+        val allMethods = declaredMethods.declaredMethods
 
         val callersProperties = ps(allMethods.toTraversable, CallersProperty.key)
         assert(callersProperties.forall(_.isFinal))
