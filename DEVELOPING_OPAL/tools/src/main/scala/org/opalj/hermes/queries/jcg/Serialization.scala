@@ -71,7 +71,7 @@ class Serialization(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
             "Ser9", /* 8 --- general deserialization of Serializiable (not Externalizable) classes */
             "ExtSer1", /* 9 --- writeExternal */
             "ExtSer2+ExtSer3", /* 10 -- readExternal & general deserialization of Externalizable classes */
-            "SerLam1+SerLam2", /* 11 --- (de-)serialization of Lambdas */
+            "SerLam1+SerLam2" /* 11 --- (de-)serialization of Lambdas */
         )
     }
 

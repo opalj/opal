@@ -12,9 +12,11 @@ import org.opalj.collection.immutable.Chain
  * Provides functionality to determine whether a set of analyses is compatible and to compute
  * a schedule to execute a set of analyses.
  *
+ * @param propertyStore required to determine which properties are already computed!
+ *
  * @author Michael Eichberg
  */
-class AnalysisScenario[A] {
+class AnalysisScenario[A] /* FIXME (propertyStore : PropertyStore)*/ {
 
     private[this] var allCS: Set[ComputationSpecification[A]] = Set.empty
 

@@ -25,6 +25,8 @@ object ExceptionUsage extends DefaultOneStepAnalysis {
         isInterrupted: () ⇒ Boolean
     ): BasicReport = {
 
+        implicit val ch: ClassHierarchy = theProject.classHierarchy
+
         if (theProject.classFile(ObjectType("java/lang/Object")).isEmpty) {
             Console.err.println(
                 "[warn] It seems as if the JDK was not loaded"+

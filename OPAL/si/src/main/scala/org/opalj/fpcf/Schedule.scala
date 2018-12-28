@@ -8,8 +8,9 @@ import org.opalj.collection.immutable.Chain
 import org.opalj.util.PerformanceEvaluation.time
 
 /**
- * Encapsulates a computed schedule and enables the execution of it. Use an [[AnalysisScenario]]
- * to compute a schedule.
+ * Encapsulates a computed schedule and enables the execution of it. Primarily takes care
+ * of calling the life-cycle methods of the analyses and setting up the phase appropriately.
+ * You can use an [[AnalysisScenario]] to compute a schedule.
  *
  * @param batches The representation of the computed schedule.
  *

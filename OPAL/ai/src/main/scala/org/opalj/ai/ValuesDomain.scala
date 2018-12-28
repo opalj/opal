@@ -395,6 +395,13 @@ trait ValuesDomain { domain ⇒
     trait ReferenceValue extends TypedValue[ReferenceType] with IsReferenceValue {
         this: domain.DomainReferenceValue ⇒
 
+        override def isPrecise: Boolean = {
+            leastUpperType match {
+                case None    ⇒ true // the value is null
+                case Some(t) ⇒ classHierarchy.isKnownToBeFinal(t)
+            }
+        }
+
         override def baseValues: Traversable[domain.DomainReferenceValue]
 
         override def allValues: Traversable[domain.DomainReferenceValue]

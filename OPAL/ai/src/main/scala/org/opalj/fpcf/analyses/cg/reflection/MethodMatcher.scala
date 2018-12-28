@@ -13,7 +13,10 @@ import org.opalj.br.analyses.ProjectIndexKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.collection.immutable.ConstArray
 import org.opalj.collection.immutable.RefArray
+import org.opalj.value.IsPrimitiveValue
 import org.opalj.value.IsReferenceValue
+import org.opalj.br.BaseType
+import org.opalj.br.ClassHierarchy
 
 /**
  * @author Florian Kuebler
@@ -89,8 +92,10 @@ class ActualParamBasedMethodMatcher(val actualParams: Seq[V]) extends MethodMatc
         p.allMethods.iterator.filter(contains)
 
     override def contains(m: Method)(implicit p: SomeProject): Boolean = {
+        implicit val ch: ClassHierarchy = p.classHierarchy
         m.descriptor.parametersCount == actualParams.size &&
             m.descriptor.parameterTypes.zip(actualParams.map(_.value)).forall {
+                // IMPROVE Make matchers nicer
                 // the actual type is null and the declared type is a ref type
                 case (pType, v) if pType.isReferenceType && v.isReferenceValue && v.asReferenceValue.isNull.isYes ⇒
                     // todo here we would need the declared type information
@@ -100,11 +105,10 @@ class ActualParamBasedMethodMatcher(val actualParams: Seq[V]) extends MethodMatc
                     v.asReferenceValue.isValueASubtypeOf(pType.asReferenceType).isYesOrUnknown
 
                 // declared type and actual type are base types and the same type
-                case (pType, v) if pType.isBaseType && v.isPrimitiveValue ⇒
-                    v.asPrimitiveValue.primitiveType eq pType
+                case (pType: BaseType, v: IsPrimitiveValue[_]) ⇒ v.primitiveType eq pType
 
                 // the actual type is null and the declared type is a base type
-                case (pType, v) if pType.isBaseType && v.isReferenceValue && v.asReferenceValue.isNull.isYes ⇒
+                case (pType: BaseType, v) if v.isReferenceValue && v.asReferenceValue.isNull.isYes ⇒
                     false
 
                 // declared type is base type, actual type might be a boxed value
@@ -112,10 +116,8 @@ class ActualParamBasedMethodMatcher(val actualParams: Seq[V]) extends MethodMatc
                     v.asReferenceValue.isValueASubtypeOf(pType.asBaseType.WrapperType).isYesOrUnknown
 
                 // actual type is base type, declared type might be a boxed type
-                case (pType, v) if pType.isObjectType && v.isPrimitiveValue ⇒
-                    pType.asObjectType.isPrimitiveTypeWrapperOf(
-                        v.asPrimitiveValue.primitiveType
-                    )
+                case (pType: ObjectType, v) if v.isPrimitiveValue ⇒
+                    pType.isPrimitiveTypeWrapperOf(v.asPrimitiveValue.primitiveType)
                 case _ ⇒
                     false
             }
@@ -127,6 +129,7 @@ class ActualParamBasedMethodMatcher(val actualParams: Seq[V]) extends MethodMatc
 // todo rename as this is only for the first argument of Method.invoke
 class ActualReceiverBasedMethodMatcher(val receiver: IsReferenceValue) extends MethodMatcher {
     override def initialMethods(implicit p: SomeProject): Iterator[Method] = {
+        implicit val ch: ClassHierarchy = p.classHierarchy
         p.allClassFiles.iterator.flatMap { cf ⇒
             var r = RefArray.empty[Method]
             if (receiver.isNull.isNoOrUnknown && receiver.isValueASubtypeOf(cf.thisType).isYesOrUnknown)
@@ -138,6 +141,7 @@ class ActualReceiverBasedMethodMatcher(val receiver: IsReferenceValue) extends M
     }
 
     override def contains(m: Method)(implicit p: SomeProject): Boolean = {
+        implicit val ch: ClassHierarchy = p.classHierarchy
         val isNull = receiver.isNull
         (isNull.isNoOrUnknown && receiver.isValueASubtypeOf(m.classFile.thisType).isYesOrUnknown) ||
             (isNull.isYesOrUnknown && m.isStatic)

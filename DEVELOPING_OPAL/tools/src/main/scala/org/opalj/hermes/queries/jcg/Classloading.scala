@@ -36,7 +36,7 @@ class Classloading(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
     override def featureIDs: Seq[String] = {
         Seq(
             "CL1+CL2+CL3", /* 0 --- Standard java classloaders */
-            "CL4", /* 1 --- Custom classloaders */
+            "CL4" /* 1 --- Custom classloaders */
         )
     }
 
@@ -77,7 +77,7 @@ class Classloading(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
             val pc = pcAndInvocation.pc
             val l = InstructionLocation(methodLocation, pc)
 
-            if(hasCustomClassLoaders)
+            if (hasCustomClassLoaders)
                 locations(1) += l // potential custom classloader
             else
                 locations(0) += l // standard java classloader

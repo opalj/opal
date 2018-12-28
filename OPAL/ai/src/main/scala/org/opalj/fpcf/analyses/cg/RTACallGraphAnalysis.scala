@@ -203,9 +203,7 @@ object RTAState {
  *
  * @author Florian Kuebler
  */
-class RTACallGraphAnalysis private[analyses] (
-        final val project: SomeProject
-) extends FPCFAnalysis {
+class RTACallGraphAnalysis private[analyses] ( final val project: SomeProject) extends FPCFAnalysis {
 
     // TODO maybe cache results for Object.toString, Iterator.hasNext, Iterator.next
 
@@ -258,12 +256,7 @@ class RTACallGraphAnalysis private[analyses] (
         if (tacEP.hasUBP && tacEP.ub.tac.isDefined)
             processMethod(state)
         else {
-            InterimResult.forUB(
-                declaredMethod,
-                NoStandardInvokeCallees,
-                Seq(tacEP),
-                continuation(state)
-            )
+            InterimResult.forUB(declaredMethod, NoStandardInvokeCallees, Seq(tacEP), c(state))
         }
     }
 
@@ -318,14 +311,10 @@ class RTACallGraphAnalysis private[analyses] (
         // for calls, add new edges
         tac.stmts.foreach {
             case stmt @ StaticFunctionCallStatement(call) ⇒
-                handleCall(
-                    method, call, stmt.pc, call.resolveCallTarget
-                )
+                handleCall(method, call, stmt.pc, call.resolveCallTarget)
 
             case call: StaticMethodCall[V] ⇒
-                handleCall(
-                    method, call, call.pc, call.resolveCallTarget
-                )
+                handleCall(method, call, call.pc, call.resolveCallTarget)
 
             case stmt @ NonVirtualFunctionCallStatement(call) ⇒
                 handleCall(
@@ -574,13 +563,9 @@ class RTACallGraphAnalysis private[analyses] (
         results
     }
 
-    private[this] def continuation(
-        state: RTAState
-    )(
-        eps: SomeEPS
-    ): ProperPropertyComputationResult = {
+    private[this] def c(state: RTAState)(eps: SomeEPS): ProperPropertyComputationResult = {
         eps match {
-            case UBP(tac: TACAI) if tac.tac.isDefined ⇒
+            case UBP(tacai: TACAI) if tacai.tac.isDefined ⇒
                 state.updateTACDependee(eps.asInstanceOf[EPS[Method, TACAI]])
                 processMethod(state)
 
@@ -589,7 +574,7 @@ class RTACallGraphAnalysis private[analyses] (
                     state.method,
                     NoStandardInvokeCallees,
                     Seq(eps),
-                    continuation(state)
+                    c(state)
                 )
             case UBP(ub: InstantiatedTypes) ⇒
                 state.updateInstantiatedTypesDependee(
@@ -624,7 +609,7 @@ class RTACallGraphAnalysis private[analyses] (
                 state.method,
                 newCallees,
                 state.dependees(),
-                continuation(state)
+                c(state)
             )
         }
     }
