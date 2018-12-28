@@ -64,7 +64,7 @@ import scala.language.existentials
  * @author Florian Kuebler
  */
 class ReflectionRelatedCallsAnalysis private[analyses] (
-        final val project: SomeProject
+        final implicit val project: SomeProject
 ) extends FPCFAnalysis {
 
     val HIGHSOUNDNESS = false
@@ -442,8 +442,13 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
      * the `pc` as incomplete.
      */
     private[this] def retrieveSuitableMatcher[A](
-        v: Option[A], pc: Int, factory: (A) ⇒ MethodMatcher
-    )(implicit state: State): MethodMatcher = {
+        v:       Option[A],
+        pc:      Int,
+        factory: A ⇒ MethodMatcher
+    )(
+        implicit
+        state: State
+    ): MethodMatcher = {
         if (v.isEmpty) {
             if (HIGHSOUNDNESS) {
                 allMethodsMatcher
