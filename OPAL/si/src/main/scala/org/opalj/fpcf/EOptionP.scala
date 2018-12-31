@@ -141,7 +141,7 @@ sealed trait EOptionP[+E <: Entity, +P <: Property] {
      *
      * @note The caller has to ensure that this EOptionP and and the given EOptionP are
      *       comparable. That is, they define properties of the same kind associated with
-     *       the same entity.
+     *       the same entity and same bounds.
      */
     private[fpcf] def isUpdatedComparedTo(oldEOptionP: EOptionP[Entity, Property]): Boolean
 
@@ -224,6 +224,18 @@ object EPS {
     }
 
     def unapply[E <: Entity, P <: Property](eps: EPS[E, P]): Some[E] = Some(eps.e)
+}
+
+/**
+ * Factory and extractor for [[EPS]] objects.
+ *
+ * @author Michael Eichberg
+ */
+object SomeEPS {
+
+    def unapply[E <: Entity, P <: Property](eps: EPS[E, P]): Some[(E, PropertyKey[P])] = {
+        Some((eps.e, eps.pk))
+    }
 }
 
 object LBPS {
@@ -435,6 +447,18 @@ object FinalEP {
 
 }
 
+/**
+ * Factory and extractor for [[FinalEP]] objects.
+ *
+ * @author Michael Eichberg
+ */
+object SomeFinalEP {
+
+    def unapply[E <: Entity, P <: Property](finalEP: FinalEP[E, P]): Some[(E, PropertyKey[P])] = {
+        Some((finalEP.e, finalEP.pk))
+    }
+}
+
 object FinalP {
 
     def unapply[E <: Entity, P >: Null <: Property](eps: FinalEP[E, P]): Option[P] = Some(eps.p)
@@ -452,7 +476,6 @@ sealed trait InterimEP[+E <: Entity, +P <: Property] extends EPS[E, P] {
         val newLBAsOP = eps.lb.asOrderedProperty
         val lbAsOP = lb.asInstanceOf[newLBAsOP.Self]
         newLBAsOP.checkIsEqualOrBetterThan(e, lbAsOP)
-
     }
 
     private[fpcf] def checkIsValidUBPropertyUpdate(eps: SomeEPS): Unit = {
@@ -478,12 +501,9 @@ sealed trait InterimEP[+E <: Entity, +P <: Property] extends EPS[E, P] {
             }
         } catch {
             case t: Throwable ⇒
-                throw new IllegalArgumentException(
-                    s"$e: illegal update oldLB: $lb vs. newLB=$eps.lb "+
-                        newDependees.mkString("newDependees={", ", ", "}")+
-                        "; cause="+t.getMessage,
-                    t
-                )
+                val m = s"$e: illegal update oldLB: $lb vs. newLB=$eps.lb "+
+                    newDependees.mkString("newDependees={", ", ", "}; cause=") + t.getMessage
+                throw new IllegalArgumentException(m, t)
         }
     }
 }
