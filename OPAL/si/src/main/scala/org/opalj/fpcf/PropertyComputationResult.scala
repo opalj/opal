@@ -15,9 +15,13 @@ sealed abstract class PropertyComputationResult {
         throw new ClassCastException();
     }
 
-    private[fpcf] def asResult: Result = {
+    private[fpcf] def isInterimPartialResult: Boolean = false
+    private[fpcf] def asInterimPartialResult: InterimPartialResult[_ >: Null <: Property] = {
         throw new ClassCastException();
     }
+
+    private[fpcf] def asResult: Result = throw new ClassCastException();
+
 }
 
 object PropertyComputationResult {
@@ -358,15 +362,16 @@ object PartialResult { private[fpcf] final val id = 6 }
  * given dependees. For example an analysis which analyzes a method to determine the set
  * of all instantiated types will use an `InterimPartialResult` to commit those results.
  */
-case class InterimPartialResult[SE >: Null <: Entity](
-        us: Traversable[SomePartialResult], // can be empty!
-        // We can't have a list of dependees, because we wouldn't be able to effectively
-        // prevent multiple concurrent notifications!
+case class InterimPartialResult[SE >: Null <: Property](
+        us:        Traversable[SomePartialResult], // can be empty!
         dependees: Traversable[SomeEOptionP],
         c:         OnUpdateContinuation
 ) extends ProperPropertyComputationResult {
 
     assert(dependees.nonEmpty)
+
+    override private[fpcf] def isInterimPartialResult: Boolean = true
+    override private[fpcf] def asInterimPartialResult: InterimPartialResult[SE] = this
 
     private[fpcf] final def id = InterimPartialResult.id
 
@@ -379,7 +384,7 @@ object InterimPartialResult {
      * Creates a new `InterimPartialResult` for the case where we just want to (re)register
      * a depending computation.
      */
-    def apply[SE >: Null <: Entity](
+    def apply[SE >: Null <: Property](
         dependees: Traversable[SomeEOptionP],
         c:         OnUpdateContinuation
     ): InterimPartialResult[SE] = {
@@ -395,7 +400,7 @@ object InterimPartialResult {
      *          new property. `u` has to return `None` if the update does not change the property
      *          and `Some(NewProperty)` otherwise.
      */
-    def apply[SE >: Null <: Entity, UE >: Null <: Entity, UP >: Null <: Property](
+    def apply[SE >: Null <: Property, UE >: Null <: Entity, UP >: Null <: Property](
         uE:        UE,
         uPK:       PropertyKey[UP],
         u:         UpdateComputation[UE, UP],
