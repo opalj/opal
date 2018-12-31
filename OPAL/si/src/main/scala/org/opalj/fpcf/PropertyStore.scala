@@ -364,9 +364,9 @@ abstract class PropertyStore {
     def entities[P <: Property](lb: P, ub: P): Iterator[Entity]
 
     /**
-    * @note Only to be called when the store is quiescent.
-    * @note Does not trigger lazy property computations.
-    */
+     * @note Only to be called when the store is quiescent.
+     * @note Does not trigger lazy property computations.
+     */
     def entitiesWithLB[P <: Property](lb: P): Iterator[Entity]
 
     /**
