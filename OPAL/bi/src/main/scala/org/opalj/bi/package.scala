@@ -101,20 +101,19 @@ package object bi {
      *
      * @note This method makes some assumptions how the version numbers will evolve.
      */
-    final lazy val isCurrentJREAtLeastJava8: Boolean =isCurrentJREAtLeastJavaX(8)
+    final lazy val isCurrentJREAtLeastJava8: Boolean = isCurrentJREAtLeastJavaX(8)
 
-    final lazy val isCurrentJREAtLeastJava9: Boolean =isCurrentJREAtLeastJavaX(9)
-
+    final lazy val isCurrentJREAtLeastJava9: Boolean = isCurrentJREAtLeastJavaX(9)
 
     // only works for Java 8 and above
-     private[this]  def isCurrentJREAtLeastJavaX(x : Int) : Boolean = {
-         require (x >= 8)
+    private[this] def isCurrentJREAtLeastJavaX(x: Int): Boolean = {
+        require(x >= 8)
         implicit val logContext: LogContext = GlobalLogContext
         val versionString = System.getProperty("java.version")
         try {
             val isAtLeastSpecifiedJavaVersion = versionString.split('.') match {
-                case Array("1","8",_*) ⇒ x == 8
-                case Array(majorVersion,_*) ⇒ parseInt(majorVersion) >= x
+                case Array("1", "8", _*)     ⇒ x == 8
+                case Array(majorVersion, _*) ⇒ parseInt(majorVersion) >= x
             }
             if (isAtLeastSpecifiedJavaVersion) {
                 info("system configuration", s"current JRE is at least Java $x")
