@@ -325,8 +325,9 @@ final class PKEParallelTasksPropertyStore private (
             } while (update eq null)
             try {
                 update match {
-                    case NewProperty(r, forceDependersNotifications) ⇒
-                        doHandleResult(r, forceDependersNotifications)
+                    case NewProperty(r) ⇒ doHandleResult(r)
+
+                    case NewDependees(_,_) => ???
 
                     case TriggeredLazyComputation(e, pkId, lc) ⇒
                         // Recall, that -- once we have a final result -- all meta data
@@ -487,7 +488,7 @@ final class PKEParallelTasksPropertyStore private (
     override def doSet(e: Entity, p: Property): Unit = handleExceptions {
         // (by specification)... we have the guarantee that no analyses are running
         val pkId = p.key.id
-        val oldP = ps(pkId).put(e, FinalP(e, p))
+        val oldP = ps(pkId).put(e, FinalEP(e, p))
         if (oldP != null) {
             throw new IllegalStateException(s"$e: update failed due to existing property $oldP")
         }
@@ -636,8 +637,6 @@ final class PKEParallelTasksPropertyStore private (
         }
     }
 
-
-
     // Thread Safe!
     override def force[E <: Entity, P <: Property](e: E, pk: PropertyKey[P]): Unit = {
         val epk = EPK(e,pk)
@@ -665,7 +664,6 @@ final class PKEParallelTasksPropertyStore private (
 
             case IncrementalResult.id ⇒
                 val IncrementalResult(ir, npcs, propertyComputationsHint) = r
-                handleResult(ir)
                 if (propertyComputationsHint == CheapPropertyComputation) {
                     npcs /*: Traversable[(PropertyComputation[e],e)]*/ foreach { npc ⇒
                         if (debug)
@@ -689,6 +687,16 @@ final class PKEParallelTasksPropertyStore private (
                         }
                     }
                 }
+                handleResult(ir)
+
+                case NoResult.id ⇒ {
+                    // A computation reported no result; i.e., it is not possible to
+                    // compute a/some property/properties for a given entity.
+                }
+
+                case Results.id ⇒
+                    val Results(furtherResults) = r
+                    furtherResults.foreach ( handleResult)
 
             case InterimResult.id ⇒
                 val queueId = r.asInterimResult.dependees.size / 4 + 1
@@ -700,7 +708,11 @@ final class PKEParallelTasksPropertyStore private (
                 appendStoreUpdate(queueId = 1, update)
 
             case InterimPartialResult.id ⇒
-                ???
+            val interimPartialResult = r.asInterimPartialResult
+                val queueId = interimPartialResult.dependees.size / 4 + 1
+                interimPartialResult.us.foreach(handleResult)
+                val update = NewDependees(interimPartialResult.dependees,interimPartialResult.c)
+                appendStoreUpdate(queueId ,update)
 
             case _ /*nothing special...*/ ⇒
                 // "final" results are prepended
@@ -731,13 +743,11 @@ final class PKEParallelTasksPropertyStore private (
         dependeesCount
     }
 
-    private[this] def notifyDependers(
-        newEPS: SomeEPS,
-        pcrs:   RefAccumulator[PropertyComputationResult]
-    ): Unit = {
+    private[this] def notifyDependers(        newEPS: SomeEPS    ): Unit = {
         val e = newEPS.e
         val pkId = newEPS.pk.id
         val isFinal = newEPS.isFinal
+
         // 3.1. notify dependers
         val oldDependersOption = this.dependers(pkId).remove(e)
         if (oldDependersOption != null) {
@@ -750,10 +760,7 @@ final class PKEParallelTasksPropertyStore private (
                 // respective onUpdateContinuation from all dependees of the respective
                 // depender to avoid that the onUpdateContinuation is triggered multiple times!
                 val oldDependerDependeesCount = clearDependees(oldDependerEPK)
-                if (onUpdateContinuationHint == CheapPropertyComputation) {
-                    directDependerOnUpdateComputationsCounter += 1
-                    pcrs += c(newEPS)
-                } else {
+
                     scheduledOnUpdateComputationsCounter += 1
                     if (isFinal) {
                         val t = new OnFinalUpdateComputationTask(this, newEPS.asFinal, c)
@@ -762,7 +769,7 @@ final class PKEParallelTasksPropertyStore private (
                         val t = new OnUpdateComputationTask(this, newEPS.toEPK, c)
                         appendTask(oldDependerDependeesCount, t)
                     }
-                }
+                
             }
         }
 
@@ -773,43 +780,15 @@ final class PKEParallelTasksPropertyStore private (
         }
     }
 
-    private[this] def handleInitialProperty(e: Entity, pkId: Int, isFinal: Boolean): Unit = {
-        if (isFinal) oneStepFinalUpdatesCounter += 1
-
-        val computationsToStart = this.triggeredComputations(pkId)
-        if (computationsToStart ne null) {
-            foreachValue[SomePropertyComputation](computationsToStart) { (_ /*index*/ , pc) ⇒
-                scheduleEagerComputationForEntity(e)(pc.asInstanceOf[PropertyComputation[Entity]])
-            }
-        }
-    }
-
     private[this] def handleUpdate(
-        oldEPS:                              SomeEPS,
-        newEPS:                              SomeEPS,
-        isFinal:                             Boolean,
-        notifyDependersAboutNonFinalUpdates: Boolean,
-        pcrs:                                RefAccumulator[PropertyComputationResult]
-    ): UpdateAndNotifyState = {
-
-        // 3. handle relevant updates
+        oldEPS:                              SomeEOptionP,
+        newEPS:                              SomeEPS
+    ): Unit = {
         val relevantUpdate = newEPS != oldEPS // always true if newEPS is a final EPS...
         if (tracer.isDefined && relevantUpdate) tracer.get.update(oldEPS, newEPS)
-        var notificationRequired = relevantUpdate // required if relevant, but not notified...
         if (isFinal || (notifyDependersAboutNonFinalUpdates && relevantUpdate)) {
             notificationRequired = false
-            notifyDependers(newEPS, pcrs)
-        }
-
-        // 4. report result
-        if (relevantUpdate) {
-            if (notificationRequired) {
-                RelevantUpdateButNoNotification
-            } else {
-                RelevantUpdateAndNotification
-            }
-        } else {
-            NoRelevantUpdate
+            notifyDependers(newEPS)
         }
     }
 
@@ -820,70 +799,41 @@ final class PKEParallelTasksPropertyStore private (
         }
     }
 
-    private[this] def assertRelation(e: Entity, lb: Property, ub: Property): Unit = {
-        try {
-            val ubAsOP = ub.asOrderedProperty
-            ubAsOP.checkIsEqualOrBetterThan(e, lb.asInstanceOf[ubAsOP.Self])
-        } catch {
-            case t: Throwable ⇒
-                val m = s"$e: illegal update: lb=$lb > ub=$ub; cause="+t.getMessage
-                throw new IllegalArgumentException(m, t)
-        }
-    }
-
     /**
      * Updates the entity and optionally notifies all dependers.
      *
      * @return true iff the dependers were not notified but a notification is required!
      */
-    private[this] def updateAndNotifyForRegularP(
-        e:                                   Entity,
-        lb:                                  Property,
-        ub:                                  Property,
-        notifyDependersAboutNonFinalUpdates: Boolean                                   = true,
-        pcrs:                                RefAccumulator[PropertyComputationResult]
-    ): UpdateAndNotifyState = {
+    private[this] def updateAndNotify(        newEPS : SomeEPS    ): Unit = {
         updatesCounter += 1
-        assert(
-            Thread.currentThread() == storeUpdatesProcessor || storeUpdatesProcessor == null,
-            "only to be called by the store updates processing thread"
-        )
-
-        val pk = ub.key
-        val pkId = pk.id
-        val newEPS = EPS[Entity, Property](e, lb, ub)
-        val isFinal = newEPS.isFinal
-        val propertiesOfEntity = ps(pkId)
+        val e = newEPS.e
+        val pkId = newEPS.pk.id
+        val propertiesOfKind = ps(pkId)
 
         // 1. update property
-        val oldEPS = propertiesOfEntity.put(e, newEPS)
+        val oldEOptionP = propertiesOfKind.put(e, newEPS)
 
         // 2. check if update was ok
-        if (oldEPS == null) {
-            handleInitialProperty(e, pkId, isFinal)
-        } else if (debug /*&& oldEPS != null*/ ) {
-            // The entity is known and we have a property value for the respective
-            // kind; i.e., we may have (old) dependees and/or also dependers.
-            val oldLB = oldEPS.lb
-            val oldUB = oldEPS.ub
-            assertNonFinal(e, oldEPS)
-            if (lb.isOrderedProperty) {
-                assertRelation(e, oldLB, lb)
-                assertRelation(e, ub, oldUB)
+        if (oldEOptionP == null || oldEOptionP.isEPK){
+                                    // TODO Check if this works...:
+                                    val computationsToStart = this.triggeredComputations(pkId)
+                                    if (computationsToStart ne null) {
+                                        foreachValue[SomePropertyComputation](computationsToStart) { (_ /*index*/ , pc) ⇒
+                                            scheduleEagerComputationForEntity(e)(pc.asInstanceOf[PropertyComputation[Entity]])
+                                        }
+                                    }
+
+            if (newEPS.isFinal) {
+            oneStepFinalUpdatesCounter += 1
             }
         }
-
+        
         // 3. check if the property is updated and generate the corresponding result
-        handleUpdate(oldEPS, newEPS, isFinal, notifyDependersAboutNonFinalUpdates, pcrs)
+        handleUpdate(oldEOptionP, newEPS)
     }
 
-    private[this] def finalUpdate(
-        e:    Entity,
-        p:    Property,
-        pcrs: RefAccumulator[PropertyComputationResult]
-    ): UpdateAndNotifyState = {
-
-        updateAndNotifyForRegularP(e, p, p, true /*actually irrelevant*/ , pcrs)
+    private[this] def finalUpdate(        finalEP : SomeFinalEP   ): Unit = {
+        updateAndNotify(finalEP )
     }
 
     private[this] def assertNoDependees(e: Entity, pkId: Int): Unit = {
@@ -900,91 +850,42 @@ final class PKEParallelTasksPropertyStore private (
         }
     }
 
-    private[this] def doHandleResult(
-        r:                                  PropertyComputationResult,
-        initialForceDependersNotifications: Set[SomeEPK]
-    ): Unit = {
-
-        // Used to store immediate results, which need to be handled immediately
-        val pcrs: RefAccumulator[PropertyComputationResult] = RefAccumulator(r)
-        var forceDependersNotifications = initialForceDependersNotifications
-
-        def processResult(r: PropertyComputationResult): Unit = {
-            assert(
-                Thread.currentThread() == storeUpdatesProcessor || storeUpdatesProcessor == null,
-                "only to be called by the store updates processing thread"
-            )
+    private[this] def doHandleResult(        r:PropertyComputationResult    ): Unit = {
 
             if (tracer.isDefined)
-                tracer.get.handlingResult(r, forceDependersNotifications)
+                tracer.get.handlingResult(r)
 
             r.id match {
 
-                case NoResult.id ⇒ {
-                    // A computation reported no result; i.e., it is not possible to
-                    // compute a/some property/properties for a given entity.
-                }
-
-                //
-                // Result containers
-                //
-
-                case Results.id ⇒
-                    val Results(furtherResults) = r
-                    pcrs ++= furtherResults
-
-                case IncrementalResult.id ⇒
-                    val IncrementalResult(ir, npcs, propertyComputationsHint) = r
-                    pcrs += ir
-                    if (propertyComputationsHint == CheapPropertyComputation) {
-                        pcrs ++= npcs /*: Iterator[(PropertyComputation[e],e)]*/ map { npc ⇒
-                            val (pc, e) = npc
-                            pc(e)
-                        }
-                    } else {
-                        npcs /*: Iterator[(PropertyComputation[e],e)]*/ foreach { npc ⇒
-                            val (pc, e) = npc
-                            scheduleComputationForEntity(e, pc)
-                        }
-                    }
-
-                //
-                // Methods which actually store results...
-                //
+                // The other types of results are already split up in their
+                // basic parts by `handleResult`
 
                 case Result.id ⇒
-                    val Result(e, p) = r
-                    val pk = p.key
-                    val epk = EPK(e, pk)
-                    clearDependees(epk)
-                    forceDependersNotifications -= epk
-                    finalUpdate(e, p, pcrs = pcrs)
+                    val Result(finalEP) = r
+                    clearDependees(finalEP.toEPK)
+                     finalUpdate(finalEP)
 
                 case MultiResult.id ⇒
                     val MultiResult(results) = r
-                    results foreach { ep ⇒
-                        val epk = ep.toEPK
-                        clearDependees(epk)
-                        forceDependersNotifications -= epk
-                        finalUpdate(ep.e, ep.p, pcrs = pcrs)
+                    results foreach { finalEP ⇒
+                        clearDependees(finalEP.toEPK)
+                        finalUpdate(finalEP)
                     }
 
                 case IdempotentResult.id ⇒
-                    val IdempotentResult(ep @ FinalP(e, p)) = r
+                    val IdempotentResult(finalEP @ FinalEP(e, p)) = r
                     val pkId = p.key.id
-                    val epk = ep.toEPK
-                    val propertiesOfEntity = ps(pkId)
+                    val propertiesOfKind = ps(pkId)
                     assert(!dependees(pkId).containsKey(e))
-                    forceDependersNotifications -= epk
-                    if (!propertiesOfEntity.containsKey(e)) {
-                        finalUpdate(e, p, pcrs)
+                    if (!propertiesOfKind.containsKey(e)) {
+                        finalUpdate(finalEP)
                     } else {
                         /*we already have a value*/
                         redundantIdempotentResultsCounter += 1
                         if (debug) {
-                            val oldEP = propertiesOfEntity.get(e)
-                            if (oldEP != ep) {
-                                throw new IllegalArgumentException(s"$e: unexpected update $oldEP => $ep")
+                            val oldEP = propertiesOfKind.get(e)
+                            if (oldEP != finalEP) {
+                                throw new IllegalArgumentException(s"$e: unexpected update $oldEP => $finalEP")
                             }
                         }
                     }
@@ -1003,10 +904,6 @@ final class PKEParallelTasksPropertyStore private (
                                 s"partial result ($r) for property with dependees (and continuation function)"
                             )
                         }
-                        forceDependersNotifications -= epk
-                        if (newEPS.isInstanceOf[IntermediateESimpleP[E, P]]) // todo if (isPropertyKeyForSimplePropertyBasedOnPKId(pk.id))
-                            updateAndNotifyForSimpleP(newEPS.e, newEPS.ub, isFinal = false, pcrs = pcrs)
-                        else
                             updateAndNotifyForRegularP(newEPS.e, newEPS.lb, newEPS.ub, pcrs = pcrs)
                     } else {
                         if (tracer.isDefined) {
@@ -1114,123 +1011,8 @@ final class PKEParallelTasksPropertyStore private (
                         dependers(dependeePKId).
                             computeIfAbsent(dependeeE, _ ⇒ new JHashMap()).put(epk, updateFunction)
                     }
-
-                case SimplePInterimResult.id ⇒
-                    // TODO Unify handling with InterimResult (avoid code duplication)
-                    val SimplePInterimResult(e, ub, seenDependees, c, onUpdateContinuationHint) = r
-                    val pk = ub.key
-                    val pkId = pk.id
-                    val epk = EPK(e, pk)
-
-                    assertNoDependees(e, pkId)
-
-                    // 1. let's check if a seen dependee is already updated; if so, we directly
-                    //    schedule/execute the continuation function again to continue computing
-                    //    the property
-                    val seenDependeesIterator = seenDependees.toIterator
-                    while (seenDependeesIterator.hasNext) {
-                        val seenDependee = seenDependeesIterator.next()
-
-                        if (debug && seenDependee.isFinal) {
-                            throw new IllegalStateException(
-                                s"$e/$pk: dependency to final property: $seenDependee"
-                            )
-                        }
-
-                        val seenDependeeE = seenDependee.e
-                        val seenDependeePKId = seenDependee.pk.id
-                        val propertiesOfEntity = ps(seenDependeePKId)
-                        // seenDependee is guaranteed to be not null
-                        // currentDependee may be null => newDependee is an EPK => no update
-                        val currentDependee = propertiesOfEntity.get(seenDependeeE)
-                        if (currentDependee != null && seenDependee != currentDependee) {
-                            // Make the current result available for other threads, but
-                            // do not yet trigger dependers; however, we have to ensure
-                            // that the dependers are eventually triggered if any update
-                            // was relevant!
-                            val updateAndNotifyState = updateAndNotifyForSimpleP(
-                                e, ub, false,
-                                notifyDependersAboutNonFinalUpdates = false,
-                                pcrs
-                            )
-                            if (updateAndNotifyState.isNotificationRequired) {
-                                forceDependersNotifications += epk
-                            }
-
-                            if (tracer.isDefined)
-                                tracer.get.immediateDependeeUpdate(
-                                    e, pk, seenDependee, currentDependee, updateAndNotifyState
-                                )
-
-                            if (onUpdateContinuationHint == CheapPropertyComputation) {
-                                directDependeeUpdatesCounter += 1
-                                // we want to avoid potential stack-overflow errors...
-                                pcrs += c(currentDependee)
-                            } else {
-                                scheduledDependeeUpdatesCounter += 1
-                                if (currentDependee.isFinal) {
-                                    val t = ImmediateOnFinalUpdateComputationTask(
-                                        store,
-                                        currentDependee.asFinal,
-                                        previousResult = r,
-                                        forceDependersNotifications,
-                                        c
-                                    )
-                                    appendTask(seenDependees.size, t)
-                                } else {
-                                    val t = ImmediateOnUpdateComputationTask(
-                                        store,
-                                        currentDependee.toEPK,
-                                        previousResult = r,
-                                        forceDependersNotifications,
-                                        c
-                                    )
-                                    appendTask(seenDependees.size, t)
-                                }
-                                // We will postpone the notification to the point where
-                                // the result(s) are handled...
-                                forceDependersNotifications = Set.empty
-                            }
-
-                            return ;
-                        }
-                    }
-
-                    // When we reach this point, all potential dependee updates are taken into account;
-                    // otherwise we would have had an early return
-
-                    // 2.1.  Update the value (trigger dependers/clear old dependees).
-                    if (updateAndNotifyForSimpleP(e, ub, isFinal = false, pcrs = pcrs).areDependersNotified) {
-                        forceDependersNotifications -= epk
-                    }
-
-                    // 2.2.  The most current value of every dependee was taken into account;
-                    //       register with new (!) dependees.
-                    this.dependees(pkId).put(e, seenDependees)
-                    val updateFunction = (c, onUpdateContinuationHint)
-                    seenDependees foreach { dependee ⇒
-                        val dependeeE = dependee.e
-                        val dependeePKId = dependee.pk.id
-                        dependers(dependeePKId).
-                            computeIfAbsent(dependeeE, _ ⇒ new JHashMap()).
-                            put(epk, updateFunction)
-                    }
             }
-        }
-
-        do {
-            while (pcrs.nonEmpty) {
-                processResult(pcrs.pop())
-            }
-            if (forceDependersNotifications.nonEmpty) {
-                val epk = forceDependersNotifications.head
-                forceDependersNotifications = forceDependersNotifications.tail
-                val eps = ps(epk.pk.id).get(epk.e)
-                if (tracer.isDefined) tracer.get.delayedNotification(eps)
-
-                notifyDependers(eps, pcrs)
-            }
-        } while (forceDependersNotifications.nonEmpty || pcrs.nonEmpty)
+        
     }
 
     override def waitOnPhaseCompletion(): Unit = handleExceptions {
@@ -1412,14 +1194,17 @@ object PKEParallelTasksPropertyStore extends ParallelPropertyStoreFactory {
 
 private[par] sealed trait StoreUpdate
 
-private[par] case class NewProperty(
-        pcr:                         PropertyComputationResult,
-        forceDependersNotifications: Set[SomeEPK]              = Set.empty
+private[par] case class NewProperty(       val pcr:                         PropertyComputationResult) extends StoreUpdate
+
+private[par] case class NewDependees(
+    val dependees: Traversable[SomeEOptionP],
+    val c:         OnUpdateContinuation
+
 ) extends StoreUpdate
 
 private[par] case class TriggeredLazyComputation[E <: Entity](
-        e:                E,
-        pkId:             Int,
-        pc:               PropertyComputation[E]
+        val e:                E,
+        val pkId:             Int,
+        val pc:               PropertyComputation[E]
 ) extends StoreUpdate
 
