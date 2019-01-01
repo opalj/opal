@@ -1,15 +1,17 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.string_definition.properties
 
+import org.opalj.fpcf.properties.StringConstancyProperty
+
 /**
  * @param possibleStrings Only relevant for some [[StringConstancyType]]s, i.e., sometimes this
  *                        parameter can be omitted.
  * @author Patrick Mell
  */
 case class StringConstancyInformation(
-        constancyLevel:  StringConstancyLevel.Value = StringConstancyLevel.DYNAMIC,
-        constancyType:   StringConstancyType.Value  = StringConstancyType.APPEND,
-        possibleStrings: String                     = ""
+    constancyLevel:  StringConstancyLevel.Value = StringConstancyLevel.DYNAMIC,
+    constancyType:   StringConstancyType.Value  = StringConstancyType.APPEND,
+    possibleStrings: String                     = ""
 )
 
 /**
@@ -51,6 +53,10 @@ object StringConstancyInformation {
      */
     def reduceMultiple(scis: List[StringConstancyInformation]): StringConstancyInformation = {
         scis.length match {
+            // The list may be empty, e.g., if the UVar passed to the analysis, refers to a
+            // VirtualFunctionCall (they are not interpreted => an empty list is returned) => return
+            // the corresponding information
+            case 0 ⇒ StringConstancyProperty.lowerBound.stringConstancyInformation
             case 1 ⇒ scis.head
             case _ ⇒ // Reduce
                 val reduced = scis.reduceLeft((o, n) ⇒ StringConstancyInformation(
