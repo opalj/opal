@@ -3,6 +3,7 @@ package org.opalj.fpcf.analyses.string_definition.interpretation
 
 import org.opalj.br.cfg.CFG
 import org.opalj.fpcf.analyses.string_definition.V
+import org.opalj.fpcf.properties.StringConstancyProperty
 import org.opalj.fpcf.string_definition.properties.StringConstancyInformation
 import org.opalj.fpcf.string_definition.properties.StringConstancyLevel
 import org.opalj.fpcf.string_definition.properties.StringConstancyType
@@ -51,7 +52,10 @@ class InterpretationHandler(cfg: CFG[Stmt[V], TACStmts[V]]) {
      *         empty list will be returned.
      */
     def processDefSite(defSite: Int): List[StringConstancyInformation] = {
-        if (defSite < 0 || processedDefSites.contains(defSite)) {
+        // Function parameters are not evaluated but regarded as unknown
+        if (defSite < 0) {
+            return List(StringConstancyProperty.lowerBound.stringConstancyInformation)
+        } else if (processedDefSites.contains(defSite)) {
             return List()
         }
         processedDefSites.append(defSite)
@@ -177,7 +181,7 @@ object InterpretationHandler {
         }
 
         val defSites = ListBuffer[Int]()
-        val stack = mutable.Stack[Int](toString.receiver.asVar.definedBy.toArray: _*)
+        val stack = mutable.Stack[Int](toString.receiver.asVar.definedBy.filter(_ >= 0).toArray: _*)
         while (stack.nonEmpty) {
             val next = stack.pop()
             stmts(next) match {
@@ -186,7 +190,7 @@ object InterpretationHandler {
                         case _: New ⇒
                             defSites.append(next)
                         case vfc: VirtualFunctionCall[V] ⇒
-                            stack.pushAll(vfc.receiver.asVar.definedBy.toArray)
+                            stack.pushAll(vfc.receiver.asVar.definedBy.filter(_ >= 0).toArray)
                     }
                 case _ ⇒
             }
@@ -210,7 +214,7 @@ object InterpretationHandler {
             stmts(ds) match {
                 // E.g., a call to `toString` or `append`
                 case Assignment(_, _, vfc: VirtualFunctionCall[V]) ⇒
-                    vfc.receiver.asVar.definedBy.foreach { innerDs ⇒
+                    vfc.receiver.asVar.definedBy.filter(_ >= 0).foreach { innerDs ⇒
                         stmts(innerDs) match {
                             case Assignment(_, _, expr: New) ⇒
                                 news.append(expr)
