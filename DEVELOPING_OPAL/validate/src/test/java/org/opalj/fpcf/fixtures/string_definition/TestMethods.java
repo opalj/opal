@@ -822,6 +822,35 @@ public class TestMethods {
         analyzeString(sbRun.toString());
     }
 
+    @StringDefinitionsCollection(
+            value = "examples that use a passed parameter to define strings that are analyzed",
+            stringDefinitions = {
+                    @StringDefinitions(
+                            expectedLevel = DYNAMIC, expectedStrings = "\\w"
+                    ),
+                    @StringDefinitions(
+                            expectedLevel = DYNAMIC, expectedStrings = "\\w"
+                    ),
+                    @StringDefinitions(
+                            expectedLevel = PARTIALLY_CONSTANT, expectedStrings = "value=\\w"
+                    ),
+                    @StringDefinitions(
+                            expectedLevel = PARTIALLY_CONSTANT, expectedStrings = "value=\\w\\w"
+                    )
+            })
+    public void parameterRead(String stringValue, StringBuilder sbValue) {
+        analyzeString(stringValue);
+        analyzeString(sbValue.toString());
+
+        StringBuilder sb = new StringBuilder("value=");
+        System.out.println(sb.toString());
+        sb.append(stringValue);
+        analyzeString(sb.toString());
+
+        sb.append(sbValue.toString());
+        analyzeString(sb.toString());
+    }
+
     //    @StringDefinitions(
     //            value = "a case with a switch with missing breaks",
     //            expectedLevel = StringConstancyLevel.CONSTANT},
