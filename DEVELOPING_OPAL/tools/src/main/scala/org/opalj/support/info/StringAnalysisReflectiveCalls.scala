@@ -78,8 +78,9 @@ object StringAnalysisReflectiveCalls extends DefaultOneStepAnalysis {
     private def isRelevantMethod(
         declaringClass: ReferenceType, methodName: String, methodDescriptor: MethodDescriptor
     ): Boolean =
-        relevantMethodNames.contains(methodName) && (declaringClass.toJava == "java.lang.Class" ||
-            methodDescriptor.returnType.toJava.contains("java.lang.reflect."))
+        relevantMethodNames.contains(methodName) && (declaringClass.toJava == "java.lang.Class" &&
+            (methodDescriptor.returnType.toJava.contains("java.lang.reflect.") ||
+                methodDescriptor.returnType.toJava.contains("java.lang.Class")))
 
     /**
      * Helper function that checks whether an array of [[Instruction]]s contains at least one
@@ -109,7 +110,7 @@ object StringAnalysisReflectiveCalls extends DefaultOneStepAnalysis {
     ): Unit = {
         if (isRelevantMethod(call.declaringClass, call.name, call.descriptor)) {
             val duvar = call.params.head.asVar
-            ps((List(duvar), method), StringConstancyProperty.key) match {
+            ps((duvar, method), StringConstancyProperty.key) match {
                 case FinalEP(_, prop) ⇒
                     resultMap(call.name).append(prop.stringConstancyInformation)
                 case _ ⇒
