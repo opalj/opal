@@ -207,6 +207,10 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
                 // We can't report any real result as long as we don't know that the fields are all
                 // effectively final and the types are immutable.
 
+                case _: InterimEP[_, _] ⇒
+                    dependees += eps
+                    InterimResult(definedMethod, ImpureByAnalysis, Pure, dependees, c)
+
                 case FinalP(_: FinalField | ImmutableType) ⇒
                     if (dependees.isEmpty) {
                         Result(definedMethod, Pure)
@@ -229,10 +233,6 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
                     else {
                         InterimResult(definedMethod, ImpureByAnalysis, Pure, dependees, c)
                     }
-
-                case _: InterimEP[_, _] ⇒
-                    dependees += eps
-                    InterimResult(definedMethod, ImpureByAnalysis, Pure, dependees, c)
 
                 case FinalP(_: Purity) ⇒
                     // a called method is impure...
