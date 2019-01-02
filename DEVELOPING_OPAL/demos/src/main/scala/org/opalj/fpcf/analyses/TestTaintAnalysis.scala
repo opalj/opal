@@ -401,7 +401,7 @@ object TestTaintAnalysisRunner {
             val manager = p.get(FPCFAnalysesManagerKey)
             val (_, analyses) =
                 manager.runAll(LazyL0BaseAIAnalysis, TACAITransformer, TestTaintAnalysis)
-            val entryPoints = analyses.collect { case a: TestTaintAnalysis ⇒ a.entryPoints }.head
+            val entryPoints = analyses.collect { case (_, a: TestTaintAnalysis) ⇒ a.entryPoints }.head
             for {
                 e ← entryPoints
                 flows = ps(e, TestTaintAnalysis.property.key)

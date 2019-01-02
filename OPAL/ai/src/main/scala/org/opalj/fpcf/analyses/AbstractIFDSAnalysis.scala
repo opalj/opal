@@ -671,6 +671,8 @@ abstract class IFDSAnalysis[DataFlowFact] extends FPCFLazyAnalysisScheduler {
 
     override val uses: Set[PropertyBounds] = Set(PropertyBounds.finalP(TACAI))
 
+    override def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
+
     /**
      * Registers the analysis as a lazy computation, that is, the method
      * will call `ProperytStore.scheduleLazyComputation`.
@@ -689,7 +691,7 @@ abstract class IFDSAnalysis[DataFlowFact] extends FPCFLazyAnalysisScheduler {
         analysis
     }
 
-    override def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
+    override def afterPhaseScheduling(ps: PropertyStore, analysis: FPCFAnalysis): Unit = {}
 
     override def afterPhaseCompletion(
         p:        SomeProject,

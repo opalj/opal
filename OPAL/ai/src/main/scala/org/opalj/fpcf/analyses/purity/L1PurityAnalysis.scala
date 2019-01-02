@@ -421,6 +421,8 @@ trait L1PurityAnalysisScheduler extends FPCFAnalysisScheduler {
 
     override def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
 
+    override def afterPhaseScheduling(ps: PropertyStore, analysis: FPCFAnalysis): Unit = {}
+
     override def afterPhaseCompletion(
         p:        SomeProject,
         ps:       PropertyStore,

@@ -3,11 +3,11 @@ package org.opalj
 package fpcf
 
 import com.typesafe.config.Config
-
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.debug
 import org.opalj.util.PerformanceEvaluation._
 import org.opalj.br.analyses.SomeProject
+import org.opalj.collection.immutable.Chain
 
 /**
  * Enables the execution of a set of analyses.
@@ -34,13 +34,14 @@ class FPCFAnalysesManager private[fpcf] (val project: SomeProject) {
 
     final def runAll(
         analyses: ComputationSpecification[FPCFAnalysis]*
-    ): (PropertyStore, List[FPCFAnalysis]) = {
+    ): (PropertyStore, List[(ComputationSpecification[FPCFAnalysis], FPCFAnalysis)]) = {
         runAll(analyses.toIterable)
     }
 
     final def runAll(
-        analyses: Iterable[ComputationSpecification[FPCFAnalysis]]
-    ): (PropertyStore, List[FPCFAnalysis]) = this.synchronized {
+        analyses:             Iterable[ComputationSpecification[FPCFAnalysis]],
+        afterPhaseScheduling: Chain[ComputationSpecification[FPCFAnalysis]] ⇒ Unit = _ ⇒ ()
+    ): (PropertyStore, List[(ComputationSpecification[FPCFAnalysis], FPCFAnalysis)]) = this.synchronized {
 
         val scenario = AnalysisScenario(analyses)
 
@@ -49,7 +50,7 @@ class FPCFAnalysesManager private[fpcf] (val project: SomeProject) {
 
         if (trace) { debug("analysis progress", "executing "+schedule) }
         val as = time {
-            schedule(propertyStore, trace)
+            schedule(propertyStore, trace, afterPhaseScheduling = afterPhaseScheduling)
         } { t ⇒
             if (trace) {
                 debug("analysis progress", s"execution of schedule took ${t.toSeconds}")

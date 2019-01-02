@@ -203,12 +203,6 @@ object TriggeredCHACallGraphAnalysisScheduler extends FPCFTriggeredAnalysisSched
         PropertyBounds.ub(CallersProperty)
     )
 
-    override def register(p: SomeProject, ps: PropertyStore, unused: Null): CHACallGraphAnalysis = {
-        val analysis = new CHACallGraphAnalysis(p)
-        ps.registerTriggeredComputation(CallersProperty.key, analysis.analyze)
-        analysis
-    }
-
     /**
      * Updates the caller properties of the initial entry points ([[InitialEntryPointsKey]]) to be
      * called from an unknown context.
@@ -238,6 +232,14 @@ object TriggeredCHACallGraphAnalysisScheduler extends FPCFTriggeredAnalysisSched
     }
 
     override def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
+
+    override def register(p: SomeProject, ps: PropertyStore, unused: Null): CHACallGraphAnalysis = {
+        val analysis = new CHACallGraphAnalysis(p)
+        ps.registerTriggeredComputation(CallersProperty.key, analysis.analyze)
+        analysis
+    }
+
+    override def afterPhaseScheduling(ps: PropertyStore, analysis: FPCFAnalysis): Unit = {}
 
     override def afterPhaseCompletion(
         p:        SomeProject,

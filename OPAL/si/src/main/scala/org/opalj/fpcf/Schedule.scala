@@ -18,12 +18,12 @@ import org.opalj.util.PerformanceEvaluation.time
  */
 case class Schedule[A](
         batches: Chain[BatchConfiguration[A]]
-) extends ((PropertyStore, Boolean, PhaseConfiguration ⇒ Unit, Chain[ComputationSpecification[A]] ⇒ Unit) ⇒ List[A]) {
+) extends ((PropertyStore, Boolean, PhaseConfiguration ⇒ Unit, Chain[ComputationSpecification[A]] ⇒ Unit) ⇒ List[(ComputationSpecification[A], A)]) {
 
     /**
      * Schedules the computation specifications; that is, executes the underlying analysis scenario.
      *
-     * @param ps The property store which should be used to execute the analyses.
+     * @param ps              The property store which should be used to execute the analyses.
      * @param afterPhaseSetup Called back after the phase with the given configuration was set up.
      * @param afterPhaseScheduling Called back after all analyses of a specific phase have been
      *        schedule (i.e., before calling waitOnPhaseCompletion).
@@ -33,10 +33,10 @@ case class Schedule[A](
         trace:                Boolean                                   = false,
         afterPhaseSetup:      PhaseConfiguration ⇒ Unit = _ ⇒ (),
         afterPhaseScheduling: Chain[ComputationSpecification[A]] ⇒ Unit = _ ⇒ ()
-    ): List[A] = {
+    ): List[(ComputationSpecification[A], A)] = {
         implicit val logContext: LogContext = ps.logContext
 
-        var executedAnalyses: List[(ComputationSpecification[A], A)] = Nil
+        var allExecutedAnalyses: List[(ComputationSpecification[A], A)] = Nil
 
         val initInfo =
             batches.flatMap {
@@ -54,11 +54,18 @@ case class Schedule[A](
                 afterPhaseSetup(configuration)
                 assert(ps.isIdle, "the property store is not idle after phase setup")
 
+                var executedAnalyses: List[(ComputationSpecification[A], A)] = Nil
+
                 css.foreach(cs ⇒ cs.beforeSchedule(ps))
                 css.foreach { cs ⇒
                     val a = cs.schedule(ps, initInfo(cs).asInstanceOf[cs.InitializationData])
                     executedAnalyses ::= ((cs, a))
                 }
+                executedAnalyses.foreach { csAnalysis ⇒
+                    val (cs, a) = csAnalysis
+                    cs.afterPhaseScheduling(ps, a)
+                }
+
                 afterPhaseScheduling(css)
 
                 ps.waitOnPhaseCompletion()
@@ -69,6 +76,7 @@ case class Schedule[A](
                     cs.afterPhaseCompletion(ps, a)
                 }
                 assert(ps.isIdle, "the property store is not idle after phase completion")
+                allExecutedAnalyses :::= executedAnalyses.reverse
             } { t ⇒
                 if (trace)
                     info(
@@ -80,7 +88,7 @@ case class Schedule[A](
         // ... we are done now; the computed properties will no longer be computed!
         ps.setupPhase(Set.empty, Set.empty)
 
-        executedAnalyses.map(_._2).reverse
+        allExecutedAnalyses
     }
 
     override def toString: String = {
