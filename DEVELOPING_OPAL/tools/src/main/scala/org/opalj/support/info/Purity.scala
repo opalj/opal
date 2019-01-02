@@ -24,6 +24,7 @@ import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.Project.JavaClassFileReader
 import org.opalj.bytecode.JRELibraryFolder
 import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.collection.immutable.Chain
 import org.opalj.fpcf.ComputationSpecification
 import org.opalj.fpcf.FPCFAnalysesManagerKey
 import org.opalj.fpcf.FPCFAnalysis
@@ -268,9 +269,14 @@ object Purity {
         time {
             val analyses = analysis :: support
 
-            analyzedMethods.foreach { dm ⇒ ps.force(dm, fpcf.properties.Purity.key) }
-
-            manager.runAll(analyses)
+            manager.runAll(
+                analyses,
+                { css: Chain[ComputationSpecification[FPCFAnalysis]] ⇒
+                    if (css.contains(analysis)) {
+                        analyzedMethods.foreach { dm ⇒ ps.force(dm, fpcf.properties.Purity.key) }
+                    }
+                }
+            )
 
         } { t ⇒ analysisTime = t.toSeconds }
         ps.shutdown()
