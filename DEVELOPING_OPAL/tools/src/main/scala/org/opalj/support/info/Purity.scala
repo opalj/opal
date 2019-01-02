@@ -76,7 +76,6 @@ import org.opalj.fpcf.properties.ImpureByAnalysis
 import org.opalj.fpcf.properties.ImpureByLackOfInformation
 import org.opalj.fpcf.properties.Pure
 import org.opalj.fpcf.properties.SideEffectFree
-import org.opalj.tac.DefaultTACAIKey
 import org.opalj.tac.fpcf.analyses.TACAITransformer
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
@@ -117,6 +116,8 @@ object Purity {
         TriggeredInstantiatedTypesAnalysis,
         TriggeredConfiguredNativeMethodsAnalysis,
         TriggeredSystemPropertiesAnalysis,
+        LazyL0BaseAIAnalysis,
+        TACAITransformer,
         LazyCalleesAnalysis(
             Set(StandardInvokeCallees, SerializationRelatedCallees, ReflectionRelatedCallees)
         )
@@ -154,7 +155,6 @@ object Purity {
         withoutJDK:            Boolean,
         individual:            Boolean,
         closedWorldAssumption: Boolean,
-        eagerTAC:              Boolean,
         debug:                 Boolean,
         evaluationDir:         Option[File]
     ): Unit = {
@@ -178,7 +178,6 @@ object Purity {
         val isLibrary = cp eq JRELibraryFolder // TODO make configurable
 
         var projectTime: Seconds = Seconds.None
-        var tacTime: Seconds = Seconds.None
         var propertyStoreTime: Seconds = Seconds.None
         var analysisTime: Seconds = Seconds.None
         var callGraphTime: Seconds = Seconds.None
@@ -228,13 +227,6 @@ object Purity {
             }): Set[Class[_ <: AnyRef]]
         )
 
-        if (eagerTAC) {
-            time {
-                val tacai = project.get(DefaultTACAIKey)
-                project.parForeachMethodWithBody() { mi ⇒ tacai(mi.method) }
-            } { t ⇒ tacTime = t.toSeconds }
-        }
-
         PropertyStore.updateDebug(debug)
         val ps = time { project.get(PropertyStoreKey) } { t ⇒ propertyStoreTime = t.toSeconds }
 
@@ -256,13 +248,13 @@ object Purity {
             for (cf ← project.allProjectClassFiles; m ← cf.methodsWithBody)
                 yield declaredMethods(m)
 
-        time {
-            val manager = project.get(FPCFAnalysesManagerKey)
+        val manager = project.get(FPCFAnalysesManagerKey)
 
+        time {
             if (isLibrary) {
-                manager.runAll(cgAnalyses + EagerLibraryEntryPointsAnalysis + LazyL0BaseAIAnalysis + TACAITransformer)
+                manager.runAll(cgAnalyses + EagerLibraryEntryPointsAnalysis)
             } else {
-                manager.runAll(cgAnalyses + LazyL0BaseAIAnalysis + TACAITransformer)
+                manager.runAll(cgAnalyses)
             }
         } { t ⇒ callGraphTime = t.toSeconds }
 
@@ -276,11 +268,7 @@ object Purity {
         time {
             val analyses = analysis :: support
 
-            val manager = project.get(FPCFAnalysesManagerKey)
-
-            analyzedMethods.foreach { dm ⇒
-                ps.force(dm, fpcf.properties.Purity.key)
-            }
+            analyzedMethods.foreach { dm ⇒ ps.force(dm, fpcf.properties.Purity.key) }
 
             manager.runAll(analyses)
 
@@ -296,7 +284,7 @@ object Purity {
                     runtime.createNewFile()
                     runtimeWriter.println("project;tac;propertyStore;callGraph;analysis")
                 }
-                runtimeWriter.println(s"$projectTime;$tacTime;$propertyStoreTime;$callGraphTime;$analysisTime")
+                runtimeWriter.println(s"$projectTime;$propertyStoreTime;$callGraphTime;$analysisTime")
             } finally {
                 if (runtimeWriter != null) runtimeWriter.close()
             }
@@ -438,7 +426,6 @@ object Purity {
         var withoutJDK = false
         var individual = false
         var cwa = false
-        var eagerTAC = false
         var debug = false
         var multiProjects = false
         var evaluationDir: Option[File] = None
@@ -466,7 +453,6 @@ object Purity {
                 case "-rater"       ⇒ raterName = Some(readNextArg())
                 case "-individual"  ⇒ individual = true
                 case "-closedWorld" ⇒ cwa = true
-                case "-eagerTAC"    ⇒ eagerTAC = true
                 case "-debug"       ⇒ debug = true
                 case "-multi"       ⇒ multiProjects = true
                 case "-eval"        ⇒ evaluationDir = Some(new File(readNextArg()))
@@ -533,7 +519,6 @@ object Purity {
                         withoutJDK,
                         individual,
                         cwa,
-                        eagerTAC,
                         debug,
                         evaluationDir
                     )
@@ -549,7 +534,6 @@ object Purity {
                     withoutJDK,
                     individual,
                     cwa,
-                    eagerTAC,
                     debug,
                     evaluationDir
                 )
