@@ -922,28 +922,31 @@ class Project[Source] private (
             }
         }
 
-        val mid = binarySearch(0, data.length - 1)
-        var index = mid
-
-        // In case we found a method but it is not `method.isPackagePrivate` == `isPackagePrivate`,
-        // there could be another method with the same name and descriptor next to that one
-        // (i.e. left or right).
+        val candidateIndex = binarySearch(0, data.length - 1)
+        // In case we found a method, but it is not `method.isPackagePrivate` == `isPackagePrivate`,
+        // it is possible that there is another method with the same name and descriptor next
+        // to that one (i.e. left or right).
         // Therefore, we also check if there exists such a method, with indices lower/higher to
         // the found one.
-        index != -1 && {
+        candidateIndex != -1 && {
+            var index = candidateIndex
+            var method: Method = null
             // check the methods with a smaller (or equal) index
-            while (index >= 0 && data(index).method.compare(name, descriptor) == 0) {
-                if (data(index).method.isPackagePrivate == isPackagePrivate)
+            while (index >= 0
+                && { method = data(index).method; method.compare(name, descriptor) == 0 }) {
+                if (method.isPackagePrivate == isPackagePrivate)
                     return true;
                 index -= 1
             }
 
-            index = mid + 1 // reset the index
+            index = candidateIndex + 1 // reset the index
 
-            // check the methods with a bigger index
-            while (index < data.length && data(index).method.compare(name, descriptor) == 0) {
-                if (data(index).method.isPackagePrivate == isPackagePrivate)
+            // check the methods with a higher index
+            while (index < data.length
+                && { method = data(index).method; method.compare(name, descriptor) == 0 }) {
+                if (method.isPackagePrivate == isPackagePrivate)
                     return true;
+
                 index += 1
             }
 
