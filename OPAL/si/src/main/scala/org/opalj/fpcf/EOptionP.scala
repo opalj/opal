@@ -645,6 +645,21 @@ object InterimEUBP {
 }
 
 /**
+ * Factory and extractor for `InterimEUBP` objects. The extractor also matches `InterimELUBP`
+ * objects, but will throw an exception for `InterimELBP` objects. If you want to match
+ * final and interim objects at the same time use the `E(LB|UB)PS` extractors.
+ */
+object InterimEUB {
+
+    def unapply[E <: Entity](eps: InterimEP[E, _]): Some[E] = {
+        if (!eps.hasUBP)
+            throw new IllegalArgumentException(s"$eps does not define an upper bound property");
+
+        Some(eps.e)
+    }
+}
+
+/**
  * Defines an extractor that matches EPKs and Interim properties where the latter only defines an
  * upper bound, but does not define a lower bound.
  *
