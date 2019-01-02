@@ -4,7 +4,6 @@ package br
 package analyses
 
 import scala.annotation.switch
-
 import java.io.File
 import java.lang.ref.SoftReference
 import java.net.URL
@@ -21,11 +20,9 @@ import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.ArrayStack
 import scala.collection.mutable.Buffer
 import scala.collection.mutable.OpenHashMap
-
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import net.ceedubs.ficus.Ficus._
-
 import org.opalj.log.Error
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
@@ -52,6 +49,8 @@ import org.opalj.br.instructions.NEW
 import org.opalj.br.reader.BytecodeInstructionsCache
 import org.opalj.br.reader.Java9FrameworkWithInvokedynamicSupportAndCaching
 import org.opalj.br.reader.Java9LibraryFramework
+
+import scala.annotation.tailrec
 
 /**
  * Primary abstraction of a Java project; i.e., a set of classes that constitute a
@@ -886,6 +885,72 @@ class Project[Source] private (
     }
 
     /**
+     * Returns all available `ClassFile` objects for the given `objectTypes` that
+     * pass the given `filter`. `ObjectType`s for which no `ClassFile` is available
+     * are ignored.
+     */
+    def lookupClassFiles(
+        objectTypes: Traversable[ObjectType]
+    )(
+        classFileFilter: ClassFile ⇒ Boolean
+    ): Traversable[ClassFile] = {
+        objectTypes.view.flatMap(classFile(_)) filter (classFileFilter)
+    }
+
+    def hasInstanceMethod(
+        receiverType:     ObjectType,
+        name:             String,
+        descriptor:       MethodDescriptor,
+        isPackagePrivate: Boolean
+    ): Boolean = {
+        val data = instanceMethods(receiverType)
+
+        @tailrec @inline def binarySearch(low: Int, high: Int): Int = {
+            if (high < low)
+                return -1;
+
+            val mid = (low + high) / 2 // <= will never overflow...(by constraint...)
+            val e = data(mid)
+            val eComparison = e.method.compare(name, descriptor)
+            if (eComparison == 0) {
+                mid
+            } else if (eComparison < 0) {
+                binarySearch(mid + 1, high)
+            } else {
+                binarySearch(low, mid - 1)
+            }
+        }
+
+        val mid = binarySearch(0, data.length - 1)
+        var index = mid
+
+        // In case we found a method but it is not `method.isPackagePrivate` == `isPackagePrivate`,
+        // there could be another method with the same name and descriptor next to that one
+        // (i.e. left or right).
+        // Therefore, we also check if there exists such a method, with indices lower/higher to
+        // the found one.
+        index != -1 && {
+            // check the methods with a smaller (or equal) index
+            while (index >= 0 && data(index).method.compare(name, descriptor) == 0) {
+                if (data(index).method.isPackagePrivate == isPackagePrivate)
+                    return true;
+                index -= 1
+            }
+
+            index = mid + 1 // reset the index
+
+            // check the methods with a bigger index
+            while (index < data.length && data(index).method.compare(name, descriptor) == 0) {
+                if (data(index).method.isPackagePrivate == isPackagePrivate)
+                    return true;
+                index += 1
+            }
+
+            false
+        }
+    }
+
+    /**
      * Converts this project abstraction into a standard Java `HashMap`.
      *
      * @note This method is intended to be used by Java projects that want to interact with OPAL.
@@ -965,19 +1030,6 @@ class Project[Source] private (
             result += ((membersCount, (count + 1, typeNames + typeName)))
         }
         result
-    }
-
-    /**
-     * Returns all available `ClassFile` objects for the given `objectTypes` that
-     * pass the given `filter`. `ObjectType`s for which no `ClassFile` is available
-     * are ignored.
-     */
-    def lookupClassFiles(
-        objectTypes: Traversable[ObjectType]
-    )(
-        classFileFilter: ClassFile ⇒ Boolean
-    ): Traversable[ClassFile] = {
-        objectTypes.view.flatMap(classFile(_)) filter (classFileFilter)
     }
 
     override def toString: String = {
@@ -1717,9 +1769,9 @@ object Project {
             project.libraryClassFilesAreInterfacesOnly,
             virtualClassFiles = Traversable.empty
         )(
-                if (useOldConfigAsFallback) config.withFallback(project.config) else config,
-                projectLogger = OPALLogger.logger(project.logContext.successor)
-            )
+            if (useOldConfigAsFallback) config.withFallback(project.config) else config,
+            projectLogger = OPALLogger.logger(project.logContext.successor)
+        )
     }
 
     /**

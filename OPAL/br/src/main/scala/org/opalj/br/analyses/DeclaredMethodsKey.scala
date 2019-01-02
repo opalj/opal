@@ -268,11 +268,7 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
                     method.name,
                     method.descriptor
                 )
-            else if (project.instanceMethods(objectType).exists { m ⇒
-                method.name == m.name &&
-                    method.descriptor == m.descriptor &&
-                    m.method.isPackagePrivate
-            })
+            else if (project.hasInstanceMethod(objectType, method.name, method.descriptor, true))
                 new ShadowsPackagePrivateMethodContext(method.name, method.descriptor)
             else
                 new MethodContext(method.name, method.descriptor)
