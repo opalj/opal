@@ -255,8 +255,9 @@ final class PKESequentialPropertyStore private (
                                     // This will happen only once, because afterwards an EPK
                                     // will be stored in the properties data structure and
                                     // then returned.
-                                    val c: OnUpdateContinuation = {
-                                        case FinalP(p) ⇒ Result(transform(e, p))
+                                    val c: OnUpdateContinuation = (eps) ⇒ {
+                                        val FinalP(p) = eps
+                                        Result(transform(e, p))
                                     }
                                     dependers(sourcePK.id)
                                         .getOrElseUpdate(e, AnyRefMap.empty)
