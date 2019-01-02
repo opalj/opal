@@ -46,7 +46,12 @@ trait FPCFEagerAnalysisScheduler extends FPCFAnalysisScheduler {
 // TODO Rename => Simple...
 trait BasicFPCFEagerAnalysisScheduler extends FPCFEagerAnalysisScheduler {
     override type InitializationData = Null
-    def init(p: SomeProject, ps: PropertyStore): Null = null
-    def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
-    def afterPhaseCompletion(p: SomeProject, ps: PropertyStore): Unit = {}
+    override def init(p: SomeProject, ps: PropertyStore): Null = null
+    override def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
+
+    override def afterPhaseCompletion(
+        p:        SomeProject,
+        ps:       PropertyStore,
+        analysis: FPCFAnalysis
+    ): Unit = {}
 }

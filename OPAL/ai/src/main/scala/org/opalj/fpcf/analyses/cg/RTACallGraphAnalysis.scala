@@ -671,5 +671,9 @@ object RTACallGraphAnalysisScheduler extends FPCFTriggeredAnalysisScheduler {
         analysis
     }
 
-    override def afterPhaseCompletion(p: SomeProject, ps: PropertyStore): Unit = {}
+    override def afterPhaseCompletion(
+        p:        SomeProject,
+        ps:       PropertyStore,
+        analysis: FPCFAnalysis
+    ): Unit = {}
 }

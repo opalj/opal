@@ -36,7 +36,7 @@ case class Schedule[A](
     ): List[A] = {
         implicit val logContext: LogContext = ps.logContext
 
-        var executedAnalyses: List[A] = Nil
+        var executedAnalyses: List[(ComputationSpecification[A], A)] = Nil
 
         val initInfo =
             batches.flatMap {
@@ -56,15 +56,18 @@ case class Schedule[A](
 
                 css.foreach(cs ⇒ cs.beforeSchedule(ps))
                 css.foreach { cs ⇒
-                    val as = cs.schedule(ps, initInfo(cs).asInstanceOf[cs.InitializationData])
-                    executedAnalyses ::= as
+                    val a = cs.schedule(ps, initInfo(cs).asInstanceOf[cs.InitializationData])
+                    executedAnalyses ::= ((cs, a))
                 }
                 afterPhaseScheduling(css)
 
                 ps.waitOnPhaseCompletion()
                 assert(ps.isIdle, "the property store is not idle after phase completion")
 
-                css.foreach(cs ⇒ cs.afterPhaseCompletion(ps))
+                executedAnalyses.foreach { csAnalysis ⇒
+                    val (cs, a) = csAnalysis
+                    cs.afterPhaseCompletion(ps, a)
+                }
                 assert(ps.isIdle, "the property store is not idle after phase completion")
             } { t ⇒
                 if (trace)
@@ -77,7 +80,7 @@ case class Schedule[A](
         // ... we are done now; the computed properties will no longer be computed!
         ps.setupPhase(Set.empty, Set.empty)
 
-        executedAnalyses.reverse
+        executedAnalyses.map(_._2).reverse
     }
 
     override def toString: String = {

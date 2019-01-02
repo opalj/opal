@@ -447,13 +447,17 @@ trait ClassImmutabilityAnalysisScheduler extends FPCFAnalysisScheduler {
         cfs
     }
 
-    def init(p: SomeProject, ps: PropertyStore): InitializationData = {
+    override def init(p: SomeProject, ps: PropertyStore): InitializationData = {
         setResultsAndComputeEntities(p, ps)
     }
 
-    def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
+    override def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
 
-    def afterPhaseCompletion(p: SomeProject, ps: PropertyStore): Unit = {}
+    override def afterPhaseCompletion(
+        p:        SomeProject,
+        ps:       PropertyStore,
+        analysis: FPCFAnalysis
+    ): Unit = {}
 }
 
 /**

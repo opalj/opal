@@ -402,7 +402,7 @@ object L1PurityAnalysis {
     }
 }
 
-trait L1PurityAnalysisScheduler extends ComputationSpecification[FPCFAnalysis] {
+trait L1PurityAnalysisScheduler extends FPCFAnalysisScheduler {
 
     final def derivedProperty: PropertyBounds = PropertyBounds.lub(Purity)
 
@@ -419,9 +419,13 @@ trait L1PurityAnalysisScheduler extends ComputationSpecification[FPCFAnalysis] {
     final override type InitializationData = L1PurityAnalysis
     final def init(p: SomeProject, ps: PropertyStore): InitializationData = new L1PurityAnalysis(p)
 
-    def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
+    override def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
 
-    def afterPhaseCompletion(p: SomeProject, ps: PropertyStore): Unit = {}
+    override def afterPhaseCompletion(
+        p:        SomeProject,
+        ps:       PropertyStore,
+        analysis: FPCFAnalysis
+    ): Unit = {}
 
 }
 
