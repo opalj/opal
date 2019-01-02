@@ -117,7 +117,7 @@ object Purity {
         TriggeredInstantiatedTypesAnalysis,
         TriggeredConfiguredNativeMethodsAnalysis,
         TriggeredSystemPropertiesAnalysis,
-        new LazyCalleesAnalysis(
+        LazyCalleesAnalysis(
             Set(StandardInvokeCallees, SerializationRelatedCallees, ReflectionRelatedCallees)
         )
     )
