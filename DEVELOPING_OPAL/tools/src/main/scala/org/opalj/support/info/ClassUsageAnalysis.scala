@@ -8,6 +8,8 @@ import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ReportableAnalysisResult
 import org.opalj.fpcf.analyses.string_definition.V
+import org.opalj.log.GlobalLogContext
+import org.opalj.log.OPALLogger
 import org.opalj.tac.Assignment
 import org.opalj.tac.Call
 import org.opalj.tac.ExprStmt
@@ -23,12 +25,16 @@ import scala.collection.mutable.ListBuffer
  * analysis collect information on which methods are called on objects of that class as well as how
  * often.
  *
- * Currently, the analysis can be configured by setting the two object variables
- * [[ClassUsageAnalysis.className]] and [[ClassUsageAnalysis.isFineGrainedAnalysis]].
+ * The analysis can be configured by passing the following optional parameters: `class` (the class
+ * to analyze), `granularity` (fine- or coarse-grained; defines which information will be gathered
+ * by an analysis run). For further information see
+ * [[ClassUsageAnalysis.analysisSpecificParametersDescription]].
  *
  * @author Patrick Mell
  */
 object ClassUsageAnalysis extends DefaultOneStepAnalysis {
+
+    implicit val logContext: GlobalLogContext.type = GlobalLogContext
 
     override def title: String = "Class Usage Analysis"
 
@@ -41,7 +47,7 @@ object ClassUsageAnalysis extends DefaultOneStepAnalysis {
      * The fully-qualified name of the class that is to be analyzed in a Java format, i.e., dots as
      * package / class separators.
      */
-    private val className = "java.lang.StringBuilder"
+    private var className = "java.lang.StringBuilder"
 
     /**
      * The analysis can run in two modes: Fine-grained or coarse-grained. Fine-grained means that
@@ -51,7 +57,7 @@ object ClassUsageAnalysis extends DefaultOneStepAnalysis {
      * base object as well as the method name are equal, i.e., overloaded methods are not
      * distinguished.
      */
-    private val isFineGrainedAnalysis = true
+    private var isFineGrainedAnalysis = false
 
     /**
      * Takes a [[Call]] and assembles the method descriptor for this call. The granularity is
@@ -145,6 +151,7 @@ object ClassUsageAnalysis extends DefaultOneStepAnalysis {
     override def doAnalyze(
         project: Project[URL], parameters: Seq[String], isInterrupted: () => Boolean
     ): ReportableAnalysisResult = {
+        getAnalysisParameters(parameters)
         val resultMap = mutable.Map[String, Int]()
         val tacProvider = project.get(SimpleTACAIKey)
 
