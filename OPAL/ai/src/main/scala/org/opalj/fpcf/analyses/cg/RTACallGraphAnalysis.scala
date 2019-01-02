@@ -4,6 +4,28 @@ package fpcf
 package analyses
 package cg
 
+import scala.language.existentials
+
+import scala.collection.immutable.IntMap
+import scala.collection.mutable
+
+import org.opalj.log.Error
+import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger.logOnce
+import org.opalj.log.Warn
+import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.collection.immutable.UIDSet
+import org.opalj.fpcf.cg.properties.CallersProperty
+import org.opalj.fpcf.cg.properties.InstantiatedTypes
+import org.opalj.fpcf.cg.properties.NoCallers
+import org.opalj.fpcf.cg.properties.NoStandardInvokeCallees
+import org.opalj.fpcf.cg.properties.OnlyCallersWithUnknownContext
+import org.opalj.fpcf.cg.properties.StandardInvokeCallees
+import org.opalj.fpcf.cg.properties.StandardInvokeCalleesImplementation
+import org.opalj.value.IsMObjectValue
+import org.opalj.value.IsNullValue
+import org.opalj.value.IsSArrayValue
+import org.opalj.value.IsSObjectValue
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
@@ -48,10 +70,6 @@ import org.opalj.value.IsMObjectValue
 import org.opalj.value.IsNullValue
 import org.opalj.value.IsSArrayValue
 import org.opalj.value.IsSObjectValue
-
-import scala.collection.immutable.IntMap
-import scala.collection.mutable
-import scala.language.existentials
 
 class RTAState private (
         private[cg] val method:                       DefinedMethod,
@@ -361,20 +379,20 @@ class RTACallGraphAnalysis private[analyses] ( final val project: SomeProject) e
 
             case Assignment(_, _, idc: InvokedynamicFunctionCall[V]) ⇒
                 state.addIncompleteCallSite(idc.pc)
-                OPALLogger.logOnce(
-                    Warn("analysis", "unresolved invokedynamic ignored by call graph construction")
+                logOnce(
+                    Warn("analysis - call graph construction", s"unresolved invokedynamic: $idc")
                 )
 
             case ExprStmt(_, idc: InvokedynamicFunctionCall[V]) ⇒
                 state.addIncompleteCallSite(idc.pc)
-                OPALLogger.logOnce(
-                    Warn("analysis", "unresolved invokedynamic ignored by call graph construction")
+                logOnce(
+                    Warn("analysis - call graph construction", s"unresolved invokedynamic: $idc")
                 )
 
-            case InvokedynamicMethodCall(pc, _, _, _, _) ⇒
+            case idc @ InvokedynamicMethodCall(pc, _, _, _, _) ⇒
                 state.addIncompleteCallSite(pc)
-                OPALLogger.logOnce(
-                    Warn("analysis", "unresolved invokedynamic ignored by call graph construction")
+                logOnce(
+                    Warn("analysis - call graph construction", s"unresolved invokedynamic: $idc")
                 )
 
             case _ ⇒ //nothing to do
