@@ -223,7 +223,7 @@ object EPS {
             InterimELUBP(e, lb, ub)
     }
 
-    def unapply[E <: Entity, P <: Property](eps: EPS[E, P]): Some[E] = Some(eps.e)
+    def unapply[E <: Entity](eps: EPS[E, _]): Some[E] = Some(eps.e)
 }
 
 /**
@@ -441,7 +441,7 @@ object FinalEP {
 
     def apply[E <: Entity, P <: Property](e: E, p: P): FinalEP[E, P] = new FinalEP(e, p)
 
-    def unapply[E <: Entity, P <: Property](eps: FinalEP[E, P]): Option[(E, P)] = {
+    def unapply[E <: Entity, P <: Property](eps: FinalEP[E, P]): Some[(E, P)] = {
         Some((eps.e, eps.p))
     }
 
@@ -702,7 +702,7 @@ object NoUBP {
 
 object InterimUBP {
 
-    def unapply[E <: Entity, P <: Property](eps: InterimEP[E, P]): Some[P] = Some(eps.ub)
+    def unapply[P <: Property](eps: InterimEP[_, P]): Some[P] = Some(eps.ub)
 
 }
 
@@ -760,7 +760,7 @@ object InterimELBP {
 
 object InterimLBP {
 
-    def unapply[E <: Entity, P >: Null <: Property](eps: InterimEP[E, P]): Some[P] = Some(eps.ub)
+    def unapply[P >: Null <: Property](eps: InterimEP[_, P]): Some[P] = Some(eps.ub)
 
 }
 
@@ -839,7 +839,7 @@ object EPK {
         new EPK(e, p.key.asInstanceOf[PropertyKey[P]])
     }
 
-    def unapply[E <: Entity, P >: Null <: Property](epk: EPK[E, P]): Option[(E, PropertyKey[P])] = {
+    def unapply[E <: Entity, P >: Null <: Property](epk: EPK[E, P]): Some[(E, PropertyKey[P])] = {
         Some((epk.e, epk.pk))
     }
 }
