@@ -45,14 +45,7 @@ class L0CompileTimeConstancyAnalysis private[analyses] ( final val project: Some
         // This function updates the compile-time constancy of the field when the field's
         // mutability is updated
         def c(eps: SomeEPS): ProperPropertyComputationResult = {
-            eps match {
-                case FinalP(LazyInitializedField) ⇒
-                    Result(field, CompileTimeVaryingField);
-                case FinalP(_: FinalField) ⇒
-                    Result(field, CompileTimeConstantField);
-                case FinalP(_: NonFinalField) ⇒
-                    Result(field, CompileTimeVaryingField);
-
+            (eps: @unchecked) match {
                 case _: SomeInterimEP ⇒
                     dependee = eps
                     InterimResult(
@@ -63,6 +56,10 @@ class L0CompileTimeConstancyAnalysis private[analyses] ( final val project: Some
                         c,
                         CheapPropertyComputation
                     )
+
+                case FinalP(LazyInitializedField) ⇒ Result(field, CompileTimeVaryingField)
+                case FinalP(_: FinalField)        ⇒ Result(field, CompileTimeConstantField)
+                case FinalP(_: NonFinalField)     ⇒ Result(field, CompileTimeVaryingField)
             }
         }
 

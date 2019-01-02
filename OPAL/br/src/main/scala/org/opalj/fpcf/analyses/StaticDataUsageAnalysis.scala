@@ -164,7 +164,7 @@ class StaticDataUsageAnalysis private[analyses] ( final val project: SomeProject
             // Let's filter the entity.
             dependees = dependees.filter(_.e ne eps.e)
 
-            eps match {
+            (eps: @unchecked) match {
                 case FinalP(du: NoVaryingDataUse) ⇒
                     if (du eq UsesConstantDataOnly) maxLevel = UsesConstantDataOnly
                     if (dependees.isEmpty)

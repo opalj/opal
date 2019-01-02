@@ -248,7 +248,7 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         state.dependees = state.dependees.filter(_.e ne eps.e)
         val oldPurity = state.ubPurity
 
-        eps match {
+        (eps: @unchecked) match {
             case UBP(_: Callees) ⇒
                 if (!checkPurityOfCallees(eps.asInstanceOf[EOptionP[DeclaredMethod, Callees]]))
                     return Result(state.definedMethod, ImpureByAnalysis)

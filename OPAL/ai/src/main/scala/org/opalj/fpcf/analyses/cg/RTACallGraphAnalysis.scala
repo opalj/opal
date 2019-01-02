@@ -221,7 +221,7 @@ class RTACallGraphAnalysis private[analyses] ( final val project: SomeProject) e
      */
     def analyze(declaredMethod: DeclaredMethod): PropertyComputationResult = {
 
-        propertyStore(declaredMethod, CallersProperty.key) match {
+        (propertyStore(declaredMethod, CallersProperty.key): @unchecked) match {
             case FinalP(NoCallers) ⇒
                 // nothing to do, since there is no caller
                 return NoResult;

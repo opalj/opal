@@ -186,7 +186,7 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
                         }
                     }
 
-                    eps match {
+                    (eps : @unchecked) match {
                         case FinalEP(e, ImmutableType | ImmutableObject) ⇒
                             dependencies = dependencies - e
                             nextResult()

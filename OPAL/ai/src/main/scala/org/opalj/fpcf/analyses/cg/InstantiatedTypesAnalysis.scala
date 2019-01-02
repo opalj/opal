@@ -29,7 +29,7 @@ class InstantiatedTypesAnalysis private[analyses] (
         UIDSet(project.get(InitialInstantiatedTypesKey).toSeq: _*)
 
     def analyze(declaredMethod: DeclaredMethod): PropertyComputationResult = {
-        propertyStore(declaredMethod, CallersProperty.key) match {
+        (propertyStore(declaredMethod, CallersProperty.key): @unchecked) match {
             case FinalP(NoCallers) ⇒
                 // nothing to do, since there is no caller
                 return NoResult;

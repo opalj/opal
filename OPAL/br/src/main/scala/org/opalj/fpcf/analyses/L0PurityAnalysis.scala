@@ -203,7 +203,7 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
             // Let's filter the entity.
             dependees = dependees.filter(_.e ne eps.e)
 
-            eps match {
+            (eps: @unchecked) match {
                 // We can't report any real result as long as we don't know that the fields are all
                 // effectively final and the types are immutable.
 

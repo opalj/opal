@@ -57,7 +57,7 @@ class ConfiguredNativeMethodsAnalysis private[analyses] (
     }
 
     def analyze(declaredMethod: DeclaredMethod): PropertyComputationResult = {
-        propertyStore(declaredMethod, CallersProperty.key) match {
+        (propertyStore(declaredMethod, CallersProperty.key): @unchecked) match {
             case FinalP(NoCallers) ⇒
                 // nothing to do, since there is no caller
                 return NoResult;

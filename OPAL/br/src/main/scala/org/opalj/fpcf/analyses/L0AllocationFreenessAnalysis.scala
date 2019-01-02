@@ -192,7 +192,17 @@ class L0AllocationFreenessAnalysis private[analyses] ( final val project: SomePr
             // Let's filter the entity.
             dependees = dependees.filter(_.e ne eps.e)
 
-            eps match {
+            (eps: @unchecked) match {
+                case _: SomeInterimEP ⇒
+                    dependees += eps
+                    InterimResult(
+                        definedMethod,
+                        MethodWithAllocations,
+                        AllocationFreeMethod,
+                        dependees,
+                        c
+                    )
+
                 case FinalP(AllocationFreeMethod) ⇒
                     if (dependees.isEmpty)
                         Result(definedMethod, AllocationFreeMethod)
@@ -209,15 +219,6 @@ class L0AllocationFreenessAnalysis private[analyses] ( final val project: SomePr
                 case FinalP(MethodWithAllocations) ⇒
                     Result(definedMethod, MethodWithAllocations)
 
-                case _: SomeInterimEP ⇒
-                    dependees += eps
-                    InterimResult(
-                        definedMethod,
-                        MethodWithAllocations,
-                        AllocationFreeMethod,
-                        dependees,
-                        c
-                    )
             }
         }
 

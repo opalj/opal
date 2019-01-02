@@ -154,23 +154,27 @@ class StaticInitializerAnalysis(val project: SomeProject) extends FPCFAnalysis {
     )(
         implicit
         state: LCState
-    ): PropertyComputationResult = someEPS match {
-        case FinalP(loadedClasses: LoadedClasses) ⇒
-            state.lcDependee = None
-            state.loadedClassesUB = Some(loadedClasses)
-            handleInstantiatedTypesAndLoadedClasses()
-        case InterimUBP(loadedClasses: LoadedClasses) ⇒
-            state.lcDependee = Some(someEPS.asInstanceOf[EPS[SomeProject, LoadedClasses]])
-            state.loadedClassesUB = Some(loadedClasses)
-            handleInstantiatedTypesAndLoadedClasses()
-        case FinalP(instantiatedTypes: InstantiatedTypes) ⇒
-            state.itDependee = None
-            state.instantiatedTypesUB = Some(instantiatedTypes)
-            handleInstantiatedTypesAndLoadedClasses()
-        case InterimUBP(instantiatedTypes: InstantiatedTypes) ⇒
-            state.itDependee = Some(someEPS.asInstanceOf[EPS[SomeProject, InstantiatedTypes]])
-            state.instantiatedTypesUB = Some(instantiatedTypes)
-            handleInstantiatedTypesAndLoadedClasses()
+    ): PropertyComputationResult = {
+        (someEPS: @unchecked) match {
+
+            case FinalP(loadedClasses: LoadedClasses) ⇒
+                state.lcDependee = None
+                state.loadedClassesUB = Some(loadedClasses)
+                handleInstantiatedTypesAndLoadedClasses()
+            case InterimUBP(loadedClasses: LoadedClasses) ⇒
+                state.lcDependee = Some(someEPS.asInstanceOf[EPS[SomeProject, LoadedClasses]])
+                state.loadedClassesUB = Some(loadedClasses)
+                handleInstantiatedTypesAndLoadedClasses()
+
+            case FinalP(instantiatedTypes: InstantiatedTypes) ⇒
+                state.itDependee = None
+                state.instantiatedTypesUB = Some(instantiatedTypes)
+                handleInstantiatedTypesAndLoadedClasses()
+            case InterimUBP(instantiatedTypes: InstantiatedTypes) ⇒
+                state.itDependee = Some(someEPS.asInstanceOf[EPS[SomeProject, InstantiatedTypes]])
+                state.instantiatedTypesUB = Some(instantiatedTypes)
+                handleInstantiatedTypesAndLoadedClasses()
+        }
     }
 
     private[this] def retrieveStaticInitializers(

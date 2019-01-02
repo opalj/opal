@@ -57,7 +57,7 @@ class FinalizerAnalysis private[analyses] (
         state: FinalizerAnalysisState
     ): ProperPropertyComputationResult = {
         var instantiatedTypesDependee: Option[SomeEPS] = None
-        val (newFinalizers, results) = eps match {
+        val (newFinalizers, results) = (eps: @unchecked) match {
             case FinalP(instantiatedTypes: InstantiatedTypes) ⇒
                 handleNewInstantiatedTypes(instantiatedTypes)
             case eps @ InterimUBP(ub: InstantiatedTypes) ⇒

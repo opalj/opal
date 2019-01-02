@@ -327,7 +327,7 @@ sealed abstract class PropertyStoreTest(
                 val es = Set("aba", "cc", "d", "fd", "zu", "aaabbbaaa")
                 ps.scheduleEagerComputationsForEntities[String](es) { e ⇒
                     def c(eps: SomeEOptionP): ProperPropertyComputationResult = {
-                        eps match {
+                        (eps: @unchecked) match {
                             case FinalP(NoAnalysisForPalindromeProperty) /*<= the test...*/ ⇒
                                 Result(e, Marker.NotMarked)
                             case epk: SomeEPK ⇒
@@ -356,7 +356,7 @@ sealed abstract class PropertyStoreTest(
                 }
                 ps.scheduleEagerComputationsForEntities(es) { e ⇒
                     def c(eps: SomeEOptionP): ProperPropertyComputationResult = {
-                        eps match {
+                        (eps: @unchecked) match {
                             case FinalP(Palindrome) | FinalP(NoPalindrome) ⇒
                                 Result(e, Marker.IsMarked)
 
@@ -854,7 +854,7 @@ sealed abstract class PropertyStoreTest(
                     var ub: Int = n.targets.size
 
                     def c(eps: SomeEOptionP): ProperPropertyComputationResult = {
-                        eps match {
+                        (eps: @unchecked) match {
                             case InterimUBP(ReachableNodesCount(otherUB)) ⇒
                                 if (ub + otherUB > 4)
                                     Result(n, TooManyNodesReachable)
@@ -926,7 +926,7 @@ sealed abstract class PropertyStoreTest(
                 ): ProperPropertyComputationResult = {
 
                     def c(eps: SomeEOptionP): ProperPropertyComputationResult = {
-                        eps match {
+                        (eps: @unchecked) match {
                             case eps @ InterimUBP(ReachableNodes(nodes)) ⇒
                                 val lb = TooManyNodesReachable
                                 val ub = ReachableNodesCount(nodes.size)
@@ -1553,7 +1553,7 @@ sealed abstract class PropertyStoreTest(
                         def c(successorNode: SomeEOptionP): ProperPropertyComputationResult = {
                             // HERE - For this test case only, we can simple get to the previous
                             // node from the one that was updated.
-                            successorNode match {
+                            (successorNode: @unchecked) match {
                                 case epk: EPK[_, _] ⇒
                                     InterimResult(node, Impure, Pure, Iterable(epk), c, pch)
 
@@ -1925,4 +1925,3 @@ abstract class PropertyStoreTestWithoutDebugging(
     override def afterAll(): Unit = PropertyStore.updateDebug(oldPropertyStoreUpdateSetting)
 
 }
-

@@ -24,7 +24,7 @@ class TriggeredSystemPropertiesAnalysis private[analyses] (
 
     def analyze(declaredMethod: DeclaredMethod): PropertyComputationResult = {
         // todo this is copy & past code from the RTACallGraphAnalysis -> refactor
-        propertyStore(declaredMethod, CallersProperty.key) match {
+        (propertyStore(declaredMethod, CallersProperty.key): @unchecked) match {
             case FinalP(NoCallers) ⇒
                 // nothing to do, since there is no caller
                 return NoResult;

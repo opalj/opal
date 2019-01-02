@@ -56,7 +56,7 @@ class L0TACAIAnalysis private[analyses] (val project: SomeProject) extends FPCFA
 
     def c(eOptionP: EOptionP[Method, BaseAIResult]): ProperPropertyComputationResult = {
         val m = eOptionP.e
-        eOptionP match {
+        (eOptionP: @unchecked) match {
             case FinalP(NoAIResult)           ⇒ Result(m, NoTACAI)
             case FinalP(AnAIResult(aiResult)) ⇒ Result(m, computeTheTACAI(m, aiResult))
 
@@ -90,7 +90,6 @@ class L0TACAIAnalysis private[analyses] (val project: SomeProject) extends FPCFA
                 )
         }
     }
-
 }
 
 sealed trait L0TACAIAnalysisScheduler extends TACAIInitializer {
