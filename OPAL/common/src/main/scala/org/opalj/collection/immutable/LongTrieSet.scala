@@ -45,7 +45,7 @@ sealed abstract class LongTrieSet
 
     /**
      * Tries to add the given method to this trie set by ''mutating the set if possible''.
-     * Due to the longernal organization, mutating the set is not always possible. In this case, a
+     * Due to the internal organization, mutating the set is not always possible. In this case, a
      * new set containing the new value is returned. Hence, the return value ''must not'' be
      * ignored!
      */

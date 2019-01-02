@@ -9,7 +9,8 @@ import org.opalj.tac.DUVar
 
 trait IFDSPropertyMetaInformation[DataFlowFact] extends PropertyMetaInformation
 
-abstract class IFDSProperty[DataFlowFact] extends Property
+abstract class IFDSProperty[DataFlowFact]
+    extends Property
     with IFDSPropertyMetaInformation[DataFlowFact] {
 
     /** The type of the TAC domain. */

@@ -85,6 +85,12 @@ object LongTrieSetProperties extends Properties("LongTrieSet") {
             (its.iterator.toList.sorted == s.iterator.toList.sorted) :| "same content"
     }
 
+    property("+ (adding) values to a set which are already in the set will result in the same set") = forAll { s: IntArraySet ⇒
+        val its = s.foldLeft(EmptyLongTrieSet: LongTrieSet)(_ + _.toLong)
+        (its.size == s.size) :| "matching size" &&
+            (its eq (s.foldLeft(its)(_ + _.toLong)))
+    }
+
     property("create LongTrieSet from Set[Long] (TraversableOnce) using ++") = forAll { s: Set[Long] ⇒
         val its = EmptyLongTrieSet ++ s
         (its.size == s.size) :| "matching size" &&

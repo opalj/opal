@@ -315,8 +315,6 @@ case class Results(
         results: TraversableOnce[ProperPropertyComputationResult]
 ) extends ProperPropertyComputationResult {
 
-    assert(results.nonEmpty)
-
     private[fpcf] final def id = Results.id
 
 }

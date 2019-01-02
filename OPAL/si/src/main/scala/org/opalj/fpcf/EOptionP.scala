@@ -461,7 +461,13 @@ object SomeFinalEP {
 
 object FinalP {
 
-    def unapply[E <: Entity, P >: Null <: Property](eps: FinalEP[E, P]): Option[P] = Some(eps.p)
+    def unapply[E <: Entity, P >: Null <: Property](eps: FinalEP[E, P]): Some[P] = Some(eps.p)
+
+}
+
+object FinalE {
+
+    def unapply[E <: Entity](eps: FinalEP[E, _]): Some[E] = Some(eps.e)
 
 }
 
@@ -508,7 +514,7 @@ sealed trait InterimEP[+E <: Entity, +P <: Property] extends EPS[E, P] {
     }
 }
 
-object InterimEP {
+object InterimE {
 
     /**
      * Extracts the entity of an interim property.
@@ -516,9 +522,7 @@ object InterimEP {
      * @note When we just have an InterimP object, we don't know which properties (ub, lb or both)
      *       are available.
      */
-    def unapply[E <: Entity, P >: Null <: Property](interimP: InterimEP[E, P]): Some[E] = {
-        Some(interimP.e)
-    }
+    def unapply[E <: Entity](interimP: InterimEP[E, _]): Some[E] = Some(interimP.e)
 
 }
 
@@ -625,8 +629,8 @@ final class InterimEUBP[+E <: Entity, +P <: Property](
 }
 
 /**
- * Factory and extractor for `InterimUBP` objects. The extractor also matches `InterimLUBP`
- * objects, but will throw an exception for `InterimLBP` objects. If you want to match
+ * Factory and extractor for `InterimEUBP` objects. The extractor also matches `InterimELUBP`
+ * objects, but will throw an exception for `InterimELBP` objects. If you want to match
  * final and interim objects at the same time use the `E(LB|UB)PS` extractors.
  */
 object InterimEUBP {
