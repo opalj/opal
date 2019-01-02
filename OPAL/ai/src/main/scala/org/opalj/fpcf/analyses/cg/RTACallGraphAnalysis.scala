@@ -410,26 +410,30 @@ class RTACallGraphAnalysis private[analyses] ( final val project: SomeProject) e
 
         val rvs = call.receiver.asVar.value.asReferenceValue.allValues
         for (rv ← rvs) rv match {
-            case av: IsSArrayValue ⇒
+            case _: IsSArrayValue ⇒
                 val tgtR = project.instanceCall(
                     caller.declaringClassType.asObjectType,
                     ObjectType.Object,
                     call.name,
                     call.descriptor
                 )
+
                 handleCall(caller, call, pc, tgtR)
-            case ov: IsSObjectValue if ov.isPrecise ⇒
-                val tgt = project.instanceCall(
-                    callerType,
-                    rv.leastUpperType.get,
-                    call.name,
-                    call.descriptor
-                )
-                handleCall(caller, call, pc, tgt)
+
             case ov: IsSObjectValue ⇒
-                val potentialTypes = classHierarchy.allSubtypesIterator(
-                    ov.theUpperTypeBound, reflexive = true
-                ).filter { subtype ⇒
+                if (ov.isPrecise) {
+                    val tgt = project.instanceCall(
+                        callerType,
+                        rv.leastUpperType.get,
+                        call.name,
+                        call.descriptor
+                    )
+
+                    handleCall(caller, call, pc, tgt)
+                } else {
+                    val potentialTypes = classHierarchy.allSubtypesIterator(
+                        ov.theUpperTypeBound, reflexive = true
+                    ).filter { subtype ⇒
                         val cfOption = project.classFile(subtype)
                         cfOption.isDefined && {
                             val cf = cfOption.get
@@ -437,7 +441,8 @@ class RTACallGraphAnalysis private[analyses] ( final val project: SomeProject) e
                         }
                     }
 
-                handleImpreciseCall(caller, call, pc, instantiatedTypesUB, potentialTypes)
+                    handleImpreciseCall(caller, call, pc, instantiatedTypesUB, potentialTypes)
+                }
 
             case mv: IsMObjectValue ⇒
                 val typeBounds = mv.upperTypeBound
@@ -477,6 +482,7 @@ class RTACallGraphAnalysis private[analyses] ( final val project: SomeProject) e
                     call.name,
                     call.descriptor
                 )
+
                 handleCall(caller, call, pc, tgtR)
             } else {
                 state.addVirtualCallSite(
