@@ -4,6 +4,8 @@ package br
 package analyses
 
 import scala.annotation.switch
+import scala.annotation.tailrec
+
 import java.io.File
 import java.lang.ref.SoftReference
 import java.net.URL
@@ -23,6 +25,7 @@ import scala.collection.mutable.OpenHashMap
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import net.ceedubs.ficus.Ficus._
+
 import org.opalj.log.Error
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
@@ -49,8 +52,6 @@ import org.opalj.br.instructions.NEW
 import org.opalj.br.reader.BytecodeInstructionsCache
 import org.opalj.br.reader.Java9FrameworkWithInvokedynamicSupportAndCaching
 import org.opalj.br.reader.Java9LibraryFramework
-
-import scala.annotation.tailrec
 
 /**
  * Primary abstraction of a Java project; i.e., a set of classes that constitute a
@@ -1769,9 +1770,9 @@ object Project {
             project.libraryClassFilesAreInterfacesOnly,
             virtualClassFiles = Traversable.empty
         )(
-            if (useOldConfigAsFallback) config.withFallback(project.config) else config,
-            projectLogger = OPALLogger.logger(project.logContext.successor)
-        )
+                if (useOldConfigAsFallback) config.withFallback(project.config) else config,
+                projectLogger = OPALLogger.logger(project.logContext.successor)
+            )
     }
 
     /**
