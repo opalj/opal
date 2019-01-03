@@ -3,7 +3,7 @@ package org.opalj.fpcf
 
 import org.opalj.collection.immutable.Chain
 
-case class BatchConfiguration[A](
+case class BatchConfiguration[A]( // TODO rename PhaseConfiguration (after renaming PhaseConfiguration)
         phaseConfiguration: PhaseConfiguration,
-        batch:              Chain[ComputationSpecification[A]]
+        batch:              Chain[ComputationSpecification[A]] // TODO rename phase
 )
