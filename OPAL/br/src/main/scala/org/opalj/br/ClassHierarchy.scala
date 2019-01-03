@@ -547,9 +547,9 @@ class ClassHierarchy private (
             return if (reflexive) Iterator.single(objectType) else Iterator.empty;
 
         if (reflexive)
-            subtypeInformationMap(oid).allTypes.iterator ++ Iterator.single(objectType)
+            subtypeInformationMap(oid).iterator ++ Iterator.single(objectType)
         else
-            subtypeInformationMap(oid).allTypes.iterator
+            subtypeInformationMap(oid).iterator
     }
 
     /**
