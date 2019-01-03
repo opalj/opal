@@ -29,8 +29,8 @@ trait FPCFEagerAnalysisScheduler extends FPCFAnalysisScheduler {
 
     /**
      * Called when a schedule is executed and when this analysis shall register itself
-     * with the property store using [[PropertyStore.scheduleEagerComputationForEntity]] or
-     * a variant thereof.
+     * with the property store using
+     * [[org.opalj.fpcf.PropertyStore.scheduleEagerComputationForEntity]] or a variant thereof.
      * This method is typically implicitly called by the [[org.opalj.fpcf.FPCFAnalysesManager]].
      *
      * @note This analysis must not call `registerTriggeredComputation` or

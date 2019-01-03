@@ -24,8 +24,9 @@ trait FPCFLazyLikeAnalysisScheduler extends FPCFAnalysisScheduler {
 
     /**
      * Called when a schedule is executed and when this analysis shall register itself
-     * with the property store using [[PropertyStore.registerLazyPropertyComputation]] or
-     * [[PropertyStore.registerTransformer]] method.
+     * with the property store using
+     * [[org.opalj.fpcf.PropertyStore.registerLazyPropertyComputation]] or
+     * [[org.opalj.fpcf.PropertyStore.registerTransformer]] method.
      *
      * This method is typically called by the [[org.opalj.fpcf.FPCFAnalysesManager]].
      *

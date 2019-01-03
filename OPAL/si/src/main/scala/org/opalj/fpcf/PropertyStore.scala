@@ -73,7 +73,7 @@ import org.opalj.fpcf.PropertyKind.SupportedPropertyKinds
  * thread-safe in the following manner:
  *  - a client has to use the SAME thread (the driver thread) to call
  *    (0) [[set]] to initialize the property store,
- *    (1) [[setupPhase(PhaseConfiguration)]],
+ *    (1) [[org.opalj.fpcf.PropertyStore!.setupPhase(configuration:org\.opalj\.fpcf\.PhaseConfiguration)*]],
  *    (2) [[registerLazyPropertyComputation]] or [[registerTriggeredComputation]],
  *    (3) [[scheduleEagerComputationForEntity]] / [[scheduleEagerComputationsForEntities]],
  *    (4) [[force]] and
