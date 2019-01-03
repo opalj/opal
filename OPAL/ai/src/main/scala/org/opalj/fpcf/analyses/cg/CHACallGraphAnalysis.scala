@@ -187,7 +187,7 @@ class CHACallGraphAnalysis private[analyses] ( final val project: SomeProject) e
 
 }
 
-object TriggeredCHACallGraphAnalysisScheduler extends FPCFTriggeredAnalysisScheduler {
+object CHACallGraphAnalysisScheduler extends FPCFTriggeredAnalysisScheduler {
     override type InitializationData = Null
 
     override def uses: Set[PropertyBounds] = Set(
