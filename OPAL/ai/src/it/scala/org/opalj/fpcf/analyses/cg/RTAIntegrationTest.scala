@@ -5,13 +5,13 @@ package analyses
 package cg
 
 import org.junit.runner.RunWith
-import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.analyses.Project
 import org.opalj.br.instructions.MethodInvocationInstruction
-import org.opalj.br.reader.Java8Framework.ClassFiles
+import org.opalj.br.TestSupport.allBIProjects
+import org.opalj.br.analyses.SomeProject
+import org.opalj.collection.immutable.Chain
 import org.opalj.fpcf.analyses.cg.reflection.TriggeredReflectionRelatedCallsAnalysis
 import org.opalj.fpcf.cg.properties.CallersProperty
 import org.opalj.fpcf.cg.properties.Callees
@@ -37,40 +37,57 @@ class RTAIntegrationTest extends FlatSpec with Matchers {
 
     behavior of "the rta call graph analysis on columbus"
 
-    val project =
-        Project(
-            ClassFiles(locateTestResources("/classfiles/Flashcards 0.4 - target 1.6.jar", "bi")),
-            //ClassFiles(locateTestResources("/classfiles/Columbus 2008_10_16 - target 1.5.jar", "bi")),
-            Traversable.empty,
-            libraryClassFilesAreInterfacesOnly = true
-        )
+    allBIProjects() foreach { biProject ⇒
+        val (name, projectFactory) = biProject
+        val project = projectFactory()
 
-    implicit val propertyStore: PropertyStore = project.get(PropertyStoreKey)
-    //PropertyStore.updateDebug(true)
+        checkProject(name, project)
+    }
 
-    val manager: FPCFAnalysesManager = project.get(FPCFAnalysesManagerKey)
-    /*val propertyStore = */ manager.runAll(
-        RTACallGraphAnalysisScheduler,
-        TriggeredStaticInitializerAnalysis,
-        TriggeredLoadedClassesAnalysis,
-        TriggeredFinalizerAnalysisScheduler,
-        TriggeredThreadRelatedCallsAnalysis,
-        TriggeredSerializationRelatedCallsAnalysis,
-        TriggeredReflectionRelatedCallsAnalysis,
-        TriggeredSystemPropertiesAnalysis,
-        TriggeredConfiguredNativeMethodsAnalysis,
-        TriggeredInstantiatedTypesAnalysis,
-        LazyL0TACAIAnalysis,
-        LazyCalleesAnalysis(
+    def checkProject(projectName: String, project: SomeProject): Unit = {
+        /*val project =
+            Project(
+                ClassFiles(locateTestResources("/classfiles/Flashcards 0.4 - target 1.6.jar", "bi")),
+                //ClassFiles(locateTestResources("/classfiles/Columbus 2008_10_16 - target 1.5.jar", "bi")),
+                Traversable.empty,
+                libraryClassFilesAreInterfacesOnly = true
+            )*/
+
+        implicit val propertyStore: PropertyStore = project.get(PropertyStoreKey)
+        implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
+
+        val calleesAnalysis = LazyCalleesAnalysis(
             Set(StandardInvokeCallees, SerializationRelatedCallees, ReflectionRelatedCallees)
         )
-    )
-    implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
-    for (dm ← declaredMethods.declaredMethods) { propertyStore(dm, Callees.key) }
-    propertyStore.waitOnPhaseCompletion()
 
-    it should "have matching callers and callees" in {
-        checkBidirectionCallerCallee()
+        val manager: FPCFAnalysesManager = project.get(FPCFAnalysesManagerKey)
+        manager.runAll(
+            List(
+                RTACallGraphAnalysisScheduler,
+                TriggeredStaticInitializerAnalysis,
+                TriggeredLoadedClassesAnalysis,
+                TriggeredFinalizerAnalysisScheduler,
+                TriggeredThreadRelatedCallsAnalysis,
+                TriggeredSerializationRelatedCallsAnalysis,
+                TriggeredReflectionRelatedCallsAnalysis,
+                TriggeredSystemPropertiesAnalysis,
+                TriggeredConfiguredNativeMethodsAnalysis,
+                TriggeredInstantiatedTypesAnalysis,
+                LazyL0TACAIAnalysis,
+                calleesAnalysis
+            ),
+            { css: Chain[ComputationSpecification[FPCFAnalysis]] ⇒
+                if (css.contains(calleesAnalysis)) {
+                    declaredMethods.declaredMethods.foreach { dm ⇒
+                        propertyStore.force(dm, Callees.key)
+                    }
+                }
+            }
+        )
+
+        it should s"have matching callers and callees in $projectName" in {
+            checkBidirectionCallerCallee()
+        }
     }
 
     // TODO: In the current version, we can not compare the CG to the one from SOOT
@@ -134,8 +151,7 @@ class RTAIntegrationTest extends FlatSpec with Matchers {
 
     def checkBidirectionCallerCallee()(
         implicit
-        propertyStore:   PropertyStore,
-        declaredMethods: DeclaredMethods
+        propertyStore: PropertyStore, declaredMethods: DeclaredMethods
     ): Unit = {
         for {
             FinalEP(dm: DeclaredMethod, callees) ← propertyStore.entities(Callees.key).map(_.asFinal)
