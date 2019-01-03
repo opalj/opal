@@ -267,7 +267,7 @@ class AnalysisScenario[A] {
         // once we are actually implementing it. For the time being, suppress notifications is always
         // advantageous.
 
-        val phase1Configuration = PhaseConfiguration(
+        val phase1Configuration = PropertyKindsConfiguration(
             propertyKindsComputedInThisPhase = derivedProperties.map(_.pk),
             suppressInterimUpdates = suppressInterimUpdates
         )

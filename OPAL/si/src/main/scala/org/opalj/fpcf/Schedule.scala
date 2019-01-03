@@ -18,7 +18,7 @@ import org.opalj.util.PerformanceEvaluation.time
  */
 case class Schedule[A](
         batches: Chain[BatchConfiguration[A]]
-) extends ((PropertyStore, Boolean, PhaseConfiguration ⇒ Unit, Chain[ComputationSpecification[A]] ⇒ Unit) ⇒ List[(ComputationSpecification[A], A)]) {
+) extends ((PropertyStore, Boolean, PropertyKindsConfiguration ⇒ Unit, Chain[ComputationSpecification[A]] ⇒ Unit) ⇒ List[(ComputationSpecification[A], A)]) {
 
     /**
      * Schedules the computation specifications; that is, executes the underlying analysis scenario.
@@ -31,7 +31,7 @@ case class Schedule[A](
     def apply(
         ps:                   PropertyStore,
         trace:                Boolean                                   = false,
-        afterPhaseSetup:      PhaseConfiguration ⇒ Unit = _ ⇒ (),
+        afterPhaseSetup:      PropertyKindsConfiguration ⇒ Unit = _ ⇒ (),
         afterPhaseScheduling: Chain[ComputationSpecification[A]] ⇒ Unit = _ ⇒ ()
     ): List[(ComputationSpecification[A], A)] = {
         implicit val logContext: LogContext = ps.logContext
