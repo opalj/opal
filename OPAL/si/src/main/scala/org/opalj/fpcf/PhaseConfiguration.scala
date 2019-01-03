@@ -7,9 +7,9 @@ package fpcf
  *
  * @param propertyKindsComputedInThisPhase The set of properties which will be computed in the
  *        phase. Required to determine which properties will never be computed and for which –
- *                                         therefore – fallbacks should be used.
+ *        therefore – fallbacks should be used.
  *
- * @param propertyKindsComputedInLaterPhase
+ * @param propertyKindsComputedInLaterPhase Used for debugging purposes!
  *
  * @param suppressInterimUpdates  Specifies for which properties updates no interim notifications
  *         shall be done. This ist generally only possible for those properties which are computed
@@ -27,7 +27,7 @@ package fpcf
  *
  * @author Michael Eichberg
  */
-case class PhaseConfiguration(
+case class PhaseConfiguration( // TODO Rename:
         propertyKindsComputedInThisPhase:                      Set[PropertyKind],
         propertyKindsComputedInLaterPhase:                     Set[PropertyKind]                    = Set.empty,
         suppressInterimUpdates:                                Map[PropertyKind, Set[PropertyKind]] = Map.empty,
