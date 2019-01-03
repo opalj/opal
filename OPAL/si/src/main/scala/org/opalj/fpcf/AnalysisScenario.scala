@@ -200,7 +200,7 @@ class AnalysisScenario[A] {
     ): Schedule[A] = {
         val alreadyComputedPropertyKinds = propertyStore.alreadyComputedPropertyKindIds.toSet
 
-        // 0. check that the property is not already derived
+        // 0. check that no property is not already derived
         allCS.foreach { cs ⇒
             cs.derives foreach { derivedProperty ⇒
                 if (alreadyComputedPropertyKinds.contains(derivedProperty.pk.id)) {
@@ -229,7 +229,22 @@ class AnalysisScenario[A] {
 
         // TODO check all further constraints (in particular those related to cyclic dependencies between analysis...)
 
-        // 2. compute the phase configuration; i.e., find those properties for which we must
+        // 2. assign analyses to different batches if an analysis can only process
+        //    final properties (unless it is a transformer, the latter have special paths and
+        //    constraints and can always be scheduled)
+
+        // TODO ....
+
+        Schedule(Chain(computePhase(propertyStore)))
+    }
+
+    /**
+     * Computes the configuration for a specific batch; this method can only handle the situation
+     * where all analyses can be executed in the same phase.
+     */
+    private def computePhase(propertyStore: PropertyStore): BatchConfiguration[A] = {
+
+        // 1. compute the phase configuration; i.e., find those properties for which we must
         //    suppress interim updates.
         var suppressInterimUpdates: Map[PropertyKind, Set[PropertyKind]] = Map.empty
         // Interim updates have to be suppressed when an analysis uses a property for which
@@ -257,7 +272,7 @@ class AnalysisScenario[A] {
             suppressInterimUpdates = suppressInterimUpdates
         )
 
-        Schedule(Chain(BatchConfiguration(phase1Configuration, batchBuilder.result())))
+        BatchConfiguration(phase1Configuration, batchBuilder.result())
     }
 }
 
