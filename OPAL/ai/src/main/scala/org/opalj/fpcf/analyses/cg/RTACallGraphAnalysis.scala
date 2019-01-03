@@ -603,6 +603,7 @@ class RTACallGraphAnalysis private[analyses] ( final val project: SomeProject) e
                         name,
                         descr
                     )
+
                     handleCall(
                         state.method,
                         name,
@@ -611,11 +612,6 @@ class RTACallGraphAnalysis private[analyses] ( final val project: SomeProject) e
                         pc,
                         tgtR
                     )
-                    // todo in case of Failure?
-                    if (tgtR.hasValue) {
-                        val tgtDM = declaredMethods(tgtR.value)
-                        state.addCallEdge(pc, tgtDM)
-                    }
                 }
             }
 
