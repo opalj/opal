@@ -242,7 +242,7 @@ class AnalysisScenario[A] {
      * Computes the configuration for a specific batch; this method can only handle the situation
      * where all analyses can be executed in the same phase.
      */
-    private def computePhase(propertyStore: PropertyStore): BatchConfiguration[A] = {
+    private def computePhase(propertyStore: PropertyStore): PhaseConfiguration[A] = {
 
         // 1. compute the phase configuration; i.e., find those properties for which we must
         //    suppress interim updates.
@@ -272,7 +272,7 @@ class AnalysisScenario[A] {
             suppressInterimUpdates = suppressInterimUpdates
         )
 
-        BatchConfiguration(phase1Configuration, batchBuilder.result())
+        PhaseConfiguration(phase1Configuration, batchBuilder.result())
     }
 }
 
