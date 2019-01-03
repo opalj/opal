@@ -335,8 +335,8 @@ abstract class PropertiesTest extends FunSpec with Matchers {
 
         val ps = p.get(PropertyStoreKey)
 
-        val (_, as) = p.get(FPCFAnalysesManagerKey).runAll(analysisRunners)
-        TestContext(p, ps, as)
+        val (_, csas) = p.get(FPCFAnalysesManagerKey).runAll(analysisRunners)
+        TestContext(p, ps, csas.collect { case (_, as) ⇒ as })
     }
 }
 

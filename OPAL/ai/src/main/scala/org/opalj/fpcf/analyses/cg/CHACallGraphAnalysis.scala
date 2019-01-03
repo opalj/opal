@@ -203,12 +203,6 @@ object TriggeredCHACallGraphAnalysisScheduler extends FPCFTriggeredAnalysisSched
         PropertyBounds.ub(CallersProperty)
     )
 
-    override def register(p: SomeProject, ps: PropertyStore, unused: Null): CHACallGraphAnalysis = {
-        val analysis = new CHACallGraphAnalysis(p)
-        ps.registerTriggeredComputation(CallersProperty.key, analysis.analyze)
-        analysis
-    }
-
     /**
      * Updates the caller properties of the initial entry points ([[InitialEntryPointsKey]]) to be
      * called from an unknown context.
@@ -225,11 +219,9 @@ object TriggeredCHACallGraphAnalysisScheduler extends FPCFTriggeredAnalysisSched
 
         entryPoints.foreach { ep ⇒
             ps.preInitialize(ep, CallersProperty.key) {
-                case _: EPK[_, _] ⇒
-                    InterimEUBP(ep, OnlyCallersWithUnknownContext)
-                case InterimUBP(ub) ⇒
-                    InterimEUBP(ep, ub.updatedWithUnknownContext())
-                case r ⇒ throw new IllegalStateException(s"unexpected previous result $r")
+                case _: EPK[_, _]   ⇒ InterimEUBP(ep, OnlyCallersWithUnknownContext)
+                case InterimUBP(ub) ⇒ InterimEUBP(ep, ub.updatedWithUnknownContext())
+                case eps            ⇒ throw new IllegalStateException(s"unexpected: $eps")
             }
         }
     }
@@ -241,5 +233,17 @@ object TriggeredCHACallGraphAnalysisScheduler extends FPCFTriggeredAnalysisSched
 
     override def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
 
-    override def afterPhaseCompletion(p: SomeProject, ps: PropertyStore): Unit = {}
+    override def register(p: SomeProject, ps: PropertyStore, unused: Null): CHACallGraphAnalysis = {
+        val analysis = new CHACallGraphAnalysis(p)
+        ps.registerTriggeredComputation(CallersProperty.key, analysis.analyze)
+        analysis
+    }
+
+    override def afterPhaseScheduling(ps: PropertyStore, analysis: FPCFAnalysis): Unit = {}
+
+    override def afterPhaseCompletion(
+        p:        SomeProject,
+        ps:       PropertyStore,
+        analysis: FPCFAnalysis
+    ): Unit = {}
 }

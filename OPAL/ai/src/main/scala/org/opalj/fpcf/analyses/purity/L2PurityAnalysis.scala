@@ -927,7 +927,7 @@ object L2PurityAnalysis {
     }
 }
 
-trait L2PurityAnalysisScheduler extends ComputationSpecification[FPCFAnalysis] {
+trait L2PurityAnalysisScheduler extends FPCFAnalysisScheduler {
 
     final def derivedProperty: PropertyBounds = PropertyBounds.lub(Purity)
 
@@ -945,11 +945,19 @@ trait L2PurityAnalysisScheduler extends ComputationSpecification[FPCFAnalysis] {
     }
 
     final override type InitializationData = L2PurityAnalysis
-    final def init(p: SomeProject, ps: PropertyStore): InitializationData = new L2PurityAnalysis(p)
+    final override def init(p: SomeProject, ps: PropertyStore): InitializationData = {
+        new L2PurityAnalysis(p)
+    }
 
-    def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
+    override def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
 
-    def afterPhaseCompletion(p: SomeProject, ps: PropertyStore): Unit = {}
+    override def afterPhaseScheduling(ps: PropertyStore, analysis: FPCFAnalysis): Unit = {}
+
+    override def afterPhaseCompletion(
+        p:        SomeProject,
+        ps:       PropertyStore,
+        analysis: FPCFAnalysis
+    ): Unit = {}
 
 }
 

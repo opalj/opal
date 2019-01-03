@@ -36,15 +36,15 @@ trait FPCFAnalysisScheduler extends ComputationSpecification[FPCFAnalysis] {
         beforeSchedule(ps.context(classOf[SomeProject]), ps)
     }
 
-    final override def afterPhaseCompletion(ps: PropertyStore): Unit = {
-        afterPhaseCompletion(ps.context(classOf[SomeProject]), ps)
+    final override def afterPhaseCompletion(ps: PropertyStore, analysis: FPCFAnalysis): Unit = {
+        afterPhaseCompletion(ps.context(classOf[SomeProject]), ps, analysis)
     }
 
     def init(p: SomeProject, ps: PropertyStore): InitializationData
 
     def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit
 
-    def afterPhaseCompletion(p: SomeProject, ps: PropertyStore): Unit
+    def afterPhaseCompletion(p: SomeProject, ps: PropertyStore, analysis: FPCFAnalysis): Unit
 
 }
 

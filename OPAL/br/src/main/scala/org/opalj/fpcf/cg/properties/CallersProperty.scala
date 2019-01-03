@@ -29,6 +29,13 @@ sealed trait CallersProperty extends Property with OrderedProperty with CallersP
 
     def callers(implicit declaredMethods: DeclaredMethods): TraversableOnce[(DeclaredMethod, Int /*PC*/ )]
 
+    /**
+     * Returns a new callers object, containing all callers of `this` object and a call from
+     * `caller` at program counter `pc`.
+     *
+     * In case, the specified call is already contained, `this` is returned, i.e. the reference does
+     * not change when the of callers set remains unchanged.
+     */
     def updated(caller: DeclaredMethod, pc: Int): CallersProperty
 
     def updatedWithUnknownContext(): CallersProperty
@@ -118,8 +125,10 @@ sealed trait CallersImplementation extends CallersProperty {
     ): TraversableOnce[(DeclaredMethod, Int /*PC*/ )] = {
         for {
             encodedPair ← encodedCallers.iterator
-            (mId, pc) = CallersProperty.toMethodAndPc(encodedPair)
-        } yield declaredMethods(mId) → pc
+        } yield {
+            val (mId, pc) = CallersProperty.toMethodAndPc(encodedPair)
+            declaredMethods(mId) → pc
+        }
     }
 }
 
@@ -131,10 +140,13 @@ class CallersOnlyWithConcreteCallers(
         caller: DeclaredMethod, pc: Int
     ): CallersProperty = {
         val encodedCaller = CallersProperty.toLong(caller.id, pc)
-        if (encodedCallers.contains(encodedCaller))
+        val newSet = encodedCallers + encodedCaller
+
+        // requires the LongTrieSet to return `this` if the `encodedCaller` is already contained.
+        if (newSet eq encodedCallers)
             this
         else
-            new CallersOnlyWithConcreteCallers(encodedCallers + encodedCaller)
+            new CallersOnlyWithConcreteCallers(newSet)
     }
 
     override def updatedWithUnknownContext(): CallersProperty =
@@ -167,10 +179,13 @@ class CallersImplWithOtherCalls(
         caller: DeclaredMethod, pc: Int
     ): CallersProperty = {
         val encodedCaller = CallersProperty.toLong(caller.id, pc)
-        if (encodedCallers.contains(encodedCaller: java.lang.Long))
+        val newSet = encodedCallers + encodedCaller
+
+        // requires the LongTrieSet to return `this` if the `encodedCaller` is already contained.
+        if (newSet eq encodedCallers)
             this
         else
-            new CallersImplWithOtherCalls(encodedCallers + encodedCaller, specialCallSitesFlags)
+            new CallersImplWithOtherCalls(newSet, specialCallSitesFlags)
     }
 
     override def updatedWithVMLevelCall(): CallersProperty =

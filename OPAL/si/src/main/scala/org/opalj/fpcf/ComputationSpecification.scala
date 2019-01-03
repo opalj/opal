@@ -142,9 +142,15 @@ trait ComputationSpecification[A] {
     def schedule(ps: PropertyStore, i: InitializationData): A
 
     /**
+     * Called back after all analyses of a specific phase have been
+     *        schedule (i.e., before calling waitOnPhaseCompletion).
+     */
+    def afterPhaseScheduling(ps: PropertyStore, analysis: A): Unit
+
+    /**
      * Called after phase completion.
      */
-    def afterPhaseCompletion(ps: PropertyStore): Unit
+    def afterPhaseCompletion(ps: PropertyStore, analysis: A): Unit
 
 }
 
@@ -153,6 +159,7 @@ trait SimpleComputationSpecification[A] extends ComputationSpecification[A] {
     final override type InitializationData = Null
     final override def init(ps: PropertyStore): Null = null
     final override def beforeSchedule(ps: PropertyStore): Unit = {}
-    final override def afterPhaseCompletion(ps: PropertyStore): Unit = {}
+    final override def afterPhaseScheduling(ps: PropertyStore, analysis: A): Unit = {}
+    final override def afterPhaseCompletion(ps: PropertyStore, analysis: A): Unit = {}
 
 }

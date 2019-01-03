@@ -4,6 +4,7 @@ package br
 package analyses
 
 import scala.annotation.switch
+import scala.annotation.tailrec
 
 import java.io.File
 import java.lang.ref.SoftReference
@@ -21,7 +22,6 @@ import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.ArrayStack
 import scala.collection.mutable.Buffer
 import scala.collection.mutable.OpenHashMap
-
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import net.ceedubs.ficus.Ficus._
@@ -886,6 +886,75 @@ class Project[Source] private (
     }
 
     /**
+     * Returns all available `ClassFile` objects for the given `objectTypes` that
+     * pass the given `filter`. `ObjectType`s for which no `ClassFile` is available
+     * are ignored.
+     */
+    def lookupClassFiles(
+        objectTypes: Traversable[ObjectType]
+    )(
+        classFileFilter: ClassFile ⇒ Boolean
+    ): Traversable[ClassFile] = {
+        objectTypes.view.flatMap(classFile(_)) filter (classFileFilter)
+    }
+
+    def hasInstanceMethod(
+        receiverType:     ObjectType,
+        name:             String,
+        descriptor:       MethodDescriptor,
+        isPackagePrivate: Boolean
+    ): Boolean = {
+        val data = instanceMethods(receiverType)
+
+        @tailrec @inline def binarySearch(low: Int, high: Int): Int = {
+            if (high < low)
+                return -1;
+
+            val mid = (low + high) / 2 // <= will never overflow...(by constraint...)
+            val e = data(mid)
+            val eComparison = e.method.compare(name, descriptor)
+            if (eComparison == 0) {
+                mid
+            } else if (eComparison < 0) {
+                binarySearch(mid + 1, high)
+            } else {
+                binarySearch(low, mid - 1)
+            }
+        }
+
+        val candidateIndex = binarySearch(0, data.length - 1)
+        // In case we found a method, but it is not `method.isPackagePrivate` == `isPackagePrivate`,
+        // it is possible that there is another method with the same name and descriptor next
+        // to that one (i.e. left or right).
+        // Therefore, we also check if there exists such a method, with indices lower/higher to
+        // the found one.
+        candidateIndex != -1 && {
+            var index = candidateIndex
+            var method: Method = null
+            // check the methods with a smaller (or equal) index
+            while (index >= 0
+                && { method = data(index).method; method.compare(name, descriptor) == 0 }) {
+                if (method.isPackagePrivate == isPackagePrivate)
+                    return true;
+                index -= 1
+            }
+
+            index = candidateIndex + 1 // reset the index
+
+            // check the methods with a higher index
+            while (index < data.length
+                && { method = data(index).method; method.compare(name, descriptor) == 0 }) {
+                if (method.isPackagePrivate == isPackagePrivate)
+                    return true;
+
+                index += 1
+            }
+
+            false
+        }
+    }
+
+    /**
      * Converts this project abstraction into a standard Java `HashMap`.
      *
      * @note This method is intended to be used by Java projects that want to interact with OPAL.
@@ -965,19 +1034,6 @@ class Project[Source] private (
             result += ((membersCount, (count + 1, typeNames + typeName)))
         }
         result
-    }
-
-    /**
-     * Returns all available `ClassFile` objects for the given `objectTypes` that
-     * pass the given `filter`. `ObjectType`s for which no `ClassFile` is available
-     * are ignored.
-     */
-    def lookupClassFiles(
-        objectTypes: Traversable[ObjectType]
-    )(
-        classFileFilter: ClassFile ⇒ Boolean
-    ): Traversable[ClassFile] = {
-        objectTypes.view.flatMap(classFile(_)) filter (classFileFilter)
     }
 
     override def toString: String = {

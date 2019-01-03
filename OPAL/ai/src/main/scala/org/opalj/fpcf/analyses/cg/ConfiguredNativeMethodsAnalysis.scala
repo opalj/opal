@@ -21,6 +21,12 @@ import org.opalj.fpcf.cg.properties.InstantiatedTypes
 import org.opalj.fpcf.cg.properties.NoCallers
 import org.opalj.fpcf.cg.properties.StandardInvokeCalleesImplementation
 
+/**
+ * Handles the effect of certain (configured native methods) to the call graph.
+ *
+ * @author Dominik Helm
+ * @author Florian Kuebler
+ */
 class ConfiguredNativeMethodsAnalysis private[analyses] (
         final val project: SomeProject
 ) extends FPCFAnalysis {
@@ -34,6 +40,7 @@ class ConfiguredNativeMethodsAnalysis private[analyses] (
     private case class ReachableMethod(cf: String, m: String, desc: String)
 
     private val nativeMethodData: Map[(String, String, String), (Option[Seq[String]], Option[Seq[ReachableMethod]])] =
+        // todo use callgraph independend key
         project.config.as[Iterator[NativeMethodData]](
             "org.opalj.fpcf.analysis.RTACallGraphAnalysis.nativeMethods"
         ).map { action ⇒
@@ -94,7 +101,7 @@ class ConfiguredNativeMethodsAnalysis private[analyses] (
         /**
          * Creates partial results for instantiated types given by their FQNs.
          */
-        def instantiatedTypesResults(fqns: Seq[String]): Option[ProperPropertyComputationResult] = {
+        def instantiatedTypesResultOption(fqns: Seq[String]): Option[ProperPropertyComputationResult] = {
             val instantiatedTypesUB =
                 getInstantiatedTypesUB(propertyStore(project, InstantiatedTypes.key))
 
@@ -143,14 +150,19 @@ class ConfiguredNativeMethodsAnalysis private[analyses] (
 
         val (instantiatedTypesO, reachableMethodsO) = methodDataO.get
 
+        val instantiatedTypesResult =
+            if (instantiatedTypesO.isDefined)
+                instantiatedTypesResultOption(instantiatedTypesO.get)
+            else
+                None
+
         if (reachableMethodsO.isDefined) {
             val callResults = calleesResults(reachableMethodsO.get)
             if (instantiatedTypesO.isDefined) {
-                val typesResult = instantiatedTypesResults(instantiatedTypesO.get)
-                Results(callResults ++ typesResult)
+                Results(callResults ++ instantiatedTypesResult)
             } else Results(callResults)
-        } else if (instantiatedTypesO.isDefined) {
-            Results(instantiatedTypesResults(instantiatedTypesO.get))
+        } else if (instantiatedTypesResult.isDefined) {
+            instantiatedTypesResult.get
         } else {
             NoResult
         }
