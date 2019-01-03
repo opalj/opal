@@ -312,32 +312,39 @@ abstract class PropertiesTest extends FunSpec with Matchers {
     def executeAnalyses(
         analysisRunners: Iterable[ComputationSpecification[FPCFAnalysis]]
     ): TestContext = {
-        val p = FixtureProject.recreate { piKeyUnidueId ⇒
-            piKeyUnidueId != PropertyStoreKey.uniqueId
-        } // to ensure that this project is not "polluted"
-        implicit val logContext: LogContext = p.logContext
-        init(p)
+        try {
+            val p = FixtureProject.recreate { piKeyUnidueId ⇒
+                piKeyUnidueId != PropertyStoreKey.uniqueId
+            } // to ensure that this project is not "polluted"
+            implicit val logContext: LogContext = p.logContext
+            init(p)
 
-        PropertyStore.updateDebug(true)
+            PropertyStore.updateDebug(true)
 
-        p.getOrCreateProjectInformationKeyInitializationData(
-            PropertyStoreKey,
-            (context: List[PropertyStoreContext[AnyRef]]) ⇒ {
-                /*
+            p.getOrCreateProjectInformationKeyInitializationData(
+                PropertyStoreKey,
+                (context: List[PropertyStoreContext[AnyRef]]) ⇒ {
+                    /*
                 val ps = PKEParallelTasksPropertyStore.create(
                     new RecordAllPropertyStoreTracer,
                     context.iterator.map(_.asTuple).toMap
                 )
                 */
-                val ps = PKESequentialPropertyStore(context: _*)
-                ps
-            }
-        )
+                    val ps = PKESequentialPropertyStore(context: _*)
+                    ps
+                }
+            )
 
-        val ps = p.get(PropertyStoreKey)
+            val ps = p.get(PropertyStoreKey)
 
-        val (_, csas) = p.get(FPCFAnalysesManagerKey).runAll(analysisRunners)
-        TestContext(p, ps, csas.collect { case (_, as) ⇒ as })
+            val (_, csas) = p.get(FPCFAnalysesManagerKey).runAll(analysisRunners)
+            TestContext(p, ps, csas.collect { case (_, as) ⇒ as })
+        } catch {
+            case t: Throwable ⇒
+                t.printStackTrace()
+                t.getSuppressed.foreach(e ⇒ e.printStackTrace())
+                throw t;
+        }
     }
 }
 

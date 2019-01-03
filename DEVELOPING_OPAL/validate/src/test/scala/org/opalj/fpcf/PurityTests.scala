@@ -7,7 +7,6 @@ import java.net.URL
 import org.opalj.ai.domain.l1
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.br.analyses.Project
-import org.opalj.concurrent.ConcurrentExceptions
 import org.opalj.fpcf.analyses.EagerL0PurityAnalysis
 import org.opalj.fpcf.analyses.purity.EagerL1PurityAnalysis
 import org.opalj.fpcf.analyses.purity.EagerL2PurityAnalysis
@@ -60,7 +59,7 @@ class PurityTests extends PropertiesTest {
     }
 
     describe("the org.opalj.fpcf.analyses.L0PurityAnalysis is executed") {
-        val as = try {
+        val as =
             executeAnalyses(
                 Set(
                     EagerL0PurityAnalysis,
@@ -69,71 +68,69 @@ class PurityTests extends PropertiesTest {
                     LazyTypeImmutabilityAnalysis
                 )
             )
-        } catch {
-            case ce: ConcurrentExceptions ⇒
-                ce.getSuppressed.foreach(e ⇒ e.printStackTrace())
-                throw ce;
-        }
         as.propertyStore.shutdown()
         validateProperties(as, declaredMethodsWithAnnotations(as.project), Set("Purity"))
     }
 
     describe("the org.opalj.fpcf.analyses.L1PurityAnalysis is executed") {
         L1PurityAnalysis.setRater(Some(SystemOutLoggingAllExceptionRater))
-        val as = executeAnalyses(
-            Set(
-                EagerL1PurityAnalysis,
-                RTACallGraphAnalysisScheduler,
-                TriggeredStaticInitializerAnalysis,
-                TriggeredLoadedClassesAnalysis,
-                TriggeredFinalizerAnalysisScheduler,
-                TriggeredThreadRelatedCallsAnalysis,
-                TriggeredSerializationRelatedCallsAnalysis,
-                TriggeredReflectionRelatedCallsAnalysis,
-                TriggeredSystemPropertiesAnalysis,
-                LazyL0TACAIAnalysis,
-                LazyL1FieldMutabilityAnalysis,
-                LazyClassImmutabilityAnalysis,
-                LazyTypeImmutabilityAnalysis,
-                new LazyCalleesAnalysis(Set(
-                    StandardInvokeCallees, SerializationRelatedCallees, ReflectionRelatedCallees
-                ))
+        val as =
+            executeAnalyses(
+                Set(
+                    EagerL1PurityAnalysis,
+                    RTACallGraphAnalysisScheduler,
+                    TriggeredStaticInitializerAnalysis,
+                    TriggeredLoadedClassesAnalysis,
+                    TriggeredFinalizerAnalysisScheduler,
+                    TriggeredThreadRelatedCallsAnalysis,
+                    TriggeredSerializationRelatedCallsAnalysis,
+                    TriggeredReflectionRelatedCallsAnalysis,
+                    TriggeredSystemPropertiesAnalysis,
+                    LazyL0TACAIAnalysis,
+                    LazyL1FieldMutabilityAnalysis,
+                    LazyClassImmutabilityAnalysis,
+                    LazyTypeImmutabilityAnalysis,
+                    LazyCalleesAnalysis(Set(
+                        StandardInvokeCallees, SerializationRelatedCallees, ReflectionRelatedCallees
+                    ))
+                )
             )
-        )
+        assert(as != null)
         as.propertyStore.shutdown()
         validateProperties(as, declaredMethodsWithAnnotations(as.project), Set("Purity"))
     }
 
     describe("the org.opalj.fpcf.analyses.L2PurityAnalysis is executed") {
         L2PurityAnalysis.setRater(Some(SystemOutLoggingAllExceptionRater))
-        val as = executeAnalyses(
-            Set(
-                EagerL2PurityAnalysis,
-                RTACallGraphAnalysisScheduler,
-                TriggeredStaticInitializerAnalysis,
-                TriggeredLoadedClassesAnalysis,
-                TriggeredFinalizerAnalysisScheduler,
-                TriggeredThreadRelatedCallsAnalysis,
-                TriggeredSerializationRelatedCallsAnalysis,
-                TriggeredReflectionRelatedCallsAnalysis,
-                TriggeredSystemPropertiesAnalysis,
-                LazyL0TACAIAnalysis,
-                LazyL0CompileTimeConstancyAnalysis,
-                LazyStaticDataUsageAnalysis,
-                LazyVirtualMethodStaticDataUsageAnalysis,
-                LazyInterProceduralEscapeAnalysis,
-                LazyVirtualCallAggregatingEscapeAnalysis,
-                LazyReturnValueFreshnessAnalysis,
-                LazyVirtualReturnValueFreshnessAnalysis,
-                LazyFieldLocalityAnalysis,
-                LazyL1FieldMutabilityAnalysis,
-                LazyClassImmutabilityAnalysis,
-                LazyTypeImmutabilityAnalysis,
-                new LazyCalleesAnalysis(Set(
-                    StandardInvokeCallees, SerializationRelatedCallees, ReflectionRelatedCallees
-                ))
+        val as =
+            executeAnalyses(
+                Set(
+                    EagerL2PurityAnalysis,
+                    RTACallGraphAnalysisScheduler,
+                    TriggeredStaticInitializerAnalysis,
+                    TriggeredLoadedClassesAnalysis,
+                    TriggeredFinalizerAnalysisScheduler,
+                    TriggeredThreadRelatedCallsAnalysis,
+                    TriggeredSerializationRelatedCallsAnalysis,
+                    TriggeredReflectionRelatedCallsAnalysis,
+                    TriggeredSystemPropertiesAnalysis,
+                    LazyL0TACAIAnalysis,
+                    LazyL0CompileTimeConstancyAnalysis,
+                    LazyStaticDataUsageAnalysis,
+                    LazyVirtualMethodStaticDataUsageAnalysis,
+                    LazyInterProceduralEscapeAnalysis,
+                    LazyVirtualCallAggregatingEscapeAnalysis,
+                    LazyReturnValueFreshnessAnalysis,
+                    LazyVirtualReturnValueFreshnessAnalysis,
+                    LazyFieldLocalityAnalysis,
+                    LazyL1FieldMutabilityAnalysis,
+                    LazyClassImmutabilityAnalysis,
+                    LazyTypeImmutabilityAnalysis,
+                    LazyCalleesAnalysis(Set(
+                        StandardInvokeCallees, SerializationRelatedCallees, ReflectionRelatedCallees
+                    ))
+                )
             )
-        )
         as.propertyStore.shutdown()
         validateProperties(as, declaredMethodsWithAnnotations(as.project), Set("Purity"))
     }
