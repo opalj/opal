@@ -54,10 +54,10 @@ class ThreadRelatedCallsAnalysis private[analyses] (
     }
 
     /**
-     * This method is triggered each time the property store has a first [[CallersProperty]] value
-     * for the `declaredMethod`. If the method is reachable, it is being checked for calls into the
-     * `Thead` API and add the corresponding implicit/evantual method call.
-     * It do so by calling `processMethod`.
+     * This method is triggered each time the property store has a first
+     * [[org.opalj.fpcf.cg.properties.CallersProperty]] value for the `declaredMethod`. If the
+     * method is reachable, it is being checked for calls into the `Thead` API and add the
+     * corresponding implicit/evantual method call. It do so by calling `processMethod`.
      */
     def analyze(declaredMethod: DeclaredMethod): PropertyComputationResult = {
 
@@ -106,7 +106,8 @@ class ThreadRelatedCallsAnalysis private[analyses] (
     }
 
     /**
-     * If there are updates on the [[TACAI]], we have to process the method again.
+     * If there are updates on the [[org.opalj.tac.fpcf.properties.TACAI]], we have to process the
+     * method again.
      */
     private[this] def continuation(
         method: DefinedMethod
@@ -187,9 +188,9 @@ class ThreadRelatedCallsAnalysis private[analyses] (
 
     /**
      * A helper method, that add the given method to the set of `threadRelatedMethods`.
-     * If `target` is defined, it simply adds the corresponding [[DeclaredMethod]].
-     * Otherwise, it will add the corresponding [[DeclaredMethod]] in case it is virtual (i.e.
-     * its definition is not available).
+     * If `target` is defined, it simply adds the corresponding [[org.opalj.br.DeclaredMethod]].
+     * Otherwise, it will add the corresponding [[org.opalj.br.DeclaredMethod]] in case it is
+     * virtual (i.e. its definition is not available).
      *
      * Note: It takes the given `threadRelatedMethods`, add the relavant ones and returns the
      * updated set.

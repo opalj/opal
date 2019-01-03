@@ -20,8 +20,8 @@ import org.opalj.tac.Stmt
 import org.opalj.tac.fpcf.properties.TACAI
 
 /**
- * For a reachable methods (see [[CallersProperty]]) this class computes the classes that are
- * being loaded (e.g. due to static field accesses).
+ * For a reachable methods (see [[org.opalj.fpcf.cg.properties.CallersProperty]]) this class
+ * computes the classes that are being loaded (e.g. due to static field accesses).
  *
  * @author Florian Kuebler
  */
@@ -29,8 +29,9 @@ class LoadedClassesAnalysis(
         val project: SomeProject
 ) extends FPCFAnalysis {
     /**
-     * If the method in `callersOfMethod` has no callers ([[NoCallers]]), it is not reachable, and
-     * its declaring class will not be loaded (at least not via this call).
+     * If the method in `callersOfMethod` has no callers
+     * ([[org.opalj.fpcf.cg.properties.NoCallers]]), it is not reachable, and its declaring class
+     * will not be loaded (at least not via this call).
      *
      * If it is not yet known, we register a dependency to it.
      *

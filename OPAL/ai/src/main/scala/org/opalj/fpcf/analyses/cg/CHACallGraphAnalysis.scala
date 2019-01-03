@@ -204,8 +204,8 @@ object CHACallGraphAnalysisScheduler extends FPCFTriggeredAnalysisScheduler {
     )
 
     /**
-     * Updates the caller properties of the initial entry points ([[InitialEntryPointsKey]]) to be
-     * called from an unknown context.
+     * Updates the caller properties of the initial entry points
+     * ([[org.opalj.br.analyses.cg.InitialEntryPointsKey]]) to be called from an unknown context.
      * This will trigger the computation of the callees for these methods (see `processMethod`).
      */
     def processEntryPoints(p: SomeProject, ps: PropertyStore): Unit = {

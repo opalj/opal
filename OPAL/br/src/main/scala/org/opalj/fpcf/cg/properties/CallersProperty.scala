@@ -9,7 +9,7 @@ import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.collection.immutable.LongTrieSet
 
 /**
- * For a given [[DeclaredMethod]], and for each call site (represented by the PC), the set of methods
+ * For a given [[org.opalj.br.DeclaredMethod]], and for each call site (represented by the PC), the set of methods
  * that are possible call targets.
  *
  * @author Florian Kuebler

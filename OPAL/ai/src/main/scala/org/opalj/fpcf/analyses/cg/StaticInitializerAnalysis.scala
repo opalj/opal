@@ -19,8 +19,9 @@ import org.opalj.fpcf.cg.properties.LoadedClasses
 import org.opalj.fpcf.cg.properties.OnlyVMLevelCallers
 
 /**
- * Extends the call graph analysis (e.g. [[RTACallGraphAnalysis]]) to include calls to static
- * initializers from within the JVM for each loaded class ([[LoadedClasses]]).
+ * Extends the call graph analysis (e.g. [[org.opalj.fpcf.analyses.cg.RTACallGraphAnalysis]]) to
+ * include calls to static initializers from within the JVM for each loaded class
+ * ([[org.opalj.fpcf.cg.properties.LoadedClasses]]).
  *
  * Furthermore, for each instantiated type ([[InstantiatedTypes]]), it ensures, that its class
  * is also a loaded class.
@@ -46,9 +47,10 @@ class StaticInitializerAnalysis(val project: SomeProject) extends FPCFAnalysis {
     )
 
     /**
-     * For the given project, it registers to the [[LoadedClasses]] and the [[InstantiatedTypes]]
-     * and ensures that:
-     *     1. For each loaded class, its static initializer is called (see [[CallersProperty]])
+     * For the given project, it registers to the [[org.opalj.fpcf.cg.properties.LoadedClasses]] and
+     * the [[org.opalj.fpcf.cg.properties.InstantiatedTypes]] and ensures that:
+     *     1. For each loaded class, its static initializer is called (see
+     *     [[org.opalj.fpcf.cg.properties.CallersProperty]])
      *     2. For each instantiated type, the type is also a loaded class
      *     // TODO split this into two methods and schedule both!
      */

@@ -190,10 +190,11 @@ object RTAState {
 }
 
 /**
- * A rapid type call graph analysis (RTA). For a given [[Method]] it computes the set of outgoing
- * call edges ([[org.opalj.fpcf.cg.properties.StandardInvokeCallees]]). Furthermore, it updates
- * the types for which allocations are present in the [[SomeProject]] ([[InstantiatedTypes]])
- * and updates the [[CallersProperty]].
+ * A rapid type call graph analysis (RTA). For a given [[org.opalj.br.Method]] it computes the set
+ * of outgoing call edges ([[org.opalj.fpcf.cg.properties.StandardInvokeCallees]]). Furthermore, it
+ * updates the types for which allocations are present in the [[org.opalj.br.analyses.SomeProject]]
+ * ([[org.opalj.fpcf.cg.properties.InstantiatedTypes]]) and updates the
+ * [[org.opalj.fpcf.cg.properties.CallersProperty]].
  *
  * This analysis does not handle features such as JVM calls to static initializers or finalize
  * calls.
@@ -211,13 +212,16 @@ class RTACallGraphAnalysis private[analyses] ( final val project: SomeProject) e
     private[this] val isMethodOverridable: Method ⇒ Answer = project.get(IsOverridableMethodKey)
 
     /**
-     * Computes the calls from the given method ([[StandardInvokeCallees]] property) and updates the
-     * [[CallersProperty]] and the [[InstantiatedTypes]].
+     * Computes the calls from the given method
+     * ([[org.opalj.fpcf.cg.properties.StandardInvokeCallees]] property) and updates the
+     * [[org.opalj.fpcf.cg.properties.CallersProperty]] and the
+     * [[org.opalj.fpcf.cg.properties.InstantiatedTypes]].
      *
      * Whenever a `declaredMethod` becomes reachable (the caller property is set initially),
      * this method is called.
-     * In case the method never becomes reachable, the fallback [[NoCallers]] will be used by the
-     * framework and this method returns [[NoResult]].
+     * In case the method never becomes reachable, the fallback
+     * [[org.opalj.fpcf.cg.properties.NoCallers]] will be used by the framework and this method
+     * returns [[org.opalj.fpcf.NoResult]].
      */
     def analyze(declaredMethod: DeclaredMethod): PropertyComputationResult = {
 
@@ -694,8 +698,8 @@ object RTACallGraphAnalysisScheduler extends FPCFTriggeredAnalysisScheduler {
     override def derivesEagerly: Set[PropertyBounds] = PropertyBounds.ubs(StandardInvokeCallees)
 
     /**
-     * Updates the caller properties of the initial entry points ([[InitialEntryPointsKey]]) to be
-     * called from an unknown context.
+     * Updates the caller properties of the initial entry points
+     * ([[org.opalj.br.analyses.cg.InitialEntryPointsKey]]) to be called from an unknown context.
      * This will trigger the computation of the callees for these methods (see `processMethod`).
      */
     def processEntryPoints(p: SomeProject, ps: PropertyStore): Unit = {
