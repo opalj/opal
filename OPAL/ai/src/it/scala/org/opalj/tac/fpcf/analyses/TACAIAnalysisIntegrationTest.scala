@@ -46,7 +46,7 @@ class TACAIAnalysisIntegrationTest extends FunSpec with Matchers {
             TACAITransformer.register(p, ps, null)
 
             try {
-                p.allMethodsWithBody foreach  { method ⇒
+                p.allMethodsWithBody foreach { method ⇒
                     counter.incrementAndGet() % 3 match {
                         case 0 ⇒
                             ps.force(method, BaseAIResult.key)
@@ -82,7 +82,7 @@ class TACAIAnalysisIntegrationTest extends FunSpec with Matchers {
             val counter = new AtomicInteger()
             val fpcfManager = p.get(FPCFAnalysesManagerKey)
             val (ps, _ /*executed analyses*/ ) = fpcfManager.runAll(EagerL0TACAIAnalysis)
-            p.allMethodsWithBody foreach  { method ⇒
+            p.allMethodsWithBody foreach { method ⇒
                 val aiResultProperty = ps(method, BaseAIResult.key)
                 val Some(aiResult) = aiResultProperty.asFinal.p.aiResult
                 // ... smoke test...

@@ -121,7 +121,7 @@ class InvokedynamicRewritingExecutionTest extends FunSpec with Matchers {
         }
     }
 
-    if(isCurrentJREAtLeastJava9) {
+    if (isCurrentJREAtLeastJava9) {
 
         describe("behavior of rewritten string_concat fixture") {
             val testClassType = ObjectType("string_concat/StringConcatFactoryTest")
