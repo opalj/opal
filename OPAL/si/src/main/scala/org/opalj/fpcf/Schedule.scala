@@ -92,7 +92,7 @@ case class Schedule[A](
     }
 
     override def toString: String = {
-        batches.map(_.batch.map(_.name).mkString("{", ", ", "}")).
+        batches.map(_.scheduled.map(_.name).mkString("{", ", ", "}")).
             mkString("Schedule(\n\t", "\n\t", "\n)")
     }
 
