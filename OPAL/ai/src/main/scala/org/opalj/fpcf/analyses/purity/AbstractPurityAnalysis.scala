@@ -545,7 +545,10 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
      */
     def checkPurityOfCallees(
         calleesEOptP: EOptionP[DeclaredMethod, Callees]
-    )(implicit state: StateType): Boolean = {
+    )(
+        implicit
+        state: StateType
+    ): Boolean = {
         handleCalleesUpdate(calleesEOptP)
         calleesEOptP match {
             case UBPS(p, isFinal) ⇒

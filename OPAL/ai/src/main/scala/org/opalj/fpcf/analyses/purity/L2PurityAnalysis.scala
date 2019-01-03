@@ -774,8 +774,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
             case Callees.key ⇒
                 checkPurityOfCallees(eps.asInstanceOf[EOptionP[DeclaredMethod, Callees]])
                 state.rvfCallSites.foreach {
-                    case (pc, data) ⇒
-                        checkFreshnessOfReturn(pc, data, eps.ub.asInstanceOf[Callees])
+                    case (pc, data) ⇒ checkFreshnessOfReturn(pc, data, eps.ub.asInstanceOf[Callees])
                 }
             case StaticDataUsage.key ⇒
                 checkStaticDataUsage(eps.asInstanceOf[EOptionP[DeclaredMethod, StaticDataUsage]])
