@@ -17,6 +17,7 @@ import org.opalj.ai.ImmediateVMExceptionsOriginOffset
 import org.opalj.ai.isMethodExternalExceptionOrigin
 import org.opalj.ai.isImmediateVMException
 import org.opalj.br.MethodDescriptor
+import org.opalj.br.ReferenceType
 import org.opalj.tac.DUVar
 import org.opalj.tac.Stmt
 import org.opalj.tac.UVar
@@ -24,7 +25,7 @@ import org.opalj.tac.UVar
 package object cg {
     type V = DUVar[ValueInformation]
 
-    type CallSiteT = (Int /*PC*/ , String, MethodDescriptor)
+    type CallSiteT = (Int /*PC*/ , String, MethodDescriptor, ReferenceType)
 
     /**
      * A persisten representation (using pcs instead of TAC value origins) for a UVar.

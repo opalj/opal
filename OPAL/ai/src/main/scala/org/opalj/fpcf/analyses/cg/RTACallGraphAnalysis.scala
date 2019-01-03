@@ -4,16 +4,17 @@ package fpcf
 package analyses
 package cg
 
-import scala.language.existentials
-
-import scala.collection.immutable.IntMap
-import scala.collection.mutable
-
-import org.opalj.log.Error
-import org.opalj.log.LogContext
-import org.opalj.log.OPALLogger
-import org.opalj.log.OPALLogger.logOnce
-import org.opalj.log.Warn
+import org.opalj.br.DeclaredMethod
+import org.opalj.br.DefinedMethod
+import org.opalj.br.Method
+import org.opalj.br.MethodDescriptor
+import org.opalj.br.ObjectType
+import org.opalj.br.ReferenceType
+import org.opalj.br.analyses.DeclaredMethods
+import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.cg.InitialEntryPointsKey
+import org.opalj.br.analyses.cg.IsOverridableMethodKey
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.cg.properties.CallersProperty
@@ -23,20 +24,11 @@ import org.opalj.fpcf.cg.properties.NoStandardInvokeCallees
 import org.opalj.fpcf.cg.properties.OnlyCallersWithUnknownContext
 import org.opalj.fpcf.cg.properties.StandardInvokeCallees
 import org.opalj.fpcf.cg.properties.StandardInvokeCalleesImplementation
-import org.opalj.value.IsMObjectValue
-import org.opalj.value.IsNullValue
-import org.opalj.value.IsSArrayValue
-import org.opalj.value.IsSObjectValue
-import org.opalj.br.DeclaredMethod
-import org.opalj.br.DefinedMethod
-import org.opalj.br.Method
-import org.opalj.br.ObjectType
-import org.opalj.br.ReferenceType
-import org.opalj.br.analyses.DeclaredMethods
-import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.cg.InitialEntryPointsKey
-import org.opalj.br.analyses.cg.IsOverridableMethodKey
+import org.opalj.log.Error
+import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger
+import org.opalj.log.OPALLogger.logOnce
+import org.opalj.log.Warn
 import org.opalj.tac.Assignment
 import org.opalj.tac.Call
 import org.opalj.tac.ExprStmt
@@ -52,6 +44,14 @@ import org.opalj.tac.VirtualCall
 import org.opalj.tac.VirtualFunctionCallStatement
 import org.opalj.tac.VirtualMethodCall
 import org.opalj.tac.fpcf.properties.TACAI
+import org.opalj.value.IsMObjectValue
+import org.opalj.value.IsNullValue
+import org.opalj.value.IsSArrayValue
+import org.opalj.value.IsSObjectValue
+
+import scala.collection.immutable.IntMap
+import scala.collection.mutable
+import scala.language.existentials
 
 class RTAState private (
         private[cg] val method:                       DefinedMethod,
@@ -282,7 +282,6 @@ class RTACallGraphAnalysis private[analyses] ( final val project: SomeProject) e
         implicit val newState = state.copy(
             numTypesProcessed = numTypesProcessed,
             instantiatedTypesDependee = instantiatedTypesDependee
-
         )
 
         // process each stmt in the current method to compute:
@@ -290,9 +289,6 @@ class RTACallGraphAnalysis private[analyses] ( final val project: SomeProject) e
         //  2. methods (+ pc) called by the current method
         //  3. compute the call sites of virtual calls, whose targets are not yet final
         handleStmts(tac, instantiatedTypesUB)
-
-        // here we can ignore the return value, as the state also gets updated
-        handleVirtualCallSites(newState, instantiatedTypesUB, instantiatedTypesUB.iterator)
 
         returnResult
     }
@@ -311,15 +307,31 @@ class RTACallGraphAnalysis private[analyses] ( final val project: SomeProject) e
         // for calls, add new edges
         tac.stmts.foreach {
             case stmt @ StaticFunctionCallStatement(call) ⇒
-                handleCall(method, call, stmt.pc, call.resolveCallTarget)
+                handleCall(
+                    method,
+                    call.name,
+                    call.descriptor,
+                    call.declaringClass,
+                    stmt.pc,
+                    call.resolveCallTarget
+                )
 
             case call: StaticMethodCall[V] ⇒
-                handleCall(method, call, call.pc, call.resolveCallTarget)
+                handleCall(
+                    method,
+                    call.name,
+                    call.descriptor,
+                    call.declaringClass,
+                    call.pc,
+                    call.resolveCallTarget
+                )
 
             case stmt @ NonVirtualFunctionCallStatement(call) ⇒
                 handleCall(
                     method,
-                    call,
+                    call.name,
+                    call.descriptor,
+                    call.declaringClass,
                     stmt.pc,
                     call.resolveCallTarget(method.declaringClassType.asObjectType)
                 )
@@ -327,7 +339,9 @@ class RTACallGraphAnalysis private[analyses] ( final val project: SomeProject) e
             case call: NonVirtualMethodCall[V] ⇒
                 handleCall(
                     method,
-                    call,
+                    call.name,
+                    call.descriptor,
+                    call.declaringClass,
                     call.pc,
                     call.resolveCallTarget(method.declaringClassType.asObjectType)
                 )
@@ -366,20 +380,22 @@ class RTACallGraphAnalysis private[analyses] ( final val project: SomeProject) e
 
     private[this] def unknownLibraryCall(
         caller:              DefinedMethod,
-        call:                Call[V],
+        callName:            String,
+        callDescriptor:      MethodDescriptor,
+        callDeclaringClass:  ReferenceType,
         runtimeReceiverType: ReferenceType,
         packageName:         String,
         pc:                  Int
     )(implicit state: RTAState): Unit = {
-        val declaringClassType = call.declaringClass.mostPreciseObjectType
+        val declaringClassType = callDeclaringClass.mostPreciseObjectType
         val runtimeType = runtimeReceiverType.mostPreciseObjectType
 
         val declTgt = declaredMethods.apply(
             declaringClassType,
             packageName,
             runtimeType,
-            call.name,
-            call.descriptor
+            callName,
+            callDescriptor
         )
 
         if (declTgt.isVirtualOrHasSingleDefinedMethod) {
@@ -418,7 +434,14 @@ class RTACallGraphAnalysis private[analyses] ( final val project: SomeProject) e
                     call.descriptor
                 )
 
-                handleCall(caller, call, pc, tgtR)
+                handleCall(
+                    caller,
+                    call.name,
+                    call.descriptor,
+                    call.declaringClass,
+                    pc,
+                    tgtR
+                )
 
             case ov: IsSObjectValue ⇒
                 if (ov.isPrecise) {
@@ -429,7 +452,14 @@ class RTACallGraphAnalysis private[analyses] ( final val project: SomeProject) e
                         call.descriptor
                     )
 
-                    handleCall(caller, call, pc, tgt)
+                    handleCall(
+                        caller,
+                        call.name,
+                        call.descriptor,
+                        call.declaringClass,
+                        pc,
+                        tgt
+                    )
                 } else {
                     val potentialTypes = classHierarchy.allSubtypesIterator(
                         ov.theUpperTypeBound, reflexive = true
@@ -483,10 +513,17 @@ class RTACallGraphAnalysis private[analyses] ( final val project: SomeProject) e
                     call.descriptor
                 )
 
-                handleCall(caller, call, pc, tgtR)
+                handleCall(
+                    caller,
+                    call.name,
+                    call.descriptor,
+                    call.declaringClass,
+                    pc,
+                    tgtR
+                )
             } else {
                 state.addVirtualCallSite(
-                    possibleTgtType, (pc, call.name, call.descriptor)
+                    possibleTgtType, (pc, call.name, call.descriptor, call.declaringClass)
                 )
             }
         }
@@ -506,7 +543,9 @@ class RTACallGraphAnalysis private[analyses] ( final val project: SomeProject) e
             if (m.isEmpty) {
                 unknownLibraryCall(
                     caller,
-                    call,
+                    call.name,
+                    call.descriptor,
+                    call.declaringClass,
                     declType,
                     caller.definedMethod.classFile.thisType.packageName,
                     pc
@@ -522,10 +561,12 @@ class RTACallGraphAnalysis private[analyses] ( final val project: SomeProject) e
      * edges for all targets.
      */
     private[this] def handleCall(
-        caller: DefinedMethod,
-        call:   Call[V],
-        pc:     Int,
-        target: org.opalj.Result[Method]
+        caller:             DefinedMethod,
+        callName:           String,
+        callDescriptor:     MethodDescriptor,
+        callDeclaringClass: ReferenceType,
+        pc:                 Int,
+        target:             org.opalj.Result[Method]
     )(
         implicit
         state: RTAState
@@ -535,28 +576,49 @@ class RTACallGraphAnalysis private[analyses] ( final val project: SomeProject) e
             state.addCallEdge(pc, tgtDM)
         } else {
             val packageName = caller.definedMethod.classFile.thisType.packageName
-            unknownLibraryCall(caller, call, call.declaringClass, packageName, pc)
+            unknownLibraryCall(
+                caller,
+                callName,
+                callDescriptor,
+                callDeclaringClass,
+                callDeclaringClass,
+                packageName,
+                pc
+            )
         }
     }
 
     // modifies state and the calleesAndCallers
     private[this] def handleVirtualCallSites(
-        state:                RTAState,
-        instantiatedTypesUB:  UIDSet[ObjectType],
         newInstantiatedTypes: Iterator[ObjectType]
-    ): Unit = {
-
-        for (instantiatedType ← newInstantiatedTypes) {
-            for {
-                (pc, name, descr) ← state.virtualCallSites.getOrElse(instantiatedType.id.toLong, Set.empty)
-                // todo in case of Failure?
-                tgt ← project.instanceCall(
-                    state.method.definedMethod.classFile.thisType, instantiatedType, name, descr
-                )
-            } {
-                val tgtDM = declaredMethods(tgt)
-                state.addCallEdge(pc, tgtDM)
+    )(implicit state: RTAState): Unit = {
+        newInstantiatedTypes.foreach { instantiatedType ⇒
+            val callSitesOpt = state.virtualCallSites.get(instantiatedType.id.toLong)
+            if (callSitesOpt.isDefined) {
+                callSitesOpt.get.foreach { callSite ⇒
+                    val (pc, name, descr, declaringClass) = callSite
+                    val tgtR = project.instanceCall(
+                        state.method.definedMethod.classFile.thisType,
+                        instantiatedType,
+                        name,
+                        descr
+                    )
+                    handleCall(
+                        state.method,
+                        name,
+                        descr,
+                        declaringClass,
+                        pc,
+                        tgtR
+                    )
+                    // todo in case of Failure?
+                    if (tgtR.hasValue) {
+                        val tgtDM = declaredMethods(tgtR.value)
+                        state.addCallEdge(pc, tgtDM)
+                    }
+                }
             }
+
             state.removeCallSite(instantiatedType)
         }
     }
@@ -591,7 +653,7 @@ class RTACallGraphAnalysis private[analyses] ( final val project: SomeProject) e
                 val newInstantiatedTypes = ub.getNewTypes(toBeDropped)
 
                 // the new edges in the call graph due to the new types
-                handleVirtualCallSites(state, ub.types, newInstantiatedTypes)
+                handleVirtualCallSites(newInstantiatedTypes)(state)
 
                 returnResult(state)
         }
