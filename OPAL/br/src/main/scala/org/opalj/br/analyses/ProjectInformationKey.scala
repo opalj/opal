@@ -3,7 +3,7 @@ package org.opalj
 package br
 package analyses
 
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * `ProjecInformationKey` objects are used to get/associate some

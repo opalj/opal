@@ -4,8 +4,11 @@ package fpcf
 package analyses
 package escape
 
-import org.opalj.ai.ValueOrigin
-import org.opalj.ai.common.DefinitionSitesKey
+import org.opalj.fpcf.cg.properties.Callees
+import org.opalj.fpcf.cg.properties.CallersProperty
+import org.opalj.fpcf.cg.properties.NoCallers
+import org.opalj.fpcf.properties._
+import org.opalj.value.ValueInformation
 import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
 import org.opalj.br.VirtualDeclaredMethod
@@ -16,11 +19,8 @@ import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.br.analyses.VirtualFormalParameters
 import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.br.analyses.cg.IsOverridableMethodKey
-import org.opalj.fpcf.cg.properties.Callees
-import org.opalj.fpcf.cg.properties.CallersProperty
-import org.opalj.fpcf.cg.properties.NoCallers
-import org.opalj.fpcf.properties._
-import org.opalj.value.ValueInformation
+import org.opalj.ai.ValueOrigin
+import org.opalj.ai.common.DefinitionSitesKey
 import org.opalj.tac.DUVar
 import org.opalj.tac.fpcf.properties.TACAI
 

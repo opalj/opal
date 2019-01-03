@@ -6,18 +6,18 @@ package analyses
 import scala.collection.{Map ⇒ SomeMap}
 import scala.collection.{Set ⇒ SomeSet}
 
-import org.opalj.collection.immutable.ConstArray.find
+import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger
 import org.opalj.collection.immutable.ConstArray
+import org.opalj.collection.immutable.ConstArray.find
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.br.instructions.FieldAccess
-import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.instructions.INVOKEINTERFACE
-import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.br.instructions.INVOKESPECIAL
+import org.opalj.br.instructions.INVOKESTATIC
+import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.br.instructions.NonVirtualMethodInvocationInstruction
 import org.opalj.br.MethodDescriptor.{SignaturePolymorphicMethod ⇒ SignaturePolymorphicMethodDescriptor}
-import org.opalj.log.OPALLogger
-import org.opalj.log.LogContext
 
 /**
  * Enables project wide lookups of methods and fields as required to determine the target(s) of an

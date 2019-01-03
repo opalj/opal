@@ -2,40 +2,41 @@
 package org.opalj
 package fpcf
 
-import org.scalatest.Matchers
-import org.scalatest.FunSpec
-import java.net.URL
 import java.io.File
+import java.net.URL
 
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigValueFactory
+import org.scalatest.FunSpec
+import org.scalatest.Matchers
+
 import org.opalj.log.LogContext
-import org.opalj.ai.common.DefinitionSite
-import org.opalj.ai.common.DefinitionSitesKey
+import org.opalj.util.ScalaMajorVersion
+import org.opalj.fpcf.properties.PropertyMatcher
+import org.opalj.fpcf.seq.PKESequentialPropertyStore
+import org.opalj.bytecode.RTJar
 import org.opalj.br.DefinedMethod
 import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.br.analyses.VirtualFormalParametersKey
-import org.opalj.util.ScalaMajorVersion
-import org.opalj.bytecode.RTJar
-import org.opalj.br.Type
-import org.opalj.br.Field
-import org.opalj.br.Method
-import org.opalj.br.ClassFile
-import org.opalj.br.ObjectType
 import org.opalj.br.Annotation
+import org.opalj.br.AnnotationLike
 import org.opalj.br.Annotations
-import org.opalj.br.StringValue
+import org.opalj.br.ClassFile
 import org.opalj.br.ClassValue
 import org.opalj.br.ElementValuePair
-import org.opalj.br.AnnotationLike
+import org.opalj.br.Field
+import org.opalj.br.Method
+import org.opalj.br.ObjectType
+import org.opalj.br.StringValue
 import org.opalj.br.TAOfNew
+import org.opalj.br.Type
+import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.cg.InitialEntryPointsKey
 import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
-import org.opalj.fpcf.properties.PropertyMatcher
-import org.opalj.fpcf.seq.PKESequentialPropertyStore
+import org.opalj.ai.common.DefinitionSite
+import org.opalj.ai.common.DefinitionSitesKey
 
 /**
  * Framework to test if the properties specified in the test project (the classes in the
