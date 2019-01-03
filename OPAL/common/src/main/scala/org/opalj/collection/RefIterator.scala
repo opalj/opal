@@ -65,6 +65,12 @@ abstract class RefIterator[+T] extends AbstractIterator[T] { self ⇒
         this
     }
 
+    override def take(n: Int): RefIterator[T] = new RefIterator[T] {
+        private[this] var taken = 0
+        def hasNext: Boolean = self.hasNext && taken < n
+        def next(): T = { taken += 1; self.next() }
+    }
+
     override def filter(p: T ⇒ Boolean): RefIterator[T] = new RefIterator[T] {
         private[this] var hasNextValue: Boolean = true
         private[this] var v: T = _
