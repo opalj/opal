@@ -807,12 +807,11 @@ final class PKESequentialPropertyStore private (
                 }
                 subPhaseId += 1
             }
-            if (debug && continueComputation) {
+            if (debug && continueComputation && !tasks.isEmpty) {
                 trace(
                     "analysis progress",
                     s"finalization of sub phase $subPhaseId of "+
-                        s"${subPhaseFinalizationOrder.length} led to updates "+
-                        s"${tasks.toArray().mkString("[", ",", "]")}"
+                        s"${subPhaseFinalizationOrder.length} led to ${tasks.size} updates "
                 )
             }
         } while (continueComputation)
