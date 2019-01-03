@@ -12,7 +12,7 @@ sealed abstract class PropertyBounds(val pk: PropertyKind) {
             case (true, true)   ⇒ "LBP+UBP"
             case (true, false)  ⇒ "LBP"
             case (false, true)  ⇒ "UBP"
-            case (false, false) ⇒ "FinalP" // Used by transformers (only)
+            case (false, false) ⇒ "FinalP" // Intended to be used only by transformers
         }) + '(' + PropertyKey.name(pk) + ')'
     }
 
