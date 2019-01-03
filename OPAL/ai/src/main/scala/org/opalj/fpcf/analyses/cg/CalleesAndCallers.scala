@@ -46,6 +46,7 @@ private[cg] class CalleesAndCallers(
         caller: DeclaredMethod, callee: DeclaredMethod, pc: Int
     ): Unit = {
         val calleeId = callee.id
+        // todo here we could slightly improve the performance by omitting the latter contains check
         if (!_callees.contains(pc) || !_callees(pc).contains(calleeId)) {
             _callees = _callees.updated(pc, _callees.getOrElse(pc, IntTrieSet.empty) + calleeId)
             _partialResultsForCallers ::= createPartialResultForCaller(caller, callee, pc)
