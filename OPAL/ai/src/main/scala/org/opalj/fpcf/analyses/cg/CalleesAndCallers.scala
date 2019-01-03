@@ -47,9 +47,19 @@ private[cg] class CalleesAndCallers(
     ): Unit = {
         val calleeId = callee.id
         // todo here we could slightly improve the performance by omitting the latter contains check
-        if (!_callees.contains(pc) || !_callees(pc).contains(calleeId)) {
-            _callees = _callees.updated(pc, _callees.getOrElse(pc, IntTrieSet.empty) + calleeId)
+        val oldCalleesAtPCOpt = _callees.get(pc)
+        if (oldCalleesAtPCOpt.isEmpty) {
+            _callees = _callees.updated(pc, IntTrieSet(calleeId))
             _partialResultsForCallers ::= createPartialResultForCaller(caller, callee, pc)
+        } else {
+            val oldCalleesAtPC = oldCalleesAtPCOpt.get
+            val newCalleesAtPC = oldCalleesAtPC + calleeId
+
+            // here we assert that IntSet returns the identity if the element is already contained
+            if (newCalleesAtPC ne oldCalleesAtPC) {
+                _callees = _callees.updated(pc, newCalleesAtPC)
+                _partialResultsForCallers ::= createPartialResultForCaller(caller, callee, pc)
+            }
         }
     }
 
