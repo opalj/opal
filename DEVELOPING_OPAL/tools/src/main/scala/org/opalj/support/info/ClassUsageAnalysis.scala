@@ -1,25 +1,27 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.support.info
 
-import java.net.URL
+import scala.annotation.switch
 
+import java.net.URL
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicInteger
+
+import scala.collection.mutable.ListBuffer
+
+import org.opalj.log.GlobalLogContext
+import org.opalj.log.OPALLogger
+import org.opalj.value.ValueInformation
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ReportableAnalysisResult
-import org.opalj.log.GlobalLogContext
-import org.opalj.log.OPALLogger
 import org.opalj.tac.Assignment
 import org.opalj.tac.Call
 import org.opalj.tac.DUVar
 import org.opalj.tac.ExprStmt
 import org.opalj.tac.SimpleTACAIKey
 import org.opalj.tac.VirtualFunctionCall
-import org.opalj.value.ValueInformation
-
-import scala.annotation.switch
-import scala.collection.mutable
-import scala.collection.mutable.ListBuffer
 
 /**
  * Analyzes a project for how a particular class is used within that project. This means that this
@@ -83,14 +85,14 @@ object ClassUsageAnalysis extends DefaultOneStepAnalysis {
      * so, updates the passed map by adding the count of the corresponding method. The granularity
      * for counting is determined by [[isFineGrainedAnalysis]].
      */
-    private def processFunctionCall(call: Call[V], map: mutable.Map[String, Int]): Unit = {
+    private def processFunctionCall(
+        call: Call[V], map: ConcurrentHashMap[String, AtomicInteger]
+    ): Unit = {
         val declaringClassName = call.declaringClass.toJava
         if (declaringClassName == className) {
             val methodDescriptor = assembleMethodDescriptor(call)
-            if (map.contains(methodDescriptor)) {
-                map(methodDescriptor) += 1
-            } else {
-                map(methodDescriptor) = 1
+            if (map.putIfAbsent(methodDescriptor, new AtomicInteger(1)) != null) {
+                map.get(methodDescriptor).addAndGet(1)
             }
         }
     }
@@ -141,11 +143,11 @@ object ClassUsageAnalysis extends DefaultOneStepAnalysis {
         project: Project[URL], parameters: Seq[String], isInterrupted: () ⇒ Boolean
     ): ReportableAnalysisResult = {
         setAnalysisParameters(parameters)
-        val resultMap = mutable.Map[String, Int]()
+        val resultMap: ConcurrentHashMap[String, AtomicInteger] = new ConcurrentHashMap
         val tacProvider = project.get(SimpleTACAIKey)
 
-        project.allMethodsWithBody.foreach { m ⇒
-            tacProvider(m).stmts.foreach { stmt ⇒
+        project.parForeachMethodWithBody() { methodInfo ⇒
+            tacProvider(methodInfo.method).stmts.foreach { stmt ⇒
                 (stmt.astID: @switch) match {
                     case Assignment.ASTID ⇒ stmt match {
                         case Assignment(_, _, c: VirtualFunctionCall[V]) ⇒
@@ -164,9 +166,9 @@ object ClassUsageAnalysis extends DefaultOneStepAnalysis {
 
         val report = ListBuffer[String]("Result:")
         // Transform to a list, sort in ascending order of occurrences, and format the information
-        report.appendAll(resultMap.toList.sortWith(_._2 < _._2).map {
-            case (descriptor: String, count: Int) ⇒ s"$descriptor: $count"
-        })
+        resultMap.entrySet().stream().sorted { (value1, value2) ⇒
+            value1.getValue.get().compareTo(value2.getValue.get())
+        }.forEach(next ⇒ report.append(s"${next.getKey}: ${next.getValue}"))
         BasicReport(report)
     }
 
