@@ -54,8 +54,8 @@ object ClassUsageAnalysis extends DefaultOneStepAnalysis {
 
     /**
      * The analysis can run in two modes: Fine-grained or coarse-grained. Fine-grained means that
-     * two method are considered as the same only if their method descriptor is the same, i.e., this
-     * mode enables a differentiation between overloaded methods.
+     * two methods are considered equal iff their method descriptor is the same, i.e., this mode
+     * enables a differentiation between overloaded methods.
      * The coarse-grained method, however, regards two method calls as the same if the class of the
      * base object as well as the method name are equal, i.e., overloaded methods are not
      * distinguished.
