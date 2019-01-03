@@ -473,10 +473,10 @@ final class PKESequentialPropertyStore private (
     }
 
     private[this] def handlePartialResult(
-                               e:  Entity,
-                               pk: SomePropertyKey,
-                               u:  UpdateComputation[_ <: Entity, _ <: Property]
-                           ): Unit = {
+        e:  Entity,
+        pk: SomePropertyKey,
+        u:  UpdateComputation[_ <: Entity, _ <: Property]
+    ): Unit = {
         type E = e.type
         type P = Property
         val eOptionP = apply[E, P](e: E, pk: PropertyKey[P])
@@ -484,16 +484,16 @@ final class PKESequentialPropertyStore private (
         newEPSOption foreach { newEPS ⇒ update(newEPS, Nil /*<= w.r.t. the "newEPS"!*/ ) }
     }
 
-    @inline private[this]  def handlePartialResults(prs: Traversable[SomePartialResult]): Unit = {
+    @inline private[this] def handlePartialResults(prs: Traversable[SomePartialResult]): Unit = {
         // It is ok if prs is empty!
         prs foreach { pr ⇒ handlePartialResult(pr.e, pr.pk, pr.u) }
     }
 
     /* Returns `true` if no dependee was updated in the meantime. */
-   private[this] def processDependeesOfInterimPartialResult(
-                                                  processedDependees: Traversable[SomeEOptionP],
-                                                  c:                  OnUpdateContinuation
-                                              ): Boolean = {
+    private[this] def processDependeesOfInterimPartialResult(
+        processedDependees: Traversable[SomeEOptionP],
+        c:                  OnUpdateContinuation
+    ): Boolean = {
         processedDependees forall { processedDependee ⇒
             val processedDependeeE = processedDependee.e
             val processedDependeePK = processedDependee.pk
@@ -528,14 +528,12 @@ final class PKESequentialPropertyStore private (
         }
     }
 
-
-
     /* Returns `true` if no dependee was updated in the meantime. */
-   private[this] def processDependeesOfInterimResult(
-                                           initialEPS:       SomeEPS,
-                                           initialDependees: Traversable[SomeEOptionP],
-                                           initialC:         OnUpdateContinuation
-                                       ): (SomeEPS, Traversable[SomeEOptionP], OnUpdateContinuation) = {
+    private[this] def processDependeesOfInterimResult(
+        initialEPS:       SomeEPS,
+        initialDependees: Traversable[SomeEOptionP],
+        initialC:         OnUpdateContinuation
+    ): (SomeEPS, Traversable[SomeEOptionP], OnUpdateContinuation) = {
         // The idea is to stack/aggregate all changes in dependees.
         val e = initialEPS.e
         val pk = initialEPS.pk
@@ -566,7 +564,7 @@ final class PKESequentialPropertyStore private (
                             nextEPS = finalEP
                             nextDependees = Nil
                             nextC = null
-                            // continue remains "false"
+                        // continue remains "false"
 
                         case r ⇒
                             println(s"unexpected result for copntinuation of intermediate result: $r")
