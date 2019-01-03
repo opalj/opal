@@ -42,7 +42,7 @@ object ClassUsageAnalysis extends DefaultOneStepAnalysis {
     override def title: String = "Class Usage Analysis"
 
     override def description: String = {
-        "Analyzes a project for how a particular class is used within it, i.e., which methods " +
+        "Analyzes a project for how a particular class is used within it, i.e., which methods "+
             "of instances of that class are called"
     }
 
@@ -138,8 +138,8 @@ object ClassUsageAnalysis extends DefaultOneStepAnalysis {
     }
 
     override def doAnalyze(
-                              project: Project[URL], parameters: Seq[String], isInterrupted: () ⇒ Boolean
-                          ): ReportableAnalysisResult = {
+        project: Project[URL], parameters: Seq[String], isInterrupted: () ⇒ Boolean
+    ): ReportableAnalysisResult = {
         setAnalysisParameters(parameters)
         val resultMap = mutable.Map[String, Int]()
         val tacProvider = project.get(SimpleTACAIKey)
