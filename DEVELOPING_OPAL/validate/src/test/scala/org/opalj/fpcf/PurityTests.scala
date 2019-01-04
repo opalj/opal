@@ -74,11 +74,9 @@ class PurityTests extends PropertiesTest {
     }
 
     describe("the org.opalj.fpcf.analyses.L1PurityAnalysis is executed") {
-        L1PurityAnalysis.setRater(Some(SystemOutLoggingAllExceptionRater))
-        val as =
+        val testContext =
             executeAnalyses(
                 Set(
-                    EagerL1PurityAnalysis,
                     RTACallGraphAnalysisScheduler,
                     TriggeredStaticInitializerAnalysis,
                     TriggeredLoadedClassesAnalysis,
@@ -99,17 +97,26 @@ class PurityTests extends PropertiesTest {
                     ))
                 )
             )
+
+        L1PurityAnalysis.setRater(Some(SystemOutLoggingAllExceptionRater))
+
+        // todo: we need final results for the CallersProperty, this should be a task of the manager
+        val p = testContext.project
+        val manager = p.get(FPCFAnalysesManagerKey)
+
+        val (ps, List((_, a))) = manager.runAll(EagerL1PurityAnalysis)
+
+        val as = TestContext(p, ps, a :: testContext.analyses)
         assert(as != null)
+
         as.propertyStore.shutdown()
         validateProperties(as, declaredMethodsWithAnnotations(as.project), Set("Purity"))
     }
 
     describe("the org.opalj.fpcf.analyses.L2PurityAnalysis is executed") {
-        L2PurityAnalysis.setRater(Some(SystemOutLoggingAllExceptionRater))
-        val as =
+        val testContext =
             executeAnalyses(
                 Set(
-                    EagerL2PurityAnalysis,
                     RTACallGraphAnalysisScheduler,
                     TriggeredStaticInitializerAnalysis,
                     TriggeredLoadedClassesAnalysis,
@@ -138,6 +145,17 @@ class PurityTests extends PropertiesTest {
                     ))
                 )
             )
+
+        L2PurityAnalysis.setRater(Some(SystemOutLoggingAllExceptionRater))
+
+        // todo: we need final results for the CallersProperty, this should be a task of the manager
+        val p = testContext.project
+        val manager = p.get(FPCFAnalysesManagerKey)
+
+        val (ps, List((_, a))) = manager.runAll(EagerL2PurityAnalysis)
+
+        val as = TestContext(p, ps, a :: testContext.analyses)
+
         as.propertyStore.shutdown()
         validateProperties(as, declaredMethodsWithAnnotations(as.project), Set("Purity"))
     }

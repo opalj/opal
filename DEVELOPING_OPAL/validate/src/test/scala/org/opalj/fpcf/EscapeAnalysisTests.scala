@@ -71,7 +71,16 @@ class EscapeAnalysisTests extends PropertiesTest {
     }
 
     describe("the org.opalj.fpcf.analyses.escape.InterProceduralEscapeAnalysis is executed") {
-        val as = executeAnalyses(EagerInterProceduralEscapeAnalysis :: analyses)
+        val testContext = executeAnalyses(analyses)
+
+        // todo: we need final results for the CallersProperty, this should be a task of the manager
+        val p = testContext.project
+        val manager = p.get(FPCFAnalysesManagerKey)
+
+        val (ps, List((_, a))) = manager.runAll(EagerInterProceduralEscapeAnalysis)
+
+        val as = TestContext(p, ps, a :: testContext.analyses)
+
         as.propertyStore.shutdown()
         validateProperties(
             as,
