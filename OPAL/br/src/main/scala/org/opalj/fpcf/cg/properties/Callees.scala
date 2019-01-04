@@ -33,6 +33,11 @@ sealed trait Callees extends Property with CalleesPropertyMetaInformation {
     def isIncompleteCallSite(pc: Int)(implicit propertyStore: PropertyStore): Boolean
 
     /**
+     * States whether there is at least one call site that could not be resolved.
+     */
+    def hasIncompleteCallSites: Boolean
+
+    /**
      * Potential callees of the call site at `pc`. The callees may not match the invocation
      * instruction at the pc and a remapping of parameters using [[indirectCallParameters]] may be
      * necessary.
@@ -131,6 +136,7 @@ sealed trait Callees extends Property with CalleesPropertyMetaInformation {
 /**
  * Callees class used for final results where the callees are already aggregated.
  */
+// todo rename, as the name is an artifact
 sealed class FinalCallees(
         private[this] val directCalleesIds:        IntMap[IntTrieSet],
         private[this] val indirectCalleesIds:      IntMap[IntTrieSet],
@@ -144,6 +150,10 @@ sealed class FinalCallees(
 
     override def isIncompleteCallSite(pc: Int)(implicit propertyStore: PropertyStore): Boolean = {
         _incompleteCallSites.contains(pc)
+    }
+
+    override def hasIncompleteCallSites: Boolean = {
+        _incompleteCallSites.nonEmpty
     }
 
     override def callees(
@@ -237,6 +247,9 @@ object NoCallees extends Callees {
     override def isIncompleteCallSite(pc: Int)(implicit propertyStore: PropertyStore): Boolean =
         false
 
+    override def hasIncompleteCallSites: Boolean =
+        false
+
     override def callees(pc: Int)(
         implicit
         propertyStore:   PropertyStore,
@@ -293,6 +306,9 @@ object NoCalleesDueToNotReachableMethod extends Callees {
         IntIterator.empty
 
     override def isIncompleteCallSite(pc: Int)(implicit propertyStore: PropertyStore): Boolean =
+        false
+
+    override def hasIncompleteCallSites: Boolean =
         false
 
     override def callees(pc: Int)(
