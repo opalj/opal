@@ -24,7 +24,6 @@ import org.opalj.br.VoidType
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.collection.immutable.IntArraySetBuilder
@@ -195,10 +194,6 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
     }
 
     implicit private[this] val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
-
-    // todo move this to instantiatedTypes analysis
-    private[this] val initialInstantiatedTypes: UIDSet[ObjectType] =
-        UIDSet(project.get(InitialInstantiatedTypesKey).toSeq: _*)
 
     def analyze(declaredMethod: DeclaredMethod): PropertyComputationResult = {
         // todo this is copy & past code from the RTACallGraphAnalysis -> refactor
@@ -1344,7 +1339,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         // in case they are not yet computed, we use the initialTypes
         val instantiatedTypesUB: UIDSet[ObjectType] = instantiatedTypesEOptP match {
             case eps: EPS[_, _] ⇒ eps.ub.types
-            case _              ⇒ initialInstantiatedTypes
+            case _              ⇒ UIDSet.empty
         }
 
         (loadedClassesUB, instantiatedTypesUB)
@@ -1393,7 +1388,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                         None
 
                 case EPK(p, _) ⇒
-                    Some(InterimEUBP(p, LoadedClasses.initial(state.newLoadedClasses)))
+                    Some(InterimEUBP(p, LoadedClasses(state.newLoadedClasses)))
 
                 case r ⇒ throw new IllegalStateException(s"unexpected previous result $r")
             })
@@ -1404,7 +1399,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                 p,
                 InstantiatedTypes.key,
                 InstantiatedTypesAnalysis.update(
-                    p, state.newInstantiatedTypes, initialInstantiatedTypes
+                    p, state.newInstantiatedTypes
                 )
             )
 

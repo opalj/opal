@@ -14,13 +14,14 @@ import org.opalj.fpcf.cg.properties.CalleesLikeNotReachable
 import org.opalj.fpcf.cg.properties.CalleesLike
 import org.opalj.fpcf.cg.properties.CalleesLikePropertyMetaInformation
 import org.opalj.fpcf.cg.properties.NoCalleesDueToNotReachableMethod
-import org.opalj.fpcf.cg.properties.FinalCallees
+import org.opalj.fpcf.cg.properties.ConcreteCallees
 import org.opalj.fpcf.cg.properties.IndirectCallees
 import scala.collection.immutable.IntMap
 
 import org.opalj.value.ValueInformation
 
-// todo the callees property could be collaborative (compute the complete set of callees on demand)
+// todo discuss whether we want the callees property computed collaboratively or stick with the
+// subproperties
 /**
  *
  * @author Florian Kuebler
@@ -139,7 +140,7 @@ final class CalleesAnalysis private[analyses] (
             }
         }
 
-        val ub = new FinalCallees(
+        val ub = new ConcreteCallees(
             directCalleeIds,
             indirectCalleeIds,
             incompleteCallSites,

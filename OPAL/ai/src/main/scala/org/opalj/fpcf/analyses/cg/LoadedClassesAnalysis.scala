@@ -121,7 +121,7 @@ class LoadedClassesAnalysis(
 
             case _: EPK[_, _] ⇒
                 Some(
-                    InterimEUBP(project, LoadedClasses.initial(newLoadedClasses))
+                    InterimEUBP(project, LoadedClasses(newLoadedClasses))
                 )
 
             case r ⇒

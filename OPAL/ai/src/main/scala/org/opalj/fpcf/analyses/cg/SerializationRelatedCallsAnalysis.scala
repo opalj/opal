@@ -426,7 +426,7 @@ class SerializationRelatedCallsAnalysis private[analyses] (
             res ::= PartialResult(
                 p,
                 InstantiatedTypes.key,
-                InstantiatedTypesAnalysis.update(p, newInstantiatedTypes, initialInstantiatedTypes)
+                InstantiatedTypesAnalysis.update(p, newInstantiatedTypes)
             )
 
         Results(res)

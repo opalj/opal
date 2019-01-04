@@ -53,13 +53,12 @@ case class InstantiatedTypes private[properties] (
 
 object InstantiatedTypes extends InstantiatedTypesPropertyMetaInformation {
 
-    def initial(
-        types:                    UIDSet[ObjectType],
+    def apply(
         initialInstantiatedTypes: UIDSet[ObjectType]
     ): InstantiatedTypes = {
         new InstantiatedTypes(
-            types.toList ++ initialInstantiatedTypes.toList,
-            types ++ initialInstantiatedTypes
+            initialInstantiatedTypes.toList,
+            initialInstantiatedTypes
         )
     }
 

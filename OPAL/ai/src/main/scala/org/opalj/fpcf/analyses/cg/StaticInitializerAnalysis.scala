@@ -111,7 +111,7 @@ class StaticInitializerAnalysis(val project: SomeProject) extends FPCFAnalysis {
                         None
 
                 case _: EPK[_, LoadedClasses] ⇒
-                    Some(InterimEUBP(project, LoadedClasses.initial(newLoadedClasses)))
+                    Some(InterimEUBP(project, LoadedClasses(newLoadedClasses)))
 
                 case r ⇒
                     throw new IllegalStateException(s"unexpected previous result $r")
