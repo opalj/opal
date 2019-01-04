@@ -44,6 +44,7 @@ import org.opalj.fpcf.analyses.cg.reflection.TriggeredReflectionRelatedCallsAnal
 import org.opalj.fpcf.cg.properties.ReflectionRelatedCallees
 import org.opalj.fpcf.cg.properties.SerializationRelatedCallees
 import org.opalj.fpcf.cg.properties.StandardInvokeCallees
+import org.opalj.fpcf.cg.properties.ThreadRelatedIncompleteCallSites
 import org.opalj.tac.fpcf.analyses.TACAITransformer
 
 /**
@@ -94,7 +95,12 @@ object InterProceduralEscapeAnalysisDemo extends DefaultOneStepAnalysis {
                 TriggeredConfiguredNativeMethodsAnalysis,
                 TriggeredSystemPropertiesAnalysis,
                 LazyCalleesAnalysis(
-                    Set(StandardInvokeCallees, SerializationRelatedCallees, ReflectionRelatedCallees)
+                    Set(
+                        StandardInvokeCallees,
+                        SerializationRelatedCallees,
+                        ReflectionRelatedCallees,
+                        ThreadRelatedIncompleteCallSites
+                    )
                 ),
                 LazyL0BaseAIAnalysis,
                 TACAITransformer

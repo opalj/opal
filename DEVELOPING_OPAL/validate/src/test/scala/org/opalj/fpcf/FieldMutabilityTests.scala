@@ -22,6 +22,7 @@ import org.opalj.fpcf.cg.properties.ReflectionRelatedCallees
 import org.opalj.fpcf.cg.properties.SerializationRelatedCallees
 import org.opalj.fpcf.cg.properties.StandardInvokeCallees
 import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
+import org.opalj.fpcf.cg.properties.ThreadRelatedIncompleteCallSites
 import org.opalj.tac.fpcf.analyses.TACAITransformer
 
 /**
@@ -70,7 +71,12 @@ class FieldMutabilityTests extends PropertiesTest {
                 LazyUnsoundPrematurelyReadFieldsAnalysis,
                 LazyInterProceduralEscapeAnalysis,
                 LazyCalleesAnalysis(
-                    Set(StandardInvokeCallees, SerializationRelatedCallees, ReflectionRelatedCallees)
+                    Set(
+                        StandardInvokeCallees,
+                        SerializationRelatedCallees,
+                        ReflectionRelatedCallees,
+                        ThreadRelatedIncompleteCallSites
+                    )
                 )
             )
         )
@@ -96,10 +102,11 @@ class FieldMutabilityTests extends PropertiesTest {
                 LazyInterProceduralEscapeAnalysis,
                 LazyL0BaseAIAnalysis,
                 TACAITransformer,
-                new LazyCalleesAnalysis(Set(
+                LazyCalleesAnalysis(Set(
                     StandardInvokeCallees,
                     SerializationRelatedCallees,
-                    ReflectionRelatedCallees
+                    ReflectionRelatedCallees,
+                    ThreadRelatedIncompleteCallSites
                 ))
             )
         )

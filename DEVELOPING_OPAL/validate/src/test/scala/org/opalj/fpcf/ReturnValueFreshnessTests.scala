@@ -18,6 +18,7 @@ import org.opalj.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.fpcf.cg.properties.ReflectionRelatedCallees
 import org.opalj.fpcf.cg.properties.SerializationRelatedCallees
 import org.opalj.fpcf.cg.properties.StandardInvokeCallees
+import org.opalj.fpcf.cg.properties.ThreadRelatedIncompleteCallSites
 import org.opalj.tac.fpcf.analyses.TACAITransformer
 
 /**
@@ -29,7 +30,7 @@ import org.opalj.tac.fpcf.analyses.TACAITransformer
  */
 class ReturnValueFreshnessTests extends PropertiesTest {
 
-    val analysisSchedulers = Set[FPCFAnalysisScheduler](
+    val analysisSchedulers: Set[FPCFAnalysisScheduler] = Set[FPCFAnalysisScheduler](
         RTACallGraphAnalysisScheduler,
         TriggeredStaticInitializerAnalysis,
         TriggeredLoadedClassesAnalysis,
@@ -41,8 +42,11 @@ class ReturnValueFreshnessTests extends PropertiesTest {
         LazyL0BaseAIAnalysis,
         TACAITransformer,
         LazyInterProceduralEscapeAnalysis,
-        new LazyCalleesAnalysis(Set(
-            StandardInvokeCallees, SerializationRelatedCallees, ReflectionRelatedCallees
+        LazyCalleesAnalysis(Set(
+            StandardInvokeCallees,
+            SerializationRelatedCallees,
+            ReflectionRelatedCallees,
+            ThreadRelatedIncompleteCallSites
         )),
         LazyInterProceduralEscapeAnalysis,
         LazyFieldLocalityAnalysis,

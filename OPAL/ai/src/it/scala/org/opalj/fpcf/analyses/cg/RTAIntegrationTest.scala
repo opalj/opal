@@ -18,6 +18,7 @@ import org.opalj.fpcf.cg.properties.Callees
 import org.opalj.fpcf.cg.properties.ReflectionRelatedCallees
 import org.opalj.fpcf.cg.properties.SerializationRelatedCallees
 import org.opalj.fpcf.cg.properties.StandardInvokeCallees
+import org.opalj.fpcf.cg.properties.ThreadRelatedIncompleteCallSites
 import org.opalj.tac.fpcf.analyses.LazyL0TACAIAnalysis
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
@@ -57,7 +58,12 @@ class RTAIntegrationTest extends FlatSpec with Matchers {
         implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
 
         val calleesAnalysis = LazyCalleesAnalysis(
-            Set(StandardInvokeCallees, SerializationRelatedCallees, ReflectionRelatedCallees)
+            Set(
+                StandardInvokeCallees,
+                SerializationRelatedCallees,
+                ReflectionRelatedCallees,
+                ThreadRelatedIncompleteCallSites
+            )
         )
 
         val manager: FPCFAnalysesManager = project.get(FPCFAnalysesManagerKey)

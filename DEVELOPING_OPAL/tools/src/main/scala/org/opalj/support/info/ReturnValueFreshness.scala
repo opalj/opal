@@ -27,6 +27,7 @@ import org.opalj.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.fpcf.cg.properties.ReflectionRelatedCallees
 import org.opalj.fpcf.cg.properties.SerializationRelatedCallees
 import org.opalj.fpcf.cg.properties.StandardInvokeCallees
+import org.opalj.fpcf.cg.properties.ThreadRelatedIncompleteCallSites
 import org.opalj.fpcf.properties.ExtensibleGetter
 import org.opalj.fpcf.properties.FreshReturnValue
 import org.opalj.fpcf.properties.Getter
@@ -70,7 +71,12 @@ object ReturnValueFreshness extends DefaultOneStepAnalysis {
             TriggeredConfiguredNativeMethodsAnalysis,
             TriggeredSystemPropertiesAnalysis,
             LazyCalleesAnalysis(
-                Set(StandardInvokeCallees, SerializationRelatedCallees, ReflectionRelatedCallees)
+                Set(
+                    StandardInvokeCallees,
+                    SerializationRelatedCallees,
+                    ReflectionRelatedCallees,
+                    ThreadRelatedIncompleteCallSites
+                )
             ),
             LazyInterProceduralEscapeAnalysis,
             LazyFieldLocalityAnalysis,

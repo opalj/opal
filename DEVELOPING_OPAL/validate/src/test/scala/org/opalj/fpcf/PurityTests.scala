@@ -38,6 +38,7 @@ import org.opalj.fpcf.analyses.cg.reflection.TriggeredReflectionRelatedCallsAnal
 import org.opalj.fpcf.cg.properties.StandardInvokeCallees
 import org.opalj.fpcf.cg.properties.ReflectionRelatedCallees
 import org.opalj.fpcf.cg.properties.SerializationRelatedCallees
+import org.opalj.fpcf.cg.properties.ThreadRelatedIncompleteCallSites
 
 /**
  * Tests if the properties specified in the test project (the classes in the (sub-)package of
@@ -91,7 +92,10 @@ class PurityTests extends PropertiesTest {
                     LazyClassImmutabilityAnalysis,
                     LazyTypeImmutabilityAnalysis,
                     LazyCalleesAnalysis(Set(
-                        StandardInvokeCallees, SerializationRelatedCallees, ReflectionRelatedCallees
+                        StandardInvokeCallees,
+                        SerializationRelatedCallees,
+                        ReflectionRelatedCallees,
+                        ThreadRelatedIncompleteCallSites
                     ))
                 )
             )
@@ -127,7 +131,10 @@ class PurityTests extends PropertiesTest {
                     LazyClassImmutabilityAnalysis,
                     LazyTypeImmutabilityAnalysis,
                     LazyCalleesAnalysis(Set(
-                        StandardInvokeCallees, SerializationRelatedCallees, ReflectionRelatedCallees
+                        StandardInvokeCallees,
+                        SerializationRelatedCallees,
+                        ReflectionRelatedCallees,
+                        ThreadRelatedIncompleteCallSites
                     ))
                 )
             )

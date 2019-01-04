@@ -28,6 +28,7 @@ import org.opalj.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.fpcf.cg.properties.ReflectionRelatedCallees
 import org.opalj.fpcf.cg.properties.SerializationRelatedCallees
 import org.opalj.fpcf.cg.properties.StandardInvokeCallees
+import org.opalj.fpcf.cg.properties.ThreadRelatedIncompleteCallSites
 import org.opalj.fpcf.properties.DeclaredFinalField
 import org.opalj.fpcf.properties.LazyInitializedField
 import org.opalj.fpcf.properties.EffectivelyFinalField
@@ -68,7 +69,12 @@ object FieldMutability extends DefaultOneStepAnalysis {
             TriggeredConfiguredNativeMethodsAnalysis,
             TriggeredSystemPropertiesAnalysis,
             LazyCalleesAnalysis(
-                Set(StandardInvokeCallees, SerializationRelatedCallees, ReflectionRelatedCallees)
+                Set(
+                    StandardInvokeCallees,
+                    SerializationRelatedCallees,
+                    ReflectionRelatedCallees,
+                    ThreadRelatedIncompleteCallSites
+                )
             ),
             LazyUnsoundPrematurelyReadFieldsAnalysis,
             LazyInterProceduralEscapeAnalysis,

@@ -22,6 +22,7 @@ import org.opalj.fpcf.analyses.purity.EagerL1PurityAnalysis
 import org.opalj.fpcf.cg.properties.ReflectionRelatedCallees
 import org.opalj.fpcf.cg.properties.SerializationRelatedCallees
 import org.opalj.fpcf.cg.properties.StandardInvokeCallees
+import org.opalj.fpcf.cg.properties.ThreadRelatedIncompleteCallSites
 import org.opalj.fpcf.properties.Purity
 import org.opalj.fpcf.properties.VirtualMethodPurity
 import org.opalj.tac.fpcf.analyses.TACAITransformer
@@ -66,7 +67,12 @@ class L1PuritySmokeTest extends FunSpec with Matchers {
         TriggeredConfiguredNativeMethodsAnalysis,
         TriggeredSystemPropertiesAnalysis,
         LazyCalleesAnalysis(
-            Set(StandardInvokeCallees, SerializationRelatedCallees, ReflectionRelatedCallees)
+            Set(
+                StandardInvokeCallees,
+                SerializationRelatedCallees,
+                ReflectionRelatedCallees,
+                ThreadRelatedIncompleteCallSites
+            )
         ),
         LazyL0BaseAIAnalysis,
         TACAITransformer

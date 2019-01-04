@@ -23,6 +23,7 @@ import org.opalj.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
 import org.opalj.fpcf.cg.properties.ReflectionRelatedCallees
 import org.opalj.fpcf.cg.properties.SerializationRelatedCallees
 import org.opalj.fpcf.cg.properties.StandardInvokeCallees
+import org.opalj.fpcf.cg.properties.ThreadRelatedIncompleteCallSites
 import org.opalj.tac.fpcf.analyses.TACAITransformer
 
 class FieldLocalityTests extends PropertiesTest {
@@ -42,7 +43,12 @@ class FieldLocalityTests extends PropertiesTest {
         LazyInterProceduralEscapeAnalysis,
         LazyReturnValueFreshnessAnalysis,
         LazyCalleesAnalysis(
-            Set(StandardInvokeCallees, SerializationRelatedCallees, ReflectionRelatedCallees)
+            Set(
+                StandardInvokeCallees,
+                SerializationRelatedCallees,
+                ReflectionRelatedCallees,
+                ThreadRelatedIncompleteCallSites
+            )
         )
     )
 

@@ -66,6 +66,7 @@ import org.opalj.fpcf.cg.properties.NoCallers
 import org.opalj.fpcf.cg.properties.ReflectionRelatedCallees
 import org.opalj.fpcf.cg.properties.SerializationRelatedCallees
 import org.opalj.fpcf.cg.properties.StandardInvokeCallees
+import org.opalj.fpcf.cg.properties.ThreadRelatedIncompleteCallSites
 import org.opalj.fpcf.properties.CompileTimePure
 import org.opalj.fpcf.properties.ContextuallyPure
 import org.opalj.fpcf.properties.ContextuallySideEffectFree
@@ -120,7 +121,12 @@ object Purity {
         LazyL0BaseAIAnalysis,
         TACAITransformer,
         LazyCalleesAnalysis(
-            Set(StandardInvokeCallees, SerializationRelatedCallees, ReflectionRelatedCallees)
+            Set(
+                StandardInvokeCallees,
+                SerializationRelatedCallees,
+                ReflectionRelatedCallees,
+                ThreadRelatedIncompleteCallSites
+            )
         )
     )
 

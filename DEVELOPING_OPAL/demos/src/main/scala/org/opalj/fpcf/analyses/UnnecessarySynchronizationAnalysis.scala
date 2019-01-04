@@ -24,6 +24,7 @@ import org.opalj.fpcf.analyses.escape.EagerInterProceduralEscapeAnalysis
 import org.opalj.fpcf.cg.properties.ReflectionRelatedCallees
 import org.opalj.fpcf.cg.properties.SerializationRelatedCallees
 import org.opalj.fpcf.cg.properties.StandardInvokeCallees
+import org.opalj.fpcf.cg.properties.ThreadRelatedIncompleteCallSites
 import org.opalj.fpcf.properties.EscapeProperty
 import org.opalj.fpcf.properties.EscapeViaNormalAndAbnormalReturn
 import org.opalj.log.LogContext
@@ -72,7 +73,12 @@ object UnnecessarySynchronizationAnalysis extends DefaultOneStepAnalysis {
                 TriggeredConfiguredNativeMethodsAnalysis,
                 TriggeredSystemPropertiesAnalysis,
                 LazyCalleesAnalysis(
-                    Set(StandardInvokeCallees, SerializationRelatedCallees, ReflectionRelatedCallees)
+                    Set(
+                        StandardInvokeCallees,
+                        SerializationRelatedCallees,
+                        ReflectionRelatedCallees,
+                        ThreadRelatedIncompleteCallSites
+                    )
                 ),
                 LazyL0BaseAIAnalysis,
                 TACAITransformer

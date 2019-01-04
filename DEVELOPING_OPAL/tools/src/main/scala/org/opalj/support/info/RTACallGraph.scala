@@ -33,6 +33,7 @@ import org.opalj.fpcf.cg.properties.ReflectionRelatedCallees
 import org.opalj.fpcf.cg.properties.SerializationRelatedCallees
 import org.opalj.fpcf.cg.properties.StandardInvokeCallees
 import org.opalj.fpcf.cg.properties.Callees
+import org.opalj.fpcf.cg.properties.ThreadRelatedIncompleteCallSites
 import org.opalj.tac.fpcf.analyses.TACAITransformer
 
 /**
@@ -75,7 +76,12 @@ object RTACallGraph extends DefaultOneStepAnalysis {
         implicit val ps = project.get(PropertyStoreKey)
 
         val calleesAnalysis = LazyCalleesAnalysis(
-            Set(StandardInvokeCallees, SerializationRelatedCallees, ReflectionRelatedCallees)
+            Set(
+                StandardInvokeCallees,
+                SerializationRelatedCallees,
+                ReflectionRelatedCallees,
+                ThreadRelatedIncompleteCallSites
+            )
         )
 
         project.get(FPCFAnalysesManagerKey).runAll(
@@ -121,6 +127,8 @@ object RTACallGraph extends DefaultOneStepAnalysis {
             case callersRegex(methodSig) ⇒ callersSigs ::= methodSig
             case calleesRegex(methodSig) ⇒ calleesSigs ::= methodSig
         }
+
+        println(ps.statistics.mkString("\n"))
 
         println(calleesSigs.mkString("\n"))
         println(callersSigs.mkString("\n"))

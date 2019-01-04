@@ -15,10 +15,12 @@ import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.collection.immutable.RefArray
+import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.cg.properties.CallersProperty
 import org.opalj.fpcf.cg.properties.NoCallers
 import org.opalj.fpcf.cg.properties.OnlyVMLevelCallers
-import org.opalj.log.OPALLogger
+import org.opalj.fpcf.cg.properties.NoThreadRelatedIncompleteCallSites
+import org.opalj.fpcf.cg.properties.ThreadRelatedIncompleteCallSites
 import org.opalj.tac.Assignment
 import org.opalj.tac.Expr
 import org.opalj.tac.New
@@ -40,6 +42,11 @@ import org.opalj.value.IsReferenceValue
 class ThreadRelatedCallsAnalysis private[analyses] (
         final val project: SomeProject
 ) extends FPCFAnalysis {
+
+    class State(
+            var vmReachableMethods:  Set[DeclaredMethod] = Set.empty,
+            var incompleteCallSites: IntTrieSet          = IntTrieSet.empty
+    )
 
     implicit private[this] val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
 
@@ -97,8 +104,9 @@ class ThreadRelatedCallsAnalysis private[analyses] (
         if (tacaiEP.hasUBP && tacaiEP.ub.tac.isDefined) {
             processMethod(definedMethod, tacaiEP.asEPS)
         } else {
-            InterimPartialResult(
-                Nil,
+            InterimResult.forUB(
+                definedMethod,
+                NoThreadRelatedIncompleteCallSites,
                 Some(tacaiEP),
                 continuation(definedMethod)
             )
@@ -111,13 +119,14 @@ class ThreadRelatedCallsAnalysis private[analyses] (
      */
     private[this] def continuation(
         method: DefinedMethod
-    )(eps: SomeEPS): PropertyComputationResult = {
+    )(eps: SomeEPS): ProperPropertyComputationResult = {
         eps match {
             case UBP(tac: TACAI) if tac.tac.isDefined ⇒
                 processMethod(method, eps.asInstanceOf[EPS[Method, TACAI]])
             case UBP(_: TACAI) ⇒
-                InterimPartialResult(
-                    Nil,
+                InterimResult.forUB(
+                    method,
+                    NoThreadRelatedIncompleteCallSites,
                     Some(eps),
                     continuation(method)
                 )
@@ -131,59 +140,64 @@ class ThreadRelatedCallsAnalysis private[analyses] (
      */
     private[this] def processMethod(
         definedMethod: DefinedMethod, tacaiEPS: EPS[Method, TACAI]
-    ): PropertyComputationResult = {
+    ): ProperPropertyComputationResult = {
         assert(tacaiEPS.hasUBP && tacaiEPS.ub.tac.isDefined)
         val stmts = tacaiEPS.ub.tac.get.stmts
 
-        var threadRelatedMethods: Set[DeclaredMethod] = Set.empty
+        val state = new State()
         for {
-            VirtualMethodCall(_, dc, _, name, descriptor, receiver, params) ← stmts
+            VirtualMethodCall(pc, dc, _, name, descriptor, receiver, params) ← stmts
             if classHierarchy.isSubtypeOf(dc, ObjectType.Thread)
             // TODO handle Runnable#addShutdownHook
         } {
             if (name == "start" && descriptor == MethodDescriptor.NoArgsAndReturnVoid) {
-                threadRelatedMethods =
-                    handleStart(definedMethod, threadRelatedMethods, stmts, receiver)
+                handleStart(definedMethod, stmts, receiver, pc, state)
             } else if (name == "setUncaughtExceptionHandler" &&
                 descriptor == setUncaughtExceptionHandlerDescriptor) {
-
-                threadRelatedMethods =
-                    handleUncaughtExceptionHandler(
-                        definedMethod,
-                        params.head,
-                        uncaughtExceptionDescriptor,
-                        threadRelatedMethods
-                    )
+                handleUncaughtExceptionHandler(
+                    definedMethod,
+                    params.head,
+                    uncaughtExceptionDescriptor,
+                    pc,
+                    state
+                )
             }
 
         }
 
         // partial results for all methods that should be made vm reachable
-        val results: Iterator[ProperPropertyComputationResult] = threadRelatedMethods.iterator.map { method ⇒
-            PartialResult[DeclaredMethod, CallersProperty](method, CallersProperty.key, {
-                case InterimUBP(ub) if !ub.hasVMLevelCallers ⇒
-                    Some(InterimEUBP(method, ub.updatedWithVMLevelCall()))
+        val results: Iterator[ProperPropertyComputationResult] =
+            state.vmReachableMethods.iterator.map { method ⇒
+                PartialResult[DeclaredMethod, CallersProperty](method, CallersProperty.key, {
+                    case InterimUBP(ub) if !ub.hasVMLevelCallers ⇒
+                        Some(InterimEUBP(method, ub.updatedWithVMLevelCall()))
 
-                case _: InterimEP[_, _] ⇒ None
+                    case _: InterimEP[_, _] ⇒ None
 
-                case _: EPK[_, _] ⇒
-                    Some(InterimEUBP(method, OnlyVMLevelCallers))
+                    case _: EPK[_, _] ⇒
+                        Some(InterimEUBP(method, OnlyVMLevelCallers))
 
-                case r ⇒
-                    throw new IllegalStateException(s"unexpected previous result $r")
-            })
-        }
+                    case r ⇒
+                        throw new IllegalStateException(s"unexpected previous result $r")
+                })
+            }
 
+        // todo we need to add the incomplete call sites
         val c = if (tacaiEPS.isRefinable)
-            Some(InterimPartialResult(
-                Nil,
+            InterimResult.forUB(
+                definedMethod,
+                ThreadRelatedIncompleteCallSites(state.incompleteCallSites),
                 Some(tacaiEPS),
                 continuation(definedMethod)
-            ))
-        else
-            None
+            )
 
-        PropertyComputationResult((results ++ c).toSeq: _*)
+        else
+            Result(
+                definedMethod,
+                ThreadRelatedIncompleteCallSites(state.incompleteCallSites)
+            )
+
+        Results((Iterator(c) ++ results).toSeq: _*)
     }
 
     /**
@@ -196,15 +210,16 @@ class ThreadRelatedCallsAnalysis private[analyses] (
      * updated set.
      */
     private[this] def addMethod(
-        definedMethod:        DefinedMethod,
-        target:               org.opalj.Result[Method],
-        preciseType:          ObjectType,
-        name:                 String,
-        descriptor:           MethodDescriptor,
-        threadRelatedMethods: Set[DeclaredMethod]
-    ): Set[DeclaredMethod] = {
+        definedMethod: DefinedMethod,
+        target:        org.opalj.Result[Method],
+        preciseType:   ObjectType,
+        name:          String,
+        descriptor:    MethodDescriptor,
+        pc:            Int,
+        state:         State
+    ): Unit = {
         if (target.hasValue) {
-            threadRelatedMethods + declaredMethods(target.value)
+            state.vmReachableMethods += declaredMethods(target.value)
         } else {
             val declTgt = declaredMethods(
                 preciseType,
@@ -215,10 +230,9 @@ class ThreadRelatedCallsAnalysis private[analyses] (
             )
 
             // also add calls to virtual declared methods (unpresent library methods)
-            if (declTgt.hasSingleDefinedMethod || declTgt.hasMultipleDefinedMethods) {
-                threadRelatedMethods
-            } else {
-                threadRelatedMethods + declTgt
+            if (!declTgt.hasSingleDefinedMethod && !declTgt.hasMultipleDefinedMethods) {
+                state.incompleteCallSites += pc
+                state.vmReachableMethods += declTgt
             }
         }
     }
@@ -233,11 +247,12 @@ class ThreadRelatedCallsAnalysis private[analyses] (
      * updated set.
      */
     private[this] def handleStart(
-        definedMethod:        DefinedMethod,
-        threadRelatedMethods: Set[DeclaredMethod],
-        stmts:                Array[Stmt[V]],
-        receiver:             Expr[V]
-    ): Set[DeclaredMethod] = {
+        definedMethod: DefinedMethod,
+        stmts:         Array[Stmt[V]],
+        receiver:      Expr[V],
+        pc:            Int,
+        state:         State
+    ): Unit = {
         // a call to Thread.start will trigger the JVM to later on call Thread.exit()
         val exitMethod = project.specialCall(
             ObjectType.Thread,
@@ -247,13 +262,14 @@ class ThreadRelatedCallsAnalysis private[analyses] (
             MethodDescriptor.NoArgsAndReturnVoid
         )
 
-        var newThreadRelatedMethods = addMethod(
+        addMethod(
             definedMethod,
             exitMethod,
             ObjectType.Thread,
             "exit",
             MethodDescriptor.NoArgsAndReturnVoid,
-            threadRelatedMethods
+            pc,
+            state
         )
 
         // a call to Thread.start will trigger a call to the underlying run method
@@ -268,31 +284,31 @@ class ThreadRelatedCallsAnalysis private[analyses] (
                     receiverType, receiverType, "run", MethodDescriptor.NoArgsAndReturnVoid
                 )
 
-                newThreadRelatedMethods = addMethod(
+                addMethod(
                     definedMethod,
                     runMethod,
                     receiverType,
                     "run",
                     MethodDescriptor.NoArgsAndReturnVoid,
-                    newThreadRelatedMethods
+                    pc,
+                    state
                 )
 
                 if (rv.leastUpperType.get == ObjectType.Thread || (
                     runMethod.hasValue && runMethod.value.classFile.thisType == ObjectType.Thread
                 )) {
-                    newThreadRelatedMethods = handleThreadWithRunnable(
+                    handleThreadWithRunnable(
                         definedMethod,
                         stmts,
                         receiver,
-                        newThreadRelatedMethods
+                        pc,
+                        state
                     )
                 }
             } else {
-                OPALLogger.warn("analysis", "missed call to `run`")
+                state.incompleteCallSites += pc
             }
         }
-
-        newThreadRelatedMethods
     }
 
     /**
@@ -322,19 +338,18 @@ class ThreadRelatedCallsAnalysis private[analyses] (
      * updated set.
      */
     private[this] def handleThreadWithRunnable(
-        definedMethod:        DefinedMethod,
-        stmts:                Array[Stmt[V]],
-        receiver:             Expr[V],
-        threadRelatedMethods: Set[DeclaredMethod]
-    ): Set[DeclaredMethod] = {
-        var newThreadRelatedMethods = threadRelatedMethods
-
+        definedMethod: DefinedMethod,
+        stmts:         Array[Stmt[V]],
+        receiver:      Expr[V],
+        pc:            Int,
+        state:         State
+    ): Unit = {
         for {
             threadDefSite ← receiver.asVar.definedBy
         } {
             if (threadDefSite < 0) {
                 // the thread is given as a parameter
-                OPALLogger.warn("analysis", "missed call to `run`")
+                state.incompleteCallSites += pc
             } else {
                 stmts(threadDefSite) match {
                     case Assignment(_, thread, New(_, _)) ⇒
@@ -349,28 +364,26 @@ class ThreadRelatedCallsAnalysis private[analyses] (
                             if (indexOfRunnableParameter != -1) {
                                 for (runnableValue ← params(indexOfRunnableParameter).asVar.value.asReferenceValue.allValues) {
                                     if (runnableValue.isPrecise) {
-                                        newThreadRelatedMethods = handlePreciseUncaughtExceptionHandler(
+                                        handlePreciseUncaughtExceptionHandler(
                                             definedMethod,
                                             runnableValue,
                                             "run",
                                             MethodDescriptor.NoArgsAndReturnVoid,
-                                            newThreadRelatedMethods
+                                            pc,
+                                            state
                                         )
                                     } else {
-
-                                        OPALLogger.warn("analysis", "missed call to `run`")
+                                        state.incompleteCallSites += pc
                                     }
                                 }
                             }
                         }
                     case _ ⇒
                         // the thread object is not newly allocated
-                        OPALLogger.warn("analysis", "missed call to `run`")
+                        state.incompleteCallSites += pc
                 }
             }
         }
-
-        newThreadRelatedMethods
     }
 
     /**
@@ -382,13 +395,12 @@ class ThreadRelatedCallsAnalysis private[analyses] (
      * updated set.
      */
     private[this] def handleUncaughtExceptionHandler(
-        definedMethod:        DefinedMethod,
-        receiver:             Expr[V],
-        descriptor:           MethodDescriptor,
-        threadRelatedMethods: Set[DeclaredMethod]
-    ): Set[DeclaredMethod] = {
-        var newThreadRelatedMethods = threadRelatedMethods
-
+        definedMethod: DefinedMethod,
+        receiver:      Expr[V],
+        descriptor:    MethodDescriptor,
+        pc:            Int,
+        state:         State
+    ): Unit = {
         val rvs = receiver.asVar.value.asReferenceValue.allValues
         for {
             rv ← rvs
@@ -396,25 +408,24 @@ class ThreadRelatedCallsAnalysis private[analyses] (
         } {
             // for precise types we can directly add the call edge here
             if (rv.isPrecise) {
-                newThreadRelatedMethods = handlePreciseUncaughtExceptionHandler(
-                    definedMethod, rv, "uncaughtException", descriptor, newThreadRelatedMethods
+                handlePreciseUncaughtExceptionHandler(
+                    definedMethod, rv, "uncaughtException", descriptor, pc, state
                 )
             } else {
-                OPALLogger.warn("analysis", "missed call to `uncaughtException`")
+                state.incompleteCallSites += pc
             }
         }
-
-        newThreadRelatedMethods
     }
 
     private[this] def handlePreciseUncaughtExceptionHandler(
-        definedMethod:        DefinedMethod,
-        receiver:             IsReferenceValue,
-        name:                 String,
-        descriptor:           MethodDescriptor,
-        threadRelatedMethods: Set[DeclaredMethod]
+        definedMethod: DefinedMethod,
+        receiver:      IsReferenceValue,
+        name:          String,
+        descriptor:    MethodDescriptor,
+        pc:            Int,
+        state:         State
 
-    ): Set[DeclaredMethod] = {
+    ): Unit = {
         val thisType = definedMethod.declaringClassType.asObjectType
         val preciseType = receiver.leastUpperType.get.asObjectType
         val tgt = project.instanceCall(
@@ -423,7 +434,7 @@ class ThreadRelatedCallsAnalysis private[analyses] (
             name,
             descriptor
         )
-        addMethod(definedMethod, tgt, preciseType, name, descriptor, threadRelatedMethods)
+        addMethod(definedMethod, tgt, preciseType, name, descriptor, pc, state)
     }
 }
 

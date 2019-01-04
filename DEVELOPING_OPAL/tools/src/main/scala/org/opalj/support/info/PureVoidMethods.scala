@@ -36,6 +36,7 @@ import org.opalj.fpcf.analyses.purity.EagerL2PurityAnalysis
 import org.opalj.fpcf.cg.properties.ReflectionRelatedCallees
 import org.opalj.fpcf.cg.properties.SerializationRelatedCallees
 import org.opalj.fpcf.cg.properties.StandardInvokeCallees
+import org.opalj.fpcf.cg.properties.ThreadRelatedIncompleteCallSites
 import org.opalj.fpcf.properties.CompileTimePure
 import org.opalj.fpcf.properties.Pure
 import org.opalj.fpcf.properties.SideEffectFree
@@ -75,7 +76,12 @@ object PureVoidMethods extends DefaultOneStepAnalysis {
             TriggeredConfiguredNativeMethodsAnalysis,
             TriggeredSystemPropertiesAnalysis,
             LazyCalleesAnalysis(
-                Set(StandardInvokeCallees, SerializationRelatedCallees, ReflectionRelatedCallees)
+                Set(
+                    StandardInvokeCallees,
+                    SerializationRelatedCallees,
+                    ReflectionRelatedCallees,
+                    ThreadRelatedIncompleteCallSites
+                )
             ),
             LazyL0CompileTimeConstancyAnalysis,
             LazyStaticDataUsageAnalysis,

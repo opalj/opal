@@ -34,6 +34,7 @@ import org.opalj.fpcf.analyses.cg.reflection.TriggeredReflectionRelatedCallsAnal
 import org.opalj.fpcf.cg.properties.ReflectionRelatedCallees
 import org.opalj.fpcf.cg.properties.SerializationRelatedCallees
 import org.opalj.fpcf.cg.properties.StandardInvokeCallees
+import org.opalj.fpcf.cg.properties.ThreadRelatedIncompleteCallSites
 import org.opalj.util.Nanoseconds
 import org.scalatest.junit.JUnitRunner
 import org.opalj.fpcf.properties.Purity
@@ -99,7 +100,12 @@ class FPCFAnalysesIntegrationTest extends FunSpec {
                             TriggeredConfiguredNativeMethodsAnalysis,
                             TriggeredSystemPropertiesAnalysis,
                             LazyCalleesAnalysis(
-                                Set(StandardInvokeCallees, SerializationRelatedCallees, ReflectionRelatedCallees)
+                                Set(
+                                    StandardInvokeCallees,
+                                    SerializationRelatedCallees,
+                                    ReflectionRelatedCallees,
+                                    ThreadRelatedIncompleteCallSites
+                                )
                             ),
                             LazyL0BaseAIAnalysis,
                             TACAITransformer
