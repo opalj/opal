@@ -46,7 +46,6 @@ private[cg] class CalleesAndCallers(
         caller: DeclaredMethod, callee: DeclaredMethod, pc: Int
     ): Unit = {
         val calleeId = callee.id
-        // todo here we could slightly improve the performance by omitting the latter contains check
         val oldCalleesAtPCOpt = _callees.get(pc)
         if (oldCalleesAtPCOpt.isEmpty) {
             _callees = _callees.updated(pc, IntTrieSet(calleeId))
