@@ -359,12 +359,34 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
         }
     }
 
-    def getCall(stmt: Stmt[V]): Call[V] = stmt.astID match {
+    def getCall(stmt: Stmt[V])(implicit state: StateType): Call[V] = stmt.astID match {
         case StaticMethodCall.ASTID     ⇒ stmt.asStaticMethodCall
         case NonVirtualMethodCall.ASTID ⇒ stmt.asNonVirtualMethodCall
         case VirtualMethodCall.ASTID    ⇒ stmt.asVirtualMethodCall
         case Assignment.ASTID           ⇒ stmt.asAssignment.expr.asFunctionCall
         case ExprStmt.ASTID             ⇒ stmt.asExprStmt.expr.asFunctionCall
+        case CaughtException.ASTID ⇒
+            /*
+             * There is no caught exception instruction in bytecode, so it might be the case, that
+             * in the three-address code, there is a CaughtException stmt right before the call
+             * with the same pc. Therefore, we have to get the call stmt after the current stmt.
+             *
+             * Example:
+             * void foo() {
+             *     try {
+             *         ...
+             *     } catch (Exception e) {
+             *         e.printStackTrace();
+             *     }
+             * }
+             *
+             * In TAC:
+             * 12: pc=52 caught java.lang.Exception ...
+             * 13: pc=52 java.lang.Exception.printStackTrace()
+             */
+            getCall(state.code(state.pcToIndex(stmt.pc) + 1))
+        case _ ⇒
+            throw new IllegalStateException(s"unexpected stmt $stmt")
     }
 
     /**
@@ -539,9 +561,12 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
                             !isDomainSpecificCall(call, call.receiverOption)
                         }
                     }
+
+                // todo: isn't this the bottom value and we could stop?
                 if (hasIncompleteCallSites)
                     atMost(ImpureByAnalysis)
 
+                // todo: why do we only checkPurityOfMethod if `hasIncompleteCallSites` is set?
                 hasIncompleteCallSites &&
                     p.directCallSites().forall {
                         case (pc, callees) ⇒
