@@ -20,7 +20,7 @@ trait OneStepAnalysis[Source, +AnalysisResult] extends Analysis[Source, Analysis
     final override def analyze(
         project:                Project[Source],
         parameters:             Seq[String]                = List.empty,
-        initProgressManagement: (Int) ⇒ ProgressManagement = ProgressManagement.None
+        initProgressManagement: Int ⇒ ProgressManagement = ProgressManagement.None
     ): AnalysisResult = {
 
         val pm = initProgressManagement(1 /* number of steps */ )

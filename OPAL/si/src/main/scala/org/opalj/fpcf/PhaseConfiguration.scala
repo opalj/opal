@@ -3,7 +3,7 @@ package org.opalj.fpcf
 
 import org.opalj.collection.immutable.Chain
 
-case class PhaseConfiguration[A]( 
+case class PhaseConfiguration[A](
         propertyKinds: PropertyKindsConfiguration,
         scheduled:     Chain[ComputationSpecification[A]]
 )
