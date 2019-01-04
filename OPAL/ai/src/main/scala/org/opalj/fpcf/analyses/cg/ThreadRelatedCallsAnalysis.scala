@@ -449,7 +449,8 @@ object TriggeredThreadRelatedCallsAnalysis extends BasicFPCFTriggeredAnalysisSch
         PropertyBounds.ub(CallersProperty)
     )
 
-    override def derivesEagerly: Set[PropertyBounds] = Set.empty
+    override def derivesEagerly: Set[PropertyBounds] =
+        Set(PropertyBounds.ub(ThreadRelatedIncompleteCallSites))
 
     override def register(
         p: SomeProject, ps: PropertyStore, unused: Null
