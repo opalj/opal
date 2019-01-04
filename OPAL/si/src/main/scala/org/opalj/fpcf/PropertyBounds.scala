@@ -2,6 +2,14 @@
 package org.opalj
 package fpcf
 
+/**
+ * Encapsulate the information about the property bounds used or derived by an analysis.
+ *
+ * @note Equality is only based on the `PropertyKind` and not on the information about
+ *       the concrete bounds.
+ *
+ * @author Michael Eichberg
+ */
 sealed abstract class PropertyBounds(val pk: PropertyKind) {
 
     def lowerBound: Boolean
