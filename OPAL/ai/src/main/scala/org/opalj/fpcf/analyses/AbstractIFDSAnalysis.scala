@@ -123,8 +123,7 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
             /*
             case finalEP: FinalEP[_, TACAI] ⇒ {val tac = finalEP.p.tac.get; (tac.stmts, tac.cfg)
             */
-            case FinalP(TheTACAI(tac)) ⇒
-                (tac.stmts, tac.cfg)
+            case FinalP(TheTACAI(tac)) ⇒ (tac.stmts, tac.cfg)
 
             case _: InterimEP[Method, TACAI] ⇒
                 throw new UnknownError("Can not handle intermediate TAC")

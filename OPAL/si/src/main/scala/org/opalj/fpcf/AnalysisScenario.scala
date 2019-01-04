@@ -30,8 +30,9 @@ class AnalysisScenario[A] {
     private[this] var triggeredCS: Set[ComputationSpecification[A]] = Set.empty
     private[this] var transformersCS: Set[ComputationSpecification[A]] = Set.empty
 
-    private[this] var derivedBy: Map[PropertyKind, (PropertyBounds, Set[ComputationSpecification[A]])] =
+    private[this] var derivedBy: Map[PropertyKind, (PropertyBounds, Set[ComputationSpecification[A]])] = {
         Map.empty
+    }
 
     def allProperties: Set[PropertyBounds] = derivedProperties ++ usedProperties
 
@@ -54,7 +55,9 @@ class AnalysisScenario[A] {
             if (eagerlyDerivedProperties.contains(collaborativelyDerivedProperty) ||
                 lazilyDerivedProperties.contains(collaborativelyDerivedProperty)) {
                 val pkName = PropertyKey.name(collaborativelyDerivedProperty.pk.id)
-                val m = s"can not register $cs: $pkName is not computed collaboratively by another analysis"
+                val m = 
+                    s"can not register $cs: "+
+                        s"$pkName is not computed collaboratively by all analyses"
                 throw new SpecificationViolation(m)
             }
         }
@@ -218,12 +221,12 @@ class AnalysisScenario[A] {
                 alreadyComputedPropertyKinds.contains(underivedProperty.pk.id)
             }
             .foreach { underivedProperty ⇒
-                val underivedPropertyName = PropertyKey.name(underivedProperty.pk.id)
+                val propertyName = PropertyKey.name(underivedProperty.pk.id)
                 if (PropertyKey.hasFallback(underivedProperty.pk)) {
-                    val message = s"no analyses scheduled for: $underivedPropertyName; using fallback"
+                    val message = s"no analyses scheduled for: $propertyName; using fallback"
                     OPALLogger.warn("analysis configuration", message)
                 } else {
-                    throw new IllegalStateException(s"no analysis scheduled for $underivedPropertyName")
+                    throw new IllegalStateException(s"no analysis scheduled for $propertyName")
                 }
             }
 
