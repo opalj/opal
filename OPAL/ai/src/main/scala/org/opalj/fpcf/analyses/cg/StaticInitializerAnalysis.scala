@@ -52,7 +52,6 @@ class StaticInitializerAnalysis(val project: SomeProject) extends FPCFAnalysis {
      *     1. For each loaded class, its static initializer is called (see
      *     [[org.opalj.fpcf.cg.properties.CallersProperty]])
      *     2. For each instantiated type, the type is also a loaded class
-     *     // TODO split this into two methods and schedule both!
      */
     // FIXME "register to" doesn't make sense, here!
     def registerToInstantiatedTypesAndLoadedClasses(p: SomeProject): PropertyComputationResult = {

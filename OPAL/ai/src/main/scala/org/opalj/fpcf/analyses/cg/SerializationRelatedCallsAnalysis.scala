@@ -42,7 +42,10 @@ import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.TheTACAI
 
 /**
- * todo
+ * Handles the effect of serialization to the call graph.
+ * As an example models the invocation of constructors when `readObject` is called, if there is a
+ * cast afterwards.
+ *
  * @author Florian Kuebler
  * @author Dominik Helm
  */
