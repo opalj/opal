@@ -15,6 +15,7 @@ import org.opalj.log.OPALLogger.logOnce
 import org.opalj.log.Warn
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.UIDSet
+import org.opalj.collection.ForeachRefIterator
 import org.opalj.fpcf.cg.properties.CallersProperty
 import org.opalj.fpcf.cg.properties.InstantiatedTypes
 import org.opalj.fpcf.cg.properties.NoCallers
@@ -37,20 +38,6 @@ import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.InitialEntryPointsKey
 import org.opalj.br.analyses.cg.IsOverridableMethodKey
-import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.collection.immutable.UIDSet
-import org.opalj.fpcf.cg.properties.CallersProperty
-import org.opalj.fpcf.cg.properties.InstantiatedTypes
-import org.opalj.fpcf.cg.properties.NoCallers
-import org.opalj.fpcf.cg.properties.NoStandardInvokeCallees
-import org.opalj.fpcf.cg.properties.OnlyCallersWithUnknownContext
-import org.opalj.fpcf.cg.properties.StandardInvokeCallees
-import org.opalj.fpcf.cg.properties.StandardInvokeCalleesImplementation
-import org.opalj.log.Error
-import org.opalj.log.LogContext
-import org.opalj.log.OPALLogger
-import org.opalj.log.OPALLogger.logOnce
-import org.opalj.log.Warn
 import org.opalj.tac.Assignment
 import org.opalj.tac.Call
 import org.opalj.tac.ExprStmt
@@ -66,10 +53,6 @@ import org.opalj.tac.VirtualCall
 import org.opalj.tac.VirtualFunctionCallStatement
 import org.opalj.tac.VirtualMethodCall
 import org.opalj.tac.fpcf.properties.TACAI
-import org.opalj.value.IsMObjectValue
-import org.opalj.value.IsNullValue
-import org.opalj.value.IsSArrayValue
-import org.opalj.value.IsSObjectValue
 
 class RTAState private (
         private[cg] val method:                       DefinedMethod,
@@ -482,7 +465,7 @@ class RTACallGraphAnalysis private[analyses] ( final val project: SomeProject) e
                         tgt
                     )
                 } else {
-                    val potentialTypes = classHierarchy.allSubtypesIterator(
+                    val potentialTypes = classHierarchy.allSubtypesForeachIterator(
                         ov.theUpperTypeBound, reflexive = true
                     ).filter { subtype ⇒
                             val cfOption = project.classFile(subtype)
@@ -499,7 +482,7 @@ class RTACallGraphAnalysis private[analyses] ( final val project: SomeProject) e
                 val typeBounds = mv.upperTypeBound
                 val remainingTypeBounds = typeBounds.tail
                 val firstTypeBound = typeBounds.head
-                val potentialTypes = ch.allSubtypesIterator(
+                val potentialTypes = ch.allSubtypesForeachIterator(
                     firstTypeBound, reflexive = true
                 ).filter { subtype ⇒
                     val cfOption = project.classFile(subtype)
@@ -523,7 +506,7 @@ class RTACallGraphAnalysis private[analyses] ( final val project: SomeProject) e
         call:                Call[V] with VirtualCall[V],
         pc:                  Int,
         instantiatedTypesUB: UIDSet[ObjectType],
-        potentialTargets:    Iterator[ObjectType]
+        potentialTargets:    ForeachRefIterator[ObjectType]
     )(implicit state: RTAState): Unit = {
         for (possibleTgtType ← potentialTargets) {
             if (instantiatedTypesUB.contains(possibleTgtType)) {

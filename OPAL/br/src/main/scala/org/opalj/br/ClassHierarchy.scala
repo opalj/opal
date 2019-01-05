@@ -27,6 +27,7 @@ import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 import org.opalj.log.Warn
 import org.opalj.collection.RefIterator
+import org.opalj.collection.ForeachRefIterator
 import org.opalj.collection.immutable.Chain.CompleteEmptyChain
 import org.opalj.collection.immutable.Chain.IncompleteEmptyChain
 import org.opalj.collection.EqualSets
@@ -551,6 +552,25 @@ class ClassHierarchy private (
             subtypeInformationMap(oid).iterator ++ RefIterator.single(objectType)
         else
             subtypeInformationMap(oid).iterator
+    }
+
+    def allSubtypesForeachIterator(
+        objectType: ObjectType,
+        reflexive:  Boolean
+    ): ForeachRefIterator[ObjectType] = {
+        val oid = objectType.id
+        if (isUnknown(oid))
+            return {
+                if (reflexive)
+                    ForeachRefIterator.single(objectType)
+                else
+                    ForeachRefIterator.empty
+            };
+
+        if (reflexive)
+            subtypeInformationMap(oid).foreachIterator ++ ForeachRefIterator.single(objectType)
+        else
+            subtypeInformationMap(oid).foreachIterator
     }
 
     /**

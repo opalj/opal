@@ -55,7 +55,7 @@ class AnalysisScenario[A] {
             if (eagerlyDerivedProperties.contains(collaborativelyDerivedProperty) ||
                 lazilyDerivedProperties.contains(collaborativelyDerivedProperty)) {
                 val pkName = PropertyKey.name(collaborativelyDerivedProperty.pk.id)
-                val m = 
+                val m =
                     s"can not register $cs: "+
                         s"$pkName is not computed collaboratively by all analyses"
                 throw new SpecificationViolation(m)
