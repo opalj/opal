@@ -74,7 +74,7 @@ abstract class RefIterator[+T] extends AbstractIterator[T] { self ⇒
     override def filter(p: T ⇒ Boolean): RefIterator[T] = new RefIterator[T] {
         private[this] var hasNextValue: Boolean = true
         private[this] var v: T = _
-        private[this] def goToNextValue(): Unit = {
+        private[this] def gotoNextValue(): Unit = {
             while (self.hasNext) {
                 v = self.next()
                 if (p(v)) return ;
@@ -82,10 +82,10 @@ abstract class RefIterator[+T] extends AbstractIterator[T] { self ⇒
             hasNextValue = false
         }
 
-        goToNextValue()
+        gotoNextValue()
 
         def hasNext: Boolean = hasNextValue
-        def next(): T = { val v = this.v; goToNextValue(); v }
+        def next(): T = { val v = this.v; gotoNextValue(); v }
     }
 
     override def filterNot(p: T ⇒ Boolean): RefIterator[T] = filter(e ⇒ !p(e))
