@@ -136,8 +136,7 @@ sealed trait Callees extends Property with CalleesPropertyMetaInformation {
 /**
  * Callees class used for final results where the callees are already aggregated.
  */
-// todo rename, as the name is an artifact
-sealed class FinalCallees(
+sealed class ConcreteCallees(
         private[this] val directCalleesIds:        IntMap[IntTrieSet],
         private[this] val indirectCalleesIds:      IntMap[IntTrieSet],
         private[this] val _incompleteCallSites:    IntTrieSet,

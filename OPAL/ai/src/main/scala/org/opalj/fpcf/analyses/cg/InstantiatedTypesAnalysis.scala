@@ -5,7 +5,6 @@ package analyses
 package cg
 
 import scala.language.existentials
-
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.cg.properties.CallersProperty
 import org.opalj.fpcf.cg.properties.InstantiatedTypes
@@ -23,10 +22,6 @@ import org.opalj.tac.fpcf.properties.TACAI
 class InstantiatedTypesAnalysis private[analyses] (
         final val project: SomeProject
 ) extends FPCFAnalysis {
-
-    // todo maybe do this in before schedule
-    private[this] val initialInstantiatedTypes: UIDSet[ObjectType] =
-        UIDSet(project.get(InitialInstantiatedTypesKey).toSeq: _*)
 
     def analyze(declaredMethod: DeclaredMethod): PropertyComputationResult = {
         (propertyStore(declaredMethod, CallersProperty.key): @unchecked) match {
@@ -89,7 +84,7 @@ class InstantiatedTypesAnalysis private[analyses] (
     ): UIDSet[ObjectType] = {
         instantiatedTypesEOptP match {
             case eps: EPS[_, _] ⇒ eps.ub.types
-            case _              ⇒ initialInstantiatedTypes
+            case _              ⇒ UIDSet.empty
         }
     }
 
@@ -129,7 +124,7 @@ class InstantiatedTypesAnalysis private[analyses] (
                     p,
                     InstantiatedTypes.key,
                     InstantiatedTypesAnalysis.update(
-                        p, newInstantiatedTypes, initialInstantiatedTypes
+                        p, newInstantiatedTypes
                     )
                 ))
                 else
@@ -141,7 +136,7 @@ class InstantiatedTypesAnalysis private[analyses] (
             PartialResult(
                 project,
                 InstantiatedTypes.key,
-                InstantiatedTypesAnalysis.update(p, newInstantiatedTypes, initialInstantiatedTypes)
+                InstantiatedTypesAnalysis.update(p, newInstantiatedTypes)
             )
         } else {
             NoResult
@@ -150,11 +145,9 @@ class InstantiatedTypesAnalysis private[analyses] (
 }
 
 object InstantiatedTypesAnalysis {
-
     def update(
-        p:                        SomeProject,
-        newInstantiatedTypes:     UIDSet[ObjectType],
-        initialInstantiatedTypes: UIDSet[ObjectType]
+        p:                    SomeProject,
+        newInstantiatedTypes: UIDSet[ObjectType]
     )(
         eop: EOptionP[SomeProject, InstantiatedTypes]
     ): Option[EPS[SomeProject, InstantiatedTypes]] = eop match {
@@ -162,17 +155,17 @@ object InstantiatedTypesAnalysis {
             Some(InterimEUBP(p, ub.updated(newInstantiatedTypes)))
 
         case _: EPK[_, _] ⇒
-            Some(InterimEUBP(
-                p,
-                InstantiatedTypes.initial(newInstantiatedTypes, initialInstantiatedTypes)
-            ))
+            throw new IllegalStateException(
+                "the instantiated types property should be pre initialized"
+            )
 
         case r ⇒ throw new IllegalStateException(s"unexpected previous result $r")
     }
-
 }
 
-object TriggeredInstantiatedTypesAnalysis extends BasicFPCFTriggeredAnalysisScheduler {
+object TriggeredInstantiatedTypesAnalysis extends FPCFTriggeredAnalysisScheduler {
+
+    override type InitializationData = Null
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(InstantiatedTypes, CallersProperty)
 
@@ -185,4 +178,25 @@ object TriggeredInstantiatedTypesAnalysis extends BasicFPCFTriggeredAnalysisSche
         ps.registerTriggeredComputation(CallersProperty.key, analysis.analyze)
         analysis
     }
+
+    override def init(p: SomeProject, ps: PropertyStore): Null = {
+        val initialInstantiatedTypes = UIDSet(p.get(InitialInstantiatedTypesKey).toSeq: _*)
+
+        ps.preInitialize[SomeProject, InstantiatedTypes](p, InstantiatedTypes.key) {
+            case _: EPK[_, _] ⇒ InterimEUBP(p, InstantiatedTypes(initialInstantiatedTypes))
+            case eps          ⇒ throw new IllegalStateException(s"unexpected property: $eps")
+        }
+
+        null
+    }
+
+    override def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
+
+    override def afterPhaseScheduling(ps: PropertyStore, analysis: FPCFAnalysis): Unit = {}
+
+    override def afterPhaseCompletion(
+        p:        SomeProject,
+        ps:       PropertyStore,
+        analysis: FPCFAnalysis
+    ): Unit = {}
 }

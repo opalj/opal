@@ -53,8 +53,7 @@ object NoLoadedClasses extends LoadedClasses(classes = UIDSet.empty, orderedClas
 
 object LoadedClasses extends LoadedClassesMetaInformation {
 
-    // todo do we have "initial" loaded classes?
-    def initial(
+    def apply(
         classes: UIDSet[ObjectType]
     ): LoadedClasses = {
         new LoadedClasses(classes.toList, classes)

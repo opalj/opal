@@ -13,7 +13,6 @@ import org.opalj.br.ObjectType
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.cg.properties.CallersProperty
@@ -40,17 +39,12 @@ class ConfiguredNativeMethodsAnalysis private[analyses] (
     private case class ReachableMethod(cf: String, m: String, desc: String)
 
     private val nativeMethodData: Map[(String, String, String), (Option[Seq[String]], Option[Seq[ReachableMethod]])] =
-        // todo use callgraph independend key
         project.config.as[Iterator[NativeMethodData]](
-            "org.opalj.fpcf.analysis.RTACallGraphAnalysis.nativeMethods"
+            "org.opalj.fpcf.analyses.ConfiguredNativeMethodsAnalysis.nativeMethods"
         ).map { action ⇒
                 (action.cf, action.m, action.desc) →
                     ((action.instantiatedTypes, action.reachableMethods))
             }.toMap
-
-    // todo maybe do this in before schedule
-    private[this] val initialInstantiatedTypes: UIDSet[ObjectType] =
-        UIDSet(project.get(InitialInstantiatedTypesKey).toSeq: _*)
 
     private[this] implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
 
@@ -59,7 +53,7 @@ class ConfiguredNativeMethodsAnalysis private[analyses] (
     ): UIDSet[ObjectType] = {
         instantiatedTypesEOptP match {
             case eps: EPS[_, _] ⇒ eps.ub.types
-            case _              ⇒ initialInstantiatedTypes
+            case _              ⇒ UIDSet.empty
         }
     }
 
@@ -114,8 +108,7 @@ class ConfiguredNativeMethodsAnalysis private[analyses] (
                     InstantiatedTypes.key,
                     InstantiatedTypesAnalysis.update(
                         p,
-                        newInstantiatedTypes,
-                        initialInstantiatedTypes
+                        newInstantiatedTypes
                     )
                 ))
             else

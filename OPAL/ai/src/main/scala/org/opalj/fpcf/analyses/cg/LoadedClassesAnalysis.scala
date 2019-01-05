@@ -113,7 +113,6 @@ class LoadedClassesAnalysis(
                 val newUb = ub.classes ++ newLoadedClasses
                 // due to monotonicity:
                 // the size check sufficiently replaces the subset check
-                // todo use index
                 if (newUb.size > ub.classes.size)
                     Some(InterimEUBP(project, ub.updated(newLoadedClasses)))
                 else
@@ -121,7 +120,7 @@ class LoadedClassesAnalysis(
 
             case _: EPK[_, _] ⇒
                 Some(
-                    InterimEUBP(project, LoadedClasses.initial(newLoadedClasses))
+                    InterimEUBP(project, LoadedClasses(newLoadedClasses))
                 )
 
             case r ⇒

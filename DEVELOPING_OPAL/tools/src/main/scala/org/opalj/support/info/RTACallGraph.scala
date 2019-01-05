@@ -71,7 +71,10 @@ object RTACallGraph extends DefaultOneStepAnalysis {
         isInterrupted: () ⇒ Boolean
     ): BasicReport = {
         implicit val declaredMethods = project.get(DeclaredMethodsKey)
-        val allMethods = declaredMethods.declaredMethods.toTraversable
+        val allMethods = declaredMethods.declaredMethods.filter { dm ⇒
+            dm.hasSingleDefinedMethod &&
+                (dm.definedMethod.classFile.thisType eq dm.declaringClassType)
+        }.toTraversable
 
         implicit val ps = project.get(PropertyStoreKey)
 

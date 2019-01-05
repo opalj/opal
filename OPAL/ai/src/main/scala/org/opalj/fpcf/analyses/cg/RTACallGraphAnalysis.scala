@@ -86,7 +86,6 @@ class RTAState private (
         )
     }
 
-    //todo do we want the calleesAndCallers
     private[cg] def addCallEdge(pc: Int, targetMethod: DeclaredMethod): Unit = {
         _calleesAndCallers.updateWithCall(method, targetMethod, pc)
     }
