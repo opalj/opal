@@ -23,7 +23,7 @@ import scala.collection.mutable.ArrayStack
  */
 sealed abstract class UIDSet[T <: UID]
     extends scala.collection.immutable.Set[T]
-    with scala.collection.SetLike[T, UIDSet[T]] {
+    with scala.collection.SetLike[T, UIDSet[T]] { set ⇒
 
     final override def empty: UIDSet[T] = UIDSet0.asInstanceOf[UIDSet[T]]
     final override def contains(e: T): Boolean = containsId(e.id)
@@ -48,6 +48,10 @@ sealed abstract class UIDSet[T <: UID]
 
     /** Iterator over all ids. */
     def idIterator: IntIterator
+
+    def foreachIterator: ForeachRefIterator[T] = new ForeachRefIterator[T] {
+        def foreach[U](f: T ⇒ U): Unit = set.foreach(f)
+    }
 
     override def iterator: RefIterator[T]
     // Note that, "super.toIterator" guarantees to call "iterator"
@@ -132,6 +136,7 @@ object UIDSet0 extends UIDSet[UID] {
     //
     override def findById(id: Int): Option[UID] = None
     override def idIterator: IntIterator = IntIterator.empty
+    override def foreachIterator: ForeachRefIterator[Nothing] = ForeachRefIterator.empty
     override def idSet: IntTrieSet = IntTrieSet.empty
     override def containsId(id: Int): Boolean = false
     override def isSingletonSet: Boolean = false

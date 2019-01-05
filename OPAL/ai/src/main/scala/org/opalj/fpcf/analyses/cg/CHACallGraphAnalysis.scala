@@ -18,6 +18,7 @@ import org.opalj.fpcf.cg.properties.StandardInvokeCallees
 import org.opalj.fpcf.cg.properties.StandardInvokeCalleesImplementation
 import org.opalj.log.Error
 import org.opalj.log.OPALLogger
+import org.opalj.log.OPALLogger.logOnce
 import org.opalj.log.Warn
 import org.opalj.tac.Assignment
 import org.opalj.tac.DUVar
@@ -32,7 +33,9 @@ import org.opalj.tac.VirtualMethodCall
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.value.ValueInformation
 
-class CHACallGraphAnalysis private[analyses] ( final val project: SomeProject) extends FPCFAnalysis {
+class CHACallGraphAnalysis private[analyses] (
+        final val project: SomeProject
+) extends FPCFAnalysis {
 
     private implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
 
@@ -111,9 +114,6 @@ class CHACallGraphAnalysis private[analyses] ( final val project: SomeProject) e
                 }
             }
         }
-
-        implicit val p: SomeProject = project
-
         tac.stmts.foreach {
             case stmt @ StaticFunctionCallStatement(call) ⇒
                 handleTgts(call.resolveCallTarget.toSet, stmt.pc)
@@ -146,20 +146,14 @@ class CHACallGraphAnalysis private[analyses] ( final val project: SomeProject) e
 
             case Assignment(_, _, idc: InvokedynamicFunctionCall[V]) ⇒
                 calleesAndCallers.addIncompleteCallsite(idc.pc)
-                OPALLogger.logOnce(
-                    Warn(
-                        "analysis",
-                        s"unresolved invokedynamic ignored by call graph construction"
-                    )
+                logOnce(
+                    Warn("analysis - call graph construction", s"unresolved invokedynamic: $idc")
                 )(p.logContext)
 
             case ExprStmt(_, idc: InvokedynamicFunctionCall[V]) ⇒
                 calleesAndCallers.addIncompleteCallsite(idc.pc)
-                OPALLogger.logOnce(
-                    Warn(
-                        "analysis",
-                        s"unresolved invokedynamic ignored by call graph construction"
-                    )
+                logOnce(
+                    Warn("analysis - call graph construction", s"unresolved invokedynamic: $idc")
                 )(p.logContext)
 
             case _ ⇒

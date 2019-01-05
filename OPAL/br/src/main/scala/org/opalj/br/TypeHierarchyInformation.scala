@@ -3,6 +3,7 @@ package org.opalj
 package br
 
 import org.opalj.collection.RefIterator
+import org.opalj.collection.ForeachRefIterator
 import org.opalj.collection.immutable.UIDSet
 
 /**
@@ -25,6 +26,8 @@ sealed abstract class TypeHierarchyInformation {
     def foreach[T](f: ObjectType ⇒ T): Unit = allTypes.foreach(f)
 
     def iterator: RefIterator[ObjectType]
+
+    def foreachIterator: ForeachRefIterator[ObjectType] = allTypes.foreachIterator
 
     def forall(f: ObjectType ⇒ Boolean): Boolean = allTypes.forall(f)
 
@@ -72,8 +75,8 @@ object SubtypeInformation {
         final override def interfaceTypes: UIDSet[ObjectType] = UIDSet.empty
         final override def allTypes: UIDSet[ObjectType] = UIDSet.empty
         final override def contains(t: ObjectType): Boolean = false
-        final override def iterator: RefIterator[ObjectType] = RefIterator.empty
         final override private[br] def containsId(objectTypeId: Int): Boolean = false
+        final override def iterator: RefIterator[ObjectType] = RefIterator.empty
     }
 
     def forObject(
