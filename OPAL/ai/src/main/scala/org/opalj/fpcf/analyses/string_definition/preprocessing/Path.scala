@@ -96,7 +96,8 @@ case class Path(elements: List[SubPath]) {
 
                 stmts(popped) match {
                     case a: Assignment[V] if a.expr.isInstanceOf[VirtualFunctionCall[V]] ⇒
-                        stack.pushAll(a.expr.asVirtualFunctionCall.receiver.asVar.definedBy.toArray)
+                        val receiver = a.expr.asVirtualFunctionCall.receiver.asVar
+                        stack.pushAll(receiver.asVar.definedBy.filter(_ >= 0).toArray)
                         // TODO: Does the following line add too much (in some cases)???
                         stack.pushAll(a.targetVar.asVar.usedBy.toArray)
                     case a: Assignment[V] if a.expr.isInstanceOf[New] ⇒

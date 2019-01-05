@@ -210,7 +210,7 @@ object InterpretationHandler {
         val news = ListBuffer[New]()
 
         // HINT: It might be that the search has to be extended to further cases
-        duvar.definedBy.foreach { ds ⇒
+        duvar.definedBy.filter(_ >= 0).foreach { ds ⇒
             stmts(ds) match {
                 // E.g., a call to `toString` or `append`
                 case Assignment(_, _, vfc: VirtualFunctionCall[V]) ⇒
