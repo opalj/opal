@@ -237,6 +237,9 @@ object RefIterator {
         def next(): Nothing = throw new NoSuchElementException("next on empty iterator")
     }
 
+    // Defined to match the interface of scala....Iterator.single
+    def single[T <: AnyRef](v: T): RefIterator[T] = this(v)
+
     def apply[T <: AnyRef](v: T): RefIterator[T] = new RefIterator[T] {
         private[this] var returned = false
         def hasNext: Boolean = !returned
