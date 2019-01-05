@@ -270,7 +270,12 @@ private[immutable] final class LongTrieSet2 private[immutable] (
         else if (i == i2) LongTrieSet1(i1)
         else this
     }
-    override def +(i: Long): LongTrieSet = if (i1 == i | i2 == i) this else LongTrieSet.from(i1, i2, i)
+    override def +(i: Long): LongTrieSet = {
+        if (i1 == i || i2 == i)
+            this
+        else
+            LongTrieSet.from(i1, i2, i)
+    }
     override def +!(i: Long): LongTrieSet = this + i
     override def intersect(other: LongTrieSet): LongTrieSet = {
         other.size match {
@@ -337,10 +342,8 @@ private[immutable] final class LongTrieSet3 private[immutable] (
     override def isSingletonSet: Boolean = false
     override def hasMultipleElements: Boolean = true
     override def size: Int = 3
-    override def headAndTail: LongRefPair[LongTrieSet] = {
-        LongRefPair(i3, new LongTrieSet2(i1, i2))
-    }
-    override def head: Long = i1
+    override def headAndTail: LongRefPair[LongTrieSet] = LongRefPair(i3, new LongTrieSet2(i1, i2))
+    override def head: Long = i1 // FIXME... not the same as headAndTail!
     override def flatMap(f: Long ⇒ LongTrieSet): LongTrieSet = f(i1) ++ f(i2) ++ f(i3)
     override def iterator: LongIterator = LongIterator(i1, i2, i3)
 
