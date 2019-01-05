@@ -7,8 +7,9 @@ import org.opalj.tac.ArrayLoad
 import org.opalj.tac.ArrayStore
 import org.opalj.tac.Stmt
 import org.opalj.tac.TACStmts
-
 import scala.collection.mutable.ListBuffer
+
+import org.opalj.fpcf.properties.StringConstancyProperty
 
 /**
  * The `ArrayLoadInterpreter` is responsible for processing [[ArrayLoad]] expressions.
@@ -31,7 +32,8 @@ class ArrayLoadInterpreter(
         val stmts = cfg.code.instructions
         val children = ListBuffer[StringConstancyInformation]()
         // Loop over all possible array values
-        instr.arrayRef.asVar.definedBy.toArray.sorted.foreach { next ⇒
+        val defSites = instr.arrayRef.asVar.definedBy.toArray
+        defSites.filter(_ >= 0).sorted.foreach { next ⇒
             val arrDecl = stmts(next)
             val sortedArrDeclUses = arrDecl.asAssignment.targetVar.usedBy.toArray.sorted
             sortedArrDeclUses.filter {
@@ -42,6 +44,11 @@ class ArrayLoadInterpreter(
                     children.appendAll(_)
                 }
             }
+        }
+
+        // In case it refers to a method parameter, add a dynamic string property
+        if (defSites.exists(_ < 0)) {
+            children.append(StringConstancyProperty.lowerBound.stringConstancyInformation)
         }
 
         children.toList
