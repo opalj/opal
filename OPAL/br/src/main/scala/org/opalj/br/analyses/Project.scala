@@ -524,7 +524,7 @@ class Project[Source] private (
     def get[T <: AnyRef](pik: ProjectInformationKey[T, _]): T = {
         val pikUId = pik.uniqueId
 
-        /* synchronization is done by the caller! */
+        /* Synchronization is done by the caller! */
         def derive(projectInformation: AtomicReferenceArray[AnyRef]): T = {
             var className = pik.getClass.getSimpleName
             if (className.endsWith("Key"))
