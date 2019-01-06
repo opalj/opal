@@ -168,34 +168,31 @@ class ThreadRelatedCallsAnalysis private[analyses] (
         // partial results for all methods that should be made vm reachable
         val results: Iterator[ProperPropertyComputationResult] =
             state.vmReachableMethods.iterator.map { method ⇒
-                PartialResult[DeclaredMethod, CallersProperty](method, CallersProperty.key, {
-                    case InterimUBP(ub) if !ub.hasVMLevelCallers ⇒
-                        Some(InterimEUBP(method, ub.updatedWithVMLevelCall()))
+                PartialResult[DeclaredMethod, CallersProperty](
+                    method,
+                    CallersProperty.key,
+                    {
+                        case InterimUBP(ub) if !ub.hasVMLevelCallers ⇒
+                            Some(InterimEUBP(method, ub.updatedWithVMLevelCall()))
 
-                    case _: InterimEP[_, _] ⇒ None
-
-                    case _: EPK[_, _] ⇒
-                        Some(InterimEUBP(method, OnlyVMLevelCallers))
-
-                    case r ⇒
-                        throw new IllegalStateException(s"unexpected previous result $r")
-                })
+                        case _: InterimEP[_, _] ⇒ None
+                        case _: EPK[_, _]       ⇒ Some(InterimEUBP(method, OnlyVMLevelCallers))
+                        case r                  ⇒ throw new IllegalStateException(s"unexpected $r")
+                    }
+                )
             }
 
         // todo we need to add the incomplete call sites
-        val c = if (tacaiEPS.isRefinable)
-            InterimResult.forUB(
-                definedMethod,
-                ThreadRelatedIncompleteCallSites(state.incompleteCallSites),
-                Some(tacaiEPS),
-                continuation(definedMethod)
-            )
-
-        else
-            Result(
-                definedMethod,
-                ThreadRelatedIncompleteCallSites(state.incompleteCallSites)
-            )
+        val c =
+            if (tacaiEPS.isRefinable)
+                InterimResult.forUB(
+                    definedMethod,
+                    ThreadRelatedIncompleteCallSites(state.incompleteCallSites),
+                    Some(tacaiEPS),
+                    continuation(definedMethod)
+                )
+            else
+                Result(definedMethod, ThreadRelatedIncompleteCallSites(state.incompleteCallSites))
 
         Results((Iterator(c) ++ results).toSeq: _*)
     }

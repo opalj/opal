@@ -218,7 +218,10 @@ class L2FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
 
     def handleCalls(
         calleesEOP: EOptionP[DeclaredMethod, Callees]
-    )(implicit state: State): Boolean = {
+    )(
+        implicit
+        state: State
+    ): Boolean = {
         calleesEOP match {
             case FinalP(callees) ⇒
                 state.calleesDependee = None
