@@ -1383,9 +1383,7 @@ object Project {
                 }
             }
 
-            uniqueInterfaceMethods foreach { m ⇒
-                processMaximallySpecificSuperinterfaceMethod(m)
-            }
+            uniqueInterfaceMethods foreach { m ⇒ processMaximallySpecificSuperinterfaceMethod(m) }
 
             // let's keep the contexts related to the maximally specific methods.
             interfaceMethods.iterator.filterNot { ms ⇒
