@@ -31,11 +31,16 @@ sealed class LoadedClasses private[properties] (
     }
 
     def updated(newClasses: Set[ObjectType]): LoadedClasses = {
-        var newOrderedClasses = orderedClasses
-        for { c ← newClasses if !classes.contains(c) } {
-            newOrderedClasses ::= c
+        var updatedOrderedClasses = orderedClasses
+        var updatedClasses = classes
+        for { c ← newClasses } {
+            val nextUpdatedClasses = updatedClasses + c
+            if (nextUpdatedClasses ne updatedClasses /* <= used as a contains check */ ) {
+                updatedOrderedClasses ::= c
+                updatedClasses = nextUpdatedClasses
+            }
         }
-        new LoadedClasses(newOrderedClasses, classes ++ newClasses)
+        new LoadedClasses(updatedOrderedClasses, updatedClasses)
     }
 
     // TODO Rename "take" (document that always the newest one(s) will be taken.
