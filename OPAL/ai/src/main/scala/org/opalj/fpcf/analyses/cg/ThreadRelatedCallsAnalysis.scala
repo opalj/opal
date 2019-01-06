@@ -194,7 +194,7 @@ class ThreadRelatedCallsAnalysis private[analyses] (
             else
                 Result(definedMethod, ThreadRelatedIncompleteCallSites(state.incompleteCallSites))
 
-        Results((Iterator(c) ++ results).toSeq: _*)
+        Results(c, results)
     }
 
     /**

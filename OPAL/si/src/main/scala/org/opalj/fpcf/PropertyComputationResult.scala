@@ -1,6 +1,8 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf
 
+import org.opalj.collection.ForeachRefIterator
+
 /**
  * Encapsulates the (intermediate) result of the computation of a property.
  *
@@ -22,18 +24,8 @@ sealed abstract class PropertyComputationResult {
 
     private[fpcf] def asResult: Result = throw new ClassCastException();
 
-}
+    private[fpcf] def asResults: Results = throw new ClassCastException();
 
-object PropertyComputationResult {
-
-    def apply(results: ProperPropertyComputationResult*): PropertyComputationResult = {
-        if (results.isEmpty)
-            NoResult
-        else if (results.size == 1)
-            results.head
-        else
-            new Results(results)
-    }
 }
 
 /**
@@ -311,18 +303,55 @@ object IncrementalResult { private[fpcf] final val id = 4 }
  * Just a collection of multiple results. The results have to be disjoint w.r.t. the underlying
  * e/pk pairs for which it contains results.
  */
-case class Results(
-        results: TraversableOnce[ProperPropertyComputationResult]
-) extends ProperPropertyComputationResult {
+sealed abstract class Results extends ProperPropertyComputationResult {
 
     private[fpcf] final def id = Results.id
+
+    private[fpcf] final override def asResults: Results = this
+
+    def foreach(f: ProperPropertyComputationResult ⇒ Unit): Unit
 
 }
 object Results {
 
     private[fpcf] final val id = 5
 
-    def apply(results: ProperPropertyComputationResult*): Results = new Results(results)
+    def apply(results: ProperPropertyComputationResult*): Results = new Results {
+        def foreach(f: ProperPropertyComputationResult ⇒ Unit): Unit = results.foreach(f)
+    }
+
+    def apply(results: TraversableOnce[ProperPropertyComputationResult]) = new Results {
+        def foreach(f: ProperPropertyComputationResult ⇒ Unit): Unit = results.foreach(f)
+    }
+
+    def apply(
+        result:  ProperPropertyComputationResult,
+        results: TraversableOnce[ProperPropertyComputationResult]
+    ) = new Results {
+        def foreach(f: ProperPropertyComputationResult ⇒ Unit): Unit = {
+            f(result)
+            results.foreach(f)
+        }
+    }
+
+    def apply(
+        resultOption: Option[ProperPropertyComputationResult],
+        results:      TraversableOnce[ProperPropertyComputationResult]
+    ) = {
+        if (resultOption.isEmpty && results.isEmpty)
+            NoResult
+        else
+            new Results {
+                def foreach(f: ProperPropertyComputationResult ⇒ Unit): Unit = {
+                    resultOption.foreach(r ⇒ f(r))
+                    results.foreach(f)
+                }
+            }
+    }
+
+    def apply(results: ForeachRefIterator[ProperPropertyComputationResult]) = new Results {
+        def foreach(f: ProperPropertyComputationResult ⇒ Unit): Unit = results.foreach(f)
+    }
 }
 
 /**

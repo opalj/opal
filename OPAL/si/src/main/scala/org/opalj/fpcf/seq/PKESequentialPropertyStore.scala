@@ -602,8 +602,7 @@ final class PKESequentialPropertyStore private (
                 npcs foreach { npc ⇒ val (pc, e) = npc; scheduleEagerComputationForEntity(e)(pc) }
 
             case Results.id ⇒
-                val Results(results) = r
-                results.foreach(r ⇒ handleResult(r))
+                r.asResults.foreach(r ⇒ handleResult(r))
 
             case MultiResult.id ⇒
                 val MultiResult(results) = r
