@@ -23,16 +23,20 @@ import org.opalj.tac.Stmt
 import org.opalj.tac.UVar
 
 package object cg {
+
     type V = DUVar[ValueInformation]
 
     type CallSiteT = (Int /*PC*/ , String, MethodDescriptor, ReferenceType)
 
     /**
-     * A persisten representation (using pcs instead of TAC value origins) for a UVar.
+     * A persistent representation (using pcs instead of TAC value origins) for a UVar.
      */
     final def persistentUVar(
         value: V
-    )(implicit stmts: Array[Stmt[V]]): Some[(ValueInformation, IntTrieSet)] = {
+    )(
+        implicit
+        stmts: Array[Stmt[V]]
+    ): Some[(ValueInformation, IntTrieSet)] = {
         Some((value.value, value.definedBy.map(pcOfDefSite _)))
     }
 
