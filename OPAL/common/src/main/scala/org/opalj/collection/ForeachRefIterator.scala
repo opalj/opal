@@ -3,9 +3,9 @@ package org.opalj
 package collection
 
 /**
- * The only way to iterate over a foreach iterator is to use `foreach`. Compared to
- * a classical iterator, iteration can be repeated and more efficient implementation strategies
- * are easily possible.
+ * Specialized variant of an internal iterator. The only way to iterate over a foreach
+ * iterator is to use `foreach`. Compared to a classical iterator, iteration can be repeated
+ * and more efficient implementation strategies are easily possible.
  *
  * @note The type bound `T <: AnyRef` is expected to be ex-/implicitly enforced by subclasses.
  *
@@ -44,6 +44,25 @@ abstract class ForeachRefIterator[+T] { self ⇒
 
     final def withFilter(p: T ⇒ Boolean): ForeachRefIterator[T] = filter(p)
 
+    final def zipWithIndex: ForeachRefIterator[(T, Int)] = {
+        new ForeachRefIterator[(T, Int)] {
+            def foreach[U](f: Tuple2[T, Int] ⇒ U): Unit = {
+                var i = 0
+                self.foreach { e ⇒
+                    f((e, i))
+                    i += 1
+                }
+            }
+        }
+    }
+
+    final def foreachWithIndex[U](f: (T, Int) ⇒ U): Unit = {
+        var i = 0
+        self.foreach { e ⇒
+            f(e, i)
+            i += 1
+        }
+    }
 }
 
 object ForeachRefIterator {
