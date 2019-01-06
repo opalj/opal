@@ -4,7 +4,7 @@ package fpcf
 package analyses
 
 import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.collection.immutable.IntTrieSetBuilder
+import org.opalj.collection.immutable.EmptyIntTrieSet
 import org.opalj.value.ValueInformation
 import org.opalj.br.PCs
 import org.opalj.ai.ValueOrigin
@@ -23,16 +23,20 @@ import org.opalj.tac.Stmt
 import org.opalj.tac.UVar
 
 package object cg {
+
     type V = DUVar[ValueInformation]
 
     type CallSiteT = (Int /*PC*/ , String, MethodDescriptor, ReferenceType)
 
     /**
-     * A persisten representation (using pcs instead of TAC value origins) for a UVar.
+     * A persistent representation (using pcs instead of TAC value origins) for a UVar.
      */
     final def persistentUVar(
         value: V
-    )(implicit stmts: Array[Stmt[V]]): Some[(ValueInformation, IntTrieSet)] = {
+    )(
+        implicit
+        stmts: Array[Stmt[V]]
+    ): Some[(ValueInformation, IntTrieSet)] = {
         Some((value.value, value.definedBy.map(pcOfDefSite _)))
     }
 
@@ -49,7 +53,8 @@ package object cg {
             )
     }
 
-    final def valueOriginOfPCs(PCs: PCs, pcToIndex: Array[Int]): IntTrieSet = {
+    final def valueOriginsOfPCs(pcs: PCs, pcToIndex: Array[Int]): IntTrieSet = {
+        /* OLD
         val origins = new IntTrieSetBuilder
         PCs.iterator.collect {
             case pc if ai.underlyingPC(pc) < 0       ⇒ pc // parameter
@@ -60,12 +65,25 @@ package object cg {
                 ValueOriginForMethodExternalException(pcToIndex(pcOfMethodExternalException(pc)))
         } foreach { origins += _ }
         origins.result()
+        */
+        pcs.foldLeft(EmptyIntTrieSet: IntTrieSet) { (origins, pc) ⇒
+            if (ai.underlyingPC(pc) < 0)
+                origins + pc // parameter
+            else if (pc >= 0 && pcToIndex(pc) >= 0)
+                origins + pcToIndex(pc) // local
+            else if (isImmediateVMException(pc) && pcToIndex(pcOfImmediateVMException(pc)) >= 0)
+                origins + ValueOriginForImmediateVMException(pcToIndex(pcOfImmediateVMException(pc)))
+            else if (isMethodExternalExceptionOrigin(pc) && pcToIndex(pcOfMethodExternalException(pc)) >= 0)
+                origins + ValueOriginForMethodExternalException(pcToIndex(pcOfMethodExternalException(pc)))
+            else
+                origins // as is
+        }
     }
 
     final def uVarForDefSites(
         defSites:  (ValueInformation, IntTrieSet),
         pcToIndex: Array[Int]
     ): V = {
-        UVar(defSites._1, valueOriginOfPCs(defSites._2, pcToIndex))
+        UVar(defSites._1, valueOriginsOfPCs(defSites._2, pcToIndex))
     }
 }

@@ -176,10 +176,8 @@ class L2FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
                 initialClasses.iterator
             }
 
-        val methodsHavingAccess = classesHavingAccess.flatMap(_.methods).toSet;
-
         // If there are native methods, we give up
-        if (methodsHavingAccess.exists(_.isNative))
+        if (classesHavingAccess.exists(_.methods.exists(_.isNative)))
             return Result(field, NonFinalFieldByLackOfInformation);
 
         // We now (compared to the simple one) have to analyze the static initializer as
@@ -220,7 +218,10 @@ class L2FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
 
     def handleCalls(
         calleesEOP: EOptionP[DeclaredMethod, Callees]
-    )(implicit state: State): Boolean = {
+    )(
+        implicit
+        state: State
+    ): Boolean = {
         calleesEOP match {
             case FinalP(callees) ⇒
                 state.calleesDependee = None

@@ -1051,23 +1051,26 @@ object ProjectLike {
                 // set.
                 var currentMaximallySpecificMethods = currentMethods
                 var additionalMaximallySpecificMethods = Set.empty[Method]
-                methods.iterator.filter(m ⇒ !currentMethods.contains(m)) foreach { method ⇒
-                    val newMethodDeclaringClassType = method.classFile.thisType
-                    var addNewMethod = true
-                    currentMaximallySpecificMethods =
-                        currentMaximallySpecificMethods.filter { currentMaximallySpecificMethod ⇒
-                            val specificMethodDeclaringClassType = currentMaximallySpecificMethod.classFile.thisType
-                            if (specificMethodDeclaringClassType isSubtypeOf newMethodDeclaringClassType) {
-                                addNewMethod = false
-                                true
-                            } else if (newMethodDeclaringClassType isSubtypeOf specificMethodDeclaringClassType) {
-                                false
-                            } else {
-                                //... we have an incomplete class hierarchy; let's keep both methods
-                                true
+                methods foreach { method ⇒
+                    if (!currentMethods.contains(method)) {
+                        val newMethodDeclaringClassType = method.classFile.thisType
+                        var addNewMethod = true
+                        currentMaximallySpecificMethods =
+                            currentMaximallySpecificMethods.filter { currentMaximallySpecificMethod ⇒
+                                val specificMethodDeclaringClassType = currentMaximallySpecificMethod.classFile.thisType
+                                if (specificMethodDeclaringClassType isSubtypeOf newMethodDeclaringClassType) {
+                                    addNewMethod = false
+                                    true
+                                } else if (newMethodDeclaringClassType isSubtypeOf specificMethodDeclaringClassType) {
+                                    false
+                                } else {
+                                    //... we have an incomplete class hierarchy;
+                                    // let's keep both methods
+                                    true
+                                }
                             }
-                        }
-                    if (addNewMethod) additionalMaximallySpecificMethods += method
+                        if (addNewMethod) additionalMaximallySpecificMethods += method
+                    }
                 }
                 currentMaximallySpecificMethods ++= additionalMaximallySpecificMethods
 

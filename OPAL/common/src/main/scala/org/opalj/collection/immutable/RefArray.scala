@@ -338,6 +338,18 @@ class RefArray[+T /* "<: AnyRef" this constraint is ONLY enforced by the factory
         override def next(): T = { val e = data(i).asInstanceOf[T]; i += 1; e }
     }
 
+    def foreachIterator: ForeachRefIterator[T] = new ForeachRefIterator[T] {
+        override def foreach[U](f: T ⇒ U): Unit = {
+            val data = self.data
+            val max = data.length
+            var i = 0
+            while (i < max) {
+                f(data(i).asInstanceOf[T])
+                i += 1
+            }
+        }
+    }
+
     override def filter(f: T ⇒ Boolean): RefArray[T] = {
         // IMPROVE Only create new array if required!
         val b = RefArray.newUnconstrainedBuilder[T]
@@ -463,6 +475,28 @@ class RefArray[+T /* "<: AnyRef" this constraint is ONLY enforced by the factory
             i += 1
         }
         new RefArray(newData)
+    }
+
+    def foreachWithIndex[U](f: (T, Int) ⇒ U): Unit = {
+        val data = self.data
+        val max = data.length
+        var i = 0
+        while (i < max) {
+            f(data(i).asInstanceOf[T], i)
+            i += 1
+        }
+    }
+
+    def sum(f: T ⇒ Int): Int = {
+        var sum = 0
+        val data = self.data
+        val max = data.length
+        var i = 0
+        while (i < max) {
+            sum += f(data(i).asInstanceOf[T])
+            i += 1
+        }
+        sum
     }
 
     override def equals(other: Any): Boolean = {

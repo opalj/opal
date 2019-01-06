@@ -31,9 +31,9 @@ sealed trait SerializationRelatedCallees extends IndirectCallees
 }
 
 sealed class SerializationRelatedCalleesImplementation(
-        protected[this] val calleesIds:          IntMap[IntTrieSet],
-        protected[this] val incompleteCallsites: IntTrieSet,
-        val parameters:                          IntMap[Map[DeclaredMethod, Seq[Option[(ValueInformation, IntTrieSet)]]]]
+        protected[this] val calleesIds: IntMap[IntTrieSet],
+        val incompleteCallSites:        IntTrieSet,
+        val parameters:                 IntMap[Map[DeclaredMethod, Seq[Option[(ValueInformation, IntTrieSet)]]]]
 ) extends AbstractCalleesLike with SerializationRelatedCallees
 
 object NoSerializationRelatedCallees

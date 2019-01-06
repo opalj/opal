@@ -4,8 +4,9 @@ package fpcf
 package cg
 package properties
 
-import org.opalj.collection.immutable.IntTrieSet
 import scala.collection.immutable.IntMap
+
+import org.opalj.collection.immutable.IntTrieSet
 
 /**
  * For a given [[org.opalj.br.DeclaredMethod]] the incomplete call sites related to the
@@ -30,7 +31,7 @@ sealed trait ThreadRelatedIncompleteCallSites extends CalleesLike
 }
 
 sealed class ThreadRelatedIncompleteCallSitesImplementation(
-        val incompleteCallsites: IntTrieSet
+        val incompleteCallSites: IntTrieSet
 ) extends {
     // here we need either the early definition or would need to mark it as a lazy val.
     protected[this] val calleesIds: IntMap[IntTrieSet] = IntMap.empty
@@ -40,9 +41,11 @@ object NoThreadRelatedIncompleteCallSites
     extends ThreadRelatedIncompleteCallSitesImplementation(IntTrieSet.empty)
 
 object NoThreadRelatedIncompleteCallSitesDueToNotReachableMethod
-    extends CalleesLikeNotReachable with ThreadRelatedIncompleteCallSites
+    extends CalleesLikeNotReachable
+    with ThreadRelatedIncompleteCallSites
 
-object ThreadRelatedIncompleteCallSites extends ThreadRelatedIncompleteCallSitesPropertyMetaInformation {
+object ThreadRelatedIncompleteCallSites
+    extends ThreadRelatedIncompleteCallSitesPropertyMetaInformation {
 
     final val key: PropertyKey[ThreadRelatedIncompleteCallSites] = {
         val name = "opalj.ThreadRelatedIncompleteCallSites"
@@ -52,7 +55,7 @@ object ThreadRelatedIncompleteCallSites extends ThreadRelatedIncompleteCallSites
                 case PropertyIsNotDerivedByPreviouslyExecutedAnalysis ⇒
                     NoThreadRelatedIncompleteCallSitesDueToNotReachableMethod
                 case _ ⇒
-                    throw new IllegalStateException(s"No analysis is scheduled for property: $name")
+                    throw new IllegalStateException(s"No analysis scheduled for: $name")
             }
         )
     }

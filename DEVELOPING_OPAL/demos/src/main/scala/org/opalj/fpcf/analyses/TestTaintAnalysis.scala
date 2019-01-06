@@ -70,9 +70,13 @@ class TestTaintAnalysis private (
                 val index = getConstValue(store.index, stmt.code)
                 if (isTainted(store.value, in))
                     if (index.isDefined) // Taint known array index
-                        in ++ definedBy.iterator.map(ArrayElement(_, index.get))
+                        // Instead of using an iterator, we are going to use internal iteration
+                        // in ++ definedBy.iterator.map(ArrayElement(_, index.get))
+                        definedBy.foldLeft(in) { (c, n) ⇒ c + ArrayElement(n, index.get) }
                     else // Taint whole array if index is unknown
-                        in ++ definedBy.iterator.map(Variable)
+                        // Instead of using an iterator, we are going to use internal iteration:
+                        // in ++ definedBy.iterator.map(Variable)
+                        definedBy.foldLeft(in) { (c, n) ⇒ c + Variable(n) }
                 else if (index.isDefined && definedBy.size == 1) // Untaint if possible
                     in - ArrayElement(definedBy.head, index.get)
                 else in
@@ -109,6 +113,7 @@ class TestTaintAnalysis private (
     def getConstValue(expr: Expr[V], code: Array[Stmt[V]]): Option[Int] = {
         if (expr.isIntConst) Some(expr.asIntConst.value)
         else if (expr.isVar) {
+            // TODO The following looks optimizable!
             val constVals = expr.asVar.definedBy.iterator.map[Option[Int]] { idx ⇒
                 if (idx >= 0) {
                     val stmt = code(idx)

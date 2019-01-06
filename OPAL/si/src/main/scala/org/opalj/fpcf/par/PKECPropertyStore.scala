@@ -194,16 +194,7 @@ final class PKECPropertyStore private (
             //
 
             case Results.id ⇒
-                val Results(furtherResults) = r
-                val resultsIterator = furtherResults.toIterator
-                var lastResult = resultsIterator.next()
-                // Arrange for the parallel handling of the "additional" results; except
-                // of the last one, which we handle directly.
-                while (resultsIterator.hasNext) {
-                    new HandleResult(lastResult).fork()
-                    lastResult = resultsIterator.next()
-                }
-                processBasicResult(lastResult)
+                r.asResults.foreach { aResult ⇒ new HandleResult(aResult).fork() }
 
             case IncrementalResult.id ⇒
                 val IncrementalResult(ir, npcs, propertyComputationsHint) = r

@@ -17,16 +17,15 @@ sealed trait InstantiatedTypesFinder {
     def collectInstantiatedTypes(project: SomeProject): Traversable[ObjectType] = Traversable.empty
 }
 
-trait ApplicationInstantiatedTypesFinder
-    extends InstantiatedTypesFinder {
+trait ApplicationInstantiatedTypesFinder extends InstantiatedTypesFinder {
 
     override def collectInstantiatedTypes(project: SomeProject): Traversable[ObjectType] = {
         Traversable(ObjectType.String) ++ super.collectInstantiatedTypes(project)
     }
 }
 
-trait LibraryInstantiatedTypesFinder
-    extends InstantiatedTypesFinder {
+trait LibraryInstantiatedTypesFinder extends InstantiatedTypesFinder {
+
     override def collectInstantiatedTypes(project: SomeProject): Traversable[ObjectType] = {
         val closedPackages = project.get(ClosedPackagesKey)
         project.allClassFiles.iterator.filter { cf ⇒

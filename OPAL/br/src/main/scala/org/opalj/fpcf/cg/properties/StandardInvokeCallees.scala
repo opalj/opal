@@ -32,7 +32,7 @@ sealed trait StandardInvokeCallees extends CalleesLike
 
 sealed class StandardInvokeCalleesImplementation(
         val calleesIds:          IntMap[IntTrieSet],
-        val incompleteCallsites: IntTrieSet
+        val incompleteCallSites: IntTrieSet
 ) extends AbstractCalleesLike with StandardInvokeCallees
 
 object NoStandardInvokeCallees

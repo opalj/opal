@@ -41,13 +41,15 @@ final class CalleesAnalysis private[analyses] (
         var directKeys = directCalleesPropertyKeys
         var indirectKeys = indirectCalleesPropertyKeys
 
-        for (pk ← directCalleesPropertyKeys.iterator ++ indirectCalleesPropertyKeys.iterator) {
+        val handlePropertyKey = (pk: PropertyKey[CalleesLike]) ⇒ {
             val r = handleEOptP(propertyStore(dm, pk), dependees, directKeys, indirectKeys)
             isReachable |= r._1
             dependees = r._2
             directKeys = r._3
             indirectKeys = r._4
-        }
+        }: Unit
+        directCalleesPropertyKeys.foreach(handlePropertyKey)
+        indirectCalleesPropertyKeys.foreach(handlePropertyKey)
 
         returnResult(dm, dependees, directKeys, indirectKeys, isReachable)
 

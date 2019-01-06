@@ -6,17 +6,17 @@ package cg
 
 import scala.language.existentials
 
+import org.opalj.collection.immutable.UIDSet
+import org.opalj.fpcf.cg.properties.CallersProperty
+import org.opalj.fpcf.cg.properties.InstantiatedTypes
+import org.opalj.fpcf.cg.properties.LoadedClasses
+import org.opalj.fpcf.cg.properties.OnlyVMLevelCallers
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.SomeProject
-import org.opalj.collection.immutable.UIDSet
-import org.opalj.fpcf.cg.properties.CallersProperty
-import org.opalj.fpcf.cg.properties.InstantiatedTypes
-import org.opalj.fpcf.cg.properties.LoadedClasses
-import org.opalj.fpcf.cg.properties.OnlyVMLevelCallers
 
 /**
  * Extends the call graph analysis (e.g. [[org.opalj.fpcf.analyses.cg.RTACallGraphAnalysis]]) to
@@ -80,13 +80,11 @@ class StaticInitializerAnalysis(val project: SomeProject) extends FPCFAnalysis {
     ): PropertyComputationResult = {
         val loadedClassesUB = state.loadedClassesUB.map(_.classes).getOrElse(UIDSet.empty)
 
-        val unseenLoadedClasses =
-            state.loadedClassesUB.map(_.getNewClasses(state.seenClasses)).getOrElse(Iterator.empty)
         val unseenInstantiatedTypes =
             state.instantiatedTypesUB.map(_.getNewTypes(state.seenInstantiatedTypes)).getOrElse(Iterator.empty)
 
-        state.seenClasses = state.loadedClassesUB.map(_.numElements).getOrElse(0)
-        state.seenInstantiatedTypes = state.instantiatedTypesUB.map(_.numElements).getOrElse(0)
+        state.seenClasses = state.loadedClassesUB.foldLeft(0)(_ + _.numElements)
+        state.seenInstantiatedTypes = state.instantiatedTypesUB.foldLeft(0)(_ + _.numElements)
 
         var newLoadedClasses = UIDSet.empty[ObjectType]
         for (unseenInstantiatedType ← unseenInstantiatedTypes) {
@@ -117,17 +115,19 @@ class StaticInitializerAnalysis(val project: SomeProject) extends FPCFAnalysis {
             }
         ))
 
-        val lcResult = if (state.itDependee.isDefined || state.lcDependee.isDefined)
-            Some(InterimPartialResult(
-                if (newLoadedClasses.nonEmpty) loadedClassesPartialResult else None,
-                state.itDependee ++ state.lcDependee,
-                continuation
-            ))
-        else if (newLoadedClasses.nonEmpty)
-            loadedClassesPartialResult
-        else
-            None
+        val lcResultOption =
+            if (state.itDependee.isDefined || state.lcDependee.isDefined)
+                Some(InterimPartialResult(
+                    if (newLoadedClasses.nonEmpty) loadedClassesPartialResult else None,
+                    state.itDependee ++ state.lcDependee,
+                    continuation
+                ))
+            else if (newLoadedClasses.nonEmpty)
+                loadedClassesPartialResult
+            else
+                None
 
+        /* OLD
         var newCLInits = Set.empty[DeclaredMethod]
         for (newLoadedClass ← unseenLoadedClasses) {
             // todo create result for static initializers
@@ -135,19 +135,41 @@ class StaticInitializerAnalysis(val project: SomeProject) extends FPCFAnalysis {
         }
 
         val callersResult = newCLInits.iterator map { clInit ⇒
-            PartialResult[DeclaredMethod, CallersProperty](clInit, CallersProperty.key, {
-                case InterimUBP(ub) if !ub.hasVMLevelCallers ⇒
-                    Some(InterimEUBP(clInit, ub.updatedWithVMLevelCall()))
+            PartialResult[DeclaredMethod, CallersProperty](
+                clInit,
+                CallersProperty.key,
+                {
+                    case InterimUBP(ub) if !ub.hasVMLevelCallers ⇒
+                        Some(InterimEUBP(clInit, ub.updatedWithVMLevelCall()))
 
-                case _: InterimEP[_, _] ⇒
-                    None
+                    case _: InterimEP[_, _] ⇒ None
 
-                case _: EPK[_, _] ⇒
-                    Some(InterimEUBP(clInit, OnlyVMLevelCallers))
-            })
+                    case _: EPK[_, _]       ⇒ Some(InterimEUBP(clInit, OnlyVMLevelCallers))
+                }
+            )
         }
+        */
+        val unseenLoadedClasses =
+            state.loadedClassesUB.map(_.getNewClasses(state.seenClasses)).getOrElse(Iterator.empty)
+        val callersResult =
+            unseenLoadedClasses
+                .flatMap { lc ⇒ retrieveStaticInitializers(lc) }
+                .map { clInit ⇒
+                    PartialResult[DeclaredMethod, CallersProperty](
+                        clInit,
+                        CallersProperty.key,
+                        {
+                            case InterimUBP(ub) if !ub.hasVMLevelCallers ⇒
+                                Some(InterimEUBP(clInit, ub.updatedWithVMLevelCall()))
 
-        PropertyComputationResult((callersResult ++ lcResult).toSeq: _*)
+                            case _: InterimEP[_, _] ⇒ None
+
+                            case _: EPK[_, _]       ⇒ Some(InterimEUBP(clInit, OnlyVMLevelCallers))
+                        }
+                    )
+                }
+
+        Results(lcResultOption, callersResult)
     }
 
     private[this] def continuation(

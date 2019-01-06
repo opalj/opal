@@ -56,7 +56,7 @@ class LibraryEntryPointsAnalysis private[analyses] (
         else
             None
 
-        PropertyComputationResult((resultsForReachableMethods(newReachableMethods) ++ c).toSeq: _*)
+        Results(c, resultsForReachableMethods(newReachableMethods))
     }
 
     private[this] def continuation(
