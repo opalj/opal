@@ -774,10 +774,12 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
             while (toVisitStack.nonEmpty) {
                 val from = toVisitStack.pop()
                 val to = successors(from).toArray
-                // Check for back-edges
+                // Check for back-edges (exclude catch nodes here as this would detect loops where
+                // no actually are
                 to.filter { next ⇒
                     val index = seenNodes.indexOf(next)
-                    index > -1 && domTree.doesDominate(seenNodes(index), from)
+                    val isCatchNode = catchNodes.exists(_.handlerPC == next)
+                    index > -1 && !isCatchNode && domTree.doesDominate(seenNodes(index), from)
                 }.foreach(destIndex ⇒ backedges.append((from, destIndex)))
 
                 seenNodes.append(from)
