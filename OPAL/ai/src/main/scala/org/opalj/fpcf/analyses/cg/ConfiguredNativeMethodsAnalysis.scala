@@ -122,7 +122,7 @@ class ConfiguredNativeMethodsAnalysis private[analyses] (
             reachableMethods: Seq[ReachableMethod]
         ): List[ProperPropertyComputationResult] = {
             val calleesAndCallers = new CalleesAndCallers()
-            for (reachableMethod ← reachableMethods.iterator) {
+            for (reachableMethod ← reachableMethods) {
                 val classType = ObjectType(reachableMethod.cf)
                 val name = reachableMethod.m
                 val descriptor = MethodDescriptor(reachableMethod.desc)
