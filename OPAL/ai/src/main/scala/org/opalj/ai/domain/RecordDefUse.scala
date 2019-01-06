@@ -332,7 +332,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                     // joinedDefOps.foreach{vo ⇒
                     //    require(vo != null, s"$newDefOps join $oldDefOps == null")
                     //}
-                    assert(joinedDefOps.forall(e ⇒ e.iterator.size == e.size))
+                    // assert(joinedDefOps.forall(e ⇒ e.iterator.size == e.size))
                     defOps(successorPC) = joinedDefOps
                 }
             }
@@ -413,7 +413,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
             forceScheduling
         } else {
             assert(newDefOps forall { vo ⇒ vo != null }, "null value origin found")
-            assert(newDefOps.forall(e ⇒ e.iterator.size == e.size))
+            // assert(newDefOps.forall(e ⇒ e.iterator.size == e.size))
             defOps(successorPC) = newDefOps
             defLocals(successorPC) = newDefLocals
             true // <=> always schedule the execution of the next instruction
