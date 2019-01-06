@@ -109,6 +109,7 @@ class TestTaintAnalysis private (
     def getConstValue(expr: Expr[V], code: Array[Stmt[V]]): Option[Int] = {
         if (expr.isIntConst) Some(expr.asIntConst.value)
         else if (expr.isVar) {
+            // TODO The following looks optimizable!
             val constVals = expr.asVar.definedBy.iterator.map[Option[Int]] { idx ⇒
                 if (idx >= 0) {
                     val stmt = code(idx)
