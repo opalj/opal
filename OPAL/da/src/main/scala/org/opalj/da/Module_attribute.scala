@@ -29,10 +29,10 @@ case class Module_attribute(
     def attribute_length: Int = {
         2 + 2 + 2 + // <= module meta information
             2 + requires.size * 6 +
-            2 + exports.iterator.sum(_.attribute_length) +
-            2 + opens.iterator.sum(_.attribute_length) +
+            2 + exports.sum(_.attribute_length) +
+            2 + opens.sum(_.attribute_length) +
             2 + uses.size * 2 +
-            2 + provides.iterator.sum(_.attribute_length)
+            2 + provides.sum(_.attribute_length)
     }
 
     override def toXHTML(implicit cp: Constant_Pool): Node = {
