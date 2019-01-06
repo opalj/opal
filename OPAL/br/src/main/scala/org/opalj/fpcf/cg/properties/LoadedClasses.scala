@@ -4,8 +4,8 @@ package fpcf
 package cg
 package properties
 
-import org.opalj.br.ObjectType
 import org.opalj.collection.immutable.UIDSet
+import org.opalj.br.ObjectType
 
 sealed trait LoadedClassesMetaInformation extends PropertyMetaInformation {
     final type Self = LoadedClasses

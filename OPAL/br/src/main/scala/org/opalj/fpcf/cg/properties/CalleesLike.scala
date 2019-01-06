@@ -4,11 +4,12 @@ package fpcf
 package cg
 package properties
 
-import org.opalj.br.DeclaredMethod
-import org.opalj.br.analyses.DeclaredMethods
+import scala.collection.immutable.IntMap
+
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.value.ValueInformation
-import scala.collection.immutable.IntMap
+import org.opalj.br.DeclaredMethod
+import org.opalj.br.analyses.DeclaredMethods
 
 /**
  * Encapsulates for a given [[org.opalj.br.DeclaredMethod]] and for each call site (represented by

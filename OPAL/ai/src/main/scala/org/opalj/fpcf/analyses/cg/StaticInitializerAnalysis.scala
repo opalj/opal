@@ -6,17 +6,17 @@ package cg
 
 import scala.language.existentials
 
+import org.opalj.collection.immutable.UIDSet
+import org.opalj.fpcf.cg.properties.CallersProperty
+import org.opalj.fpcf.cg.properties.InstantiatedTypes
+import org.opalj.fpcf.cg.properties.LoadedClasses
+import org.opalj.fpcf.cg.properties.OnlyVMLevelCallers
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.SomeProject
-import org.opalj.collection.immutable.UIDSet
-import org.opalj.fpcf.cg.properties.CallersProperty
-import org.opalj.fpcf.cg.properties.InstantiatedTypes
-import org.opalj.fpcf.cg.properties.LoadedClasses
-import org.opalj.fpcf.cg.properties.OnlyVMLevelCallers
 
 /**
  * Extends the call graph analysis (e.g. [[org.opalj.fpcf.analyses.cg.RTACallGraphAnalysis]]) to

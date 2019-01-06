@@ -4,8 +4,9 @@ package fpcf
 package cg
 package properties
 
-import org.opalj.collection.immutable.IntTrieSet
 import scala.collection.immutable.IntMap
+
+import org.opalj.collection.immutable.IntTrieSet
 
 /**
  * For a given [[org.opalj.br.DeclaredMethod]] the incomplete call sites related to the
