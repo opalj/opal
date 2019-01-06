@@ -41,9 +41,11 @@ object NoThreadRelatedIncompleteCallSites
     extends ThreadRelatedIncompleteCallSitesImplementation(IntTrieSet.empty)
 
 object NoThreadRelatedIncompleteCallSitesDueToNotReachableMethod
-    extends CalleesLikeNotReachable with ThreadRelatedIncompleteCallSites
+    extends CalleesLikeNotReachable
+    with ThreadRelatedIncompleteCallSites
 
-object ThreadRelatedIncompleteCallSites extends ThreadRelatedIncompleteCallSitesPropertyMetaInformation {
+object ThreadRelatedIncompleteCallSites
+    extends ThreadRelatedIncompleteCallSitesPropertyMetaInformation {
 
     final val key: PropertyKey[ThreadRelatedIncompleteCallSites] = {
         val name = "opalj.ThreadRelatedIncompleteCallSites"
@@ -53,7 +55,7 @@ object ThreadRelatedIncompleteCallSites extends ThreadRelatedIncompleteCallSites
                 case PropertyIsNotDerivedByPreviouslyExecutedAnalysis ⇒
                     NoThreadRelatedIncompleteCallSitesDueToNotReachableMethod
                 case _ ⇒
-                    throw new IllegalStateException(s"No analysis is scheduled for property: $name")
+                    throw new IllegalStateException(s"No analysis scheduled for: $name")
             }
         )
     }
