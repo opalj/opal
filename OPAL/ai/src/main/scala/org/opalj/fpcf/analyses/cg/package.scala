@@ -49,7 +49,7 @@ package object cg {
             )
     }
 
-    final def valueOriginOfPCs(PCs: PCs, pcToIndex: Array[Int]): IntTrieSet = {
+    final def valueOriginsOfPCs(pcs: PCs, pcToIndex: Array[Int]): IntTrieSet = {
         val origins = new IntTrieSetBuilder
         PCs.iterator.collect {
             case pc if ai.underlyingPC(pc) < 0       ⇒ pc // parameter
@@ -66,6 +66,6 @@ package object cg {
         defSites:  (ValueInformation, IntTrieSet),
         pcToIndex: Array[Int]
     ): V = {
-        UVar(defSites._1, valueOriginOfPCs(defSites._2, pcToIndex))
+        UVar(defSites._1, valueOriginsOfPCs(defSites._2, pcToIndex))
     }
 }
