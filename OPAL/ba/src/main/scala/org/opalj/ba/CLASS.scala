@@ -63,9 +63,9 @@ class CLASS[T](
                 brAnnotatedMethods.iterator.map[(MethodSignature, Option[T])](mt ⇒
                     { val (m, t) = mt; (m.signature, t) })
             */
-            brAnnotatedMethods.foldLeft(Map.empty[(MethodSignature, Option[T])]){ (map,mt) =>
-                 val (m, t) = mt
-                  map + ((m.signature, t))
+            brAnnotatedMethods.foldLeft(Map.empty[MethodSignature, Option[T]]) { (map, mt) ⇒
+                val (m, t) = mt
+                map + ((m.signature, t))
             }
 
         assert(annotationsMap.size == brAnnotatedMethods.size, "duplicate method signatures found")
