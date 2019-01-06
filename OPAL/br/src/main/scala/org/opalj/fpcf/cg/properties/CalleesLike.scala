@@ -12,11 +12,11 @@ import org.opalj.br.DeclaredMethod
 import org.opalj.br.analyses.DeclaredMethods
 
 /**
- * Encapsulates for a given [[org.opalj.br.DeclaredMethod]] and for each call site (represented by
- * the PC), the set of methods that are possible call targets according to a partial call graph
+ * Encapsulates – for a given [[org.opalj.br.DeclaredMethod]] and for each call site (represented by
+ * the PC) – the set of methods that are possible call targets according to a partial call graph
  * analysis.
  *
- * @author Florian Kuebler
+ * @author Florian Kübler
  * @author Dominik Helm
  */
 trait CalleesLike extends OrderedProperty with CalleesLikePropertyMetaInformation {
@@ -46,7 +46,7 @@ trait CalleesLike extends OrderedProperty with CalleesLikePropertyMetaInformatio
 
     override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {
         if (other.size < size)
-            throw new IllegalArgumentException(s"$e: illegal refinement of property $other to $this")
+            throw new IllegalArgumentException(s"$e: illegal refinement of $other to $this");
     }
 }
 
@@ -54,45 +54,40 @@ trait CalleesLike extends OrderedProperty with CalleesLikePropertyMetaInformatio
  * Base class for storing callees of a reachable method.
  */
 abstract class AbstractCalleesLike extends CalleesLike {
+
     protected[this] val calleesIds: IntMap[IntTrieSet]
-    protected[this] val incompleteCallsites: IntTrieSet
 
-    override def incompleteCallSites: IntTrieSet =
-        incompleteCallsites
+    override val incompleteCallSites: IntTrieSet
 
-    override def callees(pc: Int): Option[IntTrieSet] =
-        calleesIds.get(pc)
+    override def callees(pc: Int): Option[IntTrieSet] = calleesIds.get(pc)
 
     override def callSitePCs: Iterator[Int] = calleesIds.keysIterator
 
-    override def callSites(
-        implicit
-        declaredMethods: DeclaredMethods
-    ): IntMap[IntTrieSet] =
+    override def callSites(implicit declaredMethods: DeclaredMethods): IntMap[IntTrieSet] = {
         calleesIds
-
-    override val size: Int = {
-        calleesIds.iterator.map(_._2.size).sum
     }
+
+    // TODO Determine if used "regularly" - if so, rewrite using foreach to avoid (un)boxing operations.
+    override val size: Int = calleesIds.valuesIterator.foldLeft(0)(_ + _.size)
+
 }
 
 /**
  * Trait to mixin for objects that represent empty callees because the method is not reachable.
  */
 trait CalleesLikeNotReachable extends CalleesLike {
-    override def size: Int = 0
 
-    override def incompleteCallSites: IntTrieSet =
-        IntTrieSet.empty
+    final override def size: Int = 0
 
-    override def callees(pc: Int): Option[IntTrieSet] = None
+    final override def incompleteCallSites: IntTrieSet = IntTrieSet.empty
 
-    override def callSitePCs: Iterator[Int] = Iterator.empty
+    final override def callees(pc: Int): Option[IntTrieSet] = None
 
-    override def callSites(
-        implicit
-        declaredMethods: DeclaredMethods
-    ): IntMap[IntTrieSet] = IntMap.empty
+    final override def callSitePCs: Iterator[Int] = Iterator.empty
+
+    override def callSites(implicit declaredMethods: DeclaredMethods): IntMap[IntTrieSet] = {
+        IntMap.empty
+    }
 }
 
 trait IndirectCallees extends CalleesLike {
