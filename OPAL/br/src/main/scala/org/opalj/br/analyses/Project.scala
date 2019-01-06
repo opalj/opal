@@ -1386,20 +1386,25 @@ object Project {
             uniqueInterfaceMethods foreach { m ⇒ processMaximallySpecificSuperinterfaceMethod(m) }
 
             // let's keep the contexts related to the maximally specific methods.
+            /* OLD
             interfaceMethods.iterator.filterNot { ms ⇒
                 uniqueInterfaceMethodSignatures.contains(ms)
             } foreach { interfaceMethod ⇒
-                val (_, maximallySpecificSuperiniterfaceMethod) =
-                    findMaximallySpecificSuperinterfaceMethods(
-                        superinterfaceTypes,
-                        interfaceMethod.name, interfaceMethod.descriptor,
-                        UIDSet.empty[ObjectType]
-                    )(objectTypeToClassFile, classHierarchy, logContext)
-                if (maximallySpecificSuperiniterfaceMethod.size == 1) {
-                    // A maximally specific interface method can only be invoked if it is unique!
-                    processMaximallySpecificSuperinterfaceMethod(
-                        maximallySpecificSuperiniterfaceMethod.head
-                    )
+            */
+            interfaceMethods foreach { interfaceMethod ⇒
+                if (!uniqueInterfaceMethodSignatures.contains(interfaceMethod)) {
+                    val (_, maximallySpecificSuperiniterfaceMethod) =
+                        findMaximallySpecificSuperinterfaceMethods(
+                            superinterfaceTypes,
+                            interfaceMethod.name, interfaceMethod.descriptor,
+                            UIDSet.empty[ObjectType]
+                        )(objectTypeToClassFile, classHierarchy, logContext)
+                    if (maximallySpecificSuperiniterfaceMethod.size == 1) {
+                        // A maximally specific interface method can only be invoked if it is unique!
+                        processMaximallySpecificSuperinterfaceMethod(
+                            maximallySpecificSuperiniterfaceMethod.head
+                        )
+                    }
                 }
             }
 
