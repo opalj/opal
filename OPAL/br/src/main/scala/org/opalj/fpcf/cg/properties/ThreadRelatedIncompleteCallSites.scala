@@ -31,7 +31,7 @@ sealed trait ThreadRelatedIncompleteCallSites extends CalleesLike
 }
 
 sealed class ThreadRelatedIncompleteCallSitesImplementation(
-        val incompleteCallsites: IntTrieSet
+        val incompleteCallSites: IntTrieSet
 ) extends {
     // here we need either the early definition or would need to mark it as a lazy val.
     protected[this] val calleesIds: IntMap[IntTrieSet] = IntMap.empty
