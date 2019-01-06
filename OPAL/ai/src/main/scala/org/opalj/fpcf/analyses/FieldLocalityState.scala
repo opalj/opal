@@ -19,6 +19,7 @@ import org.opalj.ai.common.DefinitionSiteLike
 import org.opalj.tac.fpcf.properties.TACAI
 
 class FieldLocalityState(val field: Field, val thisIsCloneable: Boolean) {
+
     private[this] var declaredMethodsDependees: Set[EOptionP[DeclaredMethod, Property]] = Set.empty
     private[this] var definitionSitesDependees: Map[DefinitionSiteLike, (EOptionP[DefinitionSiteLike, EscapeProperty], Boolean)] = Map.empty
     private[this] var tacDependees: Map[Method, EOptionP[Method, TACAI]] = Map.empty
@@ -35,6 +36,7 @@ class FieldLocalityState(val field: Field, val thisIsCloneable: Boolean) {
     private[this] var temporary: FieldLocality = LocalField
 
     def dependees: Traversable[EOptionP[Entity, Property]] = {
+        // TODO This really looks very imperformant...
         (declaredMethodsDependees.iterator ++
             definitionSitesDependees.valuesIterator.map(_._1) ++
             tacDependees.valuesIterator ++
