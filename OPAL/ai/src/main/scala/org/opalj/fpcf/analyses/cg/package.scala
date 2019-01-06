@@ -4,7 +4,7 @@ package fpcf
 package analyses
 
 import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.collection.immutable.IntTrieSetBuilder
+import org.opalj.collection.immutable.EmptyIntTrieSet
 import org.opalj.value.ValueInformation
 import org.opalj.br.PCs
 import org.opalj.ai.ValueOrigin
@@ -54,6 +54,7 @@ package object cg {
     }
 
     final def valueOriginsOfPCs(pcs: PCs, pcToIndex: Array[Int]): IntTrieSet = {
+        /* OLD
         val origins = new IntTrieSetBuilder
         PCs.iterator.collect {
             case pc if ai.underlyingPC(pc) < 0       ⇒ pc // parameter
@@ -64,6 +65,19 @@ package object cg {
                 ValueOriginForMethodExternalException(pcToIndex(pcOfMethodExternalException(pc)))
         } foreach { origins += _ }
         origins.result()
+        */
+        pcs.foldLeft(EmptyIntTrieSet: IntTrieSet) { (origins, pc) ⇒
+            if (ai.underlyingPC(pc) < 0)
+                origins + pc // parameter
+            else if (pc >= 0 && pcToIndex(pc) >= 0)
+                origins + pcToIndex(pc) // local
+            else if (isImmediateVMException(pc) && pcToIndex(pcOfImmediateVMException(pc)) >= 0)
+                origins + ValueOriginForImmediateVMException(pcToIndex(pcOfImmediateVMException(pc)))
+            else if (isMethodExternalExceptionOrigin(pc) && pcToIndex(pcOfMethodExternalException(pc)) >= 0)
+                origins + ValueOriginForMethodExternalException(pcToIndex(pcOfMethodExternalException(pc)))
+            else
+                origins // as is
+        }
     }
 
     final def uVarForDefSites(
