@@ -118,6 +118,8 @@ class PurityTests extends PropertiesTest {
         val testContext =
             executeAnalyses(
                 Set(
+                    TACAITransformer,
+                    LazyL0BaseAIAnalysis,
                     RTACallGraphAnalysisScheduler,
                     TriggeredStaticInitializerAnalysis,
                     TriggeredLoadedClassesAnalysis,
@@ -127,15 +129,6 @@ class PurityTests extends PropertiesTest {
                     TriggeredReflectionRelatedCallsAnalysis,
                     TriggeredSystemPropertiesAnalysis,
                     TriggeredInstantiatedTypesAnalysis,
-                    TACAITransformer,
-                    LazyL0BaseAIAnalysis,
-                    LazyL0CompileTimeConstancyAnalysis,
-                    LazyInterProceduralEscapeAnalysis,
-                    LazyReturnValueFreshnessAnalysis,
-                    LazyFieldLocalityAnalysis,
-                    LazyL1FieldMutabilityAnalysis,
-                    LazyClassImmutabilityAnalysis,
-                    LazyTypeImmutabilityAnalysis,
                     LazyCalleesAnalysis(Set(
                         StandardInvokeCallees,
                         SerializationRelatedCallees,
@@ -151,7 +144,17 @@ class PurityTests extends PropertiesTest {
         val p = testContext.project
         val manager = p.get(FPCFAnalysesManagerKey)
 
-        val (ps, analyses) = manager.runAll(EagerL2PurityAnalysis, LazyStaticDataUsageAnalysis)
+        val (ps, analyses) = manager.runAll(
+            EagerL2PurityAnalysis,
+            LazyStaticDataUsageAnalysis,
+            LazyL0CompileTimeConstancyAnalysis,
+            LazyInterProceduralEscapeAnalysis,
+            LazyReturnValueFreshnessAnalysis,
+            LazyFieldLocalityAnalysis,
+            LazyL1FieldMutabilityAnalysis,
+            LazyClassImmutabilityAnalysis,
+            LazyTypeImmutabilityAnalysis
+        )
 
         val as = TestContext(p, ps, testContext.analyses ++ analyses.map(_._2))
 
