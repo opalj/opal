@@ -225,7 +225,6 @@ object Purity {
         val d: Method ⇒ Domain with RecordDefUse = (m: Method) ⇒
             domain.getConstructor(classOf[Project[_]], classOf[Method]).newInstance(project, m)
 
-        project.getOrCreateProjectInformationKeyInitializationData(SimpleAIKey, d)
         project.updateProjectInformationKeyInitializationData(
             AIDomainFactoryKey,
             (i: Option[Set[Class[_ <: AnyRef]]]) ⇒ (i match {
