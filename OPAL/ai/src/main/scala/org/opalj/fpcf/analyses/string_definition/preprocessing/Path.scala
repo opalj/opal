@@ -131,7 +131,14 @@ case class Path(elements: List[SubPath]) {
      * in `npe` will be the path being returned.
      */
     private def removeOuterBranching(npe: NestedPathElement): ListBuffer[SubPath] = {
-        ListBuffer[SubPath](npe.element: _*)
+        if (npe.element.tail.isEmpty) {
+            npe.element.head match {
+                case innerNpe: NestedPathElement ⇒ removeOuterBranching(innerNpe)
+                case fpe: SubPath                ⇒ ListBuffer[SubPath](fpe)
+            }
+        } else {
+            ListBuffer[SubPath](npe.element: _*)
+        }
     }
 
     /**
