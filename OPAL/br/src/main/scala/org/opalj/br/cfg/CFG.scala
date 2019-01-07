@@ -780,7 +780,17 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
                     val index = seenNodes.indexOf(next)
                     val isCatchNode = catchNodes.exists(_.handlerPC == next)
                     index > -1 && !isCatchNode && domTree.doesDominate(seenNodes(index), from)
-                }.foreach(destIndex ⇒ backedges.append((from, destIndex)))
+                }.foreach { destIndex ⇒
+                    // There are loops that have more than one edge leaving the loop; let x denote
+                    // the loop header and y1, y2 two edges that leave the loop with y1 happens
+                    // before y2; this method only saves one loop per loop header, thus y1 is
+                    // removed as it is still implicitly contained in the loop denoted by x to y2
+                    // (note that this does not apply for nested loops, they are kept)
+                    backedges.filter {
+                        case (_: Int, oldFrom: Int) ⇒ oldFrom == destIndex
+                    }.foreach(backedges -= _)
+                    backedges.append((from, destIndex))
+                }
 
                 seenNodes.append(from)
                 toVisitStack.pushAll(to.filter(!seenNodes.contains(_)))
