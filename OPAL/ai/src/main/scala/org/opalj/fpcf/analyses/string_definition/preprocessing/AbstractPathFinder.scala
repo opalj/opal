@@ -133,7 +133,7 @@ trait AbstractPathFinder {
         // For every successor (except the very last one), execute a DFS to check whether the very
         // last element is a successor. If so, this represents a path past the if (or if-elseif).
         branches.count { next ⇒
-            val seenNodes = ListBuffer[CFGNode](cfg.bb(next))
+            val seenNodes = ListBuffer[CFGNode](cfg.bb(branchingSite), cfg.bb(next))
             val toVisitStack = mutable.Stack[CFGNode](cfg.bb(next).successors.toArray: _*)
             while (toVisitStack.nonEmpty) {
                 val from = toVisitStack.pop()
