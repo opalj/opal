@@ -83,7 +83,6 @@ class StaticInitializerAnalysis(val project: SomeProject) extends FPCFAnalysis {
         val unseenInstantiatedTypes =
             state.instantiatedTypesUB.map(_.getNewTypes(state.seenInstantiatedTypes)).getOrElse(Iterator.empty)
 
-        state.seenClasses = state.loadedClassesUB.foldLeft(0)(_ + _.numElements)
         state.seenInstantiatedTypes = state.instantiatedTypesUB.foldLeft(0)(_ + _.numElements)
 
         var newLoadedClasses = UIDSet.empty[ObjectType]
@@ -149,8 +148,12 @@ class StaticInitializerAnalysis(val project: SomeProject) extends FPCFAnalysis {
             )
         }
         */
+
         val unseenLoadedClasses =
             state.loadedClassesUB.map(_.getNewClasses(state.seenClasses)).getOrElse(Iterator.empty)
+
+        state.seenClasses = state.loadedClassesUB.foldLeft(0)(_ + _.numElements)
+
         val callersResult =
             unseenLoadedClasses
                 .flatMap { lc ⇒ retrieveStaticInitializers(lc) }
