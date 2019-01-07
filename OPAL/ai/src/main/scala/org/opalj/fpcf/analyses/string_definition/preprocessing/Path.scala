@@ -194,36 +194,46 @@ case class Path(elements: List[SubPath]) {
         includeAlternatives: Boolean             = false
     ): (Option[NestedPathElement], Boolean) = {
         val elements = ListBuffer[SubPath]()
+        var stop = false
         var hasTargetBeenSeen = false
         val isTryCatch = includeAlternatives || (toProcess.elementType.isDefined &&
             toProcess.elementType.get == NestedPathType.TryCatchFinally)
 
-        toProcess.element.foreach {
-            case fpe: FlatPathElement if !hasTargetBeenSeen ⇒
-                if (siteMap.contains(fpe.element) && !hasTargetBeenSeen) {
-                    elements.append(fpe.copy())
+        toProcess.element.foreach { next ⇒
+            // The stop flag is used to make sure that within a sub-path only the elements up to the
+            // endSite are gathered (if endSite is within this sub-path)
+            if (!stop) {
+                next match {
+                    case fpe: FlatPathElement if !hasTargetBeenSeen ⇒
+                        if (siteMap.contains(fpe.element) && !hasTargetBeenSeen) {
+                            elements.append(fpe.copy())
+                        }
+                        if (fpe.element == endSite) {
+                            hasTargetBeenSeen = true
+                            stop = true
+                        }
+                    case npe: NestedPathElement if isTryCatch ⇒
+                        val (leanedSubPath, _) = makeLeanPathAcc(
+                            npe, siteMap, endSite, includeAlternatives = true
+                        )
+                        if (leanedSubPath.isDefined) {
+                            elements.append(leanedSubPath.get)
+                        }
+                    case npe: NestedPathElement ⇒
+                        if (!hasTargetBeenSeen) {
+                            val (leanedSubPath, wasTargetSeen) = makeLeanPathAcc(
+                                npe, siteMap, endSite
+                            )
+                            if (leanedSubPath.isDefined) {
+                                elements.append(leanedSubPath.get)
+                            }
+                            if (wasTargetSeen) {
+                                hasTargetBeenSeen = true
+                            }
+                        }
+                    case _ ⇒
                 }
-                if (fpe.element == endSite) {
-                    hasTargetBeenSeen = true
-                }
-            case npe: NestedPathElement if isTryCatch ⇒
-                val (leanedSubPath, _) = makeLeanPathAcc(
-                    npe, siteMap, endSite, includeAlternatives = true
-                )
-                if (leanedSubPath.isDefined) {
-                    elements.append(leanedSubPath.get)
-                }
-            case npe: NestedPathElement ⇒
-                if (!hasTargetBeenSeen) {
-                    val (leanedSubPath, wasTargetSeen) = makeLeanPathAcc(npe, siteMap, endSite)
-                    if (leanedSubPath.isDefined) {
-                        elements.append(leanedSubPath.get)
-                    }
-                    if (wasTargetSeen) {
-                        hasTargetBeenSeen = true
-                    }
-                }
-            case _ ⇒
+            }
         }
 
         if (elements.nonEmpty) {
