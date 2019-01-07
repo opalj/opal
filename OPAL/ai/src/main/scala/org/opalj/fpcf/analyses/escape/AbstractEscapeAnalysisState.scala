@@ -51,8 +51,6 @@ trait AbstractEscapeAnalysisState {
      */
     @inline private[escape] final def addDependency(eOptionP: EOptionP[Entity, Property]): Unit = {
         _dependees += eOptionP
-        if (_dependees.count(epk ⇒ (epk.e eq eOptionP.e) && epk.pk == eOptionP.pk) > 1)
-            println()
         assert(_dependees.count(epk ⇒ (epk.e eq eOptionP.e) && epk.pk == eOptionP.pk) <= 1)
     }
 
