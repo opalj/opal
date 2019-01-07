@@ -34,6 +34,7 @@ import org.opalj.fpcf.analyses.cg.TriggeredSerializationRelatedCallsAnalysis
 import org.opalj.fpcf.analyses.cg.RTACallGraphAnalysisScheduler
 import org.opalj.fpcf.analyses.cg.TriggeredStaticInitializerAnalysis
 import org.opalj.fpcf.analyses.cg.TriggeredLoadedClassesAnalysis
+import org.opalj.fpcf.analyses.cg.TriggeredInstantiatedTypesAnalysis
 import org.opalj.fpcf.analyses.cg.reflection.TriggeredReflectionRelatedCallsAnalysis
 import org.opalj.fpcf.cg.properties.StandardInvokeCallees
 import org.opalj.fpcf.cg.properties.ReflectionRelatedCallees
@@ -85,6 +86,7 @@ class PurityTests extends PropertiesTest {
                     TriggeredSerializationRelatedCallsAnalysis,
                     TriggeredReflectionRelatedCallsAnalysis,
                     TriggeredSystemPropertiesAnalysis,
+                    TriggeredInstantiatedTypesAnalysis,
                     LazyL0TACAIAnalysis,
                     LazyL1FieldMutabilityAnalysis,
                     LazyClassImmutabilityAnalysis,
@@ -125,6 +127,7 @@ class PurityTests extends PropertiesTest {
                     TriggeredSerializationRelatedCallsAnalysis,
                     TriggeredReflectionRelatedCallsAnalysis,
                     TriggeredSystemPropertiesAnalysis,
+                    TriggeredInstantiatedTypesAnalysis,
                     LazyL0TACAIAnalysis,
                     LazyL0CompileTimeConstancyAnalysis,
                     LazyStaticDataUsageAnalysis,
