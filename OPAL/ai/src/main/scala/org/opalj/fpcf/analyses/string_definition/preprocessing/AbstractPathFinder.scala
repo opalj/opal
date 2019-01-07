@@ -138,7 +138,7 @@ trait AbstractPathFinder {
             while (toVisitStack.nonEmpty) {
                 val from = toVisitStack.pop()
                 val to = from.successors
-                if (to.contains(cfg.bb(lastEle))) {
+                if (from.nodeId == lastEle || to.contains(cfg.bb(lastEle))) {
                     return true
                 }
                 seenNodes.append(from)
