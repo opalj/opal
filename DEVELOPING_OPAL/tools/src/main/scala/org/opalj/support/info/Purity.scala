@@ -71,7 +71,6 @@ import org.opalj.fpcf.properties.SideEffectFree
 import org.opalj.bytecode.JRELibraryFolder
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
-import org.opalj.br.Method
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.Project.JavaClassFileReader
@@ -221,9 +220,6 @@ object Purity {
                 Traversable.empty
             )
         } { t ⇒ projectTime = t.toSeconds }
-
-        val d: Method ⇒ Domain with RecordDefUse = (m: Method) ⇒
-            domain.getConstructor(classOf[Project[_]], classOf[Method]).newInstance(project, m)
 
         project.updateProjectInformationKeyInitializationData(
             AIDomainFactoryKey,
