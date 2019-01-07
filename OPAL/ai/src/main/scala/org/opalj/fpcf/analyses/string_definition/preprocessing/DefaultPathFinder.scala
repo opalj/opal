@@ -68,6 +68,9 @@ class DefaultPathFinder extends AbstractPathFinder {
             var loopEndingIndex = -1
             var belongsToLoopEnding = false
             var belongsToLoopHeader = false
+            // In some cases, this element will be used later on to append nested path elements of
+            // deeply-nested structures
+            var refToAppend: Option[NestedPathElement] = None
 
             // Append everything of the current basic block to the path
             for (i ← bb.startPC.to(bb.endPC)) {
@@ -115,15 +118,17 @@ class DefaultPathFinder extends AbstractPathFinder {
                 } // Within a nested structure => append to an inner element
                 else {
                     // For loops
-                    var ref: NestedPathElement = nestedElementsRef(currSplitIndex.head)
+                    refToAppend = Some(nestedElementsRef(currSplitIndex.head))
                     // Refine for conditionals and try-catch(-finally)
-                    ref.elementType match {
+                    refToAppend.get.elementType match {
                         case Some(t) if t == NestedPathType.CondWithAlternative ||
                             t == NestedPathType.TryCatchFinally ⇒
-                            ref = ref.element(currSplitIndex.head).asInstanceOf[NestedPathElement]
+                            refToAppend = Some(refToAppend.get.element(
+                                currSplitIndex.head
+                            ).asInstanceOf[NestedPathElement])
                         case _ ⇒
                     }
-                    ref.element.append(toAppend)
+                    refToAppend.get.element.append(toAppend)
                 }
             }
 
@@ -185,11 +190,14 @@ class DefaultPathFinder extends AbstractPathFinder {
             // this includes if a node has a catch node as successor
             if ((successorsToAdd.length > 1 && !isLoopHeader) || catchSuccessors.nonEmpty) {
                 seenCatchNodes ++= catchSuccessors.map(n ⇒ (n.nodeId, Unit))
-                val appendSite = if (numSplits.isEmpty) path else
-                    nestedElementsRef(currSplitIndex.head).element
+                // Simply append to path if no nested structure is available, otherwise append to
+                // the correct nested path element
+                val appendSite = if (numSplits.isEmpty) path
+                else if (refToAppend.isDefined) refToAppend.get.element
+                else nestedElementsRef(currSplitIndex.head).element
                 var relevantNumSuccessors = successors.size
-                var ifWithElse = true
 
+                var ifWithElse = true
                 if (isCondWithoutElse(popped, cfg)) {
                     // If there are catch node successors, the number of relevant successor equals
                     // the number of successors (because catch node are excluded here)
@@ -209,7 +217,6 @@ class DefaultPathFinder extends AbstractPathFinder {
                 outerNested.element.reverse.foreach { next ⇒
                     nestedElementsRef.prepend(next.asInstanceOf[NestedPathElement])
                 }
-                //                nestedElementsRef.prepend(outerNested)
                 appendSite.append(outerNested)
             }
         }
