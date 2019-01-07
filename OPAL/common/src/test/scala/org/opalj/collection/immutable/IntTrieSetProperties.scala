@@ -130,6 +130,18 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
         }
     }
 
+    property("head and headAndTail should return the same head") = forAll { s: IntTrieSet ⇒
+        var its = s
+        var success = true
+        while (its.nonEmpty && success) {
+            val h = its.head
+            val ht = its.headAndTail
+            its = ht.rest
+            success = h == ht.head
+        }
+        success
+    }
+
     property("mkString(String,String,String)") = forAll { (s: Set[Int], pre: String, in: String, post: String) ⇒
         val its = s.foldLeft(EmptyIntTrieSet: IntTrieSet)(_ + _)
         val itsString = its.mkString(pre, in, post)
