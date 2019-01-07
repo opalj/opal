@@ -7,9 +7,11 @@ import org.opalj.br.cfg.CFG
 import org.opalj.br.ComputationalTypeFloat
 import org.opalj.br.ComputationalTypeInt
 import org.opalj.fpcf.analyses.string_definition.V
+import org.opalj.fpcf.properties.StringConstancyProperty
 import org.opalj.fpcf.string_definition.properties.StringConstancyInformation
 import org.opalj.fpcf.string_definition.properties.StringConstancyLevel
 import org.opalj.fpcf.string_definition.properties.StringConstancyType
+import org.opalj.br.ObjectType
 import org.opalj.tac.VirtualFunctionCall
 
 /**
@@ -41,7 +43,14 @@ class VirtualFunctionCallInterpreter(
      *     `replace`: Calls to the `replace` function of [[StringBuilder]] and [[StringBuffer]]. For
      *     further information how this operation is processed, see
      *     [[VirtualFunctionCallInterpreter.interpretReplaceCall]].
+     * </li>
+     * <li>
+     *     Apart from these supported methods, a list with [[StringConstancyProperty.lowerBound]]
+     *     will be returned in case the passed method returns a [[java.lang.String]].
+     * </li>
      * </ul>
+     *
+     * If none of the above-described cases match, an empty list will be returned.
      *
      * @see [[AbstractStringInterpreter.interpret]]
      */
@@ -50,7 +59,12 @@ class VirtualFunctionCallInterpreter(
             case "append"   ⇒ interpretAppendCall(instr).getOrElse(List())
             case "toString" ⇒ interpretToStringCall(instr)
             case "replace"  ⇒ interpretReplaceCall(instr)
-            case _          ⇒ List()
+            case _ ⇒
+                instr.descriptor.returnType match {
+                    case obj: ObjectType if obj.fqn == "java/lang/String" ⇒
+                        List(StringConstancyProperty.lowerBound.stringConstancyInformation)
+                    case _ ⇒ List()
+                }
         }
     }
 
