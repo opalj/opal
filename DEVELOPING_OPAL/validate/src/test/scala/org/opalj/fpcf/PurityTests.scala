@@ -35,8 +35,9 @@ import org.opalj.fpcf.cg.properties.SerializationRelatedCallees
 import org.opalj.fpcf.cg.properties.ThreadRelatedIncompleteCallSites
 import org.opalj.br.analyses.Project
 import org.opalj.ai.domain.l1
+import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
-import org.opalj.tac.fpcf.analyses.LazyL0TACAIAnalysis
+import org.opalj.tac.fpcf.analyses.TACAITransformer
 
 /**
  * Tests if the properties specified in the test project (the classes in the (sub-)package of
@@ -84,7 +85,8 @@ class PurityTests extends PropertiesTest {
                     TriggeredReflectionRelatedCallsAnalysis,
                     TriggeredSystemPropertiesAnalysis,
                     TriggeredInstantiatedTypesAnalysis,
-                    LazyL0TACAIAnalysis,
+                    TACAITransformer,
+                    LazyL0BaseAIAnalysis,
                     LazyL1FieldMutabilityAnalysis,
                     LazyClassImmutabilityAnalysis,
                     LazyTypeImmutabilityAnalysis,
@@ -125,7 +127,8 @@ class PurityTests extends PropertiesTest {
                     TriggeredReflectionRelatedCallsAnalysis,
                     TriggeredSystemPropertiesAnalysis,
                     TriggeredInstantiatedTypesAnalysis,
-                    LazyL0TACAIAnalysis,
+                    TACAITransformer,
+                    LazyL0BaseAIAnalysis,
                     LazyL0CompileTimeConstancyAnalysis,
                     LazyInterProceduralEscapeAnalysis,
                     LazyReturnValueFreshnessAnalysis,
