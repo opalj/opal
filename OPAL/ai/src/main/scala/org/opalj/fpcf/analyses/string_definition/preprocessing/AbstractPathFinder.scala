@@ -149,14 +149,12 @@ trait AbstractPathFinder {
     }
 
     /**
-     * Implementations of this function find all paths starting from the sites, given by
-     * `startSites`, within the provided control flow graph, `cfg`. As this is executed within the
+     * Implementations of this function find all paths, starting from the start node of the given
+     * `cfg`, within the provided control flow graph, `cfg`. As this is executed within the
      * context of a string definition analysis, implementations are free to decide whether they
      * include only statements that work on [[StringBuffer]] / [[StringBuilder]] or include all
      * statements in the paths.
      *
-     * @param startSites A list of possible start sites, that is, initializations. Several start
-     *                  sites denote that an object is initialized within a conditional.
      * @param cfg The underlying control flow graph which servers as the basis to find the paths.
      * @return Returns all found paths as a [[Path]] object. That means, the return object is a flat
      *         structure, however, captures all hierarchies and (nested) flows. Note that a
@@ -165,6 +163,6 @@ trait AbstractPathFinder {
      *         implementations to attach these information to [[NestedPathElement]]s (so that
      *         procedures using results of this function do not need to re-process).
      */
-    def findPaths(startSites: List[Int], cfg: CFG[Stmt[V], TACStmts[V]]): Path
+    def findPaths(cfg: CFG[Stmt[V], TACStmts[V]]): Path
 
 }
