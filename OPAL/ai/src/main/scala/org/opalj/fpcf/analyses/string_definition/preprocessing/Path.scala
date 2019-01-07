@@ -127,6 +127,14 @@ case class Path(elements: List[SubPath]) {
     }
 
     /**
+     * Takes a [[NestedPathElement]] and removes the outermost nesting, i.e., the path contained
+     * in `npe` will be the path being returned.
+     */
+    private def removeOuterBranching(npe: NestedPathElement): ListBuffer[SubPath] = {
+        ListBuffer[SubPath](npe.element: _*)
+    }
+
+    /**
      * Takes a [[NestedPathElement]], `npe`, and an `endSite` and strips all branches that do not
      * contain `endSite`. ''Stripping'' here means to clear the other branches.
      * For example, assume `npe=[[3, 5], [7, 9]]` and `endSite=7`, the this function will return
@@ -248,7 +256,7 @@ case class Path(elements: List[SubPath]) {
                 case _ ⇒ true
             }
         }.map { s ⇒ (s, Unit) }.toMap
-        val leanPath = ListBuffer[SubPath]()
+        var leanPath = ListBuffer[SubPath]()
         val endSite = obj.definedBy.head
         var reachedEndSite = false
 
@@ -271,6 +279,15 @@ case class Path(elements: List[SubPath]) {
                         }
                     case _ ⇒
                 }
+            }
+        }
+
+        // If everything is within a nested path element, ignore it (it is not relevant, as
+        // everything happens within that branch anyway)
+        if (leanPath.tail.isEmpty) {
+            leanPath.head match {
+                case npe: NestedPathElement ⇒ leanPath = removeOuterBranching(npe)
+                case _                      ⇒
             }
         }
 

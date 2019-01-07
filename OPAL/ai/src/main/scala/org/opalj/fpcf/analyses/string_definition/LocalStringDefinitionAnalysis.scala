@@ -95,14 +95,14 @@ class LocalStringDefinitionAnalysis(
         var state: ComputationState = null
 
         if (InterpretationHandler.isStringBuilderBufferToStringCall(expr)) {
-            val initDefSites = InterpretationHandler.findDefSiteOfInit(
-                expr.asVirtualFunctionCall, stmts
-            )
             // initDefSites empty => String{Builder,Buffer} from method parameter is to be evaluated
-            if (initDefSites.isEmpty) {
+            if (InterpretationHandler.findDefSiteOfInit(
+                expr.asVirtualFunctionCall, stmts
+            ).isEmpty) {
                 return Result(data, StringConstancyProperty.lowerBound)
             }
-            val paths = pathFinder.findPaths(initDefSites, cfg)
+
+            val paths = pathFinder.findPaths(cfg)
             val leanPaths = paths.makeLeanPath(uvar, stmts)
 
             // Find DUVars, that the analysis of the current entity depends on

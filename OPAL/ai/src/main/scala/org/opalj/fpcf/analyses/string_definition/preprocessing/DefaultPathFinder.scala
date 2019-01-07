@@ -29,10 +29,10 @@ class DefaultPathFinder extends AbstractPathFinder {
      *
      * @see [[AbstractPathFinder.findPaths]]
      */
-    override def findPaths(startSites: List[Int], cfg: CFG[Stmt[V], TACStmts[V]]): Path = {
+    override def findPaths(cfg: CFG[Stmt[V], TACStmts[V]]): Path = {
         // path will accumulate all paths
         val path = ListBuffer[SubPath]()
-        var stack = IntArrayStack.fromSeq(startSites.reverse)
+        var stack = IntArrayStack(cfg.startBlock.startPC)
         val seenElements = ListBuffer[Int]()
         // For storing the node IDs of all seen catch nodes (they are to be used only once, thus
         // this store)
@@ -46,19 +46,6 @@ class DefaultPathFinder extends AbstractPathFinder {
         // Used to quickly find the element at which to insert a sub path
         val nestedElementsRef = ListBuffer[NestedPathElement]()
         val natLoops = cfg.findNaturalLoops()
-
-        // Multiple start sites => We start within a conditional => Prepare for that
-        if (startSites.size > 1) {
-            val outerNested =
-                generateNestPathElement(startSites.size, NestedPathType.CondWithAlternative)
-            numSplits.append(startSites.size)
-            currSplitIndex.append(0)
-            outerNested.element.reverse.foreach { next ⇒
-                nestedElementsRef.prepend(next.asInstanceOf[NestedPathElement])
-            }
-            nestedElementsRef.append(outerNested)
-            path.append(outerNested)
-        }
 
         while (stack.nonEmpty) {
             val popped = stack.pop()
@@ -88,10 +75,13 @@ class DefaultPathFinder extends AbstractPathFinder {
                     numBackedgesLoop.prepend(bb.predecessors.size - 1)
                     backedgeLoopCounter.prepend(0)
 
+                    val appendLocation = if (nestedElementsRef.nonEmpty)
+                        nestedElementsRef.head.element else path
+
                     val outer = generateNestPathElement(0, NestedPathType.Repetition)
                     outer.element.append(toAppend)
                     nestedElementsRef.prepend(outer)
-                    path.append(outer)
+                    appendLocation.append(outer)
 
                     belongsToLoopHeader = true
                 } // For loop ending, find the top-most loop from the stack and add to that element
@@ -148,6 +138,9 @@ class DefaultPathFinder extends AbstractPathFinder {
             val hasSeenSuccessor = successors.foldLeft(false) {
                 (old: Boolean, next: Int) ⇒ old || seenElements.contains(next)
             }
+            val hasLoopHeaderSuccessor = successors.exists(
+                isHeadOfLoop(_, cfg.findNaturalLoops(), cfg)
+            )
 
             // Clean a loop from the stacks if the end of a loop was reached
             if (loopEndingIndex != -1) {
@@ -163,14 +156,26 @@ class DefaultPathFinder extends AbstractPathFinder {
                 backedgeLoopCounter.remove(0)
             } // For join points of branchings, do some housekeeping (explicitly excluding loops)
             else if (currSplitIndex.nonEmpty &&
+                // The following condition is needed as a loop is not closed when the next statement
+                // still belongs to he loop, i.e., this back-edge is not the last of the loop
+                (!hasLoopHeaderSuccessor || isLoopEnding) &&
                 (hasSuccessorWithAtLeastNPredecessors(bb) || hasSeenSuccessor)) {
                 if (nestedElementsRef.head.elementType.getOrElse(NestedPathType.TryCatchFinally) !=
                     NestedPathType.Repetition) {
                     currSplitIndex(0) += 1
                     if (currSplitIndex.head == numSplits.head) {
+                        nestedElementsRef.remove(0, numSplits.head)
                         numSplits.remove(0)
                         currSplitIndex.remove(0)
-                        nestedElementsRef.remove(0)
+                    }
+                    // It might be that an if(-else) but ALSO a loop needs to be closed here
+                    val hasLoopToClose = nestedElementsRef.nonEmpty &&
+                        nestedElementsRef.head.elementType.isDefined &&
+                        nestedElementsRef.head.elementType.get == NestedPathType.Repetition
+                    if (hasLoopToClose) {
+                        nestedElementsRef.remove(0, 1)
+                        numSplits.remove(0)
+                        currSplitIndex.remove(0)
                     }
                 }
             }
