@@ -549,17 +549,20 @@ class RTACallGraphAnalysis private[analyses] ( final val project: SomeProject) e
 
         if (specializedDeclaringClassType.isObjectType) {
             val declType = specializedDeclaringClassType.asObjectType
-            val m =
-                if (classHierarchy.isInterface(declType).isYes)
-                    org.opalj.Result(project.resolveInterfaceMethodReference(
-                        declType, call.name, call.descriptor
-                    ))
-                else
-                    project.resolveClassMethodReference(
-                        declType, call.name, call.descriptor
-                    )
 
-            if (m.isEmpty) {
+            val mResult = if (classHierarchy.isInterface(declType).isYes)
+                org.opalj.Result(project.resolveInterfaceMethodReference(
+                    declType, call.name, call.descriptor
+                ))
+            else
+                org.opalj.Result(project.resolveMethodReference(
+                    declType,
+                    call.name,
+                    call.descriptor,
+                    forceLookupInSuperinterfacesOnFailure = true
+                ))
+
+            if (mResult.isEmpty) {
                 unknownLibraryCall(
                     caller,
                     call.name,
@@ -569,7 +572,7 @@ class RTACallGraphAnalysis private[analyses] ( final val project: SomeProject) e
                     caller.definedMethod.classFile.thisType.packageName,
                     pc
                 )
-            } else if (isMethodOverridable(m.value).isYesOrUnknown) {
+            } else if (isMethodOverridable(mResult.value).isYesOrUnknown) {
                 state.addIncompleteCallSite(pc)
             }
         }
