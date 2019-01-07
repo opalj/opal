@@ -78,12 +78,21 @@ class StaticInitializerAnalysis(val project: SomeProject) extends FPCFAnalysis {
         implicit
         state: LCState
     ): PropertyComputationResult = {
-        val loadedClassesUB = state.loadedClassesUB.map(_.classes).getOrElse(UIDSet.empty)
+        val (unseenLoadedClasses, seenClasses, loadedClassesUB) =
+            if (state.loadedClassesUB.isDefined) {
+                val lcUB = state.loadedClassesUB.get
+                (lcUB.getNewClasses(state.seenClasses), lcUB.numElements, lcUB.classes)
+            } else {
+                (Iterator.empty, 0, UIDSet.empty[ObjectType])
+            }
+        state.seenClasses = seenClasses
 
-        val unseenInstantiatedTypes =
-            state.instantiatedTypesUB.map(_.getNewTypes(state.seenInstantiatedTypes)).getOrElse(Iterator.empty)
-
-        state.seenInstantiatedTypes = state.instantiatedTypesUB.foldLeft(0)(_ + _.numElements)
+        val (unseenInstantiatedTypes, numUnseenInstantiatedTypes) =
+            if (state.instantiatedTypesUB.isDefined) {
+                val itUB = state.instantiatedTypesUB.get
+                (itUB.getNewTypes(state.seenInstantiatedTypes), itUB.numElements)
+            } else (Iterator.empty, 0)
+        state.seenInstantiatedTypes = numUnseenInstantiatedTypes
 
         var newLoadedClasses = UIDSet.empty[ObjectType]
         for (unseenInstantiatedType ← unseenInstantiatedTypes) {
@@ -148,11 +157,6 @@ class StaticInitializerAnalysis(val project: SomeProject) extends FPCFAnalysis {
             )
         }
         */
-
-        val unseenLoadedClasses =
-            state.loadedClassesUB.map(_.getNewClasses(state.seenClasses)).getOrElse(Iterator.empty)
-
-        state.seenClasses = state.loadedClassesUB.foldLeft(0)(_ + _.numElements)
 
         val callersResult =
             unseenLoadedClasses
