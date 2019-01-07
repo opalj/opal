@@ -468,14 +468,21 @@ class RTACallGraphAnalysis private[analyses] ( final val project: SomeProject) e
                     val potentialTypes = classHierarchy.allSubtypesForeachIterator(
                         ov.theUpperTypeBound, reflexive = true
                     ).filter { subtype ⇒
-                            val cfOption = project.classFile(subtype)
-                            cfOption.isDefined && {
-                                val cf = cfOption.get
-                                !cf.isInterfaceDeclaration && !cf.isAbstract
-                            }
+                        val cfOption = project.classFile(subtype)
+                        cfOption.isDefined && {
+                            val cf = cfOption.get
+                            !cf.isInterfaceDeclaration && !cf.isAbstract
                         }
+                    }
 
-                    handleImpreciseCall(caller, call, pc, instantiatedTypesUB, potentialTypes)
+                    handleImpreciseCall(
+                        caller,
+                        call,
+                        pc,
+                        ov.theUpperTypeBound,
+                        instantiatedTypesUB,
+                        potentialTypes
+                    )
                 }
 
             case mv: IsMObjectValue ⇒
@@ -495,18 +502,26 @@ class RTACallGraphAnalysis private[analyses] ( final val project: SomeProject) e
                     }
                 }
 
-                handleImpreciseCall(caller, call, pc, instantiatedTypesUB, potentialTypes)
+                handleImpreciseCall(
+                    caller,
+                    call,
+                    pc,
+                    call.declaringClass,
+                    instantiatedTypesUB,
+                    potentialTypes
+                )
             case _: IsNullValue ⇒
             // for now, we ignore the implicit calls to NullPointerException.<init>
         }
     }
 
     private[this] def handleImpreciseCall(
-        caller:              DefinedMethod,
-        call:                Call[V] with VirtualCall[V],
-        pc:                  Int,
-        instantiatedTypesUB: UIDSet[ObjectType],
-        potentialTargets:    ForeachRefIterator[ObjectType]
+        caller:                        DefinedMethod,
+        call:                          Call[V] with VirtualCall[V],
+        pc:                            Int,
+        specializedDeclaringClassType: ReferenceType,
+        instantiatedTypesUB:           UIDSet[ObjectType],
+        potentialTargets:              ForeachRefIterator[ObjectType]
     )(implicit state: RTAState): Unit = {
         for (possibleTgtType ← potentialTargets) {
             if (instantiatedTypesUB.contains(possibleTgtType)) {
@@ -532,8 +547,8 @@ class RTACallGraphAnalysis private[analyses] ( final val project: SomeProject) e
             }
         }
 
-        if (call.declaringClass.isObjectType) {
-            val declType = call.declaringClass.asObjectType
+        if (specializedDeclaringClassType.isObjectType) {
+            val declType = specializedDeclaringClassType.asObjectType
             val m =
                 if (call.isInterface)
                     org.opalj.Result(project.resolveInterfaceMethodReference(
