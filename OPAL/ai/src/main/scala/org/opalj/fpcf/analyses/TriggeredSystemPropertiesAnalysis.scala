@@ -17,6 +17,7 @@ import org.opalj.tac.Stmt
 import org.opalj.tac.VirtualFunctionCallStatement
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.value.ValueInformation
+import org.opalj.tac.fpcf.properties.TheTACAI
 
 class TriggeredSystemPropertiesAnalysis private[analyses] (
         final val project: SomeProject
@@ -67,8 +68,14 @@ class TriggeredSystemPropertiesAnalysis private[analyses] (
 
     def continuation(declaredMethod: DeclaredMethod)(eps: SomeEPS): PropertyComputationResult = {
         eps match {
-            case UBP(_: TACAI) ⇒
+            case UBP(TheTACAI(_)) ⇒
                 processMethod(declaredMethod, eps.asInstanceOf[EPS[Method, TACAI]])
+            case _ ⇒
+                InterimPartialResult(
+                    None,
+                    Some(eps),
+                    continuation(declaredMethod)
+                )
         }
     }
 
