@@ -120,15 +120,9 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
             return baseMethodResult(source);
 
         val (code, cfg) = propertyStore(method, TACAI.key) match {
-            /*
-            case finalEP: FinalEP[_, TACAI] ⇒ {val tac = finalEP.p.tac.get; (tac.stmts, tac.cfg)
-            */
             case FinalP(TheTACAI(tac)) ⇒ (tac.stmts, tac.cfg)
 
-            case _: InterimEP[Method, TACAI] ⇒
-                throw new UnknownError("Can not handle intermediate TAC")
-
-            case epk ⇒
+            case epk: EPK[Method, TACAI] ⇒
                 return InterimResult.forUB(
                     source,
                     createProperty(Map.empty),
@@ -136,6 +130,9 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
                     _ ⇒ performAnalysis(source),
                     DefaultPropertyComputation
                 );
+
+            case tac ⇒
+                throw new UnknownError(s"Can not handle intermediate/unavailabe TAC but got $tac")
         }
 
         implicit val state: State =
@@ -606,15 +603,14 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
                 case FinalP(TheTACAI(tac)) ⇒
                     (tac.stmts, tac.cfg)
 
-                case _: InterimEP[Method, TACAI] ⇒
-                    throw new UnknownError("Can not handle intermediate TAC")
-
-                case epk ⇒
+                case epk: EPK[Method, TACAI] ⇒
                     state.tacDependees += method → epk
                     state.tacData += method →
                         (state.tacData.getOrElse(method, Set.empty) + ((callBB, callIndex)))
                     return Set.empty;
 
+                case tac ⇒
+                    throw new UnknownError(s"Can't handle intermediate/unavailabe TAC but got $tac")
             }
 
             exits.computeIfAbsent(method, _ ⇒ {
