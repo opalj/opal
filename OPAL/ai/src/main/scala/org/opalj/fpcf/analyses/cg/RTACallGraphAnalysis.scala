@@ -475,7 +475,14 @@ class RTACallGraphAnalysis private[analyses] ( final val project: SomeProject) e
                             }
                         }
 
-                    handleImpreciseCall(caller, call, pc, instantiatedTypesUB, potentialTypes)
+                    handleImpreciseCall(
+                        caller,
+                        call,
+                        pc,
+                        ov.theUpperTypeBound,
+                        instantiatedTypesUB,
+                        potentialTypes
+                    )
                 }
 
             case mv: IsMObjectValue ⇒
@@ -495,18 +502,26 @@ class RTACallGraphAnalysis private[analyses] ( final val project: SomeProject) e
                     }
                 }
 
-                handleImpreciseCall(caller, call, pc, instantiatedTypesUB, potentialTypes)
+                handleImpreciseCall(
+                    caller,
+                    call,
+                    pc,
+                    call.declaringClass,
+                    instantiatedTypesUB,
+                    potentialTypes
+                )
             case _: IsNullValue ⇒
             // for now, we ignore the implicit calls to NullPointerException.<init>
         }
     }
 
     private[this] def handleImpreciseCall(
-        caller:              DefinedMethod,
-        call:                Call[V] with VirtualCall[V],
-        pc:                  Int,
-        instantiatedTypesUB: UIDSet[ObjectType],
-        potentialTargets:    ForeachRefIterator[ObjectType]
+        caller:                        DefinedMethod,
+        call:                          Call[V] with VirtualCall[V],
+        pc:                            Int,
+        specializedDeclaringClassType: ReferenceType,
+        instantiatedTypesUB:           UIDSet[ObjectType],
+        potentialTargets:              ForeachRefIterator[ObjectType]
     )(implicit state: RTAState): Unit = {
         for (possibleTgtType ← potentialTargets) {
             if (instantiatedTypesUB.contains(possibleTgtType)) {
@@ -532,19 +547,22 @@ class RTACallGraphAnalysis private[analyses] ( final val project: SomeProject) e
             }
         }
 
-        if (call.declaringClass.isObjectType) {
-            val declType = call.declaringClass.asObjectType
-            val m =
-                if (call.isInterface)
-                    org.opalj.Result(project.resolveInterfaceMethodReference(
-                        declType, call.name, call.descriptor
-                    ))
-                else
-                    project.resolveClassMethodReference(
-                        declType, call.name, call.descriptor
-                    )
+        if (specializedDeclaringClassType.isObjectType) {
+            val declType = specializedDeclaringClassType.asObjectType
 
-            if (m.isEmpty) {
+            val mResult = if (classHierarchy.isInterface(declType).isYes)
+                org.opalj.Result(project.resolveInterfaceMethodReference(
+                    declType, call.name, call.descriptor
+                ))
+            else
+                org.opalj.Result(project.resolveMethodReference(
+                    declType,
+                    call.name,
+                    call.descriptor,
+                    forceLookupInSuperinterfacesOnFailure = true
+                ))
+
+            if (mResult.isEmpty) {
                 unknownLibraryCall(
                     caller,
                     call.name,
@@ -554,7 +572,7 @@ class RTACallGraphAnalysis private[analyses] ( final val project: SomeProject) e
                     caller.definedMethod.classFile.thisType.packageName,
                     pc
                 )
-            } else if (isMethodOverridable(m.value).isYesOrUnknown) {
+            } else if (isMethodOverridable(mResult.value).isYesOrUnknown) {
                 state.addIncompleteCallSite(pc)
             }
         }

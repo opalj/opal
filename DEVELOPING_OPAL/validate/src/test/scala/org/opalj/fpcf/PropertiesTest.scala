@@ -165,7 +165,7 @@ abstract class PropertiesTest extends FunSpec with Matchers {
                 it(entityIdentifier(s"$annotationTypeName")) {
                     info(s"validator: "+matcherClass.toString.substring(32))
                     val epss = ps.properties(e).toIndexedSeq
-                    val nonFinalPSs = epss.filter(!_.isFinal)
+                    val nonFinalPSs = epss.filter(_.isRefinable)
                     assert(
                         nonFinalPSs.isEmpty,
                         nonFinalPSs.mkString("some epss are not final:\n\t", "\n\t", "\n")

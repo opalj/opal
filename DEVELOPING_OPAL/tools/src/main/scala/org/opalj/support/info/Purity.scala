@@ -10,19 +10,9 @@ import java.util.Calendar
 
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigValueFactory
-import org.opalj.ai.Domain
-import org.opalj.ai.common.SimpleAIKey
-import org.opalj.ai.domain
-import org.opalj.ai.domain.RecordDefUse
-import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
-import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
-import org.opalj.br.DeclaredMethod
-import org.opalj.br.DefinedMethod
-import org.opalj.br.Method
-import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.analyses.Project
-import org.opalj.br.analyses.Project.JavaClassFileReader
-import org.opalj.bytecode.JRELibraryFolder
+
+import org.opalj.util.Seconds
+import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.Chain
 import org.opalj.fpcf.ComputationSpecification
@@ -78,9 +68,18 @@ import org.opalj.fpcf.properties.ImpureByAnalysis
 import org.opalj.fpcf.properties.ImpureByLackOfInformation
 import org.opalj.fpcf.properties.Pure
 import org.opalj.fpcf.properties.SideEffectFree
+import org.opalj.bytecode.JRELibraryFolder
+import org.opalj.br.DeclaredMethod
+import org.opalj.br.DefinedMethod
+import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.Project.JavaClassFileReader
+import org.opalj.ai.Domain
+import org.opalj.ai.domain
+import org.opalj.ai.domain.RecordDefUse
+import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
+import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.tac.fpcf.analyses.TACAITransformer
-import org.opalj.util.PerformanceEvaluation.time
-import org.opalj.util.Seconds
 
 /**
  * Executes a purity analysis (L2 by default) along with necessary supporting analysis.
@@ -222,10 +221,6 @@ object Purity {
             )
         } { t ⇒ projectTime = t.toSeconds }
 
-        val d: Method ⇒ Domain with RecordDefUse = (m: Method) ⇒
-            domain.getConstructor(classOf[Project[_]], classOf[Method]).newInstance(project, m)
-
-        project.getOrCreateProjectInformationKeyInitializationData(SimpleAIKey, d)
         project.updateProjectInformationKeyInitializationData(
             AIDomainFactoryKey,
             (i: Option[Set[Class[_ <: AnyRef]]]) ⇒ (i match {

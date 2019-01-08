@@ -1135,11 +1135,11 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                     return None;
                 }
 
-                val possibleTypes = for {
-                    otherParamTypes: FieldType ← possibleOtherParamTypes.get.iterator
+                val possibleMethodDescriptors = for {
+                    otherParamTypes ← possibleOtherParamTypes.get.iterator
                     returnType ← returnTypes
                 } yield MethodDescriptor(otherParamTypes, returnType)
-                Some(possibleTypes)
+                Some(possibleMethodDescriptors)
             } else if (secondParamType == ObjectType.Class) { // methodType(T1, T2) => (T2)T2
                 val paramTypesOpt = getPossibleTypes(params(1), pc)
                 if (paramTypesOpt.isEmpty) {

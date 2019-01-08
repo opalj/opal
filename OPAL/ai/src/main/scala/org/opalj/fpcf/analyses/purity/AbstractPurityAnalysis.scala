@@ -551,7 +551,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
     ): Boolean = {
         handleCalleesUpdate(calleesEOptP)
         calleesEOptP match {
-            case UBPS(p, isFinal) ⇒
+            case UBPS(p: Callees, isFinal) ⇒
                 if (!isFinal) reducePurityLB(ImpureByAnalysis)
 
                 val hasIncompleteCallSites =
@@ -565,46 +565,51 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
                         }
                     }
 
-                // todo: isn't this the bottom value and we could stop?
-                if (hasIncompleteCallSites)
+                if (hasIncompleteCallSites) {
                     atMost(ImpureByAnalysis)
+                    return false;
+                }
 
-                // todo: why do we only checkPurityOfMethod if `hasIncompleteCallSites` is set?
-                hasIncompleteCallSites &&
-                    p.directCallSites().forall {
-                        case (pc, callees) ⇒
-                            val index = state.pcToIndex(pc)
-                            if (index < 0)
-                                true // call will not be executed
-                            else {
-                                val call = getCall(state.code(index))
-                                isDomainSpecificCall(call, call.receiverOption) ||
-                                    callees.forall { callee ⇒
-                                        checkPurityOfMethod(
-                                            callee,
-                                            call.receiverOption.orNull +: call.params
-                                        )
-                                    }
-                            }
-                    } &&
-                    p.indirectCallSites().forall {
-                        case (pc, callees) ⇒
-                            val index = state.pcToIndex(pc)
-                            if (index < 0)
-                                true // call will not be executed
-                            else {
-                                val call = getCall(state.code(index))
-                                isDomainSpecificCall(call, call.receiverOption) ||
-                                    callees.forall { callee ⇒
-                                        checkPurityOfMethod(
-                                            callee,
-                                            p.indirectCallParameters(pc, callee).map { paramO ⇒
-                                                paramO.map(uVarForDefSites(_, state.pcToIndex)).orNull
-                                            }
-                                        )
-                                    }
-                            }
-                    }
+                val noDirectCalleeIsImpure = p.directCallSites().forall {
+                    case (pc, callees) ⇒
+                        val index = state.pcToIndex(pc)
+                        if (index < 0)
+                            true // call will not be executed
+                        else {
+                            val call = getCall(state.code(index))
+                            isDomainSpecificCall(call, call.receiverOption) ||
+                                callees.forall { callee ⇒
+                                    checkPurityOfMethod(
+                                        callee,
+                                        call.receiverOption.orNull +: call.params
+                                    )
+                                }
+                        }
+                }
+
+                if (!noDirectCalleeIsImpure)
+                    return false;
+
+                val noIndirectCalleeIsImpure = p.indirectCallSites().forall {
+                    case (pc, callees) ⇒
+                        val index = state.pcToIndex(pc)
+                        if (index < 0)
+                            true // call will not be executed
+                        else {
+                            val call = getCall(state.code(index))
+                            isDomainSpecificCall(call, call.receiverOption) ||
+                                callees.forall { callee ⇒
+                                    checkPurityOfMethod(
+                                        callee,
+                                        p.indirectCallParameters(pc, callee).map { paramO ⇒
+                                            paramO.map(uVarForDefSites(_, state.pcToIndex)).orNull
+                                        }
+                                    )
+                                }
+                        }
+                }
+
+                noIndirectCalleeIsImpure
 
             case _ ⇒
                 reducePurityLB(ImpureByAnalysis)
