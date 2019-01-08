@@ -4,15 +4,14 @@ package br
 package analyses
 
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.locks.ReentrantReadWriteLock
 
+import org.opalj.log.OPALLogger.info
 import org.opalj.br.MethodDescriptor.SignaturePolymorphicMethod
 import org.opalj.br.ObjectType.MethodHandle
 import org.opalj.br.ObjectType.VarHandle
 import org.opalj.br.analyses.DeclaredMethodsKey.MethodContext
 import org.opalj.br.analyses.DeclaredMethodsKey.MethodContextQuery
-import org.opalj.log.OPALLogger.info
 
 /**
  * The set of all [[org.opalj.br.DeclaredMethod]]s (potentially used by the property store).
@@ -26,10 +25,10 @@ class DeclaredMethods(
         // methods on type Object when not analyzing the JDK.
         private[this] val data:      ConcurrentHashMap[ReferenceType, ConcurrentHashMap[MethodContext, DeclaredMethod]],
         private[this] var id2method: Array[DeclaredMethod],
-        private[this] val idCounter: AtomicInteger
+        private[this] var idCounter: Int
 ) {
 
-    private[this] final val lock = new ReentrantReadWriteLock()
+    private[this] final val lock = new ReentrantReadWriteLock() 
 
     def apply(
         declaredType: ObjectType,
@@ -62,7 +61,8 @@ class DeclaredMethods(
             lock.writeLock().lock()
             try {
                 if (!dmSet.contains(context)) {
-                    val vm = new VirtualDeclaredMethod(runtimeType, name, descriptor, idCounter.getAndIncrement())
+                    val vm = new VirtualDeclaredMethod(runtimeType, name, descriptor, idCounter)
+                    idCounter += 1
                     dmSet.put(new MethodContext(name, descriptor), vm)
                     if (id2method.size <= vm.id) {
                         implicit val logContext = p.logContext
