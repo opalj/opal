@@ -180,7 +180,8 @@ class DefaultPathFinder extends AbstractPathFinder {
                 }
             }
 
-            if ((numSplits.nonEmpty || backedgeLoopCounter.nonEmpty) && (bb.predecessors.size == 1)) {
+            if ((numSplits.nonEmpty || backedgeLoopCounter.nonEmpty) &&
+                (isLoopHeader || bb.predecessors.size == 1)) {
                 // Within a conditional, prepend in order to keep the correct order
                 val newStack = IntArrayStack.fromSeq(stack.reverse)
                 newStack.push(IntArrayStack.fromSeq(successorsToAdd.reverse))
