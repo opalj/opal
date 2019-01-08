@@ -111,8 +111,20 @@ object LongTrieSetProperties extends Properties("LongTrieSet") {
     property("head") = forAll { s: LongTrieSet ⇒
         s.nonEmpty ==> {
             val its = s.foldLeft(EmptyLongTrieSet: LongTrieSet)(_ + _)
-            s.contains(its.head)
+            s.contains(its.head) && its.size == s.size
         }
+    }
+
+    property("head and headAndTail should return the same head") = forAll { s: LongTrieSet ⇒
+        var its = s
+        var success = true
+        while (its.nonEmpty && success) {
+            val h = its.head
+            val ht = its.headAndTail
+            its = ht.rest
+            success = h == ht.head
+        }
+        success
     }
 
     property("mkString(String,String,String)") = forAll { (s: Set[Long], pre: String, in: String, post: String) ⇒

@@ -3,11 +3,8 @@ package org.opalj
 package fpcf
 package analyses
 
-import org.opalj.br.DeclaredMethod
-import org.opalj.br.DefinedMethod
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.instructions._
+import scala.annotation.switch
+
 import org.opalj.fpcf.properties.StaticDataUsage
 import org.opalj.fpcf.properties.CompileTimeConstancy
 import org.opalj.fpcf.properties.UsesVaryingData
@@ -16,8 +13,11 @@ import org.opalj.fpcf.properties.UsesConstantDataOnly
 import org.opalj.fpcf.properties.NoVaryingDataUse
 import org.opalj.fpcf.properties.CompileTimeConstantField
 import org.opalj.fpcf.properties.CompileTimeVaryingField
-
-import scala.annotation.switch
+import org.opalj.br.DeclaredMethod
+import org.opalj.br.DefinedMethod
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.instructions._
 
 /**
  * A simple analysis that identifies methods that use global state that may vary during one or
@@ -230,7 +230,10 @@ trait StaticDataUsageAnalysisScheduler extends ComputationSpecification[FPCFAnal
         PropertyBounds.lub(StaticDataUsage)
     }
 
-    final override def uses: Set[PropertyBounds] = Set(PropertyBounds.lub(CompileTimeConstancy))
+    final override def uses: Set[PropertyBounds] = Set(
+        PropertyBounds.lub(StaticDataUsage),
+        PropertyBounds.lub(CompileTimeConstancy)
+    )
 
 }
 

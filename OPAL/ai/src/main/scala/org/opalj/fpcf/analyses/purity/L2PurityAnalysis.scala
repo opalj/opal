@@ -939,7 +939,8 @@ trait L2PurityAnalysisScheduler extends FPCFAnalysisScheduler {
             PropertyBounds.lub(ReturnValueFreshness),
             PropertyBounds.ub(FieldLocality),
             PropertyBounds.ub(TACAI),
-            PropertyBounds.ub(Callees)
+            PropertyBounds.ub(Callees),
+            PropertyBounds.lub(Purity)
         )
     }
 

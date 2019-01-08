@@ -2,6 +2,9 @@
 package org.opalj
 package fpcf
 
+import java.net.URL
+
+import org.opalj.ai.domain.l2
 import org.opalj.fpcf.analyses.EagerL0FieldMutabilityAnalysis
 import org.opalj.fpcf.analyses.EagerL1FieldMutabilityAnalysis
 import org.opalj.fpcf.analyses.EagerL2FieldMutabilityAnalysis
@@ -22,6 +25,8 @@ import org.opalj.fpcf.cg.properties.ReflectionRelatedCallees
 import org.opalj.fpcf.cg.properties.SerializationRelatedCallees
 import org.opalj.fpcf.cg.properties.StandardInvokeCallees
 import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
+import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
+import org.opalj.br.analyses.Project
 import org.opalj.fpcf.cg.properties.ThreadRelatedIncompleteCallSites
 import org.opalj.tac.fpcf.analyses.TACAITransformer
 
@@ -33,6 +38,14 @@ import org.opalj.tac.fpcf.analyses.TACAITransformer
  * @author Michael Eichberg
  */
 class FieldMutabilityTests extends PropertiesTest {
+
+    override def init(p: Project[URL]): Unit = {
+        p.updateProjectInformationKeyInitializationData(
+            AIDomainFactoryKey,
+            (_: Option[Set[Class[_ <: AnyRef]]]) ⇒
+                Set[Class[_ <: AnyRef]](classOf[l2.DefaultPerformInvocationsDomainWithCFGAndDefUse[URL]])
+        )
+    }
 
     describe("no analysis is scheduled") {
         val as = executeAnalyses(Set.empty)

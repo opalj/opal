@@ -412,7 +412,8 @@ trait L1PurityAnalysisScheduler extends FPCFAnalysisScheduler {
             PropertyBounds.ub(Callees),
             PropertyBounds.lub(FieldMutability),
             PropertyBounds.lub(ClassImmutability),
-            PropertyBounds.lub(TypeImmutability)
+            PropertyBounds.lub(TypeImmutability),
+            PropertyBounds.lub(Purity)
         )
     }
 
