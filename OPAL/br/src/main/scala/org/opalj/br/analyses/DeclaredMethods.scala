@@ -42,10 +42,10 @@ class DeclaredMethods(
 
         val context = new MethodContextQuery(p, declaredType, packageName, name, descriptor)
         var method = dmSet.get(context)
-        if(method != null) return method;
+        if (method != null) return method;
 
         if ((runtimeType eq MethodHandle) || (runtimeType eq VarHandle)) {
-           method = dmSet.get(
+            method = dmSet.get(
                 new MethodContextQuery(
                     p,
                     declaredType,
@@ -54,29 +54,29 @@ class DeclaredMethods(
                     SignaturePolymorphicMethod
                 )
             )
-            if(method != null) return method;
+            if (method != null) return method;
         }
-      
+
         // in case of an unseen method, compute id
         if (!dmSet.contains(context)) {
             lock.writeLock().lock()
             try {
-            if (!dmSet.contains(context)) {
-                val vm = new VirtualDeclaredMethod(runtimeType, name, descriptor, idCounter.getAndIncrement())
-                dmSet.put(new MethodContext(name, descriptor), vm)
-                if (id2method.size <= vm.id) {
-                    implicit val logContext = p.logContext
-                    info("project", "too many virtual declared methods; extended the underlying array")
-                    //IMPROVE use variable increment
-                    val id2methodExt = new Array[DeclaredMethod](id2method.length + 1000)
-                    Array.copy(id2method, 0, id2methodExt, 0, id2method.length)
-                    id2method = id2methodExt
+                if (!dmSet.contains(context)) {
+                    val vm = new VirtualDeclaredMethod(runtimeType, name, descriptor, idCounter.getAndIncrement())
+                    dmSet.put(new MethodContext(name, descriptor), vm)
+                    if (id2method.size <= vm.id) {
+                        implicit val logContext = p.logContext
+                        info("project", "too many virtual declared methods; extended the underlying array")
+                        //IMPROVE use variable increment
+                        val id2methodExt = new Array[DeclaredMethod](id2method.length + 1000)
+                        Array.copy(id2method, 0, id2methodExt, 0, id2method.length)
+                        id2method = id2methodExt
+                    }
+                    id2method(vm.id) = vm
                 }
-                id2method(vm.id) = vm
+            } finally {
+                lock.writeLock().unlock()
             }
-        } finally {
-            lock.writeLock().unlock()
-        }
         }
         dmSet.get(context)
     }
