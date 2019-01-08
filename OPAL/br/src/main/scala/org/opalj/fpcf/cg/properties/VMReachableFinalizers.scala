@@ -15,8 +15,8 @@ sealed trait VMReachableFinalizersMetaInformation extends PropertyMetaInformatio
  * @author Florian Kübler
  */
 sealed class VMReachableFinalizers(
-    protected val reachableMethods: IntTrieSet
-    )    extends VMReachableMethods 
+        protected val reachableMethods: IntTrieSet
+) extends VMReachableMethods
     with VMReachableFinalizersMetaInformation {
 
     override def key: PropertyKey[VMReachableFinalizers] = VMReachableFinalizers.key

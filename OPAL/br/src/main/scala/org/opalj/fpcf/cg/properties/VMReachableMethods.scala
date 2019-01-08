@@ -7,8 +7,10 @@ package properties
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.collection.RefIterator
 
+/**
+ * @author Florian Kübler
+ */
 trait VMReachableMethods extends OrderedProperty {
 
     protected val reachableMethods: IntTrieSet
@@ -21,11 +23,11 @@ trait VMReachableMethods extends OrderedProperty {
         }
     }
 
-    def vmReachableMethods(implicit declaredMethods: DeclaredMethods): RefIterator[DeclaredMethod] = {
+    def vmReachableMethods(implicit declaredMethods: DeclaredMethods): Iterator[DeclaredMethod] = {
         reachableMethods.iterator.map(declaredMethods.apply)
     }
 
-    def isMethodReachable(        declaredMethod: DeclaredMethod    ): Boolean = {
+    def isMethodReachable(declaredMethod: DeclaredMethod): Boolean = {
         reachableMethods contains declaredMethod.id
     }
 }
@@ -39,7 +41,7 @@ trait VMReachableMethodsFallback extends VMReachableMethods {
         declaredMethods.declaredMethods
     }
 
-    override def isMethodReachable(        declaredMethod: DeclaredMethod    ): Boolean = true
+    override def isMethodReachable(declaredMethod: DeclaredMethod): Boolean = true
 
     override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {}
 }
