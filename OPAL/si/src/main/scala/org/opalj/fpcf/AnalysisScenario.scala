@@ -203,7 +203,7 @@ class AnalysisScenario[A] {
     ): Schedule[A] = {
         val alreadyComputedPropertyKinds = propertyStore.alreadyComputedPropertyKindIds.toSet
 
-        // 0. check that no property is not already derived
+        // 0. check that a property was not already derived
         allCS.foreach { cs ⇒
             cs.derives foreach { derivedProperty ⇒
                 if (alreadyComputedPropertyKinds.contains(derivedProperty.pk.id)) {

@@ -12,6 +12,7 @@ import scala.collection.{Map ⇒ SomeMap}
 import scala.collection.mutable.AnyRefMap
 import scala.collection.mutable.ArrayBuffer
 
+import org.opalj.control.foreachWithIndex
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.{debug ⇒ trace}
 import org.opalj.fpcf.PropertyKind.SupportedPropertyKinds
@@ -567,7 +568,6 @@ final class PKESequentialPropertyStore private (
                         // continue remains "false"
 
                         case r ⇒
-                            println(s"unexpected result for copntinuation of intermediate result: $r")
                             // Actually this shouldn't happen, though it is not a problem!
                             scheduledOnUpdateComputationsCounter += 1
                             tasks.addLast(HandleResultTask(store, r))
@@ -675,13 +675,15 @@ final class PKESequentialPropertyStore private (
     override def waitOnPhaseCompletion(): Unit = handleExceptions {
         require(subPhaseId == 0, "unpaired waitOnPhaseCompletion call")
 
-        // Let's trigger triggered computations for those entities, which have values!
-        ps.map(_.clone()).zipWithIndex foreach { epssPKId ⇒
-            val (epss, pkId) = epssPKId
-            epss foreach { eps ⇒
-                val (e, eOptionP) = eps
-                if (eOptionP.isEPS) {
-                    triggerComputations(e, pkId)
+        if(triggeredComputations.exists(_.nonEmpty)) {
+            // Let's trigger triggered computations for those entities, which have values!
+            val clonedPS = ps.map(_.clone()) // TODO Remove _.clone or document why it is necessary.
+            foreachWithIndex (clonedPS) { (epss, pkId) ⇒
+                epss foreach { eps ⇒
+                    val (e, eOptionP) = eps
+                    if (eOptionP.isEPS) {
+                        triggerComputations(e, pkId)
+                    }
                 }
             }
         }
