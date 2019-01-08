@@ -12,7 +12,7 @@ import org.opalj.br.ObjectType.MethodHandle
 import org.opalj.br.ObjectType.VarHandle
 import org.opalj.br.analyses.DeclaredMethodsKey.MethodContext
 import org.opalj.br.analyses.DeclaredMethodsKey.MethodContextQuery
-import org.opalj.log.OPALLogger
+import org.opalj.log.OPALLogger.info
 
 /**
  * The set of all [[org.opalj.br.DeclaredMethod]]s (potentially used by the property store).
@@ -27,10 +27,9 @@ class DeclaredMethods(
         private[this] val data:      ConcurrentHashMap[ReferenceType, ConcurrentHashMap[MethodContext, DeclaredMethod]],
         private[this] var id2method: Array[DeclaredMethod],
         private[this] val idCounter: AtomicInteger
-
 ) {
 
-    val lock = new ReentrantReadWriteLock()
+    private[this] final val lock = new ReentrantReadWriteLock()
 
     def apply(
         declaredType: ObjectType,
@@ -43,9 +42,10 @@ class DeclaredMethods(
 
         val context = new MethodContextQuery(p, declaredType, packageName, name, descriptor)
         var method = dmSet.get(context)
+        if(method != null) return method;
 
-        if (method == null && ((runtimeType eq MethodHandle) || (runtimeType eq VarHandle))) {
-            method = dmSet.get(
+        if ((runtimeType eq MethodHandle) || (runtimeType eq VarHandle)) {
+           method = dmSet.get(
                 new MethodContextQuery(
                     p,
                     declaredType,
@@ -54,38 +54,31 @@ class DeclaredMethods(
                     SignaturePolymorphicMethod
                 )
             )
+            if(method != null) return method;
         }
-
-        implicit val logContext = p.logContext
-
-        if (method == null) {
-            lock.readLock().lock()
-
-            // in case of an unseen method, compute id
+      
+        // in case of an unseen method, compute id
+        if (!dmSet.contains(context)) {
+            lock.writeLock().lock()
+            try {
             if (!dmSet.contains(context)) {
-                lock.readLock().unlock()
-                lock.writeLock().lock()
-
-                if (!dmSet.contains(context)) {
-                    val vm = new VirtualDeclaredMethod(runtimeType, name, descriptor, idCounter.getAndIncrement())
-                    dmSet.put(new MethodContext(name, descriptor), vm)
-                    if (id2method.size <= vm.id) {
-                        OPALLogger.info("project", "too many new virtual declared methods. extended the underlying array.")
-                        //IMPROVE use variable increment
-                        val id2methodExt = new Array[DeclaredMethod](id2method.length + 1000)
-                        Array.copy(id2method, 0, id2methodExt, 0, id2method.length)
-                        id2method = id2methodExt
-                    }
-                    id2method(vm.id) = vm
+                val vm = new VirtualDeclaredMethod(runtimeType, name, descriptor, idCounter.getAndIncrement())
+                dmSet.put(new MethodContext(name, descriptor), vm)
+                if (id2method.size <= vm.id) {
+                    implicit val logContext = p.logContext
+                    info("project", "too many virtual declared methods; extended the underlying array")
+                    //IMPROVE use variable increment
+                    val id2methodExt = new Array[DeclaredMethod](id2method.length + 1000)
+                    Array.copy(id2method, 0, id2methodExt, 0, id2method.length)
+                    id2method = id2methodExt
                 }
-                lock.readLock().lock()
-                lock.writeLock().unlock()
+                id2method(vm.id) = vm
             }
-            lock.readLock().unlock()
-            dmSet.get(context)
-        } else {
-            method
+        } finally {
+            lock.writeLock().unlock()
         }
+        }
+        dmSet.get(context)
     }
 
     def apply(method: Method): DefinedMethod = {
