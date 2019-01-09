@@ -64,7 +64,7 @@ scalacOptions in (ScalaUnidoc, unidoc) ++= Opts.doc.version(version.value)
 scalacOptions in (ScalaUnidoc, unidoc) ++= Opts.doc.title("The OPAL Framework")
 
 javaOptions in ThisBuild ++= Seq(
-    "-Xmx7G", "-Xms1024m", "-XX:ThreadStackSize=2048", "-Xnoclassgc",
+    "-Xmx24G", "-Xms4096m", "-XX:ThreadStackSize=2048", "-Xnoclassgc",
     "-XX:NewRatio=1", "-XX:SurvivorRatio=8", "-XX:+UseParallelGC", "-XX:+AggressiveOpts")
 
 addCommandAlias(
@@ -263,7 +263,7 @@ lazy val `DependenciesExtractionLibrary` = (project in file("OPAL/de"))
 
 /* TEMPORARILY DISABLED THE BUGPICKER UNTIL WE HAVE A CG ANALYSIS AGAIN!
 lazy val bp = `BugPicker`
-lazy val `BugPicker` = (project in file("OPAL/bp"))
+lazy val `BugPicker` = (project in file("TOOLS/bp"))
   .settings(buildSettings: _*)
   .settings(
     name := "BugPicker - Core",
