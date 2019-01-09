@@ -5,6 +5,7 @@ import org.opalj.fpcf.properties.string_definition.StringDefinitions;
 import org.opalj.fpcf.properties.string_definition.StringDefinitionsCollection;
 
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Random;
@@ -848,6 +849,50 @@ public class TestMethods {
         analyzeString(sb.toString());
 
         sb.append(sbValue.toString());
+        analyzeString(sb.toString());
+    }
+
+    @StringDefinitionsCollection(
+            value = "an example extracted from "
+                    + "com.oracle.webservices.internal.api.message.BasePropertySet with two "
+                    + "definition sites and one usage site",
+            stringDefinitions = {
+                    @StringDefinitions(
+                            expectedLevel = PARTIALLY_CONSTANT,
+                            expectedStrings = "(set\\w|s\\w)"
+                    ),
+            })
+    public void twoDefinitionsOneUsage(String getName) throws ClassNotFoundException {
+        String name = getName;
+        String setName = name.startsWith("is") ?
+                "set" + name.substring(2) :
+                's' + name.substring(1);
+
+        Class clazz = Class.forName("java.lang.MyClass");
+        Method setter;
+        try {
+            setter = clazz.getMethod(setName);
+            analyzeString(setName);
+        } catch (NoSuchMethodException var15) {
+            setter = null;
+            System.out.println("Error occurred");
+        }
+    }
+
+    @StringDefinitionsCollection(
+            value = "an example with an unknown character read",
+            stringDefinitions = {
+                    @StringDefinitions(expectedLevel = DYNAMIC, expectedStrings = "\\w"),
+                    @StringDefinitions(expectedLevel = DYNAMIC, expectedStrings = "\\w"),
+            })
+    public void unknownCharValue() {
+        int charCode = new Random().nextInt(200);
+        char c = (char) charCode;
+        String s = String.valueOf(c);
+        analyzeString(s);
+
+        StringBuilder sb = new StringBuilder();
+        sb.append(c);
         analyzeString(sb.toString());
     }
 

@@ -135,8 +135,16 @@ class VirtualFunctionCallInterpreter(
         param.value.computationalType match {
             // For some types, we know the (dynamic) values
             case ComputationalTypeInt ⇒
-                // Was already computed above
-                Some(value.head)
+                // The value was already computed above; however, we need to check whether the
+                // append takes an int value or a char (if it is a constant char, convert it)
+                if (call.descriptor.parameterType(0).isCharType &&
+                    value.head.constancyLevel == StringConstancyLevel.CONSTANT) {
+                    Some(value.head.copy(
+                        possibleStrings = value.head.possibleStrings.toInt.toChar.toString
+                    ))
+                } else {
+                    Some(value.head)
+                }
             case ComputationalTypeFloat ⇒
                 Some(InterpretationHandler.getConstancyInformationForDynamicFloat)
             // Otherwise, try to compute
