@@ -18,7 +18,7 @@ import org.opalj.tac.fpcf.properties.NoTACAI
 import org.opalj.tac.fpcf.properties.TACAI
 
 /**
- * Transforms an aiResult to the 3-address code.
+ * Transforms a BaseAIResult to the 3-address code.
  *
  * @author Michael Eichberg
  */
