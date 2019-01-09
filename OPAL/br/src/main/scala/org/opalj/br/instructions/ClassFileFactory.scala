@@ -737,7 +737,7 @@ object ClassFileFactory {
                 numberOfInstructionsForParameterLoading +
                 3 + // INVOKESPECIAL
                 1 // ARETURN
-        val maxLocals = fieldTypes.iterator.sum(_.computationalType.operandSize.toInt)
+        val maxLocals = fieldTypes.sum(_.computationalType.operandSize.toInt)
         val maxStack = maxLocals + 2 // new + dup makes two extra on the stack
         val instructions = new Array[Instruction](numberOfInstructions)
         var currentPC: Int = 0
