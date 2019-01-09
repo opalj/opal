@@ -1,18 +1,22 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.analyses.string_definition.interpretation
 
-import org.opalj.br.cfg.CFG
+import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
+
 import org.opalj.fpcf.analyses.string_definition.V
 import org.opalj.fpcf.properties.StringConstancyProperty
 import org.opalj.fpcf.string_definition.properties.StringConstancyInformation
 import org.opalj.fpcf.string_definition.properties.StringConstancyLevel
 import org.opalj.fpcf.string_definition.properties.StringConstancyType
+import org.opalj.br.cfg.CFG
 import org.opalj.tac.ArrayLoad
 import org.opalj.tac.Assignment
 import org.opalj.tac.BinaryExpr
 import org.opalj.tac.Expr
 import org.opalj.tac.ExprStmt
 import org.opalj.tac.GetField
+import org.opalj.tac.IntConst
 import org.opalj.tac.New
 import org.opalj.tac.NonVirtualFunctionCall
 import org.opalj.tac.NonVirtualMethodCall
@@ -22,9 +26,6 @@ import org.opalj.tac.StringConst
 import org.opalj.tac.TACStmts
 import org.opalj.tac.VirtualFunctionCall
 import org.opalj.tac.VirtualMethodCall
-
-import scala.collection.mutable
-import scala.collection.mutable.ListBuffer
 
 /**
  * `InterpretationHandler` is responsible for processing expressions that are relevant in order to
@@ -63,6 +64,8 @@ class InterpretationHandler(cfg: CFG[Stmt[V], TACStmts[V]]) {
         stmts(defSite) match {
             case Assignment(_, _, expr: StringConst) ⇒
                 new StringConstInterpreter(cfg, this).interpret(expr)
+            case Assignment(_, _, expr: IntConst) ⇒
+                new IntegerValueInterpreter(cfg, this).interpret(expr)
             case Assignment(_, _, expr: ArrayLoad[V]) ⇒
                 new ArrayLoadInterpreter(cfg, this).interpret(expr)
             case Assignment(_, _, expr: New) ⇒
@@ -237,7 +240,7 @@ object InterpretationHandler {
      *         That is, the returned element consists of the value [[StringConstancyLevel.DYNAMIC]],
      *         [[StringConstancyType.APPEND]], and [[StringConstancyInformation.IntValue]].
      */
-    def getStringConstancyInformationForInt: StringConstancyInformation =
+    def getConstancyInformationForDynamicInt: StringConstancyInformation =
         StringConstancyInformation(
             StringConstancyLevel.DYNAMIC,
             StringConstancyType.APPEND,
@@ -249,7 +252,7 @@ object InterpretationHandler {
      *         That is, the returned element consists of the value [[StringConstancyLevel.DYNAMIC]],
      *         [[StringConstancyType.APPEND]], and [[StringConstancyInformation.IntValue]].
      */
-    def getStringConstancyInformationForFloat: StringConstancyInformation =
+    def getConstancyInformationForDynamicFloat: StringConstancyInformation =
         StringConstancyInformation(
             StringConstancyLevel.DYNAMIC,
             StringConstancyType.APPEND,

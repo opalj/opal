@@ -246,7 +246,7 @@ public class TestMethods {
                             expectedLevel = DYNAMIC, expectedStrings = "(x|[AnIntegerValue])"
                     ),
                     @StringDefinitions(
-                            expectedLevel = DYNAMIC, expectedStrings = "([AnIntegerValue]|x)"
+                            expectedLevel = CONSTANT, expectedStrings = "(42|x)"
                     )
             })
     public void ifElseWithStringBuilderWithIntExpr() {
@@ -255,7 +255,7 @@ public class TestMethods {
         int i = new Random().nextInt();
         if (i % 2 == 0) {
             sb1.append("x");
-            sb2.append(i);
+            sb2.append(42);
         } else {
             sb1.append(i + 1);
             sb2.append("x");

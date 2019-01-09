@@ -39,9 +39,9 @@ class BinaryExprInterpreter(
     override def interpret(instr: T): List[StringConstancyInformation] =
         instr.cTpe match {
             case ComputationalTypeInt ⇒
-                List(InterpretationHandler.getStringConstancyInformationForInt)
+                List(InterpretationHandler.getConstancyInformationForDynamicInt)
             case ComputationalTypeFloat ⇒
-                List(InterpretationHandler.getStringConstancyInformationForFloat)
+                List(InterpretationHandler.getConstancyInformationForDynamicFloat)
 
             case _ ⇒ List()
         }

@@ -121,8 +121,9 @@ class VirtualFunctionCallInterpreter(
     private def valueOfAppendCall(
         call: VirtualFunctionCall[V]
     ): Option[StringConstancyInformation] = {
+        val param = call.params.head.asVar
         // .head because we want to evaluate only the first argument of append
-        val defSiteParamHead = call.params.head.asVar.definedBy.head
+        val defSiteParamHead = param.definedBy.head
         var value = exprHandler.processDefSite(defSiteParamHead)
         // If defSiteParamHead points to a New, value will be the empty list. In that case, process
         // the first use site (which is the <init> call)
@@ -131,12 +132,13 @@ class VirtualFunctionCallInterpreter(
                 cfg.code.instructions(defSiteParamHead).asAssignment.targetVar.usedBy.toArray.min
             )
         }
-        call.params.head.asVar.value.computationalType match {
+        param.value.computationalType match {
             // For some types, we know the (dynamic) values
             case ComputationalTypeInt ⇒
-                Some(InterpretationHandler.getStringConstancyInformationForInt)
+                // Was already computed above
+                Some(value.head)
             case ComputationalTypeFloat ⇒
-                Some(InterpretationHandler.getStringConstancyInformationForFloat)
+                Some(InterpretationHandler.getConstancyInformationForDynamicFloat)
             // Otherwise, try to compute
             case _ ⇒
                 // It might be necessary to merge the values of the receiver and of the parameter
