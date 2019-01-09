@@ -267,9 +267,11 @@ case class Path(elements: List[SubPath]) {
         val siteMap = getAllDefAndUseSites(obj, stmts).filter { nextSite ⇒
             stmts(nextSite) match {
                 case Assignment(_, _, expr: VirtualFunctionCall[V]) ⇒
-                    newOfObj == InterpretationHandler.findNewOfVar(expr.receiver.asVar, stmts)
+                    val news = InterpretationHandler.findNewOfVar(expr.receiver.asVar, stmts)
+                    newOfObj == news || news.exists(newOfObj.contains)
                 case ExprStmt(_, expr: VirtualFunctionCall[V]) ⇒
-                    newOfObj == InterpretationHandler.findNewOfVar(expr.receiver.asVar, stmts)
+                    val news = InterpretationHandler.findNewOfVar(expr.receiver.asVar, stmts)
+                    newOfObj == news || news.exists(newOfObj.contains)
                 case _ ⇒ true
             }
         }.map { s ⇒ (s, Unit) }.toMap
@@ -299,24 +301,27 @@ case class Path(elements: List[SubPath]) {
             }
         }
 
-        // If everything is within a nested path element, ignore it (it is not relevant, as
-        // everything happens within that branch anyway)
+        // If everything is within a single branch of a nested path element, ignore it (it is not
+        // relevant, as everything happens within that branch anyway); for loops, remove the outer
+        // body in any case (as there is no alternative branch to consider)
         if (leanPath.tail.isEmpty) {
             leanPath.head match {
-                case npe: NestedPathElement ⇒ leanPath = removeOuterBranching(npe)
-                case _                      ⇒
+                case npe: NestedPathElement if npe.elementType.get == NestedPathType.Repetition ||
+                    npe.element.tail.isEmpty ⇒
+                    leanPath = removeOuterBranching(npe)
+                case _ ⇒
             }
-        }
-
-        // If the last element is a conditional, keep only the relevant branch (the other is not
-        // necessary and stripping it simplifies further steps; explicitly exclude try-catch here!)
-        leanPath.last match {
-            case npe: NestedPathElement if npe.elementType.isDefined &&
-                (npe.elementType.get != NestedPathType.TryCatchFinally) ⇒
-                val newLast = stripUnnecessaryBranches(npe, endSite)
-                leanPath.remove(leanPath.size - 1)
-                leanPath.append(newLast)
-            case _ ⇒
+        } else {
+            // If the last element is a conditional, keep only the relevant branch (the other is not
+            // necessary and stripping it simplifies further steps; explicitly exclude try-catch)
+            leanPath.last match {
+                case npe: NestedPathElement if npe.elementType.isDefined &&
+                    (npe.elementType.get != NestedPathType.TryCatchFinally) ⇒
+                    val newLast = stripUnnecessaryBranches(npe, endSite)
+                    leanPath.remove(leanPath.size - 1)
+                    leanPath.append(newLast)
+                case _ ⇒
+            }
         }
 
         Path(leanPath.toList)
