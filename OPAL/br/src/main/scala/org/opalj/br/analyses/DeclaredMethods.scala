@@ -28,7 +28,7 @@ class DeclaredMethods(
         private[this] var idCounter: Int
 ) {
 
-    private[this] final val lock = new ReentrantReadWriteLock() 
+    private[this] final val lock = new ReentrantReadWriteLock()
 
     def apply(
         declaredType: ObjectType,

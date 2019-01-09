@@ -35,7 +35,7 @@ package object control {
     final def foreachWithIndex[T <: AnyRef](
         a: Array[T]
     )(
-        f: (T,Int) ⇒ Unit
+        f: (T, Int) ⇒ Unit
     ): Unit = macro ControlAbstractionsImplementation.foreachWithIndex[T]
 
     /**
@@ -231,7 +231,7 @@ package control {
         )(
             a: c.Expr[Array[T]]
         )(
-            f: c.Expr[(T,Int) ⇒ Unit]
+            f: c.Expr[(T, Int) ⇒ Unit]
         ): c.Expr[Unit] = {
             import c.universe._
 
@@ -241,7 +241,7 @@ package control {
                 var i = 0
                 while (i < arrayLength) {
                     val arrayEntry = array(i)
-                    f.splice( arrayEntry,i)
+                    f.splice(arrayEntry, i)
                     i += 1
                 }
             }

@@ -675,10 +675,10 @@ final class PKESequentialPropertyStore private (
     override def waitOnPhaseCompletion(): Unit = handleExceptions {
         require(subPhaseId == 0, "unpaired waitOnPhaseCompletion call")
 
-        if(triggeredComputations.exists(_.nonEmpty)) {
+        if (triggeredComputations.exists(_.nonEmpty)) {
             // Let's trigger triggered computations for those entities, which have values!
             val clonedPS = ps.map(_.clone()) // TODO Remove _.clone or document why it is necessary.
-            foreachWithIndex (clonedPS) { (epss, pkId) ⇒
+            foreachWithIndex(clonedPS) { (epss, pkId) ⇒
                 epss foreach { eps ⇒
                     val (e, eOptionP) = eps
                     if (eOptionP.isEPS) {
@@ -722,7 +722,7 @@ final class PKESequentialPropertyStore private (
                             .valuesIterator
                             .filter { eOptionP ⇒
                                 eOptionP.isEPK &&
-                                    // It is not a transformer which still waits...
+                                    // There is no suppression; i.e., we have no dependees
                                     dependees(pkId).get(eOptionP.e).isEmpty
                             }
                     continueComputation |= epkIterator.hasNext
@@ -745,6 +745,8 @@ final class PKESequentialPropertyStore private (
             //    current results of the dependers cannot be finalized; instead, we need
             //    to finalize (the cyclic dependent) dependees first and notify the
             //    dependers.
+            //    Please note, that collaboratively computed properties are not allowed to be
+            //    part of a cyclic computation if we also have suppressed notifications.
             if (!continueComputation && hasSuppressedNotifications) {
                 // Collect all InterimEPs to find cycles.
                 val interimEPs = ArrayBuffer.empty[SomeEOptionP]
