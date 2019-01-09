@@ -63,8 +63,8 @@ scalacOptions in (ScalaUnidoc, unidoc) ++= Opts.doc.version(version.value)
 scalacOptions in (ScalaUnidoc, unidoc) ++= Opts.doc.title("The OPAL Framework")
 
 javaOptions in ThisBuild ++= Seq(
-    "-Xmx7G", "-Xms1024m", "-XX:ThreadStackSize=2048", "-Xnoclassgc",
-    "-XX:NewRatio=1", "-XX:SurvivorRatio=8", "-XX:+UseParallelGC", "-XX:+AggressiveOpts")
+    "-Xmx7G", "-Xms1024m", "-XX:ThreadStackSize=2048", 
+    "-Xnoclassgc", "-XX:NewRatio=1", "-XX:SurvivorRatio=8", "-XX:+UseParallelGC")
 
 addCommandAlias("compileAll", "; copyResources ; scalastyle ; test:compile ; test:scalastyle ; it:scalariformFormat ; it:scalastyle ; it:compile ")
 
