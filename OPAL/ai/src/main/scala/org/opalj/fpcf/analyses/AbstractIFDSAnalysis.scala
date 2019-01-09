@@ -132,7 +132,7 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
                 );
 
             case tac ⇒
-                throw new UnknownError(s"Can not handle intermediate/unavailabe TAC but got $tac")
+                throw new UnknownError(s"can't handle intermediate TACs ($tac)")
         }
 
         implicit val state: State =
@@ -610,7 +610,7 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
                     return Set.empty;
 
                 case tac ⇒
-                    throw new UnknownError(s"Can't handle intermediate/unavailabe TAC but got $tac")
+                    throw new UnknownError(s"can't handle intermediate TACs ($tac)")
             }
 
             exits.computeIfAbsent(method, _ ⇒ {
