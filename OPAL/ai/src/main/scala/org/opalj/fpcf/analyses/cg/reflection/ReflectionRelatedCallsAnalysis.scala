@@ -68,30 +68,30 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         final val project: SomeProject
 ) extends FPCFAnalysis {
 
-    private[this] val configKey =
-        "org.opalj.fpcf.analyses.cg.reflection.ReflectionRelatedCallsAnalysis"
+    import ReflectionRelatedCallsAnalysis.ConfigKey
 
-
-    private[this] val highSoundnessMode = try {
-        val v = project.config.getBoolean(configKey)
-        info("reflection analysis", if (v) "high soundness mode" else "standard mode")
-        v
-    } catch {
-        case t: Throwable ⇒
-            error("reflection analysis", s"couldn't read: $configKey", t)
-            false
+    final val HighSoundnessMode = {
+        val activated = try {
+            project.config.getBoolean(ConfigKey)
+        } catch {
+            case t: Throwable ⇒
+                error("reflection analysis", s"couldn't read: $ConfigKey", t)
+                false
+        }
+        info("reflection analysis", if (activated) "high soundness mode" else "standard mode")
+        activated
     }
 
-    private[this] val ConstructorT = ObjectType("java/lang/reflect/Constructor")
-    private[this] val MethodT = ObjectType("java/lang/reflect/Method")
+    val ConstructorT = ObjectType("java/lang/reflect/Constructor")
+    val MethodT = ObjectType("java/lang/reflect/Method")
 
-    private[this] val PropertiesT = ObjectType("java/util/Properties")
+    val PropertiesT = ObjectType("java/util/Properties")
 
-    private[this] val GetPropertyDescriptor = MethodDescriptor(ObjectType.String, ObjectType.String)
-    private[this] val GetOrDefaultPropertyDescriptor =
+    val GetPropertyDescriptor = MethodDescriptor(ObjectType.String, ObjectType.String)
+    val GetOrDefaultPropertyDescriptor =
         MethodDescriptor(RefArray(ObjectType.String, ObjectType.String), ObjectType.String)
 
-    private[this] val GetDescriptor = MethodDescriptor(ObjectType.Object, ObjectType.Object)
+    val GetDescriptor = MethodDescriptor(ObjectType.Object, ObjectType.Object)
 
     private[this] val constructorMatcher = new NameBasedMethodMatcher(Set("<init>"))
 
@@ -110,6 +110,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
             private[this] var _systemProperties:         Option[Map[String, Set[String]]]                = None
     ) {
 
+        // TODO move the if condition into the assert
         if (_tacaiDependee.isDefined &&
             _tacaiDependee.get.hasUBP &&
             _tacaiDependee.get.ub.tac.isDefined)
@@ -211,7 +212,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
     implicit private[this] val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
 
     def analyze(declaredMethod: DeclaredMethod): PropertyComputationResult = {
-        // todo this is copy & past code from the RTACallGraphAnalysis -> refactor
+        // TODO this is copy & past code from the RTACallGraphAnalysis -> refactor
         (propertyStore(declaredMethod, CallersProperty.key): @unchecked) match {
             case FinalP(NoCallers) ⇒
                 // nothing to do, since there is no caller
@@ -300,15 +301,13 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         }
     }
 
-    private[this] def processMethod(
-        state: State
-    ): ProperPropertyComputationResult = {
+    private[this] def processMethod(state: State): ProperPropertyComputationResult = {
         assert(state.isTACDefined)
         val (loadedClassesUB, instantiatedTypesUB) = loadedClassesAndInstantiatedTypes()
 
         val calleesAndCallers = new IndirectCalleesAndCallers()
 
-        // todo maybe move clearing to returnResult (newLoadedClasses/newInstantiatedTypes)
+        // TODO maybe move clearing to returnResult (newLoadedClasses/newInstantiatedTypes)
         implicit val newState: State = state.copy(
             loadedClassesUB = loadedClassesUB,
             newLoadedClasses = UIDSet.empty,
@@ -328,45 +327,45 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
      */
     private[this] def analyzeMethod()(implicit state: State): Unit = {
         implicit val stmts: Array[Stmt[V]] = state.tacode.stmts
-        for {
-            pc ← state.forNamePCs
-            index = state.tacode.pcToIndex(pc)
-            if index >= 0
-            stmt = stmts(index)
-        } {
-            val expr = if (stmt.astID == Assignment.ASTID) stmt.asAssignment.expr
-            else stmt.asExprStmt.expr
-            handleForName(expr.asStaticFunctionCall.params.head, pc)
+        for { pc ← state.forNamePCs } {
+            val index = state.tacode.pcToIndex(pc)
+            if (index >= 0) {
+                val stmt = stmts(index)
+                val expr =
+                    if (stmt.astID == Assignment.ASTID)
+                        stmt.asAssignment.expr
+                    else
+                        stmt.asExprStmt.expr
+                handleForName(expr.asStaticFunctionCall.params.head, pc)
+            }
         }
 
-        for {
-            pc ← state.invocationPCs
-            index = state.tacode.pcToIndex(pc)
-            if index >= 0
-            stmt = stmts(index)
-        } {
-            stmt.astID match {
-                case Assignment.ASTID ⇒
-                    handleExpr(state.definedMethod, stmt.pc, stmt.asAssignment.expr)
-                case ExprStmt.ASTID ⇒
-                    handleExpr(state.definedMethod, stmt.pc, stmt.asExprStmt.expr)
-                case VirtualMethodCall.ASTID ⇒
-                    val VirtualMethodCall(pc, declClass, _, name, _, receiver, params) = stmt
-                    // todo verify that this is true for exactly these two methods
-                    // invoke(Exact) returns Object, but by signature polymorphism the call
-                    // may still be a VirtualMethodCall if the return value is void or unused
-                    if (declClass == ObjectType.MethodHandle &&
-                        (name == "invoke" || name == "invokeExact"))
-                        handleMethodHandleInvoke(
-                            state.definedMethod,
-                            pc,
-                            receiver,
-                            params,
-                            None,
-                            isSignaturePolymorphic = true
-                        )
-                case _ ⇒
-
+        for { pc ← state.invocationPCs } {
+            val index = state.tacode.pcToIndex(pc)
+            if (index >= 0) {
+                val stmt = stmts(index)
+                stmt.astID match {
+                    case Assignment.ASTID ⇒
+                        handleExpr(state.definedMethod, stmt.pc, stmt.asAssignment.expr)
+                    case ExprStmt.ASTID ⇒
+                        handleExpr(state.definedMethod, stmt.pc, stmt.asExprStmt.expr)
+                    case VirtualMethodCall.ASTID ⇒
+                        val VirtualMethodCall(pc, declClass, _, name, _, receiver, params) = stmt
+                        // TODO verify that this is true for exactly these two methods
+                        // invoke(Exact) returns Object, but by signature polymorphism the call
+                        // may still be a VirtualMethodCall if the return value is void or unused
+                        if (declClass == ObjectType.MethodHandle &&
+                            (name == "invoke" || name == "invokeExact"))
+                            handleMethodHandleInvoke(
+                                state.definedMethod,
+                                pc,
+                                receiver,
+                                params,
+                                None,
+                                isSignaturePolymorphic = true
+                            )
+                    case _ ⇒
+                }
             }
         }
     }
@@ -427,7 +426,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
     private[this] def handleForName(className: Expr[V], pc: Int)(implicit state: State): Unit = {
         val loadedClassesOpt = getPossibleForNameClasses(className, None)
         if (loadedClassesOpt.isEmpty) {
-            if (highSoundnessMode) {
+            if (HighSoundnessMode) {
                 state.addNewLoadedClasses(
                     p.allClassFiles.iterator.map(_.thisType).filterNot(state.loadedClassesUB.contains)
                 )
@@ -456,7 +455,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         state: State
     ): MethodMatcher = {
         if (v.isEmpty) {
-            if (highSoundnessMode) {
+            if (HighSoundnessMode) {
                 AllMethodsMatcher
             } else {
                 state.calleesAndCallers.addIncompleteCallsite(pc)
@@ -473,7 +472,8 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
      * [[AllMethodsMatcher]].
      */
     private[this] def retrieveSuitableNonEssentialMatcher[A](
-        v: Option[A], f: (A) ⇒ MethodMatcher
+        v: Option[A],
+        f: (A) ⇒ MethodMatcher
     ): MethodMatcher = {
         if (v.isEmpty) {
             AllMethodsMatcher
@@ -483,7 +483,8 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
     }
 
     private[this] def retrieveClassBasedMethodMatcher(
-        ref: Expr[V], pc: Int
+        ref: Expr[V],
+        pc:  Int
     )(implicit state: State): MethodMatcher = {
         val typesOpt =
             getPossibleTypes(ref, pc).map(_.map(_.asObjectType)).map(_.toSet)
@@ -496,7 +497,8 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
     }
 
     private[this] def retrieveNameBasedMethodMatcher(
-        expr: Expr[V], pc: Int
+        expr: Expr[V],
+        pc:   Int
     )(implicit state: State): MethodMatcher = {
         val namesO = getPossibleStrings(expr, Some(pc))
         retrieveSuitableMatcher[Set[String]](
@@ -507,7 +509,11 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
     }
 
     private[this] def retrieveDescriptorBasedMethodMatcher(
-        descriptorOpt: Option[MethodDescriptor], expr: Expr[V], pc: Int, isStatic: Boolean, isConstructor: Boolean
+        descriptorOpt: Option[MethodDescriptor],
+        expr:          Expr[V],
+        pc:            Int,
+        isStatic:      Boolean,
+        isConstructor: Boolean
     )(implicit state: State): MethodMatcher = {
         val descriptorsOpt =
             if (descriptorOpt.isDefined) descriptorOpt.map(Set(_))
@@ -536,7 +542,8 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
     }
 
     private[this] def retrieveParameterTypesBasedMethodMatcher(
-        varArgs: Expr[V], pc: Int
+        varArgs: Expr[V],
+        pc:      Int
     )(implicit state: State): MethodMatcher = {
         val paramTypesO = getTypesFromVararg(varArgs)
         retrieveSuitableMatcher[FieldTypes](
@@ -546,7 +553,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         )
     }
 
-    // todo what about the case of an constructor?
+    // TODO what about the case of an constructor?
     private[this] def retrieveMatchersForMethodHandleConst(
         receiver:      ReferenceType,
         name:          String,
@@ -573,7 +580,6 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
             else new ClassBasedMethodMatcher(
                 Set(receiver.asObjectType)
             )
-
         )
     }
 
@@ -588,9 +594,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
     )(implicit state: State): Seq[MethodMatcher] = {
         Seq(
             retrieveClassBasedMethodMatcher(refc, pc),
-
             retrieveNameBasedMethodMatcher(name, pc),
-
             retrieveDescriptorBasedMethodMatcher(
                 descriptorOpt, methodType, pc, isStatic, isConstructor
             )
@@ -604,8 +608,9 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         actualParams:   Seq[Option[(ValueInformation, IntTrieSet)]], matchers: Traversable[MethodMatcher]
     )(implicit state: State): Unit = {
         MethodMatching.getPossibleMethods(matchers.toSeq).foreach { m ⇒
-            if (m.isConstructor && !state.instantiatedTypesUB.contains(m.classFile.thisType))
+            if (m.isConstructor && !state.instantiatedTypesUB.contains(m.classFile.thisType)) {
                 state.addNewInstantiatedTypes(Iterator(m.classFile.thisType))
+            }
             state.calleesAndCallers.updateWithIndirectCall(
                 caller,
                 declaredMethods(m),
@@ -656,23 +661,22 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                         if (call.name == "getConstructor") {
                             matchers += PublicMethodMatcher
                         }
-
                         matchers += retrieveParameterTypesBasedMethodMatcher(params.head, pc)
-
                         matchers += retrieveClassBasedMethodMatcher(receiver, pc)
 
                     /*
                      * TODO: case ArrayLoad(_, _, arrayRef) ⇒ // here we could handle getConstructors
                      */
 
-                    case _ if highSoundnessMode ⇒
-                        matchers += AllMethodsMatcher
-
                     case _ ⇒
-                        state.calleesAndCallers.addIncompleteCallsite(pc)
-                        matchers += NoMethodsMatcher
+                        if (HighSoundnessMode) {
+                            matchers += AllMethodsMatcher
+                        } else {
+                            state.calleesAndCallers.addIncompleteCallsite(pc)
+                            matchers += NoMethodsMatcher
+                        }
                 }
-            } else if (highSoundnessMode) {
+            } else if (HighSoundnessMode) {
                 matchers += AllMethodsMatcher
             } else {
                 state.calleesAndCallers.addIncompleteCallsite(pc)
@@ -723,16 +727,17 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                         matchers += retrieveClassBasedMethodMatcher(receiver, pc)
 
                     /*case ArrayLoad(_, _, arrayRef) ⇒*/
-                    // todo here we can handle getMethods
-
-                    case _ if highSoundnessMode ⇒
-                        matchers += AllMethodsMatcher
+                    // TODO here we can handle getMethods
 
                     case _ ⇒
-                        state.calleesAndCallers.addIncompleteCallsite(pc)
-                        matchers += NoMethodsMatcher
+                        if (HighSoundnessMode) {
+                            matchers += AllMethodsMatcher
+                        } else {
+                            state.calleesAndCallers.addIncompleteCallsite(pc)
+                            matchers += NoMethodsMatcher
+                        }
                 }
-            } else if (highSoundnessMode) {
+            } else if (HighSoundnessMode) {
                 matchers += AllMethodsMatcher
             } else {
                 state.calleesAndCallers.addIncompleteCallsite(pc)
@@ -762,7 +767,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
             else getParamsFromVararg(invokeParams.head)
 
         methodHandle.asVar.definedBy.foreach { index ⇒
-            // todo here we need to peel of the 1. actual parameter for non static ones
+            // TODO here we need to peel of the 1. actual parameter for non static ones
             var matchers: Set[MethodMatcher] = Set.empty /*Set(
                 retrieveSuitableNonEssentialMatcher[Seq[V]](
                     actualInvokeParamsOpt,
@@ -773,7 +778,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
             if (index >= 0) {
                 val definition = state.tacode.stmts(index).asAssignment.expr
                 if (definition.isMethodHandleConst) {
-                    // todo do we need to distinguish the cases below?
+                    // TODO do we need to distinguish the cases below?
                     definition.asMethodHandleConst.value match {
                         case InvokeStaticMethodHandle(receiver, _, name, desc) ⇒
                             matchers ++= retrieveMatchersForMethodHandleConst(receiver, name, desc, isStatic = true, isConstructor = false)
@@ -785,7 +790,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                             matchers ++= retrieveMatchersForMethodHandleConst(receiver, name, desc, isStatic = false, isConstructor = false)
 
                         case InvokeSpecialMethodHandle(receiver, _, name, desc) ⇒
-                            // todo does this work for super?
+                            // TODO does this work for super?
                             matchers ++= retrieveMatchersForMethodHandleConst(receiver, name, desc, isStatic = false, isConstructor = false)
 
                         case NewInvokeSpecialMethodHandle(receiver, desc) ⇒
@@ -815,7 +820,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                         case VirtualFunctionCall(_, ObjectType.MethodHandles$Lookup, _, "findSpecial", _, _, params) ⇒
                             matchers += NonStaticMethodMatcher
 
-                            // todo we can ignore the 4ths param? Does it work for super calls?
+                            // TODO we can ignore the 4ths param? Does it work for super calls?
                             val Seq(refc, name, methodType, _) = params
                             matchers ++= retrieveMethodHandleLookupMatchers(
                                 refc, name, methodType, descriptor, pc, isStatic = false, isConstructor = false
@@ -836,7 +841,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                         case _ ⇒
                         // getters and setters are not relevant for the call graph
                     }
-                } else if (highSoundnessMode) {
+                } else if (HighSoundnessMode) {
                     if (descriptor.isDefined) {
                         // we do not know, whether the invoked method is static or not
                         // (i.e. whether the first parameter of the descriptor represent the receiver)
@@ -853,8 +858,8 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                     matchers += NoMethodsMatcher
                     state.calleesAndCallers.addIncompleteCallsite(pc)
                 }
-                // todo we should use the descriptor here
-            } else if (highSoundnessMode) {
+                // TODO we should use the descriptor here
+            } else if (HighSoundnessMode) {
                 matchers += AllMethodsMatcher
             } else {
                 matchers += NoMethodsMatcher
@@ -864,7 +869,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
             val persistentActualParams =
                 actualInvokeParamsOpt.map(_.map(persistentUVar)).getOrElse(Seq.empty)
 
-            // todo refactor this handling
+            // TODO refactor this handling
             MethodMatching.getPossibleMethods(matchers.toSeq).foreach { m ⇒
                 if (m.isConstructor && !state.instantiatedTypesUB.contains(m.classFile.thisType))
                     state.addNewInstantiatedTypes(Iterator(m.classFile.thisType))
@@ -872,7 +877,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                     caller,
                     declaredMethods(m),
                     pc,
-                    // todo: is this sufficient?
+                    // TODO: is this sufficient?
                     if (m.isStatic)
                         None +: persistentActualParams
                     else
@@ -895,7 +900,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         Some(value.asVar.definedBy.map[Set[String]] { index ⇒
             if (index >= 0) {
                 val expr = state.tacode.stmts(index).asAssignment.expr
-                // todo we do not want this `getOrElse return` stmts
+                // TODO we do not want this `getOrElse return` stmts
                 expr match {
                     case StringConst(_, v) ⇒ Set(v)
                     case StaticFunctionCall(_, ObjectType.System, _, "getProperty", GetPropertyDescriptor, params) if !onlyStringConsts ⇒
@@ -1305,7 +1310,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                 if (isFinal) None else Some(eps.asInstanceOf[EPS[SomeProject, SystemProperties]])
             // Create new state that reflects changes that may have happened in the meantime
             val (loadedClassesUB, instantiatedTypesUB) = loadedClassesAndInstantiatedTypes()
-            // todo maybe move clearing to returnResult (newLoadedClasses/newInstantiatedTypes)
+            // TODO maybe move clearing to returnResult (newLoadedClasses/newInstantiatedTypes)
             val newState = state.copy(
                 loadedClassesUB = loadedClassesUB,
                 newLoadedClasses = UIDSet.empty,
@@ -1390,7 +1395,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
 
         res ::= calleesResult
 
-        // todo here we should compare to the current loaded classes ub
+        // TODO here we should compare to the current loaded classes ub
         if (state.newLoadedClasses.nonEmpty) {
             res ::= PartialResult[SomeProject, LoadedClasses](project, LoadedClasses.key, {
                 case InterimEUBP(p, ub) ⇒
@@ -1422,23 +1427,27 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
     }
 }
 
+object ReflectionRelatedCallsAnalysis {
+
+    final val ConfigKey = "org.opalj.fpcf.analyses.cg.reflection.ReflectionRelatedCallsAnalysis"
+
+}
+
 object TriggeredReflectionRelatedCallsAnalysis extends BasicFPCFTriggeredAnalysisScheduler {
 
-    override def uses: Set[PropertyBounds] =
-        Set(
-            PropertyBounds.ub(CallersProperty),
-            PropertyBounds.ub(SystemProperties),
-            PropertyBounds.ub(LoadedClasses),
-            PropertyBounds.ub(InstantiatedTypes),
-            PropertyBounds.ub(TACAI)
-        )
+    override def uses: Set[PropertyBounds] = Set(
+        PropertyBounds.ub(CallersProperty),
+        PropertyBounds.ub(SystemProperties),
+        PropertyBounds.ub(LoadedClasses),
+        PropertyBounds.ub(InstantiatedTypes),
+        PropertyBounds.ub(TACAI)
+    )
 
-    override def derivesCollaboratively: Set[PropertyBounds] =
-        Set(
-            PropertyBounds.ub(CallersProperty),
-            PropertyBounds.ub(LoadedClasses),
-            PropertyBounds.ub(InstantiatedTypes)
-        )
+    override def derivesCollaboratively: Set[PropertyBounds] = Set(
+        PropertyBounds.ub(CallersProperty),
+        PropertyBounds.ub(LoadedClasses),
+        PropertyBounds.ub(InstantiatedTypes)
+    )
 
     override def register(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new ReflectionRelatedCallsAnalysis(p)
