@@ -84,6 +84,8 @@ class LocalStringDefinitionAnalysis(
         if (defSites.head < 0) {
             return Result(data, StringConstancyProperty.lowerBound)
         }
+        // expr is used to determine whether we deal with an object and whether the value is a
+        // method parameter (it is fine to use only the head for these operations)
         val expr = stmts(defSites.head).asAssignment.expr
         val pathFinder: AbstractPathFinder = new DefaultPathFinder()
 
