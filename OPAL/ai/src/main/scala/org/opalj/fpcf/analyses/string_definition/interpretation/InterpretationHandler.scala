@@ -82,6 +82,8 @@ class InterpretationHandler(cfg: CFG[Stmt[V], TACStmts[V]]) {
                 new FieldInterpreter(cfg, this).interpret(expr)
             case ExprStmt(_, expr: VirtualFunctionCall[V]) ⇒
                 new VirtualFunctionCallInterpreter(cfg, this).interpret(expr)
+            case ExprStmt(_, expr: StaticFunctionCall[V]) ⇒
+                new StaticFunctionCallInterpreter(cfg, this).interpret(expr)
             case vmc: VirtualMethodCall[V] ⇒
                 new VirtualMethodCallInterpreter(cfg, this).interpret(vmc)
             case nvmc: NonVirtualMethodCall[V] ⇒
