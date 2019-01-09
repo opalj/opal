@@ -98,7 +98,7 @@ object EagerLBMethodReturnValuesAnalysis extends BasicFPCFEagerAnalysisScheduler
 
     override def uses: Set[PropertyBounds] = Set.empty
 
-    def derivedProperty: PropertyBounds = PropertyBounds.lub(MethodReturnValue.key)
+    def derivedProperty: PropertyBounds = PropertyBounds.lb(MethodReturnValue.key)
 
     override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
 
