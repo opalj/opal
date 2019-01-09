@@ -74,8 +74,8 @@ class LocalStringDefinitionAnalysis(
         // sci stores the final StringConstancyInformation (if it can be determined now at all)
         var sci = StringConstancyProperty.lowerBound.stringConstancyInformation
         val tacProvider = p.get(SimpleTACAIKey)
-        val stmts = tacProvider(data._2).stmts
         val cfg = tacProvider(data._2).cfg
+        val stmts = cfg.code.instructions
 
         val uvar = data._1
         val defSites = uvar.definedBy.toArray.sorted
