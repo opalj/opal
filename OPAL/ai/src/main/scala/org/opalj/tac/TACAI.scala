@@ -205,7 +205,7 @@ object TACAI {
         // The list of bytecode instructions which were killed (=>NOP), and for which we now
         // have to clear the usages.
         // basically a mapping from a UseSite(PC) to a DefSite
-        val obsoleteUseSites: RefAppendChain[PCAndAnyRef[IntTrieSet /*DefSites*/ ]] = new RefAppendChain()
+        val obsoleteUseSites = new RefAppendChain[PCAndAnyRef[IntTrieSet /*DefSites*/ ]]
 
         def killOperandBasedUsages(useSitePC: Int, valuesCount: Int): Unit = {
             // The value(s) is (are) not used and the expression is side effect free;
