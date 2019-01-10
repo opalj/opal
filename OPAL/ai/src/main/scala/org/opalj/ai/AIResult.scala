@@ -3,6 +3,7 @@ package org.opalj
 package ai
 
 import scala.annotation.switch
+
 import org.opalj.collection.immutable.{Chain ⇒ List}
 import org.opalj.collection.immutable.{Naught ⇒ Nil}
 import org.opalj.collection.immutable.IntArraySet
@@ -68,9 +69,15 @@ sealed abstract class AIResult {
      * at least once.
      */
     lazy val evaluatedInstructions: BitSet = {
+        /*
         val evaluatedInstructions = FixedSizeBitSet.create(code.instructions.length)
         evaluatedPCs foreach { pc ⇒ if (pc >= 0) evaluatedInstructions += pc }
         evaluatedInstructions
+        */
+        val evaluatedInstructions = FixedSizeBitSet.create(code.instructions.length)
+        evaluatedPCs.foldLeft(evaluatedInstructions) { (evaluatedInstructions, pc) ⇒
+            if (pc >= 0) evaluatedInstructions += pc else evaluatedInstructions
+        }
     }
 
     /** True if and only if a subroutine (JSR) was actually evaluated. */
