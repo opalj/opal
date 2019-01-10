@@ -5,7 +5,6 @@ package info
 
 import java.net.URL
 
-import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.DefaultOneStepAnalysis
@@ -34,7 +33,9 @@ import org.opalj.fpcf.cg.properties.SerializationRelatedCallees
 import org.opalj.fpcf.cg.properties.StandardInvokeCallees
 import org.opalj.fpcf.cg.properties.Callees
 import org.opalj.fpcf.cg.properties.ThreadRelatedIncompleteCallSites
-import org.opalj.tac.fpcf.analyses.TACAITransformer
+//import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
+//import org.opalj.tac.fpcf.analyses.TACAITransformer
+import org.opalj.tac.fpcf.analyses.LazyTACAIProvider
 
 /**
  * Computes a RTA based call graph and reports its size.
@@ -89,8 +90,9 @@ object RTACallGraph extends DefaultOneStepAnalysis {
 
         project.get(FPCFAnalysesManagerKey).runAll(
             List(
-                LazyL0BaseAIAnalysis,
-                TACAITransformer,
+                // LazyL0BaseAIAnalysis,
+                // TACAITransformer,
+                LazyTACAIProvider,
                 /* Call Graph Analyses */
                 RTACallGraphAnalysisScheduler,
                 TriggeredStaticInitializerAnalysis,

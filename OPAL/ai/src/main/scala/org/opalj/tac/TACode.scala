@@ -4,6 +4,7 @@ package tac
 
 import java.util.{Arrays ⇒ JArrays}
 
+import org.opalj.value.ValueInformation
 import org.opalj.br.Attribute
 import org.opalj.br.ExceptionHandlers
 import org.opalj.br.LineNumberTable
@@ -95,6 +96,18 @@ final class TACode[P <: AnyRef, V <: Var[V]](
             JArrays.hashCode(pcToIndex)) * 31 +
             exceptionHandlers.hashCode * 31) +
             lineNumberTable.hashCode * 31
+    }
+
+    /** Detaches the 3-address code from the underlying abstract interpreation result. */
+    def detach(implicit ev: V <:< DUVar[ValueInformation]): TACode[P, DUVar[ValueInformation]] = {
+        new TACode(
+            params,
+            this.stmts.map(_.toCanonicalForm),
+            pcToIndex,
+            cfg.asInstanceOf[CFG[Stmt[DUVar[ValueInformation]], TACStmts[DUVar[ValueInformation]]]],
+            exceptionHandlers,
+            lineNumberTable
+        )
     }
 
     override def toString: String = {
