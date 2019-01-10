@@ -565,7 +565,11 @@ public class TestMethods {
             value = "case with a try-catch-finally throwable",
             stringDefinitions = {
                     @StringDefinitions(
-                            expectedLevel = PARTIALLY_CONSTANT, expectedStrings = "BOS:(\\w|:EOS)"
+                            // Due to early stopping finding paths within DefaultPathFinder, the
+                            // "EOS" can not be found for the first case (the difference to the case
+                            // tryCatchFinally is that a second CatchNode is not present in the
+                            // throwable case)
+                            expectedLevel = PARTIALLY_CONSTANT, expectedStrings = "BOS:(\\w)?"
                     ),
                     @StringDefinitions(
                             expectedLevel = PARTIALLY_CONSTANT, expectedStrings = "BOS:(\\w|:EOS)"

@@ -1,16 +1,16 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.analyses.string_definition.preprocessing
 
-import org.opalj.br.cfg.CatchNode
-import org.opalj.fpcf.analyses.string_definition.V
-import org.opalj.tac.Stmt
-import org.opalj.tac.TACStmts
-import org.opalj.br.cfg.CFG
-import org.opalj.br.cfg.ExitNode
-import org.opalj.collection.mutable.IntArrayStack
-
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
+
+import org.opalj.collection.mutable.IntArrayStack
+import org.opalj.fpcf.analyses.string_definition.V
+import org.opalj.br.cfg.CatchNode
+import org.opalj.br.cfg.CFG
+import org.opalj.br.cfg.ExitNode
+import org.opalj.tac.Stmt
+import org.opalj.tac.TACStmts
 
 /**
  * An approach based on an a naive / intuitive traversing of the control flow graph.
@@ -25,14 +25,16 @@ class DefaultPathFinder extends AbstractPathFinder {
      * predecessors / successors.
      * The paths contain all instructions, not only those that modify a [[StringBuilder]] /
      * [[StringBuffer]] object.
-     * For this implementation, `endSite` is not required, thus passing any value is fine.
+     * For this implementation, `startSites` as well as `endSite` are required!
      *
      * @see [[AbstractPathFinder.findPaths]]
      */
-    override def findPaths(cfg: CFG[Stmt[V], TACStmts[V]]): Path = {
+    override def findPaths(
+        startSites: List[Int], endSite: Int, cfg: CFG[Stmt[V], TACStmts[V]]
+    ): Path = {
         // path will accumulate all paths
         val path = ListBuffer[SubPath]()
-        var stack = IntArrayStack(cfg.startBlock.startPC)
+        var stack = IntArrayStack.fromSeq(startSites.reverse)
         val seenElements = ListBuffer[Int]()
         // For storing the node IDs of all seen catch nodes (they are to be used only once, thus
         // this store)
@@ -46,6 +48,19 @@ class DefaultPathFinder extends AbstractPathFinder {
         // Used to quickly find the element at which to insert a sub path
         val nestedElementsRef = ListBuffer[NestedPathElement]()
         val natLoops = cfg.findNaturalLoops()
+
+        // Multiple start sites => We start within a conditional => Prepare for that
+        if (startSites.size > 1) {
+            val outerNested =
+                generateNestPathElement(startSites.size, NestedPathType.CondWithAlternative)
+            numSplits.append(startSites.size)
+            currSplitIndex.append(0)
+            outerNested.element.reverse.foreach { next ⇒
+                nestedElementsRef.prepend(next.asInstanceOf[NestedPathElement])
+            }
+            nestedElementsRef.append(outerNested)
+            path.append(outerNested)
+        }
 
         while (stack.nonEmpty) {
             val popped = stack.pop()
@@ -75,13 +90,10 @@ class DefaultPathFinder extends AbstractPathFinder {
                     numBackedgesLoop.prepend(bb.predecessors.size - 1)
                     backedgeLoopCounter.prepend(0)
 
-                    val appendLocation = if (nestedElementsRef.nonEmpty)
-                        nestedElementsRef.head.element else path
-
                     val outer = generateNestPathElement(0, NestedPathType.Repetition)
                     outer.element.append(toAppend)
                     nestedElementsRef.prepend(outer)
-                    appendLocation.append(outer)
+                    path.append(outer)
 
                     belongsToLoopHeader = true
                 } // For loop ending, find the top-most loop from the stack and add to that element
@@ -138,9 +150,6 @@ class DefaultPathFinder extends AbstractPathFinder {
             val hasSeenSuccessor = successors.foldLeft(false) {
                 (old: Boolean, next: Int) ⇒ old || seenElements.contains(next)
             }
-            val hasLoopHeaderSuccessor = successors.exists(
-                isHeadOfLoop(_, cfg.findNaturalLoops(), cfg)
-            )
 
             // Clean a loop from the stacks if the end of a loop was reached
             if (loopEndingIndex != -1) {
@@ -156,32 +165,19 @@ class DefaultPathFinder extends AbstractPathFinder {
                 backedgeLoopCounter.remove(0)
             } // For join points of branchings, do some housekeeping (explicitly excluding loops)
             else if (currSplitIndex.nonEmpty &&
-                // The following condition is needed as a loop is not closed when the next statement
-                // still belongs to he loop, i.e., this back-edge is not the last of the loop
-                (!hasLoopHeaderSuccessor || isLoopEnding) &&
                 (hasSuccessorWithAtLeastNPredecessors(bb) || hasSeenSuccessor)) {
                 if (nestedElementsRef.head.elementType.getOrElse(NestedPathType.TryCatchFinally) !=
                     NestedPathType.Repetition) {
                     currSplitIndex(0) += 1
                     if (currSplitIndex.head == numSplits.head) {
-                        nestedElementsRef.remove(0, numSplits.head)
                         numSplits.remove(0)
                         currSplitIndex.remove(0)
-                    }
-                    // It might be that an if(-else) but ALSO a loop needs to be closed here
-                    val hasLoopToClose = nestedElementsRef.nonEmpty &&
-                        nestedElementsRef.head.elementType.isDefined &&
-                        nestedElementsRef.head.elementType.get == NestedPathType.Repetition
-                    if (hasLoopToClose) {
-                        nestedElementsRef.remove(0, 1)
-                        numSplits.remove(0)
-                        currSplitIndex.remove(0)
+                        nestedElementsRef.remove(0)
                     }
                 }
             }
 
-            if ((numSplits.nonEmpty || backedgeLoopCounter.nonEmpty) &&
-                (isLoopHeader || bb.predecessors.size == 1)) {
+            if ((numSplits.nonEmpty || backedgeLoopCounter.nonEmpty) && (bb.predecessors.size == 1)) {
                 // Within a conditional, prepend in order to keep the correct order
                 val newStack = IntArrayStack.fromSeq(stack.reverse)
                 newStack.push(IntArrayStack.fromSeq(successorsToAdd.reverse))
@@ -224,6 +220,11 @@ class DefaultPathFinder extends AbstractPathFinder {
                     nestedElementsRef.prepend(next.asInstanceOf[NestedPathElement])
                 }
                 appendSite.append(outerNested)
+            }
+
+            // We can stop once endSite was processed and there is no more path to endSite
+            if (popped == endSite && !stack.map(doesPathExistTo(_, endSite, cfg)).reduce(_ || _)) {
+                return Path(path.toList)
             }
         }
 

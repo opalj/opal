@@ -84,9 +84,6 @@ class LocalStringDefinitionAnalysis(
         if (defSites.head < 0) {
             return Result(data, StringConstancyProperty.lowerBound)
         }
-        // expr is used to determine whether we deal with an object and whether the value is a
-        // method parameter (it is fine to use only the head for these operations)
-        val expr = stmts(defSites.head).asAssignment.expr
         val pathFinder: AbstractPathFinder = new DefaultPathFinder()
 
         // If not empty, this very routine can only produce an intermediate result
@@ -96,15 +93,15 @@ class LocalStringDefinitionAnalysis(
         // initialize it with null
         var state: ComputationState = null
 
-        if (InterpretationHandler.isStringBuilderBufferToStringCall(expr)) {
+        val call = stmts(defSites.head).asAssignment.expr
+        if (InterpretationHandler.isStringBuilderBufferToStringCall(call)) {
+            val initDefSites = InterpretationHandler.findDefSiteOfInit(uvar, stmts)
             // initDefSites empty => String{Builder,Buffer} from method parameter is to be evaluated
-            if (InterpretationHandler.findDefSiteOfInit(
-                expr.asVirtualFunctionCall, stmts
-            ).isEmpty) {
+            if (initDefSites.isEmpty) {
                 return Result(data, StringConstancyProperty.lowerBound)
             }
 
-            val paths = pathFinder.findPaths(cfg)
+            val paths = pathFinder.findPaths(initDefSites, uvar.definedBy.head, cfg)
             val leanPaths = paths.makeLeanPath(uvar, stmts)
 
             // Find DUVars, that the analysis of the current entity depends on

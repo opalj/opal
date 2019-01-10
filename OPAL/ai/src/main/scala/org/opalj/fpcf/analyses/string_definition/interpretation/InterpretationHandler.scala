@@ -169,17 +169,11 @@ object InterpretationHandler {
     }
 
     /**
-     * Determines the definition site of the initialization of the base object that belongs to a
-     * ''toString'' call.
-     *
-     * @param toString The ''toString'' call of the object for which to get the initialization def
-     *                 site for. Make sure that the object is a subclass of
-     *                 [[AbstractStringBuilder]].
-     * @param stmts A list of statements which will be used to lookup which one the initialization
-     *              is.
-     * @return Returns the definition sites of the base object of the call.
+     * Helper function for [[findDefSiteOfInit]].
      */
-    def findDefSiteOfInit(toString: VirtualFunctionCall[V], stmts: Array[Stmt[V]]): List[Int] = {
+    private def findDefSiteOfInitAcc(
+        toString: VirtualFunctionCall[V], stmts: Array[Stmt[V]]
+    ): List[Int] = {
         // TODO: Check that we deal with an instance of AbstractStringBuilder
         if (toString.name != "toString") {
             return List()
@@ -202,6 +196,24 @@ object InterpretationHandler {
         }
 
         defSites.sorted.toList
+    }
+
+    /**
+     * Determines the definition sites of the initializations of the base object of `duvar`. This
+     * function assumes that the definition sites refer to `toString` calls.
+     *
+     * @param duvar The `DUVar` to get the initializations of the base object for.
+     * @param stmts The search context for finding the relevant information.
+     * @return Returns the definition sites of the base object.
+     */
+    def findDefSiteOfInit(duvar: V, stmts: Array[Stmt[V]]): List[Int] = {
+        val defSites = ListBuffer[Int]()
+        duvar.definedBy.foreach { ds ⇒
+            defSites.appendAll(
+                findDefSiteOfInitAcc(stmts(ds).asAssignment.expr.asVirtualFunctionCall, stmts)
+            )
+        }
+        defSites.distinct.sorted.toList
     }
 
     /**
