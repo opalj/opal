@@ -118,8 +118,12 @@ object TACAI {
         optimizations: List[TACOptimization[TACMethodParameter, DUVar[aiResult.domain.DomainValue]]]
     ): TACode[TACMethodParameter, DUVar[aiResult.domain.DomainValue]] = {
 
+        val domain: aiResult.domain.type = aiResult.domain
+        val operandsArray: aiResult.domain.OperandsArray = aiResult.operandsArray
+        val localsArray: aiResult.domain.LocalsArray = aiResult.localsArray
+
         def allDead(fromPC: Int, untilPC: Int): Boolean = {
-            val a = aiResult.operandsArray
+            val a = operandsArray
             var i = fromPC
             while (i < untilPC) {
                 if (a(i) ne null) return false;
@@ -134,15 +138,13 @@ object TACAI {
 
         val isStatic = method.isStatic
         val descriptor = method.descriptor
-        val domain: aiResult.domain.type = aiResult.domain
         val code = method.body.get
         import code.pcOfNextInstruction
         val instructions: Array[Instruction] = code.instructions
         val codeSize: Int = instructions.length
         val cfg: CFG[Instruction, Code] = domain.bbCFG
-        def wasExecuted(pc: Int) = cfg.bb(pc) != null
-        val operandsArray: aiResult.domain.OperandsArray = aiResult.operandsArray
-        val localsArray: aiResult.domain.LocalsArray = aiResult.localsArray
+
+        def wasExecuted(pc: Int) = operandsArray(pc) != null
 
         // We already have the def-use information directly available, hence, for
         // instructions such as swap and dup, which do not create "relevant"
