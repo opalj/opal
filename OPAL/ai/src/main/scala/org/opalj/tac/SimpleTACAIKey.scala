@@ -54,6 +54,10 @@ object SimpleTACAIKey extends TACAIKey {
             // well... the following cast safe is safe, because the underlying
             // datastructure is actually, conceptually immutable
             val taCode = code.asInstanceOf[TACode[TACMethodParameter, DUVar[ValueInformation]]]
+            val stmts = taCode.stmts
+            org.opalj.control.foreachWithIndex(taCode.stmts) { (stmt, index) ⇒
+                stmts(index) = stmts(index).toCanonicalForm
+            }
             taCodes.put(m, taCode)
             taCode
         }

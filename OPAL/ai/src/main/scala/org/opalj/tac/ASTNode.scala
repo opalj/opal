@@ -2,6 +2,8 @@
 package org.opalj
 package tac
 
+import org.opalj.value.ValueInformation
+
 /**
  * Defines nodes used by statements and expressions.
  *
@@ -38,5 +40,12 @@ trait ASTNode[+V <: Var[V]] {
      *        wasting some CPU cycles if it is not executed.
      */
     def isSideEffectFree: Boolean
+
+    /** See [[org.opalj.value.ValueInformation.toCanonicalForm]] for detail. */
+    def toCanonicalForm(
+        implicit
+        ev: V <:< DUVar[ValueInformation]
+    ): ASTNode[DUVar[ValueInformation]]
+
 }
 
