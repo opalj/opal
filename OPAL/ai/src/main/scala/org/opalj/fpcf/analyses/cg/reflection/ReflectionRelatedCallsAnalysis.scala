@@ -75,10 +75,17 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
             project.config.getBoolean(ConfigKey)
         } catch {
             case t: Throwable ⇒
-                error("reflection analysis", s"couldn't read: $ConfigKey", t)
+                error(
+                    "analysis configuration - reflection analysis",
+                     s"couldn't read: $ConfigKey", 
+                     t
+                     )
                 false
         }
-        info("reflection analysis", if (activated) "high soundness mode" else "standard mode")
+        info(
+            "analysis configuration",
+            "reflection analysis uses "+ (if (activated) "high soundness mode" else "standard mode")
+            )
         activated
     }
 
@@ -1429,7 +1436,9 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
 
 object ReflectionRelatedCallsAnalysis {
 
-    final val ConfigKey = "org.opalj.fpcf.analyses.cg.reflection.ReflectionRelatedCallsAnalysis"
+    final val ConfigKey = {
+        "org.opalj.fpcf.analyses.cg.reflection.ReflectionRelatedCallsAnalysis.highSoundness"
+    }
 
 }
 
