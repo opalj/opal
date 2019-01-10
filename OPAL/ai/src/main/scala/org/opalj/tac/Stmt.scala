@@ -878,7 +878,7 @@ case class CaughtException[+V <: Var[V]](
         pc:                        Int,
         exceptionType:             Option[ObjectType],
         private var throwingStmts: IntTrieSet
-) extends Stmt[V] { // TODO Why isn't it "Nothing"?
+) extends Stmt[V] {
 
     final override def asCaughtException: CaughtException[V] = this
     final override def astID: Int = CaughtException.ASTID
