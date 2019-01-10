@@ -75,6 +75,11 @@ trait Expr[+V <: Var[V]] extends ASTNode[V] {
         isIndexOfCaughtExceptionStmt: Int ⇒ Boolean
     ): Unit = {}
 
+    override def toCanonicalForm(
+        implicit
+        ev: V <:< DUVar[ValueInformation]
+    ): Expr[DUVar[ValueInformation]]
+
     // TYPE CAST (RELATED) EXPRESSIONS
 
     /** `true` if ''this'' expression is a [[Var]]. */
@@ -151,6 +156,13 @@ case class InstanceOf[+V <: Var[V]](pc: PC, value: Expr[V], cmpTpe: ReferenceTyp
         value.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt)
     }
 
+    override def toCanonicalForm(
+        implicit
+        ev: V <:< DUVar[ValueInformation]
+    ): Expr[DUVar[ValueInformation]] = {
+        InstanceOf(pc, value.toCanonicalForm, cmpTpe)
+    }
+
     override def toString: String = s"InstanceOf(pc=$pc,$value,${cmpTpe.toJava})"
 
 }
@@ -184,6 +196,13 @@ case class Compare[+V <: Var[V]](
         right.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt)
     }
 
+    override def toCanonicalForm(
+        implicit
+        ev: V <:< DUVar[ValueInformation]
+    ): Expr[DUVar[ValueInformation]] = {
+        Compare(pc, left.toCanonicalForm, condition, right.toCanonicalForm)
+    }
+
     override def toString: String = s"Compare(pc=$pc,$left,$condition,$right)"
 }
 object Compare { final val ASTID = -4 }
@@ -197,13 +216,23 @@ trait ValueExpr[+V <: Var[V]] extends Expr[V] {
     final override def forallSubExpressions[W >: V <: Var[W]](p: Expr[W] ⇒ Boolean): Boolean = true
 }
 
+trait NoVariableExpr extends ValueExpr[Nothing] {
+
+    final override def toCanonicalForm(
+        implicit
+        ev: Nothing <:< DUVar[ValueInformation]
+    ): Expr[DUVar[ValueInformation]] = {
+        this
+    }
+}
+
 /**
  * Explicit initialization of a parameter. Parameter statements '''are only used by the naive
  * representation ([[TACNaive]])''' where it is necessary to perform an initial initialization
  * of the register values. In case of [[TACAI]], usage of parameters are implicitly encoded using
  * parameter origins (see [[DUVar]]).
  */
-case class Param(cTpe: ComputationalType, name: String) extends ValueExpr[Nothing] {
+case class Param(cTpe: ComputationalType, name: String) extends NoVariableExpr {
     final override def asParam: this.type = this
     final override def astID: Int = Param.ASTID
     final override def isVar: Boolean = false
@@ -215,7 +244,7 @@ object Param { final val ASTID = -1 }
 /**
  * A constant value expression.
  */
-sealed abstract class Const extends ValueExpr[Nothing] {
+sealed abstract class Const extends NoVariableExpr {
     final override def isConst: Boolean = true
     final override def isVar: Boolean = false
     final override def isSideEffectFree: Boolean = true
@@ -350,6 +379,13 @@ case class BinaryExpr[+V <: Var[V]](
         right.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt)
     }
 
+    override def toCanonicalForm(
+        implicit
+        ev: V <:< DUVar[ValueInformation]
+    ): Expr[DUVar[ValueInformation]] = {
+        BinaryExpr(pc, cTpe, op, left.toCanonicalForm, right.toCanonicalForm)
+    }
+
     override def toString: String = s"BinaryExpr(pc=$pc,$cTpe,$left,$op,$right)"
 }
 object BinaryExpr { final val ASTID = -14 }
@@ -380,6 +416,12 @@ case class PrefixExpr[+V <: Var[V]](
         operand.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt)
     }
 
+    override def toCanonicalForm(
+        implicit
+        ev: V <:< DUVar[ValueInformation]
+    ): Expr[DUVar[ValueInformation]] = {
+        PrefixExpr(pc, cTpe, op, operand.toCanonicalForm)
+    }
     override def toString: String = s"PrefixExpr(pc=$pc,$cTpe,$op,$operand)"
 }
 object PrefixExpr { final val ASTID = -15 }
@@ -407,6 +449,13 @@ case class PrimitiveTypecastExpr[+V <: Var[V]](
         operand.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt)
     }
 
+    override def toCanonicalForm(
+        implicit
+        ev: V <:< DUVar[ValueInformation]
+    ): Expr[DUVar[ValueInformation]] = {
+        PrimitiveTypecastExpr(pc, targetTpe, operand.toCanonicalForm)
+    }
+
     override def toString: String = s"PrimitiveTypecastExpr(pc=$pc,$targetTpe,$operand)"
 }
 object PrimitiveTypecastExpr { final val ASTID = -16 }
@@ -432,6 +481,13 @@ case class New(pc: PC, tpe: ObjectType) extends Expr[Nothing] {
      * Returns `false` because an `OutOfMemoryError` may be thrown.
      */
     final override def isSideEffectFree: Boolean = false
+
+    final override def toCanonicalForm(
+        implicit
+        ev: Nothing <:< DUVar[ValueInformation]
+    ): Expr[DUVar[ValueInformation]] = {
+        this
+    }
 
     override def toString: String = s"New(pc=$pc,${tpe.toJava})"
 }
@@ -472,6 +528,13 @@ case class NewArray[+V <: Var[V]](pc: PC, counts: Seq[Expr[V]], tpe: ArrayType) 
         counts.foreach { c ⇒ c.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt) }
     }
 
+    override def toCanonicalForm(
+        implicit
+        ev: V <:< DUVar[ValueInformation]
+    ): Expr[DUVar[ValueInformation]] = {
+        NewArray(pc, counts.map(_.toCanonicalForm), tpe)
+    }
+
     override def toString: String = {
         s"NewArray(pc=$pc,${counts.mkString("[", ",", "]")},${tpe.toJava})"
     }
@@ -496,6 +559,13 @@ case class ArrayLoad[+V <: Var[V]](pc: PC, index: Expr[V], arrayRef: Expr[V]) ex
         arrayRef.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt)
     }
 
+    override def toCanonicalForm(
+        implicit
+        ev: V <:< DUVar[ValueInformation]
+    ): Expr[DUVar[ValueInformation]] = {
+        ArrayLoad(pc, index.toCanonicalForm, arrayRef.toCanonicalForm)
+    }
+
     override def toString: String = s"ArrayLoad(pc=$pc,$index,$arrayRef)"
 }
 object ArrayLoad { final val ASTID = -19 }
@@ -515,6 +585,13 @@ case class ArrayLength[+V <: Var[V]](pc: PC, arrayRef: Expr[V]) extends ArrayExp
         isIndexOfCaughtExceptionStmt: Int ⇒ Boolean
     ): Unit = {
         arrayRef.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt)
+    }
+
+    override def toCanonicalForm(
+        implicit
+        ev: V <:< DUVar[ValueInformation]
+    ): Expr[DUVar[ValueInformation]] = {
+        ArrayLength(pc, arrayRef.toCanonicalForm)
     }
 
     override def toString: String = s"ArrayLength(pc=$pc,$arrayRef)"
@@ -578,6 +655,13 @@ case class GetField[+V <: Var[V]](
             name.hashCode
     }
 
+    override def toCanonicalForm(
+        implicit
+        ev: V <:< DUVar[ValueInformation]
+    ): Expr[DUVar[ValueInformation]] = {
+        GetField(pc, declaringClass, name, declaredFieldType, objRef.toCanonicalForm)
+    }
+
     override def toString: String = {
         s"GetField(pc=$pc,${declaringClass.toJava},$name,${declaredFieldType.toJava},$objRef)"
     }
@@ -598,6 +682,13 @@ case class GetStatic(
     final override def subExprCount: Int = 0
     final override def subExpr(index: Int): Nothing = throw new IndexOutOfBoundsException();
     final override def forallSubExpressions[W >: Nothing <: Var[W]](p: Expr[W] ⇒ Boolean): Boolean = true
+
+    override def toCanonicalForm(
+        implicit
+        ev: Nothing <:< DUVar[ValueInformation]
+    ): Expr[DUVar[ValueInformation]] = {
+        this
+    }
 
     override def hashCode(): Int = {
         ((GetStatic.ASTID * 1171 +
@@ -644,6 +735,13 @@ case class InvokedynamicFunctionCall[+V <: Var[V]](
         isIndexOfCaughtExceptionStmt: Int ⇒ Boolean
     ): Unit = {
         params.foreach { p ⇒ p.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt) }
+    }
+
+    override def toCanonicalForm(
+        implicit
+        ev: V <:< DUVar[ValueInformation]
+    ): Expr[DUVar[ValueInformation]] = {
+        InvokedynamicFunctionCall(pc, bootstrapMethod, name, descriptor, params.map(_.toCanonicalForm))
     }
 
     override def hashCode(): Int = {
@@ -741,6 +839,21 @@ case class NonVirtualFunctionCall[+V <: Var[V]](
         params foreach { p ⇒ p.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt) }
     }
 
+    override def toCanonicalForm(
+        implicit
+        ev: V <:< DUVar[ValueInformation]
+    ): Expr[DUVar[ValueInformation]] = {
+        NonVirtualFunctionCall(
+            pc,
+            declaringClass,
+            isInterface,
+            name,
+            descriptor,
+            receiver.toCanonicalForm,
+            params.map(_.toCanonicalForm)
+        )
+    }
+
     override def hashCode(): Int = {
         (((NonVirtualFunctionCall.ASTID * 1171 +
             pc) * 31 +
@@ -780,6 +893,21 @@ case class VirtualFunctionCall[+V <: Var[V]](
     ): Unit = {
         receiver.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt)
         params.foreach { p ⇒ p.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt) }
+    }
+
+    override def toCanonicalForm(
+        implicit
+        ev: V <:< DUVar[ValueInformation]
+    ): Expr[DUVar[ValueInformation]] = {
+        VirtualFunctionCall(
+            pc,
+            declaringClass,
+            isInterface,
+            name,
+            descriptor,
+            receiver.toCanonicalForm,
+            params.map(_.toCanonicalForm)
+        )
     }
 
     override def hashCode(): Int = {
@@ -845,6 +973,20 @@ case class StaticFunctionCall[+V <: Var[V]](
         isIndexOfCaughtExceptionStmt: Int ⇒ Boolean
     ): Unit = {
         params.foreach { p ⇒ p.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt) }
+    }
+
+    override def toCanonicalForm(
+        implicit
+        ev: V <:< DUVar[ValueInformation]
+    ): Expr[DUVar[ValueInformation]] = {
+        StaticFunctionCall(
+            pc,
+            declaringClass,
+            isInterface,
+            name,
+            descriptor,
+            params.map(_.toCanonicalForm)
+        )
     }
 
     override def hashCode(): Int = {

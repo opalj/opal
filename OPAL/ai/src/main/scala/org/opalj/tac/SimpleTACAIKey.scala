@@ -54,6 +54,7 @@ object SimpleTACAIKey extends TACAIKey {
             // well... the following cast safe is safe, because the underlying
             // datastructure is actually, conceptually immutable
             val taCode = code.asInstanceOf[TACode[TACMethodParameter, DUVar[ValueInformation]]]
+            taCode.detach
             taCodes.put(m, taCode)
             taCode
         }

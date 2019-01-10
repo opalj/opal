@@ -42,6 +42,11 @@ sealed abstract class Stmt[+V <: Var[V]] extends ASTNode[V] {
         isIndexOfCaughtExceptionStmt: Int ⇒ Boolean
     ): Unit
 
+    override def toCanonicalForm(
+        implicit
+        ev: V <:< DUVar[ValueInformation]
+    ): Stmt[DUVar[ValueInformation]]
+
     // TYPE CONVERSION METHODS
 
     def asIf: If[V] = throw new ClassCastException();
@@ -113,6 +118,13 @@ case class If[+V <: Var[V]](
         target = pcToIndex(target)
     }
 
+    final override def toCanonicalForm(
+        implicit
+        ev: V <:< DUVar[ValueInformation]
+    ): Stmt[DUVar[ValueInformation]] = {
+        If(pc, left.toCanonicalForm, condition, right.toCanonicalForm, target)
+    }
+
     final override def isSideEffectFree: Boolean = {
         assert(left.isValueExpression && right.isValueExpression)
         true
@@ -125,12 +137,23 @@ object If {
     final val ASTID = 0
 }
 
+trait VariableFreeStmt extends Stmt[Nothing] {
+
+    final override def toCanonicalForm(
+        implicit
+        ev: Nothing <:< DUVar[ValueInformation]
+    ): Stmt[DUVar[ValueInformation]] = {
+        this
+    }
+
+}
+
 /**
  * @param target First the `pc` (absolute) of the target instruction in the
  *          original bytecode array; then the index of the respective quadruples
  *          instruction.
  */
-case class Goto(pc: PC, private var target: Int) extends Stmt[Nothing] {
+case class Goto(pc: PC, private var target: Int) extends VariableFreeStmt {
 
     final override def asGoto: this.type = this
     final override def astID: Int = Goto.ASTID
@@ -168,7 +191,7 @@ object Goto {
  *                        '''This information is only relevant in case of flow-sensitive
  *                        analyses.'''
  */
-case class Ret(pc: PC, private var returnAddresses: PCs) extends Stmt[Nothing] {
+case class Ret(pc: PC, private var returnAddresses: PCs) extends VariableFreeStmt {
 
     final override def asRet: this.type = this
     final override def astID: Int = Ret.ASTID
@@ -202,7 +225,7 @@ object Ret {
  *          original bytecode array; then the index of the respective quadruples
  *          instruction.
  */
-case class JSR(pc: PC, private[tac] var target: Int) extends Stmt[Nothing] {
+case class JSR(pc: PC, private[tac] var target: Int) extends VariableFreeStmt {
 
     final override def asJSR: this.type = this
     final override def astID: Int = JSR.ASTID
@@ -263,6 +286,13 @@ case class Switch[+V <: Var[V]](
         index.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt)
     }
 
+    final override def toCanonicalForm(
+        implicit
+        ev: V <:< DUVar[ValueInformation]
+    ): Stmt[DUVar[ValueInformation]] = {
+        Switch(pc, defaultTarget, index.toCanonicalForm, npairs)
+    }
+
     final override def isSideEffectFree: Boolean = {
         assert(index.isValueExpression)
         true
@@ -301,6 +331,13 @@ case class Assignment[+V <: Var[V]](pc: Int, targetVar: V, expr: Expr[V]) extend
         expr.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt)
     }
 
+    final override def toCanonicalForm(
+        implicit
+        ev: V <:< DUVar[ValueInformation]
+    ): Stmt[DUVar[ValueInformation]] = {
+        Assignment(pc, ev(targetVar).toCanonicalForm, expr.toCanonicalForm)
+    }
+
     final override def isSideEffectFree: Boolean = expr.isSideEffectFree
 
     override def hashCode(): Opcode = (Assignment.ASTID * 1171 + pc) * 31 + expr.hashCode
@@ -327,6 +364,13 @@ case class ReturnValue[+V <: Var[V]](pc: Int, expr: Expr[V]) extends Stmt[V] {
         expr.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt)
     }
 
+    final override def toCanonicalForm(
+        implicit
+        ev: V <:< DUVar[ValueInformation]
+    ): Stmt[DUVar[ValueInformation]] = {
+        ReturnValue(pc, expr.toCanonicalForm)
+    }
+
     final override def isSideEffectFree: Boolean = {
         // IMPROVE Check if the method does call synchronization statements; if so we may get an exception when we return from the method; otherwise the method is side-effect free
         false
@@ -338,7 +382,7 @@ object ReturnValue {
     final val ASTID = 6
 }
 
-sealed abstract class SimpleStmt extends Stmt[Nothing] {
+sealed abstract class SimpleStmt extends VariableFreeStmt {
 
     /**
      * Nothing to do.
@@ -393,6 +437,7 @@ sealed abstract class SynchronizationStmt[+V <: Var[V]] extends Stmt[V] {
     ): Unit = {
         objRef.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt)
     }
+
 }
 
 case class MonitorEnter[+V <: Var[V]](pc: PC, objRef: Expr[V]) extends SynchronizationStmt[V] {
@@ -406,6 +451,13 @@ case class MonitorEnter[+V <: Var[V]](pc: PC, objRef: Expr[V]) extends Synchroni
     final override def isSideEffectFree: Boolean = {
         // IMPROVE Is the lock as such ever used (do we potentially have concurrency)?
         false
+    }
+
+    final override def toCanonicalForm(
+        implicit
+        ev: V <:< DUVar[ValueInformation]
+    ): Stmt[DUVar[ValueInformation]] = {
+        MonitorEnter(pc, objRef.toCanonicalForm)
     }
 
     override def toString: String = s"MonitorEnter(pc=$pc,$objRef)"
@@ -425,6 +477,13 @@ case class MonitorExit[+V <: Var[V]](pc: PC, objRef: Expr[V]) extends Synchroniz
     final override def isSideEffectFree: Boolean = {
         // IMPROVE Is the lock as such ever used (do we potentially have concurrency)?
         false
+    }
+
+    final override def toCanonicalForm(
+        implicit
+        ev: V <:< DUVar[ValueInformation]
+    ): Stmt[DUVar[ValueInformation]] = {
+        MonitorExit(pc, objRef.toCanonicalForm)
     }
 
     override def toString: String = s"MonitorExit(pc=$pc,$objRef)"
@@ -461,6 +520,13 @@ case class ArrayStore[+V <: Var[V]](
         value.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt)
     }
 
+    final override def toCanonicalForm(
+        implicit
+        ev: V <:< DUVar[ValueInformation]
+    ): Stmt[DUVar[ValueInformation]] = {
+        ArrayStore(pc, arrayRef.toCanonicalForm, index.toCanonicalForm, value.toCanonicalForm)
+    }
+
     override def toString: String = s"ArrayStore(pc=$pc,$arrayRef,$index,$value)"
 }
 object ArrayStore {
@@ -480,6 +546,13 @@ case class Throw[+V <: Var[V]](pc: Int, exception: Expr[V]) extends Stmt[V] {
         isIndexOfCaughtExceptionStmt: Int ⇒ Boolean
     ): Unit = {
         exception.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt)
+    }
+
+    final override def toCanonicalForm(
+        implicit
+        ev: V <:< DUVar[ValueInformation]
+    ): Stmt[DUVar[ValueInformation]] = {
+        Throw(pc, exception.toCanonicalForm)
     }
 
     final override def isSideEffectFree: Boolean = false
@@ -529,6 +602,13 @@ case class PutStatic[+V <: Var[V]](
         value.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt)
     }
 
+    final override def toCanonicalForm(
+        implicit
+        ev: V <:< DUVar[ValueInformation]
+    ): Stmt[DUVar[ValueInformation]] = {
+        PutStatic(pc, declaringClass, name, declaredFieldType, value.toCanonicalForm)
+    }
+
     final override def isSideEffectFree: Boolean = {
         // IMPROVE Is it a redundant write?
         false
@@ -567,6 +647,15 @@ case class PutField[+V <: Var[V]](
     ): Unit = {
         objRef.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt)
         value.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt)
+    }
+
+    final override def toCanonicalForm(
+        implicit
+        ev: V <:< DUVar[ValueInformation]
+    ): Stmt[DUVar[ValueInformation]] = {
+        val newObjRef = objRef.toCanonicalForm
+        val newValue = value.toCanonicalForm
+        PutField(pc, declaringClass, name, declaredFieldType, newObjRef, newValue)
     }
 
     final override def isSideEffectFree: Boolean = {
@@ -662,6 +751,21 @@ case class NonVirtualMethodCall[+V <: Var[V]](
         resolveCallTarget(callingContext)(p).toSet
     }
 
+    final override def toCanonicalForm(
+        implicit
+        ev: V <:< DUVar[ValueInformation]
+    ): Stmt[DUVar[ValueInformation]] = {
+        NonVirtualMethodCall(
+            pc,
+            declaringClass,
+            isInterface,
+            name,
+            descriptor,
+            receiver.toCanonicalForm,
+            params.map(_.toCanonicalForm)
+        )
+    }
+
     override def toString: String = {
         val sig = descriptor.toJava(name)
         val declClass = declaringClass.toJava
@@ -686,6 +790,21 @@ case class VirtualMethodCall[+V <: Var[V]](
 
     final override def asVirtualMethodCall: this.type = this
     final override def astID: Int = VirtualMethodCall.ASTID
+
+    final override def toCanonicalForm(
+        implicit
+        ev: V <:< DUVar[ValueInformation]
+    ): Stmt[DUVar[ValueInformation]] = {
+        VirtualMethodCall(
+            pc,
+            declaringClass,
+            isInterface,
+            name,
+            descriptor,
+            receiver.toCanonicalForm,
+            params.map(_.toCanonicalForm)
+        )
+    }
 
     override def toString: String = {
         val sig = descriptor.toJava(name)
@@ -743,6 +862,20 @@ case class StaticMethodCall[+V <: Var[V]](
         params.foreach { p ⇒ p.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt) }
     }
 
+    final override def toCanonicalForm(
+        implicit
+        ev: V <:< DUVar[ValueInformation]
+    ): Stmt[DUVar[ValueInformation]] = {
+        StaticMethodCall(
+            pc,
+            declaringClass,
+            isInterface,
+            name,
+            descriptor,
+            params.map(_.toCanonicalForm)
+        )
+    }
+
     override def toString: String = {
         val sig = descriptor.toJava(name)
         val declClass = declaringClass.toJava
@@ -791,6 +924,19 @@ case class InvokedynamicMethodCall[+V <: Var[V]](
             descriptor.hashCode
     }
 
+    final override def toCanonicalForm(
+        implicit
+        ev: V <:< DUVar[ValueInformation]
+    ): Stmt[DUVar[ValueInformation]] = {
+        InvokedynamicMethodCall(
+            pc,
+            bootstrapMethod,
+            name,
+            descriptor,
+            params.map(_.toCanonicalForm)
+        )
+    }
+
     override def toString: String = {
         val sig = descriptor.toJava(name)
         val params = this.params.mkString("(", ",", ")")
@@ -824,6 +970,13 @@ case class ExprStmt[+V <: Var[V]](pc: Int, expr: Expr[V]) extends Stmt[V] {
     }
 
     override def hashCode(): Opcode = (ExprStmt.ASTID * 1171 + pc) * 31 + expr.hashCode
+
+    final override def toCanonicalForm(
+        implicit
+        ev: V <:< DUVar[ValueInformation]
+    ): Stmt[DUVar[ValueInformation]] = {
+        ExprStmt(pc, expr.toCanonicalForm)
+    }
 
     override def toString: String = s"ExprStmt(pc=$pc,$expr)"
 
@@ -887,7 +1040,7 @@ case class CaughtException[+V <: Var[V]](
         pc:                        Int,
         exceptionType:             Option[ObjectType],
         private var throwingStmts: IntTrieSet
-) extends Stmt[V] { // TODO Why isn't it "Nothing"?
+) extends Stmt[V] {
 
     final override def asCaughtException: CaughtException[V] = this
     final override def astID: Int = CaughtException.ASTID
@@ -900,6 +1053,13 @@ case class CaughtException[+V <: Var[V]](
         isIndexOfCaughtExceptionStmt: Int ⇒ Boolean
     ): Unit = {
         throwingStmts = throwingStmts map { pc ⇒ ai.remapPC(pcToIndex)(pc) }
+    }
+
+    final override def toCanonicalForm(
+        implicit
+        ev: V <:< DUVar[ValueInformation]
+    ): Stmt[DUVar[ValueInformation]] = {
+        this.asInstanceOf[Stmt[DUVar[ValueInformation]]]
     }
 
     /**
@@ -966,6 +1126,13 @@ case class Checkcast[+V <: Var[V]](pc: PC, value: Expr[V], cmpTpe: ReferenceType
         isIndexOfCaughtExceptionStmt: Int ⇒ Boolean
     ): Unit = {
         value.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt)
+    }
+
+    final override def toCanonicalForm(
+        implicit
+        ev: V <:< DUVar[ValueInformation]
+    ): Stmt[DUVar[ValueInformation]] = {
+        Checkcast(pc, value.toCanonicalForm, cmpTpe)
     }
 
     final override def isSideEffectFree: Boolean = {

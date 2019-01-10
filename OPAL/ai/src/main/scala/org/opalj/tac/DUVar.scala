@@ -45,6 +45,11 @@ abstract class DUVar[+Value <: ValueInformation] extends Var[DUVar[Value]] {
      */
     def definedBy: IntTrieSet
 
+    override def toCanonicalForm(
+        implicit
+        ev: DUVar[Value] <:< DUVar[ValueInformation]
+    ): DUVar[ValueInformation]
+
 }
 
 object DUVar {
@@ -154,6 +159,13 @@ class DVar[+Value <: ValueInformation /*org.opalj.ai.ValuesDomain#DomainValue*/ 
         }
     }
 
+    override def toCanonicalForm(
+        implicit
+        ev: DUVar[Value] <:< DUVar[ValueInformation]
+    ): DVar[ValueInformation] = {
+        new DVar(origin, value.toCanonicalForm, useSites)
+    }
+
     override def hashCode(): Int = Var.ASTID * 1171 - 13 + origin
 
     override def toString: String = {
@@ -233,6 +245,13 @@ class UVar[+Value <: ValueInformation /*org.opalj.ai.ValuesDomain#DomainValue*/ 
             else
                 defSite /* <= it is referencing a parameter */
         }
+    }
+
+    override def toCanonicalForm(
+        implicit
+        ev: DUVar[Value] <:< DUVar[ValueInformation]
+    ): UVar[ValueInformation] = {
+        new UVar(value.toCanonicalForm, defSites)
     }
 
     override def hashCode(): Int = Var.ASTID * 1171 - 113 + defSites.hashCode

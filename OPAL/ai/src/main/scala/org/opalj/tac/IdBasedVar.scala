@@ -2,6 +2,7 @@
 package org.opalj
 package tac
 
+import org.opalj.value.ValueInformation
 import org.opalj.br._
 
 /**
@@ -39,6 +40,13 @@ sealed trait IdBasedVar extends Var[IdBasedVar] {
      * This operation is not supported for local variables!
      */
     def updated(cTpe: ComputationalType): SimpleVar = { new SimpleVar(id, cTpe) }
+
+    def toCanonicalForm(implicit ev: IdBasedVar <:< DUVar[ValueInformation]): Nothing = {
+        throw new IncompatibleClassChangeError(
+            "IdBasedVar objects are not expected to inherit from DUVar"
+        )
+    }
+
 }
 
 /**
