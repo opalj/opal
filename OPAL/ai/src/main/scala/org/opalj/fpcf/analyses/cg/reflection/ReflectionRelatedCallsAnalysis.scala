@@ -77,15 +77,15 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
             case t: Throwable ⇒
                 error(
                     "analysis configuration - reflection analysis",
-                     s"couldn't read: $ConfigKey", 
-                     t
-                     )
+                    s"couldn't read: $ConfigKey",
+                    t
+                )
                 false
         }
         info(
             "analysis configuration",
-            "reflection analysis uses "+ (if (activated) "high soundness mode" else "standard mode")
-            )
+            "reflection analysis uses "+(if (activated) "high soundness mode" else "standard mode")
+        )
         activated
     }
 
