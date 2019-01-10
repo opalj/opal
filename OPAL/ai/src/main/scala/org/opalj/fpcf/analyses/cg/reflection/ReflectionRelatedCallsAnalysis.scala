@@ -69,8 +69,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
 ) extends FPCFAnalysis {
 
     private[this] val configKey =
-        "org.opalj.fpcf.analyses.cg.reflection.ReflectionRelatedCallsAnalysis"
-
+        "org.opalj.fpcf.analyses.cg.reflection.ReflectionRelatedCallsAnalysis.highsoundness"
 
     private[this] val highSoundnessMode = try {
         val v = project.config.getBoolean(configKey)
