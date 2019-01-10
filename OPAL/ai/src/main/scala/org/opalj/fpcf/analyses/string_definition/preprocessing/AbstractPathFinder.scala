@@ -118,7 +118,7 @@ trait AbstractPathFinder {
      *         other successors. If this is the case, the branching corresponds to one without an
      *         ''else'' branch.
      */
-    def isCondWithoutElse(branchingSite: Int, cfg: CFG[Stmt[V], TACStmts[V]]): Boolean = {
+    protected def isCondWithoutElse(branchingSite: Int, cfg: CFG[Stmt[V], TACStmts[V]]): Boolean = {
         val successorBlocks = cfg.bb(branchingSite).successors
         // CatchNode exists => Regard it as conditional without alternative
         if (successorBlocks.exists(_.isInstanceOf[CatchNode])) {
@@ -149,13 +149,61 @@ trait AbstractPathFinder {
     }
 
     /**
-     * Implementations of this function find all paths, starting from the start node of the given
-     * `cfg`, within the provided control flow graph, `cfg`. As this is executed within the
+     * Based on the given `cfg`, this function checks whether a path from node `from` to node `to`
+     * exists. If so, `true` is returned and `false otherwise`.
+     */
+    protected def doesPathExistTo(from: Int, to: Int, cfg: CFG[Stmt[V], TACStmts[V]]): Boolean = {
+        val stack = mutable.Stack(from)
+        val seenNodes = mutable.Map[Int, Unit]()
+        seenNodes(from) = Unit
+
+        while (stack.nonEmpty) {
+            val popped = stack.pop()
+            cfg.bb(popped).successors.foreach { nextBlock ⇒
+                // -1 is okay, as this value will not be processed (due to the flag processBlock)
+                var startPC, endPC = -1
+                var processBlock = true
+                nextBlock match {
+                    case bb: BasicBlock ⇒
+                        startPC = bb.startPC; endPC = bb.endPC
+                    case cn: CatchNode ⇒
+                        startPC = cn.startPC; endPC = cn.endPC
+                    case _ ⇒ processBlock = false
+                }
+
+                if (processBlock) {
+                    if (startPC >= to && endPC <= to) {
+                        // When the `to` node was seen, immediately return
+                        return true
+                    } else if (!seenNodes.contains(startPC)) {
+                        stack.push(startPC)
+                        seenNodes(startPC) = Unit
+                    }
+                }
+            }
+        }
+
+        // When this part is reached, no path could be found
+        false
+    }
+
+    /**
+     * Implementations of this function find all paths starting from the sites, given by
+     * `startSites`, within the provided control flow graph, `cfg`. As this is executed within the
      * context of a string definition analysis, implementations are free to decide whether they
      * include only statements that work on [[StringBuffer]] / [[StringBuilder]] or include all
      * statements in the paths.
      *
-     * @param cfg The underlying control flow graph which servers as the basis to find the paths.
+     * @param startSites A list of possible start sites, that is, initializations. Several start
+     *                   sites denote that an object is initialized within a conditional.
+     *                   Implementations may or may not use this list (however, they should indicate
+     *                   whether it is required or not).
+     * @param endSite    An end site, that is, if the element corresponding to `endSite` is
+     *                   encountered, the finding procedure can be early stopped. Implementations
+     *                   may or may not use this list (however, they should indicate whether it is
+     *                   required or not).
+     * @param cfg        The underlying control flow graph which servers as the basis to find the paths.
+     *
      * @return Returns all found paths as a [[Path]] object. That means, the return object is a flat
      *         structure, however, captures all hierarchies and (nested) flows. Note that a
      *         [[NestedPathElement]] with only one child can either refer to a loop or an ''if''
@@ -163,6 +211,6 @@ trait AbstractPathFinder {
      *         implementations to attach these information to [[NestedPathElement]]s (so that
      *         procedures using results of this function do not need to re-process).
      */
-    def findPaths(cfg: CFG[Stmt[V], TACStmts[V]]): Path
+    def findPaths(startSites: List[Int], endSite: Int, cfg: CFG[Stmt[V], TACStmts[V]]): Path
 
 }
