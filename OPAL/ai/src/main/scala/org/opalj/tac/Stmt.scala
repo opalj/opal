@@ -232,6 +232,15 @@ object JSR {
     final val ASTID = 3
 }
 
+/**
+ * Represents a table or lookup switch statement.
+ *
+ * @note The conversion from switch bytecode instructions may end up in simple goto statement.
+ *
+ * @param defaultTarget the target if none of the values matches.
+ * @param npairs may be empty in that case we have a glorified goto – or if all other cases
+ *        were determined to be dead.
+ */
 case class Switch[+V <: Var[V]](
         pc:                        PC,
         private var defaultTarget: PC,
