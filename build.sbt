@@ -3,12 +3,13 @@ import com.typesafe.sbt.SbtScalariform.ScalariformKeys
 import scalariform.formatter.preferences._
 
 import sbtassembly.AssemblyPlugin.autoImport._
+
 import sbtunidoc.ScalaUnidocPlugin
 
 name := "OPAL Library"
 
 // SNAPSHOT
-version in ThisBuild := "2.1.0-SNAPSHOT"
+version in ThisBuild := "3.0.0-SNAPSHOT"
 // RELEASED version in ThisBuild := "2.0.1" // October 10th, 2018
 // RELEASED version in ThisBuild := "2.0.0" // October 2nd, 2018
 // RELEASED version in ThisBuild := "1.0.0" // October 25th, 2017
@@ -24,14 +25,14 @@ organization in ThisBuild := "de.opal-project"
 homepage in ThisBuild := Some(url("http://www.opal-project.de"))
 licenses in ThisBuild := Seq("BSD-2-Clause" -> url("http://opensource.org/licenses/BSD-2-Clause"))
 
-scalaVersion  in ThisBuild := "2.12.8"
+scalaVersion in ThisBuild := "2.12.8"
 
 ScalacConfiguration.globalScalacOptions
 
 resolvers in ThisBuild += Resolver.jcenterRepo
 resolvers in ThisBuild += "Typesafe Repo" at "http://repo.typesafe.com/typesafe/releases/"
 
-// in OPAL most tests/analyses are already parallelized internally
+// OPAL already parallelizes most tests/analyses internally!
 parallelExecution in ThisBuild := false
 parallelExecution in Global := false
 
@@ -40,9 +41,9 @@ logBuffered in ThisBuild := false
 javacOptions in ThisBuild ++= Seq("-encoding", "utf8", "-source", "1.8")
 
 testOptions in ThisBuild := {
-    baseDirectory.map(bd =>
-        Seq(Tests.Argument("-u", bd.getAbsolutePath + "/shippable/testresults"))
-    ).value
+  baseDirectory.map(bd =>
+    Seq(Tests.Argument("-u", bd.getAbsolutePath + "/shippable/testresults"))
+  ).value
 }
 
 testOptions in ThisBuild += Tests.Argument(TestFrameworks.ScalaCheck, "-verbosity", "2")
@@ -55,18 +56,23 @@ scalacOptions in(ScalaUnidoc, unidoc) := {
 }
 
 scalacOptions in(ScalaUnidoc, unidoc) ++=
-    Opts.doc.sourceUrl(
-        "https://bitbucket.org/delors/opal/src/HEAD€{FILE_PATH}.scala?" +
-            (if (isSnapshot.value) "at=develop" else "at=master")
-    )
+  Opts.doc.sourceUrl(
+    "https://bitbucket.org/delors/opal/src/HEAD€{FILE_PATH}.scala?" +
+      (if (isSnapshot.value) "at=develop" else "at=master")
+  )
 scalacOptions in (ScalaUnidoc, unidoc) ++= Opts.doc.version(version.value)
 scalacOptions in (ScalaUnidoc, unidoc) ++= Opts.doc.title("The OPAL Framework")
 
 javaOptions in ThisBuild ++= Seq(
-    "-Xmx7G", "-Xms1024m", "-XX:ThreadStackSize=2048", 
-    "-Xnoclassgc", "-XX:NewRatio=1", "-XX:SurvivorRatio=8", "-XX:+UseParallelGC")
+    "-Xmx24G", "-Xms4096m", "-XX:ThreadStackSize=2048", "-Xnoclassgc",
+    "-XX:NewRatio=1", "-XX:SurvivorRatio=8", "-XX:+UseParallelGC", "-XX:+AggressiveOpts")
 
-addCommandAlias("compileAll", "; copyResources ; scalastyle ; test:compile ; test:scalastyle ; it:scalariformFormat ; it:scalastyle ; it:compile ")
+addCommandAlias(
+  "compileAll", 
+  "; copyResources ; scalastyle ; "+
+    "test:compile ; test:scalastyle ; "+
+    "it:scalariformFormat ; it:scalastyle ; it:compile "
+)
 
 addCommandAlias("buildAll", "; compileAll ; unidoc ;  publishLocal ")
 
@@ -78,26 +84,33 @@ lazy val IntegrationTest = config("it") extend Test
 
 // Default settings without scoverage
 lazy val buildSettings =
-    Defaults.coreDefaultSettings ++ scalariformSettings ++
-        PublishingOverwrite.onSnapshotOverwriteSettings ++
-        Seq(libraryDependencies ++= Dependencies.testlibs) ++
-        Seq(Defaults.itSettings: _*) ++
-        Seq(unmanagedSourceDirectories := (scalaSource in Compile).value :: Nil) ++
-        Seq(unmanagedSourceDirectories in Test := (javaSource in Test).value :: (scalaSource in Test).value :: Nil) ++
-        Seq(unmanagedSourceDirectories in IntegrationTest := (javaSource in Test).value :: (scalaSource in IntegrationTest).value :: Nil) ++
-        Seq(scalacOptions in(Compile, console) := Seq("-deprecation")) ++
-        // We don't want the build to be aborted by inter-project links that are reported by
-        // scaladoc as errors using the standard compiler setting. (This case is only true, when
-        // we publish the projects.)
-        Seq(scalacOptions in(Compile, doc):= Opts.doc.version(version.value))
+  Defaults.coreDefaultSettings ++ 
+    scalariformSettings ++
+    PublishingOverwrite.onSnapshotOverwriteSettings ++
+    Seq(libraryDependencies ++= Dependencies.testlibs) ++
+    Seq(Defaults.itSettings: _*) ++
+    Seq(unmanagedSourceDirectories := (scalaSource in Compile).value :: Nil) ++
+    Seq(unmanagedSourceDirectories in Test := (javaSource in Test).value :: (scalaSource in Test).value :: Nil) ++
+    Seq(unmanagedSourceDirectories in IntegrationTest := (javaSource in Test).value :: (scalaSource in IntegrationTest).value :: Nil) ++
+    Seq(scalacOptions in(Compile, console) := Seq("-deprecation")) ++
+    // We don't want the build to be aborted by inter-project links that are reported by
+    // scaladoc as errors using the standard compiler setting. (This case is only true, when
+    // we publish the projects.)
+    Seq(scalacOptions in(Compile, doc):= Opts.doc.version(version.value))
 
 lazy val scalariformSettings = scalariformItSettings ++
-    Seq(ScalariformKeys.preferences := baseDirectory(getScalariformPreferences).value)
+  Seq(ScalariformKeys.preferences := baseDirectory(getScalariformPreferences).value)
 
 def getScalariformPreferences(dir: File) = {
-    val formatterPreferencesFile = "Scalariform Formatter Preferences.properties"
-    PreferencesImporterExporter.loadPreferences(file(formatterPreferencesFile).getPath)
+  val formatterPreferencesFile = "Scalariform Formatter Preferences.properties"
+  PreferencesImporterExporter.loadPreferences(file(formatterPreferencesFile).getPath)
 }
+
+/*******************************************************************************
+ *
+ * THE ROOT PROJECT
+ *
+ ******************************************************************************/
 
 lazy val opal = `OPAL`
 lazy val `OPAL` = (project in file("."))
@@ -122,11 +135,11 @@ lazy val `OPAL` = (project in file("."))
     incubation)
 
 
-/** ***************************************************************************
-  *
-  * THE CORE PROJECTS WHICH CONSTITUTE OPAL
-  *
-  */
+/*******************************************************************************
+ *
+ * THE CORE PROJECTS WHICH CONSTITUTE OPAL
+ *
+ ******************************************************************************/
 
 lazy val common = `Common`
 lazy val `Common` = (project in file("OPAL/common"))
@@ -134,20 +147,18 @@ lazy val `Common` = (project in file("OPAL/common"))
   .settings(
     name := "Common",
     scalacOptions in(Compile, doc) := Opts.doc.title("OPAL-Common"),
-    libraryDependencies ++= Dependencies.common(scalaVersion.value)
-  )
+    libraryDependencies ++= Dependencies.common(scalaVersion.value))
   .configs(IntegrationTest)
 
 lazy val si = `StaticAnalysisInfrastructure`
 lazy val `StaticAnalysisInfrastructure` = (project in file("OPAL/si"))
-    .settings(buildSettings: _*)
-    .settings(
-        name := "Static Analysis Infrastructure",
-        scalacOptions in(Compile, doc) ++= Opts.doc.title("OPAL - Static Analysis Infrastructure"),
-        libraryDependencies ++= Dependencies.si
-    )
-    .configs(IntegrationTest)
-    .dependsOn(common % "it->test;test->test;compile->compile")
+  .settings(buildSettings: _*)
+  .settings(
+    name := "Static Analysis Infrastructure",
+    scalacOptions in(Compile, doc) ++= Opts.doc.title("OPAL - Static Analysis Infrastructure"),
+    libraryDependencies ++= Dependencies.si)
+  .configs(IntegrationTest)
+  .dependsOn(common % "it->test;test->test;compile->compile")
 
 lazy val bi = `BytecodeInfrastructure`
 lazy val `BytecodeInfrastructure` = (project in file("OPAL/bi"))
@@ -176,8 +187,7 @@ lazy val `BytecodeInfrastructure` = (project in file("OPAL/bi"))
             (javaFixturePackage in Test).value.flatMap(_.generatedFiles)
           }
         )
-    )
-  )
+    ))
   .dependsOn(common % "it->test;test->test;compile->compile")
   .configs(IntegrationTest)
   .enablePlugins(JavaFixtureCompiler)
@@ -188,8 +198,7 @@ lazy val `BytecodeRepresentation` = (project in file("OPAL/br"))
   .settings(
     name := "Bytecode Representation",
     scalacOptions in(Compile, doc) ++= Opts.doc.title("OPAL - Bytecode Representation"),
-    libraryDependencies ++= Dependencies.br
-  )
+    libraryDependencies ++= Dependencies.br)
   .dependsOn(si % "it->it;it->test;test->test;compile->compile")
   .dependsOn(bi % "it->it;it->test;test->test;compile->compile")
   .configs(IntegrationTest)
@@ -203,8 +212,7 @@ lazy val `BytecodeDisassembler` = (project in file("OPAL/da"))
     //[currently we can only use an unversioned version] assemblyJarName
     //in assembly := "OPALBytecodeDisassembler.jar-" + version.value
     assemblyJarName in assembly := "OPALDisassembler.jar",
-    mainClass in assembly := Some("org.opalj.da.Disassembler")
-  )
+    mainClass in assembly := Some("org.opalj.da.Disassembler"))
   .dependsOn(bi % "it->it;it->test;test->test;compile->compile")
   .configs(IntegrationTest)
 
@@ -213,8 +221,7 @@ lazy val `BytecodeCreator` = (project in file("OPAL/bc"))
   .settings(buildSettings: _*)
   .settings(
     name := "Bytecode Creator",
-    scalacOptions in(Compile, doc) ++= Opts.doc.title("OPAL - Bytecode Creator")
-  )
+    scalacOptions in(Compile, doc) ++= Opts.doc.title("OPAL - Bytecode Creator"))
   .dependsOn(da % "it->it;it->test;test->test;compile->compile")
   .configs(IntegrationTest)
 
@@ -226,8 +233,7 @@ lazy val `AbstractInterpretationFramework` = (project in file("OPAL/ai"))
     scalacOptions in(Compile, doc) := (Opts.doc.title("OPAL - Abstract Interpretation Framework") ++ Seq("-groups", "-implicits")),
     assemblyJarName in assembly := "OPALTACDisassembler.jar",
     mainClass in assembly := Some("org.opalj.tac.TAC"),
-    fork in run := true
-  )
+    fork in run := true)
   .dependsOn(br % "it->it;it->test;test->test;compile->compile")
   .configs(IntegrationTest)
 
@@ -235,12 +241,11 @@ lazy val ba = `BytecodeAssembler`
 lazy val `BytecodeAssembler` = (project in file("OPAL/ba"))
   .settings(buildSettings: _*)
   .settings(
-      name := "Bytecode Assembler",
-      scalacOptions in(Compile, doc) ++= Opts.doc.title("OPAL - Bytecode Assembler")
-  )
+    name := "Bytecode Assembler",
+    scalacOptions in(Compile, doc) ++= Opts.doc.title("OPAL - Bytecode Assembler"))
   .dependsOn(
-      bc % "it->it;it->test;test->test;compile->compile",
-      ai % "it->it;it->test;test->test;compile->compile")
+    bc % "it->it;it->test;test->test;compile->compile",
+    ai % "it->it;it->test;test->test;compile->compile")
   .configs(IntegrationTest)
 
 // The project "DependenciesExtractionLibrary" depends on
@@ -258,7 +263,7 @@ lazy val `DependenciesExtractionLibrary` = (project in file("OPAL/de"))
 
 /* TEMPORARILY DISABLED THE BUGPICKER UNTIL WE HAVE A CG ANALYSIS AGAIN!
 lazy val bp = `BugPicker`
-lazy val `BugPicker` = (project in file("OPAL/bp"))
+lazy val `BugPicker` = (project in file("TOOLS/bp"))
   .settings(buildSettings: _*)
   .settings(
     name := "BugPicker - Core",
@@ -321,8 +326,7 @@ lazy val `Demos` = (project in file("DEVELOPING_OPAL/demos"))
     name := "Demos",
     scalacOptions in(Compile, doc) ++= Opts.doc.title("OPAL - Demos"),
     unmanagedSourceDirectories in Compile := (javaSource in Compile).value :: (scalaSource in Compile).value :: Nil,
-    fork in run := true
-  )
+    fork in run := true)
   .dependsOn(av, ba)
   .configs(IntegrationTest)
 
@@ -340,8 +344,7 @@ lazy val `Incubation` = (project in file("OPAL/incubation"))
     version := "ALWAYS-SNAPSHOT",
     scalacOptions in(Compile, doc) ++= Opts.doc.title("Incubation"),
     fork in run := true,
-    publishArtifact := false
-  )
+    publishArtifact := false)
   .dependsOn(
     av % "it->it;it->test;test->test;compile->compile",
     ba % "it->it;it->test;test->test;compile->compile")
@@ -359,7 +362,6 @@ generateSite := {
     lazy val disassemblerJar = (assembly in da).value
     lazy val projectSerializerJar = (assembly in DeveloperTools).value
     val runUnidoc = (unidoc in Compile).value
-
     SiteGeneration.generateSite(
         sourceDirectory.value,
         resourceManaged.value,

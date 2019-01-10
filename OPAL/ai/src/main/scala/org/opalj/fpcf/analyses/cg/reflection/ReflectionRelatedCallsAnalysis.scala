@@ -5,6 +5,23 @@ package analyses
 package cg
 package reflection
 
+import scala.language.existentials
+
+import org.opalj.log.OPALLogger.error
+import org.opalj.log.OPALLogger.info
+import org.opalj.collection.immutable.IntArraySetBuilder
+import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.collection.immutable.RefArray
+import org.opalj.collection.immutable.UIDSet
+import org.opalj.fpcf.cg.properties.CallersProperty
+import org.opalj.fpcf.cg.properties.InstantiatedTypes
+import org.opalj.fpcf.cg.properties.LoadedClasses
+import org.opalj.fpcf.cg.properties.NoCallers
+import org.opalj.fpcf.cg.properties.NoReflectionRelatedCallees
+import org.opalj.fpcf.cg.properties.ReflectionRelatedCallees
+import org.opalj.fpcf.cg.properties.ReflectionRelatedCalleesImplementation
+import org.opalj.fpcf.properties.SystemProperties
+import org.opalj.value.ValueInformation
 import org.opalj.br.BaseType
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
@@ -26,18 +43,6 @@ import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.instructions.INVOKEVIRTUAL
-import org.opalj.collection.immutable.IntArraySetBuilder
-import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.collection.immutable.RefArray
-import org.opalj.collection.immutable.UIDSet
-import org.opalj.fpcf.cg.properties.CallersProperty
-import org.opalj.fpcf.cg.properties.InstantiatedTypes
-import org.opalj.fpcf.cg.properties.LoadedClasses
-import org.opalj.fpcf.cg.properties.NoCallers
-import org.opalj.fpcf.cg.properties.NoReflectionRelatedCallees
-import org.opalj.fpcf.cg.properties.ReflectionRelatedCallees
-import org.opalj.fpcf.cg.properties.ReflectionRelatedCalleesImplementation
-import org.opalj.fpcf.properties.SystemProperties
 import org.opalj.tac.ArrayStore
 import org.opalj.tac.Assignment
 import org.opalj.tac.Expr
@@ -51,9 +56,6 @@ import org.opalj.tac.TACode
 import org.opalj.tac.VirtualFunctionCall
 import org.opalj.tac.VirtualMethodCall
 import org.opalj.tac.fpcf.properties.TACAI
-import org.opalj.value.ValueInformation
-
-import scala.language.existentials
 
 /**
  * Finds calls and loaded classes that exist because of reflective calls that are easy to resolve.
@@ -66,17 +68,30 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         final val project: SomeProject
 ) extends FPCFAnalysis {
 
-    val HIGHSOUNDNESS = false
+    private[this] val configKey =
+        "org.opalj.fpcf.analyses.cg.reflection.ReflectionRelatedCallsAnalysis"
 
-    val ConstructorT = ObjectType("java/lang/reflect/Constructor")
-    val MethodT = ObjectType("java/lang/reflect/Method")
 
-    val PropertiesT = ObjectType("java/util/Properties")
+    private[this] val highSoundnessMode = try {
+        val v = project.config.getBoolean(configKey)
+        info("reflection analysis", if (v) "high soundness mode" else "standard mode")
+        v
+    } catch {
+        case t: Throwable ⇒
+            error("reflection analysis", s"couldn't read: $configKey", t)
+            false
+    }
 
-    val GetPropertyDescriptor = MethodDescriptor(ObjectType.String, ObjectType.String)
-    val GetOrDefaultPropertyDescriptor =
+    private[this] val ConstructorT = ObjectType("java/lang/reflect/Constructor")
+    private[this] val MethodT = ObjectType("java/lang/reflect/Method")
+
+    private[this] val PropertiesT = ObjectType("java/util/Properties")
+
+    private[this] val GetPropertyDescriptor = MethodDescriptor(ObjectType.String, ObjectType.String)
+    private[this] val GetOrDefaultPropertyDescriptor =
         MethodDescriptor(RefArray(ObjectType.String, ObjectType.String), ObjectType.String)
-    val GetDescriptor = MethodDescriptor(ObjectType.Object, ObjectType.Object)
+
+    private[this] val GetDescriptor = MethodDescriptor(ObjectType.Object, ObjectType.Object)
 
     private[this] val constructorMatcher = new NameBasedMethodMatcher(Set("<init>"))
 
@@ -412,7 +427,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
     private[this] def handleForName(className: Expr[V], pc: Int)(implicit state: State): Unit = {
         val loadedClassesOpt = getPossibleForNameClasses(className, None)
         if (loadedClassesOpt.isEmpty) {
-            if (HIGHSOUNDNESS) {
+            if (highSoundnessMode) {
                 state.addNewLoadedClasses(
                     p.allClassFiles.iterator.map(_.thisType).filterNot(state.loadedClassesUB.contains)
                 )
@@ -441,7 +456,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         state: State
     ): MethodMatcher = {
         if (v.isEmpty) {
-            if (HIGHSOUNDNESS) {
+            if (highSoundnessMode) {
                 AllMethodsMatcher
             } else {
                 state.calleesAndCallers.addIncompleteCallsite(pc)
@@ -650,14 +665,14 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                      * TODO: case ArrayLoad(_, _, arrayRef) ⇒ // here we could handle getConstructors
                      */
 
-                    case _ if HIGHSOUNDNESS ⇒
+                    case _ if highSoundnessMode ⇒
                         matchers += AllMethodsMatcher
 
                     case _ ⇒
                         state.calleesAndCallers.addIncompleteCallsite(pc)
                         matchers += NoMethodsMatcher
                 }
-            } else if (HIGHSOUNDNESS) {
+            } else if (highSoundnessMode) {
                 matchers += AllMethodsMatcher
             } else {
                 state.calleesAndCallers.addIncompleteCallsite(pc)
@@ -710,14 +725,14 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                     /*case ArrayLoad(_, _, arrayRef) ⇒*/
                     // todo here we can handle getMethods
 
-                    case _ if HIGHSOUNDNESS ⇒
+                    case _ if highSoundnessMode ⇒
                         matchers += AllMethodsMatcher
 
                     case _ ⇒
                         state.calleesAndCallers.addIncompleteCallsite(pc)
                         matchers += NoMethodsMatcher
                 }
-            } else if (HIGHSOUNDNESS) {
+            } else if (highSoundnessMode) {
                 matchers += AllMethodsMatcher
             } else {
                 state.calleesAndCallers.addIncompleteCallsite(pc)
@@ -821,7 +836,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                         case _ ⇒
                         // getters and setters are not relevant for the call graph
                     }
-                } else if (HIGHSOUNDNESS) {
+                } else if (highSoundnessMode) {
                     if (descriptor.isDefined) {
                         // we do not know, whether the invoked method is static or not
                         // (i.e. whether the first parameter of the descriptor represent the receiver)
@@ -839,7 +854,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                     state.calleesAndCallers.addIncompleteCallsite(pc)
                 }
                 // todo we should use the descriptor here
-            } else if (HIGHSOUNDNESS) {
+            } else if (highSoundnessMode) {
                 matchers += AllMethodsMatcher
             } else {
                 matchers += NoMethodsMatcher
