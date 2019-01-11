@@ -14,7 +14,13 @@ import org.opalj.collection.immutable.Chain
  *
  * @author Michael Eichberg
  */
-class AnalysisScenario[A] {
+class AnalysisScenario[A](ps: PropertyStore) {
+
+    private[this] var scheduleComputed: Boolean = false
+
+    //
+    // COMPUATION SPECIFICATION RELATED INFORMATION
+    //
 
     private[this] var allCS: Set[ComputationSpecification[A]] = Set.empty
 
@@ -22,6 +28,12 @@ class AnalysisScenario[A] {
     private[this] var eagerlyDerivedProperties: Set[PropertyBounds] = Set.empty
     private[this] var collaborativelyDerivedProperties: Set[PropertyBounds] = Set.empty
     private[this] var lazilyDerivedProperties: Set[PropertyBounds] = Set.empty
+
+    private[this] var initializationData: Map[ComputationSpecification[A], Any] = Map.empty
+
+    //
+    // PROPERTIES (CAN ONLY BE COMPUTED ONCE ALL COMPUTATION SPECIFICATIONS ARE REGISTERED!)
+    //
 
     private[this] var usedProperties: Set[PropertyBounds] = Set.empty
 
@@ -41,7 +53,96 @@ class AnalysisScenario[A] {
      * that should be scheduled.
      */
     def +=(cs: ComputationSpecification[A]): this.type = {
+        if (scheduleComputed) {
+            throw new IllegalStateException("process was already computed");
+        }
 
+        cs.computationType match {
+            case EagerComputation     ⇒ eagerCS += cs
+            case TriggeredComputation ⇒ triggeredCS += cs
+            case LazyComputation      ⇒ lazyCS += cs
+            case Transformer          ⇒ transformersCS += cs
+        }
+
+        allCS += cs
+
+        initializationData += cs → cs.init(ps)
+
+        this
+    }
+
+    /**
+     * Returns the graph which depicts the dependencies between the computed properties
+     * based on the current computation specifications.
+     * I.e., a property `d` depends on another property `p` if the algorithm which computes
+     * `d` uses the property `p`.
+     *
+     * @note Can only be called after the schedule method was called! If no schedule could be
+     *       computed the result of this method is undefined.
+     */
+    def propertyComputationsDependencies: Graph[PropertyBounds] = {
+        if (!scheduleComputed) {
+            throw new IllegalStateException("initialization incomplete; schedule not computed");
+        }
+        val psDeps = Graph.empty[PropertyBounds]
+        allCS foreach { cs ⇒
+            // all derived properties depend on all used properties
+            cs.derives foreach { derived ⇒
+                psDeps += derived
+                cs.uses(ps) foreach { use ⇒ psDeps += (derived, use) }
+            }
+        }
+        psDeps
+    }
+
+    /**
+     * Returns the dependencies between the computations.
+     *
+     * @note Can only be called after the schedule method was called! If no schedule could be
+     *       computed the result of this method is undefined.
+     */
+    def computationDependencies: Graph[ComputationSpecification[A]] = {
+        if (!scheduleComputed) {
+            throw new IllegalStateException("initialization incomplete; schedule not computed");
+        }
+
+        val compDeps = Graph.empty[ComputationSpecification[A]]
+        val derivedBy: Map[PropertyBounds, Set[ComputationSpecification[A]]] = {
+            var derivedBy: Map[PropertyBounds, Set[ComputationSpecification[A]]] = Map.empty
+            allCS foreach { cs ⇒
+                cs.derives foreach { derives ⇒
+                    derivedBy += derives -> (derivedBy.getOrElse(derives, Set.empty) + cs)
+                }
+            }
+            derivedBy
+        }
+        allCS foreach { cs ⇒
+            compDeps += cs
+            cs.uses(ps) foreach { usedPK ⇒
+                derivedBy.get(usedPK).iterator.flatten.foreach { providerCS ⇒
+                    if (providerCS ne cs) {
+                        compDeps += (cs, providerCS)
+                    }
+                }
+            }
+        }
+        // let's handle the case that multiple analyses derives a property collaboratively
+        derivedBy.valuesIterator.filter(_.size > 1) foreach { css ⇒
+            val cssIt = css.iterator
+            val headCS = cssIt.next()
+            var lastCS = headCS
+            do {
+                val nextCS = cssIt.next()
+                compDeps += (lastCS -> nextCS)
+                lastCS = nextCS
+            } while (cssIt.hasNext)
+            compDeps += (lastCS -> headCS)
+        }
+
+        compDeps
+    }
+
+    private[this] def processCS(cs: ComputationSpecification[A]): Unit = {
         // 1. check the most basic constraints
         cs.derivesLazily foreach { lazilyDerivedProperty ⇒
             if (derivedProperties.contains(lazilyDerivedProperty)) {
@@ -93,8 +194,7 @@ class AnalysisScenario[A] {
             }
         }
 
-        allCS += cs
-        usedProperties ++= cs.uses
+        usedProperties ++= cs.uses(ps)
 
         eagerlyDerivedProperties ++= cs.derivesEagerly
         handleDerivedProperties(cs.derivesEagerly)
@@ -102,77 +202,6 @@ class AnalysisScenario[A] {
         handleDerivedProperties(cs.derivesCollaboratively)
         lazilyDerivedProperties ++= cs.derivesLazily.toList
         handleDerivedProperties(cs.derivesLazily.toSet)
-
-        cs.computationType match {
-            case EagerComputation     ⇒ eagerCS += cs
-            case TriggeredComputation ⇒ triggeredCS += cs
-            case LazyComputation      ⇒ lazyCS += cs
-            case Transformer          ⇒ transformersCS += cs
-        }
-
-        this
-    }
-
-    /**
-     * Returns the graph which depicts the dependencies between the computed properties
-     * based on the current computation specifications.
-     * I.e., a property `d` depends on another property `p` if the algorithm which computes
-     * `d` uses the property `p`.
-     *
-     * @note The overall validity constraints are only checked when a new schedule is computed.
-     *       Hence, the returned graph only represents the specified dependencies but does not
-     *       necessarily represent a correct graph.
-     */
-    def propertyComputationsDependencies: Graph[PropertyBounds] = {
-        val psDeps = Graph.empty[PropertyBounds]
-        allCS foreach { cs ⇒
-            // all derived properties depend on all used properties
-            cs.derives foreach { derived ⇒
-                psDeps += derived
-                cs.uses foreach { use ⇒ psDeps += (derived, use) }
-            }
-        }
-        psDeps
-    }
-
-    /**
-     * Returns the dependencies between the computations.
-     */
-    def computationDependencies: Graph[ComputationSpecification[A]] = {
-        val compDeps = Graph.empty[ComputationSpecification[A]]
-        val derivedBy: Map[PropertyBounds, Set[ComputationSpecification[A]]] = {
-            var derivedBy: Map[PropertyBounds, Set[ComputationSpecification[A]]] = Map.empty
-            allCS foreach { cs ⇒
-                cs.derives foreach { derives ⇒
-                    derivedBy += derives -> (derivedBy.getOrElse(derives, Set.empty) + cs)
-                }
-            }
-            derivedBy
-        }
-        allCS foreach { cs ⇒
-            compDeps += cs
-            cs.uses foreach { usedPK ⇒
-                derivedBy.get(usedPK).iterator.flatten.foreach { providerCS ⇒
-                    if (providerCS ne cs) {
-                        compDeps += (cs, providerCS)
-                    }
-                }
-            }
-        }
-        // let's handle the case that multiple analyses derives a property collaboratively
-        derivedBy.valuesIterator.filter(_.size > 1) foreach { css ⇒
-            val cssIt = css.iterator
-            val headCS = cssIt.next()
-            var lastCS = headCS
-            do {
-                val nextCS = cssIt.next()
-                compDeps += (lastCS -> nextCS)
-                lastCS = nextCS
-            } while (cssIt.hasNext)
-            compDeps += (lastCS -> headCS)
-        }
-
-        compDeps
     }
 
     /**
@@ -200,6 +229,14 @@ class AnalysisScenario[A] {
         implicit
         logContext: LogContext
     ): Schedule[A] = {
+        if (scheduleComputed) {
+            throw new IllegalStateException("schedule already computed");
+        } else {
+            scheduleComputed = true
+        }
+
+        allCS.foreach(processCS)
+
         val alreadyComputedPropertyKinds = propertyStore.alreadyComputedPropertyKindIds.toSet
 
         // 0. check that a property was not already derived
@@ -237,7 +274,7 @@ class AnalysisScenario[A] {
 
         // TODO ....
 
-        Schedule(Chain(computePhase(propertyStore)))
+        Schedule(Chain(computePhase(propertyStore)), initializationData)
     }
 
     /**
@@ -252,7 +289,7 @@ class AnalysisScenario[A] {
         // Interim updates have to be suppressed when an analysis uses a property for which
         // the wrong bounds/not enough bounds are computed.
         transformersCS foreach { cs ⇒
-            suppressInterimUpdates += (cs.derivesLazily.get.pk → cs.uses.map(_.pk))
+            suppressInterimUpdates += (cs.derivesLazily.get.pk → cs.uses(ps).map(_.pk))
         }
 
         // 3. create the batch
@@ -286,8 +323,11 @@ object AnalysisScenario {
     /**
      * @param analyses The set of analyses that should be executed as part of this analysis scenario.
      */
-    def apply[A](analyses: Iterable[ComputationSpecification[A]]): AnalysisScenario[A] = {
-        val as = new AnalysisScenario[A]
+    def apply[A](
+        analyses:      Iterable[ComputationSpecification[A]],
+        propertyStore: PropertyStore
+    ): AnalysisScenario[A] = {
+        val as = new AnalysisScenario[A](propertyStore)
         analyses.foreach(as.+=)
         as
     }

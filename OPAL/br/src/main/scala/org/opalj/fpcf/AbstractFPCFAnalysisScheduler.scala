@@ -32,6 +32,10 @@ trait FPCFAnalysisScheduler extends ComputationSpecification[FPCFAnalysis] {
         init(ps.context(classOf[SomeProject]), ps)
     }
 
+    final override def uses(ps: PropertyStore): Set[PropertyBounds] = {
+        uses ++ uses(ps.context(classOf[SomeProject]), ps)
+    }
+
     final override def beforeSchedule(ps: PropertyStore): Unit = {
         beforeSchedule(ps.context(classOf[SomeProject]), ps)
     }
@@ -42,6 +46,12 @@ trait FPCFAnalysisScheduler extends ComputationSpecification[FPCFAnalysis] {
 
     def init(p: SomeProject, ps: PropertyStore): InitializationData
 
+    /** The uses that are configuration (project) dependent. */
+    def uses(p: SomeProject, ps: PropertyStore): Set[PropertyBounds] = Set.empty
+
+    /** The uses that are configuration independent. */
+    def uses: Set[PropertyBounds]
+
     def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit
 
     def afterPhaseCompletion(p: SomeProject, ps: PropertyStore, analysis: FPCFAnalysis): Unit
@@ -49,7 +59,7 @@ trait FPCFAnalysisScheduler extends ComputationSpecification[FPCFAnalysis] {
 }
 
 /**
- * Companion object of [[FPCFAnalysisScheduler]] that defines internal helper functions and
+ * Companion object of [[org.opalj.fpcf.FPCFAnalysisScheduler]] that defines internal helper functions and
  * values.
  *
  * @author Michael Reif

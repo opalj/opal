@@ -89,7 +89,7 @@ class L0FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
     }
 }
 
-trait L0FieldMutabilityAnalysisScheduler extends ComputationSpecification[FPCFAnalysis] {
+trait L0FieldMutabilityAnalysisScheduler extends FPCFAnalysisScheduler {
 
     final override def uses: Set[PropertyBounds] = Set.empty
 

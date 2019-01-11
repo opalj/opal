@@ -95,11 +95,11 @@ class VirtualMethodPurityAnalysis private[analyses] ( final val project: SomePro
 
 }
 
-trait VirtualMethodPurityAnalysisScheduler extends ComputationSpecification[FPCFAnalysis] {
-
-    final def derivedProperty: PropertyBounds = PropertyBounds.lub(VirtualMethodPurity)
+trait VirtualMethodPurityAnalysisScheduler extends FPCFAnalysisScheduler {
 
     final override def uses: Set[PropertyBounds] = Set(PropertyBounds.lub(Purity))
+
+    final def derivedProperty: PropertyBounds = PropertyBounds.lub(VirtualMethodPurity)
 
 }
 

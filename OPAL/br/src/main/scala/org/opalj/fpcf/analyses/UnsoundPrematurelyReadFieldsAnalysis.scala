@@ -22,7 +22,8 @@ class UnsoundPrematurelyReadFieldsAnalysis private[analyses] (val project: SomeP
     }
 }
 
-trait UnsoundPrematurelyReadFieldsAnalysisScheduler extends ComputationSpecification[FPCFAnalysis] {
+trait UnsoundPrematurelyReadFieldsAnalysisScheduler extends FPCFAnalysisScheduler {
+
     final override def uses: Set[PropertyBounds] = Set.empty
 
     final def derivedProperty: PropertyBounds = PropertyBounds.finalP(FieldPrematurelyRead)

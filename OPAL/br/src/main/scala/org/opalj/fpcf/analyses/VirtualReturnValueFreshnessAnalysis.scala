@@ -96,7 +96,7 @@ class VirtualReturnValueFreshnessAnalysis private[analyses] (
 
 }
 
-sealed trait VirtualReturnValueFreshnessAnalysisScheduler extends ComputationSpecification[FPCFAnalysis] {
+sealed trait VirtualReturnValueFreshnessAnalysisScheduler extends FPCFAnalysisScheduler {
 
     final def derivedProperty: PropertyBounds = {
         PropertyBounds.lub(VirtualMethodReturnValueFreshness)

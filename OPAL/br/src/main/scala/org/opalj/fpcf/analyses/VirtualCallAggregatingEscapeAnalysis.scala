@@ -102,11 +102,11 @@ class VirtualCallAggregatingEscapeAnalysis private[analyses] ( final val project
 
 }
 
-sealed trait VirtualCallAggregatingEscapeAnalysisScheduler extends ComputationSpecification[FPCFAnalysis] {
-
-    final def derivedProperty: PropertyBounds = PropertyBounds.lub(VirtualMethodEscapeProperty)
+sealed trait VirtualCallAggregatingEscapeAnalysisScheduler extends FPCFAnalysisScheduler {
 
     final override def uses: Set[PropertyBounds] = Set(PropertyBounds.lub(EscapeProperty))
+
+    final def derivedProperty: PropertyBounds = PropertyBounds.lub(VirtualMethodEscapeProperty)
 
 }
 

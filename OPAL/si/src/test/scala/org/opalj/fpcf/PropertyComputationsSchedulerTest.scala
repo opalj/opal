@@ -30,6 +30,7 @@ class PropertyComputationsSchedulerTest extends FunSpec with Matchers with Befor
     ) extends SimpleComputationSpecification[Unit] {
         override def schedule(ps: PropertyStore, unused: Null): Unit = {}
 
+        override def uses(ps: PropertyStore): Set[PropertyBounds] = uses
     }
 
     val pks: Array[PropertyKind] = new Array[PropertyKind](12)
@@ -50,7 +51,7 @@ class PropertyComputationsSchedulerTest extends FunSpec with Matchers with Befor
 
         it("should be possible to create an empty schedule") {
             val ps = new PropertyStoreConfigurationRecorder()
-            val batches = AnalysisScenario(Set()).computeSchedule(ps).batches
+            val batches = AnalysisScenario(Set(), ps).computeSchedule(ps).batches
             batches should be('empty)
         }
 
@@ -58,7 +59,7 @@ class PropertyComputationsSchedulerTest extends FunSpec with Matchers with Befor
 
             it("an empty analysis scenario should lead to an empty phase configuration in the ps") {
                 val ps = new PropertyStoreConfigurationRecorder()
-                val scenario = AnalysisScenario(Set.empty)
+                val scenario = AnalysisScenario(Set.empty, ps)
                 val schedule = scenario.computeSchedule(ps)
                 /*smoke test: */ schedule(ps, trace = false)
                 schedule.batches.size should be(1)

@@ -634,9 +634,7 @@ class FieldLocalityAnalysis private[analyses] (
     }
 }
 
-sealed trait FieldLocalityAnalysisScheduler extends ComputationSpecification[FPCFAnalysis] {
-
-    final def derivedProperty: PropertyBounds = PropertyBounds.lub(FieldLocality)
+sealed trait FieldLocalityAnalysisScheduler extends FPCFAnalysisScheduler {
 
     final override def uses: Set[PropertyBounds] = {
         Set(
@@ -646,6 +644,9 @@ sealed trait FieldLocalityAnalysisScheduler extends ComputationSpecification[FPC
             PropertyBounds.ub(Callees)
         )
     }
+
+    final def derivedProperty: PropertyBounds = PropertyBounds.lub(FieldLocality)
+
 }
 
 object EagerFieldLocalityAnalysis

@@ -317,13 +317,13 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
 
 }
 
-trait L0PurityAnalysisScheduler extends ComputationSpecification[FPCFAnalysis] {
-
-    final def derivedProperty: PropertyBounds = PropertyBounds.lub(Purity)
+trait L0PurityAnalysisScheduler extends FPCFAnalysisScheduler {
 
     final override def uses: Set[PropertyBounds] = {
         Set(PropertyBounds.ub(TypeImmutability), PropertyBounds.ub(FieldMutability))
     }
+
+    final def derivedProperty: PropertyBounds = PropertyBounds.lub(Purity)
 
 }
 

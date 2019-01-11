@@ -106,11 +106,11 @@ class VirtualMethodStaticDataUsageAnalysis private[analyses] (
 
 }
 
-trait VirtualMethodStaticDataUsageAnalysisScheduler extends ComputationSpecification[FPCFAnalysis] {
-
-    final def derivedProperty: PropertyBounds = PropertyBounds.lub(VirtualMethodStaticDataUsage)
+trait VirtualMethodStaticDataUsageAnalysisScheduler extends FPCFAnalysisScheduler {
 
     final override def uses: Set[PropertyBounds] = Set(PropertyBounds.lub(StaticDataUsage))
+
+    final def derivedProperty: PropertyBounds = PropertyBounds.lub(VirtualMethodStaticDataUsage)
 
 }
 

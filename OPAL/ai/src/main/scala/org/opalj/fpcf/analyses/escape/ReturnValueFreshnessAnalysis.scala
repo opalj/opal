@@ -473,7 +473,7 @@ class ReturnValueFreshnessAnalysis private[analyses] (
     }
 }
 
-sealed trait ReturnValueFreshnessAnalysisScheduler extends ComputationSpecification[FPCFAnalysis] {
+sealed trait ReturnValueFreshnessAnalysisScheduler extends FPCFAnalysisScheduler {
 
     final def derivedProperty: PropertyBounds = PropertyBounds.lub(ReturnValueFreshness)
 

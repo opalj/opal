@@ -316,11 +316,9 @@ class L1FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
     }
 }
 
-sealed trait L1FieldMutabilityAnalysisScheduler extends ComputationSpecification[FPCFAnalysis] {
+sealed trait L1FieldMutabilityAnalysisScheduler extends FPCFAnalysisScheduler {
 
-    final override def uses: Set[PropertyBounds] = {
-        Set(PropertyBounds.lub(TACAI), PropertyBounds.lub(EscapeProperty))
-    }
+    final override def uses: Set[PropertyBounds] = PropertyBounds.lubs(TACAI, EscapeProperty)
 
     final def derivedProperty: PropertyBounds = PropertyBounds.lub(FieldMutability)
 

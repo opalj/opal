@@ -83,11 +83,11 @@ class L0CompileTimeConstancyAnalysis private[analyses] ( final val project: Some
     }
 }
 
-trait L0CompileTimeConstancyAnalysisScheduler extends ComputationSpecification[FPCFAnalysis] {
+trait L0CompileTimeConstancyAnalysisScheduler extends FPCFAnalysisScheduler {
+
+    final override def uses: Set[PropertyBounds] = PropertyBounds.lubs(FieldMutability)
 
     final def derivedProperty: PropertyBounds = PropertyBounds.lub(CompileTimeConstancy)
-
-    final override def uses: Set[PropertyBounds] = Set(PropertyBounds.lub(FieldMutability))
 
 }
 

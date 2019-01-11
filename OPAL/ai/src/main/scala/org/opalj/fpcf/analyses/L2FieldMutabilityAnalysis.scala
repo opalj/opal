@@ -1056,16 +1056,18 @@ class L2FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
     }
 }
 
-trait L2FieldMutabilityAnalysisScheduler extends ComputationSpecification[FPCFAnalysis] {
-    final override def uses: Set[PropertyBounds] =
-        Set(
-            PropertyBounds.lub(Purity),
-            PropertyBounds.lub(FieldPrematurelyRead),
-            PropertyBounds.ub(TACAI),
-            PropertyBounds.lub(FieldMutability),
-            PropertyBounds.ub(EscapeProperty)
-        )
+trait L2FieldMutabilityAnalysisScheduler extends FPCFAnalysisScheduler {
+
+    final override def uses: Set[PropertyBounds] = Set(
+        PropertyBounds.lub(Purity),
+        PropertyBounds.lub(FieldPrematurelyRead),
+        PropertyBounds.ub(TACAI),
+        PropertyBounds.lub(FieldMutability),
+        PropertyBounds.ub(EscapeProperty)
+    )
+
     final def derivedProperty: PropertyBounds = PropertyBounds.lub(FieldMutability)
+
 }
 
 /**

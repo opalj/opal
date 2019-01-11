@@ -37,9 +37,6 @@ class SimpleEscapeAnalysisContext(
  * [[org.opalj.br.analyses.VirtualFormalParameter]]s are marked as
  * [[org.opalj.fpcf.properties.AtMost]]([[org.opalj.fpcf.properties.NoEscape]]).
  *
- *
- *
- *
  * @author Florian Kuebler
  */
 class SimpleEscapeAnalysis( final val project: SomeProject)
@@ -82,14 +79,15 @@ class SimpleEscapeAnalysis( final val project: SomeProject)
     override def createState: AbstractEscapeAnalysisState = new AbstractEscapeAnalysisState {}
 }
 
-trait SimpleEscapeAnalysisScheduler extends ComputationSpecification[FPCFAnalysis] {
-
-    final def derivedProperty: PropertyBounds = PropertyBounds.lub(EscapeProperty)
+trait SimpleEscapeAnalysisScheduler extends FPCFAnalysisScheduler {
 
     final override def uses: Set[PropertyBounds] = Set(
         PropertyBounds.lub(EscapeProperty),
         PropertyBounds.ub(TACAI)
     )
+
+    final def derivedProperty: PropertyBounds = PropertyBounds.lub(EscapeProperty)
+
 }
 
 /**

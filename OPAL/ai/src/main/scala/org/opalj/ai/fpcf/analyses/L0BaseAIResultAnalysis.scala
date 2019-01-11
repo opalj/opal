@@ -8,7 +8,6 @@ import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.error
 import org.opalj.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.fpcf.BasicFPCFLazyAnalysisScheduler
-import org.opalj.fpcf.ComputationSpecification
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.FPCFAnalysis
 import org.opalj.fpcf.ProperPropertyComputationResult
@@ -72,10 +71,7 @@ object L0BaseAIResultAnalysis {
     }
 }
 
-sealed trait L0BaseAIResultAnalysisScheduler extends ComputationSpecification[FPCFAnalysis] {
-
-    // FIXME The properties that are actually used depends on the properties read by the underlying domain
-    final override def uses: Set[PropertyBounds] = Set.empty
+sealed trait L0BaseAIResultAnalysisScheduler extends DomainBasedFPCFAnalysisScheduler {
 
     final def derivedProperty: PropertyBounds = PropertyBounds.lub(BaseAIResult)
 

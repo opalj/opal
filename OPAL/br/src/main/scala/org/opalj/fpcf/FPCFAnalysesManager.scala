@@ -43,7 +43,7 @@ class FPCFAnalysesManager private[fpcf] (val project: SomeProject) {
         afterPhaseScheduling: Chain[ComputationSpecification[FPCFAnalysis]] ⇒ Unit = _ ⇒ ()
     ): (PropertyStore, List[(ComputationSpecification[FPCFAnalysis], FPCFAnalysis)]) = this.synchronized {
 
-        val scenario = AnalysisScenario(analyses)
+        val scenario = AnalysisScenario(analyses, propertyStore)
 
         val schedule = scenario.computeSchedule(propertyStore)
         schedules ::= schedule

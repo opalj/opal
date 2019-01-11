@@ -384,7 +384,7 @@ class L1ThrownExceptionsAnalysis private[analyses] (
     }
 }
 
-abstract class ThrownExceptionsAnalysisScheduler extends ComputationSpecification[FPCFAnalysis] {
+abstract class ThrownExceptionsAnalysisScheduler extends FPCFAnalysisScheduler {
 
     final override def uses: Set[PropertyBounds] = {
         Set(PropertyBounds.lub(ThrownExceptionsByOverridingMethods))

@@ -45,7 +45,7 @@ class InterProceduralEscapeAnalysisState
 /**
  * A flow-sensitive inter-procedural escape analysis.
  *
- * @author Florian Kuebler
+ * @author Florian Kübler
  */
 class InterProceduralEscapeAnalysis private[analyses] (
         final val project: SomeProject
@@ -93,9 +93,8 @@ class InterProceduralEscapeAnalysis private[analyses] (
                     }
                 }
 
-                val parameterOfBase = virtualFormalParameters(
-                    declaredMethods(dm.definedMethod)
-                )(-i - 1)
+                val parameterOfBase =
+                    virtualFormalParameters(declaredMethods(dm.definedMethod))(-i - 1)
 
                 handleEscapeState(propertyStore(parameterOfBase, EscapeProperty.key))
 
@@ -132,10 +131,12 @@ class InterProceduralEscapeAnalysis private[analyses] (
         isMethodOverridable
     )
 
-    override def createState: InterProceduralEscapeAnalysisState = new InterProceduralEscapeAnalysisState()
+    override def createState: InterProceduralEscapeAnalysisState = {
+        new InterProceduralEscapeAnalysisState()
+    }
 }
 
-sealed trait InterProceduralEscapeAnalysisScheduler extends ComputationSpecification[FPCFAnalysis] {
+sealed trait InterProceduralEscapeAnalysisScheduler extends FPCFAnalysisScheduler {
 
     final def derivedProperty: PropertyBounds = PropertyBounds.lub(EscapeProperty)
 

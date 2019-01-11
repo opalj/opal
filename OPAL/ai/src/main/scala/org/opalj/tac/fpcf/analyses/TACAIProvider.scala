@@ -15,6 +15,7 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
 import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
+import org.opalj.ai.fpcf.analyses.DomainBasedFPCFAnalysisScheduler
 import org.opalj.ai.fpcf.analyses.L0BaseAIResultAnalysis
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.ai.fpcf.properties.ProjectSpecificAIExecutor
@@ -41,10 +42,7 @@ class TACAIProvider private[analyses] (val project: SomeProject) extends FPCFAna
 
 }
 
-sealed trait TACAIProviderScheduler extends TACAIInitializer {
-
-    // FIXME The properties that are actually used depends on the properties read by the underlying domain
-    final override def uses: Set[PropertyBounds] = Set.empty
+sealed trait TACAIProviderScheduler extends TACAIInitializer with DomainBasedFPCFAnalysisScheduler {
 
     final def derivedProperty: PropertyBounds = PropertyBounds.finalP(TACAI)
 

@@ -238,11 +238,11 @@ class L0AllocationFreenessAnalysis private[analyses] ( final val project: SomePr
     }
 }
 
-trait L0AllocationFreenessAnalysisScheduler extends ComputationSpecification[FPCFAnalysis] {
-
-    final def derivedProperty: PropertyBounds = PropertyBounds.lub(AllocationFreeness)
+trait L0AllocationFreenessAnalysisScheduler extends FPCFAnalysisScheduler {
 
     final override def uses: Set[PropertyBounds] = Set.empty
+
+    final def derivedProperty: PropertyBounds = PropertyBounds.lub(AllocationFreeness)
 
 }
 

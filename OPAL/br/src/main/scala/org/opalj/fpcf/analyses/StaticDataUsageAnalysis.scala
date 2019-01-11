@@ -223,7 +223,7 @@ class StaticDataUsageAnalysis private[analyses] ( final val project: SomeProject
     }
 }
 
-trait StaticDataUsageAnalysisScheduler extends ComputationSpecification[FPCFAnalysis] {
+trait StaticDataUsageAnalysisScheduler extends FPCFAnalysisScheduler {
 
     final def derivedProperty: PropertyBounds = {
         // FIXME Just seems to derive the upper bound...

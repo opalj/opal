@@ -17,7 +17,8 @@ import org.opalj.util.PerformanceEvaluation.time
  * @author Michael Eichberg
  */
 case class Schedule[A](
-        batches: Chain[PhaseConfiguration[A]]
+        batches:            Chain[PhaseConfiguration[A]],
+        initializationData: Map[ComputationSpecification[A], Any]
 ) extends ((PropertyStore, Boolean, PropertyKindsConfiguration ⇒ Unit, Chain[ComputationSpecification[A]] ⇒ Unit) ⇒ List[(ComputationSpecification[A], A)]) {
 
     /**
@@ -38,11 +39,6 @@ case class Schedule[A](
 
         var allExecutedAnalyses: List[(ComputationSpecification[A], A)] = Nil
 
-        val initInfo =
-            batches.flatMap {
-                case PhaseConfiguration(_, css) ⇒ css.toIterator.map { cs ⇒ cs -> cs.init(ps) }
-            }.toMap
-
         batches.toIterator.zipWithIndex foreach { batchId ⇒
             val (PhaseConfiguration(configuration, css), id) = batchId
 
@@ -58,7 +54,7 @@ case class Schedule[A](
 
                 css.foreach(cs ⇒ cs.beforeSchedule(ps))
                 css.foreach { cs ⇒
-                    val a = cs.schedule(ps, initInfo(cs).asInstanceOf[cs.InitializationData])
+                    val a = cs.schedule(ps, initializationData(cs).asInstanceOf[cs.InitializationData])
                     executedAnalyses ::= ((cs, a))
                 }
                 executedAnalyses.foreach { csAnalysis ⇒

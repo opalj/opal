@@ -124,13 +124,13 @@ class VirtualMethodThrownExceptionsAnalysis private[analyses] (
     }
 }
 
-trait VirtualMethodThrownExceptionsAnalysisScheduler extends ComputationSpecification[FPCFAnalysis] {
+trait VirtualMethodThrownExceptionsAnalysisScheduler extends FPCFAnalysisScheduler {
+
+    final override def uses: Set[PropertyBounds] = Set(PropertyBounds.lub(ThrownExceptions))
 
     final def derivedProperty: PropertyBounds = {
         PropertyBounds.lub(ThrownExceptionsByOverridingMethods)
     }
-
-    final override def uses: Set[PropertyBounds] = Set(PropertyBounds.lub(ThrownExceptions))
 
 }
 

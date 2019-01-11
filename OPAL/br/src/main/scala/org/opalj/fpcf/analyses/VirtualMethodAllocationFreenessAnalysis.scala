@@ -18,7 +18,10 @@ import org.opalj.fpcf.properties.VirtualMethodAllocationFreeness.VAllocationFree
  *
  * @author Dominik Helm
  */
-class VirtualMethodAllocationFreenessAnalysis private[analyses] ( final val project: SomeProject) extends FPCFAnalysis {
+class VirtualMethodAllocationFreenessAnalysis private[analyses] (
+        final val project: SomeProject
+) extends FPCFAnalysis {
+
     private[this] val declaredMethods = project.get(DeclaredMethodsKey)
 
     def determineAllocationFreeness(dm: DeclaredMethod): ProperPropertyComputationResult = {
@@ -88,13 +91,11 @@ class VirtualMethodAllocationFreenessAnalysis private[analyses] ( final val proj
 
 }
 
-trait VirtualMethodAllocationFreenessAnalysisScheduler extends ComputationSpecification[FPCFAnalysis] {
-
-    final def derivedProperty: PropertyBounds = {
-        PropertyBounds.lub(VirtualMethodAllocationFreeness)
-    }
+trait VirtualMethodAllocationFreenessAnalysisScheduler extends FPCFAnalysisScheduler {
 
     final override def uses: Set[PropertyBounds] = Set(PropertyBounds.lub(AllocationFreeness))
+
+    final def derivedProperty: PropertyBounds = PropertyBounds.lub(VirtualMethodAllocationFreeness)
 
 }
 
