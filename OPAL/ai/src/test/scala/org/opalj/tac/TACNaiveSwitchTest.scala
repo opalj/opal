@@ -4,6 +4,8 @@ package tac
 
 import org.scalatest.junit.JUnitRunner
 import org.junit.runner.RunWith
+
+import org.opalj.collection.immutable.IntIntPair
 import org.opalj.br._
 import org.opalj.br.TestSupport.biProject
 import org.opalj.collection.immutable.RefArray
@@ -33,10 +35,24 @@ class TACNaiveSwitchTest extends TACNaiveTest {
             assert(javaLikeCode.length > 0)
 
             val expected = Array(
-                Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
-                Assignment(-1, SimpleVar(-2, ComputationalTypeInt), Param(ComputationalTypeInt, "p_1")),
-                Assignment(0, SimpleVar(0, ComputationalTypeInt), SimpleVar(-2, ComputationalTypeInt)),
-                Switch(1, 10, SimpleVar(0, ComputationalTypeInt), RefArray((1, 4), (2, 6), (3, 8))),
+                Assignment(
+                    -1,
+                    SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")
+                ),
+                Assignment(
+                    -1,
+                    SimpleVar(-2, ComputationalTypeInt), Param(ComputationalTypeInt, "p_1")
+                ),
+                Assignment(
+                    0,
+                    SimpleVar(0, ComputationalTypeInt), SimpleVar(-2, ComputationalTypeInt)
+                ),
+                Switch(
+                    1,
+                    10,
+                    SimpleVar(0, ComputationalTypeInt),
+                    RefArray(IntIntPair(1, 4), IntIntPair(2, 6), IntIntPair(3, 8))
+                ),
                 Assignment(28, SimpleVar(0, ComputationalTypeInt), IntConst(28, 1)),
                 ReturnValue(29, SimpleVar(0, ComputationalTypeInt)),
                 Assignment(30, SimpleVar(0, ComputationalTypeInt), IntConst(30, 2)),
@@ -71,10 +87,24 @@ class TACNaiveSwitchTest extends TACNaiveTest {
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
             statements.shouldEqual(Array(
-                Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
-                Assignment(-1, SimpleVar(-2, ComputationalTypeInt), Param(ComputationalTypeInt, "p_1")),
-                Assignment(0, SimpleVar(0, ComputationalTypeInt), SimpleVar(-2, ComputationalTypeInt)),
-                Switch(1, 8, SimpleVar(0, ComputationalTypeInt), RefArray((1, 4), (10, 6))),
+                Assignment(
+                    -1,
+                    SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")
+                ),
+                Assignment(
+                    -1,
+                    SimpleVar(-2, ComputationalTypeInt), Param(ComputationalTypeInt, "p_1")
+                ),
+                Assignment(
+                    0,
+                    SimpleVar(0, ComputationalTypeInt), SimpleVar(-2, ComputationalTypeInt)
+                ),
+                Switch(
+                    1,
+                    8,
+                    SimpleVar(0, ComputationalTypeInt),
+                    RefArray(IntIntPair(1, 4), IntIntPair(10, 6))
+                ),
                 Assignment(28, SimpleVar(0, ComputationalTypeInt), IntConst(28, 10)),
                 ReturnValue(30, SimpleVar(0, ComputationalTypeInt)),
                 Assignment(31, SimpleVar(0, ComputationalTypeInt), IntConst(31, 200)),
