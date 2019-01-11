@@ -7,11 +7,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import org.opalj.br.analyses.SomeProject
 
 /**
- * Provides the generic infrastructure that is implemented by all factories for
- * FPCF analyses.
- * Analyses that are created using this factory will then be run using the [[PropertyStore]].
- * I.e., this trait is typically implemented by the singleton object that facilitates
- * the creation of analyses.
+ * Specification of the properties of an analysis.
  *
  * @note   It is possible to use an analysis that directly uses the property store and
  *         an analysis that uses this factory infrastructure at the same time.
