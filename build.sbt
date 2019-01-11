@@ -248,6 +248,18 @@ lazy val `BytecodeAssembler` = (project in file("OPAL/ba"))
     ai % "it->it;it->test;test->test;compile->compile")
   .configs(IntegrationTest)
 
+lazy val hermes = `Hermes`
+lazy val `Hermes` = (project in file("TOOLS/hermes"))
+  .settings(buildSettings: _*)
+  .settings(
+    name := "Hermes",
+    libraryDependencies ++= Dependencies.hermes,
+    scalacOptions in(Compile, doc) ++= Opts.doc.title("OPAL - Hermes"))
+  .dependsOn(
+    da % "it->it;it->test;test->test;compile->compile",
+    ai % "it->it;it->test;test->test;compile->compile")
+  .configs(IntegrationTest)
+
 // The project "DependenciesExtractionLibrary" depends on
 // the abstract interpretation framework to be able to
 // resolve calls using MethodHandle/MethodType/"invokedynamic"/...
@@ -299,9 +311,9 @@ lazy val `OPAL-DeveloperTools` = (project in file("DEVELOPING_OPAL/tools"))
     fork := true
   )
   .dependsOn(
-    av % "test->test;compile->compile",
+    ba % "test->test;compile->compile;it->it",  
     // DISABLED BUGPICKER      bp % "test->test;compile->compile",
-    ba % "test->test;compile->compile;it->it")
+    av % "test->test;compile->compile")
   .configs(IntegrationTest)
 
 // This project validates OPAL's implemented architecture and
@@ -314,9 +326,10 @@ lazy val `OPAL-Validate` = (project in file("DEVELOPING_OPAL/validate"))
     publishArtifact := false,
     name := "OPAL-Validate",
     scalacOptions in(Compile, doc) ++= Opts.doc.title("OPAL - Validate"),
-    compileOrder in Test := CompileOrder.Mixed
-  )
-  .dependsOn(DeveloperTools % "compile->compile;test->test;it->it;it->test")
+    compileOrder in Test := CompileOrder.Mixed)
+  .dependsOn(
+    DeveloperTools % "compile->compile;test->test;it->it;it->test",
+    hermes % "test->test;compile->compile;it->it")
   .configs(IntegrationTest)
 
 lazy val demos = `Demos`
@@ -333,8 +346,24 @@ lazy val `Demos` = (project in file("DEVELOPING_OPAL/demos"))
 /** ***************************************************************************
   *
   * PROJECTS BELONGING TO THE OPAL ECOSYSTEM
+  * (Not Deployed to Maven Central!)
   *
   */
+
+lazy val hermes_ui = `HermesUI`
+lazy val `HermesUI` = (project in file("TOOLS/hermes_ui"))
+  .settings(buildSettings: _*)
+  .settings(
+    name := "OPAL-Hermes UI",
+    // INCUBATION CODE IS NEVER EVEN CONSIDERED TO BE ALPHA QUALITY
+    scalacOptions in(Compile, doc) ++= Opts.doc.title("OPAL - Hermes UI"),
+    libraryDependencies ++= Dependencies.hermesUI,
+    fork in run := true,
+    publishArtifact := false)
+  .dependsOn(
+    hermes % "it->it;it->test;test->test;compile->compile")
+  .configs(IntegrationTest)
+
 lazy val incubation = `Incubation`
 lazy val `Incubation` = (project in file("OPAL/incubation"))
   .settings(buildSettings: _*)

@@ -67,7 +67,7 @@ object Dependencies {
     val bi = Seq(commonstext)
     val br = Seq(scalaparsercombinators, scalaxml)
     val developerTools = Seq(scalafx, controlsfx, txtmark, jacksonDF, chocosolver)
-    val hermesCore = Seq(scalafx, controlsfx, txtmark, jacksonDF, chocosolver)
+    val hermes = Seq(scalafx, controlsfx, txtmark, jacksonDF, chocosolver)
     val hermesUI = Seq(scalafx, controlsfx, txtmark, jacksonDF, chocosolver)
 
 

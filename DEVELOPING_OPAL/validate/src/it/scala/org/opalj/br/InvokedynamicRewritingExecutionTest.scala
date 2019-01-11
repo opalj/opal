@@ -208,6 +208,7 @@ class InvokedynamicRewritingExecutionTest extends FunSpec with Matchers {
             // Otherwise, the hermes resources are not included and hermes won't find
             // HermesCLI.txt for example
             val paths = Array(
+                new File("TOOLS/hermes/src/main/resources/").toURI.toURL,
                 new File("DEVELOPING_OPAL/tools/src/main/resources/").toURI.toURL,
                 new File("OPAL/ai/src/main/resources/").toURI.toURL,
                 new File("OPAL/ba/src/main/resources/").toURI.toURL,
@@ -225,7 +226,7 @@ class InvokedynamicRewritingExecutionTest extends FunSpec with Matchers {
             val tempFile = Files.createTempFile("OPALValidate-Hermes-stats-", ".csv").toFile
             tempFile.delete()
 
-            println("Starting Hermes...")
+            info("Starting Hermes...")
             m.invoke(null, Array(
                 "-config", "DEVELOPING_OPAL/validate/src/it/resources/hermes-test-fixtures.json",
                 "-statistics", tempFile.getAbsolutePath

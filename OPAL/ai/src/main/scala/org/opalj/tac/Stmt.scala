@@ -272,7 +272,11 @@ case class Switch[+V <: Var[V]](
         pcToIndex:                    Array[Int],
         isIndexOfCaughtExceptionStmt: Int ⇒ Boolean
     ): Unit = {
-        npairs._UNSAFE_mapped(x ⇒ (x._1, pcToIndex(x._2)))
+        npairs._UNSAFE_mapped { x ⇒
+            val newIndex = pcToIndex(x._2)
+            // assert(newIndex >= 0)
+            (x._1 /* <= case value */ , newIndex)
+        }
         defaultTarget = pcToIndex(defaultTarget)
         index.remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt)
     }
