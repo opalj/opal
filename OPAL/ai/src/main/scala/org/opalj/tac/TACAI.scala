@@ -824,11 +824,11 @@ object TACAI {
                 //      H A N D L I N G   S W I T C H    S T A T E M E N T S
                 //
                 // It may be the case that some or all except of one branch are actually
-                // dead – in particular in obfuscated code - in this cases, we have to 
+                // dead – in particular in obfuscated code - in this cases, we have to
                 // rewrite the switch statement. Given that at least one branch has to
                 // be live, we can use that branches jump target as the jump target of the
                 // goto instruction; in this case it doesn't matter whether it is a default
-                // branch target or some other branch target. (The default can also be 
+                // branch target or some other branch target. (The default can also be
                 // dead if the switch is exhaustive; in that case, we can choose an arbitrary
                 // value and consider its target as the default target.)
                 // When we rewrite a switch to a goto, we have to kill the operand usage
@@ -841,26 +841,24 @@ object TACAI {
                     val defaultTarget = pc + tableSwitch.defaultOffset
                     var caseValue = tableSwitch.low
                     // IMPROVE Use IntIntPair
-                    val npairs = tableSwitch.jumpOffsets.map[(Int, Int)] { jo ⇒
+                    val npairs = tableSwitch.jumpOffsets.map[IntIntPair] { jo ⇒
                         val caseTarget = pc + jo
-                        val npair = (caseValue, caseTarget)
+                        val npair = IntIntPair(caseValue, caseTarget)
                         caseValue += 1
                         npair
                     }
                     addStmt(Switch(pc, defaultTarget, index, npairs))
-                    // FIXME  see general comment
+                // FIXME  see general comment
 
                 case LOOKUPSWITCH.opcode ⇒
                     val index = operandUse(0)
                     val lookupSwitch = as[LOOKUPSWITCH](instruction)
                     val defaultTarget = pc + lookupSwitch.defaultOffset
-                    val npairs = lookupSwitch.npairs.map[(Int, Int)] { npair ⇒
-                        val IntIntPair(caseValue, branchOffset) = npair
-                        val caseTarget = pc + branchOffset
-                        (caseValue, caseTarget)
+                    val npairs = lookupSwitch.npairs.map[IntIntPair] { npair ⇒
+                        npair.incrementValue(increment = pc)
                     }
                     addStmt(Switch(pc, defaultTarget, index, npairs))
-                    // FIXME  see general comment
+                // FIXME  see general comment
 
                 case DUP.opcode | DUP_X1.opcode | DUP_X2.opcode
                     | DUP2.opcode | DUP2_X1.opcode | DUP2_X2.opcode ⇒ addNOP(pc)

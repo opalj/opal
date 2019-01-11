@@ -713,9 +713,9 @@ object TACNaive {
                     val tableSwitch = as[TABLESWITCH](instruction)
                     val defaultTarget = pc + tableSwitch.defaultOffset
                     var caseValue = tableSwitch.low
-                    val npairs = tableSwitch.jumpOffsets.map[(Int, PC)] { jo ⇒
+                    val npairs = tableSwitch.jumpOffsets.map[IntIntPair /*(Int, PC)*/ ] { jo ⇒
                         val caseTarget = pc + jo
-                        val npair = (caseValue, caseTarget)
+                        val npair = IntIntPair(caseValue, caseTarget)
                         schedule(caseTarget, rest)
                         caseValue += 1
                         npair
@@ -727,11 +727,11 @@ object TACNaive {
                     val index :: rest = stack
                     val lookupSwitch = as[LOOKUPSWITCH](instruction)
                     val defaultTarget = pc + lookupSwitch.defaultOffset
-                    val npairs = lookupSwitch.npairs.map[(Int, PC)] { npair ⇒
+                    val npairs = lookupSwitch.npairs.map[IntIntPair /*(Int, PC)*/ ] { npair ⇒
                         val IntIntPair(caseValue, branchOffset) = npair
                         val caseTarget = pc + branchOffset
                         schedule(caseTarget, rest)
-                        (caseValue, caseTarget)
+                        IntIntPair(caseValue, caseTarget)
                     }
                     schedule(defaultTarget, rest)
                     statements(pc) = List(Switch(pc, defaultTarget, index, npairs))
