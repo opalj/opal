@@ -337,6 +337,7 @@ lazy val `Demos` = (project in file("DEVELOPING_OPAL/demos"))
   .settings(buildSettings: _*)
   .settings(
     name := "Demos",
+    publishArtifact := false,
     scalacOptions in(Compile, doc) ++= Opts.doc.title("OPAL - Demos"),
     unmanagedSourceDirectories in Compile := (javaSource in Compile).value :: (scalaSource in Compile).value :: Nil,
     fork in run := true)
@@ -360,8 +361,7 @@ lazy val `HermesUI` = (project in file("TOOLS/hermes_ui"))
     libraryDependencies ++= Dependencies.hermesUI,
     fork in run := true,
     publishArtifact := false)
-  .dependsOn(
-    hermes % "it->it;it->test;test->test;compile->compile")
+  .dependsOn(hermes % "it->it;it->test;test->test;compile->compile")
   .configs(IntegrationTest)
 
 lazy val incubation = `Incubation`
