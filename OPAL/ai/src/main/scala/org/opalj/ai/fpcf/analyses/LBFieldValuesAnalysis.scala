@@ -225,7 +225,7 @@ object EagerLBFieldValuesAnalysis extends BasicFPCFEagerAnalysisScheduler {
 
     override def uses: Set[PropertyBounds] = Set()
 
-    def derivedProperty: PropertyBounds = PropertyBounds.lub(FieldValue.key)
+    def derivedProperty: PropertyBounds = PropertyBounds.lb(FieldValue.key)
 
     override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
 

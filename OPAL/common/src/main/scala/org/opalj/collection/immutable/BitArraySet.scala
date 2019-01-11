@@ -4,9 +4,10 @@ package collection
 package immutable
 
 /**
- * An immutable bit set for storing positive int values. An array is used to store
- * the underlying values. The empty bit set and sets where the maximum value is 64
- * use optimized representations.
+ * An immutable bit set for storing positive int values.
+ *
+ * An array is used to store the underlying values.
+ * The empty bit set and sets where the maximum value is 64 use optimized representations.
  *
  * @author Michael Eichberg
  */
@@ -50,7 +51,7 @@ private[immutable] object EmptyBitArraySet extends BitArraySet { thisSet ⇒
     override def equals(other: Any): Boolean = {
         other match {
             case that: BitArraySet ⇒ that.isEmpty
-            case _                 ⇒ false
+            case _                 ⇒ false // the other BitSets are never empty!
         }
     }
 
@@ -120,12 +121,13 @@ private[immutable] final class BitArraySet64(val set: Long) extends BitArraySet 
 
     override def iterator: IntIterator = new IntIterator {
         private[this] var i: Int = -1
-        private[this] def getNextValue(): Unit = {
+        private[this] def advanceIterator(): Unit = {
             do { i += 1 } while (i < 64 && !thisSet.contains(i))
         }
-        getNextValue()
+        advanceIterator()
+
         def hasNext: Boolean = i < 64
-        def next(): Int = { val i = this.i; getNextValue(); i }
+        def next(): Int = { val i = this.i; advanceIterator(); i }
     }
 
     override def equals(other: Any): Boolean = {
@@ -290,12 +292,12 @@ private[immutable] final class BitArraySetN(val set: Array[Long]) extends BitArr
     override def iterator: IntIterator = new IntIterator {
         private[this] val max: Int = set.length * 64
         private[this] var i: Int = -1
-        private[this] def getNextValue(): Unit = {
+        private[this] def advanceIterator(): Unit = {
             do { i += 1 } while (i < max && !thisSet.contains(i))
         }
-        getNextValue()
+        advanceIterator()
         def hasNext: Boolean = i < max
-        def next(): Int = { val i = this.i; getNextValue(); i }
+        def next(): Int = { val i = this.i; advanceIterator(); i }
     }
 
     override def equals(other: Any): Boolean = {

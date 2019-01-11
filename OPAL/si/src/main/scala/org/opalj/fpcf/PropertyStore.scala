@@ -956,7 +956,7 @@ object PropertyStore {
 
     private[this] var traceSuppressedNotifications: Boolean = {
         val initialTraceSuppressedNotifications = BaseConfig.getBoolean(TraceSuppressedNotificationsKey)
-        updateTraceFallbacks(initialTraceSuppressedNotifications)
+        updateTraceDependersNotificationsKey(initialTraceSuppressedNotifications)
         initialTraceSuppressedNotifications
     }
 

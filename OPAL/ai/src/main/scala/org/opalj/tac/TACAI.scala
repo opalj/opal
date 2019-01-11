@@ -42,10 +42,12 @@ import org.opalj.collection.mutable.RefAppendChain
  * The generated representation is completely parameterized over the domains that were used
  * to perform the abstract interpretation. The only requirement is that the Def/Use information
  * is recorded while performing the abstract interpretation (see
- * [[org.opalj.ai.domain.RecordDefUse]]). The generated representation is necessarily in
- * static single assignment form: each variable is assigned exactly once, and every variable is
- * defined before it is used. However, no PHI instructions are inserted; instead - in case of a
- * use - we simply directly refer to all def sites.
+ * [[org.opalj.ai.domain.RecordDefUse]]).
+ *
+ * The generated representation is necessarily in static single assignment form: each variable
+ * is assigned exactly once, and every variable is defined before it is used. However, no PHI
+ * instructions are inserted; instead - in case of a use - we simply directly refer to all
+ * def sites.
  *
  * @author Michael Eichberg
  */
@@ -116,8 +118,12 @@ object TACAI {
         optimizations: List[TACOptimization[TACMethodParameter, DUVar[aiResult.domain.DomainValue]]]
     ): TACode[TACMethodParameter, DUVar[aiResult.domain.DomainValue]] = {
 
+        val domain: aiResult.domain.type = aiResult.domain
+        val operandsArray: aiResult.domain.OperandsArray = aiResult.operandsArray
+        val localsArray: aiResult.domain.LocalsArray = aiResult.localsArray
+
         def allDead(fromPC: Int, untilPC: Int): Boolean = {
-            val a = aiResult.operandsArray
+            val a = operandsArray
             var i = fromPC
             while (i < untilPC) {
                 if (a(i) ne null) return false;
@@ -132,15 +138,13 @@ object TACAI {
 
         val isStatic = method.isStatic
         val descriptor = method.descriptor
-        val domain: aiResult.domain.type = aiResult.domain
         val code = method.body.get
         import code.pcOfNextInstruction
         val instructions: Array[Instruction] = code.instructions
         val codeSize: Int = instructions.length
         val cfg: CFG[Instruction, Code] = domain.bbCFG
-        def wasExecuted(pc: Int) = cfg.bb(pc) != null
-        val operandsArray: aiResult.domain.OperandsArray = aiResult.operandsArray
-        val localsArray: aiResult.domain.LocalsArray = aiResult.localsArray
+
+        def wasExecuted(pc: Int) = operandsArray(pc) != null
 
         // We already have the def-use information directly available, hence, for
         // instructions such as swap and dup, which do not create "relevant"
@@ -201,7 +205,7 @@ object TACAI {
         // The list of bytecode instructions which were killed (=>NOP), and for which we now
         // have to clear the usages.
         // basically a mapping from a UseSite(PC) to a DefSite
-        val obsoleteUseSites: RefAppendChain[PCAndAnyRef[IntTrieSet /*DefSites*/ ]] = new RefAppendChain()
+        val obsoleteUseSites = new RefAppendChain[PCAndAnyRef[IntTrieSet /*DefSites*/ ]]
 
         def killOperandBasedUsages(useSitePC: Int, valuesCount: Int): Unit = {
             // The value(s) is (are) not used and the expression is side effect free;
@@ -816,6 +820,21 @@ object TACAI {
                 case MONITORENTER.opcode ⇒ addStmt(MonitorEnter(pc, operandUse(0)))
                 case MONITOREXIT.opcode  ⇒ addStmt(MonitorExit(pc, operandUse(0)))
 
+                //
+                //      H A N D L I N G   S W I T C H    S T A T E M E N T S
+                //
+                // It may be the case that some or all except of one branch are actually
+                // dead – in particular in obfuscated code - in this cases, we have to 
+                // rewrite the switch statement. Given that at least one branch has to
+                // be live, we can use that branches jump target as the jump target of the
+                // goto instruction; in this case it doesn't matter whether it is a default
+                // branch target or some other branch target. (The default can also be 
+                // dead if the switch is exhaustive; in that case, we can choose an arbitrary
+                // value and consider its target as the default target.)
+                // When we rewrite a switch to a goto, we have to kill the operand usage
+                // and add a goto unless the goto simply jumps to the next instruction in
+                // which case, we replace it by NOP.
+
                 case TABLESWITCH.opcode ⇒
                     val index = operandUse(0)
                     val tableSwitch = as[TABLESWITCH](instruction)
@@ -829,6 +848,7 @@ object TACAI {
                         npair
                     }
                     addStmt(Switch(pc, defaultTarget, index, npairs))
+                    // FIXME  see general comment
 
                 case LOOKUPSWITCH.opcode ⇒
                     val index = operandUse(0)
@@ -840,6 +860,7 @@ object TACAI {
                         (caseValue, caseTarget)
                     }
                     addStmt(Switch(pc, defaultTarget, index, npairs))
+                    // FIXME  see general comment
 
                 case DUP.opcode | DUP_X1.opcode | DUP_X2.opcode
                     | DUP2.opcode | DUP2_X1.opcode | DUP2_X2.opcode ⇒ addNOP(pc)

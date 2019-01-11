@@ -101,8 +101,7 @@ object TACNaive {
 
             // Schedules the execution of the instruction using the given stack.
             def schedule(nextPC: PC, newStack: Stack): Unit = {
-                if (!processed.contains(nextPC)) {
-                    processed += nextPC
+                if (processed add nextPC) {
                     worklist ::= ((nextPC, newStack))
                 }
             }
