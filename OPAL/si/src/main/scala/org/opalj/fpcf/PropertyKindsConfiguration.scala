@@ -47,7 +47,7 @@ case class PropertyKindsConfiguration(
             }.mkString("suppressInterimUpdates={", ",", "}\n\t") +
             collaborativelyComputedPropertyKindsFinalizationOrder
             .map(_.map(PropertyKey.name).mkString("[", ",", "]"))
-            .mkString("finalizationOrder=[ ", " , ", " ]\n")
-        ")"
+            .mkString("finalizationOrder=[ ", " , ", " ]\n")+
+            ")"
     }
 }
