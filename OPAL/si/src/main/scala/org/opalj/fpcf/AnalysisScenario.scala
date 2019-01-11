@@ -90,7 +90,6 @@ class AnalysisScenario[A] {
                                 s"for the collaboratively computed property $propertyName"
                         )
                 }
-
             }
         }
 

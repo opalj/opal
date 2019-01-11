@@ -74,6 +74,7 @@ object L0BaseAIResultAnalysis {
 
 sealed trait L0BaseAIResultAnalysisScheduler extends ComputationSpecification[FPCFAnalysis] {
 
+    // FIXME The properties that are actually used depends on the properties read by the underlying domain
     final override def uses: Set[PropertyBounds] = Set.empty
 
     final def derivedProperty: PropertyBounds = PropertyBounds.lub(BaseAIResult)

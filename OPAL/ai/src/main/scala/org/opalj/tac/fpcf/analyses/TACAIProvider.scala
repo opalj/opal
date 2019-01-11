@@ -23,7 +23,7 @@ import org.opalj.tac.fpcf.properties.TACAI
 /**
  * Provides the TACAI for all methods. The TACAI provided by the TACAI provider is always
  * detached from the underlying results of the abstract interpration and therefore
- * significantly reduces the overall memory consumption.
+ * significantly reduces the overall memory consumption if the AIResults are not needed!
  *
  * @author Michael Eichberg
  */
@@ -43,6 +43,7 @@ class TACAIProvider private[analyses] (val project: SomeProject) extends FPCFAna
 
 sealed trait TACAIProviderScheduler extends TACAIInitializer {
 
+    // FIXME The properties that are actually used depends on the properties read by the underlying domain
     final override def uses: Set[PropertyBounds] = Set.empty
 
     final def derivedProperty: PropertyBounds = PropertyBounds.finalP(TACAI)
