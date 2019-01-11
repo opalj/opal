@@ -77,9 +77,8 @@ import org.opalj.br.analyses.Project.JavaClassFileReader
 import org.opalj.ai.Domain
 import org.opalj.ai.domain
 import org.opalj.ai.domain.RecordDefUse
-import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
-import org.opalj.tac.fpcf.analyses.TACAITransformer
+import org.opalj.tac.fpcf.analyses.LazyTACAIProvider
 
 /**
  * Executes a purity analysis (L2 by default) along with necessary supporting analysis.
@@ -116,8 +115,9 @@ object Purity {
         TriggeredInstantiatedTypesAnalysis,
         TriggeredConfiguredNativeMethodsAnalysis,
         TriggeredSystemPropertiesAnalysis,
-        LazyL0BaseAIAnalysis,
-        TACAITransformer,
+        // LazyL0BaseAIAnalysis,
+        // TACAITransformer,
+        LazyTACAIProvider,
         LazyCalleesAnalysis(
             Set(
                 StandardInvokeCallees,
