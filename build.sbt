@@ -355,7 +355,7 @@ lazy val hermes_ui = `HermesUI`
 lazy val `HermesUI` = (project in file("TOOLS/hermes_ui"))
   .settings(buildSettings: _*)
   .settings(
-    name := "OPAL-Hermes UI",
+    name := "Hermes UI",
     // INCUBATION CODE IS NEVER EVEN CONSIDERED TO BE ALPHA QUALITY
     scalacOptions in(Compile, doc) ++= Opts.doc.title("OPAL - Hermes UI"),
     libraryDependencies ++= Dependencies.hermesUI,
