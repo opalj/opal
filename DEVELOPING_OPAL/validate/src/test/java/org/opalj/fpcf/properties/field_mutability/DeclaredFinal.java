@@ -28,11 +28,11 @@
  */
 package org.opalj.fpcf.properties.field_mutability;
 
-import org.opalj.fpcf.FPCFAnalysis;
-import org.opalj.fpcf.analyses.L0FieldMutabilityAnalysis;
-import org.opalj.fpcf.analyses.L1FieldMutabilityAnalysis;
-import org.opalj.fpcf.analyses.L2FieldMutabilityAnalysis;
+import org.opalj.br.fpcf.FPCFAnalysis;
+import org.opalj.br.fpcf.analyses.L0FieldMutabilityAnalysis;
 import org.opalj.fpcf.properties.PropertyValidator;
+import org.opalj.tac.fpcf.analyses.L1FieldMutabilityAnalysis;
+import org.opalj.tac.fpcf.analyses.L2FieldMutabilityAnalysis;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;

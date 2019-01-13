@@ -5,34 +5,34 @@ package info
 
 import java.net.URL
 
+import org.opalj.collection.immutable.Chain
+import org.opalj.fpcf.ComputationSpecification
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
-import org.opalj.collection.immutable.Chain
-import org.opalj.fpcf.FPCFAnalysesManagerKey
-import org.opalj.fpcf.ComputationSpecification
-import org.opalj.fpcf.FPCFAnalysis
-import org.opalj.fpcf.PropertyStoreKey
-import org.opalj.fpcf.analyses.TriggeredSystemPropertiesAnalysis
-import org.opalj.fpcf.analyses.cg.EagerLibraryEntryPointsAnalysis
-import org.opalj.fpcf.analyses.cg.LazyCalleesAnalysis
-import org.opalj.fpcf.analyses.cg.TriggeredConfiguredNativeMethodsAnalysis
-import org.opalj.fpcf.analyses.cg.TriggeredFinalizerAnalysisScheduler
-import org.opalj.fpcf.analyses.cg.TriggeredInstantiatedTypesAnalysis
-import org.opalj.fpcf.analyses.cg.TriggeredLoadedClassesAnalysis
-import org.opalj.fpcf.analyses.cg.RTACallGraphAnalysisScheduler
-import org.opalj.fpcf.analyses.cg.TriggeredSerializationRelatedCallsAnalysis
-import org.opalj.fpcf.analyses.cg.TriggeredStaticInitializerAnalysis
-import org.opalj.fpcf.analyses.cg.TriggeredThreadRelatedCallsAnalysis
-import org.opalj.fpcf.analyses.cg.reflection.TriggeredReflectionRelatedCallsAnalysis
-import org.opalj.fpcf.cg.properties.CallersProperty
-import org.opalj.fpcf.cg.properties.NoCallers
-import org.opalj.fpcf.cg.properties.ReflectionRelatedCallees
-import org.opalj.fpcf.cg.properties.SerializationRelatedCallees
-import org.opalj.fpcf.cg.properties.StandardInvokeCallees
-import org.opalj.fpcf.cg.properties.Callees
-import org.opalj.fpcf.cg.properties.ThreadRelatedIncompleteCallSites
+import org.opalj.br.fpcf.FPCFAnalysesManagerKey
+import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.fpcf.PropertyStoreKey
+import org.opalj.br.fpcf.cg.properties.Callees
+import org.opalj.br.fpcf.cg.properties.CallersProperty
+import org.opalj.br.fpcf.cg.properties.NoCallers
+import org.opalj.br.fpcf.cg.properties.ReflectionRelatedCallees
+import org.opalj.br.fpcf.cg.properties.SerializationRelatedCallees
+import org.opalj.br.fpcf.cg.properties.StandardInvokeCallees
+import org.opalj.br.fpcf.cg.properties.ThreadRelatedIncompleteCallSites
+import org.opalj.tac.fpcf.analyses.cg.EagerLibraryEntryPointsAnalysis
+import org.opalj.tac.fpcf.analyses.cg.LazyCalleesAnalysis
+import org.opalj.tac.fpcf.analyses.cg.RTACallGraphAnalysisScheduler
+import org.opalj.tac.fpcf.analyses.cg.TriggeredConfiguredNativeMethodsAnalysis
+import org.opalj.tac.fpcf.analyses.cg.TriggeredFinalizerAnalysisScheduler
+import org.opalj.tac.fpcf.analyses.cg.TriggeredInstantiatedTypesAnalysis
+import org.opalj.tac.fpcf.analyses.cg.TriggeredLoadedClassesAnalysis
+import org.opalj.tac.fpcf.analyses.cg.TriggeredSerializationRelatedCallsAnalysis
+import org.opalj.tac.fpcf.analyses.cg.TriggeredStaticInitializerAnalysis
+import org.opalj.tac.fpcf.analyses.cg.TriggeredThreadRelatedCallsAnalysis
+import org.opalj.tac.fpcf.analyses.cg.reflection.TriggeredReflectionRelatedCallsAnalysis
+import org.opalj.tac.fpcf.analyses.TriggeredSystemPropertiesAnalysis
 //import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
 //import org.opalj.tac.fpcf.analyses.TACAITransformer
 import org.opalj.tac.fpcf.analyses.LazyTACAIProvider
@@ -109,7 +109,7 @@ object RTACallGraph extends DefaultOneStepAnalysis {
             ),
             { css: Chain[ComputationSpecification[FPCFAnalysis]] ⇒
                 if (css.contains(calleesAnalysis)) {
-                    allMethods.foreach { dm ⇒ ps.force(dm, fpcf.cg.properties.Callees.key) }
+                    allMethods.foreach { dm ⇒ ps.force(dm, br.fpcf.cg.properties.Callees.key) }
                 }
             }
         )

@@ -4,9 +4,7 @@ package ai
 package fpcf
 package analyses
 
-import org.opalj.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.fpcf.FinalEP
-import org.opalj.fpcf.FPCFAnalysis
 import org.opalj.fpcf.MultiResult
 import org.opalj.fpcf.NoResult
 import org.opalj.fpcf.PropertyBounds
@@ -22,6 +20,8 @@ import org.opalj.br.ObjectType
 import org.opalj.br.PC
 import org.opalj.br.analyses.FieldAccessInformationKey
 import org.opalj.br.Field
+import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
+import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.ai.fpcf.analyses.FieldValuesAnalysis.ignoredFields
 import org.opalj.ai.fpcf.properties.FieldValue
 import org.opalj.ai.fpcf.properties.ValueBasedFieldValueInformation
@@ -51,7 +51,7 @@ class LBFieldValuesAnalysis private[analyses] (
      *
      * One instance of this domain is used to analyze all methods of the respective
      * class. Only after the analysis of all methods, the information returned by
-     * [[fieldInformation]] is guaranteed to be correct.
+     * [[InitialFieldValuesAnalysisDomain#fieldInformation]] is guaranteed to be correct.
      *
      * @author Michael Eichberg
      */

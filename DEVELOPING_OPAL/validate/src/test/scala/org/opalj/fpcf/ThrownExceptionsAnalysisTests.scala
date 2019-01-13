@@ -1,8 +1,8 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf
 
-import org.opalj.fpcf.analyses.EagerVirtualMethodAllocationFreenessAnalysis
-import org.opalj.fpcf.analyses.EagerL1ThrownExceptionsAnalysis
+import org.opalj.br.fpcf.analyses.EagerL1ThrownExceptionsAnalysis
+import org.opalj.br.fpcf.analyses.EagerVirtualMethodAllocationFreenessAnalysis
 
 /**
  * Tests if the properties specified in the test project (the classes in the (sub-)package of

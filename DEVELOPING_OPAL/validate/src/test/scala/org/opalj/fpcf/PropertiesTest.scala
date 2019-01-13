@@ -35,8 +35,11 @@ import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.InitialEntryPointsKey
 import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
-import org.opalj.ai.common.DefinitionSite
-import org.opalj.ai.common.DefinitionSitesKey
+import org.opalj.br.fpcf.FPCFAnalysesManagerKey
+import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.fpcf.PropertyStoreKey
+import org.opalj.tac.common.DefinitionSite
+import org.opalj.tac.common.DefinitionSitesKey
 
 /**
  * Framework to test if the properties specified in the test project (the classes in the

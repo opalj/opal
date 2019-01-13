@@ -231,11 +231,21 @@ lazy val `AbstractInterpretationFramework` = (project in file("OPAL/ai"))
   .settings(
     name := "Abstract Interpretation Framework",
     scalacOptions in(Compile, doc) := (Opts.doc.title("OPAL - Abstract Interpretation Framework") ++ Seq("-groups", "-implicits")),
-    assemblyJarName in assembly := "OPALTACDisassembler.jar",
-    mainClass in assembly := Some("org.opalj.tac.TAC"),
     fork in run := true)
   .dependsOn(br % "it->it;it->test;test->test;compile->compile")
   .configs(IntegrationTest)
+
+  lazy val tac = `ThreeAddressCode`
+  lazy val `ThreeAddressCode` = (project in file("OPAL/tac"))
+    .settings(buildSettings: _*)
+    .settings(
+      name := "Three Address Code",
+      scalacOptions in(Compile, doc) := (Opts.doc.title("OPAL - Three Address Code") ++ Seq("-groups", "-implicits")),
+      assemblyJarName in assembly := "OPALTACDisassembler.jar",
+      mainClass in assembly := Some("org.opalj.tac.TAC"),
+      fork in run := true)
+    .dependsOn(ai % "it->it;it->test;test->test;compile->compile")
+    .configs(IntegrationTest)
 
 lazy val ba = `BytecodeAssembler`
 lazy val `BytecodeAssembler` = (project in file("OPAL/ba"))
@@ -257,7 +267,7 @@ lazy val `Hermes` = (project in file("TOOLS/hermes"))
     scalacOptions in(Compile, doc) ++= Opts.doc.title("OPAL - Hermes"))
   .dependsOn(
     da % "it->it;it->test;test->test;compile->compile",
-    ai % "it->it;it->test;test->test;compile->compile")
+    tac % "it->it;it->test;test->test;compile->compile")
   .configs(IntegrationTest)
 
 // The project "DependenciesExtractionLibrary" depends on
@@ -313,7 +323,8 @@ lazy val `OPAL-DeveloperTools` = (project in file("DEVELOPING_OPAL/tools"))
   .dependsOn(
     ba % "test->test;compile->compile;it->it",  
     // DISABLED BUGPICKER      bp % "test->test;compile->compile",
-    av % "test->test;compile->compile")
+    av % "test->test;compile->compile",
+    tac % "test->test;compile->compile")
   .configs(IntegrationTest)
 
 // This project validates OPAL's implemented architecture and
@@ -341,7 +352,7 @@ lazy val `Demos` = (project in file("DEVELOPING_OPAL/demos"))
     scalacOptions in(Compile, doc) ++= Opts.doc.title("OPAL - Demos"),
     unmanagedSourceDirectories in Compile := (javaSource in Compile).value :: (scalaSource in Compile).value :: Nil,
     fork in run := true)
-  .dependsOn(av, ba)
+  .dependsOn(av, ba, tac)
   .configs(IntegrationTest)
 
 /** ***************************************************************************

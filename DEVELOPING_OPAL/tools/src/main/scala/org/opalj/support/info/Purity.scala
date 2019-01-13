@@ -11,64 +11,43 @@ import java.util.Calendar
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigValueFactory
 
-import org.opalj.util.Seconds
 import org.opalj.util.PerformanceEvaluation.time
-import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.util.Seconds
 import org.opalj.collection.immutable.Chain
+import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.ComputationSpecification
-import org.opalj.fpcf.FPCFAnalysesManagerKey
-import org.opalj.fpcf.FPCFAnalysis
-import org.opalj.fpcf.FPCFAnalysisScheduler
-import org.opalj.fpcf.FPCFLazyAnalysisScheduler
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.PropertyStore
-import org.opalj.fpcf.PropertyStoreKey
-import org.opalj.fpcf.analyses.LazyClassImmutabilityAnalysis
-import org.opalj.fpcf.analyses.LazyFieldLocalityAnalysis
-import org.opalj.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
-import org.opalj.fpcf.analyses.LazyL0FieldMutabilityAnalysis
-import org.opalj.fpcf.analyses.LazyL0PurityAnalysis
-import org.opalj.fpcf.analyses.LazyL1FieldMutabilityAnalysis
-import org.opalj.fpcf.analyses.LazyStaticDataUsageAnalysis
-import org.opalj.fpcf.analyses.LazyTypeImmutabilityAnalysis
-import org.opalj.fpcf.analyses.TriggeredSystemPropertiesAnalysis
-import org.opalj.fpcf.analyses.cg.TriggeredConfiguredNativeMethodsAnalysis
-import org.opalj.fpcf.analyses.cg.TriggeredFinalizerAnalysisScheduler
-import org.opalj.fpcf.analyses.cg.TriggeredInstantiatedTypesAnalysis
-import org.opalj.fpcf.analyses.cg.EagerLibraryEntryPointsAnalysis
-import org.opalj.fpcf.analyses.cg.RTACallGraphAnalysisScheduler
-import org.opalj.fpcf.analyses.cg.TriggeredSerializationRelatedCallsAnalysis
-import org.opalj.fpcf.analyses.cg.TriggeredStaticInitializerAnalysis
-import org.opalj.fpcf.analyses.cg.TriggeredThreadRelatedCallsAnalysis
-import org.opalj.fpcf.analyses.cg.LazyCalleesAnalysis
-import org.opalj.fpcf.analyses.cg.TriggeredLoadedClassesAnalysis
-import org.opalj.fpcf.analyses.cg.reflection.TriggeredReflectionRelatedCallsAnalysis
-import org.opalj.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
-import org.opalj.fpcf.analyses.purity.DomainSpecificRater
-import org.opalj.fpcf.analyses.purity.L1PurityAnalysis
-import org.opalj.fpcf.analyses.purity.L2PurityAnalysis
-import org.opalj.fpcf.analyses.purity.LazyL1PurityAnalysis
-import org.opalj.fpcf.analyses.purity.LazyL2PurityAnalysis
-import org.opalj.fpcf.analyses.purity.SystemOutLoggingAllExceptionRater
-import org.opalj.fpcf.cg.properties.CallersProperty
-import org.opalj.fpcf.cg.properties.NoCallers
-import org.opalj.fpcf.cg.properties.ReflectionRelatedCallees
-import org.opalj.fpcf.cg.properties.SerializationRelatedCallees
-import org.opalj.fpcf.cg.properties.StandardInvokeCallees
-import org.opalj.fpcf.cg.properties.ThreadRelatedIncompleteCallSites
-import org.opalj.fpcf.properties.CompileTimePure
-import org.opalj.fpcf.properties.ContextuallyPure
-import org.opalj.fpcf.properties.ContextuallySideEffectFree
-import org.opalj.fpcf.properties.DContextuallyPure
-import org.opalj.fpcf.properties.DContextuallySideEffectFree
-import org.opalj.fpcf.properties.DPure
-import org.opalj.fpcf.properties.DSideEffectFree
-import org.opalj.fpcf.properties.ImpureByAnalysis
-import org.opalj.fpcf.properties.ImpureByLackOfInformation
-import org.opalj.fpcf.properties.Pure
-import org.opalj.fpcf.properties.SideEffectFree
 import org.opalj.bytecode.JRELibraryFolder
+import org.opalj.br.fpcf.FPCFAnalysesManagerKey
+import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.fpcf.FPCFAnalysisScheduler
+import org.opalj.br.fpcf.FPCFLazyAnalysisScheduler
+import org.opalj.br.fpcf.PropertyStoreKey
+import org.opalj.br.fpcf.analyses.LazyClassImmutabilityAnalysis
+import org.opalj.br.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
+import org.opalj.br.fpcf.analyses.LazyL0FieldMutabilityAnalysis
+import org.opalj.br.fpcf.analyses.LazyL0PurityAnalysis
+import org.opalj.br.fpcf.analyses.LazyStaticDataUsageAnalysis
+import org.opalj.br.fpcf.analyses.LazyTypeImmutabilityAnalysis
+import org.opalj.br.fpcf.cg.properties.CallersProperty
+import org.opalj.br.fpcf.cg.properties.NoCallers
+import org.opalj.br.fpcf.cg.properties.ReflectionRelatedCallees
+import org.opalj.br.fpcf.cg.properties.SerializationRelatedCallees
+import org.opalj.br.fpcf.cg.properties.StandardInvokeCallees
+import org.opalj.br.fpcf.cg.properties.ThreadRelatedIncompleteCallSites
+import org.opalj.br.fpcf.properties.CompileTimePure
+import org.opalj.br.fpcf.properties.ContextuallyPure
+import org.opalj.br.fpcf.properties.ContextuallySideEffectFree
+import org.opalj.br.fpcf.properties.DContextuallyPure
+import org.opalj.br.fpcf.properties.DContextuallySideEffectFree
+import org.opalj.br.fpcf.properties.DPure
+import org.opalj.br.fpcf.properties.DSideEffectFree
+import org.opalj.br.fpcf.properties.ImpureByAnalysis
+import org.opalj.br.fpcf.properties.ImpureByLackOfInformation
+import org.opalj.br.fpcf.properties.Pure
+import org.opalj.br.fpcf.properties.SideEffectFree
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
 import org.opalj.br.analyses.DeclaredMethodsKey
@@ -78,7 +57,28 @@ import org.opalj.ai.Domain
 import org.opalj.ai.domain
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
+import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
+import org.opalj.tac.fpcf.analyses.LazyL1FieldMutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.TriggeredSystemPropertiesAnalysis
+import org.opalj.tac.fpcf.analyses.cg.EagerLibraryEntryPointsAnalysis
+import org.opalj.tac.fpcf.analyses.cg.LazyCalleesAnalysis
+import org.opalj.tac.fpcf.analyses.cg.RTACallGraphAnalysisScheduler
+import org.opalj.tac.fpcf.analyses.cg.TriggeredConfiguredNativeMethodsAnalysis
+import org.opalj.tac.fpcf.analyses.cg.TriggeredFinalizerAnalysisScheduler
+import org.opalj.tac.fpcf.analyses.cg.TriggeredInstantiatedTypesAnalysis
+import org.opalj.tac.fpcf.analyses.cg.TriggeredLoadedClassesAnalysis
+import org.opalj.tac.fpcf.analyses.cg.TriggeredSerializationRelatedCallsAnalysis
+import org.opalj.tac.fpcf.analyses.cg.TriggeredStaticInitializerAnalysis
+import org.opalj.tac.fpcf.analyses.cg.TriggeredThreadRelatedCallsAnalysis
+import org.opalj.tac.fpcf.analyses.cg.reflection.TriggeredReflectionRelatedCallsAnalysis
+import org.opalj.tac.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
+import org.opalj.tac.fpcf.analyses.purity.L2PurityAnalysis
+import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis
 import org.opalj.tac.fpcf.analyses.LazyTACAIProvider
+import org.opalj.tac.fpcf.analyses.purity.DomainSpecificRater
+import org.opalj.tac.fpcf.analyses.purity.L1PurityAnalysis
+import org.opalj.tac.fpcf.analyses.purity.LazyL1PurityAnalysis
+import org.opalj.tac.fpcf.analyses.purity.SystemOutLoggingAllExceptionRater
 
 /**
  * Executes a purity analysis (L2 by default) along with necessary supporting analysis.
@@ -273,7 +273,7 @@ object Purity {
                 analyses,
                 { css: Chain[ComputationSpecification[FPCFAnalysis]] ⇒
                     if (css.contains(analysis)) {
-                        analyzedMethods.foreach { dm ⇒ ps.force(dm, fpcf.properties.Purity.key) }
+                        analyzedMethods.foreach { dm ⇒ ps.force(dm, br.fpcf.properties.Purity.key) }
                     }
                 }
             )
@@ -296,7 +296,7 @@ object Purity {
             }
         }
 
-        val purityEs = ps(analyzedMethods, fpcf.properties.Purity.key).filter {
+        val purityEs = ps(analyzedMethods, br.fpcf.properties.Purity.key).filter {
             case FinalP(p) ⇒ p ne ImpureByLackOfInformation
             case ep        ⇒ throw new RuntimeException(s"non final purity result $ep")
         }

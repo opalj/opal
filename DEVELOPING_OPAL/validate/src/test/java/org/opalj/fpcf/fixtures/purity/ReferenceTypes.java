@@ -1,9 +1,9 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.purity;
 
-import org.opalj.fpcf.analyses.L0PurityAnalysis;
-import org.opalj.fpcf.analyses.purity.L2PurityAnalysis;
-import org.opalj.fpcf.analyses.purity.L1PurityAnalysis;
+import org.opalj.br.fpcf.analyses.L0PurityAnalysis;
+import org.opalj.tac.fpcf.analyses.purity.L2PurityAnalysis;
+import org.opalj.tac.fpcf.analyses.purity.L1PurityAnalysis;
 import org.opalj.fpcf.properties.purity.*;
 
 /**

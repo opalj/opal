@@ -6,6 +6,7 @@ package return_freshness
 import org.opalj.br.AnnotationLike
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
+import org.opalj.br.fpcf.properties.ReturnValueFreshness
 
 /**
  * A property matcher that checks whether the annotated method has the specified return value
@@ -40,7 +41,14 @@ class ReturnValueFreshnessMatcher(val property: ReturnValueFreshness) extends Ab
     }
 }
 
-class PrimitiveReturnValueMatcher extends ReturnValueFreshnessMatcher(org.opalj.fpcf.properties.PrimitiveReturnValue)
-class NoFreshReturnValueMatcher extends ReturnValueFreshnessMatcher(org.opalj.fpcf.properties.NoFreshReturnValue)
-class FreshReturnValueMatcher extends ReturnValueFreshnessMatcher(org.opalj.fpcf.properties.FreshReturnValue)
-class GetterMatcher extends ReturnValueFreshnessMatcher(org.opalj.fpcf.properties.Getter)
+class PrimitiveReturnValueMatcher
+    extends ReturnValueFreshnessMatcher(org.opalj.br.fpcf.properties.PrimitiveReturnValue)
+
+class NoFreshReturnValueMatcher
+    extends ReturnValueFreshnessMatcher(org.opalj.br.fpcf.properties.NoFreshReturnValue)
+
+class FreshReturnValueMatcher
+    extends ReturnValueFreshnessMatcher(org.opalj.br.fpcf.properties.FreshReturnValue)
+
+class GetterMatcher
+    extends ReturnValueFreshnessMatcher(org.opalj.br.fpcf.properties.Getter)

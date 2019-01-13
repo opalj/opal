@@ -45,7 +45,7 @@ trait ComputationSpecification[A] {
      * @note   Self usages should also be documented.
      *
      * @note   This method is called after
-     *         [[org.opalj.fpcf.ComputationSpecification#init(ps:org\.opalj\.fpcf\.PropertyStore)]]
+     *         [[org.opalj.fpcf.ComputationSpecification#init(ps:org\.opalj\.fpcf\.PropertyStore)*]]
      *         was called for all analyses belonging to an analysis scenario.
      *         (E.g., it can be used to collect the set of used property bounds based on the
      *         configuration choices made in other analyses.)

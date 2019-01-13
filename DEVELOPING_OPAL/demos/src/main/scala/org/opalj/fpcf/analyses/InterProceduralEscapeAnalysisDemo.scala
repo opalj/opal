@@ -8,48 +8,51 @@ import java.net.URL
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.info
 import org.opalj.util.PerformanceEvaluation.time
-import org.opalj.fpcf.analyses.escape.EagerInterProceduralEscapeAnalysis
-import org.opalj.fpcf.properties.AtMost
-import org.opalj.fpcf.properties.EscapeInCallee
-import org.opalj.fpcf.properties.EscapeProperty
-import org.opalj.fpcf.properties.EscapeViaAbnormalReturn
-import org.opalj.fpcf.properties.EscapeViaHeapObject
-import org.opalj.fpcf.properties.EscapeViaNormalAndAbnormalReturn
-import org.opalj.fpcf.properties.EscapeViaParameter
-import org.opalj.fpcf.properties.EscapeViaParameterAndAbnormalReturn
-import org.opalj.fpcf.properties.EscapeViaParameterAndNormalAndAbnormalReturn
-import org.opalj.fpcf.properties.EscapeViaParameterAndReturn
-import org.opalj.fpcf.properties.EscapeViaReturn
-import org.opalj.fpcf.properties.EscapeViaStaticField
-import org.opalj.fpcf.properties.GlobalEscape
-import org.opalj.fpcf.properties.NoEscape
+import org.opalj.br.fpcf.cg.properties.ReflectionRelatedCallees
+import org.opalj.br.fpcf.cg.properties.SerializationRelatedCallees
+import org.opalj.br.fpcf.cg.properties.StandardInvokeCallees
+import org.opalj.br.fpcf.cg.properties.ThreadRelatedIncompleteCallSites
+import org.opalj.br.fpcf.properties.AtMost
+import org.opalj.br.fpcf.properties.EscapeInCallee
+import org.opalj.br.fpcf.properties.EscapeProperty
+import org.opalj.br.fpcf.properties.EscapeViaAbnormalReturn
+import org.opalj.br.fpcf.properties.EscapeViaHeapObject
+import org.opalj.br.fpcf.properties.EscapeViaNormalAndAbnormalReturn
+import org.opalj.br.fpcf.properties.EscapeViaParameter
+import org.opalj.br.fpcf.properties.EscapeViaParameterAndAbnormalReturn
+import org.opalj.br.fpcf.properties.EscapeViaParameterAndNormalAndAbnormalReturn
+import org.opalj.br.fpcf.properties.EscapeViaParameterAndReturn
+import org.opalj.br.fpcf.properties.EscapeViaReturn
+import org.opalj.br.fpcf.properties.EscapeViaStaticField
+import org.opalj.br.fpcf.properties.GlobalEscape
+import org.opalj.br.fpcf.properties.NoEscape
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.VirtualFormalParameter
-import org.opalj.ai.common.DefinitionSite
+import org.opalj.br.fpcf.FPCFAnalysesManagerKey
+import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.ai.domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse
 import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
-import org.opalj.fpcf.analyses.cg.LazyCalleesAnalysis
-import org.opalj.fpcf.analyses.cg.TriggeredConfiguredNativeMethodsAnalysis
-import org.opalj.fpcf.analyses.cg.TriggeredFinalizerAnalysisScheduler
-import org.opalj.fpcf.analyses.cg.TriggeredInstantiatedTypesAnalysis
-import org.opalj.fpcf.analyses.cg.TriggeredLoadedClassesAnalysis
-import org.opalj.fpcf.analyses.cg.RTACallGraphAnalysisScheduler
-import org.opalj.fpcf.analyses.cg.TriggeredSerializationRelatedCallsAnalysis
-import org.opalj.fpcf.analyses.cg.TriggeredStaticInitializerAnalysis
-import org.opalj.fpcf.analyses.cg.TriggeredThreadRelatedCallsAnalysis
-import org.opalj.fpcf.analyses.cg.reflection.TriggeredReflectionRelatedCallsAnalysis
-import org.opalj.fpcf.cg.properties.ReflectionRelatedCallees
-import org.opalj.fpcf.cg.properties.SerializationRelatedCallees
-import org.opalj.fpcf.cg.properties.StandardInvokeCallees
-import org.opalj.fpcf.cg.properties.ThreadRelatedIncompleteCallSites
+import org.opalj.tac.common.DefinitionSite
+import org.opalj.tac.fpcf.analyses.cg.RTACallGraphAnalysisScheduler
+import org.opalj.tac.fpcf.analyses.cg.TriggeredFinalizerAnalysisScheduler
+import org.opalj.tac.fpcf.analyses.cg.TriggeredLoadedClassesAnalysis
+import org.opalj.tac.fpcf.analyses.cg.TriggeredSerializationRelatedCallsAnalysis
+import org.opalj.tac.fpcf.analyses.cg.TriggeredStaticInitializerAnalysis
+import org.opalj.tac.fpcf.analyses.cg.TriggeredThreadRelatedCallsAnalysis
+import org.opalj.tac.fpcf.analyses.cg.reflection.TriggeredReflectionRelatedCallsAnalysis
+import org.opalj.tac.fpcf.analyses.cg.LazyCalleesAnalysis
+import org.opalj.tac.fpcf.analyses.cg.TriggeredConfiguredNativeMethodsAnalysis
+import org.opalj.tac.fpcf.analyses.cg.TriggeredInstantiatedTypesAnalysis
 import org.opalj.tac.fpcf.analyses.TACAITransformer
+import org.opalj.tac.fpcf.analyses.escape.EagerInterProceduralEscapeAnalysis
+import org.opalj.tac.fpcf.analyses.TriggeredSystemPropertiesAnalysis
 
 /**
  * A small demo that shows how to use the
- * [[org.opalj.fpcf.analyses.escape.InterProceduralEscapeAnalysis]] and what are the results of it.
+ * [[org.opalj.tac.fpcf.analyses.escape.InterProceduralEscapeAnalysis]] and what are the results of it.
  *
  * @author Florian Kübler
  */
@@ -107,9 +110,7 @@ object InterProceduralEscapeAnalysisDemo extends DefaultOneStepAnalysis {
             )
         } { t ⇒ info("progress", s"computing call graph and tac took ${t.toSeconds}") }
         time {
-            manager.runAll(
-                EagerInterProceduralEscapeAnalysis
-            )
+            manager.runAll(EagerInterProceduralEscapeAnalysis)
         } { t ⇒ info("progress", s"escape analysis took ${t.toSeconds}") }
 
         /*for (e ← propertyStore.finalEntities(AtMost(EscapeViaAbnormalReturn))) {

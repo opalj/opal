@@ -1,8 +1,8 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.properties.thrown_exceptions;
 
+import org.opalj.br.fpcf.FPCFAnalysis;
 import org.opalj.fpcf.properties.PropertyValidator;
-import org.opalj.fpcf.FPCFAnalysis;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;

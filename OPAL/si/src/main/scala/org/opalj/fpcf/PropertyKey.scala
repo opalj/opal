@@ -95,7 +95,7 @@ object PropertyKey {
      *              must be idempotent.
      *
      * @note This method is '''not thread-safe''' - the setup of the property store (e.g.,
-     *       using the [[org.opalj.fpcf.FPCFAnalysesManager]] or an [[AnalysisScenario]] has to
+     *       using the [[org.opalj.br.fpcf.FPCFAnalysesManager]] or an [[AnalysisScenario]] has to
      *       be done by the driver thread and therefore no synchronization is needed.)
      */
     def create[E <: Entity, P <: Property](

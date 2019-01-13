@@ -28,13 +28,13 @@
  */
 package org.opalj.fpcf.fixtures.field_mutability;
 
-import org.opalj.fpcf.analyses.L0FieldMutabilityAnalysis;
-import org.opalj.fpcf.analyses.L1FieldMutabilityAnalysis;
-import org.opalj.fpcf.analyses.L2FieldMutabilityAnalysis;
+import org.opalj.br.fpcf.analyses.L0FieldMutabilityAnalysis;
 import org.opalj.fpcf.properties.field_mutability.DeclaredFinal;
 import org.opalj.fpcf.properties.field_mutability.EffectivelyFinal;
 import org.opalj.fpcf.properties.field_mutability.LazyInitialized;
 import org.opalj.fpcf.properties.field_mutability.NonFinal;
+import org.opalj.tac.fpcf.analyses.L1FieldMutabilityAnalysis;
+import org.opalj.tac.fpcf.analyses.L2FieldMutabilityAnalysis;
 
 /**
  * Test classes for simple lazy initialization patterns and anti-patterns.

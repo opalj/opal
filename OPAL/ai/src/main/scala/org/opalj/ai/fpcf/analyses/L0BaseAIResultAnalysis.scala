@@ -6,16 +6,16 @@ package analyses
 
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.error
-import org.opalj.fpcf.BasicFPCFEagerAnalysisScheduler
-import org.opalj.fpcf.BasicFPCFLazyAnalysisScheduler
 import org.opalj.fpcf.Entity
-import org.opalj.fpcf.FPCFAnalysis
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
 import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
+import org.opalj.br.fpcf.BasicFPCFLazyAnalysisScheduler
+import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.ai.fpcf.properties.AnAIResult
 import org.opalj.ai.fpcf.properties.BaseAIResult

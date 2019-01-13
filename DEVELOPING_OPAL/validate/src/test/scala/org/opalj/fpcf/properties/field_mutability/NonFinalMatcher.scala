@@ -8,6 +8,11 @@ import org.opalj.br.AnnotationLike
 import org.opalj.br.ObjectType
 import org.opalj.br.BooleanValue
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br.fpcf.PropertyStoreKey
+import org.opalj.br.fpcf.properties.FieldMutability
+import org.opalj.br.fpcf.properties.FieldPrematurelyRead
+import org.opalj.br.fpcf.properties.NonFinalField
+import org.opalj.br.fpcf.properties.PrematurelyReadField
 
 /**
  * Matches a field's `FieldMutability` property. The match is successful if the field either

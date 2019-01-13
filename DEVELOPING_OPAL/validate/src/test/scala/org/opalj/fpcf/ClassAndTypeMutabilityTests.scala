@@ -1,11 +1,11 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf
 
+import org.opalj.br.fpcf.analyses.EagerClassImmutabilityAnalysis
+import org.opalj.br.fpcf.analyses.EagerTypeImmutabilityAnalysis
+import org.opalj.br.fpcf.analyses.LazyUnsoundPrematurelyReadFieldsAnalysis
 import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
-import org.opalj.fpcf.analyses.EagerClassImmutabilityAnalysis
-import org.opalj.fpcf.analyses.EagerTypeImmutabilityAnalysis
-import org.opalj.fpcf.analyses.LazyL1FieldMutabilityAnalysis
-import org.opalj.fpcf.analyses.LazyUnsoundPrematurelyReadFieldsAnalysis
+import org.opalj.tac.fpcf.analyses.LazyL1FieldMutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.TACAITransformer
 
 /**

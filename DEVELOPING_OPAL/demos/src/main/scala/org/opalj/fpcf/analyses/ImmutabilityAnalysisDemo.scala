@@ -8,15 +8,17 @@ import java.net.URL
 import org.opalj.util.gc
 import org.opalj.util.Nanoseconds
 import org.opalj.util.PerformanceEvaluation.time
-
 import org.opalj.br.ClassFile
+import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
-import org.opalj.br.analyses.BasicReport
-
-import org.opalj.fpcf.properties.FieldMutability
-import org.opalj.fpcf.properties.ClassImmutability
-import org.opalj.fpcf.properties.TypeImmutability
+import org.opalj.br.fpcf.properties.ClassImmutability
+import org.opalj.br.fpcf.properties.FieldMutability
+import org.opalj.br.fpcf.properties.TypeImmutability
+import org.opalj.br.fpcf.PropertyStoreKey
+import org.opalj.br.fpcf.analyses.EagerClassImmutabilityAnalysis
+import org.opalj.br.fpcf.analyses.EagerTypeImmutabilityAnalysis
+import org.opalj.br.fpcf.analyses.LazyL0FieldMutabilityAnalysis
 
 /**
  * Determines the immutability of the classes of a project.
@@ -76,10 +78,8 @@ object ImmutabilityAnalysisDemo extends DefaultOneStepAnalysis {
 
         // The following measurements (t) are done such that the results are comparable with the
         // reactive async approach developed by P. Haller and Simon Gries.
-        val propertyStore = time {
-            PropertyStoreKey.parallelismLevel = parallelismLevel
-            project.get(PropertyStoreKey)
-        } { r ⇒ setupTime = r }
+        PropertyStoreKey.parallelismLevel = parallelismLevel
+        val propertyStore = project.get(PropertyStoreKey)
 
         time {
             propertyStore.setupPhase(Set[PropertyKind](

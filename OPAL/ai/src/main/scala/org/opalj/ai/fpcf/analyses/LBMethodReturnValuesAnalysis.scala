@@ -4,8 +4,6 @@ package ai
 package fpcf
 package analyses
 
-import org.opalj.fpcf.BasicFPCFEagerAnalysisScheduler
-import org.opalj.fpcf.FPCFAnalysis
 import org.opalj.fpcf.NoResult
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyComputationResult
@@ -14,6 +12,8 @@ import org.opalj.fpcf.Result
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.Method
 import org.opalj.br.PC
+import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
+import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.ai.fpcf.properties.MethodReturnValue
 
 /**

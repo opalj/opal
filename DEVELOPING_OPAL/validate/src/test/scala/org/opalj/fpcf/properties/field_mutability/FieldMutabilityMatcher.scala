@@ -7,6 +7,10 @@ package field_mutability
 import org.opalj.br.AnnotationLike
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br.fpcf.properties.DeclaredFinalField
+import org.opalj.br.fpcf.properties.EffectivelyFinalField
+import org.opalj.br.fpcf.properties.FieldMutability
+import org.opalj.br.fpcf.properties.LazyInitializedField
 
 /**
  * Matches a field's `FieldMutability` property. The match is successful if the field has the

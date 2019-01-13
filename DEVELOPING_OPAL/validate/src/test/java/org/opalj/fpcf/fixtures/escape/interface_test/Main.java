@@ -1,6 +1,6 @@
 package org.opalj.fpcf.fixtures.escape.interface_test;
 
-import org.opalj.fpcf.analyses.escape.InterProceduralEscapeAnalysis;
+import org.opalj.tac.fpcf.analyses.escape.InterProceduralEscapeAnalysis;
 import org.opalj.fpcf.properties.escape.AtMostEscapeInCallee;
 import org.opalj.fpcf.properties.escape.EscapeInCallee;
 import org.opalj.fpcf.properties.escape.EscapeViaStaticField;

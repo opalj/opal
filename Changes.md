@@ -2,6 +2,7 @@
 
 ## Upcoming (3.0.0)
 - Hermes was promoted to a real project: TOOLS/hermes
+- the three-address code has been moved to its own subproject (`ThreeAddressCode`) in the folder OPAL/tac
 - fixed the name of the static analysis infrastructure project (the name of the project on Maven Central has changed)
 - vastly improved PropertyStore with support for Transformers
 - the demos subproject was moved to the OPAL-DeveloperTools subfolder

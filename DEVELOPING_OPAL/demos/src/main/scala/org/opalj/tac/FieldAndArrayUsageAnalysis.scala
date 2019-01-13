@@ -1,33 +1,33 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.tac
 
-import org.opalj.br.analyses.Project
 import java.net.URL
 
-import org.opalj.ai.common.DefinitionSitesKey
-import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
-import org.opalj.br.analyses.DefaultOneStepAnalysis
-import org.opalj.br.analyses.BasicReport
-import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.fpcf.FPCFAnalysesManagerKey
-import org.opalj.fpcf.FinalP
-import org.opalj.fpcf.PropertyStoreKey
-import org.opalj.fpcf.analyses.escape.EagerSimpleEscapeAnalysis
-import org.opalj.fpcf.properties.EscapeProperty
-import org.opalj.fpcf.properties.NoEscape
-import org.opalj.fpcf.properties.EscapeInCallee
-import org.opalj.fpcf.properties.AtMost
-import org.opalj.fpcf.properties.EscapeViaParameter
-import org.opalj.fpcf.properties.EscapeViaReturn
-import org.opalj.fpcf.properties.EscapeViaAbnormalReturn
 import org.opalj.log.LogContext
-import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.log.OPALLogger.info
+import org.opalj.util.PerformanceEvaluation.time
+import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.fpcf.FinalP
+import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.DefaultOneStepAnalysis
+import org.opalj.br.analyses.Project
+import org.opalj.br.fpcf.FPCFAnalysesManagerKey
+import org.opalj.br.fpcf.PropertyStoreKey
+import org.opalj.br.fpcf.properties.AtMost
+import org.opalj.br.fpcf.properties.EscapeInCallee
+import org.opalj.br.fpcf.properties.EscapeProperty
+import org.opalj.br.fpcf.properties.EscapeViaAbnormalReturn
+import org.opalj.br.fpcf.properties.EscapeViaParameter
+import org.opalj.br.fpcf.properties.EscapeViaReturn
+import org.opalj.br.fpcf.properties.NoEscape
+import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
+import org.opalj.tac.common.DefinitionSitesKey
+import org.opalj.tac.fpcf.analyses.escape.EagerSimpleEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.TACAITransformer
 
 /**
  * An evaluation of the impact of field/array writes to the
- * [[org.opalj.fpcf.analyses.escape.SimpleEscapeAnalysis]] as the three-address code currently
+ * [[org.opalj.tac.fpcf.analyses.escape.SimpleEscapeAnalysis]] as the three-address code currently
  * does not support may-alias information for fields and arrays.
  *
  * Among others, it estimates the number of arraystores/putfields with non-escaping objects as

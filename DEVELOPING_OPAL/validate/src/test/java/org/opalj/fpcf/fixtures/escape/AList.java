@@ -1,11 +1,11 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.escape;
 
-import org.opalj.fpcf.analyses.escape.InterProceduralEscapeAnalysis;
-import org.opalj.fpcf.analyses.escape.SimpleEscapeAnalysis;
-import org.opalj.fpcf.properties.escape.EscapeViaParameter;
 import org.opalj.fpcf.properties.escape.AtMostEscapeViaParameter;
 import org.opalj.fpcf.properties.escape.AtMostNoEscape;
+import org.opalj.fpcf.properties.escape.EscapeViaParameter;
+import org.opalj.tac.fpcf.analyses.escape.InterProceduralEscapeAnalysis;
+import org.opalj.tac.fpcf.analyses.escape.SimpleEscapeAnalysis;
 
 public class AList {
 
