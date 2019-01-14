@@ -14,11 +14,10 @@ import play.api.libs.json.JsSuccess
 import play.api.libs.json.Reads
 
 import org.opalj.collection.immutable.Chain
-import org.opalj.fpcf.PropertyStore
-import org.opalj.fpcf.analyses.TriggeredSystemPropertiesAnalysis
 import org.opalj.fpcf.ComputationSpecification
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.FinalP
+import org.opalj.fpcf.PropertyStore
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
@@ -167,7 +166,7 @@ class RTAIntegrationTest extends FlatSpec with Matchers {
 
     def checkBidirectionCallerCallee(
         implicit
-        propertyStore: PropertyStore,
+        propertyStore:   PropertyStore,
         declaredMethods: DeclaredMethods
     ): Unit = {
         for {

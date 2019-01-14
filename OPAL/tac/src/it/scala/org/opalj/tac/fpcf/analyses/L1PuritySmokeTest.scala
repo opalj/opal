@@ -11,9 +11,7 @@ import org.scalatest.junit.JUnitRunner
 
 import org.opalj.util.Nanoseconds
 import org.opalj.util.PerformanceEvaluation.time
-import org.opalj.fpcf.analyses.purity.EagerL1PurityAnalysis
 import org.opalj.fpcf.ComputationSpecification
-import org.opalj.fpcf.analyses.TriggeredSystemPropertiesAnalysis
 import org.opalj.br.TestSupport.allBIProjects
 import org.opalj.br.TestSupport.createJREProject
 import org.opalj.br.analyses.SomeProject
@@ -41,9 +39,10 @@ import org.opalj.tac.fpcf.analyses.cg.reflection.TriggeredReflectionRelatedCalls
 import org.opalj.tac.fpcf.analyses.cg.LazyCalleesAnalysis
 import org.opalj.tac.fpcf.analyses.cg.TriggeredConfiguredNativeMethodsAnalysis
 import org.opalj.tac.fpcf.analyses.cg.TriggeredInstantiatedTypesAnalysis
+import org.opalj.tac.fpcf.analyses.purity.EagerL1PurityAnalysis
 
 /**
- * Simple test to ensure that the [[org.opalj.fpcf.analyses.purity.L1PurityAnalysis]] does not cause
+ * Simple test to ensure that the [[org.opalj.tac.fpcf.analyses.purity.L1PurityAnalysis]] does not cause
  * any exceptions.
  *
  * @author Dominik Helm

@@ -18,12 +18,11 @@ import org.scalatest.junit.JUnitRunner
 
 import org.opalj.util.Nanoseconds
 import org.opalj.util.PerformanceEvaluation.time
-import org.opalj.fpcf.PropertyStore
-import org.opalj.fpcf.analyses.TriggeredSystemPropertiesAnalysis
 import org.opalj.fpcf.ComputationSpecification
 import org.opalj.fpcf.PropertyIsNotComputedByAnyAnalysis
 import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyMetaInformation
+import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.SomePropertyKey
 import org.opalj.br.DeclaredMethod
