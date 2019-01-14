@@ -67,7 +67,7 @@ class InterpretationHandler(cfg: CFG[Stmt[V], TACStmts[V]]) {
             case Assignment(_, _, expr: IntConst) ⇒
                 new IntegerValueInterpreter(cfg, this).interpret(expr)
             case Assignment(_, _, expr: ArrayLoad[V]) ⇒
-                new ArrayLoadInterpreter(cfg, this).interpret(expr)
+                new ArrayInterpreter(cfg, this).interpret(expr)
             case Assignment(_, _, expr: New) ⇒
                 new NewInterpreter(cfg, this).interpret(expr)
             case Assignment(_, _, expr: VirtualFunctionCall[V]) ⇒
