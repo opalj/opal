@@ -8,7 +8,7 @@ package instructions
  *
  * @author Michael Eichberg
  */
-case object LLOAD_2 extends LLoadInstruction with ImplicitLocalVariableIndex {
+case object LLOAD_2 extends ConstantIndexLLoadInstruction {
 
     final val lvIndex = 2
 

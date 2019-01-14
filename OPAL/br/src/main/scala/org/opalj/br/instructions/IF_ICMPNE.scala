@@ -38,7 +38,7 @@ case class IF_ICMPNE(branchoffset: Int) extends IFICMPInstruction[IF_ICMPNE] wit
  *
  * @author Malte Limmeroth
  */
-object IF_ICMPNE {
+object IF_ICMPNE extends InstructionMetaInformation {
 
     final val opcode = 160
 

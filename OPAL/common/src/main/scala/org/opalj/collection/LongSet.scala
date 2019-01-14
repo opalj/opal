@@ -36,6 +36,8 @@ trait LongSet[T <: LongSet[T]] { longSet: T ⇒
     def forall(f: Long ⇒ Boolean): Boolean
 
     def -(i: Long): T
+
+    /** Adds the given value to this set; returns `this` if this set already contains the value. */
     def +(i: Long): T
 
     final def --(is: TraversableOnce[Long]): T = {

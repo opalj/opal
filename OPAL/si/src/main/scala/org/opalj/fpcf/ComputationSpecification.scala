@@ -17,18 +17,12 @@ case class SpecificationViolation(message: String) extends Exception(message)
  */
 trait ComputationSpecification[A] {
 
-    /**
-     * The type of the data used by the analysis at initialization time.
-     * For analyses without special initialization requirements this type is `Null`.
-     */
-    type InitializationData
-
     //
     // PROPERTIES OF COMPUTATION SPECIFICATIONS
     //
 
     /**
-     * Identifies this computation specification; typlically the name of the class
+     * Identifies this computation specification; typically the name of the class
      * which implements the underlying analysis.
      *
      * The default name is the name of `this` class.
@@ -49,8 +43,14 @@ trait ComputationSpecification[A] {
      * @note   This set consists only of property kinds which are directly used by the analysis.
      *
      * @note   Self usages should also be documented.
+     *
+     * @note   This method is called after
+     *         [[org.opalj.fpcf.ComputationSpecification#init(ps:org\.opalj\.fpcf\.PropertyStore)*]]
+     *         was called for all analyses belonging to an analysis scenario.
+     *         (E.g., it can be used to collect the set of used property bounds based on the
+     *         configuration choices made in other analyses.)
      */
-    def uses: Set[PropertyBounds]
+    def uses(ps: PropertyStore): Set[PropertyBounds]
 
     /**
      * Returns the kind of the property that is lazily (on-demand) derived.
@@ -90,8 +90,8 @@ trait ComputationSpecification[A] {
      */
     def computationType: ComputationType
 
-    override def toString: String = {
-        val uses = this.uses.iterator.map(_.toSpecification).mkString("uses={", ", ", "}")
+    def toString(ps: PropertyStore): String = {
+        val uses = this.uses(ps).iterator.map(_.toSpecification).mkString("uses={", ", ", "}")
 
         val derivesLazily =
             this.derivesLazily.iterator.
@@ -111,12 +111,23 @@ trait ComputationSpecification[A] {
 
     }
 
+    override def toString: String = {
+        s"ComputationSpecification(name=$name,type=$computationType)"
+    }
+
     //
     // LIFECYCLE RELATED METHODS
     //
 
     /**
-     * Called before any analysis belonging to the same analysis scenario is scheduled –
+     * The type of the data used by the analysis at initialization time.
+     * For analyses without special initialization requirements this type is `Null`.
+     */
+    type InitializationData
+
+    /**
+     * Called directly after the analysis is registered with an analysis scheduler; in particular
+     * before any analysis belonging to the same analysis scenario is scheduled –
      * independent of the batch in which it will run.
      *
      * This enables further initialization of the computations that will eventually be executed.
@@ -142,9 +153,15 @@ trait ComputationSpecification[A] {
     def schedule(ps: PropertyStore, i: InitializationData): A
 
     /**
+     * Called back after all analyses of a specific phase have been
+     *        schedule (i.e., before calling waitOnPhaseCompletion).
+     */
+    def afterPhaseScheduling(ps: PropertyStore, analysis: A): Unit
+
+    /**
      * Called after phase completion.
      */
-    def afterPhaseCompletion(ps: PropertyStore): Unit
+    def afterPhaseCompletion(ps: PropertyStore, analysis: A): Unit
 
 }
 
@@ -153,6 +170,7 @@ trait SimpleComputationSpecification[A] extends ComputationSpecification[A] {
     final override type InitializationData = Null
     final override def init(ps: PropertyStore): Null = null
     final override def beforeSchedule(ps: PropertyStore): Unit = {}
-    final override def afterPhaseCompletion(ps: PropertyStore): Unit = {}
+    final override def afterPhaseScheduling(ps: PropertyStore, analysis: A): Unit = {}
+    final override def afterPhaseCompletion(ps: PropertyStore, analysis: A): Unit = {}
 
 }

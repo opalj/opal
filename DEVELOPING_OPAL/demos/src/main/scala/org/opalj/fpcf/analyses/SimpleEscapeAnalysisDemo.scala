@@ -8,32 +8,34 @@ import java.net.URL
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.info
 import org.opalj.util.PerformanceEvaluation.time
-import org.opalj.fpcf.analyses.escape.EagerSimpleEscapeAnalysis
-import org.opalj.fpcf.properties.AtMost
-import org.opalj.fpcf.properties.EscapeInCallee
-import org.opalj.fpcf.properties.EscapeProperty
-import org.opalj.fpcf.properties.EscapeViaAbnormalReturn
-import org.opalj.fpcf.properties.EscapeViaHeapObject
-import org.opalj.fpcf.properties.EscapeViaNormalAndAbnormalReturn
-import org.opalj.fpcf.properties.EscapeViaParameter
-import org.opalj.fpcf.properties.EscapeViaParameterAndAbnormalReturn
-import org.opalj.fpcf.properties.EscapeViaParameterAndNormalAndAbnormalReturn
-import org.opalj.fpcf.properties.EscapeViaParameterAndReturn
-import org.opalj.fpcf.properties.EscapeViaReturn
-import org.opalj.fpcf.properties.EscapeViaStaticField
-import org.opalj.fpcf.properties.GlobalEscape
-import org.opalj.fpcf.properties.NoEscape
+import org.opalj.br.fpcf.properties.AtMost
+import org.opalj.br.fpcf.properties.EscapeInCallee
+import org.opalj.br.fpcf.properties.EscapeProperty
+import org.opalj.br.fpcf.properties.EscapeViaAbnormalReturn
+import org.opalj.br.fpcf.properties.EscapeViaHeapObject
+import org.opalj.br.fpcf.properties.EscapeViaNormalAndAbnormalReturn
+import org.opalj.br.fpcf.properties.EscapeViaParameter
+import org.opalj.br.fpcf.properties.EscapeViaParameterAndAbnormalReturn
+import org.opalj.br.fpcf.properties.EscapeViaParameterAndNormalAndAbnormalReturn
+import org.opalj.br.fpcf.properties.EscapeViaParameterAndReturn
+import org.opalj.br.fpcf.properties.EscapeViaReturn
+import org.opalj.br.fpcf.properties.EscapeViaStaticField
+import org.opalj.br.fpcf.properties.GlobalEscape
+import org.opalj.br.fpcf.properties.NoEscape
 import org.opalj.br.DefinedMethod
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.VirtualFormalParameter
-import org.opalj.ai.common.DefinitionSite
+import org.opalj.br.fpcf.FPCFAnalysesManagerKey
+import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
+import org.opalj.tac.common.DefinitionSite
+import org.opalj.tac.fpcf.analyses.escape.EagerSimpleEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.TACAITransformer
 
 /**
- * A small demo that shows how to use the [[org.opalj.fpcf.analyses.escape.SimpleEscapeAnalysis]]
+ * A small demo that shows how to use the [[org.opalj.tac.fpcf.analyses.escape.SimpleEscapeAnalysis]]
  * and what are the results of it.
  *
  * @author Florian Kübler
@@ -55,23 +57,17 @@ object SimpleEscapeAnalysisDemo extends DefaultOneStepAnalysis {
 
         PropertyStore.updateDebug(true)
 
-        val propertyStore = time {
-            project.get(PropertyStoreKey)
-        } { t ⇒ info("progress", s"initialization of property store took ${t.toSeconds}") }
+        val propertyStore = project.get(PropertyStoreKey)
 
         time {
             val manager = project.get(FPCFAnalysesManagerKey)
-            manager.runAll(
-                EagerSimpleEscapeAnalysis,
-                LazyL0BaseAIAnalysis,
-                TACAITransformer /* LazyL0TACAIAnalysis */ )
-            propertyStore.waitOnPhaseCompletion()
+            manager.runAll(EagerSimpleEscapeAnalysis, LazyL0BaseAIAnalysis, TACAITransformer)
         } { t ⇒ info("progress", s"escape analysis took ${t.toSeconds}") }
 
         def countAS(entities: Iterator[Entity]) = entities.count(_.isInstanceOf[DefinitionSite])
 
         // we are only interested in the this locals of the constructors
-        def countFP(entities: Iterator[Entity]) = entities.collect { case e @ VirtualFormalParameter(DefinedMethod(_, m), -1) if m.isConstructor ⇒ e }.size
+        def countFP(entities: Iterator[Entity]) = entities.collect { case e @ VirtualFormalParameter(dm: DefinedMethod, -1) if dm.definedMethod.isConstructor ⇒ e }.size
 
         val message =
             s"""|ALLOCATION SITES:

@@ -2,7 +2,7 @@
 package org.opalj
 package fpcf
 
-import org.opalj.fpcf.analyses.EagerL0CompileTimeConstancyAnalysis
+import org.opalj.br.fpcf.analyses.EagerL0CompileTimeConstancyAnalysis
 
 /**
  * Tests if the properties specified in the test project (the classes in the (sub-)package of

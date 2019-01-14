@@ -58,8 +58,7 @@ trait LogContext {
      * Increments the counter for the given message and returns the new value.
      */
     final def incrementAndGetCount(message: LogMessage): Int = {
-        val counter = new AtomicInteger(1)
-        val existingCounter = messages.putIfAbsent(message, counter)
+        val existingCounter = messages.putIfAbsent(message, new AtomicInteger(1))
         if (existingCounter != null)
             existingCounter.incrementAndGet()
         else

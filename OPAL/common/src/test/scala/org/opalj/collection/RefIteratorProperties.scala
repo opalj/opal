@@ -71,6 +71,16 @@ object RefIteratorProperties extends Properties("RefIterator") {
         }
     }
 
+    property("take") = forAll { (a: RefArray[String], n: Int) ⇒
+        classify(a.size == 0, "the array is empty") {
+            classify(n > a.size, "the number of taken elements is larger than the array") {
+                val itSum = a.iterator.take(n).sum(_.toInt)
+                val aSum = a.toList.take(n).map(_.toInt).sum
+                itSum == aSum
+            }
+        }
+    }
+
     property("drop") = forAll(listAndIntGen) { li ⇒
         val (l, i) = li
         val it = (RefArray.newBuilder[String] ++= l).result().iterator
@@ -179,4 +189,3 @@ object RefIteratorProperties extends Properties("RefIterator") {
             !itZipped.hasNext
     }
 }
-

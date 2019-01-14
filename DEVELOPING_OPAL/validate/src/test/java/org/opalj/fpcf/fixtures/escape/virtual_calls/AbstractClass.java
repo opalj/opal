@@ -1,8 +1,8 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.escape.virtual_calls;
 
-import org.opalj.fpcf.analyses.escape.InterProceduralEscapeAnalysis;
-import org.opalj.fpcf.analyses.escape.SimpleEscapeAnalysis;
+import org.opalj.tac.fpcf.analyses.escape.InterProceduralEscapeAnalysis;
+import org.opalj.tac.fpcf.analyses.escape.SimpleEscapeAnalysis;
 import org.opalj.fpcf.fixtures.escape.Circle;
 import org.opalj.fpcf.properties.escape.*;
 

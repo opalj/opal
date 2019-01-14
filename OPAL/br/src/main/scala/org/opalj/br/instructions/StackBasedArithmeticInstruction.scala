@@ -11,7 +11,8 @@ package instructions
  */
 abstract class StackBasedArithmeticInstruction
     extends ArithmeticInstruction
-    with ConstantLengthInstruction {
+    with ConstantLengthInstruction
+    with InstructionMetaInformation {
 
     final def length: Int = 1
 

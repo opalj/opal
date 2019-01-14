@@ -3,27 +3,43 @@ package org.opalj
 package fpcf
 package analyses
 
-import org.opalj.br.analyses.Project
 import java.net.URL
 
-import org.opalj.ai.common.DefinitionSitesKey
-import org.opalj.ai.common.SimpleAIKey
-import org.opalj.ai.domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse
-import org.opalj.br.Method
-import org.opalj.tac.DefaultTACAIKey
-import org.opalj.br.analyses.DefaultOneStepAnalysis
-import org.opalj.br.analyses.BasicReport
-import org.opalj.fpcf.analyses.escape.EagerInterProceduralEscapeAnalysis
-import org.opalj.fpcf.properties.EscapeProperty
-import org.opalj.fpcf.properties.EscapeViaNormalAndAbnormalReturn
 import org.opalj.log.LogContext
-import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.log.OPALLogger.info
-import org.opalj.tac.DVar
-import org.opalj.tac.New
+import org.opalj.util.PerformanceEvaluation.time
+import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.DefaultOneStepAnalysis
+import org.opalj.br.analyses.Project
+import org.opalj.br.fpcf.cg.properties.ReflectionRelatedCallees
+import org.opalj.br.fpcf.cg.properties.SerializationRelatedCallees
+import org.opalj.br.fpcf.cg.properties.StandardInvokeCallees
+import org.opalj.br.fpcf.cg.properties.ThreadRelatedIncompleteCallSites
+import org.opalj.br.fpcf.properties.EscapeProperty
+import org.opalj.br.fpcf.properties.EscapeViaNormalAndAbnormalReturn
+import org.opalj.br.fpcf.FPCFAnalysesManagerKey
+import org.opalj.br.fpcf.PropertyStoreKey
+import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
+import org.opalj.tac.fpcf.analyses.cg.LazyCalleesAnalysis
+import org.opalj.tac.fpcf.analyses.cg.RTACallGraphAnalysisScheduler
+import org.opalj.tac.fpcf.analyses.cg.TriggeredConfiguredNativeMethodsAnalysis
+import org.opalj.tac.fpcf.analyses.cg.TriggeredFinalizerAnalysisScheduler
+import org.opalj.tac.fpcf.analyses.cg.TriggeredInstantiatedTypesAnalysis
+import org.opalj.tac.fpcf.analyses.cg.TriggeredLoadedClassesAnalysis
+import org.opalj.tac.fpcf.analyses.cg.TriggeredStaticInitializerAnalysis
+import org.opalj.tac.fpcf.analyses.cg.reflection.TriggeredReflectionRelatedCallsAnalysis
 import org.opalj.tac.Assignment
-import org.opalj.tac.NewArray
+import org.opalj.tac.DVar
 import org.opalj.tac.MonitorEnter
+import org.opalj.tac.New
+import org.opalj.tac.NewArray
+import org.opalj.tac.common.DefinitionSitesKey
+import org.opalj.tac.fpcf.analyses.TACAITransformer
+import org.opalj.tac.fpcf.analyses.cg.TriggeredSerializationRelatedCallsAnalysis
+import org.opalj.tac.fpcf.analyses.cg.TriggeredThreadRelatedCallsAnalysis
+import org.opalj.tac.fpcf.analyses.escape.EagerInterProceduralEscapeAnalysis
+import org.opalj.tac.fpcf.analyses.TriggeredSystemPropertiesAnalysis
+import org.opalj.tac.fpcf.properties.TACAI
 
 /**
  * Finds object references in monitorenter instructions that do not escape their thread.
@@ -32,10 +48,10 @@ import org.opalj.tac.MonitorEnter
  */
 object UnnecessarySynchronizationAnalysis extends DefaultOneStepAnalysis {
 
-    override def title: String = "Finds unnecessary usage of synchronization"
+    override def title: String = "Finds unnecessary usages of synchronization"
 
     override def description: String = {
-        "Finds unnecessary usage of synchronization"
+        "Finds unnecessary usages of synchronization"
     }
 
     override def doAnalyze(
@@ -45,22 +61,36 @@ object UnnecessarySynchronizationAnalysis extends DefaultOneStepAnalysis {
     ): BasicReport = {
         implicit val logContext: LogContext = project.logContext
 
-        val propertyStore = time {
-
-            val domain = (m: Method) ⇒ new DefaultPerformInvocationsDomainWithCFGAndDefUse(project, m)
-            project.getOrCreateProjectInformationKeyInitializationData(SimpleAIKey, domain)
-
-            project.get(PropertyStoreKey)
-        } { t ⇒ info("progress", s"initialization of property store took ${t.toSeconds}") }
-
-        val tacai = time {
-            val tacai = project.get(DefaultTACAIKey)
-            tacai
-        } { t ⇒ info("progress", s"generating 3-address code took ${t.toSeconds}") }
-
+        val propertyStore = project.get(PropertyStoreKey)
+        val manager = project.get(FPCFAnalysesManagerKey)
         time {
-            EagerInterProceduralEscapeAnalysis.start(project, null)
-            propertyStore.waitOnPhaseCompletion()
+            manager.runAll(
+                RTACallGraphAnalysisScheduler,
+                TriggeredStaticInitializerAnalysis,
+                TriggeredLoadedClassesAnalysis,
+                TriggeredFinalizerAnalysisScheduler,
+                TriggeredThreadRelatedCallsAnalysis,
+                TriggeredSerializationRelatedCallsAnalysis,
+                TriggeredReflectionRelatedCallsAnalysis,
+                TriggeredInstantiatedTypesAnalysis,
+                TriggeredConfiguredNativeMethodsAnalysis,
+                TriggeredSystemPropertiesAnalysis,
+                LazyCalleesAnalysis(
+                    Set(
+                        StandardInvokeCallees,
+                        SerializationRelatedCallees,
+                        ReflectionRelatedCallees,
+                        ThreadRelatedIncompleteCallSites
+                    )
+                ),
+                LazyL0BaseAIAnalysis,
+                TACAITransformer
+            )
+        } { t ⇒ info("progress", s"computing call graph and tac took ${t.toSeconds}") }
+        time {
+            manager.runAll(
+                EagerInterProceduralEscapeAnalysis
+            )
         } { t ⇒ info("progress", s"escape analysis took ${t.toSeconds}") }
 
         val allocationSites = project.get(DefinitionSitesKey).getAllocationSites
@@ -70,7 +100,8 @@ object UnnecessarySynchronizationAnalysis extends DefaultOneStepAnalysis {
                 method = as.method
                 FinalP(escape) = propertyStore(as, EscapeProperty.key)
                 if EscapeViaNormalAndAbnormalReturn lessOrEqualRestrictive escape
-                code = tacai(method).stmts
+                FinalP(tacai) = propertyStore(method, TACAI.key)
+                code = tacai.tac.get.stmts
                 defSite = code indexWhere (stmt ⇒ stmt.pc == as.pc)
                 if defSite != -1
                 stmt = code(defSite)

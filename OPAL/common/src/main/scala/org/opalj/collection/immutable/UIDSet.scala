@@ -3,8 +3,6 @@ package org.opalj
 package collection
 package immutable
 
-import scala.reflect.ClassTag
-
 import scala.collection.generic.CanBuildFrom
 import scala.collection.mutable.Builder
 import scala.collection.mutable.ArrayStack
@@ -25,7 +23,7 @@ import scala.collection.mutable.ArrayStack
  */
 sealed abstract class UIDSet[T <: UID]
     extends scala.collection.immutable.Set[T]
-    with scala.collection.SetLike[T, UIDSet[T]] {
+    with scala.collection.SetLike[T, UIDSet[T]] { set ⇒
 
     final override def empty: UIDSet[T] = UIDSet0.asInstanceOf[UIDSet[T]]
     final override def contains(e: T): Boolean = containsId(e.id)
@@ -51,6 +49,10 @@ sealed abstract class UIDSet[T <: UID]
     /** Iterator over all ids. */
     def idIterator: IntIterator
 
+    def foreachIterator: ForeachRefIterator[T] = new ForeachRefIterator[T] {
+        def foreach[U](f: T ⇒ U): Unit = set.foreach(f)
+    }
+
     override def iterator: RefIterator[T]
     // Note that, "super.toIterator" guarantees to call "iterator"
 
@@ -68,9 +70,7 @@ sealed abstract class UIDSet[T <: UID]
      * query (contains check) performance - in particular if the sets are larger.
      * (Factory 2 to 3 times better for larger sets.)
      */
-    final def toLinearProbingSet[X >: T <: UID: ClassTag]: UIDLinearProbingSet[X] = {
-        UIDLinearProbingSet[X](this)
-    }
+    def toLinearProbingSet[X >: T <: UID]: UIDLinearProbingSet[X]
 
     /**
      * Adds the given element to this set by mutating it!
@@ -136,12 +136,16 @@ object UIDSet0 extends UIDSet[UID] {
     //
     override def findById(id: Int): Option[UID] = None
     override def idIterator: IntIterator = IntIterator.empty
+    override def foreachIterator: ForeachRefIterator[Nothing] = ForeachRefIterator.empty
     override def idSet: IntTrieSet = IntTrieSet.empty
     override def containsId(id: Int): Boolean = false
     override def isSingletonSet: Boolean = false
     override def ++(es: UIDSet[UID]): UIDSet[UID] = es
     override def compare(that: UIDSet[UID]): SetRelation = {
         if (that.isEmpty) EqualSets else /* this is a */ StrictSubset
+    }
+    override def toLinearProbingSet[X >: UID <: UID]: UIDLinearProbingSet[X] = {
+        EmptyUIDLinearProbingSet
     }
 
 }
@@ -210,6 +214,10 @@ final case class UIDSet1[T <: UID](value: T) extends NonEmptyUIDSet[T] {
             StrictSubset
         else
             UncomparableSets
+    }
+
+    override def toLinearProbingSet[X >: T <: UID]: UIDLinearProbingSet[X] = {
+        new UIDLinearProbingSet1(value)
     }
 }
 
@@ -319,6 +327,10 @@ final class UIDSet2[T <: UID](value1: T, value2: T) extends NonEmptyUIDSet[T] {
             case 2 ⇒ this + es.head + es.last
             case _ ⇒ this.foldLeft(es)(_ + _) // es is larger... which should be less work
         }
+    }
+
+    override def toLinearProbingSet[X >: T <: UID]: UIDLinearProbingSet[X] = {
+        new UIDLinearProbingSet2(value1, value2)
     }
 }
 final object UIDSet2 {
@@ -451,12 +463,16 @@ final class UIDSet3[T <: UID](value1: T, value2: T, value3: T) extends NonEmptyU
             case _ ⇒ this.foldLeft(es)(_ + _) // es is at least as large as this set
         }
     }
+
+    override def toLinearProbingSet[X >: T <: UID]: UIDLinearProbingSet[X] = {
+        new UIDLinearProbingSet3(value1, value2, value3)
+    }
 }
 
 // ------------------------------------------------------------------------------------------------
 //
 //
-// If we have more than two values we always create a trie.
+// If we have more than three values we always create a trie.
 //
 //
 // ------------------------------------------------------------------------------------------------
@@ -549,6 +565,10 @@ sealed private[immutable] abstract class UIDTrieSetNodeLike[T <: UID] extends No
         if (left ne null) result = left.foldLeft(result)(op)
         if (right ne null) result = right.foldLeft(result)(op)
         result
+    }
+
+    override def toLinearProbingSet[X >: T <: UID]: UIDLinearProbingSet[X] = {
+        this.foldLeft(UIDLinearProbingSet.builder[X](this.size))(_ += _).result
     }
 
     final def +(e: T): UIDSet[T] = { val eId = e.id; this + (e, eId, eId, 0) }

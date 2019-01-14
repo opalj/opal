@@ -15,4 +15,8 @@ trait DLoadInstruction extends LoadLocalVariableInstruction {
     final def stackSlotsChange: Int = +2
 
 }
-object DLoadInstruction
+
+trait ConstantIndexDLoadInstruction
+    extends DLoadInstruction
+    with ImplicitLocalVariableIndex
+    with InstructionMetaInformation

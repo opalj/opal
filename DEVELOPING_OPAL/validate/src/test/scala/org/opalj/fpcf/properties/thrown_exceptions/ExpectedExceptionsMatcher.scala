@@ -4,10 +4,12 @@ package fpcf
 package properties
 package thrown_exceptions
 
+import org.opalj.collection.immutable.RefArray
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.AnnotationLike
 import org.opalj.br.ObjectType
-import org.opalj.collection.immutable.RefArray
+import org.opalj.br.fpcf.properties.ThrownExceptions
+
 /**
  * Trait to extract the concrete and upper bound exceptions specified in the test cases.
  *

@@ -1,9 +1,9 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.purity;
 
-import org.opalj.fpcf.analyses.L0PurityAnalysis;
-import org.opalj.fpcf.analyses.purity.L2PurityAnalysis;
-import org.opalj.fpcf.analyses.purity.L1PurityAnalysis;
+import org.opalj.br.fpcf.analyses.L0PurityAnalysis;
+import org.opalj.tac.fpcf.analyses.purity.L2PurityAnalysis;
+import org.opalj.tac.fpcf.analyses.purity.L1PurityAnalysis;
 import org.opalj.fpcf.properties.purity.*;
 
 /**
@@ -271,7 +271,7 @@ final public class ReferenceTypes {
     }
 
     @DomainSpecificContextuallyPure(
-            value = "Modifies parameter, array could be null or index out bounds", modifies = {0})
+            value = "Modifies parameter, array could be null or index out bounds", modifies = {1})
     @Impure(value = "Modifies array entry",
             analyses = {L0PurityAnalysis.class, L1PurityAnalysis.class})
     public static void setArrayEntryStatic(int[] arr, int index, int value) {

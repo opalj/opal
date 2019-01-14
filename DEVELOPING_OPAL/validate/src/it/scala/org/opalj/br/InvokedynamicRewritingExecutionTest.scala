@@ -13,6 +13,7 @@ import java.nio.file.Files
 
 import org.opalj.bytecode.RTJar
 import org.opalj.bi.TestResources.locateTestResources
+import org.opalj.bi.isCurrentJREAtLeastJava9
 import org.opalj.br.analyses.Project
 import org.opalj.ba.ProjectBasedInMemoryClassLoader
 import org.opalj.bc.Assembler
@@ -120,72 +121,75 @@ class InvokedynamicRewritingExecutionTest extends FunSpec with Matchers {
         }
     }
 
-    describe("behavior of rewritten string_concat fixture") {
-        val testClassType = ObjectType("string_concat/StringConcatFactoryTest")
-        val r = locateTestResources("classfiles/string_concat.jar", "bi")
-        val p = JavaFixtureProject(r)
-        val cf = p.classFile(testClassType).get.copy(version = bi.Java8Version)
-        val inMemoryClassLoader =
-            new InMemoryClassLoader(Map(testClassType.toJava -> Assembler(ba.toDA(cf))))
+    if (isCurrentJREAtLeastJava9) {
 
-        it("simpleConcat should concatenate strings correctly") {
-            val c = inMemoryClassLoader.loadClass(testClassType.toJava)
-            val m = c.getMethod("simpleConcat", classOf[String], classOf[String])
-            val res = m.invoke(null, "ab", "c")
+        describe("behavior of rewritten string_concat fixture") {
+            val testClassType = ObjectType("string_concat/StringConcatFactoryTest")
+            val r = locateTestResources("classfiles/string_concat.jar", "bi")
+            val p = JavaFixtureProject(r)
+            val cf = p.classFile(testClassType).get.copy(version = bi.Java8Version)
+            val inMemoryClassLoader =
+                new InMemoryClassLoader(Map(testClassType.toJava -> Assembler(ba.toDA(cf))))
 
-            // Not using res.toString as that would not check that e.g. the StringBuilder is not
-            // returned directly
-            assert(res.asInstanceOf[String] == "abc")
-        }
+            it("simpleConcat should concatenate strings correctly") {
+                val c = inMemoryClassLoader.loadClass(testClassType.toJava)
+                val m = c.getMethod("simpleConcat", classOf[String], classOf[String])
+                val res = m.invoke(null, "ab", "c")
 
-        it("concatConstants should produce the correct result") {
-            val c = inMemoryClassLoader.loadClass(testClassType.toJava)
-            val m = c.getMethod("concatConstants", classOf[String], classOf[String])
-            val res = m.invoke(null, "ab", "c")
+                // Not using res.toString as that would not check that e.g. the StringBuilder is not
+                // returned directly
+                assert(res.asInstanceOf[String] == "abc")
+            }
 
-            assert(res.asInstanceOf[String] == "ab c5")
-        }
+            it("concatConstants should produce the correct result") {
+                val c = inMemoryClassLoader.loadClass(testClassType.toJava)
+                val m = c.getMethod("concatConstants", classOf[String], classOf[String])
+                val res = m.invoke(null, "ab", "c")
 
-        it("concatObjectAndInt should produce the correct result") {
-            val c = inMemoryClassLoader.loadClass(testClassType.toJava)
-            val m =
-                c.getMethod("concatObjectAndInt", classOf[String], classOf[Object], classOf[Int])
-            val res = m.invoke(null, "ab", List(1, "c"), Int.box(5))
+                assert(res.asInstanceOf[String] == "ab c5")
+            }
 
-            assert(res.asInstanceOf[String] == "abList(1, c)5")
-        }
+            it("concatObjectAndInt should produce the correct result") {
+                val c = inMemoryClassLoader.loadClass(testClassType.toJava)
+                val m =
+                    c.getMethod("concatObjectAndInt", classOf[String], classOf[Object], classOf[Int])
+                val res = m.invoke(null, "ab", List(1, "c"), Int.box(5))
 
-        it("concatObjectAndDoubleWithConstants should produce the correct result") {
-            val c = inMemoryClassLoader.loadClass(testClassType.toJava)
-            val m =
-                c.getMethod("concatObjectAndDoubleWithConstants", classOf[Object], classOf[Double])
-            val res = m.invoke(null, List("ab", 1), Double.box(7.3))
+                assert(res.asInstanceOf[String] == "abList(1, c)5")
+            }
 
-            assert(res.asInstanceOf[String] == " 7.32.5List(ab, 1)")
-        }
+            it("concatObjectAndDoubleWithConstants should produce the correct result") {
+                val c = inMemoryClassLoader.loadClass(testClassType.toJava)
+                val m =
+                    c.getMethod("concatObjectAndDoubleWithConstants", classOf[Object], classOf[Double])
+                val res = m.invoke(null, List("ab", 1), Double.box(7.3))
 
-        it("concatLongAndConstant should produce the correct result") {
-            val c = inMemoryClassLoader.loadClass(testClassType.toJava)
-            val m = c.getMethod("concatLongAndConstant", classOf[Long], classOf[String])
-            val res = m.invoke(null, Long.box(7L), "ab")
+                assert(res.asInstanceOf[String] == " 7.32.5List(ab, 1)")
+            }
 
-            assert(res.asInstanceOf[String] == "ab157")
-        }
+            it("concatLongAndConstant should produce the correct result") {
+                val c = inMemoryClassLoader.loadClass(testClassType.toJava)
+                val m = c.getMethod("concatLongAndConstant", classOf[Long], classOf[String])
+                val res = m.invoke(null, Long.box(7L), "ab")
 
-        it("concatClassConstant should produce the correct result.StringConcatFactoryTest") {
-            val c = inMemoryClassLoader.loadClass(testClassType.toJava)
-            val m = c.getMethod("concatClassConstant", classOf[String])
-            val res = m.invoke(null, "ab")
+                assert(res.asInstanceOf[String] == "ab157")
+            }
 
-            assert(res.asInstanceOf[String] == "abclass string_concat.StringConcatFactoryTest")
-        }
+            it("concatClassConstant should produce the correct result.StringConcatFactoryTest") {
+                val c = inMemoryClassLoader.loadClass(testClassType.toJava)
+                val m = c.getMethod("concatClassConstant", classOf[String])
+                val res = m.invoke(null, "ab")
 
-        it("concatNonInlineableConstant should produce the correct result") {
-            val c = inMemoryClassLoader.loadClass(testClassType.toJava)
-            val m = c.getMethod("concatNonInlineableConstant", classOf[String])
-            val res = m.invoke(null, "ab")
+                assert(res.asInstanceOf[String] == "abclass string_concat.StringConcatFactoryTest")
+            }
 
-            assert(res.asInstanceOf[String] == "ab\u0001\u0002")
+            it("concatNonInlineableConstant should produce the correct result") {
+                val c = inMemoryClassLoader.loadClass(testClassType.toJava)
+                val m = c.getMethod("concatNonInlineableConstant", classOf[String])
+                val res = m.invoke(null, "ab")
+
+                assert(res.asInstanceOf[String] == "ab\u0001\u0002")
+            }
         }
     }
 
@@ -204,6 +208,7 @@ class InvokedynamicRewritingExecutionTest extends FunSpec with Matchers {
             // Otherwise, the hermes resources are not included and hermes won't find
             // HermesCLI.txt for example
             val paths = Array(
+                new File("TOOLS/hermes/src/main/resources/").toURI.toURL,
                 new File("DEVELOPING_OPAL/tools/src/main/resources/").toURI.toURL,
                 new File("OPAL/ai/src/main/resources/").toURI.toURL,
                 new File("OPAL/ba/src/main/resources/").toURI.toURL,
@@ -221,7 +226,7 @@ class InvokedynamicRewritingExecutionTest extends FunSpec with Matchers {
             val tempFile = Files.createTempFile("OPALValidate-Hermes-stats-", ".csv").toFile
             tempFile.delete()
 
-            println("Starting Hermes...")
+            info("Starting Hermes...")
             m.invoke(null, Array(
                 "-config", "DEVELOPING_OPAL/validate/src/it/resources/hermes-test-fixtures.json",
                 "-statistics", tempFile.getAbsolutePath

@@ -11,11 +11,11 @@ import org.opalj.collection.immutable.IntArraySet
 import scala.collection.AbstractIterator
 
 /**
- * Iterator over a collection of primitive int value; basically overrides all inherited methods
+ * Iterator over a collection of primitive int valuea; basically overrides all inherited methods
  * to avoid (un)boxing.
  *
- * @note   No guarantee is given what will happen if `next` is called after `hasNext` would return
- *         false.
+ * @note   No guarantee is given what will happen if `next` is called after `hasNext` returns or
+ *         would have returned false.
  *
  * @author Michael Eichberg
  */
@@ -23,7 +23,7 @@ abstract class IntIterator extends AbstractIterator[Int] { self ⇒
 
     /**
      * Returns the next value if `hasNext` has returned `true`; if hasNext has returned `false`
-     * and `next` is called, the result is undefined. The method may throw any exception, e.g., an
+     * and `next` is called, the result is undefined. The method may throw any exception, e.g., a
      * `NullPointerException`, or just return the last value; however, the behavior
      * is undefined and subject to change without notice!
      */
@@ -245,11 +245,29 @@ object IntIterator {
      * @param end The last value (inclusive).
      * @return An iterator over the given values.
      */
-    def inclusive(start: Int, end: Int): IntIterator = new IntIterator {
+    def upTo(start: Int, end: Int): IntIterator = new IntIterator {
         private[this] var i: Int = start
         override def hasNext: Boolean = i <= end
         override def next(): Int = {
             if (i > end) IntIterator.empty.next(); // <= will throw the expected exception
+            val r = i
+            i += 1
+            r
+        }
+    }
+
+    /**
+     * Creates a new iterator to iterate over the values in the defined range.
+     *
+     * @param start The first value (inclusive).
+     * @param end The last value (exclusive).
+     * @return An iterator over the given values.
+     */
+    def upUntil(start: Int, end: Int): IntIterator = new IntIterator {
+        private[this] var i: Int = start
+        override def hasNext: Boolean = i < end
+        override def next(): Int = {
+            if (i >= end) IntIterator.empty.next(); // <= will throw the expected exception
             val r = i
             i += 1
             r

@@ -8,7 +8,7 @@ package instructions
  *
  * @author Michael Eichberg
  */
-case object DLOAD_0 extends DLoadInstruction with ImplicitLocalVariableIndex {
+case object DLOAD_0 extends ConstantIndexDLoadInstruction {
 
     final val lvIndex = 0
 

@@ -10,7 +10,7 @@ import org.opalj.collection.immutable.Chain
  *
  * @author Michael Eichberg
  */
-case object MONITORENTER extends SynchronizationInstruction {
+case object MONITORENTER extends SynchronizationInstruction with InstructionMetaInformation {
 
     final val opcode = 194
 

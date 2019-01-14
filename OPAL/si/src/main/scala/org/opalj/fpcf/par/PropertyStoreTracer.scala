@@ -51,10 +51,7 @@ trait PropertyStoreTracer {
         updateAndNotifyState: UpdateAndNotifyState
     ): Unit
 
-    def handlingResult(
-        r:                               PropertyComputationResult,
-        epksWithNotYetNotifiedDependers: Set[SomeEPK]
-    ): Unit
+    def handlingResult(r: PropertyComputationResult): Unit
 
     def uselessPartialResult(
         r:           SomePartialResult,
@@ -174,15 +171,11 @@ case class ImmediateDependeeUpdate(
 }
 
 case class HandlingResult(
-        eventId:                         Int,
-        r:                               PropertyComputationResult,
-        epksWithNotYetNotifiedDependers: Set[SomeEPK]
+        eventId: Int,
+        r:       PropertyComputationResult
 ) extends StoreEvent {
 
-    override def toTxt: String = {
-        s"$eventId: HandlingResult($r,"+
-            s"epksWithNotYetNotifiedDependers=$epksWithNotYetNotifiedDependers)"
-    }
+    override def toTxt: String = s"$eventId: HandlingResult($r)"
 
 }
 
@@ -202,10 +195,10 @@ case class UselessPartialResult(
 
 case class MetaInformationDeleted(
         eventId: Int,
-        finalP:  SomeFinalEP
+        finalEP: SomeFinalEP
 ) extends StoreEvent {
 
-    override def toTxt: String = s"$eventId: MetaInformationDeleted(${finalP.toEPK})"
+    override def toTxt: String = s"$eventId: MetaInformationDeleted(${finalEP.toEPK})"
 
 }
 
@@ -280,12 +273,9 @@ class RecordAllPropertyStoreTracer extends PropertyStoreTracer {
         )
     }
 
-    override def handlingResult(
-        r:                               PropertyComputationResult,
-        epksWithNotYetNotifiedDependers: Set[SomeEPK]
-    ): Unit = {
+    override def handlingResult(r: PropertyComputationResult): Unit = {
         val eventId = eventCounter.incrementAndGet()
-        events offer HandlingResult(eventId, r, epksWithNotYetNotifiedDependers)
+        events offer HandlingResult(eventId, r)
     }
 
     override def uselessPartialResult(

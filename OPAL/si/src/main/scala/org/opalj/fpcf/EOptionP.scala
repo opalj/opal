@@ -141,7 +141,7 @@ sealed trait EOptionP[+E <: Entity, +P <: Property] {
      *
      * @note The caller has to ensure that this EOptionP and and the given EOptionP are
      *       comparable. That is, they define properties of the same kind associated with
-     *       the same entity.
+     *       the same entity and same bounds.
      */
     private[fpcf] def isUpdatedComparedTo(oldEOptionP: EOptionP[Entity, Property]): Boolean
 
@@ -223,7 +223,19 @@ object EPS {
             InterimELUBP(e, lb, ub)
     }
 
-    def unapply[E <: Entity, P <: Property](eps: EPS[E, P]): Some[E] = Some(eps.e)
+    def unapply[E <: Entity](eps: EPS[E, _]): Some[E] = Some(eps.e)
+}
+
+/**
+ * Factory and extractor for [[EPS]] objects.
+ *
+ * @author Michael Eichberg
+ */
+object SomeEPS {
+
+    def unapply[E <: Entity, P <: Property](eps: EPS[E, P]): Some[(E, PropertyKey[P])] = {
+        Some((eps.e, eps.pk))
+    }
 }
 
 object LBPS {
@@ -420,7 +432,7 @@ final class FinalEP[+E <: Entity, +P <: Property](val e: E, val p: P) extends EP
     override def hashCode: Int = e.hashCode() * 727 + p.hashCode()
 
     override def toString: String = {
-        s"FinalP($e@${System.identityHashCode(e).toHexString},p=$p)"
+        s"FinalEP($e@${System.identityHashCode(e).toHexString},p=$p)"
     }
 
 }
@@ -429,15 +441,33 @@ object FinalEP {
 
     def apply[E <: Entity, P <: Property](e: E, p: P): FinalEP[E, P] = new FinalEP(e, p)
 
-    def unapply[E <: Entity, P <: Property](eps: FinalEP[E, P]): Option[(E, P)] = {
+    def unapply[E <: Entity, P <: Property](eps: FinalEP[E, P]): Some[(E, P)] = {
         Some((eps.e, eps.p))
     }
 
 }
 
+/**
+ * Factory and extractor for [[FinalEP]] objects.
+ *
+ * @author Michael Eichberg
+ */
+object SomeFinalEP {
+
+    def unapply[E <: Entity, P <: Property](finalEP: FinalEP[E, P]): Some[(E, PropertyKey[P])] = {
+        Some((finalEP.e, finalEP.pk))
+    }
+}
+
 object FinalP {
 
-    def unapply[E <: Entity, P >: Null <: Property](eps: FinalEP[E, P]): Option[P] = Some(eps.p)
+    def unapply[E <: Entity, P >: Null <: Property](eps: FinalEP[E, P]): Some[P] = Some(eps.p)
+
+}
+
+object FinalE {
+
+    def unapply[E <: Entity](eps: FinalEP[E, _]): Some[E] = Some(eps.e)
 
 }
 
@@ -452,7 +482,6 @@ sealed trait InterimEP[+E <: Entity, +P <: Property] extends EPS[E, P] {
         val newLBAsOP = eps.lb.asOrderedProperty
         val lbAsOP = lb.asInstanceOf[newLBAsOP.Self]
         newLBAsOP.checkIsEqualOrBetterThan(e, lbAsOP)
-
     }
 
     private[fpcf] def checkIsValidUBPropertyUpdate(eps: SomeEPS): Unit = {
@@ -478,17 +507,14 @@ sealed trait InterimEP[+E <: Entity, +P <: Property] extends EPS[E, P] {
             }
         } catch {
             case t: Throwable ⇒
-                throw new IllegalArgumentException(
-                    s"$e: illegal update oldLB: $lb vs. newLB=$eps.lb "+
-                        newDependees.mkString("newDependees={", ", ", "}")+
-                        "; cause="+t.getMessage,
-                    t
-                )
+                val m = s"$e: illegal update oldLB: $lb vs. newLB=$eps.lb "+
+                    newDependees.mkString("newDependees={", ", ", "}; cause=") + t.getMessage
+                throw new IllegalArgumentException(m, t)
         }
     }
 }
 
-object InterimEP {
+object InterimE {
 
     /**
      * Extracts the entity of an interim property.
@@ -496,9 +522,7 @@ object InterimEP {
      * @note When we just have an InterimP object, we don't know which properties (ub, lb or both)
      *       are available.
      */
-    def unapply[E <: Entity, P >: Null <: Property](interimP: InterimEP[E, P]): Some[E] = {
-        Some(interimP.e)
-    }
+    def unapply[E <: Entity](interimP: InterimEP[E, _]): Some[E] = Some(interimP.e)
 
 }
 
@@ -605,8 +629,8 @@ final class InterimEUBP[+E <: Entity, +P <: Property](
 }
 
 /**
- * Factory and extractor for `InterimUBP` objects. The extractor also matches `InterimLUBP`
- * objects, but will throw an exception for `InterimLBP` objects. If you want to match
+ * Factory and extractor for `InterimEUBP` objects. The extractor also matches `InterimELUBP`
+ * objects, but will throw an exception for `InterimELBP` objects. If you want to match
  * final and interim objects at the same time use the `E(LB|UB)PS` extractors.
  */
 object InterimEUBP {
@@ -617,6 +641,21 @@ object InterimEUBP {
 
     def unapply[E <: Entity, P >: Null <: Property](eps: InterimEP[E, P]): Some[(E, P)] = {
         Some((eps.e, eps.ub))
+    }
+}
+
+/**
+ * Factory and extractor for `InterimEUBP` objects. The extractor also matches `InterimELUBP`
+ * objects, but will throw an exception for `InterimELBP` objects. If you want to match
+ * final and interim objects at the same time use the `E(LB|UB)PS` extractors.
+ */
+object InterimEUB {
+
+    def unapply[E <: Entity](eps: InterimEP[E, _]): Some[E] = {
+        if (!eps.hasUBP)
+            throw new IllegalArgumentException(s"$eps does not define an upper bound property");
+
+        Some(eps.e)
     }
 }
 
@@ -663,7 +702,7 @@ object NoUBP {
 
 object InterimUBP {
 
-    def unapply[E <: Entity, P <: Property](eps: InterimEP[E, P]): Some[P] = Some(eps.ub)
+    def unapply[P <: Property](eps: InterimEP[_, P]): Some[P] = Some(eps.ub)
 
 }
 
@@ -721,7 +760,7 @@ object InterimELBP {
 
 object InterimLBP {
 
-    def unapply[E <: Entity, P >: Null <: Property](eps: InterimEP[E, P]): Some[P] = Some(eps.ub)
+    def unapply[P >: Null <: Property](eps: InterimEP[_, P]): Some[P] = Some(eps.ub)
 
 }
 
@@ -800,7 +839,7 @@ object EPK {
         new EPK(e, p.key.asInstanceOf[PropertyKey[P]])
     }
 
-    def unapply[E <: Entity, P >: Null <: Property](epk: EPK[E, P]): Option[(E, PropertyKey[P])] = {
+    def unapply[E <: Entity, P >: Null <: Property](epk: EPK[E, P]): Some[(E, PropertyKey[P])] = {
         Some((epk.e, epk.pk))
     }
 }

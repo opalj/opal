@@ -5,21 +5,21 @@ package info
 
 import java.net.URL
 
+import org.opalj.util.Nanoseconds
+import org.opalj.util.PerformanceEvaluation.time
+import org.opalj.fpcf.PropertyKind
+import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.SomeEPS
 import org.opalj.br.Method
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.br.collection.TypesSet
-import org.opalj.fpcf.PropertyStoreKey
-import org.opalj.fpcf.FPCFAnalysesManagerKey
-import org.opalj.fpcf.PropertyStore
-import org.opalj.fpcf.SomeEPS
-import org.opalj.fpcf.analyses.LazyVirtualMethodThrownExceptionsAnalysis
-import org.opalj.fpcf.analyses.EagerL1ThrownExceptionsAnalysis
-import org.opalj.fpcf.properties.{ThrownExceptions ⇒ ThrownExceptionsProperty}
-import org.opalj.util.Nanoseconds
-import org.opalj.util.PerformanceEvaluation.time
-import org.opalj.fpcf.PropertyKind
+import org.opalj.br.fpcf.properties.{ThrownExceptions ⇒ ThrownExceptionsProperty}
+import org.opalj.br.fpcf.FPCFAnalysesManagerKey
+import org.opalj.br.fpcf.PropertyStoreKey
+import org.opalj.br.fpcf.analyses.EagerL1ThrownExceptionsAnalysis
+import org.opalj.br.fpcf.analyses.LazyVirtualMethodThrownExceptionsAnalysis
 
 /**
  * Prints out the information about the exceptions thrown by methods.

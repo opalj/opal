@@ -32,11 +32,11 @@ package object control {
      *
      * @note '''This is a macro.'''
      */
-    final def foreachValue[T <: AnyRef](
+    final def foreachWithIndex[T <: AnyRef](
         a: Array[T]
     )(
-        f: (Int, T) ⇒ Unit
-    ): Unit = macro ControlAbstractionsImplementation.foreachValue[T]
+        f: (T, Int) ⇒ Unit
+    ): Unit = macro ControlAbstractionsImplementation.foreachWithIndex[T]
 
     /**
      * Executes the given function `f` for the first `n` values of the given list.
@@ -226,12 +226,12 @@ package control {
             }
         }
 
-        def foreachValue[T <: AnyRef: c.WeakTypeTag](
+        def foreachWithIndex[T <: AnyRef: c.WeakTypeTag](
             c: Context
         )(
             a: c.Expr[Array[T]]
         )(
-            f: c.Expr[(Int, T) ⇒ Unit]
+            f: c.Expr[(T, Int) ⇒ Unit]
         ): c.Expr[Unit] = {
             import c.universe._
 
@@ -241,7 +241,7 @@ package control {
                 var i = 0
                 while (i < arrayLength) {
                     val arrayEntry = array(i)
-                    f.splice(i, arrayEntry)
+                    f.splice(arrayEntry, i)
                     i += 1
                 }
             }

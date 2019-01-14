@@ -2,6 +2,8 @@
 package org.opalj
 package br
 
+import org.opalj.collection.RefIterator
+import org.opalj.collection.ForeachRefIterator
 import org.opalj.collection.immutable.UIDSet
 
 /**
@@ -15,28 +17,23 @@ sealed abstract class TypeHierarchyInformation {
     def classTypes: UIDSet[ObjectType]
     def interfaceTypes: UIDSet[ObjectType]
     /**
-     * The set of all types; cached if usefull.
+     * The set of all types; cached if useful.
      */
     def allTypes: UIDSet[ObjectType]
 
-    def size: Int = classTypes.size + interfaceTypes.size
+    final def size: Int = allTypes.size
 
-    def foreach[T](f: ObjectType ⇒ T): Unit = {
-        classTypes.foreach(f)
-        interfaceTypes.foreach(f)
-    }
+    def foreach[T](f: ObjectType ⇒ T): Unit = allTypes.foreach(f)
 
-    def forall(f: ObjectType ⇒ Boolean): Boolean = {
-        classTypes.forall(f) && interfaceTypes.forall(f)
-    }
+    def iterator: RefIterator[ObjectType]
 
-    def exists(f: ObjectType ⇒ Boolean): Boolean = {
-        classTypes.exists(f) || interfaceTypes.exists(f)
-    }
+    def foreachIterator: ForeachRefIterator[ObjectType] = allTypes.foreachIterator
 
-    def foldLeft[B](z: B)(op: (B, ObjectType) ⇒ B): B = {
-        interfaceTypes.foldLeft(classTypes.foldLeft(z)(op))(op)
-    }
+    def forall(f: ObjectType ⇒ Boolean): Boolean = allTypes.forall(f)
+
+    def exists(f: ObjectType ⇒ Boolean): Boolean = allTypes.exists(f)
+
+    def foldLeft[B](z: B)(op: (B, ObjectType) ⇒ B): B = allTypes.foldLeft(z)(op)
 
     /**
      * Tests if the given type belongs to the super/subtype of `this` type; this
@@ -79,18 +76,20 @@ object SubtypeInformation {
         final override def allTypes: UIDSet[ObjectType] = UIDSet.empty
         final override def contains(t: ObjectType): Boolean = false
         final override private[br] def containsId(objectTypeId: Int): Boolean = false
+        final override def iterator: RefIterator[ObjectType] = RefIterator.empty
     }
 
     def forObject(
         theClassTypes:     UIDSet[ObjectType],
         theInterfaceTypes: UIDSet[ObjectType],
-        initialAllTypes:   UIDSet[ObjectType] // just used to increase "sharing" possibilities
+        initialAllTypes:   UIDSet[ObjectType]
     ): SubtypeInformation = {
         val theAllTypes = initialAllTypes ++ theClassTypes ++ theInterfaceTypes
         new SubtypeInformation {
             final override val classTypes: UIDSet[ObjectType] = theClassTypes
             final override val interfaceTypes: UIDSet[ObjectType] = theInterfaceTypes
             final override val allTypes: UIDSet[ObjectType] = theAllTypes
+            final override def iterator: RefIterator[ObjectType] = allTypes.iterator
             final override def contains(t: ObjectType): Boolean = true
             final override private[br] def containsId(objectTypeId: Int): Boolean = true
         }
@@ -107,16 +106,14 @@ object SubtypeInformation {
             if (theInterfaceTypes.isEmpty)
                 None
             else
-                new SubtypeInformation {
+                new SubtypeInformation { // ... if all subtypes are interfaces!
                     final override def classTypes: UIDSet[ObjectType] = UIDSet.empty
                     final override val interfaceTypes: UIDSet[ObjectType] = theInterfaceTypes
                     final override def allTypes: UIDSet[ObjectType] = interfaceTypes
+                    final override def iterator: RefIterator[ObjectType] = interfaceTypes.iterator
                     final override def contains(t: ObjectType): Boolean = {
                         val tid = t.id
-                        // the first three checks are just guard checks..
-                        tid != ObjectType.ObjectId &&
-                            tid < isKnownType.length && isKnownType(tid) &&
-                            isInterfaceType(tid) &&
+                        tid < isInterfaceType.length && isInterfaceType(tid) &&
                             interfaceTypes.containsId(tid)
                     }
                     final override private[br] def containsId(objectTypeId: Int): Boolean = {
@@ -128,12 +125,12 @@ object SubtypeInformation {
                 final override val classTypes: UIDSet[ObjectType] = theClassTypes
                 final override def interfaceTypes: UIDSet[ObjectType] = UIDSet.empty
                 final override def allTypes: UIDSet[ObjectType] = classTypes
+                final override def iterator: RefIterator[ObjectType] = classTypes.iterator
                 final override def contains(t: ObjectType): Boolean = {
                     val tid = t.id
                     // the first three checks are just guard checks..
                     tid != ObjectType.ObjectId &&
-                        tid < isKnownType.length && isKnownType(tid) &&
-                        !isInterfaceType(tid) &&
+                        tid < isKnownType.length && isKnownType(tid) && !isInterfaceType(tid) &&
                         classTypes.containsId(tid)
                 }
                 final override private[br] def containsId(objectTypeId: Int): Boolean = {
@@ -148,6 +145,7 @@ object SubtypeInformation {
                 // We precompute the information to ensure that tests that will fail will
                 // only take half as many steps... (see containsID)
                 final override val allTypes: UIDSet[ObjectType] = theAllTypes
+                final override def iterator: RefIterator[ObjectType] = allTypes.iterator
                 final override def contains(t: ObjectType): Boolean = {
                     val tid = t.id
                     // the first two checks are just guard checks...
@@ -178,6 +176,7 @@ object SupertypeInformation {
         final override def classTypes: UIDSet[ObjectType] = ClassHierarchy.JustObject
         final override def interfaceTypes: UIDSet[ObjectType] = UIDSet.empty
         final override def allTypes: UIDSet[ObjectType] = ClassHierarchy.JustObject
+        final override def iterator: RefIterator[ObjectType] = RefIterator(ObjectType.Object)
         final override def contains(t: ObjectType): Boolean = t eq ObjectType.Object
         final override private[br] def containsId(objectTypeId: Int): Boolean = {
             ObjectType.ObjectId == objectTypeId
@@ -189,6 +188,7 @@ object SupertypeInformation {
         final override def classTypes: UIDSet[ObjectType] = UIDSet.empty
         final override def interfaceTypes: UIDSet[ObjectType] = UIDSet.empty
         final override def allTypes: UIDSet[ObjectType] = UIDSet.empty
+        final override def iterator: RefIterator[ObjectType] = RefIterator.empty
         final override def contains(t: ObjectType): Boolean = t eq ObjectType.Object
         final override private[br] def containsId(objectTypeId: Int): Boolean = false
     }
@@ -197,6 +197,7 @@ object SupertypeInformation {
         final override val classTypes: UIDSet[ObjectType] = UIDSet.empty
         final override def interfaceTypes: UIDSet[ObjectType] = UIDSet.empty
         final override def allTypes: UIDSet[ObjectType] = UIDSet.empty
+        final override def iterator: RefIterator[ObjectType] = RefIterator.empty
         final override def contains(t: ObjectType): Boolean = false
         final override private[br] def containsId(objectTypeId: Int): Boolean = false
     }
@@ -218,6 +219,7 @@ object SupertypeInformation {
                     final override val classTypes: UIDSet[ObjectType] = theClassTypes
                     final override def interfaceTypes: UIDSet[ObjectType] = UIDSet.empty
                     final override def allTypes: UIDSet[ObjectType] = classTypes
+                    final override def iterator: RefIterator[ObjectType] = classTypes.iterator
                     final override def contains(t: ObjectType): Boolean = {
                         val tid = t.id
                         tid == ObjectType.ObjectId || (
@@ -238,6 +240,7 @@ object SupertypeInformation {
                     final override def classTypes: UIDSet[ObjectType] = UIDSet.empty
                     final override val interfaceTypes: UIDSet[ObjectType] = theInterfaceTypes
                     final override def allTypes: UIDSet[ObjectType] = interfaceTypes
+                    final override def iterator: RefIterator[ObjectType] = interfaceTypes.iterator
                     final override def contains(t: ObjectType): Boolean = {
                         val tid = t.id
                         tid == ObjectType.ObjectId || (
@@ -257,6 +260,7 @@ object SupertypeInformation {
                     final override val allTypes: UIDSet[ObjectType] = {
                         initialAllTypes + ObjectType.Object ++ theInterfaceTypes
                     }
+                    final override def iterator: RefIterator[ObjectType] = allTypes.iterator
                     final override def contains(t: ObjectType): Boolean = {
                         val tid = t.id
                         tid == ObjectType.ObjectId || (
@@ -276,6 +280,7 @@ object SupertypeInformation {
                     final override val allTypes: UIDSet[ObjectType] = {
                         initialAllTypes ++ classTypes ++ interfaceTypes
                     }
+                    final override def iterator: RefIterator[ObjectType] = allTypes.iterator
                     final override def contains(t: ObjectType): Boolean = {
                         val tid = t.id
                         tid == ObjectType.ObjectId || (

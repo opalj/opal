@@ -12,7 +12,7 @@ import org.opalj.collection.immutable.Chain
  */
 case class INSTANCEOF(
         referenceType: ReferenceType
-) extends Instruction with ConstantLengthInstruction with NoLabels {
+) extends ConstantLengthInstruction with NoLabels {
 
     final def opcode: Opcode = INSTANCEOF.opcode
 
@@ -66,7 +66,7 @@ case class INSTANCEOF(
  *
  * @author Malte Limmeroth
  */
-object INSTANCEOF {
+object INSTANCEOF extends InstructionMetaInformation {
 
     final val opcode = 193
 

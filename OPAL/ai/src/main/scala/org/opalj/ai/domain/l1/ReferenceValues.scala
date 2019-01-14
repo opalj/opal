@@ -18,7 +18,6 @@ import org.opalj.collection.immutable.UIDSet1
 import org.opalj.collection.immutable.UIDSet2
 import org.opalj.value.IsMultipleReferenceValue
 import org.opalj.br.ArrayType
-import org.opalj.br.ClassHierarchy
 import org.opalj.br.ComputationalType
 import org.opalj.br.ComputationalTypeReference
 import org.opalj.br.ObjectType
@@ -564,11 +563,11 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
         }
 
         override def doRefineIsNull(isNull: Answer): DomainSingleOriginReferenceValue = {
-            throw new ImpossibleRefinement(this, "nullness property of null value")
+            throw ImpossibleRefinement(this, "nullness property of null value")
         }
 
         def doRefineUpperTypeBound(supertype: ReferenceType): DomainSingleOriginReferenceValue = {
-            throw new ImpossibleRefinement(this, "refinement of type of null value")
+            throw ImpossibleRefinement(this, "refinement of type of null value")
         }
 
         protected override def doJoinWithNonNullValueWithSameOrigin(
@@ -1104,7 +1103,12 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             s"invalid upper type bound: $upperTypeBound for: ${values.mkString("[", ";", "]")}"
         )
 
-        override def classHierarchy: ClassHierarchy = domain.classHierarchy
+        override def leastUpperType: Option[ReferenceType] = {
+            if (isNull.isYes)
+                None
+            else
+                Some(classHierarchy.joinReferenceTypesUntilSingleUpperBound(upperTypeBound))
+        }
 
         override def baseValues: Traversable[DomainSingleOriginReferenceValue] = values
 

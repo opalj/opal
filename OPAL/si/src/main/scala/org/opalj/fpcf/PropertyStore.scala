@@ -12,6 +12,7 @@ import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.info
 import org.opalj.log.OPALLogger.error
+import org.opalj.collection.IntIterator
 import org.opalj.fpcf.PropertyKind.SupportedPropertyKinds
 
 /**
@@ -72,7 +73,7 @@ import org.opalj.fpcf.PropertyKind.SupportedPropertyKinds
  * thread-safe in the following manner:
  *  - a client has to use the SAME thread (the driver thread) to call
  *    (0) [[set]] to initialize the property store,
- *    (1) [[setupPhase(PhaseConfiguration)]],
+ *    (1) [[org.opalj.fpcf.PropertyStore!.setupPhase(configuration:org\.opalj\.fpcf\.PropertyKindsConfiguration)*]],
  *    (2) [[registerLazyPropertyComputation]] or [[registerTriggeredComputation]],
  *    (3) [[scheduleEagerComputationForEntity]] / [[scheduleEagerComputationsForEntities]],
  *    (4) [[force]] and
@@ -111,8 +112,6 @@ import org.opalj.fpcf.PropertyKind.SupportedPropertyKinds
 abstract class PropertyStore {
 
     implicit val logContext: LogContext
-
-    private[this] var analysesRegistered: Boolean = false
 
     //
     //
@@ -269,7 +268,11 @@ abstract class PropertyStore {
      * to determine which kind of fallback is required.
      */
     protected[this] final val propertyKindsComputedInEarlierPhase: Array[Boolean] = {
-        new Array(PropertyKind.SupportedPropertyKinds)
+        new Array(SupportedPropertyKinds)
+    }
+
+    final def alreadyComputedPropertyKindIds: IntIterator = {
+        IntIterator.upUntil(0, SupportedPropertyKinds).filter(propertyKindsComputedInEarlierPhase)
     }
 
     protected[this] final val propertyKindsComputedInThisPhase: Array[Boolean] = {
@@ -313,7 +316,7 @@ abstract class PropertyStore {
      *  - a computation is scheduled/running to compute some property, or
      *  - an analysis has a dependency on some (not yet finally computed) property, or
      *  - that the store just eagerly created the data structures necessary to associate
-     *    properties with the entity.
+     *    properties with the entity because the entity was queried
      */
     def isKnown(e: Entity): Boolean
 
@@ -360,8 +363,17 @@ abstract class PropertyStore {
      */
     def entities[P <: Property](lb: P, ub: P): Iterator[Entity]
 
+    /**
+     * @note Only to be called when the store is quiescent.
+     * @note Does not trigger lazy property computations.
+     */
     def entitiesWithLB[P <: Property](lb: P): Iterator[Entity]
 
+    /**
+     *
+     * @note Only to be called when the store is quiescent.
+     * @note Does not trigger lazy property computations.
+     */
     def entitiesWithUB[P <: Property](ub: P): Iterator[Entity]
 
     /**
@@ -396,8 +408,11 @@ abstract class PropertyStore {
      *         as a result'''.
      */
     final def set(e: Entity, p: Property): Unit = {
-        if (analysesRegistered) {
-            throw new IllegalStateException("analyses are already registered/scheduled")
+        if (!isIdle) {
+            throw new IllegalStateException("analyses are already running")
+        }
+        if (propertyKindsComputedInEarlierPhase(p.key.id)) {
+            throw new IllegalStateException(s"property kind (of $p) was computed in previous phase")
         }
         doSet(e, p)
     }
@@ -418,8 +433,11 @@ abstract class PropertyStore {
     )(
         pc: EOptionP[E, P] ⇒ InterimEP[E, P]
     ): Unit = {
-        if (analysesRegistered) {
-            throw new IllegalStateException("analyses are already registered/scheduled")
+        if (!isIdle) {
+            throw new IllegalStateException("analyses are already running")
+        }
+        if (propertyKindsComputedInEarlierPhase(pk.id)) {
+            throw new IllegalStateException(s"property kind ($pk) was computed in previous phase")
         }
         doPreInitialize(e, pk)(pc)
     }
@@ -431,7 +449,7 @@ abstract class PropertyStore {
         pc: EOptionP[E, P] ⇒ InterimEP[E, P]
     ): Unit
 
-    final def setupPhase(configuration: PhaseConfiguration): Unit = {
+    final def setupPhase(configuration: PropertyKindsConfiguration): Unit = {
         setupPhase(
             configuration.propertyKindsComputedInThisPhase,
             configuration.propertyKindsComputedInLaterPhase,
@@ -518,7 +536,9 @@ abstract class PropertyStore {
         // Step 4
         // Save the information about the finalization order (of properties which are
         // collaboratively computed).
-        val cleanUpSubPhase = propertyKindsComputedInThisPhase -- finalizationOrder.flatten.toSet
+        val cleanUpSubPhase =
+            (propertyKindsComputedInThisPhase -- finalizationOrder.flatten.toSet) +
+                AnalysisKey
         this.subPhaseFinalizationOrder =
             if (cleanUpSubPhase.isEmpty) {
                 finalizationOrder.toArray
@@ -554,7 +574,7 @@ abstract class PropertyStore {
      *
      * This method is only intended to support bug detection.
      */
-    protected[this] def isIdle: Boolean
+    def isIdle: Boolean
 
     /**
      * Returns a snapshot of the properties with the given kind associated with the given entities.
@@ -656,8 +676,6 @@ abstract class PropertyStore {
         pk: PropertyKey[P],
         pc: ProperPropertyComputation[E] // TODO add definition of PropertyComputationResult that is parameterized over the kind of Property to specify that we want a PropertyComputationResult with respect to PropertyKey (pk)
     ): Unit = {
-        analysesRegistered = true
-
         if (debug && !isIdle) {
             throw new IllegalStateException(
                 "lazy computations can only be registered while the property store is idle"
@@ -671,6 +689,7 @@ abstract class PropertyStore {
      * Registers a total function that takes a given final property and computes a new final
      * property of a different kind; the function must not query the property store. Furthermore,
      * `setupPhase` must specify that notifications about interim updates have to be suppressed.
+     * A transformer is conceptually a special kind of lazy analysis.
      */
     final def registerTransformer[SourceP <: Property, TargetP <: Property, E <: Entity](
         sourcePK: PropertyKey[SourceP],
@@ -678,8 +697,6 @@ abstract class PropertyStore {
     )(
         pc: (E, SourceP) ⇒ FinalEP[E, TargetP]
     ): Unit = {
-        analysesRegistered = true
-
         if (debug && !isIdle) {
             throw new IllegalStateException(
                 "transformers can only be registered while the property store is idle"
@@ -729,7 +746,6 @@ abstract class PropertyStore {
         pk: PropertyKey[P],
         pc: PropertyComputation[E]
     ): Unit = {
-        analysesRegistered = true
         if (debug && !isIdle) {
             throw new IllegalStateException(
                 "triggered computations can only be registered while no computations are running"
@@ -772,7 +788,6 @@ abstract class PropertyStore {
     )(
         pc: PropertyComputation[E]
     ): Unit = {
-        analysesRegistered = true
         doScheduleEagerComputationForEntity(e)(pc)
     }
 
@@ -893,10 +908,10 @@ object PropertyStore {
         implicit val logContext: LogContext = GlobalLogContext
         debug =
             if (newDebug) {
-                info("OPAL", s"$DebugKey: debugging support on for new PropertyStores")
+                info("OPAL - new PropertyStores", s"$DebugKey: debugging support on")
                 true
             } else {
-                info("OPAL", s"$DebugKey: debugging support off for new PropertyStores")
+                info("OPAL - new PropertyStores", s"$DebugKey: debugging support off")
                 false
             }
     }
@@ -906,9 +921,7 @@ object PropertyStore {
     // about debugging analyses.
     //
 
-    final val TraceFallbacksKey = {
-        "org.opalj.fpcf.PropertyStore.TraceFallbacks"
-    }
+    final val TraceFallbacksKey = "org.opalj.fpcf.PropertyStore.TraceFallbacks"
 
     private[this] var traceFallbacks: Boolean = {
         val initialTraceFallbacks = BaseConfig.getBoolean(TraceFallbacksKey)
@@ -943,7 +956,7 @@ object PropertyStore {
 
     private[this] var traceSuppressedNotifications: Boolean = {
         val initialTraceSuppressedNotifications = BaseConfig.getBoolean(TraceSuppressedNotificationsKey)
-        updateTraceFallbacks(initialTraceSuppressedNotifications)
+        updateTraceDependersNotificationsKey(initialTraceSuppressedNotifications)
         initialTraceSuppressedNotifications
     }
 

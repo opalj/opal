@@ -2,6 +2,8 @@
 package org.opalj
 package br
 
+import scala.annotation.switch
+
 import scala.collection.Seq
 import scala.math.Ordered
 
@@ -122,26 +124,6 @@ sealed abstract class MethodDescriptor
         }+"): "+returnType.toJava
     }
 
-    override def compare(other: MethodDescriptor): Int = {
-        val thisParametersCount = this.parametersCount
-        val otherParametersCount = other.parametersCount
-        if (thisParametersCount < otherParametersCount)
-            -1
-        else if (thisParametersCount > otherParametersCount)
-            1
-        else {
-            var i = 0
-            while (i < thisParametersCount) {
-                val comparisonResult = this.parameterTypes(i).compare(other.parameterTypes(i))
-                if (comparisonResult != 0)
-                    return comparisonResult;
-                else // the types are identical
-                    i += 1
-            }
-            this.returnType.compare(other.returnType)
-        }
-    }
-
     override def <(other: MethodDescriptor): Boolean = {
         val thisParametersCount = this.parametersCount
         val otherParametersCount = other.parametersCount
@@ -189,6 +171,13 @@ private object NoArgumentAndNoReturnValueMethodDescriptor extends MethodDescript
         other.parametersCount == 0
     }
 
+    override def compare(other: MethodDescriptor): Int = {
+        if (other == NoArgumentAndNoReturnValueMethodDescriptor)
+            0
+        else
+            -1
+    }
+
     // the default equals and hashCode implementations are a perfect fit
 }
 
@@ -213,6 +202,14 @@ private final class NoArgumentMethodDescriptor(val returnType: Type) extends Met
             case _                                ⇒ false
         }
     }
+
+    override def compare(other: MethodDescriptor): Int = {
+        (other.parametersCount: @switch) match {
+            case 0 ⇒ this.returnType.compare(other.returnType)
+            case _ ⇒ -1
+        }
+    }
+
 }
 
 private final class SingleArgumentMethodDescriptor(
@@ -247,6 +244,20 @@ private final class SingleArgumentMethodDescriptor(
                 false
         }
     }
+
+    override def compare(other: MethodDescriptor): Int = {
+        (other.parametersCount: @switch) match {
+            case 0 ⇒ 1
+            case 1 ⇒
+                val c = parameterType compare other.parameterType(0)
+                if (c != 0)
+                    c
+                else
+                    this.returnType.compare(other.returnType)
+            case _ ⇒ -1
+        }
+    }
+
 }
 
 private final class TwoArgumentsMethodDescriptor(
@@ -258,7 +269,7 @@ private final class TwoArgumentsMethodDescriptor(
     override def parameterTypes: FieldTypes = RefArray(firstParameterType, secondParameterType)
 
     override def parameterType(index: Int): FieldType = {
-        index match {
+        (index: @switch) match {
             case 0 ⇒ firstParameterType
             case 1 ⇒ secondParameterType
             case _ ⇒ throw new IndexOutOfBoundsException()
@@ -269,6 +280,25 @@ private final class TwoArgumentsMethodDescriptor(
 
     override def hasComputationalTypeCategory2ValueInInit: Boolean = {
         firstParameterType.computationalType.categoryId == 2
+    }
+
+    override def compare(other: MethodDescriptor): Int = {
+        (other.parametersCount: @switch) match {
+            case 0 | 1 ⇒ 1
+            case 2 ⇒
+                var c = firstParameterType compare other.parameterType(0)
+                if (c != 0)
+                    c
+                else {
+                    c = secondParameterType compare other.parameterType(1)
+                    if (c != 0) {
+                        c
+                    } else {
+                        this.returnType.compare(other.returnType)
+                    }
+                }
+            case _ ⇒ -1
+        }
     }
 
     override def equalParameters(other: MethodDescriptor): Boolean = {
@@ -313,6 +343,26 @@ private final class MultiArgumentsMethodDescriptor(
         }
         false
 
+    }
+
+    override def compare(other: MethodDescriptor): Int = {
+        val thisParametersCount = this.parametersCount
+        val otherParametersCount = other.parametersCount
+        if (thisParametersCount < otherParametersCount)
+            -1
+        else if (thisParametersCount > otherParametersCount)
+            1
+        else {
+            var i = 0
+            while (i < thisParametersCount) {
+                val comparisonResult = this.parameterTypes(i).compare(other.parameterTypes(i))
+                if (comparisonResult != 0)
+                    return comparisonResult;
+                else // the types are identical
+                    i += 1
+            }
+            this.returnType.compare(other.returnType)
+        }
     }
 
     override def equalParameters(other: MethodDescriptor): Boolean = {

@@ -8,7 +8,7 @@ package instructions
  *
  * @author Michael Eichberg
  */
-case object ASTORE_0 extends AStoreInstruction with ImplicitLocalVariableIndex {
+case object ASTORE_0 extends ConstantIndexAStoreInstruction {
 
     final val lvIndex = 0
 

@@ -67,7 +67,7 @@ case class TABLESWITCH(
     }
 
     override def caseValues: IntIterator = {
-        IntIterator.inclusive(low, high).filter(cv ⇒ jumpOffsets(cv - low) != defaultOffset)
+        IntIterator.upTo(low, high).filter(cv ⇒ jumpOffsets(cv - low) != defaultOffset)
     }
 
     final def nextInstructions(
@@ -136,7 +136,7 @@ case class TABLESWITCH(
  *
  * @author Malte Limmeroth
  */
-object TABLESWITCH {
+object TABLESWITCH extends InstructionMetaInformation {
 
     final val opcode = 170
 
@@ -197,7 +197,7 @@ case class LabeledTABLESWITCH(
     }
 
     override def caseValues: IntIterator = {
-        IntIterator.inclusive(low, high).filter(cv ⇒ jumpTargets(cv - low) != defaultBranchTarget)
+        IntIterator.upTo(low, high).filter(cv ⇒ jumpTargets(cv - low) != defaultBranchTarget)
     }
 
     final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {

@@ -30,7 +30,7 @@ case class JSR_W(branchoffset: Int) extends JSRInstruction with JSR_WLike {
  *
  * @author Malte Limmeroth
  */
-object JSR_W {
+object JSR_W extends InstructionMetaInformation {
 
     final val opcode = 201
 

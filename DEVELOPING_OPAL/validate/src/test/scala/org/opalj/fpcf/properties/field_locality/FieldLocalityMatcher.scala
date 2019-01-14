@@ -7,6 +7,7 @@ package field_locality
 import org.opalj.br.AnnotationLike
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
+import org.opalj.br.fpcf.properties.FieldLocality
 
 /**
  * A property matcher that checks whether the annotated method has the specified field locality
@@ -45,13 +46,17 @@ class FieldLocalityMatcher(val property: FieldLocality) extends AbstractProperty
     }
 }
 
-class NoLocalFieldMatcher extends FieldLocalityMatcher(properties.NoLocalField)
+class NoLocalFieldMatcher
+    extends FieldLocalityMatcher(br.fpcf.properties.NoLocalField)
 
-class ExtensibleLocalFieldMatcher extends FieldLocalityMatcher(properties.ExtensibleLocalField)
+class ExtensibleLocalFieldMatcher
+    extends FieldLocalityMatcher(br.fpcf.properties.ExtensibleLocalField)
 
-class LocalFieldMatcher extends FieldLocalityMatcher(properties.LocalField)
+class LocalFieldMatcher
+    extends FieldLocalityMatcher(br.fpcf.properties.LocalField)
 
 class ExtensibleLocalFieldWithGetterMatcher
-    extends FieldLocalityMatcher(properties.ExtensibleLocalFieldWithGetter)
+    extends FieldLocalityMatcher(br.fpcf.properties.ExtensibleLocalFieldWithGetter)
 
-class LocalFieldWithGetterMatcher extends FieldLocalityMatcher(properties.LocalFieldWithGetter)
+class LocalFieldWithGetterMatcher
+    extends FieldLocalityMatcher(br.fpcf.properties.LocalFieldWithGetter)

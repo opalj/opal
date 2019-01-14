@@ -15,4 +15,7 @@ trait FLoadInstruction extends LoadLocalVariableInstruction {
     final def stackSlotsChange: Int = +1
 }
 
-object FLoadInstruction
+trait ConstantIndexFLoadInstruction
+    extends FLoadInstruction
+    with ImplicitLocalVariableIndex
+    with InstructionMetaInformation

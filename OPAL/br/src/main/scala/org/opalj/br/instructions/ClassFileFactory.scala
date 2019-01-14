@@ -261,14 +261,13 @@ object ClassFileFactory {
             factoryMethodName
         )
 
-        bridgeMethodDescriptors.iterator.zipWithIndex.foreach {
-            case (bridgeMethodDescriptor, i) ⇒
-                methods(3 + i) = createBridgeMethod(
-                    methodName,
-                    bridgeMethodDescriptor,
-                    methodDescriptor,
-                    definingType.objectType
-                )
+        bridgeMethodDescriptors.foreachWithIndex { (bridgeMethodDescriptor, i) ⇒
+            methods(3 + i) = createBridgeMethod(
+                methodName,
+                bridgeMethodDescriptor,
+                methodDescriptor,
+                definingType.objectType
+            )
         }
 
         // Add a writeReplace and $deserializeLambda$ method if the class isSerializable
@@ -738,7 +737,7 @@ object ClassFileFactory {
                 numberOfInstructionsForParameterLoading +
                 3 + // INVOKESPECIAL
                 1 // ARETURN
-        val maxLocals = fieldTypes.iterator.sum(_.computationalType.operandSize.toInt)
+        val maxLocals = fieldTypes.sum(_.computationalType.operandSize.toInt)
         val maxStack = maxLocals + 2 // new + dup makes two extra on the stack
         val instructions = new Array[Instruction](numberOfInstructions)
         var currentPC: Int = 0

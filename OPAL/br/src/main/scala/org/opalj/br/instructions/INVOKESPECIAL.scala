@@ -46,7 +46,7 @@ case class INVOKESPECIAL(
  *
  * @author Malte Limmeroth
  */
-object INVOKESPECIAL {
+object INVOKESPECIAL extends InstructionMetaInformation {
 
     final val opcode = 183
 

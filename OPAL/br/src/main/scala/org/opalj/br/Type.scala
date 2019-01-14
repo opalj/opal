@@ -372,6 +372,13 @@ sealed abstract class ReferenceType extends FieldType {
     final override def computationalType: ComputationalType = ComputationalTypeReference
 
     /**
+     * Returns the most precise object type that represents this reference type. In
+     * case of an `ArrayType`, the `ObjectType` of `java.lang.Object` is returned;
+     * other the current `ObjectType`.
+     */
+    def mostPreciseObjectType: ObjectType
+
+    /**
      * Each reference type is associated with a unique id. Object types get ids &gt;= 0
      * and array types get ids &lt; 0.
      */
@@ -977,6 +984,8 @@ final class ObjectType private ( // DO NOT MAKE THIS A CASE CLASS!
 
     override def asObjectType: ObjectType = this
 
+    override def mostPreciseObjectType: ObjectType = this
+
     @inline final def isPrimitiveTypeWrapper: Boolean = {
         val thisId = this.id
         thisId <= ObjectType.javaLangDoubleId && thisId >= ObjectType.javaLangBooleanId
@@ -1193,6 +1202,9 @@ object ObjectType {
     final val Exception = ObjectType("java/lang/Exception")
     final val RuntimeException = ObjectType("java/lang/RuntimeException")
 
+    final val Thread = ObjectType("java/lang/Thread")
+    final val Runnable = ObjectType("java/lang/Runnable")
+
     final val StringBuilder = ObjectType("java/lang/StringBuilder")
 
     // Types related to the invokedynamic instruction
@@ -1240,6 +1252,9 @@ object ObjectType {
 
     // Given the importance of "Object Serialization" we also predefine Externalizable
     final val Externalizable = ObjectType("java/io/Externalizable")
+
+    final val ObjectInputStream = ObjectType("java/io/ObjectInputStream")
+    final val ObjectOutputStream = ObjectType("java/io/ObjectOutputStream")
 
     /**
      * Implicit mapping from a wrapper type to its primitive type.
@@ -1355,9 +1370,11 @@ final class ArrayType private ( // DO NOT MAKE THIS A CASE CLASS!
         val componentType: FieldType
 ) extends ReferenceType {
 
-    final override def isArrayType = true
+    override def isArrayType = true
 
-    final override def asArrayType = this
+    override def asArrayType = this
+
+    override def mostPreciseObjectType: ObjectType = ObjectType.Object
 
     /**
      * Returns this array type's element type. E.g., the element type of an
@@ -1478,7 +1495,21 @@ object ArrayType {
  * @author Michael Eichberg
  */
 object ArrayElementType {
+
     def unapply(at: ArrayType): Option[FieldType] = Some(at.elementType)
+
+}
+
+object ElementReferenceType {
+
+    def unapply(rt: ReferenceType): Option[ObjectType] = {
+        rt match {
+            case ot: ObjectType                   ⇒ Some(ot)
+            case ArrayElementType(ot: ObjectType) ⇒ Some(ot)
+            case _                                ⇒ None
+        }
+    }
+
 }
 
 /**

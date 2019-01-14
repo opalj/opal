@@ -1,13 +1,12 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.purity;
 
-import org.opalj.fpcf.analyses.L0PurityAnalysis;
-import org.opalj.fpcf.analyses.purity.L2PurityAnalysis;
-import org.opalj.fpcf.analyses.purity.L1PurityAnalysis;
+import org.opalj.br.fpcf.analyses.L0PurityAnalysis;
 import org.opalj.fpcf.properties.purity.CompileTimePure;
 import org.opalj.fpcf.properties.purity.EP;
 import org.opalj.fpcf.properties.purity.Impure;
 import org.opalj.fpcf.properties.purity.Pure;
+import org.opalj.tac.fpcf.analyses.purity.L1PurityAnalysis;
 
 /**
  * Some Demo code to test/demonstrate the complexity related to calculating the purity of
@@ -24,7 +23,7 @@ final class DependentCalls { // This class is immutable
     @CompileTimePure("nothing done here")
     @Pure(value = "nothing done here",
             eps = @EP(cf = Object.class, method = "<init>()V", pk = "Purity",
-                    p = "Pure", analyses = L0PurityAnalysis.class),
+                    p = "Pure", analyses = L0PurityAnalysis.class ),
             analyses = { L0PurityAnalysis.class, L1PurityAnalysis.class })
     @Impure(value = "Object.init<> not recognized as pure",
             eps = @EP(cf = Object.class, method = "<init>()V", pk = "Purity",

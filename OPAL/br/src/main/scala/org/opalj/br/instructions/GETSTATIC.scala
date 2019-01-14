@@ -51,7 +51,7 @@ case class GETSTATIC(
  *
  * @author Malte Limmeroth
  */
-object GETSTATIC {
+object GETSTATIC extends InstructionMetaInformation {
 
     final val opcode = 178
 

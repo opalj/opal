@@ -1,5 +1,6 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
+package tac
 package fpcf
 package analyses
 
@@ -8,40 +9,37 @@ import scala.collection.immutable.ListSet
 import org.opalj.log.LogContext
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.collection.immutable.RefArray
-import org.opalj.fpcf.analyses.AbstractIFDSAnalysis.V
-import org.opalj.fpcf.properties.IFDSProperty
-import org.opalj.fpcf.properties.IFDSPropertyMetaInformation
 import org.opalj.fpcf.seq.PKESequentialPropertyStore
+import org.opalj.br.fpcf.FPCFAnalysesManagerKey
+import org.opalj.fpcf.PropertyKey
+import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.PropertyStoreContext
+import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.DeclaredMethod
-import org.opalj.br.ObjectType
 import org.opalj.br.Method
-import org.opalj.br.analyses.SomeProject
+import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.SomeProject
 import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
-import org.opalj.tac.Assignment
-import org.opalj.tac.Expr
-import org.opalj.tac.Var
-import org.opalj.tac.ArrayLoad
-import org.opalj.tac.ArrayStore
-import org.opalj.tac.Stmt
-import org.opalj.tac.ReturnValue
-//import org.opalj.tac.PutStatic
-//import org.opalj.tac.GetStatic
-//import org.opalj.tac.PutField
-//import org.opalj.tac.GetField
-import org.opalj.tac.fpcf.analyses.TACAITransformer
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
+import org.opalj.tac.fpcf.properties.IFDSProperty
+import org.opalj.tac.fpcf.properties.IFDSPropertyMetaInformation
+import org.opalj.tac.fpcf.analyses.AbstractIFDSAnalysis.V
 //import org.opalj.ai.domain.l1
 import org.opalj.ai.domain.l2
 
 trait Fact
-
 case class Variable(index: Int) extends Fact
 case class ArrayElement(index: Int, element: Int) extends Fact
 //case class StaticField(classType: ObjectType, fieldName: String) extends Fact
 case class InstanceField(index: Int, classType: ObjectType, fieldName: String) extends Fact
 case class FlowFact(flow: ListSet[Method]) extends Fact {
-    override val hashCode: Int = { flow.foldLeft(1)(_ + _.hashCode() * 31) }
+    override val hashCode: Int = {
+        // HERE, a foldLeft introduces a lot of overhead due to (un)boxing.
+        var r = 1
+        flow.foreach(f ⇒ r = (r + f.hashCode()) * 31)
+        r
+    }
 }
 
 /**
@@ -70,9 +68,13 @@ class TestTaintAnalysis private (
                 val index = getConstValue(store.index, stmt.code)
                 if (isTainted(store.value, in))
                     if (index.isDefined) // Taint known array index
-                        in ++ definedBy.iterator.map(ArrayElement(_, index.get))
+                        // Instead of using an iterator, we are going to use internal iteration
+                        // in ++ definedBy.iterator.map(ArrayElement(_, index.get))
+                        definedBy.foldLeft(in) { (c, n) ⇒ c + ArrayElement(n, index.get) }
                     else // Taint whole array if index is unknown
-                        in ++ definedBy.iterator.map(Variable)
+                        // Instead of using an iterator, we are going to use internal iteration:
+                        // in ++ definedBy.iterator.map(Variable)
+                        definedBy.foldLeft(in) { (c, n) ⇒ c + Variable(n) }
                 else if (index.isDefined && definedBy.size == 1) // Untaint if possible
                     in - ArrayElement(definedBy.head, index.get)
                 else in
@@ -109,6 +111,7 @@ class TestTaintAnalysis private (
     def getConstValue(expr: Expr[V], code: Array[Stmt[V]]): Option[Int] = {
         if (expr.isIntConst) Some(expr.asIntConst.value)
         else if (expr.isVar) {
+            // TODO The following looks optimizable!
             val constVals = expr.asVar.definedBy.iterator.map[Option[Int]] { idx ⇒
                 if (idx >= 0) {
                     val stmt = code(idx)
@@ -401,7 +404,7 @@ object TestTaintAnalysisRunner {
             val manager = p.get(FPCFAnalysesManagerKey)
             val (_, analyses) =
                 manager.runAll(LazyL0BaseAIAnalysis, TACAITransformer, TestTaintAnalysis)
-            val entryPoints = analyses.collect { case a: TestTaintAnalysis ⇒ a.entryPoints }.head
+            val entryPoints = analyses.collect { case (_, a: TestTaintAnalysis) ⇒ a.entryPoints }.head
             for {
                 e ← entryPoints
                 flows = ps(e, TestTaintAnalysis.property.key)

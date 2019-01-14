@@ -2,36 +2,44 @@
 package org.opalj
 package fpcf
 
-import org.scalatest.Matchers
-import org.scalatest.FunSpec
-import java.net.URL
 import java.io.File
+import java.net.URL
+
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigValueFactory
+import org.scalatest.FunSpec
+import org.scalatest.Matchers
 
 import org.opalj.log.LogContext
-import org.opalj.ai.common.DefinitionSite
-import org.opalj.ai.common.DefinitionSitesKey
+import org.opalj.util.ScalaMajorVersion
+import org.opalj.fpcf.properties.PropertyMatcher
+import org.opalj.fpcf.seq.PKESequentialPropertyStore
+import org.opalj.bytecode.RTJar
 import org.opalj.br.DefinedMethod
 import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.br.analyses.VirtualFormalParametersKey
-import org.opalj.util.ScalaMajorVersion
-import org.opalj.bytecode.RTJar
-import org.opalj.br.Type
-import org.opalj.br.Field
-import org.opalj.br.Method
-import org.opalj.br.ClassFile
-import org.opalj.br.ObjectType
 import org.opalj.br.Annotation
+import org.opalj.br.AnnotationLike
 import org.opalj.br.Annotations
-import org.opalj.br.StringValue
+import org.opalj.br.ClassFile
 import org.opalj.br.ClassValue
 import org.opalj.br.ElementValuePair
-import org.opalj.br.AnnotationLike
+import org.opalj.br.Field
+import org.opalj.br.Method
+import org.opalj.br.ObjectType
+import org.opalj.br.StringValue
 import org.opalj.br.TAOfNew
+import org.opalj.br.Type
+import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.fpcf.properties.PropertyMatcher
-import org.opalj.fpcf.seq.PKESequentialPropertyStore
+import org.opalj.br.analyses.cg.InitialEntryPointsKey
+import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
+import org.opalj.br.fpcf.FPCFAnalysesManagerKey
+import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.fpcf.PropertyStoreKey
+import org.opalj.tac.common.DefinitionSite
+import org.opalj.tac.common.DefinitionSitesKey
 
 /**
  * Framework to test if the properties specified in the test project (the classes in the
@@ -68,11 +76,29 @@ abstract class PropertiesTest extends FunSpec with Matchers {
 
         val libraryClassFiles = (if (withRT) ClassFiles(RTJar) else List()) ++ propertiesClassFiles
 
+        val configForEntryPoints = BaseConfig.withValue(
+            InitialEntryPointsKey.ConfigKeyPrefix+"analysis",
+            ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.AllEntryPointsFinder")
+        ).withValue(
+                InitialEntryPointsKey.ConfigKeyPrefix+"AllEntryPointsFinder.projectMethodsOnly",
+                ConfigValueFactory.fromAnyRef(true)
+            )
+
+        implicit val config: Config = configForEntryPoints.withValue(
+            InitialInstantiatedTypesKey.ConfigKeyPrefix+"analysis",
+            ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.AllInstantiatedTypesFinder")
+        ).withValue(
+                InitialInstantiatedTypesKey.ConfigKeyPrefix+
+                    "AllInstantiatedTypesFinder.projectClassesOnly",
+                ConfigValueFactory.fromAnyRef(true)
+            )
+
         info(s"the test fixture project consists of ${projectClassFiles.size} class files")
         Project(
             projectClassFiles,
             libraryClassFiles,
-            libraryClassFilesAreInterfacesOnly = false
+            libraryClassFilesAreInterfacesOnly = false,
+            virtualClassFiles = Traversable.empty
         )
     }
 
@@ -142,7 +168,7 @@ abstract class PropertiesTest extends FunSpec with Matchers {
                 it(entityIdentifier(s"$annotationTypeName")) {
                     info(s"validator: "+matcherClass.toString.substring(32))
                     val epss = ps.properties(e).toIndexedSeq
-                    val nonFinalPSs = epss.filter(!_.isFinal)
+                    val nonFinalPSs = epss.filter(_.isRefinable)
                     assert(
                         nonFinalPSs.isEmpty,
                         nonFinalPSs.mkString("some epss are not final:\n\t", "\n\t", "\n")
@@ -289,32 +315,39 @@ abstract class PropertiesTest extends FunSpec with Matchers {
     def executeAnalyses(
         analysisRunners: Iterable[ComputationSpecification[FPCFAnalysis]]
     ): TestContext = {
-        val p = FixtureProject.recreate { piKeyUnidueId ⇒
-            piKeyUnidueId != PropertyStoreKey.uniqueId
-        } // to ensure that this project is not "polluted"
-        implicit val logContext: LogContext = p.logContext
-        init(p)
+        try {
+            val p = FixtureProject.recreate { piKeyUnidueId ⇒
+                piKeyUnidueId != PropertyStoreKey.uniqueId
+            } // to ensure that this project is not "polluted"
+            implicit val logContext: LogContext = p.logContext
+            init(p)
 
-        PropertyStore.updateDebug(true)
+            PropertyStore.updateDebug(true)
 
-        p.getOrCreateProjectInformationKeyInitializationData(
-            PropertyStoreKey,
-            (context: List[PropertyStoreContext[AnyRef]]) ⇒ {
-                /*
+            p.getOrCreateProjectInformationKeyInitializationData(
+                PropertyStoreKey,
+                (context: List[PropertyStoreContext[AnyRef]]) ⇒ {
+                    /*
                 val ps = PKEParallelTasksPropertyStore.create(
                     new RecordAllPropertyStoreTracer,
                     context.iterator.map(_.asTuple).toMap
                 )
                 */
-                val ps = PKESequentialPropertyStore(context: _*)
-                ps
-            }
-        )
+                    val ps = PKESequentialPropertyStore(context: _*)
+                    ps
+                }
+            )
 
-        val ps = p.get(PropertyStoreKey)
+            val ps = p.get(PropertyStoreKey)
 
-        val (_, as) = p.get(FPCFAnalysesManagerKey).runAll(analysisRunners)
-        TestContext(p, ps, as)
+            val (_, csas) = p.get(FPCFAnalysesManagerKey).runAll(analysisRunners)
+            TestContext(p, ps, csas.collect { case (_, as) ⇒ as })
+        } catch {
+            case t: Throwable ⇒
+                t.printStackTrace()
+                t.getSuppressed.foreach(e ⇒ e.printStackTrace())
+                throw t;
+        }
     }
 }
 

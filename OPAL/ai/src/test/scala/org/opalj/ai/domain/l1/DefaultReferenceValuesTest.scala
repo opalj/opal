@@ -8,6 +8,7 @@ import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FunSpec
 import org.scalatest.Matchers
+
 import org.opalj.collection.mutable.Locals
 import org.opalj.collection.immutable._
 import org.opalj.bi.TestResources.locateTestResources
@@ -17,6 +18,7 @@ import org.opalj.br.ObjectType
 import org.opalj.br.ArrayType
 import org.opalj.br.IntegerType
 import org.opalj.br.reader.Java8Framework.ClassFiles
+import org.opalj.br.ClassHierarchy
 
 /**
  * Tests the `ReferenceValues` domain.
@@ -56,7 +58,7 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers {
         describe("isValueASubtypeOf") {
 
             it("should be able to cast an array of objects to an array of array of ints") {
-
+                implicit val ch: ClassHierarchy = ValuesDomain.classHierarchy
                 // ASSERTION
                 isSubtypeOf(
                     ArrayType(ArrayType(IntegerType)),

@@ -37,7 +37,7 @@ case class IFNE(branchoffset: Int) extends IF0Instruction[IFNE] with IFNELike {
  *
  * @author Malte Limmeroth
  */
-object IFNE {
+object IFNE extends InstructionMetaInformation {
 
     final val opcode = 154
 

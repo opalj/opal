@@ -7,8 +7,12 @@ package type_mutability
 import org.opalj.br.AnnotationLike
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
+import org.opalj.br.fpcf.properties.TypeImmutability
 
-class AbstractTypeImmutabilityMatcher(val property: TypeImmutability) extends AbstractPropertyMatcher {
+class AbstractTypeImmutabilityMatcher(
+        val property: TypeImmutability
+) extends AbstractPropertyMatcher {
+
     override def validateProperty(
         p:          Project[_],
         as:         Set[ObjectType],
@@ -27,6 +31,9 @@ class AbstractTypeImmutabilityMatcher(val property: TypeImmutability) extends Ab
     }
 }
 
-class ImmutableTypeMatcher extends AbstractTypeImmutabilityMatcher(org.opalj.fpcf.properties.ImmutableType)
-class ImmutableContainerTypeMatcher extends AbstractTypeImmutabilityMatcher(org.opalj.fpcf.properties.ImmutableContainerType)
-class MutableTypeMatcher extends AbstractTypeImmutabilityMatcher(org.opalj.fpcf.properties.MutableType)
+class ImmutableTypeMatcher
+    extends AbstractTypeImmutabilityMatcher(org.opalj.br.fpcf.properties.ImmutableType)
+class ImmutableContainerTypeMatcher
+    extends AbstractTypeImmutabilityMatcher(org.opalj.br.fpcf.properties.ImmutableContainerType)
+class MutableTypeMatcher
+    extends AbstractTypeImmutabilityMatcher(org.opalj.br.fpcf.properties.MutableType)

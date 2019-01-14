@@ -1,30 +1,33 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.tac
 
-import org.opalj.br.analyses.Project
 import java.net.URL
 
-import org.opalj.ai.common.DefinitionSitesKey
-import org.opalj.br.analyses.DefaultOneStepAnalysis
-import org.opalj.br.analyses.BasicReport
+import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger.info
+import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.FinalP
-import org.opalj.fpcf.PropertyStoreKey
-import org.opalj.fpcf.analyses.escape.EagerSimpleEscapeAnalysis
-import org.opalj.fpcf.properties.EscapeProperty
-import org.opalj.fpcf.properties.NoEscape
-import org.opalj.fpcf.properties.EscapeInCallee
-import org.opalj.fpcf.properties.AtMost
-import org.opalj.fpcf.properties.EscapeViaParameter
-import org.opalj.fpcf.properties.EscapeViaReturn
-import org.opalj.fpcf.properties.EscapeViaAbnormalReturn
-import org.opalj.log.LogContext
-import org.opalj.util.PerformanceEvaluation.time
-import org.opalj.log.OPALLogger.info
+import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.DefaultOneStepAnalysis
+import org.opalj.br.analyses.Project
+import org.opalj.br.fpcf.FPCFAnalysesManagerKey
+import org.opalj.br.fpcf.PropertyStoreKey
+import org.opalj.br.fpcf.properties.AtMost
+import org.opalj.br.fpcf.properties.EscapeInCallee
+import org.opalj.br.fpcf.properties.EscapeProperty
+import org.opalj.br.fpcf.properties.EscapeViaAbnormalReturn
+import org.opalj.br.fpcf.properties.EscapeViaParameter
+import org.opalj.br.fpcf.properties.EscapeViaReturn
+import org.opalj.br.fpcf.properties.NoEscape
+import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
+import org.opalj.tac.common.DefinitionSitesKey
+import org.opalj.tac.fpcf.analyses.escape.EagerSimpleEscapeAnalysis
+import org.opalj.tac.fpcf.analyses.TACAITransformer
 
 /**
  * An evaluation of the impact of field/array writes to the
- * [[org.opalj.fpcf.analyses.escape.SimpleEscapeAnalysis]] as the three-address code currently
+ * [[org.opalj.tac.fpcf.analyses.escape.SimpleEscapeAnalysis]] as the three-address code currently
  * does not support may-alias information for fields and arrays.
  *
  * Among others, it estimates the number of arraystores/putfields with non-escaping objects as
@@ -64,11 +67,6 @@ object FieldAndArrayUsageAnalysis extends DefaultOneStepAnalysis {
 
         implicit val logContext: LogContext = project.logContext
 
-        val tacaiProvider = time {
-            val tacai = project.get(DefaultTACAIKey)
-            tacai
-        } { t ⇒ info("progress", s"generating 3-address code took ${t.toSeconds}") }
-
         val (defSites, ass) = time {
             val defSites = project.get(DefinitionSitesKey)
             (defSites, defSites.getAllocationSites)
@@ -78,24 +76,29 @@ object FieldAndArrayUsageAnalysis extends DefaultOneStepAnalysis {
             project.get(PropertyStoreKey)
         } { t ⇒ info("progress", s"initialization of property store took ${t.toSeconds}") }
         time {
-            EagerSimpleEscapeAnalysis.start(project, propertyStore, null)
-            propertyStore.waitOnPhaseCompletion()
+            val manager = project.get(FPCFAnalysesManagerKey)
+            manager.runAll(
+                EagerSimpleEscapeAnalysis,
+                LazyL0BaseAIAnalysis,
+                TACAITransformer /* LazyL0TACAIAnalysis */ )
         } { t ⇒ info("progress", s"escape analysis took ${t.toSeconds}") }
         for {
             as ← ass
             pc = as.pc
             m = as.method
-            code = tacaiProvider(m).stmts
-            lineNumbers = tacaiProvider(m).lineNumberTable
-            index = code indexWhere { stmt ⇒ stmt.pc == pc }
+            FinalP(tacai) = propertyStore(m, org.opalj.tac.fpcf.properties.TACAI.key)
+            code = tacai.tac.get
+            stmts = code.stmts
+            lineNumbers = code.lineNumberTable
+            index = code.stmts indexWhere { stmt ⇒ stmt.pc == pc }
             if index != -1
         } {
             allocations += 1
-            code(index) match {
+            stmts(index) match {
                 case Assignment(`pc`, DVar(_, uses), New(`pc`, _) | NewArray(`pc`, _, _)) ⇒
                     nonDeadAllocations += 1
                     for (use ← uses) {
-                        code(use) match {
+                        stmts(use) match {
                             case PutField(_, _, name, _, objRef, value) ⇒
                                 if (value.isVar && value.asVar.definedBy.contains(index)) {
                                     putFields += 1
@@ -103,14 +106,14 @@ object FieldAndArrayUsageAnalysis extends DefaultOneStepAnalysis {
                                         val defSitesOfObjRef = objRef.asVar.definedBy
                                         if (defSitesOfObjRef.exists { defSite ⇒
                                             if (defSite > 0) {
-                                                code(defSite) match {
+                                                stmts(defSite) match {
                                                     case Assignment(_, _, New(_, _)) ⇒ true
                                                     case _                           ⇒ false
                                                 }
                                             } else false
                                         }) {
                                             putFieldsOfAllocation += 1
-                                            for (stmt ← code) {
+                                            for (stmt ← stmts) {
                                                 stmt match {
                                                     case Assignment(_, DVar(_, _), GetField(_, _, `name`, _, objRef2)) if objRef2.isVar ⇒
                                                         if (objRef2.asVar.definedBy.exists(defSitesOfObjRef.contains)) {
@@ -132,12 +135,12 @@ object FieldAndArrayUsageAnalysis extends DefaultOneStepAnalysis {
 
                                         // nesting filter and map as collect is not available
                                         val pcsOfNewArrays = defSitesOfArray withFilter { defSite ⇒
-                                            defSite > 0 && (code(defSite) match {
+                                            defSite > 0 && (stmts(defSite) match {
                                                 case Assignment(_, _, NewArray(_, _, _)) ⇒ true
                                                 case _                                   ⇒ false
                                             })
                                         } map {
-                                            code(_) match {
+                                            stmts(_) match {
                                                 case Assignment(pc, _, _) ⇒ pc
                                                 case _                    ⇒ throw new RuntimeException()
                                             }
@@ -163,7 +166,7 @@ object FieldAndArrayUsageAnalysis extends DefaultOneStepAnalysis {
                                                 }
                                             }
 
-                                            for (stmt ← code) {
+                                            for (stmt ← stmts) {
                                                 stmt match {
                                                     case Assignment(_, DVar(_, _), ArrayLoad(_, _, arrayRef2)) if arrayRef2.isVar ⇒
                                                         if (arrayRef2.asVar.definedBy.exists(defSitesOfArray.contains)) {

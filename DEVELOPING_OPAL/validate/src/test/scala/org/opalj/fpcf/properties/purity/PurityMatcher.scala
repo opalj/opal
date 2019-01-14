@@ -4,14 +4,21 @@ package fpcf
 package properties
 package purity
 
+import org.opalj.collection.immutable.EmptyIntTrieSet
+import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.br.AnnotationLike
 import org.opalj.br.BooleanValue
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
-import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.collection.immutable.EmptyIntTrieSet
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.fpcf.properties.ClassImmutability
+import org.opalj.br.fpcf.properties.FieldLocality
+import org.opalj.br.fpcf.properties.FieldMutability
+import org.opalj.br.fpcf.properties.Purity
+import org.opalj.br.fpcf.properties.ReturnValueFreshness
+import org.opalj.br.fpcf.PropertyStoreKey
+import org.opalj.br.fpcf.properties.ClassifiedImpure
 
 /**
  * Base trait for matchers that match a method's `Purity` property.
@@ -161,65 +168,65 @@ sealed abstract class ContextualPurityMatcher(propertyConstructor: IntTrieSet �
 
 /**
  * Matches a method's `Purity` property. The match is successful if the method has the property
- * [[org.opalj.fpcf.properties.CompileTimePure]].
+ * [[org.opalj.br.fpcf.properties.CompileTimePure]].
  */
-class CompileTimePureMatcher extends PurityMatcher(properties.CompileTimePure)
+class CompileTimePureMatcher extends PurityMatcher(br.fpcf.properties.CompileTimePure)
 
 /**
  * Matches a method's `Purity` property. The match is successful if the method has the property
- * [[org.opalj.fpcf.properties.Pure]].
+ * [[org.opalj.br.fpcf.properties.Pure]].
  */
-class PureMatcher extends PurityMatcher(properties.Pure)
+class PureMatcher extends PurityMatcher(br.fpcf.properties.Pure)
 
 /**
  * Matches a method's `Purity` property. The match is successful if the method has the property
- * [[org.opalj.fpcf.properties.SideEffectFree]].
+ * [[org.opalj.br.fpcf.properties.SideEffectFree]].
  */
-class SideEffectFreeMatcher extends PurityMatcher(properties.SideEffectFree)
+class SideEffectFreeMatcher extends PurityMatcher(br.fpcf.properties.SideEffectFree)
 
 /**
  * Matches a method's `Purity` property. The match is successful if the method has the property
- * [[org.opalj.fpcf.properties.ContextuallyPure]].
+ * [[org.opalj.br.fpcf.properties.ContextuallyPure]].
  */
 class ContextuallyPureMatcher
-    extends ContextualPurityMatcher(params ⇒ properties.ContextuallyPure(params))
+    extends ContextualPurityMatcher(params ⇒ br.fpcf.properties.ContextuallyPure(params))
 
 /**
  * Matches a method's `Purity` property. The match is successful if the method has the property
- * [[org.opalj.fpcf.properties.ContextuallySideEffectFree]].
+ * [[org.opalj.br.fpcf.properties.ContextuallySideEffectFree]].
  */
 class ContextuallySideEffectFreeMatcher
-    extends ContextualPurityMatcher(params ⇒ properties.ContextuallySideEffectFree(params))
+    extends ContextualPurityMatcher(params ⇒ br.fpcf.properties.ContextuallySideEffectFree(params))
 
 /**
  * Matches a method's `Purity` property. The match is successful if the method has the property
- * [[org.opalj.fpcf.properties.DPure]].
+ * [[org.opalj.br.fpcf.properties.DPure]].
  */
-class DomainSpecificPureMatcher extends PurityMatcher(properties.DPure)
+class DomainSpecificPureMatcher extends PurityMatcher(br.fpcf.properties.DPure)
 
 /**
  * Matches a method's `Purity` property. The match is successful if the method has the property
- * [[org.opalj.fpcf.properties.DSideEffectFree]].
+ * [[org.opalj.br.fpcf.properties.DSideEffectFree]].
  */
-class DomainSpecificSideEffectFreeMatcher extends PurityMatcher(properties.DSideEffectFree)
+class DomainSpecificSideEffectFreeMatcher extends PurityMatcher(br.fpcf.properties.DSideEffectFree)
 
 /**
  * Matches a method's `Purity` property. The match is successful if the method has the property
- * [[org.opalj.fpcf.properties.DContextuallyPure]].
+ * [[org.opalj.br.fpcf.properties.DContextuallyPure]].
  */
 class DomainSpecificContextuallyPureMatcher
-    extends ContextualPurityMatcher(params ⇒ properties.DContextuallyPure(params))
+    extends ContextualPurityMatcher(params ⇒ br.fpcf.properties.DContextuallyPure(params))
 
 /**
  * Matches a method's `Purity` property. The match is successful if the method has the property
- * [[org.opalj.fpcf.properties.DContextuallySideEffectFree]].
+ * [[org.opalj.br.fpcf.properties.DContextuallySideEffectFree]].
  */
 class DomainSpecificContextuallySideEffectFreeMatcher
-    extends ContextualPurityMatcher(params ⇒ properties.DContextuallySideEffectFree(params))
+    extends ContextualPurityMatcher(params ⇒ br.fpcf.properties.DContextuallySideEffectFree(params))
 
 /**
  * Matches a method's `Purity` property. The match is successful if the property is an instance of
- * [[org.opalj.fpcf.properties.ClassifiedImpure]].
+ * [[org.opalj.br.fpcf.properties.ClassifiedImpure]].
  */
 class ImpureMatcher extends PurityMatcher(null) {
 

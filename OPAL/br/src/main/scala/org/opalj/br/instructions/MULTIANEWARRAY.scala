@@ -14,7 +14,8 @@ package instructions
 case class MULTIANEWARRAY(
         arrayType:  ArrayType,
         dimensions: Int
-) extends CreateNewArrayInstruction {
+) extends CreateNewArrayInstruction
+    with InstructionMetaInformation {
 
     final def opcode: Opcode = MULTIANEWARRAY.opcode
 

@@ -60,6 +60,12 @@ class PerformanceEvaluation extends Locking {
      */
     final def getTime(s: Symbol): Nanoseconds = withReadLock { doGetTime(s) }
 
+    final def getNanoseconds(s: Symbol): Nanoseconds = getTime(s)
+
+    final def getMilliseconds(s: Symbol): Milliseconds = getTime(s).toMilliseconds
+
+    final def getSeconds(s: Symbol): Seconds = getTime(s).toSeconds
+
     /**
      * Called by the `getTime(Symbol)` method.
      *

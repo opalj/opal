@@ -40,8 +40,6 @@ object UIDSetProperties extends Properties("UIDSet") {
 
     val intSetGen: Gen[Set[Int]] = Gen.containerOf[Set, Int](Gen.posNum[Int])
 
-    val oneToOneHunderdGen = Gen.choose(0, 100)
-
     val veryLargeListGen = for {
         i ← Gen.choose(30000, 100000)
         s ← Gen.containerOfN[List, Int](i, Arbitrary.arbitrary[Int])
@@ -392,7 +390,6 @@ class UIDSetTest extends FunSpec with Matchers {
             )
 
             assert(
-
                 new UIDSet2(SUID(3), SUID(1)) ==
                     new UIDSet3(SUID(1), SUID(2), SUID(3)).filter(_.id != 2)
             )
@@ -406,8 +403,12 @@ class UIDSetTest extends FunSpec with Matchers {
     describe("the equals operation for sets of three values") {
 
         it("should return true for two new sets containing the same values") {
-            assert(new UIDSet2(SUID(3), SUID(2)) + SUID(1) == new UIDSet3(SUID(2), SUID(1), SUID(3)))
-            assert(new UIDSet2(SUID(1), SUID(2)) + SUID(3) == new UIDSet3(SUID(2), SUID(1), SUID(3)))
+            assert(
+                new UIDSet2(SUID(3), SUID(2)) + SUID(1) == new UIDSet3(SUID(2), SUID(1), SUID(3))
+            )
+            assert(
+                new UIDSet2(SUID(1), SUID(2)) + SUID(3) == new UIDSet3(SUID(2), SUID(1), SUID(3))
+            )
 
             assert(
                 new UIDSet3(SUID(1), SUID(2), SUID(3)) ==
@@ -436,60 +437,166 @@ class UIDSetTest extends FunSpec with Matchers {
 
     describe("the effect of freezing the UIDSet") {
 
-        it("should return an efficiently queryable data structure") {
+        it("should be more efficient to iterate over sets with size > 4") {
+            val minTargetSetSize = 4
+            val maxTargetSetSize = 15
+            val repeats = 100000
+
             val p = new PerformanceEvaluation()
             import p.time
-            var entriesCount = 0
-            for {
-                i ← 1 to 1000 // determines the target set's size
-                j ← 1 to 5 // repeat tests at this level...
-            } {
-                val c = i * 2 // final set size
-                var s = UIDSet.empty[SUID]
-                time('init) {
-                    for { i ← 1 to c } {
-                        s += SUID(scala.util.Random.nextInt(300000))
-                    }
-                }
-                entriesCount += s.size
-                val linearProbingSet = time('toLinearProbingSet) { s.toLinearProbingSet }
-                assert(linearProbingSet.iterator.toSet === s.iterator.toSet)
 
-                val rnd = new java.util.Random(0)
-                var foundInTrieSetCount: Int = 0
-                time('UIDTrieSet) {
-                    for { i ← 1 to 100 } {
-                        val v = rnd.nextInt(300000)
-                        if (s.contains(SUID(v))) {
-                            foundInTrieSetCount += 1
+            for (warmUpRuns ← 1 to 2) {
+                p.resetAll()
+                for {
+                    i ← minTargetSetSize to maxTargetSetSize
+                    j ← 1 to repeats // repeats at size i
+                } {
+                    var s = UIDSet.empty[SUID]
+                    time('init) {
+                        for { z ← 1 to i } { s += SUID(scala.util.Random.nextInt(60000)) }
+                    }
+                    var sItCount = 0
+                    time('sIt) {
+                        val sIt = s.iterator
+                        while (sIt.hasNext) {
+                            sIt.next();
+                            sItCount += 1
                         }
                     }
-                }
-                rnd.setSeed(0)
-                var foundInLinearProbingSetCount: Int = 0
-                time('UIDLinearProbingSet) {
-                    for { i ← 1 to 100 } {
-                        val v = rnd.nextInt(300000)
-                        if (linearProbingSet.contains(SUID(v))) {
-                            foundInLinearProbingSetCount += 1
+
+                    val lps = s.toLinearProbingSet
+                    var lpsItCount = 0
+                    time('lpsIt) {
+                        val lpsIt = lps.iterator
+                        while (lpsIt.hasNext) {
+                            lpsIt.next();
+                            lpsItCount += 1
                         }
                     }
+
+                    var lpsForeachCount = 0
+                    time('lpsForeach) { lps.foreach(_ ⇒ lpsForeachCount += 1) }
+
+                    var sForeachCount = 0
+                    time('sForeach) { s.foreach(_ ⇒ sForeachCount += 1) }
+
+                    val sFoldCount = time('sFold) { s.foldLeft(0)((c, _) ⇒ c + 1) }
+
+                    assert(sForeachCount == lpsForeachCount)
+                    assert(sForeachCount == sFoldCount)
+
+                    var lpsForeachCollect: List[SUID] = Nil
+                    time('lpsForeachList) { lps.foreach(lpsForeachCollect ::= _) }
+
+                    var sForeachCollect: List[SUID] = Nil
+                    time('sForeachList) { s.foreach(sForeachCollect ::= _) }
+
+                    val sFoldCollect = time('sFoldList) {
+                        s.foldLeft(List.empty[SUID])((c, n) ⇒ n :: c)
+                    }
+
+                    if (j == 1) {
+                        assert(lpsForeachCollect.size == sForeachCollect.size)
+                        assert(lpsForeachCollect.size == sFoldCollect.size)
+                    }
                 }
-                assert(
-                    foundInTrieSetCount == foundInLinearProbingSetCount,
-                    s"run $i: \n"+
-                        s.iterator.map(_.id).toList.sorted.mkString(", ")+"\n"+
-                        linearProbingSet.iterator.map(_.id).toList.sorted.mkString(", ")
-                )
             }
             info(
                 "performance:\n\t\t"+
-                    s"UIDSet creation:              ${p.getTime('init).toSeconds}\n\t\t"+
-                    s"UIDSet freeze:                ${p.getTime('toLinearProbingSet).toSeconds}\n\t\t"+
+                    s"UIDSet creation:              ${p.getSeconds('init)}\n\t\t"+
                     s"- - - - - - - - - - - - - - - - - - -\n\t\t"+
-                    s"UIDTrieSet.contains:          ${p.getTime('UIDTrieSet).toSeconds}\n\t\t"+
-                    "                               vs. \n\t\t"+
-                    s"UIDLinearProbingSet.contains: ${p.getTime('UIDLinearProbingSet).toSeconds}"
+                    s"UIDTrieSet.iterator:          ${p.getSeconds('sIt)}\n\t\t"+
+                    "                              vs. \n\t\t"+
+                    s"UIDLinearProbingSet.iterator: ${p.getSeconds('lpsIt)}"+
+                    "\n\n\t\t"+
+                    "using foreach to compute an int:\n\t\t"+
+                    s"UIDTrieSet.foreach:           ${p.getSeconds('sForeach)}\n\t\t"+
+                    "                              vs. \n\t\t"+
+                    s"UIDTrieSet.fold:              ${p.getSeconds('sFold)}\n\t\t"+
+                    "                              vs. \n\t\t"+
+                    s"UIDLinearProbingSet.foreach:  ${p.getSeconds('lpsForeach)}"+
+                    "\n\n\t\t"+
+                    "using foreach to generate a list:\n\t\t"+
+                    s"UIDTrieSet.foreach:           ${p.getSeconds('sForeachList)}\n\t\t"+
+                    "                              vs. \n\t\t"+
+                    s"UIDTrieSet.fold:              ${p.getSeconds('sFoldList)}\n\t\t"+
+                    "                              vs. \n\t\t"+
+                    s"UIDLinearProbingSet.foreach:  ${p.getSeconds('lpsForeachList)}"
+            )
+        }
+
+        it("should return an efficiently queryable data structure") {
+            val p = new PerformanceEvaluation()
+            import p.time
+            var foundCount = 0
+            var entriesCount = 0
+            val minSetSize = 10
+            val maxSetSize = 40
+
+            for (warmUpRuns ← 1 to 3) {
+                p.resetAll()
+                for {
+                    i ← minSetSize to maxSetSize // determines the target set's size
+                    j ← 1 to Math.max(1000 - Math.pow(i.toDouble, 2d).toInt, 3) // repeats at size i
+                } {
+                    var s = UIDSet.empty[SUID]
+                    time('init) {
+                        for { z ← 1 to i } { s += SUID(scala.util.Random.nextInt(60000)) }
+                    }
+
+                    entriesCount += s.size
+
+                    val linearProbingSet = time('toLinearProbingSet) { s.toLinearProbingSet }
+                    if (j == 1) assert(linearProbingSet.iterator.toSet === s.iterator.toSet)
+
+                    val rnd = new java.util.Random(0)
+
+                    val foundInTrieSetCount: Int = time('UIDTrieSet) {
+                        var foundInTrieSetCount: Int = 0
+                        var z = 1
+                        while (z < 1000 /* #lookups */ ) {
+                            val v = rnd.nextInt(60000)
+                            if (s.contains(SUID(v))) { foundInTrieSetCount += 1 }
+
+                            z += 1
+                        }
+                        foundInTrieSetCount
+                    }
+
+                    rnd.setSeed(0)
+
+                    val foundInLinearProbingSetCount = time('UIDLinearProbingSet) {
+                        var foundInLinearProbingSetCount: Int = 0
+                        var z = 1
+                        while (z < 1000 /* #lookups */ ) {
+                            val v = rnd.nextInt(60000)
+                            if (linearProbingSet.contains(SUID(v))) { foundInLinearProbingSetCount += 1 }
+                            z += 1
+                        }
+                        foundInLinearProbingSetCount
+                    }
+
+                    foundCount += foundInTrieSetCount
+                    foundCount += foundInLinearProbingSetCount
+
+                    assert(
+                        foundInTrieSetCount == foundInLinearProbingSetCount,
+                        s"run $i: \n"+
+                            s.iterator.map(_.id).toList.sorted.mkString(", ")+"\n"+
+                            linearProbingSet.iterator.map(_.id).toList.sorted.mkString(", ")
+                    )
+                }
+            }
+            info(
+                "performance:\n\t\t"+
+                    s"Set creation:              ${p.getSeconds('init)}\n\t\t"+
+                    s"Set freeze:                ${p.getSeconds('toLinearProbingSet)}\n\t\t"+
+                    s"Sets entries:              $entriesCount\n\t\t"+
+                    s"Sets matched entries:      $foundCount\n\t\t"+
+                    s"- - - - - - - - - - - - - - - - - - -\n\t\t"+
+                    s"TrieSet.contains:          ${p.getSeconds('UIDTrieSet)}\n\t\t"+
+                    "                           vs. \n\t\t"+
+                    s"LinearProbingSet.contains: ${p.getSeconds('UIDLinearProbingSet)}"
             )
         }
     }

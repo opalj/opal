@@ -3,6 +3,7 @@ package org.opalj
 package ai
 
 import scala.annotation.switch
+
 import org.opalj.collection.immutable.{Chain ⇒ List}
 import org.opalj.collection.immutable.{Naught ⇒ Nil}
 import org.opalj.collection.immutable.IntArraySet
@@ -68,9 +69,15 @@ sealed abstract class AIResult {
      * at least once.
      */
     lazy val evaluatedInstructions: BitSet = {
+        /*
         val evaluatedInstructions = FixedSizeBitSet.create(code.instructions.length)
         evaluatedPCs foreach { pc ⇒ if (pc >= 0) evaluatedInstructions += pc }
         evaluatedInstructions
+        */
+        val evaluatedInstructions = FixedSizeBitSet.create(code.instructions.length)
+        evaluatedPCs.foldLeft(evaluatedInstructions) { (evaluatedInstructions, pc) ⇒
+            if (pc >= 0) evaluatedInstructions += pc else evaluatedInstructions
+        }
     }
 
     /** True if and only if a subroutine (JSR) was actually evaluated. */
@@ -117,7 +124,7 @@ sealed abstract class AIResult {
      * Contains the memory layout before the call to a subroutine. This list is
      * empty if the abstract interpretation completed successfully.
      */
-    val memoryLayoutBeforeSubroutineCall: List[(Int /*PC*/ , domain.OperandsArray, domain.LocalsArray)]
+    val memoryLayoutBeforeSubroutineCall: List[(PC, domain.OperandsArray, domain.LocalsArray)]
 
     /**
      * Contains the memory layout related to the method's subroutines (if any).
@@ -225,10 +232,9 @@ object AIResultBuilder { builder ⇒
         // Hence, we have to iterate from the beginning.
         evaluatedPCs foreachReverse { pc ⇒
             (pc: @switch) match {
-                case SUBROUTINE_START          ⇒ subroutineLevel += 1
-                case SUBROUTINE_END            ⇒ subroutineLevel -= 1
-                case pc if subroutineLevel > 0 ⇒ instructions += pc
-                case _                         ⇒ // we don't care
+                case SUBROUTINE_START ⇒ subroutineLevel += 1
+                case SUBROUTINE_END   ⇒ subroutineLevel -= 1
+                case pc               ⇒ if (subroutineLevel > 0) instructions += pc
             }
         }
         instructions

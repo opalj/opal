@@ -5,17 +5,20 @@ package analyses
 
 import java.net.URL
 
+import org.opalj.util.Nanoseconds
+import org.opalj.util.PerformanceEvaluation.time
+import org.opalj.util.gc
+import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
-import org.opalj.br.analyses.BasicReport
-import org.opalj.br.Method
+import org.opalj.br.fpcf.properties.Pure
 import org.opalj.br.Field
-import org.opalj.fpcf.properties.FieldMutability
-import org.opalj.fpcf.properties.Pure
-import org.opalj.fpcf.properties.Purity
-import org.opalj.util.PerformanceEvaluation.time
-import org.opalj.util.Nanoseconds
-import org.opalj.util.gc
+import org.opalj.br.Method
+import org.opalj.br.fpcf.PropertyStoreKey
+import org.opalj.br.fpcf.analyses.EagerL0PurityAnalysis
+import org.opalj.br.fpcf.analyses.LazyL0FieldMutabilityAnalysis
+import org.opalj.br.fpcf.properties.FieldMutability
+import org.opalj.br.fpcf.properties.Purity
 
 /**
  * Runs the purity analysis including all analyses that may improve the overall result.

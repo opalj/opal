@@ -1,6 +1,6 @@
 package org.opalj.fpcf.fixtures.escape.interface_test;
 
-import org.opalj.fpcf.analyses.escape.InterProceduralEscapeAnalysis;
+import org.opalj.tac.fpcf.analyses.escape.InterProceduralEscapeAnalysis;
 import org.opalj.fpcf.properties.escape.AtMostEscapeInCallee;
 import org.opalj.fpcf.properties.escape.EscapeInCallee;
 import org.opalj.fpcf.properties.escape.EscapeViaStaticField;
@@ -42,7 +42,7 @@ public class Main {
     public static void callBarA(A a) {
         Object o = new
                 @AtMostEscapeInCallee(
-                        value = "default implementation let it escape, but we optimize as it is extensible",
+                        value = "default implementation let it escape, but is overridden",
                         analyses = InterProceduralEscapeAnalysis.class
                 ) Object();
         a.bar(o);
@@ -50,17 +50,17 @@ public class Main {
 
     public static void callFooA(A a) {
         Object o = new
-                @AtMostEscapeInCallee(
-                        value = "B#foo let it escape, but we optimize as it is extensible",
+                @EscapeViaStaticField(
+                        value = "B#foo let it escape",
                         analyses = InterProceduralEscapeAnalysis.class
                 ) Object();
-        a.bar(o);
+        a.foo(o);
     }
 
     public static void callBazzB(B a) {
         Object o = new
-                @AtMostEscapeInCallee(
-                        value = "default implementation let it escape, but we optimize as it is extensible",
+                @EscapeViaStaticField(
+                        value = "default implementation let it escape",
                         analyses = InterProceduralEscapeAnalysis.class
                 ) Object();
         a.bazz(o);

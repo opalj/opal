@@ -52,7 +52,7 @@ case class PUTSTATIC(
  *
  * @author Malte Limmeroth
  */
-object PUTSTATIC {
+object PUTSTATIC extends InstructionMetaInformation {
 
     final val opcode = 179
 

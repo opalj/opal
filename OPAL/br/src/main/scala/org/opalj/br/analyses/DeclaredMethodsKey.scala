@@ -4,6 +4,7 @@ package br
 package analyses
 
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicInteger
 import java.util.function.{Function ⇒ JFunction}
 
 import org.opalj.br.MethodDescriptor.SignaturePolymorphicMethod
@@ -24,43 +25,43 @@ import org.opalj.collection.immutable.ConstArray
 object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing] {
 
     // The following lists were created using the Java 10 specification
-    val methodHandleSignaturePolymorphicMethods = List(
-        VirtualDeclaredMethod(MethodHandle, "invoke", SignaturePolymorphicMethod),
-        VirtualDeclaredMethod(MethodHandle, "invokeExact", SignaturePolymorphicMethod)
+    private val methodHandleSignaturePolymorphicMethods = List(
+        "invoke",
+        "invokeExact"
     )
 
-    val varHandleSignaturePolymorphicMethods = List(
-        VirtualDeclaredMethod(VarHandle, "get", SignaturePolymorphicMethod),
-        VirtualDeclaredMethod(VarHandle, "set", SignaturePolymorphicMethod),
-        VirtualDeclaredMethod(VarHandle, "getVolatile", SignaturePolymorphicMethod),
-        VirtualDeclaredMethod(VarHandle, "setVolatile", SignaturePolymorphicMethod),
-        VirtualDeclaredMethod(VarHandle, "getOpaque", SignaturePolymorphicMethod),
-        VirtualDeclaredMethod(VarHandle, "setOpaque", SignaturePolymorphicMethod),
-        VirtualDeclaredMethod(VarHandle, "getAcquire", SignaturePolymorphicMethod),
-        VirtualDeclaredMethod(VarHandle, "setRelease", SignaturePolymorphicMethod),
-        VirtualDeclaredMethod(VarHandle, "compareAndSet", SignaturePolymorphicMethod),
-        VirtualDeclaredMethod(VarHandle, "compareAndExchange", SignaturePolymorphicMethod),
-        VirtualDeclaredMethod(VarHandle, "compareAndExchangeAcquire", SignaturePolymorphicMethod),
-        VirtualDeclaredMethod(VarHandle, "compareAndExchangeRelease", SignaturePolymorphicMethod),
-        VirtualDeclaredMethod(VarHandle, "weakCompareAndSetPlain", SignaturePolymorphicMethod),
-        VirtualDeclaredMethod(VarHandle, "weakCompareAndSet", SignaturePolymorphicMethod),
-        VirtualDeclaredMethod(VarHandle, "weakCompareAndSetAcquire", SignaturePolymorphicMethod),
-        VirtualDeclaredMethod(VarHandle, "weakCompareAndSetRelease", SignaturePolymorphicMethod),
-        VirtualDeclaredMethod(VarHandle, "getAndSet", SignaturePolymorphicMethod),
-        VirtualDeclaredMethod(VarHandle, "getAndSetAcquire", SignaturePolymorphicMethod),
-        VirtualDeclaredMethod(VarHandle, "getAndSetRelease", SignaturePolymorphicMethod),
-        VirtualDeclaredMethod(VarHandle, "getAndAdd", SignaturePolymorphicMethod),
-        VirtualDeclaredMethod(VarHandle, "getAndAddAcquire", SignaturePolymorphicMethod),
-        VirtualDeclaredMethod(VarHandle, "getAndAddRelease", SignaturePolymorphicMethod),
-        VirtualDeclaredMethod(VarHandle, "getAndBitwiseOr", SignaturePolymorphicMethod),
-        VirtualDeclaredMethod(VarHandle, "getAndBitwiseOrAcquire", SignaturePolymorphicMethod),
-        VirtualDeclaredMethod(VarHandle, "getAndBitwiseOrRelease", SignaturePolymorphicMethod),
-        VirtualDeclaredMethod(VarHandle, "getAndBitwiseAnd", SignaturePolymorphicMethod),
-        VirtualDeclaredMethod(VarHandle, "getAndBitwiseAndAcquire", SignaturePolymorphicMethod),
-        VirtualDeclaredMethod(VarHandle, "getAndBitwiseAndRelease", SignaturePolymorphicMethod),
-        VirtualDeclaredMethod(VarHandle, "getAndBitwiseXor", SignaturePolymorphicMethod),
-        VirtualDeclaredMethod(VarHandle, "getAndBitwiseXorAcquire", SignaturePolymorphicMethod),
-        VirtualDeclaredMethod(VarHandle, "getAndBitwiseXorRelease", SignaturePolymorphicMethod)
+    private val varHandleSignaturePolymorphicMethods = List(
+        "get",
+        "set",
+        "getVolatile",
+        "setVolatile",
+        "getOpaque",
+        "setOpaque",
+        "getAcquire",
+        "setRelease",
+        "compareAndSet",
+        "compareAndExchange",
+        "compareAndExchangeAcquire",
+        "compareAndExchangeRelease",
+        "weakCompareAndSetPlain",
+        "weakCompareAndSet",
+        "weakCompareAndSetAcquire",
+        "weakCompareAndSetRelease",
+        "getAndSet",
+        "getAndSetAcquire",
+        "getAndSetRelease",
+        "getAndAdd",
+        "getAndAddAcquire",
+        "getAndAddRelease",
+        "getAndBitwiseOr",
+        "getAndBitwiseOrAcquire",
+        "getAndBitwiseOrRelease",
+        "getAndBitwiseAnd",
+        "getAndBitwiseAndAcquire",
+        "getAndBitwiseAndRelease",
+        "getAndBitwiseXor",
+        "getAndBitwiseXorAcquire",
+        "getAndBitwiseXorRelease"
     )
 
     /**
@@ -82,18 +83,32 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
         val mapFactory: JFunction[ReferenceType, ConcurrentHashMap[MethodContext, DeclaredMethod]] =
             (_: ReferenceType) ⇒ { new ConcurrentHashMap() }
 
+        val idCounter = new AtomicInteger()
+
         def insertDeclaredMethod(
-            dms:     ConcurrentHashMap[MethodContext, DeclaredMethod],
-            context: MethodContext,
-            dm:      DeclaredMethod
+            dms:                   ConcurrentHashMap[MethodContext, DeclaredMethod],
+            context:               MethodContext,
+            computeDeclaredMethod: (Int) ⇒ DeclaredMethod
         ): Unit = {
-            val oldDm = dms.put(context, dm)
-            if (oldDm != null && oldDm != dm) {
-                throw new UnknownError(
-                    "creation of declared methods failed:\n\t"+
-                        s"$oldDm\n\t\tvs.(new)\n\t$dm}"
-                )
-            }
+            val oldDm = dms.computeIfAbsent(context, _ ⇒ computeDeclaredMethod(
+                idCounter.getAndIncrement()
+            ))
+
+            val computedDM = computeDeclaredMethod(0)
+            assert(
+                oldDm match {
+                    case dm: DefinedMethod ⇒
+                        computedDM.hasSingleDefinedMethod &&
+                            (dm.definedMethod eq computedDM.definedMethod)
+                    case mdm: MultipleDefinedMethods ⇒
+                        mdm.hasMultipleDefinedMethods &&
+                            mdm.definedMethods.size == computedDM.definedMethods.size &&
+                            mdm.definedMethods.forall(computedDM.definedMethods.contains)
+                    case _: VirtualDeclaredMethod ⇒ true
+                },
+                "creation of declared methods failed:\n\t"+
+                    s"$oldDm\n\t\tvs.(new)\n\t$computedDM}"
+            )
         }
 
         p.parForeachClassFile() { cf ⇒
@@ -126,16 +141,19 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
                                         insertDeclaredMethod(
                                             subtypeDms,
                                             MethodContext(p, subtype, interfaceMethod),
-                                            DefinedMethod(subtype, interfaceMethod)
+                                            id ⇒ new DefinedMethod(subtype, interfaceMethod, id)
                                         )
-                                    case _ ⇒ insertDeclaredMethod(
-                                        subtypeDms,
-                                        new MethodContext(m.name, m.descriptor),
-                                        MultipleDefinedMethods(
-                                            subtype,
-                                            ConstArray(interfaceMethods.toSeq: _*)
+                                    case _ ⇒
+                                        val methods = ConstArray(interfaceMethods.toSeq: _*)
+                                        insertDeclaredMethod(
+                                            subtypeDms,
+                                            new MethodContext(m.name, m.descriptor),
+                                            id ⇒ new MultipleDefinedMethods(
+                                                subtype,
+                                                methods,
+                                                id
+                                            )
                                         )
-                                    )
                                 }
 
                                 (null, false, false) // Continue traversal on non-overridden method
@@ -143,10 +161,34 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
                                 (null, true, false) // Stop traversal on overridden method
                             }
                     }
+                } else if (m.isStatic && !m.isPrivate &&
+                    !m.isStaticInitializer && !cf.isInterfaceDeclaration) {
+                    // Static methods are inherited as well - they can be invoked on subtypes
+                    // this is not true for static initializers and static methods on interfaces
+                    p.classHierarchy.processSubtypes(classType)(initial = null) {
+                        (_: Null, subtype: ObjectType) ⇒
+                            val subClassFile = p.classFile(subtype).get
+                            val subtypeDms = result.computeIfAbsent(subtype, mapFactory)
+                            if (subClassFile.findMethod(m.name, m.descriptor).isEmpty) {
+                                val staticMethod = p.staticCall(
+                                    subtype,
+                                    isInterface = false,
+                                    m.name,
+                                    m.descriptor
+                                ).value
+                                insertDeclaredMethod(
+                                    subtypeDms,
+                                    MethodContext(p, subtype, staticMethod),
+                                    id ⇒ new DefinedMethod(subtype, staticMethod, id)
+                                )
+                                (null, false, false) // Continue traversal on non-overridden method
+                            } else {
+                                (null, true, false) // Stop traversal on overridden method
+                            }
+                    }
                 }
                 val context = MethodContext(p, classType, m)
-                val dm = DefinedMethod(classType, m)
-                insertDeclaredMethod(dms, context, dm)
+                insertDeclaredMethod(dms, context, id ⇒ new DefinedMethod(classType, m, id))
             }
 
             for {
@@ -155,28 +197,41 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
                 mc ← p.instanceMethods(classType)
             } {
                 val context = MethodContext(p, classType, mc.method)
-                val dm = DefinedMethod(classType, mc.method)
-                insertDeclaredMethod(dms, context, dm)
+                insertDeclaredMethod(dms, context, id ⇒ new DefinedMethod(classType, mc.method, id))
             }
         }
 
         // Special handling for signature-polymorphic methods
         if (p.classFile(MethodHandle).isEmpty) {
             val dms = result.computeIfAbsent(MethodHandle, _ ⇒ new ConcurrentHashMap)
-            for (dm ← methodHandleSignaturePolymorphicMethods) {
-                val context = new MethodContext(dm.name, dm.descriptor)
-                insertDeclaredMethod(dms, context, dm)
+            for (name ← methodHandleSignaturePolymorphicMethods) {
+                val context = new MethodContext(name, SignaturePolymorphicMethod)
+                insertDeclaredMethod(dms, context, id ⇒ new VirtualDeclaredMethod(
+                    MethodHandle, name, SignaturePolymorphicMethod, id
+                ))
             }
         }
         if (p.classFile(VarHandle).isEmpty) {
             val dms = result.computeIfAbsent(VarHandle, _ ⇒ new ConcurrentHashMap)
-            for (dm ← varHandleSignaturePolymorphicMethods) {
-                val context = new MethodContext(dm.name, dm.descriptor)
-                insertDeclaredMethod(dms, context, dm)
+            for (name ← varHandleSignaturePolymorphicMethods) {
+                val context = new MethodContext(name, SignaturePolymorphicMethod)
+                insertDeclaredMethod(dms, context, id ⇒ new VirtualDeclaredMethod(
+                    VarHandle, name, SignaturePolymorphicMethod, id
+                ))
             }
         }
 
-        new DeclaredMethods(p, result)
+        val id2method = new Array[DeclaredMethod](idCounter.get() + 1000)
+
+        import scala.collection.JavaConverters._
+        for {
+            context2Method ← result.elements().asScala
+            dm ← context2Method.elements().asScala
+        } {
+            id2method(dm.id) = dm
+        }
+
+        new DeclaredMethods(p, result, id2method, idCounter.get)
     }
 
     /**
@@ -213,11 +268,7 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
                     method.name,
                     method.descriptor
                 )
-            else if (project.instanceMethods(objectType).exists { m ⇒
-                method.name == m.name &&
-                    method.descriptor == m.descriptor &&
-                    m.method.isPackagePrivate
-            })
+            else if (project.hasInstanceMethod(objectType, method.name, method.descriptor, true))
                 new ShadowsPackagePrivateMethodContext(method.name, method.descriptor)
             else
                 new MethodContext(method.name, method.descriptor)
@@ -291,22 +342,29 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
                 packageName == that.packageName &&
                     methodName == that.methodName &&
                     descriptor == that.descriptor &&
-                    !project.instanceMethods(receiverType).exists { m ⇒
-                        methodName == m.name &&
-                            descriptor == m.descriptor &&
-                            (m.isPublic || m.method.isProtected)
-                    }
+                    !hasAccessibleMethod()
             case that: ShadowsPackagePrivateMethodContext ⇒
                 methodName == that.methodName &&
                     descriptor == that.descriptor &&
-                    project.instanceMethods(receiverType).exists { m ⇒
-                        methodName == m.name &&
-                            descriptor == m.descriptor &&
-                            (m.isPublic || m.method.isProtected)
-                    }
+                    hasAccessibleMethod()
             case that: MethodContext ⇒
                 methodName == that.methodName && descriptor == that.descriptor
             case _ ⇒ false
+        }
+
+        private def hasAccessibleMethod(): Boolean = {
+            if (project.classHierarchy.isInterface(receiverType).isYes) {
+                val method =
+                    project.resolveInterfaceMethodReference(receiverType, methodName, descriptor)
+                method.exists(m ⇒ m.isPublic || m.isProtected)
+            } else {
+                val method = project.resolveClassMethodReference(
+                    receiverType,
+                    methodName,
+                    descriptor
+                )
+                method.hasValue && (method.value.isPublic || method.value.isProtected)
+            }
         }
     }
 }

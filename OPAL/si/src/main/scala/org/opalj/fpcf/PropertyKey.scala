@@ -28,6 +28,8 @@ final class PropertyKey[+P] private[fpcf] (val id: Int) extends AnyVal with Prop
  */
 object PropertyKey {
 
+    private[this] val propertyKeys = new Array[SomePropertyKey](SupportedPropertyKinds)
+
     private[this] val propertyKeyNames = new Array[String](SupportedPropertyKinds)
 
     /*
@@ -93,7 +95,7 @@ object PropertyKey {
      *              must be idempotent.
      *
      * @note This method is '''not thread-safe''' - the setup of the property store (e.g.,
-     *       using the [[org.opalj.fpcf.FPCFAnalysesManager]] or an [[AnalysisScenario]] has to
+     *       using the [[org.opalj.br.fpcf.FPCFAnalysesManager]] or an [[AnalysisScenario]] has to
      *       be done by the driver thread and therefore no synchronization is needed.)
      */
     def create[E <: Entity, P <: Property](
@@ -110,7 +112,10 @@ object PropertyKey {
         fastTrackPropertyComputations(thisKeyId) =
             fastTrackPropertyComputation.asInstanceOf[(PropertyStore, Entity) ⇒ Option[Property]]
 
-        new PropertyKey(thisKeyId)
+        val pk = new PropertyKey(thisKeyId)
+        propertyKeys(thisKeyId) = pk
+
+        pk
     }
 
     def create[E <: Entity, P <: Property](name: String): PropertyKey[P] = {
@@ -145,6 +150,8 @@ object PropertyKey {
     // Query the core properties of each property kind
     // ===============================================
     //
+
+    def key(id: Int): SomePropertyKey = propertyKeys(id)
 
     /**
      * Returns the unique name of the kind of properties associated with the given key id.

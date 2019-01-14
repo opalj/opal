@@ -38,7 +38,7 @@ case class IFEQ(branchoffset: Int) extends IF0Instruction[IFEQ] with IFEQLike {
  *
  * @author Malte Limmeroth
  */
-object IFEQ extends InstructionLabelFactory {
+object IFEQ extends InstructionMetaInformation {
 
     final val opcode = 153
 

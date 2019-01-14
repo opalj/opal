@@ -327,7 +327,7 @@ sealed abstract class PropertyStoreTest(
                 val es = Set("aba", "cc", "d", "fd", "zu", "aaabbbaaa")
                 ps.scheduleEagerComputationsForEntities[String](es) { e ⇒
                     def c(eps: SomeEOptionP): ProperPropertyComputationResult = {
-                        eps match {
+                        (eps: @unchecked) match {
                             case FinalP(NoAnalysisForPalindromeProperty) /*<= the test...*/ ⇒
                                 Result(e, Marker.NotMarked)
                             case epk: SomeEPK ⇒
@@ -356,7 +356,7 @@ sealed abstract class PropertyStoreTest(
                 }
                 ps.scheduleEagerComputationsForEntities(es) { e ⇒
                     def c(eps: SomeEOptionP): ProperPropertyComputationResult = {
-                        eps match {
+                        (eps: @unchecked) match {
                             case FinalP(Palindrome) | FinalP(NoPalindrome) ⇒
                                 Result(e, Marker.IsMarked)
 
@@ -632,6 +632,64 @@ sealed abstract class PropertyStoreTest(
                 ps.shutdown()
             }
 
+            it(
+                "should be possible to register multiple triggered computations, "+
+                    "even if the first triggered computation is already potentially triggered"
+            ) {
+                    val ps = createPropertyStore()
+                    info(s"PropertyStore@${System.identityHashCode(ps).toHexString}")
+
+                    ps.set("aBa", Palindrome)
+                    ps.set("aNOa", NoPalindrome)
+
+                    val processedStrings = scala.collection.concurrent.TrieMap.empty[String, Boolean]
+
+                    ps.setupPhase(Set(PalindromeKey, PalindromeFragmentsKey), Set.empty)
+
+                    def uc(
+                        e: String
+                    )(
+                        fragmentsEOptionP: EOptionP[Entity, PalindromeFragments]
+                    ): Option[EPS[String, PalindromeFragments]] = {
+                        processedStrings.put(e, true)
+                        (fragmentsEOptionP: @unchecked) match {
+                            case _: EPK[_, _] ⇒
+                                Some(
+                                    InterimEUBP(
+                                        "fragments",
+                                        PalindromeFragments(Set(e.substring(0, 1)))
+                                    )
+                                )
+                            case InterimUBP(PalindromeFragments(fs)) ⇒
+                                val newFs = fs + e.substring(0, 1)
+                                if (newFs != fs)
+                                    Some(InterimEUBP("fragments", PalindromeFragments(newFs)))
+                                else
+                                    None
+                        }
+                    }
+                    ps.registerTriggeredComputation(
+                        PalindromeKey,
+                        (e: Entity) ⇒ PartialResult("fragments", PalindromeFragmentsKey, uc(e.toString))
+                    )
+
+                    // In this case, we can actually schedule the same computation multiple times;
+                    // it should be idempotent anyway!
+                    ps.registerTriggeredComputation(
+                        PalindromeKey,
+                        (e: Entity) ⇒ PartialResult("fragments", PalindromeFragmentsKey, uc(e.toString))
+                    )
+
+                    ps.waitOnPhaseCompletion()
+                    ps.setupPhase(Set.empty, Set.empty) // <= not strictly required, but a best practice
+
+                    ps("fragments", PalindromeFragmentsKey) should be(
+                        FinalEP("fragments", PalindromeFragments(Set("a")))
+                    )
+                    processedStrings.keySet should be(Set("aNOa", "aBa"))
+                    ps.shutdown()
+                }
+
             describe("support for fast track properties") {
 
                 it("should correctly handle lazy computations that support fast track properties") {
@@ -796,7 +854,7 @@ sealed abstract class PropertyStoreTest(
                     var ub: Int = n.targets.size
 
                     def c(eps: SomeEOptionP): ProperPropertyComputationResult = {
-                        eps match {
+                        (eps: @unchecked) match {
                             case InterimUBP(ReachableNodesCount(otherUB)) ⇒
                                 if (ub + otherUB > 4)
                                     Result(n, TooManyNodesReachable)
@@ -868,7 +926,7 @@ sealed abstract class PropertyStoreTest(
                 ): ProperPropertyComputationResult = {
 
                     def c(eps: SomeEOptionP): ProperPropertyComputationResult = {
-                        eps match {
+                        (eps: @unchecked) match {
                             case eps @ InterimUBP(ReachableNodes(nodes)) ⇒
                                 val lb = TooManyNodesReachable
                                 val ub = ReachableNodesCount(nodes.size)
@@ -1495,7 +1553,7 @@ sealed abstract class PropertyStoreTest(
                         def c(successorNode: SomeEOptionP): ProperPropertyComputationResult = {
                             // HERE - For this test case only, we can simple get to the previous
                             // node from the one that was updated.
-                            successorNode match {
+                            (successorNode: @unchecked) match {
                                 case epk: EPK[_, _] ⇒
                                     InterimResult(node, Impure, Pure, Iterable(epk), c, pch)
 
@@ -1867,4 +1925,3 @@ abstract class PropertyStoreTestWithoutDebugging(
     override def afterAll(): Unit = PropertyStore.updateDebug(oldPropertyStoreUpdateSetting)
 
 }
-

@@ -782,9 +782,10 @@ trait RecordCFG
 
         // OLD val exceptionHandlers = mutable.HashMap.empty[Int, CatchNode]
         val exceptionHandlers = new Int2ObjectOpenHashMap[CatchNode](code.exceptionHandlers.size)
-        for {
-            (exceptionHandler, index) ← code.exceptionHandlers.iterator.zipWithIndex
-        } {
+        // for {
+        //     (exceptionHandler, index) ← code.exceptionHandlers.iterator.zipWithIndex
+        // } {
+        code.exceptionHandlers foreachWithIndex { (exceptionHandler, index) ⇒
             if ( // 1.1.    Let's check if the handler was executed at all.
             unsafeWasExecuted(exceptionHandler.handlerPC) &&
                 // 1.2.    The handler may be shared by multiple try blocks, hence, we have
@@ -792,8 +793,8 @@ trait RecordCFG
                 //         that jumps to the handler.
                 handlesException(exceptionHandler)) {
                 val handlerPC = exceptionHandler.handlerPC
-                // OLD val catchNodeCandiate = new CatchNode(exceptionHandler, index)
-                // OLD val catchNode = exceptionHandlers.getOrElseUpdate(handlerPC, catchNodeCandiate)
+                // OLD val catchNodeCandidate = new CatchNode(exceptionHandler, index)
+                // OLD val catchNode = exceptionHandlers.getOrElseUpdate(handlerPC, catchNodeCandidate)
                 var catchNode = exceptionHandlers.get(handlerPC)
                 if (catchNode == null) {
                     catchNode = new CatchNode(exceptionHandler, index)

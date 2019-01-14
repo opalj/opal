@@ -16,7 +16,8 @@ import org.opalj.ai.dataflow.solver.NaiveSolver
 /**
  * Searches for strings that are passed to `Class.forName(_)` calls.
  *
- * @author Michael Eichberg and Ben Hermann
+ * @author Michael Eichberg
+ * @author Ben Hermann
  */
 abstract class StringPassedToClassForName[Source]
     extends DataFlowProblemSpecification[Source, (String) ⇒ Boolean] {

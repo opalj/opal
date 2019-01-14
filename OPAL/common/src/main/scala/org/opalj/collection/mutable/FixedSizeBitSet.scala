@@ -13,14 +13,20 @@ import java.io.Serializable
  *
  * Conceptually, the an array of long values is used to store the values.
  *
- * If values are added to the set that are larger than the specified size the behavior is
- * undefined!
+ * @note If values are added to the set that are larger than the specified size the behavior is
+ *       undefined!
  *
  * @author Michael Eichberg
  */
 sealed abstract class FixedSizeBitSet extends BitSet with Serializable {
 
     def +=(i: Int): this.type
+
+    /**
+     * Adds the given value to the set if the value is not in the set and returns true;
+     * otherwise returns false. That is, the value is definitively in the set afterwards.
+     */
+    def add(i: Int): Boolean
 
     def -=(i: Int): this.type
 
@@ -30,16 +36,14 @@ sealed abstract class FixedSizeBitSet extends BitSet with Serializable {
 private[mutable] object ZeroLengthBitSet extends FixedSizeBitSet {
     override def isEmpty: Boolean = true
     override def +=(i: Int): this.type = throw new UnsupportedOperationException("fixed size is 0")
+    override def add(i: Int): Boolean = throw new UnsupportedOperationException("fixed size is 0")
     override def -=(i: Int): this.type = this
     override def contains(i: Int): Boolean = false
     override def iterator: IntIterator = IntIterator.empty
     override def equals(other: Any): Boolean = {
         other match {
-            case that: FixedSizeBitSet64  ⇒ that.set == 0
-            case that: FixedSizeBitSet128 ⇒ that.set1 == 0 && that.set2 == 0
-            case that: FixedSizeBitSetN   ⇒ that.equals(this)
-            case that: AnyRef             ⇒ that eq this
-            case _                        ⇒ false
+            case that: FixedSizeBitSet ⇒ that.isEmpty
+            case _                     ⇒ false
         }
     }
     override def hashCode: Int = 1 // same as Arrays.hashCode(empty long array)
@@ -51,6 +55,11 @@ private[mutable] final class FixedSizeBitSet64 extends FixedSizeBitSet { thisSet
 
     override def isEmpty: Boolean = set == 0L
     override def +=(i: Int): this.type = { set |= 1L << i; this }
+    override def add(i: Int): Boolean = {
+        val oldSet = set
+        val newSet = oldSet | 1L << i
+        if (newSet != oldSet) { set = newSet; true } else false
+    }
     override def -=(i: Int): this.type = { set &= (-1L & ~(1L << i)); this }
     override def contains(i: Int): Boolean = (set & (1L << i)) != 0L
 
@@ -66,10 +75,10 @@ private[mutable] final class FixedSizeBitSet64 extends FixedSizeBitSet { thisSet
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: FixedSizeBitSet64  ⇒ this.set == that.set
-            case ZeroLengthBitSet         ⇒ this.set == 0L
+            case that: FixedSizeBitSet64  ⇒ that.set == this.set
             case that: FixedSizeBitSet128 ⇒ that.set2 == 0L && that.set1 == this.set
             case that: FixedSizeBitSetN   ⇒ that.equals(this)
+            case ZeroLengthBitSet         ⇒ this.set == 0L
             case _                        ⇒ false
         }
     }
@@ -98,6 +107,17 @@ private[mutable] final class FixedSizeBitSet128 extends FixedSizeBitSet { thisSe
         }
         this
     }
+    override def add(i: Int): Boolean = {
+        if (i <= 63) {
+            val oldSet1 = set1
+            val newSet1 = oldSet1 | 1L << i
+            if (oldSet1 != newSet1) { set1 = newSet1; true } else false
+        } else {
+            val oldSet2 = set2
+            val newSet2 = oldSet2 | 1L << (i - 64)
+            if (oldSet2 != newSet2) { set2 = newSet2; true } else false
+        }
+    }
     override def -=(i: Int): this.type = {
         if (i <= 63)
             set1 &= (-1L & ~(1L << i))
@@ -114,12 +134,12 @@ private[mutable] final class FixedSizeBitSet128 extends FixedSizeBitSet { thisSe
 
     override def iterator: IntIterator = new IntIterator {
         private[this] var i: Int = -1
-        private[this] def getNextValue(): Unit = {
+        private[this] def advanceIterator(): Unit = {
             do { i += 1 } while (i < 128 && !thisSet.contains(i))
         }
-        getNextValue()
+        advanceIterator()
         def hasNext: Boolean = i < 128
-        def next(): Int = { val i = this.i; getNextValue(); i }
+        def next(): Int = { val i = this.i; advanceIterator(); i }
     }
 
     override def equals(other: Any): Boolean = {
@@ -161,6 +181,12 @@ private[mutable] final class FixedSizeBitSetN private[mutable] (
         set(bucket) = set(bucket) | (1L << (i - 64 * bucket))
         this
     }
+    override def add(i: Int): Boolean = {
+        val bucket = i / 64
+        val oldSet = set(bucket)
+        val newSet = oldSet | (1L << (i - 64 * bucket))
+        if (newSet != oldSet) { set(bucket) = newSet; true } else false
+    }
     override def -=(i: Int): this.type = {
         val bucket = i / 64
         set(bucket) = set(bucket) & ((-1L & ~(1L << (i - 64 * bucket))))
@@ -174,12 +200,12 @@ private[mutable] final class FixedSizeBitSetN private[mutable] (
     override def iterator: IntIterator = new IntIterator {
         private[this] val max: Int = set.length * 64
         private[this] var i: Int = -1
-        private[this] def getNextValue(): Unit = {
+        private[this] def advanceIterator(): Unit = {
             do { i += 1 } while (i < max && !thisSet.contains(i))
         }
-        getNextValue()
+        advanceIterator()
         def hasNext: Boolean = i < max
-        def next(): Int = { val i = this.i; getNextValue(); i }
+        def next(): Int = { val i = this.i; advanceIterator(); i }
     }
 
     override def equals(other: Any): Boolean = {
@@ -230,7 +256,11 @@ object FixedSizeBitSet {
 
     final val empty: FixedSizeBitSet = ZeroLengthBitSet
 
-    /** @param max The maximum value you may want to store in the set. */
+    /**
+     * Creates a new mutable bit set with a fixed size.
+     *
+     * @param max The maximum value (inclusive) you may want to store in the set.
+     */
     def create(max: Int): FixedSizeBitSet = {
         // Note if max is zero, we may still want to be able to store the value 0!
         if (max < 64) new FixedSizeBitSet64

@@ -1,10 +1,12 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf
 
-import org.opalj.fpcf.analyses.EagerClassImmutabilityAnalysis
-import org.opalj.fpcf.analyses.EagerTypeImmutabilityAnalysis
-import org.opalj.fpcf.analyses.LazyL1FieldMutabilityAnalysis
-import org.opalj.tac.fpcf.analyses.LazyL0TACAIAnalysis
+import org.opalj.br.fpcf.analyses.EagerClassImmutabilityAnalysis
+import org.opalj.br.fpcf.analyses.EagerTypeImmutabilityAnalysis
+import org.opalj.br.fpcf.analyses.LazyUnsoundPrematurelyReadFieldsAnalysis
+import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
+import org.opalj.tac.fpcf.analyses.LazyL1FieldMutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.TACAITransformer
 
 /**
  * Tests if the properties specified in the test project (the classes in the (sub-)package of
@@ -17,8 +19,12 @@ class ClassAndTypeMutabilityTests extends PropertiesTest {
 
     describe("the field, class and type mutability analyses are executed") {
         val as = executeAnalyses(Set(
-            EagerClassImmutabilityAnalysis, EagerTypeImmutabilityAnalysis,
-            LazyL1FieldMutabilityAnalysis, LazyL0TACAIAnalysis
+            EagerClassImmutabilityAnalysis,
+            EagerTypeImmutabilityAnalysis,
+            LazyUnsoundPrematurelyReadFieldsAnalysis,
+            LazyL1FieldMutabilityAnalysis,
+            LazyL0BaseAIAnalysis,
+            TACAITransformer
         ))
         as.propertyStore.shutdown()
         validateProperties(
