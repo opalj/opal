@@ -10,15 +10,17 @@ import org.opalj.tac.TACStmts
 import scala.collection.mutable.ListBuffer
 
 import org.opalj.fpcf.properties.StringConstancyProperty
+import org.opalj.tac.Assignment
 
 /**
- * The `ArrayLoadInterpreter` is responsible for processing [[ArrayLoad]] expressions.
+ * The `ArrayInterpreter` is responsible for processing [[ArrayLoad]] as well as [[ArrayStore]]
+ * expressions.
  *
  * @see [[AbstractStringInterpreter]]
  *
  * @author Patrick Mell
  */
-class ArrayLoadInterpreter(
+class ArrayInterpreter(
         cfg:         CFG[Stmt[V], TACStmts[V]],
         exprHandler: InterpretationHandler
 ) extends AbstractStringInterpreter(cfg, exprHandler) {
@@ -36,11 +38,24 @@ class ArrayLoadInterpreter(
         defSites.filter(_ >= 0).sorted.foreach { next ⇒
             val arrDecl = stmts(next)
             val sortedArrDeclUses = arrDecl.asAssignment.targetVar.usedBy.toArray.sorted
+            // Process ArrayStores
             sortedArrDeclUses.filter {
                 stmts(_).isInstanceOf[ArrayStore[V]]
             } foreach { f: Int ⇒
                 val sortedDefs = stmts(f).asArrayStore.value.asVar.definedBy.toArray.sorted
                 sortedDefs.map { exprHandler.processDefSite }.foreach {
+                    children.appendAll(_)
+                }
+            }
+            // Process ArrayLoads
+            sortedArrDeclUses.filter {
+                stmts(_) match {
+                    case Assignment(_, _, _: ArrayLoad[V]) ⇒ true
+                    case _                                 ⇒ false
+                }
+            } foreach { f: Int ⇒
+                val defs = stmts(f).asAssignment.expr.asArrayLoad.arrayRef.asVar.definedBy
+                defs.toArray.sorted.map { exprHandler.processDefSite }.foreach {
                     children.appendAll(_)
                 }
             }
