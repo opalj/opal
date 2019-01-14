@@ -1,18 +1,13 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.support.info
 
+import scala.annotation.switch
+
 import java.net.URL
 
-import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.DefaultOneStepAnalysis
-import org.opalj.br.analyses.Project
-import org.opalj.br.analyses.ReportableAnalysisResult
-import org.opalj.br.instructions.Instruction
-import org.opalj.br.instructions.INVOKESTATIC
-import org.opalj.br.MethodDescriptor
-import org.opalj.br.ReferenceType
-import org.opalj.br.instructions.INVOKEVIRTUAL
-import org.opalj.br.Method
+import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
+
 import org.opalj.fpcf.FPCFAnalysesManagerKey
 import org.opalj.fpcf.analyses.string_definition.LazyStringDefinitionAnalysis
 import org.opalj.fpcf.string_definition.properties.StringConstancyInformation
@@ -20,17 +15,24 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.PropertyStoreKey
 import org.opalj.fpcf.analyses.string_definition.V
 import org.opalj.fpcf.FinalEP
+import org.opalj.fpcf.analyses.string_definition.P
 import org.opalj.fpcf.properties.StringConstancyProperty
+import org.opalj.fpcf.string_definition.properties.StringConstancyLevel
+import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.DefaultOneStepAnalysis
+import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.ReportableAnalysisResult
+import org.opalj.br.instructions.Instruction
+import org.opalj.br.instructions.INVOKESTATIC
+import org.opalj.br.ReferenceType
+import org.opalj.br.instructions.INVOKEVIRTUAL
+import org.opalj.br.Method
 import org.opalj.tac.Assignment
 import org.opalj.tac.Call
 import org.opalj.tac.ExprStmt
 import org.opalj.tac.SimpleTACAIKey
 import org.opalj.tac.StaticFunctionCall
 import org.opalj.tac.VirtualFunctionCall
-
-import scala.annotation.switch
-import scala.collection.mutable
-import scala.collection.mutable.ListBuffer
 
 /**
  * Analyzes a project for calls provided by the Java Reflection API and tries to determine which
@@ -53,12 +55,36 @@ object StringAnalysisReflectiveCalls extends DefaultOneStepAnalysis {
     private type ResultMapType = mutable.Map[String, ListBuffer[StringConstancyInformation]]
 
     /**
+     * Stores a list of pairs where the first element corresponds to the entities passed to the
+     * analysis and the second element corresponds to the method name in which the entity occurred,
+     * i.e., a value in [[relevantMethodNames]].
+     */
+    private val entities = ListBuffer[(P, String)]()
+
+    /**
      * Stores all relevant method names of the Java Reflection API, i.e., those methods from the
      * Reflection API that have at least one string argument and shall be considered by this
-     * analysis.
+     * analysis. The string are supposed to have the format as produced by [[buildFQMethodName]].
      */
     private val relevantMethodNames = List(
-        "forName", "getField", "getDeclaredField", "getMethod", "getDeclaredMethod"
+        "java.lang.Class#forName", "java.lang.ClassLoader#loadClass",
+        "java.lang.Class#getField", "java.lang.Class#getDeclaredField",
+        "java.lang.Class#getMethod", "java.lang.Class#getDeclaredMethod"
+    )
+
+    /**
+     * A list of fully-qualified method names that are to be skipped, e.g., because they make the
+     * analysis crash.
+     */
+    private val ignoreMethods = List(
+        // Check the found paths on this one
+        // "com/sun/corba/se/impl/orb/ORBImpl#setDebugFlags",
+        "com/oracle/webservices/internal/api/message/BasePropertySet$1#run",
+        "java/net/URL#getURLStreamHandler",
+        "java/net/URLConnection#lookupContentHandlerClassFor",
+        // Non rt.jar
+        "com/sun/javafx/property/PropertyReference#reflect",
+        "com/sun/glass/ui/monocle/NativePlatformFactory#getNativePlatform"
     )
 
     override def title: String = "String Analysis for Reflective Calls"
@@ -69,18 +95,22 @@ object StringAnalysisReflectiveCalls extends DefaultOneStepAnalysis {
     }
 
     /**
-     * Taking the `declaringClass`, the `methodName` as well as the `methodDescriptor` into
-     * consideration, this function checks whether a method is relevant for this analysis.
+     * Using a `declaringClass` and a `methodName`, this function returns a formatted version of the
+     * fully-qualified method name, in the format [fully-qualified class name]#[method name]
+     * where the separator for the fq class names is a dot, e.g., "java.lang.Class#forName".
+     */
+    private def buildFQMethodName(declaringClass: ReferenceType, methodName: String): String =
+        s"${declaringClass.toJava}#$methodName"
+
+    /**
+     * Taking the `declaringClass` and the `methodName` into consideration, this function checks
+     * whether a method is relevant for this analysis.
      *
      * @note Internally, this method makes use of [[relevantMethodNames]]. A method can only be
-     *       relevant if its name occurs in [[relevantMethodNames]].
+     *       relevant if it occurs in [[relevantMethodNames]].
      */
-    private def isRelevantMethod(
-        declaringClass: ReferenceType, methodName: String, methodDescriptor: MethodDescriptor
-    ): Boolean =
-        relevantMethodNames.contains(methodName) && (declaringClass.toJava == "java.lang.Class" &&
-            (methodDescriptor.returnType.toJava.contains("java.lang.reflect.") ||
-                methodDescriptor.returnType.toJava.contains("java.lang.Class")))
+    private def isRelevantCall(declaringClass: ReferenceType, methodName: String): Boolean =
+        relevantMethodNames.contains(buildFQMethodName(declaringClass, methodName))
 
     /**
      * Helper function that checks whether an array of [[Instruction]]s contains at least one
@@ -90,11 +120,11 @@ object StringAnalysisReflectiveCalls extends DefaultOneStepAnalysis {
         instructions.filter(_ != null).foldLeft(false) { (previous, nextInstr) ⇒
             previous || ((nextInstr.opcode: @switch) match {
                 case INVOKESTATIC.opcode ⇒
-                    val INVOKESTATIC(declClass, _, methodName, methodDescr) = nextInstr
-                    isRelevantMethod(declClass, methodName, methodDescr)
+                    val INVOKESTATIC(declClass, _, methodName, _) = nextInstr
+                    isRelevantCall(declClass, methodName)
                 case INVOKEVIRTUAL.opcode ⇒
-                    val INVOKEVIRTUAL(declClass, methodName, methodDescr) = nextInstr
-                    isRelevantMethod(declClass, methodName, methodDescr)
+                    val INVOKEVIRTUAL(declClass, methodName, _) = nextInstr
+                    isRelevantCall(declClass, methodName)
                 case _ ⇒ false
             })
         }
@@ -108,19 +138,66 @@ object StringAnalysisReflectiveCalls extends DefaultOneStepAnalysis {
     private def processFunctionCall(
         ps: PropertyStore, method: Method, call: Call[V], resultMap: ResultMapType
     ): Unit = {
-        if (isRelevantMethod(call.declaringClass, call.name, call.descriptor)) {
-            val duvar = call.params.head.asVar
-            ps((duvar, method), StringConstancyProperty.key) match {
-                case FinalEP(_, prop) ⇒
-                    resultMap(call.name).append(prop.stringConstancyInformation)
-                case _ ⇒
+        if (isRelevantCall(call.declaringClass, call.name)) {
+            val fqnMethodName = s"${method.classFile.thisType.fqn}#${method.name}"
+            if (!ignoreMethods.contains(fqnMethodName)) {
+                // println(
+                //   s"Processing ${call.name} in ${method.classFile.thisType.fqn}#${method.name}"
+                // )
+                val duvar = call.params.head.asVar
+                val e = (duvar, method)
+
+                ps(e, StringConstancyProperty.key) match {
+                    case FinalEP(_, prop) ⇒
+                        resultMap(call.name).append(prop.stringConstancyInformation)
+                    case _ ⇒ entities.append((e, buildFQMethodName(call.declaringClass, call.name)))
+                }
+                // Add all properties to the map; TODO: Add the following to end of the analysis
+                ps.waitOnPhaseCompletion()
+                while (entities.nonEmpty) {
+                    val nextEntity = entities.head
+                    ps.properties(nextEntity._1).toIndexedSeq.foreach {
+                        case FinalEP(_, prop) ⇒
+                            resultMap(nextEntity._2).append(
+                                prop.asInstanceOf[StringConstancyProperty].stringConstancyInformation
+                            )
+                        case _ ⇒
+                    }
+                    entities.remove(0)
+                }
             }
         }
+    }
+
+    /**
+     * Takes a `resultMap` and transforms the information contained in that map into a
+     * [[BasicReport]] which will serve as the final result of the analysis.
+     */
+    private def resultMapToReport(resultMap: ResultMapType): BasicReport = {
+        val report = ListBuffer[String]("Results of the Reflection Analysis:")
+        for ((reflectiveCall, entries) ← resultMap) {
+            var constantCount, partConstantCount, dynamicCount = 0
+            entries.foreach {
+                _.constancyLevel match {
+                    case StringConstancyLevel.CONSTANT           ⇒ constantCount += 1
+                    case StringConstancyLevel.PARTIALLY_CONSTANT ⇒ partConstantCount += 1
+                    case StringConstancyLevel.DYNAMIC            ⇒ dynamicCount += 1
+                }
+            }
+
+            report.append(s"$reflectiveCall: ${entries.length}x")
+            report.append(s" -> Constant:           ${constantCount}x")
+            report.append(s" -> Partially Constant: ${partConstantCount}x")
+            report.append(s" -> Dynamic:            ${dynamicCount}x")
+        }
+        BasicReport(report)
     }
 
     override def doAnalyze(
         project: Project[URL], parameters: Seq[String], isInterrupted: () ⇒ Boolean
     ): ReportableAnalysisResult = {
+        val t0 = System.currentTimeMillis()
+
         implicit val propertyStore: PropertyStore = project.get(PropertyStoreKey)
         project.get(FPCFAnalysesManagerKey).runAll(LazyStringDefinitionAnalysis)
         val tacProvider = project.get(SimpleTACAIKey)
@@ -128,8 +205,6 @@ object StringAnalysisReflectiveCalls extends DefaultOneStepAnalysis {
         // Stores the obtained results for each supported reflective operation
         val resultMap: ResultMapType = mutable.Map[String, ListBuffer[StringConstancyInformation]]()
         relevantMethodNames.foreach { resultMap(_) = ListBuffer() }
-
-        identity(propertyStore)
 
         project.allMethodsWithBody.foreach { m ⇒
             // To dramatically reduce the work of the tacProvider, quickly check if a method is
@@ -158,9 +233,10 @@ object StringAnalysisReflectiveCalls extends DefaultOneStepAnalysis {
                 }
             }
         }
-        val report = ListBuffer[String]("Results:")
-        // TODO: Define what the report shall look like
-        BasicReport(report)
+
+        val t1 = System.currentTimeMillis()
+        println(s"Elapsed Time: ${t1 - t0} ms")
+        resultMapToReport(resultMap)
     }
 
 }
