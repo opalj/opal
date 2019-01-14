@@ -126,10 +126,14 @@ lazy val `OPAL` = (project in file("."))
     bc,
     ba,
     ai,
-    // DISABLE BUGPICKER      bp,
+    tac,
+    //  bp, (just temporarily...)
     de,
     av,
+    hermes,
     DeveloperTools,
+    hermes_ui,
+    // THE FOLLOWING ARE NOT DEPLOYED TO MAVEN CENTRAL
     Validate,
     demos,
     incubation)
