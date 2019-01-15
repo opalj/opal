@@ -548,9 +548,10 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
             else
                 descriptorsOpt
 
-        retrieveSuitableMatcher[Set[MethodDescriptor]](
+        // there should be always other information that strongly identifies potential methods,
+        // e.g. name or classes.
+        retrieveSuitableNonEssentialMatcher[Set[MethodDescriptor]](
             actualDescriptorOpt,
-            pc,
             v ⇒ new DescriptorBasedMethodMatcher(v)
 
         )
