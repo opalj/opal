@@ -14,6 +14,7 @@ import org.opalj.br.Method
 import org.opalj.br.PC
 import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.ai.domain
 import org.opalj.ai.fpcf.properties.MethodReturnValue
 
 /**
