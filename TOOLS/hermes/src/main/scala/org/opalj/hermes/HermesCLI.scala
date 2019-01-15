@@ -17,6 +17,11 @@ import org.opalj.io.processSource
  */
 object HermesCLI {
 
+    object Hermes extends HermesCore {
+        override def updateProjectData(f: ⇒ Unit): Unit = Hermes.synchronized { f }
+        override def reportProgress(f: ⇒ Double): Unit = Hermes.synchronized { f }
+    }
+
     final val usage = {
         val hermesCLIInputStream = this.getClass.getResourceAsStream("HermesCLI.txt")
         processSource(Source.fromInputStream(hermesCLIInputStream)) { s ⇒
@@ -69,10 +74,6 @@ object HermesCLI {
             System.exit(1)
         }
 
-        object Hermes extends HermesCore {
-            override def updateProjectData(f: ⇒ Unit): Unit = Hermes.synchronized { f }
-            override def reportProgress(f: ⇒ Double): Unit = Hermes.synchronized { f }
-        }
         val waitOnFinished = new CountDownLatch(1)
         Hermes.analysesFinished onChange { (_, _, isFinished) ⇒
             if (isFinished) {
