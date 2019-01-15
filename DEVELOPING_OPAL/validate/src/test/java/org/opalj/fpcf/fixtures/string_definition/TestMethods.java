@@ -539,8 +539,10 @@ public class TestMethods {
     @StringDefinitionsCollection(
             value = "case with a try-catch-finally exception",
             stringDefinitions = {
+                    // For the reason why the first expected strings differ from the other, see the
+                    // comment in tryCatchFinallyWithThrowable
                     @StringDefinitions(
-                            expectedLevel = PARTIALLY_CONSTANT, expectedStrings = "=====(\\w|=====)"
+                            expectedLevel = PARTIALLY_CONSTANT, expectedStrings = "=====(\\w)?"
                     ),
                     @StringDefinitions(
                             expectedLevel = PARTIALLY_CONSTANT, expectedStrings = "=====(\\w|=====)"
