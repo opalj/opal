@@ -60,6 +60,16 @@ class DefaultPathFinder extends AbstractPathFinder {
             }
             nestedElementsRef.append(outerNested)
             path.append(outerNested)
+        } else {
+            // Is the definition site within a try? If so, we can ignore that try block as this
+            // scope cannot be left anyway
+            val defSite = startSites.head
+            cfg.bb(defSite).successors.filter(_.isInstanceOf[CatchNode]).foreach {
+                case cn: CatchNode if cn.startPC <= defSite ⇒
+                    seenCatchNodes(cn.nodeId) = Unit
+                    seenElements.append(cn.handlerPC)
+                case _ ⇒
+            }
         }
 
         while (stack.nonEmpty) {
@@ -223,7 +233,8 @@ class DefaultPathFinder extends AbstractPathFinder {
             }
 
             // We can stop once endSite was processed and there is no more path to endSite
-            if (popped == endSite && !stack.map(doesPathExistTo(_, endSite, cfg)).reduce(_ || _)) {
+            if (popped == endSite &&
+                !stack.map(doesPathExistTo(_, endSite, cfg, seenElements.toList)).reduce(_ || _)) {
                 return Path(path.toList)
             }
         }
