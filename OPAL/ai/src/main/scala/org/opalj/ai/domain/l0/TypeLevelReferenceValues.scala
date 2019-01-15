@@ -7,8 +7,10 @@ package l0
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.value.ASArrayValue
 import org.opalj.value.IsNullValue
+import org.opalj.value.IsReferenceValue
 import org.opalj.value.IsSArrayValue
 import org.opalj.value.IsSReferenceValue
+import org.opalj.value.ValueInformation
 import org.opalj.br.ArrayType
 import org.opalj.br.ClassHierarchy
 import org.opalj.br.FieldType
@@ -753,6 +755,26 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
      *  - Content: '''Unknown'''
      */
     def ObjectValue(pc: Int, upperTypeBound: UIDSet[ObjectType]): DomainObjectValue
+
+    abstract override def InitializedDomainValue(
+        origin: ValueOrigin,
+        vi:     ValueInformation
+    ): DomainValue = {
+        vi match {
+            case _: IsNullValue ⇒
+                NullValue(origin)
+
+            case v: IsReferenceValue ⇒
+                if (v.upperTypeBound.size > 1)
+                    // it is definitively not an array
+                    ObjectValue(origin, v.upperTypeBound.asInstanceOf[UIDSet[ObjectType]])
+                else
+                    // it is definitively not guaranteed to be null
+                    ReferenceValue(origin, v.leastUpperType.get)
+
+            case vi ⇒ super.InitializedDomainValue(origin, vi)
+        }
+    }
 
     /**
      * Factory method to create a new domain value that represents a newly created

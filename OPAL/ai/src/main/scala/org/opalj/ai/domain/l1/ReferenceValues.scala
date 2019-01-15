@@ -17,6 +17,9 @@ import org.opalj.collection.immutable.UIDSet
 import org.opalj.collection.immutable.UIDSet1
 import org.opalj.collection.immutable.UIDSet2
 import org.opalj.value.IsMultipleReferenceValue
+import org.opalj.value.IsNullValue
+import org.opalj.value.IsReferenceValue
+import org.opalj.value.ValueInformation
 import org.opalj.br.ArrayType
 import org.opalj.br.ComputationalType
 import org.opalj.br.ComputationalTypeReference
@@ -2016,5 +2019,44 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
         upperTypeBound: UIDSet[_ <: ReferenceType],
         refId:          Int
     ): DomainMultipleReferenceValues
+
+    /** Only intended to be used to map values from the outside into the context of a method. */
+    abstract override def InitializedDomainValue(
+        origin: ValueOrigin,
+        vi:     ValueInformation
+    ): DomainValue = {
+        vi match {
+            case _: IsNullValue ⇒
+                NullValue(origin)
+
+            /* *** NOT YET SUPPORTED ***
+                 * THE INDIVIDUAL VALUES OF A MultipleReferenceValues have to have unique origins.
+                 *
+            case v: IsMultipleReferenceValue ⇒
+                val mappedBaseValues =
+                    v.baseValues.foldLeft(UIDSet.empty[DomainSingleOriginReferenceValue]) { (c, n) ⇒
+                        InitializedDomainValue(origin, c)
+                            .asInstanceOf[DomainSingleOriginReferenceValue])
+                    }
+                MultipleReferenceValues(
+                    mappedBaseValues,
+                    IntTrieSet1(origin),
+                    v.isNull,
+                    v.isPrecise,
+                    v.upperTypeBound,
+                    nextRefId()
+                )
+                */
+
+            case v: IsReferenceValue ⇒
+                if (v.upperTypeBound.size > 1)
+                    // handles MObjectValue
+                    ObjectValue(origin, v.isNull, v.upperTypeBound.asInstanceOf[UIDSet[ObjectType]])
+                else
+                    ReferenceValue(origin, v.isNull, v.isPrecise, v.leastUpperType.get)
+
+            case vi ⇒ super.InitializedDomainValue(origin, vi)
+        }
+    }
 
 }
