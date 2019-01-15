@@ -65,7 +65,6 @@ trait TypeLevelFieldAccessInstructions extends FieldAccessesDomain {
     // FIELD WRITE ACCESS
     //
 
-
     /*override*/ def putfield(
         pc:             Int,
         objectref:      DomainValue,
