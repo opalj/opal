@@ -13,11 +13,11 @@ import org.opalj.fpcf.analyses.string_definition.LazyStringDefinitionAnalysis
 import org.opalj.fpcf.string_definition.properties.StringConstancyInformation
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.PropertyStoreKey
-import org.opalj.fpcf.analyses.string_definition.V
-import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.analyses.string_definition.P
-import org.opalj.fpcf.properties.StringConstancyProperty
+import org.opalj.fpcf.analyses.string_definition.V
 import org.opalj.fpcf.string_definition.properties.StringConstancyLevel
+import org.opalj.fpcf.FinalEP
+import org.opalj.fpcf.properties.StringConstancyProperty
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
@@ -67,9 +67,18 @@ object StringAnalysisReflectiveCalls extends DefaultOneStepAnalysis {
      * analysis. The string are supposed to have the format as produced by [[buildFQMethodName]].
      */
     private val relevantMethodNames = List(
-        "java.lang.Class#forName", "java.lang.ClassLoader#loadClass",
-        "java.lang.Class#getField", "java.lang.Class#getDeclaredField",
-        "java.lang.Class#getMethod", "java.lang.Class#getDeclaredMethod"
+        // The following is for the Java Reflection API
+        //                "java.lang.Class#forName", "java.lang.ClassLoader#loadClass",
+        //                "java.lang.Class#getField", "java.lang.Class#getDeclaredField",
+        //                "java.lang.Class#getMethod", "java.lang.Class#getDeclaredMethod"
+        // The following is for the javax.crypto API
+        "javax.crypto.Cipher#getInstance", "javax.crypto.Cipher#getMaxAllowedKeyLength",
+        "javax.crypto.Cipher#getMaxAllowedParameterSpec", "javax.crypto.Cipher#unwrap",
+        "javax.crypto.CipherSpi#engineSetMode", "javax.crypto.CipherSpi#engineSetPadding",
+        "javax.crypto.CipherSpi#engineUnwrap", "javax.crypto.EncryptedPrivateKeyInfo#getKeySpec",
+        "javax.crypto.ExemptionMechanism#getInstance", "javax.crypto.KeyAgreement#getInstance",
+        "javax.crypto.KeyGenerator#getInstance", "javax.crypto.Mac#getInstance",
+        "javax.crypto.SealedObject#getObject", "javax.crypto.SecretKeyFactory#getInstance"
     )
 
     /**
@@ -141,29 +150,38 @@ object StringAnalysisReflectiveCalls extends DefaultOneStepAnalysis {
         if (isRelevantCall(call.declaringClass, call.name)) {
             val fqnMethodName = s"${method.classFile.thisType.fqn}#${method.name}"
             if (!ignoreMethods.contains(fqnMethodName)) {
-                // println(
-                //   s"Processing ${call.name} in ${method.classFile.thisType.fqn}#${method.name}"
-                // )
-                val duvar = call.params.head.asVar
-                val e = (duvar, method)
+                println(
+                    s"Processing ${call.name} in ${method.classFile.thisType.fqn}#${method.name}"
+                )
+                // Loop through all parameters and start the analysis for those that take a string
+                call.descriptor.parameterTypes.zipWithIndex.foreach {
+                    case (ft, index) ⇒
+                        if (ft.toJava == "java.lang.String") {
+                            val duvar = call.params(index).asVar
+                            val e = (duvar, method)
 
-                ps(e, StringConstancyProperty.key) match {
-                    case FinalEP(_, prop) ⇒
-                        resultMap(call.name).append(prop.stringConstancyInformation)
-                    case _ ⇒ entities.append((e, buildFQMethodName(call.declaringClass, call.name)))
-                }
-                // Add all properties to the map; TODO: Add the following to end of the analysis
-                ps.waitOnPhaseCompletion()
-                while (entities.nonEmpty) {
-                    val nextEntity = entities.head
-                    ps.properties(nextEntity._1).toIndexedSeq.foreach {
-                        case FinalEP(_, prop) ⇒
-                            resultMap(nextEntity._2).append(
-                                prop.asInstanceOf[StringConstancyProperty].stringConstancyInformation
-                            )
-                        case _ ⇒
-                    }
-                    entities.remove(0)
+                            ps(e, StringConstancyProperty.key) match {
+                                case FinalEP(_, prop) ⇒ resultMap(call.name).append(
+                                    prop.stringConstancyInformation
+                                )
+                                case _ ⇒ entities.append(
+                                    (e, buildFQMethodName(call.declaringClass, call.name))
+                                )
+                            }
+                            // Add all properties to the map; TODO: Add the following to end of the analysis
+                            ps.waitOnPhaseCompletion()
+                            while (entities.nonEmpty) {
+                                val nextEntity = entities.head
+                                ps.properties(nextEntity._1).toIndexedSeq.foreach {
+                                    case FinalEP(_, prop: StringConstancyProperty) ⇒
+                                        resultMap(nextEntity._2).append(
+                                            prop.stringConstancyInformation
+                                        )
+                                    case _ ⇒
+                                }
+                                entities.remove(0)
+                            }
+                        }
                 }
             }
         }
