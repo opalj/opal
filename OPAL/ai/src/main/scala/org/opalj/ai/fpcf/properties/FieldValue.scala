@@ -34,15 +34,15 @@ sealed trait FieldValue extends Property with FieldValueMetaInformation {
      */
     final def key: PropertyKey[FieldValue] = FieldValue.key
 
-    def value(implicit classHierarchy : ClassHierarchy) : ValueInformation
+    def value(implicit classHierarchy: ClassHierarchy): ValueInformation
 }
 
 case class ValueBasedFieldValueInformation(theValue: ValueInformation) extends FieldValue {
-    override def value(implicit classHierarchy : ClassHierarchy): ValueInformation = theValue
+    override def value(implicit classHierarchy: ClassHierarchy): ValueInformation = theValue
 }
 
-case class TypeBasedFieldValueInformation(fieldType : FieldType) extends FieldValue {
-    override def value(implicit classHierarchy : ClassHierarchy) : ValueInformation = {
+case class TypeBasedFieldValueInformation(fieldType: FieldType) extends FieldValue {
+    override def value(implicit classHierarchy: ClassHierarchy): ValueInformation = {
         ValueInformation.forProperValue(fieldType)
     }
 }
