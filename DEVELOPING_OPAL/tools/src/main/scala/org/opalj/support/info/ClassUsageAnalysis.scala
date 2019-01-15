@@ -19,9 +19,11 @@ import org.opalj.br.analyses.ReportableAnalysisResult
 import org.opalj.tac.Assignment
 import org.opalj.tac.Call
 import org.opalj.tac.DUVar
+import org.opalj.tac.Expr
 import org.opalj.tac.ExprStmt
+import org.opalj.tac.FunctionCall
+import org.opalj.tac.MethodCall
 import org.opalj.tac.SimpleTACAIKey
-import org.opalj.tac.VirtualFunctionCall
 
 /**
  * Analyzes a project for how a particular class is used within that project. This means that this
@@ -81,13 +83,11 @@ object ClassUsageAnalysis extends DefaultOneStepAnalysis {
     }
 
     /**
-     * Takes any function [[Call]], checks whether the base object is of type [[className]] and if
-     * so, updates the passed map by adding the count of the corresponding method. The granularity
-     * for counting is determined by [[isFineGrainedAnalysis]].
+     * Takes any [[Call]], checks whether the base object is of type [[className]] and if so,
+     * updates the passed map by adding the count of the corresponding method. The granularity for
+     * counting is determined by [[isFineGrainedAnalysis]].
      */
-    private def processFunctionCall(
-        call: Call[V], map: ConcurrentHashMap[String, AtomicInteger]
-    ): Unit = {
+    private def processCall(call: Call[V], map: ConcurrentHashMap[String, AtomicInteger]): Unit = {
         val declaringClassName = call.declaringClass.toJava
         if (declaringClassName == className) {
             val methodDescriptor = assembleMethodDescriptor(call)
@@ -150,13 +150,21 @@ object ClassUsageAnalysis extends DefaultOneStepAnalysis {
             tacProvider(methodInfo.method).stmts.foreach { stmt ⇒
                 (stmt.astID: @switch) match {
                     case Assignment.ASTID ⇒ stmt match {
-                        case Assignment(_, _, c: VirtualFunctionCall[V]) ⇒
-                            processFunctionCall(c, resultMap)
+                        case Assignment(_, _, expr: Expr[V]) ⇒
+                            expr match {
+                                case fc: FunctionCall[V] ⇒ processCall(fc, resultMap)
+                                case mc: MethodCall[V]   ⇒ processCall(mc, resultMap)
+                                case _                   ⇒
+                            }
                         case _ ⇒
                     }
                     case ExprStmt.ASTID ⇒ stmt match {
-                        case ExprStmt(_, c: VirtualFunctionCall[V]) ⇒
-                            processFunctionCall(c, resultMap)
+                        case ExprStmt(_, expr: Expr[V]) ⇒
+                            expr match {
+                                case fc: FunctionCall[V] ⇒ processCall(fc, resultMap)
+                                case mc: MethodCall[V]   ⇒ processCall(mc, resultMap)
+                                case _                   ⇒
+                            }
                         case _ ⇒
                     }
                     case _ ⇒
