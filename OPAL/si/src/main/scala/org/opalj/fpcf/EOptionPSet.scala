@@ -42,7 +42,7 @@ sealed trait EOptionPSet[E <: Entity, P <: Property] extends Traversable[EOption
     /** Removes all EOptionP values with the given `PropertyKey` from this set. */
     def remove(pk: SomePropertyKey): Unit
 
-     /** Removes the given EOptionP value from this set. */
+    /** Removes the given EOptionP value from this set. */
     def remove(eOptionP: SomeEOptionP): Unit
 
     /**
@@ -76,16 +76,15 @@ private[fpcf] class MultiEOptionPSet[E <: Entity, P <: Property](
     override def hasDefiniteSize: Boolean = true
     override def size: Int = { var size = 0; data.valuesIterator.foreach(size += _.size); size }
 
-    override def filter(p : EOptionP[E,P] ⇒ Boolean) : EOptionPSet[E,P] = {
+    override def filter(p: EOptionP[E, P] ⇒ Boolean): EOptionPSet[E, P] = {
         val newData =
             data
                 .iterator
-                .map(e ⇒ (e._1 /*PKid*/, e._2.filter(e ⇒ p(e._2))))
-                    .filter(_._2.nonEmpty)
-                    .toMap
+                .map(e ⇒ (e._1 /*PKid*/ , e._2.filter(e ⇒ p(e._2))))
+                .filter(_._2.nonEmpty)
+                .toMap
         new MultiEOptionPSet(newData)
     }
-
 
     override def getOrQueryAndUpdate[NewE <: E, NewP <: P](
         e:  NewE,
@@ -137,9 +136,9 @@ private[fpcf] class MultiEOptionPSet[E <: Entity, P <: Property](
         data.get(pkId) match {
             case None ⇒ throw new IllegalStateException(s"no old entry found for $eps")
             case Some(eEOptionPs) ⇒
-                if(eps.isFinal) {
+                if (eps.isFinal) {
                     eEOptionPs -= (eps.e)
-                    if(eEOptionPs.isEmpty) {
+                    if (eEOptionPs.isEmpty) {
                         data = data - pkId
                     }
                 } else {
