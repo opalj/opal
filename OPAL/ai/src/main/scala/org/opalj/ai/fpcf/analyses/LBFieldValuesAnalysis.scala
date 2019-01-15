@@ -4,12 +4,17 @@ package ai
 package fpcf
 package analyses
 
+import org.opalj.fpcf.EPS
 import org.opalj.fpcf.FinalEP
+import org.opalj.fpcf.InterimResult
 import org.opalj.fpcf.MultiResult
+import org.opalj.fpcf.Result
 import org.opalj.fpcf.NoResult
+import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyComputationResult
 import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.SomeEPS
 import org.opalj.value.IsReferenceValue
 import org.opalj.value.ValueInformation
 import org.opalj.br.analyses.SomeProject
@@ -23,7 +28,9 @@ import org.opalj.br.analyses.FieldAccessInformationKey
 import org.opalj.br.Field
 import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.ai.domain
 import org.opalj.ai.fpcf.analyses.FieldValuesAnalysis.ignoredFields
+import org.opalj.ai.fpcf.domain.RefinedTypeLevelFieldAccessInstructions
 import org.opalj.ai.fpcf.properties.FieldValue
 import org.opalj.ai.fpcf.properties.TypeBasedFieldValueInformation
 import org.opalj.ai.fpcf.properties.ValueBasedFieldValueInformation
@@ -84,6 +91,30 @@ class LBFieldValuesAnalysis private[analyses] (
 
     final val fieldAccessInformation = project.get(FieldAccessInformationKey)
 
+    def relevantFieldsIterable(classFile: ClassFile): Iterable[Field] = {
+        val thisClassType = classFile.thisType
+        for {
+            field ← classFile.fields
+            if field.fieldType.isReferenceType
+
+            // Test that the initialization can be made by the declaring class only:
+            // (Please note, that we don't track the nullness of domains; we are really
+            // just interested in the type!)
+            if field.isFinal || field.isPrivate // || TODO <the field is package visible and the package is closed ... requires additional support below to find all relevant methods> || ...
+
+            // we don't want to ignore the field for some special reason
+            if ignoredFields.get(thisClassType).forall(!_.contains(field.name))
+
+            // TODO XXX FIXME We don't think that the field is accessed via unsafe or reflection
+
+            // If the type is final, then the type is already necessarily precise...
+            if !classHierarchy.isKnownToBeFinal(field.fieldType.asReferenceType)
+
+        } yield {
+            field → None
+        }
+    }
+
     /**
      *  A very basic domain that we use for analyzing the values stored in a field.
      *
@@ -93,7 +124,7 @@ class LBFieldValuesAnalysis private[analyses] (
      *
      * @author Michael Eichberg
      */
-    class InitialFieldValuesAnalysisDomain(
+    class InitialFieldValuesAnalysisDomain private (
             val classFile: ClassFile
     ) extends CorrelationalDomain
         with domain.TheProject
@@ -108,37 +139,21 @@ class LBFieldValuesAnalysis private[analyses] (
         with domain.l0.TypeLevelLongValuesShiftOperators
         with domain.l0.TypeLevelFieldAccessInstructions
         with domain.l0.TypeLevelInvokeInstructions
-        with domain.l0.DefaultReferenceValuesBinding
+        with domain.l1.DefaultReferenceValuesBinding
         with domain.DefaultHandlingOfMethodResults
-        with domain.IgnoreSynchronization {
+        with domain.IgnoreSynchronization
+        with RefinedTypeLevelFieldAccessInstructions {
 
         override implicit val project: SomeProject = analysis.project
 
         val thisClassType: ObjectType = classFile.thisType
 
         // Map of fieldNames (that are potentially relevant) and the (refined) value information
-        var fieldInformation: Map[Field, Option[DomainValue]] = {
-            val relevantFieldsIterable: Iterable[(Field, Option[DomainValue])] =
-                for {
-                    field ← classFile.fields
-                    if field.fieldType.isReferenceType
+        var fieldInformation: Map[Field, Option[DomainValue]] = null
 
-                    // test that the initialization can be made by the declaring class only:
-                    if field.isFinal || field.isPrivate // || TODO <the field is package visible and the package is closed ... requires additional support below to find all relevant methods> || ...
-
-                    // we don't want to ignore the field
-                    if ignoredFields.get(thisClassType).forall(!_.contains(field.name))
-
-                    // TODO XXX FIXME We don't think that the field is accessed via unsafe or reflection
-
-                    // If the type is final, then the type is already necessarily precise...
-                    if !classHierarchy.isKnownToBeFinal(field.fieldType.asReferenceType)
-
-                } yield {
-                    field → None
-                }
-
-            relevantFieldsIterable.toMap
+        def this(classFile: ClassFile, relevantFields: TraversableOnce[Field]) {
+            this(classFile)
+            fieldInformation = relevantFields.map[(Field, Option[DomainValue])](_ → None).toMap
         }
 
         def hasCandidateFields: Boolean = fieldInformation.nonEmpty
@@ -173,6 +188,7 @@ class LBFieldValuesAnalysis private[analyses] (
                             if (previousValue ne value) {
                                 previousValue.join(Int.MinValue, value) match {
                                     case SomeUpdate(newValue) ⇒
+                                        // IMPROVE Remove "irrelevant fields" to check if we can stop the overall process...
                                         fieldInformation += (field → Some(newValue))
                                     case NoUpdate ⇒ /*nothing to do*/
                                 }
@@ -209,7 +225,7 @@ class LBFieldValuesAnalysis private[analyses] (
     }
 
     private[analyses] def analyze(classFile: ClassFile): PropertyComputationResult = {
-        val domain = new InitialFieldValuesAnalysisDomain(classFile)
+        val domain = new InitialFieldValuesAnalysisDomain(classFile, relevantFieldsIterable(classFile))
         if (domain.hasCandidateFields) {
             val relevantMethods =
                 domain.fieldInformation.keys.foldLeft(Set.empty[Method]) { (ms, field) ⇒
@@ -220,25 +236,41 @@ class LBFieldValuesAnalysis private[analyses] (
                 BaseAI(method, domain) // the state is implicitly accumulated in the domain
             }
 
-            val results = classFile.fields.iterator.map[FinalEP[Field,ValueInformation]] { f ⇒
+            val results = classFile.fields.iterator.map[PropertyComputationResult] { (f: Field) ⇒
                 val vi = domain.fieldInformation.get(f) match {
+
                     case Some(None) ⇒ // relevant field, but obviously no writes were found...
-                        FinalEP(
-                            f,
-                            ValueBasedFieldValueInformation(domain.DefaultValue(-1,f.fieldType))
-                        )
+                        val dv = domain.DefaultValue(-1, f.fieldType)
+                        val fv = ValueBasedFieldValueInformation(dv)
+                        Result(FinalEP(f, fv))
 
-                    case Some(Some(fv)) if (
-                        fv.isPrecise || fv.isNull.isYesOrNo ||
-                        // when we reach this point:
-                        //      value.isNull == Unknown &&
-                        //      the type is not precise
-                        fv.leastUpperType.get != field.fieldType) ⇒
+                    case Some(Some(domain.DomainReferenceValueTag(fv))) ⇒
                         val vi = ValueBasedFieldValueInformation(fv.toCanonicalForm)
-                         FinalEP(f, vi)
+                        if (fv.isNull.isYes || classHierarchy.isKnownToBeFinal(fv.leastUpperType.get)) {
+                            Result(FinalEP(f, vi))
+                        } else {
+                            // 1. get the dependees that are relevant... i.e., fields read in
+                            //    methods that also write the field for which we compute more
+                            //    precise information.
+                            val relevantMethods = fieldAccessInformation.writeAccesses(f).map(_._1).toSet
+                            domain.dependees.filter {
+                                case eps @ EPS(readField: Field) ⇒
+                                    fieldAccessInformation.readAccesses(readField).exists { mPCs ⇒
+                                        relevantMethods.contains(mPCs._1)
+                                    }
+                            }
 
-                    case None ⇒
-                        FinalEP(f, TypeBasedFieldValueInformation(f.fieldType) )
+                            InterimResult.forLB(
+                                f, vi,
+                                domain.dependees,
+                                (_: SomeEPS) ⇒ {
+                                    domain.dependees.updateAll
+                                }: ProperPropertyComputationResult
+                            )
+                        }
+
+                    case _ ⇒
+                        Result(FinalEP(f, TypeBasedFieldValueInformation(f.fieldType)))
                 }
             }
 
@@ -261,8 +293,7 @@ class LBFieldValuesAnalysis private[analyses] (
             MultiResult(results)
         } else {
             MultiResult(classFile.fields.iterator map (f ⇒
-                FinalEP(f,TypeBasedFieldValueInformation(f.fieldType)) )
-            )
+                FinalEP(f, TypeBasedFieldValueInformation(f.fieldType))))
         }
     }
 

@@ -1,6 +1,6 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.ai.fpcf.domain
-
+/*
 import org.opalj.br.Method
 import org.opalj.ai.domain.TheCode
 import org.opalj.ai.Configuration
@@ -40,5 +40,5 @@ trait RefinedTypeLevelInvokeInstructions extends MethodCallsDomainWithMethodLock
             ThrowsException(potentialExceptions)
         }
     }
-
 }
+*/
