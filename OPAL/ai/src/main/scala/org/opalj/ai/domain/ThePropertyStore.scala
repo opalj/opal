@@ -13,5 +13,5 @@ import org.opalj.fpcf.PropertyStore
  */
 trait ThePropertyStore {
 
-    def propertyStore: PropertyStore
+    implicit def propertyStore: PropertyStore
 }
