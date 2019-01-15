@@ -11,6 +11,7 @@ import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyComputationResult
 import org.opalj.fpcf.PropertyStore
 import org.opalj.value.IsReferenceValue
+import org.opalj.value.ValueInformation
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.ClassFile
 import org.opalj.br.Code
@@ -24,6 +25,7 @@ import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.ai.fpcf.analyses.FieldValuesAnalysis.ignoredFields
 import org.opalj.ai.fpcf.properties.FieldValue
+import org.opalj.ai.fpcf.properties.TypeBasedFieldValueInformation
 import org.opalj.ai.fpcf.properties.ValueBasedFieldValueInformation
 
 /**
@@ -37,6 +39,42 @@ import org.opalj.ai.fpcf.properties.ValueBasedFieldValueInformation
  * the overall nullness property of the values stored in a field. E.g., even if a we always
  * see that a field is only written in the constructor we still don't know if that happens w.r.t.
  * `this` or some other instance.
+ *
+ * @note
+ * ADDITIONALLY, WE HAVE TO IGNORE THOSE FIELDS WHICH SEEMS TO BE ALWAYS NULL BECAUSE  THESE
+ * FIELDS ARE OFTEN INITIALZED - AT RUNTIME - BY SOME CODE OUTSIDE THE SCOPE OF "PURE" JAVA BASED
+ * ANALYSES.
+ *
+ * E.G., WE IGNORE THE FOLLOWING FIELDS FROM JAVA 8:
+ *  - [BY NAME] java.util.concurrent.FutureTask{ runner:null // Originaltype: java.lang.Thread }
+ *  - [BY NAME] java.nio.channels.SelectionKey{ attachment:null // Originaltype: java.lang.Object }
+ *  - [BY SETTER] java.lang.System{ err:null // Originaltype: java.io.PrintStream }
+ *  - [BY SETTER] java.lang.System{ in:null // Originaltype: java.io.InputStream }
+ *  - [BY SETTER] java.lang.System{ out:null // Originaltype: java.io.PrintStream }
+ *  - [BY CONSTRUCTOR] java.net.InterfaceAddress{ address:null // Originaltype: java.net.InetAddress }
+ *
+ * '''[UPDATE BY NATIVE CODE...] sun.nio.ch.sctp.ResultContainer{ value:null // Originaltype: java.lang.Object }'''
+ *
+ * THE FOLLOWING FIELDS ARE "REALLY" NULL in JAVA 8 (1.8.0 - 1.8.0_25):
+ *  - [OK] java.util.TimeZone{ NO_TIMEZONE:null // Originaltype: java.util.TimeZone }
+ *  - [OK - DEPRECATED] java.security.SecureRandom{ digest:null // Originaltype: java.security.MessageDigest }
+ *
+ * The reason/purpose is not 100% clear:
+ *  - [OK] javax.swing.JList.AccessibleJList.AccessibleJListChild{ accessibleContext:null }
+ *  - [OK] javax.swing.JList.AccessibleJList.AccessibleJListChild{ component:null }
+ *  - [OK] com.sun.corba.se.impl.io.IIOPInputStream{ abortIOException:null }
+ *  - [OK] com.sun.corba.se.impl.orb.ORBImpl{ codeBaseIOR:null }
+ *  - [OK - ACCIDENTIALLY CREATED?] com.sun.org.apache.xpath.internal.jaxp.XPathImpl{ d:null }
+ *  - [OK - LEGACY CODE?] javax.swing.JPopupMenu{ margin:null }
+ *  - [OK - LEGACY CODE?] sun.audio.AudioDevice{ mixer:null }
+ *  - [OK - RESERVED FOR FUTURE USAGE] com.sun.corba.se.impl.corba.ServerRequestImpl{ _ctx:null }
+ *  - [OK - LEGACY CODE?] com.sun.java.swing.plaf.motif.MotifPopupMenuUI{ border:null }
+ *  - [OK - LEGACY CODE?] com.sun.media.sound.SoftSynthesizer{ testline:null }
+ *  - [OK - LEGACY CODE?] com.sun.org.apache.xerces.internal.impl.xs.XMLSchemaLoader{ fSymbolTable:null }
+ *  - [OK - LEGACY CODE] com.sun.org.apache.xalan.internal.xsltc.trax.TransformerFactoryImpl{ _piParams:null }
+ *  - [OK - RESERVED FOR FUTURE USAGE?] com.sun.org.apache.xml.internal.dtm.ref.DTMDefaultBase{ m_namespaceLists:null }
+ *  - [OK - LEGACY CODE?] sun.awt.motif.MFontConfiguration{ fontConfig:null }
+ *  - [OK - LEGACY CODE?] sun.print.PSStreamPrintJob{ reader:null }
  *
  * @author Michael Eichberg
  */
@@ -182,6 +220,29 @@ class LBFieldValuesAnalysis private[analyses] (
                 BaseAI(method, domain) // the state is implicitly accumulated in the domain
             }
 
+            val results = classFile.fields.iterator.map[FinalEP[Field,ValueInformation]] { f ⇒
+                val vi = domain.fieldInformation.get(f) match {
+                    case Some(None) ⇒ // relevant field, but obviously no writes were found...
+                        FinalEP(
+                            f,
+                            ValueBasedFieldValueInformation(domain.DefaultValue(-1,f.fieldType))
+                        )
+
+                    case Some(Some(fv)) if (
+                        fv.isPrecise || fv.isNull.isYesOrNo ||
+                        // when we reach this point:
+                        //      value.isNull == Unknown &&
+                        //      the type is not precise
+                        fv.leastUpperType.get != field.fieldType) ⇒
+                        val vi = ValueBasedFieldValueInformation(fv.toCanonicalForm)
+                         FinalEP(f, vi)
+
+                    case None ⇒
+                        FinalEP(f, TypeBasedFieldValueInformation(f.fieldType) )
+                }
+            }
+
+            /* ONLY RESULTS FOR RELEVANT FIELDS:
             var results: List[FinalEP[Field, FieldValue]] = Nil
             domain.fieldInformation foreach { e ⇒
                 val (field, domainValueOption: Option[IsReferenceValue @unchecked]) = e
@@ -196,9 +257,12 @@ class LBFieldValuesAnalysis private[analyses] (
                     }
                 }
             }
+            */
             MultiResult(results)
         } else {
-            NoResult
+            MultiResult(classFile.fields.iterator map (f ⇒
+                FinalEP(f,TypeBasedFieldValueInformation(f.fieldType)) )
+            )
         }
     }
 

@@ -8,7 +8,7 @@ import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyStore
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
-import org.opalj.ai.domain.PropertyStoreBased
+import org.opalj.ai.fpcf.domain.PropertyStoreBased
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 
 /**

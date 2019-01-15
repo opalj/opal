@@ -1,6 +1,7 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package ai
+package fpcf
 package domain
 
 import org.opalj.fpcf.PropertyBounds
@@ -21,5 +22,7 @@ trait PropertyStoreBased {
      * (we have stackable traits!).
      */
     def usesPropertyBounds: Set[PropertyBounds] = Set.empty
+
+
 
 }

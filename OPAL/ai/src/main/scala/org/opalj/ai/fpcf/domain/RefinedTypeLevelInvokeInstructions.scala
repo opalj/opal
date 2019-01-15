@@ -1,13 +1,13 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj
-package ai
-package domain
-package la
+package org.opalj.ai.fpcf.domain
 
 import org.opalj.br.Method
+import org.opalj.ai.domain.TheCode
+import org.opalj.ai.Configuration
+import org.opalj.ai.ReferenceValuesDomain
 import org.opalj.ai.ValuesFactory
-import org.opalj.ai.analyses.MethodReturnValueInformation
-import org.opalj.ai.cg.MethodCallsDomainWithMethodLockup
+import org.opalj.ai.domain.TheProject
+import org.opalj.ai.ThrowsException
 
 /**
  *
