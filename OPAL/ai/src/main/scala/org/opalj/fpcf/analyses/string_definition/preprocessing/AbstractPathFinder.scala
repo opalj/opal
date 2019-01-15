@@ -103,8 +103,8 @@ trait AbstractPathFinder {
         bb.successors.filter(
             _.isInstanceOf[BasicBlock]
         ).foldLeft(false)((prev: Boolean, next: CFGNode) ⇒ {
-                prev || (next.predecessors.count(_.isInstanceOf[BasicBlock]) >= n)
-            })
+            prev || (next.predecessors.count(_.isInstanceOf[BasicBlock]) >= n)
+        })
 
     /**
      * This function checks if a branching corresponds to an if (or if-elseif) structure that has no
@@ -150,11 +150,18 @@ trait AbstractPathFinder {
 
     /**
      * Based on the given `cfg`, this function checks whether a path from node `from` to node `to`
-     * exists. If so, `true` is returned and `false otherwise`.
+     * exists. If so, `true` is returned and `false otherwise`. Optionally, a list of `alreadySeen`
+     * elements can be passed which influences which paths are to be followed (when assembling a
+     * path ''p'' and the next node, ''n_p'' in ''p'', is a node that was already seen, the path
+     * will not be continued in the direction of ''n_p'' (but in other directions that are not in
+     * `alreadySeen`)).
      */
-    protected def doesPathExistTo(from: Int, to: Int, cfg: CFG[Stmt[V], TACStmts[V]]): Boolean = {
+    protected def doesPathExistTo(
+        from: Int, to: Int, cfg: CFG[Stmt[V], TACStmts[V]], alreadySeen: List[Int] = List()
+    ): Boolean = {
         val stack = mutable.Stack(from)
         val seenNodes = mutable.Map[Int, Unit]()
+        alreadySeen.foreach(seenNodes(_) = Unit)
         seenNodes(from) = Unit
 
         while (stack.nonEmpty) {
