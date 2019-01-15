@@ -235,6 +235,15 @@ trait ConstantValueInformationProvider[T] {
      */
     def constantValue: Option[T]
 
+    def asConstantBoolean: Boolean = throw new UnsupportedOperationException("not a boolean const")
+    def asConstantByte: Byte = throw new UnsupportedOperationException("not a byte const")
+    def asConstantShort: Short = throw new UnsupportedOperationException("not a short const")
+    def asConstantChar: Char = throw new UnsupportedOperationException("not a char const")
+    def asConstantInteger: Integer = throw new UnsupportedOperationException("not a integer const")
+    def asConstantLong: Long = throw new UnsupportedOperationException("not a long const")
+    def asConstantFloat: Float = throw new UnsupportedOperationException("not a float const")
+    def asConstantDouble: Double = throw new UnsupportedOperationException("not a double const")
+
 }
 
 /**
@@ -258,7 +267,9 @@ sealed trait IsPrimitiveValue[T <: BaseType]
 
 object IsPrimitiveValue {
 
-    def unapply[T <: BaseType](answer: IsPrimitiveValue[T]): Some[T] = Some(answer.primitiveType)
+    def unapply[T <: BaseType](underlying: IsPrimitiveValue[T]): Some[T] = {
+        Some(underlying.primitiveType)
+    }
 
 }
 
@@ -270,16 +281,19 @@ trait IsBooleanValue extends IsIntegerLikeValue[BooleanType] {
     final override def primitiveType: BooleanType = BooleanType
     final override def hasCategory2ComputationalType: Boolean = false
     override def toCanonicalForm: ValueInformation = ABooleanValue
+    override def asConstantBoolean: Boolean = constantValue.get // Expected to be overridden!
 }
 case object ABooleanValue extends IsBooleanValue {
     override def constantValue: Option[Boolean] = None
 }
 case object BooleanValueTrue extends IsBooleanValue {
     override def constantValue: Option[Boolean] = Some(true)
+    override def asConstantBoolean: Boolean = true
     override def toCanonicalForm: ValueInformation = this
 }
 case object BooleanValueFalse extends IsBooleanValue {
     override def constantValue: Option[Boolean] = Some(false)
+    override def asConstantBoolean: Boolean = false
     override def toCanonicalForm: ValueInformation = this
 }
 
@@ -287,12 +301,14 @@ trait IsByteValue extends IsIntegerLikeValue[ByteType] {
     final override def primitiveType: ByteType = ByteType
     final override def hasCategory2ComputationalType: Boolean = false
     override def toCanonicalForm: ValueInformation = AByteValue
+    override def asConstantByte: Byte = constantValue.get // Expected to be overridden!
 }
 case object AByteValue extends IsByteValue {
     override def constantValue: Option[Byte] = None
 }
 case class TheByteValue(value: Byte) extends IsByteValue {
     override def constantValue: Option[Byte] = Some(value)
+    override def asConstantByte: Byte = value
     override def toCanonicalForm: ValueInformation = this
 }
 
@@ -300,12 +316,14 @@ trait IsCharValue extends IsIntegerLikeValue[CharType] {
     final override def primitiveType: CharType = CharType
     final override def hasCategory2ComputationalType: Boolean = false
     override def toCanonicalForm: ValueInformation = ACharValue
+    override def asConstantChar: Char = constantValue.get // Expected to be overridden!
 }
 case object ACharValue extends IsCharValue {
     override def constantValue: Option[Char] = None
 }
 case class TheCharValue(value: Char) extends IsCharValue {
     override def constantValue: Option[Char] = Some(value)
+    override def asConstantChar: Char = value
     override def toCanonicalForm: ValueInformation = this
 }
 
@@ -313,12 +331,14 @@ trait IsShortValue extends IsIntegerLikeValue[ShortType] {
     final override def primitiveType: ShortType = ShortType
     final override def hasCategory2ComputationalType: Boolean = false
     override def toCanonicalForm: ValueInformation = AShortValue
+    override def asConstantShort: Short = constantValue.get // Expected to be overridden!
 }
 case object AShortValue extends IsShortValue {
     override def constantValue: Option[Short] = None
 }
 case class TheShortValue(value: Short) extends IsShortValue {
     override def constantValue: Option[Short] = Some(value)
+    override def asConstantShort: Short = value
     override def toCanonicalForm: ValueInformation = this
 }
 
@@ -326,6 +346,7 @@ trait IsIntegerValue extends IsIntegerLikeValue[IntegerType] {
     final override def primitiveType: IntegerType = IntegerType
     final override def hasCategory2ComputationalType: Boolean = false
     override def toCanonicalForm: ValueInformation = AnIntegerValue
+    override def asConstantInteger: Integer = constantValue.get // Expected to be overridden!
     def lowerBound: Int
     def upperBound: Int
 }
@@ -336,6 +357,7 @@ case object AnIntegerValue extends IsIntegerValue {
 }
 case class TheIntegerValue(value: Int) extends IsIntegerValue {
     final override def constantValue: Option[Int] = Some(value)
+    override def asConstantInteger: Integer = value
     final override def lowerBound: Int = value
     final override def upperBound: Int = value
     override def toCanonicalForm: ValueInformation = this
@@ -346,12 +368,14 @@ trait IsFloatValue extends IsPrimitiveValue[FloatType] {
     final override def hasCategory2ComputationalType: Boolean = false
     final override def verificationTypeInfo: VerificationTypeInfo = FloatVariableInfo
     override def toCanonicalForm: ValueInformation = AFloatValue
+    override def asConstantFloat: Float = constantValue.get // Expected to be overridden!
 }
 case object AFloatValue extends IsFloatValue {
     override def constantValue: Option[Float] = None
 }
 case class TheFloatValue(value: Float) extends IsFloatValue {
     override def constantValue: Option[Float] = Some(value)
+    override def asConstantFloat: Float = value
     override def toCanonicalForm: ValueInformation = this
 }
 
@@ -360,12 +384,14 @@ trait IsLongValue extends IsPrimitiveValue[LongType] {
     final override def hasCategory2ComputationalType: Boolean = true
     final override def verificationTypeInfo: VerificationTypeInfo = LongVariableInfo
     override def toCanonicalForm: ValueInformation = ALongValue
+    override def asConstantLong: Long = constantValue.get // Expected to be overridden!
 }
 case object ALongValue extends IsLongValue {
     override def constantValue: Option[Long] = None
 }
 case class TheLongValue(value: Long) extends IsLongValue {
     override def constantValue: Option[Long] = Some(value)
+    override def asConstantLong: Long = value
     override def toCanonicalForm: ValueInformation = this
 }
 
@@ -374,12 +400,14 @@ trait IsDoubleValue extends IsPrimitiveValue[DoubleType] {
     final override def hasCategory2ComputationalType: Boolean = true
     final override def verificationTypeInfo: VerificationTypeInfo = DoubleVariableInfo
     override def toCanonicalForm: ValueInformation = ADoubleValue
+    override def asConstantDouble: Double = constantValue.get // Expected to be overridden!
 }
 case object ADoubleValue extends IsDoubleValue {
     override def constantValue: Option[Double] = None
 }
 case class TheDoubleValue(value: Double) extends IsDoubleValue {
     override def constantValue: Option[Double] = Some(value)
+    override def asConstantDouble: Double = value
     override def toCanonicalForm: ValueInformation = this
 }
 
@@ -533,7 +561,7 @@ trait IsReferenceValue extends KnownTypedValue {
      * @return The set of values this reference value abstracts over. The set is empty if this
      *         value is already a base value and it does not abstract over other values.
      */
-    def baseValues: Traversable[IsReferenceValue]
+    def baseValues: Traversable[IsReferenceValue] // ... technically a set of IsBaseReferenceValue
 
     /**
      * The set of base values (`IsReferenceValue`) this value abstracts over.

@@ -15,12 +15,16 @@ sealed trait EOptionPSet[E <: Entity, P <: Property] extends Traversable[EOption
     override def isEmpty: Boolean
     override def hasDefiniteSize: Boolean
 
-    override def filter(p : EOptionP[E,P] ⇒ Boolean) : EOptionPSet[E,P]
+    override def filter(p: EOptionP[E, P] ⇒ Boolean): EOptionPSet[E, P] = {
+        throw new UnknownError("this method must be overridden by subclasses")
+    }
 
     /**
-     * Gets the last queried value or queries the property store and stores the value. The value
-     * is stored to ensure that a client gets a consistent view of the same EPK is queried
-     * multiple times during an analysis.
+     * Gets the last queried value or queries the property store and stores the value unless
+     * the value is final.
+     *
+     * The value is stored to ensure that a client gets a consistent view of the same EPK is
+     * queried multiple times during an analysis.
      *
      * If the queried eOptionP is final then it is not added to the list of dependees.
      */
@@ -32,15 +36,26 @@ sealed trait EOptionPSet[E <: Entity, P <: Property] extends Traversable[EOption
         ps: PropertyStore
     ): EOptionP[NewE, NewP]
 
+    /** Removes all EOptionP values with the given entity from this set. */
     def remove(e: Entity): Unit
 
+    /** Removes all EOptionP values with the given `PropertyKey` from this set. */
     def remove(pk: SomePropertyKey): Unit
 
+     /** Removes the given EOptionP value from this set. */
     def remove(eOptionP: SomeEOptionP): Unit
 
+    /**
+     * Updates this set's EOptionP that has the same entity and PropertyKey with the given one.
+     * '''Here, update means that the value is replace, unless the new value is final. In
+     * that case the value is removed because it is no longer required as a dependency!'''
+     */
     def update(eps: SomeEPS): Unit
 
-    def updateAll(implicit ps : PropertyStore) : Unit
+    /**
+     * Updates all dependent values. Similar to the update method final values will be removed.
+     */
+    def updateAll(implicit ps: PropertyStore): Unit
 
 }
 
@@ -61,7 +76,18 @@ private[fpcf] class MultiEOptionPSet[E <: Entity, P <: Property](
     override def hasDefiniteSize: Boolean = true
     override def size: Int = { var size = 0; data.valuesIterator.foreach(size += _.size); size }
 
-    def getOrQueryAndUpdate[NewE <: E, NewP <: P](
+    override def filter(p : EOptionP[E,P] ⇒ Boolean) : EOptionPSet[E,P] = {
+        val newData =
+            data
+                .iterator
+                .map(e ⇒ (e._1 /*PKid*/, e._2.filter(e ⇒ p(e._2))))
+                    .filter(_._2.nonEmpty)
+                    .toMap
+        new MultiEOptionPSet(newData)
+    }
+
+
+    override def getOrQueryAndUpdate[NewE <: E, NewP <: P](
         e:  NewE,
         pk: PropertyKey[NewP]
     )(
@@ -111,20 +137,27 @@ private[fpcf] class MultiEOptionPSet[E <: Entity, P <: Property](
         data.get(pkId) match {
             case None ⇒ throw new IllegalStateException(s"no old entry found for $eps")
             case Some(eEOptionPs) ⇒
-                data = data.updated(pkId, eEOptionPs.updated(eps.e, eps.asInstanceOf[EPS[E, P]]))
+                if(eps.isFinal) {
+                    eEOptionPs -= (eps.e)
+                    if(eEOptionPs.isEmpty) {
+                        data = data - pkId
+                    }
+                } else {
+                    data = data.updated(pkId, eEOptionPs.updated(eps.e, eps.asInstanceOf[EPS[E, P]]))
+                }
         }
     }
 
-    override def updateAll(implicit ps : PropertyStore) : Unit = {
-        data.valuesIterator.foreach{ eEOptionPs ⇒
+    override def updateAll(implicit ps: PropertyStore): Unit = {
+        data.valuesIterator.foreach { eEOptionPs ⇒
             eEOptionPs
                 .mapValues(eOptionP ⇒
-                if(eOptionP.isEPK)
-                    ps(eOptionP.asEPK)
-                else
-                    ps(eOptionP.toEPK))
+                    if (eOptionP.isEPK)
+                        ps(eOptionP.asEPK)
+                    else
+                        ps(eOptionP.toEPK))
                 .filter(_._2.isRefinable)
-            }
+        }
         data = data.filter(_._2.nonEmpty)
     }
 
