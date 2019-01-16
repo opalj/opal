@@ -1,11 +1,13 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.fpcf
+package org.opalj
+package fpcf
 
 import scala.collection.immutable.IntMap
 import scala.collection.mutable
 
 /**
- * An mutable set storing EPKs and interim values; always filters final values.
+ * An mutable set storing EPKs and interim values; the set never contains FinalEPs and can
+ * (should) therefore directly be used as the dependency set passed to [[InterimResult]]s.
  *
  * @author Michael Eichberg
  */
@@ -13,9 +15,11 @@ sealed trait EOptionPSet[E <: Entity, P <: Property] extends Traversable[EOption
 
     override def foreach[U](f: EOptionP[E, P] ⇒ U): Unit
     override def isEmpty: Boolean
-    override def hasDefiniteSize: Boolean
+    final override def hasDefiniteSize: Boolean = true
 
+    /** Filters the respective EOptionP values and returns a new EOptionPSet. */
     override def filter(p: EOptionP[E, P] ⇒ Boolean): EOptionPSet[E, P] = {
+        // implementation is required to shut up the compiler...
         throw new UnknownError("this method must be overridden by subclasses")
     }
 
@@ -73,7 +77,6 @@ private[fpcf] class MultiEOptionPSet[E <: Entity, P <: Property](
         data.valuesIterator.exists(_.valuesIterator.exists(p))
     }
     override def isEmpty: Boolean = data.isEmpty // <= we always minimize the store
-    override def hasDefiniteSize: Boolean = true
     override def size: Int = { var size = 0; data.valuesIterator.foreach(size += _.size); size }
 
     override def filter(p: EOptionP[E, P] ⇒ Boolean): EOptionPSet[E, P] = {
@@ -100,7 +103,9 @@ private[fpcf] class MultiEOptionPSet[E <: Entity, P <: Property](
                     case Some(eOptionP) ⇒ eOptionP.asInstanceOf[EOptionP[NewE, NewP]]
                     case _ ⇒
                         val eOptionP: EOptionP[NewE, NewP] = ps(e, pk)
-                        eEOptionPs += (eOptionP.e → eOptionP)
+                        if (eOptionP.isRefinable) {
+                            eEOptionPs += (eOptionP.e → eOptionP)
+                        }
                         eOptionP
                 }
             case _ ⇒
@@ -134,31 +139,34 @@ private[fpcf] class MultiEOptionPSet[E <: Entity, P <: Property](
     override def update(eps: SomeEPS): Unit = {
         val pkId = eps.pk.id
         data.get(pkId) match {
-            case None ⇒ throw new IllegalStateException(s"no old entry found for $eps")
             case Some(eEOptionPs) ⇒
                 if (eps.isFinal) {
-                    eEOptionPs -= (eps.e)
+                    if (eEOptionPs.remove(eps.e).isEmpty) {
+                        throw new IllegalStateException(s"no old entry found for $eps")
+                    }
                     if (eEOptionPs.isEmpty) {
                         data = data - pkId
                     }
                 } else {
-                    data = data.updated(pkId, eEOptionPs.updated(eps.e, eps.asInstanceOf[EPS[E, P]]))
+                    eEOptionPs.update(eps.e, eps.asInstanceOf[EPS[E, P]])
                 }
+            case None ⇒ throw new IllegalStateException(s"no old entry found for $eps")
         }
     }
 
     override def updateAll(implicit ps: PropertyStore): Unit = {
         data.valuesIterator.foreach { eEOptionPs ⇒
             eEOptionPs
-                .mapValues(eOptionP ⇒
+                .transform((_, eOptionP) ⇒
                     if (eOptionP.isEPK)
                         ps(eOptionP.asEPK)
                     else
                         ps(eOptionP.toEPK))
-                .filter(_._2.isRefinable)
+                .retain((_, eOptionP) ⇒
+                    eOptionP.isRefinable)
         }
         data = data.filter(_._2.nonEmpty)
-    }a
+    }
 
     override def toString(): String = {
         var s = "MultiEOptionPSet("
