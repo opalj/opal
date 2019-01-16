@@ -5,7 +5,7 @@ import scala.collection.immutable.IntMap
 import scala.collection.mutable
 
 /**
- * An mutable set storing EOptionP values.
+ * An mutable set storing EPKs and interim values; always filters final values.
  *
  * @author Michael Eichberg
  */
@@ -72,7 +72,7 @@ private[fpcf] class MultiEOptionPSet[E <: Entity, P <: Property](
     override def exists(p: EOptionP[E, P] ⇒ Boolean) = {
         data.valuesIterator.exists(_.valuesIterator.exists(p))
     }
-    override def isEmpty: Boolean = data.isEmpty
+    override def isEmpty: Boolean = data.isEmpty // <= we always minimize the store
     override def hasDefiniteSize: Boolean = true
     override def size: Int = { var size = 0; data.valuesIterator.foreach(size += _.size); size }
 
@@ -158,8 +158,13 @@ private[fpcf] class MultiEOptionPSet[E <: Entity, P <: Property](
                 .filter(_._2.isRefinable)
         }
         data = data.filter(_._2.nonEmpty)
-    }
+    }a
 
+    override def toString(): String = {
+        var s = "MultiEOptionPSet("
+        foreach(e ⇒ s += s"\n\t$e")
+        s+"\n)"
+    }
 }
 
 object EOptionPSet {
@@ -168,6 +173,10 @@ object EOptionPSet {
 
     // IMPROVE Provide specialized implementations for sets consisting only of e/p pairs belonging to the same PK
     def apply[E <: Entity, P <: Property](eOptionP: EOptionP[E, P]): EOptionPSet[E, P] = {
-        new MultiEOptionPSet(IntMap(eOptionP.pk.id → mutable.Map(eOptionP.e → eOptionP)))
+        if (eOptionP.isRefinable) {
+            new MultiEOptionPSet(IntMap(eOptionP.pk.id → mutable.Map(eOptionP.e → eOptionP)))
+        } else {
+            empty
+        }
     }
 }
