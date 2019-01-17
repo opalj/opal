@@ -3,6 +3,8 @@ package org.opalj.support.info
 
 import java.net.URL
 
+import org.opalj.log.OPALLogger
+import org.opalj.util.PerformanceEvaluation
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EPS
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
@@ -30,22 +32,38 @@ object Values extends DefaultOneStepAnalysis {
     }
 
     override def doAnalyze(
-                              project:       Project[URL],
-                              parameters:    Seq[String],
-                              isInterrupted: () ⇒ Boolean
-                          ): BasicReport = {
+        project:       Project[URL],
+        parameters:    Seq[String],
+        isInterrupted: () ⇒ Boolean
+    ): BasicReport = {
 
         implicit val classHierarchy = project.classHierarchy
 
-        val (ps,_)= project.get(FPCFAnalysesManagerKey).runAll(
-            EagerLBFieldValuesAnalysis,
-            EagerLBMethodReturnValuesAnalysis
-        )
+        val (ps, _) =
+            PerformanceEvaluation.time {
+                project.get(FPCFAnalysesManagerKey).runAll(
+                    EagerLBFieldValuesAnalysis,
+                    EagerLBMethodReturnValuesAnalysis
+                )
+            } { t ⇒
+                OPALLogger.info(
+                    "analysis progress",
+                    s"finished in ${t.toSeconds} "
+                )(project.logContext)
+            }
 
         val fieldValues: List[EPS[Entity, FieldValue]] = ps.entities(FieldValue.key).toList
 
         val mFields =
             fieldValues
+                .filter { eps ⇒
+                    val m = eps.e.asInstanceOf[Field]
+                    m.fieldType.isReferenceType && {
+                        val fieldValue = eps.lb.value.asReferenceValue
+                        fieldValue.isNull.isYes || fieldValue.upperTypeBound.size > 1 ||
+                            m.fieldType != fieldValue.upperTypeBound.head
+                    }
+                }
                 // we are deriving more precise lower bounds => eps.lb
                 .map(eps ⇒ eps.e.asInstanceOf[Field].toJava(" => "+eps.lb.value.toString))
                 .sorted
@@ -60,6 +78,16 @@ object Values extends DefaultOneStepAnalysis {
 
         val mMethods =
             methodReturnValues
+                .filter { eps ⇒
+                    val m = eps.e.asInstanceOf[Method]
+                    m.returnType.isReferenceType && {
+                        eps.lb.returnValue.isEmpty || {
+                            val returnValue = eps.lb.returnValue.get.asReferenceValue
+                            returnValue.isNull.isYes || returnValue.upperTypeBound.size > 1 ||
+                                m.returnType != returnValue.upperTypeBound.head
+                        }
+                    }
+                }
                 // we are deriving more precise lower bounds => eps.lb
                 .map(eps ⇒ eps.e.asInstanceOf[Method].toJava(" => "+eps.lb.returnValue))
                 .sorted
@@ -68,7 +96,7 @@ object Values extends DefaultOneStepAnalysis {
                     "\n\t",
                     s"\n(Overall: ${methodReturnValues.size}/$objectValuesReturningMethodsCount)"
                 )
-
         BasicReport(mFields+"\n\n"+mMethods)
+
     }
 }
