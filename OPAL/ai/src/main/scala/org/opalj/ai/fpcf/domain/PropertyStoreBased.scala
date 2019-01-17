@@ -8,6 +8,8 @@ import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.Property
 import org.opalj.fpcf.EOptionPSet
+import org.opalj.fpcf.PropertiesBoundType
+import org.opalj.fpcf.PropertyKind
 import org.opalj.ai.domain.TheProject
 
 /**
@@ -19,14 +21,24 @@ import org.opalj.ai.domain.TheProject
 trait PropertyStoreBased extends TheProject {
 
     /**
+     * The type of the bound of the properties that are used.
+     * @return
+     */
+    def usedPropertiesBound : PropertiesBoundType
+
+    /**
      * The properties potentially queried by this domain. I.e., it must list '''all properties'''
      * that are potentially queried by any instance.
      *
      * This method '''must call its super method''' and accumulate the results
      * (we have stackable traits!).
      */
-    def usesPropertyBounds: Set[PropertyBounds] = Set.empty
+    def usesProperties: Set[PropertyKind] = Set.empty
 
-    val dependees: EOptionPSet[Entity, Property] = EOptionPSet.empty
+    final def usesPropertyBounds: Set[PropertyBounds] = {
+        usesProperties.map(pk ⇒ PropertyBounds(usedPropertiesBound,pk))
+    }
+
+    val dependees: EOptionPSet[Entity, Property]
 
 }

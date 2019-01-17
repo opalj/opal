@@ -5,7 +5,7 @@ package fpcf
 package domain
 
 import org.opalj.fpcf.LBP
-import org.opalj.fpcf.PropertyBounds
+import org.opalj.fpcf.PropertyKind
 import org.opalj.br.FieldType
 import org.opalj.br.ObjectType
 import org.opalj.br.PC
@@ -23,8 +23,8 @@ trait RefinedTypeLevelFieldAccessInstructions
     with PropertyStoreBased {
     domain: ReferenceValuesDomain with ValuesFactory with Configuration with TheProject ⇒
 
-    abstract override def usesPropertyBounds: Set[PropertyBounds] = {
-        super.usesPropertyBounds ++ Set(PropertyBounds.lb(FieldValue))
+    abstract override def usesProperties: Set[PropertyKind] = {
+        super.usesProperties ++ Set(FieldValue)
     }
 
     override def getfield(
@@ -34,13 +34,17 @@ trait RefinedTypeLevelFieldAccessInstructions
         fieldName:      String,
         fieldType:      FieldType
     ): Computation[DomainValue, ExceptionValue] = {
-
-        val field = project.resolveFieldReference(declaringClass, fieldName, fieldType)
-        dependees.getOrQueryAndUpdate(field, FieldValue.key) match {
-            case LBP(fv) ⇒
-                val vi = fv.value(classHierarchy)
-                doGetfield(pc, objectref, domain.InitializedDomainValue(pc, vi))
-            case _ ⇒
+        project.resolveFieldReference(declaringClass, fieldName, fieldType) match {
+            case Some(field) ⇒
+                dependees.getOrQueryAndUpdate(field, FieldValue.key) match {
+                    case LBP(fv) ⇒
+                        val vi = fv.value(classHierarchy)
+                        doGetfield(pc, objectref, domain.InitializedDomainValue(pc, vi))
+                    case _ ⇒
+                        // fallback
+                        super.getfield(pc, objectref, declaringClass, fieldName, fieldType)
+                }
+            case None ⇒
                 // fallback
                 super.getfield(pc, objectref, declaringClass, fieldName, fieldType)
         }
@@ -55,12 +59,17 @@ trait RefinedTypeLevelFieldAccessInstructions
         fieldName:      String,
         fieldType:      FieldType
     ): Computation[DomainValue, Nothing] = {
-        val field = project.resolveFieldReference(declaringClass, fieldName, fieldType)
-        dependees.getOrQueryAndUpdate(field, FieldValue.key) match {
-            case LBP(fv) ⇒
-                val vi = fv.value(classHierarchy)
-                doGetstatic(pc, domain.InitializedDomainValue(pc, vi))
-            case _ ⇒
+        project.resolveFieldReference(declaringClass, fieldName, fieldType) match {
+            case Some(field) ⇒
+                dependees.getOrQueryAndUpdate(field, FieldValue.key) match {
+                    case LBP(fv) ⇒
+                        val vi = fv.value(classHierarchy)
+                        doGetstatic(pc, domain.InitializedDomainValue(pc, vi))
+                    case _ ⇒
+                        // fallback
+                        super.getstatic(pc, declaringClass, fieldName, fieldType)
+                }
+            case None ⇒
                 // fallback
                 super.getstatic(pc, declaringClass, fieldName, fieldType)
         }

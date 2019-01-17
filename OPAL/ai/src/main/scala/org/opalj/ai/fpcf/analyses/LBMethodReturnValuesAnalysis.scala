@@ -40,7 +40,7 @@ class LBMethodReturnValuesAnalysis private[analyses] (
         with domain.TheMethod
         with domain.DefaultSpecialDomainValuesBinding
         with domain.ThrowAllPotentialExceptionsConfiguration
-        with domain.l0.DefaultTypeLevelIntegerValues
+        with domain.l1.DefaultIntegerValues // to enable constant tracking
         with domain.l0.DefaultTypeLevelLongValues
         with domain.l0.DefaultTypeLevelFloatValues
         with domain.l0.DefaultTypeLevelDoubleValues
