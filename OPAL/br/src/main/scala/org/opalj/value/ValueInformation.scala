@@ -689,7 +689,7 @@ case class AProperMObjectValue(
 ) extends IsMObjectValue {
     override def toCanonicalForm: IsMObjectValue = this
     override def toString: String = {
-        "ObjectValue("+
+        "ProperMObjectValue("+
             s"type=${upperTypeBound.map(_.toJava).mkString(" with ")},"+
             s"isNull=$isNull,isPrecise=$isPrecise)"
     }
@@ -767,7 +767,7 @@ case class ASObjectValue(
 ) extends IsSObjectValue {
     override def toCanonicalForm: IsSObjectValue = this
     override def toString: String = {
-        s"ObjectValue(type=${theUpperTypeBound.toJava},isNull=$isNull,isPrecise=$isPrecise)"
+        s"SObjectValue(type=${theUpperTypeBound.toJava},isNull=$isNull,isPrecise=$isPrecise)"
     }
 
 }
@@ -782,7 +782,7 @@ case class AProperSObjectValue(
 ) extends IsSObjectValue {
     override def toCanonicalForm: IsSObjectValue = this
     override def toString: String = {
-        s"ProperObjectValue(type=${theUpperTypeBound.toJava},isNull=$isNull,isPrecise=$isPrecise)"
+        s"ProperSObjectValue(type=${theUpperTypeBound.toJava},isNull=$isNull,isPrecise=$isPrecise)"
     }
 }
 
@@ -826,7 +826,7 @@ case class ASArrayValue(
 ) extends IsSArrayValue {
     override def toCanonicalForm: IsSArrayValue = this
     override def toString: String = {
-        "ArrayValue("+
+        "SArrayValue("+
             s"type=${theUpperTypeBound.toJava},"+
             s"isNull=$isNull,isPrecise=$isPrecise,length=<N/A>)"
     }
@@ -840,7 +840,7 @@ case class ASArrayWithLengthValue(
     override def isPrecise: Boolean = true
     override def toCanonicalForm: IsSArrayValue = this
     override def toString: String = {
-        s"ArrayValue("+
+        s"SArrayValue("+
             s"type=${theUpperTypeBound.toJava},"+
             s"isNull=$isNull,isPrecise=$isPrecise,length=$length)"
     }
@@ -1018,7 +1018,7 @@ case class AMultipleReferenceValue(
 ) extends IsMultipleReferenceValue {
     override def toCanonicalForm: IsReferenceValue = this
     override def toString: String = {
-        "ReferenceValue("+
+        "MulitpleReferenceValue("+
             s"type=${upperTypeBound.map(_.toJava).mkString(" with ")},"+
             s"isNull=$isNull,isPrecise=$isPrecise,"+
             s"baseValues=${baseValues.map(_.toString).mkString("{ ", ", ", " }")})"
