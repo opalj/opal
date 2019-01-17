@@ -37,7 +37,35 @@ sealed abstract class PropertyBounds(val pk: PropertyKind) {
         s"PropertyBounds(pk=$pk,lowerBound=$lowerBound,upperBound=$upperBound)"
     }
 }
+
+/**
+ * Specifies the bounds of the properties that may be used/derived.
+ */
+sealed abstract class PropertiesBoundType
+case object LBProperties extends PropertiesBoundType
+case object UBProperties extends PropertiesBoundType
+case object LUBProperties extends PropertiesBoundType
+case object FinalProperties extends PropertiesBoundType
+
 object PropertyBounds {
+
+    def apply(pbt : PropertiesBoundType, pks: Array[PropertyKind]): Set[PropertyBounds] = {
+        pbt match {
+            case LBProperties ⇒ lbs(pks :_*)
+            case UBProperties ⇒ ubs(pks : _*)
+            case LUBProperties ⇒ lubs(pks : _*)
+            case FinalProperties ⇒ finalPs(pks : _*)
+        }
+    }
+
+    def apply(pbt : PropertiesBoundType, pk: PropertyKind): PropertyBounds = {
+        pbt match {
+            case LBProperties ⇒ lb(pk)
+            case UBProperties ⇒ ub(pk)
+            case LUBProperties ⇒ lub(pk)
+            case FinalProperties ⇒ finalP(pk)
+        }
+    }
 
     def finalP(pk: PropertyKind): PropertyBounds = {
         new PropertyBounds(pk) {
