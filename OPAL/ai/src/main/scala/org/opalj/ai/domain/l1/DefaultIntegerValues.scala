@@ -19,8 +19,6 @@ trait DefaultIntegerValues extends DefaultSpecialDomainValuesBinding with Intege
 
     /**
      * Represents an unspecific, unknown Integer value.
-     *
-     * Two instances of
      */
     object AnIntegerValue extends super.AnIntegerValue {
 
