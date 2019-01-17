@@ -61,12 +61,10 @@ trait AbstractPathFinder {
 
         // The loop header might not only consist of the very first element in 'loops'; thus, check
         // whether the given site is between the first site of a loop and the site of the very first
-        // if (again, respect structures as produces by while-true loops)
+        // 'if' (again, respect structures as produces by while-true loops)
         if (!belongsToLoopHeader) {
             loops.foreach { nextLoop ⇒
-                // The second condition is to regard only those elements as headers which  have a
-                // backedge
-                if (!belongsToLoopHeader && cfg.bb(site).asBasicBlock.predecessors.size > 1) {
+                if (!belongsToLoopHeader) {
                     val start = nextLoop.head
                     var end = start
                     while (!cfg.code.instructions(end).isInstanceOf[If[V]]) {
