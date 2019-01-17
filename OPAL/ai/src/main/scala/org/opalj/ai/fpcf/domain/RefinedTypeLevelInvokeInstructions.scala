@@ -4,30 +4,21 @@ package ai
 package fpcf
 package domain
 
-import org.opalj.br.Method
-import org.opalj.br.PC
-import org.opalj.ai.domain.TheCode
-import org.opalj.ai.Configuration
-import org.opalj.ai.ReferenceValuesDomain
-import org.opalj.ai.ValuesFactory
-import org.opalj.ai.domain.TheProject
-import org.opalj.ai.ThrowsException
 import scala.util.control.ControlThrowable
 
-import org.opalj.log.Warn
 import org.opalj.log.OPALLogger
+import org.opalj.log.Warn
 import org.opalj.fpcf.LBP
-import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyKind
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
+import org.opalj.br.PC
 import org.opalj.br.ReferenceType
 import org.opalj.ai.domain.MethodCallsHandling
-import org.opalj.ai.domain.TheProject
 import org.opalj.ai.domain.TheCode
+import org.opalj.ai.domain.TheProject
 import org.opalj.ai.fpcf.properties.MethodReturnValue
-
 
 /**
  *
@@ -35,7 +26,7 @@ import org.opalj.ai.fpcf.properties.MethodReturnValue
  */
 trait RefinedTypeLevelInvokeInstructions
     extends MethodCallsDomainWithMethodLockup
-        with PropertyStoreBased {
+    with PropertyStoreBased {
     domain: ValuesFactory with ReferenceValuesDomain with Configuration with TheProject with TheCode ⇒
 
     abstract override def usesProperties: Set[PropertyKind] = {
@@ -68,29 +59,29 @@ trait RefinedTypeLevelInvokeInstructions
  *
  * @author Michael Eichberg
  */
-trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling{
+trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling {
     callingDomain: ValuesFactory with ReferenceValuesDomain with Configuration with TheProject with TheCode ⇒
 
     protected[this] def doInvoke(
-                                    pc:       PC,
-                                    method:   Method,
-                                    operands: Operands,
-                                    fallback: () ⇒ MethodCallResult
-                                ): MethodCallResult
+        pc:       PC,
+        method:   Method,
+        operands: Operands,
+        fallback: () ⇒ MethodCallResult
+    ): MethodCallResult
 
     /**
      * Currently, if we have multiple targets, `fallback` is called and that result is
      * returned.
      */
     protected[this] def doVirtualInvoke(
-                                           pc:            PC,
-                                           declaringType: ObjectType,
-                                           isInterface:   Boolean,
-                                           name:          String,
-                                           descriptor:    MethodDescriptor,
-                                           operands:      Operands,
-                                           fallback:      () ⇒ MethodCallResult
-                                       ): MethodCallResult = {
+        pc:            PC,
+        declaringType: ObjectType,
+        isInterface:   Boolean,
+        name:          String,
+        descriptor:    MethodDescriptor,
+        operands:      Operands,
+        fallback:      () ⇒ MethodCallResult
+    ): MethodCallResult = {
 
         val DomainReferenceValueTag(receiver) = operands.last
         val receiverUTB = receiver.upperTypeBound
@@ -117,16 +108,16 @@ trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling{
         } else {
             // IMPROVE Use project.instanceMethods
             project.classFile(receiverType).map { receiverClassFile ⇒
-                    val targetMethod =
-                        if (receiverClassFile.isInterfaceDeclaration)
-                            project.resolveInterfaceMethodReference(receiverType, name, descriptor)
-                        else
-                            project.resolveMethodReference(receiverType, name, descriptor)
+                val targetMethod =
+                    if (receiverClassFile.isInterfaceDeclaration)
+                        project.resolveInterfaceMethodReference(receiverType, name, descriptor)
+                    else
+                        project.resolveMethodReference(receiverType, name, descriptor)
 
-                    targetMethod match {
-                        case Some(method) if method.isFinal ⇒ doInvoke(pc, method, operands, fallback)
-                        case _ ⇒                            fallback()
-                    }
+                targetMethod match {
+                    case Some(method) if method.isFinal ⇒ doInvoke(pc, method, operands, fallback)
+                    case _                              ⇒ fallback()
+                }
             }.getOrElse {
                 fallback()
             }
@@ -134,14 +125,14 @@ trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling{
     }
 
     protected[this] def doNonVirtualInvoke(
-                                              pc:            PC,
-                                              declaringType: ObjectType,
-                                              isInterface:   Boolean,
-                                              name:          String,
-                                              descriptor:    MethodDescriptor,
-                                              operands:      Operands,
-                                              fallback:      () ⇒ MethodCallResult
-                                          ): MethodCallResult = {
+        pc:            PC,
+        declaringType: ObjectType,
+        isInterface:   Boolean,
+        name:          String,
+        descriptor:    MethodDescriptor,
+        operands:      Operands,
+        fallback:      () ⇒ MethodCallResult
+    ): MethodCallResult = {
 
         try {
             val resolvedMethod =
@@ -191,12 +182,12 @@ trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling{
     // -----------------------------------------------------------------------------------
 
     abstract override def invokevirtual(
-                                           pc:            PC,
-                                           declaringType: ReferenceType,
-                                           name:          String,
-                                           descriptor:    MethodDescriptor,
-                                           operands:      Operands
-                                       ): MethodCallResult = {
+        pc:            PC,
+        declaringType: ReferenceType,
+        name:          String,
+        descriptor:    MethodDescriptor,
+        operands:      Operands
+    ): MethodCallResult = {
 
         if (declaringType.isArrayType)
             return super.invokevirtual(pc, declaringType, name, descriptor, operands);
@@ -205,18 +196,18 @@ trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling{
             super.invokevirtual(pc, declaringType, name, descriptor, operands)
         }
 
-            doVirtualInvoke(
-                pc, declaringType.asObjectType, false, name, descriptor, operands, fallback _
-            )
+        doVirtualInvoke(
+            pc, declaringType.asObjectType, false, name, descriptor, operands, fallback _
+        )
     }
 
     abstract override def invokeinterface(
-                                             pc:            PC,
-                                             declaringType: ObjectType,
-                                             name:          String,
-                                             descriptor:    MethodDescriptor,
-                                             operands:      Operands
-                                         ): MethodCallResult = {
+        pc:            PC,
+        declaringType: ObjectType,
+        name:          String,
+        descriptor:    MethodDescriptor,
+        operands:      Operands
+    ): MethodCallResult = {
 
         def fallback(): MethodCallResult = {
             super.invokeinterface(pc, declaringType, name, descriptor, operands)
@@ -226,13 +217,13 @@ trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling{
     }
 
     abstract override def invokespecial(
-                                           pc:            PC,
-                                           declaringType: ObjectType,
-                                           isInterface:   Boolean,
-                                           name:          String,
-                                           descriptor:    MethodDescriptor,
-                                           operands:      Operands
-                                       ): MethodCallResult = {
+        pc:            PC,
+        declaringType: ObjectType,
+        isInterface:   Boolean,
+        name:          String,
+        descriptor:    MethodDescriptor,
+        operands:      Operands
+    ): MethodCallResult = {
 
         def fallback(): MethodCallResult = {
             super.invokespecial(
@@ -253,13 +244,13 @@ trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling{
      * if have a recursive invocation are delegated to the super class.
      */
     abstract override def invokestatic(
-                                          pc:            PC,
-                                          declaringType: ObjectType,
-                                          isInterface:   Boolean,
-                                          name:          String,
-                                          descriptor:    MethodDescriptor,
-                                          operands:      Operands
-                                      ): MethodCallResult = {
+        pc:            PC,
+        declaringType: ObjectType,
+        isInterface:   Boolean,
+        name:          String,
+        descriptor:    MethodDescriptor,
+        operands:      Operands
+    ): MethodCallResult = {
 
         def fallback(): MethodCallResult = {
             super.invokestatic(

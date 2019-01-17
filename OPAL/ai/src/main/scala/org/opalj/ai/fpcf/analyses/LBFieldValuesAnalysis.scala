@@ -158,7 +158,7 @@ class LBFieldValuesAnalysis private[analyses] (
 
         override implicit val project: SomeProject = analysis.project
 
-        def usedPropertiesBound : PropertiesBoundType = LBProperties
+        def usedPropertiesBound: PropertiesBoundType = LBProperties
 
         val thisClassType: ObjectType = classFile.thisType
 
@@ -271,7 +271,7 @@ class LBFieldValuesAnalysis private[analyses] (
                         // relevant field, but obviously no writes were found...
                         val dv = domain.DefaultValue(-1, f.fieldType)
                         val fv = ValueBasedFieldValueInformation(dv)
-                        println(f.toJava+"!!!!!!>>>>>> "+fv)
+                        // println(f.toJava+"!!!!!!>>>>>> "+fv)
                         Result(FinalEP(f, fv))
 
                     case Some(Some(domain.DomainReferenceValueTag(dv))) ⇒

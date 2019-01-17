@@ -24,7 +24,7 @@ trait PropertyStoreBased extends TheProject {
      * The type of the bound of the properties that are used.
      * @return
      */
-    def usedPropertiesBound : PropertiesBoundType
+    def usedPropertiesBound: PropertiesBoundType
 
     /**
      * The properties potentially queried by this domain. I.e., it must list '''all properties'''
@@ -36,7 +36,7 @@ trait PropertyStoreBased extends TheProject {
     def usesProperties: Set[PropertyKind] = Set.empty
 
     final def usesPropertyBounds: Set[PropertyBounds] = {
-        usesProperties.map(pk ⇒ PropertyBounds(usedPropertiesBound,pk))
+        usesProperties.map(pk ⇒ PropertyBounds(usedPropertiesBound, pk))
     }
 
     val dependees: EOptionPSet[Entity, Property]

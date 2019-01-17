@@ -49,20 +49,20 @@ case object FinalProperties extends PropertiesBoundType
 
 object PropertyBounds {
 
-    def apply(pbt : PropertiesBoundType, pks: Array[PropertyKind]): Set[PropertyBounds] = {
+    def apply(pbt: PropertiesBoundType, pks: Array[PropertyKind]): Set[PropertyBounds] = {
         pbt match {
-            case LBProperties ⇒ lbs(pks :_*)
-            case UBProperties ⇒ ubs(pks : _*)
-            case LUBProperties ⇒ lubs(pks : _*)
-            case FinalProperties ⇒ finalPs(pks : _*)
+            case LBProperties    ⇒ lbs(pks: _*)
+            case UBProperties    ⇒ ubs(pks: _*)
+            case LUBProperties   ⇒ lubs(pks: _*)
+            case FinalProperties ⇒ finalPs(pks: _*)
         }
     }
 
-    def apply(pbt : PropertiesBoundType, pk: PropertyKind): PropertyBounds = {
+    def apply(pbt: PropertiesBoundType, pk: PropertyKind): PropertyBounds = {
         pbt match {
-            case LBProperties ⇒ lb(pk)
-            case UBProperties ⇒ ub(pk)
-            case LUBProperties ⇒ lub(pk)
+            case LBProperties    ⇒ lb(pk)
+            case UBProperties    ⇒ ub(pk)
+            case LUBProperties   ⇒ lub(pk)
             case FinalProperties ⇒ finalP(pk)
         }
     }
