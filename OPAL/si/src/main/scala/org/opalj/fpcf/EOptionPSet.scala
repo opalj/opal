@@ -59,7 +59,7 @@ sealed trait EOptionPSet[E <: Entity, P <: Property] extends Traversable[EOption
     /**
      * Updates all dependent values. Similar to the update method final values will be removed.
      */
-    def updateAll(implicit ps: PropertyStore): Unit
+    def updateAll()(implicit ps: PropertyStore): Unit
 
 }
 
@@ -154,7 +154,7 @@ private[fpcf] class MultiEOptionPSet[E <: Entity, P <: Property](
         }
     }
 
-    override def updateAll(implicit ps: PropertyStore): Unit = {
+    override def updateAll()(implicit ps: PropertyStore): Unit = {
         data.valuesIterator.foreach { eEOptionPs ⇒
             eEOptionPs
                 .transform((_, eOptionP) ⇒
