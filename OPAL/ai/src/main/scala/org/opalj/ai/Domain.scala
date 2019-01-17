@@ -8,6 +8,7 @@ import org.opalj.value.IsReferenceValue
 import org.opalj.value.IsReturnAddressValue
 import org.opalj.value.ValueInformation
 import org.opalj.br.BooleanType
+import org.opalj.br.ByteType
 import org.opalj.br.CharType
 import org.opalj.br.ConstantFieldValue
 import org.opalj.br.ConstantInteger
@@ -122,6 +123,7 @@ trait Domain
                 if (pv.constantValue.isDefined) {
                     baseType match {
                         case BooleanType ⇒ BooleanValue(origin, pv.asConstantBoolean)
+                        case ByteType    ⇒ ByteValue(origin, pv.asConstantByte)
                         case ShortType   ⇒ ShortValue(origin, pv.asConstantShort)
                         case CharType    ⇒ CharValue(origin, pv.asConstantChar)
                         case IntegerType ⇒ IntegerValue(origin, pv.asConstantInteger)
