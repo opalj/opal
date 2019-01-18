@@ -690,7 +690,7 @@ case class AProperMObjectValue(
     override def toCanonicalForm: IsMObjectValue = this
     override def toString: String = {
         "ProperMObjectValue("+
-            s"type=${upperTypeBound.map(_.toJava).mkString(" with ")},"+
+            s"type=${upperTypeBound.map(_.toJava).toList.sorted.mkString(" with ")},"+
             s"isNull=$isNull,isPrecise=$isPrecise)"
     }
 
@@ -1025,7 +1025,7 @@ case class AMultipleReferenceValue(
     override def toCanonicalForm: IsReferenceValue = this
     override def toString: String = {
         "MulitpleReferenceValue("+
-            s"type=${upperTypeBound.map(_.toJava).mkString(" with ")},"+
+            s"type=${upperTypeBound.map(_.toJava).toList.sorted.mkString(" with ")},"+
             s"isNull=$isNull,isPrecise=$isPrecise,"+
             s"baseValues=${baseValues.map(_.toString).mkString("{ ", ", ", " }")})"
     }
