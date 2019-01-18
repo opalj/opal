@@ -53,6 +53,8 @@ import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.br.fpcf.BasicFPCFLazyAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
+import org.opalj.br.fpcf.cg.properties.CallersProperty
+import org.opalj.br.fpcf.cg.properties.NoCallers
 import org.opalj.br.fpcf.properties.ExtensibleGetter
 import org.opalj.br.fpcf.properties.ExtensibleLocalFieldWithGetter
 import org.opalj.br.fpcf.properties.NoLocalField
@@ -61,9 +63,9 @@ import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.properties.TACAI
 
 class ReturnValueFreshnessState(val dm: DefinedMethod) {
-    private[this] var returnValueDependees: Set[EOptionP[DeclaredMethod, Property]] = Set.empty
-    private[this] var fieldDependees: Set[EOptionP[Field, FieldLocality]] = Set.empty
-    private[this] var defSiteDependees: Set[EOptionP[DefinitionSite, EscapeProperty]] = Set.empty
+    private[this] var returnValueDependees: Map[DeclaredMethod, EOptionP[DeclaredMethod, ReturnValueFreshness]] = Map.empty
+    private[this] var fieldDependees: Map[Field, EOptionP[Field, FieldLocality]] = Map.empty
+    private[this] var defSiteDependees: Map[DefinitionSite, EOptionP[DefinitionSite, EscapeProperty]] = Map.empty
     private[this] var tacaiDependee: Option[EOptionP[Method, TACAI]] = None
     private[this] var _calleesDependee: Option[EOptionP[DeclaredMethod, Callees]] = None
 
@@ -71,25 +73,38 @@ class ReturnValueFreshnessState(val dm: DefinedMethod) {
 
     private[this] var upperBound: ReturnValueFreshness = FreshReturnValue
 
-    def dependees: Set[EOptionP[Entity, Property]] = {
-        returnValueDependees ++ fieldDependees ++ defSiteDependees ++ tacaiDependee ++
-            _calleesDependee.filter(_.isRefinable)
+    // TODO: Use EOptionPSet
+    def dependees: Traversable[EOptionP[Entity, Property]] = {
+        (returnValueDependees.valuesIterator ++
+            fieldDependees.valuesIterator ++
+            defSiteDependees.valuesIterator ++
+            tacaiDependee.iterator ++
+            _calleesDependee.iterator.filter(_.isRefinable)).toTraversable
     }
 
-    def hasDependees: Boolean = dependees.nonEmpty
+    def hasDependees: Boolean = {
+        returnValueDependees.nonEmpty ||
+            fieldDependees.nonEmpty ||
+            defSiteDependees.nonEmpty ||
+            tacaiDependee.nonEmpty ||
+            _calleesDependee.exists(_.isRefinable)
+    }
 
     def hasTacaiDependee: Boolean = tacaiDependee.isDefined
 
-    def addMethodDependee(epOrEpk: EOptionP[DeclaredMethod, Property]): Unit = {
-        returnValueDependees += epOrEpk
+    def addMethodDependee(epOrEpk: EOptionP[DeclaredMethod, ReturnValueFreshness]): Unit = {
+        assert(!returnValueDependees.contains(epOrEpk.e))
+        returnValueDependees += epOrEpk.e → epOrEpk
     }
 
     def addFieldDependee(epOrEpk: EOptionP[Field, FieldLocality]): Unit = {
-        fieldDependees += epOrEpk
+        assert(!fieldDependees.contains(epOrEpk.e))
+        fieldDependees += epOrEpk.e → epOrEpk
     }
 
     def addDefSiteDependee(epOrEpk: EOptionP[DefinitionSite, EscapeProperty]): Unit = {
-        defSiteDependees += epOrEpk
+        assert(!defSiteDependees.contains(epOrEpk.e))
+        defSiteDependees += epOrEpk.e → epOrEpk
     }
 
     def setCalleesDependee(epOrEpk: EOptionP[DeclaredMethod, Callees]): Unit = {
@@ -103,15 +118,15 @@ class ReturnValueFreshnessState(val dm: DefinedMethod) {
     def callSitePCs: IntTrieSet = _callSitePCs
 
     def removeMethodDependee(epOrEpk: EOptionP[DeclaredMethod, Property]): Unit = {
-        returnValueDependees = returnValueDependees.filter(other ⇒ (other.e ne epOrEpk.e) || other.pk != epOrEpk.pk)
+        returnValueDependees -= epOrEpk.e
     }
 
     def removeFieldDependee(epOrEpk: EOptionP[Field, FieldLocality]): Unit = {
-        fieldDependees = fieldDependees.filter(other ⇒ (other.e ne epOrEpk.e) || other.pk != epOrEpk.pk)
+        fieldDependees -= epOrEpk.e
     }
 
     def removeDefSiteDependee(epOrEpk: EOptionP[DefinitionSite, EscapeProperty]): Unit = {
-        defSiteDependees = defSiteDependees.filter(other ⇒ (other.e ne epOrEpk.e) || other.pk != epOrEpk.pk)
+        defSiteDependees -= epOrEpk.e
     }
 
     def updateTacaiDependee(epOrEpk: EOptionP[Method, TACAI]): Unit = {
@@ -491,12 +506,13 @@ sealed trait ReturnValueFreshnessAnalysisScheduler extends FPCFAnalysisScheduler
 
     final def derivedProperty: PropertyBounds = PropertyBounds.lub(ReturnValueFreshness)
 
-    final override def uses: Set[PropertyBounds] = {
+    override def uses: Set[PropertyBounds] = {
         Set(
             PropertyBounds.ub(TACAI),
             PropertyBounds.ub(EscapeProperty),
             PropertyBounds.ub(Callees),
-            PropertyBounds.ub(FieldLocality)
+            PropertyBounds.ub(FieldLocality),
+            PropertyBounds.ub(ReturnValueFreshness)
         )
     }
 }
@@ -506,14 +522,22 @@ object EagerReturnValueFreshnessAnalysis
     with BasicFPCFEagerAnalysisScheduler {
 
     override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
-        val declaredMethods =
-            p.get(DeclaredMethodsKey).declaredMethods.filter(_.hasSingleDefinedMethod)
+        val declaredMethods = p.get(DeclaredMethodsKey)
+
+        val methods = declaredMethods.declaredMethods
+        val callersProperties = ps(methods.toTraversable, CallersProperty)
+        assert(callersProperties.forall(_.isFinal))
+
+        val reachableMethods = callersProperties.filterNot(_.asFinal.p == NoCallers).map(_.e).toSet
+
         val analysis = new ReturnValueFreshnessAnalysis(p)
-        ps.scheduleEagerComputationsForEntities(declaredMethods)(analysis.determineFreshness)
+        ps.scheduleEagerComputationsForEntities(reachableMethods)(analysis.determineFreshness)
         analysis
     }
 
     override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
+
+    override def uses: Set[PropertyBounds] = super.uses + PropertyBounds.finalP(CallersProperty)
 
     override def derivesCollaboratively: Set[PropertyBounds] = Set.empty
 }
