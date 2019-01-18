@@ -30,7 +30,8 @@ import org.opalj.tac.common.DefinitionSiteLike
  */
 trait AbstractEscapeAnalysisState {
 
-    private[this] var _dependees = Set.empty[EOptionP[Entity, Property]]
+    // todo: use better _dependees Handling
+    private[this] var _dependees = Map.empty[Entity, EOptionP[Entity, Property]]
     private[this] var _mostRestrictiveProperty: EscapeProperty = NoEscape
 
     private[this] var _tacai: Option[TACode[TACMethodParameter, V]] = None
@@ -54,8 +55,8 @@ trait AbstractEscapeAnalysisState {
      * Adds an entity property pair (or epk) into the set of dependees.
      */
     @inline private[escape] final def addDependency(eOptionP: EOptionP[Entity, Property]): Unit = {
-        _dependees += eOptionP
-        assert(_dependees.count(epk ⇒ (epk.e eq eOptionP.e) && epk.pk == eOptionP.pk) <= 1)
+        assert(!_dependees.contains(eOptionP.e))
+        _dependees += eOptionP.e → eOptionP
     }
 
     /**
@@ -63,14 +64,19 @@ trait AbstractEscapeAnalysisState {
      * dependees.
      */
     @inline private[escape] final def removeDependency(ep: EOptionP[Entity, Property]): Unit = {
-        assert(_dependees.count(epk ⇒ (epk.e eq ep.e) && epk.pk == ep.pk) <= 1)
-        _dependees = _dependees.filter(epk ⇒ (epk.e ne ep.e) || epk.pk != ep.pk)
+        assert(_dependees.contains(ep.e))
+        _dependees -= ep.e
     }
 
     /**
      * The set of open dependees.
      */
-    private[escape] final def dependees: Set[EOptionP[Entity, Property]] = _dependees
+    private[escape] final def dependees: Traversable[EOptionP[Entity, Property]] = _dependees.values
+
+    /**
+     * Are there any dependees?
+     */
+    private[escape] final def hasDependees: Boolean = _dependees.nonEmpty
 
     /**
      * The currently most restrictive escape property. It can get even more restrictive during the
