@@ -139,8 +139,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
      * if it contains one. In this case the other types have to be in a super-/subtype
      * relation and were added "just" as a result of explicit CHECKCAST instructions.
      *
-     * Note that this method is generally only useful when we have to handle incomplete
-     * type hierarchies.
+     * @note This method is generally only useful when we have to handle incomplete type hierarchies.
      */
     protected def effectiveUTB(utb: UIDSet[_ <: ReferenceType]): UIDSet[_ <: ReferenceType] = {
         val it = utb.iterator
@@ -1087,6 +1086,12 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             s"unexpected precision (precise == $isPrecise): $this"
         )
         assert(
+            !upperTypeBound.isSingletonSet || (
+                !classHierarchy.isKnownToBeFinal(upperTypeBound.head) || isPrecise
+            ),
+            s"isPrecise has to be true if the upper type bound belongs to final type $upperTypeBound"
+        )
+        assert(
             (isNull.isYes && upperTypeBound.isEmpty) || (
                 isNull.isNoOrUnknown &&
                 upperTypeBound.nonEmpty && (
@@ -1173,8 +1178,6 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                     newIsNull
             }
 
-            val newIsPrecise = newIsNull.isYes || domain.isPrecise(newValues)
-
             val newUTB =
                 if (newIsNull.isYes)
                     UIDSet.empty[ReferenceType]
@@ -1190,6 +1193,10 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                     else
                         baseUTB
                 }
+
+            val newIsPrecise =
+                newIsNull.isYes || domain.isPrecise(newValues) ||
+                    (newUTB.isSingletonSet && classHierarchy.isKnownToBeFinal(newUTB.head))
 
             if (!valuesUpdated &&
                 newRefId == this.refId &&
@@ -1436,15 +1443,20 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                         )
                     else {
                         val thisUTB = this.upperTypeBound
+                        val newUTB =
+                            if (classHierarchy.isASubtypeOf(thisUTB, newValuesUTB).isYesOrUnknown)
+                                thisUTB
+                            else
+                                newValuesUTB
+                        val newIsPrecise =
+                            (newUTB.isSingletonSet && classHierarchy.isKnownToBeFinal(newUTB.head)) ||
+                                domain.isPrecise(newValues)
                         MultipleReferenceValues(
                             newValues,
                             origins,
                             No, // we refined the "isNull" property!
-                            domain.isPrecise(newValues),
-                            if (classHierarchy.isASubtypeOf(thisUTB, newValuesUTB).isYesOrUnknown)
-                                thisUTB
-                            else
-                                newValuesUTB,
+                            newIsPrecise,
+                            newUTB,
                             newRefId
                         )
                     }
@@ -1459,7 +1471,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             locals:    Locals
         ): (Operands, Locals) = {
 
-            // let's keep all values with a type that is a potential subtype of the
+            // Let's keep all values with a type that is a potential subtype of the
             // given supertype.
             var filteredValuesOrigins = origins
             val filteredValues =
@@ -1475,8 +1487,8 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             if (filteredValues.isSingletonSet) {
                 refineToValue(filteredValues.head, this.isNull, UIDSet(supertype), operands, locals)
             } else {
-                // there are no individual values to refine....
-                // we have to choose the more "precise" utb
+                // There are no individual values to refine -
+                // we have to choose the more "precise" utb.
                 val filteredValuesUTB = domain.upperTypeBound(filteredValues)
 
                 // We have to support (1) the case where we cast a value for which we only have
@@ -1487,6 +1499,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                 // type X to an array of reference values of type Y (which may succeed if at least
                 // one type is an interface type or if both types are in an effective
                 // inheritance relation! For example,
+                // {{{
                 // scala> val ss = new Array[java.util.ArrayList[AnyRef]](1)
                 // ss: Array[java.util.ArrayList[AnyRef]] = Array(null)
                 //
@@ -1497,6 +1510,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                 //
                 // scala> os.asInstanceOf[Array[java.io.Serializable]]
                 // Array[java.io.Serializable] = Array([])
+                // }}}
                 // However, we currently have no support to model the case "Array of <X with Y>";
                 // therefore, we simply accept the target refinement type.
                 val supertypeUTB: UIDSet[_ <: ReferenceType] =
@@ -1511,6 +1525,10 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                     else
                         supertypeUTB
                 val newRefId = if (filteredValues.size == values.size) refId else nextRefId()
+                val newIsPrecise = {
+                    (newUTB.isSingletonSet && classHierarchy.isKnownToBeFinal(newUTB.head)) ||
+                        domain.isPrecise(filteredValues)
+                }
                 val newValue =
                     MultipleReferenceValues(
                         filteredValues,
@@ -1519,7 +1537,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                             isNull
                         else
                             domain.isNull(filteredValues),
-                        domain.isPrecise(filteredValues),
+                        newIsPrecise,
                         newUTB,
                         newRefId
                     )
@@ -1564,8 +1582,9 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                         } else {
                             classHierarchy.joinUpperTypeBounds(thisUTB, thatUTB)
                         }
-                    if (newIsNull != this.isNull || newUTB != thisUTB)
+                    if (newIsNull != this.isNull || newUTB != thisUTB) {
                         updateType = StructuralUpdateType
+                    }
                     val newIsPrecise = this.isPrecise && thatValue.isPrecise && (
                         thisUTB.isEmpty || thatUTB.isEmpty || thisUTB == thatUTB
                     )
