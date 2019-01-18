@@ -996,16 +996,22 @@ trait IsMultipleReferenceValue extends IsReferenceValue {
     }
     override def toCanonicalForm: IsReferenceValue = {
         val uniqueBaseValues = baseValues.map(_.toCanonicalForm).toSet
-        // TODO if(uniqueBaseValues.size == 1) ... then check if "this" value is actually the same as the base value...
-        AMultipleReferenceValue(
-            // ...toSet is required because we potentially drop domain specific information
-            // and afterwards the values are identical.
-            uniqueBaseValues,
-            isNull,
-            isPrecise,
-            upperTypeBound,
-            leastUpperType
-        )
+        if (uniqueBaseValues.size == 1 &&
+            baseValues.head.isNull == this.isNull &&
+            baseValues.head.isPrecise == this.isPrecise &&
+            baseValues.head.upperTypeBound == this.upperTypeBound) {
+            baseValues.head
+        } else {
+            AMultipleReferenceValue(
+                // ...toSet is required because we potentially drop domain specific information
+                // and afterwards the values are identical.
+                uniqueBaseValues,
+                isNull,
+                isPrecise,
+                upperTypeBound,
+                leastUpperType
+            )
+        }
     }
 }
 
