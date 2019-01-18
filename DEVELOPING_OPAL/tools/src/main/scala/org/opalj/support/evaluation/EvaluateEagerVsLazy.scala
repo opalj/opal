@@ -25,6 +25,7 @@ import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
 import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.tac.fpcf.analyses.cg.LazyCalleesAnalysis
+import org.opalj.tac.fpcf.analyses.cg.RTACallGraphAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.TriggeredConfiguredNativeMethodsAnalysis
 import org.opalj.tac.fpcf.analyses.cg.TriggeredFinalizerAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.TriggeredLoadedClassesAnalysis
@@ -35,18 +36,17 @@ import org.opalj.tac.fpcf.analyses.TriggeredSystemPropertiesAnalysis
 import org.opalj.tac.fpcf.analyses.cg.EagerLibraryEntryPointsAnalysis
 import org.opalj.tac.fpcf.analyses.cg.TriggeredInstantiatedTypesAnalysis
 import org.opalj.tac.fpcf.analyses.cg.TriggeredStaticInitializerAnalysis
-import org.opalj.tac.fpcf.analyses.escape.EagerReturnValueFreshnessAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.purity.EagerL2PurityAnalysis
-import org.opalj.tac.fpcf.analyses.TACAITransformer
-import org.opalj.tac.fpcf.analyses.cg.CHACallGraphAnalysisScheduler
+import org.opalj.tac.fpcf.analyses.EagerL2FieldMutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.escape.EagerReturnValueFreshnessAnalysis
+import org.opalj.tac.fpcf.analyses.EagerFieldLocalityAnalysis
+import org.opalj.tac.fpcf.analyses.LazyL2FieldMutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
+import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
+import org.opalj.tac.fpcf.analyses.TACAITransformer
 import org.opalj.tac.fpcf.analyses.purity.L2PurityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.SystemOutLoggingAllExceptionRater
-import org.opalj.tac.fpcf.analyses.EagerFieldLocalityAnalysis
-import org.opalj.tac.fpcf.analyses.EagerL2FieldMutabilityAnalysis
-import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
-import org.opalj.tac.fpcf.analyses.LazyL2FieldMutabilityAnalysis
 
 /**
  * Usage:
@@ -112,7 +112,7 @@ object EvaluateEagerVsLazy {
         val manager = project.get(FPCFAnalysesManagerKey)
 
         val cgAnalyses = Set[ComputationSpecification[FPCFAnalysis]](
-            CHACallGraphAnalysisScheduler,
+            RTACallGraphAnalysisScheduler,
             TriggeredStaticInitializerAnalysis,
             TriggeredLoadedClassesAnalysis,
             TriggeredFinalizerAnalysisScheduler,
