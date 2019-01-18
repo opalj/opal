@@ -20,7 +20,7 @@ import org.opalj.fpcf.SomeEPS
 import org.opalj.value.ValueInformation
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.Method
-import org.opalj.br.PC
+//import org.opalj.br.PC
 import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.ai.domain
@@ -71,29 +71,27 @@ class LBMethodReturnValuesAnalysis private[analyses] (
         final override val UsedPropertiesBound: SinglePropertiesBoundType = LBProperties
 
         override implicit val project: SomeProject = analysis.project
-
+        /*
         override protected[this] def doRecordReturnedValue(pc: PC, value: Value): Boolean = {
             val isUpdated = super.doRecordReturnedValue(pc, value)
 
             // The idea is to check if the computed return value can no longer be more
             // precise than the "pure" type information. If this is the case, we simply
             // abort the AI
-            if (!isUpdated)
-                return false;
-
             val returnedReferenceValue = theReturnedValue.asDomainReferenceValue
             if (returnedReferenceValue.isNull.isUnknown &&
                 returnedReferenceValue.upperTypeBound.isSingletonSet &&
                 returnedReferenceValue.upperTypeBound.head == method.returnType &&
-                (!returnedReferenceValue.isPrecise ||
+                !returnedReferenceValue.isPrecise /*(!returnedReferenceValue.isPrecise ||
                     // Though the value is precise, no one cares if the type is (effectively) final
                     // or not extensible
                     // IMPROVE Use the information about "ExtensibleTypes" to filter more irrelevant cases
-                    classHierarchy.isKnownToBeFinal(returnedReferenceValue.upperTypeBound.head))) {
+                    classHierarchy.isKnownToBeFinal(returnedReferenceValue.upperTypeBound.head))*/ ) {
                 ai.interrupt()
             }
-            true // <= the information about the returned value was updated
-        }
+            isUpdated // <= the information about the returned value was updated
+        }*/
+
     }
 
     private[analyses] def analyze(method: Method): PropertyComputationResult = {
@@ -107,16 +105,20 @@ class LBMethodReturnValuesAnalysis private[analyses] (
         dependees: EOptionPSet[Entity, Property]
     ): ProperPropertyComputationResult = {
         dependees.updateAll() // <= doesn't hurt if dependees is emnpty
-        val domain = new MethodReturnValuesAnalysisDomain(ai, method, dependees)
 
+        val domain = new MethodReturnValuesAnalysisDomain(ai, method, dependees)
         val aiResult = ai(method, domain) // the state is implicitly accumulated in the domain
 
         if (!aiResult.wasAborted) {
             val vi: Option[ValueInformation] = aiResult.domain.returnedValue.map(_.toCanonicalForm)
-            if (domain.dependees.isEmpty
-                || vi.isEmpty // <=> the method always ends with an exception
-                || vi.get.asReferenceValue.isNull.isYes
-                || vi.get.asReferenceValue.isPrecise) {
+            if (dependees.isEmpty
+                || vi.isEmpty // <=> the method either always ends with an exception or does not end at all
+                // THE FOLLOWING TESTS REQUIRE ADDITIONAL KNOWLEDGE ABOUT THE DEPENDEES!
+                // IN GENERAL, EVERY POSSIBLE REFINEMENT COULD LEAD TO THE CASE THAT THE CURRENT
+                // METHOD WILL ALWAYS THROW AN EXCEPTION!
+                // || vi.get.asReferenceValue.isNull.isYes
+                // || (vi.get.asReferenceValue.isPrecise && vi.get.asReferenceValue.isNull.isNo)
+                ) {
                 Result(method, MethodReturnValue(vi))
             } else {
                 // We have potentially relevant dependencies (please, recall that we are currently
@@ -124,9 +126,11 @@ class LBMethodReturnValuesAnalysis private[analyses] (
                 def c(eps: SomeEPS): ProperPropertyComputationResult = {
                     analyze(ai, method, dependees)
                 }
-                InterimResult.forLB(method, MethodReturnValue(vi), domain.dependees, c)
+                InterimResult.forLB(method, MethodReturnValue(vi), dependees, c)
             }
         } else {
+            //... in this run, no refinement was possible and therefore, we had an early
+            // return (interrupt), but if we have dependencies, further refinements are still possible!
             val mrv = TheMethodReturnValue(ValueInformation.forProperValue(method.returnType))
             Result(FinalEP(method, mrv))
         }
