@@ -33,17 +33,37 @@ trait RefinedTypeLevelInvokeInstructions
         super.usesProperties ++ Set(MethodReturnValue)
     }
 
+    /**
+     * Provides a hook for subclasses that need to track the information for which methods
+     * refined return value information is actually used.
+     *
+     * @note Intended to be overridden by subclasses. Subclasses should simply call this
+     *       method last to get the correct behavior.
+     */
+    protected[this] def doInvokeWithRefinedReturnValue(
+        calledMethod: Method,
+        result:       MethodCallResult
+    ): MethodCallResult = {
+        result
+    }
+
     protected[this] def doInvoke(
         pc:       PC,
         method:   Method,
         operands: Operands,
         fallback: () ⇒ MethodCallResult
     ): MethodCallResult = {
+        if (!method.returnType.isObjectType) {
+            return fallback();
+        }
+
         dependees.getOrQueryAndUpdate(method, MethodReturnValue.key) match {
             case LBP(mrvProperty) ⇒
                 mrvProperty.returnValue match {
                     case Some(mrvi) ⇒
-                        MethodCallResult(domain.InitializedDomainValue(pc, mrvi), getPotentialExceptions(pc))
+                        val vi = domain.InitializedDomainValue(pc, mrvi)
+                        val result = MethodCallResult(vi, getPotentialExceptions(pc))
+                        doInvokeWithRefinedReturnValue(method, result)
                     case None ⇒
                         // the method always throws an exception... but we don't know which one
                         val potentialExceptions = getPotentialExceptions(pc)

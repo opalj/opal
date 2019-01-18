@@ -4,18 +4,31 @@ package ai
 package fpcf
 package analyses
 
-import org.opalj.fpcf.NoResult
+import org.opalj.fpcf.EOptionPSet
+import org.opalj.fpcf.LBProperties
+import org.opalj.fpcf.Result
+import org.opalj.fpcf.PropertiesBoundType
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyComputationResult
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.FinalEP
+import org.opalj.fpcf.InterimResult
+import org.opalj.fpcf.ProperPropertyComputationResult
+import org.opalj.fpcf.Property
+import org.opalj.fpcf.SomeEPS
+import org.opalj.value.ValueInformation
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.Method
 import org.opalj.br.PC
 import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.ai.domain
+import org.opalj.ai.fpcf.domain.RefinedTypeLevelFieldAccessInstructions
+import org.opalj.ai.fpcf.domain.RefinedTypeLevelInvokeInstructions
 import org.opalj.ai.fpcf.properties.MethodReturnValue
+import org.opalj.ai.fpcf.properties.TheMethodReturnValue
 
 /**
  * Computes for each method, which returns object values, general information about the potentially
@@ -33,8 +46,9 @@ class LBMethodReturnValuesAnalysis private[analyses] (
      * @author Michael Eichberg
      */
     class MethodReturnValuesAnalysisDomain(
-            val ai:     InterruptableAI[MethodReturnValuesAnalysisDomain],
-            val method: Method
+            val ai:        InterruptableAI[MethodReturnValuesAnalysisDomain],
+            val method:    Method,
+            val dependees: EOptionPSet[Entity, Property]
     ) extends CorrelationalDomain
         with domain.TheProject
         with domain.TheMethod
@@ -51,7 +65,11 @@ class LBMethodReturnValuesAnalysis private[analyses] (
         with domain.l1.DefaultReferenceValuesBinding
         with domain.DefaultHandlingOfMethodResults
         with domain.RecordReturnedValue
-        with domain.IgnoreSynchronization {
+        with domain.IgnoreSynchronization
+        with RefinedTypeLevelFieldAccessInstructions
+        with RefinedTypeLevelInvokeInstructions {
+
+        def usedPropertiesBound: PropertiesBoundType = LBProperties
 
         override implicit val project: SomeProject = analysis.project
 
@@ -84,12 +102,37 @@ class LBMethodReturnValuesAnalysis private[analyses] (
 
     private[analyses] def analyze(method: Method): PropertyComputationResult = {
         val ai = new InterruptableAI[MethodReturnValuesAnalysisDomain]()
-        val domain = new MethodReturnValuesAnalysisDomain(ai, method)
+        analyze(ai, method, EOptionPSet.empty)
+    }
+
+    private[analyses] def analyze(
+        ai:        InterruptableAI[MethodReturnValuesAnalysisDomain],
+        method:    Method,
+        dependees: EOptionPSet[Entity, Property]
+    ): ProperPropertyComputationResult = {
+        dependees.updateAll() // doesn't hurt if dependees is emnpty
+        val domain = new MethodReturnValuesAnalysisDomain(ai, method, dependees)
+
         val aiResult = ai(method, domain) // the state is implicitly accumulated in the domain
+
         if (!aiResult.wasAborted) {
-            Result(method, MethodReturnValue(aiResult.domain.returnedValue.map(_.toCanonicalForm)))
+            val vi = aiResult.domain.returnedValue.map(_.toCanonicalForm)
+            if (domain.dependees.isEmpty
+                || vi.isEmpty // <=> the method always ends with an exception
+                || vi.get.asReferenceValue.isNull.isYes
+                || vi.get.asReferenceValue.isPrecise) {
+                Result(method, MethodReturnValue(vi))
+            } else {
+                // We have potentially relevant dependencies (please, recall that we are currently
+                // not flow-sensitive).
+                def c(eps: SomeEPS): ProperPropertyComputationResult = {
+                    analyze(ai, method, dependees)
+                }
+                InterimResult.forLB(method, MethodReturnValue(vi), domain.dependees, c)
+            }
         } else {
-            NoResult
+            val mrv = TheMethodReturnValue(ValueInformation.forProperValue(method.returnType))
+            Result(FinalEP(method, mrv))
         }
     }
 

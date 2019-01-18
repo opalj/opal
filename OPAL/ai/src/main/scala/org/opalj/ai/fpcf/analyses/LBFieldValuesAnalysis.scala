@@ -4,10 +4,13 @@ package ai
 package fpcf
 package analyses
 
+import scala.collection.mutable
+
 import org.opalj.log.OPALLogger
 import org.opalj.fpcf.EOptionPSet
 import org.opalj.fpcf.Property
 import org.opalj.fpcf.Entity
+import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.InterimResult
 import org.opalj.fpcf.LBProperties
@@ -35,6 +38,7 @@ import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.ai.domain
 import org.opalj.ai.fpcf.analyses.FieldValuesAnalysis.ignoredFields
 import org.opalj.ai.fpcf.domain.RefinedTypeLevelFieldAccessInstructions
+import org.opalj.ai.fpcf.domain.RefinedTypeLevelInvokeInstructions
 import org.opalj.ai.fpcf.properties.FieldValue
 import org.opalj.ai.fpcf.properties.TypeBasedFieldValueInformation
 import org.opalj.ai.fpcf.properties.ValueBasedFieldValueInformation
@@ -126,7 +130,7 @@ class LBFieldValuesAnalysis private[analyses] (
     }
 
     /**
-     *  A very basic domain that we use for analyzing the values stored in a field.
+     *  The domain that we use for analyzing the values stored in a field.
      *
      * One instance of this domain is used to analyze all methods of the respective
      * class. Only after the analysis of all methods, the information returned by
@@ -154,16 +158,17 @@ class LBFieldValuesAnalysis private[analyses] (
         with domain.l0.DefaultReferenceValuesBinding // IT HAST TO BE L0 - we can't deal with null values!
         with domain.DefaultHandlingOfMethodResults
         with domain.IgnoreSynchronization
-        with RefinedTypeLevelFieldAccessInstructions {
+        with RefinedTypeLevelFieldAccessInstructions
+        with RefinedTypeLevelInvokeInstructions {
 
-        override implicit val project: SomeProject = analysis.project
-
-        def usedPropertiesBound: PropertiesBoundType = LBProperties
-
-        val thisClassType: ObjectType = classFile.thisType
+        final val thisClassType: ObjectType = classFile.thisType
 
         // Map of fieldNames (that are potentially relevant) and the (refined) value information
         var fieldInformation: Map[Field, Option[DomainValue]] = null
+
+        // Map between the method and the ones called by the method which could successfully
+        // be resolved.
+        val calledMethods: mutable.Map[Method, mutable.Set[Method]] = mutable.Map.empty
 
         def this(
             classFile:      ClassFile,
@@ -174,10 +179,14 @@ class LBFieldValuesAnalysis private[analyses] (
             fieldInformation = relevantFields.map[(Field, Option[DomainValue])](_ → None).toMap
         }
 
-        def hasCandidateFields: Boolean = fieldInformation.nonEmpty
+        final override def usedPropertiesBound: PropertiesBoundType = LBProperties
 
+        final override implicit def project: SomeProject = analysis.project
+
+        def hasCandidateFields: Boolean = fieldInformation.nonEmpty
         def candidateFields: Iterable[Field] = fieldInformation.keys
 
+        private[this] var currentMethod: Method = null
         private[this] var currentCode: Code = null
 
         /**
@@ -186,9 +195,20 @@ class LBFieldValuesAnalysis private[analyses] (
          * before this domain is used for the first time and immediately before the
          * interpretation of the next method (code block) starts.
          */
-        def setMethodContext(method: Method): Unit = currentCode = method.body.get
+        def setMethodContext(method: Method): Unit = {
+            currentMethod = method
+            currentCode = method.body.get
+        }
 
-        def code: Code = currentCode
+        override def code: Code = currentCode
+
+        override protected[this] def doInvokeWithRefinedReturnValue(
+            calledMethod: Method,
+            result:       MethodCallResult
+        ): MethodCallResult = {
+            calledMethods.getOrElseUpdate(currentMethod, mutable.Set.empty) += calledMethod
+            super.doInvokeWithRefinedReturnValue(calledMethod, result)
+        }
 
         private def updateFieldInformation(
             value:              DomainValue,
@@ -284,12 +304,26 @@ class LBFieldValuesAnalysis private[analyses] (
 
                             // 1. get the dependees that are relevant... i.e., fields read in
                             //    methods that also write the field for which we compute more
-                            //    precise information.
-                            val relevantMethods = fieldAccessInformation.writeAccesses(f).map(_._1).toSet
+                            //    precise information or methods called by the methods that
+                            //    write the field.
+                            val methodsWithFieldWrites =
+                                fieldAccessInformation.writeAccesses(f).map(_._1).toSet
                             val relevantDependees = domain.dependees.filter { eOptionP ⇒
-                                val readField = eOptionP.e.asInstanceOf[Field]
-                                fieldAccessInformation.readAccesses(readField).exists { mPCs ⇒
-                                    relevantMethods.contains(mPCs._1)
+                                eOptionP match {
+                                    case EOptionP(readField: Field, _) ⇒
+                                        fieldAccessInformation.readAccesses(readField).exists { mPCs ⇒
+                                            methodsWithFieldWrites.contains(mPCs._1)
+                                        }
+                                    case EOptionP(calledMethod: Method, _) ⇒
+                                        // Please note, that – if we get more precise type
+                                        // information while carrying out the analysis – the set
+                                        // of method dependees may increase after this initial
+                                        // filtering!
+                                        methodsWithFieldWrites.exists { m ⇒
+                                            val methodsCalledByM = domain.calledMethods.get(m)
+                                            methodsCalledByM.nonEmpty &&
+                                                methodsCalledByM.get.contains(calledMethod)
+                                        }
                                 }
                             }
 

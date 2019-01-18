@@ -2026,33 +2026,25 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
         vi:     ValueInformation
     ): DomainValue = {
         vi match {
+            // Matching:
+            //
+            //      IsMultipleReferenceValue
+            //
+            // is NOT YET SUPPORTED because THE INDIVIDUAL VALUES OF A MultipleReferenceValues
+            // have to have unique origins.
+
             case _: IsNullValue ⇒
                 NullValue(origin)
-
-            /* *** NOT YET SUPPORTED ***
-                 * THE INDIVIDUAL VALUES OF A MultipleReferenceValues have to have unique origins.
-                 *
-            case v: IsMultipleReferenceValue ⇒
-                val mappedBaseValues =
-                    v.baseValues.foldLeft(UIDSet.empty[DomainSingleOriginReferenceValue]) { (c, n) ⇒
-                        InitializedDomainValue(origin, c)
-                            .asInstanceOf[DomainSingleOriginReferenceValue])
-                    }
-                MultipleReferenceValues(
-                    mappedBaseValues,
-                    IntTrieSet1(origin),
-                    v.isNull,
-                    v.isPrecise,
-                    v.upperTypeBound,
-                    nextRefId()
-                )
-                */
 
             case v: IsReferenceValue ⇒
                 if (v.upperTypeBound.size > 1)
                     // handles MObjectValue
                     ObjectValue(origin, v.isNull, v.upperTypeBound.asInstanceOf[UIDSet[ObjectType]])
-                else
+                else if (v.upperTypeBound.isEmpty) {
+                    // Should not happen unless we have a MultipleReferenceValue over a
+                    // collection of null values.
+                    NullValue(origin)
+                } else
                     ReferenceValue(origin, v.isNull, v.isPrecise, v.leastUpperType.get)
 
             case vi ⇒ super.InitializedDomainValue(origin, vi)
