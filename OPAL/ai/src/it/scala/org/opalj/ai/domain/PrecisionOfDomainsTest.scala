@@ -10,6 +10,7 @@ import org.scalatest.junit.JUnitRunner
 import org.scalatest.Matchers
 import org.scalatest.FunSpec
 
+import org.opalj.concurrent.ConcurrentExceptions
 import org.opalj.br.Method
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.MethodInfo
@@ -150,37 +151,43 @@ class PrecisionOfDomainsTest extends FunSpec with Matchers {
             val failed = new java.util.concurrent.atomic.AtomicBoolean(false)
             val comparisonCount = new java.util.concurrent.atomic.AtomicInteger(0)
 
-            theProject.parForeachMethodWithBody() { methodInfo ⇒
-                val MethodInfo(_, method) = methodInfo
-                val r1 = BaseAI(method, new TypeLevelDomain(method, theProject))
-                val r2_ranges = BaseAI(method, new L1RangesDomain(method, theProject))
-                val r2_sets = BaseAI(method, new L1SetsDomain(method, theProject))
+            try {
+                theProject.parForeachMethodWithBody() { methodInfo ⇒
+                    val MethodInfo(_, method) = methodInfo
+                    val r1 = BaseAI(method, new TypeLevelDomain(method, theProject))
+                    val r2_ranges = BaseAI(method, new L1RangesDomain(method, theProject))
+                    val r2_sets = BaseAI(method, new L1SetsDomain(method, theProject))
 
-                def handleAbstractsOverFailure(
-                    lpDomain: String,
-                    mpDomain: String
-                )(
-                    m: String
-                ): Unit = {
-                    failed.set(true)
-                    val bodyMessage =
-                        "\" /*Instructions "+method.body.get.instructions.size+"*/\n"+
-                            s"\tthe less precise domain ($lpDomain) did not abstract "+
-                            s"over the state of the more precise domain ($mpDomain)\n"+
-                            "\t"+Console.BOLD + m + Console.RESET+"\n"
-                    println(method.toJava(bodyMessage))
+                    def handleAbstractsOverFailure(
+                                                      lpDomain: String,
+                                                      mpDomain: String
+                                                  )(
+                                                      m: String
+                                                  ): Unit = {
+                        failed.set(true)
+                        val bodyMessage =
+                            "\" /*Instructions " + method.body.get.instructions.size + "*/\n" +
+                                s"\tthe less precise domain ($lpDomain) did not abstract " +
+                                s"over the state of the more precise domain ($mpDomain)\n" +
+                                "\t" + Console.BOLD + m + Console.RESET + "\n"
+                        println(method.toJava(bodyMessage))
+                    }
+
+                    checkAbstractsOver(r1, r2_ranges).foreach(
+                        handleAbstractsOverFailure("TypeLevelDomain", "L1RangesDomain")
+                    )
+                    comparisonCount.incrementAndGet()
+
+                    checkAbstractsOver(r1, r2_sets).foreach(
+                        handleAbstractsOverFailure("TypeLevelDomain", "L1SetsDomain")
+                    )
+                    comparisonCount.incrementAndGet()
+
                 }
-
-                checkAbstractsOver(r1, r2_ranges).foreach(
-                    handleAbstractsOverFailure("TypeLevelDomain", "L1RangesDomain")
-                )
-                comparisonCount.incrementAndGet()
-
-                checkAbstractsOver(r1, r2_sets).foreach(
-                    handleAbstractsOverFailure("TypeLevelDomain", "L1SetsDomain")
-                )
-                comparisonCount.incrementAndGet()
-
+            } catch {
+                case ce : ConcurrentExceptions ⇒
+                    ce.getSuppressed()(0).printStackTrace()
+                    fail(ce.getSuppressed.mkString("underlying exceptions:\n","\n","\n\n"))
             }
 
             if (comparisonCount.get() < 2) {
