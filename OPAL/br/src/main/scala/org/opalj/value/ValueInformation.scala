@@ -1024,7 +1024,7 @@ case class AMultipleReferenceValue(
 ) extends IsMultipleReferenceValue {
     override def toCanonicalForm: IsReferenceValue = this
     override def toString: String = {
-        "MulitpleReferenceValue("+
+        "MultipleReferenceValue("+
             s"type=${upperTypeBound.map(_.toJava).toList.sorted.mkString(" with ")},"+
             s"isNull=$isNull,isPrecise=$isPrecise,"+
             s"baseValues=${baseValues.map(_.toString).mkString("{ ", ", ", " }")})"
