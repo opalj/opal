@@ -997,10 +997,10 @@ trait IsMultipleReferenceValue extends IsReferenceValue {
     override def toCanonicalForm: IsReferenceValue = {
         val uniqueBaseValues = baseValues.map(_.toCanonicalForm).toSet
         if (uniqueBaseValues.size == 1 &&
-            baseValues.head.isNull == this.isNull &&
-            baseValues.head.isPrecise == this.isPrecise &&
-            baseValues.head.upperTypeBound == this.upperTypeBound) {
-            baseValues.head
+            uniqueBaseValues.head.isNull == this.isNull &&
+            uniqueBaseValues.head.isPrecise == this.isPrecise &&
+            uniqueBaseValues.head.upperTypeBound == this.upperTypeBound) {
+            uniqueBaseValues.head
         } else {
             AMultipleReferenceValue(
                 // ...toSet is required because we potentially drop domain specific information
@@ -1022,6 +1022,9 @@ case class AMultipleReferenceValue(
         upperTypeBound: UIDSet[_ <: ReferenceType],
         leastUpperType: Option[ReferenceType] // None in case of "null"
 ) extends IsMultipleReferenceValue {
+
+    assert(baseValues.forall(_.getClass.getPackage.getName == ("org.opalj.value")))
+
     override def toCanonicalForm: IsReferenceValue = this
     override def toString: String = {
         "MultipleReferenceValue("+
