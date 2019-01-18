@@ -4,19 +4,18 @@ package ai
 package fpcf
 package analyses
 
+import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionPSet
+import org.opalj.fpcf.FinalEP
+import org.opalj.fpcf.InterimResult
 import org.opalj.fpcf.LBProperties
-import org.opalj.fpcf.Result
-import org.opalj.fpcf.PropertiesBoundType
+import org.opalj.fpcf.ProperPropertyComputationResult
+import org.opalj.fpcf.Property
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyComputationResult
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.FinalEP
-import org.opalj.fpcf.InterimResult
-import org.opalj.fpcf.ProperPropertyComputationResult
-import org.opalj.fpcf.Property
+import org.opalj.fpcf.SinglePropertiesBoundType
 import org.opalj.fpcf.SomeEPS
 import org.opalj.value.ValueInformation
 import org.opalj.br.analyses.SomeProject
@@ -41,7 +40,7 @@ class LBMethodReturnValuesAnalysis private[analyses] (
 ) extends FPCFAnalysis { analysis ⇒
 
     /**
-     *  A very basic domain that we use for analyzing the values returned by the methods.
+     *  A very basic domain that we use for analyzing the values returned by a method.
      *
      * @author Michael Eichberg
      */
@@ -69,7 +68,7 @@ class LBMethodReturnValuesAnalysis private[analyses] (
         with RefinedTypeLevelFieldAccessInstructions
         with RefinedTypeLevelInvokeInstructions {
 
-        def usedPropertiesBound: PropertiesBoundType = LBProperties
+        final override val UsedPropertiesBound: SinglePropertiesBoundType = LBProperties
 
         override implicit val project: SomeProject = analysis.project
 
@@ -89,15 +88,12 @@ class LBMethodReturnValuesAnalysis private[analyses] (
                 (!returnedReferenceValue.isPrecise ||
                     // Though the value is precise, no one cares if the type is (effectively) final
                     // or not extensible
-                    // TODO Use the information about "ExtensibleTypes" to filter more irrelevant cases
+                    // IMPROVE Use the information about "ExtensibleTypes" to filter more irrelevant cases
                     classHierarchy.isKnownToBeFinal(returnedReferenceValue.upperTypeBound.head))) {
                 ai.interrupt()
             }
             true // <= the information about the returned value was updated
         }
-
-        // TODO determine/record the accessed fields
-
     }
 
     private[analyses] def analyze(method: Method): PropertyComputationResult = {
@@ -110,13 +106,13 @@ class LBMethodReturnValuesAnalysis private[analyses] (
         method:    Method,
         dependees: EOptionPSet[Entity, Property]
     ): ProperPropertyComputationResult = {
-        dependees.updateAll() // doesn't hurt if dependees is emnpty
+        dependees.updateAll() // <= doesn't hurt if dependees is emnpty
         val domain = new MethodReturnValuesAnalysisDomain(ai, method, dependees)
 
         val aiResult = ai(method, domain) // the state is implicitly accumulated in the domain
 
         if (!aiResult.wasAborted) {
-            val vi = aiResult.domain.returnedValue.map(_.toCanonicalForm)
+            val vi: Option[ValueInformation] = aiResult.domain.returnedValue.map(_.toCanonicalForm)
             if (domain.dependees.isEmpty
                 || vi.isEmpty // <=> the method always ends with an exception
                 || vi.get.asReferenceValue.isNull.isYes

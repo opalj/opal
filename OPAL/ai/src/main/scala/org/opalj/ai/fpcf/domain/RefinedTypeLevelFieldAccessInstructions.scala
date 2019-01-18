@@ -37,7 +37,7 @@ trait RefinedTypeLevelFieldAccessInstructions
         project.resolveFieldReference(declaringClass, fieldName, fieldType) match {
             case Some(field) ⇒
                 dependees.getOrQueryAndUpdate(field, FieldValue.key) match {
-                    case LBP(fv) ⇒
+                    case UsedPropertiesBound(fv) ⇒
                         val vi = fv.value(classHierarchy)
                         doGetfield(pc, objectref, domain.InitializedDomainValue(pc, vi))
                     case _ ⇒

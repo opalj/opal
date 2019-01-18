@@ -7,22 +7,21 @@ package analyses
 import scala.collection.mutable
 
 import org.opalj.log.OPALLogger
-import org.opalj.fpcf.EOptionPSet
-import org.opalj.fpcf.Property
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
+import org.opalj.fpcf.EOptionPSet
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.InterimResult
 import org.opalj.fpcf.LBProperties
 import org.opalj.fpcf.MultiResult
-import org.opalj.fpcf.Result
-import org.opalj.fpcf.Results
 import org.opalj.fpcf.ProperPropertyComputationResult
-import org.opalj.fpcf.PropertiesBoundType
+import org.opalj.fpcf.Property
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyComputationResult
 import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.Result
 import org.opalj.fpcf.Results
+import org.opalj.fpcf.SinglePropertiesBoundType
 import org.opalj.fpcf.SomeEPS
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.ClassFile
@@ -179,7 +178,7 @@ class LBFieldValuesAnalysis private[analyses] (
             fieldInformation = relevantFields.map[(Field, Option[DomainValue])](_ → None).toMap
         }
 
-        final override def usedPropertiesBound: PropertiesBoundType = LBProperties
+        final override val UsedPropertiesBound: SinglePropertiesBoundType = LBProperties
 
         final override implicit def project: SomeProject = analysis.project
 

@@ -8,7 +8,6 @@ import scala.util.control.ControlThrowable
 
 import org.opalj.log.OPALLogger
 import org.opalj.log.Warn
-import org.opalj.fpcf.LBP
 import org.opalj.fpcf.PropertyKind
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
@@ -58,7 +57,7 @@ trait RefinedTypeLevelInvokeInstructions
         }
 
         dependees.getOrQueryAndUpdate(method, MethodReturnValue.key) match {
-            case LBP(mrvProperty) ⇒
+            case UsedPropertiesBound(mrvProperty) ⇒
                 mrvProperty.returnValue match {
                     case Some(mrvi) ⇒
                         val vi = domain.InitializedDomainValue(pc, mrvi)

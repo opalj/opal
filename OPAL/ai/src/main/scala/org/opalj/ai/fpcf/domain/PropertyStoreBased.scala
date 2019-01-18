@@ -4,12 +4,12 @@ package ai
 package fpcf
 package domain
 
-import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.Entity
-import org.opalj.fpcf.Property
 import org.opalj.fpcf.EOptionPSet
-import org.opalj.fpcf.PropertiesBoundType
+import org.opalj.fpcf.Property
+import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyKind
+import org.opalj.fpcf.SinglePropertiesBoundType
 import org.opalj.ai.domain.TheProject
 
 /**
@@ -22,9 +22,10 @@ trait PropertyStoreBased extends TheProject {
 
     /**
      * The type of the bound of the properties that are used.
-     * @return
+     *
+     * @note We are restricted to `SinglePropertiesBoundType` to facilitate matching the bounds.
      */
-    def usedPropertiesBound: PropertiesBoundType
+    val UsedPropertiesBound: SinglePropertiesBoundType
 
     /**
      * The properties potentially queried by this domain. I.e., it must list '''all properties'''
@@ -36,7 +37,7 @@ trait PropertyStoreBased extends TheProject {
     def usesProperties: Set[PropertyKind] = Set.empty
 
     final def usesPropertyBounds: Set[PropertyBounds] = {
-        usesProperties.map(pk ⇒ PropertyBounds(usedPropertiesBound, pk))
+        usesProperties.map(pk ⇒ PropertyBounds(UsedPropertiesBound, pk))
     }
 
     val dependees: EOptionPSet[Entity, Property]
