@@ -37,7 +37,7 @@ import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.ai.domain
 import org.opalj.ai.fpcf.analyses.FieldValuesAnalysis.ignoredFields
 import org.opalj.ai.fpcf.domain.RefinedTypeLevelFieldAccessInstructions
-import org.opalj.ai.fpcf.domain.RefinedTypeLevelInvokeInstructions
+//import org.opalj.ai.fpcf.domain.RefinedTypeLevelInvokeInstructions
 import org.opalj.ai.fpcf.properties.FieldValue
 import org.opalj.ai.fpcf.properties.TypeBasedFieldValueInformation
 import org.opalj.ai.fpcf.properties.ValueBasedFieldValueInformation
@@ -157,8 +157,8 @@ class LBFieldValuesAnalysis private[analyses] (
         with domain.l0.DefaultReferenceValuesBinding // IT HAST TO BE L0 - we can't deal with null values!
         with domain.DefaultHandlingOfMethodResults
         with domain.IgnoreSynchronization
-        with RefinedTypeLevelFieldAccessInstructions
-        with RefinedTypeLevelInvokeInstructions {
+        //with RefinedTypeLevelInvokeInstructions
+        with RefinedTypeLevelFieldAccessInstructions {
 
         final val thisClassType: ObjectType = classFile.thisType
 
@@ -201,6 +201,7 @@ class LBFieldValuesAnalysis private[analyses] (
 
         override def code: Code = currentCode
 
+        /*
         override protected[this] def doInvokeWithRefinedReturnValue(
             calledMethod: Method,
             result:       MethodCallResult
@@ -208,6 +209,7 @@ class LBFieldValuesAnalysis private[analyses] (
             calledMethods.getOrElseUpdate(currentMethod, mutable.Set.empty) += calledMethod
             super.doInvokeWithRefinedReturnValue(calledMethod, result)
         }
+        */
 
         private def updateFieldInformation(
             value:              DomainValue,
