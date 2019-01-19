@@ -20,7 +20,7 @@ import org.opalj.fpcf.SomeEPS
 import org.opalj.value.ValueInformation
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.Method
-//import org.opalj.br.PC
+import org.opalj.br.PC
 import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.ai.domain
@@ -71,27 +71,49 @@ class LBMethodReturnValuesAnalysis private[analyses] (
         final override val UsedPropertiesBound: SinglePropertiesBoundType = LBProperties
 
         override implicit val project: SomeProject = analysis.project
-        /*
+
         override protected[this] def doRecordReturnedValue(pc: PC, value: Value): Boolean = {
             val isUpdated = super.doRecordReturnedValue(pc, value)
 
             // The idea is to check if the computed return value can no longer be more
             // precise than the "pure" type information. If this is the case, we simply
             // abort the AI
+
             val returnedReferenceValue = theReturnedValue.asDomainReferenceValue
-            if (returnedReferenceValue.isNull.isUnknown &&
-                returnedReferenceValue.upperTypeBound.isSingletonSet &&
-                returnedReferenceValue.upperTypeBound.head == method.returnType &&
-                !returnedReferenceValue.isPrecise /*(!returnedReferenceValue.isPrecise ||
-                    // Though the value is precise, no one cares if the type is (effectively) final
-                    // or not extensible
-                    // IMPROVE Use the information about "ExtensibleTypes" to filter more irrelevant cases
-                    classHierarchy.isKnownToBeFinal(returnedReferenceValue.upperTypeBound.head))*/ ) {
-                ai.interrupt()
+            // IN GENERAL, we would like the following assertion to always hold,
+            // but – given that basically every code base has loose ends – it
+            // may happen that the class hierarchy lacks crucial information to
+            // make it possible to compute the correct upper bound. E.g., in case
+            // of the JDK, the type hierarchy relation between the used eclipse
+            // classes is not known and therefore the common supertype of ...dnd.RTFTextTransfer
+            // and dnd.TextTransfer is computed as Object, though it is dnd.Transfer.
+            // In this case it may happen that the returned value (Object in the above case)
+            // suddenly becomes "less precise" than the declared return type.
+            //
+            // assert(
+            //    returnedReferenceValue.isNull.isYes ||
+            //         classHierarchy.isASubtypeOf(
+            //             returnedReferenceValue.upperTypeBound,
+            //            method.returnType.asObjectType
+            //        ).isYesOrUnknown,
+            //     s"$returnedReferenceValue is not a subtype of the return type ${method.returnType}"
+            // )
+            if (isUpdated) {
+                val returnedValueUTB = returnedReferenceValue.upperTypeBound
+                val methodReturnType = method.returnType.asObjectType
+                if (!classHierarchy.isSubtypeOf(returnedValueUTB, methodReturnType)) {
+                    // the type hierarchy is incomplete...
+                    ai.interrupt()
+                } else if (returnedReferenceValue.isNull.isUnknown &&
+                    returnedValueUTB.isSingletonSet &&
+                    returnedValueUTB.head == methodReturnType &&
+                    !returnedReferenceValue.isPrecise) {
+                    // we don't get more precise information
+                    ai.interrupt()
+                }
             }
             isUpdated // <= the information about the returned value was updated
-        }*/
-
+        }
     }
 
     private[analyses] def analyze(method: Method): PropertyComputationResult = {
@@ -109,11 +131,16 @@ class LBMethodReturnValuesAnalysis private[analyses] (
         val domain = new MethodReturnValuesAnalysisDomain(ai, method, dependees)
         val aiResult = ai(method, domain) // the state is implicitly accumulated in the domain
 
+        def c(eps: SomeEPS): ProperPropertyComputationResult = {
+            ai.resetInterrupt()
+            analyze(ai, method, dependees)
+        }
+
         if (!aiResult.wasAborted) {
             val vi: Option[ValueInformation] = aiResult.domain.returnedValue.map(_.toCanonicalForm)
             if (dependees.isEmpty
-                || vi.isEmpty // <=> the method either always ends with an exception or does not end at all
-                // THE FOLLOWING TESTS REQUIRE ADDITIONAL KNOWLEDGE ABOUT THE DEPENDEES!
+                || vi.isEmpty // <=> the method always ends with an exception or not at all
+                // THE FOLLOWING TESTS WOULD REQUIRE ADDITIONAL KNOWLEDGE ABOUT THE DEPENDEES!
                 // IN GENERAL, EVERY POSSIBLE REFINEMENT COULD LEAD TO THE CASE THAT THE CURRENT
                 // METHOD WILL ALWAYS THROW AN EXCEPTION!
                 // || vi.get.asReferenceValue.isNull.isYes
@@ -123,16 +150,18 @@ class LBMethodReturnValuesAnalysis private[analyses] (
             } else {
                 // We have potentially relevant dependencies (please, recall that we are currently
                 // not flow-sensitive).
-                def c(eps: SomeEPS): ProperPropertyComputationResult = {
-                    analyze(ai, method, dependees)
-                }
                 InterimResult.forLB(method, MethodReturnValue(vi), dependees, c)
             }
         } else {
-            //... in this run, no refinement was possible and therefore, we had an early
-            // return (interrupt), but if we have dependencies, further refinements are still possible!
+            //... in this run (!) no refinement was possible and therefore we had an early
+            // return (interrupt), but if we have dependencies, further refinements are still
+            // possible, because some path(s) may be pruned by future refinements!
             val mrv = TheMethodReturnValue(ValueInformation.forProperValue(method.returnType))
-            Result(FinalEP(method, mrv))
+            if (dependees.isEmpty) {
+                Result(FinalEP(method, mrv))
+            } else {
+                InterimResult.forLB(method, mrv, dependees, c)
+            }
         }
     }
 
