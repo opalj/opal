@@ -49,6 +49,8 @@ sealed trait EOptionPSet[E <: Entity, P <: Property] extends Traversable[EOption
     /** Removes the given EOptionP value from this set. */
     def remove(eOptionP: SomeEOptionP): Unit
 
+    def clear(): Unit
+
     /**
      * Updates this set's EOptionP that has the same entity and PropertyKey with the given one.
      * '''Here, update means that the value is replace, unless the new value is final. In
@@ -134,6 +136,10 @@ private[fpcf] class MultiEOptionPSet[E <: Entity, P <: Property](
                 eEOptionPs.remove(eOptionP)
                 data = data.updated(pkId, eEOptionPs - eOptionP.e)
         }
+    }
+
+    def clear(): Unit = {
+        data = IntMap.empty
     }
 
     override def update(eps: SomeEPS): Unit = {
