@@ -88,7 +88,12 @@ object RTACallGraph extends DefaultOneStepAnalysis {
             )
         )
 
-        project.get(FPCFAnalysesManagerKey).runAll(
+        val analysesManager = project.get(FPCFAnalysesManagerKey)
+        analysesManager.runAll(
+            org.opalj.ai.fpcf.analyses.EagerLBFieldValuesAnalysis,
+            org.opalj.ai.fpcf.analyses.EagerLBMethodReturnValuesAnalysis
+        )
+        analysesManager.runAll(
             List(
                 // LazyL0BaseAIAnalysis,
                 // TACAITransformer,

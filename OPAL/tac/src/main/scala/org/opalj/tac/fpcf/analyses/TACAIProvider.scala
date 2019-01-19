@@ -22,18 +22,17 @@ import org.opalj.ai.fpcf.analyses.DomainBasedFPCFAnalysisScheduler
 import org.opalj.ai.fpcf.analyses.L0BaseAIResultAnalysis
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.ai.fpcf.properties.ProjectSpecificAIExecutor
+import org.opalj.tac.fpcf.analyses.TACAIAnalysis.computeTheTACAI
 import org.opalj.tac.fpcf.properties.TACAI
 
 /**
  * Provides the TACAI for all methods. The TACAI provided by the TACAI provider is always
- * detached from the underlying results of the abstract interpration and therefore
+ * detached from the underlying results of the abstract interpretation and therefore
  * significantly reduces the overall memory consumption if the AIResults are not needed!
  *
  * @author Michael Eichberg
  */
 class TACAIProvider private[analyses] (val project: SomeProject) extends FPCFAnalysis {
-
-    import org.opalj.tac.fpcf.analyses.TACAIAnalysis.computeTheTACAI
 
     final implicit val aiFactory: ProjectSpecificAIExecutor = project.get(AIDomainFactoryKey)
 
@@ -68,7 +67,7 @@ object EagerTACAIProvider extends TACAIProviderScheduler with FPCFEagerAnalysisS
     override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
 
     override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
-        val analysis = new TACAIProvider(p)
+        val analysis = new TACAIProvider(p) // THE TACAIPROVIDER MUST NOT BE CREATED IN INIT!
         val methods = p.allMethodsWithBody
         ps.scheduleEagerComputationsForEntities(methods)(analysis.computeTAC)
         analysis
@@ -80,7 +79,7 @@ object LazyTACAIProvider extends TACAIProviderScheduler with FPCFLazyAnalysisSch
     override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 
     override def register(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
-        val analysis = new TACAIProvider(p)
+        val analysis = new TACAIProvider(p) // THE TACAIPROVIDER MUST NOT BE CREATED IN INIT!
         ps.registerLazyPropertyComputation(TACAI.key, analysis.computeTAC)
         analysis
     }

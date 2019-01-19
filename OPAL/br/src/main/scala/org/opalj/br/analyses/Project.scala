@@ -540,12 +540,7 @@ class Project[Source] private (
                 // we don't need the initialization data anymore
                 projectInformationKeyInitializationData.remove(pik)
                 pi
-            } { t ⇒
-                info(
-                    "project",
-                    s"initialization of $className took ${t.toSeconds}"
-                )
-            }
+            } { t ⇒ info("project", s"initialization of $className took ${t.toSeconds}") }
             projectInformation.set(pikUId, pi)
             pi
         }

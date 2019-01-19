@@ -26,6 +26,7 @@ import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.ai.domain
 import org.opalj.ai.fpcf.domain.RefinedTypeLevelFieldAccessInstructions
 import org.opalj.ai.fpcf.domain.RefinedTypeLevelInvokeInstructions
+import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.ai.fpcf.properties.MethodReturnValue
 import org.opalj.ai.fpcf.properties.TheMethodReturnValue
 
@@ -168,6 +169,16 @@ class LBMethodReturnValuesAnalysis private[analyses] (
 }
 
 object EagerLBMethodReturnValuesAnalysis extends BasicFPCFEagerAnalysisScheduler {
+
+    override def init(p: SomeProject, ps: PropertyStore): Null = {
+        p.updateProjectInformationKeyInitializationData(
+            AIDomainFactoryKey,
+            (i: Option[Set[Class[_ <: AnyRef]]]) ⇒ {
+                i.getOrElse(Set.empty) + classOf[RefinedTypeLevelInvokeInstructions]
+            }
+        )
+        null
+    }
 
     override def uses: Set[PropertyBounds] = Set.empty
 

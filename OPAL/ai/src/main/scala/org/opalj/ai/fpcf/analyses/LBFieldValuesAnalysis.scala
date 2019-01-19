@@ -38,6 +38,7 @@ import org.opalj.ai.domain
 import org.opalj.ai.fpcf.analyses.FieldValuesAnalysis.ignoredFields
 import org.opalj.ai.fpcf.domain.RefinedTypeLevelFieldAccessInstructions
 //import org.opalj.ai.fpcf.domain.RefinedTypeLevelInvokeInstructions
+import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.ai.fpcf.properties.FieldValue
 import org.opalj.ai.fpcf.properties.TypeBasedFieldValueInformation
 import org.opalj.ai.fpcf.properties.ValueBasedFieldValueInformation
@@ -412,6 +413,16 @@ object FieldValuesAnalysis {
 }
 
 object EagerLBFieldValuesAnalysis extends BasicFPCFEagerAnalysisScheduler {
+
+    override def init(p: SomeProject, ps: PropertyStore): Null = {
+        p.updateProjectInformationKeyInitializationData(
+            AIDomainFactoryKey,
+            (i: Option[Set[Class[_ <: AnyRef]]]) ⇒ {
+                i.getOrElse(Set.empty) + classOf[RefinedTypeLevelFieldAccessInstructions]
+            }
+        )
+        null
+    }
 
     override def uses: Set[PropertyBounds] = Set()
 

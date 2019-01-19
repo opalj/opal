@@ -220,6 +220,17 @@ object DomainRegistry {
     )
 
     register(
+        "computations are done at the type level; "+
+            "cfg and def/use information is recorded; "+
+            "signature refinements are used",
+        classOf[fpcf.domain.PrimitiveTACAIDomainWithSignatureRefinement],
+        lessPreciseDomains = Set(classOf[domain.l0.PrimitiveTACAIDomain]),
+        (project: SomeProject, method: Method) ⇒ {
+            new fpcf.domain.PrimitiveTACAIDomainWithSignatureRefinement(project, method)
+        }
+    )
+
+    register(
         "computations related to int values are done using intervals",
         classOf[domain.l1.DefaultIntervalValuesDomain[_]],
         lessPreciseDomains = Set(classOf[domain.l0.BaseDomain[_]]),
@@ -261,6 +272,21 @@ object DomainRegistry {
         lessPreciseDomains = Set(classOf[domain.l0.PrimitiveTACAIDomain]),
         (project: SomeProject, method: Method) ⇒ {
             new domain.l1.DefaultDomainWithCFGAndDefUse(project, method)
+        }
+    )
+
+    register(
+        "uses intervals for int values; "+
+            "tracks nullness and must alias information for reference types; "+
+            "records the ai-time def-use information; "+
+            "uses refined signature information",
+        classOf[fpcf.domain.L1DefaultDomainWithCFGAndDefUseAndSignatureRefinement[_]],
+        lessPreciseDomains = Set(
+            classOf[domain.l1.DefaultDomainWithCFGAndDefUse[_]],
+            classOf[fpcf.domain.PrimitiveTACAIDomainWithSignatureRefinement]
+        ),
+        (project: SomeProject, method: Method) ⇒ {
+            new fpcf.domain.L1DefaultDomainWithCFGAndDefUseAndSignatureRefinement(project, method)
         }
     )
 

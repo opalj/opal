@@ -86,7 +86,7 @@ object EagerL0BaseAIAnalysis
     override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
 
     override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
-        val analysis = new L0BaseAIResultAnalysis(p)
+        val analysis = new L0BaseAIResultAnalysis(p) // <= NOT BE CREATED IN INIT!
         val methods = p.allMethodsWithBody
         ps.scheduleEagerComputationsForEntities(methods)(analysis.performAI)
         analysis
@@ -100,7 +100,7 @@ object LazyL0BaseAIAnalysis
     override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 
     override def register(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
-        val analysis = new L0BaseAIResultAnalysis(p)
+        val analysis = new L0BaseAIResultAnalysis(p) // <= NOT BE CREATED IN INIT!
         ps.registerLazyPropertyComputation(BaseAIResult.key, analysis.performAI)
         analysis
     }
