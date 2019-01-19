@@ -13,8 +13,6 @@ import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.br.Field
-import org.opalj.ai.fpcf.analyses.EagerLBFieldValuesAnalysis
-import org.opalj.ai.fpcf.analyses.EagerLBMethodReturnValuesAnalysis
 import org.opalj.ai.fpcf.properties.FieldValue
 import org.opalj.ai.fpcf.properties.MethodReturnValue
 
@@ -42,8 +40,8 @@ object Values extends DefaultOneStepAnalysis {
         val (ps, _) =
             PerformanceEvaluation.time {
                 project.get(FPCFAnalysesManagerKey).runAll(
-                    EagerLBFieldValuesAnalysis,
-                    EagerLBMethodReturnValuesAnalysis
+                    org.opalj.ai.fpcf.analyses.EagerLBFieldValuesAnalysis,
+                    org.opalj.ai.fpcf.analyses.EagerLBMethodReturnValuesAnalysis
                 )
             } { t ⇒
                 OPALLogger.info(
