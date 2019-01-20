@@ -138,7 +138,7 @@ object TACAI {
 
         val isStatic = method.isStatic
         val descriptor = method.descriptor
-        val code = method.body.get
+        val code = aiResult.code // THIS IS NOT `method.body.get` IF THE BODY IS INVALID!
         import code.pcOfNextInstruction
         val instructions: Array[Instruction] = code.instructions
         val codeSize: Int = instructions.length
