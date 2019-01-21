@@ -190,7 +190,11 @@ object EagerLBMethodReturnValuesAnalysis extends BasicFPCFEagerAnalysisScheduler
 
     override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new LBMethodReturnValuesAnalysis(p)
-        val methods = p.allMethodsWithBody.iterator.filter(m ⇒ m.returnType.isObjectType)
+        val methods = p.allMethodsWithBody.iterator.filter { m ⇒
+            val returnType = m.returnType
+            returnType.isObjectType
+            // && p.classHierarchy.hasSubtypes(returnType.asObjectType).isYes // <= we can't refine to null
+        }
         ps.scheduleEagerComputationsForEntities(methods)(analysis.analyze)
         analysis
     }
