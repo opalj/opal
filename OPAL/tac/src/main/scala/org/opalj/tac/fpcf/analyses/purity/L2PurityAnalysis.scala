@@ -863,13 +863,14 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         val bbsCausingExceptions = cfg.abnormalReturnNode.predecessors
         for {
             bb ← bbsCausingExceptions
-            pc = bb.asBasicBlock.endPC
-            if isSourceOfImmediateException(pc)
         } {
-            val throwingStmt = state.code(pc)
-            val ratedResult = rater.handleException(throwingStmt)
-            if (ratedResult.isDefined) atMost(ratedResult.get)
-            else atMost(SideEffectFree)
+            val pc = bb.asBasicBlock.endPC
+            if (isSourceOfImmediateException(pc)) {
+                val throwingStmt = state.code(pc)
+                val ratedResult = rater.handleException(throwingStmt)
+                if (ratedResult.isDefined) atMost(ratedResult.get)
+                else atMost(SideEffectFree)
+            }
         }
 
         if (state.ubPurity eq CompileTimePure) // Check static data usage only if necessary
@@ -973,6 +974,7 @@ object EagerL2PurityAnalysis extends L2PurityAnalysisScheduler with FPCFEagerAna
     ): FPCFAnalysis = {
         val dms = p.get(DeclaredMethodsKey).declaredMethods
         val methods = dms.collect {
+            // todo querying ps is quiet expensive
             case dm if dm.hasSingleDefinedMethod && dm.definedMethod.body.isDefined && !analysis.configuredPurity.wasSet(dm) && ps(dm, CallersProperty.key).ub != NoCallers ⇒
                 dm.asDefinedMethod
         }
