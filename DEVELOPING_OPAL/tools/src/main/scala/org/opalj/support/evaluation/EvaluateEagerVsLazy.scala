@@ -1,6 +1,8 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
+
 package support
+
 package evaluation
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigValueFactory
@@ -21,6 +23,13 @@ import org.opalj.br.fpcf.analyses.EagerClassImmutabilityAnalysis
 import org.opalj.br.fpcf.analyses.EagerTypeImmutabilityAnalysis
 import org.opalj.br.fpcf.analyses.LazyClassImmutabilityAnalysis
 import org.opalj.br.fpcf.analyses.LazyTypeImmutabilityAnalysis
+import org.opalj.br.fpcf.properties.ClassImmutability
+import org.opalj.br.fpcf.properties.EscapeProperty
+import org.opalj.br.fpcf.properties.FieldLocality
+import org.opalj.br.fpcf.properties.FieldMutability
+import org.opalj.br.fpcf.properties.Purity
+import org.opalj.br.fpcf.properties.ReturnValueFreshness
+import org.opalj.br.fpcf.properties.TypeImmutability
 import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
 import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
@@ -75,17 +84,21 @@ object EvaluateEagerVsLazy {
             case "-closedWorld" ⇒ closedWorldAssumption = true
         }
 
-        val baseConfig = if (closedWorldAssumption) BaseConfig.withValue(
-            "org.opalj.br.analyses.cg.ClassExtensibilityKey.analysis",
-            ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.ClassHierarchyIsNotExtensible")
-        )
-        else BaseConfig
+        val baseConfig =
+            if (closedWorldAssumption)
+                BaseConfig.withValue(
+                    "org.opalj.br.analyses.cg.ClassExtensibilityKey.analysis",
+                    ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.ClassHierarchyIsNotExtensible")
+                )
+            else BaseConfig
 
         implicit val config: Config =
-            baseConfig.withValue(
-                "org.opalj.br.analyses.cg.InitialEntryPointsKey.analysis",
-                ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.LibraryEntryPointsFinder")
-            ).withValue(
+            baseConfig
+                .withValue(
+                    "org.opalj.br.analyses.cg.InitialEntryPointsKey.analysis",
+                    ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.LibraryEntryPointsFinder")
+                )
+                .withValue(
                     "org.opalj.br.analyses.cg.InitialInstantiatedTypesKey.analysis",
                     ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.LibraryInstantiatedTypesFinder")
                 )
@@ -97,17 +110,22 @@ object EvaluateEagerVsLazy {
 
         val project = time {
             Project(org.opalj.bytecode.JRELibraryFolder, GlobalLogContext, config)
-        } { t ⇒ projectTime = t.toSeconds }
+        } { t ⇒
+            projectTime = t.toSeconds
+        }
 
         project.updateProjectInformationKeyInitializationData(
             AIDomainFactoryKey,
-            (i: Option[Set[Class[_ <: AnyRef]]]) ⇒ (i match {
-                case None               ⇒ Set(classOf[DefaultDomainWithCFGAndDefUse[_]])
-                case Some(requirements) ⇒ requirements + classOf[DefaultDomainWithCFGAndDefUse[_]]
-            }): Set[Class[_ <: AnyRef]]
+            (i: Option[Set[Class[_ <: AnyRef]]]) ⇒
+                (i match {
+                    case None               ⇒ Set(classOf[DefaultDomainWithCFGAndDefUse[_]])
+                    case Some(requirements) ⇒ requirements + classOf[DefaultDomainWithCFGAndDefUse[_]]
+                }): Set[Class[_ <: AnyRef]]
         )
 
-        val ps = time { project.get(PropertyStoreKey) } { t ⇒ propertyStoreTime = t.toSeconds }
+        val ps = time { project.get(PropertyStoreKey) } { t ⇒
+            propertyStoreTime = t.toSeconds
+        }
 
         val manager = project.get(FPCFAnalysesManagerKey)
 
@@ -137,7 +155,9 @@ object EvaluateEagerVsLazy {
 
         time {
             manager.runAll(cgAnalyses)
-        } { t ⇒ callGraphTime = t.toSeconds }
+        } { t ⇒
+            callGraphTime = t.toSeconds
+        }
 
         L2PurityAnalysis.setRater(Some(SystemOutLoggingAllExceptionRater))
 
@@ -166,9 +186,21 @@ object EvaluateEagerVsLazy {
         time {
             manager.runAll(analyses)
 
-        } { t ⇒ analysisTime = t.toSeconds }
+        } { t ⇒
+            analysisTime = t.toSeconds
+        }
 
         println(ps.statistics.mkString("\n"))
+        val propertyCount =
+            ps.entities(Purity.key).size +
+                ps.entities(EscapeProperty.key).size +
+                ps.entities(ClassImmutability.key).size +
+                ps.entities(TypeImmutability.key).size +
+                ps.entities(FieldMutability.key).size +
+                ps.entities(ReturnValueFreshness.key).size +
+                ps.entities(FieldLocality.key).size
+
+        println(s"properties count $propertyCount")
 
         ps.shutdown()
 
