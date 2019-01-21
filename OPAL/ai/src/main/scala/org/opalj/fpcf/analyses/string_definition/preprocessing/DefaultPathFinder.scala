@@ -1,197 +1,124 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.analyses.string_definition.preprocessing
 
-import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
 import org.opalj.fpcf.analyses.string_definition.V
-import org.opalj.br.cfg.BasicBlock
 import org.opalj.br.cfg.CFG
-import org.opalj.br.cfg.CFGNode
-import org.opalj.tac.Goto
-import org.opalj.tac.If
 import org.opalj.tac.Stmt
 import org.opalj.tac.TACStmts
 
 /**
  * An approach based on an a naive / intuitive traversing of the control flow graph.
  *
+ * @param cfg The control flow graph (CFG) on which this instance will operate on.
+ *
  * @author Patrick Mell
+ *
+ * @note To fill gaps, e.g., from the very first statement of a context, such as a CFG, to the first
+ *       control structure, a consecutive row of path elements are inserted. Arbitrarily inserted
+ *       jumps within the bytecode might lead to a different order than the one computed by this
+ *       class!
  */
-class DefaultPathFinder extends AbstractPathFinder {
+class DefaultPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) extends AbstractPathFinder(cfg) {
 
     /**
-     * CSInfo stores information regarding control structures (CS) in the form: Index of the start
-     * statement of that CS, index of the end statement of that CS and the type.
+     * This function transforms a hierarchy into a [[Path]].
+     *
+     * @param topElements A list of the elements which are present on the top-most level in the
+     *                    hierarchy.
+     * @param startIndex `startIndex` serves as a way to build a path between the first statement
+     *                   (which is not necessarily a control structure) and the very first control
+     *                  structure. For example, assume that the first control structure begins at
+     *                   statement 5. `startIndex` will then be used to fill the gap `startIndex`
+     *                   and 5.
+     * @param endIndex  `endIndex` serves as a way to build a path between the last statement of a
+     *                control structure (which is not necessarily the end of a scope of interest,
+     *                such as a method) and the last statement (e.g., in `cfg`).
+     * @return Returns the transformed [[Path]].
      */
-    private type CSInfo = (Int, Int, NestedPathType.Value)
-    private type CFGType = CFG[Stmt[V], TACStmts[V]]
+    private def hierarchyToPath(
+        topElements: List[HierarchicalCSOrder], startIndex: Int, endIndex: Int
+    ): Path = {
+        val finalPath = ListBuffer[SubPath]()
+        // For the outer-most call, this is not the start index of the last control structure but of
+        // the start PC of the first basic block
+        var indexLastCSEnd = startIndex
 
-    private def determineTypeOfIf(cfg: CFGType, stmtIndex: Int): NestedPathType.Value = {
-        // Is the first condition enough to identify loops?
-        if (isHeadOfLoop(stmtIndex, cfg.findNaturalLoops(), cfg)) {
-            NestedPathType.Repetition
-        } else if (isCondWithoutElse(stmtIndex, cfg)) {
-            NestedPathType.CondWithoutAlternative
-        } else {
-            NestedPathType.CondWithAlternative
-        }
-    }
-
-    private def getStartAndEndIndexOfLoop(headIndex: Int, cfg: CFGType): (Int, Int) = {
-        var startIndex = -1
-        var endIndex = -1
-        val relevantLoop = cfg.findNaturalLoops().filter(_ ⇒
-            isHeadOfLoop(headIndex, cfg.findNaturalLoops(), cfg))
-        if (relevantLoop.nonEmpty) {
-            startIndex = relevantLoop.head.head
-            endIndex = relevantLoop.head.last
-        }
-        (startIndex, endIndex)
-    }
-
-    private def getStartAndEndIndexOfCondWithAlternative(
-        branchingSite: Int, cfg: CFGType, processedIfs: mutable.Map[Int, Unit.type]
-    ): (Int, Int) = {
-        processedIfs(branchingSite) = Unit
-
-        var endSite = -1
-        val stack = mutable.Stack[Int](branchingSite)
-        while (stack.nonEmpty) {
-            val popped = stack.pop()
-            val nextBlock = cfg.bb(popped).successors.map {
-                case bb: BasicBlock ⇒ bb.startPC
-                // Handle Catch Nodes?
-                case _              ⇒ -1
-            }.max
-            var containsIf = false
-            for (i ← cfg.bb(nextBlock).startPC.to(cfg.bb(nextBlock).endPC)) {
-                if (cfg.code.instructions(i).isInstanceOf[If[V]]) {
-                    processedIfs(i) = Unit
-                    containsIf = true
-                }
+        // Recursively transform the hierarchies to paths
+        topElements.foreach { nextTopEle ⇒
+            // Build path up to the next control structure
+            val nextCSStart = nextTopEle.hierarchy.head._1.get._1
+            indexLastCSEnd.until(nextCSStart).foreach { i ⇒
+                finalPath.append(FlatPathElement(i))
             }
 
-            if (containsIf) {
-                stack.push(nextBlock)
+            val children = nextTopEle.hierarchy.head._2
+            if (children.isEmpty) {
+                // Recursion anchor: Build path for the correct type
+                val (subpath, _) = buildPathForElement(nextTopEle, fill = true)
+                // Control structures consist of only one element (NestedPathElement), thus "head"
+                // is enough
+                finalPath.append(subpath.elements.head)
             } else {
-                // Find the goto that points after the "else" part (the assumption is that this
-                // goto is the very last element of the current branch
-                endSite = cfg.code.instructions(nextBlock - 1).asGoto.targetStmt - 1
-            }
-        }
+                val startIndex = nextTopEle.hierarchy.head._1.get._1
+                val endIndex = nextTopEle.hierarchy.head._1.get._2
+                val childrenPath = hierarchyToPath(children, startIndex, endIndex)
+                var insertIndex = 0
+                val (subpath, startEndPairs) = buildPathForElement(nextTopEle, fill = false)
+                // npe is the nested path element that was produced above (head is enough as this
+                // list will always contain only one element, due to fill=false)
+                val npe = subpath.elements.head.asInstanceOf[NestedPathElement]
+                val isRepElement = npe.elementType.getOrElse(NestedPathType.TryCatchFinally) ==
+                    NestedPathType.Repetition
+                var lastInsertedIndex = 0
+                childrenPath.elements.foreach { nextEle ⇒
+                    if (isRepElement) {
+                        npe.element.append(nextEle)
+                    } else {
+                        npe.element(insertIndex).asInstanceOf[NestedPathElement].element.append(
+                            nextEle
+                        )
+                    }
 
-        (branchingSite, endSite)
-    }
-
-    private def getStartAndEndIndexOfCondWithoutAlternative(
-        branchingSite: Int, cfg: CFGType, processedIfs: mutable.Map[Int, Unit.type]
-    ): (Int, Int) = {
-        // Find the index of very last element in the if block (here: The goto element; is it always
-        // present?)
-        val ifTarget = cfg.code.instructions(branchingSite).asInstanceOf[If[V]].targetStmt
-        var endIndex = ifTarget
-        do {
-            endIndex -= 1
-        } while (cfg.code.instructions(branchingSite).isInstanceOf[Goto])
-
-        // It is now necessary to collect all ifs that belong to the whole if condition in the
-        // high-level construct
-        cfg.bb(ifTarget).predecessors.foreach {
-            case pred: BasicBlock ⇒
-                for (i ← pred.startPC.to(pred.endPC)) {
-                    if (cfg.code.instructions(i).isInstanceOf[If[V]]) {
-                        processedIfs(i) = Unit
+                    lastInsertedIndex = nextEle match {
+                        case fpe: FlatPathElement     ⇒ fpe.element
+                        case inner: NestedPathElement ⇒ Path.getLastElementInNPE(inner).element
+                        // Compiler wants it but should never be the case!
+                        case _                        ⇒ -1
+                    }
+                    if (lastInsertedIndex >= startEndPairs(insertIndex)._2) {
+                        insertIndex += 1
                     }
                 }
-            // How about CatchNodes?
-            case cn ⇒ println(cn)
-        }
-
-        (branchingSite, endIndex)
-    }
-
-    private def getTryCatchFinallyInfo(cfg: CFGType): List[CSInfo] = {
-        // Stores the startPC as key and the index of the end of a catch (or finally if it is
-        // present); a map is used for faster accesses
-        val tryInfo = mutable.Map[Int, Int]()
-
-        cfg.catchNodes.foreach { cn ⇒
-            if (!tryInfo.contains(cn.startPC)) {
-                val cnWithSameStartPC = cfg.catchNodes.filter(_.startPC == cn.startPC)
-                // If there is only one CatchNode for a startPC, i.e., no finally, no other catches,
-                // the end index can be directly derived from the successors
-                if (cnWithSameStartPC.tail.isEmpty) {
-                    tryInfo(cn.startPC) = cfg.bb(cn.endPC).successors.map {
-                        case bb: BasicBlock ⇒ bb.startPC - 1
-                        case _              ⇒ -1
-                    }.max
-                } // Otherwise, the largest handlerPC marks the end index
-                else {
-                    tryInfo(cn.startPC) = cnWithSameStartPC.map(_.handlerPC).max
-                }
-            }
-        }
-
-        tryInfo.map {
-            case (key, value) ⇒ (key, value, NestedPathType.TryCatchFinally)
-        }.toList
-    }
-
-    private def processBasicBlock(
-        cfg: CFGType, stmt: Int, processedIfs: mutable.Map[Int, Unit.type]
-    ): CSInfo = {
-        val csType = determineTypeOfIf(cfg, stmt)
-        val (startIndex, endIndex) = csType match {
-            case NestedPathType.Repetition ⇒
-                processedIfs(stmt) = Unit
-                getStartAndEndIndexOfLoop(stmt, cfg)
-            case NestedPathType.CondWithoutAlternative ⇒
-                getStartAndEndIndexOfCondWithoutAlternative(stmt, cfg, processedIfs)
-            // _ covers CondWithAlternative and TryCatchFinally, however, the latter one should
-            // never be present as the element referring to stmts is / should be an If
-            case _ ⇒
-                getStartAndEndIndexOfCondWithAlternative(stmt, cfg, processedIfs)
-        }
-        (startIndex, endIndex, csType)
-    }
-
-    private def findControlStructures(cfg: CFGType): List[CSInfo] = {
-        // foundCS stores all found control structures as a triple in the form (start, end, type)
-        val foundCS = ListBuffer[CSInfo]()
-        // For a fast loop-up which if statements have already been processed
-        val processedIfs = mutable.Map[Int, Unit.type]()
-        val startBlock = cfg.startBlock
-        val stack = mutable.Stack[CFGNode](startBlock)
-        val seenCFGNodes = mutable.Map[CFGNode, Unit.type]()
-        seenCFGNodes(startBlock) = Unit
-
-        while (stack.nonEmpty) {
-            val next = stack.pop()
-            seenCFGNodes(next) = Unit
-
-            next match {
-                case bb: BasicBlock ⇒
-                    for (i ← bb.startPC.to(bb.endPC)) {
-                        if (cfg.code.instructions(i).isInstanceOf[If[V]] &&
-                            !processedIfs.contains(i)) {
-                            foundCS.append(processBasicBlock(cfg, i, processedIfs))
-                            processedIfs(i) = Unit
+                // Fill the current NPE if necessary
+                val currentToInsert = ListBuffer[FlatPathElement]()
+                if (insertIndex < startEndPairs.length) {
+                    currentToInsert.appendAll((lastInsertedIndex + 1).to(
+                        startEndPairs(insertIndex)._2
+                    ).map(FlatPathElement))
+                    if (isRepElement) {
+                        npe.element.appendAll(currentToInsert)
+                    } else {
+                        var insertPos = npe.element(insertIndex).asInstanceOf[NestedPathElement]
+                        insertPos.element.appendAll(currentToInsert)
+                        insertIndex += 1
+                        // Fill the rest NPEs if necessary
+                        insertIndex.until(startEndPairs.length).foreach { i ⇒
+                            insertPos = npe.element(i).asInstanceOf[NestedPathElement]
+                            insertPos.element.appendAll(
+                                startEndPairs(i)._1.to(startEndPairs(i)._2).map(FlatPathElement)
+                            )
                         }
                     }
-                case cn: CFGNode ⇒
-                    println(cn)
-                case _ ⇒
+                }
+                finalPath.append(subpath.elements.head)
             }
-
-            // Add unseen successors
-            next.successors.filter(!seenCFGNodes.contains(_)).foreach(stack.push)
+            indexLastCSEnd = nextTopEle.hierarchy.head._1.get._2 + 1
         }
 
-        // Add try-catch information, sort everything in ascending order in terms of the startPC and
-        // return
-        foundCS.appendAll(getTryCatchFinallyInfo(cfg))
-        foundCS.sortBy { case (start, _, _) ⇒ start }.toList
+        finalPath.appendAll(indexLastCSEnd.to(endIndex).map(FlatPathElement))
+        Path(finalPath.toList)
     }
 
     /**
@@ -204,13 +131,18 @@ class DefaultPathFinder extends AbstractPathFinder {
      *
      * @see [[AbstractPathFinder.findPaths]]
      */
-    override def findPaths(startSites: List[Int], endSite: Int, cfg: CFGType): Path = {
-        val startPC = cfg.startBlock.startPC
-        identity(startPC)
-        val csInfo = findControlStructures(cfg)
-        identity(csInfo)
-
-        Path(List(FlatPathElement(0), FlatPathElement(1)))
+    override def findPaths(startSites: List[Int], endSite: Int): Path = {
+        val csInfo = findControlStructures()
+        // In case the are no control structures, return a path from the first to the last element
+        if (csInfo.isEmpty) {
+            val indexLastStmt = cfg.code.instructions.length
+            Path(cfg.startBlock.startPC.until(indexLastStmt).map(FlatPathElement).toList)
+        } // Otherwise, order the control structures and assign the corresponding path elements
+        else {
+            val lastStmtIndex = cfg.code.instructions.length - 1
+            val orderedCS = hierarchicallyOrderControlStructures(csInfo)
+            hierarchyToPath(orderedCS.hierarchy.head._2, cfg.startBlock.startPC, lastStmtIndex)
+        }
     }
 
 }
