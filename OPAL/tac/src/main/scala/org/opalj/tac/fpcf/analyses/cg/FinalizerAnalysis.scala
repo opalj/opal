@@ -141,9 +141,7 @@ class FinalizerAnalysis private[analyses] (
 
 object TriggeredFinalizerAnalysisScheduler extends BasicFPCFTriggeredAnalysisScheduler {
 
-    override def uses: Set[PropertyBounds] = Set(
-        PropertyBounds.ub(InstantiatedTypes)
-    )
+    override def uses: Set[PropertyBounds] = PropertyBounds.ubs(InstantiatedTypes)
 
     override def derivesCollaboratively: Set[PropertyBounds] = Set(
         PropertyBounds.ub(VMReachableFinalizers),
