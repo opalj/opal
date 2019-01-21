@@ -168,6 +168,8 @@ object EvaluateEagerVsLazy {
 
         } { t ⇒ analysisTime = t.toSeconds }
 
+        println(ps.statistics.mkString("\n"))
+
         ps.shutdown()
 
         Console.println(s"Call-graph time: $callGraphTime")
