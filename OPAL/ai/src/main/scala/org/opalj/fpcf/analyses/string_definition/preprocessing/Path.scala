@@ -1,18 +1,18 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.analyses.string_definition.preprocessing
 
+import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
+
 import org.opalj.fpcf.analyses.string_definition.V
 import org.opalj.fpcf.analyses.string_definition.interpretation.InterpretationHandler
+import org.opalj.value.ValueInformation
 import org.opalj.tac.Assignment
 import org.opalj.tac.DUVar
 import org.opalj.tac.ExprStmt
 import org.opalj.tac.New
 import org.opalj.tac.Stmt
 import org.opalj.tac.VirtualFunctionCall
-import org.opalj.value.ValueInformation
-
-import scala.collection.mutable
-import scala.collection.mutable.ListBuffer
 
 /**
  * @author Patrick Mell
@@ -325,6 +325,26 @@ case class Path(elements: List[SubPath]) {
         }
 
         Path(leanPath.toList)
+    }
+
+}
+
+object Path {
+
+    /**
+     * Returns the very last [[FlatPathElement]] in this path, respecting any nesting structure.
+     */
+    def getLastElementInNPE(npe: NestedPathElement): FlatPathElement = {
+        npe.element.last match {
+            case fpe: FlatPathElement ⇒ fpe
+            case npe: NestedPathElement ⇒
+                npe.element.last match {
+                    case fpe: FlatPathElement        ⇒ fpe
+                    case innerNpe: NestedPathElement ⇒ getLastElementInNPE(innerNpe)
+                    case _                           ⇒ FlatPathElement(-1)
+                }
+            case _ ⇒ FlatPathElement(-1)
+        }
     }
 
 }

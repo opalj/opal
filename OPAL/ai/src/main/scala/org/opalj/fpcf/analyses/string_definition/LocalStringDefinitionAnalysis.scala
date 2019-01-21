@@ -84,7 +84,7 @@ class LocalStringDefinitionAnalysis(
         if (defSites.head < 0) {
             return Result(data, StringConstancyProperty.lowerBound)
         }
-        val pathFinder: AbstractPathFinder = new DefaultPathFinder()
+        val pathFinder: AbstractPathFinder = new DefaultPathFinder(cfg)
 
         // If not empty, this very routine can only produce an intermediate result
         val dependees = mutable.Map[Entity, EOptionP[Entity, Property]]()
@@ -101,7 +101,7 @@ class LocalStringDefinitionAnalysis(
                 return Result(data, StringConstancyProperty.lowerBound)
             }
 
-            val paths = pathFinder.findPaths(initDefSites, uvar.definedBy.head, cfg)
+            val paths = pathFinder.findPaths(initDefSites, uvar.definedBy.head)
             val leanPaths = paths.makeLeanPath(uvar, stmts)
 
             // Find DUVars, that the analysis of the current entity depends on

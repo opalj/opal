@@ -5,7 +5,9 @@ import org.opalj.fpcf.properties.string_definition.StringDefinitions;
 import org.opalj.fpcf.properties.string_definition.StringDefinitionsCollection;
 
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Random;
@@ -539,10 +541,8 @@ public class TestMethods {
     @StringDefinitionsCollection(
             value = "case with a try-catch-finally exception",
             stringDefinitions = {
-                    // For the reason why the first expected strings differ from the other, see the
-                    // comment in tryCatchFinallyWithThrowable
                     @StringDefinitions(
-                            expectedLevel = PARTIALLY_CONSTANT, expectedStrings = "=====(\\w)?"
+                            expectedLevel = PARTIALLY_CONSTANT, expectedStrings = "=====(\\w|=====)"
                     ),
                     @StringDefinitions(
                             expectedLevel = PARTIALLY_CONSTANT, expectedStrings = "=====(\\w|=====)"
@@ -571,7 +571,7 @@ public class TestMethods {
                             // "EOS" can not be found for the first case (the difference to the case
                             // tryCatchFinally is that a second CatchNode is not present in the
                             // throwable case)
-                            expectedLevel = PARTIALLY_CONSTANT, expectedStrings = "BOS:(\\w)?"
+                            expectedLevel = PARTIALLY_CONSTANT, expectedStrings = "BOS:(\\w|:EOS)"
                     ),
                     @StringDefinitions(
                             expectedLevel = PARTIALLY_CONSTANT, expectedStrings = "BOS:(\\w|:EOS)"
@@ -665,7 +665,9 @@ public class TestMethods {
             value = "loops that use breaks and continues (or both)",
             stringDefinitions = {
                     @StringDefinitions(
-                            expectedLevel = CONSTANT, expectedStrings = "abc((d)?)*"
+                            // The bytecode produces an "if" within an "if" inside the first loop,
+                            // => two conds
+                            expectedLevel = CONSTANT, expectedStrings = "abc(((d)?)?)*"
                     ),
                     @StringDefinitions(
                             expectedLevel = CONSTANT, expectedStrings = ""
@@ -882,6 +884,55 @@ public class TestMethods {
         } catch (NoSuchMethodException var15) {
             setter = null;
             System.out.println("Error occurred");
+        }
+    }
+
+    @StringDefinitionsCollection(
+            value = "Some comprehensive example for experimental purposes taken from the JDK and " +
+                    "slightly modified",
+            stringDefinitions = {
+                    @StringDefinitions(
+                            expectedLevel = PARTIALLY_CONSTANT,
+                            expectedStrings = "Hello: (\\w|\\w|\\w)?"
+                    ),
+            })
+    protected void setDebugFlags(String[] var1) {
+        for(int var2 = 0; var2 < var1.length; ++var2) {
+            String var3 = var1[var2];
+
+            int randomValue = new Random().nextInt();
+            StringBuilder sb = new StringBuilder("Hello: ");
+            if (randomValue % 2 == 0) {
+                sb.append(getRuntimeClassName());
+            } else if (randomValue % 3 == 0) {
+                sb.append(getStringBuilderClassName());
+            } else if (randomValue % 4 == 0) {
+                sb.append(getSimpleStringBuilderClassName());
+            }
+
+            try {
+                Field var4 = this.getClass().getField(var3 + "DebugFlag");
+                int var5 = var4.getModifiers();
+                if (Modifier.isPublic(var5) && !Modifier.isStatic(var5) &&
+                        var4.getType() == Boolean.TYPE) {
+                    var4.setBoolean(this, true);
+                }
+            } catch (IndexOutOfBoundsException var90) {
+                System.out.println("Should never happen!");
+            } catch (Exception var6) {
+                int i = 10;
+                i += new Random().nextInt();
+                System.out.println("Some severe error occurred!" + i);
+            } finally {
+                int i = 10;
+                i += new Random().nextInt();
+                // TODO: Control structures in finally blocks are not handles correctly
+                // if (i % 2 == 0) {
+                //     System.out.println("Ready to analyze now in any case!" + i);
+                // }
+            }
+
+            analyzeString(sb.toString());
         }
     }
 
