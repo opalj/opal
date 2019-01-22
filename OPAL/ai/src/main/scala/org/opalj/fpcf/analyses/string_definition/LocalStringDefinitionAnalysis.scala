@@ -1,27 +1,25 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.analyses.string_definition
 
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.cfg.CFG
+import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
+
 import org.opalj.fpcf.FPCFAnalysis
 import org.opalj.fpcf.PropertyComputationResult
 import org.opalj.fpcf.PropertyKind
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.properties.StringConstancyProperty
-import org.opalj.fpcf.FPCFLazyAnalysisScheduler
 import org.opalj.fpcf.ComputationSpecification
+import org.opalj.fpcf.FPCFLazyAnalysisScheduler
 import org.opalj.fpcf.analyses.string_definition.preprocessing.AbstractPathFinder
-import org.opalj.fpcf.analyses.string_definition.preprocessing.DefaultPathFinder
 import org.opalj.fpcf.analyses.string_definition.preprocessing.PathTransformer
 import org.opalj.fpcf.Result
 import org.opalj.fpcf.analyses.string_definition.interpretation.InterpretationHandler
 import org.opalj.fpcf.analyses.string_definition.preprocessing.FlatPathElement
 import org.opalj.fpcf.analyses.string_definition.preprocessing.NestedPathElement
-import org.opalj.fpcf.string_definition.properties.StringConstancyInformation
-import org.opalj.tac.SimpleTACAIKey
-import org.opalj.tac.Stmt
 import org.opalj.fpcf.analyses.string_definition.preprocessing.Path
 import org.opalj.fpcf.analyses.string_definition.preprocessing.SubPath
+import org.opalj.fpcf.string_definition.properties.StringConstancyInformation
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.FinalEP
@@ -30,11 +28,13 @@ import org.opalj.fpcf.IntermediateResult
 import org.opalj.fpcf.NoResult
 import org.opalj.fpcf.Property
 import org.opalj.fpcf.SomeEPS
+import org.opalj.fpcf.analyses.string_definition.preprocessing.WindowPathFinder
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.cfg.CFG
 import org.opalj.tac.ExprStmt
+import org.opalj.tac.SimpleTACAIKey
+import org.opalj.tac.Stmt
 import org.opalj.tac.TACStmts
-
-import scala.collection.mutable
-import scala.collection.mutable.ListBuffer
 
 /**
  * LocalStringDefinitionAnalysis processes a read operation of a local string variable at a program
@@ -84,7 +84,7 @@ class LocalStringDefinitionAnalysis(
         if (defSites.head < 0) {
             return Result(data, StringConstancyProperty.lowerBound)
         }
-        val pathFinder: AbstractPathFinder = new DefaultPathFinder(cfg)
+        val pathFinder: AbstractPathFinder = new WindowPathFinder(cfg)
 
         // If not empty, this very routine can only produce an intermediate result
         val dependees = mutable.Map[Entity, EOptionP[Entity, Property]]()
