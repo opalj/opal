@@ -656,15 +656,17 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
     }
 
     /**
-     * Based on the given `cfg`, this function checks whether a path from node `from` to node `to`
-     * exists. If so, `true` is returned and `false otherwise`. Optionally, a list of `alreadySeen`
-     * elements can be passed which influences which paths are to be followed (when assembling a
-     * path ''p'' and the next node, ''n_p'' in ''p'', is a node that was already seen, the path
-     * will not be continued in the direction of ''n_p'' (but in other directions that are not in
-     * `alreadySeen`)).
+     * Based on the member `cfg` of this instance, this function checks whether a path from node
+     * `from` to node `to` exists. If so, `true` is returned and `false otherwise`. Optionally, a
+     * list of `alreadySeen` elements can be passed which influences which paths are to be followed
+     * (when assembling a path ''p'' and the next node, ''n_p'' in ''p'', is a node that was already
+     * seen, the path will not be continued in the direction of ''n_p'' (but in other directions
+     * that are not in `alreadySeen`)).
+     *
+     * @note This function assumes that `from` >= 0!
      */
     protected def doesPathExistTo(
-        from: Int, to: Int, cfg: CFG[Stmt[V], TACStmts[V]], alreadySeen: List[Int] = List()
+        from: Int, to: Int, alreadySeen: List[Int] = List()
     ): Boolean = {
         val stack = mutable.Stack(from)
         val seenNodes = mutable.Map[Int, Unit]()
@@ -675,7 +677,8 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
             val popped = stack.pop()
             cfg.bb(popped).successors.foreach { nextBlock ⇒
                 // -1 is okay, as this value will not be processed (due to the flag processBlock)
-                var startPC, endPC = -1
+                var startPC = -1
+                var endPC = -1
                 var processBlock = true
                 nextBlock match {
                     case bb: BasicBlock ⇒
@@ -808,16 +811,19 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
      * @return Returns all found control structures in a flat structure; for the return format, see
      *         [[CSInfo]]. The elements are returned in a sorted by ascending start index.
      */
-    protected def findControlStructures(): List[CSInfo] = {
+    protected def findControlStructures(startSites: List[Int], endSite: Int): List[CSInfo] = {
         // foundCS stores all found control structures as a triple in the form (start, end, type)
         val foundCS = ListBuffer[CSInfo]()
         // For a fast loop-up which if statements have already been processed
         val processedIfs = mutable.Map[Int, Unit.type]()
         val processedSwitches = mutable.Map[Int, Unit.type]()
-        val startBlock = cfg.startBlock
-        val stack = mutable.Stack[CFGNode](startBlock)
+        val stack = mutable.Stack[CFGNode]()
         val seenCFGNodes = mutable.Map[CFGNode, Unit.type]()
-        seenCFGNodes(startBlock) = Unit
+
+        startSites.reverse.foreach { site ⇒
+            stack.push(cfg.bb(site))
+            seenCFGNodes(cfg.bb(site)) = Unit
+        }
 
         while (stack.nonEmpty) {
             val next = stack.pop()
@@ -839,13 +845,28 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
                 case _ ⇒
             }
 
-            // Add unseen successors
-            next.successors.filter(!seenCFGNodes.contains(_)).foreach(stack.push)
+            if (next.nodeId == endSite) {
+                val doesPathExist = stack.filter(_.nodeId >= 0).foldLeft(false) {
+                    (doesExist: Boolean, next: CFGNode) ⇒
+                        doesExist || doesPathExistTo(next.nodeId, endSite)
+                }
+                // In case no more path exists, clear the stack which (=> no more iterations)
+                if (!doesPathExist) {
+                    stack.clear()
+                }
+            } else {
+                // Add unseen successors
+                next.successors.filter(!seenCFGNodes.contains(_)).foreach(stack.push)
+            }
         }
 
-        // Add try-catch information, sort everything in ascending order in terms of the startPC and
-        // return
-        foundCS.appendAll(determineTryCatchBounds())
+        // Add try-catch (only those that are relevant for the given start and end sites)
+        // information, sort everything in ascending order in terms of the startPC and return
+        val relevantTryCatchBlocks = determineTryCatchBounds().filter {
+            case (tryStart, _, _) ⇒
+                startSites.exists(tryStart >= _) && tryStart <= endSite
+        }
+        foundCS.appendAll(relevantTryCatchBlocks)
         foundCS.sortBy { case (start, _, _) ⇒ start }.toList
     }
 
@@ -926,6 +947,105 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
         HierarchicalCSOrder(List((
             None, cs.filter(!parentOf.contains(_)).map(buildHierarchy(_, mapChildrenOf))
         )))
+    }
+
+    /**
+     * This function transforms a hierarchy into a [[Path]].
+     *
+     * @param topElements A list of the elements which are present on the top-most level in the
+     *                    hierarchy.
+     * @param startIndex `startIndex` serves as a way to build a path between the first statement
+     *                   (which is not necessarily a control structure) and the very first control
+     *                  structure. For example, assume that the first control structure begins at
+     *                   statement 5. `startIndex` will then be used to fill the gap `startIndex`
+     *                   and 5.
+     * @param endIndex  `endIndex` serves as a way to build a path between the last statement of a
+     *                control structure (which is not necessarily the end of a scope of interest,
+     *                such as a method) and the last statement (e.g., in `cfg`).
+     * @return Returns the transformed [[Path]].
+     */
+    protected def hierarchyToPath(
+        topElements: List[HierarchicalCSOrder], startIndex: Int, endIndex: Int
+    ): Path = {
+        val finalPath = ListBuffer[SubPath]()
+        // For the outer-most call, this is not the start index of the last control structure but of
+        // the start PC of the first basic block
+        var indexLastCSEnd = startIndex
+
+        // Recursively transform the hierarchies to paths
+        topElements.foreach { nextTopEle ⇒
+            // Build path up to the next control structure
+            val nextCSStart = nextTopEle.hierarchy.head._1.get._1
+            indexLastCSEnd.until(nextCSStart).foreach { i ⇒
+                finalPath.append(FlatPathElement(i))
+            }
+
+            val children = nextTopEle.hierarchy.head._2
+            if (children.isEmpty) {
+                // Recursion anchor: Build path for the correct type
+                val (subpath, _) = buildPathForElement(nextTopEle, fill = true)
+                // Control structures consist of only one element (NestedPathElement), thus "head"
+                // is enough
+                finalPath.append(subpath.elements.head)
+            } else {
+                val startIndex = nextTopEle.hierarchy.head._1.get._1
+                val endIndex = nextTopEle.hierarchy.head._1.get._2
+                val childrenPath = hierarchyToPath(children, startIndex, endIndex)
+                var insertIndex = 0
+                val (subpath, startEndPairs) = buildPathForElement(nextTopEle, fill = false)
+                // npe is the nested path element that was produced above (head is enough as this
+                // list will always contain only one element, due to fill=false)
+                val npe = subpath.elements.head.asInstanceOf[NestedPathElement]
+                val isRepElement = npe.elementType.getOrElse(NestedPathType.TryCatchFinally) ==
+                    NestedPathType.Repetition
+                var lastInsertedIndex = 0
+                childrenPath.elements.foreach { nextEle ⇒
+                    if (isRepElement) {
+                        npe.element.append(nextEle)
+                    } else {
+                        npe.element(insertIndex).asInstanceOf[NestedPathElement].element.append(
+                            nextEle
+                        )
+                    }
+
+                    lastInsertedIndex = nextEle match {
+                        case fpe: FlatPathElement     ⇒ fpe.element
+                        case inner: NestedPathElement ⇒ Path.getLastElementInNPE(inner).element
+                        // Compiler wants it but should never be the case!
+                        case _                        ⇒ -1
+                    }
+                    if (lastInsertedIndex >= startEndPairs(insertIndex)._2) {
+                        insertIndex += 1
+                    }
+                }
+                // Fill the current NPE if necessary
+                val currentToInsert = ListBuffer[FlatPathElement]()
+                if (insertIndex < startEndPairs.length) {
+                    currentToInsert.appendAll((lastInsertedIndex + 1).to(
+                        startEndPairs(insertIndex)._2
+                    ).map(FlatPathElement))
+                    if (isRepElement) {
+                        npe.element.appendAll(currentToInsert)
+                    } else {
+                        var insertPos = npe.element(insertIndex).asInstanceOf[NestedPathElement]
+                        insertPos.element.appendAll(currentToInsert)
+                        insertIndex += 1
+                        // Fill the rest NPEs if necessary
+                        insertIndex.until(startEndPairs.length).foreach { i ⇒
+                            insertPos = npe.element(i).asInstanceOf[NestedPathElement]
+                            insertPos.element.appendAll(
+                                startEndPairs(i)._1.to(startEndPairs(i)._2).map(FlatPathElement)
+                            )
+                        }
+                    }
+                }
+                finalPath.append(subpath.elements.head)
+            }
+            indexLastCSEnd = nextTopEle.hierarchy.head._1.get._2 + 1
+        }
+
+        finalPath.appendAll(indexLastCSEnd.to(endIndex).map(FlatPathElement))
+        Path(finalPath.toList)
     }
 
     /**
