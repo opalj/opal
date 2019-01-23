@@ -88,6 +88,10 @@ class VirtualFunctionCallInterpreter(
         // produce a result (= empty list), the if part
         else if (receiverValues.isEmpty) {
             Some(List(appendValue.get))
+        } // The append value might be empty, if the site has already been processed (then this
+        // information will come from another StringConstancyInformation object
+        else if (appendValue.isEmpty) {
+            Some(receiverValues)
         } // Receiver and parameter information are available => Combine them
         else {
             Some(receiverValues.map { nextSci ⇒
