@@ -56,6 +56,9 @@ class WindowPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) extends AbstractPathFinde
                 }
                 nextStmt -= 1
             }
+            if (startSite.isEmpty) {
+                startSite = Some(0)
+            }
         } else {
             startSite = Some(startSites.head)
         }

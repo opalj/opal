@@ -12,6 +12,8 @@ import org.opalj.tac.TACStmts
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
+import org.opalj.tac.Goto
+import org.opalj.tac.ReturnValue
 import org.opalj.tac.Switch
 
 /**
@@ -43,7 +45,7 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
      *                  ''e1''.
      */
     protected case class HierarchicalCSOrder(
-            hierarchy: List[(Option[CSInfo], List[HierarchicalCSOrder])]
+        hierarchy: List[(Option[CSInfo], List[HierarchicalCSOrder])]
     )
 
     /**
@@ -87,9 +89,26 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
             if (containsIf) {
                 stack.push(nextBlock)
             } else {
-                // Find the goto that points after the "else" part (the assumption is that this
-                // goto is the very last element of the current branch
-                endSite = cfg.code.instructions(nextBlock - 1).asGoto.targetStmt - 1
+                cfg.code.instructions(nextBlock - 1) match {
+                    case goto: Goto ⇒
+                        // Find the goto that points after the "else" part (the assumption is that
+                        // this goto is the very last element of the current branch
+                        endSite = goto.targetStmt - 1
+                    case _ ⇒
+                        // No goto available => Jump after next block
+                        var nextIf: Option[If[V]] = None
+                        var i = nextBlock
+                        while (nextIf.isEmpty) {
+                            cfg.code.instructions(i) match {
+                                case iff: If[V] ⇒
+                                    nextIf = Some(iff)
+                                    processedIfs(i) = Unit
+                                case _ ⇒
+                            }
+                            i += 1
+                        }
+                        endSite = nextIf.get.targetStmt
+                }
             }
         }
 
@@ -124,8 +143,11 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
         }.max
 
         var nextIfIndex = -1
+        val ifTarget = cfg.code.instructions(branchingSite).asInstanceOf[If[V]].targetStmt
         for (i ← cfg.bb(nextPossibleIfBlock).startPC.to(cfg.bb(nextPossibleIfBlock).endPC)) {
-            if (cfg.code.instructions(i).isInstanceOf[If[V]]) {
+            // The second condition is necessary to detect two consecutive "if"s (not in an else-if
+            // relation)
+            if (cfg.code.instructions(i).isInstanceOf[If[V]] && ifTarget != i) {
                 processedIfs(i) = Unit
                 nextIfIndex = i
             }
@@ -139,7 +161,6 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
             endIndex = newEndIndex
         }
 
-        val ifTarget = cfg.code.instructions(branchingSite).asInstanceOf[If[V]].targetStmt
         // It might be that the "i"f is the very last element in a loop; in this case, it is a
         // little bit more complicated to find the end of the "if": Go up to the element that points
         // to the if target element
@@ -147,15 +168,16 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
             val toVisit = mutable.Stack[Int](branchingSite)
             while (toVisit.nonEmpty) {
                 val popped = toVisit.pop()
-                val successors = cfg.bb(popped).successors
-                if (successors.size == 1 && successors.head.asBasicBlock.startPC == ifTarget) {
+                val relevantSuccessors = cfg.bb(popped).successors.filter {
+                    _.isInstanceOf[BasicBlock]
+                }.map(_.asBasicBlock)
+                if (relevantSuccessors.size == 1 && relevantSuccessors.head.startPC == ifTarget) {
                     endIndex = cfg.bb(popped).endPC
                     toVisit.clear()
                 } else {
-                    toVisit.pushAll(successors.filter {
-                        case bb: BasicBlock ⇒ bb.nodeId != ifTarget
-                        case _              ⇒ false
-                    }.map(_.asBasicBlock.startPC))
+                    toVisit.pushAll(relevantSuccessors.filter {
+                        _.nodeId != ifTarget
+                    }.map(_.startPC))
                 }
             }
         }
@@ -183,6 +205,26 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
         }
 
         (branchingSite, endIndex)
+    }
+
+    /**
+     * This method finds the very first return value after (including) the given start position.
+     *
+     * @param startPos The index of the position to start with.
+     * @return Returns either the index of the very first found [[ReturnValue]] or the index of the
+     *         very last statement within the instructions if no [[ReturnValue]] could be found.
+     */
+    private def findNextReturn(startPos: Int): Int = {
+        var returnPos = startPos
+        var foundReturn = false
+        while (!foundReturn && returnPos < cfg.code.instructions.length) {
+            if (cfg.code.instructions(returnPos).isInstanceOf[ReturnValue[V]]) {
+                foundReturn = true
+            } else {
+                returnPos += 1
+            }
+        }
+        returnPos
     }
 
     /**
@@ -223,10 +265,20 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
                     } // If there is only one CatchNode for a startPC, i.e., no finally, no other
                     // catches, the end index can be directly derived from the successors
                     else if (cnSameStartPC.tail.isEmpty && !isThrowable) {
-                        tryInfo(cn.startPC) = cfg.bb(cn.endPC).successors.map {
-                            case bb: BasicBlock ⇒ bb.startPC - 1
-                            case _              ⇒ -1
-                        }.max
+                        if (cn.endPC > -1) {
+                            var end = cfg.bb(cn.endPC).successors.map {
+                                case bb: BasicBlock ⇒ bb.startPC - 1
+                                case _              ⇒ -1
+                            }.max
+                            if (end == -1) {
+                                end = findNextReturn(cn.handlerPC)
+                            }
+                            tryInfo(cn.startPC) = end
+                        } // -1 might be the case if the catch returns => Find that return and use
+                        // it as the end of the range
+                        else {
+                            findNextReturn(cn.handlerPC)
+                        }
                     } // Otherwise, the index after the try and all catches marks the end index (-1
                     // to not already get the start index of the successor)
                     else {
@@ -439,7 +491,7 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
                     throwableElement = Some(cn)
                 } else {
                     catchBlockStartPCs.append(cn.handlerPC)
-                    if (cn.catchType.isEmpty) {
+                    if (cn.startPC == start && cn.catchType.isEmpty) {
                         hasFinallyBlock = true
                     }
                 }
@@ -452,7 +504,7 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
                 // This is for the catch block
                 startEndPairs.append((throwCatch.get.startPC, throwCatch.get.endPC - 1))
             }
-        } else {
+        } else if (startEndPairs.nonEmpty) {
             var numElementsFinally = 0
             if (hasFinallyBlock) {
                 // Find out, how many elements the finally block has
@@ -478,6 +530,32 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
                         )
                     }
             }
+        } // In some cases (sometimes when a throwable is involved) the successors are no catch
+        // nodes => Find the bounds now
+        else {
+            val cn = cfg.catchNodes.filter(_.startPC == start).head
+            startEndPairs.append((cn.startPC, cn.endPC - 1))
+            val endOfCatch = cfg.code.instructions(cn.handlerPC - 1) match {
+                case goto: Goto ⇒
+                    // The first statement after the catches; it might be less than cn.startPC in
+                    // case it refers to a loop. If so, use the "if" to find the end
+                    var indexFirstAfterCatch = goto.targetStmt
+                    if (indexFirstAfterCatch < cn.startPC) {
+                        var iff: Option[If[V]] = None
+                        var i = indexFirstAfterCatch
+                        while (iff.isEmpty) {
+                            cfg.code.instructions(i) match {
+                                case foundIf: If[V] ⇒ iff = Some(foundIf)
+                                case _              ⇒
+                            }
+                            i += 1
+                        }
+                        indexFirstAfterCatch = iff.get.targetStmt
+                    }
+                    indexFirstAfterCatch
+                case _ ⇒ findNextReturn(cn.handlerPC)
+            }
+            startEndPairs.append((cn.endPC, endOfCatch))
         }
 
         val subPaths = ListBuffer[SubPath]()
@@ -584,8 +662,8 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
         bb.successors.filter(
             _.isInstanceOf[BasicBlock]
         ).foldLeft(false)((prev: Boolean, next: CFGNode) ⇒ {
-                prev || (next.predecessors.count(_.isInstanceOf[BasicBlock]) >= n)
-            })
+            prev || (next.predecessors.count(_.isInstanceOf[BasicBlock]) >= n)
+        })
 
     /**
      * This function checks if a branching corresponds to an if (or if-elseif) structure that has no
@@ -670,7 +748,7 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
     ): Boolean = {
         val stack = mutable.Stack(from)
         val seenNodes = mutable.Map[Int, Unit]()
-        alreadySeen.foreach(seenNodes(_)= Unit)
+        alreadySeen.foreach(seenNodes(_) = Unit)
         seenNodes(from) = Unit
 
         while (stack.nonEmpty) {
@@ -813,7 +891,7 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
      */
     protected def findControlStructures(startSites: List[Int], endSite: Int): List[CSInfo] = {
         // foundCS stores all found control structures as a triple in the form (start, end, type)
-        val foundCS = ListBuffer[CSInfo]()
+        var foundCS = ListBuffer[CSInfo]()
         // For a fast loop-up which if statements have already been processed
         val processedIfs = mutable.Map[Int, Unit.type]()
         val processedSwitches = mutable.Map[Int, Unit.type]()
@@ -860,12 +938,32 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
             }
         }
 
+        // It might be that some control structures can be removed as they are not in the relevant
+        // range
+        foundCS = foundCS.filterNot {
+            case (start, end, _) ⇒
+                (startSites.forall(start > _) && endSite < start) ||
+                    (startSites.forall(_ < start) && startSites.forall(_ > end))
+        }
+
         // Add try-catch (only those that are relevant for the given start and end sites)
-        // information, sort everything in ascending order in terms of the startPC and return
-        val relevantTryCatchBlocks = determineTryCatchBounds().filter {
+        // information
+        var relevantTryCatchBlocks = determineTryCatchBounds()
+        // Filter out all blocks that completely surround the given start and end sites
+        relevantTryCatchBlocks = relevantTryCatchBlocks.filter {
+            case (tryStart, tryEnd, _) ⇒
+                val tryCatchParts = buildTryCatchPath(tryStart, tryEnd, fill = false)
+                !tryCatchParts._2.exists {
+                    case (nextInnerStart, nextInnerEnd) ⇒
+                        startSites.forall(_ >= nextInnerStart) && endSite <= nextInnerEnd
+                }
+        }
+        // Keep the try-catch blocks that are (partially) within the start and end sites
+        relevantTryCatchBlocks = relevantTryCatchBlocks.filter {
             case (tryStart, _, _) ⇒
                 startSites.exists(tryStart >= _) && tryStart <= endSite
         }
+
         foundCS.appendAll(relevantTryCatchBlocks)
         foundCS.sortBy { case (start, _, _) ⇒ start }.toList
     }
