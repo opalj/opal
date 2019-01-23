@@ -182,7 +182,11 @@ object TriggeredInstantiatedTypesAnalysis extends FPCFTriggeredAnalysisScheduler
 
     override type InitializationData = Null
 
-    override def uses: Set[PropertyBounds] = PropertyBounds.ubs(InstantiatedTypes, CallersProperty)
+    override def uses: Set[PropertyBounds] = PropertyBounds.ubs(
+        TACAI,
+        InstantiatedTypes,
+        CallersProperty
+    )
 
     override def derivesCollaboratively: Set[PropertyBounds] = PropertyBounds.ubs(InstantiatedTypes)
 

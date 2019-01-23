@@ -404,9 +404,8 @@ trait ClassImmutabilityAnalysisScheduler extends FPCFAnalysisScheduler {
 
     final def derivedProperty: PropertyBounds = PropertyBounds.lub(ClassImmutability)
 
-    final override def uses: Set[PropertyBounds] = {
-        Set(PropertyBounds.lub(TypeImmutability), PropertyBounds.lub(FieldMutability))
-    }
+    final override def uses: Set[PropertyBounds] =
+        PropertyBounds.lubs(ClassImmutability, TypeImmutability, FieldMutability)
 
     override type InitializationData = TraversableOnce[ClassFile]
 
