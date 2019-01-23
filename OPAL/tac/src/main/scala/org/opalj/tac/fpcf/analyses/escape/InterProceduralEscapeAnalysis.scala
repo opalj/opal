@@ -57,7 +57,7 @@ class InterProceduralEscapeAnalysisContext(
     with DeclaredMethodsContainer
 
 class InterProceduralEscapeAnalysisState
-    extends AbstractEscapeAnalysisState with DependeeCache with ReturnValueUseSites
+    extends AbstractEscapeAnalysisState with ReturnValueUseSites
 
 /**
  * A flow-sensitive inter-procedural escape analysis.

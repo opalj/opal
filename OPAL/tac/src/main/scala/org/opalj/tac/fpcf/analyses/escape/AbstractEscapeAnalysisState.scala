@@ -5,18 +5,13 @@ package fpcf
 package analyses
 package escape
 
-import scala.collection.mutable
-
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.Property
-import org.opalj.br.DeclaredMethod
 import org.opalj.br.analyses.VirtualFormalParameter
-import org.opalj.br.fpcf.cg.properties.Callees
 import org.opalj.br.fpcf.properties.EscapeProperty
 import org.opalj.br.fpcf.properties.NoEscape
-import org.opalj.br.fpcf.properties.VirtualMethodEscapeProperty
 import org.opalj.tac.common.DefinitionSiteLike
 
 /**
@@ -26,12 +21,16 @@ import org.opalj.tac.common.DefinitionSiteLike
  * state depends. In addition to this, it holds the current most restrictive escape state
  * applicable.
  *
- * @author Florian Kübler
+ * @author Florian Kuebler
  */
 trait AbstractEscapeAnalysisState {
 
     // todo: use better _dependees Handling
+    // we have dependencies to escape values of formal parameters, tac of methods and
+    // callees of declared methods, i.e. different entities for each property kind.
+    // therefore using a map is safe!
     private[this] var _dependees = Map.empty[Entity, EOptionP[Entity, Property]]
+
     private[this] var _mostRestrictiveProperty: EscapeProperty = NoEscape
 
     private[this] var _tacai: Option[TACode[TACMethodParameter, V]] = None
@@ -63,15 +62,32 @@ trait AbstractEscapeAnalysisState {
      * Removes the entity property pair (or epk) that correspond to the given ep from the set of
      * dependees.
      */
-    @inline private[escape] final def removeDependency(ep: EOptionP[Entity, Property]): Unit = {
+    @inline private[escape] final def removeDependency(
+        ep: EOptionP[Entity, Property]
+    ): Unit = {
         assert(_dependees.contains(ep.e))
         _dependees -= ep.e
     }
 
     /**
+     * Do we already registered a dependency to that entity?
+     */
+    @inline private[escape] final def containsDependency(
+        ep: EOptionP[Entity, Property]
+    ): Boolean = {
+        _dependees.contains(ep.e)
+    }
+
+    @inline private[escape] final def getDependency(e: Entity): EOptionP[Entity, Property] = {
+        _dependees(e)
+    }
+
+    /**
      * The set of open dependees.
      */
-    private[escape] final def dependees: Traversable[EOptionP[Entity, Property]] = _dependees.values
+    private[escape] final def dependees: Traversable[EOptionP[Entity, Property]] = {
+        _dependees.values
+    }
 
     /**
      * Are there any dependees?
@@ -132,7 +148,7 @@ trait AbstractEscapeAnalysisState {
  * order to have consistent [[org.opalj.fpcf.EOptionP]] results for a single context until a
  * result is committed to the [[org.opalj.fpcf.PropertyStore]].
  */
-trait DependeeCache {
+/*trait DependeeCache {
     // TODO There is only ever one key in this map, the current method, so an Option should suffice
     private[escape] val calleesCache: mutable.Map[DeclaredMethod, EOptionP[Entity, Callees]] =
         mutable.Map()
@@ -142,7 +158,7 @@ trait DependeeCache {
 
     private[escape] val vdependeeCache: mutable.Map[VirtualFormalParameter, EOptionP[Entity, VirtualMethodEscapeProperty]] =
         mutable.Map()
-}
+}*/
 
 /**
  * Stores the parameters to which the analyses depends on, and whose functions return value is used

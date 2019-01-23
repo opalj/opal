@@ -6,6 +6,7 @@ import org.opalj.br.fpcf.cg.properties.ReflectionRelatedCallees
 import org.opalj.br.fpcf.cg.properties.SerializationRelatedCallees
 import org.opalj.br.fpcf.cg.properties.StandardInvokeCallees
 import org.opalj.br.fpcf.cg.properties.ThreadRelatedIncompleteCallSites
+import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
 import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
@@ -31,7 +32,7 @@ import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
  */
 class ReturnValueFreshnessTests extends PropertiesTest {
 
-    val analysisSchedulers: Set[FPCFAnalysisScheduler] = Set[FPCFAnalysisScheduler](
+    val cgRelatedAnalysisSchedulers: Set[FPCFAnalysisScheduler] = Set[FPCFAnalysisScheduler](
         RTACallGraphAnalysisScheduler,
         TriggeredStaticInitializerAnalysis,
         TriggeredLoadedClassesAnalysis,
@@ -42,20 +43,29 @@ class ReturnValueFreshnessTests extends PropertiesTest {
         TriggeredSystemPropertiesAnalysis,
         LazyL0BaseAIAnalysis,
         TACAITransformer,
-        LazyInterProceduralEscapeAnalysis,
         LazyCalleesAnalysis(Set(
             StandardInvokeCallees,
             SerializationRelatedCallees,
             ReflectionRelatedCallees,
             ThreadRelatedIncompleteCallSites
-        )),
+        ))
+    )
+
+    val analysisSchedulers: Set[FPCFAnalysisScheduler] = Set[FPCFAnalysisScheduler](
         LazyInterProceduralEscapeAnalysis,
         LazyFieldLocalityAnalysis,
         EagerReturnValueFreshnessAnalysis
     )
 
     describe("return value freshness analysis is executed") {
-        val as = executeAnalyses(analysisSchedulers)
+        val testContext = executeAnalyses(cgRelatedAnalysisSchedulers)
+
+        val p = testContext.project
+        val manager = p.get(FPCFAnalysesManagerKey)
+
+        val (ps, analyses) = manager.runAll(analysisSchedulers)
+
+        val as = TestContext(p, ps, testContext.analyses ++ analyses.map(_._2))
         as.propertyStore.shutdown()
         validateProperties(
             as,

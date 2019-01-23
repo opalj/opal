@@ -107,6 +107,18 @@ class ReturnValueFreshnessState(val dm: DefinedMethod) {
         defSiteDependees += epOrEpk.e → epOrEpk
     }
 
+    def containsMethodDependee(epOrEpk: EOptionP[DeclaredMethod, ReturnValueFreshness]): Boolean = {
+        returnValueDependees.contains(epOrEpk.e)
+    }
+
+    def containsFieldDependee(epOrEpk: EOptionP[Field, FieldLocality]): Boolean = {
+        fieldDependees.contains(epOrEpk.e)
+    }
+
+    def containsDefSiteDependee(epOrEpk: EOptionP[DefinitionSite, EscapeProperty]): Boolean = {
+        defSiteDependees.contains(epOrEpk.e)
+    }
+
     def setCalleesDependee(epOrEpk: EOptionP[DeclaredMethod, Callees]): Unit = {
         _calleesDependee = Some(epOrEpk)
     }
@@ -258,7 +270,7 @@ class ReturnValueFreshnessAnalysis private[analyses] (
 
                 // check if the variable is escaped
                 val escape = propertyStore(definitionSites(m, pc), EscapeProperty.key)
-                if (handleEscapeProperty(escape))
+                if (!state.containsDefSiteDependee(escape) && handleEscapeProperty(escape))
                     return Result(dm, NoFreshReturnValue);
 
                 val isNotFresh = (rhs.astID: @switch) match {
@@ -280,7 +292,10 @@ class ReturnValueFreshnessAnalysis private[analyses] (
                         }
 
                         val locality = propertyStore(field, FieldLocality.key)
-                        handleFieldLocalityProperty(locality)
+                        if (!state.containsFieldDependee(locality))
+                            handleFieldLocalityProperty(locality)
+                        else
+                            false // we already handled that entity earlier
 
                     case StaticFunctionCall.ASTID | NonVirtualFunctionCall.ASTID |
                         VirtualFunctionCall.ASTID ⇒
@@ -327,7 +342,10 @@ class ReturnValueFreshnessAnalysis private[analyses] (
         } else {
             calleesEP.ub.callees(pc).exists { callee ⇒
                 (callee ne caller) && // Recursive calls don't influence return value freshness
-                    handleReturnValueFreshness(propertyStore(callee, ReturnValueFreshness.key))
+                    {
+                        val rvf = propertyStore(callee, ReturnValueFreshness.key)
+                        !state.containsMethodDependee(rvf) && handleReturnValueFreshness(rvf)
+                    }
             }
         }
     }

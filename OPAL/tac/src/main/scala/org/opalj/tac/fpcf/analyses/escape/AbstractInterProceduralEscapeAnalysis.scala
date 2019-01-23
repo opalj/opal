@@ -42,7 +42,7 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
 
     override type AnalysisContext <: AbstractEscapeAnalysisContext with PropertyStoreContainer with IsMethodOverridableContainer with VirtualFormalParametersContainer with DeclaredMethodsContainer
 
-    override type AnalysisState <: AbstractEscapeAnalysisState with DependeeCache with ReturnValueUseSites
+    override type AnalysisState <: AbstractEscapeAnalysisState with ReturnValueUseSites
 
     protected[this] override def handleStaticMethodCall(
         call: StaticMethodCall[V]
@@ -141,10 +141,19 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
     )(implicit context: AnalysisContext, state: AnalysisState): Unit = {
         state.meetMostRestrictive(EscapeInCallee)
         val dm = declaredMethods(context.targetMethod)
-        val calleesEP = state.calleesCache.getOrElseUpdate(dm, propertyStore(dm, Callees.key))
-        if (calleesEP.isRefinable) {
-            state.addDependency(calleesEP)
-        }
+
+        val mostCurrentCalleesEP = propertyStore(dm, Callees.key)
+        val calleesEP =
+            if (state.containsDependency(mostCurrentCalleesEP))
+                state.getDependency(dm).asInstanceOf[EOptionP[DeclaredMethod, Callees]]
+            else {
+                // we have not yet seen this dependency and it is refinable -> add a dependency
+                if (mostCurrentCalleesEP.isRefinable) {
+                    state.addDependency(mostCurrentCalleesEP)
+                }
+                mostCurrentCalleesEP
+            }
+
         if (calleesEP.hasUBP) {
             val callees = calleesEP.ub
 
@@ -206,23 +215,14 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
         hasAssignment: Boolean
     )(
         implicit
-        context: AnalysisContext,
-        state:   AnalysisState
+        state: AnalysisState
     ): Unit = {
-        /* This is crucial for the analysis. the dependees set is not allowed to
-         * contain duplicates. Due to very long target methods it could be the case
-         * that multiple queries to the property store result in either an EP or an
-         * EPK. Therefore we cache the result to have it consistent.
+        /*
+         * Handling a escape state twice, does not affect the escape state
          */
-        val escapeState = state.dependeeCache.getOrElseUpdate(fp, context.propertyStore(fp, EscapeProperty.key))
-        //        val escapeState = if (isConcreteMethod) {
-        //            state.dependeeCache.getOrElseUpdate(fp, context.propertyStore(fp, EscapeProperty.key))
-        //        } else {
-        //            state.vdependeeCache.getOrElseUpdate(
-        //                fp, context.propertyStore(fp, VirtualMethodEscapeProperty.key)
-        //            )
-        //        }
-        handleEscapeState(escapeState, hasAssignment)
+        val escapeState = propertyStore(fp, EscapeProperty.key)
+        if (!state.containsDependency(escapeState))
+            handleEscapeState(escapeState, hasAssignment)
     }
 
     private[this] def caseConditionalNoEscape(
@@ -321,12 +321,11 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
         state:   AnalysisState
     ): ProperPropertyComputationResult = {
         someEPS match {
-            case EUBPS(dm: DeclaredMethod, _: Callees, isFinal) ⇒
+            case EUBPS(_: DeclaredMethod, _: Callees, isFinal) ⇒
                 state.removeDependency(someEPS)
                 if (!isFinal) {
                     state.addDependency(someEPS)
                 }
-                state.calleesCache.update(dm, someEPS.asInstanceOf[EPS[DeclaredMethod, Callees]])
                 analyzeTAC()
 
             case EPS(VirtualFormalParameter(dm: DefinedMethod, -1)) if dm.definedMethod.isConstructor ⇒
@@ -334,8 +333,6 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
 
             case EPS(other: VirtualFormalParameter) ⇒
                 state.removeDependency(someEPS)
-                // todo think about a nicer way and the reason we need this
-                state.dependeeCache.update(other, someEPS.asInstanceOf[EPS[Entity, EscapeProperty]])
                 handleEscapeState(someEPS, state.hasReturnValueUseSites contains other)
                 returnResult
 
