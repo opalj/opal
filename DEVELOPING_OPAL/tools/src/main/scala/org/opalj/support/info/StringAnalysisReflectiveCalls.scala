@@ -68,17 +68,17 @@ object StringAnalysisReflectiveCalls extends DefaultOneStepAnalysis {
      */
     private val relevantMethodNames = List(
         // The following is for the Java Reflection API
-        //                "java.lang.Class#forName", "java.lang.ClassLoader#loadClass",
-        //                "java.lang.Class#getField", "java.lang.Class#getDeclaredField",
-        //                "java.lang.Class#getMethod", "java.lang.Class#getDeclaredMethod"
+        "java.lang.Class#forName", "java.lang.ClassLoader#loadClass",
+        "java.lang.Class#getField", "java.lang.Class#getDeclaredField",
+        "java.lang.Class#getMethod", "java.lang.Class#getDeclaredMethod"
         // The following is for the javax.crypto API
-        "javax.crypto.Cipher#getInstance", "javax.crypto.Cipher#getMaxAllowedKeyLength",
-        "javax.crypto.Cipher#getMaxAllowedParameterSpec", "javax.crypto.Cipher#unwrap",
-        "javax.crypto.CipherSpi#engineSetMode", "javax.crypto.CipherSpi#engineSetPadding",
-        "javax.crypto.CipherSpi#engineUnwrap", "javax.crypto.EncryptedPrivateKeyInfo#getKeySpec",
-        "javax.crypto.ExemptionMechanism#getInstance", "javax.crypto.KeyAgreement#getInstance",
-        "javax.crypto.KeyGenerator#getInstance", "javax.crypto.Mac#getInstance",
-        "javax.crypto.SealedObject#getObject", "javax.crypto.SecretKeyFactory#getInstance"
+        //"javax.crypto.Cipher#getInstance", "javax.crypto.Cipher#getMaxAllowedKeyLength",
+        //"javax.crypto.Cipher#getMaxAllowedParameterSpec", "javax.crypto.Cipher#unwrap",
+        //"javax.crypto.CipherSpi#engineSetMode", "javax.crypto.CipherSpi#engineSetPadding",
+        //"javax.crypto.CipherSpi#engineUnwrap", "javax.crypto.EncryptedPrivateKeyInfo#getKeySpec",
+        //"javax.crypto.ExemptionMechanism#getInstance", "javax.crypto.KeyAgreement#getInstance",
+        //"javax.crypto.KeyGenerator#getInstance", "javax.crypto.Mac#getInstance",
+        //"javax.crypto.SealedObject#getObject", "javax.crypto.SecretKeyFactory#getInstance"
     )
 
     /**
@@ -86,14 +86,10 @@ object StringAnalysisReflectiveCalls extends DefaultOneStepAnalysis {
      * analysis crash.
      */
     private val ignoreMethods = List(
-        // Check the found paths on this one
-        // "com/sun/corba/se/impl/orb/ORBImpl#setDebugFlags",
-        "com/oracle/webservices/internal/api/message/BasePropertySet$1#run",
-        "java/net/URL#getURLStreamHandler",
-        "java/net/URLConnection#lookupContentHandlerClassFor",
-        // Non rt.jar
-        "com/sun/javafx/property/PropertyReference#reflect",
-        "com/sun/glass/ui/monocle/NativePlatformFactory#getNativePlatform"
+        // For the next one, there should be a \w inside the second string
+        // "com/sun/glass/ui/monocle/NativePlatformFactory#getNativePlatform",
+        // Check this result:
+        //"com/sun/jmx/mbeanserver/MBeanInstantiator#deserialize"
     )
 
     override def title: String = "String Analysis for Reflective Calls"
@@ -150,9 +146,9 @@ object StringAnalysisReflectiveCalls extends DefaultOneStepAnalysis {
         if (isRelevantCall(call.declaringClass, call.name)) {
             val fqnMethodName = s"${method.classFile.thisType.fqn}#${method.name}"
             if (!ignoreMethods.contains(fqnMethodName)) {
-                println(
-                    s"Processing ${call.name} in ${method.classFile.thisType.fqn}#${method.name}"
-                )
+                //println(
+                //    s"Processing ${call.name} in ${method.classFile.thisType.fqn}#${method.name}"
+                //)
                 // Loop through all parameters and start the analysis for those that take a string
                 call.descriptor.parameterTypes.zipWithIndex.foreach {
                     case (ft, index) ⇒
