@@ -1,20 +1,20 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.analyses.string_definition.preprocessing
 
+import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
+
+import org.opalj.fpcf.analyses.string_definition.V
 import org.opalj.br.cfg.BasicBlock
 import org.opalj.br.cfg.CatchNode
 import org.opalj.br.cfg.CFG
 import org.opalj.br.cfg.CFGNode
-import org.opalj.fpcf.analyses.string_definition.V
-import org.opalj.tac.If
-import org.opalj.tac.Stmt
-import org.opalj.tac.TACStmts
-import scala.collection.mutable
-import scala.collection.mutable.ListBuffer
-
 import org.opalj.tac.Goto
+import org.opalj.tac.If
 import org.opalj.tac.ReturnValue
+import org.opalj.tac.Stmt
 import org.opalj.tac.Switch
+import org.opalj.tac.TACStmts
 
 /**
  * [[AbstractPathFinder]] provides a scaffolding for finding all relevant paths in a CFG in the
