@@ -3,7 +3,7 @@ package org.opalj.fpcf.properties.string_definition;
 
 /**
  * Java annotations do not work with Scala enums, such as
- * {@link org.opalj.fpcf.string_definition.properties.StringConstancyLevel}. Thus, this enum.
+ * {@link org.opalj.br.fpcf.properties.string_definition.properties.StringConstancyLevel}. Thus, this enum.
  *
  * @author Patrick Mell
  */

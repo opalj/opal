@@ -8,16 +8,9 @@ import java.net.URL
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
-import org.opalj.fpcf.FPCFAnalysesManagerKey
-import org.opalj.fpcf.analyses.string_definition.LazyStringDefinitionAnalysis
-import org.opalj.fpcf.string_definition.properties.StringConstancyInformation
+import org.opalj.fpcf.FinalE
+import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.PropertyStore
-import org.opalj.fpcf.PropertyStoreKey
-import org.opalj.fpcf.analyses.string_definition.P
-import org.opalj.fpcf.analyses.string_definition.V
-import org.opalj.fpcf.string_definition.properties.StringConstancyLevel
-import org.opalj.fpcf.FinalEP
-import org.opalj.fpcf.properties.StringConstancyProperty
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
@@ -27,12 +20,20 @@ import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.ReferenceType
 import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.br.Method
+import org.opalj.br.fpcf.properties.StringConstancyProperty
+import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
+import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel
+import org.opalj.br.fpcf.FPCFAnalysesManagerKey
+import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.tac.Assignment
 import org.opalj.tac.Call
 import org.opalj.tac.ExprStmt
 import org.opalj.tac.SimpleTACAIKey
 import org.opalj.tac.StaticFunctionCall
 import org.opalj.tac.VirtualFunctionCall
+import org.opalj.tac.fpcf.analyses.string_analysis.LazyStringDefinitionAnalysis
+import org.opalj.tac.fpcf.analyses.string_analysis.P
+import org.opalj.tac.fpcf.analyses.string_analysis.V
 
 /**
  * Analyzes a project for calls provided by the Java Reflection API and tries to determine which
@@ -71,25 +72,24 @@ object StringAnalysisReflectiveCalls extends DefaultOneStepAnalysis {
         "java.lang.Class#forName", "java.lang.ClassLoader#loadClass",
         "java.lang.Class#getField", "java.lang.Class#getDeclaredField",
         "java.lang.Class#getMethod", "java.lang.Class#getDeclaredMethod"
-        // The following is for the javax.crypto API
-        //"javax.crypto.Cipher#getInstance", "javax.crypto.Cipher#getMaxAllowedKeyLength",
-        //"javax.crypto.Cipher#getMaxAllowedParameterSpec", "javax.crypto.Cipher#unwrap",
-        //"javax.crypto.CipherSpi#engineSetMode", "javax.crypto.CipherSpi#engineSetPadding",
-        //"javax.crypto.CipherSpi#engineUnwrap", "javax.crypto.EncryptedPrivateKeyInfo#getKeySpec",
-        //"javax.crypto.ExemptionMechanism#getInstance", "javax.crypto.KeyAgreement#getInstance",
-        //"javax.crypto.KeyGenerator#getInstance", "javax.crypto.Mac#getInstance",
-        //"javax.crypto.SealedObject#getObject", "javax.crypto.SecretKeyFactory#getInstance"
+    // The following is for the javax.crypto API
+    //"javax.crypto.Cipher#getInstance", "javax.crypto.Cipher#getMaxAllowedKeyLength",
+    //"javax.crypto.Cipher#getMaxAllowedParameterSpec", "javax.crypto.Cipher#unwrap",
+    //"javax.crypto.CipherSpi#engineSetMode", "javax.crypto.CipherSpi#engineSetPadding",
+    //"javax.crypto.CipherSpi#engineUnwrap", "javax.crypto.EncryptedPrivateKeyInfo#getKeySpec",
+    //"javax.crypto.ExemptionMechanism#getInstance", "javax.crypto.KeyAgreement#getInstance",
+    //"javax.crypto.KeyGenerator#getInstance", "javax.crypto.Mac#getInstance",
+    //"javax.crypto.SealedObject#getObject", "javax.crypto.SecretKeyFactory#getInstance"
     )
 
     /**
      * A list of fully-qualified method names that are to be skipped, e.g., because they make the
      * analysis crash.
      */
-    private val ignoreMethods = List(
-        // For the next one, there should be a \w inside the second string
-        // "com/sun/glass/ui/monocle/NativePlatformFactory#getNativePlatform",
-        // Check this result:
-        //"com/sun/jmx/mbeanserver/MBeanInstantiator#deserialize"
+    private val ignoreMethods = List( // For the next one, there should be a \w inside the second string
+    // "com/sun/glass/ui/monocle/NativePlatformFactory#getNativePlatform",
+    // Check this result:
+    //"com/sun/jmx/mbeanserver/MBeanInstantiator#deserialize"
     )
 
     override def title: String = "String Analysis for Reflective Calls"
@@ -157,9 +157,8 @@ object StringAnalysisReflectiveCalls extends DefaultOneStepAnalysis {
                             val e = (duvar, method)
 
                             ps(e, StringConstancyProperty.key) match {
-                                case FinalEP(_, prop) ⇒ resultMap(call.name).append(
-                                    prop.stringConstancyInformation
-                                )
+                                case FinalE(prop: StringConstancyProperty) ⇒
+                                    resultMap(call.name).append(prop.stringConstancyInformation)
                                 case _ ⇒ entities.append(
                                     (e, buildFQMethodName(call.declaringClass, call.name))
                                 )
@@ -169,7 +168,7 @@ object StringAnalysisReflectiveCalls extends DefaultOneStepAnalysis {
                             while (entities.nonEmpty) {
                                 val nextEntity = entities.head
                                 ps.properties(nextEntity._1).toIndexedSeq.foreach {
-                                    case FinalEP(_, prop: StringConstancyProperty) ⇒
+                                    case FinalP(prop: StringConstancyProperty) ⇒
                                         resultMap(nextEntity._2).append(
                                             prop.stringConstancyInformation
                                         )
