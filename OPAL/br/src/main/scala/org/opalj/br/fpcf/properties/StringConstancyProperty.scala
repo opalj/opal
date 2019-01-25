@@ -28,7 +28,7 @@ class StringConstancyProperty(
 
 }
 
-object StringConstancyProperty extends StringConstancyPropertyMetaInformation {
+object StringConstancyProperty extends Property with StringConstancyPropertyMetaInformation {
 
     final val PropertyKeyName = "StringConstancy"
 
