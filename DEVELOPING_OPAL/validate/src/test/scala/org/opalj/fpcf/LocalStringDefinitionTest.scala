@@ -29,16 +29,6 @@ import org.opalj.tac.fpcf.analyses.string_analysis.V
  */
 class LocalStringDefinitionTest extends PropertiesTest {
 
-    //    val analyses: List[FPCFAnalysisScheduler] = List(
-    //        RTACallGraphAnalysisScheduler,
-    //        TriggeredStaticInitializerAnalysis,
-    //        TriggeredInstantiatedTypesAnalysis,
-    //        TriggeredLoadedClassesAnalysis,
-    //        TACAITransformer,
-    //        LazyCalleesAnalysis(Set(StandardInvokeCallees)),
-    //        LazyStringDefinitionAnalysis
-    //    )
-
     /**
      * @return Returns all relevant project files (NOT including library files) to run the tests.
      */
@@ -99,10 +89,7 @@ class LocalStringDefinitionTest extends PropertiesTest {
 
         val manager = p.get(FPCFAnalysesManagerKey)
         val (ps, _) = manager.runAll(LazyStringDefinitionAnalysis)
-        //        val testContext = executeAnalyses(analyses)
         val testContext = TestContext(p, ps, List(new LocalStringDefinitionAnalysis(p)))
-
-        //        val as = TestContext(p, ps, a :: testContext.analyses)
 
         LazyStringDefinitionAnalysis.init(p, ps)
         LazyStringDefinitionAnalysis.schedule(ps, null)
@@ -146,7 +133,8 @@ class LocalStringDefinitionTest extends PropertiesTest {
 
 object LocalStringDefinitionTest {
 
-    val fqStringDefAnnotation = "org.opalj.fpcf.properties.string_definition.StringDefinitionsCollection"
+    val fqStringDefAnnotation =
+        "org.opalj.fpcf.properties.string_definition.StringDefinitionsCollection"
     val fqTestMethodsClass = "org.opalj.fpcf.fixtures.string_definition.TestMethods"
     // The name of the method from which to extract DUVars to analyze
     val nameTestMethod = "analyzeString"
