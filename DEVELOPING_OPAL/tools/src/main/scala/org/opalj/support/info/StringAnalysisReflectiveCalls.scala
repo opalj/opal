@@ -8,7 +8,6 @@ import java.net.URL
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
-import org.opalj.fpcf.FinalE
 import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.PropertyStore
 import org.opalj.br.analyses.BasicReport
@@ -60,7 +59,7 @@ object StringAnalysisReflectiveCalls extends DefaultOneStepAnalysis {
      * analysis and the second element corresponds to the method name in which the entity occurred,
      * i.e., a value in [[relevantMethodNames]].
      */
-    private val entities = ListBuffer[(P, String)]()
+    private val entityContext = ListBuffer[(P, String)]()
 
     /**
      * Stores all relevant method names of the Java Reflection API, i.e., those methods from the
@@ -72,24 +71,25 @@ object StringAnalysisReflectiveCalls extends DefaultOneStepAnalysis {
         "java.lang.Class#forName", "java.lang.ClassLoader#loadClass",
         "java.lang.Class#getField", "java.lang.Class#getDeclaredField",
         "java.lang.Class#getMethod", "java.lang.Class#getDeclaredMethod"
-    // The following is for the javax.crypto API
-    //"javax.crypto.Cipher#getInstance", "javax.crypto.Cipher#getMaxAllowedKeyLength",
-    //"javax.crypto.Cipher#getMaxAllowedParameterSpec", "javax.crypto.Cipher#unwrap",
-    //"javax.crypto.CipherSpi#engineSetMode", "javax.crypto.CipherSpi#engineSetPadding",
-    //"javax.crypto.CipherSpi#engineUnwrap", "javax.crypto.EncryptedPrivateKeyInfo#getKeySpec",
-    //"javax.crypto.ExemptionMechanism#getInstance", "javax.crypto.KeyAgreement#getInstance",
-    //"javax.crypto.KeyGenerator#getInstance", "javax.crypto.Mac#getInstance",
-    //"javax.crypto.SealedObject#getObject", "javax.crypto.SecretKeyFactory#getInstance"
+        // The following is for the javax.crypto API
+        //"javax.crypto.Cipher#getInstance", "javax.crypto.Cipher#getMaxAllowedKeyLength",
+        //"javax.crypto.Cipher#getMaxAllowedParameterSpec", "javax.crypto.Cipher#unwrap",
+        //"javax.crypto.CipherSpi#engineSetMode", "javax.crypto.CipherSpi#engineSetPadding",
+        //"javax.crypto.CipherSpi#engineUnwrap", "javax.crypto.EncryptedPrivateKeyInfo#getKeySpec",
+        //"javax.crypto.ExemptionMechanism#getInstance", "javax.crypto.KeyAgreement#getInstance",
+        //"javax.crypto.KeyGenerator#getInstance", "javax.crypto.Mac#getInstance",
+        //"javax.crypto.SealedObject#getObject", "javax.crypto.SecretKeyFactory#getInstance"
     )
 
     /**
      * A list of fully-qualified method names that are to be skipped, e.g., because they make the
      * analysis crash.
      */
-    private val ignoreMethods = List( // For the next one, there should be a \w inside the second string
-    // "com/sun/glass/ui/monocle/NativePlatformFactory#getNativePlatform",
-    // Check this result:
-    //"com/sun/jmx/mbeanserver/MBeanInstantiator#deserialize"
+    private val ignoreMethods = List(
+        // For the next one, there should be a \w inside the second string
+        // "com/sun/glass/ui/monocle/NativePlatformFactory#getNativePlatform",
+        // Check this result:
+        //"com/sun/jmx/mbeanserver/MBeanInstantiator#deserialize"
     )
 
     override def title: String = "String Analysis for Reflective Calls"
@@ -156,26 +156,10 @@ object StringAnalysisReflectiveCalls extends DefaultOneStepAnalysis {
                             val duvar = call.params(index).asVar
                             val e = (duvar, method)
 
-                            ps(e, StringConstancyProperty.key) match {
-                                case FinalE(prop: StringConstancyProperty) ⇒
-                                    resultMap(call.name).append(prop.stringConstancyInformation)
-                                case _ ⇒ entities.append(
-                                    (e, buildFQMethodName(call.declaringClass, call.name))
-                                )
-                            }
-                            // Add all properties to the map; TODO: Add the following to end of the analysis
-                            ps.waitOnPhaseCompletion()
-                            while (entities.nonEmpty) {
-                                val nextEntity = entities.head
-                                ps.properties(nextEntity._1).toIndexedSeq.foreach {
-                                    case FinalP(prop: StringConstancyProperty) ⇒
-                                        resultMap(nextEntity._2).append(
-                                            prop.stringConstancyInformation
-                                        )
-                                    case _ ⇒
-                                }
-                                entities.remove(0)
-                            }
+                            ps.force(e, StringConstancyProperty.key)
+                            entityContext.append(
+                                (e, buildFQMethodName(call.declaringClass, call.name))
+                            )
                         }
                 }
             }
@@ -245,6 +229,20 @@ object StringAnalysisReflectiveCalls extends DefaultOneStepAnalysis {
                     }
                 }
             }
+        }
+
+        // TODO: The call to waitOnPhaseCompletion is not 100 % correct, however, without it
+        //       resultMap does not get filled at all
+        propertyStore.waitOnPhaseCompletion()
+        entityContext.foreach {
+            case (e, callName) ⇒
+                propertyStore.properties(e).toIndexedSeq.foreach {
+                    case FinalP(p) ⇒
+                        resultMap(callName).append(
+                            p.asInstanceOf[StringConstancyProperty].stringConstancyInformation
+                        )
+                    case _ ⇒
+                }
         }
 
         val t1 = System.currentTimeMillis()
