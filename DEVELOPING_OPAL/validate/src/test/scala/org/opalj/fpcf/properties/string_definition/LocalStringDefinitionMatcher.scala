@@ -6,7 +6,7 @@ import org.opalj.br.AnnotationLike
 import org.opalj.br.ObjectType
 import org.opalj.fpcf.properties.AbstractPropertyMatcher
 import org.opalj.fpcf.Property
-import org.opalj.fpcf.properties.StringConstancyProperty
+import org.opalj.br.fpcf.properties.StringConstancyProperty
 
 /**
  * Matches local variable's `StringConstancy` property. The match is successful if the

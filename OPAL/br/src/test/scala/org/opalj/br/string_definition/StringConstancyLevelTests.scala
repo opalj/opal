@@ -1,11 +1,12 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.br.string_definition
 
-import org.opalj.fpcf.string_definition.properties.StringConstancyLevel
-import org.opalj.fpcf.string_definition.properties.StringConstancyLevel.CONSTANT
-import org.opalj.fpcf.string_definition.properties.StringConstancyLevel.DYNAMIC
-import org.opalj.fpcf.string_definition.properties.StringConstancyLevel.PARTIALLY_CONSTANT
 import org.scalatest.FunSuite
+
+import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel
+import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel.CONSTANT
+import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel.DYNAMIC
+import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel.PARTIALLY_CONSTANT
 
 /**
  * Tests for [[StringConstancyLevel]] methods.

@@ -1,24 +1,25 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.support.info
 
+import scala.annotation.switch
+
 import java.net.URL
 
+import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
+
+import org.opalj.log.GlobalLogContext
+import org.opalj.log.OPALLogger
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ReportableAnalysisResult
-import org.opalj.fpcf.analyses.string_definition.V
-import org.opalj.log.GlobalLogContext
-import org.opalj.log.OPALLogger
 import org.opalj.tac.Assignment
 import org.opalj.tac.Call
 import org.opalj.tac.ExprStmt
 import org.opalj.tac.SimpleTACAIKey
 import org.opalj.tac.VirtualFunctionCall
-
-import scala.annotation.switch
-import scala.collection.mutable
-import scala.collection.mutable.ListBuffer
+import org.opalj.tac.fpcf.analyses.cg.V
 
 /**
  * Analyzes a project for how a particular class is used within that project. This means that this

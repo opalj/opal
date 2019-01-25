@@ -4,22 +4,23 @@ package fpcf
 
 import java.io.File
 
+import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
+
 import org.opalj.br.analyses.Project
 import org.opalj.br.Annotation
 import org.opalj.br.Method
 import org.opalj.br.cfg.CFG
 import org.opalj.br.Annotations
-import org.opalj.fpcf.analyses.cg.V
-import org.opalj.fpcf.analyses.string_definition.LazyStringDefinitionAnalysis
-import org.opalj.fpcf.analyses.string_definition.LocalStringDefinitionAnalysis
-import org.opalj.fpcf.properties.StringConstancyProperty
+import org.opalj.br.fpcf.properties.StringConstancyProperty
+import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.tac.DefaultTACAIKey
 import org.opalj.tac.Stmt
 import org.opalj.tac.TACStmts
 import org.opalj.tac.VirtualMethodCall
-
-import scala.collection.mutable
-import scala.collection.mutable.ListBuffer
+import org.opalj.tac.fpcf.analyses.string_analysis.LazyStringDefinitionAnalysis
+import org.opalj.tac.fpcf.analyses.string_analysis.LocalStringDefinitionAnalysis
+import org.opalj.tac.fpcf.analyses.string_analysis.V
 
 /**
  * Tests whether the StringTrackingAnalysis works correctly.
@@ -27,6 +28,16 @@ import scala.collection.mutable.ListBuffer
  * @author Patrick Mell
  */
 class LocalStringDefinitionTest extends PropertiesTest {
+
+    //    val analyses: List[FPCFAnalysisScheduler] = List(
+    //        RTACallGraphAnalysisScheduler,
+    //        TriggeredStaticInitializerAnalysis,
+    //        TriggeredInstantiatedTypesAnalysis,
+    //        TriggeredLoadedClassesAnalysis,
+    //        TACAITransformer,
+    //        LazyCalleesAnalysis(Set(StandardInvokeCallees)),
+    //        LazyStringDefinitionAnalysis
+    //    )
 
     /**
      * @return Returns all relevant project files (NOT including library files) to run the tests.
@@ -85,15 +96,20 @@ class LocalStringDefinitionTest extends PropertiesTest {
 
     describe("the org.opalj.fpcf.StringTrackingAnalysis is started") {
         val p = Project(getRelevantProjectFiles, Array[File]())
-        val ps = p.get(org.opalj.fpcf.PropertyStoreKey)
-        ps.setupPhase(Set(StringConstancyProperty))
+
+        val manager = p.get(FPCFAnalysesManagerKey)
+        val (ps, _) = manager.runAll(LazyStringDefinitionAnalysis)
+        //        val testContext = executeAnalyses(analyses)
+        val testContext = TestContext(p, ps, List(new LocalStringDefinitionAnalysis(p)))
+
+        //        val as = TestContext(p, ps, a :: testContext.analyses)
 
         LazyStringDefinitionAnalysis.init(p, ps)
         LazyStringDefinitionAnalysis.schedule(ps, null)
+        val tacProvider = p.get(DefaultTACAIKey)
 
         // We need a "method to entity" matching for the evaluation (see further below)
         val m2e = mutable.HashMap[Method, Entity]()
-        val tacProvider = p.get(DefaultTACAIKey)
 
         p.allMethodsWithBody.filter {
             _.runtimeInvisibleAnnotations.foldLeft(false)(
@@ -121,10 +137,8 @@ class LocalStringDefinitionTest extends PropertiesTest {
                     )
             }
         }
-        validateProperties(
-            TestContext(p, ps, Set(new LocalStringDefinitionAnalysis(p))),
-            eas, Set("StringConstancy")
-        )
+        testContext.propertyStore.shutdown()
+        validateProperties(testContext, eas, Set("StringConstancy"))
         ps.waitOnPhaseCompletion()
     }
 
