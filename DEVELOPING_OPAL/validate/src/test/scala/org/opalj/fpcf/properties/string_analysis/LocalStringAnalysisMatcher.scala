@@ -1,5 +1,5 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.fpcf.properties.string_definition
+package org.opalj.fpcf.properties.string_analysis
 
 import org.opalj.br.analyses.Project
 import org.opalj.br.AnnotationLike
@@ -14,11 +14,12 @@ import org.opalj.br.fpcf.properties.StringConstancyProperty
  *
  * @author Patrick Mell
  */
-class LocalStringDefinitionMatcher extends AbstractPropertyMatcher {
+class LocalStringAnalysisMatcher extends AbstractPropertyMatcher {
 
     /**
      * @param a An annotation like of type
-     *          [[org.opalj.fpcf.properties.string_definition.StringDefinitions]].
+     *          [[org.opalj.fpcf.properties.string_analysis.StringDefinitions]].
+     *
      * @return Returns the constancy level specified in the annotation as a string. In case an
      *         annotation other than StringDefinitions is passed, an [[IllegalArgumentException]]
      *         will be thrown (since it cannot be processed).
@@ -34,7 +35,8 @@ class LocalStringDefinitionMatcher extends AbstractPropertyMatcher {
 
     /**
      * @param a An annotation like of type
-     *          [[org.opalj.fpcf.properties.string_definition.StringDefinitions]].
+     *          [[org.opalj.fpcf.properties.string_analysis.StringDefinitions]].
+     *
      * @return Returns the ''expectedStrings'' value from the annotation. In case an annotation
      *         other than StringDefinitions is passed, an [[IllegalArgumentException]] will be
      *         thrown (since it cannot be processed).

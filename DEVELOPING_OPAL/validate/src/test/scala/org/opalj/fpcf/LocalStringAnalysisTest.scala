@@ -18,24 +18,25 @@ import org.opalj.tac.DefaultTACAIKey
 import org.opalj.tac.Stmt
 import org.opalj.tac.TACStmts
 import org.opalj.tac.VirtualMethodCall
-import org.opalj.tac.fpcf.analyses.string_analysis.LazyStringDefinitionAnalysis
-import org.opalj.tac.fpcf.analyses.string_analysis.LocalStringDefinitionAnalysis
+import org.opalj.tac.fpcf.analyses.string_analysis.LazyLocalStringAnalysis
+import org.opalj.tac.fpcf.analyses.string_analysis.LocalStringAnalysis
 import org.opalj.tac.fpcf.analyses.string_analysis.V
 
 /**
- * Tests whether the StringTrackingAnalysis works correctly.
+ * Tests whether the [[LocalStringAnalysis]] works correctly with respect to some well-defined
+ * tests.
  *
  * @author Patrick Mell
  */
-class LocalStringDefinitionTest extends PropertiesTest {
+class LocalStringAnalysisTest extends PropertiesTest {
 
     /**
      * @return Returns all relevant project files (NOT including library files) to run the tests.
      */
     private def getRelevantProjectFiles: Array[File] = {
         val necessaryFiles = Array(
-            "fixtures/string_definition/TestMethods.class",
-            "properties/string_definition/StringDefinitions.class"
+            "fixtures/string_analysis/LocalTestMethods.class",
+            "properties/string_analysis/StringDefinitions.class"
         )
         val basePath = System.getProperty("user.dir")+
             "/DEVELOPING_OPAL/validate/target/scala-2.12/test-classes/org/opalj/fpcf/"
@@ -45,31 +46,31 @@ class LocalStringDefinitionTest extends PropertiesTest {
 
     /**
      * Extracts [[org.opalj.tac.UVar]]s from a set of statements. The locations of the UVars are
-     * identified by the argument to the very first call to TestMethods#analyzeString.
+     * identified by the argument to the very first call to LocalTestMethods#analyzeString.
      *
      * @param cfg The control flow graph from which to extract the UVar, usually derived from the
-     *            method that contains the call(s) to TestMethods#analyzeString.
-     * @return Returns the arguments of the TestMethods#analyzeString as a DUVars list in the order
-     *         in which they occurred in the given statements.
+     *            method that contains the call(s) to LocalTestMethods#analyzeString.
+     * @return Returns the arguments of the LocalTestMethods#analyzeString as a DUVars list in the
+     *         order in which they occurred in the given statements.
      */
     private def extractUVars(cfg: CFG[Stmt[V], TACStmts[V]]): List[V] = {
         cfg.code.instructions.filter {
             case VirtualMethodCall(_, declClass, _, name, _, _, _) ⇒
-                declClass.toJavaClass.getName == LocalStringDefinitionTest.fqTestMethodsClass &&
-                    name == LocalStringDefinitionTest.nameTestMethod
+                declClass.toJavaClass.getName == LocalStringAnalysisTest.fqTestMethodsClass &&
+                    name == LocalStringAnalysisTest.nameTestMethod
             case _ ⇒ false
         }.map(_.asVirtualMethodCall.params.head.asVar).toList
     }
 
     /**
      * Takes an annotation and checks if it is a
-     * [[org.opalj.fpcf.properties.string_definition.StringDefinitions]] annotation.
+     * [[org.opalj.fpcf.properties.string_analysis.StringDefinitions]] annotation.
      *
      * @param a The annotation to check.
      * @return True if the `a` is of type StringDefinitions and false otherwise.
      */
     private def isStringUsageAnnotation(a: Annotation): Boolean =
-        a.annotationType.toJavaClass.getName == LocalStringDefinitionTest.fqStringDefAnnotation
+        a.annotationType.toJavaClass.getName == LocalStringAnalysisTest.fqStringDefAnnotation
 
     /**
      * Extracts a `StringDefinitions` annotation from a `StringDefinitionsCollection` annotation.
@@ -88,11 +89,11 @@ class LocalStringDefinitionTest extends PropertiesTest {
         val p = Project(getRelevantProjectFiles, Array[File]())
 
         val manager = p.get(FPCFAnalysesManagerKey)
-        val (ps, _) = manager.runAll(LazyStringDefinitionAnalysis)
-        val testContext = TestContext(p, ps, List(new LocalStringDefinitionAnalysis(p)))
+        val (ps, _) = manager.runAll(LazyLocalStringAnalysis)
+        val testContext = TestContext(p, ps, List(new LocalStringAnalysis(p)))
 
-        LazyStringDefinitionAnalysis.init(p, ps)
-        LazyStringDefinitionAnalysis.schedule(ps, null)
+        LazyLocalStringAnalysis.init(p, ps)
+        LazyLocalStringAnalysis.schedule(ps, null)
         val tacProvider = p.get(DefaultTACAIKey)
 
         // We need a "method to entity" matching for the evaluation (see further below)
@@ -131,11 +132,11 @@ class LocalStringDefinitionTest extends PropertiesTest {
 
 }
 
-object LocalStringDefinitionTest {
+object LocalStringAnalysisTest {
 
     val fqStringDefAnnotation =
-        "org.opalj.fpcf.properties.string_definition.StringDefinitionsCollection"
-    val fqTestMethodsClass = "org.opalj.fpcf.fixtures.string_definition.TestMethods"
+        "org.opalj.fpcf.properties.string_analysis.StringDefinitionsCollection"
+    val fqTestMethodsClass = "org.opalj.fpcf.fixtures.string_analysis.LocalTestMethods"
     // The name of the method from which to extract DUVars to analyze
     val nameTestMethod = "analyzeString"
 
