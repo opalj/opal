@@ -18,7 +18,7 @@ import java.lang.annotation.*;
  *
  * @author Patrick Mell
  */
-@PropertyValidator(key = "StringConstancy", validator = LocalStringAnalysisMatcher.class)
+@PropertyValidator(key = "StringConstancy", validator = StringAnalysisMatcher.class)
 @Documented
 @Retention(RetentionPolicy.CLASS)
 @Target({ ElementType.ANNOTATION_TYPE })

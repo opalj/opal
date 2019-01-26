@@ -14,7 +14,7 @@ import org.opalj.br.fpcf.properties.StringConstancyProperty
  *
  * @author Patrick Mell
  */
-class LocalStringAnalysisMatcher extends AbstractPropertyMatcher {
+class StringAnalysisMatcher extends AbstractPropertyMatcher {
 
     /**
      * @param a An annotation like of type
