@@ -20,6 +20,8 @@ import org.opalj.tac.DefaultTACAIKey
 import org.opalj.tac.Stmt
 import org.opalj.tac.TACStmts
 import org.opalj.tac.VirtualMethodCall
+import org.opalj.tac.fpcf.analyses.string_analysis.InterproceduralStringAnalysis
+import org.opalj.tac.fpcf.analyses.string_analysis.LazyInterproceduralStringAnalysis
 import org.opalj.tac.fpcf.analyses.string_analysis.LazyLocalStringAnalysis
 import org.opalj.tac.fpcf.analyses.string_analysis.LocalStringAnalysis
 import org.opalj.tac.fpcf.analyses.string_analysis.V
@@ -173,6 +175,50 @@ object LocalStringAnalysisTest {
     // Files to load for the runner
     val filesToLoad = List(
         "fixtures/string_analysis/LocalTestMethods.class"
+    )
+
+}
+
+/**
+ * Tests whether the [[LocalStringAnalysis]] works correctly with respect to some well-defined
+ * tests.
+ *
+ * @author Patrick Mell
+ */
+class InterproceduralStringAnalysisTest extends PropertiesTest {
+
+    describe("the org.opalj.fpcf.InterproceduralStringAnalysis is started") {
+        val runner = new StringAnalysisTestRunner(
+            InterproceduralStringAnalysisTest.fqTestMethodsClass,
+            InterproceduralStringAnalysisTest.nameTestMethod,
+            InterproceduralStringAnalysisTest.filesToLoad
+        )
+        val p = Project(runner.getRelevantProjectFiles, Array[File]())
+
+        val manager = p.get(FPCFAnalysesManagerKey)
+        val (ps, _) = manager.runAll(LazyInterproceduralStringAnalysis)
+        val testContext = TestContext(p, ps, List(new InterproceduralStringAnalysis(p)))
+
+        LazyInterproceduralStringAnalysis.init(p, ps)
+        LazyInterproceduralStringAnalysis.schedule(ps, null)
+
+        val eas = runner.determineEAS(p, ps, p.allMethodsWithBody)
+
+        testContext.propertyStore.shutdown()
+        validateProperties(testContext, eas, Set("StringConstancy"))
+        ps.waitOnPhaseCompletion()
+    }
+
+}
+
+object InterproceduralStringAnalysisTest {
+
+    val fqTestMethodsClass = "org.opalj.fpcf.fixtures.string_analysis.InterproceduralTestMethods"
+    // The name of the method from which to extract DUVars to analyze
+    val nameTestMethod = "analyzeString"
+    // Files to load for the runner
+    val filesToLoad = List(
+        "fixtures/string_analysis/InterproceduralTestMethods.class"
     )
 
 }
