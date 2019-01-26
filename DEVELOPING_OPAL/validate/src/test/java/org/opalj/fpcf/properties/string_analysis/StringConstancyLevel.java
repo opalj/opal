@@ -1,9 +1,9 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.fpcf.properties.string_definition;
+package org.opalj.fpcf.properties.string_analysis;
 
 /**
  * Java annotations do not work with Scala enums, such as
- * {@link org.opalj.br.fpcf.properties.string_definition.properties.StringConstancyLevel}. Thus, this enum.
+ * {@link org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel}. Thus, this enum.
  *
  * @author Patrick Mell
  */

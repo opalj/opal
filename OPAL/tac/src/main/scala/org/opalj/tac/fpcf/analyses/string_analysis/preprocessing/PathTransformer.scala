@@ -114,7 +114,7 @@ class PathTransformer(val cfg: CFG[Stmt[V], TACStmts[V]]) {
      *                StringConstancyInformation need to be used that the [[InterpretationHandler]]
      *                cannot infer / derive. For instance, if the exact value of an expression needs
      *                to be determined by calling the
-     *                [[org.opalj.tac.fpcf.analyses.string_analysis.LocalStringDefinitionAnalysis]]
+     *                [[org.opalj.tac.fpcf.analyses.string_analysis.LocalStringAnalysis]]
      *                on another instance, store this information in fpe2Sci.
      * @param resetExprHandler Whether to reset the underlying [[InterpretationHandler]] or not.
      *                         When calling this function from outside, the default value should do

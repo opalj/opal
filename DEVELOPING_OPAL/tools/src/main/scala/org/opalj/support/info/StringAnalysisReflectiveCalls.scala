@@ -30,7 +30,7 @@ import org.opalj.tac.ExprStmt
 import org.opalj.tac.SimpleTACAIKey
 import org.opalj.tac.StaticFunctionCall
 import org.opalj.tac.VirtualFunctionCall
-import org.opalj.tac.fpcf.analyses.string_analysis.LazyStringDefinitionAnalysis
+import org.opalj.tac.fpcf.analyses.string_analysis.LazyLocalStringAnalysis
 import org.opalj.tac.fpcf.analyses.string_analysis.P
 import org.opalj.tac.fpcf.analyses.string_analysis.V
 
@@ -196,7 +196,7 @@ object StringAnalysisReflectiveCalls extends DefaultOneStepAnalysis {
         val t0 = System.currentTimeMillis()
 
         implicit val propertyStore: PropertyStore = project.get(PropertyStoreKey)
-        project.get(FPCFAnalysesManagerKey).runAll(LazyStringDefinitionAnalysis)
+        project.get(FPCFAnalysesManagerKey).runAll(LazyLocalStringAnalysis)
         val tacProvider = project.get(SimpleTACAIKey)
 
         // Stores the obtained results for each supported reflective operation

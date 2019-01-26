@@ -1,5 +1,5 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.fpcf.properties.string_definition;
+package org.opalj.fpcf.properties.string_analysis;
 
 import java.lang.annotation.*;
 

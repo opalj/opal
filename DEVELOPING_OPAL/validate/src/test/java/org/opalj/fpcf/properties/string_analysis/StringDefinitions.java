@@ -1,13 +1,14 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.fpcf.properties.string_definition;
+package org.opalj.fpcf.properties.string_analysis;
 
 import org.opalj.fpcf.properties.PropertyValidator;
 
 import java.lang.annotation.*;
 
 /**
- * The StringDefinitions annotation states how a string field or local variable is used during a
- * program execution.
+ * The StringDefinitions annotation states how a string field or local variable looks like with
+ * respect to the possible string values that can be read as well as the constancy level, i.e.,
+ * whether the string contains only constan or only dynamic parts or a mixture.
  * <p>
  * Note that the {@link StringDefinitions} annotation is designed in a way to be able to capture
  * only one read operation per test method. If this is a limitation, either (1) duplicate the
@@ -17,7 +18,7 @@ import java.lang.annotation.*;
  *
  * @author Patrick Mell
  */
-@PropertyValidator(key = "StringConstancy", validator = LocalStringDefinitionMatcher.class)
+@PropertyValidator(key = "StringConstancy", validator = LocalStringAnalysisMatcher.class)
 @Documented
 @Retention(RetentionPolicy.CLASS)
 @Target({ ElementType.ANNOTATION_TYPE })
@@ -31,7 +32,7 @@ public @interface StringDefinitions {
 
     /**
      * A regexp like string that describes the element(s) that are expected. For the rules, refer to
-     * {@link org.opalj.br.fpcf.properties.string_definition.properties.StringTreeElement}.
+     * {@link org.opalj.fpcf.fixtures.string_analysis.LocalTestMethods}.
      * For example, "(* | (hello | world)^5)" describes a string which can 1) either be any string
      * or 2) a five time concatenation of "hello" and/or "world".
      */

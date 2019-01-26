@@ -11,14 +11,14 @@ import org.opalj.tac.DUVar
 package object string_analysis {
 
     /**
-     * The type of entities the [[LocalStringDefinitionAnalysis]] processes.
+     * The type of entities the [[LocalStringAnalysis]] processes.
      *
      * @note The analysis requires further context information, see [[P]].
      */
     type V = DUVar[ValueInformation]
 
     /**
-     * [[LocalStringDefinitionAnalysis]] processes a local variable within the context of a
+     * [[LocalStringAnalysis]] processes a local variable within the context of a
      * particular context, i.e., the method in which it is used.
      */
     type P = (V, Method)

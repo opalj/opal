@@ -1,8 +1,8 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.fpcf.fixtures.string_definition;
+package org.opalj.fpcf.fixtures.string_analysis;
 
-import org.opalj.fpcf.properties.string_definition.StringDefinitions;
-import org.opalj.fpcf.properties.string_definition.StringDefinitionsCollection;
+import org.opalj.fpcf.properties.string_analysis.StringDefinitions;
+import org.opalj.fpcf.properties.string_analysis.StringDefinitionsCollection;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -12,10 +12,10 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Random;
 
-import static org.opalj.fpcf.properties.string_definition.StringConstancyLevel.*;
+import static org.opalj.fpcf.properties.string_analysis.StringConstancyLevel.*;
 
 /**
- * This file contains various tests for the StringDefinitionAnalysis. The following things are to be
+ * This file contains various tests for the LocalStringAnalysis. The following things are to be
  * considered when adding test cases:
  * <ul>
  * <li>
@@ -48,14 +48,14 @@ import static org.opalj.fpcf.properties.string_definition.StringConstancyLevel.*
  *
  * @author Patrick Mell
  */
-public class TestMethods {
+public class LocalTestMethods {
 
     private String someStringField = "";
     public static final String MY_CONSTANT = "mine";
 
     /**
      * This method represents the test method which is serves as the trigger point for the
-     * {@link org.opalj.fpcf.LocalStringDefinitionTest} to know which string read operation to
+     * {@link org.opalj.fpcf.LocalStringAnalysisTest} to know which string read operation to
      * analyze.
      * Note that the {@link StringDefinitions} annotation is designed in a way to be able to capture
      * only one read operation. For how to get around this limitation, see the annotation.
