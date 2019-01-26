@@ -191,22 +191,12 @@ class LocalStringAnalysis(
         data:      P,
         dependees: Iterable[EOptionP[Entity, Property]],
         state:     ComputationState
-    )(eps: SomeEPS): ProperPropertyComputationResult = {
-        val currentResult = eps match {
-            case FinalP(p) ⇒
-                Some(processFinalP(data, dependees, state, eps.e, p))
-            case InterimLUBP(lb, ub) ⇒
-                Some(InterimResult(
-                    data, lb, ub, dependees, continuation(data, dependees, state)
-                ))
-            case _ ⇒ None
-        }
-
-        if (currentResult.isDefined) {
-            currentResult.get
-        } else {
-            throw new IllegalStateException("Could not process the continuation successfully.")
-        }
+    )(eps: SomeEPS): ProperPropertyComputationResult = eps match {
+        case FinalP(p) ⇒ processFinalP(data, dependees, state, eps.e, p)
+        case InterimLUBP(lb, ub) ⇒ InterimResult(
+            data, lb, ub, dependees, continuation(data, dependees, state)
+        )
+        case _ ⇒ throw new IllegalStateException("Could not process the continuation successfully.")
     }
 
     /**
