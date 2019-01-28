@@ -29,6 +29,7 @@ import org.opalj.tac.Stmt
 import org.opalj.tac.TACStmts
 import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis.derivedProperty
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
+import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.IntraproceduralInterpretationHandler
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.AbstractPathFinder
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.FlatPathElement
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.NestedPathElement
@@ -125,7 +126,7 @@ class LocalStringAnalysis(
             }
         } // If not a call to String{Builder, Buffer}.toString, then we deal with pure strings
         else {
-            val interHandler = InterpretationHandler(cfg)
+            val interHandler = IntraproceduralInterpretationHandler(cfg)
             sci = StringConstancyInformation.reduceMultiple(
                 uvar.definedBy.toArray.sorted.flatMap { interHandler.processDefSite }.toList
             )

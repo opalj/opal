@@ -10,6 +10,8 @@ import org.opalj.tac.fpcf.analyses.string_analysis.V
 
 /**
  * The `NewInterpreter` is responsible for processing [[New]] expressions.
+ * <p>
+ * For this implementation, the concrete implementation passed for [[exprHandler]] is not relevant.
  *
  * @see [[AbstractStringInterpreter]]
  *

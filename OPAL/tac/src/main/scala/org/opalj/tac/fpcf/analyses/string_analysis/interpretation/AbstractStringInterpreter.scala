@@ -12,6 +12,11 @@ import org.opalj.tac.fpcf.analyses.string_analysis.V
  * @param exprHandler In order to interpret an instruction, it might be necessary to interpret
  *                    another instruction in the first place. `exprHandler` makes this possible.
  *
+ * @note The abstract type [[InterpretationHandler]] allows the handling of different styles (e.g.,
+ *       intraprocedural and interprocedural). Thus, implementation of this class are required to
+ *       clearly indicate what kind of [[InterpretationHandler]] they expect in order to ensure the
+ *       desired behavior and not confuse developers.
+ *
  * @author Patrick Mell
  */
 abstract class AbstractStringInterpreter(

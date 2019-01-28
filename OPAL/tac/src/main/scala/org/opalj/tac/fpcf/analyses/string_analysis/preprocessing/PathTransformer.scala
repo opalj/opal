@@ -14,7 +14,7 @@ import org.opalj.br.fpcf.properties.string_definition.StringTreeRepetition
 import org.opalj.tac.Stmt
 import org.opalj.tac.TACStmts
 import org.opalj.tac.fpcf.analyses.string_analysis.V
-import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
+import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.IntraproceduralInterpretationHandler
 
 /**
  * [[PathTransformer]] is responsible for transforming a [[Path]] into another representation, such
@@ -29,7 +29,7 @@ import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.Interpretation
  */
 class PathTransformer(val cfg: CFG[Stmt[V], TACStmts[V]]) {
 
-    private val exprHandler = InterpretationHandler(cfg)
+    private val exprHandler = IntraproceduralInterpretationHandler(cfg)
 
     /**
      * Accumulator function for transforming a path into a StringTree element.
@@ -108,18 +108,19 @@ class PathTransformer(val cfg: CFG[Stmt[V], TACStmts[V]]) {
      * Takes a [[Path]] and transforms it into a [[StringTree]]. This implies an interpretation of
      * how to handle methods called on the object of interest (like `append`).
      *
-     * @param path The path element to be transformed.
-     * @param fpe2Sci A mapping from [[FlatPathElement.element]] values to
-     *                [[StringConstancyInformation]]. Make use of this mapping if some
-     *                StringConstancyInformation need to be used that the [[InterpretationHandler]]
-     *                cannot infer / derive. For instance, if the exact value of an expression needs
-     *                to be determined by calling the
-     *                [[org.opalj.tac.fpcf.analyses.string_analysis.LocalStringAnalysis]]
-     *                on another instance, store this information in fpe2Sci.
-     * @param resetExprHandler Whether to reset the underlying [[InterpretationHandler]] or not.
+     * @param path             The path element to be transformed.
+     * @param fpe2Sci          A mapping from [[FlatPathElement.element]] values to
+     *                         [[StringConstancyInformation]]. Make use of this mapping if some
+     *                         StringConstancyInformation need to be used that the [[IntraproceduralInterpretationHandler]]
+     *                         cannot infer / derive. For instance, if the exact value of an expression needs
+     *                         to be determined by calling the
+     *                         [[org.opalj.tac.fpcf.analyses.string_analysis.LocalStringAnalysis]]
+     *                         on another instance, store this information in fpe2Sci.
+     * @param resetExprHandler Whether to reset the underlying [[IntraproceduralInterpretationHandler]] or not.
      *                         When calling this function from outside, the default value should do
      *                         fine in most of the cases. For further information, see
-     *                         [[InterpretationHandler.reset]].
+     *                         [[IntraproceduralInterpretationHandler.reset]].
+     *
      * @return If an empty [[Path]] is given, `None` will be returned. Otherwise, the transformed
      *         [[org.opalj.br.fpcf.properties.properties.StringTree]] will be returned. Note that all elements of the tree will be defined,
      *         i.e., if `path` contains sites that could not be processed (successfully), they will

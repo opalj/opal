@@ -15,17 +15,17 @@ import org.opalj.tac.VirtualFunctionCall
 import org.opalj.tac.fpcf.analyses.string_analysis.V
 
 /**
- * The `VirtualFunctionCallInterpreter` is responsible for processing [[VirtualFunctionCall]]s.
- * The list of currently supported function calls can be seen in the documentation of
- * [[interpret]].
+ * The `IntraproceduralVirtualFunctionCallInterpreter` is responsible for processing
+ * [[VirtualFunctionCall]]s in an intraprocedural fashion.
+ * The list of currently supported function calls can be seen in the documentation of [[interpret]].
  *
  * @see [[AbstractStringInterpreter]]
  *
  * @author Patrick Mell
  */
-class VirtualFunctionCallInterpreter(
+class IntraproceduralVirtualFunctionCallInterpreter(
         cfg:         CFG[Stmt[V], TACStmts[V]],
-        exprHandler: InterpretationHandler
+        exprHandler: IntraproceduralInterpretationHandler
 ) extends AbstractStringInterpreter(cfg, exprHandler) {
 
     override type T = VirtualFunctionCall[V]
@@ -42,7 +42,7 @@ class VirtualFunctionCallInterpreter(
      * <li>
      *     `replace`: Calls to the `replace` function of [[StringBuilder]] and [[StringBuffer]]. For
      *     further information how this operation is processed, see
-     *     [[VirtualFunctionCallInterpreter.interpretReplaceCall]].
+     *     [[IntraproceduralVirtualFunctionCallInterpreter.interpretReplaceCall]].
      * </li>
      * <li>
      *     Apart from these supported methods, a list with [[StringConstancyProperty.lowerBound]]

@@ -12,6 +12,9 @@ import org.opalj.tac.fpcf.analyses.string_analysis.V
 
 /**
  * The `StringConstInterpreter` is responsible for processing [[StringConst]]s.
+ * <p>
+ * For this interpreter, the given interpretation handler does not play any role. Consequently, any
+ * implementation may be passed.
  *
  * @see [[AbstractStringInterpreter]]
  *

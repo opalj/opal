@@ -13,6 +13,9 @@ import org.opalj.tac.fpcf.analyses.string_analysis.V
 /**
  * The `BinaryExprInterpreter` is responsible for processing [[BinaryExpr]]ions. A list of currently
  * supported binary expressions can be found in the documentation of [[interpret]].
+ * <p>
+ * For this interpreter, it is of no relevance what concrete implementation of
+ * [[InterpretationHandler]] is passed.
  *
  * @see [[AbstractStringInterpreter]]
  * @author Patrick Mell
@@ -42,7 +45,6 @@ class BinaryExprInterpreter(
                 List(InterpretationHandler.getConstancyInformationForDynamicInt)
             case ComputationalTypeFloat ⇒
                 List(InterpretationHandler.getConstancyInformationForDynamicFloat)
-
             case _ ⇒ List()
         }
 
