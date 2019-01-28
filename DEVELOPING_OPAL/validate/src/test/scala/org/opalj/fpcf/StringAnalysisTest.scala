@@ -16,15 +16,31 @@ import org.opalj.br.cfg.CFG
 import org.opalj.br.Annotations
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
+import org.opalj.br.fpcf.cg.properties.ReflectionRelatedCallees
+import org.opalj.br.fpcf.cg.properties.SerializationRelatedCallees
+import org.opalj.br.fpcf.cg.properties.StandardInvokeCallees
+import org.opalj.br.fpcf.cg.properties.ThreadRelatedIncompleteCallSites
+import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
 import org.opalj.tac.DefaultTACAIKey
 import org.opalj.tac.Stmt
 import org.opalj.tac.TACStmts
 import org.opalj.tac.VirtualMethodCall
+import org.opalj.tac.fpcf.analyses.cg.reflection.TriggeredReflectionRelatedCallsAnalysis
+import org.opalj.tac.fpcf.analyses.cg.RTACallGraphAnalysisScheduler
+import org.opalj.tac.fpcf.analyses.cg.TriggeredFinalizerAnalysisScheduler
+import org.opalj.tac.fpcf.analyses.cg.TriggeredSerializationRelatedCallsAnalysis
 import org.opalj.tac.fpcf.analyses.string_analysis.InterproceduralStringAnalysis
 import org.opalj.tac.fpcf.analyses.string_analysis.LazyInterproceduralStringAnalysis
 import org.opalj.tac.fpcf.analyses.string_analysis.LazyLocalStringAnalysis
 import org.opalj.tac.fpcf.analyses.string_analysis.LocalStringAnalysis
 import org.opalj.tac.fpcf.analyses.string_analysis.V
+import org.opalj.tac.fpcf.analyses.TriggeredSystemPropertiesAnalysis
+import org.opalj.tac.fpcf.analyses.cg.LazyCalleesAnalysis
+import org.opalj.tac.fpcf.analyses.cg.TriggeredStaticInitializerAnalysis
+import org.opalj.tac.fpcf.analyses.cg.TriggeredThreadRelatedCallsAnalysis
+import org.opalj.tac.fpcf.analyses.TACAITransformer
+import org.opalj.tac.fpcf.analyses.cg.TriggeredInstantiatedTypesAnalysis
+import org.opalj.tac.fpcf.analyses.cg.TriggeredLoadedClassesAnalysis
 
 /**
  * @param fqTestMethodsClass The fully-qualified name of the class that contains the test methods.
@@ -196,14 +212,34 @@ class InterproceduralStringAnalysisTest extends PropertiesTest {
         val p = Project(runner.getRelevantProjectFiles, Array[File]())
 
         val manager = p.get(FPCFAnalysesManagerKey)
-        val (ps, _) = manager.runAll(LazyInterproceduralStringAnalysis)
-        val testContext = TestContext(p, ps, List(new InterproceduralStringAnalysis(p)))
+        val (ps, analyses) = manager.runAll(
+            TACAITransformer,
+            LazyL0BaseAIAnalysis,
+            RTACallGraphAnalysisScheduler,
+            TriggeredStaticInitializerAnalysis,
+            TriggeredLoadedClassesAnalysis,
+            TriggeredFinalizerAnalysisScheduler,
+            TriggeredThreadRelatedCallsAnalysis,
+            TriggeredSerializationRelatedCallsAnalysis,
+            TriggeredReflectionRelatedCallsAnalysis,
+            TriggeredSystemPropertiesAnalysis,
+            TriggeredInstantiatedTypesAnalysis,
+            LazyCalleesAnalysis(Set(
+                StandardInvokeCallees,
+                SerializationRelatedCallees,
+                ReflectionRelatedCallees,
+                ThreadRelatedIncompleteCallSites
+            )),
+            LazyInterproceduralStringAnalysis
+        )
 
+        val testContext = TestContext(
+            p, ps, List(new InterproceduralStringAnalysis(p)) ++ analyses.map(_._2)
+        )
         LazyInterproceduralStringAnalysis.init(p, ps)
         LazyInterproceduralStringAnalysis.schedule(ps, null)
 
         val eas = runner.determineEAS(p, ps, p.allMethodsWithBody)
-
         testContext.propertyStore.shutdown()
         validateProperties(testContext, eas, Set("StringConstancy"))
         ps.waitOnPhaseCompletion()
