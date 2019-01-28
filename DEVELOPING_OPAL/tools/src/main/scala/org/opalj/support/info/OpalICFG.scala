@@ -170,7 +170,7 @@ class OpalICFG(project: SomeProject) extends InterproceduralCFG[Statement, Metho
     }
 
     def isExitStmt(stmt: Statement): Boolean = {
-        getSuccsOf(stmt).isEmpty
+        stmt.cfg.bb(stmt.index).successors.exists(_.isExitNode)
     }
 
     def isStartPoint(stmt: Statement): Boolean = {
