@@ -98,6 +98,6 @@ object InterproceduralInterpretationHandler {
      */
     def apply(
         cfg: CFG[Stmt[V], TACStmts[V]], callees: Callees
-    ): IntraproceduralInterpretationHandler = new IntraproceduralInterpretationHandler(cfg)
+    ): InterproceduralInterpretationHandler = new InterproceduralInterpretationHandler(cfg, callees)
 
 }
