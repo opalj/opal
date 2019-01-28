@@ -4,6 +4,7 @@ package org.opalj.tac.fpcf.analyses.string_analysis.interpretation
 import scala.collection.mutable.ListBuffer
 
 import org.opalj.br.cfg.CFG
+import org.opalj.br.fpcf.cg.properties.Callees
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.tac.NonVirtualMethodCall
 import org.opalj.tac.Stmt
@@ -11,16 +12,18 @@ import org.opalj.tac.TACStmts
 import org.opalj.tac.fpcf.analyses.string_analysis.V
 
 /**
- * The `NonVirtualMethodCallInterpreter` is responsible for processing [[NonVirtualMethodCall]]s.
+ * The `InterproceduralNonVirtualMethodCallInterpreter` is responsible for processing
+ * [[NonVirtualMethodCall]]s in an interprocedural fashion.
  * For supported method calls, see the documentation of the `interpret` function.
  *
  * @see [[AbstractStringInterpreter]]
  *
  * @author Patrick Mell
  */
-class NonVirtualMethodCallInterpreter(
+class InterproceduralNonVirtualMethodCallInterpreter(
         cfg:         CFG[Stmt[V], TACStmts[V]],
-        exprHandler: InterpretationHandler
+        exprHandler: InterproceduralInterpretationHandler,
+        callees:     Callees
 ) extends AbstractStringInterpreter(cfg, exprHandler) {
 
     override type T = NonVirtualMethodCall[V]
@@ -39,6 +42,7 @@ class NonVirtualMethodCallInterpreter(
      * @see [[AbstractStringInterpreter.interpret]]
      */
     override def interpret(instr: NonVirtualMethodCall[V]): List[StringConstancyInformation] = {
+        // TODO: Change from intra- to interprocedural
         instr.name match {
             case "<init>" ⇒ interpretInit(instr)
             case _        ⇒ List()
@@ -53,8 +57,7 @@ class NonVirtualMethodCallInterpreter(
      */
     private def interpretInit(init: NonVirtualMethodCall[V]): List[StringConstancyInformation] = {
         init.params.size match {
-            case 0 ⇒
-                List()
+            case 0 ⇒ List()
             //List(StringConstancyInformation(StringConstancyLevel.CONSTANT, ""))
             case _ ⇒
                 val scis = ListBuffer[StringConstancyInformation]()

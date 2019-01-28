@@ -5,40 +5,27 @@ import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
 import org.opalj.br.cfg.CFG
-import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyType
-import org.opalj.tac.ArrayLoad
 import org.opalj.tac.Assignment
-import org.opalj.tac.BinaryExpr
 import org.opalj.tac.Expr
-import org.opalj.tac.ExprStmt
-import org.opalj.tac.GetField
-import org.opalj.tac.IntConst
 import org.opalj.tac.New
-import org.opalj.tac.NonVirtualFunctionCall
-import org.opalj.tac.NonVirtualMethodCall
-import org.opalj.tac.StaticFunctionCall
 import org.opalj.tac.Stmt
-import org.opalj.tac.StringConst
-import org.opalj.tac.TACStmts
 import org.opalj.tac.VirtualFunctionCall
-import org.opalj.tac.VirtualMethodCall
 import org.opalj.tac.fpcf.analyses.string_analysis.V
+import org.opalj.tac.TACStmts
 
-/**
- * `InterpretationHandler` is responsible for processing expressions that are relevant in order to
- * determine which value(s) a string read operation might have. These expressions usually come from
- * the definitions sites of the variable of interest.
- *
- * @param cfg The control flow graph that underlies the program / method in which the expressions of
- *            interest reside.
- * @author Patrick Mell
- */
-class InterpretationHandler(cfg: CFG[Stmt[V], TACStmts[V]]) {
-    private val stmts = cfg.code.instructions
-    private val processedDefSites = ListBuffer[Int]()
+abstract class InterpretationHandler(cfg: CFG[Stmt[V], TACStmts[V]]) {
+
+    /**
+     * The statements of the given [[cfg]].
+     */
+    protected val stmts: Array[Stmt[V]] = cfg.code.instructions
+    /**
+     * A list of definition sites that have already been processed.
+     */
+    protected val processedDefSites: ListBuffer[Int] = ListBuffer[Int]()
 
     /**
      * Processes a given definition site. That is, this function determines the interpretation of
@@ -52,60 +39,22 @@ class InterpretationHandler(cfg: CFG[Stmt[V], TACStmts[V]]) {
      *         case the rules listed above or the ones of the different processors are not met, an
      *         empty list will be returned.
      */
-    def processDefSite(defSite: Int): List[StringConstancyInformation] = {
-        // Function parameters are not evaluated but regarded as unknown
-        if (defSite < 0) {
-            return List(StringConstancyProperty.lowerBound.stringConstancyInformation)
-        } else if (processedDefSites.contains(defSite)) {
-            return List()
-        }
-        processedDefSites.append(defSite)
-
-        stmts(defSite) match {
-            case Assignment(_, _, expr: StringConst) ⇒
-                new StringConstInterpreter(cfg, this).interpret(expr)
-            case Assignment(_, _, expr: IntConst) ⇒
-                new IntegerValueInterpreter(cfg, this).interpret(expr)
-            case Assignment(_, _, expr: ArrayLoad[V]) ⇒
-                new ArrayInterpreter(cfg, this).interpret(expr)
-            case Assignment(_, _, expr: New) ⇒
-                new NewInterpreter(cfg, this).interpret(expr)
-            case Assignment(_, _, expr: VirtualFunctionCall[V]) ⇒
-                new VirtualFunctionCallInterpreter(cfg, this).interpret(expr)
-            case Assignment(_, _, expr: StaticFunctionCall[V]) ⇒
-                new StaticFunctionCallInterpreter(cfg, this).interpret(expr)
-            case Assignment(_, _, expr: BinaryExpr[V]) ⇒
-                new BinaryExprInterpreter(cfg, this).interpret(expr)
-            case Assignment(_, _, expr: NonVirtualFunctionCall[V]) ⇒
-                new NonVirtualFunctionCallInterpreter(cfg, this).interpret(expr)
-            case Assignment(_, _, expr: GetField[V]) ⇒
-                new FieldInterpreter(cfg, this).interpret(expr)
-            case ExprStmt(_, expr: VirtualFunctionCall[V]) ⇒
-                new VirtualFunctionCallInterpreter(cfg, this).interpret(expr)
-            case ExprStmt(_, expr: StaticFunctionCall[V]) ⇒
-                new StaticFunctionCallInterpreter(cfg, this).interpret(expr)
-            case vmc: VirtualMethodCall[V] ⇒
-                new VirtualMethodCallInterpreter(cfg, this).interpret(vmc)
-            case nvmc: NonVirtualMethodCall[V] ⇒
-                new NonVirtualMethodCallInterpreter(cfg, this).interpret(nvmc)
-            case _ ⇒ List()
-
-        }
-    }
+    def processDefSite(defSite: Int): List[StringConstancyInformation]
 
     /**
-     * This function serves as a wrapper function for [[InterpretationHandler.processDefSite]] in
-     * the sense that it processes multiple definition sites. Thus, it may throw an exception as
-     * well if an expression referenced by a definition site cannot be processed. The same rules as
-     * for [[InterpretationHandler.processDefSite]] apply.
+     * This function serves as a wrapper function for [[processDefSites]] in the sense that it
+     * processes multiple definition sites. Thus, it may throw an exception as well if an expression
+     * referenced by a definition site cannot be processed. The same rules as for [[processDefSite]]
+     * apply.
      *
      * @param defSites The definition sites to process.
+     *
      * @return Returns a list of lists of [[StringConstancyInformation]]. Note that this function
      *         preserves the order of the given `defSites`, i.e., the first element in the result
      *         list corresponds to the first element in `defSites` and so on. If a site could not be
      *         processed, the list for that site will be the empty list.
      */
-    def processDefSites(defSites: Array[Int]): List[List[StringConstancyInformation]] =
+    final def processDefSites(defSites: Array[Int]): List[List[StringConstancyInformation]] =
         defSites.length match {
             case 0 ⇒ List()
             case 1 ⇒ List(processDefSite(defSites.head))
@@ -113,11 +62,12 @@ class InterpretationHandler(cfg: CFG[Stmt[V], TACStmts[V]]) {
         }
 
     /**
-     * The [[InterpretationHandler]] keeps an internal state for correct and faster processing. As
+     * [[InterpretationHandler]]s keeps an internal state for correct and faster processing. As
      * long as a single object within a CFG is analyzed, there is no need to reset the state.
      * However, when analyzing a second object (even the same object) it is necessary to call
      * `reset` to reset the internal state. Otherwise, incorrect results will be produced.
-     * (Alternatively, you could instantiate another [[InterpretationHandler]] instance.)
+     * (Alternatively, another instance of an implementation of [[InterpretationHandler]] could be
+     * instantiated.)
      */
     def reset(): Unit = {
         processedDefSites.clear()
@@ -126,12 +76,6 @@ class InterpretationHandler(cfg: CFG[Stmt[V], TACStmts[V]]) {
 }
 
 object InterpretationHandler {
-
-    /**
-     * @see [[InterpretationHandler]]
-     */
-    def apply(cfg: CFG[Stmt[V], TACStmts[V]]): InterpretationHandler =
-        new InterpretationHandler(cfg)
 
     /**
      * Checks whether an expression contains a call to [[StringBuilder#toString]] or

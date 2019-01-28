@@ -2,38 +2,42 @@
 package org.opalj.tac.fpcf.analyses.string_analysis.interpretation
 
 import org.opalj.br.cfg.CFG
+import org.opalj.br.fpcf.cg.properties.Callees
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyType
-import org.opalj.tac.GetStatic
+import org.opalj.tac.StaticFunctionCall
 import org.opalj.tac.Stmt
 import org.opalj.tac.TACStmts
 import org.opalj.tac.fpcf.analyses.string_analysis.V
 
 /**
- * The `GetStaticInterpreter` is responsible for processing [[org.opalj.tac.GetStatic]]s. Currently,
- * there is only primitive support, i.e., they are not analyzed but a fixed
- * [[StringConstancyInformation]] is returned.
+ * The `InterproceduralStaticFunctionCallInterpreter` is responsible for processing
+ * [[StaticFunctionCall]]s in an interprocedural fashion.
+ * <p>
+ * For supported method calls, see the documentation of the `interpret` function.
  *
  * @see [[AbstractStringInterpreter]]
  *
  * @author Patrick Mell
  */
-class GetStaticInterpreter(
+class InterproceduralStaticFunctionCallInterpreter(
         cfg:         CFG[Stmt[V], TACStmts[V]],
-        exprHandler: InterpretationHandler
+        exprHandler: InterproceduralInterpretationHandler,
+        callees:     Callees
 ) extends AbstractStringInterpreter(cfg, exprHandler) {
 
-    override type T = GetStatic
+    override type T = StaticFunctionCall[V]
 
     /**
-     * Currently, this type is not interpreted. Thus, this function always returns a list with a
-     * single element consisting of [[StringConstancyLevel.DYNAMIC]],
-     * [[StringConstancyType.APPEND]] and [[StringConstancyInformation.UnknownWordSymbol]].
+     * This function always returns a list with a single element consisting of
+     * [[StringConstancyLevel.DYNAMIC]], [[StringConstancyType.APPEND]], and
+     * [[StringConstancyInformation.UnknownWordSymbol]].
      *
      * @see [[AbstractStringInterpreter.interpret]]
      */
     override def interpret(instr: T): List[StringConstancyInformation] =
+        // TODO: Change from intra- to interprocedural
         List(StringConstancyInformation(
             StringConstancyLevel.DYNAMIC,
             StringConstancyType.APPEND,

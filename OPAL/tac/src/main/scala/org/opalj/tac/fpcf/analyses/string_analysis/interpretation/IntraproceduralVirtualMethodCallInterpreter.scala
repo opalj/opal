@@ -11,16 +11,17 @@ import org.opalj.tac.VirtualMethodCall
 import org.opalj.tac.fpcf.analyses.string_analysis.V
 
 /**
- * The `VirtualMethodCallInterpreter` is responsible for processing [[VirtualMethodCall]]s.
+ * The `IntraproceduralVirtualMethodCallInterpreter` is responsible for processing
+ * [[VirtualMethodCall]]s in an intraprocedural fashion.
  * For supported method calls, see the documentation of the `interpret` function.
  *
  * @see [[AbstractStringInterpreter]]
  *
  * @author Patrick Mell
  */
-class VirtualMethodCallInterpreter(
+class IntraproceduralVirtualMethodCallInterpreter(
         cfg:         CFG[Stmt[V], TACStmts[V]],
-        exprHandler: InterpretationHandler
+        exprHandler: IntraproceduralInterpretationHandler
 ) extends AbstractStringInterpreter(cfg, exprHandler) {
 
     override type T = VirtualMethodCall[V]

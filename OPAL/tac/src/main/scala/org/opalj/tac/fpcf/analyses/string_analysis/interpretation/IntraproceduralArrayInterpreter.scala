@@ -14,16 +14,16 @@ import org.opalj.tac.TACStmts
 import org.opalj.tac.fpcf.analyses.string_analysis.V
 
 /**
- * The `ArrayInterpreter` is responsible for processing [[ArrayLoad]] as well as [[ArrayStore]]
- * expressions.
+ * The `IntraproceduralArrayInterpreter` is responsible for processing [[ArrayLoad]] as well as
+ * [[ArrayStore]] expressions in an intraprocedural fashion.
  *
  * @see [[AbstractStringInterpreter]]
  *
  * @author Patrick Mell
  */
-class ArrayInterpreter(
+class IntraproceduralArrayInterpreter(
         cfg:         CFG[Stmt[V], TACStmts[V]],
-        exprHandler: InterpretationHandler
+        exprHandler: IntraproceduralInterpretationHandler
 ) extends AbstractStringInterpreter(cfg, exprHandler) {
 
     override type T = ArrayLoad[V]

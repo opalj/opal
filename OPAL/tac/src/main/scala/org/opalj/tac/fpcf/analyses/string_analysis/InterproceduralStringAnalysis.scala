@@ -15,6 +15,7 @@ import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
 import org.opalj.fpcf.SomeEPS
+import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.cfg.CFG
 import org.opalj.br.fpcf.FPCFAnalysis
@@ -23,20 +24,22 @@ import org.opalj.br.fpcf.FPCFLazyAnalysisScheduler
 import org.opalj.br.fpcf.cg.properties.Callees
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
-import org.opalj.tac.ExprStmt
-import org.opalj.tac.SimpleTACAIKey
+import org.opalj.br.DeclaredMethod
 import org.opalj.tac.Stmt
 import org.opalj.tac.TACStmts
 import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis.derivedProperty
-import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
-import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.AbstractPathFinder
-import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.FlatPathElement
-import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.NestedPathElement
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.Path
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.PathTransformer
-import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.SubPath
-import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.WindowPathFinder
 import org.opalj.tac.fpcf.properties.TACAI
+import org.opalj.tac.SimpleTACAIKey
+import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.AbstractPathFinder
+import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.NestedPathElement
+import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.WindowPathFinder
+import org.opalj.tac.ExprStmt
+import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
+import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterproceduralInterpretationHandler
+import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.FlatPathElement
+import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.SubPath
 
 /**
  * InterproceduralStringAnalysis processes a read operation of a string variable at a program
@@ -68,6 +71,28 @@ class InterproceduralStringAnalysis(
     )
 
     def analyze(data: P): ProperPropertyComputationResult = {
+        val declaredMethods = project.get(DeclaredMethodsKey)
+        // TODO: Is there a way to get the declared method in constant time?
+        val dm = declaredMethods.declaredMethods.find(dm ⇒ dm.name == data._2.name).get
+
+        val calleesEOptP = ps(dm, Callees.key)
+        if (calleesEOptP.hasUBP) {
+            determinePossibleStrings(data, calleesEOptP.ub)
+        } else {
+            val dependees = Iterable(calleesEOptP)
+            InterimResult(
+                calleesEOptP,
+                StringConstancyProperty.lowerBound,
+                StringConstancyProperty.upperBound,
+                dependees,
+                calleesContinuation(calleesEOptP, dependees, data)
+            )
+        }
+    }
+
+    private def determinePossibleStrings(
+        data: P, callees: Callees
+    ): ProperPropertyComputationResult = {
         // sci stores the final StringConstancyInformation (if it can be determined now at all)
         var sci = StringConstancyProperty.lowerBound.stringConstancyInformation
         val tacProvider = p.get(SimpleTACAIKey)
@@ -111,7 +136,7 @@ class InterproceduralStringAnalysis(
                     val ep = propertyStore(toAnalyze, StringConstancyProperty.key)
                     ep match {
                         case FinalP(p) ⇒
-                            return processFinalP(data, dependees.values, state, ep.e, p)
+                            return processFinalP(data, callees, dependees.values, state, ep.e, p)
                         case _ ⇒
                             dependees.put(toAnalyze, ep)
                     }
@@ -121,7 +146,7 @@ class InterproceduralStringAnalysis(
             }
         } // If not a call to String{Builder, Buffer}.toString, then we deal with pure strings
         else {
-            val interHandler = InterpretationHandler(cfg)
+            val interHandler = InterproceduralInterpretationHandler(cfg, callees)
             sci = StringConstancyInformation.reduceMultiple(
                 uvar.definedBy.toArray.sorted.flatMap { interHandler.processDefSite }.toList
             )
@@ -133,19 +158,32 @@ class InterproceduralStringAnalysis(
                 StringConstancyProperty.upperBound,
                 StringConstancyProperty.lowerBound,
                 dependees.values,
-                continuation(data, dependees.values, state)
+                continuation(data, callees, dependees.values, state)
             )
         } else {
             Result(data, StringConstancyProperty(sci))
         }
     }
 
+    private def calleesContinuation(
+        e:         Entity,
+        dependees: Iterable[EOptionP[DeclaredMethod, Callees]],
+        inputData: P
+    )(eps: SomeEPS): ProperPropertyComputationResult = eps match {
+        case FinalP(callees: Callees) ⇒
+            determinePossibleStrings(inputData, callees)
+        case InterimLUBP(lb, ub) ⇒
+            InterimResult(e, lb, ub, dependees, calleesContinuation(e, dependees, inputData))
+        case _ ⇒ throw new IllegalStateException("can occur?")
+    }
+
     /**
      * `processFinalP` is responsible for handling the case that the `propertyStore` outputs a
-     * [[FinalP]].
+     * [[org.opalj.fpcf.FinalP]].
      */
     private def processFinalP(
         data:      P,
+        callees:   Callees,
         dependees: Iterable[EOptionP[Entity, Property]],
         state:     ComputationState,
         e:         Entity,
@@ -169,7 +207,7 @@ class InterproceduralStringAnalysis(
                 StringConstancyProperty.upperBound,
                 StringConstancyProperty.lowerBound,
                 remDependees,
-                continuation(data, remDependees, state)
+                continuation(data, callees, remDependees, state)
             )
         }
     }
@@ -185,20 +223,21 @@ class InterproceduralStringAnalysis(
      */
     private def continuation(
         data:      P,
+        callees:   Callees,
         dependees: Iterable[EOptionP[Entity, Property]],
         state:     ComputationState
     )(eps: SomeEPS): ProperPropertyComputationResult = eps match {
-        case FinalP(p) ⇒ processFinalP(data, dependees, state, eps.e, p)
+        case FinalP(p) ⇒ processFinalP(data, callees, dependees, state, eps.e, p)
         case InterimLUBP(lb, ub) ⇒ InterimResult(
-            data, lb, ub, dependees, continuation(data, dependees, state)
+            data, lb, ub, dependees, continuation(data, callees, dependees, state)
         )
         case _ ⇒ throw new IllegalStateException("Could not process the continuation successfully.")
     }
 
     /**
      * Helper / accumulator function for finding dependees. For how dependees are detected, see
-     * [[findDependentVars]]. Returns a list of pairs of DUVar and the index of the
-     * [[FlatPathElement.element]] in which it occurs.
+     * findDependentVars. Returns a list of pairs of DUVar and the index of the
+     * FlatPathElement.element in which it occurs.
      */
     private def findDependeesAcc(
         subpath:           SubPath,
