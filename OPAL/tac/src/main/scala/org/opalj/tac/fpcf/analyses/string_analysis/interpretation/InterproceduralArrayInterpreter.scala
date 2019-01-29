@@ -3,6 +3,8 @@ package org.opalj.tac.fpcf.analyses.string_analysis.interpretation
 
 import scala.collection.mutable.ListBuffer
 
+import org.opalj.fpcf.ProperPropertyComputationResult
+import org.opalj.fpcf.Result
 import org.opalj.br.cfg.CFG
 import org.opalj.br.fpcf.cg.properties.Callees
 import org.opalj.br.fpcf.properties.StringConstancyProperty
@@ -33,7 +35,7 @@ class InterproceduralArrayInterpreter(
     /**
      * @see [[AbstractStringInterpreter.interpret]]
      */
-    override def interpret(instr: T): List[StringConstancyInformation] = {
+    override def interpret(instr: T): ProperPropertyComputationResult = {
         // TODO: Change from intra- to interprocedural
         val stmts = cfg.code.instructions
         val children = ListBuffer[StringConstancyInformation]()
@@ -47,9 +49,9 @@ class InterproceduralArrayInterpreter(
                 stmts(_).isInstanceOf[ArrayStore[V]]
             } foreach { f: Int ⇒
                 val sortedDefs = stmts(f).asArrayStore.value.asVar.definedBy.toArray.sorted
-                sortedDefs.map { exprHandler.processDefSite }.foreach {
-                    children.appendAll(_)
-                }
+                children.appendAll(sortedDefs.map { exprHandler.processDefSite }.map {
+                    _.asInstanceOf[StringConstancyProperty].stringConstancyInformation
+                })
             }
             // Process ArrayLoads
             sortedArrDeclUses.filter {
@@ -59,9 +61,9 @@ class InterproceduralArrayInterpreter(
                 }
             } foreach { f: Int ⇒
                 val defs = stmts(f).asAssignment.expr.asArrayLoad.arrayRef.asVar.definedBy
-                defs.toArray.sorted.map { exprHandler.processDefSite }.foreach {
-                    children.appendAll(_)
-                }
+                children.appendAll(defs.toArray.sorted.map { exprHandler.processDefSite }.map {
+                    _.asInstanceOf[StringConstancyProperty].stringConstancyInformation
+                })
             }
         }
 
@@ -70,7 +72,9 @@ class InterproceduralArrayInterpreter(
             children.append(StringConstancyProperty.lowerBound.stringConstancyInformation)
         }
 
-        children.toList
+        Result(instr, StringConstancyProperty(
+            StringConstancyInformation.reduceMultiple(children.toList)
+        ))
     }
 
 }

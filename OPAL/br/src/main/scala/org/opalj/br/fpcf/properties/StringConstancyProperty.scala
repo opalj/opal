@@ -26,6 +26,14 @@ class StringConstancyProperty(
         s"Level: $level, Possible Strings: ${stringConstancyInformation.possibleStrings}"
     }
 
+    /**
+     * @return Returns `true` if the [[stringConstancyInformation]] contained in this instance is
+     *         the neutral element (see [[StringConstancyInformation.isTheNeutralElement]]).
+     */
+    def isTheNeutralElement: Boolean = {
+        stringConstancyInformation.isTheNeutralElement
+    }
+
 }
 
 object StringConstancyProperty extends Property with StringConstancyPropertyMetaInformation {
@@ -45,6 +53,13 @@ object StringConstancyProperty extends Property with StringConstancyPropertyMeta
     def apply(
         stringConstancyInformation: StringConstancyInformation
     ): StringConstancyProperty = new StringConstancyProperty(stringConstancyInformation)
+
+    /**
+     * @return Returns the / a neutral [[StringConstancyProperty]] element, i.e., an element for
+     *         which [[StringConstancyProperty.isTheNeutralElement]] is `true`.
+     */
+    def getNeutralElement: StringConstancyProperty =
+        StringConstancyProperty(StringConstancyInformation.getNeutralElement)
 
     /**
      * @return Returns the upper bound from a lattice-point of view.

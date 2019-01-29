@@ -1,8 +1,10 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.tac.fpcf.analyses.string_analysis.interpretation
 
+import org.opalj.fpcf.ProperPropertyComputationResult
+import org.opalj.fpcf.Result
 import org.opalj.br.cfg.CFG
-import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
+import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.tac.New
 import org.opalj.tac.Stmt
 import org.opalj.tac.TACStmts
@@ -27,11 +29,12 @@ class NewInterpreter(
     /**
      * [[New]] expressions do not carry any relevant information in this context (as the initial
      * values are not set in a [[New]] expressions but, e.g., in
-     * [[org.opalj.tac.NonVirtualMethodCall]]s). Consequently, this implementation always returns an
-     * empty list.
+     * [[org.opalj.tac.NonVirtualMethodCall]]s). Consequently, this implementation always returns a
+     * Result containing [[StringConstancyProperty.getNeutralElement]]
      *
      * @see [[AbstractStringInterpreter.interpret]]
      */
-    override def interpret(instr: T): List[StringConstancyInformation] = List()
+    override def interpret(instr: T): ProperPropertyComputationResult =
+        Result(instr, StringConstancyProperty.getNeutralElement)
 
 }

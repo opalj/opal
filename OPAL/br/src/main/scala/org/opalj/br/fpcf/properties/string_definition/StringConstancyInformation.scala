@@ -1,8 +1,6 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.br.fpcf.properties.string_definition
 
-import org.opalj.br.fpcf.properties.StringConstancyProperty
-
 /**
  * @param possibleStrings Only relevant for some [[StringConstancyType]]s, i.e., sometimes this
  *                        parameter can be omitted.
@@ -13,7 +11,21 @@ case class StringConstancyInformation(
         constancyLevel:  StringConstancyLevel.Value = StringConstancyLevel.DYNAMIC,
         constancyType:   StringConstancyType.Value  = StringConstancyType.APPEND,
         possibleStrings: String                     = ""
-)
+) {
+
+    /**
+     * Checks whether the instance is the neutral element.
+     *
+     * @return Returns `true` iff [[constancyLevel]] equals [[StringConstancyLevel.CONSTANT]],
+     *         [[constancyType]] equals [[StringConstancyType.APPEND]], and
+     *         [[possibleStrings]] equals the empty string.
+     */
+    def isTheNeutralElement: Boolean =
+        constancyLevel == StringConstancyLevel.CONSTANT &&
+            constancyType == StringConstancyType.APPEND &&
+            possibleStrings == ""
+
+}
 
 /**
  * Provides a collection of instance-independent but string-constancy related values.
@@ -53,23 +65,34 @@ object StringConstancyInformation {
      * @return Returns the reduced information in the fashion described above.
      */
     def reduceMultiple(scis: List[StringConstancyInformation]): StringConstancyInformation = {
-        scis.length match {
+        val relScis = scis.filter(!_.isTheNeutralElement)
+        relScis.length match {
             // The list may be empty, e.g., if the UVar passed to the analysis, refers to a
             // VirtualFunctionCall (they are not interpreted => an empty list is returned) => return
-            // the corresponding information
-            case 0 ⇒ StringConstancyProperty.lowerBound.stringConstancyInformation
-            case 1 ⇒ scis.head
+            // the neutral element
+            case 0 ⇒ StringConstancyInformation.getNeutralElement
+            case 1 ⇒ relScis.head
             case _ ⇒ // Reduce
-                val reduced = scis.reduceLeft((o, n) ⇒ StringConstancyInformation(
-                    StringConstancyLevel.determineMoreGeneral(o.constancyLevel, n.constancyLevel),
-                    StringConstancyType.APPEND,
-                    s"${o.possibleStrings}|${n.possibleStrings}"
-                ))
-                // Modify possibleStrings value
+                val reduced = relScis.reduceLeft((o, n) ⇒
+                    StringConstancyInformation(
+                        StringConstancyLevel.determineMoreGeneral(
+                            o.constancyLevel, n.constancyLevel
+                        ),
+                        StringConstancyType.APPEND,
+                        s"${o.possibleStrings}|${n.possibleStrings}"
+                    ))
+                // Add parentheses to possibleStrings value (to indicate a choice)
                 StringConstancyInformation(
                     reduced.constancyLevel, reduced.constancyType, s"(${reduced.possibleStrings})"
                 )
         }
     }
+
+    /**
+     * @return Returns the / a neutral [[StringConstancyInformation]] element, i.e., an element for
+     *         which [[StringConstancyInformation.isTheNeutralElement]] is `true`.
+     */
+    def getNeutralElement: StringConstancyInformation =
+        StringConstancyInformation(StringConstancyLevel.CONSTANT)
 
 }
