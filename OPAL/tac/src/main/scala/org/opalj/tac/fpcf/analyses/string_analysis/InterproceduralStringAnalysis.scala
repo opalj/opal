@@ -25,6 +25,7 @@ import org.opalj.br.fpcf.cg.properties.Callees
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.br.DeclaredMethod
+import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.tac.Stmt
 import org.opalj.tac.TACStmts
 import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis.derivedProperty
@@ -54,6 +55,8 @@ class InterproceduralStringAnalysis(
         val project: SomeProject
 ) extends FPCFAnalysis {
 
+    private var declaredMethods: DeclaredMethods = _
+
     /**
      * This class is to be used to store state information that are required at a later point in
      * time during the analysis, e.g., due to the fact that another analysis had to be triggered to
@@ -71,7 +74,7 @@ class InterproceduralStringAnalysis(
     )
 
     def analyze(data: P): ProperPropertyComputationResult = {
-        val declaredMethods = project.get(DeclaredMethodsKey)
+        declaredMethods = project.get(DeclaredMethodsKey)
         // TODO: Is there a way to get the declared method in constant time?
         val dm = declaredMethods.declaredMethods.find(dm ⇒ dm.name == data._2.name).get
 
@@ -146,7 +149,9 @@ class InterproceduralStringAnalysis(
             }
         } // If not a call to String{Builder, Buffer}.toString, then we deal with pure strings
         else {
-            val interHandler = InterproceduralInterpretationHandler(cfg, callees)
+            val interHandler = InterproceduralInterpretationHandler(
+                cfg, ps, declaredMethods, callees
+            )
             sci = StringConstancyInformation.reduceMultiple(
                 uvar.definedBy.toArray.sorted.flatMap { interHandler.processDefSite }.toList
             )
