@@ -3,6 +3,8 @@ package org.opalj.tac.fpcf.analyses.string_analysis.interpretation
 
 import scala.collection.mutable.ListBuffer
 
+import org.opalj.fpcf.ProperPropertyComputationResult
+import org.opalj.fpcf.Result
 import org.opalj.br.cfg.CFG
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
@@ -31,7 +33,7 @@ class IntraproceduralArrayInterpreter(
     /**
      * @see [[AbstractStringInterpreter.interpret]]
      */
-    override def interpret(instr: T): List[StringConstancyInformation] = {
+    override def interpret(instr: T): ProperPropertyComputationResult = {
         val stmts = cfg.code.instructions
         val children = ListBuffer[StringConstancyInformation]()
         // Loop over all possible array values
@@ -44,9 +46,10 @@ class IntraproceduralArrayInterpreter(
                 stmts(_).isInstanceOf[ArrayStore[V]]
             } foreach { f: Int ⇒
                 val sortedDefs = stmts(f).asArrayStore.value.asVar.definedBy.toArray.sorted
-                sortedDefs.map { exprHandler.processDefSite }.foreach {
-                    children.appendAll(_)
-                }
+                children.appendAll(sortedDefs.map { exprHandler.processDefSite }.map { n ⇒
+                    val r = n.asInstanceOf[Result]
+                    r.finalEP.p.asInstanceOf[StringConstancyProperty].stringConstancyInformation
+                })
             }
             // Process ArrayLoads
             sortedArrDeclUses.filter {
@@ -56,9 +59,10 @@ class IntraproceduralArrayInterpreter(
                 }
             } foreach { f: Int ⇒
                 val defs = stmts(f).asAssignment.expr.asArrayLoad.arrayRef.asVar.definedBy
-                defs.toArray.sorted.map { exprHandler.processDefSite }.foreach {
-                    children.appendAll(_)
-                }
+                children.appendAll(defs.toArray.sorted.map { exprHandler.processDefSite }.map { n ⇒
+                    val r = n.asInstanceOf[Result]
+                    r.finalEP.p.asInstanceOf[StringConstancyProperty].stringConstancyInformation
+                })
             }
         }
 
@@ -67,7 +71,11 @@ class IntraproceduralArrayInterpreter(
             children.append(StringConstancyProperty.lowerBound.stringConstancyInformation)
         }
 
-        children.toList
+        Result(instr, StringConstancyProperty(
+            StringConstancyInformation.reduceMultiple(
+                children.filter(!_.isTheNeutralElement).toList
+            )
+        ))
     }
 
 }

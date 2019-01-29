@@ -1,10 +1,12 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.tac.fpcf.analyses.string_analysis.interpretation
+
+import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.Result
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.cfg.CFG
 import org.opalj.br.fpcf.cg.properties.Callees
-import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.tac.Stmt
 import org.opalj.tac.TACStmts
@@ -27,9 +29,13 @@ import org.opalj.tac.VirtualMethodCall
  * `InterproceduralInterpretationHandler` is responsible for processing expressions that are
  * relevant in order to determine which value(s) a string read operation might have. These
  * expressions usually come from the definitions sites of the variable of interest.
+ * <p>
+ * For this interpretation handler used interpreters (concrete instances of
+ * [[AbstractStringInterpreter]]) can either return a final or intermediate result.
  *
  * @param cfg The control flow graph that underlies the program / method in which the expressions of
  *            interest reside.
+ *
  * @author Patrick Mell
  */
 class InterproceduralInterpretationHandler(
@@ -44,16 +50,19 @@ class InterproceduralInterpretationHandler(
      * <p>
      * @inheritdoc
      */
-    override def processDefSite(defSite: Int): List[StringConstancyInformation] = {
+    override def processDefSite(defSite: Int): ProperPropertyComputationResult = {
+        // Without doing the following conversion, the following compile error will occur: "the
+        // result type of an implicit conversion must be more specific than org.opalj.fpcf.Entity"
+        val e: Integer = defSite.toInt
         // Function parameters are not evaluated but regarded as unknown
         if (defSite < 0) {
-            return List(StringConstancyProperty.lowerBound.stringConstancyInformation)
+            return Result(e, StringConstancyProperty.lowerBound)
         } else if (processedDefSites.contains(defSite)) {
-            return List()
+            return Result(e, StringConstancyProperty.getNeutralElement)
         }
         processedDefSites.append(defSite)
 
-        stmts(defSite) match {
+        val result = stmts(defSite) match {
             case Assignment(_, _, expr: StringConst) ⇒
                 new StringConstInterpreter(cfg, this).interpret(expr)
             case Assignment(_, _, expr: IntConst) ⇒
@@ -88,9 +97,10 @@ class InterproceduralInterpretationHandler(
                 new InterproceduralNonVirtualMethodCallInterpreter(
                     cfg, this, callees
                 ).interpret(nvmc)
-            case _ ⇒ List()
-
+            case _ ⇒ Result(e, StringConstancyProperty.getNeutralElement)
         }
+        // Replace the entity of the result
+        Result(e, result.asInstanceOf[StringConstancyProperty])
     }
 
 }

@@ -3,8 +3,11 @@ package org.opalj.tac.fpcf.analyses.string_analysis.interpretation
 
 import scala.collection.mutable.ListBuffer
 
+import org.opalj.fpcf.ProperPropertyComputationResult
+import org.opalj.fpcf.Result
 import org.opalj.br.cfg.CFG
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
+import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.tac.NonVirtualMethodCall
 import org.opalj.tac.Stmt
 import org.opalj.tac.TACStmts
@@ -35,33 +38,40 @@ class IntraproceduralNonVirtualMethodCallInterpreter(
      * one is interpreted).
      * </li>
      * </ul>
-     * For all other calls, an empty list will be returned at the moment.
+     *
+     * For all other calls, a result containing [[StringConstancyProperty.getNeutralElement]] will
+     * be returned.
      *
      * @see [[AbstractStringInterpreter.interpret]]
      */
-    override def interpret(instr: NonVirtualMethodCall[V]): List[StringConstancyInformation] = {
-        instr.name match {
+    override def interpret(instr: NonVirtualMethodCall[V]): ProperPropertyComputationResult = {
+        val prop = instr.name match {
             case "<init>" ⇒ interpretInit(instr)
-            case _        ⇒ List()
+            case _        ⇒ StringConstancyProperty.getNeutralElement
         }
+        Result(instr, prop)
     }
 
     /**
-     * Processes an `&lt;init&gt;` method call. If it has no parameters, an empty list will be
-     * returned. Otherwise, only the very first parameter will be evaluated and its result returned
-     * (this is reasonable as both, [[StringBuffer]] and [[StringBuilder]], have only constructors
-     * with <= 0 arguments and only these are currently interpreted).
+     * Processes an `&lt;init&gt;` method call. If it has no parameters,
+     * [[StringConstancyProperty.getNeutralElement]] will be returned. Otherwise, only the very
+     * first parameter will be evaluated and its result returned (this is reasonable as both,
+     * [[StringBuffer]] and [[StringBuilder]], have only constructors with <= 1 arguments and only
+     * these are currently interpreted).
      */
-    private def interpretInit(init: NonVirtualMethodCall[V]): List[StringConstancyInformation] = {
+    private def interpretInit(init: NonVirtualMethodCall[V]): StringConstancyProperty = {
         init.params.size match {
-            case 0 ⇒ List()
-            //List(StringConstancyInformation(StringConstancyLevel.CONSTANT, ""))
+            case 0 ⇒ StringConstancyProperty.getNeutralElement
             case _ ⇒
                 val scis = ListBuffer[StringConstancyInformation]()
                 init.params.head.asVar.definedBy.foreach { ds ⇒
-                    scis.append(exprHandler.processDefSite(ds): _*)
+                    val r = exprHandler.processDefSite(ds).asInstanceOf[Result]
+                    scis.append(
+                        r.finalEP.p.asInstanceOf[StringConstancyProperty].stringConstancyInformation
+                    )
                 }
-                scis.toList
+                val reduced = StringConstancyInformation.reduceMultiple(scis.toList)
+                StringConstancyProperty(reduced)
         }
     }
 

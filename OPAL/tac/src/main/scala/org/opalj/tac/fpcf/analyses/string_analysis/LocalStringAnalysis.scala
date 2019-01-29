@@ -128,7 +128,10 @@ class LocalStringAnalysis(
         else {
             val interHandler = IntraproceduralInterpretationHandler(cfg)
             sci = StringConstancyInformation.reduceMultiple(
-                uvar.definedBy.toArray.sorted.flatMap { interHandler.processDefSite }.toList
+                uvar.definedBy.toArray.sorted.map { ds ⇒
+                    val r = interHandler.processDefSite(ds).asInstanceOf[Result]
+                    r.finalEP.p.asInstanceOf[StringConstancyProperty].stringConstancyInformation
+                }.toList
             )
         }
 

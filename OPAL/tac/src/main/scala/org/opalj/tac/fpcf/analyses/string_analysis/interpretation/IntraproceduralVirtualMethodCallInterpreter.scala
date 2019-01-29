@@ -1,10 +1,13 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.tac.fpcf.analyses.string_analysis.interpretation
 
+import org.opalj.fpcf.ProperPropertyComputationResult
+import org.opalj.fpcf.Result
 import org.opalj.br.cfg.CFG
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyType
+import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.tac.Stmt
 import org.opalj.tac.TACStmts
 import org.opalj.tac.VirtualMethodCall
@@ -36,17 +39,20 @@ class IntraproceduralVirtualMethodCallInterpreter(
      * a reset mechanism.
      * </li>
      * </ul>
-     * For all other calls, an empty list will be returned.
+     *
+     * For all other calls, a result containing [[StringConstancyProperty.getNeutralElement]] will
+     * be returned.
      *
      * @see [[AbstractStringInterpreter.interpret]]
      */
-    override def interpret(instr: T): List[StringConstancyInformation] = {
-        instr.name match {
-            case "setLength" ⇒ List(StringConstancyInformation(
+    override def interpret(instr: T): ProperPropertyComputationResult = {
+        val sci = instr.name match {
+            case "setLength" ⇒ StringConstancyInformation(
                 StringConstancyLevel.CONSTANT, StringConstancyType.RESET
-            ))
-            case _ ⇒ List()
+            )
+            case _ ⇒ StringConstancyInformation.getNeutralElement
         }
+        Result(instr, StringConstancyProperty(sci))
     }
 
 }

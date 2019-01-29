@@ -3,6 +3,7 @@ package org.opalj.tac.fpcf.analyses.string_analysis.preprocessing
 
 import scala.collection.mutable.ListBuffer
 
+import org.opalj.fpcf.Result
 import org.opalj.br.cfg.CFG
 import org.opalj.br.fpcf.properties.properties.StringTree
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
@@ -11,6 +12,7 @@ import org.opalj.br.fpcf.properties.string_definition.StringTreeCond
 import org.opalj.br.fpcf.properties.string_definition.StringTreeConst
 import org.opalj.br.fpcf.properties.string_definition.StringTreeOr
 import org.opalj.br.fpcf.properties.string_definition.StringTreeRepetition
+import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.tac.Stmt
 import org.opalj.tac.TACStmts
 import org.opalj.tac.fpcf.analyses.string_analysis.V
@@ -39,20 +41,27 @@ class PathTransformer(val cfg: CFG[Stmt[V], TACStmts[V]]) {
     ): Option[StringTree] = {
         subpath match {
             case fpe: FlatPathElement ⇒
-                val sciList = if (fpe2Sci.contains(fpe.element)) List(fpe2Sci(fpe.element)) else
-                    exprHandler.processDefSite(fpe.element)
-                sciList.length match {
-                    case 0 ⇒ None
-                    case 1 ⇒ Some(StringTreeConst(sciList.head))
-                    case _ ⇒
-                        val treeElements = ListBuffer[StringTree]()
-                        treeElements.appendAll(sciList.map(StringTreeConst).to[ListBuffer])
-                        if (treeElements.nonEmpty) {
-                            Some(StringTreeOr(treeElements))
-                        } else {
-                            None
-                        }
+                val sci = if (fpe2Sci.contains(fpe.element)) fpe2Sci(fpe.element) else {
+                    val r = exprHandler.processDefSite(fpe.element).asInstanceOf[Result]
+                    r.finalEP.p.asInstanceOf[StringConstancyProperty].stringConstancyInformation
                 }
+                if (sci.isTheNeutralElement) {
+                    None
+                } else {
+                    Some(StringTreeConst(sci))
+                }
+            //                sciList.length match {
+            //                    case 0 ⇒ None
+            //                    case 1 ⇒ Some(StringTreeConst(sciList.head))
+            //                    case _ ⇒
+            //                        val treeElements = ListBuffer[StringTree]()
+            //                        treeElements.appendAll(sciList.map(StringTreeConst).to[ListBuffer])
+            //                        if (treeElements.nonEmpty) {
+            //                            Some(StringTreeOr(treeElements))
+            //                        } else {
+            //                            None
+            //                        }
+            //        }
             case npe: NestedPathElement ⇒
                 if (npe.elementType.isDefined) {
                     npe.elementType.get match {

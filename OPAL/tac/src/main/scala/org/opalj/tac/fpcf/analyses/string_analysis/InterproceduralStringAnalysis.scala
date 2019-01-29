@@ -38,7 +38,7 @@ import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.NestedPathEleme
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.WindowPathFinder
 import org.opalj.tac.ExprStmt
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
-import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterproceduralInterpretationHandler
+import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.IntraproceduralInterpretationHandler
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.FlatPathElement
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.SubPath
 
@@ -149,11 +149,12 @@ class InterproceduralStringAnalysis(
             }
         } // If not a call to String{Builder, Buffer}.toString, then we deal with pure strings
         else {
-            val interHandler = InterproceduralInterpretationHandler(
-                cfg, ps, declaredMethods, callees
-            )
+            val interHandler = IntraproceduralInterpretationHandler(cfg)
             sci = StringConstancyInformation.reduceMultiple(
-                uvar.definedBy.toArray.sorted.flatMap { interHandler.processDefSite }.toList
+                uvar.definedBy.toArray.sorted.map { ds ⇒
+                    val nextResult = interHandler.processDefSite(ds)
+                    nextResult.asInstanceOf[StringConstancyProperty].stringConstancyInformation
+                }.toList
             )
         }
 

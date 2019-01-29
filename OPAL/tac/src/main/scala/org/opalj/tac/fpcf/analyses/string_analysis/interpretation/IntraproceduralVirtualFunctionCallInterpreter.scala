@@ -1,6 +1,8 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.tac.fpcf.analyses.string_analysis.interpretation
 
+import org.opalj.fpcf.ProperPropertyComputationResult
+import org.opalj.fpcf.Result
 import org.opalj.br.cfg.CFG
 import org.opalj.br.ComputationalTypeFloat
 import org.opalj.br.ComputationalTypeInt
@@ -50,22 +52,25 @@ class IntraproceduralVirtualFunctionCallInterpreter(
      * </li>
      * </ul>
      *
-     * If none of the above-described cases match, an empty list will be returned.
+     * If none of the above-described cases match, a result containing
+     * [[StringConstancyProperty.getNeutralElement]] will be returned.
      *
      * @see [[AbstractStringInterpreter.interpret]]
      */
-    override def interpret(instr: T): List[StringConstancyInformation] = {
-        instr.name match {
-            case "append"   ⇒ interpretAppendCall(instr).getOrElse(List())
+    override def interpret(instr: T): ProperPropertyComputationResult = {
+        val property = instr.name match {
+            case "append"   ⇒ interpretAppendCall(instr)
             case "toString" ⇒ interpretToStringCall(instr)
             case "replace"  ⇒ interpretReplaceCall(instr)
             case _ ⇒
                 instr.descriptor.returnType match {
                     case obj: ObjectType if obj.fqn == "java/lang/String" ⇒
-                        List(StringConstancyProperty.lowerBound.stringConstancyInformation)
-                    case _ ⇒ List()
+                        StringConstancyProperty.lowerBound
+                    case _ ⇒ StringConstancyProperty.getNeutralElement
                 }
         }
+
+        Result(instr, property)
     }
 
     /**
@@ -75,35 +80,35 @@ class IntraproceduralVirtualFunctionCallInterpreter(
      */
     private def interpretAppendCall(
         appendCall: VirtualFunctionCall[V]
-    ): Option[List[StringConstancyInformation]] = {
-        val receiverValues = receiverValuesOfAppendCall(appendCall)
-        val appendValue = valueOfAppendCall(appendCall)
+    ): StringConstancyProperty = {
+        val receiverSci = receiverValuesOfAppendCall(appendCall).stringConstancyInformation
+        val appendSci = valueOfAppendCall(appendCall).stringConstancyInformation
 
         // The case can occur that receiver and append value are empty; although, it is
         // counter-intuitive, this case may occur if both, the receiver and the parameter, have been
         // processed before
-        if (receiverValues.isEmpty && appendValue.isEmpty) {
-            None
+        val sci = if (receiverSci.isTheNeutralElement && appendSci.isTheNeutralElement) {
+            StringConstancyInformation.getNeutralElement
         } // It might be that we have to go back as much as to a New expression. As they do not
         // produce a result (= empty list), the if part
-        else if (receiverValues.isEmpty) {
-            Some(List(appendValue.get))
+        else if (receiverSci.isTheNeutralElement) {
+            appendSci
         } // The append value might be empty, if the site has already been processed (then this
         // information will come from another StringConstancyInformation object
-        else if (appendValue.isEmpty) {
-            Some(receiverValues)
+        else if (appendSci.isTheNeutralElement) {
+            receiverSci
         } // Receiver and parameter information are available => Combine them
         else {
-            Some(receiverValues.map { nextSci ⇒
-                StringConstancyInformation(
-                    StringConstancyLevel.determineForConcat(
-                        nextSci.constancyLevel, appendValue.get.constancyLevel
-                    ),
-                    StringConstancyType.APPEND,
-                    nextSci.possibleStrings + appendValue.get.possibleStrings
-                )
-            })
+            StringConstancyInformation(
+                StringConstancyLevel.determineForConcat(
+                    receiverSci.constancyLevel, appendSci.constancyLevel
+                ),
+                StringConstancyType.APPEND,
+                receiverSci.possibleStrings + appendSci.possibleStrings
+            )
         }
+
+        StringConstancyProperty(sci)
     }
 
     /**
@@ -111,12 +116,17 @@ class IntraproceduralVirtualFunctionCallInterpreter(
      */
     private def receiverValuesOfAppendCall(
         call: VirtualFunctionCall[V]
-    ): List[StringConstancyInformation] =
+    ): StringConstancyProperty = {
         // There might be several receivers, thus the map; from the processed sites, however, use
         // only the head as a single receiver interpretation will produce one element
-        call.receiver.asVar.definedBy.toArray.sorted.map(
-            exprHandler.processDefSite
-        ).filter(_.nonEmpty).map(_.head).toList
+        val scis = call.receiver.asVar.definedBy.toArray.sorted.map { ds ⇒
+            val r = exprHandler.processDefSite(ds).asInstanceOf[Result]
+            r.finalEP.p.asInstanceOf[StringConstancyProperty].stringConstancyInformation
+        }.filter { sci ⇒ !sci.isTheNeutralElement }
+        val sci = if (scis.isEmpty) StringConstancyInformation.getNeutralElement else
+            scis.head
+        StringConstancyProperty(sci)
+    }
 
     /**
      * Determines the (string) value that was passed to a `String{Builder, Buffer}#append` method.
@@ -124,48 +134,55 @@ class IntraproceduralVirtualFunctionCallInterpreter(
      */
     private def valueOfAppendCall(
         call: VirtualFunctionCall[V]
-    ): Option[StringConstancyInformation] = {
+    ): StringConstancyProperty = {
         val param = call.params.head.asVar
         // .head because we want to evaluate only the first argument of append
-        val defSiteParamHead = param.definedBy.head
-        var value = exprHandler.processDefSite(defSiteParamHead)
-        // If defSiteParamHead points to a New, value will be the empty list. In that case, process
+        val defSiteHead = param.definedBy.head
+        var r = exprHandler.processDefSite(defSiteHead).asInstanceOf[Result]
+        var value = r.finalEP.p.asInstanceOf[StringConstancyProperty]
+        // If defSiteHead points to a New, value will be the empty list. In that case, process
         // the first use site (which is the <init> call)
-        if (value.isEmpty) {
-            value = exprHandler.processDefSite(
-                cfg.code.instructions(defSiteParamHead).asAssignment.targetVar.usedBy.toArray.min
-            )
+        if (value.isTheNeutralElement) {
+            r = exprHandler.processDefSite(
+                cfg.code.instructions(defSiteHead).asAssignment.targetVar.usedBy.toArray.min
+            ).asInstanceOf[Result]
+            value = r.finalEP.p.asInstanceOf[StringConstancyProperty]
         }
-        param.value.computationalType match {
+
+        val sci = value.stringConstancyInformation
+        val finalSci = param.value.computationalType match {
             // For some types, we know the (dynamic) values
             case ComputationalTypeInt ⇒
                 // The value was already computed above; however, we need to check whether the
                 // append takes an int value or a char (if it is a constant char, convert it)
                 if (call.descriptor.parameterType(0).isCharType &&
-                    value.head.constancyLevel == StringConstancyLevel.CONSTANT) {
-                    Some(value.head.copy(
-                        possibleStrings = value.head.possibleStrings.toInt.toChar.toString
-                    ))
+                    sci.constancyLevel == StringConstancyLevel.CONSTANT) {
+                    sci.copy(
+                        possibleStrings = sci.possibleStrings.toInt.toChar.toString
+                    )
                 } else {
-                    Some(value.head)
+                    sci
                 }
             case ComputationalTypeFloat ⇒
-                Some(InterpretationHandler.getConstancyInformationForDynamicFloat)
+                InterpretationHandler.getConstancyInfoForDynamicFloat
             // Otherwise, try to compute
             case _ ⇒
                 // It might be necessary to merge the values of the receiver and of the parameter
-                value.size match {
-                    case 0 ⇒ None
-                    case 1 ⇒ Some(value.head)
-                    case _ ⇒ Some(StringConstancyInformation(
-                        StringConstancyLevel.determineForConcat(
-                            value.head.constancyLevel, value(1).constancyLevel
-                        ),
-                        StringConstancyType.APPEND,
-                        value.head.possibleStrings + value(1).possibleStrings
-                    ))
-                }
+                //                value.size match {
+                //                    case 0 ⇒ None
+                //                    case 1 ⇒ Some(value.head)
+                //                    case _ ⇒ Some(StringConstancyInformation(
+                //                        StringConstancyLevel.determineForConcat(
+                //                            value.head.constancyLevel, value(1).constancyLevel
+                //                        ),
+                //                        StringConstancyType.APPEND,
+                //                        value.head.possibleStrings + value(1).possibleStrings
+                //                    ))
+                //                }
+                sci
         }
+
+        StringConstancyProperty(finalSci)
     }
 
     /**
@@ -175,18 +192,18 @@ class IntraproceduralVirtualFunctionCallInterpreter(
      */
     private def interpretToStringCall(
         call: VirtualFunctionCall[V]
-    ): List[StringConstancyInformation] =
-        exprHandler.processDefSite(call.receiver.asVar.definedBy.head)
+    ): StringConstancyProperty = {
+        val r = exprHandler.processDefSite(call.receiver.asVar.definedBy.head).asInstanceOf[Result]
+        r.finalEP.p.asInstanceOf[StringConstancyProperty]
+    }
 
     /**
      * Function for processing calls to [[StringBuilder#replace]] or [[StringBuffer#replace]].
-     * Currently, this function simply approximates `replace` functions by returning a list with one
-     * element - the element currently is provided by
-     * [[InterpretationHandler.getStringConstancyInformationForReplace]].
+     * (Currently, this function simply approximates `replace` functions by returning the lower
+     * bound of [[StringConstancyProperty]]).
      */
     private def interpretReplaceCall(
         instr: VirtualFunctionCall[V]
-    ): List[StringConstancyInformation] =
-        List(InterpretationHandler.getStringConstancyInformationForReplace)
+    ): StringConstancyProperty = InterpretationHandler.getStringConstancyPropertyForReplace
 
 }

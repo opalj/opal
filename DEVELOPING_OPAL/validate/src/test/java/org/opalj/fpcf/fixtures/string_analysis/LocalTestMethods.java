@@ -189,7 +189,7 @@ public class LocalTestMethods {
             stringDefinitions = {
                     @StringDefinitions(
                             expectedLevel = DYNAMIC,
-                            expectedStrings = "(java.lang.Object|\\w|java.lang.System|"
+                            expectedStrings = "((java.lang.Object|\\w)|java.lang.System|"
                                     + "java.lang.\\w|\\w)"
                     )
             })

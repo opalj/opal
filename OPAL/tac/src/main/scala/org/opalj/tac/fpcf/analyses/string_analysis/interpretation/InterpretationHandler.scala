@@ -4,10 +4,12 @@ package org.opalj.tac.fpcf.analyses.string_analysis.interpretation
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
+import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.br.cfg.CFG
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyType
+import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.tac.Assignment
 import org.opalj.tac.Expr
 import org.opalj.tac.New
@@ -35,31 +37,15 @@ abstract class InterpretationHandler(cfg: CFG[Stmt[V], TACStmts[V]]) {
      *                actually exists, and (3) can be processed by one of the subclasses of
      *                [[AbstractStringInterpreter]] (in case (3) is violated, an
      *                [[IllegalArgumentException]] will be thrown.
-     * @return Returns a list of interpretations in the form of [[StringConstancyInformation]]. In
-     *         case the rules listed above or the ones of the different processors are not met, an
-     *         empty list will be returned.
+     * @return Returns the result of the interpretation. Note that depending on the concrete
+     *         interpreter either a final or an intermediate result can be returned!
+     *         In case the rules listed above or the ones of the different concrete interpreters are
+     *         not met, the neutral [[org.opalj.br.fpcf.properties.StringConstancyProperty]] element
+     *         will be encapsulated in the result (see
+     *         [[org.opalj.br.fpcf.properties.StringConstancyProperty.isTheNeutralElement]]).
+     *         The entity of the result will be the given `defSite`.
      */
-    def processDefSite(defSite: Int): List[StringConstancyInformation]
-
-    /**
-     * This function serves as a wrapper function for [[processDefSites]] in the sense that it
-     * processes multiple definition sites. Thus, it may throw an exception as well if an expression
-     * referenced by a definition site cannot be processed. The same rules as for [[processDefSite]]
-     * apply.
-     *
-     * @param defSites The definition sites to process.
-     *
-     * @return Returns a list of lists of [[StringConstancyInformation]]. Note that this function
-     *         preserves the order of the given `defSites`, i.e., the first element in the result
-     *         list corresponds to the first element in `defSites` and so on. If a site could not be
-     *         processed, the list for that site will be the empty list.
-     */
-    final def processDefSites(defSites: Array[Int]): List[List[StringConstancyInformation]] =
-        defSites.length match {
-            case 0 ⇒ List()
-            case 1 ⇒ List(processDefSite(defSites.head))
-            case _ ⇒ defSites.filter(_ >= 0).map(processDefSite).toList
-        }
+    def processDefSite(defSite: Int): ProperPropertyComputationResult
 
     /**
      * [[InterpretationHandler]]s keeps an internal state for correct and faster processing. As
@@ -198,7 +184,7 @@ object InterpretationHandler {
      *         That is, the returned element consists of the value [[StringConstancyLevel.DYNAMIC]],
      *         [[StringConstancyType.APPEND]], and [[StringConstancyInformation.IntValue]].
      */
-    def getConstancyInformationForDynamicInt: StringConstancyInformation =
+    def getConstancyInfoForDynamicInt: StringConstancyInformation =
         StringConstancyInformation(
             StringConstancyLevel.DYNAMIC,
             StringConstancyType.APPEND,
@@ -210,7 +196,7 @@ object InterpretationHandler {
      *         That is, the returned element consists of the value [[StringConstancyLevel.DYNAMIC]],
      *         [[StringConstancyType.APPEND]], and [[StringConstancyInformation.IntValue]].
      */
-    def getConstancyInformationForDynamicFloat: StringConstancyInformation =
+    def getConstancyInfoForDynamicFloat: StringConstancyInformation =
         StringConstancyInformation(
             StringConstancyLevel.DYNAMIC,
             StringConstancyType.APPEND,
@@ -218,16 +204,16 @@ object InterpretationHandler {
         )
 
     /**
-     * @return Returns a [[StringConstancyInformation]] element that describes a the result of a
+     * @return Returns a [[StringConstancyProperty]] element that describes the result of a
      *         `replace` operation. That is, the returned element currently consists of the value
      *         [[StringConstancyLevel.DYNAMIC]], [[StringConstancyType.REPLACE]], and
      *         [[StringConstancyInformation.UnknownWordSymbol]].
      */
-    def getStringConstancyInformationForReplace: StringConstancyInformation =
-        StringConstancyInformation(
+    def getStringConstancyPropertyForReplace: StringConstancyProperty =
+        StringConstancyProperty(StringConstancyInformation(
             StringConstancyLevel.DYNAMIC,
             StringConstancyType.REPLACE,
             StringConstancyInformation.UnknownWordSymbol
-        )
+        ))
 
 }
