@@ -1,5 +1,7 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.tac.fpcf.analyses.string_analysis.interpretation
+import org.opalj.fpcf.PropertyStore
+import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.cfg.CFG
 import org.opalj.br.fpcf.cg.properties.Callees
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
@@ -31,8 +33,10 @@ import org.opalj.tac.VirtualMethodCall
  * @author Patrick Mell
  */
 class InterproceduralInterpretationHandler(
-        cfg:     CFG[Stmt[V], TACStmts[V]],
-        callees: Callees
+        cfg:             CFG[Stmt[V], TACStmts[V]],
+        ps:              PropertyStore,
+        declaredMethods: DeclaredMethods,
+        callees:         Callees
 ) extends InterpretationHandler(cfg) {
 
     /**
@@ -97,7 +101,12 @@ object InterproceduralInterpretationHandler {
      * @see [[IntraproceduralInterpretationHandler]]
      */
     def apply(
-        cfg: CFG[Stmt[V], TACStmts[V]], callees: Callees
-    ): InterproceduralInterpretationHandler = new InterproceduralInterpretationHandler(cfg, callees)
+        cfg:             CFG[Stmt[V], TACStmts[V]],
+        ps:              PropertyStore,
+        declaredMethods: DeclaredMethods,
+        callees:         Callees
+    ): InterproceduralInterpretationHandler = new InterproceduralInterpretationHandler(
+        cfg, ps, declaredMethods, callees
+    )
 
 }
