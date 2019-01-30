@@ -1023,18 +1023,18 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
                     }
                 }
             }
+        }
 
-            // If the class is serializable, the $deserializeLambda$ method may need to be lifted
-            if (serializable) {
-                val deserialize = updatedClassFile.methods.find { m ⇒
-                    m.hasFlags(AccessFlags.ACC_SYNTHETIC_STATIC_PRIVATE) &&
-                        m.name == "$deserializeLambda$"
-                }
-                if (deserialize.isDefined)
-                    updatedClassFile = updatedClassFile._UNSAFE_replaceMethod(
-                        deserialize.get, lift(deserialize.get)
-                    )
+        // If the class is serializable, the $deserializeLambda$ method may need to be lifted
+        if (serializable) {
+            val deserialize = updatedClassFile.methods.find { m ⇒
+                m.hasFlags(AccessFlags.ACC_SYNTHETIC_STATIC_PRIVATE) &&
+                    m.name == "$deserializeLambda$"
             }
+            if (deserialize.isDefined)
+                updatedClassFile = updatedClassFile._UNSAFE_replaceMethod(
+                    deserialize.get, lift(deserialize.get)
+                )
         }
 
         val needsBridgeMethod = samMethodType != instantiatedMethodType
