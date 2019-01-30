@@ -220,10 +220,10 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
      */
     def createResult()(implicit state: State): ProperPropertyComputationResult = {
 
-        val result = /*mergeMaps(*/
-            collectResult(state.cfg.normalReturnNode)/*,
+        val result = mergeMaps(
+            collectResult(state.cfg.normalReturnNode),
             collectResult(state.cfg.abnormalReturnNode)
-        )*/
+        )
 
         val dependees = state.ifdsDependees.values ++ state.tacDependees.values
 
@@ -468,10 +468,10 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
                     state.ifdsData = state.ifdsData.updated(state.source, newDependee)
                     fromCall = mergeMaps(
                         fromCall,
-                        /*mergeMaps(*/
-                            collectResult(state.cfg.normalReturnNode)/*,
+                        mergeMaps(
+                            collectResult(state.cfg.normalReturnNode),
                             collectResult(state.cfg.abnormalReturnNode)
-                        )*/
+                        )
                     )
                 } else {
                     val e = (callee, fact)
@@ -602,7 +602,7 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
                     return Set.empty;
             }
             exits.computeIfAbsent(method, _ ⇒ {
-                (/*cfg.abnormalReturnNode.predecessors ++*/ cfg.normalReturnNode.predecessors).map {
+                (cfg.abnormalReturnNode.predecessors ++ cfg.normalReturnNode.predecessors).map {
                     block ⇒
                         val endPC = block.asBasicBlock.endPC
                         Statement(method, code(endPC), endPC, code, cfg)
