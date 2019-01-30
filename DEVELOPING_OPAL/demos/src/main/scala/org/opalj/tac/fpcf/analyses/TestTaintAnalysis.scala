@@ -10,10 +10,10 @@ import org.opalj.log.LogContext
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.collection.immutable.RefArray
 import org.opalj.fpcf.seq.PKESequentialPropertyStore
-import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.PropertyStoreContext
+import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.Method
@@ -22,9 +22,9 @@ import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.SomeProject
 import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
+import org.opalj.tac.fpcf.analyses.AbstractIFDSAnalysis.V
 import org.opalj.tac.fpcf.properties.IFDSProperty
 import org.opalj.tac.fpcf.properties.IFDSPropertyMetaInformation
-import org.opalj.tac.fpcf.analyses.AbstractIFDSAnalysis.V
 //import org.opalj.ai.domain.l1
 import org.opalj.ai.domain.l2
 
