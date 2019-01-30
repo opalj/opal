@@ -1310,6 +1310,8 @@ object ClassFileFactory {
                 typeOnStack.asObjectType.unboxValue
             } else if (typeOnStack.isBooleanType && toBeReturnedType.isObjectType) {
                 typeOnStack.asBooleanType.boxValue
+            } else if (typeOnStack.isObjectType && toBeReturnedType.isBooleanType) {
+                typeOnStack.asObjectType.unboxValue
             } else if (typeOnStack.isArrayType && (typeOnStack.asArrayType.elementType eq ObjectType.Object)
                 && toBeReturnedType.isArrayType &&
                 typeOnStack.asArrayType.dimensions <= toBeReturnedType.asArrayType.dimensions) {
