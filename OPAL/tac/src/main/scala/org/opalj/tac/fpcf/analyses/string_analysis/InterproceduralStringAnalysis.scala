@@ -28,7 +28,6 @@ import org.opalj.br.DeclaredMethod
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.tac.Stmt
 import org.opalj.tac.TACStmts
-import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis.derivedProperty
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.Path
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.PathTransformer
 import org.opalj.tac.fpcf.properties.TACAI
@@ -406,6 +405,8 @@ class InterproceduralStringAnalysis(
 }
 
 sealed trait InterproceduralStringAnalysisScheduler extends FPCFAnalysisScheduler {
+
+    final def derivedProperty: PropertyBounds = PropertyBounds.lub(StringConstancyProperty)
 
     final override def uses: Set[PropertyBounds] = Set(
         PropertyBounds.ub(TACAI),
