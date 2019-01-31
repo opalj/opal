@@ -68,7 +68,7 @@ case class ComputationState(
  * InterproceduralStringAnalysis processes a read operation of a string variable at a program
  * position, ''pp'', in a way that it finds the set of possible strings that can be read at ''pp''.
  *
- * In comparison to [[LocalStringAnalysis]], this version tries to resolve method calls that are
+ * In comparison to [[IntraproceduralStringAnalysis]], this version tries to resolve method calls that are
  * involved in a string construction as far as possible.
  *
  * @author Patrick Mell

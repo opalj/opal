@@ -107,7 +107,7 @@ class PathTransformer(val interpretationHandler: InterpretationHandler) {
      *                         [[org.opalj.tac.fpcf.analyses.string_analysis.interpretation.IntraproceduralInterpretationHandler]]
      *                         cannot infer / derive. For instance, if the exact value of an
      *                         expression needs to be determined by calling the
-     *                         [[org.opalj.tac.fpcf.analyses.string_analysis.LocalStringAnalysis]]
+     *                         [[org.opalj.tac.fpcf.analyses.string_analysis.IntraproceduralStringAnalysis]]
      *                         on another instance, store this information in fpe2Sci.
      * @param resetExprHandler Whether to reset the underlying
      *                         [[org.opalj.tac.fpcf.analyses.string_analysis.interpretation.IntraproceduralInterpretationHandler]]

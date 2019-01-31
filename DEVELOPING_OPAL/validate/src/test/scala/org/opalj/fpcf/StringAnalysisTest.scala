@@ -30,9 +30,8 @@ import org.opalj.tac.fpcf.analyses.cg.RTACallGraphAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.TriggeredFinalizerAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.TriggeredSerializationRelatedCallsAnalysis
 import org.opalj.tac.fpcf.analyses.string_analysis.InterproceduralStringAnalysis
+import org.opalj.tac.fpcf.analyses.string_analysis.IntraproceduralStringAnalysis
 import org.opalj.tac.fpcf.analyses.string_analysis.LazyInterproceduralStringAnalysis
-import org.opalj.tac.fpcf.analyses.string_analysis.LazyLocalStringAnalysis
-import org.opalj.tac.fpcf.analyses.string_analysis.LocalStringAnalysis
 import org.opalj.tac.fpcf.analyses.string_analysis.V
 import org.opalj.tac.fpcf.analyses.TriggeredSystemPropertiesAnalysis
 import org.opalj.tac.fpcf.analyses.cg.LazyCalleesAnalysis
@@ -41,6 +40,7 @@ import org.opalj.tac.fpcf.analyses.cg.TriggeredThreadRelatedCallsAnalysis
 import org.opalj.tac.fpcf.analyses.TACAITransformer
 import org.opalj.tac.fpcf.analyses.cg.TriggeredInstantiatedTypesAnalysis
 import org.opalj.tac.fpcf.analyses.cg.TriggeredLoadedClassesAnalysis
+import org.opalj.tac.fpcf.analyses.string_analysis.LazyIntraproceduralStringAnalysis
 
 /**
  * @param fqTestMethodsClass The fully-qualified name of the class that contains the test methods.
@@ -152,27 +152,27 @@ sealed class StringAnalysisTestRunner(
 }
 
 /**
- * Tests whether the [[LocalStringAnalysis]] works correctly with respect to some well-defined
+ * Tests whether the [[IntraproceduralStringAnalysis]] works correctly with respect to some well-defined
  * tests.
  *
  * @author Patrick Mell
  */
-class LocalStringAnalysisTest extends PropertiesTest {
+class IntraproceduralStringAnalysisTest extends PropertiesTest {
 
     describe("the org.opalj.fpcf.LocalStringAnalysis is started") {
         val runner = new StringAnalysisTestRunner(
-            LocalStringAnalysisTest.fqTestMethodsClass,
-            LocalStringAnalysisTest.nameTestMethod,
-            LocalStringAnalysisTest.filesToLoad
+            IntraproceduralStringAnalysisTest.fqTestMethodsClass,
+            IntraproceduralStringAnalysisTest.nameTestMethod,
+            IntraproceduralStringAnalysisTest.filesToLoad
         )
         val p = Project(runner.getRelevantProjectFiles, Array[File]())
 
         val manager = p.get(FPCFAnalysesManagerKey)
-        val (ps, _) = manager.runAll(LazyLocalStringAnalysis)
-        val testContext = TestContext(p, ps, List(new LocalStringAnalysis(p)))
+        val (ps, _) = manager.runAll(LazyIntraproceduralStringAnalysis)
+        val testContext = TestContext(p, ps, List(new IntraproceduralStringAnalysis(p)))
 
-        LazyLocalStringAnalysis.init(p, ps)
-        LazyLocalStringAnalysis.schedule(ps, null)
+        LazyIntraproceduralStringAnalysis.init(p, ps)
+        LazyIntraproceduralStringAnalysis.schedule(ps, null)
 
         val eas = runner.determineEAS(p, ps, p.allMethodsWithBody)
 
@@ -183,7 +183,7 @@ class LocalStringAnalysisTest extends PropertiesTest {
 
 }
 
-object LocalStringAnalysisTest {
+object IntraproceduralStringAnalysisTest {
 
     val fqTestMethodsClass = "org.opalj.fpcf.fixtures.string_analysis.LocalTestMethods"
     // The name of the method from which to extract DUVars to analyze
@@ -196,7 +196,7 @@ object LocalStringAnalysisTest {
 }
 
 /**
- * Tests whether the [[LocalStringAnalysis]] works correctly with respect to some well-defined
+ * Tests whether the [[IntraproceduralStringAnalysis]] works correctly with respect to some well-defined
  * tests.
  *
  * @author Patrick Mell
