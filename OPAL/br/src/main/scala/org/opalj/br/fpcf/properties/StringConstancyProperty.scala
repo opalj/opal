@@ -60,9 +60,8 @@ object StringConstancyProperty extends Property with StringConstancyPropertyMeta
      * Extracts a [[Result]] from the geiven `ppcr` and returns its property as an instance of this
      * class.
      */
-    def extractFromPPCR(ppcr: ProperPropertyComputationResult): StringConstancyProperty = {
-        ppcr.asInstanceOf[Result].asInstanceOf[StringConstancyProperty]
-    }
+    def extractFromPPCR(ppcr: ProperPropertyComputationResult): StringConstancyProperty =
+        ppcr.asInstanceOf[Result].finalEP.p.asInstanceOf[StringConstancyProperty]
 
     /**
      * @return Returns the / a neutral [[StringConstancyProperty]] element, i.e., an element for
