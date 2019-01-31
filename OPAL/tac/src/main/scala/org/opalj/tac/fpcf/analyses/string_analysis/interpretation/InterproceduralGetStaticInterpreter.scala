@@ -27,13 +27,13 @@ class InterproceduralGetStaticInterpreter(
 
     /**
      * Currently, this type is not interpreted. Thus, this function always returns a result
-     * containing [[StringConstancyProperty.lowerBound]].
+     * containing [[StringConstancyProperty.lb]].
      *
      * @note For this implementation, `defSite` plays a role!
      *
      * @see [[AbstractStringInterpreter.interpret]]
      */
     override def interpret(instr: T, defSite: Int): ProperPropertyComputationResult =
-        Result(instr, StringConstancyProperty.lowerBound)
+        Result(instr, StringConstancyProperty.lb)
 
 }

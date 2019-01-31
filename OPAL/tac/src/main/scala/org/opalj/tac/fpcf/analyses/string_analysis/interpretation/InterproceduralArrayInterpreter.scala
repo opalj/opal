@@ -71,7 +71,7 @@ class InterproceduralArrayInterpreter(
 
         // In case it refers to a method parameter, add a dynamic string property
         if (defSites.exists(_ < 0)) {
-            children.append(StringConstancyProperty.lowerBound.stringConstancyInformation)
+            children.append(StringConstancyProperty.lb.stringConstancyInformation)
         }
 
         Result(instr, StringConstancyProperty(

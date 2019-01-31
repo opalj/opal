@@ -47,7 +47,7 @@ object StringConstancyProperty extends Property with StringConstancyPropertyMeta
             PropertyKeyName,
             (_: PropertyStore, _: FallbackReason, _: Entity) ⇒ {
                 // TODO: Using simple heuristics, return a better value for some easy cases
-                lowerBound
+                lb
             },
         )
     }
@@ -73,7 +73,7 @@ object StringConstancyProperty extends Property with StringConstancyPropertyMeta
     /**
      * @return Returns the upper bound from a lattice-point of view.
      */
-    def upperBound: StringConstancyProperty =
+    def ub: StringConstancyProperty =
         StringConstancyProperty(StringConstancyInformation(
             StringConstancyLevel.CONSTANT, StringConstancyType.APPEND
         ))
@@ -81,7 +81,7 @@ object StringConstancyProperty extends Property with StringConstancyPropertyMeta
     /**
      * @return Returns the lower bound from a lattice-point of view.
      */
-    def lowerBound: StringConstancyProperty =
+    def lb: StringConstancyProperty =
         StringConstancyProperty(StringConstancyInformation(
             StringConstancyLevel.DYNAMIC,
             StringConstancyType.APPEND,

@@ -70,8 +70,8 @@ class InterproceduralNonVirtualFunctionCallInterpreter(
                     state.var2IndexMapping(uvar) = defSite
                     InterimResult(
                         entity,
-                        StringConstancyProperty.lowerBound,
-                        StringConstancyProperty.upperBound,
+                        StringConstancyProperty.lb,
+                        StringConstancyProperty.ub,
                         List(),
                         c
                     )
@@ -80,8 +80,8 @@ class InterproceduralNonVirtualFunctionCallInterpreter(
             // No TAC => Register dependee and continue
             InterimResult(
                 m,
-                StringConstancyProperty.lowerBound,
-                StringConstancyProperty.upperBound,
+                StringConstancyProperty.lb,
+                StringConstancyProperty.ub,
                 state.dependees.values.flatten,
                 c
             )

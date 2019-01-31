@@ -49,7 +49,7 @@ class IntraproceduralInterpretationHandler(
         val e: Integer = defSite.toInt
         // Function parameters are not evaluated but regarded as unknown
         if (defSite < 0) {
-            return Result(e, StringConstancyProperty.lowerBound)
+            return Result(e, StringConstancyProperty.lb)
         } else if (processedDefSites.contains(defSite)) {
             return Result(e, StringConstancyProperty.getNeutralElement)
         }
