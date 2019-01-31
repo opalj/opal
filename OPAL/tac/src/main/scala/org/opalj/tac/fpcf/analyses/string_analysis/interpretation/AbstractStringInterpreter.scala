@@ -1,11 +1,20 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.tac.fpcf.analyses.string_analysis.interpretation
 
+import scala.collection.mutable.ListBuffer
+
 import org.opalj.fpcf.ProperPropertyComputationResult
+import org.opalj.fpcf.PropertyStore
 import org.opalj.br.cfg.CFG
+import org.opalj.br.Method
+import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.tac.Stmt
 import org.opalj.tac.TACStmts
 import org.opalj.tac.fpcf.analyses.string_analysis.V
+import org.opalj.tac.TACMethodParameter
+import org.opalj.tac.TACode
+import org.opalj.tac.fpcf.analyses.string_analysis.ComputationState
+import org.opalj.tac.fpcf.properties.TACAI
 
 /**
  * @param cfg The control flow graph that underlies the instruction to interpret.
@@ -25,6 +34,39 @@ abstract class AbstractStringInterpreter(
 ) {
 
     type T <: Any
+
+    /**
+     * Either returns the TAC for the given method or otherwise registers dependees.
+     *
+     * @param ps The property store to use.
+     * @param m The method to get the TAC for.
+     * @param s The computation state whose dependees might be extended in case the TAC is not
+     *          immediately ready.
+     * @return Returns `Some(tac)` if the TAC is already available or `None` otherwise.
+     */
+    protected def getTACAI(
+        ps: PropertyStore,
+        m:  Method,
+        s:  ComputationState
+    ): Option[TACode[TACMethodParameter, V]] = {
+        val tacai = ps(m, TACAI.key)
+        if (tacai.hasUBP) {
+            tacai.ub.tac
+        } else {
+            if (!s.dependees.contains(m)) {
+                s.dependees(m) = ListBuffer()
+            }
+            s.dependees(m).append(tacai)
+            None
+        }
+    }
+
+    /**
+     * Takes `declaredMethods` as well as a method `name`, extracts the method with the given `name`
+     * from `declaredMethods` and returns this one as a [[Method]].
+     */
+    protected def getDeclaredMethod(declaredMethods: DeclaredMethods, name: String): Method =
+        declaredMethods.declaredMethods.find(_.name == name).get.definedMethod
 
     /**
      *

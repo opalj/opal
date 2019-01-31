@@ -4,7 +4,7 @@ package org.opalj.fpcf.fixtures.string_analysis;
 import org.opalj.fpcf.properties.string_analysis.StringDefinitions;
 import org.opalj.fpcf.properties.string_analysis.StringDefinitionsCollection;
 
-import static org.opalj.fpcf.properties.string_analysis.StringConstancyLevel.DYNAMIC;
+import static org.opalj.fpcf.properties.string_analysis.StringConstancyLevel.CONSTANT;
 
 /**
  * This file contains various tests for the InterproceduralStringAnalysis. For further information
@@ -14,31 +14,44 @@ import static org.opalj.fpcf.properties.string_analysis.StringConstancyLevel.DYN
  */
 public class InterproceduralTestMethods {
 
-    private String someStringField = "";
-    public static final String MY_CONSTANT = "mine";
-
     /**
-     * This method represents the test method which is serves as the trigger point for the
-     * {@link org.opalj.fpcf.LocalStringAnalysisTest} to know which string read operation to
-     * analyze.
-     * Note that the {@link StringDefinitions} annotation is designed in a way to be able to capture
-     * only one read operation. For how to get around this limitation, see the annotation.
-     *
-     * @param s Some string which is to be analyzed.
+     * {@see LocalTestMethods#analyzeString}
      */
     public void analyzeString(String s) {
     }
 
     @StringDefinitionsCollection(
-            value = "at this point, function call cannot be handled => DYNAMIC",
+            value = "a case where a very simple non-virtual function call is interpreted",
             stringDefinitions = {
                     @StringDefinitions(
-                            expectedLevel = DYNAMIC, expectedStrings = "\\w"
+                            expectedLevel = CONSTANT, expectedStrings = "java.lang.StringBuilder"
                     )
             })
-    public void fromFunctionCall() {
+    public void simpleNonVirtualFunctionCallTest() {
         String className = getStringBuilderClassName();
         analyzeString(className);
+    }
+
+    @StringDefinitionsCollection(
+            value = "a case where the initialization of a StringBuilder depends on > 1 non-virtual "
+                    + "function calls and a constant",
+            stringDefinitions = {
+                    @StringDefinitions(
+                            expectedLevel = CONSTANT,
+                            expectedStrings = "(java.lang.Runtime|java.lang.StringBuilder|ERROR)"
+                    )
+            })
+    public void initFromNonVirtualFunctionCallTest(int i) {
+        String s;
+        if (i == 0) {
+            s = getRuntimeClassName();
+        } else if (i == 1) {
+            s = getStringBuilderClassName();
+        } else {
+            s = "ERROR";
+        }
+        StringBuilder sb = new StringBuilder(s);
+        analyzeString(sb.toString());
     }
 
     private String getRuntimeClassName() {

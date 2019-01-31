@@ -130,14 +130,13 @@ class InterproceduralStringAnalysis(
             }
 
             val paths = pathFinder.findPaths(initDefSites, uvar.definedBy.head)
-            val leanPaths = paths.makeLeanPath(uvar, stmts)
+            state.computedLeanPath = Some(paths.makeLeanPath(uvar, stmts))
 
             // Find DUVars, that the analysis of the current entity depends on
-            val dependentVars = findDependentVars(leanPaths, stmts, uvar)
+            val dependentVars = findDependentVars(state.computedLeanPath.get, stmts, uvar)
             if (dependentVars.nonEmpty) {
                 dependentVars.keys.foreach { nextVar ⇒
                     val toAnalyze = (nextVar, data._2)
-                    state.computedLeanPath = Some(leanPaths)
                     dependentVars.foreach { case (k, v) ⇒ state.var2IndexMapping(k) = v }
                     val ep = propertyStore(toAnalyze, StringConstancyProperty.key)
                     ep match {
@@ -151,12 +150,17 @@ class InterproceduralStringAnalysis(
                     }
                 }
             } else {
-                val interpretationHandler = InterproceduralInterpretationHandler(
+                val iHandler = InterproceduralInterpretationHandler(
                     cfg, ps, declaredMethods, state, continuation(data, callees, List(), state)
                 )
-                sci = new PathTransformer(
-                    interpretationHandler
-                ).pathToStringTree(leanPaths).reduce(true)
+                if (computeResultsForPath(state.computedLeanPath.get, iHandler, state)) {
+                    val interHandler = InterproceduralInterpretationHandler(
+                        cfg, ps, declaredMethods, state, continuation(data, callees, List(), state)
+                    )
+                    sci = new PathTransformer(interHandler).pathToStringTree(
+                        state.computedLeanPath.get, state.fpe2sci.toMap
+                    ).reduce(true)
+                }
             }
         } // If not a call to String{Builder, Buffer}.toString, then we deal with pure strings
         else {
@@ -274,6 +278,44 @@ class InterproceduralStringAnalysis(
             data, lb, ub, dependees, continuation(data, callees, dependees, state)
         )
         case _ ⇒ throw new IllegalStateException("Could not process the continuation successfully.")
+    }
+
+    /**
+     * This function traversed the given path, computes all string values along the path and stores
+     * these information in the given state.
+     *
+     * @param p The path to traverse.
+     * @param iHandler The handler for interpreting string related sites.
+     * @param state The current state of the computation. This function will extend
+     *              [[ComputationState.fpe2sci]].
+     * @return Returns `true` if all values computed for the path are final results.
+     */
+    private def computeResultsForPath(
+        p:        Path,
+        iHandler: InterproceduralInterpretationHandler,
+        state:    ComputationState
+    ): Boolean = {
+        var hasFinalResult = true
+
+        p.elements.foreach {
+            case FlatPathElement(index) ⇒
+                if (!state.fpe2sci.contains(index)) {
+                    iHandler.processDefSite(index) match {
+                        case Result(r) ⇒
+                            val p = r.p.asInstanceOf[StringConstancyProperty]
+                            state.fpe2sci(index) = p.stringConstancyInformation
+                        case _ ⇒ hasFinalResult = false
+                    }
+                }
+            case npe: NestedPathElement ⇒
+                val subFinalResult = computeResultsForPath(Path(List(npe)), iHandler, state)
+                if (hasFinalResult) {
+                    hasFinalResult = subFinalResult
+                }
+            case _ ⇒
+        }
+
+        hasFinalResult
     }
 
     /**
