@@ -55,9 +55,11 @@ class IntraproceduralVirtualFunctionCallInterpreter(
      * If none of the above-described cases match, a result containing
      * [[StringConstancyProperty.getNeutralElement]] will be returned.
      *
+     * @note For this implementation, `defSite` does not play a role.
+     *
      * @see [[AbstractStringInterpreter.interpret]]
      */
-    override def interpret(instr: T): ProperPropertyComputationResult = {
+    override def interpret(instr: T, defSite: Int): ProperPropertyComputationResult = {
         val property = instr.name match {
             case "append"   ⇒ interpretAppendCall(instr)
             case "toString" ⇒ interpretToStringCall(instr)

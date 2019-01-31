@@ -122,7 +122,10 @@ class LocalStringAnalysis(
                     }
                 }
             } else {
-                sci = new PathTransformer(cfg).pathToStringTree(leanPaths).reduce(true)
+                val interpretationHandler = IntraproceduralInterpretationHandler(cfg)
+                sci = new PathTransformer(
+                    interpretationHandler
+                ).pathToStringTree(leanPaths).reduce(true)
             }
         } // If not a call to String{Builder, Buffer}.toString, then we deal with pure strings
         else {
@@ -167,7 +170,8 @@ class LocalStringAnalysis(
         // No more dependees => Return the result for this analysis run
         val remDependees = dependees.filter(_.e != e)
         if (remDependees.isEmpty) {
-            val finalSci = new PathTransformer(state.cfg).pathToStringTree(
+            val interpretationHandler = IntraproceduralInterpretationHandler(state.cfg)
+            val finalSci = new PathTransformer(interpretationHandler).pathToStringTree(
                 state.computedLeanPath, state.fpe2sci.toMap
             ).reduce(true)
             Result(data, StringConstancyProperty(finalSci))

@@ -31,9 +31,11 @@ class IntraproceduralFieldInterpreter(
      * Fields are not suppoerted by this implementation. Thus, this function always returns a result
      * containing [[StringConstancyProperty.lowerBound]].
      *
+     * @note For this implementation, `defSite` does not play a role.
+     *
      * @see [[AbstractStringInterpreter.interpret]]
      */
-    override def interpret(instr: T): ProperPropertyComputationResult =
+    override def interpret(instr: T, defSite: Int): ProperPropertyComputationResult =
         Result(instr, StringConstancyProperty.lowerBound)
 
 }

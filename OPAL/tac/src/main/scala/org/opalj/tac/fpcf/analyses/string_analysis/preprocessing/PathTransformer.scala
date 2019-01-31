@@ -4,7 +4,6 @@ package org.opalj.tac.fpcf.analyses.string_analysis.preprocessing
 import scala.collection.mutable.ListBuffer
 
 import org.opalj.fpcf.Result
-import org.opalj.br.cfg.CFG
 import org.opalj.br.fpcf.properties.properties.StringTree
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.br.fpcf.properties.string_definition.StringTreeConcat
@@ -13,10 +12,7 @@ import org.opalj.br.fpcf.properties.string_definition.StringTreeConst
 import org.opalj.br.fpcf.properties.string_definition.StringTreeOr
 import org.opalj.br.fpcf.properties.string_definition.StringTreeRepetition
 import org.opalj.br.fpcf.properties.StringConstancyProperty
-import org.opalj.tac.Stmt
-import org.opalj.tac.TACStmts
-import org.opalj.tac.fpcf.analyses.string_analysis.V
-import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.IntraproceduralInterpretationHandler
+import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
 
 /**
  * [[PathTransformer]] is responsible for transforming a [[Path]] into another representation, such
@@ -25,13 +21,12 @@ import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.Intraprocedura
  * refer to the underlying control flow graph. If this is no longer the case, create a new instance
  * of this class with the corresponding (new) `cfg?`.
  *
- * @param cfg Objects of this class require a control flow graph that is used for transformations.
+ * @param interpretationHandler An concrete instance of [[InterpretationHandler]] that is used to
+ *                              process expressions / definition sites.
  *
  * @author Patrick Mell
  */
-class PathTransformer(val cfg: CFG[Stmt[V], TACStmts[V]]) {
-
-    private val exprHandler = IntraproceduralInterpretationHandler(cfg)
+class PathTransformer(val interpretationHandler: InterpretationHandler) {
 
     /**
      * Accumulator function for transforming a path into a StringTree element.
@@ -42,7 +37,7 @@ class PathTransformer(val cfg: CFG[Stmt[V], TACStmts[V]]) {
         subpath match {
             case fpe: FlatPathElement ⇒
                 val sci = if (fpe2Sci.contains(fpe.element)) fpe2Sci(fpe.element) else {
-                    val r = exprHandler.processDefSite(fpe.element).asInstanceOf[Result]
+                    val r = interpretationHandler.processDefSite(fpe.element).asInstanceOf[Result]
                     r.finalEP.p.asInstanceOf[StringConstancyProperty].stringConstancyInformation
                 }
                 if (sci.isTheNeutralElement) {
@@ -50,18 +45,6 @@ class PathTransformer(val cfg: CFG[Stmt[V], TACStmts[V]]) {
                 } else {
                     Some(StringTreeConst(sci))
                 }
-            //                sciList.length match {
-            //                    case 0 ⇒ None
-            //                    case 1 ⇒ Some(StringTreeConst(sciList.head))
-            //                    case _ ⇒
-            //                        val treeElements = ListBuffer[StringTree]()
-            //                        treeElements.appendAll(sciList.map(StringTreeConst).to[ListBuffer])
-            //                        if (treeElements.nonEmpty) {
-            //                            Some(StringTreeOr(treeElements))
-            //                        } else {
-            //                            None
-            //                        }
-            //        }
             case npe: NestedPathElement ⇒
                 if (npe.elementType.isDefined) {
                     npe.elementType.get match {
@@ -120,20 +103,22 @@ class PathTransformer(val cfg: CFG[Stmt[V], TACStmts[V]]) {
      * @param path             The path element to be transformed.
      * @param fpe2Sci          A mapping from [[FlatPathElement.element]] values to
      *                         [[StringConstancyInformation]]. Make use of this mapping if some
-     *                         StringConstancyInformation need to be used that the [[IntraproceduralInterpretationHandler]]
-     *                         cannot infer / derive. For instance, if the exact value of an expression needs
-     *                         to be determined by calling the
+     *                         StringConstancyInformation need to be used that the
+     *                         [[org.opalj.tac.fpcf.analyses.string_analysis.interpretation.IntraproceduralInterpretationHandler]]
+     *                         cannot infer / derive. For instance, if the exact value of an
+     *                         expression needs to be determined by calling the
      *                         [[org.opalj.tac.fpcf.analyses.string_analysis.LocalStringAnalysis]]
      *                         on another instance, store this information in fpe2Sci.
-     * @param resetExprHandler Whether to reset the underlying [[IntraproceduralInterpretationHandler]] or not.
-     *                         When calling this function from outside, the default value should do
-     *                         fine in most of the cases. For further information, see
-     *                         [[IntraproceduralInterpretationHandler.reset]].
+     * @param resetExprHandler Whether to reset the underlying
+     *                         [[org.opalj.tac.fpcf.analyses.string_analysis.interpretation.IntraproceduralInterpretationHandler]]
+     *                         or not. When calling this function from outside, the default value
+     *                         should do fine in most of the cases. For further information, see
+     *                         [[org.opalj.tac.fpcf.analyses.string_analysis.interpretation.IntraproceduralInterpretationHandler.reset]].
      *
      * @return If an empty [[Path]] is given, `None` will be returned. Otherwise, the transformed
-     *         [[org.opalj.br.fpcf.properties.properties.StringTree]] will be returned. Note that all elements of the tree will be defined,
-     *         i.e., if `path` contains sites that could not be processed (successfully), they will
-     *         not occur in the tree.
+     *         [[org.opalj.br.fpcf.properties.properties.StringTree]] will be returned. Note that
+     *         all elements of the tree will be defined, i.e., if `path` contains sites that could
+     *         not be processed (successfully), they will not occur in the tree.
      */
     def pathToStringTree(
         path:             Path,
@@ -157,7 +142,7 @@ class PathTransformer(val cfg: CFG[Stmt[V], TACStmts[V]]) {
                 }
         }
         if (resetExprHandler) {
-            exprHandler.reset()
+            interpretationHandler.reset()
         }
         tree
     }

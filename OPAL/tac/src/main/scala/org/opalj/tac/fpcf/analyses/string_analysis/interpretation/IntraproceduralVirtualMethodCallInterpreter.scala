@@ -43,9 +43,11 @@ class IntraproceduralVirtualMethodCallInterpreter(
      * For all other calls, a result containing [[StringConstancyProperty.getNeutralElement]] will
      * be returned.
      *
+     * @note For this implementation, `defSite` does not play a role.
+     *
      * @see [[AbstractStringInterpreter.interpret]]
      */
-    override def interpret(instr: T): ProperPropertyComputationResult = {
+    override def interpret(instr: T, defSite: Int): ProperPropertyComputationResult = {
         val sci = instr.name match {
             case "setLength" ⇒ StringConstancyInformation(
                 StringConstancyLevel.CONSTANT, StringConstancyType.RESET

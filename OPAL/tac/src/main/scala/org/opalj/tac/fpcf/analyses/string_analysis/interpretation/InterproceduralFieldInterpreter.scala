@@ -36,9 +36,11 @@ class InterproceduralFieldInterpreter(
      * [[org.opalj.br.fpcf.properties.string_definition.StringConstancyType.APPEND]] and
      * [[org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation.UnknownWordSymbol]].
      *
+     * @note For this implementation, `defSite` plays a role!
+     *
      * @see [[AbstractStringInterpreter.interpret]]
      */
-    override def interpret(instr: T): ProperPropertyComputationResult =
+    override def interpret(instr: T, defSite: Int): ProperPropertyComputationResult =
         Result(instr, StringConstancyProperty.lowerBound)
 
 }

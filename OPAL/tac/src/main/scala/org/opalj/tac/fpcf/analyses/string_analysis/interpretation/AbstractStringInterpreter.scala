@@ -31,6 +31,10 @@ abstract class AbstractStringInterpreter(
      * @param instr The instruction that is to be interpreted. It is the responsibility of
      *              implementations to make sure that an instruction is properly and comprehensively
      *              evaluated.
+     * @param defSite The definition site that corresponds to the given instruction. `defSite` is
+     *                not necessary for processing `instr`, however, may be used, e.g., for
+     *                housekeeping purposes. Thus, concrete implementations should indicate whether
+     *                this value is of importance for (further) processing.
      * @return The interpreted instruction. A neutral StringConstancyProperty contained in the
      *         result indicates that an instruction was not / could not be interpreted (e.g.,
      *         because it is not supported or it was processed before).
@@ -40,6 +44,6 @@ abstract class AbstractStringInterpreter(
      *         the definition site, this function returns the interpreted instruction as entity.
      *         Thus, the entity needs to be replaced by the calling client.
      */
-    def interpret(instr: T): ProperPropertyComputationResult
+    def interpret(instr: T, defSite: Int): ProperPropertyComputationResult
 
 }
