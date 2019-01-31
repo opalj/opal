@@ -39,19 +39,16 @@ import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.WindowPathFinde
 import org.opalj.tac.fpcf.properties.TACAI
 
 /**
- * LocalStringAnalysis processes a read operation of a local string variable at a program
+ * IntraproceduralStringAnalysis processes a read operation of a local string variable at a program
  * position, ''pp'', in a way that it finds the set of possible strings that can be read at ''pp''.
  *
- * "Local" as this analysis takes into account only the enclosing function as a context, i.e., it
+ * This analysis takes into account only the enclosing function as a context, i.e., it
  * intraprocedural. Values coming from other functions are regarded as dynamic values even if the
  * function returns a constant string value.
  *
- * The StringConstancyProperty might contain more than one possible string, e.g., if the source of
- * the value is an array.
- *
  * @author Patrick Mell
  */
-class LocalStringAnalysis(
+class IntraproceduralStringAnalysis(
         val project: SomeProject
 ) extends FPCFAnalysis {
 
@@ -296,7 +293,7 @@ class LocalStringAnalysis(
 
 }
 
-sealed trait LocalStringAnalysisScheduler extends FPCFAnalysisScheduler {
+sealed trait IntraproceduralStringAnalysisScheduler extends FPCFAnalysisScheduler {
 
     final def derivedProperty: PropertyBounds = PropertyBounds.lub(StringConstancyProperty)
 
@@ -306,9 +303,9 @@ sealed trait LocalStringAnalysisScheduler extends FPCFAnalysisScheduler {
         PropertyBounds.lub(StringConstancyProperty)
     )
 
-    final override type InitializationData = LocalStringAnalysis
+    final override type InitializationData = IntraproceduralStringAnalysis
     final override def init(p: SomeProject, ps: PropertyStore): InitializationData = {
-        new LocalStringAnalysis(p)
+        new IntraproceduralStringAnalysis(p)
     }
 
     override def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
@@ -326,12 +323,13 @@ sealed trait LocalStringAnalysisScheduler extends FPCFAnalysisScheduler {
 /**
  * Executor for the lazy analysis.
  */
-object LazyLocalStringAnalysis extends LocalStringAnalysisScheduler with FPCFLazyAnalysisScheduler {
+object LazyIntraproceduralStringAnalysis
+    extends IntraproceduralStringAnalysisScheduler with FPCFLazyAnalysisScheduler {
 
     override def register(
         p: SomeProject, ps: PropertyStore, analysis: InitializationData
     ): FPCFAnalysis = {
-        val analysis = new LocalStringAnalysis(p)
+        val analysis = new IntraproceduralStringAnalysis(p)
         ps.registerLazyPropertyComputation(StringConstancyProperty.key, analysis.analyze)
         analysis
     }

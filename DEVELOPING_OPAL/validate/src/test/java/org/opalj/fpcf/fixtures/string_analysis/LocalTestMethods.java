@@ -55,7 +55,7 @@ public class LocalTestMethods {
 
     /**
      * This method represents the test method which is serves as the trigger point for the
-     * {@link org.opalj.fpcf.LocalStringAnalysisTest} to know which string read operation to
+     * {@link org.opalj.fpcf.IntraproceduralStringAnalysisTest} to know which string read operation to
      * analyze.
      * Note that the {@link StringDefinitions} annotation is designed in a way to be able to capture
      * only one read operation. For how to get around this limitation, see the annotation.
