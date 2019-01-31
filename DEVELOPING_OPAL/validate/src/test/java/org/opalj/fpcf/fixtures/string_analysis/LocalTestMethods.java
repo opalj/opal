@@ -755,9 +755,6 @@ public class LocalTestMethods {
                     + "complex construction of a second StringBuilder is determined correctly.",
             stringDefinitions = {
                     @StringDefinitions(
-                            expectedLevel = CONSTANT, expectedStrings = "(Object|Runtime)"
-                    ),
-                    @StringDefinitions(
                             expectedLevel = CONSTANT, expectedStrings = "java.lang.(Object|Runtime)"
                     )
             })
@@ -772,7 +769,6 @@ public class LocalTestMethods {
             sb1.append(sbRun.toString());
         }
 
-        analyzeString(sb1.toString());
         StringBuilder sb2 = new StringBuilder("java.lang.");
         sb2.append(sb1.toString());
         analyzeString(sb2.toString());

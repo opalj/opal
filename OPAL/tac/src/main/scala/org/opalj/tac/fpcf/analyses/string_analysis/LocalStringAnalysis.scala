@@ -27,7 +27,6 @@ import org.opalj.tac.ExprStmt
 import org.opalj.tac.SimpleTACAIKey
 import org.opalj.tac.Stmt
 import org.opalj.tac.TACStmts
-import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis.derivedProperty
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.IntraproceduralInterpretationHandler
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.AbstractPathFinder
@@ -89,7 +88,7 @@ class LocalStringAnalysis(
         val pathFinder: AbstractPathFinder = new WindowPathFinder(cfg)
 
         // If not empty, this very routine can only produce an intermediate result
-        val dependees = mutable.Map[Entity, EOptionP[Entity, Property]]()
+        val dependees: mutable.Map[Entity, ListBuffer[EOptionP[Entity, Property]]] = mutable.Map()
         // state will be set to a non-null value if this analysis needs to call other analyses /
         // itself; only in the case it calls itself, will state be used, thus, it is valid to
         // initialize it with null
@@ -116,9 +115,12 @@ class LocalStringAnalysis(
                     val ep = propertyStore(toAnalyze, StringConstancyProperty.key)
                     ep match {
                         case FinalP(p) ⇒
-                            return processFinalP(data, dependees.values, state, ep.e, p)
+                            return processFinalP(data, dependees.values.flatten, state, ep.e, p)
                         case _ ⇒
-                            dependees.put(toAnalyze, ep)
+                            if (!dependees.contains(data)) {
+                                dependees(data) = ListBuffer()
+                            }
+                            dependees(data).append(ep)
                     }
                 }
             } else {
@@ -140,11 +142,11 @@ class LocalStringAnalysis(
 
         if (dependees.nonEmpty) {
             InterimResult(
-                data,
+                data._1,
                 StringConstancyProperty.upperBound,
                 StringConstancyProperty.lowerBound,
-                dependees.values,
-                continuation(data, dependees.values, state)
+                dependees.values.flatten,
+                continuation(data, dependees.values.flatten, state)
             )
         } else {
             Result(data, StringConstancyProperty(sci))
@@ -295,6 +297,8 @@ class LocalStringAnalysis(
 }
 
 sealed trait LocalStringAnalysisScheduler extends FPCFAnalysisScheduler {
+
+    final def derivedProperty: PropertyBounds = PropertyBounds.lub(StringConstancyProperty)
 
     final override def uses: Set[PropertyBounds] = Set(
         PropertyBounds.ub(TACAI),
