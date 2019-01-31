@@ -3,10 +3,12 @@ package org.opalj.br.fpcf.properties
 
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.FallbackReason
+import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.Property
 import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyMetaInformation
 import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.Result
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyType
@@ -53,6 +55,14 @@ object StringConstancyProperty extends Property with StringConstancyPropertyMeta
     def apply(
         stringConstancyInformation: StringConstancyInformation
     ): StringConstancyProperty = new StringConstancyProperty(stringConstancyInformation)
+
+    /**
+     * Extracts a [[Result]] from the geiven `ppcr` and returns its property as an instance of this
+     * class.
+     */
+    def extractFromPPCR(ppcr: ProperPropertyComputationResult): StringConstancyProperty = {
+        ppcr.asInstanceOf[Result].asInstanceOf[StringConstancyProperty]
+    }
 
     /**
      * @return Returns the / a neutral [[StringConstancyProperty]] element, i.e., an element for

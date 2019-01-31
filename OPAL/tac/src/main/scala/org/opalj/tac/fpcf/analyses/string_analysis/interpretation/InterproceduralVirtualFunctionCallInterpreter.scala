@@ -56,9 +56,11 @@ class InterproceduralVirtualFunctionCallInterpreter(
      *
      * If none of the above-described cases match, an empty list will be returned.
      *
+     * @note For this implementation, `defSite` plays a role!
+     *
      * @see [[AbstractStringInterpreter.interpret]]
      */
-    override def interpret(instr: T): ProperPropertyComputationResult = {
+    override def interpret(instr: T, defSite: Int): ProperPropertyComputationResult = {
         val property = instr.name match {
             case "append"   ⇒ interpretAppendCall(instr)
             case "toString" ⇒ interpretToStringCall(instr)
@@ -120,11 +122,16 @@ class InterproceduralVirtualFunctionCallInterpreter(
     ): StringConstancyProperty = {
         // There might be several receivers, thus the map; from the processed sites, however, use
         // only the head as a single receiver interpretation will produce one element
-        call.receiver.asVar.definedBy.toArray.sorted.map(exprHandler.processDefSite).map(
-            _.asInstanceOf[StringConstancyProperty]
+        val scis = call.receiver.asVar.definedBy.toArray.sorted.map(exprHandler.processDefSite).map(
+            _.asInstanceOf[Result].finalEP.p.asInstanceOf[StringConstancyProperty]
         ).filter {
                 !_.stringConstancyInformation.isTheNeutralElement
-            }.head
+            }
+        if (scis.isEmpty) {
+            StringConstancyProperty.getNeutralElement
+        } else {
+            scis.head
+        }
     }
 
     /**
@@ -137,13 +144,15 @@ class InterproceduralVirtualFunctionCallInterpreter(
         val param = call.params.head.asVar
         // .head because we want to evaluate only the first argument of append
         val defSiteHead = param.definedBy.head
-        var value = exprHandler.processDefSite(defSiteHead).asInstanceOf[StringConstancyProperty]
+        var value = StringConstancyProperty.extractFromPPCR(
+            exprHandler.processDefSite(defSiteHead)
+        )
         // If defSiteHead points to a New, value will be the empty list. In that case, process
         // the first use site (which is the <init> call)
         if (value.isTheNeutralElement) {
-            value = exprHandler.processDefSite(
+            value = StringConstancyProperty.extractFromPPCR(exprHandler.processDefSite(
                 cfg.code.instructions(defSiteHead).asAssignment.targetVar.usedBy.toArray.min
-            ).asInstanceOf[StringConstancyProperty]
+            ))
         }
 
         val sci = value.stringConstancyInformation

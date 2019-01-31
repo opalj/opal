@@ -55,33 +55,43 @@ class IntraproceduralInterpretationHandler(
         }
         processedDefSites.append(defSite)
 
+        // TODO: Refactor by making the match return a concrete instance of
+        //  AbstractStringInterpreter on which 'interpret' is the called only once
         val result: ProperPropertyComputationResult = stmts(defSite) match {
             case Assignment(_, _, expr: StringConst) ⇒
-                new StringConstInterpreter(cfg, this).interpret(expr)
+                new StringConstInterpreter(cfg, this).interpret(expr, defSite)
             case Assignment(_, _, expr: IntConst) ⇒
-                new IntegerValueInterpreter(cfg, this).interpret(expr)
+                new IntegerValueInterpreter(cfg, this).interpret(expr, defSite)
             case Assignment(_, _, expr: ArrayLoad[V]) ⇒
-                new IntraproceduralArrayInterpreter(cfg, this).interpret(expr)
+                new IntraproceduralArrayInterpreter(cfg, this).interpret(expr, defSite)
             case Assignment(_, _, expr: New) ⇒
-                new NewInterpreter(cfg, this).interpret(expr)
+                new NewInterpreter(cfg, this).interpret(expr, defSite)
             case Assignment(_, _, expr: VirtualFunctionCall[V]) ⇒
-                new IntraproceduralVirtualFunctionCallInterpreter(cfg, this).interpret(expr)
+                new IntraproceduralVirtualFunctionCallInterpreter(
+                    cfg, this
+                ).interpret(expr, defSite)
             case Assignment(_, _, expr: StaticFunctionCall[V]) ⇒
-                new IntraproceduralStaticFunctionCallInterpreter(cfg, this).interpret(expr)
+                new IntraproceduralStaticFunctionCallInterpreter(cfg, this).interpret(expr, defSite)
             case Assignment(_, _, expr: BinaryExpr[V]) ⇒
-                new BinaryExprInterpreter(cfg, this).interpret(expr)
+                new BinaryExprInterpreter(cfg, this).interpret(expr, defSite)
             case Assignment(_, _, expr: NonVirtualFunctionCall[V]) ⇒
-                new IntraproceduralNonVirtualFunctionCallInterpreter(cfg, this).interpret(expr)
+                new IntraproceduralNonVirtualFunctionCallInterpreter(
+                    cfg, this
+                ).interpret(expr, defSite)
             case Assignment(_, _, expr: GetField[V]) ⇒
-                new IntraproceduralFieldInterpreter(cfg, this).interpret(expr)
+                new IntraproceduralFieldInterpreter(cfg, this).interpret(expr, defSite)
             case ExprStmt(_, expr: VirtualFunctionCall[V]) ⇒
-                new IntraproceduralVirtualFunctionCallInterpreter(cfg, this).interpret(expr)
+                new IntraproceduralVirtualFunctionCallInterpreter(
+                    cfg, this
+                ).interpret(expr, defSite)
             case ExprStmt(_, expr: StaticFunctionCall[V]) ⇒
-                new IntraproceduralStaticFunctionCallInterpreter(cfg, this).interpret(expr)
+                new IntraproceduralStaticFunctionCallInterpreter(cfg, this).interpret(expr, defSite)
             case vmc: VirtualMethodCall[V] ⇒
-                new IntraproceduralVirtualMethodCallInterpreter(cfg, this).interpret(vmc)
+                new IntraproceduralVirtualMethodCallInterpreter(cfg, this).interpret(vmc, defSite)
             case nvmc: NonVirtualMethodCall[V] ⇒
-                new IntraproceduralNonVirtualMethodCallInterpreter(cfg, this).interpret(nvmc)
+                new IntraproceduralNonVirtualMethodCallInterpreter(
+                    cfg, this
+                ).interpret(nvmc, defSite)
             case _ ⇒ Result(e, StringConstancyProperty.getNeutralElement)
         }
         // Replace the entity of the result

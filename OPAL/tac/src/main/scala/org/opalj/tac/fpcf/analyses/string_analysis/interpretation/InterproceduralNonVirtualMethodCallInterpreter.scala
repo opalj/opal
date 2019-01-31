@@ -42,9 +42,13 @@ class InterproceduralNonVirtualMethodCallInterpreter(
      * </ul>
      * For all other calls, an empty list will be returned at the moment.
      *
+     * @note For this implementation, `defSite` plays a role!
+     *
      * @see [[AbstractStringInterpreter.interpret]]
      */
-    override def interpret(instr: NonVirtualMethodCall[V]): ProperPropertyComputationResult = {
+    override def interpret(
+        instr: NonVirtualMethodCall[V], defSite: Int
+    ): ProperPropertyComputationResult = {
         val prop = instr.name match {
             case "<init>" ⇒ interpretInit(instr)
             case _        ⇒ StringConstancyProperty.getNeutralElement
@@ -66,8 +70,9 @@ class InterproceduralNonVirtualMethodCallInterpreter(
                 val scis = ListBuffer[StringConstancyInformation]()
                 init.params.head.asVar.definedBy.foreach { ds ⇒
                     val result = exprHandler.processDefSite(ds)
+                    val prop = result.asInstanceOf[Result].finalEP.p
                     scis.append(
-                        result.asInstanceOf[StringConstancyProperty].stringConstancyInformation
+                        prop.asInstanceOf[StringConstancyProperty].stringConstancyInformation
                     )
                 }
                 val reduced = StringConstancyInformation.reduceMultiple(scis.toList)

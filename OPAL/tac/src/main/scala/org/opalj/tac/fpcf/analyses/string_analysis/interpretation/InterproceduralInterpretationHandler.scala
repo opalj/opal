@@ -1,12 +1,12 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.tac.fpcf.analyses.string_analysis.interpretation
 
+import org.opalj.fpcf.ProperOnUpdateContinuation
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.cfg.CFG
-import org.opalj.br.fpcf.cg.properties.Callees
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.tac.Stmt
 import org.opalj.tac.TACStmts
@@ -24,6 +24,7 @@ import org.opalj.tac.StaticFunctionCall
 import org.opalj.tac.StringConst
 import org.opalj.tac.VirtualFunctionCall
 import org.opalj.tac.VirtualMethodCall
+import org.opalj.tac.fpcf.analyses.string_analysis.ComputationState
 
 /**
  * `InterproceduralInterpretationHandler` is responsible for processing expressions that are
@@ -42,12 +43,14 @@ class InterproceduralInterpretationHandler(
         cfg:             CFG[Stmt[V], TACStmts[V]],
         ps:              PropertyStore,
         declaredMethods: DeclaredMethods,
-        callees:         Callees
+        state:           ComputationState,
+        c:               ProperOnUpdateContinuation
 ) extends InterpretationHandler(cfg) {
 
     /**
      * Processed the given definition site in an interprocedural fashion.
      * <p>
+     *
      * @inheritdoc
      */
     override def processDefSite(defSite: Int): ProperPropertyComputationResult = {
@@ -62,45 +65,52 @@ class InterproceduralInterpretationHandler(
         }
         processedDefSites.append(defSite)
 
-        val result = stmts(defSite) match {
+        val callees = state.callees.get
+        // TODO: Refactor by making the match return a concrete instance of
+        //  AbstractStringInterpreter on which 'interpret' is the called only once
+        stmts(defSite) match {
             case Assignment(_, _, expr: StringConst) ⇒
-                new StringConstInterpreter(cfg, this).interpret(expr)
+                new StringConstInterpreter(cfg, this).interpret(expr, defSite)
             case Assignment(_, _, expr: IntConst) ⇒
-                new IntegerValueInterpreter(cfg, this).interpret(expr)
+                new IntegerValueInterpreter(cfg, this).interpret(expr, defSite)
             case Assignment(_, _, expr: ArrayLoad[V]) ⇒
-                new InterproceduralArrayInterpreter(cfg, this, callees).interpret(expr)
+                new InterproceduralArrayInterpreter(cfg, this, callees).interpret(expr, defSite)
             case Assignment(_, _, expr: New) ⇒
-                new NewInterpreter(cfg, this).interpret(expr)
+                new NewInterpreter(cfg, this).interpret(expr, defSite)
             case Assignment(_, _, expr: VirtualFunctionCall[V]) ⇒
                 new InterproceduralVirtualFunctionCallInterpreter(
                     cfg, this, callees
-                ).interpret(expr)
+                ).interpret(expr, defSite)
             case Assignment(_, _, expr: StaticFunctionCall[V]) ⇒
-                new InterproceduralStaticFunctionCallInterpreter(cfg, this, callees).interpret(expr)
+                new InterproceduralStaticFunctionCallInterpreter(
+                    cfg, this, callees
+                ).interpret(expr, defSite)
             case Assignment(_, _, expr: BinaryExpr[V]) ⇒
-                new BinaryExprInterpreter(cfg, this).interpret(expr)
+                new BinaryExprInterpreter(cfg, this).interpret(expr, defSite)
             case Assignment(_, _, expr: NonVirtualFunctionCall[V]) ⇒
                 new InterproceduralNonVirtualFunctionCallInterpreter(
-                    cfg, this, callees
-                ).interpret(expr)
+                    cfg, this, ps, state, declaredMethods, c
+                ).interpret(expr, defSite)
             case Assignment(_, _, expr: GetField[V]) ⇒
-                new InterproceduralFieldInterpreter(cfg, this, callees).interpret(expr)
+                new InterproceduralFieldInterpreter(cfg, this, callees).interpret(expr, defSite)
             case ExprStmt(_, expr: VirtualFunctionCall[V]) ⇒
                 new InterproceduralVirtualFunctionCallInterpreter(
                     cfg, this, callees
-                ).interpret(expr)
+                ).interpret(expr, defSite)
             case ExprStmt(_, expr: StaticFunctionCall[V]) ⇒
-                new InterproceduralStaticFunctionCallInterpreter(cfg, this, callees).interpret(expr)
+                new InterproceduralStaticFunctionCallInterpreter(
+                    cfg, this, callees
+                ).interpret(expr, defSite)
             case vmc: VirtualMethodCall[V] ⇒
-                new InterproceduralVirtualMethodCallInterpreter(cfg, this, callees).interpret(vmc)
+                new InterproceduralVirtualMethodCallInterpreter(
+                    cfg, this, callees
+                ).interpret(vmc, defSite)
             case nvmc: NonVirtualMethodCall[V] ⇒
                 new InterproceduralNonVirtualMethodCallInterpreter(
                     cfg, this, callees
-                ).interpret(nvmc)
+                ).interpret(nvmc, defSite)
             case _ ⇒ Result(e, StringConstancyProperty.getNeutralElement)
         }
-        // Replace the entity of the result
-        Result(e, result.asInstanceOf[StringConstancyProperty])
     }
 
 }
@@ -114,9 +124,10 @@ object InterproceduralInterpretationHandler {
         cfg:             CFG[Stmt[V], TACStmts[V]],
         ps:              PropertyStore,
         declaredMethods: DeclaredMethods,
-        callees:         Callees
+        state:           ComputationState,
+        c:               ProperOnUpdateContinuation
     ): InterproceduralInterpretationHandler = new InterproceduralInterpretationHandler(
-        cfg, ps, declaredMethods, callees
+        cfg, ps, declaredMethods, state, c
     )
 
 }

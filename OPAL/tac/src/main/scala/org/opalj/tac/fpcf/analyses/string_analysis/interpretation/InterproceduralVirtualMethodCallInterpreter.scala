@@ -43,9 +43,11 @@ class InterproceduralVirtualMethodCallInterpreter(
      * </ul>
      * For all other calls, an empty list will be returned.
      *
+     * @note For this implementation, `defSite` plays a role!
+     *
      * @see [[AbstractStringInterpreter.interpret]]
      */
-    override def interpret(instr: T): ProperPropertyComputationResult = {
+    override def interpret(instr: T, defSite: Int): ProperPropertyComputationResult = {
         val sci = instr.name match {
             case "setLength" ⇒ StringConstancyInformation(
                 StringConstancyLevel.CONSTANT, StringConstancyType.RESET

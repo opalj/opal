@@ -40,9 +40,11 @@ class BinaryExprInterpreter(
      * For all other expressions, a result containing [[StringConstancyProperty.getNeutralElement]]
      * will be returned.
      *
+     * @note For this implementation, `defSite` does not play a role.
+     *
      * @see [[AbstractStringInterpreter.interpret]]
      */
-    override def interpret(instr: T): ProperPropertyComputationResult = {
+    override def interpret(instr: T, defSite: Int): ProperPropertyComputationResult = {
         val sci = instr.cTpe match {
             case ComputationalTypeInt   ⇒ InterpretationHandler.getConstancyInfoForDynamicInt
             case ComputationalTypeFloat ⇒ InterpretationHandler.getConstancyInfoForDynamicFloat

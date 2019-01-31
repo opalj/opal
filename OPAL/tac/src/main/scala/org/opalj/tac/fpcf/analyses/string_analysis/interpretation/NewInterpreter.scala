@@ -30,11 +30,13 @@ class NewInterpreter(
      * [[New]] expressions do not carry any relevant information in this context (as the initial
      * values are not set in a [[New]] expressions but, e.g., in
      * [[org.opalj.tac.NonVirtualMethodCall]]s). Consequently, this implementation always returns a
-     * Result containing [[StringConstancyProperty.getNeutralElement]]
+     * Result containing [[StringConstancyProperty.getNeutralElement]].
+     *
+     * @note For this implementation, `defSite` does not play a role.
      *
      * @see [[AbstractStringInterpreter.interpret]]
      */
-    override def interpret(instr: T): ProperPropertyComputationResult =
+    override def interpret(instr: T, defSite: Int): ProperPropertyComputationResult =
         Result(instr, StringConstancyProperty.getNeutralElement)
 
 }

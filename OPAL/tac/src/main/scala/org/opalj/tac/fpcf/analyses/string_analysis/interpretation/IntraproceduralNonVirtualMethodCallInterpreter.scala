@@ -42,9 +42,13 @@ class IntraproceduralNonVirtualMethodCallInterpreter(
      * For all other calls, a result containing [[StringConstancyProperty.getNeutralElement]] will
      * be returned.
      *
+     * @note For this implementation, `defSite` does not play a role.
+     *
      * @see [[AbstractStringInterpreter.interpret]]
      */
-    override def interpret(instr: NonVirtualMethodCall[V]): ProperPropertyComputationResult = {
+    override def interpret(
+        instr: NonVirtualMethodCall[V], defSite: Int
+    ): ProperPropertyComputationResult = {
         val prop = instr.name match {
             case "<init>" ⇒ interpretInit(instr)
             case _        ⇒ StringConstancyProperty.getNeutralElement

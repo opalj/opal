@@ -35,9 +35,11 @@ class StringConstInterpreter(
      * [[StringConstancyLevel.CONSTANT]] [[StringConstancyInformation]] element holding the
      * stringified value.
      *
+     * @note For this implementation, `defSite` does not play a role.
+     *
      * @see [[AbstractStringInterpreter.interpret]]
      */
-    override def interpret(instr: T): ProperPropertyComputationResult =
+    override def interpret(instr: T, defSite: Int): ProperPropertyComputationResult =
         Result(instr, StringConstancyProperty(StringConstancyInformation(
             StringConstancyLevel.CONSTANT,
             StringConstancyType.APPEND,

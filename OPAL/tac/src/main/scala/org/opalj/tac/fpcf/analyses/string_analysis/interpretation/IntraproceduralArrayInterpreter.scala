@@ -31,9 +31,11 @@ class IntraproceduralArrayInterpreter(
     override type T = ArrayLoad[V]
 
     /**
+     * @note For this implementation, `defSite` does not play a role.
+     *
      * @see [[AbstractStringInterpreter.interpret]]
      */
-    override def interpret(instr: T): ProperPropertyComputationResult = {
+    override def interpret(instr: T, defSite: Int): ProperPropertyComputationResult = {
         val stmts = cfg.code.instructions
         val children = ListBuffer[StringConstancyInformation]()
         // Loop over all possible array values
