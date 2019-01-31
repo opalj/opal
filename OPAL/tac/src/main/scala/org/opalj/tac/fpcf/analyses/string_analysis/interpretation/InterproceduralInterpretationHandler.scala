@@ -83,7 +83,7 @@ class InterproceduralInterpretationHandler(
                 ).interpret(expr, defSite)
             case Assignment(_, _, expr: StaticFunctionCall[V]) ⇒
                 new InterproceduralStaticFunctionCallInterpreter(
-                    cfg, this, callees
+                    cfg, this, ps, state, declaredMethods, c
                 ).interpret(expr, defSite)
             case Assignment(_, _, expr: BinaryExpr[V]) ⇒
                 new BinaryExprInterpreter(cfg, this).interpret(expr, defSite)
@@ -99,7 +99,7 @@ class InterproceduralInterpretationHandler(
                 ).interpret(expr, defSite)
             case ExprStmt(_, expr: StaticFunctionCall[V]) ⇒
                 new InterproceduralStaticFunctionCallInterpreter(
-                    cfg, this, callees
+                    cfg, this, ps, state, declaredMethods, c
                 ).interpret(expr, defSite)
             case vmc: VirtualMethodCall[V] ⇒
                 new InterproceduralVirtualMethodCallInterpreter(
@@ -107,7 +107,7 @@ class InterproceduralInterpretationHandler(
                 ).interpret(vmc, defSite)
             case nvmc: NonVirtualMethodCall[V] ⇒
                 new InterproceduralNonVirtualMethodCallInterpreter(
-                    cfg, this, callees
+                    cfg, this, ps, state, declaredMethods, c
                 ).interpret(nvmc, defSite)
             case _ ⇒ Result(e, StringConstancyProperty.getNeutralElement)
         }

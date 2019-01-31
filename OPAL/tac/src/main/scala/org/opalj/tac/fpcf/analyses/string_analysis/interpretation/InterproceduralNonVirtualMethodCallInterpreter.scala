@@ -1,17 +1,18 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.tac.fpcf.analyses.string_analysis.interpretation
 
-import scala.collection.mutable.ListBuffer
-
+import org.opalj.fpcf.ProperOnUpdateContinuation
 import org.opalj.fpcf.ProperPropertyComputationResult
+import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
+import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.cfg.CFG
-import org.opalj.br.fpcf.cg.properties.Callees
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.tac.NonVirtualMethodCall
 import org.opalj.tac.Stmt
 import org.opalj.tac.TACStmts
+import org.opalj.tac.fpcf.analyses.string_analysis.ComputationState
 import org.opalj.tac.fpcf.analyses.string_analysis.V
 
 /**
@@ -24,9 +25,14 @@ import org.opalj.tac.fpcf.analyses.string_analysis.V
  * @author Patrick Mell
  */
 class InterproceduralNonVirtualMethodCallInterpreter(
-        cfg:         CFG[Stmt[V], TACStmts[V]],
-        exprHandler: InterproceduralInterpretationHandler,
-        callees:     Callees
+        cfg: CFG[Stmt[V], TACStmts[V]],
+        // TODO: Do not let an instance of InterproceduralInterpretationHandler handler pass here
+        //  but let it be instantiated in this class
+        exprHandler:     InterproceduralInterpretationHandler,
+        ps:              PropertyStore,
+        state:           ComputationState,
+        declaredMethods: DeclaredMethods,
+        c:               ProperOnUpdateContinuation
 ) extends AbstractStringInterpreter(cfg, exprHandler) {
 
     override type T = NonVirtualMethodCall[V]
@@ -49,11 +55,11 @@ class InterproceduralNonVirtualMethodCallInterpreter(
     override def interpret(
         instr: NonVirtualMethodCall[V], defSite: Int
     ): ProperPropertyComputationResult = {
-        val prop = instr.name match {
-            case "<init>" ⇒ interpretInit(instr)
-            case _        ⇒ StringConstancyProperty.getNeutralElement
+        val e: Integer = defSite
+        instr.name match {
+            case "<init>" ⇒ interpretInit(instr, e)
+            case _        ⇒ Result(e, StringConstancyProperty.getNeutralElement)
         }
-        Result(instr, prop)
     }
 
     /**
@@ -63,20 +69,35 @@ class InterproceduralNonVirtualMethodCallInterpreter(
      * [[StringBuffer]] and [[StringBuilder]], have only constructors with <= 1 arguments and only
      * these are currently interpreted).
      */
-    private def interpretInit(init: NonVirtualMethodCall[V]): StringConstancyProperty = {
+    private def interpretInit(
+        init: NonVirtualMethodCall[V], defSite: Integer
+    ): ProperPropertyComputationResult = {
         init.params.size match {
-            case 0 ⇒ StringConstancyProperty.getNeutralElement
+            case 0 ⇒ Result(defSite, StringConstancyProperty.getNeutralElement)
             case _ ⇒
-                val scis = ListBuffer[StringConstancyInformation]()
-                init.params.head.asVar.definedBy.foreach { ds ⇒
-                    val result = exprHandler.processDefSite(ds)
-                    val prop = result.asInstanceOf[Result].finalEP.p
-                    scis.append(
-                        prop.asInstanceOf[StringConstancyProperty].stringConstancyInformation
-                    )
+                val results = init.params.head.asVar.definedBy.map { ds: Int ⇒
+                    (ds, exprHandler.processDefSite(ds))
                 }
-                val reduced = StringConstancyInformation.reduceMultiple(scis.toList)
-                StringConstancyProperty(reduced)
+                if (results.forall(_._2.isInstanceOf[Result])) {
+                    // Final result is available
+                    val scis = results.map(r ⇒
+                        StringConstancyProperty.extractFromPPCR(r._2).stringConstancyInformation)
+                    val reduced = StringConstancyInformation.reduceMultiple(scis.toList)
+                    Result(defSite, StringConstancyProperty(reduced))
+                } else {
+                    // Some intermediate results => register necessary information from final
+                    // results and return an intermediate result
+                    val returnIR = results.find(r ⇒ !r._2.isInstanceOf[Result]).get._2
+                    results.foreach {
+                        case (ds, Result(r)) ⇒
+                            val p = r.p.asInstanceOf[StringConstancyProperty]
+                            state.fpe2sci(ds) = p.stringConstancyInformation
+                        case _ ⇒
+                    }
+                    // TODO: is it enough to return only one (the first) IntermediateResult in case
+                    //  there are more? (The others were registered already, anyway.)
+                    returnIR
+                }
         }
     }
 

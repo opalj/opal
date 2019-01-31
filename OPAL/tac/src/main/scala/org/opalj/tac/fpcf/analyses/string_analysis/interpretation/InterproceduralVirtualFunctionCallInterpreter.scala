@@ -61,19 +61,19 @@ class InterproceduralVirtualFunctionCallInterpreter(
      * @see [[AbstractStringInterpreter.interpret]]
      */
     override def interpret(instr: T, defSite: Int): ProperPropertyComputationResult = {
-        val property = instr.name match {
+        val e: Integer = defSite
+        instr.name match {
             case "append"   ⇒ interpretAppendCall(instr)
             case "toString" ⇒ interpretToStringCall(instr)
             case "replace"  ⇒ interpretReplaceCall(instr)
             case _ ⇒
                 instr.descriptor.returnType match {
                     case obj: ObjectType if obj.fqn == "java/lang/String" ⇒
-                        StringConstancyProperty.lowerBound
-                    case _ ⇒ StringConstancyProperty.getNeutralElement
+                        Result(e, StringConstancyProperty.lowerBound)
+                    case _ ⇒
+                        Result(e, StringConstancyProperty.getNeutralElement)
                 }
         }
-
-        Result(instr, property)
     }
 
     /**
@@ -83,7 +83,7 @@ class InterproceduralVirtualFunctionCallInterpreter(
      */
     private def interpretAppendCall(
         appendCall: VirtualFunctionCall[V]
-    ): StringConstancyProperty = {
+    ): ProperPropertyComputationResult = {
         val receiverSci = receiverValuesOfAppendCall(appendCall).stringConstancyInformation
         val appendSci = valueOfAppendCall(appendCall).stringConstancyInformation
 
@@ -111,7 +111,7 @@ class InterproceduralVirtualFunctionCallInterpreter(
             )
         }
 
-        StringConstancyProperty(sci)
+        Result(appendCall, StringConstancyProperty(sci))
     }
 
     /**
@@ -198,10 +198,8 @@ class InterproceduralVirtualFunctionCallInterpreter(
      */
     private def interpretToStringCall(
         call: VirtualFunctionCall[V]
-    ): StringConstancyProperty = {
-        val result = exprHandler.processDefSite(call.receiver.asVar.definedBy.head)
-        result.asInstanceOf[StringConstancyProperty]
-    }
+    ): ProperPropertyComputationResult =
+        exprHandler.processDefSite(call.receiver.asVar.definedBy.head)
 
     /**
      * Function for processing calls to [[StringBuilder#replace]] or [[StringBuffer#replace]].
@@ -210,6 +208,7 @@ class InterproceduralVirtualFunctionCallInterpreter(
      */
     private def interpretReplaceCall(
         instr: VirtualFunctionCall[V]
-    ): StringConstancyProperty = InterpretationHandler.getStringConstancyPropertyForReplace
+    ): ProperPropertyComputationResult =
+        Result(instr, InterpretationHandler.getStringConstancyPropertyForReplace)
 
 }
