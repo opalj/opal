@@ -93,8 +93,8 @@ class InterproceduralStringAnalysis(
             val dependees = Iterable(calleesEOptP)
             InterimResult(
                 calleesEOptP,
-                StringConstancyProperty.lowerBound,
-                StringConstancyProperty.upperBound,
+                StringConstancyProperty.lb,
+                StringConstancyProperty.ub,
                 dependees,
                 calleesContinuation(calleesEOptP, dependees, data)
             )
@@ -105,7 +105,7 @@ class InterproceduralStringAnalysis(
         data: P, callees: Callees
     ): ProperPropertyComputationResult = {
         // sci stores the final StringConstancyInformation (if it can be determined now at all)
-        var sci = StringConstancyProperty.lowerBound.stringConstancyInformation
+        var sci = StringConstancyProperty.lb.stringConstancyInformation
         val tacProvider = p.get(SimpleTACAIKey)
         val cfg = tacProvider(data._2).cfg
         val stmts = cfg.code.instructions
@@ -116,7 +116,7 @@ class InterproceduralStringAnalysis(
         // Function parameters are currently regarded as dynamic value; the following if finds read
         // operations of strings (not String{Builder, Buffer}s, they will be handles further down
         if (defSites.head < 0) {
-            return Result(data, StringConstancyProperty.lowerBound)
+            return Result(data, StringConstancyProperty.lb)
         }
         val pathFinder: AbstractPathFinder = new WindowPathFinder(cfg)
 
@@ -125,7 +125,7 @@ class InterproceduralStringAnalysis(
             val initDefSites = InterpretationHandler.findDefSiteOfInit(uvar, stmts)
             // initDefSites empty => String{Builder,Buffer} from method parameter is to be evaluated
             if (initDefSites.isEmpty) {
-                return Result(data, StringConstancyProperty.lowerBound)
+                return Result(data, StringConstancyProperty.lb)
             }
 
             val paths = pathFinder.findPaths(initDefSites, uvar.definedBy.head)
@@ -190,8 +190,8 @@ class InterproceduralStringAnalysis(
         if (state.dependees.nonEmpty) {
             InterimResult(
                 data,
-                StringConstancyProperty.upperBound,
-                StringConstancyProperty.lowerBound,
+                StringConstancyProperty.ub,
+                StringConstancyProperty.lb,
                 state.dependees.values.flatten,
                 continuation(data, callees, state.dependees.values.flatten, state)
             )
@@ -249,8 +249,8 @@ class InterproceduralStringAnalysis(
         } else {
             InterimResult(
                 data,
-                StringConstancyProperty.upperBound,
-                StringConstancyProperty.lowerBound,
+                StringConstancyProperty.ub,
+                StringConstancyProperty.lb,
                 remDependees,
                 continuation(data, callees, remDependees, state)
             )

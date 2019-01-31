@@ -70,7 +70,7 @@ class IntraproceduralStringAnalysis(
 
     def analyze(data: P): ProperPropertyComputationResult = {
         // sci stores the final StringConstancyInformation (if it can be determined now at all)
-        var sci = StringConstancyProperty.lowerBound.stringConstancyInformation
+        var sci = StringConstancyProperty.lb.stringConstancyInformation
         val tacProvider = p.get(SimpleTACAIKey)
         val cfg = tacProvider(data._2).cfg
         val stmts = cfg.code.instructions
@@ -80,7 +80,7 @@ class IntraproceduralStringAnalysis(
         // Function parameters are currently regarded as dynamic value; the following if finds read
         // operations of strings (not String{Builder, Buffer}s, they will be handles further down
         if (defSites.head < 0) {
-            return Result(data, StringConstancyProperty.lowerBound)
+            return Result(data, StringConstancyProperty.lb)
         }
         val pathFinder: AbstractPathFinder = new WindowPathFinder(cfg)
 
@@ -96,7 +96,7 @@ class IntraproceduralStringAnalysis(
             val initDefSites = InterpretationHandler.findDefSiteOfInit(uvar, stmts)
             // initDefSites empty => String{Builder,Buffer} from method parameter is to be evaluated
             if (initDefSites.isEmpty) {
-                return Result(data, StringConstancyProperty.lowerBound)
+                return Result(data, StringConstancyProperty.lb)
             }
 
             val paths = pathFinder.findPaths(initDefSites, uvar.definedBy.head)
@@ -140,8 +140,8 @@ class IntraproceduralStringAnalysis(
         if (dependees.nonEmpty) {
             InterimResult(
                 data._1,
-                StringConstancyProperty.upperBound,
-                StringConstancyProperty.lowerBound,
+                StringConstancyProperty.ub,
+                StringConstancyProperty.lb,
                 dependees.values.flatten,
                 continuation(data, dependees.values.flatten, state)
             )
@@ -177,8 +177,8 @@ class IntraproceduralStringAnalysis(
         } else {
             InterimResult(
                 data,
-                StringConstancyProperty.upperBound,
-                StringConstancyProperty.lowerBound,
+                StringConstancyProperty.ub,
+                StringConstancyProperty.lb,
                 remDependees,
                 continuation(data, remDependees, state)
             )

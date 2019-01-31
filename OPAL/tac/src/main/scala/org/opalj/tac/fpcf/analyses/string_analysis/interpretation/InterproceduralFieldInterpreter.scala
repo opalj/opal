@@ -41,6 +41,6 @@ class InterproceduralFieldInterpreter(
      * @see [[AbstractStringInterpreter.interpret]]
      */
     override def interpret(instr: T, defSite: Int): ProperPropertyComputationResult =
-        Result(instr, StringConstancyProperty.lowerBound)
+        Result(instr, StringConstancyProperty.lb)
 
 }

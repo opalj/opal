@@ -47,7 +47,7 @@ class IntraproceduralVirtualFunctionCallInterpreter(
      *     [[IntraproceduralVirtualFunctionCallInterpreter.interpretReplaceCall]].
      * </li>
      * <li>
-     *     Apart from these supported methods, a list with [[StringConstancyProperty.lowerBound]]
+     *     Apart from these supported methods, a list with [[StringConstancyProperty.lb]]
      *     will be returned in case the passed method returns a [[java.lang.String]].
      * </li>
      * </ul>
@@ -67,7 +67,7 @@ class IntraproceduralVirtualFunctionCallInterpreter(
             case _ ⇒
                 instr.descriptor.returnType match {
                     case obj: ObjectType if obj.fqn == "java/lang/String" ⇒
-                        StringConstancyProperty.lowerBound
+                        StringConstancyProperty.lb
                     case _ ⇒ StringConstancyProperty.getNeutralElement
                 }
         }

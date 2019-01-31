@@ -26,13 +26,13 @@ class IntraproceduralNonVirtualFunctionCallInterpreter(
     override type T = NonVirtualFunctionCall[V]
 
     /**
-     * This function always returns a result that contains [[StringConstancyProperty.lowerBound]].
+     * This function always returns a result that contains [[StringConstancyProperty.lb]].
      *
      * @note For this implementation, `defSite` does not play a role.
      *
      * @see [[AbstractStringInterpreter.interpret]]
      */
     override def interpret(instr: T, defSite: Int): ProperPropertyComputationResult =
-        Result(instr, StringConstancyProperty.lowerBound)
+        Result(instr, StringConstancyProperty.lb)
 
 }
