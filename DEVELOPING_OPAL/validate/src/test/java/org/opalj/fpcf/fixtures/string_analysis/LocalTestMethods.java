@@ -249,7 +249,7 @@ public class LocalTestMethods {
                             expectedLevel = DYNAMIC, expectedStrings = "(x|[AnIntegerValue])"
                     ),
                     @StringDefinitions(
-                            expectedLevel = CONSTANT, expectedStrings = "(42|x)"
+                            expectedLevel = CONSTANT, expectedStrings = "(42-42|x)"
                     )
             })
     public void ifElseWithStringBuilderWithIntExpr() {
@@ -259,6 +259,7 @@ public class LocalTestMethods {
         if (i % 2 == 0) {
             sb1.append("x");
             sb2.append(42);
+            sb2.append(-42);
         } else {
             sb1.append(i + 1);
             sb2.append("x");
@@ -742,8 +743,8 @@ public class LocalTestMethods {
     public void directAppendConcatsWith2ndStringBuilder() {
         StringBuilder sb = new StringBuilder("java");
         StringBuilder sb2 = new StringBuilder("B");
-        sb.append(".").append("lang");
-        sb2.append(".");
+        sb.append('.').append("lang");
+        sb2.append('.');
         sb.append("String");
         sb.append(sb2.toString());
         analyzeString(sb2.toString());
