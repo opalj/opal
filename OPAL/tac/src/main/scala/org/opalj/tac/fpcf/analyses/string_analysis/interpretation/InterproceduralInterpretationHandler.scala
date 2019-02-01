@@ -8,6 +8,7 @@ import org.opalj.fpcf.Result
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.cfg.CFG
 import org.opalj.br.fpcf.properties.StringConstancyProperty
+import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.tac.Stmt
 import org.opalj.tac.TACStmts
 import org.opalj.tac.fpcf.analyses.string_analysis.V
@@ -53,13 +54,18 @@ class InterproceduralInterpretationHandler(
      *
      * @inheritdoc
      */
-    override def processDefSite(defSite: Int): ProperPropertyComputationResult = {
+    override def processDefSite(
+        defSite: Int, params: List[StringConstancyInformation] = List()
+    ): ProperPropertyComputationResult = {
         // Without doing the following conversion, the following compile error will occur: "the
         // result type of an implicit conversion must be more specific than org.opalj.fpcf.Entity"
         val e: Integer = defSite.toInt
-        // Function parameters are not evaluated but regarded as unknown
-        if (defSite < 0) {
+        // Function parameters are not evaluated when none are present
+        if (defSite < 0 && params.isEmpty) {
             return Result(e, StringConstancyProperty.lb)
+        } else if (defSite < 0) {
+            val paramPos = Math.abs(defSite + 2)
+            return Result(e, StringConstancyProperty(params(paramPos)))
         } else if (processedDefSites.contains(defSite)) {
             return Result(e, StringConstancyProperty.getNeutralElement)
         }
@@ -79,7 +85,7 @@ class InterproceduralInterpretationHandler(
                 new NewInterpreter(cfg, this).interpret(expr, defSite)
             case Assignment(_, _, expr: VirtualFunctionCall[V]) ⇒
                 new InterproceduralVirtualFunctionCallInterpreter(
-                    cfg, this, callees
+                    cfg, this, callees, params
                 ).interpret(expr, defSite)
             case Assignment(_, _, expr: StaticFunctionCall[V]) ⇒
                 new InterproceduralStaticFunctionCallInterpreter(
@@ -95,7 +101,7 @@ class InterproceduralInterpretationHandler(
                 new InterproceduralFieldInterpreter(cfg, this, callees).interpret(expr, defSite)
             case ExprStmt(_, expr: VirtualFunctionCall[V]) ⇒
                 new InterproceduralVirtualFunctionCallInterpreter(
-                    cfg, this, callees
+                    cfg, this, callees, params
                 ).interpret(expr, defSite)
             case ExprStmt(_, expr: StaticFunctionCall[V]) ⇒
                 new InterproceduralStaticFunctionCallInterpreter(

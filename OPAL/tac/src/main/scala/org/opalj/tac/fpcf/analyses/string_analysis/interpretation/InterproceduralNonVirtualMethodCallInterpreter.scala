@@ -76,7 +76,7 @@ class InterproceduralNonVirtualMethodCallInterpreter(
             case 0 ⇒ Result(defSite, StringConstancyProperty.getNeutralElement)
             case _ ⇒
                 val results = init.params.head.asVar.definedBy.map { ds: Int ⇒
-                    (ds, exprHandler.processDefSite(ds))
+                    (ds, exprHandler.processDefSite(ds, List()))
                 }
                 if (results.forall(_._2.isInstanceOf[Result])) {
                     // Final result is available

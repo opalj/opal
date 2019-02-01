@@ -18,6 +18,7 @@ import org.opalj.tac.TACStmts
 import org.opalj.tac.fpcf.analyses.string_analysis.ComputationState
 import org.opalj.tac.fpcf.analyses.string_analysis.V
 import org.opalj.tac.ReturnValue
+import org.opalj.tac.fpcf.analyses.string_analysis.InterproceduralStringAnalysis
 
 /**
  * The `InterproceduralStaticFunctionCallInterpreter` is responsible for processing
@@ -58,6 +59,15 @@ class InterproceduralStaticFunctionCallInterpreter(
             val ret = tac.get.stmts.find(_.isInstanceOf[ReturnValue[V]]).get
             val uvar = ret.asInstanceOf[ReturnValue[V]].expr.asVar
             val entity = (uvar, m)
+
+            // Collect all parameters; current assumption: Results of parameters are available right
+            // away
+            val paramScis = instr.params.map { p ⇒
+                StringConstancyProperty.extractFromPPCR(
+                    exprHandler.processDefSite(p.asVar.definedBy.head)
+                ).stringConstancyInformation
+            }.toList
+            InterproceduralStringAnalysis.registerParams(entity, paramScis)
 
             val eps = ps(entity, StringConstancyProperty.key)
             eps match {

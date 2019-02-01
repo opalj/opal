@@ -29,7 +29,8 @@ import org.opalj.tac.fpcf.analyses.string_analysis.V
 class InterproceduralVirtualFunctionCallInterpreter(
         cfg:         CFG[Stmt[V], TACStmts[V]],
         exprHandler: InterproceduralInterpretationHandler,
-        callees:     Callees
+        callees:     Callees,
+        params:      List[StringConstancyInformation]
 ) extends AbstractStringInterpreter(cfg, exprHandler) {
 
     override type T = VirtualFunctionCall[V]
@@ -122,7 +123,8 @@ class InterproceduralVirtualFunctionCallInterpreter(
     ): StringConstancyProperty = {
         // There might be several receivers, thus the map; from the processed sites, however, use
         // only the head as a single receiver interpretation will produce one element
-        val scis = call.receiver.asVar.definedBy.toArray.sorted.map(exprHandler.processDefSite).map(
+        val defSites = call.receiver.asVar.definedBy.toArray.sorted
+        val scis = defSites.map(exprHandler.processDefSite(_, params)).map(
             _.asInstanceOf[Result].finalEP.p.asInstanceOf[StringConstancyProperty]
         ).filter {
                 !_.stringConstancyInformation.isTheNeutralElement
@@ -145,13 +147,13 @@ class InterproceduralVirtualFunctionCallInterpreter(
         // .head because we want to evaluate only the first argument of append
         val defSiteHead = param.definedBy.head
         var value = StringConstancyProperty.extractFromPPCR(
-            exprHandler.processDefSite(defSiteHead)
+            exprHandler.processDefSite(defSiteHead, params)
         )
         // If defSiteHead points to a New, value will be the empty list. In that case, process
         // the first use site (which is the <init> call)
         if (value.isTheNeutralElement) {
             value = StringConstancyProperty.extractFromPPCR(exprHandler.processDefSite(
-                cfg.code.instructions(defSiteHead).asAssignment.targetVar.usedBy.toArray.min
+                cfg.code.instructions(defSiteHead).asAssignment.targetVar.usedBy.toArray.min, params
             ))
         }
 
@@ -199,7 +201,7 @@ class InterproceduralVirtualFunctionCallInterpreter(
     private def interpretToStringCall(
         call: VirtualFunctionCall[V]
     ): ProperPropertyComputationResult =
-        exprHandler.processDefSite(call.receiver.asVar.definedBy.head)
+        exprHandler.processDefSite(call.receiver.asVar.definedBy.head, params)
 
     /**
      * Function for processing calls to [[StringBuilder#replace]] or [[StringBuffer#replace]].

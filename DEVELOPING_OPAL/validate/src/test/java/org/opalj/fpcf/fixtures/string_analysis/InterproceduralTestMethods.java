@@ -14,6 +14,8 @@ import static org.opalj.fpcf.properties.string_analysis.StringConstancyLevel.CON
  */
 public class InterproceduralTestMethods {
 
+    public static final String JAVA_LANG = "java.lang";
+
     /**
      * {@see LocalTestMethods#analyzeString}
      */
@@ -54,6 +56,18 @@ public class InterproceduralTestMethods {
         analyzeString(sb.toString());
     }
 
+    @StringDefinitionsCollection(
+            value = "a case where a static method with a string parameter is called",
+            stringDefinitions = {
+                    @StringDefinitions(
+                            expectedLevel = CONSTANT,
+                            expectedStrings = "java.lang.Integer"
+                    )
+            })
+    public void fromStaticMethodWithParam() {
+        analyzeString(InterproceduralTestMethods.getFQClassName(JAVA_LANG, "Integer"));
+    }
+
     private String getRuntimeClassName() {
         return "java.lang.Runtime";
     }
@@ -64,6 +78,13 @@ public class InterproceduralTestMethods {
 
     private String getSimpleStringBuilderClassName() {
         return "StringBuilder";
+    }
+
+    /**
+     * Returns "[packageName].[className]".
+     */
+    public static String getFQClassName(String packageName, String className) {
+        return packageName + "." + className;
     }
 
 }

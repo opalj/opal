@@ -37,6 +37,11 @@ abstract class InterpretationHandler(cfg: CFG[Stmt[V], TACStmts[V]]) {
      *                actually exists, and (3) can be processed by one of the subclasses of
      *                [[AbstractStringInterpreter]] (in case (3) is violated, an
      *                [[IllegalArgumentException]] will be thrown.
+     * @param params For a (precise) interpretation, (method / function) parameter values might be
+     *               necessary. They can be leveraged using this value. The implementing classes
+     *               should make sure that (1) they handle the case when no parameters are given
+     *               and (2)they have a proper mapping from the definition sites within used methods
+     *               to the indices in `params` (as the definition sites of parameters are < 0).
      * @return Returns the result of the interpretation. Note that depending on the concrete
      *         interpreter either a final or an intermediate result can be returned!
      *         In case the rules listed above or the ones of the different concrete interpreters are
@@ -45,7 +50,10 @@ abstract class InterpretationHandler(cfg: CFG[Stmt[V], TACStmts[V]]) {
      *         [[org.opalj.br.fpcf.properties.StringConstancyProperty.isTheNeutralElement]]).
      *         The entity of the result will be the given `defSite`.
      */
-    def processDefSite(defSite: Int): ProperPropertyComputationResult
+    def processDefSite(
+        defSite: Int,
+        params:  List[StringConstancyInformation] = List()
+    ): ProperPropertyComputationResult
 
     /**
      * [[InterpretationHandler]]s keeps an internal state for correct and faster processing. As

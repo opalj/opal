@@ -48,7 +48,7 @@ class IntraproceduralArrayInterpreter(
                 stmts(_).isInstanceOf[ArrayStore[V]]
             } foreach { f: Int ⇒
                 val sortedDefs = stmts(f).asArrayStore.value.asVar.definedBy.toArray.sorted
-                children.appendAll(sortedDefs.map { exprHandler.processDefSite }.map { n ⇒
+                children.appendAll(sortedDefs.map { exprHandler.processDefSite(_) }.map { n ⇒
                     val r = n.asInstanceOf[Result]
                     r.finalEP.p.asInstanceOf[StringConstancyProperty].stringConstancyInformation
                 })
@@ -61,7 +61,7 @@ class IntraproceduralArrayInterpreter(
                 }
             } foreach { f: Int ⇒
                 val defs = stmts(f).asAssignment.expr.asArrayLoad.arrayRef.asVar.definedBy
-                children.appendAll(defs.toArray.sorted.map { exprHandler.processDefSite }.map { n ⇒
+                children.appendAll(defs.toArray.sorted.map(exprHandler.processDefSite(_)).map { n ⇒
                     val r = n.asInstanceOf[Result]
                     r.finalEP.p.asInstanceOf[StringConstancyProperty].stringConstancyInformation
                 })

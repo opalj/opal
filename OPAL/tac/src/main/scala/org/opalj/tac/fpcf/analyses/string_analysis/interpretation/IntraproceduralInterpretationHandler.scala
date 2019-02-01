@@ -5,6 +5,7 @@ import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.Result
 import org.opalj.br.cfg.CFG
 import org.opalj.br.fpcf.properties.StringConstancyProperty
+import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.tac.ArrayLoad
 import org.opalj.tac.Assignment
 import org.opalj.tac.BinaryExpr
@@ -43,7 +44,9 @@ class IntraproceduralInterpretationHandler(
      * <p>
      * @inheritdoc
      */
-    override def processDefSite(defSite: Int): ProperPropertyComputationResult = {
+    override def processDefSite(
+        defSite: Int, params: List[StringConstancyInformation] = List()
+    ): ProperPropertyComputationResult = {
         // Without doing the following conversion, the following compile error will occur: "the
         // result type of an implicit conversion must be more specific than org.opalj.fpcf.Entity"
         val e: Integer = defSite.toInt
