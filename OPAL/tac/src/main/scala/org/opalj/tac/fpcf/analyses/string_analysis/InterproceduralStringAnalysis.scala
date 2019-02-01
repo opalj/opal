@@ -61,14 +61,16 @@ case class ComputationState(
     val var2IndexMapping: mutable.Map[V, Int] = mutable.Map()
     // A mapping from values of FlatPathElements to StringConstancyInformation
     val fpe2sci: mutable.Map[Int, StringConstancyInformation] = mutable.Map()
+
+    var params: List[StringConstancyInformation] = List()
 }
 
 /**
  * InterproceduralStringAnalysis processes a read operation of a string variable at a program
  * position, ''pp'', in a way that it finds the set of possible strings that can be read at ''pp''.
  *
- * In comparison to [[IntraproceduralStringAnalysis]], this version tries to resolve method calls that are
- * involved in a string construction as far as possible.
+ * In comparison to [[IntraproceduralStringAnalysis]], this version tries to resolve method calls
+ * that are involved in a string construction as far as possible.
  *
  * @author Patrick Mell
  */
@@ -110,6 +112,7 @@ class InterproceduralStringAnalysis(
         val cfg = tacProvider(data._2).cfg
         val stmts = cfg.code.instructions
         state = ComputationState(None, cfg, Some(callees))
+        state.params = InterproceduralStringAnalysis.getParams(data)
 
         val uvar = data._1
         val defSites = uvar.definedBy.toArray.sorted
@@ -153,10 +156,7 @@ class InterproceduralStringAnalysis(
                     cfg, ps, declaredMethods, state, continuation(data, callees, List(), state)
                 )
                 if (computeResultsForPath(state.computedLeanPath.get, iHandler, state)) {
-                    val interHandler = InterproceduralInterpretationHandler(
-                        cfg, ps, declaredMethods, state, continuation(data, callees, List(), state)
-                    )
-                    sci = new PathTransformer(interHandler).pathToStringTree(
+                    sci = new PathTransformer(iHandler).pathToStringTree(
                         state.computedLeanPath.get, state.fpe2sci.toMap
                     ).reduce(true)
                 }
@@ -167,7 +167,7 @@ class InterproceduralStringAnalysis(
                 cfg, ps, declaredMethods, state, continuation(data, callees, List(), state)
             )
             val results = uvar.definedBy.toArray.sorted.map { ds ⇒
-                (ds, interHandler.processDefSite(ds))
+                (ds, interHandler.processDefSite(ds, state.params))
             }
             val interimResults = results.filter(!_._2.isInstanceOf[Result]).map { r ⇒
                 (r._1, r._2.asInstanceOf[InterimResult[StringConstancyProperty]])
@@ -299,7 +299,7 @@ class InterproceduralStringAnalysis(
         p.elements.foreach {
             case FlatPathElement(index) ⇒
                 if (!state.fpe2sci.contains(index)) {
-                    iHandler.processDefSite(index) match {
+                    iHandler.processDefSite(index, state.params) match {
                         case Result(r) ⇒
                             val p = r.p.asInstanceOf[StringConstancyProperty]
                             state.fpe2sci(index) = p.stringConstancyInformation
@@ -401,6 +401,27 @@ class InterproceduralStringAnalysis(
         }
         dependees
     }
+
+}
+
+object InterproceduralStringAnalysis {
+
+    private val paramInfos = mutable.Map[Entity, List[StringConstancyInformation]]()
+
+    def registerParams(e: Entity, scis: List[StringConstancyInformation]): Unit = {
+        if (!paramInfos.contains(e)) {
+            paramInfos(e) = List(scis: _*)
+        }
+        // Per entity and method, a StringConstancyInformation list sshoud be present only once,
+        // thus no else branch
+    }
+
+    def getParams(e: Entity): List[StringConstancyInformation] =
+        if (paramInfos.contains(e)) {
+            paramInfos(e)
+        } else {
+            List()
+        }
 
 }
 

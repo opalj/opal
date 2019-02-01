@@ -51,7 +51,7 @@ class InterproceduralArrayInterpreter(
                 stmts(_).isInstanceOf[ArrayStore[V]]
             } foreach { f: Int ⇒
                 val sortedDefs = stmts(f).asArrayStore.value.asVar.definedBy.toArray.sorted
-                children.appendAll(sortedDefs.map { exprHandler.processDefSite }.map {
+                children.appendAll(sortedDefs.map { exprHandler.processDefSite(_) }.map {
                     _.asInstanceOf[StringConstancyProperty].stringConstancyInformation
                 })
             }
@@ -63,7 +63,7 @@ class InterproceduralArrayInterpreter(
                 }
             } foreach { f: Int ⇒
                 val defs = stmts(f).asAssignment.expr.asArrayLoad.arrayRef.asVar.definedBy
-                children.appendAll(defs.toArray.sorted.map { exprHandler.processDefSite }.map {
+                children.appendAll(defs.toArray.sorted.map { exprHandler.processDefSite(_) }.map {
                     _.asInstanceOf[StringConstancyProperty].stringConstancyInformation
                 })
             }
