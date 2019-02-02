@@ -4,7 +4,12 @@ package org.opalj.fpcf.fixtures.string_analysis;
 import org.opalj.fpcf.properties.string_analysis.StringDefinitions;
 import org.opalj.fpcf.properties.string_analysis.StringDefinitionsCollection;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.util.Scanner;
+
 import static org.opalj.fpcf.properties.string_analysis.StringConstancyLevel.CONSTANT;
+import static org.opalj.fpcf.properties.string_analysis.StringConstancyLevel.DYNAMIC;
 
 /**
  * This file contains various tests for the InterproceduralStringAnalysis. For further information
@@ -64,8 +69,42 @@ public class InterproceduralTestMethods {
                             expectedStrings = "java.lang.Integer"
                     )
             })
-    public void fromStaticMethodWithParam() {
+    public void fromStaticMethodWithParamTest() {
         analyzeString(StringProvider.getFQClassName(JAVA_LANG, "Integer"));
+    }
+
+    @StringDefinitionsCollection(
+            value = "a case where a static method is called that returns a string but are not "
+                    + "within this project => cannot / will not interpret",
+            stringDefinitions = {
+                    @StringDefinitions(
+                            expectedLevel = DYNAMIC,
+                            expectedStrings = "\\w"
+                    ),
+
+            })
+    public void staticMethodOutOfScopeTest() throws FileNotFoundException {
+        analyzeString(System.getProperty("os.version"));
+    }
+
+    @StringDefinitionsCollection(
+            value = "a case where a (virtual) method is called that return a string but are not "
+                    + "within this project => cannot / will not interpret",
+            stringDefinitions = {
+                    @StringDefinitions(
+                            expectedLevel = DYNAMIC,
+                            expectedStrings = "(\\w)*"
+                    )
+
+            })
+    public void methodOutOfScopeTest() throws FileNotFoundException {
+        File file = new File("my-file.txt");
+        Scanner sc = new Scanner(file);
+        StringBuilder sb = new StringBuilder();
+        while (sc.hasNextLine()) {
+            sb.append(sc.nextLine());
+        }
+        analyzeString(sb.toString());
     }
 
     private String getRuntimeClassName() {

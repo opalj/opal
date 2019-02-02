@@ -52,7 +52,14 @@ class InterproceduralStaticFunctionCallInterpreter(
      * @see [[AbstractStringInterpreter.interpret]]
      */
     override def interpret(instr: T, defSite: Int): ProperPropertyComputationResult = {
-        val m = getDeclaredMethod(declaredMethods, instr.name)
+        val methodOption = getDeclaredMethod(declaredMethods, instr.name)
+
+        if (methodOption.isEmpty) {
+            val e: Integer = defSite
+            return Result(e, StringConstancyProperty.lb)
+        }
+
+        val m = methodOption.get
         val tac = getTACAI(ps, m, state)
         if (tac.isDefined) {
             // TAC available => Get return UVar and start the string analysis
@@ -60,8 +67,8 @@ class InterproceduralStaticFunctionCallInterpreter(
             val uvar = ret.asInstanceOf[ReturnValue[V]].expr.asVar
             val entity = (uvar, m)
 
-            // Collect all parameters; current assumption: Results of parameters are available right
-            // away
+            // Collect all parameters
+            // TODO: Current assumption: Results of parameters are available right away
             val paramScis = instr.params.map { p ⇒
                 StringConstancyProperty.extractFromPPCR(
                     exprHandler.processDefSite(p.asVar.definedBy.head)

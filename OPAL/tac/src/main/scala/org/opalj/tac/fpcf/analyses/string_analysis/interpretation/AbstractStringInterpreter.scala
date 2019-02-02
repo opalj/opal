@@ -8,6 +8,7 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.br.cfg.CFG
 import org.opalj.br.Method
 import org.opalj.br.analyses.DeclaredMethods
+import org.opalj.br.DefinedMethod
 import org.opalj.tac.Stmt
 import org.opalj.tac.TACStmts
 import org.opalj.tac.fpcf.analyses.string_analysis.V
@@ -63,10 +64,19 @@ abstract class AbstractStringInterpreter(
 
     /**
      * Takes `declaredMethods` as well as a method `name`, extracts the method with the given `name`
-     * from `declaredMethods` and returns this one as a [[Method]].
+     * from `declaredMethods` and returns this one as a [[Method]]. It might be, that the given
+     * method cannot be found. In these cases, `None` will be returned.
      */
-    protected def getDeclaredMethod(declaredMethods: DeclaredMethods, name: String): Method =
-        declaredMethods.declaredMethods.find(_.name == name).get.definedMethod
+    protected def getDeclaredMethod(
+        declaredMethods: DeclaredMethods, name: String
+    ): Option[Method] = {
+        val dm = declaredMethods.declaredMethods.find(_.name == name)
+        if (dm.isDefined && dm.get.isInstanceOf[DefinedMethod]) {
+            Some(dm.get.definedMethod)
+        } else {
+            None
+        }
+    }
 
     /**
      *
