@@ -37,11 +37,11 @@ import static org.opalj.fpcf.properties.string_analysis.StringConstancyLevel.*;
  * Brackets ("(" and "(") are used for nesting and grouping string expressions.
  * </li>
  * <li>
- * The string "-?\d+" represents (positive and negative) integer numbers. This RegExp has been taken
+ * The string "^-?\d+$" represents (positive and negative) integer numbers. This RegExp has been taken
  * from https://www.freeformatter.com/java-regex-tester.html#examples as of 2019-02-02.
  * </li>
  * <li>
- * The string "-?\\d*\\.{0,1}\\d+" represents (positive and negative) float and double numbers.
+ * The string "^-?\\d*\\.{0,1}\\d+$" represents (positive and negative) float and double numbers.
  * This RegExp has been taken from https://www.freeformatter.com/java-regex-tester.html#examples as
  * of 2019-02-02.
  * </li>
@@ -255,7 +255,7 @@ public class LocalTestMethods {
                     + "and an int",
             stringDefinitions = {
                     @StringDefinitions(
-                            expectedLevel = DYNAMIC, expectedStrings = "(x|-?\\d+)"
+                            expectedLevel = DYNAMIC, expectedStrings = "(x|^-?\\d+$)"
                     ),
                     @StringDefinitions(
                             expectedLevel = CONSTANT, expectedStrings = "(42-42|x)"
@@ -283,7 +283,7 @@ public class LocalTestMethods {
             stringDefinitions = {
                     @StringDefinitions(
                             expectedLevel = PARTIALLY_CONSTANT,
-                            expectedStrings = "(3.14|-?\\d*\\.{0,1}\\d+)2.71828"
+                            expectedStrings = "(3.14|^-?\\d*\\.{0,1}\\d+$)2.71828"
                     )
             })
     public void ifElseWithStringBuilderWithFloatExpr() {
@@ -378,7 +378,7 @@ public class LocalTestMethods {
             stringDefinitions = {
                     @StringDefinitions(
                             expectedLevel = PARTIALLY_CONSTANT,
-                            expectedStrings = "((x|-?\\d+))*yz"
+                            expectedStrings = "((x|^-?\\d+$))*yz"
                     )
             })
     public void ifElseInLoopWithAppendAfterwards() {
@@ -434,7 +434,7 @@ public class LocalTestMethods {
             stringDefinitions = {
                     @StringDefinitions(
                             expectedLevel = PARTIALLY_CONSTANT,
-                            expectedStrings = "((x|-?\\d+))*yz"
+                            expectedStrings = "((x|^-?\\d+$))*yz"
                     )
             })
     public void stringBufferExample() {
