@@ -41,12 +41,12 @@ object StringConstancyInformation {
     /**
      * The stringified version of a (dynamic) integer value.
      */
-    val IntValue: String = "-?\\d+"
+    val IntValue: String = "^-?\\d+$"
 
     /**
      * The stringified version of a (dynamic) float value.
      */
-    val FloatValue: String = "-?\\d*\\.{0,1}\\d+"
+    val FloatValue: String = "^-?\\d*\\.{0,1}\\d+$"
 
     /**
      * A value to be used when the number of an element, that is repeated, is unknown.
