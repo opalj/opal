@@ -46,7 +46,7 @@ object StringConstancyInformation {
     /**
      * The stringified version of a (dynamic) float value.
      */
-    val FloatValue: String = "[AFloatValue]"
+    val FloatValue: String = "-?\\d*\\.{0,1}\\d+"
 
     /**
      * A value to be used when the number of an element, that is repeated, is unknown.
