@@ -65,7 +65,7 @@ public class InterproceduralTestMethods {
                     )
             })
     public void fromStaticMethodWithParam() {
-        analyzeString(InterproceduralTestMethods.getFQClassName(JAVA_LANG, "Integer"));
+        analyzeString(StringProvider.getFQClassName(JAVA_LANG, "Integer"));
     }
 
     private String getRuntimeClassName() {
@@ -78,13 +78,6 @@ public class InterproceduralTestMethods {
 
     private String getSimpleStringBuilderClassName() {
         return "StringBuilder";
-    }
-
-    /**
-     * Returns "[packageName].[className]".
-     */
-    public static String getFQClassName(String packageName, String className) {
-        return packageName + "." + className;
     }
 
 }
