@@ -50,7 +50,7 @@ class PathTransformer(val interpretationHandler: InterpretationHandler) {
                     npe.elementType.get match {
                         case NestedPathType.Repetition ⇒
                             val processedSubPath = pathToStringTree(
-                                Path(npe.element.toList), resetExprHandler = false
+                                Path(npe.element.toList), fpe2Sci, resetExprHandler = false
                             )
                             Some(StringTreeRepetition(processedSubPath))
                         case _ ⇒
