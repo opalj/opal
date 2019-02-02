@@ -307,7 +307,9 @@ class InterproceduralStringAnalysis(
                     }
                 }
             case npe: NestedPathElement ⇒
-                val subFinalResult = computeResultsForPath(Path(List(npe)), iHandler, state)
+                val subFinalResult = computeResultsForPath(
+                    Path(npe.element.toList), iHandler, state
+                )
                 if (hasFinalResult) {
                     hasFinalResult = subFinalResult
                 }
