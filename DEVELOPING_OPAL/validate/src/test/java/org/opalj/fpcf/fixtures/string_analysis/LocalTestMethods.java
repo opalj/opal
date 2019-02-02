@@ -36,6 +36,10 @@ import static org.opalj.fpcf.properties.string_analysis.StringConstancyLevel.*;
  * <li>
  * Brackets ("(" and "(") are used for nesting and grouping string expressions.
  * </li>
+ * <li>
+ * The string "-?\d+" represents (positive and negative) integer numbers. This RegExp has been taken
+ * from https://www.freeformatter.com/java-regex-tester.html#examples as of 2019-02-02.
+ * </li>
  * </ul>
  * <p>
  * Thus, you should avoid the following characters / strings to occur in "expectedStrings":
@@ -246,7 +250,7 @@ public class LocalTestMethods {
                     + "and an int",
             stringDefinitions = {
                     @StringDefinitions(
-                            expectedLevel = DYNAMIC, expectedStrings = "(x|[AnIntegerValue])"
+                            expectedLevel = DYNAMIC, expectedStrings = "(x|-?\\d+)"
                     ),
                     @StringDefinitions(
                             expectedLevel = CONSTANT, expectedStrings = "(42-42|x)"
@@ -347,7 +351,7 @@ public class LocalTestMethods {
             stringDefinitions = {
                     @StringDefinitions(
                             expectedLevel = PARTIALLY_CONSTANT,
-                            expectedStrings = "((x|[AnIntegerValue]))*yz"
+                            expectedStrings = "((x|-?\\d+))*yz"
                     )
             })
     public void ifElseInLoopWithAppendAfterwards() {
@@ -403,7 +407,7 @@ public class LocalTestMethods {
             stringDefinitions = {
                     @StringDefinitions(
                             expectedLevel = PARTIALLY_CONSTANT,
-                            expectedStrings = "((x|[AnIntegerValue]))*yz"
+                            expectedStrings = "((x|-?\\d+))*yz"
                     )
             })
     public void stringBufferExample() {
