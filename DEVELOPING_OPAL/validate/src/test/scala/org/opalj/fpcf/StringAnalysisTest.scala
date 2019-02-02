@@ -152,8 +152,8 @@ sealed class StringAnalysisTestRunner(
 }
 
 /**
- * Tests whether the [[IntraproceduralStringAnalysis]] works correctly with respect to some well-defined
- * tests.
+ * Tests whether the [[IntraproceduralStringAnalysis]] works correctly with respect to some
+ * well-defined tests.
  *
  * @author Patrick Mell
  */
@@ -196,8 +196,8 @@ object IntraproceduralStringAnalysisTest {
 }
 
 /**
- * Tests whether the [[IntraproceduralStringAnalysis]] works correctly with respect to some well-defined
- * tests.
+ * Tests whether the [[InterproceduralStringAnalysis]] works correctly with respect to some
+ * well-defined tests.
  *
  * @author Patrick Mell
  */
