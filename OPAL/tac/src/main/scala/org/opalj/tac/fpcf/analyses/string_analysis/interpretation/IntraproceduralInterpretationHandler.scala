@@ -22,6 +22,8 @@ import org.opalj.tac.TACStmts
 import org.opalj.tac.VirtualFunctionCall
 import org.opalj.tac.VirtualMethodCall
 import org.opalj.tac.fpcf.analyses.string_analysis.V
+import org.opalj.tac.DoubleConst
+import org.opalj.tac.FloatConst
 
 /**
  * `IntraproceduralInterpretationHandler` is responsible for processing expressions that are
@@ -65,6 +67,10 @@ class IntraproceduralInterpretationHandler(
                 new StringConstInterpreter(cfg, this).interpret(expr, defSite)
             case Assignment(_, _, expr: IntConst) ⇒
                 new IntegerValueInterpreter(cfg, this).interpret(expr, defSite)
+            case Assignment(_, _, expr: FloatConst) ⇒
+                new FloatValueInterpreter(cfg, this).interpret(expr, defSite)
+            case Assignment(_, _, expr: DoubleConst) ⇒
+                new DoubleValueInterpreter(cfg, this).interpret(expr, defSite)
             case Assignment(_, _, expr: ArrayLoad[V]) ⇒
                 new IntraproceduralArrayInterpreter(cfg, this).interpret(expr, defSite)
             case Assignment(_, _, expr: New) ⇒

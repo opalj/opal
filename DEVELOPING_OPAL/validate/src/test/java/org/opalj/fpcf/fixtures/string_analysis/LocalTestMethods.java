@@ -40,6 +40,11 @@ import static org.opalj.fpcf.properties.string_analysis.StringConstancyLevel.*;
  * The string "-?\d+" represents (positive and negative) integer numbers. This RegExp has been taken
  * from https://www.freeformatter.com/java-regex-tester.html#examples as of 2019-02-02.
  * </li>
+ * <li>
+ * The string "-?\\d*\\.{0,1}\\d+" represents (positive and negative) float and double numbers.
+ * This RegExp has been taken from https://www.freeformatter.com/java-regex-tester.html#examples as
+ * of 2019-02-02.
+ * </li>
  * </ul>
  * <p>
  * Thus, you should avoid the following characters / strings to occur in "expectedStrings":
@@ -270,6 +275,28 @@ public class LocalTestMethods {
         }
         analyzeString(sb1.toString());
         analyzeString(sb2.toString());
+    }
+
+    @StringDefinitionsCollection(
+            value = "if-else control structure which append float and double values to a string "
+                    + "builder",
+            stringDefinitions = {
+                    @StringDefinitions(
+                            expectedLevel = PARTIALLY_CONSTANT,
+                            expectedStrings = "(3.14|-?\\d*\\.{0,1}\\d+)2.71828"
+                    )
+            })
+    public void ifElseWithStringBuilderWithFloatExpr() {
+        StringBuilder sb1 = new StringBuilder();
+        int i = new Random().nextInt();
+        if (i % 2 == 0) {
+            sb1.append(3.14);
+        } else {
+            sb1.append(new Random().nextFloat());
+        }
+        float e = (float) 2.71828;
+        sb1.append(e);
+        analyzeString(sb1.toString());
     }
 
     @StringDefinitionsCollection(

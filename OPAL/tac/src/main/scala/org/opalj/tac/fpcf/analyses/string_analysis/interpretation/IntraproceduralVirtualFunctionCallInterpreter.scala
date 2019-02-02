@@ -11,6 +11,9 @@ import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyType
+import org.opalj.br.ComputationalTypeDouble
+import org.opalj.br.DoubleType
+import org.opalj.br.FloatType
 import org.opalj.tac.Stmt
 import org.opalj.tac.TACStmts
 import org.opalj.tac.VirtualFunctionCall
@@ -68,6 +71,12 @@ class IntraproceduralVirtualFunctionCallInterpreter(
                 instr.descriptor.returnType match {
                     case obj: ObjectType if obj.fqn == "java/lang/String" ⇒
                         StringConstancyProperty.lb
+                    case FloatType | DoubleType ⇒
+                        StringConstancyProperty(StringConstancyInformation(
+                            StringConstancyLevel.DYNAMIC,
+                            StringConstancyType.APPEND,
+                            StringConstancyInformation.FloatValue
+                        ))
                     case _ ⇒ StringConstancyProperty.getNeutralElement
                 }
         }
@@ -165,22 +174,14 @@ class IntraproceduralVirtualFunctionCallInterpreter(
                 } else {
                     sci
                 }
-            case ComputationalTypeFloat ⇒
-                InterpretationHandler.getConstancyInfoForDynamicFloat
+            case ComputationalTypeFloat | ComputationalTypeDouble ⇒
+                if (sci.constancyLevel == StringConstancyLevel.CONSTANT) {
+                    sci
+                } else {
+                    InterpretationHandler.getConstancyInfoForDynamicFloat
+                }
             // Otherwise, try to compute
             case _ ⇒
-                // It might be necessary to merge the values of the receiver and of the parameter
-                //                value.size match {
-                //                    case 0 ⇒ None
-                //                    case 1 ⇒ Some(value.head)
-                //                    case _ ⇒ Some(StringConstancyInformation(
-                //                        StringConstancyLevel.determineForConcat(
-                //                            value.head.constancyLevel, value(1).constancyLevel
-                //                        ),
-                //                        StringConstancyType.APPEND,
-                //                        value.head.possibleStrings + value(1).possibleStrings
-                //                    ))
-                //                }
                 sci
         }
 
