@@ -41,7 +41,7 @@ object StringConstancyInformation {
     /**
      * The stringified version of a (dynamic) integer value.
      */
-    val IntValue: String = "[AnIntegerValue]"
+    val IntValue: String = "-?\\d+"
 
     /**
      * The stringified version of a (dynamic) float value.
