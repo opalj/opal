@@ -68,9 +68,25 @@ case class ComputationState(
 /**
  * InterproceduralStringAnalysis processes a read operation of a string variable at a program
  * position, ''pp'', in a way that it finds the set of possible strings that can be read at ''pp''.
- *
+ * <p>
  * In comparison to [[IntraproceduralStringAnalysis]], this version tries to resolve method calls
  * that are involved in a string construction as far as possible.
+ * <p>
+ * The main difference in the intra- and interprocedural implementation is the following (see the
+ * description of [[IntraproceduralStringAnalysis]] for a general overview): This analysis can only
+ * start to transform the computed lean paths into a string tree (again using a [[PathTransformer]])
+ * after all relevant string values (determined by the [[InterproceduralInterpretationHandler]])
+ * have been figured out. As the [[PropertyStore]] is used for recursively starting this analysis
+ * to determine possible strings of called method and functions, the path transformation can take
+ * place after all results for sub-expressions are available. Thus, the interprocedural
+ * interpretation handler cannot determine final results, e.g., for the array interpreter or static
+ * function call interpreter. This analysis handles this circumstance by first collecting all
+ * information for all definition sites. Only when these are available, further information, e.g.,
+ * for the final results of arrays or static function calls, are derived. Finally, after all
+ * these information are ready as well, the path transformation takes place by only looking up what
+ * string expression corresponds to which definition sites (remember, at this point, for all
+ * definition sites all possible string values are known, thus look-ups are enough and no further
+ * interpretation is required).
  *
  * @author Patrick Mell
  */
