@@ -31,12 +31,20 @@ public class InterproceduralTestMethods {
             value = "a case where a very simple non-virtual function call is interpreted",
             stringDefinitions = {
                     @StringDefinitions(
-                            expectedLevel = CONSTANT, expectedStrings = "java.lang.StringBuilder"
+                            expectedLevel = CONSTANT,
+                            expectedStrings = "(java.lang.Runtime|java.lang.StringBuilder|ERROR)"
                     )
             })
-    public void simpleNonVirtualFunctionCallTest() {
-        String className = getStringBuilderClassName();
-        analyzeString(className);
+    public void simpleNonVirtualFunctionCallTest(int i) {
+        String s;
+        if (i == 0) {
+            s = getRuntimeClassName();
+        } else if (i == 1) {
+            s = getStringBuilderClassName();
+        } else {
+            s = "ERROR";
+        }
+        analyzeString(s);
     }
 
     @StringDefinitionsCollection(
@@ -105,6 +113,26 @@ public class InterproceduralTestMethods {
             sb.append(sc.nextLine());
         }
         analyzeString(sb.toString());
+    }
+
+    @StringDefinitionsCollection(
+            value = "a case where an array access needs to be interpreted interprocedurally",
+            stringDefinitions = {
+                    @StringDefinitions(
+                            expectedLevel = DYNAMIC,
+                            expectedStrings = "(java.lang.Object|java.lang.Runtime|"
+                                    + "java.lang.Integer|\\w)"
+                    )
+
+            })
+    public void arrayTest(int i) {
+        String[] classes = {
+                "java.lang.Object",
+                getRuntimeClassName(),
+                StringProvider.getFQClassName("java.lang", "Integer"),
+                System.getProperty("SomeClass")
+        };
+        analyzeString(classes[i]);
     }
 
     private String getRuntimeClassName() {
