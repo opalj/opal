@@ -41,10 +41,24 @@ import org.opalj.tac.fpcf.properties.TACAI
 /**
  * IntraproceduralStringAnalysis processes a read operation of a local string variable at a program
  * position, ''pp'', in a way that it finds the set of possible strings that can be read at ''pp''.
- *
+ * <p>
  * This analysis takes into account only the enclosing function as a context, i.e., it
  * intraprocedural. Values coming from other functions are regarded as dynamic values even if the
  * function returns a constant string value.
+ * <p>
+ * From a high-level perspective, this analysis works as follows. First, it has to be differentiated
+ * whether string literals / variables or String{Buffer, Builder} are to be processed.
+ * For the former, the definition sites are processed. Only one definition site is the trivial case
+ * and directly corresponds to a leaf node in the string tree (such trees consist of only one node).
+ * Multiple definition sites indicate > 1 possible initialization values and are transformed into a
+ * string tree whose root node is an OR element and the children are the possible initialization
+ * values. Note that all this is handled by [[StringConstancyInformation.reduceMultiple]].
+ * <p>
+ * For the latter, String{Buffer, Builder}, lean paths from the definition sites to the usage
+ * (indicated by the given DUVar) is computed. That is, all paths from all definition sites to the
+ * usage where only statements are contained that include the String{Builder, Buffer} object of
+ * interest in some way (like an "append" or "replace" operation for example). These paths are then
+ * transformed into a string tree by making use of a [[PathTransformer]].
  *
  * @author Patrick Mell
  */
