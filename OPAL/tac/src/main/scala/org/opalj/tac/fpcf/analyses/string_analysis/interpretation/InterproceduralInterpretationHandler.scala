@@ -76,17 +76,27 @@ class InterproceduralInterpretationHandler(
         val callees = state.callees.get
         stmts(defSite) match {
             case Assignment(_, _, expr: StringConst) ⇒
-                new StringConstInterpreter(cfg, this).interpret(expr, defSite)
+                val result = new StringConstInterpreter(cfg, this).interpret(expr, defSite)
+                state.appendResultToFpe2Sci(defSite, result.asInstanceOf[Result])
+                result
             case Assignment(_, _, expr: IntConst) ⇒
-                new IntegerValueInterpreter(cfg, this).interpret(expr, defSite)
+                val result = new IntegerValueInterpreter(cfg, this).interpret(expr, defSite)
+                state.appendResultToFpe2Sci(defSite, result.asInstanceOf[Result])
+                result
             case Assignment(_, _, expr: FloatConst) ⇒
-                new FloatValueInterpreter(cfg, this).interpret(expr, defSite)
+                val result = new FloatValueInterpreter(cfg, this).interpret(expr, defSite)
+                state.appendResultToFpe2Sci(defSite, result.asInstanceOf[Result])
+                result
             case Assignment(_, _, expr: DoubleConst) ⇒
-                new DoubleValueInterpreter(cfg, this).interpret(expr, defSite)
+                val result = new DoubleValueInterpreter(cfg, this).interpret(expr, defSite)
+                state.appendResultToFpe2Sci(defSite, result.asInstanceOf[Result])
+                result
             case Assignment(_, _, expr: ArrayLoad[V]) ⇒
-                new InterproceduralArrayInterpreter(cfg, this, callees).interpret(expr, defSite)
+                new ArrayPreparationInterpreter(cfg, this, state, params).interpret(expr, defSite)
             case Assignment(_, _, expr: New) ⇒
-                new NewInterpreter(cfg, this).interpret(expr, defSite)
+                val result = new NewInterpreter(cfg, this).interpret(expr, defSite)
+                state.appendResultToFpe2Sci(defSite, result.asInstanceOf[Result])
+                result
             case Assignment(_, _, expr: VirtualFunctionCall[V]) ⇒
                 new InterproceduralVirtualFunctionCallInterpreter(
                     cfg, this, callees, params
@@ -96,7 +106,9 @@ class InterproceduralInterpretationHandler(
                     cfg, this, ps, state, declaredMethods, c
                 ).interpret(expr, defSite)
             case Assignment(_, _, expr: BinaryExpr[V]) ⇒
-                new BinaryExprInterpreter(cfg, this).interpret(expr, defSite)
+                val result = new BinaryExprInterpreter(cfg, this).interpret(expr, defSite)
+                state.appendResultToFpe2Sci(defSite, result.asInstanceOf[Result])
+                result
             case Assignment(_, _, expr: NonVirtualFunctionCall[V]) ⇒
                 new InterproceduralNonVirtualFunctionCallInterpreter(
                     cfg, this, ps, state, declaredMethods, c
@@ -116,10 +128,27 @@ class InterproceduralInterpretationHandler(
                     cfg, this, callees
                 ).interpret(vmc, defSite)
             case nvmc: NonVirtualMethodCall[V] ⇒
-                new InterproceduralNonVirtualMethodCallInterpreter(
+                val result = new InterproceduralNonVirtualMethodCallInterpreter(
                     cfg, this, ps, state, declaredMethods, c
                 ).interpret(nvmc, defSite)
+                result match {
+                    case r: Result ⇒ state.appendResultToFpe2Sci(defSite, r)
+                    case _         ⇒
+                }
+                result
             case _ ⇒ Result(e, StringConstancyProperty.getNeutralElement)
+        }
+    }
+
+    def finalizeDefSite(
+        defSite: Int, state: ComputationState
+    ): Unit = {
+        stmts(defSite) match {
+            case nvmc: NonVirtualMethodCall[V] ⇒
+                new NonVirtualMethodCallFinalizer(state).interpret(nvmc, defSite)
+            case Assignment(_, _, expr: ArrayLoad[V]) ⇒
+                new ArrayFinalizer(cfg, state).interpret(expr, defSite)
+            case _ ⇒
         }
     }
 

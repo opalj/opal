@@ -89,9 +89,8 @@ class InterproceduralNonVirtualMethodCallInterpreter(
                     // results and return an intermediate result
                     val returnIR = results.find(r ⇒ !r._2.isInstanceOf[Result]).get._2
                     results.foreach {
-                        case (ds, Result(r)) ⇒
-                            val p = r.p.asInstanceOf[StringConstancyProperty]
-                            state.fpe2sci(ds) = p.stringConstancyInformation
+                        case (ds, r: Result) ⇒
+                            state.appendResultToFpe2Sci(ds, r)
                         case _ ⇒
                     }
                     // TODO: is it enough to return only one (the first) IntermediateResult in case
