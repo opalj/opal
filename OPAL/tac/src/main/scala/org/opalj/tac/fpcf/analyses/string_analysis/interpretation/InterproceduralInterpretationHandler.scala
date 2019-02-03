@@ -72,8 +72,6 @@ class InterproceduralInterpretationHandler(
         processedDefSites.append(defSite)
 
         val callees = state.callees.get
-        // TODO: Refactor by making the match return a concrete instance of
-        //  AbstractStringInterpreter on which 'interpret' is the called only once
         stmts(defSite) match {
             case Assignment(_, _, expr: StringConst) ⇒
                 new StringConstInterpreter(cfg, this).interpret(expr, defSite)

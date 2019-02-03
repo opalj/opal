@@ -60,8 +60,6 @@ class IntraproceduralInterpretationHandler(
         }
         processedDefSites.append(defSite)
 
-        // TODO: Refactor by making the match return a concrete instance of
-        //  AbstractStringInterpreter on which 'interpret' is the called only once
         val result: ProperPropertyComputationResult = stmts(defSite) match {
             case Assignment(_, _, expr: StringConst) ⇒
                 new StringConstInterpreter(cfg, this).interpret(expr, defSite)
