@@ -1,5 +1,5 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.tac.fpcf.analyses.string_analysis.interpretation
+package org.opalj.tac.fpcf.analyses.string_analysis.interpretation.finalizer
 
 import scala.collection.mutable.ListBuffer
 

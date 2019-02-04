@@ -104,16 +104,16 @@ class PathTransformer(val interpretationHandler: InterpretationHandler) {
      * @param fpe2Sci          A mapping from [[FlatPathElement.element]] values to
      *                         [[StringConstancyInformation]]. Make use of this mapping if some
      *                         StringConstancyInformation need to be used that the
-     *                         [[org.opalj.tac.fpcf.analyses.string_analysis.interpretation.IntraproceduralInterpretationHandler]]
+     *                         [[org.opalj.tac.fpcf.analyses.string_analysis.interpretation.intraprocedural.IntraproceduralInterpretationHandler]]
      *                         cannot infer / derive. For instance, if the exact value of an
      *                         expression needs to be determined by calling the
      *                         [[org.opalj.tac.fpcf.analyses.string_analysis.IntraproceduralStringAnalysis]]
      *                         on another instance, store this information in fpe2Sci.
      * @param resetExprHandler Whether to reset the underlying
-     *                         [[org.opalj.tac.fpcf.analyses.string_analysis.interpretation.IntraproceduralInterpretationHandler]]
+     *                         [[org.opalj.tac.fpcf.analyses.string_analysis.interpretation.intraprocedural.IntraproceduralInterpretationHandler]]
      *                         or not. When calling this function from outside, the default value
      *                         should do fine in most of the cases. For further information, see
-     *                         [[org.opalj.tac.fpcf.analyses.string_analysis.interpretation.IntraproceduralInterpretationHandler.reset]].
+     *                         [[org.opalj.tac.fpcf.analyses.string_analysis.interpretation.intraprocedural.IntraproceduralInterpretationHandler.reset]].
      *
      * @return If an empty [[Path]] is given, `None` will be returned. Otherwise, the transformed
      *         [[org.opalj.br.fpcf.properties.properties.StringTree]] will be returned. Note that

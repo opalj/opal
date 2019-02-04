@@ -1,5 +1,5 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.tac.fpcf.analyses.string_analysis.interpretation
+package org.opalj.tac.fpcf.analyses.string_analysis.interpretation.finalizer
 
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.tac.NonVirtualMethodCall

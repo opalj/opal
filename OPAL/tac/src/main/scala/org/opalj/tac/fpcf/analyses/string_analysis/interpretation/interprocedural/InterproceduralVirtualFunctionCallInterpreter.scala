@@ -1,5 +1,5 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.tac.fpcf.analyses.string_analysis.interpretation
+package org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedural
 
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.Result
@@ -7,30 +7,32 @@ import org.opalj.br.cfg.CFG
 import org.opalj.br.ComputationalTypeFloat
 import org.opalj.br.ComputationalTypeInt
 import org.opalj.br.ObjectType
+import org.opalj.br.fpcf.cg.properties.Callees
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyType
-import org.opalj.br.ComputationalTypeDouble
-import org.opalj.br.DoubleType
-import org.opalj.br.FloatType
 import org.opalj.tac.Stmt
 import org.opalj.tac.TACStmts
 import org.opalj.tac.VirtualFunctionCall
 import org.opalj.tac.fpcf.analyses.string_analysis.V
+import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.AbstractStringInterpreter
+import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
 
 /**
- * The `IntraproceduralVirtualFunctionCallInterpreter` is responsible for processing
- * [[VirtualFunctionCall]]s in an intraprocedural fashion.
+ * The `InterproceduralVirtualFunctionCallInterpreter` is responsible for processing
+ * [[VirtualFunctionCall]]s in an interprocedural fashion.
  * The list of currently supported function calls can be seen in the documentation of [[interpret]].
  *
  * @see [[AbstractStringInterpreter]]
  *
  * @author Patrick Mell
  */
-class IntraproceduralVirtualFunctionCallInterpreter(
+class InterproceduralVirtualFunctionCallInterpreter(
         cfg:         CFG[Stmt[V], TACStmts[V]],
-        exprHandler: IntraproceduralInterpretationHandler
+        exprHandler: InterproceduralInterpretationHandler,
+        callees:     Callees,
+        params:      List[StringConstancyInformation]
 ) extends AbstractStringInterpreter(cfg, exprHandler) {
 
     override type T = VirtualFunctionCall[V]
@@ -47,7 +49,7 @@ class IntraproceduralVirtualFunctionCallInterpreter(
      * <li>
      *     `replace`: Calls to the `replace` function of [[StringBuilder]] and [[StringBuffer]]. For
      *     further information how this operation is processed, see
-     *     [[IntraproceduralVirtualFunctionCallInterpreter.interpretReplaceCall]].
+     *     [[InterproceduralVirtualFunctionCallInterpreter.interpretReplaceCall]].
      * </li>
      * <li>
      *     Apart from these supported methods, a list with [[StringConstancyProperty.lb]]
@@ -55,33 +57,26 @@ class IntraproceduralVirtualFunctionCallInterpreter(
      * </li>
      * </ul>
      *
-     * If none of the above-described cases match, a result containing
-     * [[StringConstancyProperty.getNeutralElement]] will be returned.
+     * If none of the above-described cases match, an empty list will be returned.
      *
-     * @note For this implementation, `defSite` does not play a role.
+     * @note For this implementation, `defSite` plays a role!
      *
      * @see [[AbstractStringInterpreter.interpret]]
      */
     override def interpret(instr: T, defSite: Int): ProperPropertyComputationResult = {
-        val property = instr.name match {
+        val e: Integer = defSite
+        instr.name match {
             case "append"   ⇒ interpretAppendCall(instr)
             case "toString" ⇒ interpretToStringCall(instr)
             case "replace"  ⇒ interpretReplaceCall(instr)
             case _ ⇒
                 instr.descriptor.returnType match {
                     case obj: ObjectType if obj.fqn == "java/lang/String" ⇒
-                        StringConstancyProperty.lb
-                    case FloatType | DoubleType ⇒
-                        StringConstancyProperty(StringConstancyInformation(
-                            StringConstancyLevel.DYNAMIC,
-                            StringConstancyType.APPEND,
-                            StringConstancyInformation.FloatValue
-                        ))
-                    case _ ⇒ StringConstancyProperty.getNeutralElement
+                        Result(e, StringConstancyProperty.lb)
+                    case _ ⇒
+                        Result(e, StringConstancyProperty.getNeutralElement)
                 }
         }
-
-        Result(instr, property)
     }
 
     /**
@@ -91,7 +86,7 @@ class IntraproceduralVirtualFunctionCallInterpreter(
      */
     private def interpretAppendCall(
         appendCall: VirtualFunctionCall[V]
-    ): StringConstancyProperty = {
+    ): ProperPropertyComputationResult = {
         val receiverSci = receiverValuesOfAppendCall(appendCall).stringConstancyInformation
         val appendSci = valueOfAppendCall(appendCall).stringConstancyInformation
 
@@ -119,7 +114,7 @@ class IntraproceduralVirtualFunctionCallInterpreter(
             )
         }
 
-        StringConstancyProperty(sci)
+        Result(appendCall, StringConstancyProperty(sci))
     }
 
     /**
@@ -130,13 +125,17 @@ class IntraproceduralVirtualFunctionCallInterpreter(
     ): StringConstancyProperty = {
         // There might be several receivers, thus the map; from the processed sites, however, use
         // only the head as a single receiver interpretation will produce one element
-        val scis = call.receiver.asVar.definedBy.toArray.sorted.map { ds ⇒
-            val r = exprHandler.processDefSite(ds).asInstanceOf[Result]
-            r.finalEP.p.asInstanceOf[StringConstancyProperty].stringConstancyInformation
-        }.filter { sci ⇒ !sci.isTheNeutralElement }
-        val sci = if (scis.isEmpty) StringConstancyInformation.getNeutralElement else
+        val defSites = call.receiver.asVar.definedBy.toArray.sorted
+        val scis = defSites.map(exprHandler.processDefSite(_, params)).map(
+            _.asInstanceOf[Result].finalEP.p.asInstanceOf[StringConstancyProperty]
+        ).filter {
+                !_.stringConstancyInformation.isTheNeutralElement
+            }
+        if (scis.isEmpty) {
+            StringConstancyProperty.getNeutralElement
+        } else {
             scis.head
-        StringConstancyProperty(sci)
+        }
     }
 
     /**
@@ -149,15 +148,15 @@ class IntraproceduralVirtualFunctionCallInterpreter(
         val param = call.params.head.asVar
         // .head because we want to evaluate only the first argument of append
         val defSiteHead = param.definedBy.head
-        var r = exprHandler.processDefSite(defSiteHead).asInstanceOf[Result]
-        var value = r.finalEP.p.asInstanceOf[StringConstancyProperty]
+        var value = StringConstancyProperty.extractFromPPCR(
+            exprHandler.processDefSite(defSiteHead, params)
+        )
         // If defSiteHead points to a New, value will be the empty list. In that case, process
         // the first use site (which is the <init> call)
         if (value.isTheNeutralElement) {
-            r = exprHandler.processDefSite(
-                cfg.code.instructions(defSiteHead).asAssignment.targetVar.usedBy.toArray.min
-            ).asInstanceOf[Result]
-            value = r.finalEP.p.asInstanceOf[StringConstancyProperty]
+            value = StringConstancyProperty.extractFromPPCR(exprHandler.processDefSite(
+                cfg.code.instructions(defSiteHead).asAssignment.targetVar.usedBy.toArray.min, params
+            ))
         }
 
         val sci = value.stringConstancyInformation
@@ -174,14 +173,22 @@ class IntraproceduralVirtualFunctionCallInterpreter(
                 } else {
                     sci
                 }
-            case ComputationalTypeFloat | ComputationalTypeDouble ⇒
-                if (sci.constancyLevel == StringConstancyLevel.CONSTANT) {
-                    sci
-                } else {
-                    InterpretationHandler.getConstancyInfoForDynamicFloat
-                }
+            case ComputationalTypeFloat ⇒
+                InterpretationHandler.getConstancyInfoForDynamicFloat
             // Otherwise, try to compute
             case _ ⇒
+                // It might be necessary to merge the values of the receiver and of the parameter
+                //                value.size match {
+                //                    case 0 ⇒ None
+                //                    case 1 ⇒ Some(value.head)
+                //                    case _ ⇒ Some(StringConstancyInformation(
+                //                        StringConstancyLevel.determineForConcat(
+                //                            value.head.constancyLevel, value(1).constancyLevel
+                //                        ),
+                //                        StringConstancyType.APPEND,
+                //                        value.head.possibleStrings + value(1).possibleStrings
+                //                    ))
+                //                }
                 sci
         }
 
@@ -195,10 +202,8 @@ class IntraproceduralVirtualFunctionCallInterpreter(
      */
     private def interpretToStringCall(
         call: VirtualFunctionCall[V]
-    ): StringConstancyProperty = {
-        val r = exprHandler.processDefSite(call.receiver.asVar.definedBy.head).asInstanceOf[Result]
-        r.finalEP.p.asInstanceOf[StringConstancyProperty]
-    }
+    ): ProperPropertyComputationResult =
+        exprHandler.processDefSite(call.receiver.asVar.definedBy.head, params)
 
     /**
      * Function for processing calls to [[StringBuilder#replace]] or [[StringBuffer#replace]].
@@ -207,6 +212,7 @@ class IntraproceduralVirtualFunctionCallInterpreter(
      */
     private def interpretReplaceCall(
         instr: VirtualFunctionCall[V]
-    ): StringConstancyProperty = InterpretationHandler.getStringConstancyPropertyForReplace
+    ): ProperPropertyComputationResult =
+        Result(instr, InterpretationHandler.getStringConstancyPropertyForReplace)
 
 }
