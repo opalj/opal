@@ -9,13 +9,16 @@ import org.opalj.tac.fpcf.analyses.string_analysis.V
 /**
  * @author Patrick Mell
  */
-class NonVirtualMethodCallFinalizer(state: ComputationState) {
+class NonVirtualMethodCallFinalizer(state: ComputationState) extends AbstractFinalizer(state) {
 
-    type T = NonVirtualMethodCall[V]
+    override type T = NonVirtualMethodCall[V]
 
-    def interpret(
-        instr: T, defSite: Int
-    ): Unit = {
+    /**
+     * Finalizes [[NonVirtualMethodCall]]s.
+     * <p>
+     * @inheritdoc
+     */
+    override def finalizeInterpretation(instr: T, defSite: Int): Unit = {
         val scis = instr.params.head.asVar.definedBy.toArray.sorted.map { state.fpe2sci }
         state.fpe2sci(defSite) = StringConstancyInformation.reduceMultiple(scis.toList)
     }
