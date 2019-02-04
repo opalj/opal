@@ -50,34 +50,12 @@ class ArrayPreparationInterpreter(
      * @see [[AbstractStringInterpreter.interpret]]
      */
     override def interpret(instr: T, defSite: Int): ProperPropertyComputationResult = {
-        val stmts = cfg.code.instructions
         val results = ListBuffer[ProperPropertyComputationResult]()
 
-        // Loop over all possible array values
-        val allDefSites = ListBuffer[Int]()
         val defSites = instr.arrayRef.asVar.definedBy.toArray
-        defSites.filter(_ >= 0).sorted.foreach { next ⇒
-            val arrDecl = stmts(next)
-            val sortedArrDeclUses = arrDecl.asAssignment.targetVar.usedBy.toArray.sorted
-            // Process ArrayStores
-            sortedArrDeclUses.filter {
-                stmts(_).isInstanceOf[ArrayStore[V]]
-            } foreach { f: Int ⇒
-                allDefSites.appendAll(stmts(f).asArrayStore.value.asVar.definedBy.toArray)
-            }
-            // Process ArrayLoads
-            sortedArrDeclUses.filter {
-                stmts(_) match {
-                    case Assignment(_, _, _: ArrayLoad[V]) ⇒ true
-                    case _                                 ⇒ false
-                }
-            } foreach { f: Int ⇒
-                val defs = stmts(f).asAssignment.expr.asArrayLoad.arrayRef.asVar.definedBy
-                allDefSites.appendAll(defs.toArray)
-            }
-        }
+        val allDefSites = ArrayPreparationInterpreter.getStoreAndLoadDefSites(instr, cfg)
 
-        allDefSites.sorted.map { ds ⇒ (ds, exprHandler.processDefSite(ds)) }.foreach {
+        allDefSites.map { ds ⇒ (ds, exprHandler.processDefSite(ds)) }.foreach {
             case (ds, r: Result) ⇒
                 state.appendResultToFpe2Sci(ds, r)
                 results.append(r)
@@ -107,6 +85,50 @@ class ArrayPreparationInterpreter(
         } else {
             results.head
         }
+    }
+
+}
+
+object ArrayPreparationInterpreter {
+
+    type T = ArrayLoad[V]
+
+    /**
+     * This function retrieves all definition sites of the array stores and array loads that belong
+     * to the given instruction.
+     *
+     * @param instr The [[ArrayLoad]] instruction to get the definition sites for.
+     * @param cfg The underlying control flow graph.
+     * @return Returns all definition sites associated with the array stores and array loads of the
+     *         given instruction. The result list is sorted in ascending order.
+     */
+    def getStoreAndLoadDefSites(instr: T, cfg: CFG[Stmt[V], TACStmts[V]]): List[Int] = {
+        val stmts = cfg.code.instructions
+        val allDefSites = ListBuffer[Int]()
+        val defSites = instr.arrayRef.asVar.definedBy.toArray
+
+        defSites.filter(_ >= 0).sorted.foreach { next ⇒
+            val arrDecl = stmts(next)
+            val sortedArrDeclUses = arrDecl.asAssignment.targetVar.usedBy.toArray.sorted
+            // For ArrayStores
+            sortedArrDeclUses.filter {
+                stmts(_).isInstanceOf[ArrayStore[V]]
+            } foreach { f: Int ⇒
+                allDefSites.appendAll(stmts(f).asArrayStore.value.asVar.definedBy.toArray)
+            }
+            // For ArrayLoads
+            sortedArrDeclUses.filter {
+                stmts(_) match {
+                    case Assignment(_, _, _: ArrayLoad[V]) ⇒ true
+                    case _                                 ⇒ false
+                }
+            } foreach { f: Int ⇒
+                val defs = stmts(f).asAssignment.expr.asArrayLoad.arrayRef.asVar.definedBy
+                allDefSites.appendAll(defs.toArray)
+            }
+        }
+
+        allDefSites.sorted.toList
     }
 
 }
