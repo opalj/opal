@@ -1,5 +1,5 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.tac.fpcf.analyses.string_analysis.interpretation
+package org.opalj.tac.fpcf.analyses.string_analysis.interpretation.intraprocedural
 
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.Result
@@ -24,6 +24,13 @@ import org.opalj.tac.VirtualMethodCall
 import org.opalj.tac.fpcf.analyses.string_analysis.V
 import org.opalj.tac.DoubleConst
 import org.opalj.tac.FloatConst
+import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.common.BinaryExprInterpreter
+import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.common.DoubleValueInterpreter
+import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.common.FloatValueInterpreter
+import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.common.IntegerValueInterpreter
+import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
+import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.common.NewInterpreter
+import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.common.StringConstInterpreter
 
 /**
  * `IntraproceduralInterpretationHandler` is responsible for processing expressions that are
@@ -31,7 +38,8 @@ import org.opalj.tac.FloatConst
  * expressions usually come from the definitions sites of the variable of interest.
  * <p>
  * For this interpretation handler it is crucial that all used interpreters (concrete instances of
- * [[AbstractStringInterpreter]]) return a final computation result!
+ * [[org.opalj.tac.fpcf.analyses.string_analysis.interpretation.AbstractStringInterpreter]]) return
+ * a final computation result!
  *
  * @param cfg The control flow graph that underlies the program / method in which the expressions of
  *            interest reside.

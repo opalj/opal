@@ -1,5 +1,5 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.tac.fpcf.analyses.string_analysis.interpretation
+package org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedural
 
 import org.opalj.fpcf.ProperOnUpdateContinuation
 import org.opalj.fpcf.ProperPropertyComputationResult
@@ -28,6 +28,15 @@ import org.opalj.tac.VirtualMethodCall
 import org.opalj.tac.fpcf.analyses.string_analysis.ComputationState
 import org.opalj.tac.DoubleConst
 import org.opalj.tac.FloatConst
+import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.common.BinaryExprInterpreter
+import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.common.DoubleValueInterpreter
+import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.common.FloatValueInterpreter
+import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.common.IntegerValueInterpreter
+import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.finalizer.ArrayFinalizer
+import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
+import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.common.NewInterpreter
+import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.common.StringConstInterpreter
+import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.finalizer.NonVirtualMethodCallFinalizer
 
 /**
  * `InterproceduralInterpretationHandler` is responsible for processing expressions that are
@@ -35,7 +44,8 @@ import org.opalj.tac.FloatConst
  * expressions usually come from the definitions sites of the variable of interest.
  * <p>
  * For this interpretation handler used interpreters (concrete instances of
- * [[AbstractStringInterpreter]]) can either return a final or intermediate result.
+ * [[org.opalj.tac.fpcf.analyses.string_analysis.interpretation.AbstractStringInterpreter]]) can
+ * either return a final or intermediate result.
  *
  * @param cfg The control flow graph that underlies the program / method in which the expressions of
  *            interest reside.
@@ -157,7 +167,7 @@ class InterproceduralInterpretationHandler(
 object InterproceduralInterpretationHandler {
 
     /**
-     * @see [[IntraproceduralInterpretationHandler]]
+     * @see [[org.opalj.tac.fpcf.analyses.string_analysis.interpretation.intraprocedural.IntraproceduralInterpretationHandler]]
      */
     def apply(
         cfg:             CFG[Stmt[V], TACStmts[V]],

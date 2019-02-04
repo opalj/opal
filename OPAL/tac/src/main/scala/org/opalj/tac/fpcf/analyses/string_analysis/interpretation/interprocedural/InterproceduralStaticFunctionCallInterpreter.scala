@@ -1,5 +1,5 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.tac.fpcf.analyses.string_analysis.interpretation
+package org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedural
 
 import scala.collection.mutable.ListBuffer
 
@@ -12,22 +12,26 @@ import org.opalj.fpcf.Result
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.cfg.CFG
 import org.opalj.br.fpcf.properties.StringConstancyProperty
-import org.opalj.tac.NonVirtualFunctionCall
+import org.opalj.tac.StaticFunctionCall
 import org.opalj.tac.Stmt
 import org.opalj.tac.TACStmts
+import org.opalj.tac.fpcf.analyses.string_analysis.ComputationState
 import org.opalj.tac.fpcf.analyses.string_analysis.V
 import org.opalj.tac.ReturnValue
-import org.opalj.tac.fpcf.analyses.string_analysis.ComputationState
+import org.opalj.tac.fpcf.analyses.string_analysis.InterproceduralStringAnalysis
+import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.AbstractStringInterpreter
 
 /**
- * The `InterproceduralNonVirtualFunctionCallInterpreter` is responsible for processing
- * [[NonVirtualFunctionCall]]s in an interprocedural fashion.
+ * The `InterproceduralStaticFunctionCallInterpreter` is responsible for processing
+ * [[StaticFunctionCall]]s in an interprocedural fashion.
+ * <p>
+ * For supported method calls, see the documentation of the `interpret` function.
  *
  * @see [[AbstractStringInterpreter]]
  *
  * @author Patrick Mell
  */
-class InterproceduralNonVirtualFunctionCallInterpreter(
+class InterproceduralStaticFunctionCallInterpreter(
         cfg:             CFG[Stmt[V], TACStmts[V]],
         exprHandler:     InterproceduralInterpretationHandler,
         ps:              PropertyStore,
@@ -36,13 +40,12 @@ class InterproceduralNonVirtualFunctionCallInterpreter(
         c:               ProperOnUpdateContinuation
 ) extends AbstractStringInterpreter(cfg, exprHandler) {
 
-    override type T = NonVirtualFunctionCall[V]
+    override type T = StaticFunctionCall[V]
 
     /**
-     * Currently, [[NonVirtualFunctionCall]]s are not supported. Thus, this function always returns
-     * a list with a single element consisting of
+     * This function always returns a list with a single element consisting of
      * [[org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel.DYNAMIC]],
-     * [[org.opalj.br.fpcf.properties.string_definition.StringConstancyType.APPEND]] and
+     * [[org.opalj.br.fpcf.properties.string_definition.StringConstancyType.APPEND]], and
      * [[org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation.UnknownWordSymbol]].
      *
      * @note For this implementation, `defSite` plays a role!
@@ -64,6 +67,15 @@ class InterproceduralNonVirtualFunctionCallInterpreter(
             val ret = tac.get.stmts.find(_.isInstanceOf[ReturnValue[V]]).get
             val uvar = ret.asInstanceOf[ReturnValue[V]].expr.asVar
             val entity = (uvar, m)
+
+            // Collect all parameters
+            // TODO: Current assumption: Results of parameters are available right away
+            val paramScis = instr.params.map { p ⇒
+                StringConstancyProperty.extractFromPPCR(
+                    exprHandler.processDefSite(p.asVar.definedBy.head)
+                ).stringConstancyInformation
+            }.toList
+            InterproceduralStringAnalysis.registerParams(entity, paramScis)
 
             val eps = ps(entity, StringConstancyProperty.key)
             eps match {

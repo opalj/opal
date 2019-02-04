@@ -1,5 +1,5 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.tac.fpcf.analyses.string_analysis.interpretation
+package org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedural
 
 import scala.collection.mutable.ListBuffer
 
@@ -15,6 +15,7 @@ import org.opalj.tac.Stmt
 import org.opalj.tac.TACStmts
 import org.opalj.tac.fpcf.analyses.string_analysis.ComputationState
 import org.opalj.tac.fpcf.analyses.string_analysis.V
+import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.AbstractStringInterpreter
 
 /**
  * The `ArrayPreparationInterpreter` is responsible for preparing [[ArrayLoad]] as well as
