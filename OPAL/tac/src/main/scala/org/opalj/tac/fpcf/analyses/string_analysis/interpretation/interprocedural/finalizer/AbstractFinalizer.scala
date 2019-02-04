@@ -1,5 +1,5 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.tac.fpcf.analyses.string_analysis.interpretation.finalizer
+package org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedural.finalizer
 
 import org.opalj.tac.fpcf.analyses.string_analysis.ComputationState
 
