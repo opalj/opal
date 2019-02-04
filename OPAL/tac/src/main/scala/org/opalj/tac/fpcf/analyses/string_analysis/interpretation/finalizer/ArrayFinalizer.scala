@@ -13,13 +13,18 @@ import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedura
 /**
  * @author Patrick Mell
  */
-class ArrayFinalizer(cfg: CFG[Stmt[V], TACStmts[V]], state: ComputationState) {
+class ArrayFinalizer(
+        state: ComputationState, cfg: CFG[Stmt[V], TACStmts[V]]
+) extends AbstractFinalizer(state) {
 
-    type T = ArrayLoad[V]
+    override type T = ArrayLoad[V]
 
-    def interpret(
-        instr: T, defSite: Int
-    ): Unit = {
+    /**
+     * Finalizes [[ArrayLoad]]s.
+     * <p>
+     * @inheritdoc
+     */
+    override def finalizeInterpretation(instr: T, defSite: Int): Unit = {
         val allDefSites = ArrayPreparationInterpreter.getStoreAndLoadDefSites(instr, cfg)
         state.fpe2sci(defSite) = StringConstancyInformation.reduceMultiple(
             allDefSites.sorted.map { state.fpe2sci(_) }

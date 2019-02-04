@@ -155,9 +155,9 @@ class InterproceduralInterpretationHandler(
     ): Unit = {
         stmts(defSite) match {
             case nvmc: NonVirtualMethodCall[V] ⇒
-                new NonVirtualMethodCallFinalizer(state).interpret(nvmc, defSite)
+                new NonVirtualMethodCallFinalizer(state).finalizeInterpretation(nvmc, defSite)
             case Assignment(_, _, expr: ArrayLoad[V]) ⇒
-                new ArrayFinalizer(cfg, state).interpret(expr, defSite)
+                new ArrayFinalizer(state, cfg).finalizeInterpretation(expr, defSite)
             case _ ⇒
         }
     }
