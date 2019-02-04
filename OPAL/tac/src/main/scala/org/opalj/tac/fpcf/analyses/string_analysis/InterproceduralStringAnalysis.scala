@@ -69,11 +69,24 @@ case class ComputationState(
     var params: List[StringConstancyInformation] = List()
 
     /**
-     * Takes a definition site as well as a result and extends the [[fpe2sci]] map accordingly.
+     * Takes a definition site as well as a result and extends the [[fpe2sci]] map accordingly,
+     * however, only if `defSite` is not yet present.
      */
     def appendResultToFpe2Sci(defSite: Int, r: Result): Unit = {
-        val sci = StringConstancyProperty.extractFromPPCR(r).stringConstancyInformation
-        fpe2sci(defSite) = sci
+        if (!fpe2sci.contains(defSite)) {
+            val sci = StringConstancyProperty.extractFromPPCR(r).stringConstancyInformation
+            fpe2sci(defSite) = sci
+        }
+    }
+
+    /**
+     * Takes a definition site as well as [[StringConstancyInformation]] and extends the [[fpe2sci]]
+     * map accordingly, however, only if `defSite` is not yet present.
+     */
+    def appendResultToFpe2Sci(defSite: Int, sci: StringConstancyInformation): Unit = {
+        if (!fpe2sci.contains(defSite)) {
+            fpe2sci(defSite) = sci
+        }
     }
 
     /**
@@ -371,10 +384,8 @@ class InterproceduralStringAnalysis(
             case FlatPathElement(index) ⇒
                 if (!state.fpe2sci.contains(index)) {
                     iHandler.processDefSite(index, state.params) match {
-                        case Result(r) ⇒
-                            val p = r.p.asInstanceOf[StringConstancyProperty]
-                            state.fpe2sci(index) = p.stringConstancyInformation
-                        case _ ⇒ hasFinalResult = false
+                        case r: Result ⇒ state.appendResultToFpe2Sci(index, r)
+                        case _         ⇒ hasFinalResult = false
                     }
                 }
             case npe: NestedPathElement ⇒

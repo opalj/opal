@@ -37,6 +37,7 @@ import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.Interpretation
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.common.NewInterpreter
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.common.StringConstInterpreter
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedural.finalizer.NonVirtualMethodCallFinalizer
+import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedural.finalizer.VirtualFunctionCallFinalizer
 
 /**
  * `InterproceduralInterpretationHandler` is responsible for processing expressions that are
@@ -108,8 +109,8 @@ class InterproceduralInterpretationHandler(
                 state.appendResultToFpe2Sci(defSite, result.asInstanceOf[Result])
                 result
             case Assignment(_, _, expr: VirtualFunctionCall[V]) ⇒
-                new InterproceduralVirtualFunctionCallInterpreter(
-                    cfg, this, callees, params
+                new VirtualFunctionCallPreparationInterpreter(
+                    cfg, this, state, params
                 ).interpret(expr, defSite)
             case Assignment(_, _, expr: StaticFunctionCall[V]) ⇒
                 new InterproceduralStaticFunctionCallInterpreter(
@@ -126,8 +127,8 @@ class InterproceduralInterpretationHandler(
             case Assignment(_, _, expr: GetField[V]) ⇒
                 new InterproceduralFieldInterpreter(cfg, this, callees).interpret(expr, defSite)
             case ExprStmt(_, expr: VirtualFunctionCall[V]) ⇒
-                new InterproceduralVirtualFunctionCallInterpreter(
-                    cfg, this, callees, params
+                new VirtualFunctionCallPreparationInterpreter(
+                    cfg, this, state, params
                 ).interpret(expr, defSite)
             case ExprStmt(_, expr: StaticFunctionCall[V]) ⇒
                 new InterproceduralStaticFunctionCallInterpreter(
@@ -156,8 +157,12 @@ class InterproceduralInterpretationHandler(
         stmts(defSite) match {
             case nvmc: NonVirtualMethodCall[V] ⇒
                 new NonVirtualMethodCallFinalizer(state).finalizeInterpretation(nvmc, defSite)
-            case Assignment(_, _, expr: ArrayLoad[V]) ⇒
-                new ArrayFinalizer(state, cfg).finalizeInterpretation(expr, defSite)
+            case Assignment(_, _, al: ArrayLoad[V]) ⇒
+                new ArrayFinalizer(state, cfg).finalizeInterpretation(al, defSite)
+            case Assignment(_, _, vfc: VirtualFunctionCall[V]) ⇒
+                new VirtualFunctionCallFinalizer(state, cfg).finalizeInterpretation(vfc, defSite)
+            case ExprStmt(_, vfc: VirtualFunctionCall[V]) ⇒
+                new VirtualFunctionCallFinalizer(state, cfg).finalizeInterpretation(vfc, defSite)
             case _ ⇒
         }
     }

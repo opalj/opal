@@ -8,8 +8,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.Scanner;
 
-import static org.opalj.fpcf.properties.string_analysis.StringConstancyLevel.CONSTANT;
-import static org.opalj.fpcf.properties.string_analysis.StringConstancyLevel.DYNAMIC;
+import static org.opalj.fpcf.properties.string_analysis.StringConstancyLevel.*;
 
 /**
  * This file contains various tests for the InterproceduralStringAnalysis. For further information
@@ -133,6 +132,67 @@ public class InterproceduralTestMethods {
                 System.getProperty("SomeClass")
         };
         analyzeString(classes[i]);
+    }
+
+    @StringDefinitionsCollection(
+            value = "a case that tests that the append interpretation of only intraprocedural "
+                    + "expressions still works",
+            stringDefinitions = {
+                    @StringDefinitions(
+                            expectedLevel = CONSTANT,
+                            expectedStrings = "value:(A|BC)Z"
+                    )
+
+            })
+    public void appendTest0(int i) {
+        StringBuilder sb = new StringBuilder("value:");
+        if (i % 2 == 0) {
+            sb.append('A');
+        } else {
+            sb.append("BC");
+        }
+        sb.append('Z');
+        analyzeString(sb.toString());
+    }
+
+    @StringDefinitionsCollection(
+            value = "a case where function calls are involved in append operations",
+            stringDefinitions = {
+                    @StringDefinitions(
+                            expectedLevel = PARTIALLY_CONSTANT,
+                            expectedStrings = "classname:StringBuilder,osname:\\w"
+                    )
+
+            })
+    public void appendTest1() {
+        StringBuilder sb = new StringBuilder("classname:");
+        sb.append(getSimpleStringBuilderClassName());
+        sb.append(",osname:");
+        sb.append(System.getProperty("os.name:"));
+        analyzeString(sb.toString());
+    }
+
+    @StringDefinitionsCollection(
+            value = "a case where function calls are involved in append operations",
+            stringDefinitions = {
+                    @StringDefinitions(
+                            expectedLevel = CONSTANT,
+                            expectedStrings = "(java.lang.Runtime|java.lang.StringBuilder|"
+                                    + "ERROR!) - Done"
+                    )
+
+            })
+    public void appendTest2(int classToLoad) {
+        StringBuilder sb;
+        if (classToLoad == 0) {
+            sb = new StringBuilder(getRuntimeClassName());
+        } else if (classToLoad == 1) {
+            sb = new StringBuilder(getStringBuilderClassName());
+        } else {
+            sb = new StringBuilder("ERROR!");
+        }
+        sb.append(" - Done");
+        analyzeString(sb.toString());
     }
 
     private String getRuntimeClassName() {
