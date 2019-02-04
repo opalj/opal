@@ -32,11 +32,11 @@ import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.common.BinaryE
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.common.DoubleValueInterpreter
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.common.FloatValueInterpreter
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.common.IntegerValueInterpreter
-import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.finalizer.ArrayFinalizer
+import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedural.finalizer.ArrayFinalizer
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.common.NewInterpreter
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.common.StringConstInterpreter
-import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.finalizer.NonVirtualMethodCallFinalizer
+import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedural.finalizer.NonVirtualMethodCallFinalizer
 
 /**
  * `InterproceduralInterpretationHandler` is responsible for processing expressions that are
