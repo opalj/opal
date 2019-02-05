@@ -94,8 +94,6 @@ class InterproceduralNonVirtualMethodCallInterpreter(
                             state.appendResultToFpe2Sci(ds, r)
                         case _ ⇒
                     }
-                    // TODO: is it enough to return only one (the first) IntermediateResult in case
-                    //  there are more? (The others were registered already, anyway.)
                     returnIR
                 }
         }
