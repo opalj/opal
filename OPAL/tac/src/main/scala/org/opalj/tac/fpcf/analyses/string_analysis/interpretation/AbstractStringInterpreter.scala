@@ -9,6 +9,7 @@ import org.opalj.br.cfg.CFG
 import org.opalj.br.Method
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.DefinedMethod
+import org.opalj.br.ReferenceType
 import org.opalj.tac.Stmt
 import org.opalj.tac.TACStmts
 import org.opalj.tac.fpcf.analyses.string_analysis.V
@@ -63,14 +64,19 @@ abstract class AbstractStringInterpreter(
     }
 
     /**
-     * Takes `declaredMethods` as well as a method `name`, extracts the method with the given `name`
-     * from `declaredMethods` and returns this one as a [[Method]]. It might be, that the given
-     * method cannot be found. In these cases, `None` will be returned.
+     * Takes `declaredMethods`, a `declaringClass`, and a method `name` and extracts the method with
+     * the given `name` from `declaredMethods` where the declaring classes match. The found entry is
+     * then returned as a [[Method]] instance.
+     * <p>
+     * It might be, that the given method cannot be found (e.g., when it is not in the scope of the
+     * current project). In these cases, `None` will be returned.
      */
     protected def getDeclaredMethod(
-        declaredMethods: DeclaredMethods, name: String
+        declaredMethods: DeclaredMethods, declaringClass: ReferenceType, methodName: String
     ): Option[Method] = {
-        val dm = declaredMethods.declaredMethods.find(_.name == name)
+        val dm = declaredMethods.declaredMethods.find { dm ⇒
+            dm.name == methodName && dm.declaringClassType == declaringClass
+        }
         if (dm.isDefined && dm.get.isInstanceOf[DefinedMethod]) {
             Some(dm.get.definedMethod)
         } else {

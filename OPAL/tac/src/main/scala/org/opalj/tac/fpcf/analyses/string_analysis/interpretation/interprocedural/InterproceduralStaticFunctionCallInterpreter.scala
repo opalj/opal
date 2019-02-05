@@ -53,7 +53,7 @@ class InterproceduralStaticFunctionCallInterpreter(
      * @see [[AbstractStringInterpreter.interpret]]
      */
     override def interpret(instr: T, defSite: Int): ProperPropertyComputationResult = {
-        val methodOption = getDeclaredMethod(declaredMethods, instr.name)
+        val methodOption = getDeclaredMethod(declaredMethods, instr.declaringClass, instr.name)
 
         if (methodOption.isEmpty) {
             val e: Integer = defSite
