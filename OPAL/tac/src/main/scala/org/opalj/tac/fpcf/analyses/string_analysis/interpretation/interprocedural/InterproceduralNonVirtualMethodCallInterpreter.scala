@@ -83,7 +83,7 @@ class InterproceduralNonVirtualMethodCallInterpreter(
                     // Final result is available
                     val scis = results.map(r ⇒
                         StringConstancyProperty.extractFromPPCR(r._2).stringConstancyInformation)
-                    val reduced = StringConstancyInformation.reduceMultiple(scis.toList)
+                    val reduced = StringConstancyInformation.reduceMultiple(scis)
                     Result(defSite, StringConstancyProperty(reduced))
                 } else {
                     // Some intermediate results => register necessary information from final

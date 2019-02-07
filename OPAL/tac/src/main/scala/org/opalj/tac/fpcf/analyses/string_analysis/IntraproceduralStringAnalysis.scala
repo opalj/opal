@@ -147,7 +147,7 @@ class IntraproceduralStringAnalysis(
                 uvar.definedBy.toArray.sorted.map { ds ⇒
                     val r = interHandler.processDefSite(ds).asInstanceOf[Result]
                     r.finalEP.p.asInstanceOf[StringConstancyProperty].stringConstancyInformation
-                }.toList
+                }
             )
         }
 

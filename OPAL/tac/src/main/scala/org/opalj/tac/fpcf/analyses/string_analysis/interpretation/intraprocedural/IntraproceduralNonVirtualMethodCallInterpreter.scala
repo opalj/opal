@@ -75,7 +75,7 @@ class IntraproceduralNonVirtualMethodCallInterpreter(
                         r.finalEP.p.asInstanceOf[StringConstancyProperty].stringConstancyInformation
                     )
                 }
-                val reduced = StringConstancyInformation.reduceMultiple(scis.toList)
+                val reduced = StringConstancyInformation.reduceMultiple(scis)
                 StringConstancyProperty(reduced)
         }
     }
