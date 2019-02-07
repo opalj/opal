@@ -53,6 +53,7 @@ import org.opalj.tac.fpcf.analyses.cg.TriggeredSerializationRelatedCallsAnalysis
 import org.opalj.tac.fpcf.analyses.cg.TriggeredStaticInitializerAnalysis
 import org.opalj.tac.fpcf.analyses.cg.TriggeredThreadRelatedCallsAnalysis
 import org.opalj.tac.fpcf.analyses.cg.reflection.TriggeredReflectionRelatedCallsAnalysis
+import org.opalj.tac.fpcf.analyses.cg.RTACallGraphKey
 
 /**
  * Simple test to ensure that the FPFC analyses do not cause exceptions and that their results
@@ -98,32 +99,9 @@ class FPCFAnalysesIntegrationTest extends FunSpec {
                     PropertyStore.updateDebug(true)
                     ps = p.get(PropertyStoreKey)
 
-                    val manager = p.get(FPCFAnalysesManagerKey)
-
                     time {
                         // todo do not want to run this for every setting
-                        manager.runAll(
-                            RTACallGraphAnalysisScheduler,
-                            TriggeredStaticInitializerAnalysis,
-                            TriggeredLoadedClassesAnalysis,
-                            TriggeredFinalizerAnalysisScheduler,
-                            TriggeredThreadRelatedCallsAnalysis,
-                            TriggeredSerializationRelatedCallsAnalysis,
-                            TriggeredReflectionRelatedCallsAnalysis,
-                            TriggeredInstantiatedTypesAnalysis,
-                            TriggeredConfiguredNativeMethodsAnalysis,
-                            TriggeredSystemPropertiesAnalysis,
-                            LazyCalleesAnalysis(
-                                Set(
-                                    StandardInvokeCallees,
-                                    SerializationRelatedCallees,
-                                    ReflectionRelatedCallees,
-                                    ThreadRelatedIncompleteCallSites
-                                )
-                            ),
-                            LazyL0BaseAIAnalysis,
-                            TACAITransformer
-                        )
+                        p.get(RTACallGraphKey())
                     } {t ⇒ info(s"call graph and tac analysis took ${t.toSeconds}")}
 
                     time {p.get(FPCFAnalysesManagerKey).runAll(analyses)}(reportAnalysisTime)

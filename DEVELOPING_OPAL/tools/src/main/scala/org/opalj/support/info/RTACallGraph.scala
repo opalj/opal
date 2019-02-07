@@ -5,37 +5,19 @@ package info
 
 import java.net.URL
 
-import org.opalj.collection.immutable.Chain
-import org.opalj.fpcf.ComputationSpecification
+import org.opalj.fpcf.PropertyStore
 import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
-import org.opalj.br.fpcf.FPCFAnalysesManagerKey
-import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.cg.properties.Callees
 import org.opalj.br.fpcf.cg.properties.CallersProperty
 import org.opalj.br.fpcf.cg.properties.NoCallers
-import org.opalj.br.fpcf.cg.properties.ReflectionRelatedCallees
-import org.opalj.br.fpcf.cg.properties.SerializationRelatedCallees
-import org.opalj.br.fpcf.cg.properties.StandardInvokeCallees
-import org.opalj.br.fpcf.cg.properties.ThreadRelatedIncompleteCallSites
-import org.opalj.tac.fpcf.analyses.cg.EagerLibraryEntryPointsAnalysis
-import org.opalj.tac.fpcf.analyses.cg.LazyCalleesAnalysis
-import org.opalj.tac.fpcf.analyses.cg.RTACallGraphAnalysisScheduler
-import org.opalj.tac.fpcf.analyses.cg.TriggeredConfiguredNativeMethodsAnalysis
-import org.opalj.tac.fpcf.analyses.cg.TriggeredFinalizerAnalysisScheduler
-import org.opalj.tac.fpcf.analyses.cg.TriggeredInstantiatedTypesAnalysis
-import org.opalj.tac.fpcf.analyses.cg.TriggeredLoadedClassesAnalysis
-import org.opalj.tac.fpcf.analyses.cg.TriggeredSerializationRelatedCallsAnalysis
-import org.opalj.tac.fpcf.analyses.cg.TriggeredStaticInitializerAnalysis
-import org.opalj.tac.fpcf.analyses.cg.TriggeredThreadRelatedCallsAnalysis
-import org.opalj.tac.fpcf.analyses.cg.reflection.TriggeredReflectionRelatedCallsAnalysis
-import org.opalj.tac.fpcf.analyses.TriggeredSystemPropertiesAnalysis
+import org.opalj.tac.fpcf.analyses.cg.RTACallGraphKey
 //import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
 //import org.opalj.tac.fpcf.analyses.TACAITransformer
-import org.opalj.tac.fpcf.analyses.LazyTACAIProvider
 
 /**
  * Computes a RTA based call graph and reports its size.
@@ -71,53 +53,17 @@ object RTACallGraph extends DefaultOneStepAnalysis {
         parameters:    Seq[String],
         isInterrupted: () ⇒ Boolean
     ): BasicReport = {
-        implicit val declaredMethods = project.get(DeclaredMethodsKey)
+        implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
         val allMethods = declaredMethods.declaredMethods.filter { dm ⇒
             dm.hasSingleDefinedMethod &&
                 (dm.definedMethod.classFile.thisType eq dm.declaringClassType)
         }.toTraversable
 
-        implicit val ps = project.get(PropertyStoreKey)
+        implicit val ps: PropertyStore = project.get(PropertyStoreKey)
 
-        val calleesAnalysis = LazyCalleesAnalysis(
-            Set(
-                StandardInvokeCallees,
-                SerializationRelatedCallees,
-                ReflectionRelatedCallees,
-                ThreadRelatedIncompleteCallSites
-            )
-        )
+        val cg = project.get(RTACallGraphKey())
 
-        project.get(FPCFAnalysesManagerKey).runAll(
-            List(
-                // LazyL0BaseAIAnalysis,
-                // TACAITransformer,
-                LazyTACAIProvider,
-                /* Call Graph Analyses */
-                RTACallGraphAnalysisScheduler,
-                TriggeredStaticInitializerAnalysis,
-                TriggeredLoadedClassesAnalysis,
-                TriggeredFinalizerAnalysisScheduler,
-                TriggeredThreadRelatedCallsAnalysis,
-                TriggeredSerializationRelatedCallsAnalysis,
-                TriggeredReflectionRelatedCallsAnalysis,
-                TriggeredInstantiatedTypesAnalysis,
-                TriggeredConfiguredNativeMethodsAnalysis,
-                TriggeredSystemPropertiesAnalysis,
-                EagerLibraryEntryPointsAnalysis,
-                calleesAnalysis
-            ),
-            { css: Chain[ComputationSpecification[FPCFAnalysis]] ⇒
-                if (css.contains(calleesAnalysis)) {
-                    allMethods.foreach { dm ⇒ ps.force(dm, br.fpcf.cg.properties.Callees.key) }
-                }
-            }
-        )
-
-        val callersProperties = ps(allMethods, CallersProperty.key)
-        assert(callersProperties.forall(_.isFinal))
-
-        val reachableMethods = callersProperties.filterNot(_.ub eq NoCallers).map(_.ub)
+        val reachableMethods = cg.reachableMethods().toTraversable
 
         val numEdges = reachableMethods.foldLeft(0) { (accEdges, callersProperty) ⇒
             callersProperty.callers.size + accEdges

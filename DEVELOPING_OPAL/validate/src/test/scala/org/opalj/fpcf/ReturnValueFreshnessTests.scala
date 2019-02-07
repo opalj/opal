@@ -28,7 +28,7 @@ import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
  *  (sub-)package of org.opalj.fpcf.fixture) and the computed ones match. The actual matching is
  *  delegated to PropertyMatchers to facilitate matching arbitrary complex property specifications.
  *
- * @author Florian Kübler
+ * @author Florian Kuebler
  */
 class ReturnValueFreshnessTests extends PropertiesTest {
 
