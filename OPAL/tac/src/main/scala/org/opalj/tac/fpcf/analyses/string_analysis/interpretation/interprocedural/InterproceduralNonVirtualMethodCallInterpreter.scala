@@ -91,7 +91,7 @@ class InterproceduralNonVirtualMethodCallInterpreter(
                     val returnIR = results.find(r ⇒ !r._2.isInstanceOf[Result]).get._2
                     results.foreach {
                         case (ds, r: Result) ⇒
-                            state.appendResultToFpe2Sci(ds, r)
+                            state.appendResultToFpe2Sci(ds, r, reset = true)
                         case _ ⇒
                     }
                     returnIR

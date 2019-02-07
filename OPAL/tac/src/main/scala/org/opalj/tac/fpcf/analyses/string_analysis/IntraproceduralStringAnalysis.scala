@@ -185,7 +185,7 @@ class IntraproceduralStringAnalysis(
         if (remDependees.isEmpty) {
             val interpretationHandler = IntraproceduralInterpretationHandler(state.cfg)
             val finalSci = new PathTransformer(interpretationHandler).pathToStringTree(
-                state.computedLeanPath, state.fpe2sci.toMap
+                state.computedLeanPath, state.fpe2sci.map { case (k, v) ⇒ (k, ListBuffer(v)) }.toMap
             ).reduce(true)
             Result(data, StringConstancyProperty(finalSci))
         } else {

@@ -110,7 +110,7 @@ class InterproceduralInterpretationHandler(
                 result
             case Assignment(_, _, expr: VirtualFunctionCall[V]) ⇒
                 new VirtualFunctionCallPreparationInterpreter(
-                    cfg, this, state, params
+                    cfg, this, ps, state, declaredMethods, params, c
                 ).interpret(expr, defSite)
             case Assignment(_, _, expr: StaticFunctionCall[V]) ⇒
                 new InterproceduralStaticFunctionCallInterpreter(
@@ -128,7 +128,7 @@ class InterproceduralInterpretationHandler(
                 new InterproceduralFieldInterpreter(cfg, this, callees).interpret(expr, defSite)
             case ExprStmt(_, expr: VirtualFunctionCall[V]) ⇒
                 new VirtualFunctionCallPreparationInterpreter(
-                    cfg, this, state, params
+                    cfg, this, ps, state, declaredMethods, params, c
                 ).interpret(expr, defSite)
             case ExprStmt(_, expr: StaticFunctionCall[V]) ⇒
                 new InterproceduralStaticFunctionCallInterpreter(

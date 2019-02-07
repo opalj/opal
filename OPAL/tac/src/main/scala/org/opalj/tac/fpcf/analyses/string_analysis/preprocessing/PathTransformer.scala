@@ -32,11 +32,13 @@ class PathTransformer(val interpretationHandler: InterpretationHandler) {
      * Accumulator function for transforming a path into a StringTree element.
      */
     private def pathToTreeAcc(
-        subpath: SubPath, fpe2Sci: Map[Int, StringConstancyInformation]
+        subpath: SubPath, fpe2Sci: Map[Int, ListBuffer[StringConstancyInformation]]
     ): Option[StringTree] = {
         subpath match {
             case fpe: FlatPathElement ⇒
-                val sci = if (fpe2Sci.contains(fpe.element)) fpe2Sci(fpe.element) else {
+                val sci = if (fpe2Sci.contains(fpe.element)) {
+                    StringConstancyInformation.reduceMultiple(fpe2Sci(fpe.element).toList)
+                } else {
                     val r = interpretationHandler.processDefSite(fpe.element).asInstanceOf[Result]
                     r.finalEP.p.asInstanceOf[StringConstancyProperty].stringConstancyInformation
                 }
@@ -122,8 +124,8 @@ class PathTransformer(val interpretationHandler: InterpretationHandler) {
      */
     def pathToStringTree(
         path:             Path,
-        fpe2Sci:          Map[Int, StringConstancyInformation] = Map.empty,
-        resetExprHandler: Boolean                              = true
+        fpe2Sci:          Map[Int, ListBuffer[StringConstancyInformation]] = Map.empty,
+        resetExprHandler: Boolean                                          = true
     ): StringTree = {
         val tree = path.elements.size match {
             case 1 ⇒ pathToTreeAcc(path.elements.head, fpe2Sci).get

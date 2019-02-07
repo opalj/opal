@@ -64,9 +64,9 @@ object StringConstancyInformation {
      *             as described above; the empty list will throw an error!
      * @return Returns the reduced information in the fashion described above.
      */
-    def reduceMultiple(scis: List[StringConstancyInformation]): StringConstancyInformation = {
+    def reduceMultiple(scis: Iterable[StringConstancyInformation]): StringConstancyInformation = {
         val relScis = scis.filter(!_.isTheNeutralElement)
-        relScis.length match {
+        relScis.size match {
             // The list may be empty, e.g., if the UVar passed to the analysis, refers to a
             // VirtualFunctionCall (they are not interpreted => an empty list is returned) => return
             // the neutral element

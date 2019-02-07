@@ -20,7 +20,11 @@ class NonVirtualMethodCallFinalizer(state: ComputationState) extends AbstractFin
      */
     override def finalizeInterpretation(instr: T, defSite: Int): Unit = {
         val scis = instr.params.head.asVar.definedBy.toArray.sorted.map { state.fpe2sci }
-        state.fpe2sci(defSite) = StringConstancyInformation.reduceMultiple(scis.toList)
+        state.appendToFpe2Sci(
+            defSite,
+            StringConstancyInformation.reduceMultiple(scis.flatten.toList),
+            reset = true
+        )
     }
 
 }

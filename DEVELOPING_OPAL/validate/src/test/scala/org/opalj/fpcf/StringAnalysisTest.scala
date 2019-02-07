@@ -255,7 +255,10 @@ object InterproceduralStringAnalysisTest {
     // Files to load for the runner
     val filesToLoad = List(
         "fixtures/string_analysis/InterproceduralTestMethods.class",
-        "fixtures/string_analysis/StringProvider.class"
+        "fixtures/string_analysis/StringProvider.class",
+        "fixtures/string_analysis/hierarchies/GreetingService.class",
+        "fixtures/string_analysis/hierarchies/HelloGreeting.class",
+        "fixtures/string_analysis/hierarchies/SimpleHelloGreeting.class"
     )
 
 }
