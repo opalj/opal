@@ -5,6 +5,7 @@ package fpcf
 package analyses
 package cg
 
+import org.opalj.collection.immutable.Chain
 import org.opalj.fpcf.ComputationSpecification
 import org.opalj.fpcf.PropertyStore
 import org.opalj.br.analyses.DeclaredMethodsKey
@@ -39,6 +40,7 @@ import org.opalj.tac.fpcf.analyses.cg.reflection.TriggeredReflectionRelatedCalls
  *                                      predefined native methods?
  *                                      See [[ConfiguredNativeMethodsAnalysis]] for details about
  *                                      the configuration.
+ * @param isLibrary should the [[EagerLibraryEntryPointsAnalysis]] be scheduled?
  *
  * Note, that initial instantiated types ([[InitialInstantiatedTypesKey]]) and entry points
  * ([[InitialEntryPointsKey]]) can be configured before hand.
@@ -54,7 +56,8 @@ case class RTACallGraphKey(
         handleReflection:              Boolean = true,
         handleSerialization:           Boolean = true,
         handleThreads:                 Boolean = true,
-        handleConfiguredNativeMethods: Boolean = true
+        handleConfiguredNativeMethods: Boolean = true,
+        isLibrary:                     Boolean = true
 ) extends ProjectInformationKey[CallGraph, Nothing] {
 
     override protected def requirements: ProjectInformationKeys = {
@@ -73,18 +76,20 @@ case class RTACallGraphKey(
 
         val manager = project.get(FPCFAnalysesManagerKey)
 
+        val calleesAnalysis = LazyCalleesAnalysis(
+            Set(
+                StandardInvokeCallees,
+                SerializationRelatedCallees,
+                ReflectionRelatedCallees,
+                ThreadRelatedIncompleteCallSites
+            )
+        )
+
         var analyses: List[ComputationSpecification[FPCFAnalysis]] =
             List(
                 RTACallGraphAnalysisScheduler,
                 TriggeredInstantiatedTypesAnalysis,
-                LazyCalleesAnalysis(
-                    Set(
-                        StandardInvokeCallees,
-                        SerializationRelatedCallees,
-                        ReflectionRelatedCallees,
-                        ThreadRelatedIncompleteCallSites
-                    )
-                ),
+                calleesAnalysis,
                 LazyTACAIProvider
             )
 
@@ -110,13 +115,19 @@ case class RTACallGraphKey(
         if (handleConfiguredNativeMethods)
             analyses ::= TriggeredConfiguredNativeMethodsAnalysis
 
-        manager.runAll(analyses)
+        if (isLibrary)
+            analyses ::= EagerLibraryEntryPointsAnalysis
 
-        // force the computation of the callees, as they have to be aggregated first
-        declaredMethods.declaredMethods.foreach { dm ⇒
-            ps.force(dm, Callees.key)
-        }
-        ps.waitOnPhaseCompletion()
+        manager.runAll(
+            analyses,
+            { css: Chain[ComputationSpecification[FPCFAnalysis]] ⇒
+                if (css.contains(calleesAnalysis)) {
+                    declaredMethods.declaredMethods.foreach { dm ⇒
+                        ps.force(dm, Callees.key)
+                    }
+                }
+            }
+        )
 
         new CallGraph()
     }

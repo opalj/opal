@@ -75,6 +75,7 @@ import org.opalj.tac.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
 import org.opalj.tac.fpcf.analyses.purity.L2PurityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis
 import org.opalj.tac.fpcf.analyses.LazyTACAIProvider
+import org.opalj.tac.fpcf.analyses.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.purity.DomainSpecificRater
 import org.opalj.tac.fpcf.analyses.purity.L1PurityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.LazyL1PurityAnalysis
@@ -103,30 +104,6 @@ object Purity {
             "[-eval <path to evaluation directory>]\n"+
             "Example:\n\tjava …PurityAnalysisEvaluation -JDK -individual -closedWorld"
     }
-
-    val cgAnalyses = Set[ComputationSpecification[FPCFAnalysis]](
-        RTACallGraphAnalysisScheduler,
-        TriggeredStaticInitializerAnalysis,
-        TriggeredLoadedClassesAnalysis,
-        TriggeredFinalizerAnalysisScheduler,
-        TriggeredThreadRelatedCallsAnalysis,
-        TriggeredSerializationRelatedCallsAnalysis,
-        TriggeredReflectionRelatedCallsAnalysis,
-        TriggeredInstantiatedTypesAnalysis,
-        TriggeredConfiguredNativeMethodsAnalysis,
-        TriggeredSystemPropertiesAnalysis,
-        // LazyL0BaseAIAnalysis,
-        // TACAITransformer,
-        LazyTACAIProvider,
-        LazyCalleesAnalysis(
-            Set(
-                StandardInvokeCallees,
-                SerializationRelatedCallees,
-                ReflectionRelatedCallees,
-                ThreadRelatedIncompleteCallSites
-            )
-        )
-    )
 
     val supportingAnalyses = IndexedSeq(
         List[FPCFAnalysisScheduler](
@@ -249,11 +226,7 @@ object Purity {
         val manager = project.get(FPCFAnalysesManagerKey)
 
         time {
-            if (isLibrary) {
-                manager.runAll(cgAnalyses + EagerLibraryEntryPointsAnalysis)
-            } else {
-                manager.runAll(cgAnalyses)
-            }
+            project.get(RTACallGraphKey(isLibrary = isLibrary))
         } { t ⇒ callGraphTime = t.toSeconds }
 
         val reachableMethods =
