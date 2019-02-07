@@ -39,9 +39,11 @@ class VirtualFunctionCallFinalizer(
      */
     private def finalizeAppend(instr: T, defSite: Int): Unit = {
         val receiverSci = StringConstancyInformation.reduceMultiple(
-            instr.receiver.asVar.definedBy.toArray.sorted.map(state.fpe2sci(_)).toList
+            instr.receiver.asVar.definedBy.toArray.sorted.flatMap(state.fpe2sci(_))
         )
-        val appendSci = state.fpe2sci(instr.params.head.asVar.definedBy.head)
+        val appendSci = StringConstancyInformation.reduceMultiple(
+            state.fpe2sci(instr.params.head.asVar.definedBy.head)
+        )
 
         val finalSci = if (receiverSci.isTheNeutralElement && appendSci.isTheNeutralElement) {
             receiverSci
@@ -59,7 +61,7 @@ class VirtualFunctionCallFinalizer(
             )
         }
 
-        state.fpe2sci(defSite) = finalSci
+        state.appendToFpe2Sci(defSite, finalSci, reset = true)
     }
 
 }

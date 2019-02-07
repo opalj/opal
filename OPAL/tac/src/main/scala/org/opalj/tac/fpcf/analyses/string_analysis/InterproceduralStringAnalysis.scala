@@ -15,6 +15,7 @@ import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
 import org.opalj.fpcf.SomeEPS
+import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.cfg.CFG
@@ -24,8 +25,6 @@ import org.opalj.br.fpcf.FPCFLazyAnalysisScheduler
 import org.opalj.br.fpcf.cg.properties.Callees
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
-import org.opalj.br.DeclaredMethod
-import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.tac.Stmt
 import org.opalj.tac.TACStmts
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.Path
@@ -48,22 +47,16 @@ import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.SubPath
  * have all required information ready for a final result.
  */
 case class ComputationState(
-        var computedLeanPath: Option[Path],
-        cfg:                  CFG[Stmt[V], TACStmts[V]],
-        var callees:          Option[Callees]           = None
+        var computedLeanPath: Option[Path]    = None,
+        var callees:          Option[Callees] = None
 ) {
+    var cfg: CFG[Stmt[V], TACStmts[V]] = _
     // If not empty, this very routine can only produce an intermediate result
     val dependees: mutable.Map[Entity, ListBuffer[EOptionP[Entity, Property]]] = mutable.Map()
     // A mapping from DUVar elements to the corresponding indices of the FlatPathElements
     val var2IndexMapping: mutable.Map[V, Int] = mutable.Map()
     // A mapping from values / indices of FlatPathElements to StringConstancyInformation
-    val fpe2sci: mutable.Map[Int, StringConstancyInformation] = mutable.Map()
-    // Some interpreters, such as the array interpreter, need preparation (see their comments for
-    // more information). This map stores the prepared data. The key of the outer map is the
-    // instruction that is to be interpreted. The key of the inner map is a definition site and the
-    // inner maps value the associated string constancy information
-    //    val preparationSciInformation: mutable.Map[Any, mutable.Map[Int, StringConstancyInformation]] =
-    //        mutable.Map()
+    val fpe2sci: mutable.Map[Int, ListBuffer[StringConstancyInformation]] = mutable.Map()
     // Parameter values of method / function; a mapping from the definition sites of parameter (
     // negative values) to a correct index of `params` has to be made!
     var params: List[StringConstancyInformation] = List()
@@ -72,34 +65,26 @@ case class ComputationState(
      * Takes a definition site as well as a result and extends the [[fpe2sci]] map accordingly,
      * however, only if `defSite` is not yet present.
      */
-    def appendResultToFpe2Sci(defSite: Int, r: Result): Unit = {
-        if (!fpe2sci.contains(defSite)) {
-            val sci = StringConstancyProperty.extractFromPPCR(r).stringConstancyInformation
-            fpe2sci(defSite) = sci
-        }
-    }
+    def appendResultToFpe2Sci(
+        defSite: Int, r: Result, reset: Boolean = false
+    ): Unit = appendToFpe2Sci(
+        defSite,
+        StringConstancyProperty.extractFromPPCR(r).stringConstancyInformation,
+        reset
+    )
 
     /**
      * Takes a definition site as well as [[StringConstancyInformation]] and extends the [[fpe2sci]]
      * map accordingly, however, only if `defSite` is not yet present.
      */
-    def appendResultToFpe2Sci(defSite: Int, sci: StringConstancyInformation): Unit = {
-        if (!fpe2sci.contains(defSite)) {
-            fpe2sci(defSite) = sci
+    def appendToFpe2Sci(
+        defSite: Int, sci: StringConstancyInformation, reset: Boolean = false
+    ): Unit = {
+        if (reset || !fpe2sci.contains(defSite)) {
+            fpe2sci(defSite) = ListBuffer()
         }
+        fpe2sci(defSite).append(sci)
     }
-
-    /**
-     * addPreparationInformation is responsible for adding an entry to preparationSciInformation
-     */
-    //    def addPreparationInformation(
-    //        instr: Any, defSite: Int, sci: StringConstancyInformation
-    //    ): Unit = {
-    //        if (!preparationSciInformation.contains(instr)) {
-    //            preparationSciInformation(instr) = mutable.Map()
-    //        }
-    //        preparationSciInformation(instr)(defSite) = sci
-    //    }
 
 }
 
@@ -134,39 +119,47 @@ class InterproceduralStringAnalysis(
 
     private var declaredMethods: DeclaredMethods = _
 
-    // state will be set to a non-null value in "determinePossibleStrings"
-    var state: ComputationState = _
-
     def analyze(data: P): ProperPropertyComputationResult = {
+        val state = ComputationState()
         declaredMethods = project.get(DeclaredMethodsKey)
         // TODO: Is there a way to get the declared method in constant time?
-        val dm = declaredMethods.declaredMethods.find(dm ⇒ dm.name == data._2.name).get
+        val dm = declaredMethods.declaredMethods.find { dm ⇒
+            dm.name == data._2.name &&
+                dm.declaringClassType.toJava == data._2.classFile.thisType.toJava
+        }.get
 
         val calleesEOptP = ps(dm, Callees.key)
         if (calleesEOptP.hasUBP) {
-            determinePossibleStrings(data, calleesEOptP.ub)
+            state.callees = Some(calleesEOptP.ub)
+            determinePossibleStrings(data, state)
         } else {
-            val dependees = Iterable(calleesEOptP)
+            state.dependees(data) = ListBuffer()
+            state.dependees(data).append(calleesEOptP)
+            val dependees = state.dependees.values.flatten
             InterimResult(
                 calleesEOptP,
                 StringConstancyProperty.lb,
                 StringConstancyProperty.ub,
                 dependees,
-                calleesContinuation(calleesEOptP, dependees, data)
+                continuation(data, state)
             )
         }
     }
 
+    /**
+     * Takes the `data` an analysis was started with as well as a computation `state` and determines
+     * the possible string values. This method returns either a final [[Result]] or an
+     * [[InterimResult]] depending on whether other information needs to be computed first.
+     */
     private def determinePossibleStrings(
-        data: P, callees: Callees
+        data: P, state: ComputationState
     ): ProperPropertyComputationResult = {
         // sci stores the final StringConstancyInformation (if it can be determined now at all)
         var sci = StringConstancyProperty.lb.stringConstancyInformation
         val tacProvider = p.get(SimpleTACAIKey)
-        val cfg = tacProvider(data._2).cfg
-        val stmts = cfg.code.instructions
-        state = ComputationState(None, cfg, Some(callees))
+        state.cfg = tacProvider(data._2).cfg
         state.params = InterproceduralStringAnalysis.getParams(data)
+        val stmts = state.cfg.code.instructions
 
         val uvar = data._1
         val defSites = uvar.definedBy.toArray.sorted
@@ -175,7 +168,7 @@ class InterproceduralStringAnalysis(
         if (defSites.head < 0) {
             return Result(data, StringConstancyProperty.lb)
         }
-        val pathFinder: AbstractPathFinder = new WindowPathFinder(cfg)
+        val pathFinder: AbstractPathFinder = new WindowPathFinder(state.cfg)
 
         val call = stmts(defSites.head).asAssignment.expr
         if (InterpretationHandler.isStringBuilderBufferToStringCall(call)) {
@@ -207,7 +200,7 @@ class InterproceduralStringAnalysis(
                 }
             } else {
                 val iHandler = InterproceduralInterpretationHandler(
-                    cfg, ps, declaredMethods, state, continuation(data, callees, List(), state)
+                    state.cfg, ps, declaredMethods, state, continuation(data, state)
                 )
                 if (computeResultsForPath(state.computedLeanPath.get, iHandler, state)) {
                     sci = new PathTransformer(iHandler).pathToStringTree(
@@ -217,7 +210,7 @@ class InterproceduralStringAnalysis(
             }
         } // If not a call to String{Builder, Buffer}.toString, then we deal with pure strings
         else {
-            val leanPath = if (defSites.length == 1) {
+            state.computedLeanPath = Some(if (defSites.length == 1) {
                 // Trivial case for just one element
                 Path(List(FlatPathElement(defSites.head)))
             } else {
@@ -228,58 +221,84 @@ class InterproceduralStringAnalysis(
                     children.append(NestedPathElement(ListBuffer(FlatPathElement(ds)), None))
                 }
                 Path(List(NestedPathElement(children, Some(NestedPathType.CondWithAlternative))))
-            }
+            })
 
-            val interHandler = InterproceduralInterpretationHandler(
-                cfg, ps, declaredMethods, state, continuation(data, callees, List(), state)
+            val iHandler = InterproceduralInterpretationHandler(
+                state.cfg, ps, declaredMethods, state, continuation(data, state)
             )
-            state.computedLeanPath = Some(leanPath)
-            if (computeResultsForPath(leanPath, interHandler, state)) {
-                // All necessary information are available => Compute final result
-                return computeFinalResult(data, state, interHandler)
+            if (computeResultsForPath(state.computedLeanPath.get, iHandler, state)) {
+                sci = new PathTransformer(iHandler).pathToStringTree(
+                    state.computedLeanPath.get, state.fpe2sci.toMap
+                ).reduce(true)
             }
             // No need to cover the else branch: interimResults.nonEmpty => dependees were added to
             // state.dependees, i.e., the if that checks whether state.dependees is non-empty will
             // always be true (thus, the value of "sci" does not matter)
         }
 
-        if (state.dependees.nonEmpty) {
+        if (state.dependees.values.nonEmpty) {
             InterimResult(
                 data,
                 StringConstancyProperty.ub,
                 StringConstancyProperty.lb,
                 state.dependees.values.flatten,
-                continuation(data, callees, state.dependees.values.flatten, state)
+                continuation(data, state)
             )
         } else {
             Result(data, StringConstancyProperty(sci))
         }
     }
 
-    private def calleesContinuation(
-        e:         Entity,
-        dependees: Iterable[EOptionP[DeclaredMethod, Callees]],
-        inputData: P
-    )(eps: SomeEPS): ProperPropertyComputationResult = eps match {
-        case FinalP(callees: Callees) ⇒
-            determinePossibleStrings(inputData, callees)
-        case InterimLUBP(lb, ub) ⇒
-            InterimResult(e, lb, ub, dependees, calleesContinuation(e, dependees, inputData))
-        case _ ⇒ throw new IllegalStateException("can occur?")
+    /**
+     * Continuation function for this analysis.
+     *
+     * @param state The current computation state. Within this continuation, dependees of the state
+     *              might be updated. Furthermore, methods processing this continuation might alter
+     *              the state.
+     * @param inputData The data which the string analysis was started with.
+     * @return Returns a final result if (already) available. Otherwise, an intermediate result will
+     *         be returned.
+     */
+    private def continuation(
+        inputData: P,
+        state:     ComputationState
+    )(eps: SomeEPS): ProperPropertyComputationResult = {
+        eps.pk match {
+            case Callees.key ⇒ eps match {
+                case FinalP(callees: Callees) ⇒
+                    state.callees = Some(callees)
+                    state.dependees(inputData) = state.dependees(inputData).filter(_.e != eps.e)
+                    if (state.dependees(inputData).isEmpty) {
+                        state.dependees.remove(inputData)
+                    }
+                    determinePossibleStrings(inputData, state)
+                case InterimLUBP(lb, ub) ⇒ InterimResult(
+                    inputData, lb, ub, state.dependees.values.flatten, continuation(inputData, state)
+                )
+                case _ ⇒ throw new IllegalStateException("Neither FinalP nor InterimResult")
+            }
+            case StringConstancyProperty.key ⇒
+                eps match {
+                    case FinalP(p) ⇒
+                        processFinalP(inputData, state, eps.e, p)
+                    case InterimLUBP(lb, ub) ⇒ InterimResult(
+                        inputData, lb, ub, state.dependees.values.flatten, continuation(eps.e.asInstanceOf[P], state)
+                    )
+                    case _ ⇒ throw new IllegalStateException("Neither FinalP nor InterimResult")
+                }
+        }
     }
 
     private def finalizePreparations(
         path: Path, state: ComputationState, iHandler: InterproceduralInterpretationHandler
-    ): Unit = {
-        path.elements.foreach {
-            case FlatPathElement(index) ⇒
-                if (!state.fpe2sci.contains(index)) {
-                    iHandler.finalizeDefSite(index, state)
-                }
-            case npe: NestedPathElement ⇒
-                finalizePreparations(Path(npe.element.toList), state, iHandler)
-            case _ ⇒
-        }
+    ): Unit = path.elements.foreach {
+        case FlatPathElement(index) ⇒
+            if (!state.fpe2sci.contains(index)) {
+                iHandler.finalizeDefSite(index, state)
+            }
+        case npe: NestedPathElement ⇒
+            finalizePreparations(Path(npe.element.toList), state, iHandler)
+        case _ ⇒
     }
 
     /**
@@ -290,7 +309,7 @@ class InterproceduralStringAnalysis(
      * @param data The entity that was to analyze.
      * @param state The final computation state. For this state the following criteria must apply:
      *              For each [[FlatPathElement]], there must be a corresponding entry in
-     *              [[state.fpe2sci]]. If this criteria is not met, a [[NullPointerException]] will
+     *              `state.fpe2sci`. If this criteria is not met, a [[NullPointerException]] will
      *              be thrown (in this case there was some work to do left and this method should
      *              not have been called)!
      * @return Returns the final result.
@@ -310,8 +329,7 @@ class InterproceduralStringAnalysis(
      * [[org.opalj.fpcf.FinalP]].
      */
     private def processFinalP(
-        data: P,
-        // callees: Callees,
+        data:  P,
         state: ComputationState,
         e:     Entity,
         p:     Property
@@ -319,7 +337,7 @@ class InterproceduralStringAnalysis(
         // Add mapping information (which will be used for computing the final result)
         val retrievedProperty = p.asInstanceOf[StringConstancyProperty]
         val currentSci = retrievedProperty.stringConstancyInformation
-        state.fpe2sci.put(state.var2IndexMapping(e.asInstanceOf[P]._1), currentSci)
+        state.appendToFpe2Sci(state.var2IndexMapping(e.asInstanceOf[P]._1), currentSci)
 
         // No more dependees => Return the result for this analysis run
         state.dependees.foreach { case (k, v) ⇒ state.dependees(k) = v.filter(_.e != e) }
@@ -327,7 +345,7 @@ class InterproceduralStringAnalysis(
         if (remDependees.isEmpty) {
             val iHandler = InterproceduralInterpretationHandler(
                 state.cfg, ps, declaredMethods, state,
-                continuation(data, state.callees.get, List(), state)
+                continuation(data, state)
             )
             computeFinalResult(data, state, iHandler)
         } else {
@@ -336,31 +354,9 @@ class InterproceduralStringAnalysis(
                 StringConstancyProperty.ub,
                 StringConstancyProperty.lb,
                 remDependees,
-                continuation(data, state.callees.get, remDependees, state)
+                continuation(data, state)
             )
         }
-    }
-
-    /**
-     * Continuation function.
-     *
-     * @param data The data that was passed to the `analyze` function.
-     * @param dependees A list of dependencies that this analysis run depends on.
-     * @param state The computation state (which was originally captured by `analyze` and possibly
-     *              extended / updated by other methods involved in computing the final result.
-     * @return This function can either produce a final result or another intermediate result.
-     */
-    private def continuation(
-        data:      P,
-        callees:   Callees,
-        dependees: Iterable[EOptionP[Entity, Property]],
-        state:     ComputationState
-    )(eps: SomeEPS): ProperPropertyComputationResult = eps match {
-        case FinalP(p) ⇒ processFinalP(data, state, eps.e, p)
-        case InterimLUBP(lb, ub) ⇒ InterimResult(
-            data, lb, ub, dependees, continuation(data, callees, dependees, state)
-        )
-        case _ ⇒ throw new IllegalStateException("Could not process the continuation successfully.")
     }
 
     /**
@@ -384,7 +380,7 @@ class InterproceduralStringAnalysis(
             case FlatPathElement(index) ⇒
                 if (!state.fpe2sci.contains(index)) {
                     iHandler.processDefSite(index, state.params) match {
-                        case r: Result ⇒ state.appendResultToFpe2Sci(index, r)
+                        case r: Result ⇒ state.appendResultToFpe2Sci(index, r, reset = true)
                         case _         ⇒ hasFinalResult = false
                     }
                 }

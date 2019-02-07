@@ -9,7 +9,7 @@ import org.opalj.br.cfg.CFG
 import org.opalj.br.Method
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.DefinedMethod
-import org.opalj.br.ReferenceType
+import org.opalj.br.fpcf.cg.properties.Callees
 import org.opalj.tac.Stmt
 import org.opalj.tac.TACStmts
 import org.opalj.tac.fpcf.analyses.string_analysis.V
@@ -64,24 +64,22 @@ abstract class AbstractStringInterpreter(
     }
 
     /**
-     * Takes `declaredMethods`, a `declaringClass`, and a method `name` and extracts the method with
-     * the given `name` from `declaredMethods` where the declaring classes match. The found entry is
-     * then returned as a [[Method]] instance.
-     * <p>
-     * It might be, that the given method cannot be found (e.g., when it is not in the scope of the
-     * current project). In these cases, `None` will be returned.
+     * This function returns all methods for a given `pc` among a set of `declaredMethods`. The
+     * second return value indicates whether at least one method has an unknown body (if `true`,
+     * then there is such a method).
      */
-    protected def getDeclaredMethod(
-        declaredMethods: DeclaredMethods, declaringClass: ReferenceType, methodName: String
-    ): Option[Method] = {
-        val dm = declaredMethods.declaredMethods.find { dm ⇒
-            dm.name == methodName && dm.declaringClassType == declaringClass
+    protected def getMethodsForPC(
+        implicit
+        pc: Int, ps: PropertyStore, callees: Callees, declaredMethods: DeclaredMethods
+    ): (List[Method], Boolean) = {
+        var hasMethodWithUnknownBody = false
+        val methods = ListBuffer[Method]()
+        callees.callees(pc).foreach {
+            case definedMethod: DefinedMethod ⇒ methods.append(definedMethod.definedMethod)
+            case _                            ⇒ hasMethodWithUnknownBody = true
         }
-        if (dm.isDefined && dm.get.isInstanceOf[DefinedMethod]) {
-            Some(dm.get.definedMethod)
-        } else {
-            None
-        }
+
+        (methods.sortBy(_.classFile.fqn).toList, hasMethodWithUnknownBody)
     }
 
     /**

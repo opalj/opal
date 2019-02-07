@@ -1,6 +1,8 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedural.finalizer
 
+import scala.collection.mutable.ListBuffer
+
 import org.opalj.br.cfg.CFG
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.tac.fpcf.analyses.string_analysis.ComputationState
@@ -26,9 +28,9 @@ class ArrayFinalizer(
      */
     override def finalizeInterpretation(instr: T, defSite: Int): Unit = {
         val allDefSites = ArrayPreparationInterpreter.getStoreAndLoadDefSites(instr, cfg)
-        state.fpe2sci(defSite) = StringConstancyInformation.reduceMultiple(
-            allDefSites.sorted.map { state.fpe2sci(_) }
-        )
+        state.fpe2sci(defSite) = ListBuffer(StringConstancyInformation.reduceMultiple(
+            allDefSites.sorted.flatMap(state.fpe2sci(_))
+        ))
     }
 
 }

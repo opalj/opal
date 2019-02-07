@@ -1,12 +1,18 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedural
 
+import scala.collection.mutable.ListBuffer
+
+import org.opalj.fpcf.InterimResult
+import org.opalj.fpcf.ProperOnUpdateContinuation
 import org.opalj.fpcf.ProperPropertyComputationResult
+import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
 import org.opalj.br.cfg.CFG
 import org.opalj.br.ComputationalTypeFloat
 import org.opalj.br.ComputationalTypeInt
 import org.opalj.br.ObjectType
+import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel
@@ -18,6 +24,8 @@ import org.opalj.tac.fpcf.analyses.string_analysis.V
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.AbstractStringInterpreter
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
 import org.opalj.tac.fpcf.analyses.string_analysis.ComputationState
+import org.opalj.tac.ReturnValue
+import org.opalj.tac.fpcf.analyses.string_analysis.InterproceduralStringAnalysis
 
 /**
  * The `InterproceduralVirtualFunctionCallInterpreter` is responsible for processing
@@ -29,10 +37,13 @@ import org.opalj.tac.fpcf.analyses.string_analysis.ComputationState
  * @author Patrick Mell
  */
 class VirtualFunctionCallPreparationInterpreter(
-        cfg:         CFG[Stmt[V], TACStmts[V]],
-        exprHandler: InterproceduralInterpretationHandler,
-        state:       ComputationState,
-        params:      List[StringConstancyInformation]
+        cfg:             CFG[Stmt[V], TACStmts[V]],
+        exprHandler:     InterproceduralInterpretationHandler,
+        ps:              PropertyStore,
+        state:           ComputationState,
+        declaredMethods: DeclaredMethods,
+        params:          List[StringConstancyInformation],
+        c:               ProperOnUpdateContinuation
 ) extends AbstractStringInterpreter(cfg, exprHandler) {
 
     override type T = VirtualFunctionCall[V]
@@ -67,7 +78,6 @@ class VirtualFunctionCallPreparationInterpreter(
      * @see [[AbstractStringInterpreter.interpret]]
      */
     override def interpret(instr: T, defSite: Int): ProperPropertyComputationResult = {
-        val e: Integer = defSite
         val result = instr.name match {
             case "append"   ⇒ interpretAppendCall(instr, defSite)
             case "toString" ⇒ interpretToStringCall(instr)
@@ -75,8 +85,9 @@ class VirtualFunctionCallPreparationInterpreter(
             case _ ⇒
                 instr.descriptor.returnType match {
                     case obj: ObjectType if obj.fqn == "java/lang/String" ⇒
-                        Result(e, StringConstancyProperty.lb)
+                        interpretArbitraryCall(instr, defSite)
                     case _ ⇒
+                        val e: Integer = defSite
                         Result(e, StringConstancyProperty.getNeutralElement)
                 }
         }
@@ -86,6 +97,78 @@ class VirtualFunctionCallPreparationInterpreter(
             case _         ⇒
         }
         result
+    }
+
+    /**
+     * This function interprets an arbitrary [[VirtualFunctionCall]]. If this method returns a
+     * [[Result]] instance, the interpretation of this call is already done. Otherwise, a new
+     * analysis was triggered whose result is not yet ready. In this case, the result needs to be
+     * finalized later on.
+     */
+    private def interpretArbitraryCall(instr: T, defSite: Int): ProperPropertyComputationResult = {
+        val (methods, _) = getMethodsForPC(
+            instr.pc, ps, state.callees.get, declaredMethods
+        )
+
+        if (methods.isEmpty) {
+            return Result(instr, StringConstancyProperty.lb)
+        }
+
+        // Collect all parameters (do this here to evaluate them only once)
+        // TODO: Current assumption: Results of parameters are available right away
+        val paramScis = instr.params.map { p ⇒
+            StringConstancyProperty.extractFromPPCR(
+                exprHandler.processDefSite(p.asVar.definedBy.head)
+            ).stringConstancyInformation
+        }.toList
+
+        val results = methods.map { nextMethod ⇒
+            val tac = getTACAI(ps, nextMethod, state)
+            if (tac.isDefined) {
+                // TAC available => Get return UVar and start the string analysis
+                val ret = tac.get.stmts.find(_.isInstanceOf[ReturnValue[V]]).get
+                val uvar = ret.asInstanceOf[ReturnValue[V]].expr.asVar
+                val entity = (uvar, nextMethod)
+
+                InterproceduralStringAnalysis.registerParams(entity, paramScis)
+                val eps = ps(entity, StringConstancyProperty.key)
+                eps match {
+                    case r: Result ⇒
+                        state.appendResultToFpe2Sci(defSite, r)
+                        r
+                    case _ ⇒
+                        if (!state.dependees.contains(nextMethod)) {
+                            state.dependees(nextMethod) = ListBuffer()
+                        }
+                        state.dependees(nextMethod).append(eps)
+                        state.var2IndexMapping(uvar) = defSite
+                        InterimResult(
+                            entity,
+                            StringConstancyProperty.lb,
+                            StringConstancyProperty.ub,
+                            List(),
+                            c
+                        )
+                }
+            } else {
+                // No TAC => Register dependee and continue
+                InterimResult(
+                    nextMethod,
+                    StringConstancyProperty.lb,
+                    StringConstancyProperty.ub,
+                    state.dependees.values.flatten,
+                    c
+                )
+            }
+        }
+
+        val finalResults = results.filter(_.isInstanceOf[Result])
+        val intermediateResults = results.filter(!_.isInstanceOf[Result])
+        if (results.length == finalResults.length) {
+            finalResults.head
+        } else {
+            intermediateResults.head
+        }
     }
 
     /**
@@ -139,7 +222,6 @@ class VirtualFunctionCallPreparationInterpreter(
             )
         }
 
-        state.appendResultToFpe2Sci(defSite, finalSci)
         val e: Integer = defSite
         Result(e, StringConstancyProperty(finalSci))
     }
@@ -225,7 +307,7 @@ class VirtualFunctionCallPreparationInterpreter(
                 valueSci
         }
 
-        state.appendResultToFpe2Sci(defSiteHead, valueSci)
+        state.appendToFpe2Sci(defSiteHead, valueSci, reset = true)
         val e: Integer = defSiteHead
         Result(e, StringConstancyProperty(finalSci))
     }

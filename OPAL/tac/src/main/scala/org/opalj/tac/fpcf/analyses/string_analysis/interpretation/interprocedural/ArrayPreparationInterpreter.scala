@@ -57,7 +57,7 @@ class ArrayPreparationInterpreter(
 
         allDefSites.map { ds ⇒ (ds, exprHandler.processDefSite(ds)) }.foreach {
             case (ds, r: Result) ⇒
-                state.appendResultToFpe2Sci(ds, r)
+                state.appendResultToFpe2Sci(ds, r, reset = true)
                 results.append(r)
             case (_, ir: ProperPropertyComputationResult) ⇒ results.append(ir)
         }

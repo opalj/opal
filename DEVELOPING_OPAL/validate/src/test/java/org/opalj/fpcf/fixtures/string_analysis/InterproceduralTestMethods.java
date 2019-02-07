@@ -1,6 +1,8 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.string_analysis;
 
+import org.opalj.fpcf.fixtures.string_analysis.hierarchies.GreetingService;
+import org.opalj.fpcf.fixtures.string_analysis.hierarchies.HelloGreeting;
 import org.opalj.fpcf.properties.string_analysis.StringDefinitions;
 import org.opalj.fpcf.properties.string_analysis.StringDefinitionsCollection;
 
@@ -193,6 +195,33 @@ public class InterproceduralTestMethods {
         }
         sb.append(" - Done");
         analyzeString(sb.toString());
+    }
+
+    @StringDefinitionsCollection(
+            value = "a case where the concrete instance of an interface is known",
+            stringDefinitions = {
+                    @StringDefinitions(
+                            expectedLevel = CONSTANT,
+                            expectedStrings = "Hello World"
+                    )
+
+            })
+    public void knownHierarchyInstanceTest() {
+        GreetingService gs = new HelloGreeting();
+        analyzeString(gs.getGreeting("World"));
+    }
+
+    @StringDefinitionsCollection(
+            value = "a case where the concrete instance of an interface is NOT known",
+            stringDefinitions = {
+                    @StringDefinitions(
+                            expectedLevel = CONSTANT,
+                            expectedStrings = "(Hello World|Hello)"
+                    )
+
+            })
+    public void unknownHierarchyInstanceTest(GreetingService greetingService) {
+        analyzeString(greetingService.getGreeting("World"));
     }
 
     private String getRuntimeClassName() {

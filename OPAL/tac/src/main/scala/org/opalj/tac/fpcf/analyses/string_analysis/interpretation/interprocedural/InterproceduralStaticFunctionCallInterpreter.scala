@@ -53,14 +53,18 @@ class InterproceduralStaticFunctionCallInterpreter(
      * @see [[AbstractStringInterpreter.interpret]]
      */
     override def interpret(instr: T, defSite: Int): ProperPropertyComputationResult = {
-        val methodOption = getDeclaredMethod(declaredMethods, instr.declaringClass, instr.name)
+        val methods, _ = getMethodsForPC(
+            instr.pc, ps, state.callees.get, declaredMethods
+        )
 
-        if (methodOption.isEmpty) {
-            val e: Integer = defSite
-            return Result(e, StringConstancyProperty.lb)
+        // Static methods cannot be overwritten, thus 1) we do not need the second return value of
+        // getMethodsForPC and 2) interpreting the head is enough
+        if (methods._1.isEmpty) {
+            state.appendToFpe2Sci(defSite, StringConstancyProperty.lb.stringConstancyInformation)
+            return Result(instr, StringConstancyProperty.lb)
         }
 
-        val m = methodOption.get
+        val m = methods._1.head
         val tac = getTACAI(ps, m, state)
         if (tac.isDefined) {
             // TAC available => Get return UVar and start the string analysis
