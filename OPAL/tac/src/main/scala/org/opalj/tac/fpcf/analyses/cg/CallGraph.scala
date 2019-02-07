@@ -28,6 +28,10 @@ class CallGraph private[cg] ()(implicit ps: PropertyStore, declaredMethods: Decl
         ps(m, Callees.key).ub.callees(pc)
     }
 
+    def calleesPropertyOf(m: DeclaredMethod): Callees = {
+        ps(m, Callees.key).ub
+    }
+
     def directCalleesOf(m: DeclaredMethod, pc: Int): Iterator[DeclaredMethod] = {
         ps(m, Callees.key).ub.directCallees(pc)
     }
@@ -46,6 +50,10 @@ class CallGraph private[cg] ()(implicit ps: PropertyStore, declaredMethods: Decl
 
     def callersOf(m: DeclaredMethod): TraversableOnce[(DeclaredMethod, Int)] = {
         ps(m, CallersProperty.key).ub.callers
+    }
+
+    def callersPropertyOf(m: DeclaredMethod): CallersProperty = {
+        ps(m, CallersProperty.key).ub
     }
 
     def hasVMLevelCaller(m: DeclaredMethod): Boolean = {
