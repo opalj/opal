@@ -37,7 +37,7 @@ class PathTransformer(val interpretationHandler: InterpretationHandler) {
         subpath match {
             case fpe: FlatPathElement ⇒
                 val sci = if (fpe2Sci.contains(fpe.element)) {
-                    StringConstancyInformation.reduceMultiple(fpe2Sci(fpe.element).toList)
+                    StringConstancyInformation.reduceMultiple(fpe2Sci(fpe.element))
                 } else {
                     val r = interpretationHandler.processDefSite(fpe.element).asInstanceOf[Result]
                     r.finalEP.p.asInstanceOf[StringConstancyProperty].stringConstancyInformation

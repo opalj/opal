@@ -76,7 +76,7 @@ class IntraproceduralArrayInterpreter(
 
         Result(instr, StringConstancyProperty(
             StringConstancyInformation.reduceMultiple(
-                children.filter(!_.isTheNeutralElement).toList
+                children.filter(!_.isTheNeutralElement)
             )
         ))
     }
