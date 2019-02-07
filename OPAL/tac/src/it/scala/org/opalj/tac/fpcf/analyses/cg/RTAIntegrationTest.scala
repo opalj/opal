@@ -13,8 +13,6 @@ import play.api.libs.json.Json
 import play.api.libs.json.JsSuccess
 import play.api.libs.json.Reads
 
-import org.opalj.collection.immutable.Chain
-import org.opalj.fpcf.ComputationSpecification
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.PropertyStore
@@ -26,15 +24,7 @@ import org.opalj.br.TestSupport.allBIProjects
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.cg.properties.Callees
 import org.opalj.br.fpcf.cg.properties.CallersProperty
-import org.opalj.br.fpcf.cg.properties.ReflectionRelatedCallees
-import org.opalj.br.fpcf.cg.properties.SerializationRelatedCallees
-import org.opalj.br.fpcf.cg.properties.StandardInvokeCallees
-import org.opalj.br.fpcf.cg.properties.ThreadRelatedIncompleteCallSites
-import org.opalj.br.fpcf.FPCFAnalysesManager
-import org.opalj.br.fpcf.FPCFAnalysesManagerKey
-import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.PropertyStoreKey
-import org.opalj.tac.fpcf.analyses.cg.reflection.TriggeredReflectionRelatedCallsAnalysis
 
 case class CallSites(callSites: Set[CallSite])
 
@@ -66,39 +56,7 @@ class RTAIntegrationTest extends FlatSpec with Matchers {
         implicit val propertyStore: PropertyStore = project.get(PropertyStoreKey)
         implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
 
-        val calleesAnalysis = LazyCalleesAnalysis(
-            Set(
-                StandardInvokeCallees,
-                SerializationRelatedCallees,
-                ReflectionRelatedCallees,
-                ThreadRelatedIncompleteCallSites
-            )
-        )
-
-        val manager: FPCFAnalysesManager = project.get(FPCFAnalysesManagerKey)
-        manager.runAll(
-            List(
-                RTACallGraphAnalysisScheduler,
-                TriggeredStaticInitializerAnalysis,
-                TriggeredLoadedClassesAnalysis,
-                TriggeredFinalizerAnalysisScheduler,
-                TriggeredThreadRelatedCallsAnalysis,
-                TriggeredSerializationRelatedCallsAnalysis,
-                TriggeredReflectionRelatedCallsAnalysis,
-                TriggeredSystemPropertiesAnalysis,
-                TriggeredConfiguredNativeMethodsAnalysis,
-                TriggeredInstantiatedTypesAnalysis,
-                LazyL0TACAIAnalysis,
-                calleesAnalysis
-            ),
-            { css: Chain[ComputationSpecification[FPCFAnalysis]] ⇒
-                if (css.contains(calleesAnalysis)) {
-                    declaredMethods.declaredMethods.foreach { dm ⇒
-                        propertyStore.force(dm, Callees.key)
-                    }
-                }
-            }
-        )
+        project.get(RTACallGraphKey())
 
         it should s"have matching callers and callees in $projectName" in {
             checkBidirectionCallerCallee

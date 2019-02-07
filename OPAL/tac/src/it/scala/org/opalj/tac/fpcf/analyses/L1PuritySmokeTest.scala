@@ -15,30 +15,15 @@ import org.opalj.fpcf.ComputationSpecification
 import org.opalj.br.TestSupport.allBIProjects
 import org.opalj.br.TestSupport.createJREProject
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.cg.properties.SerializationRelatedCallees
 import org.opalj.br.fpcf.properties.Purity
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.analyses.EagerClassImmutabilityAnalysis
 import org.opalj.br.fpcf.analyses.EagerTypeImmutabilityAnalysis
 import org.opalj.br.fpcf.analyses.EagerVirtualMethodPurityAnalysis
-import org.opalj.br.fpcf.FPCFAnalysisScheduler
-import org.opalj.br.fpcf.cg.properties.ReflectionRelatedCallees
-import org.opalj.br.fpcf.cg.properties.StandardInvokeCallees
-import org.opalj.br.fpcf.cg.properties.ThreadRelatedIncompleteCallSites
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.properties.VirtualMethodPurity
-import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
-import org.opalj.tac.fpcf.analyses.cg.RTACallGraphAnalysisScheduler
-import org.opalj.tac.fpcf.analyses.cg.TriggeredFinalizerAnalysisScheduler
-import org.opalj.tac.fpcf.analyses.cg.TriggeredLoadedClassesAnalysis
-import org.opalj.tac.fpcf.analyses.cg.TriggeredSerializationRelatedCallsAnalysis
-import org.opalj.tac.fpcf.analyses.cg.TriggeredStaticInitializerAnalysis
-import org.opalj.tac.fpcf.analyses.cg.TriggeredThreadRelatedCallsAnalysis
-import org.opalj.tac.fpcf.analyses.cg.reflection.TriggeredReflectionRelatedCallsAnalysis
-import org.opalj.tac.fpcf.analyses.cg.LazyCalleesAnalysis
-import org.opalj.tac.fpcf.analyses.cg.TriggeredConfiguredNativeMethodsAnalysis
-import org.opalj.tac.fpcf.analyses.cg.TriggeredInstantiatedTypesAnalysis
+import org.opalj.tac.fpcf.analyses.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.purity.EagerL1PurityAnalysis
 
 /**
@@ -64,33 +49,10 @@ class L1PuritySmokeTest extends FunSpec with Matchers {
         EagerTypeImmutabilityAnalysis
     )
 
-    val baseAnalyses: Set[FPCFAnalysisScheduler] = Set(
-        RTACallGraphAnalysisScheduler,
-        TriggeredStaticInitializerAnalysis,
-        TriggeredLoadedClassesAnalysis,
-        TriggeredFinalizerAnalysisScheduler,
-        TriggeredThreadRelatedCallsAnalysis,
-        TriggeredSerializationRelatedCallsAnalysis,
-        TriggeredReflectionRelatedCallsAnalysis,
-        TriggeredInstantiatedTypesAnalysis,
-        TriggeredConfiguredNativeMethodsAnalysis,
-        TriggeredSystemPropertiesAnalysis,
-        LazyCalleesAnalysis(
-            Set(
-                StandardInvokeCallees,
-                SerializationRelatedCallees,
-                ReflectionRelatedCallees,
-                ThreadRelatedIncompleteCallSites
-            )
-        ),
-        LazyL0BaseAIAnalysis,
-        TACAITransformer
-    )
-
     def checkProject(p: SomeProject, withSupportAnalyses: Boolean): Unit = {
         val manager = p.get(FPCFAnalysesManagerKey)
 
-        manager.runAll(baseAnalyses)
+        p.get(RTACallGraphKey())
 
         var analyses = primaryAnalyses
         if (withSupportAnalyses)

@@ -11,6 +11,7 @@ import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.fpcf.cg.properties.Callees
 import org.opalj.br.fpcf.cg.properties.CallersProperty
+import org.opalj.br.fpcf.cg.properties.NoCallers
 
 /**
  * The proxy class for all call-graph related properties.
@@ -63,4 +64,12 @@ class CallGraph private[cg] ()(implicit ps: PropertyStore, declaredMethods: Decl
     def hasCallersWithUnknownContext(m: DeclaredMethod): Boolean = {
         ps(m, CallersProperty.key).ub.hasCallersWithUnknownContext
     }
+
+  def reachableMethods(): Iterator[CallersProperty] = {
+      val callersProperties = ps.entities(CallersProperty.key)
+
+      callersProperties.filterNot(_.ub eq NoCallers).map(_.ub)
+  }
+
+
 }

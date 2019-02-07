@@ -53,6 +53,7 @@ import org.opalj.tac.fpcf.analyses.cg.TriggeredSerializationRelatedCallsAnalysis
 import org.opalj.tac.fpcf.analyses.cg.TriggeredStaticInitializerAnalysis
 import org.opalj.tac.fpcf.analyses.cg.TriggeredThreadRelatedCallsAnalysis
 import org.opalj.tac.fpcf.analyses.cg.reflection.TriggeredReflectionRelatedCallsAnalysis
+import org.opalj.tac.fpcf.analyses.cg.RTACallGraphKey
 
 /**
  * Simple test to ensure that the FPFC analyses do not cause exceptions and that their results
@@ -78,12 +79,15 @@ class FPCFAnalysesIntegrationTest extends FunSpec {
                         factory = projectFactory
                         p = projectFactory()
 
-                        p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) {
-                            case None ⇒
-                                Set(classOf[l1.DefaultDomainWithCFGAndDefUse[_]])
-                            case Some(requirements) ⇒
-                                requirements + classOf[l1.DefaultDomainWithCFGAndDefUse[_]]
-                        }
+                        p.updateProjectInformationKeyInitializationData(
+                            AIDomainFactoryKey,
+                            (i: Option[Set[Class[_ <: AnyRef]]]) ⇒ (i match {
+                                case None ⇒
+                                    Set(classOf[l1.DefaultDomainWithCFGAndDefUse[_]])
+                                case Some(requirements) ⇒
+                                    requirements + classOf[l1.DefaultDomainWithCFGAndDefUse[_]]
+                            }): Set[Class[_ <: AnyRef]]
+                        )
                     } else {
                         // Recreate project keeping all ProjectInformationKeys other than the
                         // PropertyStore as we are interested only in FPCF analysis results.
@@ -95,35 +99,12 @@ class FPCFAnalysesIntegrationTest extends FunSpec {
                     PropertyStore.updateDebug(true)
                     ps = p.get(PropertyStoreKey)
 
-                    val manager = p.get(FPCFAnalysesManagerKey)
-
                     time {
                         // todo do not want to run this for every setting
-                        manager.runAll(
-                            RTACallGraphAnalysisScheduler,
-                            TriggeredStaticInitializerAnalysis,
-                            TriggeredLoadedClassesAnalysis,
-                            TriggeredFinalizerAnalysisScheduler,
-                            TriggeredThreadRelatedCallsAnalysis,
-                            TriggeredSerializationRelatedCallsAnalysis,
-                            TriggeredReflectionRelatedCallsAnalysis,
-                            TriggeredInstantiatedTypesAnalysis,
-                            TriggeredConfiguredNativeMethodsAnalysis,
-                            TriggeredSystemPropertiesAnalysis,
-                            LazyCalleesAnalysis(
-                                Set(
-                                    StandardInvokeCallees,
-                                    SerializationRelatedCallees,
-                                    ReflectionRelatedCallees,
-                                    ThreadRelatedIncompleteCallSites
-                                )
-                            ),
-                            LazyL0BaseAIAnalysis,
-                            TACAITransformer
-                        )
-                    } { t ⇒ info(s"call graph and tac analysis took ${t.toSeconds}") }
+                        p.get(RTACallGraphKey())
+                    } {t ⇒ info(s"call graph and tac analysis took ${t.toSeconds}")}
 
-                    time { p.get(FPCFAnalysesManagerKey).runAll(analyses) }(reportAnalysisTime)
+                    time {p.get(FPCFAnalysesManagerKey).runAll(analyses)}(reportAnalysisTime)
                 }
 
                 it("should compute the correct properties") {
