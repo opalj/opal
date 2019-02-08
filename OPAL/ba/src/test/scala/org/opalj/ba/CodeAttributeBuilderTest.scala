@@ -439,7 +439,7 @@ class CodeAttributeBuilderTest extends FlatSpec {
         }
     }
 
-    it should "not remove live code after jumps to PCS from Catch Block" in {
+    it should "not remove live code after jumps to PCs from Catch Block" in {
         import ObjectType.{Object ⇒ OObject}
         import ObjectType.{RuntimeException ⇒ ORuntimeException}
         val codeElements = Array[CodeElement[AnyRef]](
@@ -471,23 +471,23 @@ class CodeAttributeBuilderTest extends FlatSpec {
         )
         val c = CODE[AnyRef](codeElements)
         val expectedInstructions = Array(
-            ACONST_NULL,
-            ACONST_NULL,
-            INVOKEVIRTUAL(OObject, "equals", MethodDescriptor.apply(OObject, BooleanType)),
-            null,
-            null,
-            ICONST_0,
-            IRETURN,
-            POP,
-            ICONST_1,
-            ICONST_2,
-            IFNE(4),
-            null,
-            null,
-            IRETURN,
-            IRETURN
+            /* 0 */ ACONST_NULL,
+            /* 1 */ ACONST_NULL,
+            /* 2 */ INVOKEVIRTUAL(OObject, "equals", MethodDescriptor.apply(OObject, BooleanType)),
+            /* 3 */ null,
+            /* 4 */ null,
+            /* 5 */ ICONST_0,
+            /* 6 */ IRETURN,
+            /* 7 */ POP,
+            /* 8 */ ICONST_1,
+            /* 9 */ ICONST_2,
+            /* 10 */ IFNE(4),
+            /* 11 */ null,
+            /* 12 */ null,
+            /* 13 */ IRETURN,
+            /* 14 */ IRETURN
         )
         assert(c.instructions.sameElements(expectedInstructions))
-        assert(c.exceptionHandlers.head == ExceptionHandler(0, 6, 6, Some(ORuntimeException)))
+        assert(c.exceptionHandlers.head == ExceptionHandler(0, 7, 7, Some(ORuntimeException)))
     }
 }
