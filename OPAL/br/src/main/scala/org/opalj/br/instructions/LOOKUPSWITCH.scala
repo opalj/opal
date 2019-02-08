@@ -168,7 +168,7 @@ case class LabeledLOOKUPSWITCH(
 
     def caseValues: IntIterator = npairs.iterator.filter(_._2 != defaultBranchTarget).map(_._1)
 
-    override def branchTargets: InstructionLabels = npairs.map[InstructionLabel](_._2)
+    override def branchTargets: InstructionLabels = defaultBranchTarget +: npairs.map[InstructionLabel](_._2)
 
     @throws[BranchoffsetOutOfBoundsException]("if the branchoffset is invalid")
     override def resolveJumpTargets(currentPC: PC, pcs: Map[InstructionLabel, PC]): LOOKUPSWITCH = {
