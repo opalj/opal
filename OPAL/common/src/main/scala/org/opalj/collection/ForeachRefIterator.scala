@@ -25,7 +25,7 @@ abstract class ForeachRefIterator[+T] { self ⇒
         }
     }
 
-    final def +[X >: T <: AnyRef](that : X) : ForeachRefIterator[X] = {
+    final def +[X >: T <: AnyRef](that: X): ForeachRefIterator[X] = {
         new ForeachRefIterator[X] {
             def foreach[U](f: X ⇒ U): Unit = {
                 self.foreach(f)
