@@ -159,17 +159,17 @@ class PrecisionOfDomainsTest extends FunSpec with Matchers {
                     val r2_sets = BaseAI(method, new L1SetsDomain(method, theProject))
 
                     def handleAbstractsOverFailure(
-                                                      lpDomain: String,
-                                                      mpDomain: String
-                                                  )(
-                                                      m: String
-                                                  ): Unit = {
+                        lpDomain: String,
+                        mpDomain: String
+                    )(
+                        m: String
+                    ): Unit = {
                         failed.set(true)
                         val bodyMessage =
-                            "\" /*Instructions " + method.body.get.instructions.size + "*/\n" +
-                                s"\tthe less precise domain ($lpDomain) did not abstract " +
-                                s"over the state of the more precise domain ($mpDomain)\n" +
-                                "\t" + Console.BOLD + m + Console.RESET + "\n"
+                            "\" /*Instructions "+method.body.get.instructions.size+"*/\n"+
+                                s"\tthe less precise domain ($lpDomain) did not abstract "+
+                                s"over the state of the more precise domain ($mpDomain)\n"+
+                                "\t"+Console.BOLD + m + Console.RESET+"\n"
                         println(method.toJava(bodyMessage))
                     }
 
@@ -185,9 +185,9 @@ class PrecisionOfDomainsTest extends FunSpec with Matchers {
 
                 }
             } catch {
-                case ce : ConcurrentExceptions ⇒
+                case ce: ConcurrentExceptions ⇒
                     ce.getSuppressed()(0).printStackTrace()
-                    fail(ce.getSuppressed.mkString("underlying exceptions:\n","\n","\n\n"))
+                    fail(ce.getSuppressed.mkString("underlying exceptions:\n", "\n", "\n\n"))
             }
 
             if (comparisonCount.get() < 2) {

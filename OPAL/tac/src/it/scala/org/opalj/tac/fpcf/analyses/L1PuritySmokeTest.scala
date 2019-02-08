@@ -94,7 +94,7 @@ class L1PuritySmokeTest extends FunSpec with Matchers {
 
         var analyses = primaryAnalyses
         if (withSupportAnalyses)
-                analyses ++= supportAnalyses
+            analyses ++= supportAnalyses
         manager.runAll(analyses)
 
         val propertyStore = p.get(PropertyStoreKey)

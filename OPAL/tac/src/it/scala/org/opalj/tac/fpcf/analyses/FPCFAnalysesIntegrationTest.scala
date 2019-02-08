@@ -124,9 +124,9 @@ class FPCFAnalysesIntegrationTest extends FunSpec {
                             LazyL0BaseAIAnalysis,
                             TACAITransformer
                         )
-                    } {t ⇒ info(s"call graph and tac analysis took ${t.toSeconds}")}
+                    } { t ⇒ info(s"call graph and tac analysis took ${t.toSeconds}") }
 
-                    time {p.get(FPCFAnalysesManagerKey).runAll(analyses)}(reportAnalysisTime)
+                    time { p.get(FPCFAnalysesManagerKey).runAll(analyses) }(reportAnalysisTime)
                 }
 
                 it("should compute the correct properties") {
