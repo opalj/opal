@@ -272,7 +272,12 @@ object LabeledCode {
                 labeledInstructions += i.toLabeledInstruction(pc)
             }
         }
-
+        code.exceptionHandlers.iterator.zipWithIndex.foreach { ehIndex ⇒
+            val (eh, index) = ehIndex
+            if (eh.endPC == estimatedSize) {
+                labeledInstructions += TRYEND(Symbol(s"eh$index"))
+            }
+        }
         // We have to add the pc that would be used by the instruction which would follow the last
         // instruction in the code array. This is required when we remap, e.g.,  LocalVariableTables
         // where the range extends across ALL instructions.

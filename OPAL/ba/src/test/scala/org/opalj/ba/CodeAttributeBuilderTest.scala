@@ -3,10 +3,8 @@ package org.opalj
 package ba
 
 import org.junit.runner.RunWith
-
 import org.scalatest.FlatSpec
 import org.scalatest.junit.JUnitRunner
-
 import org.opalj.collection.immutable.RefArray
 import org.opalj.util.InMemoryClassLoader
 import org.opalj.bi.ACC_PUBLIC
@@ -17,6 +15,8 @@ import org.opalj.br.instructions._
 import org.opalj.br.ClassHierarchy
 import org.opalj.ai.domain.l0.TypeCheckingDomain
 import org.opalj.ai.util.XHTML
+import org.opalj.br.BooleanType
+import org.opalj.br.ExceptionHandler
 
 /**
  * Tests the require statements and warnings of a CodeAttributeBuilder.
@@ -435,5 +435,56 @@ class CodeAttributeBuilderTest extends FlatSpec {
             val clazzMethod = clazz.getMethod("stackMap")
             clazzMethod.invoke(clazzInstance)
         }
+    }
+
+
+    it should "not remove live code after jumps to PCS from Catch Block" in {
+        val codeElements = Array[CodeElement[AnyRef]](
+            LabelElement(0),
+            TRY('eh),
+            ACONST_NULL,
+            LabelElement(1),
+            ACONST_NULL,
+            LabelElement(2),
+            INVOKEVIRTUAL(ObjectType.Object, "equals", MethodDescriptor.apply(ObjectType.Object, BooleanType)),
+            LabelElement(5),
+            ICONST_0,
+            LabelElement(6),
+            IRETURN,
+            TRYEND('eh),
+            CATCH('eh, 1, Some(ObjectType.RuntimeException)),
+            LabelElement(7),
+            POP,
+            LabelElement(8),
+            ICONST_1,
+            LabelElement(9),
+            ICONST_2,
+            LabelElement(10),
+            LabeledIFNE(14),
+            LabelElement(13),
+            IRETURN,
+            LabelElement(14),
+            IRETURN
+        )
+        val c = CODE[AnyRef](codeElements)
+        val expectedInstructions = Array(
+            ACONST_NULL,
+            ACONST_NULL,
+            INVOKEVIRTUAL(ObjectType.Object, "equals", MethodDescriptor.apply(ObjectType.Object, BooleanType)),
+            null,
+            null,
+            ICONST_0,
+            IRETURN,
+            POP,
+            ICONST_1,
+            ICONST_2,
+            IFNE(4),
+            null,
+            null,
+            IRETURN,
+            IRETURN
+        )
+        assert(c.instructions.sameElements(expectedInstructions))
+        assert(c.exceptionHandlers.head == ExceptionHandler(0,6,6,Some(ObjectType.RuntimeException)))
     }
 }

@@ -215,6 +215,21 @@ object CODE {
                 throw new NoSuchElementException(message)
             }
             markMetaInformationAsLive(targetIndex)
+
+            val targetInstruction = codeElements(targetIndex)
+            if (targetInstruction.isPseudoInstruction && isLive(targetIndex)) {
+                targetInstruction match {
+                    case LabelElement(_: PCLabel) ⇒
+                        var indexOfFirstInstruction = (targetIndex + 1)
+                        while (!codeElements(indexOfFirstInstruction).isInstructionLikeElement) {
+                            indexOfFirstInstruction += 1
+                        }
+                        markedAsLive += indexOfFirstInstruction
+                    // we schedule the instruction after the label
+                    case _ ⇒
+                }
+                return ;
+            }
         }
 
         /* Returns `true` if any instruction was actually marked as live. */
