@@ -64,7 +64,7 @@ object MethodReturnValue extends MethodReturnValuePropertyMetaInformation {
      * The key associated with every purity property.
      */
     final val key = PropertyKey.create[Method, MethodReturnValue](
-        "org.opalj.ai.fpcf.properties.MethodReturnValue",
+        "opalj.MethodReturnValue",
         (ps: PropertyStore, _: FallbackReason, m: Method) ⇒ {
             val p = ps.context(classOf[SomeProject])
             MethodReturnValue(

@@ -53,7 +53,7 @@ object FieldValue extends FieldValueMetaInformation {
      * The key associated with every [[FieldValue]] property.
      */
     final val key: PropertyKey[FieldValue] = PropertyKey.create[Field, FieldValue](
-        "org.opalj.ai.fpcf.properties.FieldValue",
+        "opalj.FieldValue",
         // fallback property computation...
         (ps: PropertyStore, r: FallbackReason, f: Field) ⇒ {
             val p = ps.context(classOf[SomeProject])
