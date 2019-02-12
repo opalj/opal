@@ -434,7 +434,11 @@ object EagerLBFieldValuesAnalysis extends BasicFPCFEagerAnalysisScheduler {
 
     override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new LBFieldValuesAnalysis(p)
-        val classFiles = p.allProjectClassFiles
+        val classFiles =
+            if (!p.libraryClassFilesAreInterfacesOnly)
+                p.allClassFiles
+            else
+                p.allProjectClassFiles
         ps.scheduleEagerComputationsForEntities(classFiles)(analysis.analyze)
         analysis
     }
