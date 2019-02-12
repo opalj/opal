@@ -75,7 +75,7 @@ public class InterproceduralTestMethods {
             stringDefinitions = {
                     @StringDefinitions(
                             expectedLevel = CONSTANT,
-                            expectedStrings = "java.lang.Integer"
+                            expectedStrings = "java.lang.(Integer|Object|Runtime)"
                     )
             })
     public void fromStaticMethodWithParamTest() {
@@ -122,7 +122,7 @@ public class InterproceduralTestMethods {
                     @StringDefinitions(
                             expectedLevel = DYNAMIC,
                             expectedStrings = "(java.lang.Object|java.lang.Runtime|"
-                                    + "java.lang.Integer|\\w)"
+                                    + "java.lang.(Integer|Object|Runtime)|\\w)"
                     )
 
             })
@@ -222,6 +222,22 @@ public class InterproceduralTestMethods {
             })
     public void unknownHierarchyInstanceTest(GreetingService greetingService) {
         analyzeString(greetingService.getGreeting("World"));
+    }
+
+    @StringDefinitionsCollection(
+            value = "a case where context-insensitivity is tested",
+            stringDefinitions = {
+                    @StringDefinitions(
+                            expectedLevel = CONSTANT,
+                            expectedStrings = "java.lang.(Integer|Object|Runtime)"
+                    )
+
+            })
+    public void contextInsensitivityTest() {
+        StringBuilder sb = new StringBuilder();
+        String s = StringProvider.getFQClassName("java.lang", "Object");
+        sb.append(StringProvider.getFQClassName("java.lang", "Runtime"));
+        analyzeString(sb.toString());
     }
 
     private String getRuntimeClassName() {
