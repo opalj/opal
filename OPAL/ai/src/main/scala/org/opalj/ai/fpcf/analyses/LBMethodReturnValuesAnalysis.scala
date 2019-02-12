@@ -193,7 +193,8 @@ object EagerLBMethodReturnValuesAnalysis extends BasicFPCFEagerAnalysisScheduler
         val methods = p.allMethodsWithBody.iterator.filter { m ⇒
             val returnType = m.returnType
             returnType.isObjectType
-            // && p.classHierarchy.hasSubtypes(returnType.asObjectType).isYes // <= we can't refine to null
+            // If we enable the following check then we can't refine to null anymore:
+            // && p.classHierarchy.hasSubtypes(returnType.asObjectType).isYes
         }
         ps.scheduleEagerComputationsForEntities(methods)(analysis.analyze)
         analysis

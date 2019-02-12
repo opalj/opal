@@ -994,8 +994,12 @@ trait IsMultipleReferenceValue extends IsReferenceValue {
 
         answer
     }
+
     override def toCanonicalForm: IsReferenceValue = {
-        val uniqueBaseValues = baseValues.map(_.toCanonicalForm).toSet
+        var uniqueBaseValues = Set.empty[IsReferenceValue]
+        uniqueBaseValues = baseValues.foldLeft(uniqueBaseValues)(_ + _.toCanonicalForm)
+        // ...toSet is required because we potentially drop domain specific information
+        // and afterwards the values are identical.
         if (uniqueBaseValues.size == 1 &&
             uniqueBaseValues.head.isNull == this.isNull &&
             uniqueBaseValues.head.isPrecise == this.isPrecise &&
@@ -1003,8 +1007,6 @@ trait IsMultipleReferenceValue extends IsReferenceValue {
             uniqueBaseValues.head
         } else {
             AMultipleReferenceValue(
-                // ...toSet is required because we potentially drop domain specific information
-                // and afterwards the values are identical.
                 uniqueBaseValues,
                 isNull,
                 isPrecise,

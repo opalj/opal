@@ -2039,7 +2039,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
         refId:          Int
     ): DomainMultipleReferenceValues
 
-    /** Only intended to be used to map values from the outside into the context of a method. */
+    // Only intended to be used to map values from the outside into the context of a method.
     abstract override def InitializedDomainValue(
         origin: ValueOrigin,
         vi:     ValueInformation
