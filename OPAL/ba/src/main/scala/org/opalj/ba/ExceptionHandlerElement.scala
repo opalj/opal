@@ -46,7 +46,7 @@ case class TRYEND(id: Symbol) extends ExceptionHandlerElement {
  * @param position The (relative) position in the final exception handler table.
  *         The `CATCH` with the lowest position will be the first exception handler
  *         (the handler with the highest priority).
- *         Overall the order is just used so sort the handlers and nothing more. The sorting
+ *         Overall the order is just used to sort the handlers and nothing more. The sorting
  *         is stable - i.e., two handlers with the same number will end up in the same order
  *         in the table. Furthermore, it is possible to use negative numbers to ensure that a
  *         (custom) handler has precedence over all ''handlers'' found in the initial code;

@@ -47,7 +47,7 @@ import org.opalj.tac.fpcf.analyses.LazyTACAIProvider
  */
 object RTACallGraph extends DefaultOneStepAnalysis {
 
-    override def title: String = "Field Locality"
+    override def title: String = "RTA Call Graph Builder"
 
     override def description: String = {
         "Provides the number of reachable methods and call edges in the give project."
@@ -88,7 +88,12 @@ object RTACallGraph extends DefaultOneStepAnalysis {
             )
         )
 
-        project.get(FPCFAnalysesManagerKey).runAll(
+        val analysesManager = project.get(FPCFAnalysesManagerKey)
+        analysesManager.runAll(
+            org.opalj.ai.fpcf.analyses.EagerLBFieldValuesAnalysis,
+            org.opalj.ai.fpcf.analyses.EagerLBMethodReturnValuesAnalysis
+        )
+        analysesManager.runAll(
             List(
                 // LazyL0BaseAIAnalysis,
                 // TACAITransformer,

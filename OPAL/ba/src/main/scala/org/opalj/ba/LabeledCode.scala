@@ -247,8 +247,8 @@ object LabeledCode {
      * @return The labeled code.
      */
     def apply(code: Code, filterInstruction: PC ⇒ Boolean = (_) ⇒ true): LabeledCode = {
-
-        val estimatedSize = code.codeSize
+        val codeSize = code.codeSize
+        val estimatedSize = codeSize
         val labeledInstructions = new ArrayBuffer[CodeElement[AnyRef]](estimatedSize)
 
         // Transform the current code to use labels; this approach handles cases such as
@@ -272,9 +272,11 @@ object LabeledCode {
                 labeledInstructions += i.toLabeledInstruction(pc)
             }
         }
+        // The pc of a handler that handles "all" instructions is equal to "codeSize" and
+        // therefore code.iterate will not reach it.
         code.exceptionHandlers.iterator.zipWithIndex.foreach { ehIndex ⇒
             val (eh, index) = ehIndex
-            if (eh.endPC == estimatedSize) {
+            if (eh.endPC == codeSize) {
                 labeledInstructions += TRYEND(Symbol(s"eh$index"))
             }
         }

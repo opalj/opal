@@ -365,7 +365,7 @@ final class PKESequentialPropertyStore private (
         val dependerPKId = dependerEPK.pk.id
         val e = dependerEPK.e
         for {
-            epkDependees ← dependees(dependerPKId).get(e)
+            epkDependees ← dependees(dependerPKId).remove(e)
             EOptionP(oldDependeeE, oldDependeePK) ← epkDependees // <= the old ones
             oldDependeePKId = oldDependeePK.id
             dependeeDependers ← dependers(oldDependeePKId).get(oldDependeeE)
@@ -375,7 +375,6 @@ final class PKESequentialPropertyStore private (
                 dependers(oldDependeePKId).remove(oldDependeeE)
             }
         }
-        dependees(dependerPKId).remove(e)
     }
 
     /**
@@ -396,8 +395,9 @@ final class PKESequentialPropertyStore private (
                 // the property.
                 triggerComputations(e, pkId)
                 if (newDependees.nonEmpty) {
-                    val oldDependees = dependees(pkId).put(e, newDependees)
-                    assert(oldDependees.isEmpty)
+                    // Recall, that we allow dependees to be a mutable data-structure!
+                    // Hence, the old value may be the new value!
+                    dependees(pkId).put(e, newDependees)
                 }
                 // registration with the new dependees is done when processing InterimResult
 

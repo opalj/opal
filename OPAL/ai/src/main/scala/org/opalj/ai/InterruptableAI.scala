@@ -22,4 +22,6 @@ class InterruptableAI[D <: Domain] extends AI[D] {
      */
     def interrupt(): Unit = { doInterrupt = true }
 
+    def resetInterrupt(): Unit = { doInterrupt = false }
+
 }

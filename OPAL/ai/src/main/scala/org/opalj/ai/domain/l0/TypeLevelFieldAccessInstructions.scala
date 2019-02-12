@@ -17,14 +17,19 @@ import org.opalj.br.ObjectType
 trait TypeLevelFieldAccessInstructions extends FieldAccessesDomain {
     domain: ReferenceValuesDomain with TypedValuesFactory with Configuration ⇒
 
+    // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // //
+    // FIELD READ ACCESS
+    //
+
     /*override*/ def getfield(
         pc:             Int,
         objectref:      DomainValue,
         declaringClass: ObjectType,
         fieldName:      String,
         fieldType:      FieldType
-    ): Computation[DomainValue, ExceptionValue] =
+    ): Computation[DomainValue, ExceptionValue] = {
         doGetfield(pc, objectref, TypedValue(pc, fieldType))
+    }
 
     /*override*/ def doGetfield(
         pc:         Int,
@@ -56,6 +61,10 @@ trait TypeLevelFieldAccessInstructions extends FieldAccessesDomain {
         ComputedValue(fieldValue)
     }
 
+    // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // //
+    // FIELD WRITE ACCESS
+    //
+
     /*override*/ def putfield(
         pc:             Int,
         objectref:      DomainValue,
@@ -63,13 +72,14 @@ trait TypeLevelFieldAccessInstructions extends FieldAccessesDomain {
         declaringClass: ObjectType,
         fieldName:      String,
         fieldType:      FieldType
-    ): Computation[Nothing, ExceptionValue] =
+    ): Computation[Nothing, ExceptionValue] = {
         refIsNull(pc, objectref) match {
             case Yes ⇒ throws(VMNullPointerException(pc))
             case Unknown if throwNullPointerExceptionOnFieldAccess ⇒
                 ComputationWithSideEffectOrException(VMNullPointerException(pc))
             case _ ⇒ ComputationWithSideEffectOnly
         }
+    }
 
     /*override*/ def putstatic(
         pc:             Int,
@@ -77,7 +87,8 @@ trait TypeLevelFieldAccessInstructions extends FieldAccessesDomain {
         declaringClass: ObjectType,
         fieldName:      String,
         fieldType:      FieldType
-    ): Computation[Nothing, Nothing] =
+    ): Computation[Nothing, Nothing] = {
         ComputationWithSideEffectOnly
+    }
 
 }

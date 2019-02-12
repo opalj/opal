@@ -114,7 +114,8 @@ import org.opalj.br.reader.Java9LibraryFramework
  *                         + all class files.
  *
  * @param libraryClassFilesAreInterfacesOnly If `true` then only the public interfaces
- *         of the methods of the library's classes are available.
+ *         of the methods of the library's classes are available; if `false` all methods and
+ *         method bodies are reified.
  *
  * @author Michael Eichberg
  * @author Marco Torsello
@@ -540,12 +541,7 @@ class Project[Source] private (
                 // we don't need the initialization data anymore
                 projectInformationKeyInitializationData.remove(pik)
                 pi
-            } { t ⇒
-                info(
-                    "project",
-                    s"initialization of $className took ${t.toSeconds}"
-                )
-            }
+            } { t ⇒ info("project", s"initialization of $className took ${t.toSeconds}") }
             projectInformation.set(pikUId, pi)
             pi
         }

@@ -48,6 +48,20 @@ trait ValuesDomain { domain ⇒
         classHierarchy.isSubtypeOf(subtype, supertype)
     }
 
+    /**
+     * Creates a domain value from the given value information that represents a
+     * properly domain value.
+     * A representation of a proper value is created even if the value information is provided
+     * for an '''uninitialized''' value.
+     *
+     * @note This function is only defined for proper values, i.e., it is not defined for '''void'''
+     *       values or illegal values.
+     *
+     * @note This method is intended to be overwritten by concrete domains which can represent more
+     *       information.
+     */
+    def InitializedDomainValue(origin: ValueOrigin, vi: ValueInformation): DomainValue
+
     // -----------------------------------------------------------------------------------
     //
     // REPRESENTATION OF VALUES

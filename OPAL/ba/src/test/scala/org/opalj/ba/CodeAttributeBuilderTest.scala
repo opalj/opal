@@ -17,6 +17,7 @@ import org.opalj.ai.domain.l0.TypeCheckingDomain
 import org.opalj.ai.util.XHTML
 import org.opalj.br.BooleanType
 import org.opalj.br.ExceptionHandler
+import org.opalj.br.MethodDescriptor.JustTakes
 
 /**
  * Tests the require statements and warnings of a CodeAttributeBuilder.
@@ -67,6 +68,7 @@ class CodeAttributeBuilderTest extends FlatSpec {
             f
         } catch {
             case e: VerifyError ⇒
+                import ClassHierarchy.PreInitializedClassHierarchy
                 val theCode = theBRMethod.body.get
                 val theSMT = theCode.stackMapTable.get
 
@@ -87,14 +89,14 @@ class CodeAttributeBuilderTest extends FlatSpec {
                     theCode.exceptionHandlers.mkString("Exception Handlers:\n\t\t", "\n\t\t", "\n")
                 )
                 info(
-                    theCode.liveVariables(ClassHierarchy.PreInitializedClassHierarchy).
+                    theCode.liveVariables(PreInitializedClassHierarchy).
                         zipWithIndex.filter(_._1 != null).map(_.swap).
                         mkString("Live variables:\n\t\t", "\n\t\t", "\n")
                 )
                 info(theSMT.pcs.mkString("Stack map table pcs: ", ", ", ""))
                 info(theSMT.stackMapFrames.mkString("Stack map table entries:\n\t\t", "\n\t\t", "\n"))
 
-                val theDomain = new TypeCheckingDomain(br.ClassHierarchy.PreInitializedClassHierarchy, theBRMethod)
+                val theDomain = new TypeCheckingDomain(PreInitializedClassHierarchy, theBRMethod)
                 val ils = CodeAttributeBuilder.ai.initialLocals(theBRMethod, theDomain)(None)
                 val ios = CodeAttributeBuilder.ai.initialOperands(theBRMethod, theDomain)
                 val r = CodeAttributeBuilder.ai.performInterpretation(theCode, theDomain)(ios, ils)
@@ -371,7 +373,7 @@ class CodeAttributeBuilderTest extends FlatSpec {
             ASTORE_1,
             GETSTATIC("java/lang/System", "out", PrintStreamType.toJVMTypeName),
             LoadString("bar"),
-            INVOKEVIRTUAL("java/io/PrintStream", "println", MethodDescriptor.JustTakes(ObjectType.String).toJVMDescriptor),
+            INVOKEVIRTUAL(PrintStreamType, "println", JustTakes(ObjectType.String)),
             ALOAD_1,
             POP,
             INVOKESTATIC(thisName, false, "otherMethod", "()Z"),
@@ -437,8 +439,9 @@ class CodeAttributeBuilderTest extends FlatSpec {
         }
     }
 
-
-    it should "not remove live code after jumps to PCS from Catch Block" in {
+    it should "not remove live code after simple conditional branch instructions" in {
+        import ObjectType.{Object ⇒ OObject}
+        import ObjectType.{RuntimeException ⇒ ORuntimeException}
         val codeElements = Array[CodeElement[AnyRef]](
             LabelElement(0),
             TRY('eh),
@@ -446,13 +449,13 @@ class CodeAttributeBuilderTest extends FlatSpec {
             LabelElement(1),
             ACONST_NULL,
             LabelElement(2),
-            INVOKEVIRTUAL(ObjectType.Object, "equals", MethodDescriptor.apply(ObjectType.Object, BooleanType)),
+            INVOKEVIRTUAL(OObject, "equals", MethodDescriptor(OObject, BooleanType)),
             LabelElement(5),
             ICONST_0,
             LabelElement(6),
             IRETURN,
             TRYEND('eh),
-            CATCH('eh, 1, Some(ObjectType.RuntimeException)),
+            CATCH('eh, 1, Some(ORuntimeException)),
             LabelElement(7),
             POP,
             LabelElement(8),
@@ -460,31 +463,35 @@ class CodeAttributeBuilderTest extends FlatSpec {
             LabelElement(9),
             ICONST_2,
             LabelElement(10),
-            LabeledIFNE(14),
+            LabeledIFNE(16),
             LabelElement(13),
+            POP,
+            ICONST_0,
             IRETURN,
-            LabelElement(14),
+            LabelElement(16),
             IRETURN
         )
         val c = CODE[AnyRef](codeElements)
         val expectedInstructions = Array(
-            ACONST_NULL,
-            ACONST_NULL,
-            INVOKEVIRTUAL(ObjectType.Object, "equals", MethodDescriptor.apply(ObjectType.Object, BooleanType)),
-            null,
-            null,
-            ICONST_0,
-            IRETURN,
-            POP,
-            ICONST_1,
-            ICONST_2,
-            IFNE(4),
-            null,
-            null,
-            IRETURN,
-            IRETURN
+            /* 00 */ ACONST_NULL,
+            /* 01 */ ACONST_NULL,
+            /* 02 */ INVOKEVIRTUAL(OObject, "equals", MethodDescriptor(OObject, BooleanType)),
+            /* 03 */ null,
+            /* 04 */ null,
+            /* 05 */ ICONST_0,
+            /* 06 */ IRETURN,
+            /* 07 */ POP,
+            /* 08 */ ICONST_1,
+            /* 09 */ ICONST_2,
+            /* 10 */ IFNE(6),
+            /* 11 */ null,
+            /* 12 */ null,
+            /* 13 */ POP,
+            /* 14 */ ICONST_0,
+            /* 15 */ IRETURN,
+            /* 16 */ IRETURN
         )
-        assert(c.instructions.sameElements(expectedInstructions))
-        assert(c.exceptionHandlers.head == ExceptionHandler(0,6,6,Some(ObjectType.RuntimeException)))
+        assert(c.instructions === expectedInstructions)
+        assert(c.exceptionHandlers.head == ExceptionHandler(0, 7, 7, Some(ORuntimeException)))
     }
 }
