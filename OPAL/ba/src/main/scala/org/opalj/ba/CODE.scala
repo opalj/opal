@@ -247,7 +247,8 @@ object CODE {
                     var currentInstruction: CodeElement[T] = codeElements(currentIndex)
                     var continueIteration = true
                     do {
-                        if (!isLive(currentIndex) && !currentInstruction.isExceptionHandlerElement) {
+                        val isNotYetLive = !isLive(currentIndex)
+                        if (isNotYetLive && !currentInstruction.isExceptionHandlerElement) {
                             // This check is primarily required due to the eager marking
                             // of PCLabels as live.
                             isLive(currentIndex) = true
