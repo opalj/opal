@@ -130,7 +130,7 @@ class LBFieldValuesAnalysis private[analyses] (
     }
 
     /**
-     *  The domain that we use for analyzing the values stored in a field.
+     * The domain that we use for analyzing the values stored in a field.
      *
      * One instance of this domain is used to analyze all methods of the respective
      * class. Only after the analysis of all methods, the information returned by
@@ -146,8 +146,9 @@ class LBFieldValuesAnalysis private[analyses] (
         with domain.TheCode
         with domain.DefaultSpecialDomainValuesBinding
         with domain.ThrowAllPotentialExceptionsConfiguration
-        //with domain.l0.DefaultTypeLevelIntegerValues
-        with domain.l1.DefaultIntegerValues // helps in case of "ifs" related to type tests etc.
+        // We don't use: "domain.l0.DefaultTypeLevelIntegerValues" because we want constant
+        // propagation which helps in case of "ifs" related to type tests etc.::
+        with domain.l1.DefaultIntegerValues
         with domain.l0.DefaultTypeLevelLongValues
         with domain.l0.DefaultTypeLevelFloatValues
         with domain.l0.DefaultTypeLevelDoubleValues
@@ -155,7 +156,8 @@ class LBFieldValuesAnalysis private[analyses] (
         with domain.l0.TypeLevelLongValuesShiftOperators
         with domain.l0.TypeLevelFieldAccessInstructions
         with domain.l0.TypeLevelInvokeInstructions
-        with domain.l0.DefaultReferenceValuesBinding // IT HAST TO BE L0 - we can't deal with null values!
+        // IT HAST TO BE L0 - we can't deal with "null" values!
+        with domain.l0.DefaultReferenceValuesBinding
         with domain.DefaultHandlingOfMethodResults
         with domain.IgnoreSynchronization
         //with RefinedTypeLevelInvokeInstructions
