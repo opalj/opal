@@ -55,7 +55,7 @@ class IntraproceduralInterpretationHandler(
      * @inheritdoc
      */
     override def processDefSite(
-        defSite: Int, params: List[StringConstancyInformation] = List()
+        defSite: Int, params: List[Seq[StringConstancyInformation]] = List()
     ): ProperPropertyComputationResult = {
         // Without doing the following conversion, the following compile error will occur: "the
         // result type of an implicit conversion must be more specific than org.opalj.fpcf.Entity"

@@ -42,7 +42,7 @@ class VirtualFunctionCallPreparationInterpreter(
         ps:              PropertyStore,
         state:           ComputationState,
         declaredMethods: DeclaredMethods,
-        params:          List[StringConstancyInformation],
+        params:          List[Seq[StringConstancyInformation]],
         c:               ProperOnUpdateContinuation
 ) extends AbstractStringInterpreter(cfg, exprHandler) {
 
@@ -114,13 +114,17 @@ class VirtualFunctionCallPreparationInterpreter(
             return Result(instr, StringConstancyProperty.lb)
         }
 
-        // Collect all parameters (do this here to evaluate them only once)
-        // TODO: Current assumption: Results of parameters are available right away
-        val paramScis = instr.params.map { p ⇒
-            StringConstancyProperty.extractFromPPCR(
-                exprHandler.processDefSite(p.asVar.definedBy.head)
-            ).stringConstancyInformation
-        }.toList
+        val directCallSites = state.callees.get.directCallSites()(ps, declaredMethods)
+        val instrClassName =
+            instr.receiver.asVar.value.asReferenceValue.asReferenceType.mostPreciseObjectType.toJava
+        val relevantPCs = directCallSites.filter {
+            case (_, calledMethods) ⇒ calledMethods.exists { m ⇒
+                val mClassName = m.declaringClassType.toJava
+                m.name == instr.name && mClassName == instrClassName
+            }
+        }.keys
+        // Collect all parameters
+        val params = evaluateParameters(getParametersForPCs(relevantPCs, state.tac), exprHandler)
 
         val results = methods.map { nextMethod ⇒
             val tac = getTACAI(ps, nextMethod, state)
@@ -130,7 +134,7 @@ class VirtualFunctionCallPreparationInterpreter(
                 val uvar = ret.asInstanceOf[ReturnValue[V]].expr.asVar
                 val entity = (uvar, nextMethod)
 
-                InterproceduralStringAnalysis.registerParams(entity, paramScis)
+                InterproceduralStringAnalysis.registerParams(entity, params)
                 val eps = ps(entity, StringConstancyProperty.key)
                 eps match {
                     case r: Result ⇒

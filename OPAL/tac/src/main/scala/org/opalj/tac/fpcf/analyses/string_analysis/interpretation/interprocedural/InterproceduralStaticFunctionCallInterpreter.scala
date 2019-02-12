@@ -18,8 +18,8 @@ import org.opalj.tac.TACStmts
 import org.opalj.tac.fpcf.analyses.string_analysis.ComputationState
 import org.opalj.tac.fpcf.analyses.string_analysis.V
 import org.opalj.tac.ReturnValue
-import org.opalj.tac.fpcf.analyses.string_analysis.InterproceduralStringAnalysis
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.AbstractStringInterpreter
+import org.opalj.tac.fpcf.analyses.string_analysis.InterproceduralStringAnalysis
 
 /**
  * The `InterproceduralStaticFunctionCallInterpreter` is responsible for processing
@@ -66,20 +66,22 @@ class InterproceduralStaticFunctionCallInterpreter(
 
         val m = methods._1.head
         val tac = getTACAI(ps, m, state)
+
+        val directCallSites = state.callees.get.directCallSites()(ps, declaredMethods)
+        val relevantPCs = directCallSites.filter {
+            case (_, calledMethods) ⇒
+                calledMethods.exists(m ⇒
+                    m.name == instr.name && m.declaringClassType == instr.declaringClass)
+        }.keys
+        // Collect all parameters
+        val params = evaluateParameters(getParametersForPCs(relevantPCs, state.tac), exprHandler)
+
         if (tac.isDefined) {
             // TAC available => Get return UVar and start the string analysis
             val ret = tac.get.stmts.find(_.isInstanceOf[ReturnValue[V]]).get
             val uvar = ret.asInstanceOf[ReturnValue[V]].expr.asVar
             val entity = (uvar, m)
-
-            // Collect all parameters
-            // TODO: Current assumption: Results of parameters are available right away
-            val paramScis = instr.params.map { p ⇒
-                StringConstancyProperty.extractFromPPCR(
-                    exprHandler.processDefSite(p.asVar.definedBy.head)
-                ).stringConstancyInformation
-            }.toList
-            InterproceduralStringAnalysis.registerParams(entity, paramScis)
+            InterproceduralStringAnalysis.registerParams(entity, params)
 
             val eps = ps(entity, StringConstancyProperty.key)
             eps match {

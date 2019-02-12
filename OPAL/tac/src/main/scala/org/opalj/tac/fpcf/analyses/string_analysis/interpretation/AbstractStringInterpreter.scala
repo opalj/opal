@@ -5,11 +5,14 @@ import scala.collection.mutable.ListBuffer
 
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyStore
+import org.opalj.value.ValueInformation
 import org.opalj.br.cfg.CFG
 import org.opalj.br.Method
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.DefinedMethod
 import org.opalj.br.fpcf.cg.properties.Callees
+import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
+import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.tac.Stmt
 import org.opalj.tac.TACStmts
 import org.opalj.tac.fpcf.analyses.string_analysis.V
@@ -17,6 +20,12 @@ import org.opalj.tac.TACMethodParameter
 import org.opalj.tac.TACode
 import org.opalj.tac.fpcf.analyses.string_analysis.ComputationState
 import org.opalj.tac.fpcf.properties.TACAI
+import org.opalj.tac.Assignment
+import org.opalj.tac.DUVar
+import org.opalj.tac.Expr
+import org.opalj.tac.ExprStmt
+import org.opalj.tac.FunctionCall
+import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedural.InterproceduralInterpretationHandler
 
 /**
  * @param cfg The control flow graph that underlies the instruction to interpret.
@@ -81,6 +90,45 @@ abstract class AbstractStringInterpreter(
 
         (methods.sortBy(_.classFile.fqn).toList, hasMethodWithUnknownBody)
     }
+
+    /**
+     * `getParametersForPCs` takes a list of program counters, `pcs`, as well as the TACode on which
+     * `pcs` is based. This function then extracts the parameters of all function calls from the
+     * given `pcs` and returns them.
+     */
+    protected def getParametersForPCs(
+        pcs: Iterable[Int],
+        tac: TACode[TACMethodParameter, DUVar[ValueInformation]]
+    ): List[Seq[Expr[V]]] = {
+        val paramLists = ListBuffer[Seq[Expr[V]]]()
+        pcs.map(tac.pcToIndex).foreach { stmtIndex ⇒
+            val params = tac.stmts(stmtIndex) match {
+                case ExprStmt(_, vfc: FunctionCall[V])     ⇒ vfc.params
+                case Assignment(_, _, fc: FunctionCall[V]) ⇒ fc.params
+                case _                                     ⇒ Seq()
+            }
+            if (params.nonEmpty) {
+                paramLists.append(params)
+            }
+        }
+        paramLists.toList
+    }
+
+    /**
+     * evaluateParameters takes a list of parameters, `params`, as produced, e.g., by
+     * [[AbstractStringInterpreter.getParametersForPCs]], and an interpretation handler, `iHandler`
+     * and interprets the given parameters.
+     */
+    protected def evaluateParameters(
+        params:   List[Seq[Expr[V]]],
+        iHandler: InterproceduralInterpretationHandler
+    ): List[Seq[StringConstancyInformation]] = params.map(_.map { expr ⇒
+        val scis = expr.asVar.definedBy.map(iHandler.processDefSite(_, List())).map { r ⇒
+            // TODO: Current assumption: Results of parameters are available right away
+            StringConstancyProperty.extractFromPPCR(r).stringConstancyInformation
+        }
+        StringConstancyInformation.reduceMultiple(scis)
+    })
 
     /**
      *

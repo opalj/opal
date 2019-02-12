@@ -34,7 +34,7 @@ class ArrayPreparationInterpreter(
         cfg:         CFG[Stmt[V], TACStmts[V]],
         exprHandler: InterproceduralInterpretationHandler,
         state:       ComputationState,
-        params:      List[StringConstancyInformation]
+        params:      List[Seq[StringConstancyInformation]]
 ) extends AbstractStringInterpreter(cfg, exprHandler) {
 
     override type T = ArrayLoad[V]
@@ -66,12 +66,7 @@ class ArrayPreparationInterpreter(
         defSites.filter(_ < 0).foreach { ds ⇒
             val paramPos = Math.abs(defSite + 2)
             // lb is the fallback value
-            var sci = StringConstancyInformation(
-                possibleStrings = StringConstancyInformation.UnknownWordSymbol
-            )
-            if (paramPos < params.size) {
-                sci = params(paramPos)
-            }
+            val sci = StringConstancyInformation.reduceMultiple(params.map(_(paramPos)))
             val e: Integer = ds
             state.appendResultToFpe2Sci(ds, Result(e, StringConstancyProperty(sci)))
         }

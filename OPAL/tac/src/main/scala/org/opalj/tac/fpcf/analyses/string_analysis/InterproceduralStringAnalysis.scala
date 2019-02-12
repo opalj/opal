@@ -15,6 +15,7 @@ import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
 import org.opalj.fpcf.SomeEPS
+import org.opalj.value.ValueInformation
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.SomeProject
@@ -40,6 +41,9 @@ import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedura
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.FlatPathElement
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.NestedPathType
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.SubPath
+import org.opalj.tac.DUVar
+import org.opalj.tac.TACMethodParameter
+import org.opalj.tac.TACode
 
 /**
  * This class is to be used to store state information that are required at a later point in
@@ -50,6 +54,7 @@ case class ComputationState(
         var computedLeanPath: Option[Path]    = None,
         var callees:          Option[Callees] = None
 ) {
+    var tac: TACode[TACMethodParameter, DUVar[ValueInformation]] = _
     var cfg: CFG[Stmt[V], TACStmts[V]] = _
     // If not empty, this very routine can only produce an intermediate result
     val dependees: mutable.Map[Entity, ListBuffer[EOptionP[Entity, Property]]] = mutable.Map()
@@ -59,7 +64,7 @@ case class ComputationState(
     val fpe2sci: mutable.Map[Int, ListBuffer[StringConstancyInformation]] = mutable.Map()
     // Parameter values of method / function; a mapping from the definition sites of parameter (
     // negative values) to a correct index of `params` has to be made!
-    var params: List[StringConstancyInformation] = List()
+    var params: List[Seq[StringConstancyInformation]] = List()
 
     /**
      * Takes a definition site as well as a result and extends the [[fpe2sci]] map accordingly,
@@ -128,19 +133,37 @@ class InterproceduralStringAnalysis(
                 dm.declaringClassType.toJava == data._2.classFile.thisType.toJava
         }.get
 
+        val tacai = ps(data._2, TACAI.key)
+        if (tacai.hasUBP) {
+            state.tac = tacai.ub.tac.get
+        } else {
+            if (!state.dependees.contains(data)) {
+                state.dependees(data) = ListBuffer()
+            }
+            state.dependees(data).append(tacai)
+            InterimResult(
+                tacai,
+                StringConstancyProperty.lb,
+                StringConstancyProperty.ub,
+                state.dependees.values.flatten,
+                continuation(data, state)
+            )
+        }
+
         val calleesEOptP = ps(dm, Callees.key)
         if (calleesEOptP.hasUBP) {
             state.callees = Some(calleesEOptP.ub)
             determinePossibleStrings(data, state)
         } else {
-            state.dependees(data) = ListBuffer()
+            if (!state.dependees.contains(data)) {
+                state.dependees(data) = ListBuffer()
+            }
             state.dependees(data).append(calleesEOptP)
-            val dependees = state.dependees.values.flatten
             InterimResult(
                 calleesEOptP,
                 StringConstancyProperty.lb,
                 StringConstancyProperty.ub,
-                dependees,
+                state.dependees.values.flatten,
                 continuation(data, state)
             )
         }
@@ -245,6 +268,7 @@ class InterproceduralStringAnalysis(
                 continuation(data, state)
             )
         } else {
+            InterproceduralStringAnalysis.unregisterParams(data)
             Result(data, StringConstancyProperty(sci))
         }
     }
@@ -264,14 +288,43 @@ class InterproceduralStringAnalysis(
         state:     ComputationState
     )(eps: SomeEPS): ProperPropertyComputationResult = {
         eps.pk match {
+            case TACAI.key ⇒ eps match {
+                case FinalP(tac: TACAI) ⇒
+                    state.tac = tac.tac.get
+                    state.dependees(inputData) = state.dependees(inputData).filter(_.e != eps.e)
+                    if (state.dependees(inputData).isEmpty) {
+                        state.dependees.remove(inputData)
+                        determinePossibleStrings(inputData, state)
+                    } else {
+                        InterimResult(
+                            inputData,
+                            StringConstancyProperty.lb,
+                            StringConstancyProperty.ub,
+                            state.dependees.values.flatten,
+                            continuation(inputData, state)
+                        )
+                    }
+                case InterimLUBP(lb, ub) ⇒ InterimResult(
+                    inputData, lb, ub, state.dependees.values.flatten, continuation(inputData, state)
+                )
+                case _ ⇒ throw new IllegalStateException("Neither FinalP nor InterimResult")
+            }
             case Callees.key ⇒ eps match {
                 case FinalP(callees: Callees) ⇒
                     state.callees = Some(callees)
                     state.dependees(inputData) = state.dependees(inputData).filter(_.e != eps.e)
                     if (state.dependees(inputData).isEmpty) {
                         state.dependees.remove(inputData)
+                        determinePossibleStrings(inputData, state)
+                    } else {
+                        InterimResult(
+                            inputData,
+                            StringConstancyProperty.lb,
+                            StringConstancyProperty.ub,
+                            state.dependees.values.flatten,
+                            continuation(inputData, state)
+                        )
                     }
-                    determinePossibleStrings(inputData, state)
                 case InterimLUBP(lb, ub) ⇒ InterimResult(
                     inputData, lb, ub, state.dependees.values.flatten, continuation(inputData, state)
                 )
@@ -321,6 +374,7 @@ class InterproceduralStringAnalysis(
         val finalSci = new PathTransformer(null).pathToStringTree(
             state.computedLeanPath.get, state.fpe2sci.toMap, resetExprHandler = false
         ).reduce(true)
+        InterproceduralStringAnalysis.unregisterParams(data)
         Result(data, StringConstancyProperty(finalSci))
     }
 
@@ -486,19 +540,26 @@ class InterproceduralStringAnalysis(
 
 object InterproceduralStringAnalysis {
 
-    private val paramInfos = mutable.Map[Entity, List[StringConstancyInformation]]()
+    /**
+     * Maps entities to a list of lists of parameters. As currently this analysis works context-
+     * insensitive, we have a list of lists to capture all parameters of all potential method /
+     * function calls.
+     */
+    private val paramInfos = mutable.Map[Entity, ListBuffer[Seq[StringConstancyInformation]]]()
 
-    def registerParams(e: Entity, scis: List[StringConstancyInformation]): Unit = {
+    def registerParams(e: Entity, scis: List[Seq[StringConstancyInformation]]): Unit = {
         if (!paramInfos.contains(e)) {
-            paramInfos(e) = List(scis: _*)
+            paramInfos(e) = ListBuffer(scis: _*)
+        } else {
+            paramInfos(e).appendAll(scis)
         }
-        // Per entity and method, a StringConstancyInformation list should be present only once,
-        // thus no else branch
     }
 
-    def getParams(e: Entity): List[StringConstancyInformation] =
+    def unregisterParams(e: Entity): Unit = paramInfos.remove(e)
+
+    def getParams(e: Entity): List[Seq[StringConstancyInformation]] =
         if (paramInfos.contains(e)) {
-            paramInfos(e)
+            paramInfos(e).toList
         } else {
             List()
         }

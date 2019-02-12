@@ -68,7 +68,7 @@ class InterproceduralInterpretationHandler(
      * @inheritdoc
      */
     override def processDefSite(
-        defSite: Int, params: List[StringConstancyInformation] = List()
+        defSite: Int, params: List[Seq[StringConstancyInformation]] = List()
     ): ProperPropertyComputationResult = {
         // Without doing the following conversion, the following compile error will occur: "the
         // result type of an implicit conversion must be more specific than org.opalj.fpcf.Entity"
@@ -78,7 +78,9 @@ class InterproceduralInterpretationHandler(
             return Result(e, StringConstancyProperty.lb)
         } else if (defSite < 0) {
             val paramPos = Math.abs(defSite + 2)
-            return Result(e, StringConstancyProperty(params(paramPos)))
+            val paramScis = params.map(_(paramPos)).distinct
+            val finalParamSci = StringConstancyInformation.reduceMultiple(paramScis)
+            return Result(e, StringConstancyProperty(finalParamSci))
         } else if (processedDefSites.contains(defSite)) {
             return Result(e, StringConstancyProperty.getNeutralElement)
         }

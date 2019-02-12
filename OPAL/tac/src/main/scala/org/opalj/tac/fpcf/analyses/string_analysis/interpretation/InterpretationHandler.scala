@@ -52,7 +52,7 @@ abstract class InterpretationHandler(cfg: CFG[Stmt[V], TACStmts[V]]) {
      */
     def processDefSite(
         defSite: Int,
-        params:  List[StringConstancyInformation] = List()
+        params:  List[Seq[StringConstancyInformation]] = List()
     ): ProperPropertyComputationResult
 
     /**
