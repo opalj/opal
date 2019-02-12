@@ -439,7 +439,7 @@ class CodeAttributeBuilderTest extends FlatSpec {
         }
     }
 
-    it should "not remove live code after jumps to PCs from Catch Block" in {
+    it should "not remove live code after simple conditional branch instructions" in {
         import ObjectType.{Object ⇒ OObject}
         import ObjectType.{RuntimeException ⇒ ORuntimeException}
         val codeElements = Array[CodeElement[AnyRef]](
@@ -449,7 +449,7 @@ class CodeAttributeBuilderTest extends FlatSpec {
             LabelElement(1),
             ACONST_NULL,
             LabelElement(2),
-            INVOKEVIRTUAL(OObject, "equals", MethodDescriptor.apply(OObject, BooleanType)),
+            INVOKEVIRTUAL(OObject, "equals", MethodDescriptor(OObject, BooleanType)),
             LabelElement(5),
             ICONST_0,
             LabelElement(6),
@@ -463,31 +463,35 @@ class CodeAttributeBuilderTest extends FlatSpec {
             LabelElement(9),
             ICONST_2,
             LabelElement(10),
-            LabeledIFNE(14),
+            LabeledIFNE(16),
             LabelElement(13),
+            POP,
+            ICONST_0,
             IRETURN,
-            LabelElement(14),
+            LabelElement(16),
             IRETURN
         )
         val c = CODE[AnyRef](codeElements)
         val expectedInstructions = Array(
-            /* 0 */ ACONST_NULL,
-            /* 1 */ ACONST_NULL,
-            /* 2 */ INVOKEVIRTUAL(OObject, "equals", MethodDescriptor.apply(OObject, BooleanType)),
-            /* 3 */ null,
-            /* 4 */ null,
-            /* 5 */ ICONST_0,
-            /* 6 */ IRETURN,
-            /* 7 */ POP,
-            /* 8 */ ICONST_1,
-            /* 9 */ ICONST_2,
-            /* 10 */ IFNE(4),
+            /* 00 */ ACONST_NULL,
+            /* 01 */ ACONST_NULL,
+            /* 02 */ INVOKEVIRTUAL(OObject, "equals", MethodDescriptor(OObject, BooleanType)),
+            /* 03 */ null,
+            /* 04 */ null,
+            /* 05 */ ICONST_0,
+            /* 06 */ IRETURN,
+            /* 07 */ POP,
+            /* 08 */ ICONST_1,
+            /* 09 */ ICONST_2,
+            /* 10 */ IFNE(6),
             /* 11 */ null,
             /* 12 */ null,
-            /* 13 */ IRETURN,
-            /* 14 */ IRETURN
+            /* 13 */ POP,
+            /* 14 */ ICONST_0,
+            /* 15 */ IRETURN,
+            /* 16 */ IRETURN
         )
-        assert(c.instructions.sameElements(expectedInstructions))
+        assert(c.instructions === expectedInstructions)
         assert(c.exceptionHandlers.head == ExceptionHandler(0, 7, 7, Some(ORuntimeException)))
     }
 }
