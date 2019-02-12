@@ -49,9 +49,10 @@ trait ValuesDomain { domain ⇒
     }
 
     /**
-     * Creates a domain value that represents a properly initialized domain value
-     * from the given value information. A representation of a proper value is created
-     * even if the value information is provided for an '''uninitialized''' value.
+     * Creates a domain value from the given value information that represents a
+     * properly domain value.
+     * A representation of a proper value is created even if the value information is provided
+     * for an '''uninitialized''' value.
      *
      * @note This function is only defined for proper values, i.e., it is not defined for '''void'''
      *       values or illegal values.
