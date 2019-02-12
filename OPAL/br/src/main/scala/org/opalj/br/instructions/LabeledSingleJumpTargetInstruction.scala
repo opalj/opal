@@ -3,6 +3,8 @@ package org.opalj
 package br
 package instructions
 
+import org.opalj.collection.ForeachRefIterator
+
 /**
  * An instruction where the jump target is identified using a `Symbol` associated with the
  * instruction which should be executed in case of a jump.
@@ -13,7 +15,9 @@ package instructions
  */
 trait LabeledSingleJumpTargetInstruction extends LabeledInstruction {
 
-    final def branchTargets: List[InstructionLabel] = branchTarget :: Nil
+    final def branchTargets: ForeachRefIterator[InstructionLabel] = {
+        ForeachRefIterator.single(branchTarget)
+    }
 
     def branchTarget: InstructionLabel
 }

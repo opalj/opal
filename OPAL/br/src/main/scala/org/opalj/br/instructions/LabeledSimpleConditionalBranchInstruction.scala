@@ -3,6 +3,8 @@ package org.opalj
 package br
 package instructions
 
+import org.opalj.collection.ForeachRefIterator
+
 /**
  * An conditional branch instruction where the jump target is identified using a `Symbol`.
  *
@@ -10,8 +12,14 @@ package instructions
  * @author Michael Eichberg
  */
 trait LabeledSimpleConditionalBranchInstruction
-    extends LabeledSingleJumpTargetInstruction
+    extends LabeledInstruction
     with SimpleConditionalBranchInstructionLike {
+
+    final def branchTargets: ForeachRefIterator[InstructionLabel] = {
+        ForeachRefIterator(branchTarget)
+    }
+
+    def branchTarget: InstructionLabel
 
     /**
      * @inheritdoc
