@@ -233,8 +233,7 @@ object CODE {
         }
 
         /* Returns `true` if any instruction was actually marked as live. */
-        def processMarkedAsLive(): Boolean = {
-            var markedInstructionAsLive = false
+        def processMarkedAsLive(): Unit = {
             while (markedAsLive.nonEmpty) {
                 // mark all code elements which can be executed subsequently as live
                 val IntRefPair(nextIndex, newMarkedAsLive) = markedAsLive.headAndTail
@@ -242,7 +241,6 @@ object CODE {
 
                 var currentIndex = nextIndex
                 if (!isLive(currentIndex)) {
-                    markedInstructionAsLive = true
 
                     var currentInstruction: CodeElement[T] = codeElements(currentIndex)
                     var continueIteration = true
@@ -287,8 +285,6 @@ object CODE {
                                     true
                                 }
                         }
-                        // DEBUG: println(s"[processMarkedAsLive] did set $currentIndex to live")
-
                         currentIndex += 1
                     } while (continueIteration
                         && currentIndex < codeElementsSize
@@ -301,7 +297,6 @@ object CODE {
                         })
                 }
             }
-            markedInstructionAsLive
         }
 
         /**
