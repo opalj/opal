@@ -266,7 +266,7 @@ object CODE {
                                     li.branchTargets.foreach(handleBranchTarget)
                                     // let's check if we have a "fall-through"
                                     li match {
-                                        case LabeledJSR(_) | LabeledJSR_W(_) |
+                                        case _: LabeledJSR | _: LabeledJSR_W |
                                             _: LabeledSimpleConditionalBranchInstruction ⇒
                                             // let's continue...
                                             true
