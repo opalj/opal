@@ -209,27 +209,29 @@ object CODE {
         }
 
         def handleBranchTarget(branchTarget: InstructionLabel): Unit = {
-            val targetIndex = labelsToIndexes.getInt(branchTarget)
+            var targetIndex = labelsToIndexes.getInt(branchTarget)
             if (targetIndex == Int.MinValue) {
                 val message = s"the $branchTarget label could not be resolved"
                 throw new NoSuchElementException(message)
             }
-            markMetaInformationAsLive(targetIndex)
 
+            // Recall that we always eagerly mark all PCLabels as live to enable remappings;
+            // hence, it may happen that in (nested) catch blocks, which are only processed
+            // in a second step, the target (pseudo) instruction is actually already marked as
+            // live though the real instruction is not (yet) live.
             val targetInstruction = codeElements(targetIndex)
-            if (targetInstruction.isPseudoInstruction && isLive(targetIndex)) {
-                targetInstruction match {
-                    case LabelElement(_: PCLabel) ⇒
-                        var indexOfFirstInstruction = (targetIndex + 1)
-                        while (!codeElements(indexOfFirstInstruction).isInstructionLikeElement) {
-                            indexOfFirstInstruction += 1
-                        }
-                        markedAsLive += indexOfFirstInstruction
-                    // we schedule the instruction after the label
-                    case _ ⇒
+            if (targetInstruction.isPseudoInstruction &&
+                isLive(targetIndex) &&
+                targetInstruction.asPseudoInstruction.isPCLabel) {
+                targetIndex += 1
+                while (!codeElements(targetIndex).isInstructionLikeElement) {
+                    targetIndex += 1
                 }
-                return ;
+                markedAsLive += targetIndex
+                // we schedule the instruction after the label
             }
+
+            markMetaInformationAsLive(targetIndex)
         }
 
         /* Returns `true` if any instruction was actually marked as live. */
