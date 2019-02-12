@@ -17,4 +17,6 @@ case class LabelElement(label: InstructionLabel) extends PseudoInstruction {
 
     final override def isCatch: Boolean = false
 
+    final override def isPCLabel: Boolean = label.isPCLabel
+
 }
