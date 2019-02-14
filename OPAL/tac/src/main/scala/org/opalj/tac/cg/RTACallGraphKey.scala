@@ -21,35 +21,24 @@ import org.opalj.br.fpcf.cg.properties.Callees
 import org.opalj.br.fpcf.cg.properties.SerializationRelatedCallees
 import org.opalj.br.fpcf.cg.properties.ThreadRelatedIncompleteCallSites
 import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.tac.fpcf.analyses.cg.reflection.TriggeredReflectionRelatedCallsAnalysis
 import org.opalj.tac.fpcf.analyses.cg.LazyCalleesAnalysis
 import org.opalj.tac.fpcf.analyses.cg.RTACallGraphAnalysisScheduler
-import org.opalj.tac.fpcf.analyses.cg.TriggeredFinalizerAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.TriggeredInstantiatedTypesAnalysis
-import org.opalj.tac.fpcf.analyses.cg.TriggeredLoadedClassesAnalysis
 import org.opalj.tac.fpcf.analyses.LazyTACAIProvider
-import org.opalj.tac.fpcf.analyses.cg.TriggeredStaticInitializerAnalysis
-import org.opalj.tac.fpcf.analyses.TriggeredSystemPropertiesAnalysis
+import org.opalj.log.OPALLogger.error
+import scala.reflect.runtime.universe.runtimeMirror
+
+import org.opalj.log.LogContext
+import org.opalj.br.fpcf.FPCFAnalysisScheduler
+import scala.collection.JavaConverters._
+
 import org.opalj.tac.fpcf.analyses.cg.EagerLibraryEntryPointsAnalysis
-import org.opalj.tac.fpcf.analyses.cg.TriggeredConfiguredNativeMethodsAnalysis
-import org.opalj.tac.fpcf.analyses.cg.TriggeredSerializationRelatedCallsAnalysis
-import org.opalj.tac.fpcf.analyses.cg.TriggeredThreadRelatedCallsAnalysis
 
 /**
  * A [[ProjectInformationKey]] to compute a [[CallGraph]] based on RTA.
+ * Uses the call graph analyses modules specified in the config file under the key
+ * "org.opalj.tac.cg.CallGraphKey.modules".
  *
- * @param handleStaticInitializer should the call-graph algorithm handle the invocation of static
- *                                initializers?
- * @param handleFinalizer should the call-graph algorithm handle the invocation of finalizers?
- * @param handleReflection              should the call-graph algorithm handle calls to the reflection API?
- *                                      See [[org.opalj.tac.fpcf.analyses.cg.reflection.ReflectionRelatedCallsAnalysis]]
- *                                      for detailed information about its configuration.
- * @param handleSerialization           should the call-graph algorithm handle the serialization API?
- * @param handleThreads                 should the call-graph algorithm handle the thread API?
- * @param handleConfiguredNativeMethods should the call-graph algorithm handle the invocation
- *                                      predefined native methods?
- *                                      See [[org.opalj.tac.fpcf.analyses.cg.ConfiguredNativeMethodsAnalysis]] for details about
- *                                      the configuration.
  * @param isLibrary                     should the [[org.opalj.tac.fpcf.analyses.cg.EagerLibraryEntryPointsAnalysis]] be scheduled?
  *
  *                                      Note, that initial instantiated types ([[InitialInstantiatedTypesKey]]) and entry points
@@ -57,17 +46,13 @@ import org.opalj.tac.fpcf.analyses.cg.TriggeredThreadRelatedCallsAnalysis
  *                                      Furthermore, you can configure the analysis mode (Library or Application) in the configuration
  *                                      of these keys.
  *
+ *
+ *
  * @author Florian Kuebler
  *
  */
 case class RTACallGraphKey(
-        handleStaticInitializer:       Boolean = true,
-        handleFinalizer:               Boolean = true,
-        handleReflection:              Boolean = true,
-        handleSerialization:           Boolean = true,
-        handleThreads:                 Boolean = true,
-        handleConfiguredNativeMethods: Boolean = true,
-        isLibrary:                     Boolean = true
+        isLibrary: Boolean
 ) extends ProjectInformationKey[CallGraph, Nothing] {
 
     override protected def requirements: ProjectInformationKeys = {
@@ -83,9 +68,11 @@ case class RTACallGraphKey(
     override protected def compute(project: SomeProject): CallGraph = {
         implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
         implicit val ps: PropertyStore = project.get(PropertyStoreKey)
+        implicit val logContext = project.logContext
 
         val manager = project.get(FPCFAnalysesManagerKey)
 
+        // todo we should not need to know the types of callees
         val calleesAnalysis = LazyCalleesAnalysis(
             Set(
                 StandardInvokeCallees,
@@ -103,30 +90,17 @@ case class RTACallGraphKey(
                 LazyTACAIProvider
             )
 
-        if (handleStaticInitializer) {
-            analyses ::= TriggeredStaticInitializerAnalysis
-            analyses ::= TriggeredLoadedClassesAnalysis
-        }
-
-        if (handleFinalizer)
-            analyses ::= TriggeredFinalizerAnalysisScheduler
-
-        if (handleReflection) {
-            analyses ::= TriggeredReflectionRelatedCallsAnalysis
-            analyses ::= TriggeredSystemPropertiesAnalysis
-        }
-
-        if (handleSerialization)
-            analyses ::= TriggeredSerializationRelatedCallsAnalysis
-
-        if (handleThreads)
-            analyses ::= TriggeredThreadRelatedCallsAnalysis
-
-        if (handleConfiguredNativeMethods)
-            analyses ::= TriggeredConfiguredNativeMethodsAnalysis
-
         if (isLibrary)
             analyses ::= EagerLibraryEntryPointsAnalysis
+
+        val config = project.config
+
+        // todo use registry here
+        val registeredModules = config.getStringList(
+            "org.opalj.tac.cg.CallGraphKey.modules"
+        ).asScala.flatMap(resolveAnalysisRunner(_))
+
+        analyses ++= registeredModules
 
         manager.runAll(
             analyses,
@@ -140,5 +114,21 @@ case class RTACallGraphKey(
         )
 
         new CallGraph()
+    }
+
+    private[this] def resolveAnalysisRunner(fqn: String)(implicit logContext: LogContext): Option[FPCFAnalysisScheduler] = {
+        val mirror = runtimeMirror(getClass.getClassLoader)
+        try {
+            val module = mirror.staticModule(fqn)
+            import mirror.reflectModule
+            Some(reflectModule(module).instance.asInstanceOf[FPCFAnalysisScheduler])
+        } catch {
+            case sre: ScalaReflectionException ⇒
+                error("RTA call graph", "cannot find analysis scheduler", sre)
+                None
+            case cce: ClassCastException ⇒
+                error("RTA call graph", "analysis scheduler class is invalid", cce)
+                None
+        }
     }
 }

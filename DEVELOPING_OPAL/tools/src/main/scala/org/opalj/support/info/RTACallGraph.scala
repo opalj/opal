@@ -60,7 +60,7 @@ object RTACallGraph extends DefaultOneStepAnalysis {
 
         implicit val ps: PropertyStore = project.get(PropertyStoreKey)
 
-        val cg = project.get(RTACallGraphKey())
+        val cg = project.get(RTACallGraphKey(true)) //todo is library?
 
         val reachableMethods = cg.reachableMethods().toTraversable
 

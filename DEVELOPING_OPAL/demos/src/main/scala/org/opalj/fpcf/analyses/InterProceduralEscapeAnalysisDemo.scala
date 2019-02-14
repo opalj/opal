@@ -70,7 +70,7 @@ object InterProceduralEscapeAnalysisDemo extends DefaultOneStepAnalysis {
 
         val manager = project.get(FPCFAnalysesManagerKey)
         time {
-            project.get(RTACallGraphKey())
+            project.get(RTACallGraphKey(true))
         } { t ⇒ info("progress", s"computing call graph and tac took ${t.toSeconds}") }
         time {
             manager.runAll(EagerInterProceduralEscapeAnalysis)
