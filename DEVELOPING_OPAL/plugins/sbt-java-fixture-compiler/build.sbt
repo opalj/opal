@@ -5,7 +5,7 @@ description := "compiles Java projects using a fixed version of the Eclipse comp
 organization := "de.opal-project"
 licenses += ("BSC 2-clause", url("https://opensource.org/licenses/BSD-2-Clause"))
 
-scalaVersion := "2.12.7"
+scalaVersion := "2.12.8"
 
 sbtPlugin := true
 
