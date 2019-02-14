@@ -5,6 +5,7 @@ package ba
 import org.junit.runner.RunWith
 import org.scalatest.FlatSpec
 import org.scalatest.junit.JUnitRunner
+
 import org.opalj.collection.immutable.RefArray
 import org.opalj.util.InMemoryClassLoader
 import org.opalj.bi.ACC_PUBLIC
@@ -493,5 +494,46 @@ class CodeAttributeBuilderTest extends FlatSpec {
         )
         assert(c.instructions === expectedInstructions)
         assert(c.exceptionHandlers.head == ExceptionHandler(0, 7, 7, Some(ORuntimeException)))
+    }
+
+    it should "allow explicitly specified ExceptionHandlers that include the last PC" in {
+        val code = br.Code(0, 0, Array(
+            /* 0 */ GOTO(6),
+            /* 1 */ null,
+            /* 2 */ null,
+            /* 3 */ POP,
+            /* 4 */ ICONST_2,
+            /* 5 */ IRETURN,
+            /* 6 */ ICONST_0,
+            /* 7 */ ICONST_1,
+            /* 8 */ IADD,
+            /* 9 */ IRETURN
+        ),
+            RefArray(ExceptionHandler(7, 10, 3, Some(ObjectType.RuntimeException))))
+        val labeledCode = LabeledCode(code)
+        val labeledInstructions = labeledCode.codeElements.toIndexedSeq
+        assert(labeledInstructions(2) == CATCH('eh0, 0, Some(ObjectType.RuntimeException)))
+        assert(labeledInstructions(11) == TRY('eh0))
+        assert(labeledInstructions(18) == TRYEND('eh0))
+    }
+
+    it should "allow inline ExceptionHandlers that include the last PC" in {
+        import ObjectType.{RuntimeException ⇒ ORuntimeException}
+        import ObjectType.{Object ⇒ OObject}
+        val codeElements = Array[CodeElement[AnyRef]](
+            GOTO('NORMAL_CF), // => 0,1,2
+            CATCH('eh, 1, Some(ORuntimeException)),
+            POP, // => 3
+            ICONST_2, // => 4
+            IRETURN, // => 5
+            'NORMAL_CF,
+            TRY('eh),
+            ACONST_NULL, // => 6
+            INVOKEVIRTUAL(OObject, "hashCode", MethodDescriptor.JustReturnsInteger), // => 7,8,9
+            IRETURN, // => 10
+            TRYEND('eh)
+        )
+        val code = CODE[AnyRef](codeElements)
+        assert(code.exceptionHandlers.head == ExceptionHandler(6, 11, 3, Some(ORuntimeException)))
     }
 }
