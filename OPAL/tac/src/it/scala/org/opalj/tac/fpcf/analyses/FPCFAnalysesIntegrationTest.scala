@@ -28,32 +28,17 @@ import org.opalj.fpcf.SomePropertyKey
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.TestSupport.allBIProjects
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.cg.properties.ReflectionRelatedCallees
-import org.opalj.br.fpcf.cg.properties.SerializationRelatedCallees
-import org.opalj.br.fpcf.cg.properties.StandardInvokeCallees
-import org.opalj.br.fpcf.cg.properties.ThreadRelatedIncompleteCallSites
 import org.opalj.br.fpcf.properties.Purity
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.fpcf.FPCFAnalysesRegistry
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.ai.domain.l1
-import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
+import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.FPCFAnalysesIntegrationTest.factory
 import org.opalj.tac.fpcf.analyses.FPCFAnalysesIntegrationTest.p
 import org.opalj.tac.fpcf.analyses.FPCFAnalysesIntegrationTest.ps
-import org.opalj.tac.fpcf.analyses.cg.LazyCalleesAnalysis
-import org.opalj.tac.fpcf.analyses.cg.RTACallGraphAnalysisScheduler
-import org.opalj.tac.fpcf.analyses.cg.TriggeredConfiguredNativeMethodsAnalysis
-import org.opalj.tac.fpcf.analyses.cg.TriggeredFinalizerAnalysisScheduler
-import org.opalj.tac.fpcf.analyses.cg.TriggeredInstantiatedTypesAnalysis
-import org.opalj.tac.fpcf.analyses.cg.TriggeredLoadedClassesAnalysis
-import org.opalj.tac.fpcf.analyses.cg.TriggeredSerializationRelatedCallsAnalysis
-import org.opalj.tac.fpcf.analyses.cg.TriggeredStaticInitializerAnalysis
-import org.opalj.tac.fpcf.analyses.cg.TriggeredThreadRelatedCallsAnalysis
-import org.opalj.tac.fpcf.analyses.cg.reflection.TriggeredReflectionRelatedCallsAnalysis
-import org.opalj.tac.fpcf.analyses.cg.RTACallGraphKey
 
 /**
  * Simple test to ensure that the FPFC analyses do not cause exceptions and that their results

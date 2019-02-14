@@ -25,6 +25,7 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.cg.properties.Callees
 import org.opalj.br.fpcf.cg.properties.CallersProperty
 import org.opalj.br.fpcf.PropertyStoreKey
+import org.opalj.tac.cg.RTACallGraphKey
 
 case class CallSites(callSites: Set[CallSite])
 

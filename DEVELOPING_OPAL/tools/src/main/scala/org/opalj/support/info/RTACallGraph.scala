@@ -14,8 +14,7 @@ import org.opalj.br.analyses.Project
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.cg.properties.Callees
 import org.opalj.br.fpcf.cg.properties.CallersProperty
-import org.opalj.br.fpcf.cg.properties.NoCallers
-import org.opalj.tac.fpcf.analyses.cg.RTACallGraphKey
+import org.opalj.tac.cg.RTACallGraphKey
 //import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
 //import org.opalj.tac.fpcf.analyses.TACAITransformer
 
@@ -65,9 +64,7 @@ object RTACallGraph extends DefaultOneStepAnalysis {
 
         val reachableMethods = cg.reachableMethods().toTraversable
 
-        val numEdges = reachableMethods.foldLeft(0) { (accEdges, callersProperty) ⇒
-            callersProperty.callers.size + accEdges
-        }
+        val numEdges = cg.numEdges
 
         var calleesSigs: List[String] = Nil
         var callersSigs: List[String] = Nil
