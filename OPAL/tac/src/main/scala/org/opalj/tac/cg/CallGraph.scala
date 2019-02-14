@@ -73,6 +73,4 @@ class CallGraph private[cg] ()(implicit ps: PropertyStore, declaredMethods: Decl
     val callers = ps.entities(CallersProperty.key).map(_.ub.callers)
       callers.map(_.size).sum
   }
-
-
 }
