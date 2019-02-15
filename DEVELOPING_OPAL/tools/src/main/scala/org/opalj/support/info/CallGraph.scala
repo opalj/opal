@@ -14,19 +14,32 @@ import org.opalj.br.analyses.Project
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.cg.properties.Callees
 import org.opalj.br.fpcf.cg.properties.CallersProperty
+import org.opalj.tac.cg.CHACallGraphKey
 import org.opalj.tac.cg.RTACallGraphKey
 //import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
 //import org.opalj.tac.fpcf.analyses.TACAITransformer
 
 /**
- * Computes a RTA based call graph and reports its size.
+ * Computes a call graph and reports its size.
+ *
+ * Please specify the call-graph algorithm:
+ *  -algorithm=CHA for an CHA-based call graph
+ *  -algorithm=RTA for an RTA-based call graph
+ *
+ * Please also specify whether the target (-cp=) is an application or a library:
+ *  -mode=app for an application
+ *  -mode=library for a library
+ *
  * Furthermore, it can be used to print the callees or callers of specific methods.
  * To do so, add -callers=m, where m is the method name/signature using Java notation, as parameter
  * (for callees use -callees=m).
  *
+ * The default algorithm is an RTA.
+ * Use -CHA to compute a CHA-based call graph.
+ *
  * @author Florian Kuebler
  */
-object RTACallGraph extends DefaultOneStepAnalysis {
+object CallGraph extends DefaultOneStepAnalysis {
 
     override def title: String = "Field Locality"
 
@@ -35,13 +48,16 @@ object RTACallGraph extends DefaultOneStepAnalysis {
     }
 
     override def analysisSpecificParametersDescription: String = {
-        "[-callers=method]"+"[-callees=method]"
+        "[-mode=app|library]"+"[-algorithm=CHA|RTA]"+"[-callers=method]"+"[-callees=method]"
     }
 
     override def checkAnalysisSpecificParameters(parameters: Seq[String]): Traversable[String] = {
         val remainingParameters =
             parameters.filter { p ⇒
-                !p.startsWith("-callers=") && !p.startsWith("-callees=")
+                !p.startsWith("-callers=") &&
+                    !p.startsWith("-callees=") &&
+                    !p.startsWith("-mode=") &&
+                    !p.startsWith("-algorithm=")
             }
         super.checkAnalysisSpecificParameters(remainingParameters)
     }
@@ -52,6 +68,41 @@ object RTACallGraph extends DefaultOneStepAnalysis {
         parameters:    Seq[String],
         isInterrupted: () ⇒ Boolean
     ): BasicReport = {
+        var calleesSigs: List[String] = Nil
+        var callersSigs: List[String] = Nil
+        var isLibrary: Option[Boolean] = None
+        var cgAlgorithm: Option[String] = None
+
+        val callersRegex = "-callers=(.*)".r
+        val calleesRegex = "-callees=(.*)".r
+        val modeRegex = "-mode=(app|library)".r
+        val algorithmRegex = "-algorithm=(CHA|RTA)".r
+
+        parameters.foreach {
+            case callersRegex(methodSig) ⇒ callersSigs ::= methodSig
+            case calleesRegex(methodSig) ⇒ calleesSigs ::= methodSig
+            case modeRegex("app") ⇒
+                if (isLibrary.isEmpty)
+                    isLibrary = Some(false)
+                else throw new IllegalArgumentException("-mode was set twice")
+            case modeRegex("library") ⇒
+                if (isLibrary.isEmpty)
+                    isLibrary = Some(true)
+                else throw new IllegalArgumentException("-mode was set twice")
+            case algorithmRegex(algo) ⇒
+                if (cgAlgorithm.isEmpty)
+                    cgAlgorithm = Some(algo)
+                else throw new IllegalArgumentException("-algorithm was set twice")
+
+        }
+
+      // todo: also manipulate the entry points and instantiated types keys
+        if (isLibrary.isEmpty)
+            throw new IllegalArgumentException("-mode was not set")
+
+        if (cgAlgorithm.isEmpty)
+            throw new IllegalArgumentException("-algorithm was not set")
+
         implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
         val allMethods = declaredMethods.declaredMethods.filter { dm ⇒
             dm.hasSingleDefinedMethod &&
@@ -60,21 +111,14 @@ object RTACallGraph extends DefaultOneStepAnalysis {
 
         implicit val ps: PropertyStore = project.get(PropertyStoreKey)
 
-        val cg = project.get(RTACallGraphKey(true)) //todo is library?
+        val cg = cgAlgorithm.get match {
+            case "CHA" ⇒ project.get(CHACallGraphKey(isLibrary.get))
+            case "RTA" ⇒ project.get(RTACallGraphKey(isLibrary.get))
+        }
 
         val reachableMethods = cg.reachableMethods().toTraversable
 
         val numEdges = cg.numEdges
-
-        var calleesSigs: List[String] = Nil
-        var callersSigs: List[String] = Nil
-
-        val callersRegex = "-callers=(.*)".r
-        val calleesRegex = "-callees=(.*)".r
-        parameters.foreach {
-            case callersRegex(methodSig) ⇒ callersSigs ::= methodSig
-            case calleesRegex(methodSig) ⇒ calleesSigs ::= methodSig
-        }
 
         println(ps.statistics.mkString("\n"))
 
