@@ -49,14 +49,19 @@ import org.opalj.tac.TACode
  * This class is to be used to store state information that are required at a later point in
  * time during the analysis, e.g., due to the fact that another analysis had to be triggered to
  * have all required information ready for a final result.
+ *
+ * @param entity The entity for which the analysis was started with.
  */
-case class ComputationState(
-        var computedLeanPath: Option[Path]    = None,
-        var callees:          Option[Callees] = None
-) {
+case class ComputationState(entity: P) {
+    // The Three-Address Code of the entity's method
     var tac: TACode[TACMethodParameter, DUVar[ValueInformation]] = _
+    // The Control Flow Graph of the entity's method
     var cfg: CFG[Stmt[V], TACStmts[V]] = _
-    // If not empty, this very routine can only produce an intermediate result
+    // The computed lean path that corresponds to the given entity
+    var computedLeanPath: Path = _
+    // Callees information regarding the declared method that corresponds to the entity's method
+    var callees: Callees = _
+    // If not empty, this routine can only produce an intermediate result
     val dependees: mutable.Map[Entity, ListBuffer[EOptionP[Entity, Property]]] = mutable.Map()
     // A mapping from DUVar elements to the corresponding indices of the FlatPathElements
     val var2IndexMapping: mutable.Map[V, Int] = mutable.Map()
@@ -125,7 +130,7 @@ class InterproceduralStringAnalysis(
     private var declaredMethods: DeclaredMethods = _
 
     def analyze(data: P): ProperPropertyComputationResult = {
-        val state = ComputationState()
+        val state = ComputationState(data)
         declaredMethods = project.get(DeclaredMethodsKey)
         // TODO: Is there a way to get the declared method in constant time?
         val dm = declaredMethods.declaredMethods.find { dm ⇒
@@ -142,17 +147,17 @@ class InterproceduralStringAnalysis(
             }
             state.dependees(data).append(tacai)
             InterimResult(
-                tacai,
+                data,
                 StringConstancyProperty.lb,
                 StringConstancyProperty.ub,
                 state.dependees.values.flatten,
-                continuation(data, state)
+                continuation(state)
             )
         }
 
         val calleesEOptP = ps(dm, Callees.key)
         if (calleesEOptP.hasUBP) {
-            state.callees = Some(calleesEOptP.ub)
+            state.callees = calleesEOptP.ub
             determinePossibleStrings(data, state)
         } else {
             if (!state.dependees.contains(data)) {
@@ -160,11 +165,11 @@ class InterproceduralStringAnalysis(
             }
             state.dependees(data).append(calleesEOptP)
             InterimResult(
-                calleesEOptP,
+                data,
                 StringConstancyProperty.lb,
                 StringConstancyProperty.ub,
                 state.dependees.values.flatten,
-                continuation(data, state)
+                continuation(state)
             )
         }
     }
@@ -202,10 +207,10 @@ class InterproceduralStringAnalysis(
             }
 
             val paths = pathFinder.findPaths(initDefSites, uvar.definedBy.head)
-            state.computedLeanPath = Some(paths.makeLeanPath(uvar, stmts))
+            state.computedLeanPath = paths.makeLeanPath(uvar, stmts)
 
             // Find DUVars, that the analysis of the current entity depends on
-            val dependentVars = findDependentVars(state.computedLeanPath.get, stmts, uvar)
+            val dependentVars = findDependentVars(state.computedLeanPath, stmts, uvar)
             if (dependentVars.nonEmpty) {
                 dependentVars.keys.foreach { nextVar ⇒
                     val toAnalyze = (nextVar, data._2)
@@ -223,17 +228,17 @@ class InterproceduralStringAnalysis(
                 }
             } else {
                 val iHandler = InterproceduralInterpretationHandler(
-                    state.cfg, ps, declaredMethods, state, continuation(data, state)
+                    state.cfg, ps, declaredMethods, state, continuation(state)
                 )
-                if (computeResultsForPath(state.computedLeanPath.get, iHandler, state)) {
+                if (computeResultsForPath(state.computedLeanPath, iHandler, state)) {
                     sci = new PathTransformer(iHandler).pathToStringTree(
-                        state.computedLeanPath.get, state.fpe2sci.toMap
+                        state.computedLeanPath, state.fpe2sci.toMap
                     ).reduce(true)
                 }
             }
         } // If not a call to String{Builder, Buffer}.toString, then we deal with pure strings
         else {
-            state.computedLeanPath = Some(if (defSites.length == 1) {
+            state.computedLeanPath = if (defSites.length == 1) {
                 // Trivial case for just one element
                 Path(List(FlatPathElement(defSites.head)))
             } else {
@@ -244,14 +249,14 @@ class InterproceduralStringAnalysis(
                     children.append(NestedPathElement(ListBuffer(FlatPathElement(ds)), None))
                 }
                 Path(List(NestedPathElement(children, Some(NestedPathType.CondWithAlternative))))
-            })
+            }
 
             val iHandler = InterproceduralInterpretationHandler(
-                state.cfg, ps, declaredMethods, state, continuation(data, state)
+                state.cfg, ps, declaredMethods, state, continuation(state)
             )
-            if (computeResultsForPath(state.computedLeanPath.get, iHandler, state)) {
+            if (computeResultsForPath(state.computedLeanPath, iHandler, state)) {
                 sci = new PathTransformer(iHandler).pathToStringTree(
-                    state.computedLeanPath.get, state.fpe2sci.toMap
+                    state.computedLeanPath, state.fpe2sci.toMap
                 ).reduce(true)
             }
             // No need to cover the else branch: interimResults.nonEmpty => dependees were added to
@@ -265,7 +270,7 @@ class InterproceduralStringAnalysis(
                 StringConstancyProperty.ub,
                 StringConstancyProperty.lb,
                 state.dependees.values.flatten,
-                continuation(data, state)
+                continuation(state)
             )
         } else {
             InterproceduralStringAnalysis.unregisterParams(data)
@@ -279,14 +284,13 @@ class InterproceduralStringAnalysis(
      * @param state The current computation state. Within this continuation, dependees of the state
      *              might be updated. Furthermore, methods processing this continuation might alter
      *              the state.
-     * @param inputData The data which the string analysis was started with.
      * @return Returns a final result if (already) available. Otherwise, an intermediate result will
      *         be returned.
      */
     private def continuation(
-        inputData: P,
-        state:     ComputationState
+        state: ComputationState
     )(eps: SomeEPS): ProperPropertyComputationResult = {
+        val inputData = state.entity
         eps.pk match {
             case TACAI.key ⇒ eps match {
                 case FinalP(tac: TACAI) ⇒
@@ -301,17 +305,17 @@ class InterproceduralStringAnalysis(
                             StringConstancyProperty.lb,
                             StringConstancyProperty.ub,
                             state.dependees.values.flatten,
-                            continuation(inputData, state)
+                            continuation(state)
                         )
                     }
                 case InterimLUBP(lb, ub) ⇒ InterimResult(
-                    inputData, lb, ub, state.dependees.values.flatten, continuation(inputData, state)
+                    inputData, lb, ub, state.dependees.values.flatten, continuation(state)
                 )
                 case _ ⇒ throw new IllegalStateException("Neither FinalP nor InterimResult")
             }
             case Callees.key ⇒ eps match {
                 case FinalP(callees: Callees) ⇒
-                    state.callees = Some(callees)
+                    state.callees = callees
                     state.dependees(inputData) = state.dependees(inputData).filter(_.e != eps.e)
                     if (state.dependees(inputData).isEmpty) {
                         state.dependees.remove(inputData)
@@ -322,21 +326,30 @@ class InterproceduralStringAnalysis(
                             StringConstancyProperty.lb,
                             StringConstancyProperty.ub,
                             state.dependees.values.flatten,
-                            continuation(inputData, state)
+                            continuation(state)
                         )
                     }
                 case InterimLUBP(lb, ub) ⇒ InterimResult(
-                    inputData, lb, ub, state.dependees.values.flatten, continuation(inputData, state)
+                    inputData, lb, ub, state.dependees.values.flatten, continuation(state)
                 )
                 case _ ⇒ throw new IllegalStateException("Neither FinalP nor InterimResult")
             }
             case StringConstancyProperty.key ⇒
                 eps match {
                     case FinalP(p) ⇒
-                        processFinalP(inputData, state, eps.e, p)
-                    case InterimLUBP(lb, ub) ⇒ InterimResult(
-                        inputData, lb, ub, state.dependees.values.flatten, continuation(eps.e.asInstanceOf[P], state)
-                    )
+                        processFinalP(state.entity, state, eps.e, p)
+                    case InterimLUBP(lb, ub) ⇒
+                        for ((k, _) ← state.dependees) {
+                            state.dependees(k) = state.dependees(k).filter(_.e != eps.e)
+                        }
+                        val eData = eps.e.asInstanceOf[P]
+                        if (!state.dependees.contains(eData._2)) {
+                            state.dependees(eData._2) = ListBuffer()
+                        }
+                        state.dependees(eData._2).append(eps)
+                        InterimResult(
+                            inputData, lb, ub, state.dependees.values.flatten, continuation(state)
+                        )
                     case _ ⇒ throw new IllegalStateException("Neither FinalP nor InterimResult")
                 }
         }
@@ -370,9 +383,9 @@ class InterproceduralStringAnalysis(
     private def computeFinalResult(
         data: P, state: ComputationState, iHandler: InterproceduralInterpretationHandler
     ): Result = {
-        finalizePreparations(state.computedLeanPath.get, state, iHandler)
+        finalizePreparations(state.computedLeanPath, state, iHandler)
         val finalSci = new PathTransformer(null).pathToStringTree(
-            state.computedLeanPath.get, state.fpe2sci.toMap, resetExprHandler = false
+            state.computedLeanPath, state.fpe2sci.toMap, resetExprHandler = false
         ).reduce(true)
         InterproceduralStringAnalysis.unregisterParams(data)
         Result(data, StringConstancyProperty(finalSci))
@@ -395,11 +408,16 @@ class InterproceduralStringAnalysis(
 
         // No more dependees => Return the result for this analysis run
         state.dependees.foreach { case (k, v) ⇒ state.dependees(k) = v.filter(_.e != e) }
+        state.dependees.foreach {
+            case (k, v) ⇒ if (v.isEmpty) {
+                state.dependees.remove(k)
+            }
+        }
         val remDependees = state.dependees.values.flatten
         if (remDependees.isEmpty) {
             val iHandler = InterproceduralInterpretationHandler(
                 state.cfg, ps, declaredMethods, state,
-                continuation(data, state)
+                continuation(state)
             )
             computeFinalResult(data, state, iHandler)
         } else {
@@ -408,7 +426,7 @@ class InterproceduralStringAnalysis(
                 StringConstancyProperty.ub,
                 StringConstancyProperty.lb,
                 remDependees,
-                continuation(data, state)
+                continuation(state)
             )
         }
     }

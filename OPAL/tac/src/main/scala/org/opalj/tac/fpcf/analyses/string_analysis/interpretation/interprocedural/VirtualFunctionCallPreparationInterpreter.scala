@@ -107,14 +107,14 @@ class VirtualFunctionCallPreparationInterpreter(
      */
     private def interpretArbitraryCall(instr: T, defSite: Int): ProperPropertyComputationResult = {
         val (methods, _) = getMethodsForPC(
-            instr.pc, ps, state.callees.get, declaredMethods
+            instr.pc, ps, state.callees, declaredMethods
         )
 
         if (methods.isEmpty) {
             return Result(instr, StringConstancyProperty.lb)
         }
 
-        val directCallSites = state.callees.get.directCallSites()(ps, declaredMethods)
+        val directCallSites = state.callees.directCallSites()(ps, declaredMethods)
         val instrClassName =
             instr.receiver.asVar.value.asReferenceValue.asReferenceType.mostPreciseObjectType.toJava
         val relevantPCs = directCallSites.filter {

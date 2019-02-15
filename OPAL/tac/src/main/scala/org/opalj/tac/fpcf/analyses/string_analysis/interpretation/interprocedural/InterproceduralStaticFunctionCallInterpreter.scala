@@ -54,7 +54,7 @@ class InterproceduralStaticFunctionCallInterpreter(
      */
     override def interpret(instr: T, defSite: Int): ProperPropertyComputationResult = {
         val methods, _ = getMethodsForPC(
-            instr.pc, ps, state.callees.get, declaredMethods
+            instr.pc, ps, state.callees, declaredMethods
         )
 
         // Static methods cannot be overwritten, thus 1) we do not need the second return value of
@@ -67,7 +67,7 @@ class InterproceduralStaticFunctionCallInterpreter(
         val m = methods._1.head
         val tac = getTACAI(ps, m, state)
 
-        val directCallSites = state.callees.get.directCallSites()(ps, declaredMethods)
+        val directCallSites = state.callees.directCallSites()(ps, declaredMethods)
         val relevantPCs = directCallSites.filter {
             case (_, calledMethods) ⇒
                 calledMethods.exists(m ⇒

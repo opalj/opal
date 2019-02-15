@@ -86,7 +86,7 @@ class InterproceduralInterpretationHandler(
         }
         processedDefSites.append(defSite)
 
-        val callees = state.callees.get
+        val callees = state.callees
         stmts(defSite) match {
             case Assignment(_, _, expr: StringConst) ⇒
                 val result = new StringConstInterpreter(cfg, this).interpret(expr, defSite)
