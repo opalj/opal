@@ -3,6 +3,12 @@ package org.opalj
 package tac
 package cg
 
+import scala.reflect.runtime.universe.runtimeMirror
+
+import scala.collection.JavaConverters._
+
+import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger.error
 import org.opalj.collection.immutable.Chain
 import org.opalj.fpcf.ComputationSpecification
 import org.opalj.fpcf.PropertyStore
@@ -14,24 +20,16 @@ import org.opalj.br.analyses.cg.InitialEntryPointsKey
 import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.fpcf.PropertyStoreKey
-import org.opalj.br.fpcf.cg.properties.ReflectionRelatedCallees
 import org.opalj.br.fpcf.cg.properties.StandardInvokeCallees
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.fpcf.cg.properties.Callees
-import org.opalj.br.fpcf.cg.properties.SerializationRelatedCallees
-import org.opalj.br.fpcf.cg.properties.ThreadRelatedIncompleteCallSites
 import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.fpcf.FPCFAnalysisScheduler
+import org.opalj.br.fpcf.cg.properties.CalleesLikePropertyMetaInformation
 import org.opalj.tac.fpcf.analyses.cg.LazyCalleesAnalysis
 import org.opalj.tac.fpcf.analyses.cg.RTACallGraphAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.TriggeredInstantiatedTypesAnalysis
 import org.opalj.tac.fpcf.analyses.LazyTACAIProvider
-import org.opalj.log.OPALLogger.error
-import scala.reflect.runtime.universe.runtimeMirror
-
-import org.opalj.log.LogContext
-import org.opalj.br.fpcf.FPCFAnalysisScheduler
-import scala.collection.JavaConverters._
-
 import org.opalj.tac.fpcf.analyses.cg.EagerLibraryEntryPointsAnalysis
 
 /**
@@ -71,15 +69,22 @@ case class RTACallGraphKey(
         implicit val logContext = project.logContext
 
         val manager = project.get(FPCFAnalysesManagerKey)
+        val config = project.config
+
+        // todo use registry here
+        val registeredModules = config.getStringList(
+            "org.opalj.tac.cg.CallGraphKey.modules"
+        ).asScala.flatMap(resolveAnalysisRunner(_))
+
+        val derivedProperties = registeredModules.flatMap(a ⇒ a.derives.map(_.pk)).toSet
+
+        val calleeProperties = derivedProperties.collect {
+            case p: CalleesLikePropertyMetaInformation ⇒ p
+        }
 
         // todo we should not need to know the types of callees
         val calleesAnalysis = LazyCalleesAnalysis(
-            Set(
-                StandardInvokeCallees,
-                SerializationRelatedCallees,
-                ReflectionRelatedCallees,
-                ThreadRelatedIncompleteCallSites
-            )
+            Set(StandardInvokeCallees) ++ calleeProperties
         )
 
         var analyses: List[ComputationSpecification[FPCFAnalysis]] =
@@ -92,13 +97,6 @@ case class RTACallGraphKey(
 
         if (isLibrary)
             analyses ::= EagerLibraryEntryPointsAnalysis
-
-        val config = project.config
-
-        // todo use registry here
-        val registeredModules = config.getStringList(
-            "org.opalj.tac.cg.CallGraphKey.modules"
-        ).asScala.flatMap(resolveAnalysisRunner(_))
 
         analyses ++= registeredModules
 

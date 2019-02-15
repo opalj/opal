@@ -51,6 +51,18 @@ trait ApplicationEntryPointsFinder extends EntryPointFinder {
     }
 }
 
+trait ApplicationWithoutJREEntryPointsFinder extends ApplicationEntryPointsFinder {
+    private val packagesToExclude = Set("com/sun", "sun", "oracle", "jdk", "java", "com/oracle")
+
+    override def collectEntryPoints(project: SomeProject): Traversable[Method] = {
+        super.collectEntryPoints(project).filterNot { ep ⇒
+            packagesToExclude.exists { prefix ⇒
+                ep.declaringClassFile.thisType.packageName.startsWith(prefix)
+            }
+        }
+    }
+}
+
 /**
  * This trait provides an analysis to compute a libraries' default entry points. The analysis thus
  * depends on the type extensibility, method overridability, and closed packages information. Hence,
@@ -249,9 +261,9 @@ trait ConfigurationEntryPointsFinder extends EntryPointFinder {
 
     /* Required by Ficus' `ArbitraryTypeReader`*/
     private case class EntryPointContainer(
-            declaringClass: String,
-            name:           String,
-            descriptor:     Option[String]
+        declaringClass: String,
+        name:           String,
+        descriptor:     Option[String]
     )
 }
 
@@ -270,6 +282,10 @@ object ConfigurationEntryPointsFinder
  */
 object ApplicationEntryPointsFinder
     extends ApplicationEntryPointsFinder
+    with ConfigurationEntryPointsFinder
+
+object ApplicationWithoutJREEntryPointsFinder
+    extends ApplicationWithoutJREEntryPointsFinder
     with ConfigurationEntryPointsFinder
 
 /**

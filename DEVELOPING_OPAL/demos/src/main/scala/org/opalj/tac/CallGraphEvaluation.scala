@@ -79,7 +79,7 @@ object CallGraphEvaluation extends DefaultOneStepAnalysis {
             )
         }*/
 
-        val moduleNames = modules.map(_.split('.').last.replace("Triggered", "").replace("CallsAnalysis", ""))
+        val moduleNames = modules.map(_.split('.').last.replace("Triggered", "").replace("RelatedCallsAnalysis", ""))
 
         modules :::= List(
             "org.opalj.tac.fpcf.analyses.cg.TriggeredFinalizerAnalysisScheduler",
@@ -117,28 +117,36 @@ object CallGraphEvaluation extends DefaultOneStepAnalysis {
             for ((_, tgts) ← ps(rm, StandardInvokeCallees.key).ub.callSites)
                 numStandardEdges += tgts.size
 
-            for ((_, tgts) ← ps(rm, ReflectionRelatedCallees.key).ub.callSites)
-                numReflectiveEdges += tgts.size
+            if (moduleNames.contains("Reflection"))
+                for ((_, tgts) ← ps(rm, ReflectionRelatedCallees.key).ub.callSites)
+                    numReflectiveEdges += tgts.size
 
-            for ((_, tgts) ← ps(rm, SerializationRelatedCallees.key).ub.callSites)
-                numSerializationEdges += tgts.size
+            if (moduleNames.contains("Serialization"))
+                for ((_, tgts) ← ps(rm, SerializationRelatedCallees.key).ub.callSites)
+                    numSerializationEdges += tgts.size
 
-            if (rm.name == "start" &&
-                rm.descriptor == MethodDescriptor.NoArgsAndReturnVoid &&
-                ps(rm, CallersProperty.key).ub.hasVMLevelCallers)
-                numThreadEdges += 1
+            if (moduleNames.contains("Thread"))
+                if (rm.name == "start" &&
+                    rm.descriptor == MethodDescriptor.NoArgsAndReturnVoid &&
+                    ps(rm, CallersProperty.key).ub.hasVMLevelCallers)
+                    numThreadEdges += 1
         }
         numEdges += numThreadEdges
 
-        val outFile = new File(s"results/$projectName.tsv")
+        val outFile = new File(s"results/${projectName.get}.tsv")
+        val writeHeader =
+            if (!outFile.exists()) {
+                outFile.getParentFile.mkdirs()
+                outFile.createNewFile()
+                true
+            } else
+                false
         val writer = new PrintWriter(new FileWriter(outFile, true))
 
-        if (!outFile.exists()) {
-            outFile.mkdirs()
+        if (writeHeader)
             writer.println("config\t# rm\t# edges\t# standard edges\t# reflection edges\t# serialization edges\t# thread edges")
-        }
 
-        writer.println(s"$algorithm,${moduleNames.mkString(",")}\t${reachableMethods.size}\t$numEdges\t$numStandardEdges\t$numReflectiveEdges\t$numSerializationEdges\t$numThreadEdges")
+        writer.println(s"${algorithm.get},${moduleNames.mkString(",")}\t${reachableMethods.size}\t$numEdges\t$numStandardEdges\t$numReflectiveEdges\t$numSerializationEdges\t$numThreadEdges")
 
         writer.flush()
         writer.close()
