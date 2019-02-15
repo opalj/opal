@@ -51,7 +51,7 @@ class InterproceduralNonVirtualFunctionCallInterpreter(
      * @see [[AbstractStringInterpreter.interpret]]
      */
     override def interpret(instr: T, defSite: Int): ProperPropertyComputationResult = {
-        val methods = getMethodsForPC(instr.pc, ps, state.callees.get, declaredMethods)
+        val methods = getMethodsForPC(instr.pc, ps, state.callees, declaredMethods)
         val m = methods._1.head
         val tac = getTACAI(ps, m, state)
         if (tac.isDefined) {
@@ -71,17 +71,17 @@ class InterproceduralNonVirtualFunctionCallInterpreter(
                     state.dependees(m).append(eps)
                     state.var2IndexMapping(uvar) = defSite
                     InterimResult(
-                        entity,
+                        state.entity,
                         StringConstancyProperty.lb,
                         StringConstancyProperty.ub,
-                        List(),
+                        state.dependees.values.flatten,
                         c
                     )
             }
         } else {
             // No TAC => Register dependee and continue
             InterimResult(
-                m,
+                state.entity,
                 StringConstancyProperty.lb,
                 StringConstancyProperty.ub,
                 state.dependees.values.flatten,
