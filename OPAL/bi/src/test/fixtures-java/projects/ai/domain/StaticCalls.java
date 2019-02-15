@@ -26,7 +26,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package performInvocations;
+package ai.domain;;
 
 public class StaticCalls {
 
@@ -208,5 +208,22 @@ public class StaticCalls {
     static boolean uselessReferenceTest() {
         Object o = new Object();
         return o == id(o);
+    }
+
+    static Object semiIdentity(Object x, boolean b) {
+        if(b)
+            return x;
+        else
+            return null;
+    }
+
+    static Object advancedUselessReferenceTest(boolean doCheck) {
+        Object p = new Object();
+        Object o = semiIdentity(p, doCheck);
+        if(o != null) {
+            return o; // <= should be "p"
+        } else {
+            return null;
+        }
     }
 }

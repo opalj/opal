@@ -40,9 +40,9 @@ trait RecordMethodCallResults
         super.returnVoid(pc)
     }
 
-    def returnedNormally: Boolean = hasReturnedNormally || allReturnedValues.nonEmpty
+    override def returnedNormally: Boolean = hasReturnedNormally || allReturnedValues.nonEmpty
 
-    def returnedValue(target: TargetDomain, callerPC: Int): Option[target.DomainValue] = {
+    override def returnedValue(target: TargetDomain, callerPC: Int): Option[target.DomainValue] = {
         if (allReturnedValues.isEmpty)
             None
         else {
@@ -50,7 +50,26 @@ trait RecordMethodCallResults
         }
     }
 
-    def returnedValueRemapped(
+    /**
+     * Remaps the returned value to the domain value used by the calling domain.
+     *
+     * @note Even if the current domain provides origin information then the returned value is not
+     *       refined by this default implementation. For example, imagine the following code:
+     *       {{{
+     *       def isString(o : Object) : Object = {
+     *          if(o.isInstanceOf[String])
+     *              o // here, we know that o is actually a String.
+     *          else
+     *              null
+     *       }
+     *       }}}
+     *       Here, the value that is returned is the original "object" value; the information
+     *       that it is a String is not available in the calling method's context.
+     *       Furthermore, "MultipleReferenceValues" are also not supported.
+     *       Support of these features requires that the "current" domain is at least the
+     *       l1.DefaultReferenceValuesDomain which we do not assume here.
+     */
+    override def returnedValueRemapped(
         callerDomain: TargetDomain,
         callerPC:     Int
     )(
@@ -61,11 +80,7 @@ trait RecordMethodCallResults
         if (allReturnedValues.isEmpty)
             None
         else {
-            // IMPROVE If some of the returned values are, e.g., MultipleReferenceValues
-            // or if we have multiple return sites
-            // where some refer to parameters and some to local variables, then we should map back
-            // the information regarding the parameters and summarize only w.r.t. the
-            // local variables.
+            /* THE FOLLOWING IS THE MOST BASIC HANDLING WHICH ONLY SUPPORTS IDENTITY FUNCTIONS:
             val summarizedValue = summarize(callerPC, allReturnedValues.values)
 
             val nthParameter = passedParameters.nthValue { _ eq summarizedValue }
@@ -76,6 +91,31 @@ trait RecordMethodCallResults
                 val mappedBackValue = originalOperands.reverse(nthParameter)
                 Some(mappedBackValue)
             }
+            */
+
+            // If we have multiple return sites where some refer to parameters and
+            // some to local variables, we map back the information regarding
+            // the parameters and summarize only w.r.t. the local variables.
+            val (returnedParameters, returnedLocals) =
+                allReturnedValues.values.partition(passedParameters.contains)
+            var summarizedValue: callerDomain.DomainValue = // <= summarized in the target domain!
+                if (returnedLocals.nonEmpty)
+                    summarize(callerPC, returnedLocals).adapt(callerDomain, callerPC)
+                else
+                    null
+            returnedParameters foreach { p ⇒
+                val nthParameter = passedParameters.nthValue { _ == p }
+                val originalParameter = originalOperands.reverse(nthParameter)
+                if (summarizedValue == null || summarizedValue == originalParameter) {
+                    summarizedValue = originalParameter
+                } else {
+                    summarizedValue.join(callerPC, originalParameter) match {
+                        case SomeUpdate(newSummarizedValue) ⇒ summarizedValue = newSummarizedValue
+                        case _                              ⇒ summarizedValue
+                    }
+                }
+            }
+            Some(summarizedValue)
         }
     }
 
@@ -91,7 +131,6 @@ trait RecordMethodCallResults
             def handleExceptionValue(exceptionValue: ExceptionValue): Unit = {
                 exceptionValue.upperTypeBound match {
                     case EmptyUpperTypeBound ⇒
-                        println("[info] [RecordMethodCallResults.thrownExceptions] Type of exception is unknown.")
                         exceptionValuesPerType = exceptionValuesPerType.updated(
                             ObjectType.Throwable,
                             exceptionValuesPerType.getOrElse(

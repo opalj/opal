@@ -659,8 +659,9 @@ trait ValuesDomain { domain ⇒
      *      specific domain/domain values, if need be.
      */
     def summarize(pc: Int, values: Iterable[DomainValue]): DomainValue = {
-        var summary = values.head.summarize(pc)
-        values.tail foreach { value ⇒
+        val valuesIterator = values.iterator
+        var summary = valuesIterator.next().summarize(pc)
+        valuesIterator foreach { value ⇒
             if (summary ne value) {
                 summary.join(pc, value.summarize(pc)) match {
                     case NoUpdate               ⇒ /*nothing to do*/
