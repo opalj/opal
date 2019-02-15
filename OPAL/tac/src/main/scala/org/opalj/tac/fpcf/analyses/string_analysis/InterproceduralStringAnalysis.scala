@@ -98,7 +98,7 @@ class InterproceduralStringAnalysis(
         val calleesEOptP = ps(dm, Callees.key)
         if (calleesEOptP.hasUBP) {
             state.callees = calleesEOptP.ub
-            determinePossibleStrings(data, state)
+            determinePossibleStrings(state)
         } else {
             if (!state.dependees.contains(data)) {
                 state.dependees(data) = ListBuffer()
@@ -120,21 +120,21 @@ class InterproceduralStringAnalysis(
      * [[InterimResult]] depending on whether other information needs to be computed first.
      */
     private def determinePossibleStrings(
-        data: P, state: InterproceduralComputationState
+        state: InterproceduralComputationState
     ): ProperPropertyComputationResult = {
         // sci stores the final StringConstancyInformation (if it can be determined now at all)
         var sci = StringConstancyProperty.lb.stringConstancyInformation
         val tacProvider = p.get(SimpleTACAIKey)
-        state.cfg = tacProvider(data._2).cfg
-        state.params = InterproceduralStringAnalysis.getParams(data)
+        state.cfg = tacProvider(state.entity._2).cfg
+        state.params = InterproceduralStringAnalysis.getParams(state.entity)
         val stmts = state.cfg.code.instructions
 
-        val uvar = data._1
+        val uvar = state.entity._1
         val defSites = uvar.definedBy.toArray.sorted
         // Function parameters are currently regarded as dynamic value; the following if finds read
         // operations of strings (not String{Builder, Buffer}s, they will be handles further down
         if (defSites.head < 0) {
-            return Result(data, StringConstancyProperty.lb)
+            return Result(state.entity, StringConstancyProperty.lb)
         }
         val pathFinder: AbstractPathFinder = new WindowPathFinder(state.cfg)
 
@@ -143,7 +143,7 @@ class InterproceduralStringAnalysis(
             val initDefSites = InterpretationHandler.findDefSiteOfInit(uvar, stmts)
             // initDefSites empty => String{Builder,Buffer} from method parameter is to be evaluated
             if (initDefSites.isEmpty) {
-                return Result(data, StringConstancyProperty.lb)
+                return Result(state.entity, StringConstancyProperty.lb)
             }
 
             val paths = pathFinder.findPaths(initDefSites, uvar.definedBy.head)
@@ -153,12 +153,12 @@ class InterproceduralStringAnalysis(
             val dependentVars = findDependentVars(state.computedLeanPath, stmts, uvar)
             if (dependentVars.nonEmpty) {
                 dependentVars.keys.foreach { nextVar ⇒
-                    val toAnalyze = (nextVar, data._2)
+                    val toAnalyze = (nextVar, state.entity._2)
                     dependentVars.foreach { case (k, v) ⇒ state.var2IndexMapping(k) = v }
                     val ep = propertyStore(toAnalyze, StringConstancyProperty.key)
                     ep match {
                         case FinalP(p) ⇒
-                            return processFinalP(data, state, ep.e, p)
+                            return processFinalP(state.entity, state, ep.e, p)
                         case _ ⇒
                             if (!state.dependees.contains(toAnalyze)) {
                                 state.dependees(toAnalyze) = ListBuffer()
@@ -206,15 +206,15 @@ class InterproceduralStringAnalysis(
 
         if (state.dependees.values.nonEmpty) {
             InterimResult(
-                data,
+                state.entity,
                 StringConstancyProperty.ub,
                 StringConstancyProperty.lb,
                 state.dependees.values.flatten,
                 continuation(state)
             )
         } else {
-            InterproceduralStringAnalysis.unregisterParams(data)
-            Result(data, StringConstancyProperty(sci))
+            InterproceduralStringAnalysis.unregisterParams(state.entity)
+            Result(state.entity, StringConstancyProperty(sci))
         }
     }
 
@@ -238,7 +238,7 @@ class InterproceduralStringAnalysis(
                     state.dependees(inputData) = state.dependees(inputData).filter(_.e != eps.e)
                     if (state.dependees(inputData).isEmpty) {
                         state.dependees.remove(inputData)
-                        determinePossibleStrings(inputData, state)
+                        determinePossibleStrings(state)
                     } else {
                         InterimResult(
                             inputData,
@@ -259,7 +259,7 @@ class InterproceduralStringAnalysis(
                     state.dependees(inputData) = state.dependees(inputData).filter(_.e != eps.e)
                     if (state.dependees(inputData).isEmpty) {
                         state.dependees.remove(inputData)
-                        determinePossibleStrings(inputData, state)
+                        determinePossibleStrings(state)
                     } else {
                         InterimResult(
                             inputData,
