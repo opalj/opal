@@ -13,9 +13,9 @@ import org.opalj.tac.ArrayStore
 import org.opalj.tac.Assignment
 import org.opalj.tac.Stmt
 import org.opalj.tac.TACStmts
-import org.opalj.tac.fpcf.analyses.string_analysis.ComputationState
 import org.opalj.tac.fpcf.analyses.string_analysis.V
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.AbstractStringInterpreter
+import org.opalj.tac.fpcf.analyses.string_analysis.InterproceduralComputationState
 
 /**
  * The `ArrayPreparationInterpreter` is responsible for preparing [[ArrayLoad]] as well as
@@ -33,7 +33,7 @@ import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.AbstractString
 class ArrayPreparationInterpreter(
         cfg:         CFG[Stmt[V], TACStmts[V]],
         exprHandler: InterproceduralInterpretationHandler,
-        state:       ComputationState,
+        state:       InterproceduralComputationState,
         params:      List[Seq[StringConstancyInformation]]
 ) extends AbstractStringInterpreter(cfg, exprHandler) {
 

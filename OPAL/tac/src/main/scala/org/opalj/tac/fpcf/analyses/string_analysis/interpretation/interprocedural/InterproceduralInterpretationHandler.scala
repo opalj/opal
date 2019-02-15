@@ -15,7 +15,9 @@ import org.opalj.tac.fpcf.analyses.string_analysis.V
 import org.opalj.tac.ArrayLoad
 import org.opalj.tac.Assignment
 import org.opalj.tac.BinaryExpr
+import org.opalj.tac.DoubleConst
 import org.opalj.tac.ExprStmt
+import org.opalj.tac.FloatConst
 import org.opalj.tac.GetField
 import org.opalj.tac.IntConst
 import org.opalj.tac.New
@@ -25,9 +27,6 @@ import org.opalj.tac.StaticFunctionCall
 import org.opalj.tac.StringConst
 import org.opalj.tac.VirtualFunctionCall
 import org.opalj.tac.VirtualMethodCall
-import org.opalj.tac.fpcf.analyses.string_analysis.ComputationState
-import org.opalj.tac.DoubleConst
-import org.opalj.tac.FloatConst
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.common.BinaryExprInterpreter
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.common.DoubleValueInterpreter
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.common.FloatValueInterpreter
@@ -38,6 +37,7 @@ import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.common.NewInte
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.common.StringConstInterpreter
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedural.finalizer.NonVirtualMethodCallFinalizer
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedural.finalizer.VirtualFunctionCallFinalizer
+import org.opalj.tac.fpcf.analyses.string_analysis.InterproceduralComputationState
 
 /**
  * `InterproceduralInterpretationHandler` is responsible for processing expressions that are
@@ -57,7 +57,7 @@ class InterproceduralInterpretationHandler(
         cfg:             CFG[Stmt[V], TACStmts[V]],
         ps:              PropertyStore,
         declaredMethods: DeclaredMethods,
-        state:           ComputationState,
+        state:           InterproceduralComputationState,
         c:               ProperOnUpdateContinuation
 ) extends InterpretationHandler(cfg) {
 
@@ -154,7 +154,7 @@ class InterproceduralInterpretationHandler(
     }
 
     def finalizeDefSite(
-        defSite: Int, state: ComputationState
+        defSite: Int, state: InterproceduralComputationState
     ): Unit = {
         stmts(defSite) match {
             case nvmc: NonVirtualMethodCall[V] ⇒
@@ -180,7 +180,7 @@ object InterproceduralInterpretationHandler {
         cfg:             CFG[Stmt[V], TACStmts[V]],
         ps:              PropertyStore,
         declaredMethods: DeclaredMethods,
-        state:           ComputationState,
+        state:           InterproceduralComputationState,
         c:               ProperOnUpdateContinuation
     ): InterproceduralInterpretationHandler = new InterproceduralInterpretationHandler(
         cfg, ps, declaredMethods, state, c

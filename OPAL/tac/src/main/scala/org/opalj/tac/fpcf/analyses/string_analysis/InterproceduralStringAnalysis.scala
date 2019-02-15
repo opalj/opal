@@ -5,7 +5,6 @@ import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
 import org.opalj.fpcf.Entity
-import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.InterimLUBP
 import org.opalj.fpcf.InterimResult
@@ -15,11 +14,9 @@ import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
 import org.opalj.fpcf.SomeEPS
-import org.opalj.value.ValueInformation
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.cfg.CFG
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.br.fpcf.FPCFLazyAnalysisScheduler
@@ -27,7 +24,6 @@ import org.opalj.br.fpcf.cg.properties.Callees
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.tac.Stmt
-import org.opalj.tac.TACStmts
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.Path
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.PathTransformer
 import org.opalj.tac.fpcf.properties.TACAI
@@ -41,62 +37,6 @@ import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedura
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.FlatPathElement
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.NestedPathType
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.SubPath
-import org.opalj.tac.DUVar
-import org.opalj.tac.TACMethodParameter
-import org.opalj.tac.TACode
-
-/**
- * This class is to be used to store state information that are required at a later point in
- * time during the analysis, e.g., due to the fact that another analysis had to be triggered to
- * have all required information ready for a final result.
- *
- * @param entity The entity for which the analysis was started with.
- */
-case class ComputationState(entity: P) {
-    // The Three-Address Code of the entity's method
-    var tac: TACode[TACMethodParameter, DUVar[ValueInformation]] = _
-    // The Control Flow Graph of the entity's method
-    var cfg: CFG[Stmt[V], TACStmts[V]] = _
-    // The computed lean path that corresponds to the given entity
-    var computedLeanPath: Path = _
-    // Callees information regarding the declared method that corresponds to the entity's method
-    var callees: Callees = _
-    // If not empty, this routine can only produce an intermediate result
-    val dependees: mutable.Map[Entity, ListBuffer[EOptionP[Entity, Property]]] = mutable.Map()
-    // A mapping from DUVar elements to the corresponding indices of the FlatPathElements
-    val var2IndexMapping: mutable.Map[V, Int] = mutable.Map()
-    // A mapping from values / indices of FlatPathElements to StringConstancyInformation
-    val fpe2sci: mutable.Map[Int, ListBuffer[StringConstancyInformation]] = mutable.Map()
-    // Parameter values of method / function; a mapping from the definition sites of parameter (
-    // negative values) to a correct index of `params` has to be made!
-    var params: List[Seq[StringConstancyInformation]] = List()
-
-    /**
-     * Takes a definition site as well as a result and extends the [[fpe2sci]] map accordingly,
-     * however, only if `defSite` is not yet present.
-     */
-    def appendResultToFpe2Sci(
-        defSite: Int, r: Result, reset: Boolean = false
-    ): Unit = appendToFpe2Sci(
-        defSite,
-        StringConstancyProperty.extractFromPPCR(r).stringConstancyInformation,
-        reset
-    )
-
-    /**
-     * Takes a definition site as well as [[StringConstancyInformation]] and extends the [[fpe2sci]]
-     * map accordingly, however, only if `defSite` is not yet present.
-     */
-    def appendToFpe2Sci(
-        defSite: Int, sci: StringConstancyInformation, reset: Boolean = false
-    ): Unit = {
-        if (reset || !fpe2sci.contains(defSite)) {
-            fpe2sci(defSite) = ListBuffer()
-        }
-        fpe2sci(defSite).append(sci)
-    }
-
-}
 
 /**
  * InterproceduralStringAnalysis processes a read operation of a string variable at a program
@@ -130,7 +70,7 @@ class InterproceduralStringAnalysis(
     private var declaredMethods: DeclaredMethods = _
 
     def analyze(data: P): ProperPropertyComputationResult = {
-        val state = ComputationState(data)
+        val state = InterproceduralComputationState(data)
         declaredMethods = project.get(DeclaredMethodsKey)
         // TODO: Is there a way to get the declared method in constant time?
         val dm = declaredMethods.declaredMethods.find { dm ⇒
@@ -180,7 +120,7 @@ class InterproceduralStringAnalysis(
      * [[InterimResult]] depending on whether other information needs to be computed first.
      */
     private def determinePossibleStrings(
-        data: P, state: ComputationState
+        data: P, state: InterproceduralComputationState
     ): ProperPropertyComputationResult = {
         // sci stores the final StringConstancyInformation (if it can be determined now at all)
         var sci = StringConstancyProperty.lb.stringConstancyInformation
@@ -288,7 +228,7 @@ class InterproceduralStringAnalysis(
      *         be returned.
      */
     private def continuation(
-        state: ComputationState
+        state: InterproceduralComputationState
     )(eps: SomeEPS): ProperPropertyComputationResult = {
         val inputData = state.entity
         eps.pk match {
@@ -356,7 +296,9 @@ class InterproceduralStringAnalysis(
     }
 
     private def finalizePreparations(
-        path: Path, state: ComputationState, iHandler: InterproceduralInterpretationHandler
+        path:     Path,
+        state:    InterproceduralComputationState,
+        iHandler: InterproceduralInterpretationHandler
     ): Unit = path.elements.foreach {
         case FlatPathElement(index) ⇒
             if (!state.fpe2sci.contains(index)) {
@@ -381,7 +323,9 @@ class InterproceduralStringAnalysis(
      * @return Returns the final result.
      */
     private def computeFinalResult(
-        data: P, state: ComputationState, iHandler: InterproceduralInterpretationHandler
+        data:     P,
+        state:    InterproceduralComputationState,
+        iHandler: InterproceduralInterpretationHandler
     ): Result = {
         finalizePreparations(state.computedLeanPath, state, iHandler)
         val finalSci = new PathTransformer(null).pathToStringTree(
@@ -397,7 +341,7 @@ class InterproceduralStringAnalysis(
      */
     private def processFinalP(
         data:  P,
-        state: ComputationState,
+        state: InterproceduralComputationState,
         e:     Entity,
         p:     Property
     ): ProperPropertyComputationResult = {
@@ -438,13 +382,13 @@ class InterproceduralStringAnalysis(
      * @param p The path to traverse.
      * @param iHandler The handler for interpreting string related sites.
      * @param state The current state of the computation. This function will alter
-     *              [[ComputationState.fpe2sci]].
+     *              [[InterproceduralComputationState.fpe2sci]].
      * @return Returns `true` if all values computed for the path are final results.
      */
     private def computeResultsForPath(
         p:        Path,
         iHandler: InterproceduralInterpretationHandler,
-        state:    ComputationState
+        state:    InterproceduralComputationState
     ): Boolean = {
         var hasFinalResult = true
 

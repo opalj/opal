@@ -23,8 +23,8 @@ import org.opalj.tac.VirtualFunctionCall
 import org.opalj.tac.fpcf.analyses.string_analysis.V
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.AbstractStringInterpreter
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
-import org.opalj.tac.fpcf.analyses.string_analysis.ComputationState
 import org.opalj.tac.ReturnValue
+import org.opalj.tac.fpcf.analyses.string_analysis.InterproceduralComputationState
 import org.opalj.tac.fpcf.analyses.string_analysis.InterproceduralStringAnalysis
 
 /**
@@ -40,7 +40,7 @@ class VirtualFunctionCallPreparationInterpreter(
         cfg:             CFG[Stmt[V], TACStmts[V]],
         exprHandler:     InterproceduralInterpretationHandler,
         ps:              PropertyStore,
-        state:           ComputationState,
+        state:           InterproceduralComputationState,
         declaredMethods: DeclaredMethods,
         params:          List[Seq[StringConstancyInformation]],
         c:               ProperOnUpdateContinuation
@@ -241,7 +241,7 @@ class VirtualFunctionCallPreparationInterpreter(
      *       returned list contains an [[org.opalj.fpcf.InterimResult]].
      */
     private def receiverValuesOfAppendCall(
-        call: VirtualFunctionCall[V], state: ComputationState
+        call: VirtualFunctionCall[V], state: InterproceduralComputationState
     ): List[ProperPropertyComputationResult] = {
         val defSites = call.receiver.asVar.definedBy.toArray.sorted
 
@@ -266,7 +266,7 @@ class VirtualFunctionCallPreparationInterpreter(
      * This function can process string constants as well as function calls as argument to append.
      */
     private def valueOfAppendCall(
-        call: VirtualFunctionCall[V], state: ComputationState
+        call: VirtualFunctionCall[V], state: InterproceduralComputationState
     ): ProperPropertyComputationResult = {
         val param = call.params.head.asVar
         // .head because we want to evaluate only the first argument of append
