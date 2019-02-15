@@ -1,8 +1,6 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedural
 
-import scala.collection.mutable.ListBuffer
-
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.InterimResult
 import org.opalj.fpcf.ProperOnUpdateContinuation
@@ -88,10 +86,7 @@ class InterproceduralStaticFunctionCallInterpreter(
                 case FinalEP(e, p) ⇒
                     Result(e, p)
                 case _ ⇒
-                    if (!state.dependees.contains(m)) {
-                        state.dependees(m) = ListBuffer()
-                    }
-                    state.dependees(m).append(eps)
+                    state.dependees = eps :: state.dependees
                     state.var2IndexMapping(uvar) = defSite
                     InterimResult(
                         entity,
@@ -107,7 +102,7 @@ class InterproceduralStaticFunctionCallInterpreter(
                 m,
                 StringConstancyProperty.lb,
                 StringConstancyProperty.ub,
-                state.dependees.values.flatten,
+                state.dependees,
                 c
             )
         }

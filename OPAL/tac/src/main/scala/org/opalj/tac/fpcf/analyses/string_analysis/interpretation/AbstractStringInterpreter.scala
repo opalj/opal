@@ -64,10 +64,7 @@ abstract class AbstractStringInterpreter(
         if (tacai.hasUBP) {
             tacai.ub.tac
         } else {
-            if (!s.dependees.contains(m)) {
-                s.dependees(m) = ListBuffer()
-            }
-            s.dependees(m).append(tacai)
+            s.dependees = tacai :: s.dependees
             None
         }
     }
