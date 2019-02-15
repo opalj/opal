@@ -5,17 +5,17 @@ import org.opalj.br.cfg.CFG
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyType
-import org.opalj.tac.fpcf.analyses.string_analysis.ComputationState
 import org.opalj.tac.fpcf.analyses.string_analysis.V
 import org.opalj.tac.Stmt
 import org.opalj.tac.TACStmts
 import org.opalj.tac.VirtualFunctionCall
+import org.opalj.tac.fpcf.analyses.string_analysis.InterproceduralComputationState
 
 /**
  * @author Patrick Mell
  */
 class VirtualFunctionCallFinalizer(
-        state: ComputationState, cfg: CFG[Stmt[V], TACStmts[V]]
+        state: InterproceduralComputationState, cfg: CFG[Stmt[V], TACStmts[V]]
 ) extends AbstractFinalizer(state) {
 
     override type T = VirtualFunctionCall[V]

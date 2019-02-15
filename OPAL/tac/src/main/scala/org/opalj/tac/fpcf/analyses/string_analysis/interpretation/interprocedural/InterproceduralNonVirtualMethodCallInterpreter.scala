@@ -12,9 +12,9 @@ import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.tac.NonVirtualMethodCall
 import org.opalj.tac.Stmt
 import org.opalj.tac.TACStmts
-import org.opalj.tac.fpcf.analyses.string_analysis.ComputationState
 import org.opalj.tac.fpcf.analyses.string_analysis.V
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.AbstractStringInterpreter
+import org.opalj.tac.fpcf.analyses.string_analysis.InterproceduralComputationState
 
 /**
  * The `InterproceduralNonVirtualMethodCallInterpreter` is responsible for processing
@@ -31,7 +31,7 @@ class InterproceduralNonVirtualMethodCallInterpreter(
         //  but let it be instantiated in this class
         exprHandler:     InterproceduralInterpretationHandler,
         ps:              PropertyStore,
-        state:           ComputationState,
+        state:           InterproceduralComputationState,
         declaredMethods: DeclaredMethods,
         c:               ProperOnUpdateContinuation
 ) extends AbstractStringInterpreter(cfg, exprHandler) {

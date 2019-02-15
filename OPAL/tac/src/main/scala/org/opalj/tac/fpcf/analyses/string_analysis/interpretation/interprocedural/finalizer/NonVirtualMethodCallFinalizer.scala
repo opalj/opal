@@ -3,13 +3,15 @@ package org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedur
 
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.tac.NonVirtualMethodCall
-import org.opalj.tac.fpcf.analyses.string_analysis.ComputationState
+import org.opalj.tac.fpcf.analyses.string_analysis.InterproceduralComputationState
 import org.opalj.tac.fpcf.analyses.string_analysis.V
 
 /**
  * @author Patrick Mell
  */
-class NonVirtualMethodCallFinalizer(state: ComputationState) extends AbstractFinalizer(state) {
+class NonVirtualMethodCallFinalizer(
+        state: InterproceduralComputationState
+) extends AbstractFinalizer(state) {
 
     override type T = NonVirtualMethodCall[V]
 

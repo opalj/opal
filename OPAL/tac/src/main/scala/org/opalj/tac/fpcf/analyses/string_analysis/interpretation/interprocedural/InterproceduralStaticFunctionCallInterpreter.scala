@@ -15,10 +15,10 @@ import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.tac.StaticFunctionCall
 import org.opalj.tac.Stmt
 import org.opalj.tac.TACStmts
-import org.opalj.tac.fpcf.analyses.string_analysis.ComputationState
 import org.opalj.tac.fpcf.analyses.string_analysis.V
 import org.opalj.tac.ReturnValue
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.AbstractStringInterpreter
+import org.opalj.tac.fpcf.analyses.string_analysis.InterproceduralComputationState
 import org.opalj.tac.fpcf.analyses.string_analysis.InterproceduralStringAnalysis
 
 /**
@@ -35,7 +35,7 @@ class InterproceduralStaticFunctionCallInterpreter(
         cfg:             CFG[Stmt[V], TACStmts[V]],
         exprHandler:     InterproceduralInterpretationHandler,
         ps:              PropertyStore,
-        state:           ComputationState,
+        state:           InterproceduralComputationState,
         declaredMethods: DeclaredMethods,
         c:               ProperOnUpdateContinuation
 ) extends AbstractStringInterpreter(cfg, exprHandler) {

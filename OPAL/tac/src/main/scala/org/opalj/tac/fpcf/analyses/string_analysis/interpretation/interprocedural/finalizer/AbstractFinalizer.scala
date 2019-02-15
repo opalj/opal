@@ -1,7 +1,7 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedural.finalizer
 
-import org.opalj.tac.fpcf.analyses.string_analysis.ComputationState
+import org.opalj.tac.fpcf.analyses.string_analysis.InterproceduralComputationState
 
 /**
  * When processing instruction interprocedurally, it is not always possible to compute a final
@@ -17,7 +17,7 @@ import org.opalj.tac.fpcf.analyses.string_analysis.ComputationState
  * @param state The computation state to use to retrieve partial results and to write the final
  *              result back.
  */
-abstract class AbstractFinalizer(state: ComputationState) {
+abstract class AbstractFinalizer(state: InterproceduralComputationState) {
 
     protected type T <: Any
 

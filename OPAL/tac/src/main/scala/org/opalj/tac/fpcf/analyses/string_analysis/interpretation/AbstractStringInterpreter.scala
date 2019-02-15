@@ -18,7 +18,6 @@ import org.opalj.tac.TACStmts
 import org.opalj.tac.fpcf.analyses.string_analysis.V
 import org.opalj.tac.TACMethodParameter
 import org.opalj.tac.TACode
-import org.opalj.tac.fpcf.analyses.string_analysis.ComputationState
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.Assignment
 import org.opalj.tac.DUVar
@@ -26,6 +25,7 @@ import org.opalj.tac.Expr
 import org.opalj.tac.ExprStmt
 import org.opalj.tac.FunctionCall
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedural.InterproceduralInterpretationHandler
+import org.opalj.tac.fpcf.analyses.string_analysis.InterproceduralComputationState
 
 /**
  * @param cfg The control flow graph that underlies the instruction to interpret.
@@ -58,7 +58,7 @@ abstract class AbstractStringInterpreter(
     protected def getTACAI(
         ps: PropertyStore,
         m:  Method,
-        s:  ComputationState
+        s:  InterproceduralComputationState
     ): Option[TACode[TACMethodParameter, V]] = {
         val tacai = ps(m, TACAI.key)
         if (tacai.hasUBP) {
