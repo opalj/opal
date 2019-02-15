@@ -78,19 +78,16 @@ class InterproceduralStringAnalysis(
                 dm.declaringClassType.toJava == data._2.classFile.thisType.toJava
         }.get
 
-        val tacai = ps(data._2, TACAI.key)
-        if (tacai.hasUBP) {
-            state.tac = tacai.ub.tac.get
+        val tacaiEOptP = ps(data._2, TACAI.key)
+        if (tacaiEOptP.hasUBP) {
+            state.tac = tacaiEOptP.ub.tac.get
         } else {
-            if (!state.dependees.contains(data)) {
-                state.dependees(data) = ListBuffer()
-            }
-            state.dependees(data).append(tacai)
+            state.dependees = tacaiEOptP :: state.dependees
             InterimResult(
                 data,
                 StringConstancyProperty.lb,
                 StringConstancyProperty.ub,
-                state.dependees.values.flatten,
+                state.dependees,
                 continuation(state)
             )
         }
@@ -100,15 +97,12 @@ class InterproceduralStringAnalysis(
             state.callees = calleesEOptP.ub
             determinePossibleStrings(state)
         } else {
-            if (!state.dependees.contains(data)) {
-                state.dependees(data) = ListBuffer()
-            }
-            state.dependees(data).append(calleesEOptP)
+            state.dependees = calleesEOptP :: state.dependees
             InterimResult(
                 data,
                 StringConstancyProperty.lb,
                 StringConstancyProperty.ub,
-                state.dependees.values.flatten,
+                state.dependees,
                 continuation(state)
             )
         }
@@ -157,13 +151,8 @@ class InterproceduralStringAnalysis(
                     dependentVars.foreach { case (k, v) ⇒ state.var2IndexMapping(k) = v }
                     val ep = propertyStore(toAnalyze, StringConstancyProperty.key)
                     ep match {
-                        case FinalP(p) ⇒
-                            return processFinalP(state.entity, state, ep.e, p)
-                        case _ ⇒
-                            if (!state.dependees.contains(toAnalyze)) {
-                                state.dependees(toAnalyze) = ListBuffer()
-                            }
-                            state.dependees(toAnalyze).append(ep)
+                        case FinalP(p) ⇒ return processFinalP(state.entity, state, ep.e, p)
+                        case _         ⇒ state.dependees = ep :: state.dependees
                     }
                 }
             } else {
@@ -204,12 +193,12 @@ class InterproceduralStringAnalysis(
             // always be true (thus, the value of "sci" does not matter)
         }
 
-        if (state.dependees.values.nonEmpty) {
+        if (state.dependees.nonEmpty) {
             InterimResult(
                 state.entity,
                 StringConstancyProperty.ub,
                 StringConstancyProperty.lb,
-                state.dependees.values.flatten,
+                state.dependees,
                 continuation(state)
             )
         } else {
@@ -235,42 +224,40 @@ class InterproceduralStringAnalysis(
             case TACAI.key ⇒ eps match {
                 case FinalP(tac: TACAI) ⇒
                     state.tac = tac.tac.get
-                    state.dependees(inputData) = state.dependees(inputData).filter(_.e != eps.e)
-                    if (state.dependees(inputData).isEmpty) {
-                        state.dependees.remove(inputData)
+                    state.dependees = state.dependees.filter(_.e != eps.e)
+                    if (state.dependees.isEmpty) {
                         determinePossibleStrings(state)
                     } else {
                         InterimResult(
                             inputData,
                             StringConstancyProperty.lb,
                             StringConstancyProperty.ub,
-                            state.dependees.values.flatten,
+                            state.dependees,
                             continuation(state)
                         )
                     }
                 case InterimLUBP(lb, ub) ⇒ InterimResult(
-                    inputData, lb, ub, state.dependees.values.flatten, continuation(state)
+                    inputData, lb, ub, state.dependees, continuation(state)
                 )
                 case _ ⇒ throw new IllegalStateException("Neither FinalP nor InterimResult")
             }
             case Callees.key ⇒ eps match {
                 case FinalP(callees: Callees) ⇒
                     state.callees = callees
-                    state.dependees(inputData) = state.dependees(inputData).filter(_.e != eps.e)
-                    if (state.dependees(inputData).isEmpty) {
-                        state.dependees.remove(inputData)
+                    state.dependees = state.dependees.filter(_.e != eps.e)
+                    if (state.dependees.isEmpty) {
                         determinePossibleStrings(state)
                     } else {
                         InterimResult(
                             inputData,
                             StringConstancyProperty.lb,
                             StringConstancyProperty.ub,
-                            state.dependees.values.flatten,
+                            state.dependees,
                             continuation(state)
                         )
                     }
                 case InterimLUBP(lb, ub) ⇒ InterimResult(
-                    inputData, lb, ub, state.dependees.values.flatten, continuation(state)
+                    inputData, lb, ub, state.dependees, continuation(state)
                 )
                 case _ ⇒ throw new IllegalStateException("Neither FinalP nor InterimResult")
             }
@@ -279,16 +266,10 @@ class InterproceduralStringAnalysis(
                     case FinalP(p) ⇒
                         processFinalP(state.entity, state, eps.e, p)
                     case InterimLUBP(lb, ub) ⇒
-                        for ((k, _) ← state.dependees) {
-                            state.dependees(k) = state.dependees(k).filter(_.e != eps.e)
-                        }
-                        val eData = eps.e.asInstanceOf[P]
-                        if (!state.dependees.contains(eData._2)) {
-                            state.dependees(eData._2) = ListBuffer()
-                        }
-                        state.dependees(eData._2).append(eps)
+                        state.dependees = state.dependees.filter(_.e != eps.e)
+                        state.dependees = eps :: state.dependees
                         InterimResult(
-                            inputData, lb, ub, state.dependees.values.flatten, continuation(state)
+                            inputData, lb, ub, state.dependees, continuation(state)
                         )
                     case _ ⇒ throw new IllegalStateException("Neither FinalP nor InterimResult")
                 }
@@ -351,14 +332,8 @@ class InterproceduralStringAnalysis(
         state.appendToFpe2Sci(state.var2IndexMapping(e.asInstanceOf[P]._1), currentSci)
 
         // No more dependees => Return the result for this analysis run
-        state.dependees.foreach { case (k, v) ⇒ state.dependees(k) = v.filter(_.e != e) }
-        state.dependees.foreach {
-            case (k, v) ⇒ if (v.isEmpty) {
-                state.dependees.remove(k)
-            }
-        }
-        val remDependees = state.dependees.values.flatten
-        if (remDependees.isEmpty) {
+        state.dependees = state.dependees.filter(_.e != e)
+        if (state.dependees.isEmpty) {
             val iHandler = InterproceduralInterpretationHandler(
                 state.cfg, ps, declaredMethods, state,
                 continuation(state)
@@ -369,7 +344,7 @@ class InterproceduralStringAnalysis(
                 data,
                 StringConstancyProperty.ub,
                 StringConstancyProperty.lb,
-                remDependees,
+                state.dependees,
                 continuation(state)
             )
         }
