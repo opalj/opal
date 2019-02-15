@@ -22,6 +22,8 @@ import org.opalj.br.fpcf.cg.properties.StandardInvokeCallees
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.fpcf.cg.properties.CallersProperty
+import org.opalj.ai.domain.l1
+import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.tac.cg.CHACallGraphKey
 import org.opalj.tac.cg.RTACallGraphKey
 
@@ -97,6 +99,15 @@ object CallGraphEvaluation extends DefaultOneStepAnalysis {
 
         val p = Project.recreate(project, config)
 
+        val domain = classOf[l1.DefaultDomainWithCFGAndDefUse[_]]
+        p.updateProjectInformationKeyInitializationData(
+            AIDomainFactoryKey,
+            (i: Option[Set[Class[_ <: AnyRef]]]) ⇒ (i match {
+                case None               ⇒ Set(domain)
+                case Some(requirements) ⇒ requirements + domain
+            }): Set[Class[_ <: AnyRef]]
+        )
+
         val cg = algorithm.get match {
             case "RTA" ⇒ p.get(RTACallGraphKey(false))
             case "CHA" ⇒ p.get(CHACallGraphKey(false))
@@ -126,7 +137,7 @@ object CallGraphEvaluation extends DefaultOneStepAnalysis {
                     numSerializationEdges += tgts.size
 
             if (moduleNames.contains("Thread"))
-                if (rm.name == "start" &&
+                if ((rm.name == "run" || rm.name == "exit") &&
                     rm.descriptor == MethodDescriptor.NoArgsAndReturnVoid &&
                     ps(rm, CallersProperty.key).ub.hasVMLevelCallers)
                     numThreadEdges += 1
