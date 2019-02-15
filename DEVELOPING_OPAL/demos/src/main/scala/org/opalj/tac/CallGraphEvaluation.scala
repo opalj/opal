@@ -8,9 +8,7 @@ import java.io.PrintWriter
 import java.net.URL
 
 import scala.collection.JavaConverters._
-
 import com.typesafe.config.ConfigValueFactory
-
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
@@ -108,10 +106,15 @@ object CallGraphEvaluation extends DefaultOneStepAnalysis {
             }): Set[Class[_ <: AnyRef]]
         )
 
+        val start = System.currentTimeMillis()
+
         val cg = algorithm.get match {
             case "RTA" ⇒ p.get(RTACallGraphKey(false))
             case "CHA" ⇒ p.get(CHACallGraphKey(false))
         }
+
+        val time = System.currentTimeMillis() - start
+        val seconds = (time / 1000)
 
         var numEdges = cg.numEdges
         val reachableMethods = cg.reachableMethods().toTraversable
@@ -155,9 +158,9 @@ object CallGraphEvaluation extends DefaultOneStepAnalysis {
         val writer = new PrintWriter(new FileWriter(outFile, true))
 
         if (writeHeader)
-            writer.println("config\t# rm\t# edges\t# standard edges\t# reflection edges\t# serialization edges\t# thread edges")
+            writer.println("config\t# rm\t# edges\t# standard edges\t# reflection edges\t# serialization edges\t# thread edges\ttime")
 
-        writer.println(s"${algorithm.get},${moduleNames.mkString(",")}\t${reachableMethods.size}\t$numEdges\t$numStandardEdges\t$numReflectiveEdges\t$numSerializationEdges\t$numThreadEdges")
+        writer.println(s"${algorithm.get},${moduleNames.mkString(",")}\t${reachableMethods.size}\t$numEdges\t$numStandardEdges\t$numReflectiveEdges\t$numSerializationEdges\t$numThreadEdges\t$seconds")
 
         writer.flush()
         writer.close()
