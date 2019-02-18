@@ -170,18 +170,29 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
                             val subClassFile = p.classFile(subtype).get
                             val subtypeDms = result.computeIfAbsent(subtype, mapFactory)
                             if (subClassFile.findMethod(m.name, m.descriptor).isEmpty) {
-                                val staticMethod = p.staticCall(
+                                val staticMethodResult = p.staticCall(
                                     subtype,
                                     isInterface = false,
                                     m.name,
                                     m.descriptor
-                                ).value
-                                insertDeclaredMethod(
-                                    subtypeDms,
-                                    MethodContext(p, subtype, staticMethod),
-                                    id ⇒ new DefinedMethod(subtype, staticMethod, id)
                                 )
-                                (null, false, false) // Continue traversal on non-overridden method
+                                if (staticMethodResult.hasValue) {
+                                    val staticMethod = staticMethodResult.value
+                                    insertDeclaredMethod(
+                                        subtypeDms,
+                                        MethodContext(p, subtype, staticMethod),
+                                        id ⇒ new DefinedMethod(subtype, staticMethod, id)
+                                    )
+                                    // Continue traversal on non-overridden method
+                                    (null, false, false)
+                                } else {
+                                    // This can only happen with a broken class hierarchy such that
+                                    // `subtype` implements `classType` but `classType` isn't an
+                                    // interface
+
+                                    // Stop traversal
+                                    (null, true, false)
+                                }
                             } else {
                                 (null, true, false) // Stop traversal on overridden method
                             }
