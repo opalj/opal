@@ -398,16 +398,19 @@ abstract class PropertyStore {
     def finalEntities[P <: Property](p: P): Iterator[Entity]
 
     /**
-     * Associates the given property `p` with property kind `pk` with the given entity
-     * `e` if `e` has no property of the respective kind. The set property is always final.
+     * Associates the given property `p`, which has property kind `pk`, with the given entity
+     * `e` iff `e` has no property of the respective kind. The set property is always final.
      *
      * '''Calling this method is only supported before any analysis is scheduled!'''
      *
-     * A use case is an analysis that does use the property store while executing the analysis,
+     * One use case is an analysis that does use the property store while executing the analysis,
      * but which wants to store the results in the store. Such an analysis '''must
      * be executed before any other analysis is scheduled'''.
+     * A second use case are (eager or lazy) analyses, which want to store some pre-configured
+     * information in the property store; e.g., properties of natives methods which were derived
+     * beforehand.
      *
-     * @note   This method must not be used '''if there might be another computation that
+     * @note   This method must not be used '''if there might be a computation (in the future) that
      *         computes the property kind `pk` for `e` and which returns the respective property
      *         as a result'''.
      */
@@ -429,7 +432,7 @@ abstract class PropertyStore {
      * '''Calling this method is only supported before any analysis is scheduled!'''
      *
      * @param pc A function which is given the current property of kind pk associated with e and
-     *           which has to compute the new intermediate property `p`.
+     *           which has to compute the new '''intermediate''' property `p`.
      */
     final def preInitialize[E <: Entity, P <: Property](
         e:  E,
@@ -640,7 +643,7 @@ abstract class PropertyStore {
     /**
      * Enforce the evaluation of the specified property kind for the given entity, even
      * if the property is computed lazily and no "eager computation" requires the results
-     * anymore. Force also ensures that the property is stored in the store even if
+     * (anymore). Force also ensures that the property is stored in the store even if
      * the fallback value is used.
      * Using `force` is in particular necessary in cases where a specific analysis should
      * be scheduled lazily because the computed information is not necessary for all entities,
