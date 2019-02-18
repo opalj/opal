@@ -138,7 +138,7 @@ final class PKESequentialPropertyStore private (
         }
     }
 
-    override def isKnown(e: Entity): Boolean = ps.contains(e)
+    override def isKnown(e: Entity): Boolean = ps.exists(_.contains(e))
 
     override def hasProperty(e: Entity, pk: PropertyKind): Boolean = {
         require(e ne null)

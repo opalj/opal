@@ -47,11 +47,15 @@ import org.opalj.fpcf.PropertyKind.SupportedPropertyKinds
  *    No other analysis is (conceptually) allowed to derive a value for an E/PK pairing
  *    for which a lazy function is registered. It is also not allowed to schedule a computation
  *    eagerly if a lazy computation is also registered.
+ *
  *  - '''Thread-Safe PropertyComputation functions''' If a single instance of a property computation
  *    function (which is the standard case) is scheduled for computing the properties of multiple
  *    entities, that function has to be thread safe. I.e., the function may
  *    be executed concurrently for different entities. The [[OnUpdateContinuation]] functions
- *    are, however, executed sequentially w.r.t. one E/PK pair.
+ *    are, however, executed sequentially w.r.t. one E/PK pair. This model generally does not
+ *    require that users have to think about concurrent issues as long as the initial function
+ *    is actually a pure function.
+ *
  *  - '''Non-Overlapping Results''' [[PropertyComputation]] functions that are invoked on different
  *    entities have to compute result sets that are disjoint unless a [[PartialResult]] is used.
  *    For example, an analysis that performs a computation on class files and
@@ -69,7 +73,7 @@ import org.opalj.fpcf.PropertyKind.SupportedPropertyKinds
  * computed a lower bound that one will be used.
  *
  * ==Thread Safety==
- * The sequential property stores are not thread-safe; the parallelized implementation(s) are
+ * The sequential property store is not thread-safe; the parallelized implementation is
  * thread-safe in the following manner:
  *  - a client has to use the SAME thread (the driver thread) to call
  *    (0) [[set]] to initialize the property store,
@@ -316,13 +320,13 @@ abstract class PropertyStore {
      *  - a computation is scheduled/running to compute some property, or
      *  - an analysis has a dependency on some (not yet finally computed) property, or
      *  - that the store just eagerly created the data structures necessary to associate
-     *    properties with the entity because the entity was queried
+     *    properties with the entity because the entity was queried.
      */
     def isKnown(e: Entity): Boolean
 
     /**
-     * Tests if we have a property for the entity with the respective kind. If `hasProperty`
-     * returns `true` a subsequent `apply` will return an `EPS` (not an `EPK`).
+     * Tests if we have some (lb, ub or final) property for the entity with the respective kind.
+     * If `hasProperty` returns `true` a subsequent `apply` will return an `EPS` (not an `EPK`).
      */
     final def hasProperty(epk: SomeEPK): Boolean = hasProperty(epk.e, epk.pk)
 
@@ -831,10 +835,15 @@ abstract class PropertyStore {
      * Intended to be overridden by subclasses.
      */
     protected[this] def onFirstException(t: Throwable): Unit = {
+        doTerminate = true
         shutdown()
         if (!suppressError) {
             val storeId = "PropertyStore@"+System.identityHashCode(this).toHexString
-            error("analysis progress", s"$storeId: analysis resulted in exception", t)
+            error(
+                "analysis progress",
+                s"$storeId: shutting down computations due to failing analysis",
+                t
+            )
         }
     }
 

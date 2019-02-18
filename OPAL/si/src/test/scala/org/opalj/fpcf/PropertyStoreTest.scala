@@ -212,6 +212,8 @@ sealed abstract class PropertyStoreTest(
                 ps.setupPhase(Set(PalindromeKey, SuperPalindromeKey), Set.empty)
                 ps.waitOnPhaseCompletion()
 
+                ps.isKnown("aba") should be(true)
+
                 ps.hasProperty("aba", PalindromeKey) should be(true)
                 ps.hasProperty("zzYzz", SuperPalindromeKey) should be(true)
 
