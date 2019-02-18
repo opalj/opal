@@ -206,21 +206,18 @@ class UVar[+Value <: ValueInformation /*org.opalj.ai.ValuesDomain#DomainValue*/ 
 ) extends DUVar[Value] {
 
     def name: String = {
-        val n =
-            defSites.iterator.map { defSite ⇒
-                val n =
-                    if (isImmediateVMException(defSite))
-                        "exception[VM]@"+pcOfImmediateVMException(defSite)
-                    else if (isMethodExternalExceptionOrigin(defSite))
-                        "exception@"+pcOfMethodExternalException(defSite)
-                    else if (defSite < 0) {
-                        "param"+(-defSite - 1).toHexString
-                    } else {
-                        "lv"+defSite.toHexString
-                    }
-                if (DUVar.printDomainValue) s"$n/*:$value*/" else n
-            }.mkString("{", ", ", "}")
-        if (DUVar.printDomainValue) s"$n/*:$value*/" else n
+        val ending = if (DUVar.printDomainValue) s"}/*domainValue=$value*/" else "}"
+        defSites.iterator.map { defSite ⇒
+            if (isImmediateVMException(defSite))
+                "exception[VM]@"+pcOfImmediateVMException(defSite)
+            else if (isMethodExternalExceptionOrigin(defSite))
+                "exception@"+pcOfMethodExternalException(defSite)
+            else if (defSite < 0) {
+                "param"+(-defSite - 1).toHexString
+            } else {
+                "lv"+defSite.toHexString
+            }
+        }.mkString("{", ", ", ending)
     }
 
     def definedBy: IntTrieSet = defSites
