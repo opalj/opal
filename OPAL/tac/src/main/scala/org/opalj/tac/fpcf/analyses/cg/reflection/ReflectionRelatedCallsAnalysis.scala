@@ -696,6 +696,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                 matchers += AllMethodsMatcher
             } else {
                 state.calleesAndCallers.addIncompleteCallsite(pc)
+                matchers += NoMethodsMatcher
             }
 
             addCalls(caller, pc, None, persistentActualParams, matchers)
@@ -847,7 +848,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
 
                             val Seq(refc, methodType) = params
 
-                            matchers += new NameBasedMethodMatcher(Set("<init>"))
+                            matchers += constructorMatcher
 
                             matchers += retrieveClassBasedMethodMatcher(refc, pc)
 
