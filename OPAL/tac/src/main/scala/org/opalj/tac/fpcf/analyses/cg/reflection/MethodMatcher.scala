@@ -213,7 +213,7 @@ object MethodMatching {
             Iterator.empty
         } else {
             val sortedMatchers = filters.sortBy(_.priority)
-            sortedMatchers.head.initialMethods.filter(m ⇒ filters.forall(_.contains(m)))
+            sortedMatchers.head.initialMethods.filter(m ⇒ sortedMatchers.tail.forall(_.contains(m)))
         }
     }
 }
