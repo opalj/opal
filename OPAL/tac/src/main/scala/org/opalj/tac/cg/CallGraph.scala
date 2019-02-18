@@ -63,14 +63,14 @@ class CallGraph private[cg] ()(implicit ps: PropertyStore, declaredMethods: Decl
         ps(m, CallersProperty.key).ub.hasCallersWithUnknownContext
     }
 
-  def reachableMethods(): Iterator[DeclaredMethod] = {
-      val callersProperties = ps.entities(CallersProperty.key)
+    def reachableMethods(): Iterator[DeclaredMethod] = {
+        val callersProperties = ps.entities(CallersProperty.key)
 
-      callersProperties.filterNot(_.ub eq NoCallers).map(_.e.asInstanceOf[DeclaredMethod])
-  }
+        callersProperties.filterNot(_.ub eq NoCallers).map(_.e.asInstanceOf[DeclaredMethod])
+    }
 
-  lazy val numEdges: Int = {
-    val callers = ps.entities(CallersProperty.key).map(_.ub.callers)
-      callers.map(_.size).sum
-  }
+    lazy val numEdges: Int = {
+        val callers = ps.entities(CallersProperty.key).map(_.ub.callers)
+        callers.map(_.size).sum
+    }
 }
