@@ -758,6 +758,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                 matchers += AllMethodsMatcher
             } else {
                 state.calleesAndCallers.addIncompleteCallsite(pc)
+                matchers += NoMethodsMatcher
             }
 
             addCalls(
