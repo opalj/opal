@@ -123,7 +123,7 @@ class DVar[+Value <: ValueInformation /*org.opalj.ai.ValuesDomain#DomainValue*/ 
 
     def name: String = {
         val n = s"lv${origin.toHexString}"
-        if (DUVar.printDomainValue) s"$n/*:$value*/" else n
+        if (DUVar.printDomainValue) s"$n/*domainValue=$value*/" else n
     }
 
     final def isSideEffectFree: Boolean = true
@@ -206,7 +206,6 @@ class UVar[+Value <: ValueInformation /*org.opalj.ai.ValuesDomain#DomainValue*/ 
 ) extends DUVar[Value] {
 
     def name: String = {
-        val ending = if (DUVar.printDomainValue) s"}/*domainValue=$value*/" else "}"
         defSites.iterator.map { defSite ⇒
             if (isImmediateVMException(defSite))
                 "exception[VM]@"+pcOfImmediateVMException(defSite)
@@ -217,7 +216,7 @@ class UVar[+Value <: ValueInformation /*org.opalj.ai.ValuesDomain#DomainValue*/ 
             } else {
                 "lv"+defSite.toHexString
             }
-        }.mkString("{", ", ", ending)
+        }.mkString("{", ", ", if (DUVar.printDomainValue) s"}/*domainValue=$value*/" else "}")
     }
 
     def definedBy: IntTrieSet = defSites
