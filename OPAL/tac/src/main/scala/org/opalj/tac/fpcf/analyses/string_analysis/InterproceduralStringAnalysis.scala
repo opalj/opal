@@ -203,7 +203,6 @@ class InterproceduralStringAnalysis(
                     }
                 }
             } else {
-                // TODO: Parameters can be removed
                 if (computeResultsForPath(state.computedLeanPath, state)) {
                     sci = new PathTransformer(state.iHandler).pathToStringTree(
                         state.computedLeanPath, state.fpe2sci.toMap
