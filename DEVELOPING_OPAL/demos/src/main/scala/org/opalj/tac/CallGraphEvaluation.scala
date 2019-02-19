@@ -8,7 +8,9 @@ import java.io.PrintWriter
 import java.net.URL
 
 import scala.collection.JavaConverters._
+
 import com.typesafe.config.ConfigValueFactory
+
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
@@ -19,9 +21,11 @@ import org.opalj.br.fpcf.cg.properties.SerializationRelatedCallees
 import org.opalj.br.fpcf.cg.properties.StandardInvokeCallees
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.fpcf.cg.properties.CallersProperty
 import org.opalj.ai.domain.l1
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
+import org.opalj.tac.cg.CallGraphSerializer
 import org.opalj.tac.cg.CHACallGraphKey
 import org.opalj.tac.cg.RTACallGraphKey
 
@@ -36,7 +40,8 @@ object CallGraphEvaluation extends DefaultOneStepAnalysis {
             parameters.filter { p ⇒
                 !p.startsWith("-algorithm=") &&
                     !p.startsWith("-module=") &&
-                    !p.startsWith("-projectName=")
+                    !p.startsWith("-projectName=") &&
+                    !(p == "-writeCG")
             }
         super.checkAnalysisSpecificParameters(remainingParameters)
     }
@@ -49,6 +54,7 @@ object CallGraphEvaluation extends DefaultOneStepAnalysis {
         var algorithm: Option[String] = None
         var projectName: Option[String] = None
         var modules: List[String] = Nil
+        var writeCG = false
 
         val algorithmPattern = "-algorithm=(RTA|CHA)".r
         val modulePattern = "-module=(.*)".r
@@ -65,6 +71,8 @@ object CallGraphEvaluation extends DefaultOneStepAnalysis {
                 projectName = Some(pName)
             case modulePattern(module) ⇒
                 modules ::= module
+            case "-writeCG" ⇒
+                writeCG = true
 
         }
 
@@ -114,6 +122,13 @@ object CallGraphEvaluation extends DefaultOneStepAnalysis {
         }
 
         val time = System.currentTimeMillis() - start
+
+        if (writeCG) {
+            implicit val declaredMethods: DeclaredMethods = p.get(DeclaredMethodsKey)
+            val cgFile = new File(s"${algorithm.get}-${moduleNames.mkString("_")}.json")
+            CallGraphSerializer.writeCG(cg, cgFile)
+        }
+
         val seconds = (time / 1000)
 
         var numEdges = cg.numEdges
