@@ -84,6 +84,7 @@ class InterproceduralInterpretationHandler(
         } else if (processedDefSites.contains(defSite)) {
             return Result(e, StringConstancyProperty.getNeutralElement)
         }
+        // Note that def sites referring to constant expressions will be deleted further down
         processedDefSites.append(defSite)
 
         val callees = state.callees
@@ -91,18 +92,22 @@ class InterproceduralInterpretationHandler(
             case Assignment(_, _, expr: StringConst) ⇒
                 val result = new StringConstInterpreter(cfg, this).interpret(expr, defSite)
                 state.appendResultToFpe2Sci(defSite, result.asInstanceOf[Result])
+                processedDefSites.remove(processedDefSites.length - 1)
                 result
             case Assignment(_, _, expr: IntConst) ⇒
                 val result = new IntegerValueInterpreter(cfg, this).interpret(expr, defSite)
                 state.appendResultToFpe2Sci(defSite, result.asInstanceOf[Result])
+                processedDefSites.remove(processedDefSites.length - 1)
                 result
             case Assignment(_, _, expr: FloatConst) ⇒
                 val result = new FloatValueInterpreter(cfg, this).interpret(expr, defSite)
                 state.appendResultToFpe2Sci(defSite, result.asInstanceOf[Result])
+                processedDefSites.remove(processedDefSites.length - 1)
                 result
             case Assignment(_, _, expr: DoubleConst) ⇒
                 val result = new DoubleValueInterpreter(cfg, this).interpret(expr, defSite)
                 state.appendResultToFpe2Sci(defSite, result.asInstanceOf[Result])
+                processedDefSites.remove(processedDefSites.length - 1)
                 result
             case Assignment(_, _, expr: ArrayLoad[V]) ⇒
                 new ArrayPreparationInterpreter(cfg, this, state, params).interpret(expr, defSite)
