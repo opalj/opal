@@ -27,6 +27,10 @@ class CallGraph private[cg] ()(implicit ps: PropertyStore, declaredMethods: Decl
         ps(m, Callees.key).ub.callees(pc)
     }
 
+    def calleesOf(m: DeclaredMethod): Iterator[(Int, Iterator[DeclaredMethod])] = {
+        ps(m, Callees.key).ub.callSites().toIterator
+    }
+
     def calleesPropertyOf(m: DeclaredMethod): Callees = {
         ps(m, Callees.key).ub
     }
