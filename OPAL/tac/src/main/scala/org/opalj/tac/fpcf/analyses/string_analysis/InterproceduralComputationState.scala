@@ -11,6 +11,7 @@ import org.opalj.fpcf.Result
 import org.opalj.value.ValueInformation
 import org.opalj.br.cfg.CFG
 import org.opalj.br.fpcf.cg.properties.Callees
+import org.opalj.br.fpcf.cg.properties.CallersProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.tac.Stmt
@@ -19,6 +20,7 @@ import org.opalj.tac.DUVar
 import org.opalj.tac.TACMethodParameter
 import org.opalj.tac.TACode
 import org.opalj.tac.TACStmts
+import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedural.InterproceduralInterpretationHandler
 
 /**
  * This class is to be used to store state information that are required at a later point in
@@ -32,18 +34,23 @@ case class InterproceduralComputationState(entity: P) {
     var tac: TACode[TACMethodParameter, DUVar[ValueInformation]] = _
     // The Control Flow Graph of the entity's method
     var cfg: CFG[Stmt[V], TACStmts[V]] = _
+    // The interpretation handler to use
+    var iHandler: InterproceduralInterpretationHandler = _
     // The computed lean path that corresponds to the given entity
     var computedLeanPath: Path = _
     // Callees information regarding the declared method that corresponds to the entity's method
     var callees: Callees = _
+    // Callers information regarding the declared method that corresponds to the entity's method
+    var callers: CallersProperty = _
     // If not empty, this routine can only produce an intermediate result
     var dependees: List[EOptionP[Entity, Property]] = List()
     // A mapping from DUVar elements to the corresponding indices of the FlatPathElements
     val var2IndexMapping: mutable.Map[V, Int] = mutable.Map()
     // A mapping from values / indices of FlatPathElements to StringConstancyInformation
     val fpe2sci: mutable.Map[Int, ListBuffer[StringConstancyInformation]] = mutable.Map()
-    // Parameter values of method / function; a mapping from the definition sites of parameter (
-    // negative values) to a correct index of `params` has to be made!
+    // Parameter values of a method / function. The structure of this field is as follows: Each item
+    // in the outer list holds the parameters of a concrete call. A mapping from the definition
+    // sites of parameter (negative values) to a correct index of `params` has to be made!
     var params: List[Seq[StringConstancyInformation]] = List()
 
     /**
