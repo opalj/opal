@@ -74,7 +74,7 @@ object CallGraphSerializer {
 
                 case Some(body) ⇒
                     val declaredTgtO = body.instructions(pc) match {
-                        case MethodInvocationInstruction(dc, _, name, desc) ⇒ Some(dc, name, desc)
+                        case MethodInvocationInstruction(dc, _, name, desc) ⇒ Some((dc, name, desc))
                         case _                                              ⇒ None
                     }
 
