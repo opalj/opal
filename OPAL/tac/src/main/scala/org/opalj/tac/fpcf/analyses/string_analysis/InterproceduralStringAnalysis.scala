@@ -14,6 +14,7 @@ import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
 import org.opalj.fpcf.SomeEPS
+import org.opalj.value.ValueInformation
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.SomeProject
@@ -21,22 +22,30 @@ import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.br.fpcf.FPCFLazyAnalysisScheduler
 import org.opalj.br.fpcf.cg.properties.Callees
+import org.opalj.br.fpcf.cg.properties.CallersProperty
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
+import org.opalj.br.Method
 import org.opalj.tac.Stmt
-import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.Path
-import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.PathTransformer
-import org.opalj.tac.fpcf.properties.TACAI
-import org.opalj.tac.SimpleTACAIKey
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.AbstractPathFinder
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.NestedPathElement
+import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.Path
+import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.PathTransformer
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.WindowPathFinder
+import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.ExprStmt
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedural.InterproceduralInterpretationHandler
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.FlatPathElement
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.NestedPathType
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.SubPath
+import org.opalj.tac.Assignment
+import org.opalj.tac.DUVar
+import org.opalj.tac.FunctionCall
+import org.opalj.tac.MethodCall
+import org.opalj.tac.SimpleTACAIKey
+import org.opalj.tac.TACMethodParameter
+import org.opalj.tac.TACode
 
 /**
  * InterproceduralStringAnalysis processes a read operation of a string variable at a program
@@ -116,22 +125,60 @@ class InterproceduralStringAnalysis(
     private def determinePossibleStrings(
         state: InterproceduralComputationState
     ): ProperPropertyComputationResult = {
-        // sci stores the final StringConstancyInformation (if it can be determined now at all)
-        var sci = StringConstancyProperty.lb.stringConstancyInformation
-        val tacProvider = p.get(SimpleTACAIKey)
-        state.cfg = tacProvider(state.entity._2).cfg
-        state.params = InterproceduralStringAnalysis.getParams(state.entity)
-        val stmts = state.cfg.code.instructions
-
         val uvar = state.entity._1
         val defSites = uvar.definedBy.toArray.sorted
-        // Function parameters are currently regarded as dynamic value; the following if finds read
-        // operations of strings (not String{Builder, Buffer}s, they will be handles further down
-        if (defSites.head < 0) {
-            return Result(state.entity, StringConstancyProperty.lb)
-        }
-        val pathFinder: AbstractPathFinder = new WindowPathFinder(state.cfg)
 
+        val tacProvider = p.get(SimpleTACAIKey)
+        if (state.cfg == null) {
+            state.cfg = tacProvider(state.entity._2).cfg
+        }
+        if (state.iHandler == null) {
+            state.iHandler = InterproceduralInterpretationHandler(
+                state.cfg, ps, declaredMethods, state, continuation(state)
+            )
+        }
+
+        // In case a parameter is required for approximating a string, retrieve callers information
+        // (but only once)
+        val hasParamDefSite = defSites.exists(_ < 0)
+        if (hasParamDefSite && state.callers == null) {
+            val declaredMethods = project.get(DeclaredMethodsKey)
+            val dm = declaredMethods.declaredMethods.filter { dm ⇒
+                dm.name == state.entity._2.name &&
+                    dm.declaringClassType.toJava == state.entity._2.classFile.thisType.toJava
+            }.next()
+            val callersEOptP = ps(dm, CallersProperty.key)
+            if (callersEOptP.hasUBP) {
+                state.callers = callersEOptP.ub
+            } else {
+                state.dependees = callersEOptP :: state.dependees
+                return InterimResult(
+                    state.entity,
+                    StringConstancyProperty.lb,
+                    StringConstancyProperty.ub,
+                    state.dependees,
+                    continuation(state)
+                )
+            }
+        }
+        if (hasParamDefSite) {
+            registerParams(state, tacProvider)
+            state.params = InterproceduralStringAnalysis.getParams(state.entity)
+        } else {
+            state.params = InterproceduralStringAnalysis.getParams(state.entity)
+        }
+
+        // sci stores the final StringConstancyInformation (if it can be determined now at all)
+        var sci = StringConstancyProperty.lb.stringConstancyInformation
+        val stmts = state.cfg.code.instructions
+
+        // Interpret a function / method parameter using the parameter information in state
+        if (defSites.head < 0) {
+            val r = state.iHandler.processDefSite(defSites.head, state.params)
+            return Result(state.entity, StringConstancyProperty.extractFromPPCR(r))
+        }
+
+        val pathFinder: AbstractPathFinder = new WindowPathFinder(state.cfg)
         val call = stmts(defSites.head).asAssignment.expr
         if (InterpretationHandler.isStringBuilderBufferToStringCall(call)) {
             val initDefSites = InterpretationHandler.findDefSiteOfInit(uvar, stmts)
@@ -156,11 +203,9 @@ class InterproceduralStringAnalysis(
                     }
                 }
             } else {
-                val iHandler = InterproceduralInterpretationHandler(
-                    state.cfg, ps, declaredMethods, state, continuation(state)
-                )
-                if (computeResultsForPath(state.computedLeanPath, iHandler, state)) {
-                    sci = new PathTransformer(iHandler).pathToStringTree(
+                // TODO: Parameters can be removed
+                if (computeResultsForPath(state.computedLeanPath, state.iHandler, state)) {
+                    sci = new PathTransformer(state.iHandler).pathToStringTree(
                         state.computedLeanPath, state.fpe2sci.toMap
                     ).reduce(true)
                 }
@@ -180,11 +225,8 @@ class InterproceduralStringAnalysis(
                 Path(List(NestedPathElement(children, Some(NestedPathType.CondWithAlternative))))
             }
 
-            val iHandler = InterproceduralInterpretationHandler(
-                state.cfg, ps, declaredMethods, state, continuation(state)
-            )
-            if (computeResultsForPath(state.computedLeanPath, iHandler, state)) {
-                sci = new PathTransformer(iHandler).pathToStringTree(
+            if (computeResultsForPath(state.computedLeanPath, state.iHandler, state)) {
+                sci = new PathTransformer(state.iHandler).pathToStringTree(
                     state.computedLeanPath, state.fpe2sci.toMap
                 ).reduce(true)
             }
@@ -261,6 +303,26 @@ class InterproceduralStringAnalysis(
                 )
                 case _ ⇒ throw new IllegalStateException("Neither FinalP nor InterimResult")
             }
+            case CallersProperty.key ⇒ eps match {
+                case FinalP(callers: CallersProperty) ⇒
+                    state.callers = callers
+                    state.dependees = state.dependees.filter(_.e != eps.e)
+                    if (state.dependees.isEmpty) {
+                        determinePossibleStrings(state)
+                    } else {
+                        InterimResult(
+                            inputData,
+                            StringConstancyProperty.lb,
+                            StringConstancyProperty.ub,
+                            state.dependees,
+                            continuation(state)
+                        )
+                    }
+                case InterimLUBP(lb, ub) ⇒ InterimResult(
+                    inputData, lb, ub, state.dependees, continuation(state)
+                )
+                case _ ⇒ throw new IllegalStateException("Neither FinalP nor InterimResult")
+            }
             case StringConstancyProperty.key ⇒
                 eps match {
                     case FinalP(p) ⇒
@@ -306,9 +368,8 @@ class InterproceduralStringAnalysis(
     private def computeFinalResult(
         data:     P,
         state:    InterproceduralComputationState,
-        iHandler: InterproceduralInterpretationHandler
     ): Result = {
-        finalizePreparations(state.computedLeanPath, state, iHandler)
+        finalizePreparations(state.computedLeanPath, state, state.iHandler)
         val finalSci = new PathTransformer(null).pathToStringTree(
             state.computedLeanPath, state.fpe2sci.toMap, resetExprHandler = false
         ).reduce(true)
@@ -334,11 +395,7 @@ class InterproceduralStringAnalysis(
         // No more dependees => Return the result for this analysis run
         state.dependees = state.dependees.filter(_.e != e)
         if (state.dependees.isEmpty) {
-            val iHandler = InterproceduralInterpretationHandler(
-                state.cfg, ps, declaredMethods, state,
-                continuation(state)
-            )
-            computeFinalResult(data, state, iHandler)
+            computeFinalResult(data, state)
         } else {
             InterimResult(
                 data,
@@ -348,6 +405,45 @@ class InterproceduralStringAnalysis(
                 continuation(state)
             )
         }
+    }
+
+    /**
+     * This method takes a computation state, `state` as well as a TAC provider, `tacProvider`, and
+     * determines the interpretations of all parameters of the method under analysis. These
+     * interpretations are registered using [[InterproceduralStringAnalysis.registerParams]].
+     */
+    private def registerParams(
+        state: InterproceduralComputationState,
+        tacProvider: Method ⇒ TACode[TACMethodParameter, DUVar[ValueInformation]]
+    ): Unit = {
+        val paramsSci = ListBuffer[ListBuffer[StringConstancyInformation]]()
+        state.callers.callers(declaredMethods).foreach {
+            case (m, pc) ⇒
+                val tac = propertyStore(m.definedMethod, TACAI.key).ub.tac.get
+                paramsSci.append(ListBuffer())
+                val params = tac.stmts(tac.pcToIndex(pc)) match {
+                    case Assignment(_, _, fc: FunctionCall[V]) ⇒ fc.params
+                    case Assignment(_, _, mc: MethodCall[V]) ⇒ mc.params
+                    case ExprStmt(_, fc: FunctionCall[V]) ⇒ fc.params
+                    case ExprStmt(_, fc: MethodCall[V]) ⇒ fc.params
+                    case mc: MethodCall[V] ⇒ mc.params
+                    case _ ⇒ List()
+                }
+                params.foreach { p ⇒
+                    val iHandler = InterproceduralInterpretationHandler(
+                        tacProvider(m.definedMethod).cfg,
+                        propertyStore,
+                        declaredMethods,
+                        state,
+                        continuation(state)
+                    )
+                    val prop = StringConstancyProperty.extractFromPPCR(
+                        iHandler.processDefSite(p.asVar.definedBy.head)
+                    )
+                    paramsSci.last.append(prop.stringConstancyInformation)
+                }
+        }
+        InterproceduralStringAnalysis.registerParams(state.entity, paramsSci.toList)
     }
 
     /**
@@ -534,7 +630,7 @@ sealed trait InterproceduralStringAnalysisScheduler extends FPCFAnalysisSchedule
  * Executor for the lazy analysis.
  */
 object LazyInterproceduralStringAnalysis
-    extends InterproceduralStringAnalysisScheduler with FPCFLazyAnalysisScheduler {
+        extends InterproceduralStringAnalysisScheduler with FPCFLazyAnalysisScheduler {
 
     override def register(
         p: SomeProject, ps: PropertyStore, analysis: InitializationData
