@@ -198,13 +198,13 @@ class InterproceduralStringAnalysis(
                     dependentVars.foreach { case (k, v) ⇒ state.var2IndexMapping(k) = v }
                     val ep = propertyStore(toAnalyze, StringConstancyProperty.key)
                     ep match {
-                        case FinalP(p) ⇒ return processFinalP(state.entity, state, ep.e, p)
+                        case FinalP(p) ⇒ return processFinalP(state, ep.e, p)
                         case _         ⇒ state.dependees = ep :: state.dependees
                     }
                 }
             } else {
                 // TODO: Parameters can be removed
-                if (computeResultsForPath(state.computedLeanPath, state.iHandler, state)) {
+                if (computeResultsForPath(state.computedLeanPath, state)) {
                     sci = new PathTransformer(state.iHandler).pathToStringTree(
                         state.computedLeanPath, state.fpe2sci.toMap
                     ).reduce(true)
@@ -225,7 +225,7 @@ class InterproceduralStringAnalysis(
                 Path(List(NestedPathElement(children, Some(NestedPathType.CondWithAlternative))))
             }
 
-            if (computeResultsForPath(state.computedLeanPath, state.iHandler, state)) {
+            if (computeResultsForPath(state.computedLeanPath, state)) {
                 sci = new PathTransformer(state.iHandler).pathToStringTree(
                     state.computedLeanPath, state.fpe2sci.toMap
                 ).reduce(true)
@@ -326,7 +326,7 @@ class InterproceduralStringAnalysis(
             case StringConstancyProperty.key ⇒
                 eps match {
                     case FinalP(p) ⇒
-                        processFinalP(state.entity, state, eps.e, p)
+                        processFinalP(state, eps.e, p)
                     case InterimLUBP(lb, ub) ⇒
                         state.dependees = state.dependees.filter(_.e != eps.e)
                         state.dependees = eps :: state.dependees
@@ -357,7 +357,6 @@ class InterproceduralStringAnalysis(
      * of instruction that could only be prepared (e.g., if an array load included a method call,
      * its final result is not yet ready, however, this function finalizes, e.g., that load).
      *
-     * @param data The entity that was to analyze.
      * @param state The final computation state. For this state the following criteria must apply:
      *              For each [[FlatPathElement]], there must be a corresponding entry in
      *              `state.fpe2sci`. If this criteria is not met, a [[NullPointerException]] will
@@ -366,15 +365,14 @@ class InterproceduralStringAnalysis(
      * @return Returns the final result.
      */
     private def computeFinalResult(
-        data:     P,
         state:    InterproceduralComputationState,
     ): Result = {
         finalizePreparations(state.computedLeanPath, state, state.iHandler)
         val finalSci = new PathTransformer(null).pathToStringTree(
             state.computedLeanPath, state.fpe2sci.toMap, resetExprHandler = false
         ).reduce(true)
-        InterproceduralStringAnalysis.unregisterParams(data)
-        Result(data, StringConstancyProperty(finalSci))
+        InterproceduralStringAnalysis.unregisterParams(state.entity)
+        Result(state.entity, StringConstancyProperty(finalSci))
     }
 
     /**
@@ -382,7 +380,6 @@ class InterproceduralStringAnalysis(
      * [[org.opalj.fpcf.FinalP]].
      */
     private def processFinalP(
-        data:  P,
         state: InterproceduralComputationState,
         e:     Entity,
         p:     Property
@@ -395,10 +392,10 @@ class InterproceduralStringAnalysis(
         // No more dependees => Return the result for this analysis run
         state.dependees = state.dependees.filter(_.e != e)
         if (state.dependees.isEmpty) {
-            computeFinalResult(data, state)
+            computeFinalResult(state)
         } else {
             InterimResult(
-                data,
+                state.entity,
                 StringConstancyProperty.ub,
                 StringConstancyProperty.lb,
                 state.dependees,
@@ -451,14 +448,12 @@ class InterproceduralStringAnalysis(
      * these information in the given state.
      *
      * @param p The path to traverse.
-     * @param iHandler The handler for interpreting string related sites.
      * @param state The current state of the computation. This function will alter
      *              [[InterproceduralComputationState.fpe2sci]].
      * @return Returns `true` if all values computed for the path are final results.
      */
     private def computeResultsForPath(
         p:        Path,
-        iHandler: InterproceduralInterpretationHandler,
         state:    InterproceduralComputationState
     ): Boolean = {
         var hasFinalResult = true
@@ -466,14 +461,14 @@ class InterproceduralStringAnalysis(
         p.elements.foreach {
             case FlatPathElement(index) ⇒
                 if (!state.fpe2sci.contains(index)) {
-                    iHandler.processDefSite(index, state.params) match {
+                    state.iHandler.processDefSite(index, state.params) match {
                         case r: Result ⇒ state.appendResultToFpe2Sci(index, r, reset = true)
                         case _         ⇒ hasFinalResult = false
                     }
                 }
             case npe: NestedPathElement ⇒
                 val subFinalResult = computeResultsForPath(
-                    Path(npe.element.toList), iHandler, state
+                    Path(npe.element.toList), state
                 )
                 if (hasFinalResult) {
                     hasFinalResult = subFinalResult
