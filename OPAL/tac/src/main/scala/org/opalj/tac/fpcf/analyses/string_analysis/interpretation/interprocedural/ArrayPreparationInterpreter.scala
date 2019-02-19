@@ -78,7 +78,13 @@ class ArrayPreparationInterpreter(
         if (interimResult.isDefined) {
             interimResult.get
         } else {
-            results.head
+            val scis = results.map(StringConstancyProperty.extractFromPPCR)
+            val resultSci = StringConstancyInformation.reduceMultiple(
+                scis.map(_.stringConstancyInformation)
+            )
+            val result = Result(instr, StringConstancyProperty(resultSci))
+            state.appendResultToFpe2Sci(defSite, result)
+            result
         }
     }
 
