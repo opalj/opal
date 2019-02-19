@@ -430,9 +430,12 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
     ): (Path, List[(Int, Int)]) = {
         val startEndPairs = ListBuffer[(Int, Int)]()
         val switch = cfg.code.instructions(start).asSwitch
-        val caseStmts = switch.caseStmts.sorted
+        val caseStmts = ListBuffer[Int](switch.caseStmts.sorted: _*)
 
         val containsDefault = caseStmts.length == caseStmts.distinct.length
+        if (containsDefault) {
+            caseStmts.append(switch.defaultStmt)
+        }
         val pathType = if (containsDefault) NestedPathType.CondWithAlternative else
             NestedPathType.CondWithoutAlternative
 
