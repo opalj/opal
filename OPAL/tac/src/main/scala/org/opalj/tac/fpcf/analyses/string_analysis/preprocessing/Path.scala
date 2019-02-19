@@ -276,7 +276,7 @@ case class Path(elements: List[SubPath]) {
             }
         }.map { s ⇒ (s, Unit) }.toMap
         var leanPath = ListBuffer[SubPath]()
-        val endSite = obj.definedBy.head
+        val endSite = obj.definedBy.toArray.max
         var reachedEndSite = false
 
         elements.foreach { next ⇒
