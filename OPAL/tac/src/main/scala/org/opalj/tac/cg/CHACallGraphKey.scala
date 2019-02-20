@@ -20,12 +20,9 @@ import org.opalj.br.analyses.cg.InitialEntryPointsKey
 import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.fpcf.PropertyStoreKey
-import org.opalj.br.fpcf.cg.properties.ReflectionRelatedCallees
 import org.opalj.br.fpcf.cg.properties.StandardInvokeCallees
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.fpcf.cg.properties.Callees
-import org.opalj.br.fpcf.cg.properties.SerializationRelatedCallees
-import org.opalj.br.fpcf.cg.properties.ThreadRelatedIncompleteCallSites
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.br.fpcf.cg.properties.CalleesLikePropertyMetaInformation
