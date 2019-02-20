@@ -140,8 +140,8 @@ class InterproceduralStringAnalysis(
 
         // In case a parameter is required for approximating a string, retrieve callers information
         // (but only once)
-        val hasParamDefSite = defSites.exists(_ < 0)
-        if (hasParamDefSite && state.callers == null) {
+        state.params = InterproceduralStringAnalysis.getParams(state.entity)
+        if (state.callers == null && state.params.isEmpty) {
             val declaredMethods = project.get(DeclaredMethodsKey)
             val dm = declaredMethods.declaredMethods.filter { dm ⇒
                 dm.name == state.entity._2.name &&
@@ -150,6 +150,7 @@ class InterproceduralStringAnalysis(
             val callersEOptP = ps(dm, CallersProperty.key)
             if (callersEOptP.hasUBP) {
                 state.callers = callersEOptP.ub
+                registerParams(state, tacProvider)
             } else {
                 state.dependees = callersEOptP :: state.dependees
                 return InterimResult(
@@ -161,12 +162,7 @@ class InterproceduralStringAnalysis(
                 )
             }
         }
-        if (hasParamDefSite) {
-            registerParams(state, tacProvider)
-            state.params = InterproceduralStringAnalysis.getParams(state.entity)
-        } else {
-            state.params = InterproceduralStringAnalysis.getParams(state.entity)
-        }
+        state.params = InterproceduralStringAnalysis.getParams(state.entity)
 
         // sci stores the final StringConstancyInformation (if it can be determined now at all)
         var sci = StringConstancyProperty.lb.stringConstancyInformation
@@ -307,6 +303,7 @@ class InterproceduralStringAnalysis(
                     state.callers = callers
                     state.dependees = state.dependees.filter(_.e != eps.e)
                     if (state.dependees.isEmpty) {
+                        registerParams(state, p.get(SimpleTACAIKey))
                         determinePossibleStrings(state)
                     } else {
                         InterimResult(
@@ -433,9 +430,13 @@ class InterproceduralStringAnalysis(
                         state,
                         continuation(state)
                     )
+                    val defSite = p.asVar.definedBy.head
                     val prop = StringConstancyProperty.extractFromPPCR(
-                        iHandler.processDefSite(p.asVar.definedBy.head)
+                        iHandler.processDefSite(defSite)
                     )
+                    // We have to remove the element (it was added during the processDefSite call)
+                    // as otherwise false information might be stored and used
+                    state.fpe2sci.remove(defSite)
                     paramsSci.last.append(prop.stringConstancyInformation)
                 }
         }
