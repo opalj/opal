@@ -28,6 +28,7 @@ import org.opalj.br.fpcf.cg.properties.SerializationRelatedCallees
 import org.opalj.br.fpcf.cg.properties.ThreadRelatedIncompleteCallSites
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
+import org.opalj.br.fpcf.cg.properties.CalleesLikePropertyMetaInformation
 import org.opalj.tac.fpcf.analyses.cg.LazyCalleesAnalysis
 import org.opalj.tac.fpcf.analyses.LazyTACAIProvider
 import org.opalj.tac.fpcf.analyses.cg.CHACallGraphAnalysisScheduler
@@ -72,14 +73,22 @@ case class CHACallGraphKey(
 
         val manager = project.get(FPCFAnalysesManagerKey)
 
+        val config = project.config
+
+        // todo use registry here
+        val registeredModules = config.getStringList(
+            "org.opalj.tac.cg.CallGraphKey.modules"
+        ).asScala.flatMap(resolveAnalysisRunner(_))
+
+        val derivedProperties = registeredModules.flatMap(a ⇒ a.derives.map(_.pk)).toSet
+
+        val calleeProperties = derivedProperties.collect {
+            case p: CalleesLikePropertyMetaInformation ⇒ p
+        }
+
         // todo we should not need to know the types of callees
         val calleesAnalysis = LazyCalleesAnalysis(
-            Set(
-                StandardInvokeCallees,
-                SerializationRelatedCallees,
-                ReflectionRelatedCallees,
-                ThreadRelatedIncompleteCallSites
-            )
+            Set(StandardInvokeCallees) ++ calleeProperties
         )
 
         var analyses: List[ComputationSpecification[FPCFAnalysis]] =
@@ -91,13 +100,6 @@ case class CHACallGraphKey(
 
         if (isLibrary)
             analyses ::= EagerLibraryEntryPointsAnalysis
-
-        val config = project.config
-
-        // todo use registry here
-        val registeredModules = config.getStringList(
-            "org.opalj.tac.cg.CallGraphKey.modules"
-        ).asScala.flatMap(resolveAnalysisRunner(_))
 
         analyses ++= registeredModules
 
