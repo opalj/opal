@@ -294,6 +294,8 @@ class SerializationRelatedCallsAnalysis private[analyses] (
             // for each subtype of the type declared at cast we add calls to the relevant methods
             for {
                 t ← ch.allSubtypes(castType.asObjectType, reflexive = true)
+                cf ← project.classFile(t) // we ignore cases were no class file exists
+                if !cf.isInterfaceDeclaration
                 if ch.isSubtypeOf(castType, ObjectType.Serializable)
             } {
                 if (ch.isSubtypeOf(castType, ObjectType.Externalizable)) {
@@ -310,12 +312,10 @@ class SerializationRelatedCallsAnalysis private[analyses] (
                     )
 
                     // call to no-arg constructor
-                    p.classFile(t) foreach { cf ⇒
-                        cf.findMethod("<init>", NoArgsAndReturnVoid) foreach { c ⇒
-                            calleesAndCallers.updateWithIndirectCall(
-                                definedMethod, declaredMethods(c), pc, UnknownParam
-                            )
-                        }
+                    cf.findMethod("<init>", NoArgsAndReturnVoid) foreach { c ⇒
+                        calleesAndCallers.updateWithIndirectCall(
+                            definedMethod, declaredMethods(c), pc, UnknownParam
+                        )
                     }
                 } else {
 
@@ -348,13 +348,12 @@ class SerializationRelatedCallsAnalysis private[analyses] (
                     // for the type to be instantiated, we need to call a constructor of the type t
                     // in order to let the instantiated types be correct. Note, that the JVM would
                     // not call the constructor
-                    project.classFile(t).foreach { cf ⇒
-                        // Note, that we assume that there is a constructor
-                        val constructor = cf.constructors.next()
-                        calleesAndCallers.updateWithIndirectCall(
-                            definedMethod, declaredMethods(constructor), pc, UnknownParam
-                        )
-                    }
+
+                    // Note, that we assume that there is a constructor
+                    val constructor = cf.constructors.next()
+                    calleesAndCallers.updateWithIndirectCall(
+                        definedMethod, declaredMethods(constructor), pc, UnknownParam
+                    )
 
                 }
 
