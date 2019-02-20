@@ -89,11 +89,14 @@ object CallGraphEvaluation extends DefaultOneStepAnalysis {
 
         val moduleNames = modules.map(_.split('.').last.replace("Triggered", "").replace("RelatedCallsAnalysis", ""))
 
+        val triggerConfiguredNativeMethods =
+            if (algorithm.get == "RTA") "org.opalj.tac.fpcf.analyses.cg.TriggeredConfiguredNativeMethodsAnalysis" else ""
+
         modules :::= List(
             "org.opalj.tac.fpcf.analyses.cg.TriggeredFinalizerAnalysisScheduler",
             "org.opalj.tac.fpcf.analyses.cg.TriggeredLoadedClassesAnalysis",
             "org.opalj.tac.fpcf.analyses.cg.TriggeredStaticInitializerAnalysis",
-            "org.opalj.tac.fpcf.analyses.cg.TriggeredConfiguredNativeMethodsAnalysis",
+            triggerConfiguredNativeMethods,
             "org.opalj.tac.fpcf.analyses.TriggeredSystemPropertiesAnalysis"
         )
 
