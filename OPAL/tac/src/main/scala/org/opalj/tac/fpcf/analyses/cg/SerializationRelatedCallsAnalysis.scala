@@ -8,19 +8,16 @@ package cg
 import scala.annotation.tailrec
 
 import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPS
 import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.InterimResult
 import org.opalj.fpcf.NoResult
-import org.opalj.fpcf.PartialResult
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyComputationResult
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
-import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
 import org.opalj.br.fpcf.cg.properties.NoSerializationRelatedCallees
@@ -41,8 +38,6 @@ import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
-import org.opalj.br.fpcf.cg.properties.InstantiatedTypes
 import org.opalj.br.fpcf.cg.properties.NoCallers
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.cg.properties.CallersProperty
@@ -74,8 +69,6 @@ class SerializationRelatedCallsAnalysis private[analyses] (
     final val ReadExternalDescriptor = MethodDescriptor.JustTakes(ObjectInputType)
 
     implicit private[this] val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
-    private[this] val initialInstantiatedTypes: UIDSet[ObjectType] =
-        UIDSet(project.get(InitialInstantiatedTypesKey).toSeq: _*)
 
     def analyze(declaredMethod: DeclaredMethod): PropertyComputationResult = {
         // todo this is copy & past code from the RTACallGraphAnalysis -> refactor
@@ -142,20 +135,11 @@ class SerializationRelatedCallsAnalysis private[analyses] (
 
         val tacode = tacEP.ub.tac.get
 
-        // Let's get the types that are definitely initialized at this point in time;
-        // the upper bound for type instantiations, seen so far in case they are not yet
-        // computed, we use the initialTypes.
-        val instantiatedTypes: UIDSet[ObjectType] = ps(project, InstantiatedTypes.key) match {
-            case UBP(instantiatedTypes) ⇒ instantiatedTypes.types
-            case _                      ⇒ initialInstantiatedTypes
-        }
-
         val calleesAndCallers = new IndirectCalleesAndCallers()
 
         implicit val stmts: Array[Stmt[V]] = tacode.stmts
         val pcToIndex = tacode.pcToIndex
 
-        var newInstantiatedTypes = UIDSet.empty[ObjectType]
         for (pc ← relevantPCs) {
             val index = pcToIndex(pc)
             if (index != -1) {
@@ -171,13 +155,11 @@ class SerializationRelatedCallsAnalysis private[analyses] (
                         )
 
                     case Assignment(_, targetVar: V, VirtualFunctionCall(_, dc, _, "readObject", md, receiver: V, _)) if isOISReadObject(dc, md) ⇒
-                        newInstantiatedTypes = handleOISReadObject(
+                        handleOISReadObject(
                             definedMethod,
                             targetVar,
                             receiver,
                             pc,
-                            instantiatedTypes,
-                            newInstantiatedTypes,
                             calleesAndCallers
                         )
 
@@ -190,7 +172,7 @@ class SerializationRelatedCallsAnalysis private[analyses] (
             }
         }
 
-        returnResult(definedMethod, relevantPCs, calleesAndCallers, newInstantiatedTypes, tacEP)
+        returnResult(definedMethod, relevantPCs, calleesAndCallers, tacEP)
     }
 
     @inline private[this] def isOOSWriteObject(
@@ -294,18 +276,15 @@ class SerializationRelatedCallsAnalysis private[analyses] (
     }
 
     private[this] def handleOISReadObject(
-        definedMethod:        DefinedMethod,
-        targetVar:            V,
-        inputStream:          V,
-        pc:                   Int,
-        instantiatedTypesUB:  UIDSet[ObjectType],
-        newInstantiatedTypes: UIDSet[ObjectType],
-        calleesAndCallers:    IndirectCalleesAndCallers
+        definedMethod:     DefinedMethod,
+        targetVar:         V,
+        inputStream:       V,
+        pc:                Int,
+        calleesAndCallers: IndirectCalleesAndCallers
     )(
         implicit
         stmts: Array[Stmt[V]]
-    ): UIDSet[ObjectType] = {
-        var resNewInstantiatedTypes = UIDSet.empty[ObjectType]
+    ): Unit = {
         var foundCast = false
         val parameterList = Seq(None, persistentUVar(inputStream))
         for { Checkcast(_, _, ElementReferenceType(castType)) ← stmts } {
@@ -316,11 +295,6 @@ class SerializationRelatedCallsAnalysis private[analyses] (
                 t ← ch.allSubtypes(castType.asObjectType, reflexive = true)
                 if ch.isSubtypeOf(castType, ObjectType.Serializable)
             } {
-
-                // the object will be created
-                if (!instantiatedTypesUB.contains(t))
-                    resNewInstantiatedTypes += t
-
                 if (ch.isSubtypeOf(castType, ObjectType.Externalizable)) {
                     // call to `readExternal`
                     val readExternal = p.instanceCall(t, t, "readExternal", ReadExternalDescriptor)
@@ -343,6 +317,7 @@ class SerializationRelatedCallsAnalysis private[analyses] (
                         }
                     }
                 } else {
+
                     // call to `readObject`
                     val readObjectMethod =
                         p.specialCall(t, t, isInterface = false, "readObject", ReadObjectDescriptor)
@@ -368,6 +343,18 @@ class SerializationRelatedCallsAnalysis private[analyses] (
                             )
                         }
                     }
+
+                    // for the type to be instantiated, we need to call a constructor of the type t
+                    // in order to let the instantiated types be correct. Note, that the JVM would
+                    // not call the constructor
+                    project.classFile(t).foreach { cf ⇒
+                        // Note, that we assume that there is a constructor
+                        val constructor = cf.constructors.next()
+                        calleesAndCallers.updateWithIndirectCall(
+                            definedMethod, declaredMethods(constructor), pc, UnknownParam
+                        )
+                    }
+
                 }
 
                 // call to `readResolve`
@@ -401,7 +388,6 @@ class SerializationRelatedCallsAnalysis private[analyses] (
         if (!foundCast) {
             calleesAndCallers.addIncompleteCallsite(pc)
         }
-        resNewInstantiatedTypes
     }
 
     @tailrec private[this] def firstNotSerializableSupertype(t: ObjectType): Option[ObjectType] = {
@@ -417,14 +403,11 @@ class SerializationRelatedCallsAnalysis private[analyses] (
     }
 
     @inline private[this] def returnResult(
-        definedMethod:        DefinedMethod,
-        relevantPCs:          IntTrieSet,
-        calleesAndCallers:    IndirectCalleesAndCallers,
-        newInstantiatedTypes: UIDSet[ObjectType],
-        tacaiEP:              EOptionP[Method, TACAI]
+        definedMethod:     DefinedMethod,
+        relevantPCs:       IntTrieSet,
+        calleesAndCallers: IndirectCalleesAndCallers,
+        tacaiEP:           EOptionP[Method, TACAI]
     ): ProperPropertyComputationResult = {
-        var res: List[ProperPropertyComputationResult] = calleesAndCallers.partialResultsForCallers
-
         val tmpResult =
             if (calleesAndCallers.callees.isEmpty) NoSerializationRelatedCallees
             else
@@ -434,27 +417,16 @@ class SerializationRelatedCallsAnalysis private[analyses] (
                     calleesAndCallers.parameters
                 )
 
-        val calleesResult =
-            if (tacaiEP.isRefinable)
-                InterimResult.forUB(
-                    definedMethod,
-                    tmpResult,
-                    Some(tacaiEP),
-                    c(definedMethod, relevantPCs)
-                )
-            else
-                Result(definedMethod, tmpResult)
-
-        res ::= calleesResult
-
-        if (newInstantiatedTypes.nonEmpty)
-            res ::= PartialResult(
-                p,
-                InstantiatedTypes.key,
-                InstantiatedTypesAnalysis.update(p, newInstantiatedTypes)
+        if (tacaiEP.isRefinable)
+            InterimResult.forUB(
+                definedMethod,
+                tmpResult,
+                Some(tacaiEP),
+                c(definedMethod, relevantPCs)
             )
+        else
+            Result(definedMethod, tmpResult)
 
-        Results(res)
     }
 
     private[this] def c(
@@ -482,13 +454,11 @@ object TriggeredSerializationRelatedCallsAnalysis extends BasicFPCFTriggeredAnal
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(
         CallersProperty,
-        InstantiatedTypes,
         TACAI
     )
 
     override def derivesCollaboratively: Set[PropertyBounds] = PropertyBounds.ubs(
-        CallersProperty,
-        InstantiatedTypes
+        CallersProperty
     )
 
     override def derivesEagerly: Set[PropertyBounds] = PropertyBounds.ubs(

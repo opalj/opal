@@ -38,6 +38,7 @@ import org.opalj.br.fpcf.cg.properties.InstantiatedTypes
  *
  * @author Dominik Helm
  */
+// todo: rename this class as it only handles instantiated types
 class LibraryEntryPointsAnalysis private[analyses] (
         final val project: SomeProject
 ) extends FPCFAnalysis {

@@ -21,25 +21,35 @@ import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyComputationResult
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.SomeEPS
-import org.opalj.fpcf.UBP
 import org.opalj.br.DeclaredMethod
-import org.opalj.br.Method
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
+import org.opalj.br.analyses.DeclaredMethods
+import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.fpcf.cg.properties.CallersProperty
 import org.opalj.br.fpcf.cg.properties.InstantiatedTypes
 import org.opalj.br.fpcf.cg.properties.NoCallers
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.FPCFTriggeredAnalysisScheduler
-import org.opalj.tac.fpcf.properties.TACAI
+import org.opalj.br.instructions.INVOKESPECIAL
+import org.opalj.br.PCAndInstruction
+import org.opalj.br.instructions.NEW
 
 class InstantiatedTypesAnalysis private[analyses] (
         final val project: SomeProject
 ) extends FPCFAnalysis {
+    implicit private val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
 
     def analyze(declaredMethod: DeclaredMethod): PropertyComputationResult = {
-        (propertyStore(declaredMethod, CallersProperty.key): @unchecked) match {
+
+        // only constructors may initialize a class
+        if (declaredMethod.name != "<init>")
+            return NoResult;
+
+        val callersEOptP = propertyStore(declaredMethod, CallersProperty.key)
+
+        val callersUB: CallersProperty = (callersEOptP: @unchecked) match {
             case FinalP(NoCallers) ⇒
                 // nothing to do, since there is no caller
                 return NoResult;
@@ -49,49 +59,135 @@ class InstantiatedTypesAnalysis private[analyses] (
                     // we can not create a dependency here, so the analysis is not allowed to create
                     // such a result
                     throw new IllegalStateException("illegal immediate result for callers")
+                } else {
+                    eps.ub
                 }
             // the method is reachable, so we analyze it!
         }
 
-        // we only allow defined methods
-        if (!declaredMethod.hasSingleDefinedMethod)
+        // the set of types that are definitely initialized at this point in time
+        val instantiatedTypesEOptP = propertyStore(project, InstantiatedTypes.key)
+        val instantiatedTypesUB: UIDSet[ObjectType] = getInstantiatedTypesUB(instantiatedTypesEOptP)
+
+        val declaredType = declaredMethod.declaringClassType.asObjectType
+
+        // if the current type is already instantiated, no work is left
+        if (instantiatedTypesUB.contains(declaredType))
             return NoResult;
 
-        val method = declaredMethod.definedMethod
+        val cfOpt = project.classFile(declaredType)
 
-        // we only allow defined methods with declared type eq. to the class of the method
-        if (method.classFile.thisType != declaredMethod.declaringClassType)
-            return NoResult;
+        // abstract classes can never be instantiated
+        cfOpt.foreach { cf ⇒
+            if (cf.isAbstract)
+                return NoResult;
+        }
 
-        if (method.body.isEmpty)
-            // happens in particular for native methods
-            return NoResult;
+        processCallers(declaredMethod, declaredType, callersEOptP, callersUB, Set.empty)
+    }
 
-        val tacEP = propertyStore(method, TACAI.key)
+    private[this] def processCallers(
+        declaredMethod:   DeclaredMethod,
+        declaredType:     ObjectType,
+        callersEOptP:     EOptionP[DeclaredMethod, CallersProperty],
+        callersUB:        CallersProperty,
+        seenSuperCallers: Set[DeclaredMethod]
+    ): PropertyComputationResult = {
+        var newSeenSuperCallers = seenSuperCallers
+        for {
+            (caller, _) ← callersUB.callers
+            // if we already analyzed the caller, we do not need to do it twice
+            // note, that this is only needed for the continuation
+            if !newSeenSuperCallers.contains(caller)
+        } {
+            if (caller.name != "<init>") {
+                return partialResult(declaredType);
+            }
 
-        if (tacEP.hasUBP && tacEP.ub.tac.isDefined)
-            processMethod(declaredMethod, tacEP)
-        else {
+            // the constructor is called from another constructor. it is only an new instantiated
+            // type if it was no super call. Thus the caller must be a subtype
+            if (!classHierarchy.isSubtypeOf(caller.declaringClassType, declaredType))
+                return partialResult(declaredType);
+
+            // actually it must be the direct subtype! -- we did the first check to return early
+            project.classFile(caller.declaringClassType.asObjectType).foreach { cf ⇒
+                cf.superclassType.foreach { supertype ⇒
+                    if (supertype != declaredType)
+                        return partialResult(declaredType);
+                }
+            }
+
+            // if the caller is not available, we have to assume that it was no super call
+            if (!caller.hasSingleDefinedMethod) {
+                return partialResult(declaredType);
+            }
+
+            val callerMethod = caller.definedMethod
+
+            // if the caller has no body, we have to assume that it was no super call
+            if (callerMethod.body.isEmpty)
+                return partialResult(declaredType);
+
+            val supercall = INVOKESPECIAL(
+                declaredType,
+                isInterface = false,
+                "<init>",
+                declaredMethod.descriptor
+            )
+
+            val pcsOfSuperCalls = callerMethod.body.get.collectInstructionsWithPC {
+                case pcAndInstr @ PCAndInstruction(_, `supercall`) ⇒ pcAndInstr
+            }
+
+            assert(pcsOfSuperCalls.nonEmpty)
+
+            // there can be only one super call, so there must be an explicit call
+            if (pcsOfSuperCalls.size > 1)
+                return partialResult(declaredType);
+
+            // there is exactly the current call as potential super call, it still might no super
+            // call if the class has another constructor that calls the super. In that case
+            // there must either be a new of the `declaredType`
+            val newInstr = NEW(declaredType)
+            val hasNew = callerMethod.body.get.exists {
+                case (_, i) ⇒ i == newInstr
+            }
+            if (hasNew)
+                return partialResult(declaredType);
+
+            // to call is a super call, we should remember the call, in order to not evaluate it
+            // again, if there are new callers!
+            newSeenSuperCallers += caller
+        }
+
+        if (callersEOptP.isFinal) {
+            NoResult
+        } else {
             InterimPartialResult(
-                None,
-                Seq(tacEP),
-                continuationForTAC(declaredMethod)
+                Some(callersEOptP),
+                continuation(declaredMethod, declaredType, newSeenSuperCallers)
             )
         }
     }
 
-    private[this] def continuationForTAC(declaredMethod: DeclaredMethod)(
-        someEPS: SomeEPS
-    ): PropertyComputationResult = someEPS match {
-        case UBP(tac: TACAI) if tac.tac.isDefined ⇒
-            processMethod(declaredMethod, someEPS.asInstanceOf[EPS[Method, TACAI]])
-        case UBP(_: TACAI) ⇒
-            InterimPartialResult(
-                None,
-                Seq(someEPS),
-                continuationForTAC(declaredMethod)
-            )
-        case _ ⇒ throw new RuntimeException(s"unexpected update $someEPS")
+    private[this] def continuation(
+        declaredMethod:   DeclaredMethod,
+        declaredType:     ObjectType,
+        seenSuperCallers: Set[DeclaredMethod]
+    )(someEPS: SomeEPS): PropertyComputationResult = {
+        val eps = someEPS.asInstanceOf[EPS[DeclaredMethod, CallersProperty]]
+        processCallers(declaredMethod, declaredType, eps, eps.ub, seenSuperCallers)
+
+    }
+
+    private[this] def partialResult(
+        declaredType: ObjectType
+    ): PartialResult[SomeProject, InstantiatedTypes] = {
+        PartialResult[SomeProject, InstantiatedTypes](
+            project,
+            InstantiatedTypes.key,
+            InstantiatedTypesAnalysis.update(project, UIDSet(declaredType))
+        )
     }
 
     def getInstantiatedTypesUB(
@@ -100,61 +196,6 @@ class InstantiatedTypesAnalysis private[analyses] (
         instantiatedTypesEOptP match {
             case eps: EPS[_, _] ⇒ eps.ub.types
             case _              ⇒ UIDSet.empty
-        }
-    }
-
-    private[this] def processMethod(
-        declaredMethod: DeclaredMethod, tacEP: EOptionP[Method, TACAI]
-    ): PropertyComputationResult = {
-
-        val tac = tacEP.ub.tac.get
-
-        // the set of types that are definitely initialized at this point in time
-        val instantiatedTypesEOptP = propertyStore(project, InstantiatedTypes.key)
-
-        // the upper bound for type instantiations, seen so far
-        // in case they are not yet computed, we use the initialTypes
-        val instantiatedTypesUB: UIDSet[ObjectType] = getInstantiatedTypesUB(instantiatedTypesEOptP)
-
-        var newInstantiatedTypes: UIDSet[ObjectType] = UIDSet.empty
-
-        tac.stmts.foreach {
-            case Assignment(_, _, New(_, allocatedType)) ⇒
-                if (!instantiatedTypesUB.contains(allocatedType)) {
-                    newInstantiatedTypes += allocatedType
-                }
-
-            case ExprStmt(_, New(_, allocatedType)) ⇒
-                if (!instantiatedTypesUB.contains(allocatedType)) {
-                    newInstantiatedTypes += allocatedType
-                }
-
-            case _ ⇒
-        }
-
-        if (tacEP.isRefinable) {
-            InterimPartialResult(
-                if (newInstantiatedTypes.nonEmpty || instantiatedTypesEOptP.isEPK)
-                    Some(PartialResult(
-                    p,
-                    InstantiatedTypes.key,
-                    InstantiatedTypesAnalysis.update(
-                        p, newInstantiatedTypes
-                    )
-                ))
-                else
-                    None,
-                Some(tacEP),
-                continuationForTAC(declaredMethod)
-            )
-        } else if (newInstantiatedTypes.nonEmpty || instantiatedTypesEOptP.isEPK) {
-            PartialResult(
-                project,
-                InstantiatedTypes.key,
-                InstantiatedTypesAnalysis.update(p, newInstantiatedTypes)
-            )
-        } else {
-            NoResult
         }
     }
 }
@@ -166,7 +207,7 @@ object InstantiatedTypesAnalysis {
     )(
         eop: EOptionP[SomeProject, InstantiatedTypes]
     ): Option[EPS[SomeProject, InstantiatedTypes]] = eop match {
-        case InterimUBP(ub) ⇒
+        case InterimUBP(ub: InstantiatedTypes) ⇒
             Some(InterimEUBP(p, ub.updated(newInstantiatedTypes)))
 
         case _: EPK[_, _] ⇒
@@ -183,7 +224,6 @@ object TriggeredInstantiatedTypesAnalysis extends FPCFTriggeredAnalysisScheduler
     override type InitializationData = Null
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(
-        TACAI,
         InstantiatedTypes,
         CallersProperty
     )

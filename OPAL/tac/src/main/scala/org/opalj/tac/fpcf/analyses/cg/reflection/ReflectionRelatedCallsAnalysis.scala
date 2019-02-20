@@ -32,7 +32,6 @@ import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
 import org.opalj.fpcf.UBPS
 import org.opalj.value.ValueInformation
-import org.opalj.br.fpcf.cg.properties.InstantiatedTypes
 import org.opalj.br.fpcf.cg.properties.LoadedClasses
 import org.opalj.br.fpcf.cg.properties.NoReflectionRelatedCallees
 import org.opalj.br.fpcf.cg.properties.ReflectionRelatedCallees
@@ -113,12 +112,10 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
     final class State(
             val definedMethod:                           DefinedMethod,
             val loadedClassesUB:                         UIDSet[ObjectType]                              = UIDSet.empty,
-            val instantiatedTypesUB:                     UIDSet[ObjectType]                              = UIDSet.empty,
             val calleesAndCallers:                       IndirectCalleesAndCallers                       = new IndirectCalleesAndCallers(),
             val forNamePCs:                              IntTrieSet                                      = IntTrieSet.empty,
             val invocationPCs:                           IntTrieSet                                      = IntTrieSet.empty,
             private[this] var _newLoadedClasses:         UIDSet[ObjectType]                              = UIDSet.empty,
-            private[this] var _newInstantiatedTypes:     UIDSet[ObjectType]                              = UIDSet.empty,
             private[this] var _tacode:                   Option[TACode[TACMethodParameter, V]]           = None,
             private[this] var _tacaiDependee:            Option[EOptionP[Method, TACAI]]                 = None,
             private[this] var _systemPropertiesDependee: Option[EOptionP[SomeProject, SystemProperties]] = None,
@@ -134,12 +131,10 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         private[cg] def copy(
             definedMethod:            DefinedMethod                                   = this.definedMethod,
             loadedClassesUB:          UIDSet[ObjectType]                              = this.loadedClassesUB,
-            instantiatedTypesUB:      UIDSet[ObjectType]                              = this.instantiatedTypesUB,
             calleesAndCallers:        IndirectCalleesAndCallers                       = this.calleesAndCallers,
             forNamePCs:               IntTrieSet                                      = this.forNamePCs,
             invocationPCs:            IntTrieSet                                      = this.invocationPCs,
             newLoadedClasses:         UIDSet[ObjectType]                              = _newLoadedClasses,
-            newInstantiatedTypes:     UIDSet[ObjectType]                              = _newInstantiatedTypes,
             tacode:                   Option[TACode[TACMethodParameter, V]]           = _tacode,
             tacaiDependee:            Option[EOptionP[Method, TACAI]]                 = _tacaiDependee,
             systemPropertiesDependee: Option[EOptionP[SomeProject, SystemProperties]] = _systemPropertiesDependee,
@@ -148,12 +143,10 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
             new State(
                 definedMethod,
                 loadedClassesUB,
-                instantiatedTypesUB,
                 calleesAndCallers,
                 forNamePCs,
                 invocationPCs,
                 newLoadedClasses,
-                newInstantiatedTypes,
                 tacode,
                 tacaiDependee,
                 systemPropertiesDependee,
@@ -165,13 +158,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
             _newLoadedClasses ++= newLoadedClasses
         }
 
-        private[cg] def addNewInstantiatedTypes(newInstantiatedTypes: TraversableOnce[ObjectType]): Unit = {
-            _newInstantiatedTypes ++= newInstantiatedTypes
-        }
-
         private[cg] def newLoadedClasses: UIDSet[ObjectType] = _newLoadedClasses
-
-        private[cg] def newInstantiatedTypes: UIDSet[ObjectType] = _newInstantiatedTypes
 
         private[cg] def isTACDefined: Boolean = _tacode.isDefined
 
@@ -318,16 +305,13 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
 
     private[this] def processMethod(state: State): ProperPropertyComputationResult = {
         assert(state.isTACDefined)
-        val (loadedClassesUB, instantiatedTypesUB) = loadedClassesAndInstantiatedTypes()
+        val loadedClassesUB = loadedClasses()
 
         val calleesAndCallers = new IndirectCalleesAndCallers()
 
-        // TODO maybe move clearing to returnResult (newLoadedClasses/newInstantiatedTypes)
+        // TODO maybe move clearing to returnResult newLoadedClasses
         implicit val newState: State = state.copy(
             loadedClassesUB = loadedClassesUB,
-            newLoadedClasses = UIDSet.empty,
-            instantiatedTypesUB = instantiatedTypesUB,
-            newInstantiatedTypes = UIDSet.empty,
             calleesAndCallers = calleesAndCallers
         )
 
@@ -624,9 +608,6 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         actualParams:   Seq[Option[(ValueInformation, IntTrieSet)]], matchers: Traversable[MethodMatcher]
     )(implicit state: State): Unit = {
         MethodMatching.getPossibleMethods(matchers.toSeq).foreach { m ⇒
-            if (m.isConstructor && !state.instantiatedTypesUB.contains(m.classFile.thisType)) {
-                state.addNewInstantiatedTypes(Iterator(m.classFile.thisType))
-            }
             state.calleesAndCallers.updateWithIndirectCall(
                 caller,
                 declaredMethods(m),
@@ -889,8 +870,6 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
 
             // TODO refactor this handling
             MethodMatching.getPossibleMethods(matchers.toSeq).foreach { m ⇒
-                if (m.isConstructor && !state.instantiatedTypesUB.contains(m.classFile.thisType))
-                    state.addNewInstantiatedTypes(Iterator(m.classFile.thisType))
                 state.calleesAndCallers.updateWithIndirectCall(
                     caller,
                     declaredMethods(m),
@@ -1331,13 +1310,11 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
             val newEPS =
                 if (isFinal) None else Some(eps.asInstanceOf[EPS[SomeProject, SystemProperties]])
             // Create new state that reflects changes that may have happened in the meantime
-            val (loadedClassesUB, instantiatedTypesUB) = loadedClassesAndInstantiatedTypes()
-            // TODO maybe move clearing to returnResult (newLoadedClasses/newInstantiatedTypes)
+            val loadedClassesUB= loadedClasses()
+            // TODO maybe move clearing to returnResult newLoadedClasses
             val newState = state.copy(
                 loadedClassesUB = loadedClassesUB,
                 newLoadedClasses = UIDSet.empty,
-                instantiatedTypesUB = instantiatedTypesUB,
-                newInstantiatedTypes = UIDSet.empty,
                 calleesAndCallers = new IndirectCalleesAndCallers(state.calleesAndCallers.callees),
                 systemPropertiesDependee = newEPS,
                 systemProperties = Some(ub.properties)
@@ -1364,7 +1341,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
     /**
      * Retrieves the current state of loaded classes and instantiated types from the property store.
      */
-    private[this] def loadedClassesAndInstantiatedTypes(): (UIDSet[ObjectType], UIDSet[ObjectType]) = {
+    private[this] def loadedClasses(): UIDSet[ObjectType] = {
         // the set of classes that are definitely loaded at this point in time
         val loadedClassesEOptP = propertyStore(project, LoadedClasses.key)
 
@@ -1374,17 +1351,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
             case _              ⇒ UIDSet.empty
         }
 
-        // the set of types that are definitely initialized at this point in time
-        val instantiatedTypesEOptP = propertyStore(project, InstantiatedTypes.key)
-
-        // the upper bound for type instantiations, seen so far
-        // in case they are not yet computed, we use the initialTypes
-        val instantiatedTypesUB: UIDSet[ObjectType] = instantiatedTypesEOptP match {
-            case eps: EPS[_, _] ⇒ eps.ub.types
-            case _              ⇒ UIDSet.empty
-        }
-
-        (loadedClassesUB, instantiatedTypesUB)
+        loadedClassesUB
     }
 
     @inline private[this] def returnResult()(
@@ -1436,13 +1403,6 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
             })
         }
 
-        if (state.newInstantiatedTypes.nonEmpty)
-            res ::= PartialResult(
-                p,
-                InstantiatedTypes.key,
-                InstantiatedTypesAnalysis.update(p, state.newInstantiatedTypes)
-            )
-
         Results(res)
     }
 }
@@ -1461,14 +1421,12 @@ object TriggeredReflectionRelatedCallsAnalysis extends BasicFPCFTriggeredAnalysi
         PropertyBounds.ub(CallersProperty),
         PropertyBounds.ub(SystemProperties),
         PropertyBounds.ub(LoadedClasses),
-        PropertyBounds.ub(InstantiatedTypes),
         PropertyBounds.ub(TACAI)
     )
 
     override def derivesCollaboratively: Set[PropertyBounds] = Set(
         PropertyBounds.ub(CallersProperty),
-        PropertyBounds.ub(LoadedClasses),
-        PropertyBounds.ub(InstantiatedTypes)
+        PropertyBounds.ub(LoadedClasses)
     )
 
     override def register(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
