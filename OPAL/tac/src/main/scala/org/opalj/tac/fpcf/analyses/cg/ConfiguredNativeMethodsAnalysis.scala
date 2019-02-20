@@ -37,21 +37,23 @@ import org.opalj.br.fpcf.cg.properties.InstantiatedTypes
 import org.opalj.br.fpcf.FPCFAnalysis
 
 /**
- * Handles the effect of certain (configured native methods) to the call graph.
+ * Handles the effect of certain (configured native methods) to the set of instantiated types.
+ *
  *
  * @author Dominik Helm
- * @author Florian Kübler
+ * @author Florian Kuebler
  */
+// TODO: rename this class as it only affects the instantiated types!
 class ConfiguredNativeMethodsAnalysis private[analyses] (
         final val project: SomeProject
 ) extends FPCFAnalysis {
 
     private case class NativeMethodData(
-            cf:                String,
-            m:                 String,
-            desc:              String,
-            instantiatedTypes: Option[Seq[String]],
-            reachableMethods:  Option[Seq[ReachableMethod]]
+        cf:                String,
+        m:                 String,
+        desc:              String,
+        instantiatedTypes: Option[Seq[String]],
+        reachableMethods:  Option[Seq[ReachableMethod]]
     )
 
     private case class ReachableMethod(cf: String, m: String, desc: String)
