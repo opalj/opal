@@ -53,30 +53,31 @@ trait APIBasedCallGraphAnalysis extends FPCFAnalysis {
 
     private[this] def c(
         seenCallers: Set[(DeclaredMethod, Int)]
-    )(callersEOptP: SomeEOptionP): ProperPropertyComputationResult = callersEOptP match {
-        case UBP(callersUB: CallersProperty) ⇒
-            // IMPROVE: use better design in order to get new callers
-            var newSeenCallers = seenCallers
-            var results: List[ProperPropertyComputationResult] = Nil
-            if (callersUB.size != 0) {
-                for ((caller, pc) ← callersUB.callers) {
-                    // we can not analyze virtual methods
-                    if (!newSeenCallers.contains((caller, pc)) && caller.hasSingleDefinedMethod) {
-                        newSeenCallers += (caller → pc)
+    )(callersEOptP: SomeEOptionP): ProperPropertyComputationResult =
+        (callersEOptP: @unchecked) match {
+            case UBP(callersUB: CallersProperty) ⇒
+                // IMPROVE: use better design in order to get new callers
+                var newSeenCallers = seenCallers
+                var results: List[ProperPropertyComputationResult] = Nil
+                if (callersUB.size != 0) {
+                    for ((caller, pc) ← callersUB.callers) {
+                        // we can not analyze virtual methods
+                        if (!newSeenCallers.contains((caller, pc)) && caller.hasSingleDefinedMethod) {
+                            newSeenCallers += (caller → pc)
 
-                        results ::= handleNewCaller(caller.asDefinedMethod, pc)
+                            results ::= handleNewCaller(caller.asDefinedMethod, pc)
+                        }
                     }
                 }
-            }
 
-            if (callersEOptP.isRefinable)
-                results ::= InterimPartialResult(
-                    Some(callersEOptP), c(newSeenCallers)
-                )
+                if (callersEOptP.isRefinable)
+                    results ::= InterimPartialResult(
+                        Some(callersEOptP), c(newSeenCallers)
+                    )
 
-            Results(results)
-        case _: EPK[_, _] ⇒ InterimPartialResult(Some(callersEOptP), c(seenCallers))
-    }
+                Results(results)
+            case _: EPK[_, _] ⇒ InterimPartialResult(Some(callersEOptP), c(seenCallers))
+        }
 }
 
 trait TACAIBasedAPIBasedCallGraphAnalysis extends APIBasedCallGraphAnalysis {
