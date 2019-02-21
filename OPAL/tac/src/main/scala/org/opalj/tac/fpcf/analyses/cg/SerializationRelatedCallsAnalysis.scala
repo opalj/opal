@@ -19,6 +19,7 @@ import org.opalj.fpcf.PropertyComputationResult
 import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
+import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
 import org.opalj.br.fpcf.cg.properties.NoSerializationRelatedCallees
@@ -348,7 +349,6 @@ class SerializationRelatedCallsAnalysis private[analyses] (
                     // for the type to be instantiated, we need to call a constructor of the type t
                     // in order to let the instantiated types be correct. Note, that the JVM would
                     // not call the constructor
-
                     // Note, that we assume that there is a constructor
                     val constructor = cf.constructors.next()
                     calleesAndCallers.updateWithIndirectCall(
@@ -408,6 +408,7 @@ class SerializationRelatedCallsAnalysis private[analyses] (
         calleesAndCallers: IndirectCalleesAndCallers,
         tacaiEP:           EOptionP[Method, TACAI]
     ): ProperPropertyComputationResult = {
+        var res: List[ProperPropertyComputationResult] = calleesAndCallers.partialResultsForCallers
         val tmpResult =
             if (calleesAndCallers.callees.isEmpty) NoSerializationRelatedCallees
             else
@@ -417,7 +418,7 @@ class SerializationRelatedCallsAnalysis private[analyses] (
                     calleesAndCallers.parameters
                 )
 
-        if (tacaiEP.isRefinable)
+        val calleesResult = if (tacaiEP.isRefinable)
             InterimResult.forUB(
                 definedMethod,
                 tmpResult,
@@ -427,6 +428,9 @@ class SerializationRelatedCallsAnalysis private[analyses] (
         else
             Result(definedMethod, tmpResult)
 
+        res ::= calleesResult
+
+        Results(res)
     }
 
     private[this] def c(
