@@ -96,7 +96,7 @@ object CallGraph extends DefaultOneStepAnalysis {
 
         }
 
-      // todo: also manipulate the entry points and instantiated types keys
+        // todo: also manipulate the entry points and instantiated types keys
         if (isLibrary.isEmpty)
             throw new IllegalArgumentException("-mode was not set")
 
