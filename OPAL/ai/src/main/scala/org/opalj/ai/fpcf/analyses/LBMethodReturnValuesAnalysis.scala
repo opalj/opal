@@ -31,8 +31,8 @@ import org.opalj.ai.fpcf.properties.MethodReturnValue
 import org.opalj.ai.fpcf.properties.TheMethodReturnValue
 
 /**
- * Computes for each method, which returns object values, general information about the potentially
- * returned values.
+ * Computes for each method that returns object typed values general information about the
+ * potentially returned values.
  *
  * @author Michael Eichberg
  */
@@ -88,7 +88,7 @@ class LBMethodReturnValuesAnalysis private[analyses] (
             // of the JDK, the type hierarchy relation between the used eclipse
             // classes is not known and therefore the common supertype of ...dnd.RTFTextTransfer
             // and dnd.TextTransfer is computed as Object, though it is dnd.Transfer.
-            // In this case it may happen that the returned value (Object in the above case)
+            // In this case, it may happen that the returned value (Object in the above case)
             // suddenly becomes "less precise" than the declared return type.
             //
             // assert(
@@ -113,7 +113,7 @@ class LBMethodReturnValuesAnalysis private[analyses] (
                     ai.interrupt()
                 }
             }
-            isUpdated // <= the information about the returned value was updated
+            isUpdated // <= whether the information about the returned value was updated
         }
     }
 
@@ -134,7 +134,14 @@ class LBMethodReturnValuesAnalysis private[analyses] (
 
         def c(eps: SomeEPS): ProperPropertyComputationResult = {
             ai.resetInterrupt()
-            analyze(ai, method, dependees)
+            analyze(
+                ai,
+                method,
+                // We need a new instance, because the set may grow when compared to the
+                // last run; actually it may even shrink, but this is will likely only happen in
+                // very rare cases and is not a problem.
+                dependees.clone()
+            )
         }
 
         if (!aiResult.wasAborted) {
@@ -156,7 +163,8 @@ class LBMethodReturnValuesAnalysis private[analyses] (
         } else {
             //... in this run (!) no refinement was possible and therefore we had an early
             // return (interrupt), but if we have dependencies, further refinements are still
-            // possible, because some path(s) may be pruned by future refinements!
+            // possible, e.g., because some path(s) may be pruned by future refinements or
+            // more precise type information becomes available.
             val mrv = TheMethodReturnValue(ValueInformation.forProperValue(method.returnType))
             if (dependees.isEmpty) {
                 Result(FinalEP(method, mrv))

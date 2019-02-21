@@ -130,7 +130,7 @@ class LBFieldValuesAnalysis private[analyses] (
     }
 
     /**
-     * The domain that we use for analyzing the values stored in a field.
+     * The domain used for analyzing the values stored in a field.
      *
      * One instance of this domain is used to analyze all methods of the respective
      * class. Only after the analysis of all methods, the information returned by
@@ -328,7 +328,15 @@ class LBFieldValuesAnalysis private[analyses] (
                                         // Please note, that – if we get more precise type
                                         // information while carrying out the analysis – the set
                                         // of method dependees may increase after this initial
-                                        // filtering!
+                                        // filtering, because we may be able to resolve further
+                                        // method calls that are initially not resolved.
+                                        // e.g.
+                                        // {{{
+                                        //  val o = Foo.m() // initially returns "some object"
+                                        //  o.toString // no precisely resolvables
+                                        //  // if now, m() is known to return only String objects
+                                        //  // o.toString becomes resolvable!
+                                        // }}}
                                         methodsWithFieldWrites.exists { m ⇒
                                             val methodsCalledByM = domain.calledMethods.get(m)
                                             methodsCalledByM.nonEmpty &&
