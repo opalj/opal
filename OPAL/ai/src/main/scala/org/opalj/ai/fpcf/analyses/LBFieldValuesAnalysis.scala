@@ -284,7 +284,13 @@ class LBFieldValuesAnalysis private[analyses] (
 
     private[analyses] def analyze(classFile: ClassFile): PropertyComputationResult = {
         val relevantFields = relevantFieldsIterable(classFile)
-        if (relevantFields.nonEmpty) {
+        if (relevantFields.isEmpty) {
+            return MultiResult(
+                classFile.fields.iterator map { f ⇒
+                    FinalEP(f, TypeBasedFieldValueInformation(f.fieldType))
+                }
+            )
+        }
             val domain = new FieldValuesAnalysisDomain(classFile, relevantFields)
             analyzeRelevantMethods(classFile, domain)
             val allFieldsIterator = classFile.fields.iterator
@@ -389,10 +395,6 @@ class LBFieldValuesAnalysis private[analyses] (
             }
             */
             Results(results)
-        } else {
-            MultiResult(classFile.fields.iterator map (f ⇒
-                FinalEP(f, TypeBasedFieldValueInformation(f.fieldType))))
-        }
     }
 
 }
