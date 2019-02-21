@@ -143,7 +143,8 @@ class OISReadObjectAnalysis private[analyses] (
 
         handleOISReadObject(caller, targetVar, receiver, pc, callersAndCallers)
 
-        var results = callersAndCallers.partialResultsForCallers
+        // todo create partial results for callers AND CALLEES!
+        //var results = callersAndCallers.partialResultsForCallers
         //var partialResultForCalle
         ???
     }
