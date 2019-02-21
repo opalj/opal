@@ -1311,7 +1311,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
             val newEPS =
                 if (isFinal) None else Some(eps.asInstanceOf[EPS[SomeProject, SystemProperties]])
             // Create new state that reflects changes that may have happened in the meantime
-            val loadedClassesUB= loadedClasses()
+            val loadedClassesUB = loadedClasses()
             // TODO maybe move clearing to returnResult newLoadedClasses
             val newState = state.copy(
                 loadedClassesUB = loadedClassesUB,
