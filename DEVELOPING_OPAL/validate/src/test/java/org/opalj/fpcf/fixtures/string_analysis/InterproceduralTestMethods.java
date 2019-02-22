@@ -6,6 +6,7 @@ import org.opalj.fpcf.fixtures.string_analysis.hierarchies.HelloGreeting;
 import org.opalj.fpcf.properties.string_analysis.StringDefinitions;
 import org.opalj.fpcf.properties.string_analysis.StringDefinitionsCollection;
 
+import javax.management.remote.rmi.RMIServer;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.Scanner;
@@ -21,6 +22,8 @@ import static org.opalj.fpcf.properties.string_analysis.StringConstancyLevel.*;
 public class InterproceduralTestMethods {
 
     public static final String JAVA_LANG = "java.lang";
+    private static final String rmiServerImplStubClassName =
+            RMIServer.class.getName() + "Impl_Stub";
 
     /**
      * {@see LocalTestMethods#analyzeString}
@@ -238,6 +241,20 @@ public class InterproceduralTestMethods {
         String s = StringProvider.getFQClassName("java.lang", "Object");
         sb.append(StringProvider.getFQClassName("java.lang", "Runtime"));
         analyzeString(sb.toString());
+    }
+
+    @StringDefinitionsCollection(
+            value = "a case taken from javax.management.remote.rmi.RMIConnector where a GetStatic "
+                    + "is involved",
+            stringDefinitions = {
+                    @StringDefinitions(
+                            expectedLevel = DYNAMIC,
+                            expectedStrings = "\\w"
+                    )
+
+            })
+    public void getStaticTest() {
+        analyzeString(rmiServerImplStubClassName);
     }
 
     private String getRuntimeClassName() {
