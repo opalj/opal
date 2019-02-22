@@ -38,6 +38,7 @@ import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.common.StringC
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedural.finalizer.NonVirtualMethodCallFinalizer
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedural.finalizer.VirtualFunctionCallFinalizer
 import org.opalj.tac.fpcf.analyses.string_analysis.InterproceduralComputationState
+import org.opalj.tac.GetStatic
 
 /**
  * `InterproceduralInterpretationHandler` is responsible for processing expressions that are
@@ -115,6 +116,10 @@ class InterproceduralInterpretationHandler(
                 val result = new NewInterpreter(cfg, this).interpret(expr, defSite)
                 state.appendResultToFpe2Sci(defSite, result.asInstanceOf[Result])
                 result
+            case Assignment(_, _, expr: GetStatic) ⇒
+                new InterproceduralGetStaticInterpreter(cfg, this).interpret(expr, defSite)
+            case ExprStmt(_, expr: GetStatic) ⇒
+                new InterproceduralGetStaticInterpreter(cfg, this).interpret(expr, defSite)
             case Assignment(_, _, expr: VirtualFunctionCall[V]) ⇒
                 new VirtualFunctionCallPreparationInterpreter(
                     cfg, this, ps, state, declaredMethods, params, c

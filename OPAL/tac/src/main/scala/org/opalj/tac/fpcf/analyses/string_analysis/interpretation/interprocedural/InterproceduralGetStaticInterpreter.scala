@@ -10,7 +10,6 @@ import org.opalj.tac.Stmt
 import org.opalj.tac.TACStmts
 import org.opalj.tac.fpcf.analyses.string_analysis.V
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.AbstractStringInterpreter
-import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.intraprocedural.IntraproceduralInterpretationHandler
 
 /**
  * The `InterproceduralGetStaticInterpreter` is responsible for processing
@@ -22,7 +21,7 @@ import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.intraprocedura
  */
 class InterproceduralGetStaticInterpreter(
         cfg:         CFG[Stmt[V], TACStmts[V]],
-        exprHandler: IntraproceduralInterpretationHandler
+        exprHandler: InterproceduralInterpretationHandler
 ) extends AbstractStringInterpreter(cfg, exprHandler) {
 
     override type T = GetStatic
@@ -31,11 +30,12 @@ class InterproceduralGetStaticInterpreter(
      * Currently, this type is not interpreted. Thus, this function always returns a result
      * containing [[StringConstancyProperty.lb]].
      *
-     * @note For this implementation, `defSite` plays a role!
+     * @note For this implementation, `defSite` does currently not play a role!
      *
      * @see [[AbstractStringInterpreter.interpret]]
      */
     override def interpret(instr: T, defSite: Int): ProperPropertyComputationResult =
+        // TODO: How can they be better approximated?
         Result(instr, StringConstancyProperty.lb)
 
 }
