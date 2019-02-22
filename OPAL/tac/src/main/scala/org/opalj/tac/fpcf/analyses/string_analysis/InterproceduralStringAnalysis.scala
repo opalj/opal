@@ -89,7 +89,12 @@ class InterproceduralStringAnalysis(
 
         val tacaiEOptP = ps(data._2, TACAI.key)
         if (tacaiEOptP.hasUBP) {
-            state.tac = tacaiEOptP.ub.tac.get
+            if (tacaiEOptP.ub.tac.isEmpty) {
+                // No TAC available, e.g., because the method has no body
+                return Result(state.entity, StringConstancyProperty.lb)
+            } else {
+                state.tac = tacaiEOptP.ub.tac.get
+            }
         } else {
             state.dependees = tacaiEOptP :: state.dependees
             InterimResult(
