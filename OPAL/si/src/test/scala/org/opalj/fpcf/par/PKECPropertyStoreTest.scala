@@ -2,6 +2,7 @@
 package org.opalj.fpcf
 package par
 
+/*
 class PKEParallelTasksPropertyStoreTestWithDebugging
     extends PropertyStoreTestWithDebugging(
         List(DefaultPropertyComputation, CheapPropertyComputation)
@@ -14,14 +15,15 @@ class PKEParallelTasksPropertyStoreTestWithDebugging
     }
 
 }
+*/
 
-class PKEParallelTasksPropertyStoreTestWithoutDebugging
+class PKECPropertyStoreTestWithoutDebugging
     extends PropertyStoreTestWithoutDebugging(
         List(DefaultPropertyComputation, CheapPropertyComputation)
     ) {
 
     def createPropertyStore(): PropertyStore = {
-        val ps = PKEParallelTasksPropertyStore(new RecordAllPropertyStoreTracer)
+        val ps = PKECPropertyStore()
         ps.suppressError = true
         ps
     }
