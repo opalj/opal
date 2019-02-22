@@ -87,7 +87,6 @@ final class PKECPropertyStore private (
     override def quiescenceCount: Int = ???
     override def scheduledOnUpdateComputationsCount: Int = ???
     override def scheduledTasksCount: Int = ???
-    override def statistics: scala.collection.Map[String, Int] = ???
 
     override def entities(propertyFilter: SomeEPS ⇒ Boolean): Iterator[Entity] = ???
     override def entities[P <: Property](lb: P, ub: P): Iterator[Entity] = ???

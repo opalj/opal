@@ -6,7 +6,7 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.{Arrays ⇒ JArrays}
 
 import scala.util.control.ControlThrowable
-import scala.collection.{Map ⇒ SomeMap}
+import scala.collection.mutable
 
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
@@ -259,7 +259,22 @@ abstract class PropertyStore {
      * Reports core statistics; this method is only guaranteed to report ''final'' results
      * if it is called while the store is quiescent.
      */
-    def statistics: SomeMap[String, Int]
+    def statistics: mutable.LinkedHashMap[String, Int] = {
+        mutable.LinkedHashMap(
+            "scheduled tasks" ->
+                scheduledTasksCount,
+            "scheduled on update computations" ->
+                scheduledOnUpdateComputationsCount,
+            "fast-track properties" ->
+                fastTrackPropertiesCount,
+            "fast-track property computations" ->
+                fastTrackPropertyComputationsCount,
+            "computations of fallback properties for computed properties" ->
+                fallbacksUsedForComputedPropertiesCount,
+            "quiescence" ->
+                quiescenceCount
+        )
+    }
 
     //
     //

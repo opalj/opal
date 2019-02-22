@@ -8,7 +8,6 @@ import scala.language.existentials
 import java.util.ArrayDeque
 
 import scala.collection.mutable
-import scala.collection.{Map ⇒ SomeMap}
 import scala.collection.mutable.AnyRefMap
 import scala.collection.mutable.ArrayBuffer
 
@@ -78,20 +77,6 @@ final class PKESequentialPropertyStore private (
     private[this] var fastTrackPropertiesCounter = 0
     def fastTrackPropertiesCount: Int = fastTrackPropertiesCounter
 
-    def statistics: SomeMap[String, Int] = {
-        mutable.LinkedHashMap(
-            "scheduled tasks" ->
-                scheduledTasksCount,
-            "scheduled on update computations" ->
-                scheduledOnUpdateComputationsCount,
-            "fast-track properties" ->
-                fastTrackPropertiesCount,
-            "computations of fallback properties for computed properties" ->
-                fallbacksUsedForComputedPropertiesCounter,
-            "quiescence" ->
-                quiescenceCount
-        )
-    }
 
     // --------------------------------------------------------------------------------------------
     //
