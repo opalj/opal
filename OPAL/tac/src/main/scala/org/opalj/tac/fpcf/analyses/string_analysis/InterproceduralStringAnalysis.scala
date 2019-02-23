@@ -429,7 +429,7 @@ class InterproceduralStringAnalysis(
                 }
                 params.foreach { p ⇒
                     val iHandler = InterproceduralInterpretationHandler(
-                        tacProvider(m.definedMethod).cfg,
+                        tac.cfg,
                         propertyStore,
                         declaredMethods,
                         state,

@@ -50,7 +50,12 @@ class InterproceduralNonVirtualFunctionCallInterpreter(
      */
     override def interpret(instr: T, defSite: Int): ProperPropertyComputationResult = {
         val methods = getMethodsForPC(instr.pc, ps, state.callees, declaredMethods)
+        if (methods._1.isEmpty) {
+            // No methods available => Return lower bound
+            return Result(instr, StringConstancyProperty.lb)
+        }
         val m = methods._1.head
+
         val tac = getTACAI(ps, m, state)
         if (tac.isDefined) {
             // TAC available => Get return UVar and start the string analysis
