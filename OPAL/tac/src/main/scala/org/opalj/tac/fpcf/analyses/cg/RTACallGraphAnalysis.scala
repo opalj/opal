@@ -43,10 +43,7 @@ import org.opalj.value.IsSArrayValue
 import org.opalj.value.IsSObjectValue
 import org.opalj.br.fpcf.cg.properties.CallersProperty
 import org.opalj.br.fpcf.cg.properties.NoCallers
-import org.opalj.br.fpcf.cg.properties.NoStandardInvokeCallees
 import org.opalj.br.fpcf.cg.properties.OnlyCallersWithUnknownContext
-import org.opalj.br.fpcf.cg.properties.StandardInvokeCallees
-import org.opalj.br.fpcf.cg.properties.StandardInvokeCalleesImplementation
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
@@ -61,6 +58,9 @@ import org.opalj.br.analyses.cg.IsOverridableMethodKey
 import org.opalj.br.fpcf.cg.properties.InstantiatedTypes
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.FPCFTriggeredAnalysisScheduler
+import org.opalj.br.fpcf.cg.properties.Callees
+import org.opalj.br.fpcf.cg.properties.ConcreteCallees
+import org.opalj.br.fpcf.cg.properties.NoCallees
 import org.opalj.tac.fpcf.properties.TACAI
 
 class RTAState private (
@@ -200,9 +200,7 @@ object RTAState {
 
 /**
  * A rapid type call graph analysis (RTA). For a given [[org.opalj.br.Method]] it computes the set
- * of outgoing call edges ([[org.opalj.br.fpcf.cg.properties.StandardInvokeCallees]]). Furthermore, it
- * updates the types for which allocations are present in the [[org.opalj.br.analyses.SomeProject]]
- * ([[org.opalj.br.fpcf.cg.properties.InstantiatedTypes]]) and updates the
+ * of outgoing call edges ([[org.opalj.br.fpcf.cg.properties.Callees]]). Furthermore, it updates the
  * [[org.opalj.br.fpcf.cg.properties.CallersProperty]].
  *
  * This analysis does not handle features such as JVM calls to static initializers or finalize
@@ -222,9 +220,8 @@ class RTACallGraphAnalysis private[analyses] ( final val project: SomeProject) e
 
     /**
      * Computes the calls from the given method
-     * ([[org.opalj.br.fpcf.cg.properties.StandardInvokeCallees]] property) and updates the
-     * [[org.opalj.br.fpcf.cg.properties.CallersProperty]] and the
-     * [[org.opalj.br.fpcf.cg.properties.InstantiatedTypes]].
+     * ([[org.opalj.br.fpcf.cg.properties.Callees]] property) and updates the
+     * [[org.opalj.br.fpcf.cg.properties.CallersProperty]].
      *
      * Whenever a `declaredMethod` becomes reachable (the caller property is set initially),
      * this method is called.
@@ -269,7 +266,7 @@ class RTACallGraphAnalysis private[analyses] ( final val project: SomeProject) e
         if (tacEP.hasUBP && tacEP.ub.tac.isDefined)
             processMethod(state)
         else {
-            InterimResult.forUB(declaredMethod, NoStandardInvokeCallees, Seq(tacEP), c(state))
+            InterimResult.forUB(declaredMethod, NoCallees, Seq(tacEP), c(state))
         }
     }
 
@@ -477,12 +474,12 @@ class RTACallGraphAnalysis private[analyses] ( final val project: SomeProject) e
                     val potentialTypes = classHierarchy.allSubtypesForeachIterator(
                         ov.theUpperTypeBound, reflexive = true
                     ).filter { subtype ⇒
-                            val cfOption = project.classFile(subtype)
-                            cfOption.isDefined && {
-                                val cf = cfOption.get
-                                !cf.isInterfaceDeclaration && !cf.isAbstract
-                            }
+                        val cfOption = project.classFile(subtype)
+                        cfOption.isDefined && {
+                            val cf = cfOption.get
+                            !cf.isInterfaceDeclaration && !cf.isAbstract
                         }
+                    }
 
                     handleImpreciseCall(
                         caller,
@@ -667,7 +664,7 @@ class RTACallGraphAnalysis private[analyses] ( final val project: SomeProject) e
             case UBP(_: TACAI) ⇒
                 InterimResult.forUB(
                     state.method,
-                    NoStandardInvokeCallees,
+                    NoCallees,
                     Seq(eps),
                     c(state)
                 )
@@ -693,9 +690,9 @@ class RTACallGraphAnalysis private[analyses] ( final val project: SomeProject) e
         // here we need a immutable copy of the current state
         val newCallees =
             if (state.callees.isEmpty && state.incompleteCallSites.isEmpty)
-                NoStandardInvokeCallees
+                NoCallees
             else
-                new StandardInvokeCalleesImplementation(state.callees, state.incompleteCallSites)
+                new ConcreteCallees(state.callees, IntMap.empty, state.incompleteCallSites)
 
         if (state.virtualCallSites.isEmpty || !state.hasOpenDependees) {
             Result(state.method, newCallees)
@@ -724,7 +721,7 @@ object RTACallGraphAnalysisScheduler extends FPCFTriggeredAnalysisScheduler {
 
     override def derivesCollaboratively: Set[PropertyBounds] = PropertyBounds.ubs(CallersProperty)
 
-    override def derivesEagerly: Set[PropertyBounds] = PropertyBounds.ubs(StandardInvokeCallees)
+    override def derivesEagerly: Set[PropertyBounds] = PropertyBounds.ubs(Callees)
 
     /**
      * Updates the caller properties of the initial entry points
@@ -741,9 +738,12 @@ object RTACallGraphAnalysisScheduler extends FPCFTriggeredAnalysisScheduler {
 
         entryPoints.foreach { ep ⇒
             ps.preInitialize(ep, CallersProperty.key) {
-                case _: EPK[_, _]   ⇒ InterimEUBP(ep, OnlyCallersWithUnknownContext)
-                case InterimUBP(ub) ⇒ InterimEUBP(ep, ub.updatedWithUnknownContext())
-                case r              ⇒ throw new IllegalStateException(s"unexpected eps $r")
+                case _: EPK[_, _] ⇒
+                    InterimEUBP(ep, OnlyCallersWithUnknownContext)
+                case InterimUBP(ub: CallersProperty) ⇒
+                    InterimEUBP(ep, ub.updatedWithUnknownContext())
+                case r ⇒
+                    throw new IllegalStateException(s"unexpected eps $r")
             }
         }
     }

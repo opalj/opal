@@ -141,6 +141,7 @@ sealed trait Callees extends Property with CalleesPropertyMetaInformation {
     private[cg] def updateWithDirectCallees(
         callees: IntMap[IntTrieSet], incompleteCallSites: IntTrieSet
     ): Callees
+
     private[cg] def updateWithIndirectCallees(
         callees:                IntMap[IntTrieSet],
         incompleteCallSites:    IntTrieSet,
@@ -157,7 +158,7 @@ sealed class ConcreteCallees(
         private[this] val directCalleesIds:        IntMap[IntTrieSet],
         private[this] val indirectCalleesIds:      IntMap[IntTrieSet],
         private[this] val _incompleteCallSites:    IntTrieSet,
-        private[this] val _indirectCallParameters: IntMap[IntMap[Seq[Option[(ValueInformation, IntTrieSet)]]]]
+        private[this] val _indirectCallParameters: IntMap[IntMap[Seq[Option[(ValueInformation, IntTrieSet)]]]] = IntMap.empty
 ) extends Callees {
 
     override def incompleteCallSites(implicit propertyStore: PropertyStore): IntIterator = {

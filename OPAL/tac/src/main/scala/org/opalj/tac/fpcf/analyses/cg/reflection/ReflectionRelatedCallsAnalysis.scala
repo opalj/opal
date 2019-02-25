@@ -8,6 +8,8 @@ package reflection
 
 import scala.language.existentials
 
+import scala.collection.immutable.IntMap
+
 import org.opalj.log.OPALLogger.error
 import org.opalj.log.OPALLogger.info
 import org.opalj.collection.immutable.IntArraySetBuilder
@@ -34,9 +36,6 @@ import org.opalj.fpcf.UBP
 import org.opalj.fpcf.UBPS
 import org.opalj.value.ValueInformation
 import org.opalj.br.fpcf.cg.properties.LoadedClasses
-import org.opalj.br.fpcf.cg.properties.NoReflectionRelatedCallees
-import org.opalj.br.fpcf.cg.properties.ReflectionRelatedCallees
-import org.opalj.br.fpcf.cg.properties.ReflectionRelatedCalleesImplementation
 import org.opalj.br.BaseType
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
@@ -61,6 +60,9 @@ import org.opalj.br.fpcf.cg.properties.CallersProperty
 import org.opalj.br.fpcf.cg.properties.NoCallers
 import org.opalj.br.fpcf.properties.SystemProperties
 import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
+import org.opalj.br.fpcf.cg.properties.Callees
+import org.opalj.br.fpcf.cg.properties.ConcreteCallees
+import org.opalj.br.fpcf.cg.properties.NoCallees
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.tac.fpcf.properties.TACAI
@@ -113,7 +115,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
     final class State(
             val definedMethod:                           DefinedMethod,
             val loadedClassesUB:                         UIDSet[ObjectType]                              = UIDSet.empty,
-            val calleesAndCallers:                       IndirectCalleesAndCallers                       = new IndirectCalleesAndCallers(),
+            val calleesAndCallers:                       CalleesAndCallers                               = new CalleesAndCallers(),
             val forNamePCs:                              IntTrieSet                                      = IntTrieSet.empty,
             val invocationPCs:                           IntTrieSet                                      = IntTrieSet.empty,
             private[this] var _newLoadedClasses:         UIDSet[ObjectType]                              = UIDSet.empty,
@@ -132,7 +134,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         private[cg] def copy(
             definedMethod:            DefinedMethod                                   = this.definedMethod,
             loadedClassesUB:          UIDSet[ObjectType]                              = this.loadedClassesUB,
-            calleesAndCallers:        IndirectCalleesAndCallers                       = this.calleesAndCallers,
+            calleesAndCallers:        CalleesAndCallers                               = this.calleesAndCallers,
             forNamePCs:               IntTrieSet                                      = this.forNamePCs,
             invocationPCs:            IntTrieSet                                      = this.invocationPCs,
             newLoadedClasses:         UIDSet[ObjectType]                              = _newLoadedClasses,
@@ -279,7 +281,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         }
 
         if (invocationPCs.isEmpty && forNamePCs.isEmpty)
-            return Result(declaredMethod, NoReflectionRelatedCallees);
+            return Result(declaredMethod, NoCallees);
 
         val tacEP = propertyStore(method, TACAI.key)
         val tacEPOpt = if (tacEP.isFinal) None else Some(tacEP)
@@ -300,7 +302,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                 invocationPCs = invocationPCs,
                 _tacaiDependee = tacEPOpt
             )
-            InterimResult.forUB(definedMethod, NoReflectionRelatedCallees, tacEPOpt, continuation)
+            InterimResult.forUB(definedMethod, NoCallees, tacEPOpt, continuation)
         }
     }
 
@@ -308,7 +310,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         assert(state.isTACDefined)
         val loadedClassesUB = loadedClasses()
 
-        val calleesAndCallers = new IndirectCalleesAndCallers()
+        val calleesAndCallers = new CalleesAndCallers()
 
         // TODO maybe move clearing to returnResult newLoadedClasses
         implicit val newState: State = state.copy(
@@ -1316,7 +1318,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
             val newState = state.copy(
                 loadedClassesUB = loadedClassesUB,
                 newLoadedClasses = UIDSet.empty,
-                calleesAndCallers = new IndirectCalleesAndCallers(state.calleesAndCallers.callees),
+                calleesAndCallers = new CalleesAndCallers(state.calleesAndCallers.callees),
                 systemPropertiesDependee = newEPS,
                 systemProperties = Some(ub.properties)
             )
@@ -1333,7 +1335,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         case UBP(_: TACAI) ⇒
             InterimResult.forUB(
                 state.definedMethod,
-                NoReflectionRelatedCallees,
+                NoCallees,
                 Some(eps),
                 continuation
             )
@@ -1363,9 +1365,10 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
             state.calleesAndCallers.partialResultsForCallers
 
         val calleeUB = if (state.calleesAndCallers.callees.isEmpty)
-            NoReflectionRelatedCallees
+            NoCallees
         else
-            new ReflectionRelatedCalleesImplementation(
+            new ConcreteCallees(
+                IntMap.empty,
                 state.calleesAndCallers.callees,
                 state.calleesAndCallers.incompleteCallsites,
                 state.calleesAndCallers.parameters
@@ -1439,6 +1442,6 @@ object TriggeredReflectionRelatedCallsAnalysis extends BasicFPCFTriggeredAnalysi
     }
 
     override def derivesEagerly: Set[PropertyBounds] = Set(
-        PropertyBounds.ub(ReflectionRelatedCallees)
+        PropertyBounds.ub(Callees)
     )
 }

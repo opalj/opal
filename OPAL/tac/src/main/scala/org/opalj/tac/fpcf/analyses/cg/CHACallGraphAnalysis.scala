@@ -5,6 +5,8 @@ package fpcf
 package analyses
 package cg
 
+import scala.collection.immutable.IntMap
+
 import org.opalj.log.Error
 import org.opalj.log.OPALLogger
 import org.opalj.log.OPALLogger.logOnce
@@ -12,10 +14,7 @@ import org.opalj.log.Warn
 import org.opalj.fpcf.NoResult
 import org.opalj.br.fpcf.cg.properties.CallersProperty
 import org.opalj.br.fpcf.cg.properties.NoCallers
-import org.opalj.br.fpcf.cg.properties.NoStandardInvokeCallees
 import org.opalj.br.fpcf.cg.properties.OnlyCallersWithUnknownContext
-import org.opalj.br.fpcf.cg.properties.StandardInvokeCallees
-import org.opalj.br.fpcf.cg.properties.StandardInvokeCalleesImplementation
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPK
 import org.opalj.fpcf.EPS
@@ -43,7 +42,10 @@ import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.InitialEntryPointsKey
 import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.fpcf.cg.properties.Callees
 import org.opalj.br.fpcf.cg.properties.CallersProperty
+import org.opalj.br.fpcf.cg.properties.ConcreteCallees
+import org.opalj.br.fpcf.cg.properties.NoCallees
 import org.opalj.br.fpcf.cg.properties.NoCallers
 import org.opalj.tac.fpcf.properties.TACAI
 
@@ -89,7 +91,7 @@ class CHACallGraphAnalysis private[analyses] (
         } else {
             InterimResult.forUB(
                 declaredMethod,
-                NoStandardInvokeCallees,
+                NoCallees,
                 Seq(tacEP),
                 continuationForTAC(declaredMethod)
             )
@@ -104,7 +106,7 @@ class CHACallGraphAnalysis private[analyses] (
         case _ ⇒
             InterimResult.forUB(
                 declaredMethod,
-                NoStandardInvokeCallees,
+                NoCallees,
                 Seq(someEPS),
                 continuationForTAC(declaredMethod)
             )
@@ -175,10 +177,10 @@ class CHACallGraphAnalysis private[analyses] (
         }
 
         val callees = if (calleesAndCallers.callees.isEmpty)
-            NoStandardInvokeCallees
+            NoCallees
         else
-            new StandardInvokeCalleesImplementation(
-                calleesAndCallers.callees, calleesAndCallers.incompleteCallsites
+            new ConcreteCallees(
+                calleesAndCallers.callees, IntMap.empty, calleesAndCallers.incompleteCallsites
             )
 
         val calleesResult = if (tacEP.isFinal)
@@ -205,7 +207,7 @@ object CHACallGraphAnalysisScheduler extends FPCFTriggeredAnalysisScheduler {
     override def triggeredBy: PropertyKey[CallersProperty] = CallersProperty.key
 
     override def derivesEagerly: Set[PropertyBounds] = Set(
-        PropertyBounds.ub(StandardInvokeCallees)
+        PropertyBounds.ub(Callees)
     )
 
     override def derivesCollaboratively: Set[PropertyBounds] = Set(
@@ -228,9 +230,12 @@ object CHACallGraphAnalysisScheduler extends FPCFTriggeredAnalysisScheduler {
 
         entryPoints.foreach { ep ⇒
             ps.preInitialize(ep, CallersProperty.key) {
-                case _: EPK[_, _]   ⇒ InterimEUBP(ep, OnlyCallersWithUnknownContext)
-                case InterimUBP(ub) ⇒ InterimEUBP(ep, ub.updatedWithUnknownContext())
-                case eps            ⇒ throw new IllegalStateException(s"unexpected: $eps")
+                case _: EPK[_, _] ⇒
+                    InterimEUBP(ep, OnlyCallersWithUnknownContext)
+                case InterimUBP(ub: CallersProperty) ⇒
+                    InterimEUBP(ep, ub.updatedWithUnknownContext())
+                case eps ⇒
+                    throw new IllegalStateException(s"unexpected: $eps")
             }
         }
     }
