@@ -23,7 +23,6 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.cg.properties.CallersProperty
-import org.opalj.br.fpcf.cg.properties.SerializationRelatedCallees
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
@@ -34,6 +33,7 @@ import org.opalj.br.MethodDescriptor.JustReturnsObject
 import org.opalj.br.MethodDescriptor.NoArgsAndReturnVoid
 import org.opalj.br.ObjectType.{ObjectOutputStream ⇒ ObjectOutputStreamType}
 import org.opalj.br.ObjectType.{ObjectInputStream ⇒ ObjectInputStreamType}
+import org.opalj.br.fpcf.cg.properties.Callees
 import org.opalj.tac.fpcf.analyses.cg.SerializationRelatedCallsAnalysis.UnknownParam
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.TheTACAI
@@ -140,7 +140,7 @@ class OISReadObjectAnalysis private[analyses] (
             VirtualFunctionCall(_, _, _, "readObject", _, receiver: V, _)
             ) = stmts(indexOfReadObject)
 
-        val callersAndCallers = new IndirectCalleesAndCallers()
+        val callersAndCallers = new CalleesAndCallers()
 
         handleOISReadObject(caller, targetVar, receiver, pc, callersAndCallers)
 
@@ -155,7 +155,7 @@ class OISReadObjectAnalysis private[analyses] (
         targetVar:         V,
         inputStream:       V,
         pc:                Int,
-        calleesAndCallers: IndirectCalleesAndCallers
+        calleesAndCallers: CalleesAndCallers
     )(
         implicit
         stmts: Array[Stmt[V]]
@@ -308,7 +308,7 @@ object TriggeredSerializationRelatedCallsAnalysis1 extends BasicFPCFEagerAnalysi
     )
 
     override def derivesEagerly: Set[PropertyBounds] = PropertyBounds.ubs(
-        SerializationRelatedCallees
+        Callees
     )
 
     override def start(p: SomeProject, ps: PropertyStore, i: Null): FPCFAnalysis = {

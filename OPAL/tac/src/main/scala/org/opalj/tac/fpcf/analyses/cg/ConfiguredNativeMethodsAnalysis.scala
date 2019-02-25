@@ -5,6 +5,8 @@ package fpcf
 package analyses
 package cg
 
+import scala.collection.immutable.IntMap
+
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 
@@ -22,7 +24,6 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
 import org.opalj.fpcf.Results
 import org.opalj.br.fpcf.cg.properties.NoCallers
-import org.opalj.br.fpcf.cg.properties.StandardInvokeCalleesImplementation
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
@@ -34,6 +35,7 @@ import org.opalj.br.fpcf.cg.properties.CallersProperty
 import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
 import org.opalj.br.fpcf.cg.properties.InstantiatedTypes
 import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.fpcf.cg.properties.ConcreteCallees
 
 /**
  * Handles the effect of certain (configured native methods) to the set of instantiated types.
@@ -148,7 +150,7 @@ class ConfiguredNativeMethodsAnalysis private[analyses] (
                 calleesAndCallers.updateWithCall(declaredMethod, callee, 0)
             }
             val callees =
-                new StandardInvokeCalleesImplementation(calleesAndCallers.callees, IntTrieSet.empty)
+                new ConcreteCallees(calleesAndCallers.callees, IntMap.empty, IntTrieSet.empty)
             Result(declaredMethod, callees) :: calleesAndCallers.partialResultsForCallers
         }
 

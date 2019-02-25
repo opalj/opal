@@ -7,6 +7,8 @@ package cg
 
 import scala.annotation.tailrec
 
+import scala.collection.immutable.IntMap
+
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPS
@@ -21,9 +23,6 @@ import org.opalj.fpcf.Result
 import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
-import org.opalj.br.fpcf.cg.properties.NoSerializationRelatedCallees
-import org.opalj.br.fpcf.cg.properties.SerializationRelatedCallees
-import org.opalj.br.fpcf.cg.properties.SerializationRelatedCalleesImplementation
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
 import org.opalj.br.ElementReferenceType
@@ -43,6 +42,9 @@ import org.opalj.br.fpcf.cg.properties.NoCallers
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.cg.properties.CallersProperty
 import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
+import org.opalj.br.fpcf.cg.properties.Callees
+import org.opalj.br.fpcf.cg.properties.ConcreteCallees
+import org.opalj.br.fpcf.cg.properties.NoCallees
 import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.tac.fpcf.analyses.cg.SerializationRelatedCallsAnalysis.UnknownParam
 import org.opalj.tac.fpcf.properties.TACAI
@@ -112,7 +114,7 @@ class SerializationRelatedCallsAnalysis private[analyses] (
         }
 
         if (relevantPCs.isEmpty)
-            return Result(declaredMethod, NoSerializationRelatedCallees);
+            return Result(declaredMethod, NoCallees);
 
         val tacEP = propertyStore(method, TACAI.key)
 
@@ -121,7 +123,7 @@ class SerializationRelatedCallsAnalysis private[analyses] (
         } else {
             InterimResult.forUB(
                 declaredMethod,
-                NoSerializationRelatedCallees,
+                NoCallees,
                 List(tacEP),
                 c(definedMethod, relevantPCs)
             )
@@ -136,7 +138,7 @@ class SerializationRelatedCallsAnalysis private[analyses] (
 
         val tacode = tacEP.ub.tac.get
 
-        val calleesAndCallers = new IndirectCalleesAndCallers()
+        val calleesAndCallers = new CalleesAndCallers()
 
         implicit val stmts: Array[Stmt[V]] = tacode.stmts
         val pcToIndex = tacode.pcToIndex
@@ -193,7 +195,7 @@ class SerializationRelatedCallsAnalysis private[analyses] (
         outputStream:      V,
         param:             V,
         pc:                Int,
-        calleesAndCallers: IndirectCalleesAndCallers
+        calleesAndCallers: CalleesAndCallers
     )(
         implicit
         stmts: Array[Stmt[V]]
@@ -281,7 +283,7 @@ class SerializationRelatedCallsAnalysis private[analyses] (
         targetVar:         V,
         inputStream:       V,
         pc:                Int,
-        calleesAndCallers: IndirectCalleesAndCallers
+        calleesAndCallers: CalleesAndCallers
     )(
         implicit
         stmts: Array[Stmt[V]]
@@ -404,14 +406,15 @@ class SerializationRelatedCallsAnalysis private[analyses] (
     @inline private[this] def returnResult(
         definedMethod:     DefinedMethod,
         relevantPCs:       IntTrieSet,
-        calleesAndCallers: IndirectCalleesAndCallers,
+        calleesAndCallers: CalleesAndCallers,
         tacaiEP:           EOptionP[Method, TACAI]
     ): ProperPropertyComputationResult = {
         var res: List[ProperPropertyComputationResult] = calleesAndCallers.partialResultsForCallers
         val tmpResult =
-            if (calleesAndCallers.callees.isEmpty) NoSerializationRelatedCallees
+            if (calleesAndCallers.callees.isEmpty) NoCallees
             else
-                new SerializationRelatedCalleesImplementation(
+                new ConcreteCallees(
+                    IntMap.empty,
                     calleesAndCallers.callees,
                     calleesAndCallers.incompleteCallsites,
                     calleesAndCallers.parameters
@@ -442,7 +445,7 @@ class SerializationRelatedCallsAnalysis private[analyses] (
         case UBP(_: TACAI) ⇒
             InterimResult.forUB(
                 definedMethod,
-                NoSerializationRelatedCallees,
+                NoCallees,
                 List(eps),
                 c(definedMethod, relevantPCs)
             )
@@ -465,7 +468,7 @@ object TriggeredSerializationRelatedCallsAnalysis extends BasicFPCFTriggeredAnal
     )
 
     override def derivesEagerly: Set[PropertyBounds] = PropertyBounds.ubs(
-        SerializationRelatedCallees
+        Callees
     )
 
     override def register(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {

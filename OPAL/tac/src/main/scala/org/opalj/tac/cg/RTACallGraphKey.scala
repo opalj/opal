@@ -9,7 +9,6 @@ import scala.collection.JavaConverters._
 
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.error
-import org.opalj.collection.immutable.Chain
 import org.opalj.fpcf.ComputationSpecification
 import org.opalj.fpcf.PropertyStore
 import org.opalj.br.analyses.DeclaredMethodsKey
@@ -20,13 +19,9 @@ import org.opalj.br.analyses.cg.InitialEntryPointsKey
 import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.fpcf.PropertyStoreKey
-import org.opalj.br.fpcf.cg.properties.StandardInvokeCallees
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
-import org.opalj.br.fpcf.cg.properties.Callees
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
-import org.opalj.br.fpcf.cg.properties.CalleesLikePropertyMetaInformation
-import org.opalj.tac.fpcf.analyses.cg.LazyCalleesAnalysis
 import org.opalj.tac.fpcf.analyses.cg.RTACallGraphAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.TriggeredInstantiatedTypesAnalysis
 import org.opalj.tac.fpcf.analyses.LazyTACAIProvider
@@ -76,22 +71,10 @@ case class RTACallGraphKey(
             "org.opalj.tac.cg.CallGraphKey.modules"
         ).asScala.flatMap(resolveAnalysisRunner(_))
 
-        val derivedProperties = registeredModules.flatMap(a ⇒ a.derives.map(_.pk)).toSet
-
-        val calleeProperties = derivedProperties.collect {
-            case p: CalleesLikePropertyMetaInformation ⇒ p
-        }
-
-        // todo we should not need to know the types of callees
-        val calleesAnalysis = LazyCalleesAnalysis(
-            Set(StandardInvokeCallees) ++ calleeProperties
-        )
-
         var analyses: List[ComputationSpecification[FPCFAnalysis]] =
             List(
                 RTACallGraphAnalysisScheduler,
                 TriggeredInstantiatedTypesAnalysis,
-                calleesAnalysis,
                 LazyTACAIProvider
             )
 
@@ -100,16 +83,7 @@ case class RTACallGraphKey(
 
         analyses ++= registeredModules
 
-        manager.runAll(
-            analyses,
-            { css: Chain[ComputationSpecification[FPCFAnalysis]] ⇒
-                if (css.contains(calleesAnalysis)) {
-                    declaredMethods.declaredMethods.foreach { dm ⇒
-                        ps.force(dm, Callees.key)
-                    }
-                }
-            }
-        )
+        manager.runAll(analyses)
 
         new CallGraph()
     }

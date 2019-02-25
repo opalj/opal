@@ -24,7 +24,6 @@ import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.fpcf.cg.properties.Callees
 import org.opalj.br.fpcf.cg.properties.CallersProperty
 import org.opalj.br.fpcf.cg.properties.ConcreteCallees
-import org.opalj.br.fpcf.cg.properties.NoCallees
 
 private[cg] class CalleesAndCallers(
         //IMPROVE: mutable map for performance
@@ -32,6 +31,8 @@ private[cg] class CalleesAndCallers(
 ) {
 
     private[this] var _incompleteCallsites: IntTrieSet = IntTrieSet.empty
+
+    private[this] var _parameters: IntMap[IntMap[Seq[Option[(ValueInformation, IntTrieSet)]]]] = IntMap.empty
 
     private[this] var _partialResultsForCallers: List[PartialResult[DeclaredMethod, CallersProperty]] =
         List.empty
@@ -46,16 +47,22 @@ private[cg] class CalleesAndCallers(
         _partialResultsForCallers = Nil
     }
 
+    private[cg] def parameters: IntMap[IntMap[Seq[Option[(ValueInformation, IntTrieSet)]]]] =
+        _parameters
+
     private[cg] def partialResultForCallees(
         dm: DeclaredMethod, isIndirect: Boolean
     ): PartialResult[DeclaredMethod, Callees] = {
         PartialResult[DeclaredMethod, Callees](dm, Callees.key, {
-            case _ if _callees.isEmpty   ⇒ None
+            case _ if _callees.isEmpty ⇒ None
+            case InterimUBP(ub: Callees) if isIndirect ⇒
+                Some(InterimEUBP(dm, ub.updateWithIndirectCallees(_callees, _incompleteCallsites, _parameters)))
             case InterimUBP(ub: Callees) ⇒
+                Some(InterimEUBP(dm, ub.updateWithDirectCallees(_callees, _incompleteCallsites)))
             case _: EPK[_, _] if isIndirect ⇒
                 Some(InterimEUBP(dm, new ConcreteCallees(IntMap.empty, _callees, _incompleteCallsites, null)))
             case _: EPK[_, _] ⇒
-                Some(InterimEUBP(dm, new ConcreteCallees(_callees, IntMap.empty, _incompleteCallsites, IntMap.empty)))
+                Some(InterimEUBP(dm, new ConcreteCallees(_callees, IntMap.empty, _incompleteCallsites)))
             case r ⇒
                 throw new IllegalStateException(s"unexpected previous result $r")
         })
@@ -109,56 +116,16 @@ private[cg] class CalleesAndCallers(
         }
     }
 
-    private[this] def createPartialResultForCaller(
-        caller: DeclaredMethod,
-        callee: DeclaredMethod,
-        pc:     Int
-    ): PartialResult[DeclaredMethod, CallersProperty] = {
-        PartialResult[DeclaredMethod, CallersProperty](callee, CallersProperty.key, {
-            case InterimUBP(ub) ⇒
-                val newCallers = ub.updated(caller, pc)
-                // here we assert that update returns the identity if there is no change
-                if (ub ne newCallers)
-                    Some(InterimEUBP(callee, newCallers))
-                else
-                    None
-
-            case _: EPK[_, _] ⇒
-                val set = LongTrieSet(CallersProperty.toLong(caller.id, pc))
-                Some(InterimEUBP(
-                    callee,
-                    new CallersOnlyWithConcreteCallers(set)
-                ))
-
-            case r ⇒
-                throw new IllegalStateException(s"unexpected previous result $r")
-        })
-    }
-}
-
-private[cg] class IndirectCalleesAndCallers(
-        _callees:                      IntMap[IntTrieSet]                                                       = IntMap.empty,
-        private[this] var _parameters: IntMap[Map[DeclaredMethod, Seq[Option[(ValueInformation, IntTrieSet)]]]] = IntMap.empty
-) extends CalleesAndCallers(_callees) {
-    private[cg] def parameters: IntMap[Map[DeclaredMethod, Seq[Option[(ValueInformation, IntTrieSet)]]]] =
-        _parameters
-
-    private[cg] override def updateWithCall(
-        caller: DeclaredMethod, callee: DeclaredMethod, pc: Int
-    ): Unit = {
-        throw new UnsupportedOperationException("Use updateWithIndirectCall instead!")
-    }
-
     private[cg] def updateWithIndirectCall(
         caller:     DefinedMethod,
         callee:     DeclaredMethod,
         pc:         Int,
         parameters: Seq[Option[(ValueInformation, IntTrieSet)]]
     ): Unit = {
-        super.updateWithCall(caller, callee, pc)
+        updateWithCall(caller, callee, pc)
         _parameters = _parameters.updated(
             pc,
-            _parameters.getOrElse(pc, Map.empty).updated(callee, parameters)
+            _parameters.getOrElse(pc, IntMap.empty).updated(callee.id, parameters)
         )
     }
 
@@ -187,4 +154,29 @@ private[cg] class IndirectCalleesAndCallers(
         }
     }
 
+    private[this] def createPartialResultForCaller(
+        caller: DeclaredMethod,
+        callee: DeclaredMethod,
+        pc:     Int
+    ): PartialResult[DeclaredMethod, CallersProperty] = {
+        PartialResult[DeclaredMethod, CallersProperty](callee, CallersProperty.key, {
+            case InterimUBP(ub: CallersProperty) ⇒
+                val newCallers = ub.updated(caller, pc)
+                // here we assert that update returns the identity if there is no change
+                if (ub ne newCallers)
+                    Some(InterimEUBP(callee, newCallers))
+                else
+                    None
+
+            case _: EPK[_, _] ⇒
+                val set = LongTrieSet(CallersProperty.toLong(caller.id, pc))
+                Some(InterimEUBP(
+                    callee,
+                    new CallersOnlyWithConcreteCallers(set)
+                ))
+
+            case r ⇒
+                throw new IllegalStateException(s"unexpected previous result $r")
+        })
+    }
 }

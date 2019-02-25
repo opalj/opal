@@ -5,6 +5,8 @@ package fpcf
 package analyses
 package cg
 
+import scala.collection.immutable.IntMap
+
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.RefArray
 import org.opalj.fpcf.EPK
@@ -35,13 +37,14 @@ import org.opalj.br.VoidType
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.cg.properties.NoThreadRelatedIncompleteCallSites
 import org.opalj.br.fpcf.cg.properties.OnlyVMLevelCallers
-import org.opalj.br.fpcf.cg.properties.ThreadRelatedIncompleteCallSites
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.cg.properties.CallersProperty
 import org.opalj.br.fpcf.cg.properties.NoCallers
 import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
+import org.opalj.br.fpcf.cg.properties.Callees
+import org.opalj.br.fpcf.cg.properties.ConcreteCallees
+import org.opalj.br.fpcf.cg.properties.NoCallees
 import org.opalj.tac.fpcf.properties.TACAI
 
 /**
@@ -58,8 +61,8 @@ class ThreadRelatedCallsAnalysis private[analyses] (
 ) extends FPCFAnalysis {
 
     class State(
-            var vmReachableMethods:  Set[DeclaredMethod] = Set.empty,
-            var incompleteCallSites: IntTrieSet          = IntTrieSet.empty
+        var vmReachableMethods:  Set[DeclaredMethod] = Set.empty,
+        var incompleteCallSites: IntTrieSet          = IntTrieSet.empty
     )
 
     implicit private[this] val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
@@ -120,7 +123,7 @@ class ThreadRelatedCallsAnalysis private[analyses] (
         } else {
             InterimResult.forUB(
                 definedMethod,
-                NoThreadRelatedIncompleteCallSites,
+                NoCallees,
                 Some(tacaiEP),
                 continuation(definedMethod)
             )
@@ -140,7 +143,7 @@ class ThreadRelatedCallsAnalysis private[analyses] (
             case UBP(_: TACAI) ⇒
                 InterimResult.forUB(
                     method,
-                    NoThreadRelatedIncompleteCallSites,
+                    NoCallees,
                     Some(eps),
                     continuation(method)
                 )
@@ -186,7 +189,7 @@ class ThreadRelatedCallsAnalysis private[analyses] (
                     method,
                     CallersProperty.key,
                     {
-                        case InterimUBP(ub) if !ub.hasVMLevelCallers ⇒
+                        case InterimUBP(ub: CallersProperty) if !ub.hasVMLevelCallers ⇒
                             Some(InterimEUBP(method, ub.updatedWithVMLevelCall()))
 
                         case _: InterimEP[_, _] ⇒ None
@@ -201,12 +204,15 @@ class ThreadRelatedCallsAnalysis private[analyses] (
             if (tacaiEPS.isRefinable)
                 InterimResult.forUB(
                     definedMethod,
-                    ThreadRelatedIncompleteCallSites(state.incompleteCallSites),
+                    new ConcreteCallees(IntMap.empty, IntMap.empty, state.incompleteCallSites),
                     Some(tacaiEPS),
                     continuation(definedMethod)
                 )
             else
-                Result(definedMethod, ThreadRelatedIncompleteCallSites(state.incompleteCallSites))
+                Result(
+                    definedMethod,
+                    new ConcreteCallees(IntMap.empty, IntMap.empty, state.incompleteCallSites)
+                )
 
         Results(c, results)
     }
@@ -461,7 +467,7 @@ object TriggeredThreadRelatedCallsAnalysis extends BasicFPCFTriggeredAnalysisSch
     )
 
     override def derivesEagerly: Set[PropertyBounds] =
-        Set(PropertyBounds.ub(ThreadRelatedIncompleteCallSites))
+        Set(PropertyBounds.ub(Callees))
 
     override def register(
         p: SomeProject, ps: PropertyStore, unused: Null
