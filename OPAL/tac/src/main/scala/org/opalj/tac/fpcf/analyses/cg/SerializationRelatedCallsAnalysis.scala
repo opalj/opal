@@ -7,190 +7,148 @@ package cg
 
 import scala.annotation.tailrec
 
-import scala.collection.immutable.IntMap
-
-import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.fpcf.EOptionP
-import org.opalj.fpcf.EPS
+import org.opalj.fpcf.EPK
 import org.opalj.fpcf.FinalP
-import org.opalj.fpcf.InterimResult
-import org.opalj.fpcf.NoResult
+import org.opalj.fpcf.InterimPartialResult
+import org.opalj.fpcf.InterimUBP
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyComputationResult
 import org.opalj.fpcf.PropertyStore
-import org.opalj.fpcf.Result
 import org.opalj.fpcf.Results
-import org.opalj.fpcf.SomeEPS
+import org.opalj.fpcf.SomeEOptionP
 import org.opalj.fpcf.UBP
-import org.opalj.br.DeclaredMethod
-import org.opalj.br.DefinedMethod
-import org.opalj.br.ElementReferenceType
-import org.opalj.br.Method
-import org.opalj.br.MethodDescriptor
-import org.opalj.br.MethodDescriptor.JustReturnsObject
-import org.opalj.br.MethodDescriptor.JustTakesObject
-import org.opalj.br.MethodDescriptor.NoArgsAndReturnVoid
-import org.opalj.br.ObjectType
-import org.opalj.br.ObjectType.{ObjectOutputStream ⇒ ObjectOutputStreamType}
-import org.opalj.br.ObjectType.{ObjectInputStream ⇒ ObjectInputStreamType}
-import org.opalj.br.ReferenceType
-import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.cg.properties.NoCallers
+import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.cg.properties.CallersProperty
-import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
+import org.opalj.br.DeclaredMethod
+import org.opalj.br.MethodDescriptor
+import org.opalj.br.ObjectType
+import org.opalj.br.analyses.DeclaredMethods
+import org.opalj.br.DefinedMethod
+import org.opalj.br.ElementReferenceType
+import org.opalj.br.MethodDescriptor.JustReturnsObject
+import org.opalj.br.MethodDescriptor.NoArgsAndReturnVoid
+import org.opalj.br.ObjectType.{ObjectOutputStream ⇒ ObjectOutputStreamType}
+import org.opalj.br.ObjectType.{ObjectInputStream ⇒ ObjectInputStreamType}
 import org.opalj.br.fpcf.cg.properties.Callees
-import org.opalj.br.fpcf.cg.properties.ConcreteCallees
-import org.opalj.br.fpcf.cg.properties.NoCallees
-import org.opalj.br.instructions.INVOKEVIRTUAL
-import org.opalj.tac.fpcf.analyses.cg.SerializationRelatedCallsAnalysis.UnknownParam
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.TheTACAI
+import org.opalj.tac.VirtualFunctionCall
 
-/**
- * Handles the effect of serialization to the call graph.
- * As an example models the invocation of constructors when `readObject` is called, if there is a
- * cast afterwards.
- *
- * @author Florian Kuebler
- * @author Dominik Helm
- */
-class SerializationRelatedCallsAnalysis private[analyses] (
+trait APIBasedCallGraphAnalysis extends FPCFAnalysis {
+    val apiMethod: DeclaredMethod
+
+    implicit val declaredMethods: DeclaredMethods = p.get(DeclaredMethodsKey)
+
+    def handleNewCaller(caller: DefinedMethod, pc: Int): ProperPropertyComputationResult
+
+    final def registerAPIMethod(): ProperPropertyComputationResult = {
+        val seenCallers = Set.empty[(DeclaredMethod, Int)]
+        val callersEOptP = ps(apiMethod, CallersProperty.key)
+        c(seenCallers)(callersEOptP)
+    }
+
+    private[this] def c(
+        seenCallers: Set[(DeclaredMethod, Int)]
+    )(callersEOptP: SomeEOptionP): ProperPropertyComputationResult =
+        (callersEOptP: @unchecked) match {
+            case UBP(callersUB: CallersProperty) ⇒
+                // IMPROVE: use better design in order to get new callers
+                var newSeenCallers = seenCallers
+                var results: List[ProperPropertyComputationResult] = Nil
+                if (callersUB.size != 0) {
+                    for ((caller, pc) ← callersUB.callers) {
+                        // we can not analyze virtual methods
+                        if (!newSeenCallers.contains((caller, pc)) && caller.hasSingleDefinedMethod) {
+                            newSeenCallers += (caller → pc)
+
+                            results ::= handleNewCaller(caller.asDefinedMethod, pc)
+                        }
+                    }
+                }
+
+                if (callersEOptP.isRefinable)
+                    results ::= InterimPartialResult(
+                        Some(callersEOptP), c(newSeenCallers)
+                    )
+
+                Results(results)
+            case _: EPK[_, _] ⇒ InterimPartialResult(Some(callersEOptP), c(seenCallers))
+        }
+}
+
+trait TACAIBasedAPIBasedCallGraphAnalysis extends APIBasedCallGraphAnalysis {
+    final override def handleNewCaller(caller: DefinedMethod, pc: Int): ProperPropertyComputationResult = {
+        val tacEOptP = ps(caller.definedMethod, TACAI.key)
+        continueWithTAC(caller, pc)(tacEOptP)
+    }
+
+    private[this] def continueWithTAC(
+        caller: DefinedMethod, pc: Int
+    )(tacEOptP: SomeEOptionP): ProperPropertyComputationResult = tacEOptP match {
+        case FinalP(tac: TheTACAI) ⇒
+            processNewCaller(caller, pc, tac.theTAC)
+
+        case InterimUBP(tac: TheTACAI) ⇒
+            val result = processNewCaller(caller, pc, tac.theTAC)
+            val continuationResult =
+                InterimPartialResult(Some(tacEOptP), continueWithTAC(caller, pc))
+            Results(result, continuationResult)
+
+        case _ ⇒ InterimPartialResult(Some(tacEOptP), continueWithTAC(caller, pc))
+    }
+
+    def processNewCaller(
+        caller: DefinedMethod, pc: Int, tac: TACode[TACMethodParameter, V]
+    ): ProperPropertyComputationResult
+}
+
+class OOSWriteObjectAnalysis private[analyses] (
         final val project: SomeProject
-) extends FPCFAnalysis {
+) extends TACAIBasedAPIBasedCallGraphAnalysis {
 
-    final val ObjectInputValidationType = ObjectType("java/io/ObjectInputValidation")
+    override val apiMethod: DeclaredMethod = declaredMethods(
+        ObjectOutputStreamType,
+        "",
+        ObjectOutputStreamType,
+        "writeObject",
+        MethodDescriptor.JustTakesObject
+    )
+
     final val ObjectOutputType = ObjectType("java/io/ObjectOutput")
-    final val ObjectInputType = ObjectType("java/io/ObjectInput")
-
-    final val WriteObjectDescriptor = MethodDescriptor.JustTakes(ObjectOutputStreamType)
-    final val ReadObjectDescriptor = MethodDescriptor.JustTakes(ObjectInputStreamType)
     final val WriteExternalDescriptor = MethodDescriptor.JustTakes(ObjectOutputType)
-    final val ReadExternalDescriptor = MethodDescriptor.JustTakes(ObjectInputType)
+    final val WriteObjectDescriptor = MethodDescriptor.JustTakes(ObjectOutputStreamType)
 
-    implicit private[this] val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
-
-    def analyze(declaredMethod: DeclaredMethod): PropertyComputationResult = {
-        // todo this is copy & past code from the RTACallGraphAnalysis -> refactor
-        (propertyStore(declaredMethod, CallersProperty.key): @unchecked) match {
-            case FinalP(NoCallers) ⇒
-                // nothing to do, since there is no caller
-                return NoResult;
-
-            case eps: EPS[_, _] ⇒
-                if (eps.ub eq NoCallers) {
-                    // we can not create a dependency here, so the analysis is not allowed to create
-                    // such a result
-                    throw new IllegalStateException("illegal immediate result for callers")
-                }
-            // the method is reachable, so we analyze it!
-        }
-
-        // we only allow defined methods
-        if (!declaredMethod.hasSingleDefinedMethod)
-            return NoResult;
-
-        val definedMethod = declaredMethod.asDefinedMethod
-
-        val method = declaredMethod.definedMethod
-
-        // we only allow defined methods with declared type equal to the class of the method
-        if (method.classFile.thisType != declaredMethod.declaringClassType)
-            return NoResult;
-
-        if (method.body.isEmpty)
-            // happens in particular for native methods
-            return NoResult;
-
-        var relevantPCs = IntTrieSet.empty
-        method.body.get.iterate(INVOKEVIRTUAL) { (pc, instruction) ⇒
-            val call = instruction.asMethodInvocationInstruction
-            if (call.declaringClass == ObjectOutputStreamType && call.name == "writeObject" ||
-                call.declaringClass == ObjectInputStreamType && call.name == "readObject")
-                relevantPCs += pc
-        }
-
-        if (relevantPCs.isEmpty)
-            return Result(declaredMethod, NoCallees);
-
-        val tacEP = propertyStore(method, TACAI.key)
-
-        if (tacEP.hasUBP && tacEP.ub.tac.isDefined) {
-            processMethod(definedMethod, relevantPCs, tacEP.asEPS)
-        } else {
-            InterimResult.forUB(
-                declaredMethod,
-                NoCallees,
-                List(tacEP),
-                c(definedMethod, relevantPCs)
-            )
-        }
-    }
-
-    private[this] def processMethod(
-        definedMethod: DefinedMethod,
-        relevantPCs:   IntTrieSet,
-        tacEP:         EPS[Method, TACAI]
+    override def processNewCaller(
+        caller: DefinedMethod,
+        pc:     UShort,
+        tac:    TACode[TACMethodParameter, V]
     ): ProperPropertyComputationResult = {
+        implicit val stmts: Array[Stmt[V]] = tac.stmts
 
-        val tacode = tacEP.ub.tac.get
+        val indexOfWriteObject = tac.pcToIndex(pc)
 
+        // todo this may fail
         val calleesAndCallers = new CalleesAndCallers()
+        val VirtualMethodCall(_, _, _, "writeObject", _, receiver: V, params) = stmts(indexOfWriteObject)
+        handleOOSWriteObject(
+            caller,
+            receiver,
+            params.head.asVar,
+            pc,
+            calleesAndCallers
+        )
 
-        implicit val stmts: Array[Stmt[V]] = tacode.stmts
-        val pcToIndex = tacode.pcToIndex
-
-        for (pc ← relevantPCs) {
-            val index = pcToIndex(pc)
-            if (index != -1) {
-
-                stmts(index) match {
-                    case VirtualMethodCall(_, dc, _, "writeObject", md, receiver: V, params) if isOOSWriteObject(dc, md) ⇒
-                        handleOOSWriteObject(
-                            definedMethod,
-                            receiver,
-                            params.head.asVar,
-                            pc,
-                            calleesAndCallers
-                        )
-
-                    case Assignment(_, targetVar: V, VirtualFunctionCall(_, dc, _, "readObject", md, receiver: V, _)) if isOISReadObject(dc, md) ⇒
-                        handleOISReadObject(
-                            definedMethod,
-                            targetVar,
-                            receiver,
-                            pc,
-                            calleesAndCallers
-                        )
-
-                    case ExprStmt(_, VirtualFunctionCall(_, dc, _, "readObject", md, _, _)) if isOISReadObject(dc, md) ⇒
-                        calleesAndCallers.addIncompleteCallsite(pc)
-
-                    case _ ⇒ /* irrelevant */
-
-                }
-            }
-        }
-
-        returnResult(definedMethod, relevantPCs, calleesAndCallers, tacEP)
+        Results(
+            calleesAndCallers.partialResultForCallees(caller, isIndirect = true),
+            calleesAndCallers.partialResultsForCallers
+        )
     }
 
-    @inline private[this] def isOOSWriteObject(
-        declaredType: ReferenceType, methodDescriptor: MethodDescriptor
-    ): Boolean = {
-        ch.isSubtypeOf(declaredType, ObjectOutputStreamType) && methodDescriptor == JustTakesObject
-    }
-
-    @inline private[this] def isOISReadObject(
-        declaredType: ReferenceType, methodDescriptor: MethodDescriptor
-    ): Boolean = {
-        ch.isSubtypeOf(declaredType, ObjectInputStreamType) && methodDescriptor == JustReturnsObject
-    }
-
-    @inline private[this] def handleOOSWriteObject(
+    private[this] def handleOOSWriteObject(
         definedMethod:     DefinedMethod,
         outputStream:      V,
         param:             V,
@@ -278,6 +236,52 @@ class SerializationRelatedCallsAnalysis private[analyses] (
         }
     }
 
+}
+
+class OISReadObjectAnalysis private[analyses] (
+        final val project: SomeProject
+) extends TACAIBasedAPIBasedCallGraphAnalysis {
+
+    final val ObjectInputValidationType = ObjectType("java/io/ObjectInputValidation")
+    final val ObjectInputType = ObjectType("java/io/ObjectInput")
+
+    final val ReadObjectDescriptor = MethodDescriptor.JustTakes(ObjectInputStreamType)
+    final val ReadExternalDescriptor = MethodDescriptor.JustTakes(ObjectInputType)
+
+    final val UnknownParam = Seq(None)
+
+    override val apiMethod: DeclaredMethod = declaredMethods(
+        ObjectInputStreamType,
+        "",
+        ObjectInputStreamType,
+        "readObject",
+        MethodDescriptor.JustReturnsObject
+    )
+
+    override def processNewCaller(
+        caller: DefinedMethod, pc: Int, tac: TACode[TACMethodParameter, V]
+    ): ProperPropertyComputationResult = {
+        implicit val stmts: Array[Stmt[V]] = tac.stmts
+
+        val indexOfReadObject = tac.pcToIndex(pc)
+        val calleesAndCallers = new CalleesAndCallers()
+
+        val stmt = stmts(indexOfReadObject)
+        if (stmt.isInstanceOf[Assignment[V]]) {
+            // todo this may fail
+            val VirtualFunctionCall(_, _, _, "readObject", _, receiver: V, _) = stmt.asAssignment.expr
+            handleOISReadObject(caller, stmt.asAssignment.targetVar, receiver, pc, calleesAndCallers)
+
+        } else {
+            calleesAndCallers.addIncompleteCallsite(pc)
+        }
+
+        Results(
+            calleesAndCallers.partialResultForCallees(caller, isIndirect = true),
+            calleesAndCallers.partialResultsForCallers
+        )
+    }
+
     private[this] def handleOISReadObject(
         definedMethod:     DefinedMethod,
         targetVar:         V,
@@ -305,7 +309,9 @@ class SerializationRelatedCallsAnalysis private[analyses] (
                     val readExternal = p.instanceCall(t, t, "readExternal", ReadExternalDescriptor)
 
                     calleesAndCallers.updateWithIndirectCallOrFallback(
-                        definedMethod, readExternal, pc,
+                        definedMethod,
+                        readExternal,
+                        pc,
                         ObjectType.Externalizable.packageName,
                         ObjectType.Externalizable,
                         "readExternal",
@@ -402,79 +408,48 @@ class SerializationRelatedCallsAnalysis private[analyses] (
                 }
         }
     }
+}
 
-    @inline private[this] def returnResult(
-        definedMethod:     DefinedMethod,
-        relevantPCs:       IntTrieSet,
-        calleesAndCallers: CalleesAndCallers,
-        tacaiEP:           EOptionP[Method, TACAI]
-    ): ProperPropertyComputationResult = {
-        var res: List[ProperPropertyComputationResult] = calleesAndCallers.partialResultsForCallers
-        val tmpResult =
-            if (calleesAndCallers.callees.isEmpty) NoCallees
-            else
-                new ConcreteCallees(
-                    IntMap.empty,
-                    calleesAndCallers.callees,
-                    calleesAndCallers.incompleteCallsites,
-                    calleesAndCallers.parameters
-                )
+/**
+ * Handles the effect of serialization to the call graph.
+ * As an example models the invocation of constructors when `readObject` is called, if there is a
+ * cast afterwards.
+ *
+ * @author Florian Kuebler
+ * @author Dominik Helm
+ */
+class SerializationRelatedCallsAnalysis private[analyses] (
+        final val project: SomeProject
+) extends FPCFAnalysis {
 
-        val calleesResult = if (tacaiEP.isRefinable)
-            InterimResult.forUB(
-                definedMethod,
-                tmpResult,
-                Some(tacaiEP),
-                c(definedMethod, relevantPCs)
-            )
-        else
-            Result(definedMethod, tmpResult)
-
-        res ::= calleesResult
-
-        Results(res)
-    }
-
-    private[this] def c(
-        definedMethod: DefinedMethod, relevantPCs: IntTrieSet
-    )(
-        eps: SomeEPS
-    ): ProperPropertyComputationResult = eps match {
-        case UBP(_: TheTACAI) ⇒
-            processMethod(definedMethod, relevantPCs, eps.asInstanceOf[EPS[Method, TACAI]])
-        case UBP(_: TACAI) ⇒
-            InterimResult.forUB(
-                definedMethod,
-                NoCallees,
-                List(eps),
-                c(definedMethod, relevantPCs)
-            )
+    def process(p: SomeProject): PropertyComputationResult = {
+        val readObjectAnalysis = new OISReadObjectAnalysis(project)
+        val readObjectResult = readObjectAnalysis.registerAPIMethod()
+        val writeObjectAnalysis = new OOSWriteObjectAnalysis(project)
+        val writeObjectResult = writeObjectAnalysis.registerAPIMethod()
+        Results(readObjectResult, writeObjectResult)
     }
 }
 
-object SerializationRelatedCallsAnalysis {
-    final val UnknownParam = Seq(None)
-}
-
-object TriggeredSerializationRelatedCallsAnalysis extends BasicFPCFTriggeredAnalysisScheduler {
+object TriggeredSerializationRelatedCallsAnalysis extends BasicFPCFEagerAnalysisScheduler {
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(
         CallersProperty,
+        Callees,
         TACAI
     )
 
     override def derivesCollaboratively: Set[PropertyBounds] = PropertyBounds.ubs(
-        CallersProperty
+        CallersProperty, Callees
     )
 
-    override def derivesEagerly: Set[PropertyBounds] = PropertyBounds.ubs(
-        Callees
-    )
+    override def derivesEagerly: Set[PropertyBounds] = Set.empty
 
-    override def register(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+    override def start(p: SomeProject, ps: PropertyStore, i: Null): FPCFAnalysis = {
+
         val analysis = new SerializationRelatedCallsAnalysis(p)
-        ps.registerTriggeredComputation(CallersProperty.key, analysis.analyze)
+        ps.scheduleEagerComputationForEntity(p)(analysis.process)
         analysis
     }
-
 }
+

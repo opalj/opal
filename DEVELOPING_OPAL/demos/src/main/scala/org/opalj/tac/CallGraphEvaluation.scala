@@ -11,15 +11,12 @@ import scala.collection.JavaConverters._
 
 import com.typesafe.config.ConfigValueFactory
 
+import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ReportableAnalysisResult
-import org.opalj.br.fpcf.PropertyStoreKey
-import org.opalj.br.MethodDescriptor
-import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.DeclaredMethods
-import org.opalj.br.fpcf.cg.properties.CallersProperty
 import org.opalj.ai.domain.l1
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.tac.cg.CallGraphSerializer
@@ -136,12 +133,12 @@ object CallGraphEvaluation extends DefaultOneStepAnalysis {
         val numStandardEdges = 0
         val numReflectiveEdges = 0
         val numSerializationEdges = 0
-        var numThreadEdges = 0
+        val numThreadEdges = 0
 
-        val ps = p.get(PropertyStoreKey)
-        implicit val declaredMethods = p.get(DeclaredMethodsKey)
+        //val ps = p.get(PropertyStoreKey)
+        //implicit val declaredMethods = p.get(DeclaredMethodsKey)
 
-        for (rm ← reachableMethods) {
+        /*for (rm ← reachableMethods) {
             for ((_, tgts) ← ps(rm, StandardInvokeCallees.key).ub.callSites)
                 numStandardEdges += tgts.size
 
@@ -158,7 +155,7 @@ object CallGraphEvaluation extends DefaultOneStepAnalysis {
                     rm.descriptor == MethodDescriptor.NoArgsAndReturnVoid &&
                     ps(rm, CallersProperty.key).ub.hasVMLevelCallers)
                     numThreadEdges += 1
-        }
+        }*/
         numEdges += numThreadEdges
 
         val outFile = new File(s"results/${projectName.get}.tsv")

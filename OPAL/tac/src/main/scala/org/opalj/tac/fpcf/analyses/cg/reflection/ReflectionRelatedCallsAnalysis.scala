@@ -20,14 +20,12 @@ import org.opalj.fpcf.EPS
 import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.InterimEUBP
 import org.opalj.fpcf.InterimPartialResult
-import org.opalj.fpcf.InterimResult
 import org.opalj.fpcf.NoResult
 import org.opalj.fpcf.PartialResult
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyComputationResult
 import org.opalj.fpcf.PropertyStore
-import org.opalj.fpcf.Result
 import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
@@ -59,7 +57,6 @@ import org.opalj.br.fpcf.cg.properties.NoCallers
 import org.opalj.br.fpcf.properties.SystemProperties
 import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
 import org.opalj.br.fpcf.cg.properties.Callees
-import org.opalj.br.fpcf.cg.properties.NoCallees
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.tac.fpcf.properties.TACAI
@@ -278,7 +275,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         }
 
         if (invocationPCs.isEmpty && forNamePCs.isEmpty)
-            return Result(declaredMethod, NoCallees);
+            return NoResult;
 
         val tacEP = propertyStore(method, TACAI.key)
         val tacEPOpt = if (tacEP.isFinal) None else Some(tacEP)
@@ -299,7 +296,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                 invocationPCs = invocationPCs,
                 _tacaiDependee = tacEPOpt
             )
-            InterimResult.forUB(definedMethod, NoCallees, tacEPOpt, continuation)
+            InterimPartialResult(tacEPOpt, continuation)
         }
     }
 
@@ -1330,12 +1327,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
             processMethod(state)
 
         case UBP(_: TACAI) ⇒
-            InterimResult.forUB(
-                state.definedMethod,
-                NoCallees,
-                Some(eps),
-                continuation
-            )
+            InterimPartialResult(Some(eps), continuation)
     }
 
     /**
@@ -1408,16 +1400,18 @@ object ReflectionRelatedCallsAnalysis {
 
 object TriggeredReflectionRelatedCallsAnalysis extends BasicFPCFTriggeredAnalysisScheduler {
 
-    override def uses: Set[PropertyBounds] = Set(
-        PropertyBounds.ub(CallersProperty),
-        PropertyBounds.ub(SystemProperties),
-        PropertyBounds.ub(LoadedClasses),
-        PropertyBounds.ub(TACAI)
+    override def uses: Set[PropertyBounds] = PropertyBounds.ubs(
+        CallersProperty,
+        Callees,
+        SystemProperties,
+        LoadedClasses,
+        TACAI
     )
 
-    override def derivesCollaboratively: Set[PropertyBounds] = Set(
-        PropertyBounds.ub(CallersProperty),
-        PropertyBounds.ub(LoadedClasses)
+    override def derivesCollaboratively: Set[PropertyBounds] = PropertyBounds.ubs(
+        CallersProperty,
+        Callees,
+        LoadedClasses
     )
 
     override def register(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
@@ -1426,7 +1420,5 @@ object TriggeredReflectionRelatedCallsAnalysis extends BasicFPCFTriggeredAnalysi
         analysis
     }
 
-    override def derivesEagerly: Set[PropertyBounds] = Set(
-        PropertyBounds.ub(Callees)
-    )
+    override def derivesEagerly: Set[PropertyBounds] = Set.empty
 }

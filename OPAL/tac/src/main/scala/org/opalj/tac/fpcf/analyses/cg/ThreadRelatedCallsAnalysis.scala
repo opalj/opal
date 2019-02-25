@@ -15,7 +15,6 @@ import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.InterimEP
 import org.opalj.fpcf.InterimEUBP
 import org.opalj.fpcf.InterimPartialResult
-import org.opalj.fpcf.InterimResult
 import org.opalj.fpcf.InterimUBP
 import org.opalj.fpcf.NoResult
 import org.opalj.fpcf.PartialResult
@@ -44,7 +43,6 @@ import org.opalj.br.fpcf.cg.properties.NoCallers
 import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
 import org.opalj.br.fpcf.cg.properties.Callees
 import org.opalj.br.fpcf.cg.properties.ConcreteCallees
-import org.opalj.br.fpcf.cg.properties.NoCallees
 import org.opalj.tac.fpcf.properties.TACAI
 
 /**
@@ -121,12 +119,7 @@ class ThreadRelatedCallsAnalysis private[analyses] (
         if (tacaiEP.hasUBP && tacaiEP.ub.tac.isDefined) {
             processMethod(definedMethod, tacaiEP.asEPS)
         } else {
-            InterimResult.forUB(
-                definedMethod,
-                NoCallees,
-                Some(tacaiEP),
-                continuation(definedMethod)
-            )
+            InterimPartialResult(Some(tacaiEP), continuation(definedMethod))
         }
     }
 
@@ -141,12 +134,7 @@ class ThreadRelatedCallsAnalysis private[analyses] (
             case UBP(tac: TACAI) if tac.tac.isDefined ⇒
                 processMethod(method, eps.asInstanceOf[EPS[Method, TACAI]])
             case UBP(_: TACAI) ⇒
-                InterimResult.forUB(
-                    method,
-                    NoCallees,
-                    Some(eps),
-                    continuation(method)
-                )
+                InterimPartialResult(Some(eps), continuation(method))
         }
     }
 
