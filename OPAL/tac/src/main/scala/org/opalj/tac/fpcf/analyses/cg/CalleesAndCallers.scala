@@ -21,7 +21,10 @@ import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.DeclaredMethods
+import org.opalj.br.fpcf.cg.properties.Callees
 import org.opalj.br.fpcf.cg.properties.CallersProperty
+import org.opalj.br.fpcf.cg.properties.ConcreteCallees
+import org.opalj.br.fpcf.cg.properties.NoCallees
 
 private[cg] class CalleesAndCallers(
         //IMPROVE: mutable map for performance
@@ -41,6 +44,21 @@ private[cg] class CalleesAndCallers(
 
     private[cg] def clearPartialResultsForCallers(): Unit = {
         _partialResultsForCallers = Nil
+    }
+
+    private[cg] def partialResultForCallees(
+        dm: DeclaredMethod, isIndirect: Boolean
+    ): PartialResult[DeclaredMethod, Callees] = {
+        PartialResult[DeclaredMethod, Callees](dm, Callees.key, {
+            case _ if _callees.isEmpty   ⇒ None
+            case InterimUBP(ub: Callees) ⇒
+            case _: EPK[_, _] if isIndirect ⇒
+                Some(InterimEUBP(dm, new ConcreteCallees(IntMap.empty, _callees, _incompleteCallsites, null)))
+            case _: EPK[_, _] ⇒
+                Some(InterimEUBP(dm, new ConcreteCallees(_callees, IntMap.empty, _incompleteCallsites, IntMap.empty)))
+            case r ⇒
+                throw new IllegalStateException(s"unexpected previous result $r")
+        })
     }
 
     private[cg] def incompleteCallsites: IntTrieSet = _incompleteCallsites
