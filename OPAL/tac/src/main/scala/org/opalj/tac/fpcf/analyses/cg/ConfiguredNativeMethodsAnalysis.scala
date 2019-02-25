@@ -5,12 +5,9 @@ package fpcf
 package analyses
 package cg
 
-import scala.collection.immutable.IntMap
-
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 
-import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPS
@@ -20,9 +17,7 @@ import org.opalj.fpcf.PartialResult
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyComputationResult
-import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyStore
-import org.opalj.fpcf.Result
 import org.opalj.fpcf.Results
 import org.opalj.br.fpcf.cg.properties.NoCallers
 import org.opalj.br.DeclaredMethod
@@ -36,7 +31,7 @@ import org.opalj.br.fpcf.cg.properties.CallersProperty
 import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
 import org.opalj.br.fpcf.cg.properties.InstantiatedTypes
 import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.fpcf.cg.properties.ConcreteCallees
+import org.opalj.br.fpcf.cg.properties.Callees
 
 /**
  * Handles the effect of certain (configured native methods) to the set of instantiated types.
@@ -51,11 +46,11 @@ class ConfiguredNativeMethodsAnalysis private[analyses] (
 ) extends FPCFAnalysis {
 
     private case class NativeMethodData(
-            cf:                String,
-            m:                 String,
-            desc:              String,
-            instantiatedTypes: Option[Seq[String]],
-            reachableMethods:  Option[Seq[ReachableMethod]]
+        cf:                String,
+        m:                 String,
+        desc:              String,
+        instantiatedTypes: Option[Seq[String]],
+        reachableMethods:  Option[Seq[ReachableMethod]]
     )
 
     private case class ReachableMethod(cf: String, m: String, desc: String)
@@ -150,9 +145,8 @@ class ConfiguredNativeMethodsAnalysis private[analyses] (
                     declaredMethods(classType, classType.packageName, classType, name, descriptor)
                 calleesAndCallers.updateWithCall(declaredMethod, callee, 0)
             }
-            val callees =
-                new ConcreteCallees(calleesAndCallers.callees, IntMap.empty, IntTrieSet.empty)
-            Result(declaredMethod, callees) :: calleesAndCallers.partialResultsForCallers
+            calleesAndCallers.partialResultForCallees(declaredMethod, isIndirect = false) ::
+                calleesAndCallers.partialResultsForCallers
         }
 
         val methodDataO =
@@ -172,7 +166,7 @@ class ConfiguredNativeMethodsAnalysis private[analyses] (
         if (reachableMethodsO.isDefined) {
             val callResults = calleesResults(reachableMethodsO.get)
             if (instantiatedTypesO.isDefined) {
-                Results(callResults ++ instantiatedTypesResult)
+                Results(instantiatedTypesResult.get, callResults)
             } else Results(callResults)
         } else if (instantiatedTypesResult.isDefined) {
             instantiatedTypesResult.get
@@ -183,18 +177,11 @@ class ConfiguredNativeMethodsAnalysis private[analyses] (
 }
 
 object TriggeredConfiguredNativeMethodsAnalysis extends BasicFPCFTriggeredAnalysisScheduler {
+    override def uses: Set[PropertyBounds] =
+        PropertyBounds.ubs(Callees, CallersProperty, InstantiatedTypes)
 
-    override def uses: Set[PropertyBounds] = Set(
-        PropertyBounds.ub(CallersProperty),
-        PropertyBounds.ub(InstantiatedTypes)
-    )
-
-    override def triggeredBy: PropertyKey[CallersProperty] = CallersProperty.key
-
-    override def derivesCollaboratively: Set[PropertyBounds] = Set(
-        PropertyBounds.ub(CallersProperty),
-        PropertyBounds.ub(InstantiatedTypes)
-    )
+    override def derivesCollaboratively: Set[PropertyBounds] =
+        PropertyBounds.ubs(Callees, CallersProperty, InstantiatedTypes)
 
     override def derivesEagerly: Set[PropertyBounds] = Set.empty
 
@@ -203,7 +190,7 @@ object TriggeredConfiguredNativeMethodsAnalysis extends BasicFPCFTriggeredAnalys
     ): ConfiguredNativeMethodsAnalysis = {
         val analysis = new ConfiguredNativeMethodsAnalysis(p)
 
-        ps.registerTriggeredComputation(triggeredBy, analysis.analyze)
+        ps.registerTriggeredComputation(CallersProperty.key, analysis.analyze)
 
         analysis
     }

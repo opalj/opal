@@ -14,6 +14,7 @@ import org.opalj.fpcf.EPS
 import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.InterimEP
 import org.opalj.fpcf.InterimEUBP
+import org.opalj.fpcf.InterimPartialResult
 import org.opalj.fpcf.InterimResult
 import org.opalj.fpcf.InterimUBP
 import org.opalj.fpcf.NoResult
@@ -22,7 +23,6 @@ import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyComputationResult
 import org.opalj.fpcf.PropertyStore
-import org.opalj.fpcf.Result
 import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
@@ -182,8 +182,24 @@ class ThreadRelatedCallsAnalysis private[analyses] (
 
         }
 
+        // todo we need to add the incomplete call sites
+        val calleesResult = PartialResult[DeclaredMethod, Callees](definedMethod, Callees.key, {
+            case _ if state.incompleteCallSites.isEmpty ⇒ None
+            case InterimUBP(ub: Callees) ⇒
+                Some(InterimEUBP(definedMethod, ub.updateWithDirectCallees(IntMap.empty, state.incompleteCallSites)))
+            case _: EPK[_, _] ⇒
+                Some(InterimEUBP(definedMethod, new ConcreteCallees(IntMap.empty, IntMap.empty, state.incompleteCallSites)))
+            case r ⇒
+                throw new IllegalStateException(s"unexpected previous result $r")
+        })
+
+        val calleesInterimResult = if (tacaiEPS.isRefinable)
+            InterimPartialResult(Some(calleesResult), Some(tacaiEPS), continuation(definedMethod))
+        else
+            calleesResult
+
         // partial results for all methods that should be made vm reachable
-        val results: Iterator[ProperPropertyComputationResult] =
+        val vmReachableCallersResults: Iterator[ProperPropertyComputationResult] =
             state.vmReachableMethods.iterator.map { method ⇒
                 PartialResult[DeclaredMethod, CallersProperty](
                     method,
@@ -199,22 +215,7 @@ class ThreadRelatedCallsAnalysis private[analyses] (
                 )
             }
 
-        // todo we need to add the incomplete call sites
-        val c =
-            if (tacaiEPS.isRefinable)
-                InterimResult.forUB(
-                    definedMethod,
-                    new ConcreteCallees(IntMap.empty, IntMap.empty, state.incompleteCallSites),
-                    Some(tacaiEPS),
-                    continuation(definedMethod)
-                )
-            else
-                Result(
-                    definedMethod,
-                    new ConcreteCallees(IntMap.empty, IntMap.empty, state.incompleteCallSites)
-                )
-
-        Results(c, results)
+        Results(calleesInterimResult, vmReachableCallersResults)
     }
 
     /**
@@ -457,17 +458,13 @@ class ThreadRelatedCallsAnalysis private[analyses] (
 
 object TriggeredThreadRelatedCallsAnalysis extends BasicFPCFTriggeredAnalysisScheduler {
 
-    override def uses: Set[PropertyBounds] = Set(
-        PropertyBounds.ub(CallersProperty),
-        PropertyBounds.ub(TACAI)
-    )
+    override def uses: Set[PropertyBounds] =
+        PropertyBounds.ubs(Callees, CallersProperty, TACAI)
 
-    override def derivesCollaboratively: Set[PropertyBounds] = Set(
-        PropertyBounds.ub(CallersProperty)
-    )
+    override def derivesCollaboratively: Set[PropertyBounds] =
+        PropertyBounds.ubs(Callees, CallersProperty)
 
-    override def derivesEagerly: Set[PropertyBounds] =
-        Set(PropertyBounds.ub(Callees))
+    override def derivesEagerly: Set[PropertyBounds] = Set.empty
 
     override def register(
         p: SomeProject, ps: PropertyStore, unused: Null

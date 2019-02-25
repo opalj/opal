@@ -8,8 +8,6 @@ package reflection
 
 import scala.language.existentials
 
-import scala.collection.immutable.IntMap
-
 import org.opalj.log.OPALLogger.error
 import org.opalj.log.OPALLogger.info
 import org.opalj.collection.immutable.IntArraySetBuilder
@@ -21,6 +19,7 @@ import org.opalj.fpcf.EPK
 import org.opalj.fpcf.EPS
 import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.InterimEUBP
+import org.opalj.fpcf.InterimPartialResult
 import org.opalj.fpcf.InterimResult
 import org.opalj.fpcf.NoResult
 import org.opalj.fpcf.PartialResult
@@ -61,7 +60,6 @@ import org.opalj.br.fpcf.cg.properties.NoCallers
 import org.opalj.br.fpcf.properties.SystemProperties
 import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
 import org.opalj.br.fpcf.cg.properties.Callees
-import org.opalj.br.fpcf.cg.properties.ConcreteCallees
 import org.opalj.br.fpcf.cg.properties.NoCallees
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.instructions.INVOKEVIRTUAL
@@ -1361,36 +1359,26 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
         implicit
         state: State
     ): ProperPropertyComputationResult = {
-        var res: List[ProperPropertyComputationResult] =
-            state.calleesAndCallers.partialResultsForCallers
-
-        val calleeUB = if (state.calleesAndCallers.callees.isEmpty)
-            NoCallees
-        else
-            new ConcreteCallees(
-                IntMap.empty,
-                state.calleesAndCallers.callees,
-                state.calleesAndCallers.incompleteCallsites,
-                state.calleesAndCallers.parameters
-            )
 
         val calleesResult =
-            if (state.hasOpenDependee) {
-                InterimResult.forUB(
-                    state.definedMethod,
-                    calleeUB,
+            state.calleesAndCallers.partialResultForCallees(state.definedMethod, isIndirect = true)
+
+        val calleesInterimResult =
+            if (state.hasOpenDependee)
+                InterimPartialResult(
+                    Some(calleesResult),
                     state.systemPropertiesDependee ++ state.tacaiDependee,
                     continuation
                 )
-            } else {
-                Result(state.definedMethod, calleeUB)
-            }
+            else
+                calleesResult
 
-        res ::= calleesResult
+        var results: List[ProperPropertyComputationResult] =
+            state.calleesAndCallers.partialResultsForCallers
 
         // TODO here we should compare to the current loaded classes ub
         if (state.newLoadedClasses.nonEmpty) {
-            res ::= PartialResult[SomeProject, LoadedClasses](project, LoadedClasses.key, {
+            results ::= PartialResult[SomeProject, LoadedClasses](project, LoadedClasses.key, {
                 case InterimEUBP(p, ub) ⇒
                     val newUb = ub.classes ++ state.newLoadedClasses
                     // due to monotonicity:
@@ -1407,7 +1395,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
             })
         }
 
-        Results(res)
+        Results(calleesInterimResult, results)
     }
 }
 

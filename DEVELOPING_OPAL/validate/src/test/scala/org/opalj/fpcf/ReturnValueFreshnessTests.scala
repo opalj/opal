@@ -2,10 +2,6 @@
 package org.opalj
 package fpcf
 
-import org.opalj.br.fpcf.cg.properties.ReflectionRelatedCallees
-import org.opalj.br.fpcf.cg.properties.SerializationRelatedCallees
-import org.opalj.br.fpcf.cg.properties.StandardInvokeCallees
-import org.opalj.br.fpcf.cg.properties.ThreadRelatedIncompleteCallSites
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
@@ -20,7 +16,6 @@ import org.opalj.tac.fpcf.analyses.cg.TriggeredSerializationRelatedCallsAnalysis
 import org.opalj.tac.fpcf.analyses.cg.TriggeredStaticInitializerAnalysis
 import org.opalj.tac.fpcf.analyses.cg.TriggeredThreadRelatedCallsAnalysis
 import org.opalj.tac.fpcf.analyses.cg.reflection.TriggeredReflectionRelatedCallsAnalysis
-import org.opalj.tac.fpcf.analyses.cg.LazyCalleesAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 
 /**
@@ -42,13 +37,7 @@ class ReturnValueFreshnessTests extends PropertiesTest {
         TriggeredReflectionRelatedCallsAnalysis,
         TriggeredSystemPropertiesAnalysis,
         LazyL0BaseAIAnalysis,
-        TACAITransformer,
-        LazyCalleesAnalysis(Set(
-            StandardInvokeCallees,
-            SerializationRelatedCallees,
-            ReflectionRelatedCallees,
-            ThreadRelatedIncompleteCallSites
-        ))
+        TACAITransformer
     )
 
     val analysisSchedulers: Set[FPCFAnalysisScheduler] = Set[FPCFAnalysisScheduler](

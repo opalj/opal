@@ -11,10 +11,6 @@ import org.opalj.br.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
 import org.opalj.br.fpcf.analyses.LazyL0FieldMutabilityAnalysis
 import org.opalj.br.fpcf.analyses.LazyStaticDataUsageAnalysis
 import org.opalj.br.fpcf.analyses.LazyTypeImmutabilityAnalysis
-import org.opalj.br.fpcf.cg.properties.ReflectionRelatedCallees
-import org.opalj.br.fpcf.cg.properties.SerializationRelatedCallees
-import org.opalj.br.fpcf.cg.properties.StandardInvokeCallees
-import org.opalj.br.fpcf.cg.properties.ThreadRelatedIncompleteCallSites
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.ai.domain.l1
 import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
@@ -22,7 +18,6 @@ import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
 import org.opalj.tac.fpcf.analyses.LazyL1FieldMutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.TriggeredSystemPropertiesAnalysis
-import org.opalj.tac.fpcf.analyses.cg.LazyCalleesAnalysis
 import org.opalj.tac.fpcf.analyses.cg.RTACallGraphAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.TriggeredFinalizerAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.TriggeredInstantiatedTypesAnalysis
@@ -88,13 +83,7 @@ class PurityTests extends PropertiesTest {
                     LazyL0BaseAIAnalysis,
                     LazyL1FieldMutabilityAnalysis,
                     LazyClassImmutabilityAnalysis,
-                    LazyTypeImmutabilityAnalysis,
-                    LazyCalleesAnalysis(Set(
-                        StandardInvokeCallees,
-                        SerializationRelatedCallees,
-                        ReflectionRelatedCallees,
-                        ThreadRelatedIncompleteCallSites
-                    ))
+                    LazyTypeImmutabilityAnalysis
                 )
             )
 
@@ -127,13 +116,7 @@ class PurityTests extends PropertiesTest {
                     TriggeredSerializationRelatedCallsAnalysis,
                     TriggeredReflectionRelatedCallsAnalysis,
                     TriggeredSystemPropertiesAnalysis,
-                    TriggeredInstantiatedTypesAnalysis,
-                    LazyCalleesAnalysis(Set(
-                        StandardInvokeCallees,
-                        SerializationRelatedCallees,
-                        ReflectionRelatedCallees,
-                        ThreadRelatedIncompleteCallSites
-                    ))
+                    TriggeredInstantiatedTypesAnalysis
                 )
             )
 
