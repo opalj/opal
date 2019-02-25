@@ -278,11 +278,12 @@ sealed class ConcreteCallees(
             _incompleteCallSites ++ incompleteCallSites,
             _indirectCallParameters.unionWith(
                 indirectCallParameters,
-                (_, r, l) ⇒
+                (_, r, l) ⇒ {
                     r.unionWith(
                         l,
                         (_, _, _) ⇒ throw new UnknownError("Indirect callee derived by two analyses")
                     )
+                }
             )
         )
     }

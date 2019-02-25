@@ -24,8 +24,9 @@ import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.fpcf.cg.properties.Callees
 import org.opalj.br.fpcf.cg.properties.CallersProperty
 import org.opalj.br.fpcf.cg.properties.ConcreteCallees
+import org.opalj.br.fpcf.cg.properties.NoCallees
 
-private[cg] class CalleesAndCallers(
+class CalleesAndCallers(
         //IMPROVE: mutable map for performance
         private[this] var _callees: IntMap[IntTrieSet] = IntMap.empty
 ) {
@@ -43,10 +44,6 @@ private[cg] class CalleesAndCallers(
         _partialResultsForCallers
     }
 
-    private[cg] def clearPartialResultsForCallers(): Unit = {
-        _partialResultsForCallers = Nil
-    }
-
     private[cg] def parameters: IntMap[IntMap[Seq[Option[(ValueInformation, IntTrieSet)]]]] =
         _parameters
 
@@ -54,13 +51,16 @@ private[cg] class CalleesAndCallers(
         dm: DeclaredMethod, isIndirect: Boolean
     ): PartialResult[DeclaredMethod, Callees] = {
         PartialResult[DeclaredMethod, Callees](dm, Callees.key, {
-            case _ if _callees.isEmpty ⇒ None
+            case InterimUBP(_: Callees) if _callees.isEmpty && _incompleteCallsites.isEmpty ⇒
+                None
             case InterimUBP(ub: Callees) if isIndirect ⇒
                 Some(InterimEUBP(dm, ub.updateWithIndirectCallees(_callees, _incompleteCallsites, _parameters)))
             case InterimUBP(ub: Callees) ⇒
                 Some(InterimEUBP(dm, ub.updateWithDirectCallees(_callees, _incompleteCallsites)))
+            case _: EPK[_, _] if _callees.isEmpty && _incompleteCallsites.isEmpty ⇒
+                Some(InterimEUBP(dm, NoCallees))
             case _: EPK[_, _] if isIndirect ⇒
-                Some(InterimEUBP(dm, new ConcreteCallees(IntMap.empty, _callees, _incompleteCallsites, null)))
+                Some(InterimEUBP(dm, new ConcreteCallees(IntMap.empty, _callees, _incompleteCallsites, _parameters)))
             case _: EPK[_, _] ⇒
                 Some(InterimEUBP(dm, new ConcreteCallees(_callees, IntMap.empty, _incompleteCallsites)))
             case r ⇒
