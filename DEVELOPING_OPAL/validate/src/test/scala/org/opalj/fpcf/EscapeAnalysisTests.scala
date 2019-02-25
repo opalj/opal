@@ -5,13 +5,11 @@ import java.net.URL
 
 import org.opalj.br.analyses.Project
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
-import org.opalj.br.fpcf.cg.properties.StandardInvokeCallees
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.ai.domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse
 import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.tac.fpcf.analyses.TACAITransformer
-import org.opalj.tac.fpcf.analyses.cg.LazyCalleesAnalysis
 import org.opalj.tac.fpcf.analyses.cg.RTACallGraphAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.TriggeredInstantiatedTypesAnalysis
 import org.opalj.tac.fpcf.analyses.cg.TriggeredLoadedClassesAnalysis
@@ -34,8 +32,7 @@ class EscapeAnalysisTests extends PropertiesTest {
         TriggeredInstantiatedTypesAnalysis,
         TriggeredLoadedClassesAnalysis,
         LazyL0BaseAIAnalysis,
-        TACAITransformer,
-        LazyCalleesAnalysis(Set(StandardInvokeCallees))
+        TACAITransformer
     )
 
     override def init(p: Project[URL]): Unit = {

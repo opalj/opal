@@ -7,17 +7,12 @@ import java.net.URL
 import org.opalj.br.analyses.Project
 import org.opalj.br.fpcf.analyses.EagerL0FieldMutabilityAnalysis
 import org.opalj.br.fpcf.analyses.LazyUnsoundPrematurelyReadFieldsAnalysis
-import org.opalj.br.fpcf.cg.properties.ReflectionRelatedCallees
-import org.opalj.br.fpcf.cg.properties.SerializationRelatedCallees
-import org.opalj.br.fpcf.cg.properties.StandardInvokeCallees
-import org.opalj.br.fpcf.cg.properties.ThreadRelatedIncompleteCallSites
 import org.opalj.ai.domain.l2
 import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.tac.fpcf.analyses.TriggeredSystemPropertiesAnalysis
 import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis
 import org.opalj.tac.fpcf.analyses.TACAITransformer
-import org.opalj.tac.fpcf.analyses.cg.LazyCalleesAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.EagerL2FieldMutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.cg.RTACallGraphAnalysisScheduler
@@ -82,15 +77,7 @@ class FieldMutabilityTests extends PropertiesTest {
                 LazyL0BaseAIAnalysis,
                 TACAITransformer,
                 LazyUnsoundPrematurelyReadFieldsAnalysis,
-                LazyInterProceduralEscapeAnalysis,
-                LazyCalleesAnalysis(
-                    Set(
-                        StandardInvokeCallees,
-                        SerializationRelatedCallees,
-                        ReflectionRelatedCallees,
-                        ThreadRelatedIncompleteCallSites
-                    )
-                )
+                LazyInterProceduralEscapeAnalysis
             )
         )
         as.propertyStore.shutdown()
@@ -114,13 +101,7 @@ class FieldMutabilityTests extends PropertiesTest {
                 LazyL2PurityAnalysis,
                 LazyInterProceduralEscapeAnalysis,
                 LazyL0BaseAIAnalysis,
-                TACAITransformer,
-                LazyCalleesAnalysis(Set(
-                    StandardInvokeCallees,
-                    SerializationRelatedCallees,
-                    ReflectionRelatedCallees,
-                    ThreadRelatedIncompleteCallSites
-                ))
+                TACAITransformer
             )
         )
         as.propertyStore.shutdown()

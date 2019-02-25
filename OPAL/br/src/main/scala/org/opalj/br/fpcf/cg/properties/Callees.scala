@@ -138,11 +138,11 @@ sealed trait Callees extends Property with CalleesPropertyMetaInformation {
         callee: DeclaredMethod
     )(implicit propertyStore: PropertyStore): Seq[Option[(ValueInformation, IntTrieSet)]]
 
-    private[cg] def updateWithDirectCallees(
+    def updateWithDirectCallees(
         callees: IntMap[IntTrieSet], incompleteCallSites: IntTrieSet
     ): Callees
 
-    private[cg] def updateWithIndirectCallees(
+    def updateWithIndirectCallees(
         callees:                IntMap[IntTrieSet],
         incompleteCallSites:    IntTrieSet,
         indirectCallParameters: IntMap[IntMap[Seq[Option[(ValueInformation, IntTrieSet)]]]]
@@ -255,7 +255,7 @@ sealed class ConcreteCallees(
         _indirectCallParameters(pc)(method.id)
     }
 
-    override private[cg] def updateWithDirectCallees(
+    override def updateWithDirectCallees(
         callees:             IntMap[PCs],
         incompleteCallSites: PCs
     ): ConcreteCallees = {
@@ -267,7 +267,7 @@ sealed class ConcreteCallees(
         )
     }
 
-    override private[cg] def updateWithIndirectCallees(
+    override def updateWithIndirectCallees(
         callees:                IntMap[PCs],
         incompleteCallSites:    PCs,
         indirectCallParameters: IntMap[IntMap[Seq[Option[(ValueInformation, PCs)]]]]
@@ -347,14 +347,14 @@ object NoCallees extends Callees {
         propertyStore: PropertyStore
     ): Seq[Option[(ValueInformation, IntTrieSet)]] = Seq.empty
 
-    override private[cg] def updateWithDirectCallees(
+    override def updateWithDirectCallees(
         callees:             IntMap[PCs],
         incompleteCallSites: PCs
     ): ConcreteCallees = {
         new ConcreteCallees(callees, IntMap.empty, incompleteCallSites, IntMap.empty)
     }
 
-    override private[cg] def updateWithIndirectCallees(
+    override def updateWithIndirectCallees(
         callees:                IntMap[PCs],
         incompleteCallSites:    PCs,
         indirectCallParameters: IntMap[IntMap[Seq[Option[(ValueInformation, PCs)]]]]
@@ -421,12 +421,12 @@ object NoCalleesDueToNotReachableMethod extends Callees {
         implicit
         propertyStore: PropertyStore
     ): Seq[Option[(ValueInformation, IntTrieSet)]] = Seq.empty
-    override private[cg] def updateWithDirectCallees(
+    override def updateWithDirectCallees(
         callees:             IntMap[PCs],
         incompleteCallSites: PCs
     ): Callees = throw new IllegalStateException("Unreachable methods can't be updated!")
 
-    override private[cg] def updateWithIndirectCallees(
+    override def updateWithIndirectCallees(
         callees:                IntMap[PCs],
         incompleteCallSites:    PCs,
         indirectCallParameters: IntMap[IntMap[Seq[Option[(ValueInformation, PCs)]]]]

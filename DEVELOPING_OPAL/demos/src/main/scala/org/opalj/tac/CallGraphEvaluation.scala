@@ -16,9 +16,6 @@ import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ReportableAnalysisResult
 import org.opalj.br.fpcf.PropertyStoreKey
-import org.opalj.br.fpcf.cg.properties.ReflectionRelatedCallees
-import org.opalj.br.fpcf.cg.properties.SerializationRelatedCallees
-import org.opalj.br.fpcf.cg.properties.StandardInvokeCallees
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.DeclaredMethods
@@ -136,9 +133,9 @@ object CallGraphEvaluation extends DefaultOneStepAnalysis {
         var numEdges = cg.numEdges
         val reachableMethods = cg.reachableMethods().toTraversable
 
-        var numStandardEdges = 0
-        var numReflectiveEdges = 0
-        var numSerializationEdges = 0
+        val numStandardEdges = 0
+        val numReflectiveEdges = 0
+        val numSerializationEdges = 0
         var numThreadEdges = 0
 
         val ps = p.get(PropertyStoreKey)

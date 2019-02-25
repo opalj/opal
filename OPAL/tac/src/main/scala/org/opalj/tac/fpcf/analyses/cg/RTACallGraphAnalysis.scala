@@ -23,16 +23,16 @@ import org.opalj.fpcf.EPK
 import org.opalj.fpcf.EPS
 import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.InterimEUBP
+import org.opalj.fpcf.InterimPartialResult
 import org.opalj.fpcf.InterimResult
 import org.opalj.fpcf.InterimUBP
 import org.opalj.fpcf.NoResult
-import org.opalj.fpcf.PartialResult
+import org.opalj.fpcf.OnUpdateContinuation
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.Property
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyComputationResult
 import org.opalj.fpcf.PropertyStore
-import org.opalj.fpcf.Result
 import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
@@ -58,7 +58,6 @@ import org.opalj.br.fpcf.cg.properties.InstantiatedTypes
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.FPCFTriggeredAnalysisScheduler
 import org.opalj.br.fpcf.cg.properties.Callees
-import org.opalj.br.fpcf.cg.properties.ConcreteCallees
 import org.opalj.br.fpcf.cg.properties.NoCallees
 import org.opalj.tac.fpcf.properties.TACAI
 
@@ -105,8 +104,11 @@ class RTAState private (
         _calleesAndCallers.addIncompleteCallsite(pc)
     }
 
-    private[cg] def partialResultsForCallers: List[PartialResult[DeclaredMethod, CallersProperty]] = {
-        _calleesAndCallers.partialResultsForCallers
+    private[cg] def results(c: OnUpdateContinuation): Results = {
+        val calleesResult = _calleesAndCallers.partialResultForCallees(method, isIndirect = false)
+        val calleesInterimResult = if (virtualCallSites.isEmpty || !hasOpenDependees) calleesResult
+        else InterimPartialResult(Some(calleesResult), dependees(), c)
+        Results(calleesInterimResult, _calleesAndCallers.partialResultsForCallers)
     }
 
     private[cg] def clearPartialResultsForCallers(): Unit = {
@@ -159,11 +161,11 @@ class RTAState private (
         _instantiatedTypesDependee
     }
 
-    private[cg] def hasOpenDependees: Boolean = {
+    private def hasOpenDependees: Boolean = {
         _tacDependee.isDefined || _instantiatedTypesDependee.isDefined
     }
 
-    private[cg] def dependees(): Iterable[EOptionP[Entity, Property]] = {
+    private def dependees(): Iterable[EOptionP[Entity, Property]] = {
         _tacDependee ++ _instantiatedTypesDependee
     }
 
@@ -288,7 +290,7 @@ class RTACallGraphAnalysis private[analyses] ( final val project: SomeProject) e
 
         // the number of types, already seen by the analysis
         val numTypesProcessed = instantiatedTypesUB.size
-        implicit val newState = state.copy(
+        implicit val newState: RTAState = state.copy(
             numTypesProcessed = numTypesProcessed,
             instantiatedTypesDependee = instantiatedTypesDependee
         )
@@ -647,9 +649,7 @@ class RTACallGraphAnalysis private[analyses] ( final val project: SomeProject) e
     }
 
     private[this] def returnResult(implicit state: RTAState): ProperPropertyComputationResult = {
-        val results = Results(
-            resultForStandardInvokeCallees(state) :: state.partialResultsForCallers
-        )
+        val results = state.results(c(state))
         state.clearPartialResultsForCallers()
         results
     }
@@ -681,29 +681,6 @@ class RTACallGraphAnalysis private[analyses] ( final val project: SomeProject) e
                 returnResult(state)
         }
     }
-
-    private[this] def resultForStandardInvokeCallees(
-        state: RTAState
-    ): ProperPropertyComputationResult = {
-
-        // here we need a immutable copy of the current state
-        val newCallees =
-            if (state.callees.isEmpty && state.incompleteCallSites.isEmpty)
-                NoCallees
-            else
-                new ConcreteCallees(state.callees, IntMap.empty, state.incompleteCallSites)
-
-        if (state.virtualCallSites.isEmpty || !state.hasOpenDependees) {
-            Result(state.method, newCallees)
-        } else {
-            InterimResult.forUB(
-                state.method,
-                newCallees,
-                state.dependees(),
-                c(state)
-            )
-        }
-    }
 }
 
 object RTACallGraphAnalysisScheduler extends FPCFTriggeredAnalysisScheduler {
@@ -712,13 +689,15 @@ object RTACallGraphAnalysisScheduler extends FPCFTriggeredAnalysisScheduler {
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(
         InstantiatedTypes,
+        Callees,
         CallersProperty,
         TACAI
     )
 
-    override def derivesCollaboratively: Set[PropertyBounds] = PropertyBounds.ubs(CallersProperty)
+    override def derivesCollaboratively: Set[PropertyBounds] =
+        PropertyBounds.ubs(Callees, CallersProperty)
 
-    override def derivesEagerly: Set[PropertyBounds] = PropertyBounds.ubs(Callees)
+    override def derivesEagerly: Set[PropertyBounds] = Set.empty
 
     /**
      * Updates the caller properties of the initial entry points
