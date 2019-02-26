@@ -119,13 +119,13 @@ abstract class AbstractStringInterpreter(
     protected def evaluateParameters(
         params:   List[Seq[Expr[V]]],
         iHandler: InterproceduralInterpretationHandler
-    ): List[Seq[StringConstancyInformation]] = params.map(_.map { expr ⇒
+    ): ListBuffer[ListBuffer[StringConstancyInformation]] = params.map(_.map { expr ⇒
         val scis = expr.asVar.definedBy.map(iHandler.processDefSite(_, List())).map { r ⇒
             // TODO: Current assumption: Results of parameters are available right away
             StringConstancyProperty.extractFromPPCR(r).stringConstancyInformation
         }
         StringConstancyInformation.reduceMultiple(scis)
-    })
+    }.to[ListBuffer]).to[ListBuffer]
 
     /**
      *
