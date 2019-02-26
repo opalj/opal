@@ -128,7 +128,12 @@ class PathTransformer(val interpretationHandler: InterpretationHandler) {
         resetExprHandler: Boolean                                          = true
     ): StringTree = {
         val tree = path.elements.size match {
-            case 1 ⇒ pathToTreeAcc(path.elements.head, fpe2Sci).get
+            case 1 ⇒
+                // It might be that for some expressions, a neutral element is produced which is
+                // filtered out by pathToTreeAcc; return the lower bound in such cases
+                pathToTreeAcc(path.elements.head, fpe2Sci).getOrElse(
+                    StringTreeConst(StringConstancyProperty.lb.stringConstancyInformation)
+                )
             case _ ⇒
                 val concatElement = StringTreeConcat(
                     path.elements.map { ne ⇒
