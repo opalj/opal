@@ -145,8 +145,11 @@ class InterproceduralStringAnalysis(
 
         // In case a parameter is required for approximating a string, retrieve callers information
         // (but only once)
-        state.params = InterproceduralStringAnalysis.getParams(state.entity)
-        if (state.callers == null && state.params.isEmpty) {
+        if (state.params.isEmpty) {
+            state.params = InterproceduralStringAnalysis.getParams(state.entity)
+        }
+        if (state.entity._2.parameterTypes.length > 0 &&
+            state.callers == null && state.params.isEmpty) {
             val declaredMethods = project.get(DeclaredMethodsKey)
             val dm = declaredMethods.declaredMethods.filter { dm ⇒
                 dm.name == state.entity._2.name &&
@@ -155,7 +158,15 @@ class InterproceduralStringAnalysis(
             val callersEOptP = ps(dm, CallersProperty.key)
             if (callersEOptP.hasUBP) {
                 state.callers = callersEOptP.ub
-                registerParams(state, tacProvider)
+                if (!registerParams(state, tacProvider)) {
+                    return InterimResult(
+                        state.entity,
+                        StringConstancyProperty.lb,
+                        StringConstancyProperty.ub,
+                        state.dependees,
+                        continuation(state)
+                    )
+                }
             } else {
                 state.dependees = callersEOptP :: state.dependees
                 return InterimResult(
@@ -167,7 +178,18 @@ class InterproceduralStringAnalysis(
                 )
             }
         }
-        state.params = InterproceduralStringAnalysis.getParams(state.entity)
+
+        if (state.parameterDependeesCount > 0) {
+            return InterimResult(
+                state.entity,
+                StringConstancyProperty.lb,
+                StringConstancyProperty.ub,
+                state.dependees,
+                continuation(state)
+            )
+        } else {
+            state.isSetupCompleted = true
+        }
 
         // sci stores the final StringConstancyInformation (if it can be determined now at all)
         var sci = StringConstancyProperty.lb.stringConstancyInformation
@@ -175,7 +197,8 @@ class InterproceduralStringAnalysis(
 
         // Interpret a function / method parameter using the parameter information in state
         if (defSites.head < 0) {
-            val r = state.iHandler.processDefSite(defSites.head, state.params)
+            state.computedLeanPath = Path(List(FlatPathElement(defSites.head)))
+            val r = state.iHandler.processDefSite(defSites.head, state.params.toList)
             return Result(state.entity, StringConstancyProperty.extractFromPPCR(r))
         }
 
@@ -326,8 +349,22 @@ class InterproceduralStringAnalysis(
             }
             case StringConstancyProperty.key ⇒
                 eps match {
-                    case FinalP(p) ⇒
-                        processFinalP(state, eps.e, p)
+                    case FinalP(p: StringConstancyProperty) ⇒
+                        val resultEntity = eps.e.asInstanceOf[P]
+                        // If necessary, update parameter information
+                        if (state.paramResultPositions.contains(resultEntity)) {
+                            val pos = state.paramResultPositions(resultEntity)
+                            state.params(pos._1)(pos._2) = p.stringConstancyInformation
+                            state.paramResultPositions.remove(resultEntity)
+                            state.parameterDependeesCount -= 1
+                            state.dependees = state.dependees.filter(_.e != eps.e)
+                        }
+
+                        if (state.isSetupCompleted && state.parameterDependeesCount == 0) {
+                            processFinalP(state, eps.e, p)
+                        } else {
+                            determinePossibleStrings(state)
+                        }
                     case InterimLUBP(lb, ub) ⇒
                         state.dependees = state.dependees.filter(_.e != eps.e)
                         state.dependees = eps :: state.dependees
@@ -413,12 +450,11 @@ class InterproceduralStringAnalysis(
     private def registerParams(
         state: InterproceduralComputationState,
         tacProvider: Method ⇒ TACode[TACMethodParameter, DUVar[ValueInformation]]
-    ): Unit = {
-        val paramsSci = ListBuffer[ListBuffer[StringConstancyInformation]]()
-        state.callers.callers(declaredMethods).foreach {
-            case (m, pc) ⇒
+    ): Boolean = {
+        var hasIntermediateResult = false
+        state.callers.callers(declaredMethods).toSeq.zipWithIndex.foreach {
+            case ((m, pc), methodIndex) ⇒
                 val tac = propertyStore(m.definedMethod, TACAI.key).ub.tac.get
-                paramsSci.append(ListBuffer())
                 val params = tac.stmts(tac.pcToIndex(pc)) match {
                     case Assignment(_, _, fc: FunctionCall[V]) ⇒ fc.params
                     case Assignment(_, _, mc: MethodCall[V]) ⇒ mc.params
@@ -427,25 +463,40 @@ class InterproceduralStringAnalysis(
                     case mc: MethodCall[V] ⇒ mc.params
                     case _ ⇒ List()
                 }
-                params.foreach { p ⇒
-                    val iHandler = InterproceduralInterpretationHandler(
-                        tac.cfg,
-                        propertyStore,
-                        declaredMethods,
-                        state,
-                        continuation(state)
-                    )
-                    val defSite = p.asVar.definedBy.head
-                    val prop = StringConstancyProperty.extractFromPPCR(
-                        iHandler.processDefSite(defSite)
-                    )
-                    // We have to remove the element (it was added during the processDefSite call)
-                    // as otherwise false information might be stored and used
-                    state.fpe2sci.remove(defSite)
-                    paramsSci.last.append(prop.stringConstancyInformation)
+                params.zipWithIndex.foreach { case (p, paramIndex) ⇒
+                    // Add an element to the params list (we do it here because we know how many
+                    // parameters there are)
+                    if (state.params.length <= methodIndex) {
+                        state.params.append(params.indices.map(_ ⇒
+                            StringConstancyInformation.getNeutralElement
+                        ).to[ListBuffer])
+                    }
+                    // Recursively analyze supported types
+                    if (InterproceduralStringAnalysis.isSupportedType(p.asVar)) {
+                        val paramEntity = (p.asVar, m.definedMethod)
+                        val eps = propertyStore(paramEntity, StringConstancyProperty.key)
+                        state.var2IndexMapping(paramEntity._1) = paramIndex
+                        eps match {
+                            case FinalP(r) ⇒
+                                state.params(methodIndex)(paramIndex) = r.stringConstancyInformation
+                            case _ ⇒
+                                state.dependees = eps :: state.dependees
+                                hasIntermediateResult = true
+                                state.paramResultPositions(paramEntity) = (methodIndex, paramIndex)
+                                state.parameterDependeesCount += 1
+                        }
+                    } else {
+                        state.params(methodIndex)(paramIndex) =
+                            StringConstancyProperty.lb.stringConstancyInformation
+                    }
+
                 }
         }
-        InterproceduralStringAnalysis.registerParams(state.entity, paramsSci.toList)
+        // If all parameters could already be determined, register them
+        if (!hasIntermediateResult) {
+            InterproceduralStringAnalysis.registerParams(state.entity, state.params)
+        }
+        !hasIntermediateResult
     }
 
     /**
@@ -466,7 +517,7 @@ class InterproceduralStringAnalysis(
         p.elements.foreach {
             case FlatPathElement(index) ⇒
                 if (!state.fpe2sci.contains(index)) {
-                    state.iHandler.processDefSite(index, state.params) match {
+                    state.iHandler.processDefSite(index, state.params.toList) match {
                         case r: Result ⇒ state.appendResultToFpe2Sci(index, r, reset = true)
                         case _         ⇒ hasFinalResult = false
                     }
@@ -578,9 +629,9 @@ object InterproceduralStringAnalysis {
      * insensitive, we have a list of lists to capture all parameters of all potential method /
      * function calls.
      */
-    private val paramInfos = mutable.Map[Entity, ListBuffer[Seq[StringConstancyInformation]]]()
+    private val paramInfos = mutable.Map[Entity, ListBuffer[ListBuffer[StringConstancyInformation]]]()
 
-    def registerParams(e: Entity, scis: List[Seq[StringConstancyInformation]]): Unit = {
+    def registerParams(e: Entity, scis: ListBuffer[ListBuffer[StringConstancyInformation]]): Unit = {
         if (!paramInfos.contains(e)) {
             paramInfos(e) = ListBuffer(scis: _*)
         } else {
@@ -590,11 +641,32 @@ object InterproceduralStringAnalysis {
 
     def unregisterParams(e: Entity): Unit = paramInfos.remove(e)
 
-    def getParams(e: Entity): List[Seq[StringConstancyInformation]] =
+    def getParams(e: Entity): ListBuffer[ListBuffer[StringConstancyInformation]] =
         if (paramInfos.contains(e)) {
-            paramInfos(e).toList
+            paramInfos(e)
         } else {
-            List()
+            ListBuffer()
+        }
+
+    /**
+     * Checks whether a value of some type is supported by the [[InterproceduralStringAnalysis]].
+     * Currently supported types are, java.lang.String and the primitive types short, int, float,
+     * and double.
+     *
+     * @param v The value to check if it is supported.
+     * @return Returns `true` if `v` is a supported type and `false` otherwise.
+     */
+    def isSupportedType(v: V): Boolean =
+        if (v.value.isPrimitiveValue) {
+            val primTypeName = v.value.asPrimitiveValue.primitiveType.toJava
+            primTypeName == "short" || primTypeName == "int" || primTypeName == "float" ||
+                primTypeName == "double"
+        } else {
+            try {
+                v.value.verificationTypeInfo.asObjectVariableInfo.clazz.toJava == "java.lang.String"
+            } catch {
+                case _: Exception ⇒ false
+            }
         }
 
 }

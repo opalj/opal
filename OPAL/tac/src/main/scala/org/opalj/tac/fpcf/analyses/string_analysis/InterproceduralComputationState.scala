@@ -48,10 +48,28 @@ case class InterproceduralComputationState(entity: P) {
     val var2IndexMapping: mutable.Map[V, Int] = mutable.Map()
     // A mapping from values / indices of FlatPathElements to StringConstancyInformation
     val fpe2sci: mutable.Map[Int, ListBuffer[StringConstancyInformation]] = mutable.Map()
+    /**
+     * An analysis may depend on the evaluation of its parameters. This number indicates how many
+     * of such dependencies are still to be computed.
+     */
+    var parameterDependeesCount = 0
+    /**
+     * Indicates whether the basic setup of the string analysis is done. This value is to be set to
+     * `true`, when all necessary dependees and parameters are available.
+     */
+    var isSetupCompleted = false
+    /**
+     * It might be that the result of parameters, which have to be evaluated, is not available right
+     * away. Later on, when the result is available, it is necessary to map it to the right
+     * position; this map stores this information. The key is the entity, with which the String
+     * Analysis was started recursively; the value is a pair where the first value indicates the
+     * index of the method and the second value the position of the parameter.
+     */
+    val paramResultPositions: mutable.Map[P, (Int, Int)] = mutable.Map()
     // Parameter values of a method / function. The structure of this field is as follows: Each item
     // in the outer list holds the parameters of a concrete call. A mapping from the definition
     // sites of parameter (negative values) to a correct index of `params` has to be made!
-    var params: List[Seq[StringConstancyInformation]] = List()
+    var params: ListBuffer[ListBuffer[StringConstancyInformation]] = ListBuffer()
 
     /**
      * Takes a definition site as well as a result and extends the [[fpe2sci]] map accordingly,
