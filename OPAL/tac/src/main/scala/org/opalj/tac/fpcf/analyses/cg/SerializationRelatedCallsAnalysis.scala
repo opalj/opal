@@ -36,7 +36,6 @@ import org.opalj.br.ObjectType.{ObjectInputStream ⇒ ObjectInputStreamType}
 import org.opalj.br.fpcf.cg.properties.Callees
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.TheTACAI
-import org.opalj.tac.VirtualFunctionCall
 
 trait APIBasedCallGraphAnalysis extends FPCFAnalysis {
     val apiMethod: DeclaredMethod

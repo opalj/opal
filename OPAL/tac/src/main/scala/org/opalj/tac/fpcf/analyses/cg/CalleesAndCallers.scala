@@ -25,6 +25,7 @@ import org.opalj.br.fpcf.cg.properties.Callees
 import org.opalj.br.fpcf.cg.properties.CallersProperty
 import org.opalj.br.fpcf.cg.properties.ConcreteCallees
 import org.opalj.br.fpcf.cg.properties.NoCallees
+import org.opalj.br.fpcf.cg.properties.OnlyVMLevelCallers
 
 class CalleesAndCallers(
         //IMPROVE: mutable map for performance
@@ -173,6 +174,57 @@ class CalleesAndCallers(
                 Some(InterimEUBP(
                     callee,
                     new CallersOnlyWithConcreteCallers(set)
+                ))
+
+            case r ⇒
+                throw new IllegalStateException(s"unexpected previous result $r")
+        })
+    }
+}
+
+class VMReachableMethods() {
+    private[this] var vmReachableMethods: Set[DeclaredMethod] = Set.empty
+    private[this] var incompleteCallSites: IntTrieSet = IntTrieSet.empty
+
+    def addIncompleteCallSite(pc: Int): Unit = incompleteCallSites += pc
+    def addVMReachableMethod(declaredMethod: DeclaredMethod): Unit =
+        vmReachableMethods += declaredMethod
+
+    def partialResultsForCallers: Traversable[PartialResult[DeclaredMethod, CallersProperty]] = {
+        vmReachableMethods.map { m ⇒
+            PartialResult[DeclaredMethod, CallersProperty](m, CallersProperty.key, {
+                case _: EPK[_, _] ⇒
+                    Some(InterimEUBP(m, OnlyVMLevelCallers))
+
+                case InterimUBP(ub: CallersProperty) ⇒
+                    if (ub.hasVMLevelCallers)
+                        None
+                    else
+                        Some(InterimEUBP(m, ub.updatedWithVMLevelCall()))
+
+                case r ⇒
+                    throw new IllegalStateException(s"unexpected previous result $r")
+
+            })
+        }
+    }
+
+    def partialResultForCallees(dm: DeclaredMethod): PartialResult[DeclaredMethod, Callees] = {
+        PartialResult(dm, Callees.key, {
+            case _: EPK[_, _] ⇒
+                if (incompleteCallSites.isEmpty)
+                    Some(InterimEUBP(dm, NoCallees))
+                else
+                    Some(InterimEUBP(
+                        dm,
+                        new ConcreteCallees(IntMap.empty, IntMap.empty, incompleteCallSites)
+                    ))
+
+            case InterimUBP(ub: Callees) ⇒
+                if (incompleteCallSites.isEmpty) None
+                else Some(InterimEUBP(
+                    dm,
+                    ub.updateWithDirectCallees(IntMap.empty, incompleteCallSites)
                 ))
 
             case r ⇒
