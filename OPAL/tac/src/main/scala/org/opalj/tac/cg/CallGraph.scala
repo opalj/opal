@@ -51,7 +51,7 @@ class CallGraph private[cg] ()(implicit ps: PropertyStore, declaredMethods: Decl
         ps(m, Callees.key).ub.incompleteCallSites
     }
 
-    def callersOf(m: DeclaredMethod): TraversableOnce[(DeclaredMethod, Int)] = {
+    def callersOf(m: DeclaredMethod): TraversableOnce[(DeclaredMethod, Int, Boolean)] = {
         ps(m, CallersProperty.key).ub.callers
     }
 

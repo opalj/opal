@@ -96,7 +96,7 @@ class InstantiatedTypesAnalysis private[analyses] (
     ): PropertyComputationResult = {
         var newSeenSuperCallers = seenSuperCallers
         for {
-            (caller, _) ← callersUB.callers
+            (caller, _, _) ← callersUB.callers
             // if we already analyzed the caller, we do not need to do it twice
             // note, that this is only needed for the continuation
             if !newSeenSuperCallers.contains(caller)

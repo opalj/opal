@@ -135,18 +135,17 @@ class ConfiguredNativeMethodsAnalysis private[analyses] (
          */
         def calleesResults(
             reachableMethods: Seq[ReachableMethod]
-        ): List[ProperPropertyComputationResult] = {
-            val calleesAndCallers = new CalleesAndCallers()
+        ): TraversableOnce[ProperPropertyComputationResult] = {
+            val calleesAndCallers = new DirectCalls()
             for (reachableMethod ← reachableMethods) {
                 val classType = ObjectType(reachableMethod.cf)
                 val name = reachableMethod.m
                 val descriptor = MethodDescriptor(reachableMethod.desc)
                 val callee =
                     declaredMethods(classType, classType.packageName, classType, name, descriptor)
-                calleesAndCallers.updateWithCall(declaredMethod, callee, 0)
+                calleesAndCallers.addCall(declaredMethod, callee, 0)
             }
-            calleesAndCallers.partialResultForCallees(declaredMethod, isIndirect = false) ::
-                calleesAndCallers.partialResultsForCallers
+            calleesAndCallers.partialResults(declaredMethod)
         }
 
         val methodDataO =

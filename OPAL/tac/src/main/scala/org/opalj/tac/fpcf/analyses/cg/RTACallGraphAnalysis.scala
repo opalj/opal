@@ -233,14 +233,14 @@ class RTACallGraphAnalysis private[analyses] ( final val project: SomeProject) e
         val state = RTAState(declaredMethod.asDefinedMethod, tacEP)
 
         if (tacEP.hasUBP && tacEP.ub.tac.isDefined)
-            processMethod(state, new CalleesAndCallers())
+            processMethod(state, new DirectCalls())
         else {
             InterimPartialResult(Seq(tacEP), c(state))
         }
     }
 
     private[this] def processMethod(
-        state: RTAState, calleesAndCallers: CalleesAndCallers
+        state: RTAState, calleesAndCallers: DirectCalls
     ): ProperPropertyComputationResult = {
         val tac = state.tac().get
 
@@ -277,7 +277,7 @@ class RTACallGraphAnalysis private[analyses] ( final val project: SomeProject) e
     def handleStmts(
         tac:                 TACode[TACMethodParameter, V],
         instantiatedTypesUB: UIDSet[ObjectType],
-        calleesAndCallers:   CalleesAndCallers
+        calleesAndCallers:   DirectCalls
     // (callees map, virtual call sites)
     )(
         implicit
@@ -343,19 +343,19 @@ class RTACallGraphAnalysis private[analyses] ( final val project: SomeProject) e
                 )
 
             case Assignment(_, _, idc: InvokedynamicFunctionCall[V]) ⇒
-                calleesAndCallers.addIncompleteCallsite(idc.pc)
+                calleesAndCallers.addIncompleteCallSite(idc.pc)
                 logOnce(
                     Warn("analysis - call graph construction", s"unresolved invokedynamic: $idc")
                 )
 
             case ExprStmt(_, idc: InvokedynamicFunctionCall[V]) ⇒
-                calleesAndCallers.addIncompleteCallsite(idc.pc)
+                calleesAndCallers.addIncompleteCallSite(idc.pc)
                 logOnce(
                     Warn("analysis - call graph construction", s"unresolved invokedynamic: $idc")
                 )
 
-            case idc @ InvokedynamicMethodCall(pc, _, _, _, _) ⇒
-                calleesAndCallers.addIncompleteCallsite(idc.pc)
+            case idc: InvokedynamicMethodCall[_] ⇒
+                calleesAndCallers.addIncompleteCallSite(idc.pc)
                 logOnce(
                     Warn("analysis - call graph construction", s"unresolved invokedynamic: $idc")
                 )
@@ -372,7 +372,7 @@ class RTACallGraphAnalysis private[analyses] ( final val project: SomeProject) e
         runtimeReceiverType: ReferenceType,
         packageName:         String,
         pc:                  Int,
-        calleesAndCallers:   CalleesAndCallers
+        calleesAndCallers:   DirectCalls
     ): Unit = {
         val declaringClassType = callDeclaringClass.mostPreciseObjectType
         val runtimeType = runtimeReceiverType.mostPreciseObjectType
@@ -386,15 +386,15 @@ class RTACallGraphAnalysis private[analyses] ( final val project: SomeProject) e
         )
 
         if (declTgt.isVirtualOrHasSingleDefinedMethod) {
-            calleesAndCallers.updateWithCall(caller, declTgt, pc)
+            calleesAndCallers.addCall(caller, declTgt, pc)
         } else {
             declTgt.definedMethods foreach { m ⇒
                 val dm = declaredMethods(m)
-                calleesAndCallers.updateWithCall(caller, dm, pc)
+                calleesAndCallers.addCall(caller, dm, pc)
             }
         }
 
-        calleesAndCallers.addIncompleteCallsite(pc)
+        calleesAndCallers.addIncompleteCallSite(pc)
     }
 
     /**
@@ -408,7 +408,7 @@ class RTACallGraphAnalysis private[analyses] ( final val project: SomeProject) e
         call:                Call[V] with VirtualCall[V],
         pc:                  Int,
         instantiatedTypesUB: UIDSet[ObjectType],
-        calleesAndCallers:   CalleesAndCallers
+        calleesAndCallers:   DirectCalls
     )(implicit state: RTAState): Unit = {
         val callerType = caller.definedMethod.classFile.thisType
 
@@ -510,7 +510,7 @@ class RTACallGraphAnalysis private[analyses] ( final val project: SomeProject) e
         specializedDeclaringClassType: ReferenceType,
         instantiatedTypesUB:           UIDSet[ObjectType],
         potentialTargets:              ForeachRefIterator[ObjectType],
-        calleesAndCallers:             CalleesAndCallers
+        calleesAndCallers:             DirectCalls
     )(implicit state: RTAState): Unit = {
         for (possibleTgtType ← potentialTargets) {
             if (instantiatedTypesUB.contains(possibleTgtType)) {
@@ -564,7 +564,7 @@ class RTACallGraphAnalysis private[analyses] ( final val project: SomeProject) e
                     calleesAndCallers
                 )
             } else if (isMethodOverridable(mResult.value).isYesOrUnknown) {
-                calleesAndCallers.addIncompleteCallsite(pc)
+                calleesAndCallers.addIncompleteCallSite(pc)
             }
         }
     }
@@ -580,11 +580,11 @@ class RTACallGraphAnalysis private[analyses] ( final val project: SomeProject) e
         callDeclaringClass: ReferenceType,
         pc:                 Int,
         target:             org.opalj.Result[Method],
-        calleesAndCallers:  CalleesAndCallers
+        calleesAndCallers:  DirectCalls
     ): Unit = {
         if (target.hasValue) {
             val tgtDM = declaredMethods(target.value)
-            calleesAndCallers.updateWithCall(caller, tgtDM, pc)
+            calleesAndCallers.addCall(caller, tgtDM, pc)
         } else {
             val packageName = caller.definedMethod.classFile.thisType.packageName
             unknownLibraryCall(
@@ -602,7 +602,7 @@ class RTACallGraphAnalysis private[analyses] ( final val project: SomeProject) e
 
     // modifies state and the calleesAndCallers
     private[this] def handleVirtualCallSites(
-        newInstantiatedTypes: Iterator[ObjectType], calleesAndCallers: CalleesAndCallers
+        newInstantiatedTypes: Iterator[ObjectType], calleesAndCallers: DirectCalls
     )(implicit state: RTAState): Unit = {
         newInstantiatedTypes.foreach { instantiatedType ⇒
             val callSitesOpt = state.virtualCallSites.get(instantiatedType.id.toLong)
@@ -633,14 +633,16 @@ class RTACallGraphAnalysis private[analyses] ( final val project: SomeProject) e
     }
 
     private[this] def returnResult(
-        calleesAndCallers: CalleesAndCallers
+        calleesAndCallers: DirectCalls
     )(implicit state: RTAState): ProperPropertyComputationResult = {
-        val calleesResult = calleesAndCallers.partialResultForCallees(state.method, isIndirect = false)
-        val calleesInterimResult =
-            if (state.virtualCallSites.isEmpty || !state.hasOpenDependees)
-                calleesResult
-            else InterimPartialResult(Some(calleesResult), state.dependees(), c(state))
-        Results(calleesInterimResult, calleesAndCallers.partialResultsForCallers)
+        val results = calleesAndCallers.partialResults(state.method)
+
+        if (state.virtualCallSites.isEmpty || !state.hasOpenDependees)
+            Results(results)
+        else Results(
+            InterimPartialResult(state.dependees(), c(state)),
+            results
+        )
     }
 
     private[this] def c(state: RTAState)(eps: SomeEPS): ProperPropertyComputationResult = {
@@ -649,7 +651,7 @@ class RTACallGraphAnalysis private[analyses] ( final val project: SomeProject) e
                 state.updateTACDependee(eps.asInstanceOf[EPS[Method, TACAI]])
                 // as the callees and callers creates partial results for both (callees and callers)
                 // we should create an empty/new one!
-                processMethod(state, new CalleesAndCallers())
+                processMethod(state, new DirectCalls())
 
             case UBP(_: TACAI) ⇒
                 InterimPartialResult(
@@ -663,7 +665,7 @@ class RTACallGraphAnalysis private[analyses] ( final val project: SomeProject) e
                 state.numTypesProcessed = ub.numElements
                 val newInstantiatedTypes = ub.getNewTypes(toBeDropped)
 
-                val calleesAndCallers = new CalleesAndCallers()
+                val calleesAndCallers = new DirectCalls()
 
                 // the new edges in the call graph due to the new types
                 // as the callees and callers creates partial results for both (callees and callers)
