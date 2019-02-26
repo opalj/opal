@@ -74,8 +74,9 @@ class InterproceduralInterpretationHandler(
         // Without doing the following conversion, the following compile error will occur: "the
         // result type of an implicit conversion must be more specific than org.opalj.fpcf.Entity"
         val e: Integer = defSite.toInt
-        // Function parameters are not evaluated when none are present
-        if (defSite < 0 && params.isEmpty) {
+        // Function parameters are not evaluated when none are present (this always includes the
+        // implicit parameter for "this")
+        if (defSite < 0 && (params.isEmpty || defSite == -1)) {
             return Result(e, StringConstancyProperty.lb)
         } else if (defSite < 0) {
             val paramPos = Math.abs(defSite + 2)
