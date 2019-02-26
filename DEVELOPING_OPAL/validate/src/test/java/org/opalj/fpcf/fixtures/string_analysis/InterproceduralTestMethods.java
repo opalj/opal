@@ -277,6 +277,26 @@ public class InterproceduralTestMethods {
     }
 
     @StringDefinitionsCollection(
+            value = "a case where the append value has more than one def site with a function "
+                    + "call involved",
+            stringDefinitions = {
+                    @StringDefinitions(
+                            expectedLevel = CONSTANT,
+                            expectedStrings = "It is (great|Hello, World)"
+                    )
+
+            })
+    public void appendWithTwoDefSitesWithFuncCallTest(int i) {
+        String s;
+        if (i > 0) {
+            s = "great";
+        } else {
+            s = getHelloWorld();
+        }
+        analyzeString(new StringBuilder("It is ").append(s).toString());
+    }
+
+    @StringDefinitionsCollection(
             value = "a case taken from javax.management.remote.rmi.RMIConnector where a GetStatic "
                     + "is involved",
             stringDefinitions = {
