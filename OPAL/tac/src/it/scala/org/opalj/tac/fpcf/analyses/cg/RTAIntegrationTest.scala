@@ -134,12 +134,12 @@ class RTAIntegrationTest extends FlatSpec with Matchers {
             callee ← tgts
         } {
             val FinalP(callersProperty) = propertyStore(callee, CallersProperty.key).asFinal
-            assert(callersProperty.callers.toSet.contains(dm → pc))
+            assert(callersProperty.callers.map(caller ⇒ (caller._1, caller._2)).toSet.contains(dm → pc))
         }
 
         for {
             FinalEP(dm: DeclaredMethod, callers) ← propertyStore.entities(CallersProperty.key).map(_.asFinal)
-            (caller, pc) ← callers.callers
+            (caller, pc, _) ← callers.callers
         } {
             val FinalP(calleesProperty) = propertyStore(caller, Callees.key).asFinal
             assert(calleesProperty.callees(pc).contains(dm))

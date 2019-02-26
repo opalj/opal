@@ -28,7 +28,6 @@ import org.opalj.tac.NonVirtualMethodCall
 import org.opalj.tac.Stmt
 import org.opalj.tac.TACMethodParameter
 import org.opalj.tac.TACode
-import org.opalj.tac.VirtualMethodCall
 
 class ThreadStartAnalysis private[analyses] (
         final val project: SomeProject, final val threadStartMethod: DeclaredMethod
@@ -37,24 +36,23 @@ class ThreadStartAnalysis private[analyses] (
     override val apiMethod: DeclaredMethod = threadStartMethod
 
     override def processNewCaller(
-        caller: DefinedMethod,
-        pc:     Int,
-        tac:    TACode[TACMethodParameter, V]
+        caller:          DefinedMethod,
+        pc:              Int,
+        tac:             TACode[TACMethodParameter, V],
+        receiverOption:  Option[Expr[V]],
+        params:          Seq[Option[Expr[V]]],
+        targetVarOption: Option[V],
+        isDirect:        Boolean
     ): ProperPropertyComputationResult = {
         val vmReachableMethods = new VMReachableMethods()
         implicit val stmts: Array[Stmt[V]] = tac.stmts
 
-        val index = tac.pcToIndex(pc)
+        if (receiverOption.isDefined)
+            handleStart(caller, stmts, receiverOption.get, pc, vmReachableMethods)
+        else
+            vmReachableMethods.addIncompleteCallSite(pc)
 
-        // todo this may fail
-        val VirtualMethodCall(_, _, _, "start", _, receiver, _) = stmts(index)
-
-        handleStart(caller, stmts, receiver, pc, vmReachableMethods)
-
-        Results(
-            vmReachableMethods.partialResultForCallees(caller),
-            vmReachableMethods.partialResultsForCallers
-        )
+        Results(vmReachableMethods.partialResults(caller))
     }
 
     /**
@@ -275,23 +273,21 @@ class UncaughtExceptionHandlerAnalysis private[analyses] (
     override val apiMethod: DeclaredMethod = setUncaughtExceptionHandlerMethod
 
     override def processNewCaller(
-        caller: DefinedMethod,
-        pc:     Int,
-        tac:    TACode[TACMethodParameter, V]
+        caller:          DefinedMethod,
+        pc:              Int,
+        tac:             TACode[TACMethodParameter, V],
+        receiverOption:  Option[Expr[V]],
+        params:          Seq[Option[Expr[V]]],
+        targetVarOption: Option[V],
+        isDirect:        Boolean
     ): ProperPropertyComputationResult = {
         val vmReachableMethods = new VMReachableMethods()
-        implicit val stmts: Array[Stmt[V]] = tac.stmts
+        if (params.nonEmpty && params.head.isDefined)
+            handleUncaughtExceptionHandler(caller, params.head.get, pc, vmReachableMethods)
+        else
+            vmReachableMethods.addIncompleteCallSite(pc)
 
-        val index = tac.pcToIndex(pc)
-
-        // todo this may fail
-        val VirtualMethodCall(_, _, _, "setUncaughtExceptionHandler", _, _, params) = stmts(index)
-        handleUncaughtExceptionHandler(caller, params.head, pc, vmReachableMethods)
-
-        Results(
-            vmReachableMethods.partialResultForCallees(caller),
-            vmReachableMethods.partialResultsForCallers
-        )
+        Results(vmReachableMethods.partialResults(caller))
     }
 
     /**

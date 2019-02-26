@@ -189,9 +189,9 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
              */
             for {
                 indirectCallee ← callees.indirectCallees(pc)
-                // parameters(0) is the param of the defSite
+                indirectCallReceiver = callees.indirectCallReceiver(pc, indirectCallee)
                 indirectCallParams = callees.indirectCallParameters(pc, indirectCallee)
-                (Some(uvar), i) ← indirectCallParams.zipWithIndex
+                (Some(uvar), i) ← (indirectCallReceiver +: indirectCallParams).zipWithIndex
                 indirectCallParam = uVarForDefSites(uvar, state.tacai.get.pcToIndex)
                 if state.usesDefSite(indirectCallParam)
             } {

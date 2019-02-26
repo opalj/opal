@@ -104,15 +104,15 @@ class CHACallGraphAnalysis private[analyses] (
         val tac = tacEP.ub.tac.get
 
         // for each call site in the current method, the set of methods that might called
-        val calleesAndCallers = new CalleesAndCallers()
+        val calleesAndCallers = new DirectCalls()
 
         // todo add calls to library targets
         @inline def handleTgts(tgts: Set[Method], pc: Int): Unit = {
             if (tgts.isEmpty) {
-                calleesAndCallers.addIncompleteCallsite(pc) // todo is this reasonable?
+                calleesAndCallers.addIncompleteCallSite(pc) // todo is this reasonable?
             } else {
                 tgts.foreach { tgt ⇒
-                    calleesAndCallers.updateWithCall(declaredMethod, declaredMethods(tgt), pc)
+                    calleesAndCallers.addCall(declaredMethod, declaredMethods(tgt), pc)
                 }
             }
         }
@@ -147,13 +147,13 @@ class CHACallGraphAnalysis private[analyses] (
                 )
 
             case Assignment(_, _, idc: InvokedynamicFunctionCall[V]) ⇒
-                calleesAndCallers.addIncompleteCallsite(idc.pc)
+                calleesAndCallers.addIncompleteCallSite(idc.pc)
                 logOnce(
                     Warn("analysis - call graph construction", s"unresolved invokedynamic: $idc")
                 )(p.logContext)
 
             case ExprStmt(_, idc: InvokedynamicFunctionCall[V]) ⇒
-                calleesAndCallers.addIncompleteCallsite(idc.pc)
+                calleesAndCallers.addIncompleteCallSite(idc.pc)
                 logOnce(
                     Warn("analysis - call graph construction", s"unresolved invokedynamic: $idc")
                 )(p.logContext)
@@ -162,19 +162,14 @@ class CHACallGraphAnalysis private[analyses] (
 
         }
 
-        val calleesResult = calleesAndCallers.partialResultForCallees(
-            declaredMethod, isIndirect = false
-        )
-        val calleesInterimResult =
-            if (tacEP.isFinal)
-                calleesResult
-            else
-                InterimPartialResult(
-                    Some(calleesResult), Some(tacEP), continuationForTAC(declaredMethod)
-                )
-        Results(calleesInterimResult, calleesAndCallers.partialResultsForCallers)
+        if (tacEP.isFinal)
+            Results(calleesAndCallers.partialResults(declaredMethod))
+        else
+            Results(
+                InterimPartialResult(Some(tacEP), continuationForTAC(declaredMethod)),
+                calleesAndCallers.partialResults(declaredMethod)
+            )
     }
-
 }
 
 object CHACallGraphAnalysisScheduler extends FPCFTriggeredAnalysisScheduler {

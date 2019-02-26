@@ -140,7 +140,8 @@ object CallGraph extends DefaultOneStepAnalysis {
                 if (mSig.contains(methodSignature)) {
                     println(s"Callers of ${m.toJava}:")
                     println(ps(m, CallersProperty.key).ub.callers.map {
-                        case (caller, pc) ⇒ caller.toJava → pc
+                        case (caller, pc, isDirect) ⇒
+                            s"${caller.toJava}, $pc${if(!isDirect) ", indirect" else ""}"
                     }.mkString("\t", "\n\t", "\n"))
                 }
             }
