@@ -42,7 +42,7 @@ class VirtualFunctionCallFinalizer(
             instr.receiver.asVar.definedBy.toArray.sorted.flatMap(state.fpe2sci(_))
         )
         val appendSci = StringConstancyInformation.reduceMultiple(
-            state.fpe2sci(instr.params.head.asVar.definedBy.head)
+            instr.params.head.asVar.definedBy.toArray.sorted.flatMap { state.fpe2sci(_) }
         )
 
         val finalSci = if (receiverSci.isTheNeutralElement && appendSci.isTheNeutralElement) {
