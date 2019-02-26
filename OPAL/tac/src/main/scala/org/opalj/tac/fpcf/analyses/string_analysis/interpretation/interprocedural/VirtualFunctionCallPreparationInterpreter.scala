@@ -263,29 +263,32 @@ class VirtualFunctionCallPreparationInterpreter(
     private def valueOfAppendCall(
         call: VirtualFunctionCall[V], state: InterproceduralComputationState
     ): ProperPropertyComputationResult = {
-        val param = call.params.head.asVar
         // .head because we want to evaluate only the first argument of append
-        val defSiteHead = param.definedBy.head
-        var value = exprHandler.processDefSite(defSiteHead, params)
+        val param = call.params.head.asVar
+        val defSites = param.definedBy.toArray.sorted
+        val values = defSites.map(exprHandler.processDefSite(_, params))
 
-        // Defer the computation if there is no final result (yet)
-        if (!value.isInstanceOf[Result]) {
-            return value
+        // Defer the computation if there is at least one intermediate result
+        if (!values.forall(_.isInstanceOf[Result])) {
+            return values.find(!_.isInstanceOf[Result]).get
         }
 
-        var valueSci = StringConstancyProperty.extractFromPPCR(value).stringConstancyInformation
+        var valueSci = StringConstancyInformation.reduceMultiple(values.map {
+            StringConstancyProperty.extractFromPPCR(_).stringConstancyInformation
+        })
         // If defSiteHead points to a "New", value will be the empty list. In that case, process
         // the first use site (which is the <init> call)
         if (valueSci.isTheNeutralElement) {
-            val ds = cfg.code.instructions(defSiteHead).asAssignment.targetVar.usedBy.toArray.min
-            value = exprHandler.processDefSite(ds, params)
+            val ds = cfg.code.instructions(defSites.head).asAssignment.targetVar.usedBy.toArray.min
+            val r = exprHandler.processDefSite(ds, params)
             // Again, defer the computation if there is no final result (yet)
-            if (!value.isInstanceOf[Result]) {
-                return value
+            if (!r.isInstanceOf[Result]) {
+                return r
+            } else {
+                valueSci = StringConstancyProperty.extractFromPPCR(r).stringConstancyInformation
             }
         }
 
-        valueSci = StringConstancyProperty.extractFromPPCR(value).stringConstancyInformation
         val finalSci = param.value.computationalType match {
             // For some types, we know the (dynamic) values
             case ComputationalTypeInt ⇒
@@ -306,8 +309,8 @@ class VirtualFunctionCallPreparationInterpreter(
                 valueSci
         }
 
-        state.appendToFpe2Sci(defSiteHead, valueSci, reset = true)
-        val e: Integer = defSiteHead
+        val e: Integer = defSites.head
+        state.appendToFpe2Sci(e, valueSci, reset = true)
         Result(e, StringConstancyProperty(finalSci))
     }
 

@@ -257,6 +257,25 @@ public class InterproceduralTestMethods {
         analyzeString(rmiServerImplStubClassName);
     }
 
+    @StringDefinitionsCollection(
+            value = "a case where the append value has more than one def site",
+            stringDefinitions = {
+                    @StringDefinitions(
+                            expectedLevel = CONSTANT,
+                            expectedStrings = "It is (great|not great)"
+                    )
+
+            })
+    public void appendWithTwoDefSites(int i) {
+        String s;
+        if (i > 0) {
+            s = "great";
+        } else {
+            s = "not great";
+        }
+        analyzeString(new StringBuilder("It is ").append(s).toString());
+    }
+
     private String getRuntimeClassName() {
         return "java.lang.Runtime";
     }
