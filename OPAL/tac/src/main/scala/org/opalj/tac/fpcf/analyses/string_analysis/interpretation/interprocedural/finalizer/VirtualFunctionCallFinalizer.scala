@@ -27,8 +27,10 @@ class VirtualFunctionCallFinalizer(
      * @inheritdoc
      */
     override def finalizeInterpretation(instr: T, defSite: Int): Unit = {
-        if (instr.name == "append") {
-            finalizeAppend(instr, defSite)
+        instr.name match {
+            case "append"   ⇒ finalizeAppend(instr, defSite)
+            case "toString" ⇒ finalizeToString(instr, defSite)
+            case _          ⇒
         }
     }
 
@@ -38,11 +40,31 @@ class VirtualFunctionCallFinalizer(
      * [[org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedural.VirtualFunctionCallPreparationInterpreter]].
      */
     private def finalizeAppend(instr: T, defSite: Int): Unit = {
+        val receiverDefSites = instr.receiver.asVar.definedBy.toArray.sorted
+        receiverDefSites.foreach { ds ⇒
+            if (!state.fpe2sci.contains(ds)) {
+                state.iHandler.finalizeDefSite(ds, state)
+            }
+        }
         val receiverSci = StringConstancyInformation.reduceMultiple(
-            instr.receiver.asVar.definedBy.toArray.sorted.flatMap(state.fpe2sci(_))
+            receiverDefSites.flatMap { s ⇒
+                // As the receiver value is used already here, we do not want it to be used a
+                // second time (during the final traversing of the path); thus, reset it to have it
+                // only once in the result, i.e., final tree
+                val sci = state.fpe2sci(s)
+                state.appendToFpe2Sci(s, StringConstancyInformation.getNeutralElement, reset = true)
+                sci
+            }
         )
+
+        val paramDefSites = instr.params.head.asVar.definedBy.toArray.sorted
+        paramDefSites.foreach { ds ⇒
+            if (!state.fpe2sci.contains(ds)) {
+                state.iHandler.finalizeDefSite(ds, state)
+            }
+        }
         val appendSci = StringConstancyInformation.reduceMultiple(
-            instr.params.head.asVar.definedBy.toArray.sorted.flatMap { state.fpe2sci(_) }
+            paramDefSites.flatMap(state.fpe2sci(_))
         )
 
         val finalSci = if (receiverSci.isTheNeutralElement && appendSci.isTheNeutralElement) {
@@ -62,6 +84,19 @@ class VirtualFunctionCallFinalizer(
         }
 
         state.appendToFpe2Sci(defSite, finalSci, reset = true)
+    }
+
+    private def finalizeToString(instr: T, defSite: Int): Unit = {
+        val dependeeSites = instr.receiver.asVar.definedBy
+        dependeeSites.foreach { nextDependeeSite ⇒
+            if (!state.fpe2sci.contains(nextDependeeSite)) {
+                state.iHandler.finalizeDefSite(nextDependeeSite, state)
+            }
+        }
+        val finalSci = StringConstancyInformation.reduceMultiple(
+            dependeeSites.toArray.flatMap { ds ⇒ state.fpe2sci(ds) }
+        )
+        state.appendToFpe2Sci(defSite, finalSci)
     }
 
 }
