@@ -30,23 +30,41 @@ import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedura
  * @param entity The entity for which the analysis was started with.
  */
 case class InterproceduralComputationState(entity: P) {
-    // The Three-Address Code of the entity's method
+    /**
+     * The Three-Address Code of the entity's method
+     */
     var tac: TACode[TACMethodParameter, DUVar[ValueInformation]] = _
-    // The Control Flow Graph of the entity's method
+    /**
+     * The Control Flow Graph of the entity's method
+     */
     var cfg: CFG[Stmt[V], TACStmts[V]] = _
-    // The interpretation handler to use
+    /**
+     * The interpretation handler to use
+     */
     var iHandler: InterproceduralInterpretationHandler = _
-    // The computed lean path that corresponds to the given entity
+    /**
+     * The computed lean path that corresponds to the given entity
+     */
     var computedLeanPath: Path = _
-    // Callees information regarding the declared method that corresponds to the entity's method
+    /**
+     * Callees information regarding the declared method that corresponds to the entity's method
+     */
     var callees: Callees = _
-    // Callers information regarding the declared method that corresponds to the entity's method
+    /**
+     * Callers information regarding the declared method that corresponds to the entity's method
+     */
     var callers: CallersProperty = _
-    // If not empty, this routine can only produce an intermediate result
+    /**
+     * If not empty, this routine can only produce an intermediate result
+     */
     var dependees: List[EOptionP[Entity, Property]] = List()
-    // A mapping from DUVar elements to the corresponding indices of the FlatPathElements
+    /**
+     * A mapping from DUVar elements to the corresponding indices of the FlatPathElements
+     */
     val var2IndexMapping: mutable.Map[V, Int] = mutable.Map()
-    // A mapping from values / indices of FlatPathElements to StringConstancyInformation
+    /**
+     * A mapping from values / indices of FlatPathElements to StringConstancyInformation
+     */
     val fpe2sci: mutable.Map[Int, ListBuffer[StringConstancyInformation]] = mutable.Map()
     /**
      * An analysis may depend on the evaluation of its parameters. This number indicates how many
