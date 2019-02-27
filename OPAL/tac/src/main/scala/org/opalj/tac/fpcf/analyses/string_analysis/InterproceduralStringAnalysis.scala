@@ -355,13 +355,36 @@ class InterproceduralStringAnalysis(
                 eps match {
                     case FinalP(p: StringConstancyProperty) ⇒
                         val resultEntity = eps.e.asInstanceOf[P]
-                        // If necessary, update parameter information
+                        // If necessary, update the parameter information with which the
+                        // surrounding function / method of the entity was called with
                         if (state.paramResultPositions.contains(resultEntity)) {
                             val pos = state.paramResultPositions(resultEntity)
                             state.params(pos._1)(pos._2) = p.stringConstancyInformation
                             state.paramResultPositions.remove(resultEntity)
                             state.parameterDependeesCount -= 1
                             state.dependees = state.dependees.filter(_.e != eps.e)
+                        }
+
+                        // If necessary, update parameter information of function calls
+                        if (state.entity2Function.contains(resultEntity)) {
+                            state.appendToFpe2Sci(
+                                state.var2IndexMapping(resultEntity._1),
+                                p.stringConstancyInformation
+                            )
+                            val func = state.entity2Function(resultEntity)
+                            val pos = state.nonFinalFunctionArgsPos(func)(resultEntity)
+                            val result = Result(resultEntity, p)
+                            state.nonFinalFunctionArgs(func)(pos._1)(pos._2)(pos._3) = result
+                            state.entity2Function.remove(resultEntity)
+                            // Continue only after all necessary function parameters are evaluated
+                            if (state.entity2Function.nonEmpty) {
+                                return determinePossibleStrings(state)
+                            } else {
+                                state.entity2Function.clear()
+                                if (!computeResultsForPath(state.computedLeanPath, state)) {
+                                    determinePossibleStrings(state)
+                                }
+                            }
                         }
 
                         if (state.isSetupCompleted && state.parameterDependeesCount == 0) {

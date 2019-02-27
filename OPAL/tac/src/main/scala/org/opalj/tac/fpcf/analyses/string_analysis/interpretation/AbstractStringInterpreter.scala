@@ -1,18 +1,21 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.tac.fpcf.analyses.string_analysis.interpretation
 
+import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
+import org.opalj.fpcf.InterimResult
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.Result
 import org.opalj.value.ValueInformation
 import org.opalj.br.cfg.CFG
 import org.opalj.br.Method
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.DefinedMethod
 import org.opalj.br.fpcf.cg.properties.Callees
-import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.br.fpcf.properties.StringConstancyProperty
+import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.tac.Stmt
 import org.opalj.tac.TACStmts
 import org.opalj.tac.fpcf.analyses.string_analysis.V
@@ -26,6 +29,8 @@ import org.opalj.tac.ExprStmt
 import org.opalj.tac.FunctionCall
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedural.InterproceduralInterpretationHandler
 import org.opalj.tac.fpcf.analyses.string_analysis.InterproceduralComputationState
+import org.opalj.tac.fpcf.analyses.string_analysis.NonFinalFunctionArgsPos
+import org.opalj.tac.fpcf.analyses.string_analysis.P
 
 /**
  * @param cfg The control flow graph that underlies the instruction to interpret.
@@ -114,18 +119,67 @@ abstract class AbstractStringInterpreter(
     /**
      * evaluateParameters takes a list of parameters, `params`, as produced, e.g., by
      * [[AbstractStringInterpreter.getParametersForPCs]], and an interpretation handler, `iHandler`
-     * and interprets the given parameters.
+     * and interprets the given parameters. The result list has the following format: The outer list
+     * corresponds to the lists of parameters passed to a function / method, the list in the middle
+     * corresponds to such lists and the inner-most list corresponds to the results /
+     * interpretations (this list is required as a concrete parameter may have more than one
+     * definition site).
      */
     protected def evaluateParameters(
-        params:   List[Seq[Expr[V]]],
-        iHandler: InterproceduralInterpretationHandler
-    ): ListBuffer[ListBuffer[StringConstancyInformation]] = params.map(_.map { expr ⇒
-        val scis = expr.asVar.definedBy.map(iHandler.processDefSite(_, List())).map { r ⇒
-            // TODO: Current assumption: Results of parameters are available right away
-            StringConstancyProperty.extractFromPPCR(r).stringConstancyInformation
-        }
-        StringConstancyInformation.reduceMultiple(scis)
-    }.to[ListBuffer]).to[ListBuffer]
+        params:          List[Seq[Expr[V]]],
+        iHandler:        InterproceduralInterpretationHandler,
+        funCall:         FunctionCall[V],
+        functionArgsPos: NonFinalFunctionArgsPos,
+        entity2Function: mutable.Map[P, FunctionCall[V]]
+    ): ListBuffer[ListBuffer[ListBuffer[ProperPropertyComputationResult]]] = params.zipWithIndex.map {
+        case (nextParamList, outerIndex) ⇒
+            nextParamList.zipWithIndex.map {
+                case (nextParam, middleIndex) ⇒
+                    nextParam.asVar.definedBy.toArray.sorted.zipWithIndex.map {
+                        case (ds, innerIndex) ⇒
+                            val r = iHandler.processDefSite(ds, List())
+                            if (!r.isInstanceOf[Result]) {
+                                val interim = r.asInstanceOf[InterimResult[StringConstancyProperty]]
+                                if (!functionArgsPos.contains(funCall)) {
+                                    functionArgsPos(funCall) = mutable.Map()
+                                }
+                                val e = interim.eps.e.asInstanceOf[P]
+                                functionArgsPos(funCall)(e) = (outerIndex, middleIndex, innerIndex)
+                                entity2Function(e) = funCall
+                            }
+                            r
+                    }.to[ListBuffer]
+            }.to[ListBuffer]
+    }.to[ListBuffer]
+
+    /**
+     * This function checks whether the interpretation of parameters, as, e.g., produced by
+     * [[evaluateParameters()]], is final or not. If the given parameters contain at least one
+     * element not of type [[Result]], this function returns such a non-final result. Otherwise, if
+     * all computation results are final, this function returns `None`.
+     */
+    protected def getNonFinalParameters(
+        evaluatedParameters: Seq[Seq[Seq[ProperPropertyComputationResult]]]
+    ): List[InterimResult[StringConstancyProperty]] =
+        evaluatedParameters.flatten.flatten.filter { !_.isInstanceOf[Result] }.map {
+            _.asInstanceOf[InterimResult[StringConstancyProperty]]
+        }.toList
+
+    /**
+     * convertEvaluatedParameters takes a list of evaluated / interpreted parameters as, e.g.,
+     * produced by [[evaluateParameters]] and transforms these into a list of lists where the inner
+     * lists are the reduced [[StringConstancyInformation]]. Note that this function assumes that
+     * all results in the inner-most sequence are final!
+     */
+    protected def convertEvaluatedParameters(
+        evaluatedParameters: Seq[Seq[Seq[ProperPropertyComputationResult]]]
+    ): ListBuffer[ListBuffer[StringConstancyInformation]] = evaluatedParameters.map { paramList ⇒
+        paramList.map { param ⇒
+            StringConstancyInformation.reduceMultiple(param.map { paramInterpr ⇒
+                StringConstancyProperty.extractFromPPCR(paramInterpr).stringConstancyInformation
+            })
+        }.to[ListBuffer]
+    }.to[ListBuffer]
 
     /**
      *

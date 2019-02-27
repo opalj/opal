@@ -21,6 +21,7 @@ import org.opalj.tac.TACMethodParameter
 import org.opalj.tac.TACode
 import org.opalj.tac.TACStmts
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedural.InterproceduralInterpretationHandler
+import org.opalj.tac.FunctionCall
 
 /**
  * This class is to be used to store state information that are required at a later point in
@@ -88,6 +89,12 @@ case class InterproceduralComputationState(entity: P) {
     // in the outer list holds the parameters of a concrete call. A mapping from the definition
     // sites of parameter (negative values) to a correct index of `params` has to be made!
     var params: ListBuffer[ListBuffer[StringConstancyInformation]] = ListBuffer()
+
+    val nonFinalFunctionArgsPos: NonFinalFunctionArgsPos = mutable.Map()
+
+    val nonFinalFunctionArgs: mutable.Map[FunctionCall[V], NonFinalFunctionArgs] = mutable.Map()
+
+    val entity2Function: mutable.Map[P, FunctionCall[V]] = mutable.Map()
 
     /**
      * Takes a definition site as well as a result and extends the [[fpe2sci]] map accordingly,

@@ -328,6 +328,23 @@ public class InterproceduralTestMethods {
         return s;
     }
 
+    @StringDefinitionsCollection(
+            value = "a case where a function takes another function as one of its parameters",
+            stringDefinitions = {
+                    @StringDefinitions(
+                            expectedLevel = CONSTANT,
+                            expectedStrings = "Hello, World!"
+                    ),
+                    @StringDefinitions(
+                            expectedLevel = CONSTANT,
+                            expectedStrings = "Hello, World?"
+                    )
+            })
+    public void functionWithFunctionParameter() {
+        analyzeString(addExclamationMark(getHelloWorld()));
+        analyzeString(addQuestionMark(getHelloWorld()));
+    }
+
     /**
      * Necessary for the callerWithFunctionParameterTest.
      */
@@ -357,6 +374,14 @@ public class InterproceduralTestMethods {
 
     private static String getHelloWorld() {
         return "Hello, World";
+    }
+
+    private static String addExclamationMark(String s) {
+        return s + "!";
+    }
+
+    private String addQuestionMark(String s) {
+        return s + "?";
     }
 
 }

@@ -121,8 +121,30 @@ class VirtualFunctionCallPreparationInterpreter(
                 m.name == instr.name && mClassName == instrClassName
             }
         }.keys
+
         // Collect all parameters
-        val params = evaluateParameters(getParametersForPCs(relevantPCs, state.tac), exprHandler)
+        val isFunctionArgsPreparationDone = state.nonFinalFunctionArgs.contains(instr)
+        val params = if (isFunctionArgsPreparationDone) {
+            state.nonFinalFunctionArgs(instr)
+        } else {
+            evaluateParameters(
+                getParametersForPCs(relevantPCs, state.tac),
+                exprHandler,
+                instr,
+                state.nonFinalFunctionArgsPos,
+                state.entity2Function
+            )
+        }
+        if (!isFunctionArgsPreparationDone) {
+            val nonFinalResults = getNonFinalParameters(params)
+            if (nonFinalResults.nonEmpty) {
+                state.nonFinalFunctionArgs(instr) = params
+                return nonFinalResults.head
+            }
+        }
+        state.nonFinalFunctionArgs.remove(instr)
+        state.nonFinalFunctionArgsPos.remove(instr)
+        val evaluatedParams = convertEvaluatedParameters(params)
 
         val results = methods.map { nextMethod ⇒
             val tac = getTACAI(ps, nextMethod, state)
@@ -132,7 +154,7 @@ class VirtualFunctionCallPreparationInterpreter(
                 val uvar = ret.asInstanceOf[ReturnValue[V]].expr.asVar
                 val entity = (uvar, nextMethod)
 
-                InterproceduralStringAnalysis.registerParams(entity, params)
+                InterproceduralStringAnalysis.registerParams(entity, evaluatedParams)
                 val eps = ps(entity, StringConstancyProperty.key)
                 eps match {
                     case r: Result ⇒

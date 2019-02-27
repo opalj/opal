@@ -27,7 +27,7 @@ abstract class InterpretationHandler(cfg: CFG[Stmt[V], TACStmts[V]]) {
     /**
      * A list of definition sites that have already been processed.
      */
-    protected val processedDefSites: ListBuffer[Int] = ListBuffer[Int]()
+    protected val processedDefSites: ListBuffer[Int] = ListBuffer[Int]() // TODO: Maybe a map is advantageous
 
     /**
      * Processes a given definition site. That is, this function determines the interpretation of
