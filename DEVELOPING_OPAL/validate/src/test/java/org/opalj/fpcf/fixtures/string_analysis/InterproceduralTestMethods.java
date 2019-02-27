@@ -297,6 +297,23 @@ public class InterproceduralTestMethods {
     }
 
     @StringDefinitionsCollection(
+            value = "a case taken from com.sun.javafx.property.PropertyReference#reflect where "
+                    + "a dependency within the finalize procedure is present",
+            stringDefinitions = {
+                    @StringDefinitions(
+                            expectedLevel = PARTIALLY_CONSTANT,
+                            expectedStrings = "get(\\w|Hello, Worldjava.lang.Runtime)"
+                    )
+
+            })
+    public void dependenciesWithinFinalizeTest(String s) {
+        String properName = s.length() == 1 ? s.substring(0, 1).toUpperCase() :
+                getHelloWorld() + getRuntimeClassName();
+        String getterName = "get" + properName;
+        analyzeString(getterName);
+    }
+
+    @StringDefinitionsCollection(
             value = "a case taken from javax.management.remote.rmi.RMIConnector where a GetStatic "
                     + "is involved",
             stringDefinitions = {
