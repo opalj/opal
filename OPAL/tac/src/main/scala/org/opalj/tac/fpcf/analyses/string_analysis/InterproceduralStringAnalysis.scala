@@ -150,11 +150,15 @@ class InterproceduralStringAnalysis(
         }
         if (state.entity._2.parameterTypes.length > 0 &&
             state.callers == null && state.params.isEmpty) {
-            val declaredMethods = project.get(DeclaredMethodsKey)
-            val dm = declaredMethods.declaredMethods.filter { dm ⇒
+            val declaredMethods = project.get(DeclaredMethodsKey).declaredMethods
+            val dm = declaredMethods.find { dm ⇒
+                // TODO: What is a better / more robust way to compare methods (a check with == did
+                //  not produce the expected behavior)?
                 dm.name == state.entity._2.name &&
-                    dm.declaringClassType.toJava == state.entity._2.classFile.thisType.toJava
-            }.next()
+                    dm.declaringClassType.toJava == state.entity._2.classFile.thisType.toJava &&
+                    dm.definedMethod.descriptor.parameterTypes.length ==
+                        state.entity._2.descriptor.parameterTypes.length
+            }.get
             val callersEOptP = ps(dm, CallersProperty.key)
             if (callersEOptP.hasUBP) {
                 state.callers = callersEOptP.ub
