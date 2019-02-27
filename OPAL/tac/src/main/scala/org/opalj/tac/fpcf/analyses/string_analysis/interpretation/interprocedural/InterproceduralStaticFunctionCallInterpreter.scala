@@ -71,15 +71,37 @@ class InterproceduralStaticFunctionCallInterpreter(
                 calledMethods.exists(m ⇒
                     m.name == instr.name && m.declaringClassType == instr.declaringClass)
         }.keys
+
         // Collect all parameters
-        val params = evaluateParameters(getParametersForPCs(relevantPCs, state.tac), exprHandler)
+        val isFunctionArgsPreparationDone = state.nonFinalFunctionArgs.contains(instr)
+        val params = if (isFunctionArgsPreparationDone) {
+            state.nonFinalFunctionArgs(instr)
+        } else {
+            evaluateParameters(
+                getParametersForPCs(relevantPCs, state.tac),
+                exprHandler,
+                instr,
+                state.nonFinalFunctionArgsPos,
+                state.entity2Function
+            )
+        }
+        if (!isFunctionArgsPreparationDone) {
+            val nonFinalResults = getNonFinalParameters(params)
+            if (nonFinalResults.nonEmpty) {
+                state.nonFinalFunctionArgs(instr) = params
+                return nonFinalResults.head
+            }
+        }
+        state.nonFinalFunctionArgs.remove(instr)
+        state.nonFinalFunctionArgsPos.remove(instr)
+        val evaluatedParams = convertEvaluatedParameters(params)
 
         if (tac.isDefined) {
             // TAC available => Get return UVar and start the string analysis
             val ret = tac.get.stmts.find(_.isInstanceOf[ReturnValue[V]]).get
             val uvar = ret.asInstanceOf[ReturnValue[V]].expr.asVar
             val entity = (uvar, m)
-            InterproceduralStringAnalysis.registerParams(entity, params)
+            InterproceduralStringAnalysis.registerParams(entity, evaluatedParams)
 
             val eps = ps(entity, StringConstancyProperty.key)
             eps match {
