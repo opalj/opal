@@ -5,6 +5,7 @@ import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
 import org.opalj.fpcf.ProperPropertyComputationResult
+import org.opalj.value.ValueInformation
 import org.opalj.br.cfg.CFG
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel
@@ -16,14 +17,17 @@ import org.opalj.tac.New
 import org.opalj.tac.Stmt
 import org.opalj.tac.VirtualFunctionCall
 import org.opalj.tac.fpcf.analyses.string_analysis.V
+import org.opalj.tac.DUVar
+import org.opalj.tac.TACMethodParameter
+import org.opalj.tac.TACode
 import org.opalj.tac.TACStmts
 
-abstract class InterpretationHandler(cfg: CFG[Stmt[V], TACStmts[V]]) {
+abstract class InterpretationHandler(tac: TACode[TACMethodParameter, DUVar[ValueInformation]]) {
 
-    /**
-     * The statements of the given [[cfg]].
-     */
-    protected val stmts: Array[Stmt[V]] = cfg.code.instructions
+    protected val stmts: Array[Stmt[DUVar[ValueInformation]]] = tac.stmts
+    protected val cfg: CFG[Stmt[DUVar[ValueInformation]], TACStmts[DUVar[ValueInformation]]] =
+        tac.cfg
+
     /**
      * A list of definition sites that have already been processed.
      */
