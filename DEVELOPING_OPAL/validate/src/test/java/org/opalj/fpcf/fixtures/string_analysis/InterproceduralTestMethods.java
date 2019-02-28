@@ -219,7 +219,7 @@ public class InterproceduralTestMethods {
             stringDefinitions = {
                     @StringDefinitions(
                             expectedLevel = CONSTANT,
-                            expectedStrings = "(Hello World|Hello)"
+                            expectedStrings = "(Hello|Hello World)"
                     )
 
             })
@@ -343,6 +343,19 @@ public class InterproceduralTestMethods {
     public void functionWithFunctionParameter() {
         analyzeString(addExclamationMark(getHelloWorld()));
         analyzeString(addQuestionMark(getHelloWorld()));
+    }
+
+    @StringDefinitionsCollection(
+            value = "a case where no callers information need to be computed",
+            stringDefinitions = {
+                    @StringDefinitions(
+                            expectedLevel = CONSTANT,
+                            expectedStrings = "java.lang.String"
+                    )
+            })
+    public void noCallersInformationRequiredTest(String s) {
+        System.out.println(s);
+        analyzeString("java.lang.String");
     }
 
     /**
