@@ -29,6 +29,7 @@ import org.opalj.tac.ExprStmt
 import org.opalj.tac.FunctionCall
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedural.InterproceduralInterpretationHandler
 import org.opalj.tac.fpcf.analyses.string_analysis.InterproceduralComputationState
+import org.opalj.tac.fpcf.analyses.string_analysis.NonFinalFunctionArgs
 import org.opalj.tac.fpcf.analyses.string_analysis.NonFinalFunctionArgsPos
 import org.opalj.tac.fpcf.analyses.string_analysis.P
 
@@ -124,14 +125,17 @@ abstract class AbstractStringInterpreter(
      * corresponds to such lists and the inner-most list corresponds to the results /
      * interpretations (this list is required as a concrete parameter may have more than one
      * definition site).
+     * For housekeeping, this function takes the function call, `funCall`, of which parameters are
+     * to be evaluated as well as function argument positions, `functionArgsPos`, and a mapping from
+     * entities to functions, `entity2function`.
      */
     protected def evaluateParameters(
         params:          List[Seq[Expr[V]]],
         iHandler:        InterproceduralInterpretationHandler,
         funCall:         FunctionCall[V],
         functionArgsPos: NonFinalFunctionArgsPos,
-        entity2Function: mutable.Map[P, FunctionCall[V]]
-    ): ListBuffer[ListBuffer[ListBuffer[ProperPropertyComputationResult]]] = params.zipWithIndex.map {
+        entity2function: mutable.Map[P, FunctionCall[V]]
+    ): NonFinalFunctionArgs = params.zipWithIndex.map {
         case (nextParamList, outerIndex) ⇒
             nextParamList.zipWithIndex.map {
                 case (nextParam, middleIndex) ⇒
@@ -145,7 +149,7 @@ abstract class AbstractStringInterpreter(
                                 }
                                 val e = interim.eps.e.asInstanceOf[P]
                                 functionArgsPos(funCall)(e) = (outerIndex, middleIndex, innerIndex)
-                                entity2Function(e) = funCall
+                                entity2function(e) = funCall
                             }
                             r
                     }.to[ListBuffer]
@@ -154,9 +158,8 @@ abstract class AbstractStringInterpreter(
 
     /**
      * This function checks whether the interpretation of parameters, as, e.g., produced by
-     * [[evaluateParameters()]], is final or not. If the given parameters contain at least one
-     * element not of type [[Result]], this function returns such a non-final result. Otherwise, if
-     * all computation results are final, this function returns `None`.
+     * [[evaluateParameters()]], is final or not and returns all results not of type [[Result]] as a
+     * list. Hence, if this function returns an empty list, all parameters are fully evaluated.
      */
     protected def getNonFinalParameters(
         evaluatedParameters: Seq[Seq[Seq[ProperPropertyComputationResult]]]

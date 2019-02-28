@@ -32,44 +32,54 @@ case class InterproceduralComputationState(entity: P) {
      * The Three-Address Code of the entity's method
      */
     var tac: TACode[TACMethodParameter, DUVar[ValueInformation]] = _
+
     /**
      * The interpretation handler to use
      */
     var iHandler: InterproceduralInterpretationHandler = _
+
     /**
      * The computed lean path that corresponds to the given entity
      */
     var computedLeanPath: Path = _
+
     /**
      * Callees information regarding the declared method that corresponds to the entity's method
      */
     var callees: Callees = _
+
     /**
      * Callers information regarding the declared method that corresponds to the entity's method
      */
     var callers: CallersProperty = _
+
     /**
      * If not empty, this routine can only produce an intermediate result
      */
     var dependees: List[EOptionP[Entity, Property]] = List()
+
     /**
      * A mapping from DUVar elements to the corresponding indices of the FlatPathElements
      */
     val var2IndexMapping: mutable.Map[V, Int] = mutable.Map()
+
     /**
      * A mapping from values / indices of FlatPathElements to StringConstancyInformation
      */
     val fpe2sci: mutable.Map[Int, ListBuffer[StringConstancyInformation]] = mutable.Map()
+
     /**
      * An analysis may depend on the evaluation of its parameters. This number indicates how many
      * of such dependencies are still to be computed.
      */
     var parameterDependeesCount = 0
+
     /**
      * Indicates whether the basic setup of the string analysis is done. This value is to be set to
      * `true`, when all necessary dependees and parameters are available.
      */
     var isSetupCompleted = false
+
     /**
      * It might be that the result of parameters, which have to be evaluated, is not available right
      * away. Later on, when the result is available, it is necessary to map it to the right
@@ -78,15 +88,33 @@ case class InterproceduralComputationState(entity: P) {
      * index of the method and the second value the position of the parameter.
      */
     val paramResultPositions: mutable.Map[P, (Int, Int)] = mutable.Map()
-    // Parameter values of a method / function. The structure of this field is as follows: Each item
-    // in the outer list holds the parameters of a concrete call. A mapping from the definition
-    // sites of parameter (negative values) to a correct index of `params` has to be made!
+
+    /**
+     * Parameter values of a method / function. The structure of this field is as follows: Each item
+     * in the outer list holds the parameters of a concrete call. A mapping from the definition
+     * sites of parameter (negative values) to a correct index of `params` has to be made!
+     */
     var params: ListBuffer[ListBuffer[StringConstancyInformation]] = ListBuffer()
 
+    /**
+     * This map is used to store information regarding arguments of function calls. In case a
+     * function is passed as a function parameter, the result might not be available right away but
+     * needs to be mapped to the correct param element of [[nonFinalFunctionArgs]] when available.
+     * For this, this map is used.
+     * For further information, see [[NonFinalFunctionArgsPos]].
+     */
     val nonFinalFunctionArgsPos: NonFinalFunctionArgsPos = mutable.Map()
 
+    /**
+     * This map is used to actually store the interpretations of parameters passed to functions.
+     * For further information, see [[NonFinalFunctionArgs]].
+     */
     val nonFinalFunctionArgs: mutable.Map[FunctionCall[V], NonFinalFunctionArgs] = mutable.Map()
 
+    /**
+     * During the process of updating the [[nonFinalFunctionArgs]] map, it is necessary to find out
+     * to which function an entity belongs. We use the following map to do this in constant time.
+     */
     val entity2Function: mutable.Map[P, FunctionCall[V]] = mutable.Map()
 
     /**

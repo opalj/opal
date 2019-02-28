@@ -28,7 +28,22 @@ package object string_analysis {
      */
     type P = (V, Method)
 
-    type NonFinalFunctionArgsPos = mutable.Map[FunctionCall[V], mutable.Map[P, (Int, Int, Int)]]
+    /**
+     * This type indicates how (non-final) parameters of functions are represented. The outer-most
+     * list holds all parameter lists a function is called with. The list in the middle holds the
+     * parameters of a concrete call and the inner-most list holds interpreted parameters. The
+     * reason for the inner-most list is that a parameter might have different definition sites; to
+     * capture all, the third (inner-most) list is necessary.
+     */
     type NonFinalFunctionArgs = ListBuffer[ListBuffer[ListBuffer[ProperPropertyComputationResult]]]
+
+    /**
+     * This type serves as a lookup mechanism to find out which functions parameters map to which
+     * argument position. That is, the element of type [[P]] of the inner map maps from this entity
+     * to its position in a data structure of type [[NonFinalFunctionArgs]]. The outer map is
+     * necessary to uniquely identify a position as an entity might be used for different function
+     * calls.
+     */
+    type NonFinalFunctionArgsPos = mutable.Map[FunctionCall[V], mutable.Map[P, (Int, Int, Int)]]
 
 }
