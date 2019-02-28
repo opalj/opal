@@ -72,7 +72,9 @@ class InterproceduralStaticFunctionCallInterpreter(
                     m.name == instr.name && m.declaringClassType == instr.declaringClass)
         }.keys
 
-        // Collect all parameters
+        // Collect all parameters; either from the state, if the interpretation of instr was started
+        // before (in this case, the assumption is that all parameters are fully interpreted) or
+        // start a new interpretation
         val isFunctionArgsPreparationDone = state.nonFinalFunctionArgs.contains(instr)
         val params = if (isFunctionArgsPreparationDone) {
             state.nonFinalFunctionArgs(instr)
@@ -85,6 +87,7 @@ class InterproceduralStaticFunctionCallInterpreter(
                 state.entity2Function
             )
         }
+        // Continue only when all parameter information are available
         if (!isFunctionArgsPreparationDone) {
             val nonFinalResults = getNonFinalParameters(params)
             if (nonFinalResults.nonEmpty) {

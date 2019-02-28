@@ -368,6 +368,7 @@ class InterproceduralStringAnalysis(
                                 state.var2IndexMapping(resultEntity._1),
                                 p.stringConstancyInformation
                             )
+                            // Update the state
                             val func = state.entity2Function(resultEntity)
                             val pos = state.nonFinalFunctionArgsPos(func)(resultEntity)
                             val result = Result(resultEntity, p)
@@ -377,6 +378,11 @@ class InterproceduralStringAnalysis(
                             if (state.entity2Function.nonEmpty) {
                                 return determinePossibleStrings(state)
                             } else {
+                                // We could try to determine a final result before all function
+                                // parameter information are available, however, this will
+                                // definitely result in finding some intermediate result. Thus,
+                                // defer this computations when we know that all necessary
+                                // information are available
                                 state.entity2Function.clear()
                                 if (!computeResultsForPath(state.computedLeanPath, state)) {
                                     determinePossibleStrings(state)
