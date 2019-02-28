@@ -29,9 +29,10 @@ abstract class InterpretationHandler(tac: TACode[TACMethodParameter, DUVar[Value
         tac.cfg
 
     /**
-     * A list of definition sites that have already been processed.
+     * A list of definition sites that have already been processed. Store it as a map for constant
+     * loop-ups (the value is not relevant and thus set to [[Unit]]).
      */
-    protected val processedDefSites: ListBuffer[Int] = ListBuffer[Int]() // TODO: Maybe a map is advantageous
+    protected val processedDefSites: mutable.Map[Int, Unit] = mutable.Map()
 
     /**
      * Processes a given definition site. That is, this function determines the interpretation of

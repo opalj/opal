@@ -65,7 +65,7 @@ class IntraproceduralInterpretationHandler(
         } else if (processedDefSites.contains(defSite)) {
             return Result(e, StringConstancyProperty.getNeutralElement)
         }
-        processedDefSites.append(defSite)
+        processedDefSites(defSite) = Unit
 
         val result: ProperPropertyComputationResult = stmts(defSite) match {
             case Assignment(_, _, expr: StringConst) ⇒
