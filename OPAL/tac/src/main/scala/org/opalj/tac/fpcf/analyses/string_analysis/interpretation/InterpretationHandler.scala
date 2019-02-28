@@ -94,6 +94,15 @@ object InterpretationHandler {
         }
 
     /**
+     * Checks whether the given expression is a string constant / string literal.
+     *
+     * @param expr The expression to check.
+     * @return Returns `true` if the given expression  is a string constant / literal and `false`
+     *         otherwise.
+     */
+    def isStringConstExpression(expr: Expr[V]): Boolean = expr.isStringConst
+
+    /**
      * Checks whether an expression contains a call to [[StringBuilder#append]] or
      * [[StringBuffer#append]].
      *

@@ -132,6 +132,7 @@ class InterproceduralStringAnalysis(
     ): ProperPropertyComputationResult = {
         val uvar = state.entity._1
         val defSites = uvar.definedBy.toArray.sorted
+        val stmts = state.tac.stmts
 
         val tacProvider = p.get(SimpleTACAIKey)
         if (state.iHandler == null) {
@@ -140,13 +141,19 @@ class InterproceduralStringAnalysis(
             )
         }
 
-        // In case a parameter is required for approximating a string, retrieve callers information
-        // (but only once)
         if (state.params.isEmpty) {
             state.params = InterproceduralStringAnalysis.getParams(state.entity)
         }
-        if (state.entity._2.parameterTypes.length > 0 &&
-            state.callers == null && state.params.isEmpty) {
+        // In case a parameter is required for approximating a string, retrieve callers information
+        // (but only once and only if the expressions is not a local string)
+        val requiresCallersInfo = if (state.entity._1.definedBy.exists(_ < 0)) {
+            state.entity._2.parameterTypes.length > 0 && state.callers == null &&
+                state.params.isEmpty
+        } else {
+            !InterpretationHandler.isStringConstExpression(stmts(defSites.head).asAssignment.expr)
+        }
+
+        if (requiresCallersInfo) {
             val declaredMethods = project.get(DeclaredMethodsKey).declaredMethods
             val dm = declaredMethods.find { dm ⇒
                 // TODO: What is a better / more robust way to compare methods (a check with == did
@@ -194,8 +201,6 @@ class InterproceduralStringAnalysis(
 
         // sci stores the final StringConstancyInformation (if it can be determined now at all)
         var sci = StringConstancyProperty.lb.stringConstancyInformation
-        val stmts = state.tac.stmts
-
         // Interpret a function / method parameter using the parameter information in state
         if (defSites.head < 0) {
             state.computedLeanPath = Path(List(FlatPathElement(defSites.head)))
