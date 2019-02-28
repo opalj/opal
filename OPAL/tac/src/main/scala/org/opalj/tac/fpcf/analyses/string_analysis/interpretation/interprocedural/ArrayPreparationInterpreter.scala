@@ -64,7 +64,7 @@ class ArrayPreparationInterpreter(
 
         // Add information of parameters
         defSites.filter(_ < 0).foreach { ds ⇒
-            val paramPos = Math.abs(defSite + 2)
+            val paramPos = Math.abs(ds + 2)
             // lb is the fallback value
             val sci = StringConstancyInformation.reduceMultiple(params.map(_(paramPos)))
             val e: Integer = ds
