@@ -85,29 +85,29 @@ class InterproceduralInterpretationHandler(
             return Result(e, StringConstancyProperty.getNeutralElement)
         }
         // Note that def sites referring to constant expressions will be deleted further down
-        processedDefSites.append(defSite)
+        processedDefSites(defSite) = Unit
 
         val callees = state.callees
         stmts(defSite) match {
             case Assignment(_, _, expr: StringConst) ⇒
                 val result = new StringConstInterpreter(cfg, this).interpret(expr, defSite)
                 state.appendResultToFpe2Sci(defSite, result.asInstanceOf[Result])
-                processedDefSites.remove(processedDefSites.length - 1)
+                processedDefSites.remove(defSite)
                 result
             case Assignment(_, _, expr: IntConst) ⇒
                 val result = new IntegerValueInterpreter(cfg, this).interpret(expr, defSite)
                 state.appendResultToFpe2Sci(defSite, result.asInstanceOf[Result])
-                processedDefSites.remove(processedDefSites.length - 1)
+                processedDefSites.remove(defSite)
                 result
             case Assignment(_, _, expr: FloatConst) ⇒
                 val result = new FloatValueInterpreter(cfg, this).interpret(expr, defSite)
                 state.appendResultToFpe2Sci(defSite, result.asInstanceOf[Result])
-                processedDefSites.remove(processedDefSites.length - 1)
+                processedDefSites.remove(defSite)
                 result
             case Assignment(_, _, expr: DoubleConst) ⇒
                 val result = new DoubleValueInterpreter(cfg, this).interpret(expr, defSite)
                 state.appendResultToFpe2Sci(defSite, result.asInstanceOf[Result])
-                processedDefSites.remove(processedDefSites.length - 1)
+                processedDefSites.remove(defSite)
                 result
             case Assignment(_, _, expr: ArrayLoad[V]) ⇒
                 new ArrayPreparationInterpreter(cfg, this, state, params).interpret(expr, defSite)
@@ -127,7 +127,7 @@ class InterproceduralInterpretationHandler(
                 // processed def sites to make sure that is can be compute again (when all final
                 // results are available)
                 if (state.nonFinalFunctionArgs.contains(expr)) {
-                    processedDefSites.remove(processedDefSites.indexOf(defSite))
+                    processedDefSites.remove(defSite)
                 }
                 r
             case Assignment(_, _, expr: StaticFunctionCall[V]) ⇒
@@ -138,7 +138,7 @@ class InterproceduralInterpretationHandler(
                 // processed def sites to make sure that is can be compute again (when all final
                 // results are available)
                 if (state.nonFinalFunctionArgs.contains(expr)) {
-                    processedDefSites.remove(processedDefSites.indexOf(defSite))
+                    processedDefSites.remove(defSite)
                 }
                 r
             case Assignment(_, _, expr: BinaryExpr[V]) ⇒
@@ -159,7 +159,7 @@ class InterproceduralInterpretationHandler(
                 // processed def sites to make sure that is can be compute again (when all final
                 // results are available)
                 if (state.nonFinalFunctionArgs.contains(expr)) {
-                    processedDefSites.remove(processedDefSites.indexOf(defSite))
+                    processedDefSites.remove(defSite)
                 }
                 r
             case ExprStmt(_, expr: StaticFunctionCall[V]) ⇒
@@ -170,7 +170,7 @@ class InterproceduralInterpretationHandler(
                 // processed def sites to make sure that is can be compute again (when all final
                 // results are available)
                 if (!r.isInstanceOf[Result]) {
-                    processedDefSites.remove(processedDefSites.length - 1)
+                    processedDefSites.remove(defSite)
                 }
                 r
             case vmc: VirtualMethodCall[V] ⇒
