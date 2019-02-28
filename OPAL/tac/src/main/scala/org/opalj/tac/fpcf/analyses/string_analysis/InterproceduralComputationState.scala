@@ -9,17 +9,14 @@ import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.Property
 import org.opalj.fpcf.Result
 import org.opalj.value.ValueInformation
-import org.opalj.br.cfg.CFG
 import org.opalj.br.fpcf.cg.properties.Callees
 import org.opalj.br.fpcf.cg.properties.CallersProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.br.fpcf.properties.StringConstancyProperty
-import org.opalj.tac.Stmt
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.Path
 import org.opalj.tac.DUVar
 import org.opalj.tac.TACMethodParameter
 import org.opalj.tac.TACode
-import org.opalj.tac.TACStmts
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedural.InterproceduralInterpretationHandler
 import org.opalj.tac.FunctionCall
 
@@ -35,10 +32,6 @@ case class InterproceduralComputationState(entity: P) {
      * The Three-Address Code of the entity's method
      */
     var tac: TACode[TACMethodParameter, DUVar[ValueInformation]] = _
-    /**
-     * The Control Flow Graph of the entity's method
-     */
-    var cfg: CFG[Stmt[V], TACStmts[V]] = _
     /**
      * The interpretation handler to use
      */

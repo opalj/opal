@@ -3,7 +3,7 @@ package org.opalj.tac.fpcf.analyses.string_analysis.interpretation.intraprocedur
 
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.Result
-import org.opalj.br.cfg.CFG
+import org.opalj.value.ValueInformation
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.tac.ArrayLoad
@@ -16,9 +16,7 @@ import org.opalj.tac.New
 import org.opalj.tac.NonVirtualFunctionCall
 import org.opalj.tac.NonVirtualMethodCall
 import org.opalj.tac.StaticFunctionCall
-import org.opalj.tac.Stmt
 import org.opalj.tac.StringConst
-import org.opalj.tac.TACStmts
 import org.opalj.tac.VirtualFunctionCall
 import org.opalj.tac.VirtualMethodCall
 import org.opalj.tac.fpcf.analyses.string_analysis.V
@@ -31,6 +29,9 @@ import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.common.Integer
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.common.NewInterpreter
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.common.StringConstInterpreter
+import org.opalj.tac.DUVar
+import org.opalj.tac.TACMethodParameter
+import org.opalj.tac.TACode
 
 /**
  * `IntraproceduralInterpretationHandler` is responsible for processing expressions that are
@@ -41,13 +42,11 @@ import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.common.StringC
  * [[org.opalj.tac.fpcf.analyses.string_analysis.interpretation.AbstractStringInterpreter]]) return
  * a final computation result!
  *
- * @param cfg The control flow graph that underlies the program / method in which the expressions of
- *            interest reside.
  * @author Patrick Mell
  */
 class IntraproceduralInterpretationHandler(
-        cfg: CFG[Stmt[V], TACStmts[V]]
-) extends InterpretationHandler(cfg) {
+        tac: TACode[TACMethodParameter, DUVar[ValueInformation]]
+) extends InterpretationHandler(tac) {
 
     /**
      * Processed the given definition site in an intraprocedural fashion.
@@ -121,7 +120,7 @@ object IntraproceduralInterpretationHandler {
      * @see [[IntraproceduralInterpretationHandler]]
      */
     def apply(
-        cfg: CFG[Stmt[V], TACStmts[V]]
-    ): IntraproceduralInterpretationHandler = new IntraproceduralInterpretationHandler(cfg)
+        tac: TACode[TACMethodParameter, DUVar[ValueInformation]]
+    ): IntraproceduralInterpretationHandler = new IntraproceduralInterpretationHandler(tac)
 
 }

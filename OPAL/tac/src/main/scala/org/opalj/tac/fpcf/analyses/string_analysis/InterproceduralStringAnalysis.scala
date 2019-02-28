@@ -134,12 +134,9 @@ class InterproceduralStringAnalysis(
         val defSites = uvar.definedBy.toArray.sorted
 
         val tacProvider = p.get(SimpleTACAIKey)
-        if (state.cfg == null) {
-            state.cfg = tacProvider(state.entity._2).cfg
-        }
         if (state.iHandler == null) {
             state.iHandler = InterproceduralInterpretationHandler(
-                state.cfg, ps, declaredMethods, state, continuation(state)
+                state.tac, ps, declaredMethods, state, continuation(state)
             )
         }
 
@@ -197,7 +194,7 @@ class InterproceduralStringAnalysis(
 
         // sci stores the final StringConstancyInformation (if it can be determined now at all)
         var sci = StringConstancyProperty.lb.stringConstancyInformation
-        val stmts = state.cfg.code.instructions
+        val stmts = state.tac.stmts
 
         // Interpret a function / method parameter using the parameter information in state
         if (defSites.head < 0) {
@@ -206,7 +203,7 @@ class InterproceduralStringAnalysis(
             return Result(state.entity, StringConstancyProperty.extractFromPPCR(r))
         }
 
-        val pathFinder: AbstractPathFinder = new WindowPathFinder(state.cfg)
+        val pathFinder: AbstractPathFinder = new WindowPathFinder(state.tac.cfg)
         val call = stmts(defSites.head).asAssignment.expr
         if (InterpretationHandler.isStringBuilderBufferToStringCall(call)) {
             val initDefSites = InterpretationHandler.findDefSiteOfInit(uvar, stmts)
