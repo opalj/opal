@@ -142,14 +142,11 @@ class InterproceduralStringAnalysis(
         }
         // In case a parameter is required for approximating a string, retrieve callers information
         // (but only once and only if the expressions is not a local string)
-        val requiresCallersInfo = if (state.entity._1.definedBy.exists(_ < 0)) {
-            state.entity._2.parameterTypes.length > 0 &&
-                state.entity._2.parameterTypes.exists {
-                    InterproceduralStringAnalysis.isSupportedType
-                } && state.callers == null && state.params.isEmpty
-        } else {
-            !InterpretationHandler.isStringConstExpression(stmts(defSites.head).asAssignment.expr)
+        val hasSupportedParamType = state.entity._2.parameterTypes.exists {
+            InterproceduralStringAnalysis.isSupportedType
         }
+        val requiresCallersInfo = state.callers == null && state.params.isEmpty &&
+            (state.entity._1.definedBy.exists(_ < 0) || hasSupportedParamType)
 
         if (requiresCallersInfo) {
             val dm = declaredMethods(state.entity._2)
