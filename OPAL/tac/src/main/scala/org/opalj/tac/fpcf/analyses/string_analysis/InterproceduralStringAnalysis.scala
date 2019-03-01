@@ -25,6 +25,7 @@ import org.opalj.br.fpcf.cg.properties.Callees
 import org.opalj.br.fpcf.cg.properties.CallersProperty
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
+import org.opalj.br.FieldType
 import org.opalj.br.Method
 import org.opalj.tac.Stmt
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.AbstractPathFinder
@@ -147,8 +148,10 @@ class InterproceduralStringAnalysis(
         // In case a parameter is required for approximating a string, retrieve callers information
         // (but only once and only if the expressions is not a local string)
         val requiresCallersInfo = if (state.entity._1.definedBy.exists(_ < 0)) {
-            state.entity._2.parameterTypes.length > 0 && state.callers == null &&
-                state.params.isEmpty
+            state.entity._2.parameterTypes.length > 0 &&
+                state.entity._2.parameterTypes.exists {
+                    InterproceduralStringAnalysis.isSupportedType
+                } && state.callers == null && state.params.isEmpty
         } else {
             !InterpretationHandler.isStringConstExpression(stmts(defSites.head).asAssignment.expr)
         }
@@ -161,7 +164,7 @@ class InterproceduralStringAnalysis(
                 dm.name == state.entity._2.name &&
                     dm.declaringClassType.toJava == state.entity._2.classFile.thisType.toJava &&
                     dm.definedMethod.descriptor.parameterTypes.length ==
-                        state.entity._2.descriptor.parameterTypes.length
+                    state.entity._2.descriptor.parameterTypes.length
             }.get
             val callersEOptP = ps(dm, CallersProperty.key)
             if (callersEOptP.hasUBP) {
@@ -437,9 +440,7 @@ class InterproceduralStringAnalysis(
      *              not have been called)!
      * @return Returns the final result.
      */
-    private def computeFinalResult(
-        state:    InterproceduralComputationState,
-    ): Result = {
+    private def computeFinalResult(state: InterproceduralComputationState): Result = {
         finalizePreparations(state.computedLeanPath, state, state.iHandler)
         val finalSci = new PathTransformer(null).pathToStringTree(
             state.computedLeanPath, state.fpe2sci.toMap, resetExprHandler = false
@@ -483,7 +484,7 @@ class InterproceduralStringAnalysis(
      * interpretations are registered using [[InterproceduralStringAnalysis.registerParams]].
      */
     private def registerParams(
-        state: InterproceduralComputationState,
+        state:       InterproceduralComputationState,
         tacProvider: Method ⇒ TACode[TACMethodParameter, DUVar[ValueInformation]]
     ): Boolean = {
         var hasIntermediateResult = false
@@ -492,38 +493,38 @@ class InterproceduralStringAnalysis(
                 val tac = propertyStore(m.definedMethod, TACAI.key).ub.tac.get
                 val params = tac.stmts(tac.pcToIndex(pc)) match {
                     case Assignment(_, _, fc: FunctionCall[V]) ⇒ fc.params
-                    case Assignment(_, _, mc: MethodCall[V]) ⇒ mc.params
-                    case ExprStmt(_, fc: FunctionCall[V]) ⇒ fc.params
-                    case ExprStmt(_, fc: MethodCall[V]) ⇒ fc.params
-                    case mc: MethodCall[V] ⇒ mc.params
-                    case _ ⇒ List()
+                    case Assignment(_, _, mc: MethodCall[V])   ⇒ mc.params
+                    case ExprStmt(_, fc: FunctionCall[V])      ⇒ fc.params
+                    case ExprStmt(_, fc: MethodCall[V])        ⇒ fc.params
+                    case mc: MethodCall[V]                     ⇒ mc.params
+                    case _                                     ⇒ List()
                 }
-                params.zipWithIndex.foreach { case (p, paramIndex) ⇒
-                    // Add an element to the params list (we do it here because we know how many
-                    // parameters there are)
-                    if (state.params.length <= methodIndex) {
-                        state.params.append(params.indices.map(_ ⇒
-                            StringConstancyInformation.getNeutralElement
-                        ).to[ListBuffer])
-                    }
-                    // Recursively analyze supported types
-                    if (InterproceduralStringAnalysis.isSupportedType(p.asVar)) {
-                        val paramEntity = (p.asVar, m.definedMethod)
-                        val eps = propertyStore(paramEntity, StringConstancyProperty.key)
-                        state.var2IndexMapping(paramEntity._1) = paramIndex
-                        eps match {
-                            case FinalP(r) ⇒
-                                state.params(methodIndex)(paramIndex) = r.stringConstancyInformation
-                            case _ ⇒
-                                state.dependees = eps :: state.dependees
-                                hasIntermediateResult = true
-                                state.paramResultPositions(paramEntity) = (methodIndex, paramIndex)
-                                state.parameterDependeesCount += 1
+                params.zipWithIndex.foreach {
+                    case (p, paramIndex) ⇒
+                        // Add an element to the params list (we do it here because we know how many
+                        // parameters there are)
+                        if (state.params.length <= methodIndex) {
+                            state.params.append(params.indices.map(_ ⇒
+                                StringConstancyInformation.getNeutralElement).to[ListBuffer])
                         }
-                    } else {
-                        state.params(methodIndex)(paramIndex) =
-                            StringConstancyProperty.lb.stringConstancyInformation
-                    }
+                        // Recursively analyze supported types
+                        if (InterproceduralStringAnalysis.isSupportedType(p.asVar)) {
+                            val paramEntity = (p.asVar, m.definedMethod)
+                            val eps = propertyStore(paramEntity, StringConstancyProperty.key)
+                            state.var2IndexMapping(paramEntity._1) = paramIndex
+                            eps match {
+                                case FinalP(r) ⇒
+                                    state.params(methodIndex)(paramIndex) = r.stringConstancyInformation
+                                case _ ⇒
+                                    state.dependees = eps :: state.dependees
+                                    hasIntermediateResult = true
+                                    state.paramResultPositions(paramEntity) = (methodIndex, paramIndex)
+                                    state.parameterDependeesCount += 1
+                            }
+                        } else {
+                            state.params(methodIndex)(paramIndex) =
+                                StringConstancyProperty.lb.stringConstancyInformation
+                        }
 
                 }
         }
@@ -538,14 +539,14 @@ class InterproceduralStringAnalysis(
      * This function traverses the given path, computes all string values along the path and stores
      * these information in the given state.
      *
-     * @param p The path to traverse.
+     * @param p     The path to traverse.
      * @param state The current state of the computation. This function will alter
      *              [[InterproceduralComputationState.fpe2sci]].
      * @return Returns `true` if all values computed for the path are final results.
      */
     private def computeResultsForPath(
-        p:        Path,
-        state:    InterproceduralComputationState
+        p:     Path,
+        state: InterproceduralComputationState
     ): Boolean = {
         var hasFinalResult = true
 
@@ -684,25 +685,45 @@ object InterproceduralStringAnalysis {
         }
 
     /**
-     * Checks whether a value of some type is supported by the [[InterproceduralStringAnalysis]].
-     * Currently supported types are, java.lang.String and the primitive types short, int, float,
-     * and double.
+     * Checks whether a given type, identified by its string representation, is supported by the
+     * string analysis. That means, if this function returns `true`, a value, which is of type
+     * `typeName` may be approximated by the string analysis better than just the lower bound.
      *
-     * @param v The value to check if it is supported.
-     * @return Returns `true` if `v` is a supported type and `false` otherwise.
+     * @param typeName The name of the type to check. May either be the name of a primitive type or
+     *                 a fully-qualified class name (dot-separated).
+     * @return Returns `true`, if `typeName` is an element in [char, short, int, float, double,
+     *         java.lang.String] and `false` otherwise.
+     */
+    def isSupportedType(typeName: String): Boolean =
+        typeName == "char" || typeName == "short" || typeName == "int" || typeName == "float" ||
+            typeName == "double" || typeName == "java.lang.String"
+
+    /**
+     * Determines whether a given [[V]] element ([[DUVar]]) is supported by the string analysis.
+     *
+     * @param v The element to check.
+     * @return Returns true if the given [[FieldType]] is of a supported type. For supported types,
+     *         see [[InterproceduralStringAnalysis.isSupportedType(String)]].
      */
     def isSupportedType(v: V): Boolean =
         if (v.value.isPrimitiveValue) {
-            val primTypeName = v.value.asPrimitiveValue.primitiveType.toJava
-            primTypeName == "short" || primTypeName == "int" || primTypeName == "float" ||
-                primTypeName == "double"
+            isSupportedType(v.value.asPrimitiveValue.primitiveType.toJava)
         } else {
             try {
-                v.value.verificationTypeInfo.asObjectVariableInfo.clazz.toJava == "java.lang.String"
+                isSupportedType(v.value.verificationTypeInfo.asObjectVariableInfo.clazz.toJava)
             } catch {
                 case _: Exception ⇒ false
             }
         }
+
+    /**
+     * Determines whether a given [[FieldType]] element is supported by the string analysis.
+     *
+     * @param fieldType The element to check.
+     * @return Returns true if the given [[FieldType]] is of a supported type. For supported types,
+     *         see [[InterproceduralStringAnalysis.isSupportedType(String)]].
+     */
+    def isSupportedType(fieldType: FieldType): Boolean = isSupportedType(fieldType.toJava)
 
 }
 
