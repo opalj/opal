@@ -348,8 +348,9 @@ class LBFieldValuesAnalysis private[analyses] (
                             def c(eps: SomeEPS): ProperPropertyComputationResult = {
                                 // println("\nCONTINUATION:")
                                 // print(f.toJava+"\n\t\t"+relevantDependees+"\n\t\t")
-                                relevantDependees.updateAll()
-                                val domain = new FieldValuesAnalysisDomain(classFile, List(f), relevantDependees)
+                                val newDependees = relevantDependees.clone()
+                                newDependees.updateAll()
+                                val domain = new FieldValuesAnalysisDomain(classFile, List(f), newDependees)
                                 analyzeRelevantMethods(classFile, domain)
                                 val dvOption = domain.fieldInformation(f)
                                 if (dvOption.isEmpty) {
@@ -362,12 +363,12 @@ class LBFieldValuesAnalysis private[analyses] (
                                 val domain.DomainReferenceValueTag(dv) = dvOption.get
                                 val vi = ValueBasedFieldValueInformation(dv.toCanonicalForm)
                                 // println("======>>>>>>\n\t\t"+vi+"\n\t\t"+relevantDependees)
-                                if (relevantDependees.isEmpty ||
+                                if (newDependees.isEmpty ||
                                     dv.isNull.isYes ||
                                     classHierarchy.isKnownToBeFinal(dv.leastUpperType.get)) {
                                     Result(FinalEP(f, vi))
                                 } else {
-                                    InterimResult.forLB(f, vi, relevantDependees, c)
+                                    InterimResult.forLB(f, vi, newDependees, c)
                                 }
                             }
 

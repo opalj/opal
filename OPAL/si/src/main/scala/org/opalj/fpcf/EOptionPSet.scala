@@ -6,12 +6,26 @@ import scala.collection.immutable.IntMap
 import scala.collection.mutable
 
 /**
- * An mutable set storing EPKs and interim values; the set never contains FinalEPs and can
- * (should) therefore directly be used as the dependency set passed to [[InterimResult]]s.
+ * An semi-mutable set storing EPKs and interim properties.
+ *
+ * The set is semi-mutable in the sense that the concrete property values associated with
+ * a specific entity can be updated, but as soon as dependencies to other E/PKs are added or removed
+ * a new set is created; this behavior is required by the property store since the list of
+ * dependees w.r.t. the entity/property kind must not change
+ *
+ * The set never contains FinalEPs and can (should) therefore directly be used as the dependency
+ * set passed to [[InterimResult]]s.
  *
  * @author Michael Eichberg
  */
 sealed trait EOptionPSet[E <: Entity, P <: Property] extends Traversable[EOptionP[E, P]] {
+
+    // The number of times a dependency was added or removed. That is, this number always
+    // increases and is used by the property store to detect if an EOptionPSet was actually
+    // updated w.r.t. the set of epk dependencies. However, if a dependency is updated and the
+    // new property is final and dependency is therefor deleted, we still do not consider that
+    // as an explicit epk dependency update!
+    private[fpcf] def epkUpdatesCount: Int
 
     override def foreach[U](f: EOptionP[E, P] ⇒ U): Unit
     override def isEmpty: Boolean
@@ -19,15 +33,15 @@ sealed trait EOptionPSet[E <: Entity, P <: Property] extends Traversable[EOption
 
     /** Filters the respective EOptionP values and returns a new EOptionPSet. */
     override def filter(p: EOptionP[E, P] ⇒ Boolean): EOptionPSet[E, P] = {
-        // implementation is required to shut up the compiler...
+        // an implementation is required to shut up the compiler...
         throw new UnknownError("this method must be overridden by subclasses")
     }
 
     /**
-     * Gets the last queried value or queries the property store and stores the value unless
+     * Returns the last queried value or queries the property store and stores the value unless
      * the value is final.
      *
-     * The value is stored to ensure that a client gets a consistent view of the same EPK is
+     * The value is stored to ensure that a client gets a consistent view of the same EPK if it is
      * queried multiple times during an analysis.
      *
      * If the queried eOptionP is final then it is not added to the list of dependees.
@@ -40,6 +54,7 @@ sealed trait EOptionPSet[E <: Entity, P <: Property] extends Traversable[EOption
         ps: PropertyStore
     ): EOptionP[NewE, NewP]
 
+    /*
     /** Removes all EOptionP values with the given entity from this set. */
     def remove(e: Entity): Unit
 
@@ -50,10 +65,11 @@ sealed trait EOptionPSet[E <: Entity, P <: Property] extends Traversable[EOption
     def remove(eOptionP: SomeEOptionP): Unit
 
     def clear(): Unit
+*/
 
     /**
      * Updates this set's EOptionP that has the same entity and PropertyKey with the given one.
-     * '''Here, update means that the value is replace, unless the new value is final. In
+     * '''Here, update means that the value is replaced, unless the new value is final. In
      * that case the value is removed because it is no longer required as a dependency!'''
      */
     def update(eps: SomeEPS): Unit
@@ -63,10 +79,17 @@ sealed trait EOptionPSet[E <: Entity, P <: Property] extends Traversable[EOption
      */
     def updateAll()(implicit ps: PropertyStore): Unit
 
+    /** Creates new successor instance which can be manipulated independently from this instance. */
+    override def clone(): EOptionPSet[E, P] = {
+        // an implementation is required to shut up the compiler...
+        throw new UnknownError("this method must be overridden by subclasses")
+    }
+
 }
 
 private[fpcf] class MultiEOptionPSet[E <: Entity, P <: Property](
-        private var data: Map[Int, mutable.Map[Entity, EOptionP[E, P]]] = IntMap.empty
+        private var data:                  Map[Int, mutable.Map[Entity, EOptionP[E, P]]] = IntMap.empty,
+        private[fpcf] var epkUpdatesCount: Int                                           = 0
 ) extends EOptionPSet[E, P] {
 
     override def foreach[U](f: EOptionP[E, P] ⇒ U): Unit = {
@@ -82,13 +105,30 @@ private[fpcf] class MultiEOptionPSet[E <: Entity, P <: Property](
     override def size: Int = { var size = 0; data.valuesIterator.foreach(size += _.size); size }
 
     override def filter(p: EOptionP[E, P] ⇒ Boolean): EOptionPSet[E, P] = {
-        val newData =
-            data
-                .iterator
-                .map(e ⇒ (e._1 /*PKid*/ , e._2.filter(e ⇒ p(e._2))))
-                .filter(_._2.nonEmpty)
-                .toMap
-        new MultiEOptionPSet(newData)
+        var newData: Map[Int, mutable.Map[Entity, EOptionP[E, P]]] = IntMap.empty
+        var filteredSomeValue = false
+        data.foreach { entry ⇒
+            val (pkId, eEOptionPs) = entry
+            val newEEOptionPs =
+                eEOptionPs.filter { entry ⇒
+                    val (e, eOptionP) = entry
+                    if (p(eOptionP)) {
+                        true
+                    } else {
+                        filteredSomeValue = true
+                        false
+                    }
+                }
+            if (newEEOptionPs.nonEmpty) {
+                newData += ((pkId, newEEOptionPs))
+            }
+        }
+
+        if (filteredSomeValue) {
+            new MultiEOptionPSet(newData, epkUpdatesCount + 1)
+        } else {
+            new MultiEOptionPSet(data, epkUpdatesCount)
+        }
     }
 
     override def getOrQueryAndUpdate[NewE <: E, NewP <: P](
@@ -107,6 +147,7 @@ private[fpcf] class MultiEOptionPSet[E <: Entity, P <: Property](
                         val eOptionP: EOptionP[NewE, NewP] = ps(e, pk)
                         if (eOptionP.isRefinable) {
                             eEOptionPs += (eOptionP.e → eOptionP)
+                            epkUpdatesCount += 1
                         }
                         eOptionP
                 }
@@ -114,12 +155,14 @@ private[fpcf] class MultiEOptionPSet[E <: Entity, P <: Property](
                 val eOptionP: EOptionP[NewE, NewP] = ps(e, pk)
                 if (eOptionP.isRefinable) {
                     data = data + (pkId → mutable.Map(eOptionP.e → eOptionP))
+                    epkUpdatesCount += 1
                 }
                 eOptionP
 
         }
     }
 
+    /*
     def remove(e: Entity): Unit = {
         data = data.mapValues(_ -= e).filter(_._2.nonEmpty)
     }
@@ -141,6 +184,7 @@ private[fpcf] class MultiEOptionPSet[E <: Entity, P <: Property](
     def clear(): Unit = {
         data = IntMap.empty
     }
+    */
 
     override def update(eps: SomeEPS): Unit = {
         val pkId = eps.pk.id
@@ -173,6 +217,8 @@ private[fpcf] class MultiEOptionPSet[E <: Entity, P <: Property](
         }
         data = data.filter(_._2.nonEmpty)
     }
+
+    override def clone(): EOptionPSet[E, P] = new MultiEOptionPSet(data, epkUpdatesCount)
 
     override def toString(): String = {
         var s = "MultiEOptionPSet("

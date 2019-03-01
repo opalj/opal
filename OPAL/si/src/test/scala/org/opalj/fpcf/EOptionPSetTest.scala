@@ -17,9 +17,6 @@ class EOptionPSetTest extends FunSuite {
 
         val set = EOptionPSet[Entity, Property](e1)
         assert(set.hasDefiniteSize)
-
-        set.remove(e1)
-        assert(set.hasDefiniteSize)
     }
 
     test("we can iterate over the singleton value stored in an EOptionPSet") {
@@ -127,7 +124,7 @@ class EOptionPSetTest extends FunSuite {
         val set = EOptionPSet[Entity, Property](FinalEP(new Object, Marker.IsMarked))
         assert(set.isEmpty)
     }
-
+    /*
     test("remove can be called on an empty EOptionPSet") {
         val set = EOptionPSet.empty[Entity, Property]
 
@@ -199,6 +196,7 @@ class EOptionPSetTest extends FunSuite {
         // the following query is passed through to the property store...
         assert(set.getOrQueryAndUpdate(e2, Palindromes.PalindromeKey) == ie2Pal)
     }
+    */
 
     test("filters filters the respective value") {
         val e1 = "e1"

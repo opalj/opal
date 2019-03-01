@@ -29,13 +29,13 @@ class BasePropertyStoreMockup extends PropertyStore {
 
     override def scheduledOnUpdateComputationsCount: Int = ???
 
-    override def immediateOnUpdateComputationsCount: Int = ???
-
     override def quiescenceCount: Int = ???
 
     override def fastTrackPropertiesCount: Int = ???
 
-    override def statistics: scala.collection.Map[String, Int] = ???
+    override def fastTrackPropertyComputationsCount: Int = ???
+
+    override def fallbacksUsedForComputedPropertiesCount: Int = ???
 
     override def isKnown(e: Entity): Boolean = ???
 
@@ -64,9 +64,11 @@ class BasePropertyStoreMockup extends PropertyStore {
         pc: EOptionP[E, P] ⇒ InterimEP[E, P]
     ): Unit = ???
 
-    override def apply[E <: Entity, P <: Property](e: E, pk: PropertyKey[P]): EOptionP[E, P] = ???
-
-    override def apply[E <: Entity, P <: Property](epk: EPK[E, P]): EOptionP[E, P] = ???
+    override def doApply[E <: Entity, P <: Property](
+        epk:  EPK[E, P],
+        e:    E,
+        pkId: Int
+    ): EOptionP[E, P] = ???
 
     override def force[E <: Entity, P <: Property](e: E, pk: PropertyKey[P]): Unit = ???
 
@@ -101,12 +103,12 @@ class InitializedPropertyStore(
         val data: IntMap[Map[Entity, mutable.Queue[EOptionP[Entity, Property]]]]
 ) extends BasePropertyStoreMockup {
 
-    override def apply[E <: Entity, P <: Property](epk: EPK[E, P]): EOptionP[E, P] = {
-        data(epk.pk.id)(epk.e).dequeue().asInstanceOf[EOptionP[E, P]]
-    }
-
-    override def apply[E <: Entity, P <: Property](e: E, pk: PropertyKey[P]): EOptionP[E, P] = {
-        data(pk.id)(e).dequeue().asInstanceOf[EOptionP[E, P]]
+    override def doApply[E <: Entity, P <: Property](
+        epk:  EPK[E, P],
+        e:    E,
+        pkId: Int
+    ): EOptionP[E, P] = {
+        data(pkId)(e).dequeue().asInstanceOf[EOptionP[E, P]]
     }
 }
 

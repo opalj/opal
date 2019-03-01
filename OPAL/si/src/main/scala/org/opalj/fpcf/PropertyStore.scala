@@ -244,16 +244,20 @@ abstract class PropertyStore {
      */
     def scheduledOnUpdateComputationsCount: Int
 
-    /**
-     * The number of times a property was directly computed again due to an updated dependee.
-     */
-    def immediateOnUpdateComputationsCount: Int
-
     /** The number of times the property store reached quiescence. */
     def quiescenceCount: Int
 
-    /** The number of properties that were computed using a fast-track. */
+    /** The number of properties that were successfully computed using a fast-track. */
     def fastTrackPropertiesCount: Int
+
+    /** The number of fast-track property computations that were execute. */
+    def fastTrackPropertyComputationsCount: Int
+
+    /**
+     * The number of times a fallback property was computed for an entity though an (eager)
+     * analysis was actually scheduled.
+     */
+    def fallbacksUsedForComputedPropertiesCount: Int
 
     /**
      * Reports core statistics; this method is only guaranteed to report ''final'' results
@@ -410,7 +414,9 @@ abstract class PropertyStore {
      * @note Only to be called when the store is quiescent.
      * @note Does not trigger lazy property computations.
      */
-    def finalEntities[P <: Property](p: P): Iterator[Entity]
+    def finalEntities[P <: Property](p: P): Iterator[Entity] = {
+        entities((otherEPS: SomeEPS) ⇒ otherEPS.isFinal && otherEPS.asFinal.p == p)
+    }
 
     /**
      * Associates the given property `p`, which has property kind `pk`, with the given entity
@@ -479,6 +485,10 @@ abstract class PropertyStore {
             configuration.collaborativelyComputedPropertyKindsFinalizationOrder
         )
     }
+
+    protected[this] var subPhaseId: Int = 0
+
+    protected[this] var hasSuppressedNotifications: Boolean = false
 
     /**
      * Needs to be called before an analysis is scheduled to inform the property store which
@@ -568,6 +578,9 @@ abstract class PropertyStore {
                 (finalizationOrder :+ cleanUpSubPhase.toList).toArray
             }
 
+        subPhaseId = 0
+        hasSuppressedNotifications = suppressInterimUpdates.nonEmpty
+
         // Step 5
         // Call `newPhaseInitialized` to enable subclasses to perform custom initialization steps
         // when a phase was setup.
@@ -627,7 +640,9 @@ abstract class PropertyStore {
     }
 
     /** @see `apply(epk:EPK)` for details. */
-    def apply[E <: Entity, P <: Property](e: E, pk: PropertyKey[P]): EOptionP[E, P]
+    final def apply[E <: Entity, P <: Property](e: E, pk: PropertyKey[P]): EOptionP[E, P] = {
+        apply(EPK(e, pk), e, pk, pk.id)
+    }
 
     /**
      * Returns the property of the respective property kind `pk` currently associated
@@ -653,7 +668,34 @@ abstract class PropertyStore {
      * @return `EPK(e,pk)` if information about the respective property is not (yet) available.
      *         `Final|InterimP(e,Property)` otherwise.
      */
-    def apply[E <: Entity, P <: Property](epk: EPK[E, P]): EOptionP[E, P]
+    def apply[E <: Entity, P <: Property](epk: EPK[E, P]): EOptionP[E, P] = {
+        val e = epk.e
+        val pk = epk.pk
+        val pkId = pk.id
+        apply(epk, e, pk, pkId)
+    }
+
+    private[this] def apply[E <: Entity, P <: Property](
+        epk:  EPK[E, P],
+        e:    E,
+        pk:   PropertyKey[P],
+        pkId: Int
+    ): EOptionP[E, P] = {
+
+        if (debug && propertyKindsComputedInLaterPhase(pkId)) {
+            throw new IllegalArgumentException(
+                s"querying of property kind ($pk) computed in a later phase"
+            )
+        }
+
+        doApply(epk, e, pkId)
+    }
+
+    protected[this] def doApply[E <: Entity, P <: Property](
+        epk:  EPK[E, P],
+        e:    E,
+        pkId: Int
+    ): EOptionP[E, P]
 
     /**
      * Enforce the evaluation of the specified property kind for the given entity, even

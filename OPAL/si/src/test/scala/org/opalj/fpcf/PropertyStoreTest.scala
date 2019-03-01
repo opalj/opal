@@ -49,7 +49,6 @@ sealed abstract class PropertyStoreTest(
                 ps.scheduledTasksCount should be(0)
                 ps.fastTrackPropertiesCount should be(0)
                 ps.scheduledOnUpdateComputationsCount should be(0)
-                ps.immediateOnUpdateComputationsCount should be(0)
                 ps.isKnown("<DOES NOT EXIST>") should be(false)
                 ps.hasProperty("<DOES NOT EXIST>", Palindrome) should be(false)
                 ps.properties("<DOES NOT EXIST>") should be('Empty)
@@ -74,7 +73,6 @@ sealed abstract class PropertyStoreTest(
                 ps.scheduledTasksCount should be(0)
                 ps.fastTrackPropertiesCount should be(0)
                 ps.scheduledOnUpdateComputationsCount should be(0)
-                ps.immediateOnUpdateComputationsCount should be(0)
                 ps.isKnown("<DOES NOT EXIST>") should be(false)
                 ps.hasProperty("<DOES NOT EXIST>", Palindrome) should be(false)
                 ps.properties("<DOES NOT EXIST>") should be('Empty)
@@ -162,8 +160,9 @@ sealed abstract class PropertyStoreTest(
                 ps.setupPhase(Set(PalindromeKey), Set.empty)
 
                 ps.scheduleEagerComputationForEntity("e1") { e ⇒
-                    val dependees = Seq(EPK("e2", PalindromeKey), EPK("e3", PalindromeKey))
-                    dependees.foreach(ps.apply[Entity, Property]) // we have to quey them!
+                    val e3EPK = EPK("e3", PalindromeKey)
+                    val dependees = Seq(EPK("e2", PalindromeKey), e3EPK)
+                    ps(e3EPK) // we have to query it (e2 is already set => no need to query it)!
                     InterimResult(
                         "e1",
                         NoPalindrome,
@@ -988,9 +987,7 @@ sealed abstract class PropertyStoreTest(
                                     s"${nodeEntitiesPermutation.mkString("[", ",", "]")} "+
                                     "; number of executed tasks:"+ps.scheduledTasksCount+
                                     "; number of scheduled onUpdateContinuations:"+
-                                    ps.scheduledOnUpdateComputationsCount+
-                                    "; number of immediate onUpdateContinuations:"+
-                                    ps.immediateOnUpdateComputationsCount
+                                    ps.scheduledOnUpdateComputationsCount
                             )
                             try {
                                 ps(nodeA, ReachableNodes.Key) should be(FinalEP(
@@ -1589,9 +1586,7 @@ sealed abstract class PropertyStoreTest(
                     info(
                         s"number of executed tasks:"+ps.scheduledTasksCount+
                             "; number of scheduled onUpdateContinuations:"+
-                            ps.scheduledOnUpdateComputationsCount+
-                            "; number of immediate onUpdateContinuations:"+
-                            ps.immediateOnUpdateComputationsCount
+                            ps.scheduledOnUpdateComputationsCount
                     )
                 }
             }
@@ -1657,9 +1652,7 @@ sealed abstract class PropertyStoreTest(
                     info(
                         s"number of executed tasks:"+ps.scheduledTasksCount+
                             "; number of scheduled onUpdateContinuations:"+
-                            ps.scheduledOnUpdateComputationsCount+
-                            "; number of immediate onUpdateContinuations:"+
-                            ps.immediateOnUpdateComputationsCount
+                            ps.scheduledOnUpdateComputationsCount
                     )
                 }
             }
