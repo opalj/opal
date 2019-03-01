@@ -410,7 +410,7 @@ final class PKESequentialPropertyStore private (
 
         val oldPV = ps(pkId).put(e, new FinalEP(e, p))
         if (oldPV.isDefined) {
-            throw new IllegalStateException(s"$e has already a property $oldPV")
+            throw new IllegalStateException(s"$e had already the property $oldPV")
         }
     }
 
