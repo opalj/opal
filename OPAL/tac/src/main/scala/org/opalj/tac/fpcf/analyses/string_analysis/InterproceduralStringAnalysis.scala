@@ -15,7 +15,6 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
 import org.opalj.fpcf.SomeEPS
 import org.opalj.value.ValueInformation
-import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.FPCFAnalysis
@@ -77,16 +76,12 @@ class InterproceduralStringAnalysis(
         val project: SomeProject
 ) extends FPCFAnalysis {
 
-    private var declaredMethods: DeclaredMethods = _
+    private val declaredMethods = project.get(DeclaredMethodsKey)
 
     def analyze(data: P): ProperPropertyComputationResult = {
         val state = InterproceduralComputationState(data)
-        declaredMethods = project.get(DeclaredMethodsKey)
-        // TODO: Is there a way to get the declared method in constant time?
-        val dm = declaredMethods.declaredMethods.find { dm ⇒
-            dm.name == data._2.name &&
-                dm.declaringClassType.toJava == data._2.classFile.thisType.toJava
-        }.get
+        // TODO: Make the entity of the analysis take a declared method instead of a method
+        val dm = declaredMethods(data._2)
 
         val tacaiEOptP = ps(data._2, TACAI.key)
         if (tacaiEOptP.hasUBP) {
@@ -157,15 +152,7 @@ class InterproceduralStringAnalysis(
         }
 
         if (requiresCallersInfo) {
-            val declaredMethods = project.get(DeclaredMethodsKey).declaredMethods
-            val dm = declaredMethods.find { dm ⇒
-                // TODO: What is a better / more robust way to compare methods (a check with == did
-                //  not produce the expected behavior)?
-                dm.name == state.entity._2.name &&
-                    dm.declaringClassType.toJava == state.entity._2.classFile.thisType.toJava &&
-                    dm.definedMethod.descriptor.parameterTypes.length ==
-                    state.entity._2.descriptor.parameterTypes.length
-            }.get
+            val dm = declaredMethods(state.entity._2)
             val callersEOptP = ps(dm, CallersProperty.key)
             if (callersEOptP.hasUBP) {
                 state.callers = callersEOptP.ub
@@ -758,7 +745,7 @@ sealed trait InterproceduralStringAnalysisScheduler extends FPCFAnalysisSchedule
  * Executor for the lazy analysis.
  */
 object LazyInterproceduralStringAnalysis
-        extends InterproceduralStringAnalysisScheduler with FPCFLazyAnalysisScheduler {
+    extends InterproceduralStringAnalysisScheduler with FPCFLazyAnalysisScheduler {
 
     override def register(
         p: SomeProject, ps: PropertyStore, analysis: InitializationData
