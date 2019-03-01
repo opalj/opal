@@ -314,6 +314,11 @@ abstract class PropertyStore {
         Array.fill(SupportedPropertyKinds) { new Array[Boolean](SupportedPropertyKinds) }
     }
 
+    /**
+     * The order in which the property kinds will be finalized; the last phase is considered
+     * the clean-up phase and will contain all remaining properties that were not explicitly
+     * finalized previously.
+     */
     protected[this] final var subPhaseFinalizationOrder: Array[List[PropertyKind]] = Array.empty
 
     /**
@@ -496,7 +501,9 @@ abstract class PropertyStore {
      * information is used to decide when we use a fallback and which kind of fallback.
      *
      * @note `setupPhase` even needs to be called if just fallback values should be computed; in
-     *        this case both sets have to be empty.
+     *        this case `propertyKindsComputedInThisPhase` and `propertyKindsComputedInLaterPhase`
+     *        have to be empty, but `finalizationOrder` have to contain the respective property
+     *        kind.
      *
      * @param propertyKindsComputedInThisPhase The kinds of properties for which we will schedule
      *                                         computations.
@@ -522,7 +529,7 @@ abstract class PropertyStore {
             throw new IllegalStateException("computations are already running");
         }
 
-        assert(
+        require(
             suppressInterimUpdates.forall { e ⇒
                 val (dependerPK, dependeePKs) = e
                 !dependeePKs.contains(dependerPK)

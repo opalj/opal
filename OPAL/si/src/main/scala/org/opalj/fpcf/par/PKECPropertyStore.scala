@@ -800,7 +800,7 @@ final class PKECPropertyStore private (
             // 1. Let's search for all EPKs (not EPS) and use the fall back for them.
             //    (Recall that we return fallback properties eagerly if no analysis is
             //     scheduled or will be scheduled, However, it is still possible that we will
-            //     not have computed a property for a specific entity, if the underlying
+            //     not have computed a property for a specific entity if the underlying
             //     analysis doesn't compute one; in that case we need to put in fallback
             //     values.)
             var pkId = 0
