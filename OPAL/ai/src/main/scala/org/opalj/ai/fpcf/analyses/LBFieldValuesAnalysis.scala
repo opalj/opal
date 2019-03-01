@@ -103,7 +103,7 @@ class LBFieldValuesAnalysis private[analyses] (
     final val fieldAccessInformation = project.get(FieldAccessInformationKey)
 
     /**
-     * Computes the set of the fields which are potentially refineable w.r.t. type information.
+     * Computes the set of the fields which are potentially refinable w.r.t. type information.
      */
     def relevantFieldsIterable(classFile: ClassFile): Iterable[Field] = {
         val thisClassType = classFile.thisType
@@ -428,6 +428,9 @@ object FieldValuesAnalysis {
 object EagerLBFieldValuesAnalysis extends BasicFPCFEagerAnalysisScheduler {
 
     override def init(p: SomeProject, ps: PropertyStore): Null = {
+        // To ensure that subsequent analyses are able to pick-up the results of this
+        // analysis, we state that the domain that has to be used when computing
+        // the AIResult has to use the (partial) domain: RefinedTypeLevelFieldAccessInstructions.
         p.updateProjectInformationKeyInitializationData(
             AIDomainFactoryKey,
             (i: Option[Set[Class[_ <: AnyRef]]]) ⇒ {

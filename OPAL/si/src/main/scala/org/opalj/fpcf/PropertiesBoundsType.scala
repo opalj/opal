@@ -6,6 +6,8 @@ import scala.language.higherKinds
 
 /**
  * Specifies the bounds of the properties that may be used/derived.
+ *
+ * @author Michael Eichberg
  */
 sealed abstract class PropertiesBoundType {
     type MatchedProperties[P]

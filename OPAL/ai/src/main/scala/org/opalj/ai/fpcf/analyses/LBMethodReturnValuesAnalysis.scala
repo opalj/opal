@@ -179,10 +179,13 @@ class LBMethodReturnValuesAnalysis private[analyses] (
 object EagerLBMethodReturnValuesAnalysis extends BasicFPCFEagerAnalysisScheduler {
 
     override def init(p: SomeProject, ps: PropertyStore): Null = {
+        // To ensure that subsequent analyses are able to pick-up the results of this
+        // analysis, we state that the domain that has to be used when computing
+        // the AIResult has to use the (partial) domain: RefinedTypeLevelInvokeInstructions.
         p.updateProjectInformationKeyInitializationData(
             AIDomainFactoryKey,
             (i: Option[Set[Class[_ <: AnyRef]]]) ⇒ {
-                i.getOrElse(Set.empty) + classOf[RefinedTypeLevelInvokeInstructions]
+                i.getOrElse(Set.empty)+ classOf[RefinedTypeLevelInvokeInstructions]
             }
         )
         null
