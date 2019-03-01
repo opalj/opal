@@ -437,8 +437,7 @@ abstract class PropertyStore {
      * beforehand.
      *
      * @note   This method must not be used '''if there might be a computation (in the future) that
-     *         computes the property kind `pk` for `e` and which returns the respective property
-     *         as a result'''.
+     *         computes the property kind `pk` for the given `e`'''.
      */
     final def set(e: Entity, p: Property): Unit = {
         if (!isIdle) {
@@ -707,8 +706,7 @@ abstract class PropertyStore {
     /**
      * Enforce the evaluation of the specified property kind for the given entity, even
      * if the property is computed lazily and no "eager computation" requires the results
-     * (anymore). Force also ensures that the property is stored in the store even if
-     * the fallback value is used.
+     * (anymore).
      * Using `force` is in particular necessary in cases where a specific analysis should
      * be scheduled lazily because the computed information is not necessary for all entities,
      * but strictly required for some elements.
@@ -926,7 +924,7 @@ abstract class PropertyStore {
             // everything falls apart anyway.
             this.synchronized {
                 if (exception ne null) {
-                    if (exception ne t) {
+                    if (exception != t) {
                         exception.addSuppressed(t)
                     }
                 } else {
@@ -943,8 +941,7 @@ abstract class PropertyStore {
     }
 
     @inline protected[this] def handleExceptions[U](f: ⇒ U): U = {
-        if (exception ne null)
-            throw exception;
+        if (exception != null) throw exception;
 
         try {
             f
