@@ -9,10 +9,10 @@ import scala.collection.immutable.ListSet
 import org.opalj.log.LogContext
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.collection.immutable.RefArray
-import org.opalj.fpcf.seq.PKESequentialPropertyStore
 import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.PropertyStoreContext
+import org.opalj.fpcf.par.PKECPropertyStore
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.DeclaredMethod
@@ -379,7 +379,7 @@ object TestTaintAnalysisRunner {
                 PropertyStoreKey,
                 (context: List[PropertyStoreContext[AnyRef]]) ⇒ {
                     implicit val lg: LogContext = p.logContext
-                    val ps = PKESequentialPropertyStore.apply(context: _*)
+                    val ps = PKECPropertyStore.apply(context: _*)
                     PropertyStore.updateDebug(false)
                     ps
                 }
@@ -403,7 +403,7 @@ object TestTaintAnalysisRunner {
             val ps = p.get(PropertyStoreKey)
             val manager = p.get(FPCFAnalysesManagerKey)
             val (_, analyses) =
-                manager.runAll(LazyL0BaseAIAnalysis, TACAITransformer, TestTaintAnalysis)
+                manager.runAll(LazyL0BaseAIAnalysis, LazyTACAIProvider, TestTaintAnalysis)
             val entryPoints = analyses.collect { case (_, a: TestTaintAnalysis) ⇒ a.entryPoints }.head
             for {
                 e ← entryPoints
