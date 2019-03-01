@@ -918,7 +918,7 @@ abstract class PropertyStore {
 
     protected[this] def collectException(t: Throwable): Unit = {
         if (exception != null) {
-            if (exception != t && !exception.isInstanceOf[InterruptedException]) {
+            if (exception != t && !t.isInstanceOf[InterruptedException]) {
                 exception.addSuppressed(t)
             }
         } else {
