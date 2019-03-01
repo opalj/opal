@@ -11,6 +11,7 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
+import java.util.concurrent.ForkJoinWorkerThread
 
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.{debug ⇒ trace}
@@ -50,11 +51,18 @@ final class PKECPropertyStore private (
         new ForkJoinPool(
             NumberOfThreadsForProcessingPropertyComputations,
             ForkJoinPool.defaultForkJoinWorkerThreadFactory,
-            (_: Thread, e: Throwable) ⇒ {
-                collectException(e)
-            },
+            (_: Thread, e: Throwable) ⇒ { collectException(e) },
             true
         )
+    }
+
+    private[this] def awaitPoolQuiescence(): Unit = handleExceptions {
+        if (!store.pool.awaitQuiescence(Long.MaxValue, TimeUnit.DAYS)) {
+            throw new UnknownError("pool failed to reach quiescence")
+        }
+        // exceptions that are thrown in a pool's thread are "only" collected and, hence,
+        // may not "immediately" trigger the termination.
+        if (exception != null) throw exception;
     }
 
     // The following "var"s/"arrays" do not need to be volatile/thread safe, because the updates –
@@ -123,10 +131,7 @@ final class PKECPropertyStore private (
     override def entities[P <: Property](pk: PropertyKey[P]): Iterator[EPS[Entity, P]] = {
         properties(pk.id)
             .values().iterator().asScala
-            .collect {
-                case eps: EPS[Entity, P] @unchecked ⇒
-                    eps
-            }
+            .collect { case EPKState(eps: EPS[Entity, P] @unchecked) ⇒ eps }
     }
 
     override def entities[P <: Property](lb: P, ub: P): Iterator[Entity] = {
@@ -170,23 +175,30 @@ final class PKECPropertyStore private (
     //
     //
 
+    private[this] def forkOrExecute(f: ⇒ Unit): Unit = {
+        if (Thread.currentThread().isInstanceOf[ForkJoinWorkerThread]) {
+            new RecursiveAction { def compute(): Unit = f }.fork()
+        } else {
+            store.pool.execute(() ⇒ f)
+        }
+        scheduledTasksCounter.incrementAndGet()
+    }
+
     private[this] def forkPropertyComputation[E <: Entity](
         e:  E,
         pc: PropertyComputation[E]
     ): Unit = {
-        if (doTerminate) throw new InterruptedException();
-
-        val action = new RecursiveAction { def compute(): Unit = store.processResult(pc(e)) }
-        action.fork()
-        scheduledTasksCounter.incrementAndGet()
+        forkOrExecute {
+            if (doTerminate) throw new InterruptedException();
+            store.processResult(pc(e))
+        }
     }
 
     private[this] def forkResultHandler(r: PropertyComputationResult): Unit = {
-        if (doTerminate) throw new InterruptedException();
-
-        val action = new RecursiveAction { def compute(): Unit = store.processResult(r) }
-        action.fork()
-        scheduledTasksCounter.incrementAndGet()
+        forkOrExecute {
+            if (doTerminate) throw new InterruptedException();
+            store.processResult(r)
+        }
     }
 
     /*private[this]*/ def forkOnUpdateContinuation(
@@ -194,34 +206,24 @@ final class PKECPropertyStore private (
         e:  Entity,
         pk: SomePropertyKey
     ): Unit = {
-        if (doTerminate) throw new InterruptedException();
-
-        val action = new RecursiveAction {
-            def compute(): Unit = {
-                // get the newest value before we actually call the onUpdateContinuation
-                val newEPS = store(e, pk).asEPS
-                // IMPROVE ... see other forkOnUpdateContinuation
-                store.processResult(c(newEPS))
-            }
+        forkOrExecute {
+            if (doTerminate) throw new InterruptedException();
+            // get the newest value before we actually call the onUpdateContinuation
+            val newEPS = store(e, pk).asEPS
+            // IMPROVE ... see other forkOnUpdateContinuation
+            store.processResult(c(newEPS))
         }
-        action.fork()
-        scheduledOnUpdateComputationsCounter.incrementAndGet()
     }
 
     private[this] def forkOnUpdateContinuation(
         c:       OnUpdateContinuation,
         finalEP: SomeFinalEP
     ): Unit = {
-        if (doTerminate) throw new InterruptedException();
-
-        val action = new RecursiveAction {
-            def compute(): Unit = {
-                // IMPROVE: Instead of naively calling "c" with finalEP, it may be worth considering which other updates have happened to figure out which update may be the "beste"
-                store.processResult(c(finalEP))
-            }
+        forkOrExecute {
+            if (doTerminate) throw new InterruptedException();
+            // IMPROVE: Instead of naively calling "c" with finalEP, it may be worth considering which other updates have happened to figure out which update may be the "beste"
+            store.processResult(c(finalEP))
         }
-        action.fork()
-        scheduledOnUpdateComputationsCounter.incrementAndGet()
     }
 
     def shutdown(): Unit = store.pool.shutdown()
@@ -233,10 +235,7 @@ final class PKECPropertyStore private (
     )(
         pc: PropertyComputation[E]
     ): Unit = {
-        if (doTerminate) throw new InterruptedException();
-
-        scheduledTasksCounter.incrementAndGet()
-        store.pool.execute(() ⇒ processResult(pc(e)))
+        forkPropertyComputation(e, pc)
     }
 
     override def doRegisterTriggeredComputation[E <: Entity, P <: Property](
@@ -265,7 +264,10 @@ final class PKECPropertyStore private (
     override def force[E <: Entity, P <: Property](e: E, pk: PropertyKey[P]): Unit = this(e, pk)
 
     override def doSet(e: Entity, p: Property): Unit = {
-        properties(p.id).put(e, EPKState(FinalEP(e, p)))
+        val oldP = properties(p.id).put(e, EPKState(FinalEP(e, p)))
+        if (oldP != null) {
+            throw new IllegalStateException(s"$e had already the property $oldP")
+        }
     }
 
     override def doPreInitialize[E <: Entity, P <: Property](
@@ -313,12 +315,7 @@ final class PKECPropertyStore private (
 
     // THIS METHOD IS NOT INTENDED TO BE USED BY THE CPropertyStore ITSELF - IT IS ONLY MEANT TO
     // BE USED BY EXTERNAL TASKS.
-    override def handleResult(r: PropertyComputationResult): Unit = {
-        // We need to execute everything in a ForkJoinPoolTask, because the subsequent handling
-        // expects that.
-        if (doTerminate) throw new InterruptedException();
-        pool.execute(() ⇒ store.processResult(r))
-    }
+    override def handleResult(r: PropertyComputationResult): Unit = forkResultHandler(r)
 
     private[this] def notifyDepender(
         dependerEPK: SomeEPK,
@@ -415,7 +412,7 @@ final class PKECPropertyStore private (
         //    is triggered.
         val dependerEPK = interimEP.toEPK
         dependees forall { processedDependee ⇒
-            state.hasPendingOnUpdateComputation() && {
+            state.hasPendingOnUpdateComputation && {
                 val dependeeState = properties(processedDependee.pk.id).get(processedDependee.e)
                 val currentDependee = dependeeState.eOptionP
                 if (currentDependee.isUpdatedComparedTo(processedDependee)) {
@@ -787,11 +784,7 @@ final class PKECPropertyStore private (
         val continueComputation = new AtomicBoolean(false)
         do {
             continueComputation.set(false)
-            if (!pool.awaitQuiescence(Long.MaxValue, TimeUnit.DAYS)) {
-                throw new UnknownError("pool failed to reach quiescence")
-            }
-            if (exception != null) throw exception;
-
+            awaitPoolQuiescence()
             quiescenceCounter += 1
             if (debug) trace("analysis progress", s"reached quiescence $quiescenceCounter")
 
@@ -803,9 +796,10 @@ final class PKECPropertyStore private (
             //     not have computed a property for a specific entity if the underlying
             //     analysis doesn't compute one; in that case we need to put in fallback
             //     values.)
-            var pkId = 0
-            while (pkId <= maxPKIndex) {
-                if (propertyKindsComputedInThisPhase(pkId)) {
+            var pkIdIterator = 0
+            while (pkIdIterator <= maxPKIndex) {
+                if (propertyKindsComputedInThisPhase(pkIdIterator)) {
+                    val pkId = pkIdIterator
                     store.pool.execute(() ⇒ {
                         val epkStateIterator =
                             properties(pkId)
@@ -817,6 +811,7 @@ final class PKECPropertyStore private (
                                 }
                         if (epkStateIterator.hasNext) continueComputation.set(true)
                         epkStateIterator.foreach { epkState ⇒
+                            println("State without dependees: "+epkState)
                             val e = epkState.e
                             val reason = PropertyIsNotDerivedByPreviouslyExecutedAnalysis
                             val p = fallbackPropertyBasedOnPKId(this, reason, e, pkId)
@@ -828,9 +823,9 @@ final class PKECPropertyStore private (
                         }
                     })
                 }
-                pkId += 1
+                pkIdIterator += 1
             }
-            store.pool.awaitQuiescence(Long.MaxValue, TimeUnit.DAYS)
+            awaitPoolQuiescence()
 
             // 2... suppression
 
@@ -846,7 +841,7 @@ final class PKECPropertyStore private (
                 if (debug) {
                     trace(
                         "analysis progress",
-                        pksToFinalize.map(PropertyKey.name).mkString("finalization of: ", ",", "")
+                        pksToFinalize.map(PropertyKey.name).mkString("finalization of: ", ", ", "")
                     )
                 }
                 // The following will also kill dependers related to anonymous computations using
@@ -861,18 +856,17 @@ final class PKECPropertyStore private (
                         }
                     })
                 }
-                store.pool.awaitQuiescence(Long.MaxValue, TimeUnit.DAYS)
+                awaitPoolQuiescence()
 
                 pksToFinalize foreach { pk ⇒
                     store.pool.execute(() ⇒ {
-
                         val interimEPSStates = properties(pk.id).values().asScala.filter(_.isRefinable)
                         interimEPSStates foreach { interimEPKState ⇒
                             finalUpdate(interimEPKState.eOptionP.toFinalEP)
                         }
                     })
                 }
-                store.pool.awaitQuiescence(Long.MaxValue, TimeUnit.DAYS)
+                awaitPoolQuiescence()
 
                 subPhaseId += 1
             }
@@ -944,7 +938,7 @@ sealed trait EPKState {
 
     def setOnUpdateComputation(c: OnUpdateContinuation): Unit
 
-    def hasPendingOnUpdateComputation(): Boolean
+    def hasPendingOnUpdateComputation: Boolean
 
     def dependees: Traversable[SomeEOptionP]
 
@@ -1012,7 +1006,7 @@ final class InterimEPKState(
         assert(oldOnUpdateContinuation == null)
     }
 
-    override def hasPendingOnUpdateComputation(): Boolean = cAR.get() != null
+    override def hasPendingOnUpdateComputation: Boolean = cAR.get() != null
 
     override def setDependees(dependees: Traversable[SomeEOptionP]): Unit = {
         this.dependees = dependees
@@ -1034,7 +1028,7 @@ final class FinalEPKState(override val eOptionP: SomeEOptionP) extends EPKState 
     override def isRefinable: Boolean = false
 
     override def updateEOptionP(newEOptionP: SomeInterimEP, debug: Boolean): SomeEOptionP = {
-        throw new UnknownError(s"final properties can't be updated $newEOptionP")
+        throw new UnknownError(s"the final property $eOptionP can't be updated to $newEOptionP")
     }
 
     override def getAndClearDependers(): Set[SomeEPK] = Set.empty
@@ -1071,7 +1065,7 @@ final class FinalEPKState(override val eOptionP: SomeEOptionP) extends EPKState 
         throw new UnknownError("final properties can't have \"OnUpdateContinuations\"")
     }
 
-    override def hasPendingOnUpdateComputation(): Boolean = false
+    override def hasPendingOnUpdateComputation: Boolean = false
 
     override def toString: String = s"FinalEPKState(finalEP=$eOptionP)"
 }
