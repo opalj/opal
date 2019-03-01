@@ -106,9 +106,6 @@ final class PKESequentialPropertyStore private (
     // The list of scheduled computations
     private[this] var tasks: ArrayDeque[QualifiedTask] = new ArrayDeque(50000)
 
-    private[this] var subPhaseId: Int = 0
-    private[this] var hasSuppressedNotifications: Boolean = false
-
     override def toString(printProperties: Boolean): String = {
         if (printProperties) {
             val properties = for {
@@ -357,8 +354,6 @@ final class PKESequentialPropertyStore private (
                 // the property.
                 triggerComputations(e, pkId)
                 if (newDependees.nonEmpty) {
-                    // Recall, that we allow dependees to be a mutable data-structure!
-                    // Hence, the old value may be the new value!
                     dependees(pkId).put(e, newDependees)
                 }
                 // registration with the new dependees is done when processing InterimResult
