@@ -222,7 +222,7 @@ class InterproceduralStringAnalysis(
             } else {
                 if (computeResultsForPath(state.computedLeanPath, state)) {
                     sci = new PathTransformer(state.iHandler).pathToStringTree(
-                        state.computedLeanPath, state.fpe2sci.toMap
+                        state.computedLeanPath, state.fpe2sci
                     ).reduce(true)
                 }
             }
@@ -243,7 +243,7 @@ class InterproceduralStringAnalysis(
 
             if (computeResultsForPath(state.computedLeanPath, state)) {
                 sci = new PathTransformer(state.iHandler).pathToStringTree(
-                    state.computedLeanPath, state.fpe2sci.toMap
+                    state.computedLeanPath, state.fpe2sci
                 ).reduce(true)
             }
             // No need to cover the else branch: interimResults.nonEmpty => dependees were added to
@@ -426,8 +426,8 @@ class InterproceduralStringAnalysis(
      */
     private def computeFinalResult(state: InterproceduralComputationState): Result = {
         finalizePreparations(state.computedLeanPath, state, state.iHandler)
-        val finalSci = new PathTransformer(null).pathToStringTree(
-            state.computedLeanPath, state.fpe2sci.toMap, resetExprHandler = false
+        val finalSci = new PathTransformer(state.iHandler).pathToStringTree(
+            state.computedLeanPath, state.fpe2sci, resetExprHandler = false
         ).reduce(true)
         InterproceduralStringAnalysis.unregisterParams(state.entity)
         Result(state.entity, StringConstancyProperty(finalSci))

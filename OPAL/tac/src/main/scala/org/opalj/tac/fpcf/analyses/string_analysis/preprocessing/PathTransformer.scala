@@ -2,6 +2,7 @@
 package org.opalj.tac.fpcf.analyses.string_analysis.preprocessing
 
 import scala.collection.mutable.ListBuffer
+import scala.collection.mutable.Map
 
 import org.opalj.fpcf.Result
 import org.opalj.br.fpcf.properties.properties.StringTree
@@ -40,7 +41,9 @@ class PathTransformer(val interpretationHandler: InterpretationHandler) {
                     StringConstancyInformation.reduceMultiple(fpe2Sci(fpe.element))
                 } else {
                     val r = interpretationHandler.processDefSite(fpe.element).asInstanceOf[Result]
-                    r.finalEP.p.asInstanceOf[StringConstancyProperty].stringConstancyInformation
+                    val sci = StringConstancyProperty.extractFromPPCR(r).stringConstancyInformation
+                    fpe2Sci(fpe.element) = ListBuffer(sci)
+                    sci
                 }
                 if (sci.isTheNeutralElement) {
                     None
