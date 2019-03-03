@@ -23,6 +23,8 @@ class BasePropertyStoreMockup extends PropertyStore {
 
     override def supportsFastTrackPropertyComputations: Boolean = ???
 
+    override def incrementFallbacksUsedForComputedPropertiesCounter(): Unit = ???
+
     override def toString(printProperties: Boolean): String = ???
 
     override def scheduledTasksCount: Int = ???

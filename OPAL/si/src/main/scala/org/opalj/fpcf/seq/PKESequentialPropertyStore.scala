@@ -15,7 +15,6 @@ import org.opalj.control.foreachWithIndex
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.{debug ⇒ trace}
 import org.opalj.fpcf.PropertyKind.SupportedPropertyKinds
-import org.opalj.fpcf.PropertyKey.fallbackPropertyBasedOnPKId
 import org.opalj.fpcf.PropertyKey.computeFastTrackPropertyBasedOnPKId
 
 /**
@@ -68,6 +67,9 @@ final class PKESequentialPropertyStore private (
     private[this] var fallbacksUsedForComputedPropertiesCounter: Int = 0
     override def fallbacksUsedForComputedPropertiesCount: Int = {
         fallbacksUsedForComputedPropertiesCounter
+    }
+    override def incrementFallbacksUsedForComputedPropertiesCounter(): Unit = {
+        fallbacksUsedForComputedPropertiesCounter += 1
     }
 
     private[this] var quiescenceCounter = 0
@@ -227,17 +229,7 @@ final class PKESequentialPropertyStore private (
                             ps(pkId).put(e, epk)
                             epk
                         } else {
-                            val reason = {
-                                if (propertyKindsComputedInEarlierPhase(pkId))
-                                    PropertyIsNotDerivedByPreviouslyExecutedAnalysis
-                                else
-                                    PropertyIsNotComputedByAnyAnalysis
-                            }
-                            val p = fallbackPropertyBasedOnPKId(this, reason, e, pkId)
-                            if (traceFallbacks) {
-                                trace("analysis progress", s"used fallback $p for $e")
-                            }
-                            val finalEP = FinalEP(e, p.asInstanceOf[P])
+                            val finalEP = computeFallback(e, pkId)
                             update(finalEP, Nil)
                             finalEP
                         }
@@ -680,13 +672,8 @@ final class PKESequentialPropertyStore private (
                     continueComputation |= epkIterator.hasNext
                     epkIterator.foreach { eOptionP ⇒
                         val e = eOptionP.e
-                        val reason = PropertyIsNotDerivedByPreviouslyExecutedAnalysis
-                        val p = fallbackPropertyBasedOnPKId(this, reason, e, pkId)
-                        if (traceFallbacks) {
-                            trace("analysis progress", s"used fallback $p for $e")
-                        }
-                        fallbacksUsedForComputedPropertiesCounter += 1
-                        update(FinalEP(e, p), Nil)
+                        val r = computeFallback(e, pkId)
+                        update(r, Nil)
                     }
                 }
                 pkId += 1

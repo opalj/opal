@@ -119,6 +119,9 @@ final class PKECPropertyStore private (
     override def fallbacksUsedForComputedPropertiesCount: Int = {
         fallbacksUsedForComputedPropertiesCounter.get()
     }
+    override def incrementFallbacksUsedForComputedPropertiesCounter(): Unit = {
+        fallbacksUsedForComputedPropertiesCounter.incrementAndGet()
+    }
 
     override def entities(p: SomeEPS ⇒ Boolean): Iterator[Entity] = {
         this.properties.iterator.flatMap { propertiesPerKind ⇒
@@ -295,10 +298,10 @@ final class PKECPropertyStore private (
         val propertiesOfKind = properties(pkId)
 
         var isNewEPKState = false
-        val epkState = propertiesOfKind.computeIfAbsent(
-            e,
-            (_) ⇒ { isNewEPKState = true; EPKState(epk) }
-        )
+        val epkState = propertiesOfKind.computeIfAbsent(e, (_) ⇒ {
+            isNewEPKState = true
+            EPKState(epk)
+        })
 
         if (!isNewEPKState) {
             // just return the current value
@@ -309,8 +312,14 @@ final class PKECPropertyStore private (
         val lc = lazyComputations(pkId)
         if (lc != null) {
             forkPropertyComputation(e, lc.asInstanceOf[PropertyComputation[E]])
+            epk
+        } else if (!propertyKindsComputedInThisPhase(pkId)) {
+            val r = computeFallback[E, P](e, pkId)
+            finalUpdate(r, potentiallyIdemPotentUpdate = true)
+            r
+        } else {
+            epk
         }
-        epk
     }
 
     // THIS METHOD IS NOT INTENDED TO BE USED BY THE CPropertyStore ITSELF - IT IS ONLY MEANT TO
@@ -346,14 +355,21 @@ final class PKECPropertyStore private (
         }
     }
 
-    private[this] def finalUpdate(finalEP: SomeFinalEP): Unit = {
+    private[this] def finalUpdate(
+        finalEP:                     SomeFinalEP,
+        potentiallyIdemPotentUpdate: Boolean     = false
+    ): Unit = {
         val newState = EPKState(finalEP)
         val oldState = properties(finalEP.pk.id).put(finalEP.e, newState)
         if (oldState != null) {
-            assert(
-                oldState.isRefinable,
-                s"the old state $oldState is already final (new: $finalEP)"
-            )
+            if (!oldState.isRefinable) {
+                if (!potentiallyIdemPotentUpdate)
+                    throw new IllegalStateException(
+                        s"the old state $oldState is already final (new: $finalEP)"
+                    )
+                else
+                    return ; // IDEMPOTENT UPDATE
+            }
             // We had a state object which means we may have dependers.
             //
             // We now have to inform the dependers. Though this is a

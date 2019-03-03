@@ -11,9 +11,11 @@ import scala.collection.mutable
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.info
+import org.opalj.log.OPALLogger.{debug ⇒ trace}
 import org.opalj.log.OPALLogger.error
 import org.opalj.collection.IntIterator
 import org.opalj.fpcf.PropertyKind.SupportedPropertyKinds
+import org.opalj.fpcf.PropertyKey.fallbackPropertyBasedOnPKId
 
 /**
  * A property store manages the execution of computations of properties related to concrete
@@ -259,6 +261,8 @@ abstract class PropertyStore {
      */
     def fallbacksUsedForComputedPropertiesCount: Int
 
+    def incrementFallbacksUsedForComputedPropertiesCounter(): Unit
+
     /**
      * Reports core statistics; this method is only guaranteed to report ''final'' results
      * if it is called while the store is quiescent.
@@ -336,6 +340,25 @@ abstract class PropertyStore {
     }
     protected[this] final val transformersBySourcePK: Array[( /*target*/ PropertyKey[Property], (Entity, Property) ⇒ FinalEP[Entity, Property])] = {
         new Array(PropertyKind.SupportedPropertyKinds)
+    }
+
+    protected[this] def computeFallback[E <: Entity, P <: Property](
+        e:    E,
+        pkId: Int
+    ): FinalEP[E, P] = {
+        val reason = {
+            if (propertyKindsComputedInEarlierPhase(pkId) || propertyKindsComputedInThisPhase(pkId)) {
+                incrementFallbacksUsedForComputedPropertiesCounter()
+                PropertyIsNotDerivedByPreviouslyExecutedAnalysis
+            } else {
+                PropertyIsNotComputedByAnyAnalysis
+            }
+        }
+        val p = fallbackPropertyBasedOnPKId(this, reason, e, pkId)
+        if (traceFallbacks) {
+            trace("analysis progress", s"used fallback $p for $e")
+        }
+        FinalEP(e, p.asInstanceOf[P])
     }
 
     /**
