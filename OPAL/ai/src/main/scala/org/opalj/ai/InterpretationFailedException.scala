@@ -71,9 +71,19 @@ object InterpretationFailedException {
                 s"InterpretationFailedException(\n\tdomain=$domain,"+
                     s"\n\tai=${ai.getClass},\n\tcause=$cause,"+
                     s"\n\tpc=$pc,"+
-                    s"\n\toperands=${operandsArray(pc)},"+
-                    s"\n\tregisters=${localsArray(pc).zipWithIndex.map(_.swap).mkString(",")}"+
-                    s"\n)"
+                    (
+                        if (pc < theOperandsArray.length)
+                            s"\n\toperands=${operandsArray(pc)},"
+                        else
+                            s"\n\toperands=N/A (the pc is invalid: $pc)"
+                    ) +
+                        (
+                            if (pc < theLocalsArray.length)
+                                s"\n\tregisters=${localsArray(pc).zipWithIndex.map(_.swap).mkString(",")}"
+                            else
+                                s"\n\tregisters=N/A (the pc is invalid: $pc)"
+                        ) +
+                            s"\n)"
             }
 
             final override def getMessage(): String = toString
