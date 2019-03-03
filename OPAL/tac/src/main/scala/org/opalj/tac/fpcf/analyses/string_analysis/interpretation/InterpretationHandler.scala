@@ -100,7 +100,18 @@ object InterpretationHandler {
      * @return Returns `true` if the given expression  is a string constant / literal and `false`
      *         otherwise.
      */
-    def isStringConstExpression(expr: Expr[V]): Boolean = expr.isStringConst
+    def isStringConstExpression(expr: Expr[V]): Boolean = if (expr.isStringConst) {
+        true
+    } else {
+        if (expr.isVar) {
+            val value = expr.asVar.value
+            value.isReferenceValue && value.asReferenceValue.upperTypeBound.exists {
+                _.toJava == "java.lang.String"
+            }
+        } else {
+            false
+        }
+    }
 
     /**
      * Checks whether an expression contains a call to [[StringBuilder#append]] or

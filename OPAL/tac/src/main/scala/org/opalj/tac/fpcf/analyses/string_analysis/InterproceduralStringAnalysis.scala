@@ -37,7 +37,6 @@ import org.opalj.tac.ExprStmt
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedural.InterproceduralInterpretationHandler
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.FlatPathElement
-import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.NestedPathType
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.SubPath
 import org.opalj.tac.Assignment
 import org.opalj.tac.DUVar
@@ -46,6 +45,11 @@ import org.opalj.tac.MethodCall
 import org.opalj.tac.SimpleTACAIKey
 import org.opalj.tac.TACMethodParameter
 import org.opalj.tac.TACode
+import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.NestedPathType
+import org.opalj.tac.ArrayLoad
+import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedural.ArrayPreparationInterpreter
+import org.opalj.tac.BinaryExpr
+import org.opalj.tac.Expr
 
 /**
  * InterproceduralStringAnalysis processes a read operation of a string variable at a program
@@ -142,11 +146,38 @@ class InterproceduralStringAnalysis(
         }
         // In case a parameter is required for approximating a string, retrieve callers information
         // (but only once and only if the expressions is not a local string)
-        val hasSupportedParamType = state.entity._2.parameterTypes.exists {
-            InterproceduralStringAnalysis.isSupportedType
+        val hasCallersOrParamInfo = state.callers == null && state.params.isEmpty
+        val requiresCallersInfo = if (defSites.exists(_ < 0)) {
+            if (InterpretationHandler.isStringConstExpression(uvar)) {
+                state.computedLeanPath = computeLeanPathForStringConst(uvar)
+                hasCallersOrParamInfo
+            } else {
+                // StringBuilders as parameters are currently not evaluated
+                return Result(state.entity, StringConstancyProperty.lb)
+            }
+        } else {
+            val call = stmts(defSites.head).asAssignment.expr
+            if (InterpretationHandler.isStringBuilderBufferToStringCall(call)) {
+                val (leanPath, hasInitDefSites) = computeLeanPathForStringBuilder(
+                    uvar, state.tac
+                )
+                if (!hasInitDefSites) {
+                    return Result(state.entity, StringConstancyProperty.lb)
+                }
+                state.computedLeanPath = leanPath
+                val hasSupportedParamType = state.entity._2.parameterTypes.exists {
+                    InterproceduralStringAnalysis.isSupportedType
+                }
+                if (hasSupportedParamType) {
+                    hasParamUsageAlongPath(state.computedLeanPath, state.tac.stmts)
+                } else {
+                    !hasCallersOrParamInfo
+                }
+            } else {
+                state.computedLeanPath = computeLeanPathForStringConst(uvar)
+                !hasCallersOrParamInfo
+            }
         }
-        val requiresCallersInfo = state.callers == null && state.params.isEmpty &&
-            (state.entity._1.definedBy.exists(_ < 0) || hasSupportedParamType)
 
         if (requiresCallersInfo) {
             val dm = declaredMethods(state.entity._2)
@@ -190,23 +221,12 @@ class InterproceduralStringAnalysis(
         var sci = StringConstancyProperty.lb.stringConstancyInformation
         // Interpret a function / method parameter using the parameter information in state
         if (defSites.head < 0) {
-            state.computedLeanPath = Path(List(FlatPathElement(defSites.head)))
             val r = state.iHandler.processDefSite(defSites.head, state.params.toList)
             return Result(state.entity, StringConstancyProperty.extractFromPPCR(r))
         }
 
-        val pathFinder: AbstractPathFinder = new WindowPathFinder(state.tac.cfg)
         val call = stmts(defSites.head).asAssignment.expr
         if (InterpretationHandler.isStringBuilderBufferToStringCall(call)) {
-            val initDefSites = InterpretationHandler.findDefSiteOfInit(uvar, stmts)
-            // initDefSites empty => String{Builder,Buffer} from method parameter is to be evaluated
-            if (initDefSites.isEmpty) {
-                return Result(state.entity, StringConstancyProperty.lb)
-            }
-
-            val paths = pathFinder.findPaths(initDefSites, uvar.definedBy.head)
-            state.computedLeanPath = paths.makeLeanPath(uvar, stmts)
-
             // Find DUVars, that the analysis of the current entity depends on
             val dependentVars = findDependentVars(state.computedLeanPath, stmts, uvar)
             if (dependentVars.nonEmpty) {
@@ -228,19 +248,6 @@ class InterproceduralStringAnalysis(
             }
         } // If not a call to String{Builder, Buffer}.toString, then we deal with pure strings
         else {
-            state.computedLeanPath = if (defSites.length == 1) {
-                // Trivial case for just one element
-                Path(List(FlatPathElement(defSites.head)))
-            } else {
-                // For > 1 definition sites, create a nest path element with |defSites| many
-                // children where each child is a NestPathElement(FlatPathElement)
-                val children = ListBuffer[SubPath]()
-                defSites.foreach { ds ⇒
-                    children.append(NestedPathElement(ListBuffer(FlatPathElement(ds)), None))
-                }
-                Path(List(NestedPathElement(children, Some(NestedPathType.CondWithAlternative))))
-            }
-
             if (computeResultsForPath(state.computedLeanPath, state)) {
                 sci = new PathTransformer(state.iHandler).pathToStringTree(
                     state.computedLeanPath, state.fpe2sci
@@ -560,6 +567,70 @@ class InterproceduralStringAnalysis(
         }
 
         hasFinalResult
+    }
+
+    /**
+     * This function computes the lean path for a [[DUVar]] which is required to be a string
+     * expressions.
+     */
+    private def computeLeanPathForStringConst(duvar: V): Path = {
+        val defSites = duvar.definedBy.toArray.sorted
+        if (defSites.length == 1) {
+            // Trivial case for just one element
+            Path(List(FlatPathElement(defSites.head)))
+        } else {
+            // For > 1 definition sites, create a nest path element with |defSites| many
+            // children where each child is a NestPathElement(FlatPathElement)
+            val children = ListBuffer[SubPath]()
+            defSites.foreach { ds ⇒
+                children.append(NestedPathElement(ListBuffer(FlatPathElement(ds)), None))
+            }
+            Path(List(NestedPathElement(children, Some(NestedPathType.CondWithAlternative))))
+        }
+    }
+
+    /**
+     * This function computes the lean path for a [[DUVar]] which is required to stem from a
+     * `String{Builder, Buffer}#toString()` call. For this, the `tac` of the method, in which
+     * `duvar` resides, is required.
+     * This function then returns a pair of values: The first value is the computed lean path and
+     * the second value indicates whether the String{Builder, Buffer} has initialization sites
+     * within the method stored in `tac`. If it has no initialization sites, it returns
+     * `(null, false)` and otherwise `(computed lean path, true)`.
+     */
+    private def computeLeanPathForStringBuilder(
+        duvar: V, tac: TACode[TACMethodParameter, DUVar[ValueInformation]]
+    ): (Path, Boolean) = {
+        val pathFinder: AbstractPathFinder = new WindowPathFinder(tac.cfg)
+        val initDefSites = InterpretationHandler.findDefSiteOfInit(duvar, tac.stmts)
+        if (initDefSites.isEmpty) {
+            (null, false)
+        } else {
+            val paths = pathFinder.findPaths(initDefSites, duvar.definedBy.head)
+            (paths.makeLeanPath(duvar, tac.stmts), true)
+        }
+    }
+
+    private def hasParamUsageAlongPath(path: Path, stmts: Array[Stmt[V]]): Boolean = {
+        def hasExprParamUsage(expr: Expr[V]): Boolean = expr match {
+            case al: ArrayLoad[V] ⇒
+                ArrayPreparationInterpreter.getStoreAndLoadDefSites(al, stmts).exists(_ < 0)
+            case duvar: V            ⇒ duvar.definedBy.exists(_ < 0)
+            case fc: FunctionCall[V] ⇒ fc.params.exists(hasExprParamUsage)
+            case mc: MethodCall[V]   ⇒ mc.params.exists(hasExprParamUsage)
+            case be: BinaryExpr[V]   ⇒ hasExprParamUsage(be.left) || hasExprParamUsage(be.right)
+            case _                   ⇒ false
+        }
+
+        path.elements.exists {
+            case FlatPathElement(index) ⇒ stmts(index) match {
+                case Assignment(_, _, expr) ⇒ hasExprParamUsage(expr)
+                case ExprStmt(_, expr)      ⇒ hasExprParamUsage(expr)
+                case _                      ⇒ false
+            }
+            case NestedPathElement(subPath, _) ⇒ hasParamUsageAlongPath(Path(subPath.toList), stmts)
+            case _                             ⇒ false
+        }
     }
 
     /**

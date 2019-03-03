@@ -27,7 +27,9 @@ class ArrayFinalizer(
      * @inheritdoc
      */
     override def finalizeInterpretation(instr: T, defSite: Int): Unit = {
-        val allDefSites = ArrayPreparationInterpreter.getStoreAndLoadDefSites(instr, cfg)
+        val allDefSites = ArrayPreparationInterpreter.getStoreAndLoadDefSites(
+            instr, state.tac.stmts
+        )
         state.fpe2sci(defSite) = ListBuffer(StringConstancyInformation.reduceMultiple(
             allDefSites.sorted.flatMap(state.fpe2sci(_))
         ))

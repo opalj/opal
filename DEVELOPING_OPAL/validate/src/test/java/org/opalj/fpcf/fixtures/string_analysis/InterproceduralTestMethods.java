@@ -219,7 +219,7 @@ public class InterproceduralTestMethods {
             stringDefinitions = {
                     @StringDefinitions(
                             expectedLevel = CONSTANT,
-                            expectedStrings = "(Hello World|Hello)"
+                            expectedStrings = "(Hello|Hello World)"
                     )
 
             })
