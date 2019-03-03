@@ -53,7 +53,9 @@ class ArrayPreparationInterpreter(
         val results = ListBuffer[ProperPropertyComputationResult]()
 
         val defSites = instr.arrayRef.asVar.definedBy.toArray
-        val allDefSites = ArrayPreparationInterpreter.getStoreAndLoadDefSites(instr, cfg)
+        val allDefSites = ArrayPreparationInterpreter.getStoreAndLoadDefSites(
+            instr, state.tac.stmts
+        )
 
         allDefSites.map { ds ⇒ (ds, exprHandler.processDefSite(ds)) }.foreach {
             case (ds, r: Result) ⇒
@@ -99,12 +101,11 @@ object ArrayPreparationInterpreter {
      * to the given instruction.
      *
      * @param instr The [[ArrayLoad]] instruction to get the definition sites for.
-     * @param cfg The underlying control flow graph.
+     * @param stmts The set of statements to use.
      * @return Returns all definition sites associated with the array stores and array loads of the
      *         given instruction. The result list is sorted in ascending order.
      */
-    def getStoreAndLoadDefSites(instr: T, cfg: CFG[Stmt[V], TACStmts[V]]): List[Int] = {
-        val stmts = cfg.code.instructions
+    def getStoreAndLoadDefSites(instr: T, stmts: Array[Stmt[V]]): List[Int] = {
         val allDefSites = ListBuffer[Int]()
         val defSites = instr.arrayRef.asVar.definedBy.toArray
 
