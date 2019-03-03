@@ -72,11 +72,10 @@ class InterproceduralStaticFunctionCallInterpreter(
                     m.name == instr.name && m.declaringClassType == instr.declaringClass)
         }.keys
 
-        // Collect all parameters; either from the state, if the interpretation of instr was started
+        // Collect all parameters; either from the state if the interpretation of instr was started
         // before (in this case, the assumption is that all parameters are fully interpreted) or
         // start a new interpretation
-        val isFunctionArgsPreparationDone = state.nonFinalFunctionArgs.contains(instr)
-        val params = if (isFunctionArgsPreparationDone) {
+        val params = if (state.nonFinalFunctionArgs.contains(instr)) {
             state.nonFinalFunctionArgs(instr)
         } else {
             evaluateParameters(
@@ -88,17 +87,15 @@ class InterproceduralStaticFunctionCallInterpreter(
             )
         }
         // Continue only when all parameter information are available
-        if (!isFunctionArgsPreparationDone) {
-            val nonFinalResults = getNonFinalParameters(params)
-            if (nonFinalResults.nonEmpty) {
-                state.nonFinalFunctionArgs(instr) = params
-                return nonFinalResults.head
-            }
+        val nonFinalResults = getNonFinalParameters(params)
+        if (nonFinalResults.nonEmpty) {
+            state.nonFinalFunctionArgs(instr) = params
+            return nonFinalResults.head
         }
+
         state.nonFinalFunctionArgs.remove(instr)
         state.nonFinalFunctionArgsPos.remove(instr)
         val evaluatedParams = convertEvaluatedParameters(params)
-
         if (tac.isDefined) {
             // TAC available => Get return UVar and start the string analysis
             val ret = tac.get.stmts.find(_.isInstanceOf[ReturnValue[V]]).get
