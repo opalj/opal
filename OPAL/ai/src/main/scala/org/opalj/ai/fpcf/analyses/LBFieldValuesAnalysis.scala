@@ -291,103 +291,103 @@ class LBFieldValuesAnalysis private[analyses] (
                 }
             )
         }
-            val domain = new FieldValuesAnalysisDomain(classFile, relevantFields)
-            analyzeRelevantMethods(classFile, domain)
-            val allFieldsIterator = classFile.fields.iterator
-            val results = allFieldsIterator.map[ProperPropertyComputationResult] { (f: Field) ⇒
-                domain.fieldInformation.get(f) match {
+        val domain = new FieldValuesAnalysisDomain(classFile, relevantFields)
+        analyzeRelevantMethods(classFile, domain)
+        val allFieldsIterator = classFile.fields.iterator
+        val results = allFieldsIterator.map[ProperPropertyComputationResult] { (f: Field) ⇒
+            domain.fieldInformation.get(f) match {
 
-                    case Some(None) ⇒
-                        // relevant field, but obviously no writes were found...
-                        val dv = domain.DefaultValue(-1, f.fieldType)
-                        val fv = ValueBasedFieldValueInformation(dv)
-                        // println(f.toJava+"!!!!!!>>>>>> "+fv)
-                        Result(FinalEP(f, fv))
+                case Some(None) ⇒
+                    // relevant field, but obviously no writes were found...
+                    val dv = domain.DefaultValue(-1, f.fieldType)
+                    val fv = ValueBasedFieldValueInformation(dv)
+                    // println(f.toJava+"!!!!!!>>>>>> "+fv)
+                    Result(FinalEP(f, fv))
 
-                    case Some(Some(domain.DomainReferenceValueTag(dv))) ⇒
-                        if ( /* ultimate refinements => */ dv.isNull.isYes || classHierarchy.isKnownToBeFinal(dv.leastUpperType.get)) {
-                            val vi = ValueBasedFieldValueInformation(dv.toCanonicalForm)
-                            // println(f.toJava+"!!!!!!>>>>>> "+vi)
-                            Result(FinalEP(f, vi))
-                        } else {
-                            // IMPROVE Consider using the CFG to determine if the read fields are relevant at all; currently the analysis is flow insensitive.
+                case Some(Some(domain.DomainReferenceValueTag(dv))) ⇒
+                    if ( /* ultimate refinements => */ dv.isNull.isYes || classHierarchy.isKnownToBeFinal(dv.leastUpperType.get)) {
+                        val vi = ValueBasedFieldValueInformation(dv.toCanonicalForm)
+                        // println(f.toJava+"!!!!!!>>>>>> "+vi)
+                        Result(FinalEP(f, vi))
+                    } else {
+                        // IMPROVE Consider using the CFG to determine if the read fields are relevant at all; currently the analysis is flow insensitive.
 
-                            // 1. get the dependees that are relevant... i.e., fields read in
-                            //    methods that also write the field for which we compute more
-                            //    precise information or methods called by the methods that
-                            //    write the field.
-                            val methodsWithFieldWrites =
-                                fieldAccessInformation.writeAccesses(f).map(_._1).toSet
-                            val relevantDependees = domain.dependees.filter { eOptionP ⇒
-                                eOptionP match {
-                                    case EOptionP(readField: Field, _) ⇒
-                                        fieldAccessInformation.readAccesses(readField).exists { mPCs ⇒
-                                            methodsWithFieldWrites.contains(mPCs._1)
-                                        }
-                                    case EOptionP(calledMethod: Method, _) ⇒
-                                        // Please note, that – if we get more precise type
-                                        // information while carrying out the analysis – the set
-                                        // of method dependees may increase after this initial
-                                        // filtering, because we may be able to resolve further
-                                        // method calls that are initially not resolved.
-                                        // e.g.
-                                        // {{{
-                                        //  val o = Foo.m() // initially returns "some object"
-                                        //  o.toString // no precisely resolvables
-                                        //  // if now, m() is known to return only String objects
-                                        //  // o.toString becomes resolvable!
-                                        // }}}
-                                        methodsWithFieldWrites.exists { m ⇒
-                                            val methodsCalledByM = domain.calledMethods.get(m)
-                                            methodsCalledByM.nonEmpty &&
-                                                methodsCalledByM.get.contains(calledMethod)
-                                        }
-                                }
-                            }
-
-                            def c(eps: SomeEPS): ProperPropertyComputationResult = {
-                                // println("\nCONTINUATION:")
-                                // print(f.toJava+"\n\t\t"+relevantDependees+"\n\t\t")
-                                val newDependees = relevantDependees.clone()
-                                newDependees.updateAll()
-                                val domain = new FieldValuesAnalysisDomain(classFile, List(f), newDependees)
-                                analyzeRelevantMethods(classFile, domain)
-                                val dvOption = domain.fieldInformation(f)
-                                if (dvOption.isEmpty) {
-                                    // the field is no longer written...
-                                    OPALLogger.error(
-                                        "analysis state",
-                                        s"the field values analysis for ${f} failed miserably: "
-                                    )(project.logContext)
-                                }
-                                val domain.DomainReferenceValueTag(dv) = dvOption.get
-                                val vi = ValueBasedFieldValueInformation(dv.toCanonicalForm)
-                                // println("======>>>>>>\n\t\t"+vi+"\n\t\t"+relevantDependees)
-                                if (newDependees.isEmpty ||
-                                    dv.isNull.isYes ||
-                                    classHierarchy.isKnownToBeFinal(dv.leastUpperType.get)) {
-                                    Result(FinalEP(f, vi))
-                                } else {
-                                    InterimResult.forLB(f, vi, newDependees, c)
-                                }
-                            }
-
-                            val vi = ValueBasedFieldValueInformation(dv.toCanonicalForm)
-                            if (relevantDependees.isEmpty) {
-                                //   println(f.toJava+"!!!!!!>>>>>> "+vi)
-                                Result(FinalEP(f, vi))
-                            } else {
-                                //   println(f.toJava+"======>>>>>>\n\t\t"+vi+"\n\t\t"+relevantDependees)
-                                InterimResult.forLB(f, vi, relevantDependees, c)
+                        // 1. get the dependees that are relevant... i.e., fields read in
+                        //    methods that also write the field for which we compute more
+                        //    precise information or methods called by the methods that
+                        //    write the field.
+                        val methodsWithFieldWrites =
+                            fieldAccessInformation.writeAccesses(f).map(_._1).toSet
+                        val relevantDependees = domain.dependees.filter { eOptionP ⇒
+                            eOptionP match {
+                                case EOptionP(readField: Field, _) ⇒
+                                    fieldAccessInformation.readAccesses(readField).exists { mPCs ⇒
+                                        methodsWithFieldWrites.contains(mPCs._1)
+                                    }
+                                case EOptionP(calledMethod: Method, _) ⇒
+                                    // Please note, that – if we get more precise type
+                                    // information while carrying out the analysis – the set
+                                    // of method dependees may increase after this initial
+                                    // filtering, because we may be able to resolve further
+                                    // method calls that are initially not resolved.
+                                    // e.g.
+                                    // {{{
+                                    //  val o = Foo.m() // initially returns "some object"
+                                    //  o.toString // no precisely resolvables
+                                    //  // if now, m() is known to return only String objects
+                                    //  // o.toString becomes resolvable!
+                                    // }}}
+                                    methodsWithFieldWrites.exists { m ⇒
+                                        val methodsCalledByM = domain.calledMethods.get(m)
+                                        methodsCalledByM.nonEmpty &&
+                                            methodsCalledByM.get.contains(calledMethod)
+                                    }
                             }
                         }
 
-                    case _ ⇒
-                        Result(FinalEP(f, TypeBasedFieldValueInformation(f.fieldType)))
-                }
-            }
+                        def c(eps: SomeEPS): ProperPropertyComputationResult = {
+                            // println("\nCONTINUATION:")
+                            // print(f.toJava+"\n\t\t"+relevantDependees+"\n\t\t")
+                            val newDependees = relevantDependees.clone()
+                            newDependees.updateAll()
+                            val domain = new FieldValuesAnalysisDomain(classFile, List(f), newDependees)
+                            analyzeRelevantMethods(classFile, domain)
+                            val dvOption = domain.fieldInformation(f)
+                            if (dvOption.isEmpty) {
+                                // the field is no longer written...
+                                OPALLogger.error(
+                                    "analysis state",
+                                    s"the field values analysis for ${f} failed miserably: "
+                                )(project.logContext)
+                            }
+                            val domain.DomainReferenceValueTag(dv) = dvOption.get
+                            val vi = ValueBasedFieldValueInformation(dv.toCanonicalForm)
+                            // println("======>>>>>>\n\t\t"+vi+"\n\t\t"+relevantDependees)
+                            if (newDependees.isEmpty ||
+                                dv.isNull.isYes ||
+                                classHierarchy.isKnownToBeFinal(dv.leastUpperType.get)) {
+                                Result(FinalEP(f, vi))
+                            } else {
+                                InterimResult.forLB(f, vi, newDependees, c)
+                            }
+                        }
 
-            /* ONLY RESULTS FOR REFERENCE-TYPED FIELDS FOR WHICH WE COULD GET BETTER RESULTS:
+                        val vi = ValueBasedFieldValueInformation(dv.toCanonicalForm)
+                        if (relevantDependees.isEmpty) {
+                            //   println(f.toJava+"!!!!!!>>>>>> "+vi)
+                            Result(FinalEP(f, vi))
+                        } else {
+                            //   println(f.toJava+"======>>>>>>\n\t\t"+vi+"\n\t\t"+relevantDependees)
+                            InterimResult.forLB(f, vi, relevantDependees, c)
+                        }
+                    }
+
+                case _ ⇒
+                    Result(FinalEP(f, TypeBasedFieldValueInformation(f.fieldType)))
+            }
+        }
+
+        /* ONLY RESULTS FOR REFERENCE-TYPED FIELDS FOR WHICH WE COULD GET BETTER RESULTS:
             var results: List[FinalEP[Field, FieldValue]] = Nil
             domain.fieldInformation foreach { e ⇒
                 val (field, domainValueOption: Option[IsReferenceValue @unchecked]) = e
@@ -403,7 +403,7 @@ class LBFieldValuesAnalysis private[analyses] (
                 }
             }
             */
-            Results(results)
+        Results(results)
     }
 
 }

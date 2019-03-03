@@ -185,7 +185,7 @@ object EagerLBMethodReturnValuesAnalysis extends BasicFPCFEagerAnalysisScheduler
         p.updateProjectInformationKeyInitializationData(
             AIDomainFactoryKey,
             (i: Option[Set[Class[_ <: AnyRef]]]) ⇒ {
-                i.getOrElse(Set.empty)+ classOf[RefinedTypeLevelInvokeInstructions]
+                i.getOrElse(Set.empty) + classOf[RefinedTypeLevelInvokeInstructions]
             }
         )
         null
