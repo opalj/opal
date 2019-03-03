@@ -10,7 +10,6 @@ import java.util.concurrent.RecursiveAction
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
-import java.util.concurrent.atomic.AtomicReference
 import java.util.concurrent.ForkJoinWorkerThread
 
 import org.opalj.log.LogContext
@@ -37,15 +36,9 @@ final class PKECPropertyStore private (
 
     //
     //
-    // CORE DATA STRUCTURES
+    // THREAD POOL
     //
     //
-
-    // Per PropertyKind we use one concurrent hash map to store the entities' properties.
-    // The value encompasses the current property along with some helper information.
-    private[this] val properties: Array[ConcurrentHashMap[Entity, EPKState]] = {
-        Array.fill(SupportedPropertyKinds) { new ConcurrentHashMap() }
-    }
 
     private[this] val pool: ForkJoinPool = {
         new ForkJoinPool(
@@ -65,9 +58,21 @@ final class PKECPropertyStore private (
         if (exception != null) throw exception;
     }
 
+    //
+    //
+    // CORE DATA STRUCTURES
+    //
+    //
+
+    // Per PropertyKind we use one concurrent hash map to store the entities' properties.
+    // The value encompasses the current property along with some helper information.
+    private[this] val properties: Array[ConcurrentHashMap[Entity, EPKState]] = {
+        Array.fill(SupportedPropertyKinds) { new ConcurrentHashMap() }
+    }
+
     // The following "var"s/"arrays" do not need to be volatile/thread safe, because the updates –
     // which are only done while the store is quiescent – are done within the driver thread and
-    // are guaranteed to be visible to all relevant fork/join tasks.
+    // are guaranteed to be visible to all relevant tasks.
 
     /** Computations that will be triggered when a new property becomes available. */
     private[this] val triggeredComputations: Array[Array[SomePropertyComputation]] = {
@@ -178,11 +183,23 @@ final class PKECPropertyStore private (
     //
     //
 
+    override def shutdown(): Unit = store.pool.shutdown()
+
+    override def isIdle: Boolean = store.pool.isQuiescent
+
     private[this] def forkOrExecute(f: ⇒ Unit): Unit = {
         if (Thread.currentThread().isInstanceOf[ForkJoinWorkerThread]) {
-            new RecursiveAction { def compute(): Unit = f }.fork()
+            new RecursiveAction {
+                def compute(): Unit = {
+                    if (doTerminate) throw new InterruptedException();
+                    f
+                }
+            }.fork()
         } else {
-            store.pool.execute(() ⇒ f)
+            store.pool.execute(() ⇒ {
+                if (doTerminate) throw new InterruptedException();
+                f
+            })
         }
         scheduledTasksCounter.incrementAndGet()
     }
@@ -192,25 +209,22 @@ final class PKECPropertyStore private (
         pc: PropertyComputation[E]
     ): Unit = {
         forkOrExecute {
-            if (doTerminate) throw new InterruptedException();
             store.processResult(pc(e))
         }
     }
 
     private[this] def forkResultHandler(r: PropertyComputationResult): Unit = {
         forkOrExecute {
-            if (doTerminate) throw new InterruptedException();
             store.processResult(r)
         }
     }
 
-    /*private[this]*/ def forkOnUpdateContinuation(
+    private[this] def forkOnUpdateContinuation(
         c:  OnUpdateContinuation,
         e:  Entity,
         pk: SomePropertyKey
     ): Unit = {
         forkOrExecute {
-            if (doTerminate) throw new InterruptedException();
             // get the newest value before we actually call the onUpdateContinuation
             val newEPS = store(e, pk).asEPS
             // IMPROVE ... see other forkOnUpdateContinuation
@@ -223,15 +237,10 @@ final class PKECPropertyStore private (
         finalEP: SomeFinalEP
     ): Unit = {
         forkOrExecute {
-            if (doTerminate) throw new InterruptedException();
             // IMPROVE: Instead of naively calling "c" with finalEP, it may be worth considering which other updates have happened to figure out which update may be the "beste"
             store.processResult(c(finalEP))
         }
     }
-
-    def shutdown(): Unit = store.pool.shutdown()
-
-    override def isIdle: Boolean = store.pool.isQuiescent
 
     override def doScheduleEagerComputationForEntity[E <: Entity](
         e: E
@@ -864,23 +873,23 @@ final class PKECPropertyStore private (
                 // the generic property key: "AnalysisKey"; i.e., those without explicit properties!
                 pksToFinalize foreach { pk ⇒
                     val propertyKey = PropertyKey.key(pk.id)
-                    store.pool.execute(() ⇒ {
+                    forkOrExecute {
                         val dependeesIt = properties(pk.id).elements().asScala.filter(_.hasDependees)
                         if (dependeesIt.hasNext) continueComputation.set(true)
                         dependeesIt foreach { epkState ⇒
                             removeDependerFromDependees(EPK(epkState.e, propertyKey))
                         }
-                    })
+                    }
                 }
                 awaitPoolQuiescence()
 
                 pksToFinalize foreach { pk ⇒
-                    store.pool.execute(() ⇒ {
+                    forkOrExecute {
                         val interimEPSStates = properties(pk.id).values().asScala.filter(_.isRefinable)
                         interimEPSStates foreach { interimEPKState ⇒
                             finalUpdate(interimEPKState.eOptionP.toFinalEP)
                         }
-                    })
+                    }
                 }
                 awaitPoolQuiescence()
 
@@ -917,201 +926,3 @@ object PKECPropertyStore extends ParallelPropertyStoreFactory {
 
 }
 
-/**
- * Encapsulates the state of a single entity and its property of a specific kind.
- *
- * @note All operations are effectively atomic operations.
- */
-sealed trait EPKState {
-
-    /** Gets the current property. */
-    def eOptionP: SomeEOptionP
-
-    final def isEPK: Boolean = eOptionP.isEPK
-
-    def isRefinable: Boolean
-
-    final def e: Entity = eOptionP.e
-
-    def updateEOptionP(newEOptionP: SomeInterimEP, debug: Boolean): SomeEOptionP
-
-    /**
-     * Adds the given E/PK as a depender on this E/PK instance.
-     *
-     * @note This operation is idempotent; that is, adding the same EPK multiple times has no
-     *       special effect.
-     */
-    def addDepender(someEPK: SomeEPK): Unit
-
-    def removeDepender(someEPK: SomeEPK): Unit
-
-    def getAndClearDependers(): Set[SomeEPK]
-
-    /**
-     * @return The current OnUpdateComputation or `null`.
-     */
-    def getAndClearOnUpdateComputation(): OnUpdateContinuation
-
-    def setOnUpdateComputation(c: OnUpdateContinuation): Unit
-
-    def hasPendingOnUpdateComputation: Boolean
-
-    def dependees: Traversable[SomeEOptionP]
-
-    def hasDependees: Boolean
-
-    def setDependees(dependees: Traversable[SomeEOptionP]): Unit
-}
-
-/**
- *
- * @param eOptionPAR An atomic reference holding the current property extension; we need to
- *                 use an atomic reference to enable concurrent update operations as required
- *                 by properties computed using partial results.
- *                 The atomic reference is never null.
- * @param cAR The on update continuation function; null if triggered.
- * @param dependees The dependees; never updated concurrently.
- */
-final class InterimEPKState(
-        val eOptionPAR:          AtomicReference[SomeEOptionP],
-        val cAR:                 AtomicReference[OnUpdateContinuation],
-        @volatile var dependees: Traversable[SomeEOptionP],
-        val dependersAR:         AtomicReference[Set[SomeEPK]]
-) extends EPKState {
-
-    assert(eOptionPAR.get.isRefinable)
-
-    override def eOptionP: SomeEOptionP = eOptionPAR.get()
-
-    override def isRefinable: Boolean = true
-
-    override def updateEOptionP(newEOptionP: SomeInterimEP, debug: Boolean): SomeEOptionP = {
-        val oldEOptionP = eOptionPAR.getAndSet(newEOptionP)
-        if (debug) {
-            oldEOptionP.checkIsValidPropertiesUpdate(newEOptionP, dependees)
-        }
-        oldEOptionP
-    }
-
-    override def addDepender(someEPK: SomeEPK): Unit = {
-        dependersAR.accumulateAndGet(
-            Set(someEPK),
-            (currentDependers, newDepender) ⇒ currentDependers + newDepender.head
-        )
-    }
-
-    override def removeDepender(someEPK: SomeEPK): Unit = {
-        dependersAR.accumulateAndGet(
-            Set(someEPK),
-            (currentDependers, newDepender) ⇒ currentDependers - newDepender.head
-        )
-    }
-
-    override def getAndClearDependers(): Set[SomeEPK] = {
-        val dependers = dependersAR.getAndSet(Set.empty)
-        if (dependers == null)
-            Set.empty
-        else
-            dependers
-    }
-
-    override def getAndClearOnUpdateComputation(): OnUpdateContinuation = cAR.getAndSet(null)
-
-    override def setOnUpdateComputation(c: OnUpdateContinuation): Unit = {
-        val oldOnUpdateContinuation = cAR.getAndSet(c)
-        assert(oldOnUpdateContinuation == null)
-    }
-
-    override def hasPendingOnUpdateComputation: Boolean = cAR.get() != null
-
-    override def setDependees(dependees: Traversable[SomeEOptionP]): Unit = {
-        this.dependees = dependees
-    }
-
-    override def hasDependees: Boolean = dependees.nonEmpty
-
-    override def toString: String = {
-        "InterimEPKState("+
-            s"eOptionP=${eOptionPAR.get},"+
-            s"<hasOnUpdateComputation=${cAR.get() != null}>,"+
-            s"dependees=$dependees,"+
-            s"dependers=${dependersAR.get()})"
-    }
-}
-
-final class FinalEPKState(override val eOptionP: SomeEOptionP) extends EPKState {
-
-    override def isRefinable: Boolean = false
-
-    override def updateEOptionP(newEOptionP: SomeInterimEP, debug: Boolean): SomeEOptionP = {
-        throw new UnknownError(s"the final property $eOptionP can't be updated to $newEOptionP")
-    }
-
-    override def getAndClearDependers(): Set[SomeEPK] = Set.empty
-
-    override def addDepender(epk: SomeEPK): Unit = {
-        // There is nothing to do!
-
-        // This method must not throw an exception, because it may happen
-        // that a client read an intermediate property and based on that it decided
-        // to add a dependency, but this value was updated in the meantime and it doesn't
-        // make sense to store dependers on final values.
-        // This will – however – not lead to a lost update since a client is required
-        // to check – after registering itself as a depender – that the value is still as
-        // expected!
-    }
-
-    override def removeDepender(someEPK: SomeEPK): Unit = {
-        // There is nothing to do!
-    }
-
-    override def getAndClearOnUpdateComputation(): OnUpdateContinuation = null
-
-    override def dependees: Traversable[SomeEOptionP] = {
-        throw new UnknownError("final properties don't have dependees")
-    }
-
-    override def setDependees(dependees: Traversable[SomeEOptionP]): Unit = {
-        throw new UnknownError("final properties can't have dependees")
-    }
-
-    override def hasDependees: Boolean = false
-
-    override def setOnUpdateComputation(c: OnUpdateContinuation): Unit = {
-        throw new UnknownError("final properties can't have \"OnUpdateContinuations\"")
-    }
-
-    override def hasPendingOnUpdateComputation: Boolean = false
-
-    override def toString: String = s"FinalEPKState(finalEP=$eOptionP)"
-}
-
-object EPKState {
-
-    def apply(finalEP: SomeFinalEP): EPKState = new FinalEPKState(finalEP)
-
-    def apply(eOptionP: SomeEOptionP): EPKState = {
-        new InterimEPKState(
-            new AtomicReference[SomeEOptionP](eOptionP),
-            new AtomicReference[OnUpdateContinuation](null),
-            Nil,
-            new AtomicReference[Set[SomeEPK]](Set.empty)
-        )
-    }
-
-    def apply(
-        eOptionP:  SomeEOptionP,
-        c:         OnUpdateContinuation,
-        dependees: Traversable[SomeEOptionP]
-    ): EPKState = {
-        new InterimEPKState(
-            new AtomicReference[SomeEOptionP](eOptionP),
-            new AtomicReference[OnUpdateContinuation](c),
-            dependees,
-            new AtomicReference[Set[SomeEPK]](Set.empty)
-        )
-    }
-
-    def unapply(epkState: EPKState): Some[SomeEOptionP] = Some(epkState.eOptionP)
-
-}
