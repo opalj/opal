@@ -361,14 +361,21 @@ class InterproceduralStringAnalysis(
                                 p.stringConstancyInformation
                             )
                             // Update the state
-                            val func = state.entity2Function(resultEntity)
-                            val pos = state.nonFinalFunctionArgsPos(func)(resultEntity)
-                            val result = Result(resultEntity, p)
-                            state.nonFinalFunctionArgs(func)(pos._1)(pos._2)(pos._3) = result
-                            state.entity2Function.remove(resultEntity)
+                            state.entity2Function(resultEntity).foreach { f ⇒
+                                val pos = state.nonFinalFunctionArgsPos(f)(resultEntity)
+                                val result = Result(resultEntity, p)
+                                state.nonFinalFunctionArgs(f)(pos._1)(pos._2)(pos._3) = result
+                                state.entity2Function.remove(resultEntity)
+                            }
                             // Continue only after all necessary function parameters are evaluated
                             if (state.entity2Function.nonEmpty) {
-                                return determinePossibleStrings(state)
+                                return InterimResult(
+                                    inputData,
+                                    StringConstancyProperty.lb,
+                                    StringConstancyProperty.ub,
+                                    state.dependees,
+                                    continuation(state)
+                                )
                             } else {
                                 // We could try to determine a final result before all function
                                 // parameter information are available, however, this will
@@ -377,7 +384,7 @@ class InterproceduralStringAnalysis(
                                 // information are available
                                 state.entity2Function.clear()
                                 if (!computeResultsForPath(state.computedLeanPath, state)) {
-                                    determinePossibleStrings(state)
+                                    return determinePossibleStrings(state)
                                 }
                             }
                         }

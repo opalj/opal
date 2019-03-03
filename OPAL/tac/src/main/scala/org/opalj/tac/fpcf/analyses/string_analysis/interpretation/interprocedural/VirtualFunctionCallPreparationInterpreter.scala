@@ -125,8 +125,7 @@ class VirtualFunctionCallPreparationInterpreter(
         // Collect all parameters; either from the state, if the interpretation of instr was started
         // before (in this case, the assumption is that all parameters are fully interpreted) or
         // start a new interpretation
-        val isFunctionArgsPreparationDone = state.nonFinalFunctionArgs.contains(instr)
-        val params = if (isFunctionArgsPreparationDone) {
+        val params = if (state.nonFinalFunctionArgs.contains(instr)) {
             state.nonFinalFunctionArgs(instr)
         } else {
             evaluateParameters(
@@ -138,41 +137,46 @@ class VirtualFunctionCallPreparationInterpreter(
             )
         }
         // Continue only when all parameter information are available
-        if (!isFunctionArgsPreparationDone) {
-            val nonFinalResults = getNonFinalParameters(params)
-            if (nonFinalResults.nonEmpty) {
-                state.nonFinalFunctionArgs(instr) = params
-                return nonFinalResults.head
-            }
+        val nonFinalResults = getNonFinalParameters(params)
+        if (nonFinalResults.nonEmpty) {
+            state.nonFinalFunctionArgs(instr) = params
+            return nonFinalResults.head
         }
+
         state.nonFinalFunctionArgs.remove(instr)
         state.nonFinalFunctionArgsPos.remove(instr)
         val evaluatedParams = convertEvaluatedParameters(params)
-
         val results = methods.map { nextMethod ⇒
             val tac = getTACAI(ps, nextMethod, state)
             if (tac.isDefined) {
-                // TAC available => Get return UVar and start the string analysis
-                val ret = tac.get.stmts.find(_.isInstanceOf[ReturnValue[V]]).get
-                val uvar = ret.asInstanceOf[ReturnValue[V]].expr.asVar
-                val entity = (uvar, nextMethod)
+                // It might be that a function has no return value, e. g., in case it is guaranteed
+                // to throw an exception (see, e.g.,
+                // com.sun.org.apache.xpath.internal.objects.XRTreeFragSelectWrapper#str)
+                if (!tac.get.stmts.exists(_.isInstanceOf[ReturnValue[V]])) {
+                    Result(instr, StringConstancyProperty.lb)
+                } else {
+                    // TAC and return available => Get return UVar and start the string analysis
+                    val ret = tac.get.stmts.find(_.isInstanceOf[ReturnValue[V]]).get
+                    val uvar = ret.asInstanceOf[ReturnValue[V]].expr.asVar
+                    val entity = (uvar, nextMethod)
 
-                InterproceduralStringAnalysis.registerParams(entity, evaluatedParams)
-                val eps = ps(entity, StringConstancyProperty.key)
-                eps match {
-                    case r: Result ⇒
-                        state.appendResultToFpe2Sci(defSite, r)
-                        r
-                    case _ ⇒
-                        state.dependees = eps :: state.dependees
-                        state.var2IndexMapping(uvar) = defSite
-                        InterimResult(
-                            entity,
-                            StringConstancyProperty.lb,
-                            StringConstancyProperty.ub,
-                            List(),
-                            c
-                        )
+                    InterproceduralStringAnalysis.registerParams(entity, evaluatedParams)
+                    val eps = ps(entity, StringConstancyProperty.key)
+                    eps match {
+                        case r: Result ⇒
+                            state.appendResultToFpe2Sci(defSite, r)
+                            r
+                        case _ ⇒
+                            state.dependees = eps :: state.dependees
+                            state.var2IndexMapping(uvar) = defSite
+                            InterimResult(
+                                entity,
+                                StringConstancyProperty.lb,
+                                StringConstancyProperty.ub,
+                                List(),
+                                c
+                            )
+                    }
                 }
             } else {
                 // No TAC => Register dependee and continue

@@ -134,7 +134,7 @@ abstract class AbstractStringInterpreter(
         iHandler:        InterproceduralInterpretationHandler,
         funCall:         FunctionCall[V],
         functionArgsPos: NonFinalFunctionArgsPos,
-        entity2function: mutable.Map[P, FunctionCall[V]]
+        entity2function: mutable.Map[P, ListBuffer[FunctionCall[V]]]
     ): NonFinalFunctionArgs = params.zipWithIndex.map {
         case (nextParamList, outerIndex) ⇒
             nextParamList.zipWithIndex.map {
@@ -149,7 +149,10 @@ abstract class AbstractStringInterpreter(
                                 }
                                 val e = interim.eps.e.asInstanceOf[P]
                                 functionArgsPos(funCall)(e) = (outerIndex, middleIndex, innerIndex)
-                                entity2function(e) = funCall
+                                if (!entity2function.contains(e)) {
+                                    entity2function(e) = ListBuffer()
+                                }
+                                entity2function(e).append(funCall)
                             }
                             r
                     }.to[ListBuffer]

@@ -115,7 +115,7 @@ case class InterproceduralComputationState(entity: P) {
      * During the process of updating the [[nonFinalFunctionArgs]] map, it is necessary to find out
      * to which function an entity belongs. We use the following map to do this in constant time.
      */
-    val entity2Function: mutable.Map[P, FunctionCall[V]] = mutable.Map()
+    val entity2Function: mutable.Map[P, ListBuffer[FunctionCall[V]]] = mutable.Map()
 
     /**
      * Takes a definition site as well as a result and extends the [[fpe2sci]] map accordingly,
