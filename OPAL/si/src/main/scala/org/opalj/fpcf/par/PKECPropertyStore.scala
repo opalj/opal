@@ -48,8 +48,8 @@ abstract class PKECPropertyStore extends ParallelPropertyStore { store ⇒
     ): Unit
 
     protected[this] def forkOnUpdateContinuation(
-        c:       OnUpdateContinuation,
-        finalEP: SomeFinalEP
+        dependerEPK: SomeEPK,
+        finalEP:     SomeFinalEP
     ): Unit
 
     protected[this] def parallelize(r: Runnable): Unit
@@ -299,20 +299,12 @@ abstract class PKECPropertyStore extends ParallelPropertyStore { store ⇒
     // BE USED BY EXTERNAL TASKS.
     override def handleResult(r: PropertyComputationResult): Unit = forkResultHandler(r)
 
-    private[this] def notifyDepender(dependerEPK: SomeEPK, eps: SomeInterimEP): Unit = {
-        val dependerState = properties(dependerEPK.pk.id).get(dependerEPK.e)
-        val c = dependerState.getAndClearOnUpdateComputation(dependerEPK)
-        if (c != null) {
-            forkOnUpdateContinuation(dependerEPK, eps.e, eps.pk)
-        }
+    private[this] def notifyDepender(dependerEPK: SomeEPK, eps: SomeEPS): Unit = {
+        forkOnUpdateContinuation(dependerEPK, eps.e, eps.pk)
     }
 
     private[this] def notifyDepender(dependerEPK: SomeEPK, finalEP: SomeFinalEP): Unit = {
-        val dependerState = properties(dependerEPK.pk.id).get(dependerEPK.e)
-        val c = dependerState.getAndClearOnUpdateComputation(dependerEPK)
-        if (c != null) {
-            forkOnUpdateContinuation(c, finalEP)
-        }
+        forkOnUpdateContinuation(dependerEPK, finalEP)
     }
 
     private[par] def clearDependees(depender: SomeEPK, dependees: Traversable[SomeEOptionP]): Unit = {

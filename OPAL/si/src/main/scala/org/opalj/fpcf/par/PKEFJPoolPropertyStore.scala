@@ -78,7 +78,6 @@ final class PKEFJPoolPropertyStore private (
     ): Unit = {
         pool.execute(() ⇒ {
             if (doTerminate) throw new InterruptedException();
-
             val dependerState = properties(dependerEPK.pk.id).get(dependerEPK.e)
             val c = dependerState.getAndClearOnUpdateComputation(dependerEPK)
             if (c != null) {
@@ -92,13 +91,17 @@ final class PKEFJPoolPropertyStore private (
     }
 
     override protected[this] def forkOnUpdateContinuation(
-        c:       OnUpdateContinuation,
-        finalEP: SomeFinalEP
+        dependerEPK: SomeEPK,
+        finalEP:     SomeFinalEP
     ): Unit = {
         pool.execute(() ⇒ {
             if (doTerminate) throw new InterruptedException();
-            // IMPROVE: Instead of naively calling "c" with finalEP, it may be worth considering which other updates have happened to figure out which update may be the "beste"
-            store.processResult(c(finalEP))
+            val dependerState = properties(dependerEPK.pk.id).get(dependerEPK.e)
+            val c = dependerState.getAndClearOnUpdateComputation()
+            if (c != null) {
+                // IMPROVE: Instead of naively calling "c" with finalEP, it may be worth considering which other updates have happened to figure out which update may be the "beste"
+                store.processResult(c(finalEP))
+            }
         })
         incrementOnUpdateContinuationsCounter()
     }
