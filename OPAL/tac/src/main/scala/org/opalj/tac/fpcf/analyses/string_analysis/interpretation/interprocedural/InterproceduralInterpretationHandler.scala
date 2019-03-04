@@ -79,10 +79,7 @@ class InterproceduralInterpretationHandler(
             (params.isEmpty || defSite == -1 || defSite <= ImmediateVMExceptionsOriginOffset)) {
             return Result(e, StringConstancyProperty.lb)
         } else if (defSite < 0) {
-            val paramPos = Math.abs(defSite + 2)
-            val paramScis = params.map(_(paramPos)).distinct
-            val finalParamSci = StringConstancyInformation.reduceMultiple(paramScis)
-            return Result(e, StringConstancyProperty(finalParamSci))
+            return Result(e, StringConstancyProperty(getParam(params, defSite)))
         } else if (processedDefSites.contains(defSite)) {
             return Result(e, StringConstancyProperty.getNeutralElement)
         }
@@ -192,19 +189,40 @@ class InterproceduralInterpretationHandler(
         }
     }
 
+    /**
+     * This function takes parameters and a definition site and extracts the desired parameter from
+     * the given list of parameters. Note that `defSite` is required to be <= -2.
+     */
+    private def getParam(
+        params: Seq[Seq[StringConstancyInformation]], defSite: Int
+    ): StringConstancyInformation = {
+        val paramPos = Math.abs(defSite + 2)
+        val paramScis = params.map(_(paramPos)).distinct
+        StringConstancyInformation.reduceMultiple(paramScis)
+    }
+
+    /**
+     * Finalized a given definition state.
+     */
     def finalizeDefSite(
         defSite: Int, state: InterproceduralComputationState
     ): Unit = {
-        stmts(defSite) match {
-            case nvmc: NonVirtualMethodCall[V] ⇒
-                new NonVirtualMethodCallFinalizer(state).finalizeInterpretation(nvmc, defSite)
-            case Assignment(_, _, al: ArrayLoad[V]) ⇒
-                new ArrayFinalizer(state, cfg).finalizeInterpretation(al, defSite)
-            case Assignment(_, _, vfc: VirtualFunctionCall[V]) ⇒
-                new VirtualFunctionCallFinalizer(state, cfg).finalizeInterpretation(vfc, defSite)
-            case ExprStmt(_, vfc: VirtualFunctionCall[V]) ⇒
-                new VirtualFunctionCallFinalizer(state, cfg).finalizeInterpretation(vfc, defSite)
-            case _ ⇒
+        if (defSite < 0) {
+            state.appendToFpe2Sci(defSite, getParam(state.params, defSite), reset = true)
+        } else {
+            stmts(defSite) match {
+                case nvmc: NonVirtualMethodCall[V] ⇒
+                    NonVirtualMethodCallFinalizer(state).finalizeInterpretation(nvmc, defSite)
+                case Assignment(_, _, al: ArrayLoad[V]) ⇒
+                    ArrayFinalizer(state, cfg).finalizeInterpretation(al, defSite)
+                case Assignment(_, _, vfc: VirtualFunctionCall[V]) ⇒
+                    VirtualFunctionCallFinalizer(state, cfg).finalizeInterpretation(vfc, defSite)
+                case ExprStmt(_, vfc: VirtualFunctionCall[V]) ⇒
+                    VirtualFunctionCallFinalizer(state, cfg).finalizeInterpretation(vfc, defSite)
+                case _ ⇒ state.appendToFpe2Sci(
+                    defSite, StringConstancyProperty.lb.stringConstancyInformation, reset = true
+                )
+            }
         }
     }
 
