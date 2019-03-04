@@ -220,7 +220,7 @@ object EPKState {
     def apply(eOptionP: SomeEOptionP): EPKState = {
         new InterimEPKState(
             new AtomicReference[SomeEOptionP](eOptionP),
-            new AtomicReference[OnUpdateContinuation](null),
+            new AtomicReference[OnUpdateContinuation]( /*null*/ ),
             Nil,
             new AtomicReference[Set[SomeEPK]](Set.empty)
         )
