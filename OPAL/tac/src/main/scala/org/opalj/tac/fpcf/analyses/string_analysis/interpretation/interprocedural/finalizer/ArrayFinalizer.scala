@@ -36,3 +36,11 @@ class ArrayFinalizer(
     }
 
 }
+
+object ArrayFinalizer {
+
+    def apply(
+        state: InterproceduralComputationState, cfg: CFG[Stmt[V], TACStmts[V]]
+    ): ArrayFinalizer = new ArrayFinalizer(state, cfg)
+
+}

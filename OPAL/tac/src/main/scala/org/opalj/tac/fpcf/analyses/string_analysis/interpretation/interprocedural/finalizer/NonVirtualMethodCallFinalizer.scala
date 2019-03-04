@@ -2,6 +2,7 @@
 package org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedural.finalizer
 
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
+import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.tac.NonVirtualMethodCall
 import org.opalj.tac.fpcf.analyses.string_analysis.InterproceduralComputationState
 import org.opalj.tac.fpcf.analyses.string_analysis.V
@@ -21,12 +22,26 @@ class NonVirtualMethodCallFinalizer(
      * @inheritdoc
      */
     override def finalizeInterpretation(instr: T, defSite: Int): Unit = {
-        val scis = instr.params.head.asVar.definedBy.toArray.sorted.map { state.fpe2sci }
-        state.appendToFpe2Sci(
-            defSite,
-            StringConstancyInformation.reduceMultiple(scis.flatten.toList),
-            reset = true
-        )
+        val toAppend = if (instr.params.nonEmpty) {
+            instr.params.head.asVar.definedBy.toArray.foreach { ds ⇒
+                if (!state.fpe2sci.contains(ds)) {
+                    state.iHandler.finalizeDefSite(ds, state)
+                }
+            }
+            val scis = instr.params.head.asVar.definedBy.toArray.sorted.map { state.fpe2sci }
+            StringConstancyInformation.reduceMultiple(scis.flatten.toList)
+        } else {
+            StringConstancyProperty.lb.stringConstancyInformation
+        }
+        state.appendToFpe2Sci(defSite, toAppend, reset = true)
     }
+
+}
+
+object NonVirtualMethodCallFinalizer {
+
+    def apply(
+        state: InterproceduralComputationState
+    ): NonVirtualMethodCallFinalizer = new NonVirtualMethodCallFinalizer(state)
 
 }

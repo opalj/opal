@@ -31,7 +31,7 @@ class VirtualFunctionCallFinalizer(
         instr.name match {
             case "append"   ⇒ finalizeAppend(instr, defSite)
             case "toString" ⇒ finalizeToString(instr, defSite)
-            case _          ⇒ state.appendToFpe2Sci(
+            case _ ⇒ state.appendToFpe2Sci(
                 defSite, StringConstancyProperty.lb.stringConstancyInformation, reset = true
             )
         }
@@ -101,5 +101,13 @@ class VirtualFunctionCallFinalizer(
         )
         state.appendToFpe2Sci(defSite, finalSci)
     }
+
+}
+
+object VirtualFunctionCallFinalizer {
+
+    def apply(
+        state: InterproceduralComputationState, cfg: CFG[Stmt[V], TACStmts[V]]
+    ): VirtualFunctionCallFinalizer = new VirtualFunctionCallFinalizer(state, cfg)
 
 }
