@@ -5,6 +5,7 @@ import org.opalj.br.cfg.CFG
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyType
+import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.tac.fpcf.analyses.string_analysis.V
 import org.opalj.tac.Stmt
 import org.opalj.tac.TACStmts
@@ -30,7 +31,9 @@ class VirtualFunctionCallFinalizer(
         instr.name match {
             case "append"   ⇒ finalizeAppend(instr, defSite)
             case "toString" ⇒ finalizeToString(instr, defSite)
-            case _          ⇒
+            case _          ⇒ state.appendToFpe2Sci(
+                defSite, StringConstancyProperty.lb.stringConstancyInformation, reset = true
+            )
         }
     }
 
