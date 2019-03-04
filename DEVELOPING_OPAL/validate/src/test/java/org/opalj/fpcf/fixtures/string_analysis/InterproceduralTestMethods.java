@@ -9,6 +9,7 @@ import org.opalj.fpcf.properties.string_analysis.StringDefinitionsCollection;
 import javax.management.remote.rmi.RMIServer;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.lang.reflect.Method;
 import java.util.Scanner;
 
 import static org.opalj.fpcf.properties.string_analysis.StringConstancyLevel.*;
@@ -219,7 +220,7 @@ public class InterproceduralTestMethods {
             stringDefinitions = {
                     @StringDefinitions(
                             expectedLevel = CONSTANT,
-                            expectedStrings = "(Hello|Hello World)"
+                            expectedStrings = "(Hello World|Hello)"
                     )
 
             })
@@ -306,11 +307,16 @@ public class InterproceduralTestMethods {
                     )
 
             })
-    public void dependenciesWithinFinalizeTest(String s) {
+    public void dependenciesWithinFinalizeTest(String s, Class clazz) {
         String properName = s.length() == 1 ? s.substring(0, 1).toUpperCase() :
                 getHelloWorld() + getRuntimeClassName();
         String getterName = "get" + properName;
-        analyzeString(getterName);
+        Method m;
+        try {
+            m = clazz.getMethod(getterName);
+            System.out.println(m);
+            analyzeString(getterName);
+        } catch (NoSuchMethodException var13) {}
     }
 
     @StringDefinitionsCollection(

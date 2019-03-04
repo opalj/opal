@@ -141,41 +141,43 @@ class InterproceduralStringAnalysis(
             )
         }
 
+        if (state.computedLeanPath == null) {
+            state.computedLeanPath = computeLeanPath(uvar, state.tac)
+        }
+
+        var requiresCallersInfo = false
         if (state.params.isEmpty) {
             state.params = InterproceduralStringAnalysis.getParams(state.entity)
         }
-        // In case a parameter is required for approximating a string, retrieve callers information
-        // (but only once and only if the expressions is not a local string)
-        val hasCallersOrParamInfo = state.callers == null && state.params.isEmpty
-        val requiresCallersInfo = if (defSites.exists(_ < 0)) {
-            if (InterpretationHandler.isStringConstExpression(uvar)) {
-                state.computedLeanPath = computeLeanPathForStringConst(uvar)
-                hasCallersOrParamInfo
-            } else {
-                // StringBuilders as parameters are currently not evaluated
-                return Result(state.entity, StringConstancyProperty.lb)
-            }
-        } else {
-            val call = stmts(defSites.head).asAssignment.expr
-            if (InterpretationHandler.isStringBuilderBufferToStringCall(call)) {
-                val (leanPath, hasInitDefSites) = computeLeanPathForStringBuilder(
-                    uvar, state.tac
-                )
-                if (!hasInitDefSites) {
+        if (state.params.isEmpty) {
+            // In case a parameter is required for approximating a string, retrieve callers information
+            // (but only once and only if the expressions is not a local string)
+            val hasCallersOrParamInfo = state.callers == null && state.params.isEmpty
+            requiresCallersInfo = if (defSites.exists(_ < 0)) {
+                if (InterpretationHandler.isStringConstExpression(uvar)) {
+                    hasCallersOrParamInfo
+                } else {
+                    // StringBuilders as parameters are currently not evaluated
                     return Result(state.entity, StringConstancyProperty.lb)
                 }
-                state.computedLeanPath = leanPath
-                val hasSupportedParamType = state.entity._2.parameterTypes.exists {
-                    InterproceduralStringAnalysis.isSupportedType
-                }
-                if (hasSupportedParamType) {
-                    hasParamUsageAlongPath(state.computedLeanPath, state.tac.stmts)
+            } else {
+                val call = stmts(defSites.head).asAssignment.expr
+                if (InterpretationHandler.isStringBuilderBufferToStringCall(call)) {
+                    val (_, hasInitDefSites) = computeLeanPathForStringBuilder(uvar, state.tac)
+                    if (!hasInitDefSites) {
+                        return Result(state.entity, StringConstancyProperty.lb)
+                    }
+                    val hasSupportedParamType = state.entity._2.parameterTypes.exists {
+                        InterproceduralStringAnalysis.isSupportedType
+                    }
+                    if (hasSupportedParamType) {
+                        hasParamUsageAlongPath(state.computedLeanPath, state.tac.stmts)
+                    } else {
+                        !hasCallersOrParamInfo
+                    }
                 } else {
                     !hasCallersOrParamInfo
                 }
-            } else {
-                state.computedLeanPath = computeLeanPathForStringConst(uvar)
-                !hasCallersOrParamInfo
             }
         }
 
@@ -372,7 +374,7 @@ class InterproceduralStringAnalysis(
                                 val pos = state.nonFinalFunctionArgsPos(f)(resultEntity)
                                 val result = Result(resultEntity, p)
                                 state.nonFinalFunctionArgs(f)(pos._1)(pos._2)(pos._3) = result
-                                state.entity2Function.remove(resultEntity)
+                                state.entity2Function.remove(resultEntity) // TODO: Is that correct? (rather remove only the function from the list)
                             }
                             // Continue only after all necessary function parameters are evaluated
                             if (state.entity2Function.nonEmpty) {
@@ -567,6 +569,27 @@ class InterproceduralStringAnalysis(
         }
 
         hasFinalResult
+    }
+
+    /**
+     * This function is a wrapper function for [[computeLeanPathForStringConst]] and
+     * [[computeLeanPathForStringBuilder]].
+     */
+    private def computeLeanPath(
+        duvar: V, tac: TACode[TACMethodParameter, DUVar[ValueInformation]]
+    ): Path = {
+        val defSites = duvar.definedBy.toArray.sorted
+        if (defSites.head < 0) {
+            computeLeanPathForStringConst(duvar)
+        } else {
+            val call = tac.stmts(defSites.head).asAssignment.expr
+            if (InterpretationHandler.isStringBuilderBufferToStringCall(call)) {
+                val (leanPath, _) = computeLeanPathForStringBuilder(duvar, tac)
+                leanPath
+            } else {
+                computeLeanPathForStringConst(duvar)
+            }
+        }
     }
 
     /**
