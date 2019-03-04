@@ -245,7 +245,7 @@ final class PKESequentialPropertyStore private (
                         fastTrackPropertyOption match {
                             case Some(p) ⇒
                                 fastTrackPropertiesCounter += 1
-                                val finalP = FinalEP(e, p.asInstanceOf[P])
+                                val finalP = FinalEP(e, p)
                                 update(finalP, Nil)
                                 finalP
                             case None ⇒
@@ -478,7 +478,6 @@ final class PKESequentialPropertyStore private (
         }
     }
 
-    /* Returns `true` if no dependee was updated in the meantime. */
     private[this] def processDependeesOfInterimResult(
         initialEPS:       SomeEPS,
         initialDependees: Traversable[SomeEOptionP],
