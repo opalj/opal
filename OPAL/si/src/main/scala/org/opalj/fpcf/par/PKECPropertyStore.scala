@@ -392,6 +392,7 @@ abstract class PKECPropertyStore extends ParallelPropertyStore { store ⇒
         dependees forall { processedDependee ⇒
             state.hasPendingOnUpdateComputation && {
                 val dependeeState = properties(processedDependee.pk.id).get(processedDependee.e)
+                dependeeState.addDepender(dependerEPK)
                 val currentDependee = dependeeState.eOptionP
                 if (currentDependee.isUpdatedComparedTo(processedDependee)) {
                     // A dependee was updated; let's trigger the OnUpdateContinuation if it
@@ -402,7 +403,6 @@ abstract class PKECPropertyStore extends ParallelPropertyStore { store ⇒
                     }
                     false // we don't need to register further dependers
                 } else {
-                    dependeeState.addDepender(dependerEPK)
                     true
                 }
             }
