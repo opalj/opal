@@ -2,26 +2,26 @@
 package org.opalj.fpcf
 package par
 
-class PKECPropertyStoreTestWithDebugging
+class PKEFJPoolPropertyStoreTestWithDebugging
     extends PropertyStoreTestWithDebugging(
         List(DefaultPropertyComputation, CheapPropertyComputation)
     ) {
 
     def createPropertyStore(): PropertyStore = {
-        val ps = PKECPropertyStore()
+        val ps = PKEFJPoolPropertyStore()
         ps.suppressError = true
         ps
     }
 
 }
 
-class PKECPropertyStoreTestWithoutDebugging
+class PKEFJPoolPropertyStoreTestWithoutDebugging
     extends PropertyStoreTestWithoutDebugging(
         List(DefaultPropertyComputation, CheapPropertyComputation)
     ) {
 
     def createPropertyStore(): PropertyStore = {
-        val ps = PKECPropertyStore()
+        val ps = PKEFJPoolPropertyStore()
         ps.suppressError = true
         ps
     }

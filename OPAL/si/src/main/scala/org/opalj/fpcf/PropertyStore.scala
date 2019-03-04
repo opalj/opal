@@ -261,7 +261,7 @@ abstract class PropertyStore {
      */
     def fallbacksUsedForComputedPropertiesCount: Int
 
-    def incrementFallbacksUsedForComputedPropertiesCounter(): Unit
+    protected[this] def incrementFallbacksUsedForComputedPropertiesCounter(): Unit
 
     /**
      * Reports core statistics; this method is only guaranteed to report ''final'' results
@@ -768,7 +768,7 @@ abstract class PropertyStore {
         pk: PropertyKey[P],
         pc: ProperPropertyComputation[E] // TODO add definition of PropertyComputationResult that is parameterized over the kind of Property to specify that we want a PropertyComputationResult with respect to PropertyKey (pk)
     ): Unit = {
-        if (debug && !isIdle) {
+        if (!isIdle) {
             throw new IllegalStateException(
                 "lazy computations can only be registered while the property store is idle"
             )
@@ -789,7 +789,7 @@ abstract class PropertyStore {
     )(
         pc: (E, SourceP) ⇒ FinalEP[E, TargetP]
     ): Unit = {
-        if (debug && !isIdle) {
+        if (!isIdle) {
             throw new IllegalStateException(
                 "transformers can only be registered while the property store is idle"
             )
@@ -838,7 +838,7 @@ abstract class PropertyStore {
         pk: PropertyKey[P],
         pc: PropertyComputation[E]
     ): Unit = {
-        if (debug && !isIdle) {
+        if (!isIdle) {
             throw new IllegalStateException(
                 "triggered computations can only be registered while no computations are running"
             )
