@@ -124,7 +124,8 @@ class InterproceduralInterpretationHandler(
                 ).interpret(expr, defSite)
                 // In case no final result could be computed, remove this def site from the list of
                 // processed def sites to make sure that is can be compute again (when all final
-                // results are available)
+                // results are available); we use nonFinalFunctionArgs because if it does not
+                // contain expr, it can be finalized later on without processing the function again
                 if (state.nonFinalFunctionArgs.contains(expr)) {
                     processedDefSites.remove(defSite)
                 }
@@ -133,9 +134,6 @@ class InterproceduralInterpretationHandler(
                 val r = new InterproceduralStaticFunctionCallInterpreter(
                     cfg, this, ps, state, declaredMethods, c
                 ).interpret(expr, defSite)
-                // In case no final result could be computed, remove this def site from the list of
-                // processed def sites to make sure that is can be compute again (when all final
-                // results are available)
                 if (state.nonFinalFunctionArgs.contains(expr)) {
                     processedDefSites.remove(defSite)
                 }
@@ -145,18 +143,19 @@ class InterproceduralInterpretationHandler(
                 state.appendResultToFpe2Sci(defSite, result.asInstanceOf[Result])
                 result
             case Assignment(_, _, expr: NonVirtualFunctionCall[V]) ⇒
-                new InterproceduralNonVirtualFunctionCallInterpreter(
+                val r = new InterproceduralNonVirtualFunctionCallInterpreter(
                     cfg, this, ps, state, declaredMethods, c
                 ).interpret(expr, defSite)
+                if (state.nonFinalFunctionArgs.contains(expr)) {
+                    processedDefSites.remove(defSite)
+                }
+                r
             case Assignment(_, _, expr: GetField[V]) ⇒
                 new InterproceduralFieldInterpreter(cfg, this, callees).interpret(expr, defSite)
             case ExprStmt(_, expr: VirtualFunctionCall[V]) ⇒
                 val r = new VirtualFunctionCallPreparationInterpreter(
                     cfg, this, ps, state, declaredMethods, params, c
                 ).interpret(expr, defSite)
-                // In case no final result could be computed, remove this def site from the list of
-                // processed def sites to make sure that is can be compute again (when all final
-                // results are available)
                 if (state.nonFinalFunctionArgs.contains(expr)) {
                     processedDefSites.remove(defSite)
                 }
@@ -165,9 +164,6 @@ class InterproceduralInterpretationHandler(
                 val r = new InterproceduralStaticFunctionCallInterpreter(
                     cfg, this, ps, state, declaredMethods, c
                 ).interpret(expr, defSite)
-                // In case no final result could be computed, remove this def site from the list of
-                // processed def sites to make sure that is can be compute again (when all final
-                // results are available)
                 if (!r.isInstanceOf[Result]) {
                     processedDefSites.remove(defSite)
                 }
