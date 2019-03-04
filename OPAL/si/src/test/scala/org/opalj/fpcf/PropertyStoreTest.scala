@@ -41,7 +41,7 @@ sealed abstract class PropertyStoreTest(
             import Palindromes.PalindromeFragmentsKey
             import Palindromes.PalindromeFragments
 
-            ignore("should be possible to query an empty property") {
+            it("should be possible to query an empty property") {
                 val ps = createPropertyStore()
                 info(s"PropertyStore@${System.identityHashCode(ps).toHexString}")
 
@@ -84,7 +84,7 @@ sealed abstract class PropertyStoreTest(
                 ps.shutdown()
             }
 
-            ignore("should be able to print properties even if the store is empty") {
+            it("should be able to print properties even if the store is empty") {
                 val ps = createPropertyStore()
                 info(s"PropertyStore@${System.identityHashCode(ps).toHexString}")
 
