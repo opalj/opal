@@ -41,7 +41,7 @@ sealed trait EPKState {
      * @note  This method must not throw an exception, because it may happen
      *        that a client reads an intermediate property and based on that it decided
      *        to add a dependency, but this EPKState was updated in the meantime and may
-     *        encapsulte a final value for which it does not make sense to store dependers.
+     *        encapsulate a final value for which it does not make sense to store dependers.
      *        This will – however – not lead to a lost update since a client is required
      *        to check – after registering itself as a depender – that the value is still as
      *        expected!
