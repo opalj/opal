@@ -364,6 +364,19 @@ public class InterproceduralTestMethods {
         analyzeString("java.lang.String");
     }
 
+//    @StringDefinitionsCollection(
+//            value = "a case where no callers information need to be computed",
+//            stringDefinitions = {
+//                            expectedLevel = CONSTANT,
+//                            expectedStrings = "value"
+//                    )
+//            })
+//    public String cyclicDependencyTest(String s) {
+//        String value = getProperty(s);
+//        analyzeString(value);
+//        return value;
+//    }
+
     /**
      * Necessary for the callerWithFunctionParameterTest.
      */
@@ -402,5 +415,13 @@ public class InterproceduralTestMethods {
     private String addQuestionMark(String s) {
         return s + "?";
     }
+
+//    private String getProperty(String name) {
+//        if (name == null) {
+//            return cyclicDependencyTest("default");
+//        } else {
+//            return "value";
+//        }
+//    }
 
 }
