@@ -41,8 +41,10 @@ object TACAITransformer extends BasicFPCFTransformerScheduler with TACAIInitiali
                         FinalEP(
                             m,
                             baseAIResult.aiResult match {
-                                case Some(aiResult) ⇒ TACAIAnalysis.computeTheTACAI(m, aiResult)(p)
-                                case None           ⇒ NoTACAI
+                                case Some(aiResult) ⇒
+                                    TACAIAnalysis.computeTheTACAI(m, aiResult, false)(p)
+                                case None ⇒
+                                    NoTACAI
                             }
                         )
                 }

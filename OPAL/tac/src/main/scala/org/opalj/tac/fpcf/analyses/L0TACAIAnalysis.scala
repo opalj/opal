@@ -58,16 +58,16 @@ class L0TACAIAnalysis private[analyses] (val project: SomeProject) extends FPCFA
         val m = eOptionP.e
         (eOptionP: @unchecked) match {
             case FinalP(NoAIResult)           ⇒ Result(m, NoTACAI)
-            case FinalP(AnAIResult(aiResult)) ⇒ Result(m, computeTheTACAI(m, aiResult))
+            case FinalP(AnAIResult(aiResult)) ⇒ Result(m, computeTheTACAI(m, aiResult, false))
 
             case currentAIResult @ InterimLUBP(AnAIResult(initialLBAIResult), ub) ⇒
-                val newLB = computeTheTACAI(m, initialLBAIResult)
+                val newLB = computeTheTACAI(m, initialLBAIResult, false)
                 val newUB =
                     if (ub == NoAIResult)
                         NoTACAI
                     else {
                         val AnAIResult(initialUBAIResult) = ub
-                        computeTheTACAI(m, initialUBAIResult)
+                        computeTheTACAI(m, initialUBAIResult, false)
                     }
 
                 InterimResult.create(
@@ -83,7 +83,7 @@ class L0TACAIAnalysis private[analyses] (val project: SomeProject) extends FPCFA
 
                 InterimResult.create(
                     m,
-                    computeTheTACAI(m, aiResult),
+                    computeTheTACAI(m, aiResult, false),
                     NoTACAI,
                     List(epk),
                     c = c

@@ -15,12 +15,20 @@ import org.opalj.tac.fpcf.properties.TheTACAI
 
 object TACAIAnalysis {
 
-    def computeTheTACAI(m: Method, aiResult: AIResult)(implicit p: SomeProject): TheTACAI = {
+    def computeTheTACAI(
+        m:                  Method,
+        aiResult:           AIResult,
+        detachFromAIResult: Boolean
+    )(
+        implicit
+        p: SomeProject
+    ): TheTACAI = {
         val typedAIResult = aiResult.asInstanceOf[AIResult { val domain: Domain with RecordDefUse }]
         val taCode = TACAIFactory(m, p.classHierarchy, typedAIResult)(Nil)
+        val theTACode = if (detachFromAIResult) taCode.detach else taCode
         val tacaiProperty = TheTACAI(
             // the following cast is safe - see TACode for details
-            taCode.asInstanceOf[TACode[TACMethodParameter, DUVar[ValueInformation]]]
+            theTACode.asInstanceOf[TACode[TACMethodParameter, DUVar[ValueInformation]]]
         )
         tacaiProperty
     }
