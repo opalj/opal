@@ -1,6 +1,7 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.string_analysis;
 
+import com.sun.corba.se.impl.util.PackagePrefixChecker;
 import org.opalj.fpcf.fixtures.string_analysis.hierarchies.GreetingService;
 import org.opalj.fpcf.fixtures.string_analysis.hierarchies.HelloGreeting;
 import org.opalj.fpcf.properties.string_analysis.StringDefinitions;
@@ -10,6 +11,7 @@ import javax.management.remote.rmi.RMIServer;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.lang.reflect.Method;
+import java.rmi.Remote;
 import java.util.Scanner;
 
 import static org.opalj.fpcf.properties.string_analysis.StringConstancyLevel.*;
@@ -391,6 +393,24 @@ public class InterproceduralTestMethods {
         analyzeString(shaderName);
     }
 
+    @StringDefinitionsCollection(
+            value = "a case taken from com.sun.corba.se.impl.util.Utility#tieName and slightly "
+                    + "adapted",
+            stringDefinitions = {
+                    @StringDefinitions(
+                            expectedLevel = PARTIALLY_CONSTANT,
+                            expectedStrings = "(\\w\\w_tie|\\w_tie)"
+                    )
+            })
+    public String tieName(String var0, Remote remote) {
+        PackagePrefixChecker ppc = new PackagePrefixChecker();
+        String s = PackagePrefixChecker.hasOffendingPrefix(tieNameForCompiler(var0)) ?
+                PackagePrefixChecker.packagePrefix() + tieNameForCompiler(var0) :
+                tieNameForCompiler(var0);
+        analyzeString(s);
+        return s;
+    }
+
 //    @StringDefinitionsCollection(
 //            value = "a case where no callers information need to be computed",
 //            stringDefinitions = {
@@ -417,6 +437,13 @@ public class InterproceduralTestMethods {
      */
     public static String belongsToTheSameTestCase() {
         return getHelloWorld();
+    }
+
+    /**
+     * Necessary for the tieName test.
+     */
+    private static String tieNameForCompiler(String var0) {
+        return var0 + "_tie";
     }
 
     private String getRuntimeClassName() {

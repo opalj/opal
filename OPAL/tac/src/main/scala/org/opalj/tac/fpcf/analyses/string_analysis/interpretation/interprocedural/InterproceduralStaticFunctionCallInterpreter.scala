@@ -109,7 +109,7 @@ class InterproceduralStaticFunctionCallInterpreter(
                     Result(e, p)
                 case _ ⇒
                     state.dependees = eps :: state.dependees
-                    state.var2IndexMapping(uvar) = defSite
+                    state.appendToVar2IndexMapping(uvar, defSite)
                     InterimResult(
                         entity,
                         StringConstancyProperty.lb,

@@ -61,7 +61,7 @@ case class InterproceduralComputationState(entity: P) {
     /**
      * A mapping from DUVar elements to the corresponding indices of the FlatPathElements
      */
-    val var2IndexMapping: mutable.Map[V, Int] = mutable.Map()
+    val var2IndexMapping: mutable.Map[V, ListBuffer[Int]] = mutable.Map()
 
     /**
      * A mapping from values / indices of FlatPathElements to StringConstancyInformation
@@ -140,6 +140,16 @@ case class InterproceduralComputationState(entity: P) {
             fpe2sci(defSite) = ListBuffer()
         }
         fpe2sci(defSite).append(sci)
+    }
+
+    /**
+     * Takes an entity as well as a definition site and append it to [[var2IndexMapping]].
+     */
+    def appendToVar2IndexMapping(entity: V, defSite: Int): Unit = {
+        if (!var2IndexMapping.contains(entity)) {
+            var2IndexMapping(entity) = ListBuffer()
+        }
+        var2IndexMapping(entity).append(defSite)
     }
 
 }
