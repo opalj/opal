@@ -24,7 +24,6 @@ import org.opalj.br.fpcf.cg.properties.Callees
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.tac.ExprStmt
-import org.opalj.tac.SimpleTACAIKey
 import org.opalj.tac.Stmt
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.intraprocedural.IntraproceduralInterpretationHandler
@@ -74,21 +73,29 @@ class IntraproceduralStringAnalysis(
      * have all required information ready for a final result.
      */
     private case class ComputationState(
-            // The lean path that was computed
-            computedLeanPath: Path,
-            // A mapping from DUVar elements to the corresponding indices of the FlatPathElements
-            var2IndexMapping: mutable.Map[V, Int],
-            // A mapping from values of FlatPathElements to StringConstancyInformation
-            fpe2sci: mutable.Map[Int, StringConstancyInformation],
-            // The three-address code of the method in which the entity under analysis resides
-            tac: TACode[TACMethodParameter, DUVar[ValueInformation]]
+        // The lean path that was computed
+        computedLeanPath: Path,
+        // A mapping from DUVar elements to the corresponding indices of the FlatPathElements
+        var2IndexMapping: mutable.Map[V, Int],
+        // A mapping from values of FlatPathElements to StringConstancyInformation
+        fpe2sci: mutable.Map[Int, StringConstancyInformation],
+        // The three-address code of the method in which the entity under analysis resides
+        tac: TACode[TACMethodParameter, DUVar[ValueInformation]]
     )
 
     def analyze(data: P): ProperPropertyComputationResult = {
         // sci stores the final StringConstancyInformation (if it can be determined now at all)
         var sci = StringConstancyProperty.lb.stringConstancyInformation
-        val tacProvider = p.get(SimpleTACAIKey)
-        val tac = tacProvider(data._2)
+        val tacaiEOptP = ps(data._2, TACAI.key)
+        var tac: TACode[TACMethodParameter, DUVar[ValueInformation]] = null
+        if (tacaiEOptP.hasUBP) {
+            if (tacaiEOptP.ub.tac.isEmpty) {
+                // No TAC available, e.g., because the method has no body
+                return Result(data, StringConstancyProperty.lb)
+            } else {
+                tac = tacaiEOptP.ub.tac.get
+            }
+        }
         val cfg = tac.cfg
         val stmts = tac.stmts
 
@@ -341,7 +348,7 @@ sealed trait IntraproceduralStringAnalysisScheduler extends FPCFAnalysisSchedule
  * Executor for the lazy analysis.
  */
 object LazyIntraproceduralStringAnalysis
-    extends IntraproceduralStringAnalysisScheduler with FPCFLazyAnalysisScheduler {
+        extends IntraproceduralStringAnalysisScheduler with FPCFLazyAnalysisScheduler {
 
     override def register(
         p: SomeProject, ps: PropertyStore, analysis: InitializationData
