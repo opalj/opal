@@ -629,7 +629,7 @@ class InterproceduralStringAnalysis(
         if (initDefSites.isEmpty) {
             (null, false)
         } else {
-            val paths = pathFinder.findPaths(initDefSites, duvar.definedBy.head)
+            val paths = pathFinder.findPaths(initDefSites, duvar.definedBy.toArray.max)
             (paths.makeLeanPath(duvar, tac.stmts), true)
         }
     }
