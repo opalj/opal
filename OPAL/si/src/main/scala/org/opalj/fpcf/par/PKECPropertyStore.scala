@@ -24,6 +24,8 @@ import org.opalj.fpcf.PropertyKind.SupportedPropertyKinds
  */
 abstract class PKECPropertyStore extends ParallelPropertyStore { store ⇒
 
+    protected[this] implicit def self: PKECPropertyStore = this
+
     //
     //
     // PARALLELIZATION RELATED FUNCTIONALITY
@@ -40,9 +42,9 @@ abstract class PKECPropertyStore extends ParallelPropertyStore { store ⇒
     protected[this] def forkResultHandler(r: PropertyComputationResult): Unit
 
     protected[this] def forkOnUpdateContinuation(
-        c:  OnUpdateContinuation,
-        e:  Entity,
-        pk: SomePropertyKey
+        dependerEPK: SomeEPK,
+        e:           Entity,
+        pk:          SomePropertyKey
     ): Unit
 
     protected[this] def forkOnUpdateContinuation(
@@ -60,7 +62,7 @@ abstract class PKECPropertyStore extends ParallelPropertyStore { store ⇒
 
     // Per PropertyKind we use one concurrent hash map to store the entities' properties.
     // The value encompasses the current property along with some helper information.
-    private[this] val properties: Array[ConcurrentHashMap[Entity, EPKState]] = {
+    protected[this] val properties: Array[ConcurrentHashMap[Entity, EPKState]] = {
         Array.fill(SupportedPropertyKinds) { new ConcurrentHashMap() }
     }
 
@@ -69,7 +71,7 @@ abstract class PKECPropertyStore extends ParallelPropertyStore { store ⇒
     // are guaranteed to be visible to all relevant tasks.
 
     /** Computations that will be triggered when a new property becomes available. */
-    private[this] val triggeredComputations: Array[Array[SomePropertyComputation]] = {
+    protected[this] val triggeredComputations: Array[Array[SomePropertyComputation]] = {
         new Array(SupportedPropertyKinds)
     }
 
@@ -294,23 +296,23 @@ abstract class PKECPropertyStore extends ParallelPropertyStore { store ⇒
     // BE USED BY EXTERNAL TASKS.
     override def handleResult(r: PropertyComputationResult): Unit = forkResultHandler(r)
 
-    private[this] def notifyDepender(dependerEPK: SomeEPK, eps: SomeEPS): Unit = {
+    private[this] def notifyDepender(dependerEPK: SomeEPK, eps: SomeInterimEP): Unit = {
         val dependerState = properties(dependerEPK.pk.id).get(dependerEPK.e)
-        val c = dependerState.getAndClearOnUpdateComputation()
+        val c = dependerState.getAndClearOnUpdateComputation(dependerEPK)
         if (c != null) {
-            forkOnUpdateContinuation(c, eps.e, eps.pk)
+            forkOnUpdateContinuation(dependerEPK, eps.e, eps.pk)
         }
     }
 
     private[this] def notifyDepender(dependerEPK: SomeEPK, finalEP: SomeFinalEP): Unit = {
         val dependerState = properties(dependerEPK.pk.id).get(dependerEPK.e)
-        val c = dependerState.getAndClearOnUpdateComputation()
+        val c = dependerState.getAndClearOnUpdateComputation(dependerEPK)
         if (c != null) {
             forkOnUpdateContinuation(c, finalEP)
         }
     }
 
-    def clearDependees(depender: SomeEPK, dependees: Traversable[SomeEOptionP]): Unit = {
+    private[par] def clearDependees(depender: SomeEPK, dependees: Traversable[SomeEOptionP]): Unit = {
         dependees foreach { dependee ⇒
             val dependeeState = properties(dependee.pk.id).get(dependee.e)
             dependeeState.removeDepender(depender)
@@ -372,12 +374,6 @@ abstract class PKECPropertyStore extends ParallelPropertyStore { store ⇒
             else {
                 val oldEOptionP = existingState.updateEOptionP(interimEP, debug)
                 notificationRequired = interimEP.isUpdatedComparedTo(oldEOptionP)
-                // Before we set the "new" OnUpdateComputation function, we first have
-                // to deregister with all old dependees to avoid that the continuation
-                // function is called by an outdated dependee from which it doesn't expect
-                // any more updates!
-                // IMPROVE Only deregister those dependees that are necessary; this however requires collaboration with the analyses to make efficient decisions possible (ATTENTION: currently we only register as long as necessary!)
-                clearDependees(interimEP.toEPK, existingState.dependees)
                 existingState.setDependees(dependees)
                 existingState.setOnUpdateComputation(c)
                 existingState
@@ -397,9 +393,9 @@ abstract class PKECPropertyStore extends ParallelPropertyStore { store ⇒
                 if (currentDependee.isUpdatedComparedTo(processedDependee)) {
                     // A dependee was updated; let's trigger the OnUpdateContinuation if it
                     // wasn't already triggered concurrently.
-                    val currentC = state.getAndClearOnUpdateComputation()
+                    val currentC = state.getAndClearOnUpdateComputation(dependerEPK)
                     if (currentC != null) {
-                        forkOnUpdateContinuation(currentC, processedDependee.e, processedDependee.pk)
+                        forkOnUpdateContinuation(dependerEPK, processedDependee.e, processedDependee.pk)
                     }
                     false // we don't need to register further dependers
                 } else {

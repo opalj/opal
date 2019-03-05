@@ -59,11 +59,17 @@ sealed trait EPKState {
 
     /**
      * Returns the current `OnUpdateComputation` or `null`, if the `OnUpdateComputation` was
-     * already triggered. This is an atomic operation.
+     * already triggered. This is an atomic operation. Additionally – in a second step –
+     * removes the EPK underlying the EPKState from the the dependees and clears the dependees.
      *
      * @note This method is always defined and never throws an exception.
      */
-    def getAndClearOnUpdateComputation(): OnUpdateContinuation
+    def getAndClearOnUpdateComputation(
+        thisEPK: SomeEPK = this.eOptionP.toEPK
+    )(
+        implicit
+        ps: PKECPropertyStore
+    ): OnUpdateContinuation
 
     /**
      * Sets the `OnUpdateComputation` to the given one.
@@ -154,7 +160,19 @@ final class InterimEPKState(
             dependers
     }
 
-    override def getAndClearOnUpdateComputation(): OnUpdateContinuation = cAR.getAndSet(null)
+    override def getAndClearOnUpdateComputation(
+        thisEPK: SomeEPK = this.eOptionP.toEPK
+    )(
+        implicit
+        ps: PKECPropertyStore
+    ): OnUpdateContinuation = {
+        val c = cAR.getAndSet(null)
+        if (c != null) {
+            ps.clearDependees(thisEPK, dependees)
+            dependees = Nil
+        }
+        c
+    }
 
     override def setOnUpdateComputation(c: OnUpdateContinuation): Unit = {
         val oldOnUpdateContinuation = cAR.getAndSet(c)
@@ -192,7 +210,14 @@ final class FinalEPKState(override val eOptionP: SomeEOptionP) extends EPKState 
 
     override def removeDepender(someEPK: SomeEPK): Unit = { /* There is nothing to do! */ }
 
-    override def getAndClearOnUpdateComputation(): OnUpdateContinuation = null
+    override def getAndClearOnUpdateComputation(
+        thisEPK: SomeEPK = this.eOptionP.toEPK
+    )(
+        implicit
+        ps: PKECPropertyStore
+    ): OnUpdateContinuation = {
+        null
+    }
 
     override def dependees: Traversable[SomeEOptionP] = {
         throw new UnknownError("final properties don't have dependees")

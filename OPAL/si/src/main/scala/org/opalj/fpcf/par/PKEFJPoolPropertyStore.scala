@@ -28,7 +28,7 @@ final class PKEFJPoolPropertyStore private (
 
     private[this] val pool: ForkJoinPool = {
         new ForkJoinPool(
-            NumberOfThreadsForProcessingPropertyComputations,
+            64 /*NumberOfThreadsForProcessingPropertyComputations*/ ,
             ForkJoinPool.defaultForkJoinWorkerThreadFactory,
             (_: Thread, e: Throwable) ⇒ { collectException(e) },
             false
@@ -48,9 +48,7 @@ final class PKEFJPoolPropertyStore private (
 
     override def isIdle: Boolean = pool.isQuiescent
 
-    override protected[this] def parallelize(r: Runnable): Unit = {
-        pool.execute(r)
-    }
+    override protected[this] def parallelize(r: Runnable): Unit = pool.execute(r)
 
     override protected[this] def forkPropertyComputation[E <: Entity](
         e:  E,
@@ -72,16 +70,20 @@ final class PKEFJPoolPropertyStore private (
     }
 
     override protected[this] def forkOnUpdateContinuation(
-        c:  OnUpdateContinuation,
-        e:  Entity,
-        pk: SomePropertyKey
+        dependerEPK: SomeEPK,
+        e:           Entity,
+        pk:          SomePropertyKey
     ): Unit = {
         pool.execute(() ⇒ {
             if (doTerminate) throw new InterruptedException();
-            // get the newest value before we actually call the onUpdateContinuation
-            val newEPS = store(e, pk).asEPS
-            // IMPROVE ... see other forkOnUpdateContinuation
-            store.processResult(c(newEPS))
+            val dependerState = properties(dependerEPK.pk.id).get(dependerEPK.e)
+            val c = dependerState.getAndClearOnUpdateComputation(dependerEPK)
+            if (c != null) {
+                // get the newest value before we actually call the onUpdateContinuation
+                val newEPS = store(e, pk).asEPS
+                // IMPROVE ... see other forkOnUpdateContinuation
+                store.processResult(c(newEPS))
+            }
         })
         incrementScheduledTasksCounter()
     }
