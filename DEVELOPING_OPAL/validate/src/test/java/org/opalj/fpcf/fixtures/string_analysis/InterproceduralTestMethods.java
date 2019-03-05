@@ -364,6 +364,33 @@ public class InterproceduralTestMethods {
         analyzeString("java.lang.String");
     }
 
+    @StringDefinitionsCollection(
+            value = "a case taken from com.sun.prism.impl.ps.BaseShaderContext#getPaintShader "
+                    + "and slightly adapted",
+            stringDefinitions = {
+                    @StringDefinitions(
+                            expectedLevel = CONSTANT,
+                            expectedStrings = "Hello, World_paintname((_PAD|_REFLECT|_REPEAT)?)?"
+                                    + "(_AlphaTest)?"
+                    )
+            })
+    public void getPaintShader(boolean getPaintType, int spreadMethod, boolean alphaTest) {
+        String shaderName = getHelloWorld() + "_" + "paintname";
+        if (getPaintType) {
+            if (spreadMethod == 0) {
+                shaderName = shaderName + "_PAD";
+            } else if (spreadMethod == 1) {
+                shaderName = shaderName + "_REFLECT";
+            } else if (spreadMethod == 2) {
+                shaderName = shaderName + "_REPEAT";
+            }
+        }
+        if (alphaTest) {
+            shaderName = shaderName + "_AlphaTest";
+        }
+        analyzeString(shaderName);
+    }
+
 //    @StringDefinitionsCollection(
 //            value = "a case where no callers information need to be computed",
 //            stringDefinitions = {
