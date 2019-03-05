@@ -98,7 +98,7 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
                         // No goto available => Jump after next block
                         var nextIf: Option[If[V]] = None
                         var i = nextBlock
-                        while (nextIf.isEmpty) {
+                        while (i < cfg.code.instructions.length && nextIf.isEmpty) {
                             cfg.code.instructions(i) match {
                                 case iff: If[V] ⇒
                                     nextIf = Some(iff)
@@ -107,7 +107,10 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
                             }
                             i += 1
                         }
-                        endSite = nextIf.get.targetStmt
+                        endSite = if (nextIf.isDefined) nextIf.get.targetStmt else {
+                            stack.clear()
+                            i - 1
+                        }
                 }
             }
         }
