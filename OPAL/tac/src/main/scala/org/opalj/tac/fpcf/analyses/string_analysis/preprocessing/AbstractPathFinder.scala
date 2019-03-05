@@ -392,15 +392,17 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
                 startEndPairs.append((popped, nextBlock - 1))
                 stack.push(nextBlock)
             } else {
-                endSite = nextBlock - 1
-                if (endSite == start) {
-                    endSite = end
-                } // The following is necessary to not exceed bounds (might be the case within a
-                // try block for example)
-                else if (endSite > end) {
-                    endSite = end
+                if (popped <= end) {
+                    endSite = nextBlock - 1
+                    if (endSite == start) {
+                        endSite = end
+                    } // The following is necessary to not exceed bounds (might be the case within a
+                    // try block for example)
+                    else if (endSite > end) {
+                        endSite = end
+                    }
+                    startEndPairs.append((popped, endSite))
                 }
-                startEndPairs.append((popped, endSite))
             }
         }
 
