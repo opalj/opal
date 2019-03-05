@@ -119,14 +119,8 @@ class InterproceduralStaticFunctionCallInterpreter(
                     )
             }
         } else {
-            // No TAC => Register dependee and continue
-            InterimResult(
-                m,
-                StringConstancyProperty.lb,
-                StringConstancyProperty.ub,
-                state.dependees,
-                c
-            )
+            // No TAC (e.g., for native methods)
+            Result(instr, StringConstancyProperty.lb)
         }
     }
 

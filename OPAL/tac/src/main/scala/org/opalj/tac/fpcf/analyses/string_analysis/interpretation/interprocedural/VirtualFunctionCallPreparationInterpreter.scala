@@ -179,14 +179,8 @@ class VirtualFunctionCallPreparationInterpreter(
                     }
                 }
             } else {
-                // No TAC => Register dependee and continue
-                InterimResult(
-                    nextMethod,
-                    StringConstancyProperty.lb,
-                    StringConstancyProperty.ub,
-                    state.dependees,
-                    c
-                )
+                // No TAC (e.g., for native methods)
+                Result(instr, StringConstancyProperty.lb)
             }
         }
 
