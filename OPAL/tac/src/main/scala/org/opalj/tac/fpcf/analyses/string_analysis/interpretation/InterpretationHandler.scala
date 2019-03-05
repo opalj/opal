@@ -173,9 +173,11 @@ object InterpretationHandler {
     def findDefSiteOfInit(duvar: V, stmts: Array[Stmt[V]]): List[Int] = {
         val defSites = ListBuffer[Int]()
         duvar.definedBy.foreach { ds ⇒
-            defSites.appendAll(
-                findDefSiteOfInitAcc(stmts(ds).asAssignment.expr.asVirtualFunctionCall, stmts)
-            )
+            defSites.appendAll(stmts(ds).asAssignment.expr match {
+                case vfc: VirtualFunctionCall[V] ⇒ findDefSiteOfInitAcc(vfc, stmts)
+                // The following case is, e.g., for {NonVirtual, Static}FunctionCalls
+                case _                           ⇒ List(ds)
+            })
         }
         defSites.distinct.sorted.toList
     }
