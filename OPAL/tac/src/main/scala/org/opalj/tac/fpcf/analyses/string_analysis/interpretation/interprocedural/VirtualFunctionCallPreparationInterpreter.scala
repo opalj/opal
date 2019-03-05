@@ -271,14 +271,21 @@ class VirtualFunctionCallPreparationInterpreter(
 
         val allResults = defSites.map(ds ⇒ (ds, exprHandler.processDefSite(ds, params)))
         val finalResults = allResults.filter(_._2.isInstanceOf[Result])
+        val finalResultsWithoutNeutralElements = finalResults.filter {
+            case (_, Result(r)) ⇒
+                val p = r.p.asInstanceOf[StringConstancyProperty]
+                !p.stringConstancyInformation.isTheNeutralElement
+            case _ ⇒ false
+        }
         val intermediateResults = allResults.filter(!_._2.isInstanceOf[Result])
 
-        // Extend the state by the final results
-        finalResults.foreach { next ⇒
+        // Extend the state by the final results not being the neutral elements (they might need to
+        // be finalized later)
+        finalResultsWithoutNeutralElements.foreach { next ⇒
             state.appendResultToFpe2Sci(next._1, next._2.asInstanceOf[Result])
         }
 
-        if (allResults.length == finalResults.length) {
+        if (intermediateResults.isEmpty) {
             finalResults.map(_._2).toList
         } else {
             List(intermediateResults.head._2)
