@@ -115,6 +115,9 @@ abstract class PKECPropertyStore extends ParallelPropertyStore { store ⇒
     override def scheduledOnUpdateComputationsCount: Int = {
         scheduledOnUpdateComputationsCounter.get()
     }
+    protected[this] def incrementOnUpdateContinuationsCounter(): Unit = {
+        scheduledOnUpdateComputationsCounter.incrementAndGet()
+    }
 
     private[this] val scheduledTasksCounter = new AtomicInteger(0)
     override def scheduledTasksCount: Int = scheduledTasksCounter.get()

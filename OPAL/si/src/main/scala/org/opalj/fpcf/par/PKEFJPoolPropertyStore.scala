@@ -85,7 +85,7 @@ final class PKEFJPoolPropertyStore private (
                 store.processResult(c(newEPS))
             }
         })
-        incrementScheduledTasksCounter()
+        incrementOnUpdateContinuationsCounter()
     }
 
     override protected[this] def forkOnUpdateContinuation(
@@ -97,7 +97,7 @@ final class PKEFJPoolPropertyStore private (
             // IMPROVE: Instead of naively calling "c" with finalEP, it may be worth considering which other updates have happened to figure out which update may be the "beste"
             store.processResult(c(finalEP))
         })
-        incrementScheduledTasksCounter()
+        incrementOnUpdateContinuationsCounter()
     }
 
 }
