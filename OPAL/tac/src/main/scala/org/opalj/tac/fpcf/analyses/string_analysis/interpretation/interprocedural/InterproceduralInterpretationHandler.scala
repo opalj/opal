@@ -164,7 +164,7 @@ class InterproceduralInterpretationHandler(
                 val r = new InterproceduralStaticFunctionCallInterpreter(
                     cfg, this, ps, state, declaredMethods, c
                 ).interpret(expr, defSite)
-                if (!r.isInstanceOf[Result]) {
+                if (state.nonFinalFunctionArgs.contains(expr)) {
                     processedDefSites.remove(defSite)
                 }
                 r
