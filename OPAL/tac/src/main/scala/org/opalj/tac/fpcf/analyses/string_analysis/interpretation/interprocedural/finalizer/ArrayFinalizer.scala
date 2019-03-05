@@ -30,6 +30,13 @@ class ArrayFinalizer(
         val allDefSites = ArrayPreparationInterpreter.getStoreAndLoadDefSites(
             instr, state.tac.stmts
         )
+
+        allDefSites.foreach { ds ⇒
+            if (!state.fpe2sci.contains(ds)) {
+                state.iHandler.finalizeDefSite(ds, state)
+            }
+        }
+
         state.fpe2sci(defSite) = ListBuffer(StringConstancyInformation.reduceMultiple(
             allDefSites.sorted.flatMap(state.fpe2sci(_))
         ))
