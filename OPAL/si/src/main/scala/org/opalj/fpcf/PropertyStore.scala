@@ -4,6 +4,7 @@ package fpcf
 
 import java.util.concurrent.ConcurrentHashMap
 import java.util.{Arrays ⇒ JArrays}
+import java.util.concurrent.RejectedExecutionException
 
 import scala.util.control.ControlThrowable
 import scala.collection.mutable
@@ -939,7 +940,10 @@ abstract class PropertyStore {
 
     protected[this] def collectException(t: Throwable): Unit = {
         if (exception != null) {
-            if (exception != t && !t.isInstanceOf[InterruptedException]) {
+            if (exception != t
+                && !t.isInstanceOf[InterruptedException]
+                && !t.isInstanceOf[RejectedExecutionException] // <= used, e.g., by a ForkJoinPool
+                ) {
                 exception.addSuppressed(t)
             }
         } else {
