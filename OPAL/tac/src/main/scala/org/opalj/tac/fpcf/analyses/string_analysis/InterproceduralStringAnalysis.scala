@@ -234,7 +234,7 @@ class InterproceduralStringAnalysis(
             if (dependentVars.nonEmpty) {
                 dependentVars.keys.foreach { nextVar ⇒
                     val toAnalyze = (nextVar, state.entity._2)
-                    dependentVars.foreach { case (k, v) ⇒ state.var2IndexMapping(k) = v }
+                    dependentVars.foreach { case (k, v) ⇒ state.appendToVar2IndexMapping(k, v) }
                     val ep = propertyStore(toAnalyze, StringConstancyProperty.key)
                     ep match {
                         case FinalP(p) ⇒ return processFinalP(state, ep.e, p)
@@ -365,10 +365,9 @@ class InterproceduralStringAnalysis(
 
                         // If necessary, update parameter information of function calls
                         if (state.entity2Function.contains(resultEntity)) {
-                            state.appendToFpe2Sci(
-                                state.var2IndexMapping(resultEntity._1),
-                                p.stringConstancyInformation
-                            )
+                            state.var2IndexMapping(resultEntity._1).foreach(state.appendToFpe2Sci(
+                                _, p.stringConstancyInformation
+                            ))
                             // Update the state
                             state.entity2Function(resultEntity).foreach { f ⇒
                                 val pos = state.nonFinalFunctionArgsPos(f)(resultEntity)
@@ -461,7 +460,9 @@ class InterproceduralStringAnalysis(
         // Add mapping information (which will be used for computing the final result)
         val retrievedProperty = p.asInstanceOf[StringConstancyProperty]
         val currentSci = retrievedProperty.stringConstancyInformation
-        state.appendToFpe2Sci(state.var2IndexMapping(e.asInstanceOf[P]._1), currentSci)
+        state.var2IndexMapping(e.asInstanceOf[P]._1).foreach {
+            state.appendToFpe2Sci(_, currentSci)
+        }
 
         // No more dependees => Return the result for this analysis run
         state.dependees = state.dependees.filter(_.e != e)
@@ -511,7 +512,7 @@ class InterproceduralStringAnalysis(
                         if (InterproceduralStringAnalysis.isSupportedType(p.asVar)) {
                             val paramEntity = (p.asVar, m.definedMethod)
                             val eps = propertyStore(paramEntity, StringConstancyProperty.key)
-                            state.var2IndexMapping(paramEntity._1) = paramIndex
+                            state.appendToVar2IndexMapping(paramEntity._1, paramIndex)
                             eps match {
                                 case FinalP(r) ⇒
                                     state.params(methodIndex)(paramIndex) = r.stringConstancyInformation
