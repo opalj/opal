@@ -153,6 +153,7 @@ object InterpretationHandler {
                             defSites.append(next)
                         case vfc: VirtualFunctionCall[V] ⇒
                             stack.pushAll(vfc.receiver.asVar.definedBy.filter(_ >= 0).toArray)
+                        case _ ⇒ // E.g., NullExpr
                     }
                 case _ ⇒
             }
