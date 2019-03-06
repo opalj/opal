@@ -26,6 +26,7 @@ import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.br.FieldType
 import org.opalj.br.Method
+import org.opalj.br.analyses.FieldAccessInformationKey
 import org.opalj.tac.Stmt
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.AbstractPathFinder
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.NestedPathElement
@@ -81,6 +82,7 @@ class InterproceduralStringAnalysis(
 ) extends FPCFAnalysis {
 
     private val declaredMethods = project.get(DeclaredMethodsKey)
+    private final val fieldAccessInformation = project.get(FieldAccessInformationKey)
 
     def analyze(data: P): ProperPropertyComputationResult = {
         val state = InterproceduralComputationState(data)
@@ -137,7 +139,7 @@ class InterproceduralStringAnalysis(
         val tacProvider = p.get(SimpleTACAIKey)
         if (state.iHandler == null) {
             state.iHandler = InterproceduralInterpretationHandler(
-                state.tac, ps, declaredMethods, state, continuation(state)
+                state.tac, ps, declaredMethods, fieldAccessInformation, state, continuation(state)
             )
         }
 
@@ -290,7 +292,11 @@ class InterproceduralStringAnalysis(
         eps.pk match {
             case TACAI.key ⇒ eps match {
                 case FinalP(tac: TACAI) ⇒
-                    state.tac = tac.tac.get
+                    // Set the TAC only once (the TAC might be requested for other methods, so this
+                    // makes sure we do not overwrite the state's TAC)
+                    if (state.tac == null) {
+                        state.tac = tac.tac.get
+                    }
                     state.dependees = state.dependees.filter(_.e != eps.e)
                     if (state.dependees.isEmpty) {
                         determinePossibleStrings(state)

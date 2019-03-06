@@ -7,6 +7,7 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
 import org.opalj.value.ValueInformation
 import org.opalj.br.analyses.DeclaredMethods
+import org.opalj.br.analyses.FieldAccessInformation
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.ai.ImmediateVMExceptionsOriginOffset
@@ -54,11 +55,12 @@ import org.opalj.tac.TACode
  * @author Patrick Mell
  */
 class InterproceduralInterpretationHandler(
-        tac:             TACode[TACMethodParameter, DUVar[ValueInformation]],
-        ps:              PropertyStore,
-        declaredMethods: DeclaredMethods,
-        state:           InterproceduralComputationState,
-        c:               ProperOnUpdateContinuation
+        tac:                    TACode[TACMethodParameter, DUVar[ValueInformation]],
+        ps:                     PropertyStore,
+        declaredMethods:        DeclaredMethods,
+        fieldAccessInformation: FieldAccessInformation,
+        state:                  InterproceduralComputationState,
+        c:                      ProperOnUpdateContinuation
 ) extends InterpretationHandler(tac) {
 
     /**
@@ -151,7 +153,13 @@ class InterproceduralInterpretationHandler(
                 }
                 r
             case Assignment(_, _, expr: GetField[V]) ⇒
-                new InterproceduralFieldInterpreter(cfg, this, callees).interpret(expr, defSite)
+                val r = new InterproceduralFieldInterpreter(
+                    state, this, ps, fieldAccessInformation, c
+                ).interpret(expr, defSite)
+                if (!r.isInstanceOf[Result]) {
+                    processedDefSites.remove(defSite)
+                }
+                r
             case ExprStmt(_, expr: VirtualFunctionCall[V]) ⇒
                 val r = new VirtualFunctionCallPreparationInterpreter(
                     cfg, this, ps, state, declaredMethods, params, c
@@ -230,13 +238,14 @@ object InterproceduralInterpretationHandler {
      * @see [[org.opalj.tac.fpcf.analyses.string_analysis.interpretation.intraprocedural.IntraproceduralInterpretationHandler]]
      */
     def apply(
-        tac:             TACode[TACMethodParameter, DUVar[ValueInformation]],
-        ps:              PropertyStore,
-        declaredMethods: DeclaredMethods,
-        state:           InterproceduralComputationState,
-        c:               ProperOnUpdateContinuation
+        tac:                    TACode[TACMethodParameter, DUVar[ValueInformation]],
+        ps:                     PropertyStore,
+        declaredMethods:        DeclaredMethods,
+        fieldAccessInformation: FieldAccessInformation,
+        state:                  InterproceduralComputationState,
+        c:                      ProperOnUpdateContinuation
     ): InterproceduralInterpretationHandler = new InterproceduralInterpretationHandler(
-        tac, ps, declaredMethods, state, c
+        tac, ps, declaredMethods, fieldAccessInformation, state, c
     )
 
 }
