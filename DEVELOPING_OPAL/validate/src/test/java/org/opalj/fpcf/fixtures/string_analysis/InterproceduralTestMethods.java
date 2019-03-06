@@ -28,6 +28,8 @@ public class InterproceduralTestMethods {
     private static final String rmiServerImplStubClassName =
             RMIServer.class.getName() + "Impl_Stub";
 
+    private String myField;
+
     /**
      * {@see LocalTestMethods#analyzeString}
      */
@@ -409,6 +411,23 @@ public class InterproceduralTestMethods {
                 tieNameForCompiler(var0);
         analyzeString(s);
         return s;
+    }
+
+    @StringDefinitionsCollection(
+            value = "a case where a string field is read",
+            stringDefinitions = {
+                    @StringDefinitions(
+                            expectedLevel = DYNAMIC,
+                            expectedStrings = "(\\w|some value)"
+                    )
+            })
+    public void fieldReadTest() {
+        myField = "some value";
+        analyzeString(myField);
+    }
+
+    private void belongsToFieldReadTest() {
+        myField = "another value";
     }
 
 //    @StringDefinitionsCollection(
