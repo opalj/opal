@@ -787,9 +787,11 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
                     // removed as it is still implicitly contained in the loop denoted by x to y2
                     // (note that this does not apply for nested loops, they are kept)
                     backedges.filter {
-                        case (_: Int, oldFrom: Int) ⇒ oldFrom == destIndex
+                        case (oldFrom: Int, oldTo: Int) ⇒ oldTo == destIndex && oldFrom < from
                     }.foreach(backedges -= _)
-                    backedges.append((from, destIndex))
+                    if (backedges.isEmpty) {
+                        backedges.append((from, destIndex))
+                    }
                 }
 
                 seenNodes.append(from)
