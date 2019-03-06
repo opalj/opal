@@ -390,16 +390,18 @@ abstract class PKECPropertyStore extends ParallelPropertyStore { store ⇒
         val dependerEPK = interimEP.toEPK
         dependees forall { processedDependee ⇒
             state.hasPendingOnUpdateComputation && {
-                val dependeeState = properties(processedDependee.pk.id).get(processedDependee.e)
-                dependeeState.addDepender(dependerEPK)
-                val currentDependee = dependeeState.eOptionP
+                val psPerDependeeKind = properties(processedDependee.pk.id)
+                psPerDependeeKind.get(processedDependee.e).addDepender(dependerEPK)
+                val currentDependee = psPerDependeeKind.get(processedDependee.e).eOptionP
                 if (currentDependee.isUpdatedComparedTo(processedDependee)) {
                     // A dependee was updated; let's trigger the OnUpdateContinuation if it
                     // wasn't already triggered concurrently.
-                    val currentC = state.getAndClearOnUpdateComputation(dependerEPK)
-                    if (currentC != null) {
-                        forkOnUpdateContinuation(dependerEPK, processedDependee.e, processedDependee.pk)
-                    }
+                    clearDependees(dependerEPK, dependees)
+                    state.setDependees(Nil)
+                    //val currentC = state.getAndClearOnUpdateComputation(dependerEPK)
+                    //if (currentC != null) {
+                    forkOnUpdateContinuation(dependerEPK, processedDependee.e, processedDependee.pk)
+                    //}
                     false // we don't need to register further dependers
                 } else {
                     true

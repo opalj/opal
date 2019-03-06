@@ -28,7 +28,7 @@ final class PKEFJPoolPropertyStore private (
 
     private[this] val pool: ForkJoinPool = {
         new ForkJoinPool(
-            64 /*NumberOfThreadsForProcessingPropertyComputations*/ ,
+            128 /*NumberOfThreadsForProcessingPropertyComputations*/ ,
             ForkJoinPool.defaultForkJoinWorkerThreadFactory,
             (_: Thread, e: Throwable) ⇒ { collectException(e) },
             false
@@ -56,6 +56,7 @@ final class PKEFJPoolPropertyStore private (
     ): Unit = {
         pool.execute(() ⇒ {
             if (doTerminate) throw new InterruptedException();
+            
             store.processResult(pc(e))
         })
         incrementScheduledTasksCounter()
@@ -64,6 +65,7 @@ final class PKEFJPoolPropertyStore private (
     override protected[this] def forkResultHandler(r: PropertyComputationResult): Unit = {
         pool.execute(() ⇒ {
             if (doTerminate) throw new InterruptedException();
+
             store.processResult(r)
         })
         incrementScheduledTasksCounter()
@@ -76,6 +78,7 @@ final class PKEFJPoolPropertyStore private (
     ): Unit = {
         pool.execute(() ⇒ {
             if (doTerminate) throw new InterruptedException();
+
             val dependerState = properties(dependerEPK.pk.id).get(dependerEPK.e)
             val c = dependerState.getAndClearOnUpdateComputation(dependerEPK)
             if (c != null) {
