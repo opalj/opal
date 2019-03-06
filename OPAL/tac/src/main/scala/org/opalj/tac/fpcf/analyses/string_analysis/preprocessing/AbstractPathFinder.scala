@@ -45,7 +45,7 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
      *                  ''e1''.
      */
     protected case class HierarchicalCSOrder(
-            hierarchy: List[(Option[CSInfo], List[HierarchicalCSOrder])]
+        hierarchy: List[(Option[CSInfo], List[HierarchicalCSOrder])]
     )
 
     /**
@@ -93,7 +93,14 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
                     case goto: Goto ⇒
                         // Find the goto that points after the "else" part (the assumption is that
                         // this goto is the very last element of the current branch
-                        endSite = goto.targetStmt - 1
+                        endSite = goto.targetStmt
+                        // The goto might point back at the beginning of a loop; if so, the end of
+                        // the if/else is denoted by the end of the loop
+                        if (endSite < branchingSite) {
+                            endSite = cfg.findNaturalLoops().filter(_.head == endSite).head.last
+                        } else {
+                            endSite -= 1
+                        }
                     case _ ⇒
                         // No goto available => Jump after next block
                         var nextIf: Option[If[V]] = None
@@ -670,8 +677,8 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
         bb.successors.filter(
             _.isInstanceOf[BasicBlock]
         ).foldLeft(false)((prev: Boolean, next: CFGNode) ⇒ {
-                prev || (next.predecessors.count(_.isInstanceOf[BasicBlock]) >= n)
-            })
+            prev || (next.predecessors.count(_.isInstanceOf[BasicBlock]) >= n)
+        })
 
     /**
      * This function checks if a branching corresponds to an if (or if-elseif) structure that has no
@@ -756,7 +763,7 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
     ): Boolean = {
         val stack = mutable.Stack(from)
         val seenNodes = mutable.Map[Int, Unit]()
-        alreadySeen.foreach(seenNodes(_)= Unit)
+        alreadySeen.foreach(seenNodes(_) = Unit)
         seenNodes(from) = Unit
 
         while (stack.nonEmpty) {
