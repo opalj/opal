@@ -711,6 +711,11 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
         val branches = successors.reverse.tail.reverse
         val lastEle = successors.last
 
+        // If an "if" ends at the end of a loop, it cannot have an else
+        if (cfg.findNaturalLoops().exists(_.last == lastEle - 1)) {
+            return true
+        }
+
         val indexIf = cfg.bb(lastEle) match {
             case bb: BasicBlock ⇒
                 val ifPos = bb.startPC.to(bb.endPC).filter(
