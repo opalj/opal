@@ -30,6 +30,8 @@ public class InterproceduralTestMethods {
 
     private String myField;
 
+    private String noWriteField;
+
     /**
      * {@see LocalTestMethods#analyzeString}
      */
@@ -429,6 +431,18 @@ public class InterproceduralTestMethods {
 
     private void belongsToFieldReadTest() {
         myField = "another value";
+    }
+
+    @StringDefinitionsCollection(
+            value = "a case where a field is read which is not written",
+            stringDefinitions = {
+                    @StringDefinitions(
+                            expectedLevel = DYNAMIC,
+                            expectedStrings = "(^null$|\\w)"
+                    )
+            })
+    public void fieldWithNoWriteTest() {
+        analyzeString(noWriteField);
     }
 
 //    @StringDefinitionsCollection(
