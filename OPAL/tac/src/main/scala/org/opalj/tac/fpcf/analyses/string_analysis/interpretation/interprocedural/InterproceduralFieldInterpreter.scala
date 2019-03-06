@@ -11,6 +11,8 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
 import org.opalj.br.analyses.FieldAccessInformation
 import org.opalj.br.fpcf.properties.StringConstancyProperty
+import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
+import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel
 import org.opalj.tac.GetField
 import org.opalj.tac.fpcf.analyses.string_analysis.V
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.AbstractStringInterpreter
@@ -48,7 +50,8 @@ class InterproceduralFieldInterpreter(
      *
      * @see [[AbstractStringInterpreter.interpret]]
      */
-    override def interpret(instr: T, defSite: Int): ProperPropertyComputationResult =
+    override def interpret(instr: T, defSite: Int): ProperPropertyComputationResult = {
+        val defSitEntity: Integer = defSite
         if (InterproceduralStringAnalysis.isSupportedType(instr.declaredFieldType)) {
             val results = ListBuffer[ProperPropertyComputationResult]()
             fieldAccessInformation.writeAccesses(instr.declaringClass, instr.name).foreach {
@@ -72,17 +75,30 @@ class InterproceduralFieldInterpreter(
                                     )
                             })
                         case _ ⇒
-                            val e: Integer = defSite
                             state.appendToFpe2Sci(
-                                e, StringConstancyProperty.lb.stringConstancyInformation
+                                defSitEntity, StringConstancyProperty.lb.stringConstancyInformation
                             )
-                            results.append(Result(e, StringConstancyProperty.lb))
+                            results.append(Result(defSitEntity, StringConstancyProperty.lb))
                     }
                 }
             }
-            results.find(!_.isInstanceOf[Result]).getOrElse(results.head)
+            if (results.isEmpty) {
+                // No methods, which write the field, were found => Field could either be null or
+                // any value
+                val possibleStrings = "(^null$|"+StringConstancyInformation.UnknownWordSymbol+")"
+                val sci = StringConstancyInformation(
+                    StringConstancyLevel.DYNAMIC, possibleStrings = possibleStrings
+                )
+                Result(defSitEntity, StringConstancyProperty(sci))
+            } else {
+                // If available, return an intermediate result to indicate that the computation
+                // needs to be continued
+                results.find(!_.isInstanceOf[Result]).getOrElse(results.head)
+            }
         } else {
+            // Unknown type => Cannot further approximate
             Result(instr, StringConstancyProperty.lb)
         }
+    }
 
 }
