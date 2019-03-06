@@ -73,14 +73,14 @@ class IntraproceduralStringAnalysis(
      * have all required information ready for a final result.
      */
     private case class ComputationState(
-        // The lean path that was computed
-        computedLeanPath: Path,
-        // A mapping from DUVar elements to the corresponding indices of the FlatPathElements
-        var2IndexMapping: mutable.Map[V, Int],
-        // A mapping from values of FlatPathElements to StringConstancyInformation
-        fpe2sci: mutable.Map[Int, StringConstancyInformation],
-        // The three-address code of the method in which the entity under analysis resides
-        tac: TACode[TACMethodParameter, DUVar[ValueInformation]]
+            // The lean path that was computed
+            computedLeanPath: Path,
+            // A mapping from DUVar elements to the corresponding indices of the FlatPathElements
+            var2IndexMapping: mutable.Map[V, Int],
+            // A mapping from values of FlatPathElements to StringConstancyInformation
+            fpe2sci: mutable.Map[Int, StringConstancyInformation],
+            // The three-address code of the method in which the entity under analysis resides
+            tac: TACode[TACMethodParameter, DUVar[ValueInformation]]
     )
 
     def analyze(data: P): ProperPropertyComputationResult = {
@@ -348,7 +348,7 @@ sealed trait IntraproceduralStringAnalysisScheduler extends FPCFAnalysisSchedule
  * Executor for the lazy analysis.
  */
 object LazyIntraproceduralStringAnalysis
-        extends IntraproceduralStringAnalysisScheduler with FPCFLazyAnalysisScheduler {
+    extends IntraproceduralStringAnalysisScheduler with FPCFLazyAnalysisScheduler {
 
     override def register(
         p: SomeProject, ps: PropertyStore, analysis: InitializationData
