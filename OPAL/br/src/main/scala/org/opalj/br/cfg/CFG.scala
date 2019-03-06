@@ -786,10 +786,12 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
                     // before y2; this method only saves one loop per loop header, thus y1 is
                     // removed as it is still implicitly contained in the loop denoted by x to y2
                     // (note that this does not apply for nested loops, they are kept)
+                    val hasDest = backedges.exists(_._2 == destIndex)
+                    var removedBackedge = false
                     backedges.filter {
-                        case (oldFrom: Int, oldTo: Int) ⇒ oldTo == destIndex && oldFrom < from
-                    }.foreach(backedges -= _)
-                    if (backedges.isEmpty) {
+                        case (oldTo: Int, oldFrom: Int) ⇒ oldFrom == destIndex && oldTo < from
+                    }.foreach { toRemove ⇒ removedBackedge = true; backedges -= toRemove }
+                    if (!hasDest || removedBackedge) {
                         backedges.append((from, destIndex))
                     }
                 }
