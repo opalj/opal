@@ -768,7 +768,7 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
     ): Boolean = {
         val stack = mutable.Stack(from)
         val seenNodes = mutable.Map[Int, Unit]()
-        alreadySeen.foreach(seenNodes(_) = Unit)
+        alreadySeen.foreach(seenNodes(_)= Unit)
         seenNodes(from) = Unit
 
         while (stack.nonEmpty) {
@@ -869,10 +869,23 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
         val switch = cfg.code.instructions(stmt).asSwitch
         val caseStmts = switch.caseStmts.sorted
         // From the last to the first one, find the first case that points after the switch
-        val caseGoto = caseStmts.reverse.find { caseIndex ⇒
+        val caseGotoOption = caseStmts.reverse.find { caseIndex ⇒
             cfg.code.instructions(caseIndex - 1).isInstanceOf[Goto]
-        }.get - 1
-        val end = cfg.code.instructions(caseGoto).asGoto.targetStmt - 1
+        }
+        // If no such case is present, find the next goto after the default case
+        val posGoTo = if (caseGotoOption.isEmpty) {
+            var i = switch.defaultStmt
+            while (!cfg.code.instructions(i).isInstanceOf[Goto]) {
+                i += 1
+            }
+            i
+        } else caseGotoOption.get - 1
+        var end = cfg.code.instructions(posGoTo).asGoto.targetStmt - 1
+        // In case the goto points at the a loop, do not set the start index of the loop as end
+        // position but the index of the goto
+        if (end < stmt) {
+            end = posGoTo
+        }
 
         val containsDefault = caseStmts.length == caseStmts.distinct.length
         val pathType = if (containsDefault) NestedPathType.CondWithAlternative else
