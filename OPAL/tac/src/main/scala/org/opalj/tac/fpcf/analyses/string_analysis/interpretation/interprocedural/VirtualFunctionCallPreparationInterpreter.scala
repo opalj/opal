@@ -303,20 +303,25 @@ class VirtualFunctionCallPreparationInterpreter(
             return values.find(!_.isInstanceOf[Result]).get
         }
 
-        var valueSci = StringConstancyInformation.reduceMultiple(values.map {
+        val sciValues = values.map {
             StringConstancyProperty.extractFromPPCR(_).stringConstancyInformation
-        })
+        }
+        val defSitesValueSci = StringConstancyInformation.reduceMultiple(sciValues)
         // If defSiteHead points to a "New", value will be the empty list. In that case, process
         // the first use site (which is the <init> call)
-        if (valueSci.isTheNeutralElement) {
+        var newValueSci = StringConstancyInformation.getNeutralElement
+        if (defSitesValueSci.isTheNeutralElement) {
             val ds = cfg.code.instructions(defSites.head).asAssignment.targetVar.usedBy.toArray.min
             val r = exprHandler.processDefSite(ds, params)
             // Again, defer the computation if there is no final result (yet)
             if (!r.isInstanceOf[Result]) {
+                newValueSci = defSitesValueSci
                 return r
             } else {
-                valueSci = StringConstancyProperty.extractFromPPCR(r).stringConstancyInformation
+                newValueSci = StringConstancyProperty.extractFromPPCR(r).stringConstancyInformation
             }
+        } else {
+            newValueSci = defSitesValueSci
         }
 
         val finalSci = param.value.computationalType match {
@@ -325,22 +330,27 @@ class VirtualFunctionCallPreparationInterpreter(
                 // The value was already computed above; however, we need to check whether the
                 // append takes an int value or a char (if it is a constant char, convert it)
                 if (call.descriptor.parameterType(0).isCharType &&
-                    valueSci.constancyLevel == StringConstancyLevel.CONSTANT) {
-                    valueSci.copy(
-                        possibleStrings = valueSci.possibleStrings.toInt.toChar.toString
-                    )
+                    defSitesValueSci.constancyLevel == StringConstancyLevel.CONSTANT) {
+                    if (defSitesValueSci.isTheNeutralElement) {
+                        StringConstancyProperty.lb.stringConstancyInformation
+                    } else {
+                        val charSciValues = sciValues.filter(_.possibleStrings != "") map { sci ⇒
+                            sci.copy(possibleStrings = sci.possibleStrings.toInt.toChar.toString)
+                        }
+                        StringConstancyInformation.reduceMultiple(charSciValues)
+                    }
                 } else {
-                    valueSci
+                    newValueSci
                 }
             case ComputationalTypeFloat ⇒
                 InterpretationHandler.getConstancyInfoForDynamicFloat
             // Otherwise, try to compute
             case _ ⇒
-                valueSci
+                newValueSci
         }
 
         val e: Integer = defSites.head
-        state.appendToFpe2Sci(e, valueSci, reset = true)
+        state.appendToFpe2Sci(e, newValueSci, reset = true)
         Result(e, StringConstancyProperty(finalSci))
     }
 
