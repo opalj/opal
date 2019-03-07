@@ -35,6 +35,7 @@ import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.PathTransformer
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.SubPath
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.WindowPathFinder
 import org.opalj.tac.fpcf.properties.TACAI
+import org.opalj.tac.DefaultTACAIKey
 import org.opalj.tac.DUVar
 import org.opalj.tac.TACMethodParameter
 import org.opalj.tac.TACode
@@ -86,16 +87,21 @@ class IntraproceduralStringAnalysis(
     def analyze(data: P): ProperPropertyComputationResult = {
         // sci stores the final StringConstancyInformation (if it can be determined now at all)
         var sci = StringConstancyProperty.lb.stringConstancyInformation
-        val tacaiEOptP = ps(data._2, TACAI.key)
-        var tac: TACode[TACMethodParameter, DUVar[ValueInformation]] = null
-        if (tacaiEOptP.hasUBP) {
-            if (tacaiEOptP.ub.tac.isEmpty) {
-                // No TAC available, e.g., because the method has no body
-                return Result(data, StringConstancyProperty.lb)
-            } else {
-                tac = tacaiEOptP.ub.tac.get
-            }
-        }
+
+        val tacProvider = p.get(DefaultTACAIKey)
+        val tac = tacProvider(data._2)
+
+        // Uncomment the following code to get the TAC from the property store
+        //        val tacaiEOptP = ps(data._2, TACAI.key)
+        //        var tac: TACode[TACMethodParameter, DUVar[ValueInformation]] = null
+        //        if (tacaiEOptP.hasUBP) {
+        //            if (tacaiEOptP.ub.tac.isEmpty) {
+        //                // No TAC available, e.g., because the method has no body
+        //                return Result(data, StringConstancyProperty.lb)
+        //            } else {
+        //                tac = tacaiEOptP.ub.tac.get
+        //            }
+        //        }
         val cfg = tac.cfg
         val stmts = tac.stmts
 
