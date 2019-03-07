@@ -868,8 +868,11 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
     protected def processSwitch(stmt: Int): CSInfo = {
         val switch = cfg.code.instructions(stmt).asSwitch
         val caseStmts = switch.caseStmts.sorted
-        // TODO: How about only one case?
-        val end = cfg.code.instructions(caseStmts.tail.head - 1).asGoto.targetStmt - 1
+        // From the last to the first one, find the first case that points after the switch
+        val caseGoto = caseStmts.reverse.find { caseIndex ⇒
+            cfg.code.instructions(caseIndex - 1).isInstanceOf[Goto]
+        }.get - 1
+        val end = cfg.code.instructions(caseGoto).asGoto.targetStmt - 1
 
         val containsDefault = caseStmts.length == caseStmts.distinct.length
         val pathType = if (containsDefault) NestedPathType.CondWithAlternative else
