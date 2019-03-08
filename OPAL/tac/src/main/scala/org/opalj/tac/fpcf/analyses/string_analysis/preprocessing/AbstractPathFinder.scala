@@ -45,7 +45,7 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
      *                  ''e1''.
      */
     protected case class HierarchicalCSOrder(
-        hierarchy: List[(Option[CSInfo], List[HierarchicalCSOrder])]
+            hierarchy: List[(Option[CSInfo], List[HierarchicalCSOrder])]
     )
 
     /**
@@ -677,8 +677,8 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
         bb.successors.filter(
             _.isInstanceOf[BasicBlock]
         ).foldLeft(false)((prev: Boolean, next: CFGNode) ⇒ {
-            prev || (next.predecessors.count(_.isInstanceOf[BasicBlock]) >= n)
-        })
+                prev || (next.predecessors.count(_.isInstanceOf[BasicBlock]) >= n)
+            })
 
     /**
      * This function checks if a branching corresponds to an if (or if-elseif) structure that has no
