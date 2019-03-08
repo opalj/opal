@@ -147,7 +147,7 @@ class VirtualFunctionCallPreparationInterpreter(
         state.nonFinalFunctionArgsPos.remove(instr)
         val evaluatedParams = convertEvaluatedParameters(params)
         val results = methods.map { nextMethod ⇒
-            val (tacEps, tac) = getTACAI(ps, nextMethod, state)
+            val (_, tac) = getTACAI(ps, nextMethod, state)
             if (tac.isDefined) {
                 state.methodPrep2defSite.remove(nextMethod)
                 // It might be that a function has no return value, e. g., in case it is guaranteed
@@ -180,9 +180,7 @@ class VirtualFunctionCallPreparationInterpreter(
                     }
                 }
             } else {
-                // No TAC => Register dependee and continue
                 state.appendToMethodPrep2defSite(nextMethod, defSite)
-                state.dependees = tacEps :: state.dependees
                 InterimResult(
                     state.entity,
                     StringConstancyProperty.lb,
