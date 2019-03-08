@@ -38,14 +38,17 @@ public class InterproceduralTestMethods {
 
     private String fieldWithConstructorInit;
 
+    private float secretNumber;
+
     /**
      * {@see LocalTestMethods#analyzeString}
      */
     public void analyzeString(String s) {
     }
 
-    public InterproceduralTestMethods() {
+    public InterproceduralTestMethods(float e) {
         fieldWithConstructorInit = "initialized by constructor";
+        secretNumber = e;
     }
 
     @StringDefinitionsCollection(
@@ -511,6 +514,18 @@ public class InterproceduralTestMethods {
             })
     public void fieldInitByConstructor() {
         analyzeString(fieldWithConstructorInit.toString());
+    }
+
+    @StringDefinitionsCollection(
+            value = "a case where a field is initialized with a value of a constructor parameter",
+            stringDefinitions = {
+                    @StringDefinitions(
+                            expectedLevel = DYNAMIC,
+                            expectedStrings = "^-?\\d*\\.{0,1}\\d+$"
+                    )
+            })
+    public void fieldInitByConstructorParameter() {
+        analyzeString(new StringBuilder().append(secretNumber).toString());
     }
 
 //    @StringDefinitionsCollection(
