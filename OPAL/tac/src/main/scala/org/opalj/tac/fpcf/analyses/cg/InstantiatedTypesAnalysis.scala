@@ -208,7 +208,11 @@ object InstantiatedTypesAnalysis {
         eop: EOptionP[SomeProject, InstantiatedTypes]
     ): Option[EPS[SomeProject, InstantiatedTypes]] = eop match {
         case InterimUBP(ub: InstantiatedTypes) ⇒
-            Some(InterimEUBP(p, ub.updated(newInstantiatedTypes)))
+            val newUB = ub.updated(newInstantiatedTypes)
+            if (newUB.types.size > ub.types.size)
+                Some(InterimEUBP(p, newUB))
+            else
+                None
 
         case _: EPK[_, _] ⇒
             throw new IllegalStateException(
