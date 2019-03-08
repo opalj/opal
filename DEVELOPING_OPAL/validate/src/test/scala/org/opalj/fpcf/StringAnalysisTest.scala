@@ -8,7 +8,9 @@ import java.net.URL
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
+import org.opalj.log.LogContext
 import org.opalj.collection.immutable.ConstArray
+import org.opalj.fpcf.seq.PKESequentialPropertyStore
 import org.opalj.br.analyses.Project
 import org.opalj.br.Annotation
 import org.opalj.br.Method
@@ -20,8 +22,9 @@ import org.opalj.br.fpcf.cg.properties.ReflectionRelatedCallees
 import org.opalj.br.fpcf.cg.properties.SerializationRelatedCallees
 import org.opalj.br.fpcf.cg.properties.StandardInvokeCallees
 import org.opalj.br.fpcf.cg.properties.ThreadRelatedIncompleteCallSites
+import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
-import org.opalj.tac.DefaultTACAIKey
 import org.opalj.tac.Stmt
 import org.opalj.tac.TACStmts
 import org.opalj.tac.VirtualMethodCall
@@ -29,9 +32,7 @@ import org.opalj.tac.fpcf.analyses.cg.reflection.TriggeredReflectionRelatedCalls
 import org.opalj.tac.fpcf.analyses.cg.RTACallGraphAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.TriggeredFinalizerAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.TriggeredSerializationRelatedCallsAnalysis
-import org.opalj.tac.fpcf.analyses.string_analysis.InterproceduralStringAnalysis
 import org.opalj.tac.fpcf.analyses.string_analysis.IntraproceduralStringAnalysis
-import org.opalj.tac.fpcf.analyses.string_analysis.LazyInterproceduralStringAnalysis
 import org.opalj.tac.fpcf.analyses.string_analysis.V
 import org.opalj.tac.fpcf.analyses.TriggeredSystemPropertiesAnalysis
 import org.opalj.tac.fpcf.analyses.cg.LazyCalleesAnalysis
@@ -41,6 +42,8 @@ import org.opalj.tac.fpcf.analyses.TACAITransformer
 import org.opalj.tac.fpcf.analyses.cg.TriggeredInstantiatedTypesAnalysis
 import org.opalj.tac.fpcf.analyses.cg.TriggeredLoadedClassesAnalysis
 import org.opalj.tac.fpcf.analyses.string_analysis.LazyIntraproceduralStringAnalysis
+import org.opalj.tac.DefaultTACAIKey
+import org.opalj.tac.fpcf.analyses.string_analysis.LazyInterproceduralStringAnalysis
 
 /**
  * @param fqTestMethodsClass The fully-qualified name of the class that contains the test methods.
@@ -196,8 +199,13 @@ object IntraproceduralStringAnalysisTest {
 }
 
 /**
- * Tests whether the [[InterproceduralStringAnalysis]] works correctly with respect to some
+ * Tests whether the InterproceduralStringAnalysis works correctly with respect to some
  * well-defined tests.
+ *
+ * @note We could use a manager to run the analyses, however, doing so leads to the fact that the
+ *       property store does not compute all properties, especially TAC. The reason being is that
+ *       a ''shutdown'' call prevents further computations. Thus, we do all this manually here.
+ *       (Detected and fixed in a session with Dominik.)
  *
  * @author Patrick Mell
  */
@@ -210,10 +218,15 @@ class InterproceduralStringAnalysisTest extends PropertiesTest {
             InterproceduralStringAnalysisTest.filesToLoad
         )
         val p = Project(runner.getRelevantProjectFiles, Array[File]())
+        p.getOrCreateProjectInformationKeyInitializationData(
+            PropertyStoreKey,
+            (context:List[PropertyStoreContext[AnyRef]]) ⇒ {
+                implicit val lg:LogContext = p.logContext
+                PropertyStore.updateTraceFallbacks(true)
+                PKESequentialPropertyStore.apply(context:_*)
+        })
 
-        val manager = p.get(FPCFAnalysesManagerKey)
-        val (ps, analyses) = manager.runAll(
-            TACAITransformer,
+        val analyses: Set[ComputationSpecification[FPCFAnalysis]] = Set(TACAITransformer,
             LazyL0BaseAIAnalysis,
             RTACallGraphAnalysisScheduler,
             TriggeredStaticInitializerAnalysis,
@@ -232,16 +245,23 @@ class InterproceduralStringAnalysisTest extends PropertiesTest {
             )),
             LazyInterproceduralStringAnalysis
         )
+        val ps = p.get(PropertyStoreKey)
+        ps.setupPhase(analyses.flatMap(_.derives.map(_.pk)))
+        var initData: Map[ComputationSpecification[_], Any] = Map()
+        analyses.foreach{a ⇒
+            initData += a → a.init(ps)
+            a.beforeSchedule(ps)
+        }
+        var scheduledAnalyses: List[FPCFAnalysis] = List()
+        analyses.foreach{a ⇒
+            scheduledAnalyses ::=a.schedule(ps, initData(a).asInstanceOf[a.InitializationData])
+        }
 
-        val testContext = TestContext(
-            p, ps, List(new InterproceduralStringAnalysis(p)) ++ analyses.map(_._2)
-        )
-        LazyInterproceduralStringAnalysis.init(p, ps)
-        LazyInterproceduralStringAnalysis.schedule(ps, null)
+        val testContext = TestContext(p, ps, scheduledAnalyses)
 
         val eas = runner.determineEAS(p, ps, p.allMethodsWithBody)
-        testContext.propertyStore.shutdown()
         validateProperties(testContext, eas, Set("StringConstancy"))
+        testContext.propertyStore.shutdown()
         ps.waitOnPhaseCompletion()
     }
 
