@@ -77,7 +77,7 @@ class InterproceduralStaticFunctionCallInterpreter(
         }
 
         val m = methods._1.head
-        val (tacEps, tac) = getTACAI(ps, m, state)
+        val (_, tac) = getTACAI(ps, m, state)
 
         val directCallSites = state.callees.directCallSites()(ps, declaredMethods)
         val relevantPCs = directCallSites.filter {
@@ -141,7 +141,6 @@ class InterproceduralStaticFunctionCallInterpreter(
         } else {
             // No TAC => Register dependee and continue
             state.appendToMethodPrep2defSite(m, defSite)
-            state.dependees = tacEps :: state.dependees
             InterimResult(
                 state.entity,
                 StringConstancyProperty.lb,
