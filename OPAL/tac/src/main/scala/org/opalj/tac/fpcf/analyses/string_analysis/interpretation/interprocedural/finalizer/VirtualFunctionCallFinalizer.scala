@@ -22,8 +22,8 @@ class VirtualFunctionCallFinalizer(
     override type T = VirtualFunctionCall[V]
 
     /**
-     * Finalizes [[VirtualFunctionCall]]s. Currently, this finalizer supports only the "append"
-     * function.
+     * Finalizes [[VirtualFunctionCall]]s. Currently, this finalizer supports only the "append" and
+     * "toString" function.
      * <p>
      * @inheritdoc
      */
