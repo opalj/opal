@@ -32,6 +32,8 @@ public class InterproceduralTestMethods {
 
     private String noWriteField;
 
+    private Object myObject;
+
     /**
      * {@see LocalTestMethods#analyzeString}
      */
@@ -465,6 +467,18 @@ public class InterproceduralTestMethods {
             })
     public void fieldWithNoWriteTest() {
         analyzeString(noWriteField);
+    }
+
+    @StringDefinitionsCollection(
+            value = "a case where a field is read whose type is not supported",
+            stringDefinitions = {
+                    @StringDefinitions(
+                            expectedLevel = DYNAMIC,
+                            expectedStrings = "\\w"
+                    )
+            })
+    public void nonSupportedFieldTypeRead() {
+        analyzeString(myObject.toString());
     }
 
 //    @StringDefinitionsCollection(

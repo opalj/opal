@@ -54,7 +54,7 @@ class InterproceduralFieldInterpreter(
         val defSitEntity: Integer = defSite
         if (!InterproceduralStringAnalysis.isSupportedType(instr.declaredFieldType)) {
             // Unknown type => Cannot further approximate
-            Result(instr, StringConstancyProperty.lb)
+            return Result(instr, StringConstancyProperty.lb)
         }
 
         val results = ListBuffer[ProperPropertyComputationResult]()
