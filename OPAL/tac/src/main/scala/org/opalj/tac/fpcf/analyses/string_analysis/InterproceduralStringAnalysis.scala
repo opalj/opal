@@ -26,6 +26,7 @@ import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.br.FieldType
 import org.opalj.br.analyses.FieldAccessInformationKey
+import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel
 import org.opalj.tac.Stmt
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.AbstractPathFinder
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.NestedPathElement
@@ -157,6 +158,11 @@ class InterproceduralStringAnalysis(
             requiresCallersInfo = if (defSites.exists(_ < 0)) {
                 if (InterpretationHandler.isStringConstExpression(uvar)) {
                     hasCallersOrParamInfo
+                } else if (InterproceduralStringAnalysis.isSupportedPrimitiveNumberType(uvar)) {
+                    val numType = uvar.value.asPrimitiveValue.primitiveType.toJava
+                    val sci = InterproceduralStringAnalysis.
+                        getDynamicStringInformationForNumberType(numType)
+                    return Result(state.entity, StringConstancyProperty(sci))
                 } else {
                     // StringBuilders as parameters are currently not evaluated
                     return Result(state.entity, StringConstancyProperty.lb)
@@ -708,6 +714,26 @@ object InterproceduralStringAnalysis {
         }
 
     /**
+     * This function checks whether a given type is a supported primitive type. Supported currently
+     * means short, int, float, or double.
+     */
+    def isSupportedPrimitiveNumberType(v: V): Boolean = {
+        val value = v.value
+        if (value.isPrimitiveValue) {
+            isSupportedPrimitiveNumberType(value.asPrimitiveValue.primitiveType.toJava)
+        } else {
+            false
+        }
+    }
+
+    /**
+     * This function checks whether a given type is a supported primitive type. Supported currently
+     * means short, int, float, or double.
+     */
+    def isSupportedPrimitiveNumberType(typeName: String): Boolean =
+        typeName == "short" || typeName == "int" || typeName == "float" || typeName == "double"
+
+    /**
      * Checks whether a given type, identified by its string representation, is supported by the
      * string analysis. That means, if this function returns `true`, a value, which is of type
      * `typeName` may be approximated by the string analysis better than just the lower bound.
@@ -718,8 +744,8 @@ object InterproceduralStringAnalysis {
      *         java.lang.String] and `false` otherwise.
      */
     def isSupportedType(typeName: String): Boolean =
-        typeName == "char" || typeName == "short" || typeName == "int" || typeName == "float" ||
-            typeName == "double" || typeName == "java.lang.String"
+        typeName == "char" || isSupportedPrimitiveNumberType(typeName) ||
+            typeName == "java.lang.String"
 
     /**
      * Determines whether a given [[V]] element ([[DUVar]]) is supported by the string analysis.
@@ -747,6 +773,23 @@ object InterproceduralStringAnalysis {
      *         see [[InterproceduralStringAnalysis.isSupportedType(String)]].
      */
     def isSupportedType(fieldType: FieldType): Boolean = isSupportedType(fieldType.toJava)
+
+    /**
+     * Takes the name of a primitive number type - supported types are short, int, float, double -
+     * and returns the dynamic [[StringConstancyInformation]] for that type. In case an unsupported
+     * type is given [[StringConstancyInformation.UnknownWordSymbol]] is returned as possible
+     * strings.
+     */
+    def getDynamicStringInformationForNumberType(
+        numberType: String
+    ): StringConstancyInformation = {
+        val possibleStrings = numberType match {
+            case "short" | "int"    ⇒ StringConstancyInformation.IntValue
+            case "float" | "double" ⇒ StringConstancyInformation.FloatValue
+            case _                  ⇒ StringConstancyInformation.UnknownWordSymbol
+        }
+        StringConstancyInformation(StringConstancyLevel.DYNAMIC, possibleStrings = possibleStrings)
+    }
 
 }
 
