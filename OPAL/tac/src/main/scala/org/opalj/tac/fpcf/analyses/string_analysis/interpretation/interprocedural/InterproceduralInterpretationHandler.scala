@@ -42,6 +42,7 @@ import org.opalj.tac.DUVar
 import org.opalj.tac.GetStatic
 import org.opalj.tac.TACMethodParameter
 import org.opalj.tac.TACode
+import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedural.finalizer.GetFieldFinalizer
 
 /**
  * `InterproceduralInterpretationHandler` is responsible for processing expressions that are
@@ -249,6 +250,10 @@ class InterproceduralInterpretationHandler(
                     VirtualFunctionCallFinalizer(state, cfg).finalizeInterpretation(vfc, defSite)
                 case ExprStmt(_, vfc: VirtualFunctionCall[V]) ⇒
                     VirtualFunctionCallFinalizer(state, cfg).finalizeInterpretation(vfc, defSite)
+                case Assignment(_, _, gf: GetField[V]) ⇒
+                    GetFieldFinalizer(state).finalizeInterpretation(gf, defSite)
+                case ExprStmt(_, gf: GetField[V]) ⇒
+                    GetFieldFinalizer(state).finalizeInterpretation(gf, defSite)
                 case _ ⇒ state.appendToFpe2Sci(
                     defSite, StringConstancyProperty.lb.stringConstancyInformation, reset = true
                 )

@@ -439,12 +439,11 @@ public class InterproceduralTestMethods {
     }
 
     @StringDefinitionsCollection(
-            value = "a case where a string field is read (the expected strings should actually"
-                    + "contain the value written in belongsToFieldReadTest!)",
+            value = "a case where a string field is read",
             stringDefinitions = {
                     @StringDefinitions(
-                            expectedLevel = DYNAMIC,
-                            expectedStrings = "(\\w|some value)"
+                            expectedLevel = CONSTANT,
+                            expectedStrings = "(some value|another value)"
                     )
             })
     public void fieldReadTest() {
