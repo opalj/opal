@@ -22,6 +22,7 @@ import org.opalj.tac.GetField
 import org.opalj.tac.TACMethodParameter
 import org.opalj.tac.TACode
 import org.opalj.tac.TACStmts
+import org.opalj.tac.fpcf.analyses.string_analysis.InterproceduralStringAnalysis
 
 abstract class InterpretationHandler(tac: TACode[TACMethodParameter, DUVar[ValueInformation]]) {
 
@@ -113,6 +114,15 @@ object InterpretationHandler {
             false
         }
     }
+
+    /**
+     * Returns `true` if the given expressions is a primitive number type
+     */
+    def isPrimitiveNumberTypeExpression(expr: Expr[V]): Boolean =
+        expr.asVar.value.isPrimitiveValue &&
+            InterproceduralStringAnalysis.isSupportedPrimitiveNumberType(
+                expr.asVar.value.asPrimitiveValue.primitiveType.toJava
+            )
 
     /**
      * Checks whether an expression contains a call to [[StringBuilder#append]] or
