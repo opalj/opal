@@ -94,7 +94,7 @@ public class InterproceduralTestMethods {
 
     @StringDefinitionsCollection(
             value = "a case where a static method is called that returns a string but are not "
-                    + "within this project => cannot / will not interpret",
+                    + "within this project => cannot / will not be interpret",
             stringDefinitions = {
                     @StringDefinitions(
                             expectedLevel = DYNAMIC,
@@ -131,8 +131,8 @@ public class InterproceduralTestMethods {
             stringDefinitions = {
                     @StringDefinitions(
                             expectedLevel = DYNAMIC,
-                            expectedStrings = "(java.lang.Object|java.lang.Runtime|"
-                                    + "java.lang.(Integer|Object|Runtime)|\\w)"
+                            expectedStrings = "(java.lang.Object|\\w|java.lang.(Integer|"
+                                    + "Object|Runtime)|\\w)"
                     )
 
             })
