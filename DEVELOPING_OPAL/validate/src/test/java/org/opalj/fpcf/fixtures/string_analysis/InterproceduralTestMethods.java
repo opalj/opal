@@ -322,7 +322,8 @@ public class InterproceduralTestMethods {
             m = clazz.getMethod(getterName);
             System.out.println(m);
             analyzeString(getterName);
-        } catch (NoSuchMethodException var13) {}
+        } catch (NoSuchMethodException var13) {
+        }
     }
 
     @StringDefinitionsCollection(
@@ -338,6 +339,21 @@ public class InterproceduralTestMethods {
     public String callerWithFunctionParameterTest(String s, float i) {
         analyzeString(s);
         return s;
+    }
+
+    /**
+     * Necessary for the callerWithFunctionParameterTest.
+     */
+    public void belongsToSomeTestCase() {
+        String s = callerWithFunctionParameterTest(belongsToTheSameTestCase(), 900);
+        System.out.println(s);
+    }
+
+    /**
+     * Necessary for the callerWithFunctionParameterTest.
+     */
+    public static String belongsToTheSameTestCase() {
+        return getHelloWorld();
     }
 
     @StringDefinitionsCollection(
@@ -415,6 +431,13 @@ public class InterproceduralTestMethods {
         return s;
     }
 
+    /**
+     * Necessary for the tieName test.
+     */
+    private static String tieNameForCompiler(String var0) {
+        return var0 + "_tie";
+    }
+
     @StringDefinitionsCollection(
             value = "a case where a string field is read (the expected strings should actually"
                     + "contain the value written in belongsToFieldReadTest!)",
@@ -448,6 +471,7 @@ public class InterproceduralTestMethods {
 //    @StringDefinitionsCollection(
 //            value = "a case where no callers information need to be computed",
 //            stringDefinitions = {
+//                    @StringDefinitions(
 //                            expectedLevel = CONSTANT,
 //                            expectedStrings = "value"
 //                    )
@@ -457,28 +481,14 @@ public class InterproceduralTestMethods {
 //        analyzeString(value);
 //        return value;
 //    }
-
-    /**
-     * Necessary for the callerWithFunctionParameterTest.
-     */
-    public void belongsToSomeTestCase() {
-        String s = callerWithFunctionParameterTest(belongsToTheSameTestCase(), 900);
-        System.out.println(s);
-    }
-
-    /**
-     * Necessary for the callerWithFunctionParameterTest.
-     */
-    public static String belongsToTheSameTestCase() {
-        return getHelloWorld();
-    }
-
-    /**
-     * Necessary for the tieName test.
-     */
-    private static String tieNameForCompiler(String var0) {
-        return var0 + "_tie";
-    }
+//
+//    private String getProperty(String name) {
+//        if (name == null) {
+//            return cyclicDependencyTest("default");
+//        } else {
+//            return "value";
+//        }
+//    }
 
     private String getRuntimeClassName() {
         return "java.lang.Runtime";
@@ -503,13 +513,5 @@ public class InterproceduralTestMethods {
     private String addQuestionMark(String s) {
         return s + "?";
     }
-
-//    private String getProperty(String name) {
-//        if (name == null) {
-//            return cyclicDependencyTest("default");
-//        } else {
-//            return "value";
-//        }
-//    }
 
 }
