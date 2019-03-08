@@ -131,8 +131,8 @@ public class InterproceduralTestMethods {
             stringDefinitions = {
                     @StringDefinitions(
                             expectedLevel = DYNAMIC,
-                            expectedStrings = "(java.lang.Object|java.lang.Runtime|"
-                                    + "java.lang.(Integer|Object|Runtime)|\\w)"
+                            expectedStrings = "(java.lang.Object|\\w|java.lang.(Integer|"
+                                    + "Object|Runtime)|\\w)"
                     )
 
             })
