@@ -111,7 +111,13 @@ class InterproceduralInterpretationHandler(
                 processedDefSites.remove(defSite)
                 result
             case Assignment(_, _, expr: ArrayLoad[V]) ⇒
-                new ArrayPreparationInterpreter(cfg, this, state, params).interpret(expr, defSite)
+                val r = new ArrayPreparationInterpreter(
+                    cfg, this, state, params
+                ).interpret(expr, defSite)
+                if (!r.isInstanceOf[Result]) {
+                    processedDefSites.remove(defSite)
+                }
+                r
             case Assignment(_, _, expr: New) ⇒
                 val result = new NewInterpreter(cfg, this).interpret(expr, defSite)
                 state.appendResultToFpe2Sci(defSite, result.asInstanceOf[Result])
@@ -120,23 +126,13 @@ class InterproceduralInterpretationHandler(
                 new InterproceduralGetStaticInterpreter(cfg, this).interpret(expr, defSite)
             case ExprStmt(_, expr: GetStatic) ⇒
                 new InterproceduralGetStaticInterpreter(cfg, this).interpret(expr, defSite)
-            case Assignment(_, _, expr: VirtualFunctionCall[V]) ⇒
-                val r = new VirtualFunctionCallPreparationInterpreter(
-                    cfg, this, ps, state, declaredMethods, params, c
-                ).interpret(expr, defSite)
-                // In case no final result could be computed, remove this def site from the list of
-                // processed def sites to make sure that is can be compute again (when all final
-                // results are available); we use nonFinalFunctionArgs because if it does not
-                // contain expr, it can be finalized later on without processing the function again
-                if (state.nonFinalFunctionArgs.contains(expr)) {
-                    processedDefSites.remove(defSite)
-                }
-                r
+            case Assignment(_, _, expr: VirtualFunctionCall[V]) ⇒ processVFC(expr, defSite, params)
+            case ExprStmt(_, expr: VirtualFunctionCall[V])      ⇒ processVFC(expr, defSite, params)
             case Assignment(_, _, expr: StaticFunctionCall[V]) ⇒
                 val r = new InterproceduralStaticFunctionCallInterpreter(
                     cfg, this, ps, state, declaredMethods, c
                 ).interpret(expr, defSite)
-                if (state.nonFinalFunctionArgs.contains(expr)) {
+                if (!r.isInstanceOf[Result] || state.nonFinalFunctionArgs.contains(expr)) {
                     processedDefSites.remove(defSite)
                 }
                 r
@@ -148,7 +144,7 @@ class InterproceduralInterpretationHandler(
                 val r = new InterproceduralNonVirtualFunctionCallInterpreter(
                     cfg, this, ps, state, declaredMethods, c
                 ).interpret(expr, defSite)
-                if (state.nonFinalFunctionArgs.contains(expr)) {
+                if (!r.isInstanceOf[Result] || state.nonFinalFunctionArgs.contains(expr)) {
                     processedDefSites.remove(defSite)
                 }
                 r
@@ -160,19 +156,11 @@ class InterproceduralInterpretationHandler(
                     processedDefSites.remove(defSite)
                 }
                 r
-            case ExprStmt(_, expr: VirtualFunctionCall[V]) ⇒
-                val r = new VirtualFunctionCallPreparationInterpreter(
-                    cfg, this, ps, state, declaredMethods, params, c
-                ).interpret(expr, defSite)
-                if (state.nonFinalFunctionArgs.contains(expr)) {
-                    processedDefSites.remove(defSite)
-                }
-                r
             case ExprStmt(_, expr: StaticFunctionCall[V]) ⇒
                 val r = new InterproceduralStaticFunctionCallInterpreter(
                     cfg, this, ps, state, declaredMethods, c
                 ).interpret(expr, defSite)
-                if (state.nonFinalFunctionArgs.contains(expr)) {
+                if (!r.isInstanceOf[Result] || state.nonFinalFunctionArgs.contains(expr)) {
                     processedDefSites.remove(defSite)
                 }
                 r
@@ -186,11 +174,49 @@ class InterproceduralInterpretationHandler(
                 ).interpret(nvmc, defSite)
                 result match {
                     case r: Result ⇒ state.appendResultToFpe2Sci(defSite, r)
-                    case _         ⇒
+                    case _         ⇒ processedDefSites.remove(defSite)
                 }
                 result
             case _ ⇒ Result(e, StringConstancyProperty.getNeutralElement)
         }
+    }
+
+    /**
+     * Helper function for interpreting [[VirtualFunctionCall]]s.
+     */
+    private def processVFC(
+        expr:    VirtualFunctionCall[V],
+        defSite: Int,
+        params:  List[Seq[StringConstancyInformation]]
+    ): ProperPropertyComputationResult = {
+        val r = new VirtualFunctionCallPreparationInterpreter(
+            cfg, this, ps, state, declaredMethods, params, c
+        ).interpret(expr, defSite)
+        // Set whether the virtual function call is fully prepared. This is the case if 1) the
+        // call was not fully prepared before (no final result available) or 2) the preparation is
+        // now done (methodPrep2defSite makes sure we have the TAC ready for a method required by
+        // this virtual function call).
+        if (!r.isInstanceOf[Result] && !state.isVFCFullyPrepared.contains(expr)) {
+            state.isVFCFullyPrepared(expr) = false
+        } else if (state.isVFCFullyPrepared.contains(expr) && state.methodPrep2defSite.isEmpty) {
+            state.isVFCFullyPrepared(expr) = true
+        }
+        val isPrepDone = !state.isVFCFullyPrepared.contains(expr) || state.isVFCFullyPrepared(expr)
+
+        // In case no final result could be computed, remove this def site from the list of
+        // processed def sites to make sure that is can be compute again (when all final
+        // results are available); we use nonFinalFunctionArgs because if it does not
+        // contain expr, it can be finalized later on without processing the function again.
+        // A differentiation between "toString" and other calls is made since toString calls are not
+        // prepared in the same way as other calls are as toString does not take any arguments that
+        // might need to be prepared (however, toString needs a finalization procedure)
+        if (expr.name == "toString" &&
+            (state.nonFinalFunctionArgs.contains(expr) || !r.isInstanceOf[Result])) {
+            processedDefSites.remove(defSite)
+        } else if (state.nonFinalFunctionArgs.contains(expr) || !isPrepDone) {
+            processedDefSites.remove(defSite)
+        }
+        r
     }
 
     /**

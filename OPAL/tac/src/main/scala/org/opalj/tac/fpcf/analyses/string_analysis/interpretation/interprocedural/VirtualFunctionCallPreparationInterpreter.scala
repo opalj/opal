@@ -147,8 +147,9 @@ class VirtualFunctionCallPreparationInterpreter(
         state.nonFinalFunctionArgsPos.remove(instr)
         val evaluatedParams = convertEvaluatedParameters(params)
         val results = methods.map { nextMethod ⇒
-            val tac = getTACAI(ps, nextMethod, state)
+            val (tacEps, tac) = getTACAI(ps, nextMethod, state)
             if (tac.isDefined) {
+                state.methodPrep2defSite.remove(nextMethod)
                 // It might be that a function has no return value, e. g., in case it is guaranteed
                 // to throw an exception (see, e.g.,
                 // com.sun.org.apache.xpath.internal.objects.XRTreeFragSelectWrapper#str)
@@ -179,8 +180,16 @@ class VirtualFunctionCallPreparationInterpreter(
                     }
                 }
             } else {
-                // No TAC (e.g., for native methods)
-                Result(instr, StringConstancyProperty.lb)
+                // No TAC => Register dependee and continue
+                state.appendToMethodPrep2defSite(nextMethod, defSite)
+                state.dependees = tacEps :: state.dependees
+                InterimResult(
+                    state.entity,
+                    StringConstancyProperty.lb,
+                    StringConstancyProperty.ub,
+                    state.dependees,
+                    c
+                )
             }
         }
 

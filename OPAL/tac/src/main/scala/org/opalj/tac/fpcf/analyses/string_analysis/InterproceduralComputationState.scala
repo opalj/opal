@@ -13,12 +13,14 @@ import org.opalj.br.fpcf.cg.properties.Callees
 import org.opalj.br.fpcf.cg.properties.CallersProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.br.fpcf.properties.StringConstancyProperty
+import org.opalj.br.Method
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.Path
 import org.opalj.tac.DUVar
 import org.opalj.tac.TACMethodParameter
 import org.opalj.tac.TACode
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedural.InterproceduralInterpretationHandler
 import org.opalj.tac.FunctionCall
+import org.opalj.tac.VirtualFunctionCall
 
 /**
  * This class is to be used to store state information that are required at a later point in
@@ -118,6 +120,18 @@ case class InterproceduralComputationState(entity: P) {
     val entity2Function: mutable.Map[P, ListBuffer[FunctionCall[V]]] = mutable.Map()
 
     /**
+     * A mapping from a method to definition sites which indicates that a method is still prepared,
+     * e.g., the TAC is still to be retrieved, and the list values indicate the defintion sites
+     * which depend on the preparations.
+     */
+    val methodPrep2defSite: mutable.Map[Method, ListBuffer[Int]] = mutable.Map()
+
+    /**
+     * A mapping which indicates whether a virtual function call is fully prepared.
+     */
+    val isVFCFullyPrepared: mutable.Map[VirtualFunctionCall[V], Boolean] = mutable.Map()
+
+    /**
      * Takes a definition site as well as a result and extends the [[fpe2sci]] map accordingly,
      * however, only if `defSite` is not yet present.
      */
@@ -131,7 +145,8 @@ case class InterproceduralComputationState(entity: P) {
 
     /**
      * Takes a definition site as well as [[StringConstancyInformation]] and extends the [[fpe2sci]]
-     * map accordingly, however, only if `defSite` is not yet present.
+     * map accordingly, however, only if `defSite` is not yet present and `sci` not present within
+     * the list of `defSite`.
      */
     def appendToFpe2Sci(
         defSite: Int, sci: StringConstancyInformation, reset: Boolean = false
@@ -139,7 +154,9 @@ case class InterproceduralComputationState(entity: P) {
         if (reset || !fpe2sci.contains(defSite)) {
             fpe2sci(defSite) = ListBuffer()
         }
-        fpe2sci(defSite).append(sci)
+        if (!fpe2sci(defSite).contains(sci)) {
+            fpe2sci(defSite).append(sci)
+        }
     }
 
     /**
@@ -150,6 +167,34 @@ case class InterproceduralComputationState(entity: P) {
             var2IndexMapping(entity) = ListBuffer()
         }
         var2IndexMapping(entity).append(defSite)
+    }
+
+    /**
+     * Takes a TAC EPS as well as a definition site and append it to [[methodPrep2defSite]].
+     */
+    def appendToMethodPrep2defSite(m: Method, defSite: Int): Unit = {
+        if (!methodPrep2defSite.contains(m)) {
+            methodPrep2defSite(m) = ListBuffer()
+        }
+        if (!methodPrep2defSite(m).contains(defSite)) {
+            methodPrep2defSite(m).append(defSite)
+        }
+    }
+
+    /**
+     * Removed the given definition site for the given method from [[methodPrep2defSite]]. If the
+     * entry for `m` in `methodPrep2defSite` is empty, the entry for `m` is removed.
+     */
+    def removeFromMethodPrep2defSite(m: Method, defSite: Int): Unit = {
+        if (methodPrep2defSite.contains(m)) {
+            val index = methodPrep2defSite(m).indexOf(defSite)
+            if (index > -1) {
+                methodPrep2defSite(m).remove(index)
+            }
+            if (methodPrep2defSite(m).isEmpty) {
+                methodPrep2defSite.remove(m)
+            }
+        }
     }
 
 }

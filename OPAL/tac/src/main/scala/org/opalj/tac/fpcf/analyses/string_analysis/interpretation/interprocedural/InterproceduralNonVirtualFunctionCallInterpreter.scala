@@ -56,8 +56,9 @@ class InterproceduralNonVirtualFunctionCallInterpreter(
         }
         val m = methods._1.head
 
-        val tac = getTACAI(ps, m, state)
+        val (tacEps, tac) = getTACAI(ps, m, state)
         if (tac.isDefined) {
+            state.removeFromMethodPrep2defSite(m, defSite)
             // TAC available => Get return UVar and start the string analysis
             val ret = tac.get.stmts.find(_.isInstanceOf[ReturnValue[V]]).get
             val uvar = ret.asInstanceOf[ReturnValue[V]].expr.asVar
@@ -80,6 +81,8 @@ class InterproceduralNonVirtualFunctionCallInterpreter(
             }
         } else {
             // No TAC => Register dependee and continue
+            state.appendToMethodPrep2defSite(m, defSite)
+            state.dependees = tacEps :: state.dependees
             InterimResult(
                 state.entity,
                 StringConstancyProperty.lb,
