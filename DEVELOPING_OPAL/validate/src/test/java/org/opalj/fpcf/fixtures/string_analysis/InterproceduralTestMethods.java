@@ -34,10 +34,18 @@ public class InterproceduralTestMethods {
 
     private Object myObject;
 
+    private String fieldWithInit = "init field value";
+
+    private String fieldWithConstructorInit;
+
     /**
      * {@see LocalTestMethods#analyzeString}
      */
     public void analyzeString(String s) {
+    }
+
+    public InterproceduralTestMethods() {
+        fieldWithConstructorInit = "initialized by constructor";
     }
 
     @StringDefinitionsCollection(
@@ -445,7 +453,7 @@ public class InterproceduralTestMethods {
             stringDefinitions = {
                     @StringDefinitions(
                             expectedLevel = CONSTANT,
-                            expectedStrings = "(some value|another value)"
+                            expectedStrings = "(some value|another value|^null$)"
                     )
             })
     public void fieldReadTest() {
@@ -479,6 +487,30 @@ public class InterproceduralTestMethods {
             })
     public void nonSupportedFieldTypeRead() {
         analyzeString(myObject.toString());
+    }
+
+    @StringDefinitionsCollection(
+            value = "a case where a field is declared and initialized",
+            stringDefinitions = {
+                    @StringDefinitions(
+                            expectedLevel = CONSTANT,
+                            expectedStrings = "init field value"
+                    )
+            })
+    public void fieldWithInitTest() {
+        analyzeString(fieldWithInit.toString());
+    }
+
+    @StringDefinitionsCollection(
+            value = "a case where a field is initialized in a constructor",
+            stringDefinitions = {
+                    @StringDefinitions(
+                            expectedLevel = CONSTANT,
+                            expectedStrings = "initialized by constructor"
+                    )
+            })
+    public void fieldInitByConstructor() {
+        analyzeString(fieldWithConstructorInit.toString());
     }
 
 //    @StringDefinitionsCollection(

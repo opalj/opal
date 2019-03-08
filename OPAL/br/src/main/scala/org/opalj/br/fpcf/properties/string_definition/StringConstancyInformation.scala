@@ -54,6 +54,11 @@ object StringConstancyInformation {
     val InfiniteRepetitionSymbol: String = "*"
 
     /**
+     * A value to be used to indicate that a string expression might be null.
+     */
+    val NullStringValue: String = "^null$"
+
+    /**
      * Takes a list of [[StringConstancyInformation]] and reduces them to a single one by or-ing
      * them together (the level is determined by finding the most general level; the type is set to
      * [[StringConstancyType.APPEND]] and the possible strings are concatenated using a pipe and
@@ -94,5 +99,11 @@ object StringConstancyInformation {
      */
     def getNeutralElement: StringConstancyInformation =
         StringConstancyInformation(StringConstancyLevel.CONSTANT)
+
+    /**
+     * @return Returns a [[StringConstancyInformation]] element to indicate a `null` value.
+     */
+    def getNullElement: StringConstancyInformation =
+        StringConstancyInformation(StringConstancyLevel.CONSTANT, possibleStrings = NullStringValue)
 
 }

@@ -57,9 +57,13 @@ class InterproceduralFieldInterpreter(
             return Result(instr, StringConstancyProperty.lb)
         }
 
+        var hasInit = false
         val results = ListBuffer[ProperPropertyComputationResult]()
         fieldAccessInformation.writeAccesses(instr.declaringClass, instr.name).foreach {
             case (m, pcs) ⇒ pcs.foreach { pc ⇒
+                if (m.name == "<init>") {
+                    hasInit = true
+                }
                 val (tacEps, tac) = getTACAI(ps, m, state)
                 val nextResult = if (tacEps.isRefinable) {
                     InterimResult(
@@ -117,6 +121,14 @@ class InterproceduralFieldInterpreter(
             // If all results are final, determine all possible values for the field. Otherwise,
             // return some intermediate result to indicate that the computation is not yet done
             if (results.forall(_.isInstanceOf[Result])) {
+                // No init is present => append a `null` element to indicate that the field might be
+                // null; this behavior could be refined by only setting the null element if no
+                // statement is guaranteed to be executed prior to the field read
+                if (!hasInit) {
+                    results.append(Result(
+                        instr, StringConstancyProperty(StringConstancyInformation.getNullElement)
+                    ))
+                }
                 val resultScis = results.map {
                     StringConstancyProperty.extractFromPPCR(_).stringConstancyInformation
                 }
