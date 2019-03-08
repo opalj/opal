@@ -73,7 +73,9 @@ abstract class AbstractStringInterpreter(
         if (tacai.hasUBP) {
             (tacai, tacai.ub.tac)
         } else {
-            s.dependees = tacai :: s.dependees
+            if (tacai.isRefinable) {
+                s.dependees = tacai :: s.dependees
+            }
             (tacai, None)
         }
     }
