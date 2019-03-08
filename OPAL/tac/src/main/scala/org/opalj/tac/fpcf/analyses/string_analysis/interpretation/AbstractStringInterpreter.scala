@@ -4,6 +4,7 @@ package org.opalj.tac.fpcf.analyses.string_analysis.interpretation
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
+import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.InterimResult
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyStore
@@ -53,25 +54,27 @@ abstract class AbstractStringInterpreter(
     type T <: Any
 
     /**
-     * Either returns the TAC for the given method or otherwise registers dependees.
+     * Returns the EPS retrieved from querying the given property store for the given method as well
+     * as the TAC, if it could already be determined. If not, thus function registers a dependee
+     * within the given state.
      *
      * @param ps The property store to use.
      * @param m The method to get the TAC for.
      * @param s The computation state whose dependees might be extended in case the TAC is not
      *          immediately ready.
-     * @return Returns `Some(tac)` if the TAC is already available or `None` otherwise.
+     * @return Returns (eps, tac).
      */
     protected def getTACAI(
         ps: PropertyStore,
         m:  Method,
         s:  InterproceduralComputationState
-    ): Option[TACode[TACMethodParameter, V]] = {
+    ): (EOptionP[Method, TACAI], Option[TACode[TACMethodParameter, V]]) = {
         val tacai = ps(m, TACAI.key)
         if (tacai.hasUBP) {
-            tacai.ub.tac
+            (tacai, tacai.ub.tac)
         } else {
             s.dependees = tacai :: s.dependees
-            None
+            (tacai, None)
         }
     }
 
@@ -141,7 +144,7 @@ abstract class AbstractStringInterpreter(
                 case (nextParam, middleIndex) ⇒
                     nextParam.asVar.definedBy.toArray.sorted.zipWithIndex.map {
                         case (ds, innerIndex) ⇒
-                            val r = iHandler.processDefSite(ds, List())
+                            val r = iHandler.processDefSite(ds)
                             if (!r.isInstanceOf[Result]) {
                                 val interim = r.asInstanceOf[InterimResult[StringConstancyProperty]]
                                 if (!functionArgsPos.contains(funCall)) {

@@ -99,6 +99,11 @@ class VirtualFunctionCallFinalizer(
         val finalSci = StringConstancyInformation.reduceMultiple(
             dependeeSites.toArray.flatMap { ds ⇒ state.fpe2sci(ds) }
         )
+        // Remove the dependees, such as calls to "toString"; the reason being is that we do not
+        // duplications (arising from an "append" and a "toString" call)
+        dependeeSites.foreach {
+            state.appendToFpe2Sci(_, StringConstancyInformation.getNeutralElement, reset = true)
+        }
         state.appendToFpe2Sci(defSite, finalSci)
     }
 

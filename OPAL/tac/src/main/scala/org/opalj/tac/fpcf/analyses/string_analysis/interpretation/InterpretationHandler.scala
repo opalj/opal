@@ -18,6 +18,7 @@ import org.opalj.tac.Stmt
 import org.opalj.tac.VirtualFunctionCall
 import org.opalj.tac.fpcf.analyses.string_analysis.V
 import org.opalj.tac.DUVar
+import org.opalj.tac.GetField
 import org.opalj.tac.TACMethodParameter
 import org.opalj.tac.TACode
 import org.opalj.tac.TACStmts
@@ -153,6 +154,8 @@ object InterpretationHandler {
                             defSites.append(next)
                         case vfc: VirtualFunctionCall[V] ⇒
                             stack.pushAll(vfc.receiver.asVar.definedBy.filter(_ >= 0).toArray)
+                        case _: GetField[V] ⇒
+                            defSites.append(next)
                         case _ ⇒ // E.g., NullExpr
                     }
                 case _ ⇒
