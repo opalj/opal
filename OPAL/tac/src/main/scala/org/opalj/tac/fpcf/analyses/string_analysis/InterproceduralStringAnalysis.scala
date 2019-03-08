@@ -211,6 +211,7 @@ class InterproceduralStringAnalysis(
         }
 
         val call = stmts(defSites.head).asAssignment.expr
+        var attemptFinalResultComputation = false
         if (InterpretationHandler.isStringBuilderBufferToStringCall(call)) {
             // Find DUVars, that the analysis of the current entity depends on
             val dependentVars = findDependentVars(state.computedLeanPath, stmts, uvar)
@@ -225,22 +226,19 @@ class InterproceduralStringAnalysis(
                     }
                 }
             } else {
-                if (state.dependees.isEmpty && computeResultsForPath(state.computedLeanPath, state)) {
-                    sci = new PathTransformer(state.iHandler).pathToStringTree(
-                        state.computedLeanPath, state.fpe2sci
-                    ).reduce(true)
-                }
+                attemptFinalResultComputation = true
             }
         } // If not a call to String{Builder, Buffer}.toString, then we deal with pure strings
         else {
-            if (computeResultsForPath(state.computedLeanPath, state)) {
+            attemptFinalResultComputation = true
+        }
+
+        if (attemptFinalResultComputation) {
+            if (state.dependees.isEmpty && computeResultsForPath(state.computedLeanPath, state)) {
                 sci = new PathTransformer(state.iHandler).pathToStringTree(
                     state.computedLeanPath, state.fpe2sci
                 ).reduce(true)
             }
-            // No need to cover the else branch: interimResults.nonEmpty => dependees were added to
-            // state.dependees, i.e., the if that checks whether state.dependees is non-empty will
-            // always be true (thus, the value of "sci" does not matter)
         }
 
         if (state.dependees.nonEmpty) {
