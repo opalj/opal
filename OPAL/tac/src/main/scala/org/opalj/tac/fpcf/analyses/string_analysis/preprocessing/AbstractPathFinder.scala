@@ -89,17 +89,46 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
             if (containsIf) {
                 stack.push(nextBlock)
             } else {
-                cfg.code.instructions(nextBlock - 1) match {
+                // Check and find if there is a goto which provides further information about the
+                // bounds of the conditional; a goto is relevant, if it does not point back at a
+                // surrounding loop
+                var isRelevantGoto = false
+                val relevantGoTo: Option[Goto] = cfg.code.instructions(nextBlock - 1) match {
                     case goto: Goto ⇒
-                        // Find the goto that points after the "else" part (the assumption is that
-                        // this goto is the very last element of the current branch
-                        endSite = goto.targetStmt
-                        // The goto might point back at the beginning of a loop; if so, the end of
-                        // the if/else is denoted by the end of the loop
-                        if (endSite < branchingSite) {
-                            endSite = cfg.findNaturalLoops().filter(_.head == endSite).head.last
+                        // A goto is not relevant if it points at a loop that is within the
+                        // conditional (this does not help / provides no further information)
+                        val gotoSite = goto.targetStmt
+                        isRelevantGoto = !cfg.findNaturalLoops().exists { l ⇒
+                            l.head == gotoSite
+                        }
+                        Some(goto)
+                    case _ ⇒ None
+                }
+
+                relevantGoTo match {
+                    case Some(goto) ⇒
+                        if (isRelevantGoto) {
+                            // Find the goto that points after the "else" part (the assumption is that
+                            // this goto is the very last element of the current branch
+                            endSite = goto.targetStmt
+                            // The goto might point back at the beginning of a loop; if so, the end of
+                            // the if/else is denoted by the end of the loop
+                            if (endSite < branchingSite) {
+                                endSite = cfg.findNaturalLoops().filter(_.head == endSite).head.last
+                            } else {
+                                endSite -= 1
+                            }
                         } else {
-                            endSite -= 1
+                            // If the conditional is encloses in a try-catch block, consider this
+                            // bounds and otherwise the bounds of the surrounding element
+                            cfg.bb(nextBlock).successors.find(_.isInstanceOf[CatchNode]) match {
+                                case Some(cs: CatchNode) ⇒ endSite = cs.endPC
+                                case _ ⇒
+                                    endSite = if (nextBlock > branchingSite) nextBlock else
+                                        cfg.findNaturalLoops().find {
+                                            _.head == goto.targetStmt
+                                        }.get.last - 1
+                            }
                         }
                     case _ ⇒
                         // No goto available => Jump after next block
@@ -158,13 +187,13 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
             // The second condition is necessary to detect two consecutive "if"s (not in an else-if
             // relation)
             if (cfg.code.instructions(i).isInstanceOf[If[V]] && ifTarget != i) {
-                processedIfs(i) = Unit
                 nextIfIndex = i
             }
         }
 
         var endIndex = nextPossibleIfBlock - 1
-        if (nextIfIndex > -1) {
+        if (nextIfIndex > -1 && !isHeadOfLoop(nextIfIndex, cfg.findNaturalLoops(), cfg)) {
+            processedIfs(nextIfIndex) = Unit
             val (_, newEndIndex) = getStartAndEndIndexOfCondWithoutAlternative(
                 nextIfIndex, processedIfs
             )
@@ -198,7 +227,10 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
             branchingSite >= cn.startPC && branchingSite <= cn.endPC
         }
         if (inTryBlocks.nonEmpty) {
-            endIndex = inTryBlocks.minBy(-_.startPC).endPC
+            val tryEndPC = inTryBlocks.minBy(-_.startPC).endPC
+            if (endIndex > tryEndPC) {
+                endIndex = tryEndPC
+            }
         }
 
         // It is now necessary to collect all ifs that belong to the whole if condition (in the
@@ -708,7 +740,7 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
         }
 
         // Separate the last element from all previous ones
-        val branches = successors.reverse.tail.reverse
+        //val branches = successors.reverse.tail.reverse
         val lastEle = successors.last
 
         // If an "if" ends at the end of a loop (the "if" must be within that loop!), it cannot have
@@ -723,7 +755,7 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
                 val ifPos = bb.startPC.to(bb.endPC).filter(
                     cfg.code.instructions(_).isInstanceOf[If[V]]
                 )
-                if (ifPos.nonEmpty) {
+                if (ifPos.nonEmpty && !isHeadOfLoop(ifPos.head, cfg.findNaturalLoops(), cfg)) {
                     ifPos.head
                 } else {
                     -1
@@ -738,20 +770,22 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
             // For every successor (except the very last one), execute a DFS to check whether the
             // very last element is a successor. If so, this represents a path past the if (or
             // if-elseif).
-            branches.count { next ⇒
+            var reachableCount = 0
+            successors.foreach { next ⇒
                 val seenNodes = ListBuffer[CFGNode](cfg.bb(branchingSite), cfg.bb(next))
                 val toVisitStack = mutable.Stack[CFGNode](cfg.bb(next).successors.toArray: _*)
                 while (toVisitStack.nonEmpty) {
                     val from = toVisitStack.pop()
                     val to = from.successors
-                    if (from.nodeId == lastEle || to.contains(cfg.bb(lastEle))) {
-                        return true
+                    if ((from.nodeId == lastEle || to.contains(cfg.bb(lastEle))) &&
+                        from.nodeId >= branchingSite) {
+                        reachableCount += 1
                     }
                     seenNodes.append(from)
                     toVisitStack.pushAll(to.filter(!seenNodes.contains(_)))
                 }
-                return false
-            } > 1
+            }
+            reachableCount > 1
         }
     }
 
