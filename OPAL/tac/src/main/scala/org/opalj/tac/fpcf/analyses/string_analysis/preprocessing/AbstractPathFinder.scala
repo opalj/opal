@@ -108,11 +108,11 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
                 relevantGoTo match {
                     case Some(goto) ⇒
                         if (isRelevantGoto) {
-                            // Find the goto that points after the "else" part (the assumption is that
-                            // this goto is the very last element of the current branch
+                            // Find the goto that points after the "else" part (the assumption is
+                            // that this goto is the very last element of the current branch
                             endSite = goto.targetStmt
-                            // The goto might point back at the beginning of a loop; if so, the end of
-                            // the if/else is denoted by the end of the loop
+                            // The goto might point back at the beginning of a loop; if so, the end
+                            // of the if/else is denoted by the end of the loop
                             if (endSite < branchingSite) {
                                 endSite = cfg.findNaturalLoops().filter(_.head == endSite).head.last
                             } else {
@@ -124,10 +124,10 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
                             cfg.bb(nextBlock).successors.find(_.isInstanceOf[CatchNode]) match {
                                 case Some(cs: CatchNode) ⇒ endSite = cs.endPC
                                 case _ ⇒
-                                    endSite = if (nextBlock > branchingSite) nextBlock else
+                                    endSite = if (nextBlock > branchingSite) nextBlock - 1 else
                                         cfg.findNaturalLoops().find {
                                             _.head == goto.targetStmt
-                                        }.get.last - 1
+                                        }.get.last
                             }
                         }
                     case _ ⇒
@@ -418,11 +418,19 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
         val stack = mutable.Stack[Int](start)
         while (stack.nonEmpty) {
             val popped = stack.pop()
-            val nextBlock = cfg.bb(popped).successors.map {
+            var nextBlock = cfg.bb(popped).successors.map {
                 case bb: BasicBlock ⇒ bb.startPC
                 // Handle Catch Nodes?
                 case _              ⇒ -1
             }.max
+
+            if (pathType == NestedPathType.CondWithAlternative && nextBlock > end) {
+                nextBlock = popped + 1
+                while (!cfg.code.instructions(nextBlock).isInstanceOf[If[V]]) {
+                    nextBlock += 1
+                }
+            }
+
             var containsIf = false
             for (i ← cfg.bb(nextBlock).startPC.to(cfg.bb(nextBlock).endPC)) {
                 if (cfg.code.instructions(i).isInstanceOf[If[V]]) {
@@ -724,10 +732,15 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
      *         other successors. If this is the case, the branching corresponds to one without an
      *         ''else'' branch.
      */
-    protected def isCondWithoutElse(branchingSite: Int, cfg: CFG[Stmt[V], TACStmts[V]]): Boolean = {
+    protected def isCondWithoutElse(
+        branchingSite: Int,
+        cfg:           CFG[Stmt[V], TACStmts[V]],
+        processedIfs:  mutable.Map[Int, Unit.type]
+    ): Boolean = {
         val successorBlocks = cfg.bb(branchingSite).successors
         // CatchNode exists => Regard it as conditional without alternative
         if (successorBlocks.exists(_.isInstanceOf[CatchNode])) {
+            processedIfs(branchingSite) = Unit
             return false
         }
 
@@ -765,7 +778,7 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
 
         if (indexIf != -1) {
             // For else-if constructs
-            isCondWithoutElse(indexIf, cfg)
+            isCondWithoutElse(indexIf, cfg, processedIfs)
         } else {
             // For every successor (except the very last one), execute a DFS to check whether the
             // very last element is a successor. If so, this represents a path past the if (or
@@ -785,7 +798,12 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
                     toVisitStack.pushAll(to.filter(!seenNodes.contains(_)))
                 }
             }
-            reachableCount > 1
+            if (reachableCount > 1) {
+                true
+            } else {
+                processedIfs(branchingSite) = Unit
+                false
+            }
         }
     }
 
@@ -876,7 +894,7 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
     protected def processIf(
         stmt: Int, processedIfs: mutable.Map[Int, Unit.type]
     ): CSInfo = {
-        val csType = determineTypeOfIf(stmt)
+        val csType = determineTypeOfIf(stmt, processedIfs)
         val (startIndex, endIndex) = csType match {
             case NestedPathType.Repetition ⇒
                 processedIfs(stmt) = Unit
@@ -937,13 +955,15 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
      *         [[NestedPathType.TryCatchFinally]] (as their construction does not involve an [[If]]
      *         statement).
      */
-    protected def determineTypeOfIf(stmtIndex: Int): NestedPathType.Value = {
+    protected def determineTypeOfIf(
+        stmtIndex: Int, processedIfs: mutable.Map[Int, Unit.type]
+    ): NestedPathType.Value = {
         // Is the first condition enough to identify loops?
         val loops = cfg.findNaturalLoops()
         // The if might belong to the head or end of the loop
         if (isHeadOfLoop(stmtIndex, loops, cfg) || isEndOfLoop(stmtIndex, loops)) {
             NestedPathType.Repetition
-        } else if (isCondWithoutElse(stmtIndex, cfg)) {
+        } else if (isCondWithoutElse(stmtIndex, cfg, processedIfs)) {
             NestedPathType.CondWithoutAlternative
         } else {
             NestedPathType.CondWithAlternative
@@ -1096,8 +1116,8 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
             // Use a while instead of a foreach loop in order to stop when the parent was found
             while (parent.isEmpty && nextPossibleParentIndex < childrenOf.length) {
                 val possibleParent = childrenOf(nextPossibleParentIndex)
-                // The parent element must fully contain the child
-                if (nextCS._1 > possibleParent._1._1 && nextCS._1 < possibleParent._1._2) {
+                // The parent element must contain the child
+                if (nextCS._1 > possibleParent._1._1 && nextCS._1 <= possibleParent._1._2) {
                     parent = Some(nextPossibleParentIndex)
                 } else {
                     nextPossibleParentIndex += 1
