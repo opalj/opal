@@ -711,8 +711,10 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
         val branches = successors.reverse.tail.reverse
         val lastEle = successors.last
 
-        // If an "if" ends at the end of a loop, it cannot have an else
-        if (cfg.findNaturalLoops().exists(_.last == lastEle - 1)) {
+        // If an "if" ends at the end of a loop (the "if" must be within that loop!), it cannot have
+        // an else
+        val loopOption = cfg.findNaturalLoops().find(_.last == lastEle - 1)
+        if (loopOption.isDefined && loopOption.get.head < branchingSite) {
             return true
         }
 
