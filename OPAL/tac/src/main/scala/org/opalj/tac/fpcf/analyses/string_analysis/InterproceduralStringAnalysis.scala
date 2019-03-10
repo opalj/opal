@@ -267,7 +267,7 @@ class InterproceduralStringAnalysis(
     private def continuation(
         state: InterproceduralComputationState
     )(eps: SomeEPS): ProperPropertyComputationResult = {
-        state.dependees = state.dependees.filter(_.e ne eps.e)
+        state.dependees = state.dependees.filter(_.e != eps.e)
         eps.pk match {
             case TACAI.key ⇒ eps match {
                 case FinalP(tac: TACAI) ⇒
