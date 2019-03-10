@@ -359,7 +359,27 @@ class InterproceduralStringAnalysis(
                         }
                     case InterimLUBP(lb: StringConstancyProperty, ub: StringConstancyProperty) ⇒
                         state.dependees = eps :: state.dependees
-                        getInterimResult(state, lb, ub)
+
+                        // If a new upper bound value is present, recompute a new interim result
+                        var recomputeInterim = false
+                        state.var2IndexMapping(eps.e.asInstanceOf[P]._1).foreach { i ⇒
+                            if (!state.interimFpe2sci.contains(i) ||
+                                ub.stringConstancyInformation != state.interimFpe2sci(i)) {
+                                state.setInterimFpe2Sci(i, ub.stringConstancyInformation)
+                                recomputeInterim = true
+                            }
+                        }
+                        // Either set a new interim result or use the old one if nothing has changed
+                        val ubForInterim = if (recomputeInterim) {
+                            val fpe2SciMapping = state.interimFpe2sci.map {
+                                case (key, value) ⇒ key → ListBuffer(value)
+                            }
+                            StringConstancyProperty(new PathTransformer(state.iHandler).pathToStringTree(
+                                state.computedLeanPath, fpe2SciMapping
+                            ).reduce(true))
+                        } else ub
+
+                        getInterimResult(state, lb, ubForInterim)
                     case _ ⇒
                         state.dependees = eps :: state.dependees
                         getInterimResult(state)

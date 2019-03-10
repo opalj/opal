@@ -94,6 +94,16 @@ object StringConstancyInformation {
     }
 
     /**
+     * @return Returns a [[StringConstancyInformation]] element that corresponds to the lower bound
+     *         from a lattice-based point of view.
+     */
+    def lb: StringConstancyInformation = StringConstancyInformation(
+        StringConstancyLevel.DYNAMIC,
+        StringConstancyType.APPEND,
+        StringConstancyInformation.UnknownWordSymbol
+    )
+
+    /**
      * @return Returns the / a neutral [[StringConstancyInformation]] element, i.e., an element for
      *         which [[StringConstancyInformation.isTheNeutralElement]] is `true`.
      */

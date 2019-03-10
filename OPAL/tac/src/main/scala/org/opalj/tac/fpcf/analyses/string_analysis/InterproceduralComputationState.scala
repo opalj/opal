@@ -71,6 +71,15 @@ case class InterproceduralComputationState(entity: P) {
     val fpe2sci: mutable.Map[Int, ListBuffer[StringConstancyInformation]] = mutable.Map()
 
     /**
+     * A mapping from a value / index of a FlatPathElement to StringConstancyInformation which is
+     * not yet final. For [[fpe2sci]] a list of [[StringConstancyInformation]] is necessary to
+     * compute (intermediate) results which might not be done in a single analysis step. For the
+     * interims, a single [[StringConstancyInformation]] element is sufficient, as it captures the
+     * results from [[fpe2sci]].
+     */
+    val interimFpe2sci: mutable.Map[Int, StringConstancyInformation] = mutable.Map()
+
+    /**
      * An analysis may depend on the evaluation of its parameters. This number indicates how many
      * of such dependencies are still to be computed.
      */
@@ -158,6 +167,20 @@ case class InterproceduralComputationState(entity: P) {
             fpe2sci(defSite).append(sci)
         }
     }
+
+    /**
+     * Sets a value for the [[interimFpe2sci]] map.
+     */
+    def setInterimFpe2Sci(defSite: Int, sci: StringConstancyInformation): Unit =
+        interimFpe2sci(defSite) = sci
+
+    /**
+     * Sets a result for the [[interimFpe2sci]] map. `r` is required to be a final result!
+     */
+    def setInterimFpe2Sci(defSite: Int, r: Result): Unit = appendToFpe2Sci(
+        defSite,
+        StringConstancyProperty.extractFromPPCR(r).stringConstancyInformation,
+    )
 
     /**
      * Takes an entity as well as a definition site and append it to [[var2IndexMapping]].
