@@ -329,8 +329,12 @@ class InterproceduralStringAnalysis(
                                 val pos = state.nonFinalFunctionArgsPos(f)(resultEntity)
                                 val result = Result(resultEntity, p)
                                 state.nonFinalFunctionArgs(f)(pos._1)(pos._2)(pos._3) = result
-                                // TODO: Is that correct? (rather remove only the function from the list)
-                                state.entity2Function.remove(resultEntity)
+                                // Housekeeping
+                                val index = state.entity2Function(resultEntity).indexOf(f)
+                                state.entity2Function(resultEntity).remove(index)
+                                if (state.entity2Function(resultEntity).isEmpty) {
+                                    state.entity2Function.remove(resultEntity)
+                                }
                             }
                             // Continue only after all necessary function parameters are evaluated
                             if (state.entity2Function.nonEmpty) {
