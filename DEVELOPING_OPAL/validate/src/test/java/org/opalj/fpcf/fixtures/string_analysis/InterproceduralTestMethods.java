@@ -528,27 +528,27 @@ public class InterproceduralTestMethods {
         analyzeString(new StringBuilder().append(secretNumber).toString());
     }
 
-//    @StringDefinitionsCollection(
-//            value = "a case where no callers information need to be computed",
-//            stringDefinitions = {
-//                    @StringDefinitions(
-//                            expectedLevel = CONSTANT,
-//                            expectedStrings = "value"
-//                    )
-//            })
-//    public String cyclicDependencyTest(String s) {
-//        String value = getProperty(s);
-//        analyzeString(value);
-//        return value;
-//    }
-//
-//    private String getProperty(String name) {
-//        if (name == null) {
-//            return cyclicDependencyTest("default");
-//        } else {
-//            return "value";
-//        }
-//    }
+    @StringDefinitionsCollection(
+            value = "a case where no callers information need to be computed",
+            stringDefinitions = {
+                    @StringDefinitions(
+                            expectedLevel = DYNAMIC,
+                            expectedStrings = "\\w" // Should be rather (\\w|value)
+                    )
+            })
+    public String cyclicDependencyTest(String s) {
+        String value = getProperty(s);
+        analyzeString(value);
+        return value;
+    }
+
+    private String getProperty(String name) {
+        if (name == null) {
+            return cyclicDependencyTest("default");
+        } else {
+            return "value";
+        }
+    }
 
     private String getRuntimeClassName() {
         return "java.lang.Runtime";
