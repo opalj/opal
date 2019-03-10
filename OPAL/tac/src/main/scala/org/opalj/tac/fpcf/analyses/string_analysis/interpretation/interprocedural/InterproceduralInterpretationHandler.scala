@@ -8,6 +8,7 @@ import org.opalj.fpcf.Result
 import org.opalj.value.ValueInformation
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.FieldAccessInformation
+import org.opalj.br.fpcf.cg.properties.Callees
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.ai.ImmediateVMExceptionsOriginOffset
@@ -43,6 +44,7 @@ import org.opalj.tac.GetStatic
 import org.opalj.tac.TACMethodParameter
 import org.opalj.tac.TACode
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedural.finalizer.GetFieldFinalizer
+import org.opalj.tac.SimpleValueConst
 
 /**
  * `InterproceduralInterpretationHandler` is responsible for processing expressions that are
@@ -95,163 +97,27 @@ class InterproceduralInterpretationHandler(
 
         val callees = state.callees
         stmts(defSite) match {
-            case Assignment(_, _, expr: StringConst) ⇒
-                val result = new StringConstInterpreter(cfg, this).interpret(
-                    expr, defSite
-                ).asInstanceOf[Result]
-                state.appendResultToFpe2Sci(defSite, result)
-                state.setInterimFpe2Sci(defSite, result)
-                processedDefSites.remove(defSite)
-                result
-            case Assignment(_, _, expr: IntConst) ⇒
-                val result = new IntegerValueInterpreter(cfg, this).interpret(
-                    expr, defSite
-                ).asInstanceOf[Result]
-                state.appendResultToFpe2Sci(defSite, result)
-                state.setInterimFpe2Sci(defSite, result)
-                processedDefSites.remove(defSite)
-                result
-            case Assignment(_, _, expr: FloatConst) ⇒
-                val result = new FloatValueInterpreter(cfg, this).interpret(
-                    expr, defSite
-                ).asInstanceOf[Result]
-                state.appendResultToFpe2Sci(defSite, result)
-                state.setInterimFpe2Sci(defSite, result)
-                processedDefSites.remove(defSite)
-                result
-            case Assignment(_, _, expr: DoubleConst) ⇒
-                val result = new DoubleValueInterpreter(cfg, this).interpret(
-                    expr, defSite
-                ).asInstanceOf[Result]
-                state.appendResultToFpe2Sci(defSite, result)
-                state.setInterimFpe2Sci(defSite, result)
-                processedDefSites.remove(defSite)
-                result
+            case Assignment(_, _, expr: StringConst) ⇒ processConstExpr(expr, defSite)
+            case Assignment(_, _, expr: IntConst)    ⇒ processConstExpr(expr, defSite)
+            case Assignment(_, _, expr: FloatConst)  ⇒ processConstExpr(expr, defSite)
+            case Assignment(_, _, expr: DoubleConst) ⇒ processConstExpr(expr, defSite)
             case Assignment(_, _, expr: ArrayLoad[V]) ⇒
-                val r = new ArrayPreparationInterpreter(
-                    cfg, this, state, params
-                ).interpret(expr, defSite)
-                if (!r.isInstanceOf[Result]) {
-                    state.setInterimFpe2Sci(defSite, StringConstancyInformation.lb)
-                    processedDefSites.remove(defSite)
-                }
-                r
-            case Assignment(_, _, expr: New) ⇒
-                val result = new NewInterpreter(cfg, this).interpret(
-                    expr, defSite
-                ).asInstanceOf[Result]
-                state.appendResultToFpe2Sci(defSite, result)
-                state.setInterimFpe2Sci(defSite, result)
-                result
-            case Assignment(_, _, expr: GetStatic) ⇒
-                val result = new InterproceduralGetStaticInterpreter(cfg, this).interpret(
-                    expr, defSite
-                ).asInstanceOf[Result]
-                state.setInterimFpe2Sci(defSite, result)
-                result
-            case ExprStmt(_, expr: GetStatic) ⇒
-                val result = new InterproceduralGetStaticInterpreter(cfg, this).interpret(
-                    expr, defSite
-                ).asInstanceOf[Result]
-                state.setInterimFpe2Sci(defSite, result)
-                result
+                processArrayLoad(expr, defSite, params)
+            case Assignment(_, _, expr: New)                    ⇒ processNew(expr, defSite)
+            case Assignment(_, _, expr: GetStatic)              ⇒ processGetStatic(expr, defSite)
+            case ExprStmt(_, expr: GetStatic)                   ⇒ processGetStatic(expr, defSite)
             case Assignment(_, _, expr: VirtualFunctionCall[V]) ⇒ processVFC(expr, defSite, params)
             case ExprStmt(_, expr: VirtualFunctionCall[V])      ⇒ processVFC(expr, defSite, params)
             case Assignment(_, _, expr: StaticFunctionCall[V]) ⇒
-                val r = new InterproceduralStaticFunctionCallInterpreter(
-                    cfg, this, ps, state, declaredMethods, c
-                ).interpret(expr, defSite)
-                val isFinalResult = r.isInstanceOf[Result]
-                if (!isFinalResult || state.nonFinalFunctionArgs.contains(expr)) {
-                    processedDefSites.remove(defSite)
-                }
-
-                if (isFinalResult) {
-                    state.setInterimFpe2Sci(defSite, r.asInstanceOf[Result])
-                } else {
-                    state.setInterimFpe2Sci(defSite, StringConstancyInformation.lb)
-                }
-
-                r
-            case Assignment(_, _, expr: BinaryExpr[V]) ⇒
-                val result = new BinaryExprInterpreter(cfg, this).interpret(expr, defSite)
-                state.setInterimFpe2Sci(defSite, result.asInstanceOf[Result])
-                state.appendResultToFpe2Sci(defSite, result.asInstanceOf[Result])
-                result
+                processStaticFunctionCall(expr, defSite)
+            case ExprStmt(_, expr: StaticFunctionCall[V]) ⇒ processStaticFunctionCall(expr, defSite)
+            case Assignment(_, _, expr: BinaryExpr[V])    ⇒ processBinaryExpr(expr, defSite)
             case Assignment(_, _, expr: NonVirtualFunctionCall[V]) ⇒
-                val r = new InterproceduralNonVirtualFunctionCallInterpreter(
-                    cfg, this, ps, state, declaredMethods, c
-                ).interpret(expr, defSite)
-                val isFinalResult = r.isInstanceOf[Result]
-                if (!isFinalResult || state.nonFinalFunctionArgs.contains(expr)) {
-                    processedDefSites.remove(defSite)
-                }
-
-                if (isFinalResult) {
-                    state.setInterimFpe2Sci(defSite, r.asInstanceOf[Result])
-                } else {
-                    state.setInterimFpe2Sci(defSite, StringConstancyInformation.lb)
-                }
-
-                r
-            case Assignment(_, _, expr: GetField[V]) ⇒
-                val r = new InterproceduralFieldInterpreter(
-                    state, this, ps, fieldAccessInformation, c
-                ).interpret(expr, defSite)
-                val isFinalResult = r.isInstanceOf[Result]
-                if (!isFinalResult) {
-                    processedDefSites.remove(defSite)
-                }
-
-                if (isFinalResult) {
-                    state.setInterimFpe2Sci(defSite, r.asInstanceOf[Result])
-                } else {
-                    state.setInterimFpe2Sci(defSite, StringConstancyInformation.lb)
-                }
-
-                r
-            case ExprStmt(_, expr: StaticFunctionCall[V]) ⇒
-                val r = new InterproceduralStaticFunctionCallInterpreter(
-                    cfg, this, ps, state, declaredMethods, c
-                ).interpret(expr, defSite)
-                val isFinalResult = r.isInstanceOf[Result]
-                if (!isFinalResult || state.nonFinalFunctionArgs.contains(expr)) {
-                    processedDefSites.remove(defSite)
-                }
-
-                if (isFinalResult) {
-                    state.setInterimFpe2Sci(defSite, r.asInstanceOf[Result])
-                } else {
-                    state.setInterimFpe2Sci(defSite, StringConstancyInformation.lb)
-                }
-
-                r
+                processNonVirtualFunctionCall(expr, defSite)
+            case Assignment(_, _, expr: GetField[V]) ⇒ processGetField(expr, defSite)
             case vmc: VirtualMethodCall[V] ⇒
-                val r = new InterproceduralVirtualMethodCallInterpreter(
-                    cfg, this, callees
-                ).interpret(vmc, defSite)
-
-                val isFinalResult = r.isInstanceOf[Result]
-                if (isFinalResult) {
-                    state.setInterimFpe2Sci(defSite, r.asInstanceOf[Result])
-                } else {
-                    state.setInterimFpe2Sci(defSite, StringConstancyInformation.lb)
-                }
-
-                r
-            case nvmc: NonVirtualMethodCall[V] ⇒
-                val r = new InterproceduralNonVirtualMethodCallInterpreter(
-                    cfg, this, ps, state, declaredMethods, c
-                ).interpret(nvmc, defSite)
-                r match {
-                    case r: Result ⇒
-                        state.setInterimFpe2Sci(defSite, r)
-                        state.appendResultToFpe2Sci(defSite, r)
-                    case _ ⇒
-                        state.setInterimFpe2Sci(defSite, StringConstancyInformation.lb)
-                        processedDefSites.remove(defSite)
-                }
-                r
+                processVirtualMethodCall(vmc, defSite, callees)
+            case nvmc: NonVirtualMethodCall[V] ⇒ processNonVirtualMethodCall(nvmc, defSite)
             case _ ⇒
                 state.setInterimFpe2Sci(defSite, StringConstancyInformation.getNeutralElement)
                 Result(e, StringConstancyProperty.getNeutralElement)
@@ -259,7 +125,68 @@ class InterproceduralInterpretationHandler(
     }
 
     /**
-     * Helper function for interpreting [[VirtualFunctionCall]]s.
+     * Helper / utility function for processing [[StringConst]], [[IntConst]], [[FloatConst]], and
+     * [[DoubleConst]].
+     */
+    private def processConstExpr(
+        constExpr: SimpleValueConst, defSite: Int
+    ): ProperPropertyComputationResult = {
+        val ppcr = constExpr match {
+            case ic: IntConst    ⇒ new IntegerValueInterpreter(cfg, this).interpret(ic, defSite)
+            case fc: FloatConst  ⇒ new FloatValueInterpreter(cfg, this).interpret(fc, defSite)
+            case dc: DoubleConst ⇒ new DoubleValueInterpreter(cfg, this).interpret(dc, defSite)
+            case sc ⇒ new StringConstInterpreter(cfg, this).interpret(
+                sc.asInstanceOf[StringConst], defSite
+            )
+        }
+        val result = ppcr.asInstanceOf[Result]
+        state.appendResultToFpe2Sci(defSite, result)
+        state.setInterimFpe2Sci(defSite, result)
+        processedDefSites.remove(defSite)
+        result
+    }
+
+    /**
+     * Helper / utility function for processing [[ArrayLoad]]s.
+     */
+    private def processArrayLoad(
+        expr: ArrayLoad[V], defSite: Int, params: List[Seq[StringConstancyInformation]]
+    ): ProperPropertyComputationResult = {
+        val r = new ArrayPreparationInterpreter(
+            cfg, this, state, params
+        ).interpret(expr, defSite)
+        if (!r.isInstanceOf[Result]) {
+            state.setInterimFpe2Sci(defSite, StringConstancyInformation.lb)
+            processedDefSites.remove(defSite)
+        }
+        r
+    }
+
+    /**
+     * Helper / utility function for processing [[New]] expressions.
+     */
+    private def processNew(expr: New, defSite: Int): ProperPropertyComputationResult = {
+        val result = new NewInterpreter(cfg, this).interpret(
+            expr, defSite
+        ).asInstanceOf[Result]
+        state.appendResultToFpe2Sci(defSite, result)
+        state.setInterimFpe2Sci(defSite, result)
+        result
+    }
+
+    /**
+     * Helper / utility function for processing [[GetStatic]]s.
+     */
+    private def processGetStatic(expr: GetStatic, defSite: Int): ProperPropertyComputationResult = {
+        val result = new InterproceduralGetStaticInterpreter(cfg, this).interpret(
+            expr, defSite
+        ).asInstanceOf[Result]
+        state.setInterimFpe2Sci(defSite, result)
+        result
+    }
+
+    /**
+     * Helper / utility function for interpreting [[VirtualFunctionCall]]s.
      */
     private def processVFC(
         expr:    VirtualFunctionCall[V],
@@ -295,13 +222,118 @@ class InterproceduralInterpretationHandler(
             processedDefSites.remove(defSite)
         }
 
+        doInterimResultHandling(r, defSite)
+        r
+    }
+
+    /**
+     * Helper / utility function for processing [[StaticFunctionCall]]s.
+     */
+    private def processStaticFunctionCall(
+        expr: StaticFunctionCall[V], defSite: Int
+    ): ProperPropertyComputationResult = {
+        val r = new InterproceduralStaticFunctionCallInterpreter(
+            cfg, this, ps, state, declaredMethods, c
+        ).interpret(expr, defSite)
+        if (!r.isInstanceOf[Result] || state.nonFinalFunctionArgs.contains(expr)) {
+            processedDefSites.remove(defSite)
+        }
+        doInterimResultHandling(r, defSite)
+
+        r
+    }
+
+    /**
+     * Helper / utility function for processing [[BinaryExpr]]s.
+     */
+    private def processBinaryExpr(
+        expr: BinaryExpr[V], defSite: Int
+    ): ProperPropertyComputationResult = {
+        val result = new BinaryExprInterpreter(cfg, this).interpret(expr, defSite)
+        state.setInterimFpe2Sci(defSite, result.asInstanceOf[Result])
+        state.appendResultToFpe2Sci(defSite, result.asInstanceOf[Result])
+        result
+    }
+
+    /**
+     * Helper / utility function for processing [[GetField]]s.
+     */
+    private def processGetField(
+        expr: GetField[V], defSite: Int
+    ): ProperPropertyComputationResult = {
+        val r = new InterproceduralFieldInterpreter(
+            state, this, ps, fieldAccessInformation, c
+        ).interpret(expr, defSite)
+        if (!r.isInstanceOf[Result]) {
+            processedDefSites.remove(defSite)
+        }
+        doInterimResultHandling(r, defSite)
+        r
+    }
+
+    /**
+     * Helper / utility function for processing [[NonVirtualMethodCall]]s.
+     */
+    private def processNonVirtualFunctionCall(
+        expr: NonVirtualFunctionCall[V], defSite: Int
+    ): ProperPropertyComputationResult = {
+        val r = new InterproceduralNonVirtualFunctionCallInterpreter(
+            cfg, this, ps, state, declaredMethods, c
+        ).interpret(expr, defSite)
+        if (!r.isInstanceOf[Result] || state.nonFinalFunctionArgs.contains(expr)) {
+            processedDefSites.remove(defSite)
+        }
+        doInterimResultHandling(r, defSite)
+        r
+    }
+
+    /**
+     * Helper / utility function for processing [[VirtualMethodCall]]s.
+     */
+    def processVirtualMethodCall(
+        expr: VirtualMethodCall[V], defSite: Int, callees: Callees
+    ): ProperPropertyComputationResult = {
+        val r = new InterproceduralVirtualMethodCallInterpreter(
+            cfg, this, callees
+        ).interpret(expr, defSite)
+        doInterimResultHandling(r, defSite)
+        r
+    }
+
+    /**
+     * Helper / utility function for processing [[NonVirtualMethodCall]]s.
+     */
+    private def processNonVirtualMethodCall(
+        nvmc: NonVirtualMethodCall[V], defSite: Int
+    ): ProperPropertyComputationResult = {
+        val r = new InterproceduralNonVirtualMethodCallInterpreter(
+            cfg, this, ps, state, declaredMethods, c
+        ).interpret(nvmc, defSite)
+        r match {
+            case r: Result ⇒
+                state.setInterimFpe2Sci(defSite, r)
+                state.appendResultToFpe2Sci(defSite, r)
+            case _ ⇒
+                state.setInterimFpe2Sci(defSite, StringConstancyInformation.lb)
+                processedDefSites.remove(defSite)
+        }
+        r
+    }
+
+    /**
+     * This function takes a result, which can be final or not, as well as a definition site. This
+     * function handles the steps necessary to provide information for computing intermediate
+     * results.
+     */
+    private def doInterimResultHandling(
+        result: ProperPropertyComputationResult, defSite: Int
+    ): Unit = {
+        val isFinalResult = result.isInstanceOf[Result]
         if (isFinalResult) {
-            state.setInterimFpe2Sci(defSite, r.asInstanceOf[Result])
+            state.setInterimFpe2Sci(defSite, result.asInstanceOf[Result])
         } else {
             state.setInterimFpe2Sci(defSite, StringConstancyInformation.lb)
         }
-
-        r
     }
 
     /**
