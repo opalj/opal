@@ -418,46 +418,49 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
         val stack = mutable.Stack[Int](start)
         while (stack.nonEmpty) {
             val popped = stack.pop()
-            var nextBlock = cfg.bb(popped).successors.map {
-                case bb: BasicBlock ⇒ bb.startPC
-                // Handle Catch Nodes?
-                case _              ⇒ -1
-            }.max
+            if (popped <= end) {
+                var nextBlock = cfg.bb(popped).successors.map {
+                    case bb: BasicBlock ⇒ bb.startPC
+                    // Handle Catch Nodes?
+                    case _              ⇒ -1
+                }.max
 
-            if (pathType == NestedPathType.CondWithAlternative && nextBlock > end) {
-                nextBlock = popped + 1
-                while (!cfg.code.instructions(nextBlock).isInstanceOf[If[V]]) {
-                    nextBlock += 1
-                }
-            }
-
-            var containsIf = false
-            for (i ← cfg.bb(nextBlock).startPC.to(cfg.bb(nextBlock).endPC)) {
-                if (cfg.code.instructions(i).isInstanceOf[If[V]]) {
-                    containsIf = true
-                }
-            }
-
-            if (containsIf) {
-                startEndPairs.append((popped, nextBlock - 1))
-                stack.push(nextBlock)
-            } else {
-                if (popped <= end) {
-                    endSite = nextBlock - 1
-                    if (endSite == start) {
-                        endSite = end
-                    } // The following is necessary to not exceed bounds (might be the case within a
-                    // try block for example)
-                    else if (endSite > end) {
-                        endSite = end
+                if (pathType == NestedPathType.CondWithAlternative && nextBlock > end) {
+                    nextBlock = popped + 1
+                    while (nextBlock < cfg.code.instructions.length - 1 &&
+                        !cfg.code.instructions(nextBlock).isInstanceOf[If[V]]) {
+                        nextBlock += 1
                     }
-                    startEndPairs.append((popped, endSite))
+                }
+
+                var containsIf = false
+                for (i ← cfg.bb(nextBlock).startPC.to(cfg.bb(nextBlock).endPC)) {
+                    if (cfg.code.instructions(i).isInstanceOf[If[V]]) {
+                        containsIf = true
+                    }
+                }
+
+                if (containsIf) {
+                    startEndPairs.append((popped, nextBlock - 1))
+                    stack.push(nextBlock)
+                } else {
+                    if (popped <= end) {
+                        endSite = nextBlock - 1
+                        if (endSite == start) {
+                            endSite = end
+                        } // The following is necessary to not exceed bounds (might be the case
+                        // within a try block for example)
+                        else if (endSite > end) {
+                            endSite = end
+                        }
+                        startEndPairs.append((popped, endSite))
+                    }
                 }
             }
         }
 
         // Append the "else" branch (if present)
-        if (pathType == NestedPathType.CondWithAlternative) {
+        if (pathType == NestedPathType.CondWithAlternative && startEndPairs.last._2 + 1 <= end) {
             startEndPairs.append((startEndPairs.last._2 + 1, end))
         }
 
@@ -470,7 +473,11 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
                     subpathElements.appendAll(startSubpath.to(endSubpath).map(FlatPathElement))
                 }
         }
-        (Path(List(NestedPathElement(subPaths, Some(pathType)))), startEndPairs.toList)
+
+        val pathTypeToUse = if (pathType == NestedPathType.CondWithAlternative &&
+            startEndPairs.length == 1) NestedPathType.CondWithoutAlternative else pathType
+
+        (Path(List(NestedPathElement(subPaths, Some(pathTypeToUse)))), startEndPairs.toList)
     }
 
     /**
