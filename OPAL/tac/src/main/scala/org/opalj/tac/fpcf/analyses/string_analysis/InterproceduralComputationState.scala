@@ -34,9 +34,16 @@ case class InterproceduralComputationState(entity: P) {
     var tac: TACode[TACMethodParameter, DUVar[ValueInformation]] = _
 
     /**
-     * The interpretation handler to use
+     * The interpretation handler to use for computing a final result (if possible).
      */
     var iHandler: InterproceduralInterpretationHandler = _
+
+    /**
+     * The interpretation handler to use for computing intermediate results. We need two handlers
+     * since they have an internal state, e.g., processed def sites, which should not interfere
+     * each other to produce correct results.
+     */
+    var interimIHandler: InterproceduralInterpretationHandler = _
 
     /**
      * The computed lean path that corresponds to the given entity

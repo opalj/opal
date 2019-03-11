@@ -90,11 +90,33 @@ class InterproceduralStringAnalysis(
      */
     private def getInterimResult(
         state: InterproceduralComputationState,
-        lb:    StringConstancyProperty         = StringConstancyProperty.lb,
-        ub:    StringConstancyProperty         = StringConstancyProperty.ub
     ): InterimResult[StringConstancyProperty] = InterimResult(
-        state.entity, lb, ub, state.dependees, continuation(state)
+        state.entity,
+        computeNewLowerBound(state),
+        computeNewUpperBound(state),
+        state.dependees,
+        continuation(state)
     )
+
+    private def computeNewUpperBound(
+        state: InterproceduralComputationState
+    ): StringConstancyProperty = {
+        val fpe2SciMapping = state.interimFpe2sci.map {
+            case (key, value) ⇒ key → ListBuffer(value)
+        }
+        identity(fpe2SciMapping)
+        if (state.computedLeanPath != null) {
+            StringConstancyProperty(new PathTransformer(state.interimIHandler).pathToStringTree(
+                state.computedLeanPath, fpe2SciMapping
+            ).reduce(true))
+        } else {
+            StringConstancyProperty.lb
+        }
+    }
+
+    private def computeNewLowerBound(
+        state: InterproceduralComputationState
+    ): StringConstancyProperty = StringConstancyProperty.lb
 
     def analyze(data: P): ProperPropertyComputationResult = {
         val state = InterproceduralComputationState(data)
@@ -141,6 +163,9 @@ class InterproceduralStringAnalysis(
         if (state.iHandler == null) {
             state.iHandler = InterproceduralInterpretationHandler(
                 state.tac, ps, declaredMethods, fieldAccessInformation, state, continuation(state)
+            )
+            state.interimIHandler = InterproceduralInterpretationHandler(
+                state.tac, ps, declaredMethods, fieldAccessInformation, state.copy(), continuation(state)
             )
         }
 
@@ -359,29 +384,12 @@ class InterproceduralStringAnalysis(
                         } else {
                             determinePossibleStrings(state)
                         }
-                    case InterimLUBP(lb: StringConstancyProperty, ub: StringConstancyProperty) ⇒
+                    case InterimLUBP(_: StringConstancyProperty, ub: StringConstancyProperty) ⇒
                         state.dependees = eps :: state.dependees
-
-                        // If a new upper bound value is present, recompute a new interim result
-                        var recomputeInterim = false
                         state.var2IndexMapping(eps.e.asInstanceOf[P]._1).foreach { i ⇒
-                            if (!state.interimFpe2sci.contains(i) ||
-                                ub.stringConstancyInformation != state.interimFpe2sci(i)) {
                                 state.setInterimFpe2Sci(i, ub.stringConstancyInformation)
-                                recomputeInterim = true
-                            }
                         }
-                        // Either set a new interim result or use the old one if nothing has changed
-                        val ubForInterim = if (recomputeInterim) {
-                            val fpe2SciMapping = state.interimFpe2sci.map {
-                                case (key, value) ⇒ key → ListBuffer(value)
-                            }
-                            StringConstancyProperty(new PathTransformer(state.iHandler).pathToStringTree(
-                                state.computedLeanPath, fpe2SciMapping
-                            ).reduce(true))
-                        } else ub
-
-                        getInterimResult(state, lb, ubForInterim)
+                        getInterimResult(state)
                     case _ ⇒
                         state.dependees = eps :: state.dependees
                         getInterimResult(state)
@@ -853,7 +861,7 @@ sealed trait InterproceduralStringAnalysisScheduler extends FPCFAnalysisSchedule
  * Executor for the lazy analysis.
  */
 object LazyInterproceduralStringAnalysis
-    extends InterproceduralStringAnalysisScheduler with FPCFLazyAnalysisScheduler {
+        extends InterproceduralStringAnalysisScheduler with FPCFLazyAnalysisScheduler {
 
     override def register(
         p: SomeProject, ps: PropertyStore, analysis: InitializationData
