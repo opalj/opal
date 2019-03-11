@@ -550,6 +550,29 @@ public class InterproceduralTestMethods {
         }
     }
 
+    @StringDefinitionsCollection(
+            value = "a case where a non virtual function has multiple return values",
+            stringDefinitions = {
+                    @StringDefinitions(
+                            expectedLevel = CONSTANT,
+                            expectedStrings = "(One|val|java.lang.Object)"
+                    )
+            })
+    public void severalReturnValuesTest1() {
+        analyzeString(severalReturnValuesFunction("val", 42));
+    }
+
+    /**
+     * Belongs to severalReturnValuesTest1.
+     */
+    private String severalReturnValuesFunction(String s, int i) {
+        switch (i) {
+        case 0: return getObjectClassName();
+        case 1: return "One";
+        default: return s;
+        }
+    }
+
     private String getRuntimeClassName() {
         return "java.lang.Runtime";
     }
@@ -572,6 +595,10 @@ public class InterproceduralTestMethods {
 
     private String addQuestionMark(String s) {
         return s + "?";
+    }
+
+    private String getObjectClassName() {
+        return "java.lang.Object";
     }
 
 }
