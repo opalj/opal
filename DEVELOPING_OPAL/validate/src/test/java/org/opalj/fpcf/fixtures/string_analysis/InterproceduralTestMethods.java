@@ -6,6 +6,7 @@ import org.opalj.fpcf.fixtures.string_analysis.hierarchies.GreetingService;
 import org.opalj.fpcf.fixtures.string_analysis.hierarchies.HelloGreeting;
 import org.opalj.fpcf.properties.string_analysis.StringDefinitions;
 import org.opalj.fpcf.properties.string_analysis.StringDefinitionsCollection;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import javax.management.remote.rmi.RMIServer;
 import java.io.File;
@@ -596,6 +597,44 @@ public class InterproceduralTestMethods {
         } else {
             return getHelperClass();
         }
+    }
+
+    @StringDefinitionsCollection(
+            value = "a case where a non-virtual function has no return values at all",
+            stringDefinitions = {
+                    @StringDefinitions(
+                            expectedLevel = DYNAMIC,
+                            expectedStrings = "\\w"
+                    )
+            })
+    public void functionWithNoReturnValueTest1() {
+        analyzeString(noReturnFunction1());
+    }
+
+    /**
+     * Belongs to functionWithNoReturnValueTest1.
+     */
+    public String noReturnFunction1() {
+        throw new NotImplementedException();
+    }
+
+    @StringDefinitionsCollection(
+            value = "a case where a static function has no return values at all",
+            stringDefinitions = {
+                    @StringDefinitions(
+                            expectedLevel = DYNAMIC,
+                            expectedStrings = "\\w"
+                    )
+            })
+    public void functionWithNoReturnValueTest2() {
+        analyzeString(noReturnFunction2());
+    }
+
+    /**
+     * Belongs to functionWithNoReturnValueTest2.
+     */
+    public static String noReturnFunction2() {
+        throw new NotImplementedException();
     }
 
     private String getRuntimeClassName() {
