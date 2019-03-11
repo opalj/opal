@@ -791,7 +791,7 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
             // For every successor (except the very last one), execute a DFS to check whether the
             // very last element is a successor. If so, this represents a path past the if (or
             // if-elseif).
-            var reachableCount = 0
+            var reachableCount = successors.count(_ == lastEle)
             successors.foreach { next ⇒
                 val seenNodes = ListBuffer[CFGNode](cfg.bb(branchingSite), cfg.bb(next))
                 val toVisitStack = mutable.Stack[CFGNode](cfg.bb(next).successors.toArray: _*)
