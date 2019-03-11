@@ -10,19 +10,14 @@ import org.opalj.fpcf.Result
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.cfg.CFG
 import org.opalj.br.fpcf.properties.StringConstancyProperty
-import org.opalj.br.Method
 import org.opalj.tac.StaticFunctionCall
 import org.opalj.tac.Stmt
 import org.opalj.tac.TACStmts
 import org.opalj.tac.fpcf.analyses.string_analysis.V
-import org.opalj.tac.ReturnValue
-import org.opalj.tac.fpcf.analyses.string_analysis
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.AbstractStringInterpreter
 import org.opalj.tac.fpcf.analyses.string_analysis.InterproceduralComputationState
 import org.opalj.tac.fpcf.analyses.string_analysis.InterproceduralStringAnalysis
-import org.opalj.tac.TACMethodParameter
-import org.opalj.tac.TACode
-import org.opalj.tac.fpcf.analyses.string_analysis.P
+import org.opalj.tac.ReturnValue
 
 /**
  * The `InterproceduralStaticFunctionCallInterpreter` is responsible for processing
@@ -44,15 +39,6 @@ class InterproceduralStaticFunctionCallInterpreter(
 ) extends AbstractStringInterpreter(cfg, exprHandler) {
 
     override type T = StaticFunctionCall[V]
-
-    private def extractReturnsFromFunction(
-        tac: TACode[TACMethodParameter, string_analysis.V],
-        m:   Method
-    ): P = {
-        val ret = tac.stmts.find(_.isInstanceOf[ReturnValue[V]]).get
-        val uvar = ret.asInstanceOf[ReturnValue[V]].expr.asVar
-        (uvar, m)
-    }
 
     /**
      * This function always returns a list with a single element consisting of
@@ -104,10 +90,13 @@ class InterproceduralStaticFunctionCallInterpreter(
         val nonFinalResults = getNonFinalParameters(params)
         if (nonFinalResults.nonEmpty) {
             if (tac.isDefined) {
-                val e = extractReturnsFromFunction(tac.get, m)
-                val eps = ps(e, StringConstancyProperty.key)
-                state.dependees = eps :: state.dependees
-                state.appendToVar2IndexMapping(e._1, defSite)
+                val returns = tac.get.stmts.filter(_.isInstanceOf[ReturnValue[V]])
+                returns.foreach { ret ⇒
+                    val entity = (ret.asInstanceOf[ReturnValue[V]].expr.asVar, m)
+                    val eps = ps(entity, StringConstancyProperty.key)
+                    state.dependees = eps :: state.dependees
+                    state.appendToVar2IndexMapping(entity._1, defSite)
+                }
             }
             state.nonFinalFunctionArgs(instr) = params
             state.appendToMethodPrep2defSite(m, defSite)
@@ -120,23 +109,33 @@ class InterproceduralStaticFunctionCallInterpreter(
         if (tac.isDefined) {
             state.removeFromMethodPrep2defSite(m, defSite)
             // TAC available => Get return UVar and start the string analysis
-            val entity = extractReturnsFromFunction(tac.get, m)
-            InterproceduralStringAnalysis.registerParams(entity, evaluatedParams)
+            val returns = tac.get.stmts.filter(_.isInstanceOf[ReturnValue[V]])
+            if (returns.isEmpty) {
+                // A function without returns, e.g., because it is guaranteed to throw an exception,
+                // is approximated with the lower bound
+                Result(instr, StringConstancyProperty.lb)
+            } else {
+                val results = returns.map { ret ⇒
+                    val entity = (ret.asInstanceOf[ReturnValue[V]].expr.asVar, m)
+                    InterproceduralStringAnalysis.registerParams(entity, evaluatedParams)
 
-            val eps = ps(entity, StringConstancyProperty.key)
-            eps match {
-                case FinalEP(e, p) ⇒
-                    Result(e, p)
-                case _ ⇒
-                    state.dependees = eps :: state.dependees
-                    state.appendToVar2IndexMapping(entity._1, defSite)
-                    InterimResult(
-                        entity,
-                        StringConstancyProperty.lb,
-                        StringConstancyProperty.ub,
-                        List(),
-                        c
-                    )
+                    val eps = ps(entity, StringConstancyProperty.key)
+                    eps match {
+                        case FinalEP(e, p) ⇒
+                            Result(e, p)
+                        case _ ⇒
+                            state.dependees = eps :: state.dependees
+                            state.appendToVar2IndexMapping(entity._1, defSite)
+                            InterimResult(
+                                entity,
+                                StringConstancyProperty.lb,
+                                StringConstancyProperty.ub,
+                                List(),
+                                c
+                            )
+                    }
+                }
+                results.find(!_.isInstanceOf[Result]).getOrElse(results.head)
             }
         } else {
             // No TAC => Register dependee and continue
