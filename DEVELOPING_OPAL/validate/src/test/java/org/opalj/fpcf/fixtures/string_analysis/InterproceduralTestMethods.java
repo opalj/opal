@@ -573,6 +573,31 @@ public class InterproceduralTestMethods {
         }
     }
 
+    @StringDefinitionsCollection(
+            value = "a case where a non static function has multiple return values",
+            stringDefinitions = {
+                    @StringDefinitions(
+                            expectedLevel = CONSTANT,
+                            expectedStrings = "(that's odd|my.helper.Class)"
+                    )
+            })
+    public void severalReturnValuesTest2() {
+        analyzeString(severalReturnValuesStaticFunction(42));
+    }
+
+    /**
+     * Belongs to severalReturnValuesTest2.
+     */
+    private static String severalReturnValuesStaticFunction(int i) {
+        // The ternary operator would create only a single "return" statement which is not what we
+        // want here
+        if (i % 2 != 0) {
+            return "that's odd";
+        } else {
+            return getHelperClass();
+        }
+    }
+
     private String getRuntimeClassName() {
         return "java.lang.Runtime";
     }
@@ -599,6 +624,10 @@ public class InterproceduralTestMethods {
 
     private String getObjectClassName() {
         return "java.lang.Object";
+    }
+
+    private static String getHelperClass() {
+        return "my.helper.Class";
     }
 
 }
