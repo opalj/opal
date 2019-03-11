@@ -5,6 +5,7 @@ import scala.collection.mutable.ListBuffer
 
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
+import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.Property
 import org.opalj.br.cfg.CFG
 import org.opalj.br.fpcf.properties.StringConstancyProperty
@@ -82,9 +83,20 @@ class ArrayPreparationInterpreter(
         if (interims.isDefined) {
             interims.get
         } else {
-            val resultSci = StringConstancyInformation.reduceMultiple(results.map {
+            var resultSci = StringConstancyInformation.reduceMultiple(results.map {
                 _.asFinal.p.asInstanceOf[StringConstancyProperty].stringConstancyInformation
             })
+            // It might be that there are no results; in such a case, set the string information to
+            // the lower bound and manually add an entry to the results list
+            if (resultSci.isTheNeutralElement) {
+                resultSci = StringConstancyInformation.lb
+            }
+            if (results.isEmpty) {
+                results.append(FinalEP(
+                    (instr.arrayRef.asVar, state.entity._2), StringConstancyProperty(resultSci)
+                ))
+            }
+
             state.appendToFpe2Sci(defSite, resultSci)
             results.head
         }
