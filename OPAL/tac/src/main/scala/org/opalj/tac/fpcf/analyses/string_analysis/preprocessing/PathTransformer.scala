@@ -40,10 +40,24 @@ class PathTransformer(val interpretationHandler: InterpretationHandler) {
                     StringConstancyInformation.reduceMultiple(fpe2Sci(fpe.element))
                 } else {
                     val r = interpretationHandler.processDefSite(fpe.element)
-                    val p = r.asFinal.p.asInstanceOf[StringConstancyProperty]
-                    val sci = p.stringConstancyInformation
-                    fpe2Sci(fpe.element) = ListBuffer(sci)
-                    sci
+                    val sciToAdd = if (r.isFinal) {
+                        r.asFinal.p.asInstanceOf[StringConstancyProperty].stringConstancyInformation
+                    } else {
+                        // processDefSite is not guaranteed to return a StringConstancyProperty =>
+                        // fall back to lower bound is necessary
+                        if (r.isEPK || r.isEPS) {
+                            StringConstancyInformation.lb
+                        } else {
+                            r.asInterim.ub match {
+                                case property: StringConstancyProperty ⇒
+                                    property.stringConstancyInformation
+                                case _ ⇒
+                                    StringConstancyInformation.lb
+                            }
+                        }
+                    }
+                    fpe2Sci(fpe.element) = ListBuffer(sciToAdd)
+                    sciToAdd
                 }
                 if (sci.isTheNeutralElement) {
                     None
