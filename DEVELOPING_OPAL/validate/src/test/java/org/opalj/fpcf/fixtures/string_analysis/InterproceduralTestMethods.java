@@ -600,8 +600,12 @@ public class InterproceduralTestMethods {
     }
 
     @StringDefinitionsCollection(
-            value = "a case where a non-virtual function has no return values at all",
+            value = "a case where a non-virtual and a static function have no return values at all",
             stringDefinitions = {
+                    @StringDefinitions(
+                            expectedLevel = DYNAMIC,
+                            expectedStrings = "\\w"
+                    ),
                     @StringDefinitions(
                             expectedLevel = DYNAMIC,
                             expectedStrings = "\\w"
@@ -609,6 +613,7 @@ public class InterproceduralTestMethods {
             })
     public void functionWithNoReturnValueTest1() {
         analyzeString(noReturnFunction1());
+        analyzeString(noReturnFunction2());
     }
 
     /**
@@ -618,20 +623,8 @@ public class InterproceduralTestMethods {
         throw new NotImplementedException();
     }
 
-    @StringDefinitionsCollection(
-            value = "a case where a static function has no return values at all",
-            stringDefinitions = {
-                    @StringDefinitions(
-                            expectedLevel = DYNAMIC,
-                            expectedStrings = "\\w"
-                    )
-            })
-    public void functionWithNoReturnValueTest2() {
-        analyzeString(noReturnFunction2());
-    }
-
     /**
-     * Belongs to functionWithNoReturnValueTest2.
+     * Belongs to functionWithNoReturnValueTest1.
      */
     public static String noReturnFunction2() {
         throw new NotImplementedException();
