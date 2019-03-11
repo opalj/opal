@@ -150,34 +150,33 @@ class VirtualFunctionCallPreparationInterpreter(
             val (_, tac) = getTACAI(ps, nextMethod, state)
             if (tac.isDefined) {
                 state.methodPrep2defSite.remove(nextMethod)
-                // It might be that a function has no return value, e. g., in case it is guaranteed
-                // to throw an exception (see, e.g.,
-                // com.sun.org.apache.xpath.internal.objects.XRTreeFragSelectWrapper#str)
-                if (!tac.get.stmts.exists(_.isInstanceOf[ReturnValue[V]])) {
+                val returns = tac.get.stmts.filter(_.isInstanceOf[ReturnValue[V]])
+                if (returns.isEmpty) {
+                    // It might be that a function has no return value, e. g., in case it is
+                    // guaranteed to throw an exception
                     Result(instr, StringConstancyProperty.lb)
                 } else {
-                    // TAC and return available => Get return UVar and start the string analysis
-                    val ret = tac.get.stmts.find(_.isInstanceOf[ReturnValue[V]]).get
-                    val uvar = ret.asInstanceOf[ReturnValue[V]].expr.asVar
-                    val entity = (uvar, nextMethod)
-
-                    InterproceduralStringAnalysis.registerParams(entity, evaluatedParams)
-                    val eps = ps(entity, StringConstancyProperty.key)
-                    eps match {
-                        case r: Result ⇒
-                            state.appendResultToFpe2Sci(defSite, r)
-                            r
-                        case _ ⇒
-                            state.dependees = eps :: state.dependees
-                            state.appendToVar2IndexMapping(uvar, defSite)
-                            InterimResult(
-                                entity,
-                                StringConstancyProperty.lb,
-                                StringConstancyProperty.ub,
-                                List(),
-                                c
-                            )
+                    val results = returns.map { ret ⇒
+                        val entity = (ret.asInstanceOf[ReturnValue[V]].expr.asVar, nextMethod)
+                        InterproceduralStringAnalysis.registerParams(entity, evaluatedParams)
+                        val eps = ps(entity, StringConstancyProperty.key)
+                        eps match {
+                            case r: Result ⇒
+                                state.appendResultToFpe2Sci(defSite, r)
+                                r
+                            case _ ⇒
+                                state.dependees = eps :: state.dependees
+                                state.appendToVar2IndexMapping(entity._1, defSite)
+                                InterimResult(
+                                    entity,
+                                    StringConstancyProperty.lb,
+                                    StringConstancyProperty.ub,
+                                    List(),
+                                    c
+                                )
+                        }
                     }
+                    results.find(!_.isInstanceOf[Result]).getOrElse(results.head)
                 }
             } else {
                 state.appendToMethodPrep2defSite(nextMethod, defSite)
