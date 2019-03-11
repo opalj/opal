@@ -5,6 +5,7 @@ import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
 import org.opalj.fpcf.Entity
+import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.InterimLUBP
 import org.opalj.fpcf.InterimResult
@@ -213,7 +214,8 @@ class InterproceduralStringAnalysis(
         // Interpret a function / method parameter using the parameter information in state
         if (defSites.head < 0) {
             val r = state.iHandler.processDefSite(defSites.head, state.params.toList)
-            return Result(state.entity, StringConstancyProperty.extractFromPPCR(r))
+            val sci = r.asFinal.p.asInstanceOf[StringConstancyProperty].stringConstancyInformation
+            return Result(state.entity, StringConstancyProperty(sci))
         }
 
         val call = stmts(defSites.head).asAssignment.expr
@@ -308,32 +310,32 @@ class InterproceduralStringAnalysis(
             }
             case StringConstancyProperty.key ⇒
                 eps match {
-                    case FinalP(p: StringConstancyProperty) ⇒
-                        val resultEntity = eps.e.asInstanceOf[P]
+                    case FinalEP(entity, p: StringConstancyProperty) ⇒
+                        val e = entity.asInstanceOf[P]
                         // If necessary, update the parameter information with which the
                         // surrounding function / method of the entity was called with
-                        if (state.paramResultPositions.contains(resultEntity)) {
-                            val pos = state.paramResultPositions(resultEntity)
+                        if (state.paramResultPositions.contains(e)) {
+                            val pos = state.paramResultPositions(e)
                             state.params(pos._1)(pos._2) = p.stringConstancyInformation
-                            state.paramResultPositions.remove(resultEntity)
+                            state.paramResultPositions.remove(e)
                             state.parameterDependeesCount -= 1
                         }
 
                         // If necessary, update parameter information of function calls
-                        if (state.entity2Function.contains(resultEntity)) {
-                            state.var2IndexMapping(resultEntity._1).foreach(state.appendToFpe2Sci(
+                        if (state.entity2Function.contains(e)) {
+                            state.var2IndexMapping(e._1).foreach(state.appendToFpe2Sci(
                                 _, p.stringConstancyInformation
                             ))
                             // Update the state
-                            state.entity2Function(resultEntity).foreach { f ⇒
-                                val pos = state.nonFinalFunctionArgsPos(f)(resultEntity)
-                                val result = Result(resultEntity, p)
-                                state.nonFinalFunctionArgs(f)(pos._1)(pos._2)(pos._3) = result
+                            state.entity2Function(e).foreach { f ⇒
+                                val pos = state.nonFinalFunctionArgsPos(f)(e)
+                                val finalEp = FinalEP(e, p)
+                                state.nonFinalFunctionArgs(f)(pos._1)(pos._2)(pos._3) = finalEp
                                 // Housekeeping
-                                val index = state.entity2Function(resultEntity).indexOf(f)
-                                state.entity2Function(resultEntity).remove(index)
-                                if (state.entity2Function(resultEntity).isEmpty) {
-                                    state.entity2Function.remove(resultEntity)
+                                val index = state.entity2Function(e).indexOf(f)
+                                state.entity2Function(e).remove(index)
+                                if (state.entity2Function(e).isEmpty) {
+                                    state.entity2Function.remove(e)
                                 }
                             }
                             // Continue only after all necessary function parameters are evaluated
@@ -521,9 +523,12 @@ class InterproceduralStringAnalysis(
         p.elements.foreach {
             case FlatPathElement(index) ⇒
                 if (!state.fpe2sci.contains(index)) {
-                    state.iHandler.processDefSite(index, state.params.toList) match {
-                        case r: Result ⇒ state.appendResultToFpe2Sci(index, r, reset = true)
-                        case _         ⇒ hasFinalResult = false
+                    val eOptP = state.iHandler.processDefSite(index, state.params.toList)
+                    if (eOptP.isFinal) {
+                        val p = eOptP.asFinal.p.asInstanceOf[StringConstancyProperty]
+                        state.appendToFpe2Sci(index, p.stringConstancyInformation, reset = true)
+                    } else {
+                        hasFinalResult = false
                     }
                 }
             case npe: NestedPathElement ⇒

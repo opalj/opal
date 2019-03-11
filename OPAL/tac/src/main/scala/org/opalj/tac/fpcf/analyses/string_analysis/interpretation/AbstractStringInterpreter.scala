@@ -4,11 +4,10 @@ package org.opalj.tac.fpcf.analyses.string_analysis.interpretation
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
+import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
-import org.opalj.fpcf.InterimResult
-import org.opalj.fpcf.ProperPropertyComputationResult
+import org.opalj.fpcf.Property
 import org.opalj.fpcf.PropertyStore
-import org.opalj.fpcf.Result
 import org.opalj.value.ValueInformation
 import org.opalj.br.cfg.CFG
 import org.opalj.br.Method
@@ -146,35 +145,32 @@ abstract class AbstractStringInterpreter(
                 case (nextParam, middleIndex) ⇒
                     nextParam.asVar.definedBy.toArray.sorted.zipWithIndex.map {
                         case (ds, innerIndex) ⇒
-                            val r = iHandler.processDefSite(ds)
-                            if (!r.isInstanceOf[Result]) {
-                                val interim = r.asInstanceOf[InterimResult[StringConstancyProperty]]
+                            val ep = iHandler.processDefSite(ds)
+                            if (ep.isRefinable) {
                                 if (!functionArgsPos.contains(funCall)) {
                                     functionArgsPos(funCall) = mutable.Map()
                                 }
-                                val e = interim.eps.e.asInstanceOf[P]
+                                val e = ep.e.asInstanceOf[P]
                                 functionArgsPos(funCall)(e) = (outerIndex, middleIndex, innerIndex)
                                 if (!entity2function.contains(e)) {
                                     entity2function(e) = ListBuffer()
                                 }
                                 entity2function(e).append(funCall)
                             }
-                            r
+                            ep
                     }.to[ListBuffer]
             }.to[ListBuffer]
     }.to[ListBuffer]
 
     /**
      * This function checks whether the interpretation of parameters, as, e.g., produced by
-     * [[evaluateParameters()]], is final or not and returns all results not of type [[Result]] as a
-     * list. Hence, if this function returns an empty list, all parameters are fully evaluated.
+     * [[evaluateParameters()]], is final or not and returns all refineables as a list. Hence, if
+     * this function returns an empty list, all parameters are fully evaluated.
      */
     protected def getNonFinalParameters(
-        evaluatedParameters: Seq[Seq[Seq[ProperPropertyComputationResult]]]
-    ): List[InterimResult[StringConstancyProperty]] =
-        evaluatedParameters.flatten.flatten.filter { !_.isInstanceOf[Result] }.map {
-            _.asInstanceOf[InterimResult[StringConstancyProperty]]
-        }.toList
+        evaluatedParameters: Seq[Seq[Seq[EOptionP[Entity, Property]]]]
+    ): List[EOptionP[Entity, Property]] =
+        evaluatedParameters.flatten.flatten.filter { _.isRefinable }.toList
 
     /**
      * convertEvaluatedParameters takes a list of evaluated / interpreted parameters as, e.g.,
@@ -183,12 +179,14 @@ abstract class AbstractStringInterpreter(
      * all results in the inner-most sequence are final!
      */
     protected def convertEvaluatedParameters(
-        evaluatedParameters: Seq[Seq[Seq[ProperPropertyComputationResult]]]
+        evaluatedParameters: Seq[Seq[Seq[EOptionP[Entity, Property]]]]
     ): ListBuffer[ListBuffer[StringConstancyInformation]] = evaluatedParameters.map { paramList ⇒
         paramList.map { param ⇒
-            StringConstancyInformation.reduceMultiple(param.map { paramInterpr ⇒
-                StringConstancyProperty.extractFromPPCR(paramInterpr).stringConstancyInformation
-            })
+            StringConstancyInformation.reduceMultiple(
+                param.map {
+                    _.asFinal.p.asInstanceOf[StringConstancyProperty].stringConstancyInformation
+                }
+            )
         }.to[ListBuffer]
     }.to[ListBuffer]
 
@@ -210,6 +208,6 @@ abstract class AbstractStringInterpreter(
      *         the definition site, this function returns the interpreted instruction as entity.
      *         Thus, the entity needs to be replaced by the calling client.
      */
-    def interpret(instr: T, defSite: Int): ProperPropertyComputationResult
+    def interpret(instr: T, defSite: Int): EOptionP[Entity, Property]
 
 }

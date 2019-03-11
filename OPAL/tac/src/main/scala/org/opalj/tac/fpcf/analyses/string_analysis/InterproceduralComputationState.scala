@@ -7,12 +7,10 @@ import scala.collection.mutable.ListBuffer
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.Property
-import org.opalj.fpcf.Result
 import org.opalj.value.ValueInformation
 import org.opalj.br.fpcf.cg.properties.Callees
 import org.opalj.br.fpcf.cg.properties.CallersProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
-import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.Method
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.Path
 import org.opalj.tac.DUVar
@@ -141,18 +139,6 @@ case class InterproceduralComputationState(entity: P) {
     val isVFCFullyPrepared: mutable.Map[VirtualFunctionCall[V], Boolean] = mutable.Map()
 
     /**
-     * Takes a definition site as well as a result and extends the [[fpe2sci]] map accordingly,
-     * however, only if `defSite` is not yet present.
-     */
-    def appendResultToFpe2Sci(
-        defSite: Int, r: Result, reset: Boolean = false
-    ): Unit = appendToFpe2Sci(
-        defSite,
-        StringConstancyProperty.extractFromPPCR(r).stringConstancyInformation,
-        reset
-    )
-
-    /**
      * Takes a definition site as well as [[StringConstancyInformation]] and extends the [[fpe2sci]]
      * map accordingly, however, only if `defSite` is not yet present and `sci` not present within
      * the list of `defSite`.
@@ -173,14 +159,6 @@ case class InterproceduralComputationState(entity: P) {
      */
     def setInterimFpe2Sci(defSite: Int, sci: StringConstancyInformation): Unit =
         interimFpe2sci(defSite) = sci
-
-    /**
-     * Sets a result for the [[interimFpe2sci]] map. `r` is required to be a final result!
-     */
-    def setInterimFpe2Sci(defSite: Int, r: Result): Unit = appendToFpe2Sci(
-        defSite,
-        StringConstancyProperty.extractFromPPCR(r).stringConstancyInformation,
-    )
 
     /**
      * Takes an entity as well as a definition site and append it to [[var2IndexMapping]].

@@ -161,8 +161,8 @@ class IntraproceduralStringAnalysis(
             val interHandler = IntraproceduralInterpretationHandler(tac)
             sci = StringConstancyInformation.reduceMultiple(
                 uvar.definedBy.toArray.sorted.map { ds ⇒
-                    val r = interHandler.processDefSite(ds).asInstanceOf[Result]
-                    r.finalEP.p.asInstanceOf[StringConstancyProperty].stringConstancyInformation
+                    val r = interHandler.processDefSite(ds).asFinal
+                    r.p.asInstanceOf[StringConstancyProperty].stringConstancyInformation
                 }
             )
         }

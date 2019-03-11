@@ -4,7 +4,9 @@ package org.opalj.tac.fpcf.analyses.string_analysis.interpretation
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
-import org.opalj.fpcf.ProperPropertyComputationResult
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.EOptionP
+import org.opalj.fpcf.Property
 import org.opalj.value.ValueInformation
 import org.opalj.br.cfg.CFG
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
@@ -60,7 +62,7 @@ abstract class InterpretationHandler(tac: TACode[TACMethodParameter, DUVar[Value
     def processDefSite(
         defSite: Int,
         params:  List[Seq[StringConstancyInformation]] = List()
-    ): ProperPropertyComputationResult
+    ): EOptionP[Entity, Property]
 
     /**
      * [[InterpretationHandler]]s keeps an internal state for correct and faster processing. As

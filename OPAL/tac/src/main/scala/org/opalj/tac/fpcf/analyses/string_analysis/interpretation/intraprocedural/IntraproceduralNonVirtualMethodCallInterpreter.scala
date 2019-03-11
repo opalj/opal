@@ -3,8 +3,9 @@ package org.opalj.tac.fpcf.analyses.string_analysis.interpretation.intraprocedur
 
 import scala.collection.mutable.ListBuffer
 
-import org.opalj.fpcf.ProperPropertyComputationResult
-import org.opalj.fpcf.Result
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.EOptionP
+import org.opalj.fpcf.FinalEP
 import org.opalj.br.cfg.CFG
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.br.fpcf.properties.StringConstancyProperty
@@ -49,12 +50,12 @@ class IntraproceduralNonVirtualMethodCallInterpreter(
      */
     override def interpret(
         instr: NonVirtualMethodCall[V], defSite: Int
-    ): ProperPropertyComputationResult = {
+    ): EOptionP[Entity, StringConstancyProperty] = {
         val prop = instr.name match {
             case "<init>" ⇒ interpretInit(instr)
             case _        ⇒ StringConstancyProperty.getNeutralElement
         }
-        Result(instr, prop)
+        FinalEP(instr, prop)
     }
 
     /**
@@ -70,9 +71,9 @@ class IntraproceduralNonVirtualMethodCallInterpreter(
             case _ ⇒
                 val scis = ListBuffer[StringConstancyInformation]()
                 init.params.head.asVar.definedBy.foreach { ds ⇒
-                    val r = exprHandler.processDefSite(ds).asInstanceOf[Result]
+                    val r = exprHandler.processDefSite(ds).asFinal
                     scis.append(
-                        r.finalEP.p.asInstanceOf[StringConstancyProperty].stringConstancyInformation
+                        r.p.asInstanceOf[StringConstancyProperty].stringConstancyInformation
                     )
                 }
                 val reduced = StringConstancyInformation.reduceMultiple(scis)

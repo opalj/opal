@@ -1,8 +1,10 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedural
 
-import org.opalj.fpcf.ProperPropertyComputationResult
-import org.opalj.fpcf.Result
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.EOptionP
+import org.opalj.fpcf.FinalEP
+import org.opalj.fpcf.Property
 import org.opalj.br.cfg.CFG
 import org.opalj.br.fpcf.cg.properties.Callees
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
@@ -48,14 +50,14 @@ class InterproceduralVirtualMethodCallInterpreter(
      *
      * @see [[AbstractStringInterpreter.interpret]]
      */
-    override def interpret(instr: T, defSite: Int): ProperPropertyComputationResult = {
+    override def interpret(instr: T, defSite: Int): EOptionP[Entity, Property] = {
         val sci = instr.name match {
             case "setLength" ⇒ StringConstancyInformation(
                 StringConstancyLevel.CONSTANT, StringConstancyType.RESET
             )
             case _ ⇒ StringConstancyInformation.getNeutralElement
         }
-        Result(instr, StringConstancyProperty(sci))
+        FinalEP(instr, StringConstancyProperty(sci))
     }
 
 }
