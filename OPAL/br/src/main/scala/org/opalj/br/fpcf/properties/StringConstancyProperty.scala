@@ -34,6 +34,13 @@ class StringConstancyProperty(
         stringConstancyInformation.isTheNeutralElement
     }
 
+    override def hashCode(): Int = stringConstancyInformation.hashCode()
+
+    override def equals(o: Any): Boolean = o match {
+        case scp: StringConstancyProperty ⇒
+            stringConstancyInformation.equals(scp.stringConstancyInformation)
+        case _ ⇒ false
+    }
 }
 
 object StringConstancyProperty extends Property with StringConstancyPropertyMetaInformation {
