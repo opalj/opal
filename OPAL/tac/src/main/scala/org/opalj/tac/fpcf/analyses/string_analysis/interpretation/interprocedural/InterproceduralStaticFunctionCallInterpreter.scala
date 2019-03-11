@@ -1,6 +1,8 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedural
 
+import scala.util.Try
+
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.InterimResult
 import org.opalj.fpcf.ProperOnUpdateContinuation
@@ -10,6 +12,7 @@ import org.opalj.fpcf.Result
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.cfg.CFG
 import org.opalj.br.fpcf.properties.StringConstancyProperty
+import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.tac.StaticFunctionCall
 import org.opalj.tac.Stmt
 import org.opalj.tac.TACStmts
@@ -34,6 +37,7 @@ class InterproceduralStaticFunctionCallInterpreter(
         exprHandler:     InterproceduralInterpretationHandler,
         ps:              PropertyStore,
         state:           InterproceduralComputationState,
+        params:          List[Seq[StringConstancyInformation]],
         declaredMethods: DeclaredMethods,
         c:               ProperOnUpdateContinuation
 ) extends AbstractStringInterpreter(cfg, exprHandler) {
@@ -51,6 +55,55 @@ class InterproceduralStaticFunctionCallInterpreter(
      * @see [[AbstractStringInterpreter.interpret]]
      */
     override def interpret(instr: T, defSite: Int): ProperPropertyComputationResult = {
+        if (instr.declaringClass.fqn == "java/lang/String" && instr.name == "valueOf") {
+            processStringValueOf(instr)
+        } else {
+            processArbitraryCall(instr, defSite)
+        }
+    }
+
+    /**
+     * A function for processing calls to [[String#valueOf]]. This function assumes that the passed
+     * `call` element is actually such a call.
+     * This function returns an intermediate results if one or more interpretations could not be
+     * finished. Otherwise, if all definition sites could be fully processed, this function
+     * returns an instance of [[Result]] which corresponds to the result of the interpretation of
+     * the parameter passed to the call.
+     */
+    private def processStringValueOf(
+        call: StaticFunctionCall[V]
+    ): ProperPropertyComputationResult = {
+        val results = call.params.head.asVar.definedBy.toArray.sorted.map { ds ⇒
+            exprHandler.processDefSite(ds, params)
+        }
+        val interim = results.find(!_.isInstanceOf[Result])
+        if (interim.isDefined) {
+            interim.get
+        } else {
+            // For char values, we need to do a conversion (as the returned results are integers)
+            val scis = if (call.descriptor.parameterType(0).toJava == "char") {
+                results.map { r ⇒
+                    val sci = StringConstancyProperty.extractFromPPCR(r).stringConstancyInformation
+                    if (Try(sci.possibleStrings.toInt).isSuccess) {
+                        sci.copy(possibleStrings = sci.possibleStrings.toInt.toChar.toString)
+                    } else {
+                        sci
+                    }
+                }
+            } else {
+                results.map(StringConstancyProperty.extractFromPPCR(_).stringConstancyInformation)
+            }
+            val finalSci = StringConstancyInformation.reduceMultiple(scis)
+            Result(call, StringConstancyProperty(finalSci))
+        }
+    }
+
+    /**
+     * This function interprets an arbitrary static function call.
+     */
+    private def processArbitraryCall(
+        instr: StaticFunctionCall[V], defSite: Int
+    ): ProperPropertyComputationResult = {
         val methods, _ = getMethodsForPC(
             instr.pc, ps, state.callees, declaredMethods
         )

@@ -45,6 +45,7 @@ import org.opalj.tac.TACMethodParameter
 import org.opalj.tac.TACode
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedural.finalizer.GetFieldFinalizer
 import org.opalj.tac.SimpleValueConst
+import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedural.finalizer.StaticFunctionCallFinalizer
 
 /**
  * `InterproceduralInterpretationHandler` is responsible for processing expressions that are
@@ -109,9 +110,10 @@ class InterproceduralInterpretationHandler(
             case Assignment(_, _, expr: VirtualFunctionCall[V]) ⇒ processVFC(expr, defSite, params)
             case ExprStmt(_, expr: VirtualFunctionCall[V])      ⇒ processVFC(expr, defSite, params)
             case Assignment(_, _, expr: StaticFunctionCall[V]) ⇒
-                processStaticFunctionCall(expr, defSite)
-            case ExprStmt(_, expr: StaticFunctionCall[V]) ⇒ processStaticFunctionCall(expr, defSite)
-            case Assignment(_, _, expr: BinaryExpr[V])    ⇒ processBinaryExpr(expr, defSite)
+                processStaticFunctionCall(expr, defSite, params)
+            case ExprStmt(_, expr: StaticFunctionCall[V]) ⇒
+                processStaticFunctionCall(expr, defSite, params)
+            case Assignment(_, _, expr: BinaryExpr[V]) ⇒ processBinaryExpr(expr, defSite)
             case Assignment(_, _, expr: NonVirtualFunctionCall[V]) ⇒
                 processNonVirtualFunctionCall(expr, defSite)
             case Assignment(_, _, expr: GetField[V]) ⇒ processGetField(expr, defSite)
@@ -230,10 +232,10 @@ class InterproceduralInterpretationHandler(
      * Helper / utility function for processing [[StaticFunctionCall]]s.
      */
     private def processStaticFunctionCall(
-        expr: StaticFunctionCall[V], defSite: Int
+        expr: StaticFunctionCall[V], defSite: Int, params: List[Seq[StringConstancyInformation]]
     ): ProperPropertyComputationResult = {
         val r = new InterproceduralStaticFunctionCallInterpreter(
-            cfg, this, ps, state, declaredMethods, c
+            cfg, this, ps, state, params, declaredMethods, c
         ).interpret(expr, defSite)
         if (!r.isInstanceOf[Result] || state.nonFinalFunctionArgs.contains(expr)) {
             processedDefSites.remove(defSite)
@@ -370,6 +372,10 @@ class InterproceduralInterpretationHandler(
                     GetFieldFinalizer(state).finalizeInterpretation(gf, defSite)
                 case ExprStmt(_, gf: GetField[V]) ⇒
                     GetFieldFinalizer(state).finalizeInterpretation(gf, defSite)
+                case Assignment(_, _, sfc: StaticFunctionCall[V]) ⇒
+                    StaticFunctionCallFinalizer(state).finalizeInterpretation(sfc, defSite)
+                case ExprStmt(_, sfc: StaticFunctionCall[V]) ⇒
+                    StaticFunctionCallFinalizer(state).finalizeInterpretation(sfc, defSite)
                 case _ ⇒ state.appendToFpe2Sci(
                     defSite, StringConstancyProperty.lb.stringConstancyInformation, reset = true
                 )
