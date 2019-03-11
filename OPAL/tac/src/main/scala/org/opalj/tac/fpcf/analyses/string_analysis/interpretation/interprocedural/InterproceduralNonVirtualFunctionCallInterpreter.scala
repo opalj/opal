@@ -1,10 +1,12 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedural
 
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.EOptionP
+import org.opalj.fpcf.EPK
 import org.opalj.fpcf.FinalEP
-import org.opalj.fpcf.InterimResult
 import org.opalj.fpcf.ProperOnUpdateContinuation
-import org.opalj.fpcf.ProperPropertyComputationResult
+import org.opalj.fpcf.Property
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
 import org.opalj.br.analyses.DeclaredMethods
@@ -48,11 +50,11 @@ class InterproceduralNonVirtualFunctionCallInterpreter(
      *
      * @see [[AbstractStringInterpreter.interpret]]
      */
-    override def interpret(instr: T, defSite: Int): ProperPropertyComputationResult = {
+    override def interpret(instr: T, defSite: Int): EOptionP[Entity, Property] = {
         val methods = getMethodsForPC(instr.pc, ps, state.callees, declaredMethods)
         if (methods._1.isEmpty) {
             // No methods available => Return lower bound
-            return Result(instr, StringConstancyProperty.lb)
+            return FinalEP(instr, StringConstancyProperty.lb)
         }
         val m = methods._1.head
 
@@ -64,39 +66,24 @@ class InterproceduralNonVirtualFunctionCallInterpreter(
             if (returns.isEmpty) {
                 // A function without returns, e.g., because it is guaranteed to throw an exception,
                 // is approximated with the lower bound
-                Result(instr, StringConstancyProperty.lb)
+                FinalEP(instr, StringConstancyProperty.lb)
             } else {
                 val results = returns.map { ret ⇒
                     val uvar = ret.asInstanceOf[ReturnValue[V]].expr.asVar
                     val entity = (uvar, m)
 
                     val eps = ps(entity, StringConstancyProperty.key)
-                    eps match {
-                        case FinalEP(e, p) ⇒
-                            Result(e, p)
-                        case _ ⇒
-                            state.dependees = eps :: state.dependees
-                            state.appendToVar2IndexMapping(uvar, defSite)
-                            InterimResult(
-                                state.entity,
-                                StringConstancyProperty.lb,
-                                StringConstancyProperty.ub,
-                                state.dependees,
-                                c
-                            )
+                    if (eps.isRefinable) {
+                        state.dependees = eps :: state.dependees
+                        state.appendToVar2IndexMapping(uvar, defSite)
                     }
+                    eps
                 }
                 results.find(!_.isInstanceOf[Result]).getOrElse(results.head)
             }
         } else {
             state.appendToMethodPrep2defSite(m, defSite)
-            InterimResult(
-                state.entity,
-                StringConstancyProperty.lb,
-                StringConstancyProperty.ub,
-                state.dependees,
-                c
-            )
+            EPK(state.entity, StringConstancyProperty.key)
         }
     }
 

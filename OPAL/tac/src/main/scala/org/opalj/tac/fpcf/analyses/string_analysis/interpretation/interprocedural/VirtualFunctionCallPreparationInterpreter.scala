@@ -1,9 +1,12 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedural
 
-import org.opalj.fpcf.InterimResult
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.EOptionP
+import org.opalj.fpcf.EPK
+import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.ProperOnUpdateContinuation
-import org.opalj.fpcf.ProperPropertyComputationResult
+import org.opalj.fpcf.Property
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
 import org.opalj.br.cfg.CFG
@@ -24,6 +27,7 @@ import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.Interpretation
 import org.opalj.tac.ReturnValue
 import org.opalj.tac.fpcf.analyses.string_analysis.InterproceduralComputationState
 import org.opalj.tac.fpcf.analyses.string_analysis.InterproceduralStringAnalysis
+import org.opalj.tac.fpcf.analyses.string_analysis.P
 
 /**
  * The `InterproceduralVirtualFunctionCallInterpreter` is responsible for processing
@@ -75,7 +79,7 @@ class VirtualFunctionCallPreparationInterpreter(
      *
      * @see [[AbstractStringInterpreter.interpret]]
      */
-    override def interpret(instr: T, defSite: Int): ProperPropertyComputationResult = {
+    override def interpret(instr: T, defSite: Int): EOptionP[Entity, Property] = {
         val result = instr.name match {
             case "append"   ⇒ interpretAppendCall(instr, defSite)
             case "toString" ⇒ interpretToStringCall(instr)
@@ -86,13 +90,14 @@ class VirtualFunctionCallPreparationInterpreter(
                         interpretArbitraryCall(instr, defSite)
                     case _ ⇒
                         val e: Integer = defSite
-                        Result(e, StringConstancyProperty.getNeutralElement)
+                        FinalEP(e, StringConstancyProperty.getNeutralElement)
                 }
         }
 
-        result match {
-            case r: Result ⇒ state.appendResultToFpe2Sci(defSite, r)
-            case _         ⇒
+        if (result.isFinal) {
+            // If the result is final, it is guaranteed to be of type [P, StringConstancyProperty]
+            val prop = result.asFinal.p.asInstanceOf[StringConstancyProperty]
+            state.appendToFpe2Sci(defSite, prop.stringConstancyInformation)
         }
         result
     }
@@ -103,13 +108,15 @@ class VirtualFunctionCallPreparationInterpreter(
      * analysis was triggered whose result is not yet ready. In this case, the result needs to be
      * finalized later on.
      */
-    private def interpretArbitraryCall(instr: T, defSite: Int): ProperPropertyComputationResult = {
+    private def interpretArbitraryCall(
+        instr: T, defSite: Int
+    ): EOptionP[Entity, Property] = {
         val (methods, _) = getMethodsForPC(
             instr.pc, ps, state.callees, declaredMethods
         )
 
         if (methods.isEmpty) {
-            return Result(instr, StringConstancyProperty.lb)
+            return FinalEP(instr, StringConstancyProperty.lb)
         }
 
         val directCallSites = state.callees.directCallSites()(ps, declaredMethods)
@@ -154,39 +161,27 @@ class VirtualFunctionCallPreparationInterpreter(
                 if (returns.isEmpty) {
                     // It might be that a function has no return value, e. g., in case it is
                     // guaranteed to throw an exception
-                    Result(instr, StringConstancyProperty.lb)
+                    FinalEP(instr, StringConstancyProperty.lb)
                 } else {
                     val results = returns.map { ret ⇒
                         val entity = (ret.asInstanceOf[ReturnValue[V]].expr.asVar, nextMethod)
                         InterproceduralStringAnalysis.registerParams(entity, evaluatedParams)
                         val eps = ps(entity, StringConstancyProperty.key)
                         eps match {
-                            case r: Result ⇒
-                                state.appendResultToFpe2Sci(defSite, r)
+                            case r: FinalEP[P, StringConstancyProperty] ⇒
+                                state.appendToFpe2Sci(defSite, r.p.stringConstancyInformation)
                                 r
                             case _ ⇒
                                 state.dependees = eps :: state.dependees
                                 state.appendToVar2IndexMapping(entity._1, defSite)
-                                InterimResult(
-                                    entity,
-                                    StringConstancyProperty.lb,
-                                    StringConstancyProperty.ub,
-                                    List(),
-                                    c
-                                )
+                                eps
                         }
                     }
-                    results.find(!_.isInstanceOf[Result]).getOrElse(results.head)
+                    results.find(_.isRefinable).getOrElse(results.head)
                 }
             } else {
                 state.appendToMethodPrep2defSite(nextMethod, defSite)
-                InterimResult(
-                    state.entity,
-                    StringConstancyProperty.lb,
-                    StringConstancyProperty.ub,
-                    state.dependees,
-                    c
-                )
+                EPK(state.entity, StringConstancyProperty.key)
             }
         }
 
@@ -206,23 +201,24 @@ class VirtualFunctionCallPreparationInterpreter(
      */
     private def interpretAppendCall(
         appendCall: VirtualFunctionCall[V], defSite: Int
-    ): ProperPropertyComputationResult = {
+    ): EOptionP[Entity, Property] = {
         val receiverResults = receiverValuesOfAppendCall(appendCall, state)
         val appendResult = valueOfAppendCall(appendCall, state)
 
         // If there is an intermediate result, return this one (then the final result cannot yet be
         // computed)
-        if (!receiverResults.head.isInstanceOf[Result]) {
+        if (receiverResults.head.isRefinable) {
             return receiverResults.head
-        } else if (!appendResult.isInstanceOf[Result]) {
+        } else if (appendResult.isRefinable) {
             return appendResult
         }
 
-        val receiverScis = receiverResults.map {
-            StringConstancyProperty.extractFromPPCR(_).stringConstancyInformation
+        val receiverScis = receiverResults.map { r ⇒
+            val p = r.asFinal.p.asInstanceOf[StringConstancyProperty]
+            p.stringConstancyInformation
         }
         val appendSci =
-            StringConstancyProperty.extractFromPPCR(appendResult).stringConstancyInformation
+            appendResult.asFinal.p.asInstanceOf[StringConstancyProperty].stringConstancyInformation
 
         // The case can occur that receiver and append value are empty; although, it is
         // counter-intuitive, this case may occur if both, the receiver and the parameter, have been
@@ -251,7 +247,7 @@ class VirtualFunctionCallPreparationInterpreter(
         }
 
         val e: Integer = defSite
-        Result(e, StringConstancyProperty(finalSci))
+        FinalEP(e, StringConstancyProperty(finalSci))
     }
 
     /**
@@ -266,23 +262,24 @@ class VirtualFunctionCallPreparationInterpreter(
      */
     private def receiverValuesOfAppendCall(
         call: VirtualFunctionCall[V], state: InterproceduralComputationState
-    ): List[ProperPropertyComputationResult] = {
+    ): List[EOptionP[Entity, Property]] = {
         val defSites = call.receiver.asVar.definedBy.toArray.sorted
 
         val allResults = defSites.map(ds ⇒ (ds, exprHandler.processDefSite(ds, params)))
-        val finalResults = allResults.filter(_._2.isInstanceOf[Result])
+        val finalResults = allResults.filter(_._2.isFinal)
         val finalResultsWithoutNeutralElements = finalResults.filter {
-            case (_, Result(r)) ⇒
-                val p = r.p.asInstanceOf[StringConstancyProperty]
+            case (_, FinalEP(_, p: StringConstancyProperty)) ⇒
                 !p.stringConstancyInformation.isTheNeutralElement
             case _ ⇒ false
         }
-        val intermediateResults = allResults.filter(!_._2.isInstanceOf[Result])
+        val intermediateResults = allResults.filter(_._2.isRefinable)
 
         // Extend the state by the final results not being the neutral elements (they might need to
         // be finalized later)
         finalResultsWithoutNeutralElements.foreach { next ⇒
-            state.appendResultToFpe2Sci(next._1, next._2.asInstanceOf[Result])
+            val p = next._2.asFinal.p.asInstanceOf[StringConstancyProperty]
+            val sci = p.stringConstancyInformation
+            state.appendToFpe2Sci(next._1, sci)
         }
 
         if (intermediateResults.isEmpty) {
@@ -298,19 +295,19 @@ class VirtualFunctionCallPreparationInterpreter(
      */
     private def valueOfAppendCall(
         call: VirtualFunctionCall[V], state: InterproceduralComputationState
-    ): ProperPropertyComputationResult = {
+    ): EOptionP[Entity, Property] = {
         // .head because we want to evaluate only the first argument of append
         val param = call.params.head.asVar
         val defSites = param.definedBy.toArray.sorted
         val values = defSites.map(exprHandler.processDefSite(_, params))
 
         // Defer the computation if there is at least one intermediate result
-        if (!values.forall(_.isInstanceOf[Result])) {
-            return values.find(!_.isInstanceOf[Result]).get
+        if (values.exists(_.isRefinable)) {
+            return values.find(_.isRefinable).get
         }
 
         val sciValues = values.map {
-            StringConstancyProperty.extractFromPPCR(_).stringConstancyInformation
+            _.asFinal.p.asInstanceOf[StringConstancyProperty].stringConstancyInformation
         }
         val defSitesValueSci = StringConstancyInformation.reduceMultiple(sciValues)
         // If defSiteHead points to a "New", value will be the empty list. In that case, process
@@ -320,11 +317,12 @@ class VirtualFunctionCallPreparationInterpreter(
             val ds = cfg.code.instructions(defSites.head).asAssignment.targetVar.usedBy.toArray.min
             val r = exprHandler.processDefSite(ds, params)
             // Again, defer the computation if there is no final result (yet)
-            if (!r.isInstanceOf[Result]) {
-                newValueSci = defSitesValueSci
+            if (r.isRefinable) {
+                newValueSci = defSitesValueSci // TODO: Can be removed!?!
                 return r
             } else {
-                newValueSci = StringConstancyProperty.extractFromPPCR(r).stringConstancyInformation
+                val p = r.asFinal.p.asInstanceOf[StringConstancyProperty]
+                newValueSci = p.stringConstancyInformation
             }
         } else {
             newValueSci = defSitesValueSci
@@ -357,7 +355,7 @@ class VirtualFunctionCallPreparationInterpreter(
 
         val e: Integer = defSites.head
         state.appendToFpe2Sci(e, newValueSci, reset = true)
-        Result(e, StringConstancyProperty(finalSci))
+        FinalEP(e, StringConstancyProperty(finalSci))
     }
 
     /**
@@ -367,7 +365,7 @@ class VirtualFunctionCallPreparationInterpreter(
      */
     private def interpretToStringCall(
         call: VirtualFunctionCall[V]
-    ): ProperPropertyComputationResult =
+    ): EOptionP[Entity, Property] =
         // TODO: Can it produce an intermediate result???
         exprHandler.processDefSite(call.receiver.asVar.definedBy.head, params)
 
@@ -378,7 +376,7 @@ class VirtualFunctionCallPreparationInterpreter(
      */
     private def interpretReplaceCall(
         instr: VirtualFunctionCall[V]
-    ): ProperPropertyComputationResult =
-        Result(instr, InterpretationHandler.getStringConstancyPropertyForReplace)
+    ): EOptionP[Entity, StringConstancyProperty] =
+        FinalEP(instr, InterpretationHandler.getStringConstancyPropertyForReplace)
 
 }

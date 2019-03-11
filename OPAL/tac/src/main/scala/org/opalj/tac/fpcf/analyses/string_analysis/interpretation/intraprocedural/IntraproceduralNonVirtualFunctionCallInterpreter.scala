@@ -1,8 +1,9 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.tac.fpcf.analyses.string_analysis.interpretation.intraprocedural
 
-import org.opalj.fpcf.ProperPropertyComputationResult
-import org.opalj.fpcf.Result
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.EOptionP
+import org.opalj.fpcf.FinalEP
 import org.opalj.br.cfg.CFG
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.tac.NonVirtualFunctionCall
@@ -33,7 +34,7 @@ class IntraproceduralNonVirtualFunctionCallInterpreter(
      *
      * @see [[AbstractStringInterpreter.interpret]]
      */
-    override def interpret(instr: T, defSite: Int): ProperPropertyComputationResult =
-        Result(instr, StringConstancyProperty.lb)
+    override def interpret(instr: T, defSite: Int): EOptionP[Entity, StringConstancyProperty] =
+        FinalEP(instr, StringConstancyProperty.lb)
 
 }

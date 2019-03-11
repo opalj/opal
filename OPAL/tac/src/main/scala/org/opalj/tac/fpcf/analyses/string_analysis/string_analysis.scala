@@ -4,7 +4,9 @@ package org.opalj.tac.fpcf.analyses
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
-import org.opalj.fpcf.ProperPropertyComputationResult
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.EOptionP
+import org.opalj.fpcf.Property
 import org.opalj.value.ValueInformation
 import org.opalj.br.Method
 import org.opalj.tac.DUVar
@@ -35,7 +37,7 @@ package object string_analysis {
      * reason for the inner-most list is that a parameter might have different definition sites; to
      * capture all, the third (inner-most) list is necessary.
      */
-    type NonFinalFunctionArgs = ListBuffer[ListBuffer[ListBuffer[ProperPropertyComputationResult]]]
+    type NonFinalFunctionArgs = ListBuffer[ListBuffer[ListBuffer[EOptionP[Entity, Property]]]]
 
     /**
      * This type serves as a lookup mechanism to find out which functions parameters map to which

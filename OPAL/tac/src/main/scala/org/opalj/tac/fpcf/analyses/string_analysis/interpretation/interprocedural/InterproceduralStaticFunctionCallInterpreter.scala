@@ -3,12 +3,13 @@ package org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedur
 
 import scala.util.Try
 
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.EOptionP
+import org.opalj.fpcf.EPK
 import org.opalj.fpcf.FinalEP
-import org.opalj.fpcf.InterimResult
 import org.opalj.fpcf.ProperOnUpdateContinuation
-import org.opalj.fpcf.ProperPropertyComputationResult
+import org.opalj.fpcf.Property
 import org.opalj.fpcf.PropertyStore
-import org.opalj.fpcf.Result
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.cfg.CFG
 import org.opalj.br.fpcf.properties.StringConstancyProperty
@@ -54,7 +55,7 @@ class InterproceduralStaticFunctionCallInterpreter(
      *
      * @see [[AbstractStringInterpreter.interpret]]
      */
-    override def interpret(instr: T, defSite: Int): ProperPropertyComputationResult = {
+    override def interpret(instr: T, defSite: Int): EOptionP[Entity, Property] = {
         if (instr.declaringClass.fqn == "java/lang/String" && instr.name == "valueOf") {
             processStringValueOf(instr)
         } else {
@@ -67,23 +68,25 @@ class InterproceduralStaticFunctionCallInterpreter(
      * `call` element is actually such a call.
      * This function returns an intermediate results if one or more interpretations could not be
      * finished. Otherwise, if all definition sites could be fully processed, this function
-     * returns an instance of [[Result]] which corresponds to the result of the interpretation of
+     * returns an instance of Result which corresponds to the result of the interpretation of
      * the parameter passed to the call.
      */
     private def processStringValueOf(
         call: StaticFunctionCall[V]
-    ): ProperPropertyComputationResult = {
+    ): EOptionP[Entity, Property] = {
         val results = call.params.head.asVar.definedBy.toArray.sorted.map { ds ⇒
             exprHandler.processDefSite(ds, params)
         }
-        val interim = results.find(!_.isInstanceOf[Result])
+        val interim = results.find(_.isRefinable)
         if (interim.isDefined) {
             interim.get
         } else {
             // For char values, we need to do a conversion (as the returned results are integers)
-            val scis = if (call.descriptor.parameterType(0).toJava == "char") {
-                results.map { r ⇒
-                    val sci = StringConstancyProperty.extractFromPPCR(r).stringConstancyInformation
+            val scis = results.map { r ⇒
+                r.asFinal.p.asInstanceOf[StringConstancyProperty].stringConstancyInformation
+            }
+            val finalScis = if (call.descriptor.parameterType(0).toJava == "char") {
+                scis.map { sci ⇒
                     if (Try(sci.possibleStrings.toInt).isSuccess) {
                         sci.copy(possibleStrings = sci.possibleStrings.toInt.toChar.toString)
                     } else {
@@ -91,10 +94,10 @@ class InterproceduralStaticFunctionCallInterpreter(
                     }
                 }
             } else {
-                results.map(StringConstancyProperty.extractFromPPCR(_).stringConstancyInformation)
+                scis
             }
-            val finalSci = StringConstancyInformation.reduceMultiple(scis)
-            Result(call, StringConstancyProperty(finalSci))
+            val finalSci = StringConstancyInformation.reduceMultiple(finalScis)
+            FinalEP(call, StringConstancyProperty(finalSci))
         }
     }
 
@@ -103,7 +106,7 @@ class InterproceduralStaticFunctionCallInterpreter(
      */
     private def processArbitraryCall(
         instr: StaticFunctionCall[V], defSite: Int
-    ): ProperPropertyComputationResult = {
+    ): EOptionP[Entity, Property] = {
         val methods, _ = getMethodsForPC(
             instr.pc, ps, state.callees, declaredMethods
         )
@@ -112,7 +115,7 @@ class InterproceduralStaticFunctionCallInterpreter(
         // getMethodsForPC and 2) interpreting the head is enough
         if (methods._1.isEmpty) {
             state.appendToFpe2Sci(defSite, StringConstancyProperty.lb.stringConstancyInformation)
-            return Result(instr, StringConstancyProperty.lb)
+            return FinalEP(instr, StringConstancyProperty.lb)
         }
 
         val m = methods._1.head
@@ -166,40 +169,25 @@ class InterproceduralStaticFunctionCallInterpreter(
             if (returns.isEmpty) {
                 // A function without returns, e.g., because it is guaranteed to throw an exception,
                 // is approximated with the lower bound
-                Result(instr, StringConstancyProperty.lb)
+                FinalEP(instr, StringConstancyProperty.lb)
             } else {
                 val results = returns.map { ret ⇒
                     val entity = (ret.asInstanceOf[ReturnValue[V]].expr.asVar, m)
                     InterproceduralStringAnalysis.registerParams(entity, evaluatedParams)
 
                     val eps = ps(entity, StringConstancyProperty.key)
-                    eps match {
-                        case FinalEP(e, p) ⇒
-                            Result(e, p)
-                        case _ ⇒
-                            state.dependees = eps :: state.dependees
-                            state.appendToVar2IndexMapping(entity._1, defSite)
-                            InterimResult(
-                                entity,
-                                StringConstancyProperty.lb,
-                                StringConstancyProperty.ub,
-                                List(),
-                                c
-                            )
+                    if (eps.isRefinable) {
+                        state.dependees = eps :: state.dependees
+                        state.appendToVar2IndexMapping(entity._1, defSite)
                     }
+                    eps
                 }
-                results.find(!_.isInstanceOf[Result]).getOrElse(results.head)
+                results.find(_.isRefinable).getOrElse(results.head)
             }
         } else {
             // No TAC => Register dependee and continue
             state.appendToMethodPrep2defSite(m, defSite)
-            InterimResult(
-                state.entity,
-                StringConstancyProperty.lb,
-                StringConstancyProperty.ub,
-                state.dependees,
-                c
-            )
+            EPK(state.entity, StringConstancyProperty.key)
         }
     }
 

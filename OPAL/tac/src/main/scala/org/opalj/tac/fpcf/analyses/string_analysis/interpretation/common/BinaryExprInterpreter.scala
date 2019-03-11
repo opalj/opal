@@ -1,8 +1,9 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.tac.fpcf.analyses.string_analysis.interpretation.common
 
-import org.opalj.fpcf.ProperPropertyComputationResult
-import org.opalj.fpcf.Result
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.EOptionP
+import org.opalj.fpcf.FinalEP
 import org.opalj.br.cfg.CFG
 import org.opalj.br.ComputationalTypeFloat
 import org.opalj.br.ComputationalTypeInt
@@ -46,13 +47,13 @@ class BinaryExprInterpreter(
      *
      * @see [[AbstractStringInterpreter.interpret]]
      */
-    override def interpret(instr: T, defSite: Int): ProperPropertyComputationResult = {
+    override def interpret(instr: T, defSite: Int): EOptionP[Entity, StringConstancyProperty] = {
         val sci = instr.cTpe match {
             case ComputationalTypeInt   ⇒ InterpretationHandler.getConstancyInfoForDynamicInt
             case ComputationalTypeFloat ⇒ InterpretationHandler.getConstancyInfoForDynamicFloat
             case _                      ⇒ StringConstancyInformation.getNeutralElement
         }
-        Result(instr, StringConstancyProperty(sci))
+        FinalEP(instr, StringConstancyProperty(sci))
     }
 
 }

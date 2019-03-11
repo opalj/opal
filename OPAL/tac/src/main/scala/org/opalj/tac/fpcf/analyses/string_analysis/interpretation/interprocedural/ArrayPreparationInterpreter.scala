@@ -3,8 +3,9 @@ package org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedur
 
 import scala.collection.mutable.ListBuffer
 
-import org.opalj.fpcf.ProperPropertyComputationResult
-import org.opalj.fpcf.Result
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.EOptionP
+import org.opalj.fpcf.Property
 import org.opalj.br.cfg.CFG
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
@@ -41,16 +42,16 @@ class ArrayPreparationInterpreter(
 
     /**
      * @note This implementation will extend [[state.fpe2sci]] in a way that it adds the string
-     *       constancy information foreach definition site where it can compute a final result. All
-     *       definition sites producing an intermediate result will have to be handled later on to
+     *       constancy information for each definition site where it can compute a final result. All
+     *       definition sites producing a refineable result will have to be handled later on to
      *       not miss this information.
      *
      * @note For this implementation, `defSite` plays a role!
      *
      * @see [[AbstractStringInterpreter.interpret]]
      */
-    override def interpret(instr: T, defSite: Int): ProperPropertyComputationResult = {
-        val results = ListBuffer[ProperPropertyComputationResult]()
+    override def interpret(instr: T, defSite: Int): EOptionP[Entity, Property] = {
+        val results = ListBuffer[EOptionP[Entity, Property]]()
 
         val defSites = instr.arrayRef.asVar.definedBy.toArray
         val allDefSites = ArrayPreparationInterpreter.getStoreAndLoadDefSites(
@@ -58,10 +59,12 @@ class ArrayPreparationInterpreter(
         )
 
         allDefSites.map { ds ⇒ (ds, exprHandler.processDefSite(ds)) }.foreach {
-            case (ds, r: Result) ⇒
-                state.appendResultToFpe2Sci(ds, r)
-                results.append(r)
-            case (_, ir: ProperPropertyComputationResult) ⇒ results.append(ir)
+            case (ds, ep) ⇒
+                if (ep.isFinal) {
+                    val p = ep.asFinal.p.asInstanceOf[StringConstancyProperty]
+                    state.appendToFpe2Sci(ds, p.stringConstancyInformation)
+                }
+                results.append(ep)
         }
 
         // Add information of parameters
@@ -69,24 +72,21 @@ class ArrayPreparationInterpreter(
             val paramPos = Math.abs(ds + 2)
             // lb is the fallback value
             val sci = StringConstancyInformation.reduceMultiple(params.map(_(paramPos)))
-            val e: Integer = ds
-            state.appendResultToFpe2Sci(ds, Result(e, StringConstancyProperty(sci)))
+            state.appendToFpe2Sci(ds, sci)
         }
 
         // If there is at least one InterimResult, return one. Otherwise, return a final result
         // (to either indicate that further computation are necessary or a final result is already
         // present)
-        val interimResult = results.find(!_.isInstanceOf[Result])
-        if (interimResult.isDefined) {
-            interimResult.get
+        val interims = results.find(!_.isFinal)
+        if (interims.isDefined) {
+            interims.get
         } else {
-            val scis = results.map(StringConstancyProperty.extractFromPPCR)
-            val resultSci = StringConstancyInformation.reduceMultiple(
-                scis.map(_.stringConstancyInformation)
-            )
-            val result = Result(instr, StringConstancyProperty(resultSci))
-            state.appendResultToFpe2Sci(defSite, result)
-            result
+            val resultSci = StringConstancyInformation.reduceMultiple(results.map {
+                _.asFinal.p.asInstanceOf[StringConstancyProperty].stringConstancyInformation
+            })
+            state.appendToFpe2Sci(defSite, resultSci)
+            results.head
         }
     }
 

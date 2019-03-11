@@ -1,8 +1,9 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.tac.fpcf.analyses.string_analysis.interpretation.intraprocedural
 
-import org.opalj.fpcf.ProperPropertyComputationResult
-import org.opalj.fpcf.Result
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.EOptionP
+import org.opalj.fpcf.FinalEP
 import org.opalj.br.cfg.CFG
 import org.opalj.br.ComputationalTypeFloat
 import org.opalj.br.ComputationalTypeInt
@@ -64,7 +65,7 @@ class IntraproceduralVirtualFunctionCallInterpreter(
      *
      * @see [[AbstractStringInterpreter.interpret]]
      */
-    override def interpret(instr: T, defSite: Int): ProperPropertyComputationResult = {
+    override def interpret(instr: T, defSite: Int): EOptionP[Entity, StringConstancyProperty] = {
         val property = instr.name match {
             case "append"   ⇒ interpretAppendCall(instr)
             case "toString" ⇒ interpretToStringCall(instr)
@@ -83,7 +84,7 @@ class IntraproceduralVirtualFunctionCallInterpreter(
                 }
         }
 
-        Result(instr, property)
+        FinalEP(instr, property)
     }
 
     /**
@@ -133,8 +134,8 @@ class IntraproceduralVirtualFunctionCallInterpreter(
         // There might be several receivers, thus the map; from the processed sites, however, use
         // only the head as a single receiver interpretation will produce one element
         val scis = call.receiver.asVar.definedBy.toArray.sorted.map { ds ⇒
-            val r = exprHandler.processDefSite(ds).asInstanceOf[Result]
-            r.finalEP.p.asInstanceOf[StringConstancyProperty].stringConstancyInformation
+            val r = exprHandler.processDefSite(ds)
+            r.asFinal.p.asInstanceOf[StringConstancyProperty].stringConstancyInformation
         }.filter { sci ⇒ !sci.isTheNeutralElement }
         val sci = if (scis.isEmpty) StringConstancyInformation.getNeutralElement else
             scis.head
@@ -151,15 +152,15 @@ class IntraproceduralVirtualFunctionCallInterpreter(
         val param = call.params.head.asVar
         // .head because we want to evaluate only the first argument of append
         val defSiteHead = param.definedBy.head
-        var r = exprHandler.processDefSite(defSiteHead).asInstanceOf[Result]
-        var value = r.finalEP.p.asInstanceOf[StringConstancyProperty]
+        var r = exprHandler.processDefSite(defSiteHead)
+        var value = r.asFinal.p.asInstanceOf[StringConstancyProperty]
         // If defSiteHead points to a New, value will be the empty list. In that case, process
         // the first use site (which is the <init> call)
         if (value.isTheNeutralElement) {
             r = exprHandler.processDefSite(
                 cfg.code.instructions(defSiteHead).asAssignment.targetVar.usedBy.toArray.min
-            ).asInstanceOf[Result]
-            value = r.finalEP.p.asInstanceOf[StringConstancyProperty]
+            ).asFinal
+            value = r.asFinal.p.asInstanceOf[StringConstancyProperty]
         }
 
         val sci = value.stringConstancyInformation
@@ -198,8 +199,8 @@ class IntraproceduralVirtualFunctionCallInterpreter(
     private def interpretToStringCall(
         call: VirtualFunctionCall[V]
     ): StringConstancyProperty = {
-        val r = exprHandler.processDefSite(call.receiver.asVar.definedBy.head).asInstanceOf[Result]
-        r.finalEP.p.asInstanceOf[StringConstancyProperty]
+        val finalEP = exprHandler.processDefSite(call.receiver.asVar.definedBy.head).asFinal
+        finalEP.p.asInstanceOf[StringConstancyProperty]
     }
 
     /**

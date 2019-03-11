@@ -1,8 +1,10 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.tac.fpcf.analyses.string_analysis.interpretation.intraprocedural
 
-import org.opalj.fpcf.ProperPropertyComputationResult
-import org.opalj.fpcf.Result
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.EOptionP
+import org.opalj.fpcf.FinalEP
+import org.opalj.fpcf.Property
 import org.opalj.value.ValueInformation
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
@@ -55,19 +57,19 @@ class IntraproceduralInterpretationHandler(
      */
     override def processDefSite(
         defSite: Int, params: List[Seq[StringConstancyInformation]] = List()
-    ): ProperPropertyComputationResult = {
+    ): EOptionP[Entity, Property] = {
         // Without doing the following conversion, the following compile error will occur: "the
         // result type of an implicit conversion must be more specific than org.opalj.fpcf.Entity"
         val e: Integer = defSite.toInt
         // Function parameters are not evaluated but regarded as unknown
         if (defSite < 0) {
-            return Result(e, StringConstancyProperty.lb)
+            return FinalEP(e, StringConstancyProperty.lb)
         } else if (processedDefSites.contains(defSite)) {
-            return Result(e, StringConstancyProperty.getNeutralElement)
+            return FinalEP(e, StringConstancyProperty.getNeutralElement)
         }
         processedDefSites(defSite) = Unit
 
-        val result: ProperPropertyComputationResult = stmts(defSite) match {
+        val result: EOptionP[Entity, Property] = stmts(defSite) match {
             case Assignment(_, _, expr: StringConst) ⇒
                 new StringConstInterpreter(cfg, this).interpret(expr, defSite)
             case Assignment(_, _, expr: IntConst) ⇒
@@ -106,10 +108,9 @@ class IntraproceduralInterpretationHandler(
                 new IntraproceduralNonVirtualMethodCallInterpreter(
                     cfg, this
                 ).interpret(nvmc, defSite)
-            case _ ⇒ Result(e, StringConstancyProperty.getNeutralElement)
+            case _ ⇒ FinalEP(e, StringConstancyProperty.getNeutralElement)
         }
-        // Replace the entity of the result
-        Result(e, result.asInstanceOf[Result].finalEP.p)
+        result
     }
 
 }

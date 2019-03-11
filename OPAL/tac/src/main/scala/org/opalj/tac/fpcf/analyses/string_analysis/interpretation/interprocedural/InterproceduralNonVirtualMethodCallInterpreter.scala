@@ -1,10 +1,12 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedural
 
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.EOptionP
+import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.ProperOnUpdateContinuation
-import org.opalj.fpcf.ProperPropertyComputationResult
+import org.opalj.fpcf.Property
 import org.opalj.fpcf.PropertyStore
-import org.opalj.fpcf.Result
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.cfg.CFG
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
@@ -55,11 +57,11 @@ class InterproceduralNonVirtualMethodCallInterpreter(
      */
     override def interpret(
         instr: NonVirtualMethodCall[V], defSite: Int
-    ): ProperPropertyComputationResult = {
+    ): EOptionP[Entity, Property] = {
         val e: Integer = defSite
         instr.name match {
             case "<init>" ⇒ interpretInit(instr, e)
-            case _        ⇒ Result(e, StringConstancyProperty.getNeutralElement)
+            case _        ⇒ FinalEP(e, StringConstancyProperty.getNeutralElement)
         }
     }
 
@@ -72,26 +74,32 @@ class InterproceduralNonVirtualMethodCallInterpreter(
      */
     private def interpretInit(
         init: NonVirtualMethodCall[V], defSite: Integer
-    ): ProperPropertyComputationResult = {
+    ): EOptionP[Entity, Property] = {
         init.params.size match {
-            case 0 ⇒ Result(defSite, StringConstancyProperty.getNeutralElement)
+            case 0 ⇒ FinalEP(defSite, StringConstancyProperty.getNeutralElement)
             case _ ⇒
                 val results = init.params.head.asVar.definedBy.map { ds: Int ⇒
                     (ds, exprHandler.processDefSite(ds, List()))
                 }
-                if (results.forall(_._2.isInstanceOf[Result])) {
+                if (results.forall(_._2.isFinal)) {
                     // Final result is available
-                    val scis = results.map(r ⇒
-                        StringConstancyProperty.extractFromPPCR(r._2).stringConstancyInformation)
-                    val reduced = StringConstancyInformation.reduceMultiple(scis)
-                    Result(defSite, StringConstancyProperty(reduced))
+                    val reduced = StringConstancyInformation.reduceMultiple(results.map { r ⇒
+                        val prop = r._2.asFinal.p.asInstanceOf[StringConstancyProperty]
+                        prop.stringConstancyInformation
+                    })
+                    FinalEP(defSite, StringConstancyProperty(reduced))
                 } else {
                     // Some intermediate results => register necessary information from final
                     // results and return an intermediate result
-                    val returnIR = results.find(r ⇒ !r._2.isInstanceOf[Result]).get._2
+                    val returnIR = results.find(r ⇒ !r._2.isFinal).get._2
                     results.foreach {
-                        case (ds, r: Result) ⇒
-                            state.appendResultToFpe2Sci(ds, r, reset = true)
+                        case (ds, r) ⇒
+                            if (r.isFinal) {
+                                val p = r.asFinal.p.asInstanceOf[StringConstancyProperty]
+                                state.appendToFpe2Sci(
+                                    ds, p.stringConstancyInformation, reset = true
+                                )
+                            }
                         case _ ⇒
                     }
                     returnIR

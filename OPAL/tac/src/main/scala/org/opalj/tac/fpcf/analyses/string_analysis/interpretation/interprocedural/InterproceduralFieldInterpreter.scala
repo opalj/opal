@@ -3,12 +3,13 @@ package org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedur
 
 import scala.collection.mutable.ListBuffer
 
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.EOptionP
+import org.opalj.fpcf.EPK
 import org.opalj.fpcf.FinalEP
-import org.opalj.fpcf.InterimResult
 import org.opalj.fpcf.ProperOnUpdateContinuation
-import org.opalj.fpcf.ProperPropertyComputationResult
+import org.opalj.fpcf.Property
 import org.opalj.fpcf.PropertyStore
-import org.opalj.fpcf.Result
 import org.opalj.br.analyses.FieldAccessInformation
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
@@ -50,15 +51,15 @@ class InterproceduralFieldInterpreter(
      *
      * @see [[AbstractStringInterpreter.interpret]]
      */
-    override def interpret(instr: T, defSite: Int): ProperPropertyComputationResult = {
+    override def interpret(instr: T, defSite: Int): EOptionP[Entity, Property] = {
         val defSitEntity: Integer = defSite
         if (!InterproceduralStringAnalysis.isSupportedType(instr.declaredFieldType)) {
             // Unknown type => Cannot further approximate
-            return Result(instr, StringConstancyProperty.lb)
+            return FinalEP(instr, StringConstancyProperty.lb)
         }
 
         var hasInit = false
-        val results = ListBuffer[ProperPropertyComputationResult]()
+        val results = ListBuffer[EOptionP[Entity, Property]]()
         fieldAccessInformation.writeAccesses(instr.declaringClass, instr.name).foreach {
             case (m, pcs) ⇒ pcs.foreach { pc ⇒
                 if (m.name == "<init>") {
@@ -66,40 +67,26 @@ class InterproceduralFieldInterpreter(
                 }
                 val (tacEps, tac) = getTACAI(ps, m, state)
                 val nextResult = if (tacEps.isRefinable) {
-                    InterimResult(
-                        instr,
-                        StringConstancyProperty.lb,
-                        StringConstancyProperty.ub,
-                        state.dependees,
-                        c
-                    )
+                    EPK(state.entity, StringConstancyProperty.key)
                 } else {
                     tac match {
                         case Some(methodTac) ⇒
                             val stmt = methodTac.stmts(methodTac.pcToIndex(pc))
                             val entity = (stmt.asPutField.value.asVar, m)
                             val eps = ps(entity, StringConstancyProperty.key)
-                            eps match {
-                                case FinalEP(e, p) ⇒ Result(e, p)
-                                case _ ⇒
-                                    state.dependees = eps :: state.dependees
-                                    // We need some mapping from an entity to an index in order for
-                                    // the processFinalP to find an entry. We cannot use the given
-                                    // def site as this would mark the def site as finalized even
-                                    // though it might not be. Thus, we use -1 as it is a safe dummy
-                                    // value
-                                    state.appendToVar2IndexMapping(entity._1, -1)
-                                    InterimResult(
-                                        entity,
-                                        StringConstancyProperty.lb,
-                                        StringConstancyProperty.ub,
-                                        state.dependees,
-                                        c
-                                    )
+                            if (eps.isRefinable) {
+                                state.dependees = eps :: state.dependees
+                                // We need some mapping from an entity to an index in order for
+                                // the processFinalP to find an entry. We cannot use the given
+                                // def site as this would mark the def site as finalized even
+                                // though it might not be. Thus, we use -1 as it is a safe dummy
+                                // value
+                                state.appendToVar2IndexMapping(entity._1, -1)
                             }
+                            eps
                         case _ ⇒
                             // No TAC available
-                            Result(defSitEntity, StringConstancyProperty.lb)
+                            FinalEP(defSitEntity, StringConstancyProperty.lb)
                     }
                 }
                 results.append(nextResult)
@@ -116,27 +103,26 @@ class InterproceduralFieldInterpreter(
             state.appendToFpe2Sci(
                 defSitEntity, StringConstancyProperty.lb.stringConstancyInformation
             )
-            Result(defSitEntity, StringConstancyProperty(sci))
+            FinalEP(defSitEntity, StringConstancyProperty(sci))
         } else {
             // If all results are final, determine all possible values for the field. Otherwise,
             // return some intermediate result to indicate that the computation is not yet done
-            if (results.forall(_.isInstanceOf[Result])) {
+            if (results.forall(_.isFinal)) {
                 // No init is present => append a `null` element to indicate that the field might be
                 // null; this behavior could be refined by only setting the null element if no
                 // statement is guaranteed to be executed prior to the field read
                 if (!hasInit) {
-                    results.append(Result(
+                    results.append(FinalEP(
                         instr, StringConstancyProperty(StringConstancyInformation.getNullElement)
                     ))
                 }
-                val resultScis = results.map {
-                    StringConstancyProperty.extractFromPPCR(_).stringConstancyInformation
-                }
-                val finalSci = StringConstancyInformation.reduceMultiple(resultScis)
+                val finalSci = StringConstancyInformation.reduceMultiple(results.map {
+                    _.asFinal.p.asInstanceOf[StringConstancyProperty].stringConstancyInformation
+                })
                 state.appendToFpe2Sci(defSitEntity, finalSci)
-                Result(defSitEntity, StringConstancyProperty(finalSci))
+                FinalEP(defSitEntity, StringConstancyProperty(finalSci))
             } else {
-                results.find(!_.isInstanceOf[Result]).get
+                results.find(!_.isFinal).get
             }
         }
     }
