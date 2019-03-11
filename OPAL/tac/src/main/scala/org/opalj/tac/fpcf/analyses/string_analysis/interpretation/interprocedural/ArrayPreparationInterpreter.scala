@@ -6,7 +6,6 @@ import scala.collection.mutable.ListBuffer
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.FinalEP
-import org.opalj.fpcf.Property
 import org.opalj.br.cfg.CFG
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
@@ -51,8 +50,8 @@ class ArrayPreparationInterpreter(
      *
      * @see [[AbstractStringInterpreter.interpret]]
      */
-    override def interpret(instr: T, defSite: Int): EOptionP[Entity, Property] = {
-        val results = ListBuffer[EOptionP[Entity, Property]]()
+    override def interpret(instr: T, defSite: Int): EOptionP[Entity, StringConstancyProperty] = {
+        val results = ListBuffer[EOptionP[Entity, StringConstancyProperty]]()
 
         val defSites = instr.arrayRef.asVar.definedBy.toArray
         val allDefSites = ArrayPreparationInterpreter.getStoreAndLoadDefSites(

@@ -5,7 +5,6 @@ import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.ProperOnUpdateContinuation
-import org.opalj.fpcf.Property
 import org.opalj.fpcf.PropertyStore
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.cfg.CFG
@@ -57,7 +56,7 @@ class InterproceduralNonVirtualMethodCallInterpreter(
      */
     override def interpret(
         instr: NonVirtualMethodCall[V], defSite: Int
-    ): EOptionP[Entity, Property] = {
+    ): EOptionP[Entity, StringConstancyProperty] = {
         val e: Integer = defSite
         instr.name match {
             case "<init>" ⇒ interpretInit(instr, e)
@@ -74,7 +73,7 @@ class InterproceduralNonVirtualMethodCallInterpreter(
      */
     private def interpretInit(
         init: NonVirtualMethodCall[V], defSite: Integer
-    ): EOptionP[Entity, Property] = {
+    ): EOptionP[Entity, StringConstancyProperty] = {
         init.params.size match {
             case 0 ⇒ FinalEP(defSite, StringConstancyProperty.getNeutralElement)
             case _ ⇒

@@ -78,7 +78,7 @@ class InterproceduralInterpretationHandler(
      */
     override def processDefSite(
         defSite: Int, params: List[Seq[StringConstancyInformation]] = List()
-    ): EOptionP[Entity, Property] = {
+    ): EOptionP[Entity, StringConstancyProperty] = {
         // Without doing the following conversion, the following compile error will occur: "the
         // result type of an implicit conversion must be more specific than org.opalj.fpcf.Entity"
         val e: Integer = defSite.toInt
@@ -156,7 +156,7 @@ class InterproceduralInterpretationHandler(
      */
     private def processArrayLoad(
         expr: ArrayLoad[V], defSite: Int, params: List[Seq[StringConstancyInformation]]
-    ): EOptionP[Entity, Property] = {
+    ): EOptionP[Entity, StringConstancyProperty] = {
         val r = new ArrayPreparationInterpreter(
             cfg, this, state, params
         ).interpret(expr, defSite)
@@ -173,7 +173,7 @@ class InterproceduralInterpretationHandler(
     /**
      * Helper / utility function for processing [[New]] expressions.
      */
-    private def processNew(expr: New, defSite: Int): EOptionP[Entity, Property] = {
+    private def processNew(expr: New, defSite: Int): EOptionP[Entity, StringConstancyProperty] = {
         val finalEP = new NewInterpreter(cfg, this).interpret(
             expr, defSite
         )
@@ -186,7 +186,9 @@ class InterproceduralInterpretationHandler(
     /**
      * Helper / utility function for processing [[GetStatic]]s.
      */
-    private def processGetStatic(expr: GetStatic, defSite: Int): EOptionP[Entity, Property] = {
+    private def processGetStatic(
+        expr: GetStatic, defSite: Int
+    ): EOptionP[Entity, StringConstancyProperty] = {
         val result = new InterproceduralGetStaticInterpreter(cfg, this).interpret(
             expr, defSite
         )
@@ -201,7 +203,7 @@ class InterproceduralInterpretationHandler(
         expr:    VirtualFunctionCall[V],
         defSite: Int,
         params:  List[Seq[StringConstancyInformation]]
-    ): EOptionP[Entity, Property] = {
+    ): EOptionP[Entity, StringConstancyProperty] = {
         val r = new VirtualFunctionCallPreparationInterpreter(
             cfg, this, ps, state, declaredMethods, params, c
         ).interpret(expr, defSite)
@@ -240,7 +242,7 @@ class InterproceduralInterpretationHandler(
      */
     private def processStaticFunctionCall(
         expr: StaticFunctionCall[V], defSite: Int, params: List[Seq[StringConstancyInformation]]
-    ): EOptionP[Entity, Property] = {
+    ): EOptionP[Entity, StringConstancyProperty] = {
         val r = new InterproceduralStaticFunctionCallInterpreter(
             cfg, this, ps, state, params, declaredMethods, c
         ).interpret(expr, defSite)
@@ -257,7 +259,7 @@ class InterproceduralInterpretationHandler(
      */
     private def processBinaryExpr(
         expr: BinaryExpr[V], defSite: Int
-    ): EOptionP[Entity, Property] = {
+    ): EOptionP[Entity, StringConstancyProperty] = {
         val result = new BinaryExprInterpreter(cfg, this).interpret(expr, defSite)
         val sci = result.asFinal.p.stringConstancyInformation
         state.setInterimFpe2Sci(defSite, sci)
@@ -270,7 +272,7 @@ class InterproceduralInterpretationHandler(
      */
     private def processGetField(
         expr: GetField[V], defSite: Int
-    ): EOptionP[Entity, Property] = {
+    ): EOptionP[Entity, StringConstancyProperty] = {
         val r = new InterproceduralFieldInterpreter(
             state, this, ps, fieldAccessInformation, c
         ).interpret(expr, defSite)
@@ -286,7 +288,7 @@ class InterproceduralInterpretationHandler(
      */
     private def processNonVirtualFunctionCall(
         expr: NonVirtualFunctionCall[V], defSite: Int
-    ): EOptionP[Entity, Property] = {
+    ): EOptionP[Entity, StringConstancyProperty] = {
         val r = new InterproceduralNonVirtualFunctionCallInterpreter(
             cfg, this, ps, state, declaredMethods, c
         ).interpret(expr, defSite)
@@ -302,7 +304,7 @@ class InterproceduralInterpretationHandler(
      */
     def processVirtualMethodCall(
         expr: VirtualMethodCall[V], defSite: Int, callees: Callees
-    ): EOptionP[Entity, Property] = {
+    ): EOptionP[Entity, StringConstancyProperty] = {
         val r = new InterproceduralVirtualMethodCallInterpreter(
             cfg, this, callees
         ).interpret(expr, defSite)
@@ -315,7 +317,7 @@ class InterproceduralInterpretationHandler(
      */
     private def processNonVirtualMethodCall(
         nvmc: NonVirtualMethodCall[V], defSite: Int
-    ): EOptionP[Entity, Property] = {
+    ): EOptionP[Entity, StringConstancyProperty] = {
         val r = new InterproceduralNonVirtualMethodCallInterpreter(
             cfg, this, ps, state, declaredMethods, c
         ).interpret(nvmc, defSite)

@@ -168,8 +168,8 @@ abstract class AbstractStringInterpreter(
      * this function returns an empty list, all parameters are fully evaluated.
      */
     protected def getNonFinalParameters(
-        evaluatedParameters: Seq[Seq[Seq[EOptionP[Entity, Property]]]]
-    ): List[EOptionP[Entity, Property]] =
+        evaluatedParameters: Seq[Seq[Seq[EOptionP[Entity, StringConstancyProperty]]]]
+    ): List[EOptionP[Entity, StringConstancyProperty]] =
         evaluatedParameters.flatten.flatten.filter { _.isRefinable }.toList
 
     /**

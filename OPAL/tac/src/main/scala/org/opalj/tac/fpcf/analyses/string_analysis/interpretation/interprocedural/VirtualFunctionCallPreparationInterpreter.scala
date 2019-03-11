@@ -6,7 +6,6 @@ import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPK
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.ProperOnUpdateContinuation
-import org.opalj.fpcf.Property
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
 import org.opalj.br.cfg.CFG
@@ -79,7 +78,7 @@ class VirtualFunctionCallPreparationInterpreter(
      *
      * @see [[AbstractStringInterpreter.interpret]]
      */
-    override def interpret(instr: T, defSite: Int): EOptionP[Entity, Property] = {
+    override def interpret(instr: T, defSite: Int): EOptionP[Entity, StringConstancyProperty] = {
         val result = instr.name match {
             case "append"   ⇒ interpretAppendCall(instr, defSite)
             case "toString" ⇒ interpretToStringCall(instr)
@@ -110,7 +109,7 @@ class VirtualFunctionCallPreparationInterpreter(
      */
     private def interpretArbitraryCall(
         instr: T, defSite: Int
-    ): EOptionP[Entity, Property] = {
+    ): EOptionP[Entity, StringConstancyProperty] = {
         val (methods, _) = getMethodsForPC(
             instr.pc, ps, state.callees, declaredMethods
         )
@@ -201,7 +200,7 @@ class VirtualFunctionCallPreparationInterpreter(
      */
     private def interpretAppendCall(
         appendCall: VirtualFunctionCall[V], defSite: Int
-    ): EOptionP[Entity, Property] = {
+    ): EOptionP[Entity, StringConstancyProperty] = {
         val receiverResults = receiverValuesOfAppendCall(appendCall, state)
         val appendResult = valueOfAppendCall(appendCall, state)
 
@@ -262,7 +261,7 @@ class VirtualFunctionCallPreparationInterpreter(
      */
     private def receiverValuesOfAppendCall(
         call: VirtualFunctionCall[V], state: InterproceduralComputationState
-    ): List[EOptionP[Entity, Property]] = {
+    ): List[EOptionP[Entity, StringConstancyProperty]] = {
         val defSites = call.receiver.asVar.definedBy.toArray.sorted
 
         val allResults = defSites.map(ds ⇒ (ds, exprHandler.processDefSite(ds, params)))
@@ -295,7 +294,7 @@ class VirtualFunctionCallPreparationInterpreter(
      */
     private def valueOfAppendCall(
         call: VirtualFunctionCall[V], state: InterproceduralComputationState
-    ): EOptionP[Entity, Property] = {
+    ): EOptionP[Entity, StringConstancyProperty] = {
         // .head because we want to evaluate only the first argument of append
         val param = call.params.head.asVar
         val defSites = param.definedBy.toArray.sorted
@@ -311,18 +310,22 @@ class VirtualFunctionCallPreparationInterpreter(
         }
         val defSitesValueSci = StringConstancyInformation.reduceMultiple(sciValues)
         // If defSiteHead points to a "New", value will be the empty list. In that case, process
-        // the first use site (which is the <init> call)
+        // the first use site
         var newValueSci = StringConstancyInformation.getNeutralElement
         if (defSitesValueSci.isTheNeutralElement) {
-            val ds = cfg.code.instructions(defSites.head).asAssignment.targetVar.usedBy.toArray.min
-            val r = exprHandler.processDefSite(ds, params)
-            // Again, defer the computation if there is no final result (yet)
-            if (r.isRefinable) {
-                newValueSci = defSitesValueSci // TODO: Can be removed!?!
-                return r
+            val headSite = defSites.head
+            if (headSite < 0) {
+                newValueSci = StringConstancyInformation.lb
             } else {
-                val p = r.asFinal.p.asInstanceOf[StringConstancyProperty]
-                newValueSci = p.stringConstancyInformation
+                val ds = cfg.code.instructions(headSite).asAssignment.targetVar.usedBy.toArray.min
+                val r = exprHandler.processDefSite(ds, params)
+                // Again, defer the computation if there is no final result (yet)
+                if (r.isRefinable) {
+                    return r
+                } else {
+                    val p = r.asFinal.p.asInstanceOf[StringConstancyProperty]
+                    newValueSci = p.stringConstancyInformation
+                }
             }
         } else {
             newValueSci = defSitesValueSci
@@ -365,7 +368,7 @@ class VirtualFunctionCallPreparationInterpreter(
      */
     private def interpretToStringCall(
         call: VirtualFunctionCall[V]
-    ): EOptionP[Entity, Property] =
+    ): EOptionP[Entity, StringConstancyProperty] =
         // TODO: Can it produce an intermediate result???
         exprHandler.processDefSite(call.receiver.asVar.definedBy.head, params)
 
