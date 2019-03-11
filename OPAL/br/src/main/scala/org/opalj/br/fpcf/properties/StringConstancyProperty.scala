@@ -82,10 +82,6 @@ object StringConstancyProperty extends Property with StringConstancyPropertyMeta
      * @return Returns the lower bound from a lattice-point of view.
      */
     def lb: StringConstancyProperty =
-        StringConstancyProperty(StringConstancyInformation(
-            StringConstancyLevel.DYNAMIC,
-            StringConstancyType.APPEND,
-            StringConstancyInformation.UnknownWordSymbol
-        ))
+        StringConstancyProperty(StringConstancyInformation.lb)
 
 }
