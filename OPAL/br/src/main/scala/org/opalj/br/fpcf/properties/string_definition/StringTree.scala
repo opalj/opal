@@ -28,26 +28,31 @@ sealed abstract class StringTreeElement(val children: ListBuffer[StringTreeEleme
         val resetElement = reduced.find(_.constancyType == StringConstancyType.RESET)
         val replaceElement = reduced.find(_.constancyType == StringConstancyType.REPLACE)
         val appendElements = reduced.filter { _.constancyType == StringConstancyType.APPEND }
-        val reducedInfo = appendElements.reduceLeft((o, n) ⇒ StringConstancyInformation(
-            StringConstancyLevel.determineMoreGeneral(o.constancyLevel, n.constancyLevel),
-            StringConstancyType.APPEND,
-            s"${o.possibleStrings}|${n.possibleStrings}"
-        ))
+        val appendSci = if (appendElements.nonEmpty) {
+            Some(appendElements.reduceLeft((o, n) ⇒ StringConstancyInformation(
+                StringConstancyLevel.determineMoreGeneral(o.constancyLevel, n.constancyLevel),
+                StringConstancyType.APPEND,
+                s"${o.possibleStrings}|${n.possibleStrings}"
+            )))
+        } else {
+            None
+        }
         val scis = ListBuffer[StringConstancyInformation]()
 
-        // The only difference between a Cond and an Or is how the possible strings look like
-        var possibleStrings = s"${reducedInfo.possibleStrings}"
-        if (processOr) {
-            if (appendElements.tail.nonEmpty) {
-                possibleStrings = s"($possibleStrings)"
+        if (appendSci.isDefined) {
+            // The only difference between a Cond and an Or is how the possible strings look like
+            var possibleStrings = s"${appendSci.get.possibleStrings}"
+            if (processOr) {
+                if (appendElements.tail.nonEmpty) {
+                    possibleStrings = s"($possibleStrings)"
+                }
+            } else {
+                possibleStrings = s"(${appendSci.get.possibleStrings})?"
             }
-        } else {
-            possibleStrings = s"(${reducedInfo.possibleStrings})?"
+            scis.append(StringConstancyInformation(
+                appendSci.get.constancyLevel, appendSci.get.constancyType, possibleStrings
+            ))
         }
-
-        scis.append(StringConstancyInformation(
-            reducedInfo.constancyLevel, reducedInfo.constancyType, possibleStrings
-        ))
         if (resetElement.isDefined) {
             scis.append(resetElement.get)
         }
