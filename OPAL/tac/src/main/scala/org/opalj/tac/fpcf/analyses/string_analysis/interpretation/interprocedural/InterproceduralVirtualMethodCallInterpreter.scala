@@ -4,7 +4,6 @@ package org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedur
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.FinalEP
-import org.opalj.fpcf.Property
 import org.opalj.br.cfg.CFG
 import org.opalj.br.fpcf.cg.properties.Callees
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
@@ -50,7 +49,7 @@ class InterproceduralVirtualMethodCallInterpreter(
      *
      * @see [[AbstractStringInterpreter.interpret]]
      */
-    override def interpret(instr: T, defSite: Int): EOptionP[Entity, Property] = {
+    override def interpret(instr: T, defSite: Int): EOptionP[Entity, StringConstancyProperty] = {
         val sci = instr.name match {
             case "setLength" ⇒ StringConstancyInformation(
                 StringConstancyLevel.CONSTANT, StringConstancyType.RESET

@@ -8,7 +8,6 @@ import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPK
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.ProperOnUpdateContinuation
-import org.opalj.fpcf.Property
 import org.opalj.fpcf.PropertyStore
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.cfg.CFG
@@ -55,7 +54,7 @@ class InterproceduralStaticFunctionCallInterpreter(
      *
      * @see [[AbstractStringInterpreter.interpret]]
      */
-    override def interpret(instr: T, defSite: Int): EOptionP[Entity, Property] = {
+    override def interpret(instr: T, defSite: Int): EOptionP[Entity, StringConstancyProperty] = {
         if (instr.declaringClass.fqn == "java/lang/String" && instr.name == "valueOf") {
             processStringValueOf(instr)
         } else {
@@ -73,7 +72,7 @@ class InterproceduralStaticFunctionCallInterpreter(
      */
     private def processStringValueOf(
         call: StaticFunctionCall[V]
-    ): EOptionP[Entity, Property] = {
+    ): EOptionP[Entity, StringConstancyProperty] = {
         val results = call.params.head.asVar.definedBy.toArray.sorted.map { ds ⇒
             exprHandler.processDefSite(ds, params)
         }
@@ -106,7 +105,7 @@ class InterproceduralStaticFunctionCallInterpreter(
      */
     private def processArbitraryCall(
         instr: StaticFunctionCall[V], defSite: Int
-    ): EOptionP[Entity, Property] = {
+    ): EOptionP[Entity, StringConstancyProperty] = {
         val methods, _ = getMethodsForPC(
             instr.pc, ps, state.callees, declaredMethods
         )

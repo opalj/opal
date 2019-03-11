@@ -8,7 +8,6 @@ import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPK
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.ProperOnUpdateContinuation
-import org.opalj.fpcf.Property
 import org.opalj.fpcf.PropertyStore
 import org.opalj.br.analyses.FieldAccessInformation
 import org.opalj.br.fpcf.properties.StringConstancyProperty
@@ -51,7 +50,7 @@ class InterproceduralFieldInterpreter(
      *
      * @see [[AbstractStringInterpreter.interpret]]
      */
-    override def interpret(instr: T, defSite: Int): EOptionP[Entity, Property] = {
+    override def interpret(instr: T, defSite: Int): EOptionP[Entity, StringConstancyProperty] = {
         val defSitEntity: Integer = defSite
         if (!InterproceduralStringAnalysis.isSupportedType(instr.declaredFieldType)) {
             // Unknown type => Cannot further approximate
@@ -59,7 +58,7 @@ class InterproceduralFieldInterpreter(
         }
 
         var hasInit = false
-        val results = ListBuffer[EOptionP[Entity, Property]]()
+        val results = ListBuffer[EOptionP[Entity, StringConstancyProperty]]()
         fieldAccessInformation.writeAccesses(instr.declaringClass, instr.name).foreach {
             case (m, pcs) ⇒ pcs.foreach { pc ⇒
                 if (m.name == "<init>") {
