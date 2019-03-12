@@ -81,6 +81,13 @@ class InterproceduralStringAnalysis(
         val project: SomeProject
 ) extends FPCFAnalysis {
 
+    /**
+     * To analyze an expression within a method ''m'', callers information might be necessary, e.g.,
+     * to know with which arguments ''m'' is called. [[callersThreshold]] determines the threshold
+     * up to which number of callers parameter information are gathered. For "number of callers
+     * greater than [[callersThreshold]]", parameters are approximated with the lower bound.
+     */
+    private val callersThreshold = 10
     private val declaredMethods = project.get(DeclaredMethodsKey)
     private final val fieldAccessInformation = project.get(FieldAccessInformationKey)
 
@@ -467,12 +474,24 @@ class InterproceduralStringAnalysis(
      * This method takes a computation state, `state` as well as a TAC provider, `tacProvider`, and
      * determines the interpretations of all parameters of the method under analysis. These
      * interpretations are registered using [[InterproceduralStringAnalysis.registerParams]].
+     * The return value of this function indicates whether a the parameter evaluation is done
+     * (`true`) or not yet (`false`).
      */
     private def registerParams(
         state: InterproceduralComputationState
     ): Boolean = {
+        val callers = state.callers.callers(declaredMethods).toSeq
+        if (callers.length > callersThreshold) {
+            state.params.append(
+                state.entity._2.parameterTypes.map{
+                    _: FieldType ⇒ StringConstancyInformation.lb
+                }.to[ListBuffer]
+            )
+            return false
+        }
+
         var hasIntermediateResult = false
-        state.callers.callers(declaredMethods).toSeq.zipWithIndex.foreach {
+        callers.zipWithIndex.foreach {
             case ((m, pc), methodIndex) ⇒
                 val tac = propertyStore(m.definedMethod, TACAI.key).ub.tac.get
                 val params = tac.stmts(tac.pcToIndex(pc)) match {
