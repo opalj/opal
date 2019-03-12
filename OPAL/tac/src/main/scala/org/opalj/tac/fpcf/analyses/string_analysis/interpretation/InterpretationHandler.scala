@@ -231,7 +231,11 @@ object InterpretationHandler {
                             case Assignment(_, _, expr: New) ⇒
                                 news.append(expr)
                             case Assignment(_, _, expr: VirtualFunctionCall[V]) ⇒
-                                news.appendAll(findNewOfVar(expr.receiver.asVar, stmts))
+                                val exprReceiverVar = expr.receiver.asVar
+                                // The "if" is to avoid endless recursion
+                                if (duvar.definedBy != exprReceiverVar.definedBy) {
+                                    news.appendAll(findNewOfVar(exprReceiverVar, stmts))
+                                }
                             case _ ⇒
                         }
                     }
