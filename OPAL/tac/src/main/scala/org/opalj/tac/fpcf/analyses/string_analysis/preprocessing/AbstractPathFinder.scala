@@ -45,7 +45,7 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
      *                  ''e1''.
      */
     protected case class HierarchicalCSOrder(
-        hierarchy: List[(Option[CSInfo], List[HierarchicalCSOrder])]
+            hierarchy: List[(Option[CSInfo], List[HierarchicalCSOrder])]
     )
 
     /**
@@ -339,9 +339,11 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
                             val endOfFinally = cnSameStartPC.map(_.handlerPC).max
                             tryInfo(cn.startPC) = endOfFinally - 1 - numElementsFinally
                         } else {
-                            tryInfo(cn.startPC) = cfg.bb(cnSameStartPC.head.endPC).successors.map {
+                            val blockIndex = if (cnSameStartPC.head.endPC < 0)
+                                cfg.code.instructions.length - 1 else cnSameStartPC.head.endPC
+                            tryInfo(cn.startPC) = cfg.bb(blockIndex).successors.map {
                                 case bb: BasicBlock ⇒ bb.startPC
-                                case _              ⇒ -1
+                                case _              ⇒ blockIndex
                             }.max - 1
                         }
                     }
@@ -553,7 +555,8 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
             case cn: CatchNode ⇒
                 // Add once for the try block
                 if (startEndPairs.isEmpty) {
-                    startEndPairs.append((cn.startPC, cn.endPC))
+                    val endPC = if (cn.endPC >= 0) cn.endPC else cn.handlerPC
+                    startEndPairs.append((cn.startPC, endPC))
                 }
                 if (cn.catchType.isDefined && cn.catchType.get.fqn == "java/lang/Throwable") {
                     throwableElement = Some(cn)
@@ -736,8 +739,8 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
         bb.successors.filter(
             _.isInstanceOf[BasicBlock]
         ).foldLeft(false)((prev: Boolean, next: CFGNode) ⇒ {
-            prev || (next.predecessors.count(_.isInstanceOf[BasicBlock]) >= n)
-        })
+                prev || (next.predecessors.count(_.isInstanceOf[BasicBlock]) >= n)
+            })
 
     /**
      * This function checks if a branching corresponds to an if (or if-elseif) structure that has no
@@ -841,7 +844,7 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
     ): Boolean = {
         val stack = mutable.Stack(from)
         val seenNodes = mutable.Map[Int, Unit]()
-        alreadySeen.foreach(seenNodes(_) = Unit)
+        alreadySeen.foreach(seenNodes(_)= Unit)
         seenNodes(from) = Unit
 
         while (stack.nonEmpty) {
