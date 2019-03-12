@@ -41,7 +41,7 @@ import org.opalj.tac.cg.RTACallGraphKey
  */
 object CallGraph extends DefaultOneStepAnalysis {
 
-    override def title: String = "Field Locality"
+    override def title: String = "Call Graph Analysis"
 
     override def description: String = {
         "Provides the number of reachable methods and call edges in the give project."
