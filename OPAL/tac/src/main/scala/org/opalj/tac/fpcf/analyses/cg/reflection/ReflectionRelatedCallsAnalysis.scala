@@ -26,7 +26,6 @@ import org.opalj.value.ValueInformation
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
-import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
 import org.opalj.br.fpcf.cg.properties.Callees
 import org.opalj.br.fpcf.cg.properties.CallersProperty
 import org.opalj.br.fpcf.cg.properties.LoadedClasses
@@ -42,6 +41,7 @@ import org.opalj.br.InvokeVirtualMethodHandle
 import org.opalj.br.NewInvokeSpecialMethodHandle
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.BooleanType
+import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.tac.fpcf.properties.TACAI
 
 sealed trait TypeAndStringMagic extends TACAIBasedAPIBasedCallGraphAnalysis {
@@ -770,7 +770,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
     }
 }
 
-object TriggeredReflectionRelatedCallsAnalysis extends BasicFPCFTriggeredAnalysisScheduler {
+object TriggeredReflectionRelatedCallsAnalysis extends BasicFPCFEagerAnalysisScheduler {
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(
         CallersProperty,
@@ -785,7 +785,7 @@ object TriggeredReflectionRelatedCallsAnalysis extends BasicFPCFTriggeredAnalysi
         LoadedClasses
     )
 
-    override def register(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+    override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new ReflectionRelatedCallsAnalysis(p)
         ps.scheduleEagerComputationForEntity(p)(analysis.process)
         analysis

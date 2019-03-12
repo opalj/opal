@@ -10,7 +10,6 @@ import org.opalj.fpcf.Results
 import org.opalj.value.IsReferenceValue
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.cg.properties.CallersProperty
-import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
 import org.opalj.br.fpcf.cg.properties.Callees
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
@@ -20,6 +19,7 @@ import org.opalj.br.ObjectType
 import org.opalj.br.VoidType
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.Method
+import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.Assignment
 import org.opalj.tac.Expr
@@ -418,7 +418,7 @@ class TriggeredThreadRelatedCallsAnalysis private[analyses] (
     }
 }
 
-object TriggeredThreadRelatedCallsAnalysis extends BasicFPCFTriggeredAnalysisScheduler {
+object TriggeredThreadRelatedCallsAnalysis extends BasicFPCFEagerAnalysisScheduler {
 
     private[cg] val uncaughtExceptionDescriptor = {
         MethodDescriptor(
@@ -434,7 +434,7 @@ object TriggeredThreadRelatedCallsAnalysis extends BasicFPCFTriggeredAnalysisSch
 
     override def derivesEagerly: Set[PropertyBounds] = Set.empty
 
-    override def register(
+    override def start(
         p: SomeProject, ps: PropertyStore, unused: Null
     ): TriggeredThreadRelatedCallsAnalysis = {
         val analysis = new TriggeredThreadRelatedCallsAnalysis(p)
