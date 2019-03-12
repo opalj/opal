@@ -160,17 +160,23 @@ class InterproceduralStringAnalysis(
             return getInterimResult(state)
         }
 
+        if (state.computedLeanPath == null) {
+            state.computedLeanPath = computeLeanPath(uvar, state.tac)
+        }
+
         if (state.iHandler == null) {
             state.iHandler = InterproceduralInterpretationHandler(
                 state.tac, ps, declaredMethods, fieldAccessInformation, state
             )
+            val interimState = state.copy()
+            interimState.tac = state.tac
+            interimState.computedLeanPath = state.computedLeanPath
+            interimState.callees = state.callees
+            interimState.callers = state.callers
+            interimState.params = state.params
             state.interimIHandler = InterproceduralInterpretationHandler(
-                state.tac, ps, declaredMethods, fieldAccessInformation, state.copy()
+                state.tac, ps, declaredMethods, fieldAccessInformation, interimState
             )
-        }
-
-        if (state.computedLeanPath == null) {
-            state.computedLeanPath = computeLeanPath(uvar, state.tac)
         }
 
         var requiresCallersInfo = false
