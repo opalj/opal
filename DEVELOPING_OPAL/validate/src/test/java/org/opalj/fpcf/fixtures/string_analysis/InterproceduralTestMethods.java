@@ -534,7 +534,7 @@ public class InterproceduralTestMethods {
             stringDefinitions = {
                     @StringDefinitions(
                             expectedLevel = DYNAMIC,
-                            expectedStrings = "\\w" // Should be rather (\\w|value)
+                            expectedStrings = "(\\w|value)"
                     )
             })
     public String cyclicDependencyTest(String s) {

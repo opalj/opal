@@ -76,13 +76,10 @@ case class InterproceduralComputationState(entity: P) {
     val fpe2sci: mutable.Map[Int, ListBuffer[StringConstancyInformation]] = mutable.Map()
 
     /**
-     * A mapping from a value / index of a FlatPathElement to StringConstancyInformation which is
-     * not yet final. For [[fpe2sci]] a list of [[StringConstancyInformation]] is necessary to
-     * compute (intermediate) results which might not be done in a single analysis step. For the
-     * interims, a single [[StringConstancyInformation]] element is sufficient, as it captures the
-     * results from [[fpe2sci]].
+     * A mapping from a value / index of a FlatPathElement to StringConstancyInformation which are
+     * not yet final.
      */
-    val interimFpe2sci: mutable.Map[Int, StringConstancyInformation] = mutable.Map()
+    val interimFpe2sci: mutable.Map[Int, ListBuffer[StringConstancyInformation]] = mutable.Map()
 
     /**
      * An analysis may depend on the evaluation of its parameters. This number indicates how many
@@ -162,10 +159,23 @@ case class InterproceduralComputationState(entity: P) {
     }
 
     /**
-     * Sets a value for the [[interimFpe2sci]] map.
+     * Appends a [[StringConstancyInformation]] element to [[interimFpe2sci]].
+     *
+     * @param defSite The definition site to which append the given `sci` element for.
+     * @param sci The [[StringConstancyInformation]] to add to the list of interim results for the
+     *            given definition site.
      */
-    def setInterimFpe2Sci(defSite: Int, sci: StringConstancyInformation): Unit =
-        interimFpe2sci(defSite) = sci
+    def appendToInterimFpe2Sci(
+        defSite: Int, sci: StringConstancyInformation
+    ): Unit = {
+        if (!interimFpe2sci.contains(defSite)) {
+            interimFpe2sci(defSite) = ListBuffer()
+        }
+        // Append an element
+        if (!interimFpe2sci(defSite).contains(sci)) {
+            interimFpe2sci(defSite).append(sci)
+        }
+    }
 
     /**
      * Takes an entity as well as a definition site and append it to [[var2IndexMapping]].
