@@ -35,7 +35,7 @@ import org.opalj.tac.cg.RTACallGraphKey
  * (for callees use -callees=m).
  *
  * The default algorithm is an RTA.
- * Use -CHA to compute a CHA-based call graph.
+ * Use -algorithm=CHA to compute a CHA-based call graph.
  *
  * @author Florian Kuebler
  */
