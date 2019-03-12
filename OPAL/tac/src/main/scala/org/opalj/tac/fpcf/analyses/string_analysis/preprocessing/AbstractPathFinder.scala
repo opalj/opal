@@ -45,7 +45,7 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
      *                  ''e1''.
      */
     protected case class HierarchicalCSOrder(
-            hierarchy: List[(Option[CSInfo], List[HierarchicalCSOrder])]
+        hierarchy: List[(Option[CSInfo], List[HierarchicalCSOrder])]
     )
 
     /**
@@ -328,8 +328,13 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
                             // Find out, how many elements the finally block has and adjust the try
                             // block accordingly
                             val startFinally = cnSameStartPC.map(_.handlerPC).max
-                            val endFinally =
-                                cfg.code.instructions(startFinally - 1).asGoto.targetStmt
+                            val endFinally = cfg.code.instructions(startFinally - 1) match {
+                                // If the finally does not terminate a method, it has a goto to jump
+                                // after the finally block; if not, the end of the finally is marked
+                                // by the end of the method
+                                case Goto(_, target) ⇒ target
+                                case _               ⇒ cfg.code.instructions.length - 1
+                            }
                             val numElementsFinally = endFinally - startFinally - 1
                             val endOfFinally = cnSameStartPC.map(_.handlerPC).max
                             tryInfo(cn.startPC) = endOfFinally - 1 - numElementsFinally
@@ -572,7 +577,13 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
             if (hasFinallyBlock) {
                 // Find out, how many elements the finally block has
                 val startFinally = catchBlockStartPCs.max
-                val endFinally = cfg.code.instructions(startFinally - 1).asGoto.targetStmt
+                val endFinally = cfg.code.instructions(startFinally - 1) match {
+                    // If the finally does not terminate a method, it has a goto to jump
+                    // after the finally block; if not, the end of the finally is marked
+                    // by the end of the method
+                    case Goto(_, target) ⇒ target
+                    case _               ⇒ cfg.code.instructions.length - 1
+                }
                 // -1 for unified processing further down below (because in
                 // catchBlockStartPCs.foreach, 1 is subtracted)
                 numElementsFinally = endFinally - startFinally - 1
@@ -725,8 +736,8 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
         bb.successors.filter(
             _.isInstanceOf[BasicBlock]
         ).foldLeft(false)((prev: Boolean, next: CFGNode) ⇒ {
-                prev || (next.predecessors.count(_.isInstanceOf[BasicBlock]) >= n)
-            })
+            prev || (next.predecessors.count(_.isInstanceOf[BasicBlock]) >= n)
+        })
 
     /**
      * This function checks if a branching corresponds to an if (or if-elseif) structure that has no
@@ -830,7 +841,7 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
     ): Boolean = {
         val stack = mutable.Stack(from)
         val seenNodes = mutable.Map[Int, Unit]()
-        alreadySeen.foreach(seenNodes(_)= Unit)
+        alreadySeen.foreach(seenNodes(_) = Unit)
         seenNodes(from) = Unit
 
         while (stack.nonEmpty) {
