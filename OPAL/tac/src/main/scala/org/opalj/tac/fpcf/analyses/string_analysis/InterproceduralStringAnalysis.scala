@@ -111,7 +111,6 @@ class InterproceduralStringAnalysis(
         val fpe2SciMapping = state.interimFpe2sci.map {
             case (key, value) ⇒ key → ListBuffer(value)
         }
-        identity(fpe2SciMapping)
         if (state.computedLeanPath != null) {
             StringConstancyProperty(new PathTransformer(state.interimIHandler).pathToStringTree(
                 state.computedLeanPath, fpe2SciMapping
