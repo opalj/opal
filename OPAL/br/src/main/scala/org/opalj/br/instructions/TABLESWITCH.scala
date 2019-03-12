@@ -9,6 +9,7 @@ import org.opalj.collection.immutable.IntArray
 import org.opalj.collection.immutable.IntArraySet
 import org.opalj.collection.immutable.IntArraySet1
 import org.opalj.collection.immutable.RefArray
+import org.opalj.collection.ForeachRefIterator
 
 /**
  * Access jump table by index and jump.
@@ -183,7 +184,9 @@ case class LabeledTABLESWITCH(
         )
     }
 
-    override def branchTargets: Seq[InstructionLabel] = defaultBranchTarget +: jumpTargets
+    override def branchTargets: ForeachRefIterator[InstructionLabel] = {
+        jumpTargets.foreachIterator + defaultBranchTarget
+    }
 
     def caseValueOfJumpTarget(jumpTarget: InstructionLabel): (Chain[Int], Boolean) = {
         var caseValues = Chain.empty[Int]

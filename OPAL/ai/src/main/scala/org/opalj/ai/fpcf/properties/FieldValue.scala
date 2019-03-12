@@ -12,6 +12,8 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.value.ValueInformation
 import org.opalj.br.Field
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br.ClassHierarchy
+import org.opalj.br.FieldType
 
 sealed trait FieldValueMetaInformation extends PropertyMetaInformation {
 
@@ -32,10 +34,18 @@ sealed trait FieldValue extends Property with FieldValueMetaInformation {
      */
     final def key: PropertyKey[FieldValue] = FieldValue.key
 
-    def value: ValueInformation
+    def value(implicit classHierarchy: ClassHierarchy): ValueInformation
 }
 
-case class ValueBasedFieldValueInformation(value: ValueInformation) extends FieldValue
+case class ValueBasedFieldValueInformation(theValue: ValueInformation) extends FieldValue {
+    override def value(implicit classHierarchy: ClassHierarchy): ValueInformation = theValue
+}
+
+case class TypeBasedFieldValueInformation(fieldType: FieldType) extends FieldValue {
+    override def value(implicit classHierarchy: ClassHierarchy): ValueInformation = {
+        ValueInformation.forProperValue(fieldType)
+    }
+}
 
 object FieldValue extends FieldValueMetaInformation {
 
@@ -43,7 +53,7 @@ object FieldValue extends FieldValueMetaInformation {
      * The key associated with every [[FieldValue]] property.
      */
     final val key: PropertyKey[FieldValue] = PropertyKey.create[Field, FieldValue](
-        "org.opalj.ai.fpcf.properties.FieldValue",
+        "opalj.FieldValue",
         // fallback property computation...
         (ps: PropertyStore, r: FallbackReason, f: Field) ⇒ {
             val p = ps.context(classOf[SomeProject])

@@ -209,17 +209,33 @@ object CODE {
         }
 
         def handleBranchTarget(branchTarget: InstructionLabel): Unit = {
-            val targetIndex = labelsToIndexes.getInt(branchTarget)
+            var targetIndex = labelsToIndexes.getInt(branchTarget)
             if (targetIndex == Int.MinValue) {
                 val message = s"the $branchTarget label could not be resolved"
                 throw new NoSuchElementException(message)
             }
+
+            // Recall that we always eagerly mark all PCLabels as live to enable remappings;
+            // hence, it may happen that in (nested) catch blocks, which are only processed
+            // in a second step, the target (pseudo) instruction is actually already marked as
+            // live though the real instruction is not (yet) live.
+            val targetInstruction = codeElements(targetIndex)
+            if (targetInstruction.isPseudoInstruction &&
+                isLive(targetIndex) &&
+                targetInstruction.asPseudoInstruction.isPCLabel) {
+                targetIndex += 1
+                while (!codeElements(targetIndex).isInstructionLikeElement) {
+                    targetIndex += 1
+                }
+                markedAsLive += targetIndex
+                // we schedule the instruction after the label
+            }
+
             markMetaInformationAsLive(targetIndex)
         }
 
         /* Returns `true` if any instruction was actually marked as live. */
-        def processMarkedAsLive(): Boolean = {
-            var markedInstructionAsLive = false
+        def processMarkedAsLive(): Unit = {
             while (markedAsLive.nonEmpty) {
                 // mark all code elements which can be executed subsequently as live
                 val IntRefPair(nextIndex, newMarkedAsLive) = markedAsLive.headAndTail
@@ -227,12 +243,12 @@ object CODE {
 
                 var currentIndex = nextIndex
                 if (!isLive(currentIndex)) {
-                    markedInstructionAsLive = true
 
                     var currentInstruction: CodeElement[T] = codeElements(currentIndex)
                     var continueIteration = true
                     do {
-                        if (!isLive(currentIndex) && !currentInstruction.isExceptionHandlerElement) {
+                        val isNotYetLive = !isLive(currentIndex)
+                        if (isNotYetLive && !currentInstruction.isExceptionHandlerElement) {
                             // This check is primarily required due to the eager marking
                             // of PCLabels as live.
                             isLive(currentIndex) = true
@@ -251,7 +267,7 @@ object CODE {
                                     li.branchTargets.foreach(handleBranchTarget)
                                     // let's check if we have a "fall-through"
                                     li match {
-                                        case LabeledJSR(_) | LabeledJSR_W(_) |
+                                        case _: LabeledJSR | _: LabeledJSR_W |
                                             _: LabeledSimpleConditionalBranchInstruction ⇒
                                             // let's continue...
                                             true
@@ -271,8 +287,6 @@ object CODE {
                                     true
                                 }
                         }
-                        // DEBUG: println(s"[processMarkedAsLive] did set $currentIndex to live")
-
                         currentIndex += 1
                     } while (continueIteration
                         && currentIndex < codeElementsSize
@@ -285,7 +299,6 @@ object CODE {
                         })
                 }
             }
-            markedInstructionAsLive
         }
 
         /**

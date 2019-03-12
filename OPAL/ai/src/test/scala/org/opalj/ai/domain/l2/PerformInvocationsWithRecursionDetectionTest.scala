@@ -5,14 +5,16 @@ package domain
 package l2
 
 import scala.language.reflectiveCalls
+
 import org.junit.runner.RunWith
-import org.scalatest.Matchers
 import org.scalatest.FlatSpec
+import org.scalatest.Matchers
 import org.scalatest.junit.JUnitRunner
-import org.opalj.bi.TestResources.locateTestResources
+
+import org.opalj.collection.immutable.Chain
 import org.opalj.br._
 import org.opalj.br.analyses.Project
-import org.opalj.collection.immutable.Chain
+import org.opalj.br.TestSupport.biProject
 
 /**
  * Tests that we can detect situations in which a method calls itself.
@@ -163,6 +165,7 @@ object PerformInvocationsWithRecursionDetectionTestFixture {
 
             }
         }
+
         override def calledMethodDomain(method: Method) =
             new ChildInvocationDomain(project, method, this)
 
@@ -184,9 +187,7 @@ object PerformInvocationsWithRecursionDetectionTestFixture {
 
     }
 
-    val testClassFileName = "classfiles/performInvocations.jar"
-    val testClassFile = locateTestResources(testClassFileName, "ai")
-    val project = Project(testClassFile)
-    val StaticCalls = project.classFile(ObjectType("performInvocations/StaticCalls")).get
+    val project = biProject("ai.jar")
+    val StaticCalls = project.classFile(ObjectType("ai/domain/StaticCalls")).get
 
 }

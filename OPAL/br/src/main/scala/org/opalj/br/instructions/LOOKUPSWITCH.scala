@@ -9,6 +9,7 @@ import org.opalj.collection.immutable.IntArraySet1
 import org.opalj.collection.immutable.Chain
 import org.opalj.collection.immutable.IntIntPair
 import org.opalj.collection.immutable.RefArray
+import org.opalj.collection.ForeachRefIterator
 
 /**
  * Access jump table by key match and jump.
@@ -168,7 +169,9 @@ case class LabeledLOOKUPSWITCH(
 
     def caseValues: IntIterator = npairs.iterator.filter(_._2 != defaultBranchTarget).map(_._1)
 
-    override def branchTargets: InstructionLabels = npairs.map[InstructionLabel](_._2)
+    override def branchTargets: ForeachRefIterator[InstructionLabel] = {
+        npairs.foreachIterator.map[InstructionLabel](_._2) + defaultBranchTarget
+    }
 
     @throws[BranchoffsetOutOfBoundsException]("if the branchoffset is invalid")
     override def resolveJumpTargets(currentPC: PC, pcs: Map[InstructionLabel, PC]): LOOKUPSWITCH = {

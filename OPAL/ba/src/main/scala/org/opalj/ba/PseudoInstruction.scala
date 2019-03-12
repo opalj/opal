@@ -9,9 +9,13 @@ package ba
  */
 abstract class PseudoInstruction extends CodeElement[Nothing] {
 
+    final override def isPseudoInstruction: Boolean = true
+    final override def asPseudoInstruction: PseudoInstruction = this
+
     final override def isInstructionLikeElement: Boolean = false
 
-    final override def isPseudoInstruction: Boolean = true
-
     final override def isControlTransferInstruction: Boolean = false
+
+    def isPCLabel: Boolean = false
+
 }

@@ -25,6 +25,15 @@ abstract class ForeachRefIterator[+T] { self ⇒
         }
     }
 
+    final def +[X >: T <: AnyRef](that: X): ForeachRefIterator[X] = {
+        new ForeachRefIterator[X] {
+            def foreach[U](f: X ⇒ U): Unit = {
+                self.foreach(f)
+                f(that)
+            }
+        }
+    }
+
     final def ++[X >: T <: AnyRef](that: ForeachRefIterator[X]): ForeachRefIterator[X] = {
         new ForeachRefIterator[X] {
             def foreach[U](f: X ⇒ U): Unit = {
@@ -46,7 +55,7 @@ abstract class ForeachRefIterator[+T] { self ⇒
 
     final def zipWithIndex: ForeachRefIterator[(T, Int)] = {
         new ForeachRefIterator[(T, Int)] {
-            def foreach[U](f: Tuple2[T, Int] ⇒ U): Unit = {
+            def foreach[U](f: ((T, Int)) ⇒ U): Unit = {
                 var i = 0
                 self.foreach { e ⇒
                     f((e, i))

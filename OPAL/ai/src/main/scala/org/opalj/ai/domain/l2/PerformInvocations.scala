@@ -115,7 +115,7 @@ trait PerformInvocations extends MethodCallsHandling {
 
             if (calledMethod.descriptor.returnType eq VoidType) {
                 MethodCallResult(exceptions)
-            } else if (returnedValue.isEmpty /*the method always throws an exception*/ ) {
+            } else if (returnedValue.isEmpty /* <=> the method always throws an exception */ ) {
                 ThrowsException(exceptions)
             } else {
                 MethodCallResult(returnedValue.get, exceptions)

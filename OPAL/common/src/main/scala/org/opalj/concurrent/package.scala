@@ -184,23 +184,27 @@ package object concurrent {
     )(
         f: Function[T, U]
     ): Unit = {
-        val exceptions = new ConcurrentExceptions
 
         if (parallelizationLevel == 1) {
+            var exceptions: ConcurrentExceptions = null
+            def addSuppressed(throwable: Throwable): Unit = {
+                if (exceptions == null) exceptions = new ConcurrentExceptions
+                exceptions.addSuppressed(throwable)
+            }
             data forall { e ⇒
                 try {
                     f(e)
                 } catch {
                     case ct: ControlThrowable ⇒
                         val t = new Throwable("unsupported non-local return", ct)
-                        exceptions.addSuppressed(t)
+                        addSuppressed(t)
 
                     case t: Throwable ⇒
-                        exceptions.addSuppressed(t)
+                        addSuppressed(t)
                 }
                 !isInterrupted()
             }
-            if (exceptions.getSuppressed.length > 0)
+            if (exceptions != null)
                 throw exceptions;
             else
                 return ;
@@ -209,6 +213,11 @@ package object concurrent {
         val max = data.length
         val index = new AtomicInteger(0)
         val futures = new Array[Future[Unit]](parallelizationLevel)
+        var exceptions: ConcurrentExceptions = null
+        def addSuppressed(throwable: Throwable): Unit = index.synchronized {
+            if (exceptions == null) exceptions = new ConcurrentExceptions
+            exceptions.addSuppressed(throwable)
+        }
 
         // Start parallel execution
         try {
@@ -224,10 +233,10 @@ package object concurrent {
                             } catch {
                                 case ct: ControlThrowable ⇒
                                     val t = new Throwable("unsupported non-local return", ct)
-                                    exceptions.addSuppressed(t)
+                                    addSuppressed(t)
 
                                 case t: Throwable ⇒
-                                    exceptions.addSuppressed(t)
+                                    addSuppressed(t)
                             }
                         }
                     }
@@ -240,18 +249,16 @@ package object concurrent {
                 while (t < parallelizationLevel) {
                     val future = futures(t)
                     Await.ready(future, Duration.Inf).value.get match {
-                        case scala.util.Failure(exception) ⇒ exceptions.addSuppressed(exception)
+                        case scala.util.Failure(exception) ⇒ addSuppressed(exception)
                         case _                             ⇒ // OK
                     }
                     t += 1
                 }
             }
         } catch {
-            case t: Throwable ⇒
-                // actually, we should never get here...
-                exceptions.addSuppressed(t)
+            case t: Throwable ⇒ addSuppressed(t) // <= actually, we should never get here...
         }
-        if (exceptions.getSuppressed.length > 0) {
+        if (exceptions != null) {
             throw exceptions;
         }
     }

@@ -73,7 +73,8 @@ public class EscapesViaReturn {
 
     public Object escapeAfterCallToSometimesIdentity(boolean b) {
         Object o = new
-                @AtMostEscapeInCallee("the object is passed to an identity like function")
+                @AtMostEscapeInCallee(value = "the object is passed to an identity like function", performInvokationsDomain = false)
+                @AtMostEscapeViaReturn(value = "the object is passed to an identity like function", performInvokationsDomain = true)
                         Object();
         return sometimesIdentity(b, o);
     }

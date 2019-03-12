@@ -48,5 +48,5 @@ trait TheProject extends ThePropertyStore with LogContextProvider {
      */
     @inline final implicit def classHierarchy: BRClassHierarchy = project.classHierarchy
 
-    final override lazy val propertyStore = project.get(PropertyStoreKey)
+    implicit final override lazy val propertyStore = project.get(PropertyStoreKey)
 }

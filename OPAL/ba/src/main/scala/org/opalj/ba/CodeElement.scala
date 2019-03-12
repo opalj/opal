@@ -18,15 +18,17 @@ import org.opalj.br.instructions.LabeledInstruction
  */
 trait CodeElement[+T] {
 
-    def isInstructionLikeElement: Boolean
-
     def isPseudoInstruction: Boolean
+    def asPseudoInstruction: PseudoInstruction = {
+        throw new ClassCastException(s"$this is not a PseudoInstruction")
+    }
+
+    def isInstructionLikeElement: Boolean
 
     def isExceptionHandlerElement: Boolean
 
     def isTry: Boolean
-
-    def asTry: TRY = throw new ClassCastException(s"cannot cast $this to TRY");
+    def asTry: TRY = throw new ClassCastException(s"$this is not a TRY");
 
     def isCatch: Boolean
 

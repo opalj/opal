@@ -9,11 +9,11 @@ import org.scalatest.FlatSpec
 import org.scalatest.Matchers
 import org.scalatest.junit.JUnitRunner
 
-import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br.ClassFile
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
+import org.opalj.br.TestSupport.biProject
 
 /**
  *
@@ -163,6 +163,23 @@ class PerformInvocationsTest extends FlatSpec with Matchers {
         domain.allReturnedValues.head should be((17, domain.IntegerRange(1)))
     }
 
+    it should ("be able to return the information that a parameter or some other value is returned") in {
+        val method = StaticCalls.findMethod("advancedUselessReferenceTest").head
+        val domain = new L1InvocationDomain(PerformInvocationsTestFixture.project, method)
+        val result = BaseAI(method, domain)
+        domain.returnedNormally should be(true)
+        domain.allThrownExceptions.size should be(0)
+
+        domain.allReturnedValues.size should be(2)
+        assert(
+            domain.allReturnedValues(21) == domain.NullValue(20)
+        )
+        assert(
+            domain.allReturnedValues(19) == domain.InitializedObjectValue(0, ObjectType.Object)
+        )
+        println(result)
+    }
+
 }
 
 object PerformInvocationsTestFixture {
@@ -257,9 +274,7 @@ object PerformInvocationsTestFixture {
         ): InvocationDomain = new L1InvocationDomain(project, method)
     }
 
-    val testClassFileName = "classfiles/performInvocations.jar"
-    val testClassFile = locateTestResources(testClassFileName, "ai")
-    val project = Project(testClassFile)
-    val StaticCalls = project.classFile(ObjectType("performInvocations/StaticCalls")).get
+    val project = biProject("ai.jar")
+    val StaticCalls = project.classFile(ObjectType("ai/domain/StaticCalls")).get
 
 }

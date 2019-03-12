@@ -146,7 +146,7 @@ final class InterimResult[P >: Null <: Property] private (
         val hint:      PropertyComputationHint
 ) extends ProperPropertyComputationResult { result ⇒
 
-    val key: PropertyKey[P] = eps.pk
+    final def key: PropertyKey[P] = eps.pk
 
     if (PropertyStore.Debug) { // TODO move to generic handleResult method ...
         if (dependees.isEmpty) {

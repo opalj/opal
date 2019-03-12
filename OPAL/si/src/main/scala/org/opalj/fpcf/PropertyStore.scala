@@ -4,16 +4,19 @@ package fpcf
 
 import java.util.concurrent.ConcurrentHashMap
 import java.util.{Arrays ⇒ JArrays}
+import java.util.concurrent.RejectedExecutionException
 
 import scala.util.control.ControlThrowable
-import scala.collection.{Map ⇒ SomeMap}
+import scala.collection.mutable
 
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.info
+import org.opalj.log.OPALLogger.{debug ⇒ trace}
 import org.opalj.log.OPALLogger.error
 import org.opalj.collection.IntIterator
 import org.opalj.fpcf.PropertyKind.SupportedPropertyKinds
+import org.opalj.fpcf.PropertyKey.fallbackPropertyBasedOnPKId
 
 /**
  * A property store manages the execution of computations of properties related to concrete
@@ -47,11 +50,15 @@ import org.opalj.fpcf.PropertyKind.SupportedPropertyKinds
  *    No other analysis is (conceptually) allowed to derive a value for an E/PK pairing
  *    for which a lazy function is registered. It is also not allowed to schedule a computation
  *    eagerly if a lazy computation is also registered.
+ *
  *  - '''Thread-Safe PropertyComputation functions''' If a single instance of a property computation
  *    function (which is the standard case) is scheduled for computing the properties of multiple
  *    entities, that function has to be thread safe. I.e., the function may
  *    be executed concurrently for different entities. The [[OnUpdateContinuation]] functions
- *    are, however, executed sequentially w.r.t. one E/PK pair.
+ *    are, however, executed sequentially w.r.t. one E/PK pair. This model generally does not
+ *    require that users have to think about concurrent issues as long as the initial function
+ *    is actually a pure function.
+ *
  *  - '''Non-Overlapping Results''' [[PropertyComputation]] functions that are invoked on different
  *    entities have to compute result sets that are disjoint unless a [[PartialResult]] is used.
  *    For example, an analysis that performs a computation on class files and
@@ -69,7 +76,7 @@ import org.opalj.fpcf.PropertyKind.SupportedPropertyKinds
  * computed a lower bound that one will be used.
  *
  * ==Thread Safety==
- * The sequential property stores are not thread-safe; the parallelized implementation(s) are
+ * The sequential property store is not thread-safe; the parallelized implementation is
  * thread-safe in the following manner:
  *  - a client has to use the SAME thread (the driver thread) to call
  *    (0) [[set]] to initialize the property store,
@@ -240,22 +247,43 @@ abstract class PropertyStore {
      */
     def scheduledOnUpdateComputationsCount: Int
 
-    /**
-     * The number of times a property was directly computed again due to an updated dependee.
-     */
-    def immediateOnUpdateComputationsCount: Int
-
     /** The number of times the property store reached quiescence. */
     def quiescenceCount: Int
 
-    /** The number of properties that were computed using a fast-track. */
+    /** The number of properties that were successfully computed using a fast-track. */
     def fastTrackPropertiesCount: Int
+
+    /** The number of fast-track property computations that were execute. */
+    def fastTrackPropertyComputationsCount: Int
+
+    /**
+     * The number of times a fallback property was computed for an entity though an (eager)
+     * analysis was actually scheduled.
+     */
+    def fallbacksUsedForComputedPropertiesCount: Int
+
+    protected[this] def incrementFallbacksUsedForComputedPropertiesCounter(): Unit
 
     /**
      * Reports core statistics; this method is only guaranteed to report ''final'' results
      * if it is called while the store is quiescent.
      */
-    def statistics: SomeMap[String, Int]
+    def statistics: mutable.LinkedHashMap[String, Int] = {
+        mutable.LinkedHashMap(
+            "scheduled tasks" ->
+                scheduledTasksCount,
+            "scheduled on update computations" ->
+                scheduledOnUpdateComputationsCount,
+            "fast-track properties" ->
+                fastTrackPropertiesCount,
+            "fast-track property computations" ->
+                fastTrackPropertyComputationsCount,
+            "computations of fallback properties for computed properties" ->
+                fallbacksUsedForComputedPropertiesCount,
+            "quiescence" ->
+                quiescenceCount
+        )
+    }
 
     //
     //
@@ -291,6 +319,11 @@ abstract class PropertyStore {
         Array.fill(SupportedPropertyKinds) { new Array[Boolean](SupportedPropertyKinds) }
     }
 
+    /**
+     * The order in which the property kinds will be finalized; the last phase is considered
+     * the clean-up phase and will contain all remaining properties that were not explicitly
+     * finalized previously.
+     */
     protected[this] final var subPhaseFinalizationOrder: Array[List[PropertyKind]] = Array.empty
 
     /**
@@ -310,19 +343,38 @@ abstract class PropertyStore {
         new Array(PropertyKind.SupportedPropertyKinds)
     }
 
+    protected[this] def computeFallback[E <: Entity, P <: Property](
+        e:    E,
+        pkId: Int
+    ): FinalEP[E, P] = {
+        val reason = {
+            if (propertyKindsComputedInEarlierPhase(pkId) || propertyKindsComputedInThisPhase(pkId)) {
+                incrementFallbacksUsedForComputedPropertiesCounter()
+                PropertyIsNotDerivedByPreviouslyExecutedAnalysis
+            } else {
+                PropertyIsNotComputedByAnyAnalysis
+            }
+        }
+        val p = fallbackPropertyBasedOnPKId(this, reason, e, pkId)
+        if (traceFallbacks) {
+            trace("analysis progress", s"used fallback $p for $e")
+        }
+        FinalEP(e, p.asInstanceOf[P])
+    }
+
     /**
      * Returns `true` if the given entity is known to the property store. Here, `isKnown` can mean
      *  - that we actually have a property, or
      *  - a computation is scheduled/running to compute some property, or
      *  - an analysis has a dependency on some (not yet finally computed) property, or
      *  - that the store just eagerly created the data structures necessary to associate
-     *    properties with the entity because the entity was queried
+     *    properties with the entity because the entity was queried.
      */
     def isKnown(e: Entity): Boolean
 
     /**
-     * Tests if we have a property for the entity with the respective kind. If `hasProperty`
-     * returns `true` a subsequent `apply` will return an `EPS` (not an `EPK`).
+     * Tests if we have some (lb, ub or final) property for the entity with the respective kind.
+     * If `hasProperty` returns `true` a subsequent `apply` will return an `EPS` (not an `EPK`).
      */
     final def hasProperty(epk: SomeEPK): Boolean = hasProperty(epk.e, epk.pk)
 
@@ -391,21 +443,25 @@ abstract class PropertyStore {
      * @note Only to be called when the store is quiescent.
      * @note Does not trigger lazy property computations.
      */
-    def finalEntities[P <: Property](p: P): Iterator[Entity]
+    def finalEntities[P <: Property](p: P): Iterator[Entity] = {
+        entities((otherEPS: SomeEPS) ⇒ otherEPS.isFinal && otherEPS.asFinal.p == p)
+    }
 
     /**
-     * Associates the given property `p` with property kind `pk` with the given entity
-     * `e` if `e` has no property of the respective kind. The set property is always final.
+     * Associates the given property `p`, which has property kind `pk`, with the given entity
+     * `e` iff `e` has no property of the respective kind. The set property is always final.
      *
      * '''Calling this method is only supported before any analysis is scheduled!'''
      *
-     * A use case is an analysis that does use the property store while executing the analysis,
+     * One use case is an analysis that does use the property store while executing the analysis,
      * but which wants to store the results in the store. Such an analysis '''must
      * be executed before any other analysis is scheduled'''.
+     * A second use case are (eager or lazy) analyses, which want to store some pre-configured
+     * information in the property store; e.g., properties of natives methods which were derived
+     * beforehand.
      *
-     * @note   This method must not be used '''if there might be another computation that
-     *         computes the property kind `pk` for `e` and which returns the respective property
-     *         as a result'''.
+     * @note   This method must not be used '''if there might be a computation (in the future) that
+     *         computes the property kind `pk` for the given `e`'''.
      */
     final def set(e: Entity, p: Property): Unit = {
         if (!isIdle) {
@@ -425,7 +481,7 @@ abstract class PropertyStore {
      * '''Calling this method is only supported before any analysis is scheduled!'''
      *
      * @param pc A function which is given the current property of kind pk associated with e and
-     *           which has to compute the new intermediate property `p`.
+     *           which has to compute the new '''intermediate''' property `p`.
      */
     final def preInitialize[E <: Entity, P <: Property](
         e:  E,
@@ -458,13 +514,19 @@ abstract class PropertyStore {
         )
     }
 
+    protected[this] var subPhaseId: Int = 0
+
+    protected[this] var hasSuppressedNotifications: Boolean = false
+
     /**
      * Needs to be called before an analysis is scheduled to inform the property store which
      * properties will be computed now and which are computed in a later phase. The
      * information is used to decide when we use a fallback and which kind of fallback.
      *
      * @note `setupPhase` even needs to be called if just fallback values should be computed; in
-     *        this case both sets have to be empty.
+     *        this case `propertyKindsComputedInThisPhase` and `propertyKindsComputedInLaterPhase`
+     *        have to be empty, but `finalizationOrder` have to contain the respective property
+     *        kind.
      *
      * @param propertyKindsComputedInThisPhase The kinds of properties for which we will schedule
      *                                         computations.
@@ -490,7 +552,7 @@ abstract class PropertyStore {
             throw new IllegalStateException("computations are already running");
         }
 
-        assert(
+        require(
             suppressInterimUpdates.forall { e ⇒
                 val (dependerPK, dependeePKs) = e
                 !dependeePKs.contains(dependerPK)
@@ -545,6 +607,9 @@ abstract class PropertyStore {
             } else {
                 (finalizationOrder :+ cleanUpSubPhase.toList).toArray
             }
+
+        subPhaseId = 0
+        hasSuppressedNotifications = suppressInterimUpdates.nonEmpty
 
         // Step 5
         // Call `newPhaseInitialized` to enable subclasses to perform custom initialization steps
@@ -605,7 +670,9 @@ abstract class PropertyStore {
     }
 
     /** @see `apply(epk:EPK)` for details. */
-    def apply[E <: Entity, P <: Property](e: E, pk: PropertyKey[P]): EOptionP[E, P]
+    final def apply[E <: Entity, P <: Property](e: E, pk: PropertyKey[P]): EOptionP[E, P] = {
+        apply(EPK(e, pk), e, pk, pk.id)
+    }
 
     /**
      * Returns the property of the respective property kind `pk` currently associated
@@ -631,13 +698,39 @@ abstract class PropertyStore {
      * @return `EPK(e,pk)` if information about the respective property is not (yet) available.
      *         `Final|InterimP(e,Property)` otherwise.
      */
-    def apply[E <: Entity, P <: Property](epk: EPK[E, P]): EOptionP[E, P]
+    def apply[E <: Entity, P <: Property](epk: EPK[E, P]): EOptionP[E, P] = {
+        val e = epk.e
+        val pk = epk.pk
+        val pkId = pk.id
+        apply(epk, e, pk, pkId)
+    }
+
+    private[this] def apply[E <: Entity, P <: Property](
+        epk:  EPK[E, P],
+        e:    E,
+        pk:   PropertyKey[P],
+        pkId: Int
+    ): EOptionP[E, P] = {
+
+        if (debug && propertyKindsComputedInLaterPhase(pkId)) {
+            throw new IllegalArgumentException(
+                s"querying of property kind ($pk) computed in a later phase"
+            )
+        }
+
+        doApply(epk, e, pkId)
+    }
+
+    protected[this] def doApply[E <: Entity, P <: Property](
+        epk:  EPK[E, P],
+        e:    E,
+        pkId: Int
+    ): EOptionP[E, P]
 
     /**
      * Enforce the evaluation of the specified property kind for the given entity, even
      * if the property is computed lazily and no "eager computation" requires the results
-     * anymore. Force also ensures that the property is stored in the store even if
-     * the fallback value is used.
+     * (anymore).
      * Using `force` is in particular necessary in cases where a specific analysis should
      * be scheduled lazily because the computed information is not necessary for all entities,
      * but strictly required for some elements.
@@ -676,7 +769,7 @@ abstract class PropertyStore {
         pk: PropertyKey[P],
         pc: ProperPropertyComputation[E] // TODO add definition of PropertyComputationResult that is parameterized over the kind of Property to specify that we want a PropertyComputationResult with respect to PropertyKey (pk)
     ): Unit = {
-        if (debug && !isIdle) {
+        if (!isIdle) {
             throw new IllegalStateException(
                 "lazy computations can only be registered while the property store is idle"
             )
@@ -697,7 +790,7 @@ abstract class PropertyStore {
     )(
         pc: (E, SourceP) ⇒ FinalEP[E, TargetP]
     ): Unit = {
-        if (debug && !isIdle) {
+        if (!isIdle) {
             throw new IllegalStateException(
                 "transformers can only be registered while the property store is idle"
             )
@@ -746,7 +839,7 @@ abstract class PropertyStore {
         pk: PropertyKey[P],
         pc: PropertyComputation[E]
     ): Unit = {
-        if (debug && !isIdle) {
+        if (!isIdle) {
             throw new IllegalStateException(
                 "triggered computations can only be registered while no computations are running"
             )
@@ -831,10 +924,15 @@ abstract class PropertyStore {
      * Intended to be overridden by subclasses.
      */
     protected[this] def onFirstException(t: Throwable): Unit = {
+        doTerminate = true
         shutdown()
         if (!suppressError) {
             val storeId = "PropertyStore@"+System.identityHashCode(this).toHexString
-            error("analysis progress", s"$storeId: analysis resulted in exception", t)
+            error(
+                "analysis progress",
+                s"$storeId: shutting down computations due to failing analysis",
+                t
+            )
         }
     }
 
@@ -842,7 +940,10 @@ abstract class PropertyStore {
 
     protected[this] def collectException(t: Throwable): Unit = {
         if (exception != null) {
-            if (exception != t && !exception.isInstanceOf[InterruptedException]) {
+            if (exception != t
+                && !t.isInstanceOf[InterruptedException]
+                && !t.isInstanceOf[RejectedExecutionException] // <= used, e.g., by a ForkJoinPool
+                ) {
                 exception.addSuppressed(t)
             }
         } else {
@@ -850,7 +951,7 @@ abstract class PropertyStore {
             // everything falls apart anyway.
             this.synchronized {
                 if (exception ne null) {
-                    if (exception ne t) {
+                    if (exception != t) {
                         exception.addSuppressed(t)
                     }
                 } else {
@@ -867,8 +968,7 @@ abstract class PropertyStore {
     }
 
     @inline protected[this] def handleExceptions[U](f: ⇒ U): U = {
-        if (exception ne null)
-            throw exception;
+        if (exception != null) throw exception;
 
         try {
             f

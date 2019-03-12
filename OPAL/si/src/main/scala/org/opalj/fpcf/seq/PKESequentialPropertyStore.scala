@@ -8,7 +8,6 @@ import scala.language.existentials
 import java.util.ArrayDeque
 
 import scala.collection.mutable
-import scala.collection.{Map ⇒ SomeMap}
 import scala.collection.mutable.AnyRefMap
 import scala.collection.mutable.ArrayBuffer
 
@@ -16,7 +15,6 @@ import org.opalj.control.foreachWithIndex
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.{debug ⇒ trace}
 import org.opalj.fpcf.PropertyKind.SupportedPropertyKinds
-import org.opalj.fpcf.PropertyKey.fallbackPropertyBasedOnPKId
 import org.opalj.fpcf.PropertyKey.computeFastTrackPropertyBasedOnPKId
 
 /**
@@ -61,37 +59,27 @@ final class PKESequentialPropertyStore private (
     @volatile var delayHandlingOfDependerNotification: Boolean = true
 
     private[this] var scheduledTasksCounter: Int = 0
-    def scheduledTasksCount: Int = scheduledTasksCounter
+    override def scheduledTasksCount: Int = scheduledTasksCounter
 
     private[this] var scheduledOnUpdateComputationsCounter: Int = 0
-    def scheduledOnUpdateComputationsCount: Int = scheduledOnUpdateComputationsCounter
-
-    private[this] var immediateOnUpdateComputationsCounter: Int = 0
-    def immediateOnUpdateComputationsCount: Int = immediateOnUpdateComputationsCounter
+    override def scheduledOnUpdateComputationsCount: Int = scheduledOnUpdateComputationsCounter
 
     private[this] var fallbacksUsedForComputedPropertiesCounter: Int = 0
-    def fallbacksUsedForComputedPropertiesCount: Int = fallbacksUsedForComputedPropertiesCounter
+    override def fallbacksUsedForComputedPropertiesCount: Int = {
+        fallbacksUsedForComputedPropertiesCounter
+    }
+    override def incrementFallbacksUsedForComputedPropertiesCounter(): Unit = {
+        fallbacksUsedForComputedPropertiesCounter += 1
+    }
 
     private[this] var quiescenceCounter = 0
-    def quiescenceCount: Int = quiescenceCounter
+    override def quiescenceCount: Int = quiescenceCounter
 
     private[this] var fastTrackPropertiesCounter = 0
-    def fastTrackPropertiesCount: Int = fastTrackPropertiesCounter
+    override def fastTrackPropertiesCount: Int = fastTrackPropertiesCounter
 
-    def statistics: SomeMap[String, Int] = {
-        mutable.LinkedHashMap(
-            "scheduled tasks" ->
-                scheduledTasksCount,
-            "scheduled on update computations" ->
-                scheduledOnUpdateComputationsCount,
-            "fast-track properties" ->
-                fastTrackPropertiesCount,
-            "computations of fallback properties for computed properties" ->
-                fallbacksUsedForComputedPropertiesCounter,
-            "quiescence" ->
-                quiescenceCount
-        )
-    }
+    private[this] var fastTrackPropertyComputationsCounter = 0
+    override def fastTrackPropertyComputationsCount: Int = fastTrackPropertyComputationsCounter
 
     // --------------------------------------------------------------------------------------------
     //
@@ -120,9 +108,6 @@ final class PKESequentialPropertyStore private (
     // The list of scheduled computations
     private[this] var tasks: ArrayDeque[QualifiedTask] = new ArrayDeque(50000)
 
-    private[this] var subPhaseId: Int = 0
-    private[this] var hasSuppressedNotifications: Boolean = false
-
     override def toString(printProperties: Boolean): String = {
         if (printProperties) {
             val properties = for {
@@ -138,7 +123,7 @@ final class PKESequentialPropertyStore private (
         }
     }
 
-    override def isKnown(e: Entity): Boolean = ps.contains(e)
+    override def isKnown(e: Entity): Boolean = ps.exists(_.contains(e))
 
     override def hasProperty(e: Entity, pk: PropertyKind): Boolean = {
         require(e ne null)
@@ -178,53 +163,28 @@ final class PKESequentialPropertyStore private (
         require(lb ne null)
         require(ub ne null)
         assert(lb.key == ub.key)
-        for { ELUBP(e, `lb`, `ub`) ← ps(lb.key.id).valuesIterator } yield { e }
+        for { ELUBP(e, `lb`, `ub`) ← ps(lb.id).valuesIterator } yield { e }
     }
 
     override def entitiesWithLB[P <: Property](lb: P): Iterator[Entity] = {
         require(lb ne null)
-        for { ELBP(e, `lb`) ← ps(lb.key.id).valuesIterator } yield { e }
-        entities { otherEPS: SomeEPS ⇒ otherEPS.hasLBP && lb == otherEPS.lb }
+        for { ELBP(e, `lb`) ← ps(lb.id).valuesIterator } yield { e }
     }
 
     override def entitiesWithUB[P <: Property](ub: P): Iterator[Entity] = {
         require(ub ne null)
-        for { EUBP(e, `ub`) ← ps(ub.key.id).valuesIterator } yield { e }
+        for { EUBP(e, `ub`) ← ps(ub.id).valuesIterator } yield { e }
     }
 
     override def entities[P <: Property](pk: PropertyKey[P]): Iterator[EPS[Entity, P]] = {
         ps(pk.id).valuesIterator.collect { case eps: SomeEPS ⇒ eps.asInstanceOf[EPS[Entity, P]] }
     }
 
-    override def finalEntities[P <: Property](p: P): Iterator[Entity] = {
-        entities((otherEPS: SomeEPS) ⇒ otherEPS.isFinal && otherEPS.asFinal.p == p)
-    }
-
-    override protected[this] def newPhaseInitialized(
-        propertyKindsComputedInThisPhase:  Set[PropertyKind],
-        propertyKindsComputedInLaterPhase: Set[PropertyKind],
-        suppressInterimUpdates:            Map[PropertyKind, Set[PropertyKind]],
-        finalizationOrder:                 List[List[PropertyKind]]
-    ): Unit = {
-        subPhaseId = 0
-        hasSuppressedNotifications = suppressInterimUpdates.nonEmpty
-    }
-
-    override def apply[E <: Entity, P <: Property](e: E, pk: PropertyKey[P]): EOptionP[E, P] = {
-        apply(EPK(e, pk))
-    }
-
-    override def apply[E <: Entity, P <: Property](epk: EPK[E, P]): EOptionP[E, P] = {
-        val e = epk.e
-        val pk = epk.pk
-        val pkId = pk.id
-
-        if (debug && propertyKindsComputedInLaterPhase(pkId)) {
-            throw new IllegalArgumentException(
-                s"querying of property kind ($pk) computed in a later phase"
-            )
-        }
-
+    override protected[this] def doApply[E <: Entity, P <: Property](
+        epk:  EPK[E, P],
+        e:    E,
+        pkId: Int
+    ): EOptionP[E, P] = {
         ps(pkId).get(e) match {
             case None ⇒
                 // the entity is unknown ...
@@ -269,17 +229,7 @@ final class PKESequentialPropertyStore private (
                             ps(pkId).put(e, epk)
                             epk
                         } else {
-                            val reason = {
-                                if (propertyKindsComputedInEarlierPhase(pkId))
-                                    PropertyIsNotDerivedByPreviouslyExecutedAnalysis
-                                else
-                                    PropertyIsNotComputedByAnyAnalysis
-                            }
-                            val p = fallbackPropertyBasedOnPKId(this, reason, e, pkId)
-                            if (traceFallbacks) {
-                                trace("analysis progress", s"used fallback $p for $e")
-                            }
-                            val finalEP = FinalEP(e, p.asInstanceOf[P])
+                            val finalEP = computeFallback(e, pkId)
                             update(finalEP, Nil)
                             finalEP
                         }
@@ -287,14 +237,15 @@ final class PKESequentialPropertyStore private (
                     case lc: PropertyComputation[E] @unchecked ⇒
                         val fastTrackPropertyOption: Option[P] =
                             if (useFastTrackPropertyComputations) {
-                                fastTrackPropertiesCounter += 1
+                                fastTrackPropertyComputationsCounter += 1
                                 computeFastTrackPropertyBasedOnPKId[P](this, e, pkId)
                             } else {
                                 None
                             }
                         fastTrackPropertyOption match {
                             case Some(p) ⇒
-                                val finalP = FinalEP(e, p.asInstanceOf[P])
+                                fastTrackPropertiesCounter += 1
+                                val finalP = FinalEP(e, p)
                                 update(finalP, Nil)
                                 finalP
                             case None ⇒
@@ -365,7 +316,7 @@ final class PKESequentialPropertyStore private (
         val dependerPKId = dependerEPK.pk.id
         val e = dependerEPK.e
         for {
-            epkDependees ← dependees(dependerPKId).get(e)
+            epkDependees ← dependees(dependerPKId).remove(e)
             EOptionP(oldDependeeE, oldDependeePK) ← epkDependees // <= the old ones
             oldDependeePKId = oldDependeePK.id
             dependeeDependers ← dependers(oldDependeePKId).get(oldDependeeE)
@@ -375,7 +326,6 @@ final class PKESequentialPropertyStore private (
                 dependers(oldDependeePKId).remove(oldDependeeE)
             }
         }
-        dependees(dependerPKId).remove(e)
     }
 
     /**
@@ -396,8 +346,7 @@ final class PKESequentialPropertyStore private (
                 // the property.
                 triggerComputations(e, pkId)
                 if (newDependees.nonEmpty) {
-                    val oldDependees = dependees(pkId).put(e, newDependees)
-                    assert(oldDependees.isEmpty)
+                    dependees(pkId).put(e, newDependees)
                 }
                 // registration with the new dependees is done when processing InterimResult
 
@@ -453,7 +402,7 @@ final class PKESequentialPropertyStore private (
 
         val oldPV = ps(pkId).put(e, new FinalEP(e, p))
         if (oldPV.isDefined) {
-            throw new IllegalStateException(s"$e has already a property $oldPV")
+            throw new IllegalStateException(s"$e had already the property $oldPV")
         }
     }
 
@@ -529,7 +478,6 @@ final class PKESequentialPropertyStore private (
         }
     }
 
-    /* Returns `true` if no dependee was updated in the meantime. */
     private[this] def processDependeesOfInterimResult(
         initialEPS:       SomeEPS,
         initialDependees: Traversable[SomeEOptionP],
@@ -552,8 +500,6 @@ final class PKESequentialPropertyStore private (
                 val nextDependeePKId = nextDependeePK.id
                 val currentDependee = ps(nextDependeePKId)(nextDependeeE)
                 if (currentDependee.isUpdatedComparedTo(nextDependee)) {
-                    immediateOnUpdateComputationsCounter += 1
-
                     nextC(currentDependee.asEPS) match {
                         case InterimResult(newEPS @ SomeEPS(`e`, `pk`), newDependees, newC, _) ⇒
                             nextEPS = newEPS
@@ -677,8 +623,7 @@ final class PKESequentialPropertyStore private (
 
         if (triggeredComputations.exists(_.nonEmpty)) {
             // Let's trigger triggered computations for those entities, which have values!
-            val clonedPS = ps.map(_.clone()) // TODO Remove _.clone or document why it is necessary.
-            foreachWithIndex(clonedPS) { (epss, pkId) ⇒
+            foreachWithIndex(ps) { (epss, pkId) ⇒
                 epss foreach { eps ⇒
                     val (e, eOptionP) = eps
                     if (eOptionP.isEPS) {
@@ -690,7 +635,6 @@ final class PKESequentialPropertyStore private (
 
         val maxPKIndex = PropertyKey.maxId
         var continueComputation: Boolean = false
-        // We need a consistent interrupt state for fallback
         do {
             continueComputation = false
 
@@ -705,8 +649,7 @@ final class PKESequentialPropertyStore private (
                 trace("analysis progress", s"reached quiescence $quiescenceCounter")
             }
 
-            // We have reached quiescence.
-            // Let's check if we have to fill in fallbacks.
+            // We have reached quiescence....
 
             // 1. Let's search for all EPKs (not EPS) and use the fall back for them.
             //    (Recall that we return fallback properties eagerly if no analysis is
@@ -728,13 +671,8 @@ final class PKESequentialPropertyStore private (
                     continueComputation |= epkIterator.hasNext
                     epkIterator.foreach { eOptionP ⇒
                         val e = eOptionP.e
-                        val reason = PropertyIsNotDerivedByPreviouslyExecutedAnalysis
-                        val p = fallbackPropertyBasedOnPKId(this, reason, e, pkId)
-                        if (traceFallbacks) {
-                            trace("analysis progress", s"used fallback $p for $e")
-                        }
-                        fallbacksUsedForComputedPropertiesCounter += 1
-                        update(FinalEP(e, p), Nil)
+                        val r = computeFallback(e, pkId)
+                        update(r, Nil)
                     }
                 }
                 pkId += 1
@@ -745,7 +683,7 @@ final class PKESequentialPropertyStore private (
             //    current results of the dependers cannot be finalized; instead, we need
             //    to finalize (the cyclic dependent) dependees first and notify the
             //    dependers.
-            //    Please note, that collaboratively computed properties are not allowed to be
+            //    Recall, that collaboratively computed properties are not allowed to be
             //    part of a cyclic computation if we also have suppressed notifications.
             if (!continueComputation && hasSuppressedNotifications) {
                 // Collect all InterimEPs to find cycles.
@@ -794,7 +732,9 @@ final class PKESequentialPropertyStore private (
                 pksToFinalize foreach { pk ⇒
                     val dependeesIt = dependees(pk.id).keysIterator
                     continueComputation |= dependeesIt.nonEmpty
-                    dependeesIt foreach { e ⇒ removeDependerFromDependees(EPK(e, PropertyKey.key(pk.id))) }
+                    dependeesIt foreach { e ⇒
+                        removeDependerFromDependees(EPK(e, PropertyKey.key(pk.id)))
+                    }
                 }
                 pksToFinalize foreach { pk ⇒
                     val interimEPSs = ps(pk.id).valuesIterator.filter(_.isRefinable)

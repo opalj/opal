@@ -90,9 +90,9 @@ object FixtureCompileSpec {
         ): JavaFixtureCompilationResult = {
 
             val standardConfiguration =
-                task.fixture.sourceFolder +
-                s" ${task.supportLibraries} -d ${task.targetFolder} -Xemacs -encoding utf8 -proc:none " +
-                    s"-bootclasspath ${task.fixture.sourceFolder}/../../rt-jar-stubs-1.8.0.jar"
+                '"'+ task.fixture.sourceFolder.toString +'"'+
+                s""" ${task.supportLibraries} -d "${task.targetFolder}" -Xemacs -encoding utf8 -proc:none """ +
+                    s"""-bootclasspath "${task.fixture.sourceFolder}/../../rt-jar-stubs-1.8.0.jar""""
             val commandLine = s"$standardConfiguration ${task.configOptions}"
 
             // Note that we have to recompile the entire project if some file is

@@ -9,24 +9,24 @@ import scala.collection.immutable.ListSet
 import org.opalj.log.LogContext
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.collection.immutable.RefArray
-import org.opalj.fpcf.seq.PKESequentialPropertyStore
-import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.PropertyStoreContext
+import org.opalj.fpcf.par.PKEFJPoolPropertyStore
+import org.opalj.fpcf.seq.PKESequentialPropertyStore
+import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.SomeProject
-import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
+import org.opalj.ai.domain.l1
+import org.opalj.ai.domain.l2
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
+import org.opalj.tac.fpcf.analyses.AbstractIFDSAnalysis.V
 import org.opalj.tac.fpcf.properties.IFDSProperty
 import org.opalj.tac.fpcf.properties.IFDSPropertyMetaInformation
-import org.opalj.tac.fpcf.analyses.AbstractIFDSAnalysis.V
-//import org.opalj.ai.domain.l1
-import org.opalj.ai.domain.l2
 
 trait Fact
 case class Variable(index: Int) extends Fact
@@ -373,26 +373,28 @@ object Taint extends IFDSPropertyMetaInformation[Fact] {
 object TestTaintAnalysisRunner {
 
     def main(args: Array[String]): Unit = {
-        time {
-            val p = Project(bytecode.RTJar)
-            p.getOrCreateProjectInformationKeyInitializationData(
-                PropertyStoreKey,
-                (context: List[PropertyStoreContext[AnyRef]]) ⇒ {
-                    implicit val lg: LogContext = p.logContext
-                    val ps = PKESequentialPropertyStore.apply(context: _*)
-                    PropertyStore.updateDebug(false)
-                    ps
-                }
-            )
-            /*
-            p.updateProjectInformationKeyInitializationData(
-                AIDomainFactoryKey,
-                (i: Option[Set[Class[_ <: AnyRef]]]) ⇒ (i match {
-                    case None               ⇒ Set(classOf[l1.DefaultDomainWithCFGAndDefUse[_]])
-                    case Some(requirements) ⇒ requirements + classOf[l1.DefaultDomainWithCFGAndDefUse[_]]
-                }): Set[Class[_ <: AnyRef]]
-            )
-            */
+        if (args.contains("--help")) {
+            println("Potential parameters:")
+            println(" -seq to use the SequentialPropertyStore")
+            println(" -l1 to use the l2 domain instead of the default l1 domain")
+            println(" -delay for a three seconds delay before the taint flow analysis is started")
+        }
+
+        val p = Project(bytecode.RTJar)
+        p.getOrCreateProjectInformationKeyInitializationData(
+            PropertyStoreKey,
+            (context: List[PropertyStoreContext[AnyRef]]) ⇒ {
+                implicit val lg: LogContext = p.logContext
+                PropertyStore.updateDebug(false)
+                val ps =
+                    if (args.contains("-seq"))
+                        PKESequentialPropertyStore.apply(context: _*)
+                    else
+                        PKEFJPoolPropertyStore.apply(context: _*)
+                ps
+            }
+        )
+        if (args.contains("-l2")) {
             p.updateProjectInformationKeyInitializationData(
                 AIDomainFactoryKey,
                 (i: Option[Set[Class[_ <: AnyRef]]]) ⇒ (i match {
@@ -400,10 +402,27 @@ object TestTaintAnalysisRunner {
                     case Some(requirements) ⇒ requirements + classOf[l2.DefaultPerformInvocationsDomainWithCFGAndDefUse[_]]
                 }): Set[Class[_ <: AnyRef]]
             )
-            val ps = p.get(PropertyStoreKey)
-            val manager = p.get(FPCFAnalysesManagerKey)
+        } else {
+            p.updateProjectInformationKeyInitializationData(
+                AIDomainFactoryKey,
+                (i: Option[Set[Class[_ <: AnyRef]]]) ⇒ (i match {
+                    case None               ⇒ Set(classOf[l1.DefaultDomainWithCFGAndDefUse[_]])
+                    case Some(requirements) ⇒ requirements + classOf[l1.DefaultDomainWithCFGAndDefUse[_]]
+                }): Set[Class[_ <: AnyRef]]
+            )
+        }
+
+        val ps = p.get(PropertyStoreKey)
+        val manager = p.get(FPCFAnalysesManagerKey)
+
+        if (args.contains("-delay")) {
+            println("Sleeping for three seconds.")
+            Thread.sleep(3000)
+        }
+
+        time {
             val (_, analyses) =
-                manager.runAll(LazyL0BaseAIAnalysis, TACAITransformer, TestTaintAnalysis)
+                manager.runAll(LazyTACAIProvider, TestTaintAnalysis)
             val entryPoints = analyses.collect { case (_, a: TestTaintAnalysis) ⇒ a.entryPoints }.head
             for {
                 e ← entryPoints
@@ -415,6 +434,6 @@ object TestTaintAnalysisRunner {
                     case _              ⇒
                 }
             }
-        } { t ⇒ println(s"Time: ${t.toSeconds}") }
+        } { t ⇒ println(s"Time for taint-flow analysis: ${t.toSeconds}") }
     }
 }
