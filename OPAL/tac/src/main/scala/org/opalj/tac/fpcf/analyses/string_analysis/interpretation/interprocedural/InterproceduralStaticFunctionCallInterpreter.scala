@@ -7,7 +7,6 @@ import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPK
 import org.opalj.fpcf.FinalEP
-import org.opalj.fpcf.ProperOnUpdateContinuation
 import org.opalj.fpcf.PropertyStore
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.cfg.CFG
@@ -39,7 +38,6 @@ class InterproceduralStaticFunctionCallInterpreter(
         state:           InterproceduralComputationState,
         params:          List[Seq[StringConstancyInformation]],
         declaredMethods: DeclaredMethods,
-        c:               ProperOnUpdateContinuation
 ) extends AbstractStringInterpreter(cfg, exprHandler) {
 
     override type T = StaticFunctionCall[V]

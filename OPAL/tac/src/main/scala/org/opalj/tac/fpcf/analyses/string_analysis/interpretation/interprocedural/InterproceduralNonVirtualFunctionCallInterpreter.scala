@@ -5,7 +5,6 @@ import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPK
 import org.opalj.fpcf.FinalEP
-import org.opalj.fpcf.ProperOnUpdateContinuation
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
 import org.opalj.br.analyses.DeclaredMethods
@@ -33,7 +32,6 @@ class InterproceduralNonVirtualFunctionCallInterpreter(
         ps:              PropertyStore,
         state:           InterproceduralComputationState,
         declaredMethods: DeclaredMethods,
-        c:               ProperOnUpdateContinuation
 ) extends AbstractStringInterpreter(cfg, exprHandler) {
 
     override type T = NonVirtualFunctionCall[V]
