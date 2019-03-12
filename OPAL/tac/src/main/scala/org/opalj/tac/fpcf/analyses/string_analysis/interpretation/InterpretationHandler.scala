@@ -165,7 +165,14 @@ object InterpretationHandler {
                         case _: New ⇒
                             defSites.append(next)
                         case vfc: VirtualFunctionCall[V] ⇒
-                            stack.pushAll(vfc.receiver.asVar.definedBy.filter(_ >= 0).toArray)
+                            val recDefSites = vfc.receiver.asVar.definedBy.filter(_ >= 0).toArray
+                            // recDefSites.isEmpty => Definition site is a parameter => Use the
+                            // current function call as a def site
+                            if (recDefSites.nonEmpty) {
+                                stack.pushAll(recDefSites)
+                            } else {
+                                defSites.append(next)
+                            }
                         case _: GetField[V] ⇒
                             defSites.append(next)
                         case _ ⇒ // E.g., NullExpr
@@ -194,6 +201,11 @@ object InterpretationHandler {
                 case _                           ⇒ List(ds)
             })
         }
+        // If no init sites could be determined, use the definition sites of the UVar
+        if (defSites.isEmpty) {
+            defSites.appendAll(duvar.definedBy.toArray)
+        }
+
         defSites.distinct.sorted.toList
     }
 
