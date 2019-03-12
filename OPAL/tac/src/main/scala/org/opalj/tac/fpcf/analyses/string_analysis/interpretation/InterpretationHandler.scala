@@ -157,6 +157,7 @@ object InterpretationHandler {
 
         val defSites = ListBuffer[Int]()
         val stack = mutable.Stack[Int](toString.receiver.asVar.definedBy.filter(_ >= 0).toArray: _*)
+        val seenElements: mutable.Map[Int, Unit] = mutable.Map()
         while (stack.nonEmpty) {
             val next = stack.pop()
             stmts(next) match {
@@ -169,7 +170,7 @@ object InterpretationHandler {
                             // recDefSites.isEmpty => Definition site is a parameter => Use the
                             // current function call as a def site
                             if (recDefSites.nonEmpty) {
-                                stack.pushAll(recDefSites)
+                                stack.pushAll(recDefSites.filter(!seenElements.contains(_)))
                             } else {
                                 defSites.append(next)
                             }
@@ -179,6 +180,7 @@ object InterpretationHandler {
                     }
                 case _ ⇒
             }
+            seenElements(next) = Unit
         }
 
         defSites.sorted.toList
