@@ -420,20 +420,25 @@ object TestTaintAnalysisRunner {
             Thread.sleep(3000)
         }
 
-        time {
-            val (_, analyses) =
-                manager.runAll(LazyTACAIProvider, TestTaintAnalysis)
-            val entryPoints = analyses.collect { case (_, a: TestTaintAnalysis) ⇒ a.entryPoints }.head
-            for {
-                e ← entryPoints
-                flows = ps(e, TestTaintAnalysis.property.key)
-                fact ← flows.ub.asInstanceOf[IFDSProperty[Fact]].flows.values.flatten.toSet[Fact]
-            } {
-                fact match {
-                    case FlowFact(flow) ⇒ println(s"flow: "+flow.map(_.toJava).mkString(", "))
-                    case _              ⇒
-                }
-            }
+        val (_, analyses) =
+            time {
+              manager.runAll(LazyTACAIProvider, TestTaintAnalysis)
         } { t ⇒ println(s"Time for taint-flow analysis: ${t.toSeconds}") }
+        val entryPoints = analyses.collect { case (_, a: TestTaintAnalysis) ⇒ a.entryPoints }.head
+        for {
+            e ← entryPoints
+            flows = ps(e, TestTaintAnalysis.property.key)
+            fact ← flows.ub.asInstanceOf[IFDSProperty[Fact]].flows.values.flatten.toSet[Fact]
+        } {
+            fact match {
+                case FlowFact(flow) ⇒ println(s"flow: "+flow.map(_.toJava).mkString(", "))
+                case _              ⇒
+            }
+        }
+        println(
+            ps.statistics.iterator.map(_.toString()).toList
+            .sorted
+            .mkString("PropertyStore Statistics:\n\t","\n\t","\n")
+        )
     }
 }

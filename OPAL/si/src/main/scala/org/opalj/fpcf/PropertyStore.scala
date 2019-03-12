@@ -252,9 +252,11 @@ abstract class PropertyStore {
 
     /** The number of properties that were successfully computed using a fast-track. */
     def fastTrackPropertiesCount: Int
+    private[fpcf] def incrementFastTrackPropertiesCounter(): Unit
 
     /** The number of fast-track property computations that were execute. */
     def fastTrackPropertyComputationsCount: Int
+    private[fpcf] def incrementFastTrackPropertyComputationsCounter(): Unit
 
     /**
      * The number of times a fallback property was computed for an entity though an (eager)
@@ -262,27 +264,33 @@ abstract class PropertyStore {
      */
     def fallbacksUsedForComputedPropertiesCount: Int
 
-    protected[this] def incrementFallbacksUsedForComputedPropertiesCounter(): Unit
+    private[fpcf] def incrementFallbacksUsedForComputedPropertiesCounter(): Unit
 
     /**
      * Reports core statistics; this method is only guaranteed to report ''final'' results
      * if it is called while the store is quiescent.
      */
     def statistics: mutable.LinkedHashMap[String, Int] = {
-        mutable.LinkedHashMap(
-            "scheduled tasks" ->
-                scheduledTasksCount,
-            "scheduled on update computations" ->
-                scheduledOnUpdateComputationsCount,
-            "fast-track properties" ->
-                fastTrackPropertiesCount,
-            "fast-track property computations" ->
-                fastTrackPropertyComputationsCount,
-            "computations of fallback properties for computed properties" ->
-                fallbacksUsedForComputedPropertiesCount,
-            "quiescence" ->
-                quiescenceCount
-        )
+        val s =
+            if (debug)
+                mutable.LinkedHashMap(
+                    "scheduled tasks" ->
+                        scheduledTasksCount,
+                    "scheduled on update computations" ->
+                        scheduledOnUpdateComputationsCount,
+                    "fast-track properties" ->
+                        fastTrackPropertiesCount,
+                    "fast-track property computations" ->
+                        fastTrackPropertyComputationsCount,
+                    "computations of fallback properties for computed properties" ->
+                        fallbacksUsedForComputedPropertiesCount
+                )
+            else
+                mutable.LinkedHashMap.empty[String, Int]
+
+        // Always available stats:
+        s.put("quiescence", quiescenceCount)
+        s
     }
 
     //
@@ -349,7 +357,7 @@ abstract class PropertyStore {
     ): FinalEP[E, P] = {
         val reason = {
             if (propertyKindsComputedInEarlierPhase(pkId) || propertyKindsComputedInThisPhase(pkId)) {
-                incrementFallbacksUsedForComputedPropertiesCounter()
+                if (debug) incrementFallbacksUsedForComputedPropertiesCounter()
                 PropertyIsNotDerivedByPreviouslyExecutedAnalysis
             } else {
                 PropertyIsNotComputedByAnyAnalysis

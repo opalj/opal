@@ -31,31 +31,32 @@ sealed trait EPKState {
      *       final value. Hence, the client is required to handle (potentially) idempotent updates
      *       and to take care of appropriate synchronization.
      */
-    def updateEOptionP(newEOptionP: SomeInterimEP, debug: Boolean): SomeEOptionP
+    def update(
+        newEOptionP: SomeInterimEP,
+        c:           OnUpdateContinuation,
+        dependees:   Traversable[SomeEOptionP],
+        debug:       Boolean
+    ): SomeEOptionP
 
     /**
      * Adds the given E/PK as a depender on this E/PK instance.
      *
      * @note  This operation is idempotent; that is, adding the same EPK multiple times has no
      *        special effect.
-     * @note  This method must not throw an exception, because it may happen
-     *        that a client reads an intermediate property and based on that it decided
-     *        to add a dependency, but this EPKState was updated in the meantime and may
-     *        encapsulate a final value for which it does not make sense to store dependers.
-     *        This will – however – not lead to a lost update since a client is required
-     *        to check – after registering itself as a depender – that the value is still as
-     *        expected!
+     * @note  Adding a depender to a FinalEPK is not supported.
      */
     def addDepender(someEPK: SomeEPK): Unit
 
     /**
      * Removes the given E/PK from the list of dependers of this EPKState.
      *
-     * @note This method is always defined and never throws an exception.
+     * @note This method is always defined and never throws an exception for convenience purposes.
      */
     def removeDepender(someEPK: SomeEPK): Unit
 
-    def getAndClearDependers(): Set[SomeEPK]
+    def resetDependers(): Set[SomeEPK]
+
+    def lastDependers(): Set[SomeEPK]
 
     /**
      * Returns the current `OnUpdateComputation` or `null`, if the `OnUpdateComputation` was
@@ -64,19 +65,7 @@ sealed trait EPKState {
      *
      * @note This method is always defined and never throws an exception.
      */
-    def getAndClearOnUpdateComputation(
-        thisEPK: SomeEPK = this.eOptionP.toEPK
-    )(
-        implicit
-        ps: PKECPropertyStore
-    ): OnUpdateContinuation
-
-    /**
-     * Sets the `OnUpdateComputation` to the given one.
-     *
-     * @note This method is only defined if this `EPKState` is refinable.
-     */
-    def setOnUpdateComputation(c: OnUpdateContinuation): Unit
+    def clearOnUpdateComputationAndDependees(): OnUpdateContinuation
 
     /**
      * Returns `true` if the current `EPKState` has an `OnUpdateComputation` that was not yet
@@ -105,7 +94,6 @@ sealed trait EPKState {
      */
     def dependees: Traversable[SomeEOptionP]
 
-    def setDependees(dependees: Traversable[SomeEOptionP]): Unit
 }
 
 /**
@@ -118,71 +106,72 @@ sealed trait EPKState {
  * @param dependees The dependees; never updated concurrently.
  */
 final class InterimEPKState(
-        val eOptionPAR:          AtomicReference[SomeEOptionP],
+        var eOptionP:            SomeEOptionP,
         val cAR:                 AtomicReference[OnUpdateContinuation],
         @volatile var dependees: Traversable[SomeEOptionP],
-        val dependersAR:         AtomicReference[Set[SomeEPK]]
+        var dependersAR:         AtomicReference[Set[SomeEPK]]
 ) extends EPKState {
 
-    assert(eOptionPAR.get.isRefinable)
-
-    override def eOptionP: SomeEOptionP = eOptionPAR.get()
+    assert(eOptionP.isRefinable)
 
     override def isRefinable: Boolean = true
 
-    override def updateEOptionP(newEOptionP: SomeInterimEP, debug: Boolean): SomeEOptionP = {
-        val oldEOptionP = eOptionPAR.getAndSet(newEOptionP)
-        if (debug) {
-            oldEOptionP.checkIsValidPropertiesUpdate(newEOptionP, dependees)
-        }
-        oldEOptionP
-    }
-
     override def addDepender(someEPK: SomeEPK): Unit = {
-        dependersAR.accumulateAndGet(
-            Set(someEPK),
-            (currentDependers, newDepender) ⇒ currentDependers + newDepender.head
-        )
+        val dependersAR = this.dependersAR
+        if (dependersAR == null)
+            return ;
+
+        var prev, next: Set[SomeEPK] = null
+        do {
+            prev = dependersAR.get()
+            next = prev + someEPK
+        } while (!dependersAR.compareAndSet(prev, next))
     }
 
     override def removeDepender(someEPK: SomeEPK): Unit = {
-        dependersAR.accumulateAndGet(
-            Set(someEPK),
-            (currentDependers, newDepender) ⇒ currentDependers - newDepender.head
-        )
+        val dependersAR = this.dependersAR
+        if (dependersAR == null)
+            return ;
+
+        var prev, next: Set[SomeEPK] = null
+        do {
+            prev = dependersAR.get()
+            next = prev - someEPK
+        } while (!dependersAR.compareAndSet(prev, next))
     }
 
-    override def getAndClearDependers(): Set[SomeEPK] = {
-        val dependers = dependersAR.getAndSet(Set.empty)
-        if (dependers == null)
-            Set.empty
-        else
-            dependers
+    override def lastDependers(): Set[SomeEPK] = {
+        val dependers = dependersAR.get()
+        dependersAR = null
+        dependers
     }
 
-    override def getAndClearOnUpdateComputation(
-        thisEPK: SomeEPK = this.eOptionP.toEPK
-    )(
-        implicit
-        ps: PKECPropertyStore
-    ): OnUpdateContinuation = {
+    override def clearOnUpdateComputationAndDependees(): OnUpdateContinuation = {
         val c = cAR.getAndSet(null)
-        if (c != null) {
-            ps.clearDependees(thisEPK, dependees)
-            dependees = Nil
-        }
+        dependees = Nil
         c
-    }
-
-    override def setOnUpdateComputation(c: OnUpdateContinuation): Unit = {
-        val oldOnUpdateContinuation = cAR.getAndSet(c)
-        assert(oldOnUpdateContinuation == null)
     }
 
     override def hasPendingOnUpdateComputation: Boolean = cAR.get() != null
 
-    override def setDependees(dependees: Traversable[SomeEOptionP]): Unit = {
+    override def update(
+        eOptionP:  SomeInterimEP,
+        c:         OnUpdateContinuation,
+        dependees: Traversable[SomeEOptionP],
+        debug:     Boolean
+    ): SomeEOptionP = {
+        val oldEOptionP = this.eOptionP
+        if (debug) oldEOptionP.checkIsValidPropertiesUpdate(eOptionP, dependees)
+
+        this.eOptionP = eOptionP
+
+        val oldOnUpdateContinuation = cAR.getAndSet(c)
+        assert(oldOnUpdateContinuation == null)
+
+        assert(this.dependees.isEmpty)
         this.dependees = dependees
+
+        oldEOptionP
     }
 
     override def hasDependees: Boolean = dependees.nonEmpty
@@ -200,22 +189,25 @@ final class FinalEPKState(override val eOptionP: SomeEOptionP) extends EPKState 
 
     override def isRefinable: Boolean = false
 
-    override def updateEOptionP(newEOptionP: SomeInterimEP, debug: Boolean): SomeEOptionP = {
+    override def update(newEOptionP: SomeInterimEP, debug: Boolean): SomeEOptionP = {
         throw new UnknownError(s"the final property $eOptionP can't be updated to $newEOptionP")
     }
 
-    override def getAndClearDependers(): Set[SomeEPK] = Set.empty
+    override def resetDependers(): Set[SomeEPK] = {
+        throw new UnknownError(s"the final property $eOptionP can't have dependers")
+    }
 
-    override def addDepender(epk: SomeEPK): Unit = { /* There is nothing to do! */ }
+    override def lastDependers(): Set[SomeEPK] = {
+        throw new UnknownError(s"the final property $eOptionP can't have dependers")
+    }
+
+    override def addDepender(epk: SomeEPK): Unit = {
+        throw new UnknownError(s"final properties can't have dependers")
+    }
 
     override def removeDepender(someEPK: SomeEPK): Unit = { /* There is nothing to do! */ }
 
-    override def getAndClearOnUpdateComputation(
-        thisEPK: SomeEPK = this.eOptionP.toEPK
-    )(
-        implicit
-        ps: PKECPropertyStore
-    ): OnUpdateContinuation = {
+    override def clearOnUpdateComputationAndDependees(): OnUpdateContinuation = {
         null
     }
 
@@ -223,13 +215,12 @@ final class FinalEPKState(override val eOptionP: SomeEOptionP) extends EPKState 
         throw new UnknownError("final properties don't have dependees")
     }
 
-    override def setDependees(dependees: Traversable[SomeEOptionP]): Unit = {
-        throw new UnknownError("final properties can't have dependees")
-    }
-
     override def hasDependees: Boolean = false
 
-    override def setOnUpdateComputation(c: OnUpdateContinuation): Unit = {
+    override def setOnUpdateComputationAndDependees(
+        c:         OnUpdateContinuation,
+        dependees: Traversable[SomeEOptionP]
+    ): Unit = {
         throw new UnknownError("final properties can't have \"OnUpdateContinuations\"")
     }
 
