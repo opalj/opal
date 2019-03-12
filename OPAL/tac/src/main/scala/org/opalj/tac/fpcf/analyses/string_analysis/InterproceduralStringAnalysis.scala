@@ -108,12 +108,9 @@ class InterproceduralStringAnalysis(
     private def computeNewUpperBound(
         state: InterproceduralComputationState
     ): StringConstancyProperty = {
-        val fpe2SciMapping = state.interimFpe2sci.map {
-            case (key, value) ⇒ key → ListBuffer(value)
-        }
         if (state.computedLeanPath != null) {
             StringConstancyProperty(new PathTransformer(state.interimIHandler).pathToStringTree(
-                state.computedLeanPath, fpe2SciMapping
+                state.computedLeanPath, state.interimFpe2sci
             ).reduce(true))
         } else {
             StringConstancyProperty.lb
@@ -349,6 +346,10 @@ class InterproceduralStringAnalysis(
                 eps match {
                     case FinalEP(entity, p: StringConstancyProperty) ⇒
                         val e = entity.asInstanceOf[P]
+                        // For updating the interim state
+                        state.var2IndexMapping(eps.e.asInstanceOf[P]._1).foreach { i ⇒
+                            state.appendToInterimFpe2Sci(i, p.stringConstancyInformation)
+                        }
                         // If necessary, update the parameter information with which the
                         // surrounding function / method of the entity was called with
                         if (state.paramResultPositions.contains(e)) {
@@ -399,7 +400,7 @@ class InterproceduralStringAnalysis(
                     case InterimLUBP(_: StringConstancyProperty, ub: StringConstancyProperty) ⇒
                         state.dependees = eps :: state.dependees
                         state.var2IndexMapping(eps.e.asInstanceOf[P]._1).foreach { i ⇒
-                                state.setInterimFpe2Sci(i, ub.stringConstancyInformation)
+                            state.appendToInterimFpe2Sci(i, ub.stringConstancyInformation)
                         }
                         getInterimResult(state)
                     case _ ⇒

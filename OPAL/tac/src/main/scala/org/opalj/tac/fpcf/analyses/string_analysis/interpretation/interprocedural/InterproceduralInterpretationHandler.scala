@@ -84,14 +84,14 @@ class InterproceduralInterpretationHandler(
         // implicit parameter for "this" and for exceptions thrown outside the current function)
         if (defSite < 0 &&
             (params.isEmpty || defSite == -1 || defSite <= ImmediateVMExceptionsOriginOffset)) {
-            state.setInterimFpe2Sci(defSite, StringConstancyInformation.lb)
+            state.appendToInterimFpe2Sci(defSite, StringConstancyInformation.lb)
             return FinalEP(e, StringConstancyProperty.lb)
         } else if (defSite < 0) {
             val sci = getParam(params, defSite)
-            state.setInterimFpe2Sci(defSite, sci)
+            state.appendToInterimFpe2Sci(defSite, sci)
             return FinalEP(e, StringConstancyProperty(sci))
         } else if (processedDefSites.contains(defSite)) {
-            state.setInterimFpe2Sci(defSite, StringConstancyInformation.getNeutralElement)
+            state.appendToInterimFpe2Sci(defSite, StringConstancyInformation.getNeutralElement)
             return FinalEP(e, StringConstancyProperty.getNeutralElement)
         }
         // Note that def sites referring to constant expressions will be deleted further down
@@ -122,7 +122,7 @@ class InterproceduralInterpretationHandler(
                 processVirtualMethodCall(vmc, defSite, callees)
             case nvmc: NonVirtualMethodCall[V] ⇒ processNonVirtualMethodCall(nvmc, defSite)
             case _ ⇒
-                state.setInterimFpe2Sci(defSite, StringConstancyInformation.getNeutralElement)
+                state.appendToInterimFpe2Sci(defSite, StringConstancyInformation.getNeutralElement)
                 FinalEP(e, StringConstancyProperty.getNeutralElement)
         }
     }
@@ -144,7 +144,7 @@ class InterproceduralInterpretationHandler(
         }
         val sci = finalEP.asFinal.p.stringConstancyInformation
         state.appendToFpe2Sci(defSite, sci)
-        state.setInterimFpe2Sci(defSite, sci)
+        state.appendToInterimFpe2Sci(defSite, sci)
         processedDefSites.remove(defSite)
         finalEP
     }
@@ -164,7 +164,7 @@ class InterproceduralInterpretationHandler(
             processedDefSites.remove(defSite)
             StringConstancyInformation.lb
         }
-        state.setInterimFpe2Sci(defSite, sci)
+        state.appendToInterimFpe2Sci(defSite, sci)
         r
     }
 
@@ -177,7 +177,7 @@ class InterproceduralInterpretationHandler(
         )
         val sci = finalEP.asFinal.p.stringConstancyInformation
         state.appendToFpe2Sci(defSite, sci)
-        state.setInterimFpe2Sci(defSite, sci)
+        state.appendToInterimFpe2Sci(defSite, sci)
         finalEP
     }
 
@@ -260,7 +260,7 @@ class InterproceduralInterpretationHandler(
     ): EOptionP[Entity, StringConstancyProperty] = {
         val result = new BinaryExprInterpreter(cfg, this).interpret(expr, defSite)
         val sci = result.asFinal.p.stringConstancyInformation
-        state.setInterimFpe2Sci(defSite, sci)
+        state.appendToInterimFpe2Sci(defSite, sci)
         state.appendToFpe2Sci(defSite, sci)
         result
     }
@@ -321,10 +321,10 @@ class InterproceduralInterpretationHandler(
         ).interpret(nvmc, defSite)
         r match {
             case FinalEP(_, p: StringConstancyProperty) ⇒
-                state.setInterimFpe2Sci(defSite, p.stringConstancyInformation)
+                state.appendToInterimFpe2Sci(defSite, p.stringConstancyInformation)
                 state.appendToFpe2Sci(defSite, p.stringConstancyInformation)
             case _ ⇒
-                state.setInterimFpe2Sci(defSite, StringConstancyInformation.lb)
+                state.appendToInterimFpe2Sci(defSite, StringConstancyInformation.lb)
                 processedDefSites.remove(defSite)
         }
         r
@@ -343,7 +343,7 @@ class InterproceduralInterpretationHandler(
         } else {
             StringConstancyInformation.lb
         }
-        state.setInterimFpe2Sci(defSite, sci)
+        state.appendToInterimFpe2Sci(defSite, sci)
     }
 
     /**
