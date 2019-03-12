@@ -5,7 +5,6 @@ import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPK
 import org.opalj.fpcf.FinalEP
-import org.opalj.fpcf.ProperOnUpdateContinuation
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
 import org.opalj.br.cfg.CFG
@@ -44,7 +43,6 @@ class VirtualFunctionCallPreparationInterpreter(
         state:           InterproceduralComputationState,
         declaredMethods: DeclaredMethods,
         params:          List[Seq[StringConstancyInformation]],
-        c:               ProperOnUpdateContinuation
 ) extends AbstractStringInterpreter(cfg, exprHandler) {
 
     override type T = VirtualFunctionCall[V]

@@ -162,10 +162,10 @@ class InterproceduralStringAnalysis(
 
         if (state.iHandler == null) {
             state.iHandler = InterproceduralInterpretationHandler(
-                state.tac, ps, declaredMethods, fieldAccessInformation, state, continuation(state)
+                state.tac, ps, declaredMethods, fieldAccessInformation, state
             )
             state.interimIHandler = InterproceduralInterpretationHandler(
-                state.tac, ps, declaredMethods, fieldAccessInformation, state.copy(), continuation(state)
+                state.tac, ps, declaredMethods, fieldAccessInformation, state.copy()
             )
         }
 

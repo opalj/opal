@@ -4,7 +4,6 @@ package org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedur
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.FinalEP
-import org.opalj.fpcf.ProperOnUpdateContinuation
 import org.opalj.fpcf.Property
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
@@ -67,7 +66,6 @@ class InterproceduralInterpretationHandler(
         declaredMethods:        DeclaredMethods,
         fieldAccessInformation: FieldAccessInformation,
         state:                  InterproceduralComputationState,
-        c:                      ProperOnUpdateContinuation
 ) extends InterpretationHandler(tac) {
 
     /**
@@ -205,7 +203,7 @@ class InterproceduralInterpretationHandler(
         params:  List[Seq[StringConstancyInformation]]
     ): EOptionP[Entity, StringConstancyProperty] = {
         val r = new VirtualFunctionCallPreparationInterpreter(
-            cfg, this, ps, state, declaredMethods, params, c
+            cfg, this, ps, state, declaredMethods, params
         ).interpret(expr, defSite)
         // Set whether the virtual function call is fully prepared. This is the case if 1) the
         // call was not fully prepared before (no final result available) or 2) the preparation is
@@ -244,7 +242,7 @@ class InterproceduralInterpretationHandler(
         expr: StaticFunctionCall[V], defSite: Int, params: List[Seq[StringConstancyInformation]]
     ): EOptionP[Entity, StringConstancyProperty] = {
         val r = new InterproceduralStaticFunctionCallInterpreter(
-            cfg, this, ps, state, params, declaredMethods, c
+            cfg, this, ps, state, params, declaredMethods
         ).interpret(expr, defSite)
         if (!r.isInstanceOf[Result] || state.nonFinalFunctionArgs.contains(expr)) {
             processedDefSites.remove(defSite)
@@ -274,7 +272,7 @@ class InterproceduralInterpretationHandler(
         expr: GetField[V], defSite: Int
     ): EOptionP[Entity, StringConstancyProperty] = {
         val r = new InterproceduralFieldInterpreter(
-            state, this, ps, fieldAccessInformation, c
+            state, this, ps, fieldAccessInformation
         ).interpret(expr, defSite)
         if (r.isRefinable) {
             processedDefSites.remove(defSite)
@@ -290,7 +288,7 @@ class InterproceduralInterpretationHandler(
         expr: NonVirtualFunctionCall[V], defSite: Int
     ): EOptionP[Entity, StringConstancyProperty] = {
         val r = new InterproceduralNonVirtualFunctionCallInterpreter(
-            cfg, this, ps, state, declaredMethods, c
+            cfg, this, ps, state, declaredMethods
         ).interpret(expr, defSite)
         if (r.isRefinable || state.nonFinalFunctionArgs.contains(expr)) {
             processedDefSites.remove(defSite)
@@ -319,7 +317,7 @@ class InterproceduralInterpretationHandler(
         nvmc: NonVirtualMethodCall[V], defSite: Int
     ): EOptionP[Entity, StringConstancyProperty] = {
         val r = new InterproceduralNonVirtualMethodCallInterpreter(
-            cfg, this, ps, state, declaredMethods, c
+            cfg, this, ps, state, declaredMethods
         ).interpret(nvmc, defSite)
         r match {
             case FinalEP(_, p: StringConstancyProperty) ⇒
@@ -406,9 +404,8 @@ object InterproceduralInterpretationHandler {
         declaredMethods:        DeclaredMethods,
         fieldAccessInformation: FieldAccessInformation,
         state:                  InterproceduralComputationState,
-        c:                      ProperOnUpdateContinuation
     ): InterproceduralInterpretationHandler = new InterproceduralInterpretationHandler(
-        tac, ps, declaredMethods, fieldAccessInformation, state, c
+        tac, ps, declaredMethods, fieldAccessInformation, state
     )
 
 }

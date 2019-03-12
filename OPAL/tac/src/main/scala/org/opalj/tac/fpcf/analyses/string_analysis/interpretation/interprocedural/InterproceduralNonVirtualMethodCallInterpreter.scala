@@ -4,7 +4,6 @@ package org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedur
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.FinalEP
-import org.opalj.fpcf.ProperOnUpdateContinuation
 import org.opalj.fpcf.PropertyStore
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.cfg.CFG
@@ -28,13 +27,10 @@ import org.opalj.tac.fpcf.analyses.string_analysis.InterproceduralComputationSta
  */
 class InterproceduralNonVirtualMethodCallInterpreter(
         cfg: CFG[Stmt[V], TACStmts[V]],
-        // TODO: Do not let an instance of InterproceduralInterpretationHandler handler pass here
-        //  but let it be instantiated in this class
         exprHandler:     InterproceduralInterpretationHandler,
         ps:              PropertyStore,
         state:           InterproceduralComputationState,
         declaredMethods: DeclaredMethods,
-        c:               ProperOnUpdateContinuation
 ) extends AbstractStringInterpreter(cfg, exprHandler) {
 
     override type T = NonVirtualMethodCall[V]

@@ -7,7 +7,6 @@ import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPK
 import org.opalj.fpcf.FinalEP
-import org.opalj.fpcf.ProperOnUpdateContinuation
 import org.opalj.fpcf.PropertyStore
 import org.opalj.br.analyses.FieldAccessInformation
 import org.opalj.br.fpcf.properties.StringConstancyProperty
@@ -34,7 +33,6 @@ class InterproceduralFieldInterpreter(
         exprHandler:            InterproceduralInterpretationHandler,
         ps:                     PropertyStore,
         fieldAccessInformation: FieldAccessInformation,
-        c:                      ProperOnUpdateContinuation
 ) extends AbstractStringInterpreter(state.tac.cfg, exprHandler) {
 
     override type T = GetField[V]
