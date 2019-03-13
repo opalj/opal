@@ -12,7 +12,7 @@ import org.opalj.collection.immutable.RefArray
 import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.PropertyStoreContext
-import org.opalj.fpcf.par.PKEFJPoolPropertyStore
+//import org.opalj.fpcf.par.PKEFJPoolPropertyStore
 import org.opalj.fpcf.seq.PKESequentialPropertyStore
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.fpcf.PropertyStoreKey
@@ -390,7 +390,8 @@ object TestTaintAnalysisRunner {
                     if (args.contains("-seq"))
                         PKESequentialPropertyStore.apply(context: _*)
                     else
-                        PKEFJPoolPropertyStore.apply(context: _*)
+                        ???
+                //PKEFJPoolPropertyStore.apply(context: _*)
                 ps
             }
         )
@@ -422,8 +423,8 @@ object TestTaintAnalysisRunner {
 
         val (_, analyses) =
             time {
-              manager.runAll(LazyTACAIProvider, TestTaintAnalysis)
-        } { t ⇒ println(s"Time for taint-flow analysis: ${t.toSeconds}") }
+                manager.runAll(LazyTACAIProvider, TestTaintAnalysis)
+            } { t ⇒ println(s"Time for taint-flow analysis: ${t.toSeconds}") }
         val entryPoints = analyses.collect { case (_, a: TestTaintAnalysis) ⇒ a.entryPoints }.head
         for {
             e ← entryPoints
@@ -437,8 +438,8 @@ object TestTaintAnalysisRunner {
         }
         println(
             ps.statistics.iterator.map(_.toString()).toList
-            .sorted
-            .mkString("PropertyStore Statistics:\n\t","\n\t","\n")
+                .sorted
+                .mkString("PropertyStore Statistics:\n\t", "\n\t", "\n")
         )
     }
 }
