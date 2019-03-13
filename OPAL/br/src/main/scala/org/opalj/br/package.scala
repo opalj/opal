@@ -277,4 +277,28 @@ package object br {
         AccessFlags.toString(accessFlags, AccessFlagsContexts.METHOD)
     }
 
+    /**
+     * Calculates the parameter index associated with a method's local variable register index.
+     * The index of the first parameter is 0. If the method is not static the *this* reference
+     * stored in register index `0` has the parameter index `-1`.
+     *
+     * @param  isStatic `true` if method is static and, hence, has no implicit parameter for `this`.
+     * @return The parameter index for the specified register.
+     */
+    def registerIndexToParameterIndex(
+        isStatic:      Boolean,
+        descriptor:    MethodDescriptor,
+        registerIndex: Int
+    ): Int = {
+
+        var parameterIndex = 0
+        val parameterTypes = descriptor.parameterTypes
+        var currentIndex = 0
+        while (currentIndex < registerIndex) {
+            currentIndex += parameterTypes(parameterIndex).computationalType.operandSize
+            parameterIndex += 1
+        }
+        if (isStatic) parameterIndex else parameterIndex - 1
+    }
+
 }
