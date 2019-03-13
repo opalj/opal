@@ -20,6 +20,17 @@ import org.opalj.br.fpcf.properties.Purity.NotCompileTimePure
 import org.opalj.br.fpcf.properties.Purity.PerformsDomainSpecificOperations
 import org.opalj.br.fpcf.properties.Purity.PureFlags
 import org.opalj.br.fpcf.properties.Purity.SideEffectFreeFlags
+import org.opalj.br.instructions.PrimitiveLDC
+import org.opalj.br.instructions.SIPUSH
+import org.opalj.br.instructions.BIPUSH
+import org.opalj.br.instructions.LDC
+import org.opalj.br.instructions.LDC_W
+import org.opalj.br.instructions.LDC2_W
+import org.opalj.br.instructions.ALOAD
+import org.opalj.br.instructions.DLOAD
+import org.opalj.br.instructions.FLOAD
+import org.opalj.br.instructions.ILOAD
+import org.opalj.br.instructions.LLOAD
 import org.opalj.br.instructions.AALOAD
 import org.opalj.br.instructions.AASTORE
 import org.opalj.br.instructions.ARETURN
@@ -220,6 +231,158 @@ sealed abstract class Purity
 }
 
 object Purity extends PurityPropertyMetaInformation {
+
+    def fastTrack(ps: PropertyStore, dm: DeclaredMethod): Option[Purity] = {
+        if (!dm.hasSingleDefinedMethod)
+            Some(ImpureByLackOfInformation)
+        else if (dm.definedMethod.classFile.thisType ne dm.declaringClassType)
+            None
+        else {
+            val method = dm.definedMethod
+            val body = method.body
+            if (body.isEmpty)
+                Some(ImpureByAnalysis)
+            else
+                fastTrackForConcreteMethod(dm.definedMethod)
+        }
+    }
+
+    def fastTrackForConcreteMethod(method: Method): Option[Purity] = {
+        if (method.isSynchronized && method.isStatic) {
+            // TODO Why "&& isStatic"?
+            return Some(ImpureByAnalysis);
+        }
+
+        val code = method.body.get
+        val instructions = code.instructions
+        code.codeSize match {
+            // In the following cases, we can distinguish a number of patterns,
+            // which are definitively always pure:
+
+            case 0 | 1 | 2 ⇒
+                // A method with this size can't throw a _new_ exception or have a control-flow
+                // statement. Given that the method has to return a value/throw a value the
+                // only preceding instruction could be load or const instruction.
+                Some(CompileTimePure);
+
+            case 3 ⇒
+                val firstInstruction = instructions(0)
+                firstInstruction.opcode match {
+                    case LDC.opcode if firstInstruction.isInstanceOf[PrimitiveLDC[_]] ⇒
+                        Some(CompileTimePure);
+                    case BIPUSH.opcode |
+                        ILOAD.opcode | FLOAD.opcode | ALOAD.opcode |
+                        LLOAD.opcode | DLOAD.opcode ⇒
+                        Some(CompileTimePure);
+                    case _ ⇒
+                        // TODO Can we identify situations where we are definitively impure?
+                        // The patterns handled above are:
+                        //      LoadPrimitveConstant - return
+                        //      BIPUSH - return
+                        //      (I|A|L|D|F)LOAD - (I|A|L|D|F)return
+                        // The patterns not handled above are (e.g):
+                        //      (Frequent)  LoadClass|LoadMethodType|LoadMethodHandle - return
+                        //      (Very rare) ALOAD_1, ARRAYLENGTH, IRETURN
+                        None
+                }
+
+            case 4 ⇒
+                val firstInstruction = instructions(0)
+                firstInstruction.opcode match {
+                    case LDC_W.opcode if firstInstruction.isInstanceOf[PrimitiveLDC[_]] ⇒
+                        Some(CompileTimePure);
+                    case LDC2_W.opcode | SIPUSH.opcode ⇒
+                        Some(CompileTimePure);
+                    case SIPUSH.opcode ⇒
+                        Some(CompileTimePure);
+                    case GetStatic.opcode | INVOKESTATIC.opcode =>
+                        return None
+                    case _ ⇒
+                        // TODO Can we identify situations where we are definitively impure?
+                        //None
+                        continueAnalysisOfMethod(method)
+                }
+            case _ ⇒
+                continueAnalysisOfMethod(method)
+        }
+    }
+
+    /** Only defined for methods which are not (static synchronized) and which have a body. */
+    private[this] def continueAnalysisOfMethod(method: Method): Option[Purity] = {
+        val body = method.body.get
+        if (body.codeSize > 36) {
+            // The number 36 is dervived from a careful analysis of the JDK's method w.r.t purity
+            // using the algorithm below; i.e., for methods which are longer than 36 byte, no
+            // pure method was found.
+            return None;
+        }
+        if (method.isSynchronized || method.returnType.isReferenceType) {
+            // we just don't handle this type of methods...
+            return None;
+        }
+
+        val methodName = method.name
+        val methodDescriptor = method.descriptor
+        val declaringClassType = method.classFile.thisType
+
+        val isPure =
+            body.iterator.forall { instruction ⇒
+                instruction.opcode match {
+                    case INVOKESPECIAL.opcode | INVOKESTATIC.opcode ⇒ instruction match {
+
+                        case MethodInvocationInstruction(`declaringClassType`, _, `methodName`, `methodDescriptor`) ⇒
+                            // We have a self-recursive call; such calls do not influence
+                            // the computation of the method's purity and are ignored.
+                            // Let's continue with the evaluation of the next instruction.
+                            true
+
+                        case mii: NonVirtualMethodInvocationInstruction ⇒ false
+                    }
+
+                    case GETSTATIC.opcode | GETFIELD.opcode |
+                        PUTFIELD.opcode | PUTSTATIC.opcode |
+                        AALOAD.opcode | AASTORE.opcode |
+                        BALOAD.opcode | BASTORE.opcode |
+                        CALOAD.opcode | CASTORE.opcode |
+                        SALOAD.opcode | SASTORE.opcode |
+                        IALOAD.opcode | IASTORE.opcode |
+                        LALOAD.opcode | LASTORE.opcode |
+                        DALOAD.opcode | DASTORE.opcode |
+                        FALOAD.opcode | FASTORE.opcode |
+                        ARRAYLENGTH.opcode |
+                        MONITORENTER.opcode | MONITOREXIT.opcode |
+                        INVOKEDYNAMIC.opcode |
+                        INVOKEVIRTUAL.opcode | INVOKEINTERFACE.opcode ⇒
+                        false
+
+                    case ARETURN.opcode |
+                        IRETURN.opcode | FRETURN.opcode | DRETURN.opcode | LRETURN.opcode |
+                        RETURN.opcode ⇒
+                        // if we have a monitor instruction the method is impure anyway..
+                        // hence, we can ignore the monitor related implicit exception
+                        true
+
+                    // Reference comparisons may have different results for structurally equal values
+                    case IF_ACMPEQ.opcode | IF_ACMPNE.opcode ⇒
+                        false
+
+                    case _ ⇒
+                        // All other instructions (IFs, Load/Stores, Arith., etc.) are pure
+                        // as long as no implicit exceptions are raised.
+                        // Remember that NEW/NEWARRAY/etc. may raise OutOfMemoryExceptions.
+                        instruction.jvmExceptions.isEmpty
+                    // JVM Exceptions reify the stack and, hence, make the method impure as
+                    // the calling context is now an explicit part of the method's result.
+                    //Impure
+                }
+            }
+
+        if (isPure)
+            Some(CompileTimePure)
+        else
+            None
+    }
+
     /**
      * The key associated with every purity property. The name is "Purity"; the fallback is
      * "Impure".
@@ -227,76 +390,7 @@ object Purity extends PurityPropertyMetaInformation {
     final val key = PropertyKey.create[DeclaredMethod, Purity](
         "Purity",
         ImpureByLackOfInformation,
-        fastTrackPropertyComputation = (ps: PropertyStore, dm: DeclaredMethod) ⇒ {
-            if (!dm.hasSingleDefinedMethod) Some(ImpureByLackOfInformation)
-            else if (dm.definedMethod.classFile.thisType ne dm.declaringClassType) None
-            else {
-                val method = dm.definedMethod
-                val declaringClassType = method.classFile.thisType
-                val methodDescriptor = method.descriptor
-                val methodName = method.name
-                val body = method.body
-
-                val isImpure = body.isEmpty || method.isSynchronized && method.isStatic
-
-                val isPure =
-                    !isImpure && !method.isSynchronized && !method.returnType.isReferenceType &&
-                        body.get.instructions.forall { instruction ⇒
-                            (instruction ne null) && ((instruction.opcode: @switch) match {
-                                case INVOKESPECIAL.opcode | INVOKESTATIC.opcode ⇒ instruction match {
-
-                                    case MethodInvocationInstruction(`declaringClassType`, _, `methodName`, `methodDescriptor`) ⇒
-                                        // We have a self-recursive call; such calls do not influence
-                                        // the computation of the method's purity and are ignored.
-                                        // Let's continue with the evaluation of the next instruction.
-                                        true
-
-                                    case mii: NonVirtualMethodInvocationInstruction ⇒ false
-                                }
-
-                                case GETSTATIC.opcode | GETFIELD.opcode |
-                                    PUTFIELD.opcode | PUTSTATIC.opcode |
-                                    AALOAD.opcode | AASTORE.opcode |
-                                    BALOAD.opcode | BASTORE.opcode |
-                                    CALOAD.opcode | CASTORE.opcode |
-                                    SALOAD.opcode | SASTORE.opcode |
-                                    IALOAD.opcode | IASTORE.opcode |
-                                    LALOAD.opcode | LASTORE.opcode |
-                                    DALOAD.opcode | DASTORE.opcode |
-                                    FALOAD.opcode | FASTORE.opcode |
-                                    ARRAYLENGTH.opcode |
-                                    MONITORENTER.opcode | MONITOREXIT.opcode |
-                                    INVOKEDYNAMIC.opcode |
-                                    INVOKEVIRTUAL.opcode | INVOKEINTERFACE.opcode ⇒
-                                    false
-
-                                case ARETURN.opcode |
-                                    IRETURN.opcode | FRETURN.opcode | DRETURN.opcode | LRETURN.opcode |
-                                    RETURN.opcode ⇒
-                                    // if we have a monitor instruction the method is impure anyway..
-                                    // hence, we can ignore the monitor related implicit exception
-                                    true
-
-                                // Reference comparisons may have different results for structurally equal values
-                                case IF_ACMPEQ.opcode | IF_ACMPNE.opcode ⇒
-                                    false
-
-                                case _ ⇒
-                                    // All other instructions (IFs, Load/Stores, Arith., etc.) are pure
-                                    // as long as no implicit exceptions are raised.
-                                    // Remember that NEW/NEWARRAY/etc. may raise OutOfMemoryExceptions.
-                                    instruction.jvmExceptions.isEmpty
-                                // JVM Exceptions reify the stack and, hence, make the method impure as
-                                // the calling context is now an explicit part of the method's result.
-                                //Impure
-                            })
-                        }
-
-                if (isImpure) Some(ImpureByAnalysis)
-                else if (isPure) Some(CompileTimePure)
-                else None
-            }
-        }
+        fastTrackPropertyComputation = fastTrack _
     )
 
     final val NotCompileTimePure = 0x1
