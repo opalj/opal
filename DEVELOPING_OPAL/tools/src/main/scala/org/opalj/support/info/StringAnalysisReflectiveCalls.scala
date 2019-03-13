@@ -9,7 +9,14 @@ import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
 import org.opalj.fpcf.FinalP
+import org.opalj.fpcf.InterimELUBP
+import org.opalj.fpcf.InterimLUBP
+import org.opalj.fpcf.InterimResult
+import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.Result
+import org.opalj.fpcf.SomeEPS
+import org.opalj.value.ValueInformation
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
@@ -23,16 +30,35 @@ import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
-import org.opalj.br.fpcf.PropertyStoreKey
+import org.opalj.br.fpcf.cg.properties.ReflectionRelatedCallees
+import org.opalj.br.fpcf.cg.properties.SerializationRelatedCallees
+import org.opalj.br.fpcf.cg.properties.StandardInvokeCallees
+import org.opalj.br.fpcf.cg.properties.ThreadRelatedIncompleteCallSites
+import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
 import org.opalj.tac.Assignment
 import org.opalj.tac.Call
 import org.opalj.tac.ExprStmt
-import org.opalj.tac.SimpleTACAIKey
 import org.opalj.tac.StaticFunctionCall
 import org.opalj.tac.VirtualFunctionCall
-import org.opalj.tac.fpcf.analyses.string_analysis.LazyIntraproceduralStringAnalysis
 import org.opalj.tac.fpcf.analyses.string_analysis.P
 import org.opalj.tac.fpcf.analyses.string_analysis.V
+import org.opalj.tac.fpcf.analyses.TACAITransformer
+import org.opalj.tac.fpcf.analyses.TriggeredSystemPropertiesAnalysis
+import org.opalj.tac.fpcf.analyses.cg.TriggeredInstantiatedTypesAnalysis
+import org.opalj.tac.fpcf.analyses.cg.TriggeredLoadedClassesAnalysis
+import org.opalj.tac.fpcf.properties.TACAI
+import org.opalj.tac.DUVar
+import org.opalj.tac.Stmt
+import org.opalj.tac.TACMethodParameter
+import org.opalj.tac.TACode
+import org.opalj.tac.fpcf.analyses.cg.LazyCalleesAnalysis
+import org.opalj.tac.fpcf.analyses.cg.TriggeredFinalizerAnalysisScheduler
+import org.opalj.tac.fpcf.analyses.cg.TriggeredStaticInitializerAnalysis
+import org.opalj.tac.fpcf.analyses.cg.reflection.TriggeredReflectionRelatedCallsAnalysis
+import org.opalj.tac.fpcf.analyses.cg.RTACallGraphAnalysisScheduler
+import org.opalj.tac.fpcf.analyses.cg.TriggeredSerializationRelatedCallsAnalysis
+import org.opalj.tac.fpcf.analyses.cg.TriggeredThreadRelatedCallsAnalysis
+import org.opalj.tac.fpcf.analyses.string_analysis.LazyInterproceduralStringAnalysis
 
 /**
  * Analyzes a project for calls provided by the Java Reflection API and tries to determine which
@@ -67,10 +93,6 @@ object StringAnalysisReflectiveCalls extends DefaultOneStepAnalysis {
      * analysis. The string are supposed to have the format as produced by [[buildFQMethodName]].
      */
     private val relevantMethodNames = List(
-        // The following is for the Java Reflection API
-        "java.lang.Class#forName", "java.lang.ClassLoader#loadClass",
-        "java.lang.Class#getField", "java.lang.Class#getDeclaredField",
-        "java.lang.Class#getMethod", "java.lang.Class#getDeclaredMethod"
         // The following is for the javax.crypto API
         //"javax.crypto.Cipher#getInstance", "javax.crypto.Cipher#getMaxAllowedKeyLength",
         //"javax.crypto.Cipher#getMaxAllowedParameterSpec", "javax.crypto.Cipher#unwrap",
@@ -79,18 +101,25 @@ object StringAnalysisReflectiveCalls extends DefaultOneStepAnalysis {
         //"javax.crypto.ExemptionMechanism#getInstance", "javax.crypto.KeyAgreement#getInstance",
         //"javax.crypto.KeyGenerator#getInstance", "javax.crypto.Mac#getInstance",
         //"javax.crypto.SealedObject#getObject", "javax.crypto.SecretKeyFactory#getInstance"
+        // The following is for the Java Reflection API
+        "java.lang.Class#forName", "java.lang.ClassLoader#loadClass",
+        "java.lang.Class#getField", "java.lang.Class#getDeclaredField",
+        "java.lang.Class#getMethod", "java.lang.Class#getDeclaredMethod"
     )
 
     /**
-     * A list of fully-qualified method names that are to be skipped, e.g., because they make the
-     * analysis crash.
+     * A list of fully-qualified method names that are to be skipped, e.g., because they make an
+     * analysis crash (e.g., com/sun/jmx/mbeanserver/MBeanInstantiator#deserialize)
      */
-    private val ignoreMethods = List(
-        // For the next one, there should be a \w inside the second string
-        // "com/sun/glass/ui/monocle/NativePlatformFactory#getNativePlatform",
-        // Check this result:
-        //"com/sun/jmx/mbeanserver/MBeanInstantiator#deserialize"
-    )
+    private val ignoreMethods = List()
+
+    // executeFrom specifies the index / counter when to start feeding entities to the property
+    // store. executeTo specifies the index / counter when to stop feeding entities to the property
+    // store. These values are basically to help debugging. executionCounter is a helper variable
+    // for that purpose
+    private val executeFrom = 0
+    private val executeTo = 10000
+    private var executionCounter = 0
 
     override def title: String = "String Analysis for Reflective Calls"
 
@@ -146,22 +175,24 @@ object StringAnalysisReflectiveCalls extends DefaultOneStepAnalysis {
         if (isRelevantCall(call.declaringClass, call.name)) {
             val fqnMethodName = s"${method.classFile.thisType.fqn}#${method.name}"
             if (!ignoreMethods.contains(fqnMethodName)) {
-                //println(
-                //    s"Processing ${call.name} in ${method.classFile.thisType.fqn}#${method.name}"
-                //)
-                // Loop through all parameters and start the analysis for those that take a string
-                call.descriptor.parameterTypes.zipWithIndex.foreach {
-                    case (ft, index) ⇒
-                        if (ft.toJava == "java.lang.String") {
-                            val duvar = call.params(index).asVar
-                            val e = (duvar, method)
-
-                            ps.force(e, StringConstancyProperty.key)
-                            entityContext.append(
-                                (e, buildFQMethodName(call.declaringClass, call.name))
-                            )
-                        }
+                if (executionCounter >= executeFrom && executionCounter <= executeTo) {
+                    println(
+                        s"Starting ${call.name} in ${method.classFile.thisType.fqn}#${method.name}"
+                    )
+                    // Loop through all parameters and start the analysis for those that take a string
+                    call.descriptor.parameterTypes.zipWithIndex.foreach {
+                        case (ft, index) ⇒
+                            if (ft.toJava == "java.lang.String") {
+                                val duvar = call.params(index).asVar
+                                val e = (duvar, method)
+                                ps.force(e, StringConstancyProperty.key)
+                                entityContext.append(
+                                    (e, buildFQMethodName(call.declaringClass, call.name))
+                                )
+                            }
+                    }
                 }
+                executionCounter += 1
             }
         }
     }
@@ -190,58 +221,116 @@ object StringAnalysisReflectiveCalls extends DefaultOneStepAnalysis {
         BasicReport(report)
     }
 
+    private def processStatements(
+        ps:        PropertyStore,
+        stmts:     Array[Stmt[V]],
+        m:         Method,
+        resultMap: ResultMapType
+    ): Unit = {
+        stmts.foreach { stmt ⇒
+            // Using the following switch speeds up the whole process
+            (stmt.astID: @switch) match {
+                case Assignment.ASTID ⇒ stmt match {
+                    case Assignment(_, _, c: StaticFunctionCall[V]) ⇒
+                        processFunctionCall(ps, m, c, resultMap)
+                    case Assignment(_, _, c: VirtualFunctionCall[V]) ⇒
+                        processFunctionCall(ps, m, c, resultMap)
+                    case _ ⇒
+                }
+                case ExprStmt.ASTID ⇒ stmt match {
+                    case ExprStmt(_, c: StaticFunctionCall[V]) ⇒
+                        processFunctionCall(ps, m, c, resultMap)
+                    case ExprStmt(_, c: VirtualFunctionCall[V]) ⇒
+                        processFunctionCall(ps, m, c, resultMap)
+                    case _ ⇒
+                }
+                case _ ⇒
+            }
+        }
+    }
+
+    private def continuation(
+        ps: PropertyStore, m: Method, resultMap: ResultMapType
+    )(eps: SomeEPS): ProperPropertyComputationResult = {
+        eps match {
+            case FinalP(tac: TACAI) ⇒
+                processStatements(ps, tac.tac.get.stmts, m, resultMap)
+                Result(m, tac)
+            case InterimLUBP(lb, ub) ⇒
+                InterimResult(
+                    m, lb, ub, List(eps), continuation(ps, m, resultMap)
+                )
+            case _ ⇒ throw new IllegalStateException("should never happen!")
+        }
+    }
+
     override def doAnalyze(
         project: Project[URL], parameters: Seq[String], isInterrupted: () ⇒ Boolean
     ): ReportableAnalysisResult = {
-        val t0 = System.currentTimeMillis()
-
-        implicit val propertyStore: PropertyStore = project.get(PropertyStoreKey)
-        project.get(FPCFAnalysesManagerKey).runAll(LazyIntraproceduralStringAnalysis)
-        val tacProvider = project.get(SimpleTACAIKey)
+        val manager = project.get(FPCFAnalysesManagerKey)
+        implicit val (propertyStore, analyses) = manager.runAll(
+            TACAITransformer,
+            LazyL0BaseAIAnalysis,
+            RTACallGraphAnalysisScheduler,
+            TriggeredStaticInitializerAnalysis,
+            TriggeredLoadedClassesAnalysis,
+            TriggeredFinalizerAnalysisScheduler,
+            TriggeredThreadRelatedCallsAnalysis,
+            TriggeredSerializationRelatedCallsAnalysis,
+            TriggeredReflectionRelatedCallsAnalysis,
+            TriggeredSystemPropertiesAnalysis,
+            TriggeredInstantiatedTypesAnalysis,
+            LazyCalleesAnalysis(Set(
+                StandardInvokeCallees,
+                SerializationRelatedCallees,
+                ReflectionRelatedCallees,
+                ThreadRelatedIncompleteCallSites
+            )),
+            LazyInterproceduralStringAnalysis
+        // LazyIntraproceduralStringAnalysis
+        )
 
         // Stores the obtained results for each supported reflective operation
         val resultMap: ResultMapType = mutable.Map[String, ListBuffer[StringConstancyInformation]]()
         relevantMethodNames.foreach { resultMap(_) = ListBuffer() }
 
         project.allMethodsWithBody.foreach { m ⇒
-            // To dramatically reduce the work of the tacProvider, quickly check if a method is
-            // relevant at all
+            // To dramatically reduce work, quickly check if a method is relevant at all
             if (instructionsContainRelevantMethod(m.body.get.instructions)) {
-                val stmts = tacProvider(m).stmts
-                stmts.foreach { stmt ⇒
-                    // Use the following switch to speed-up the whole process
-                    (stmt.astID: @switch) match {
-                        case Assignment.ASTID ⇒ stmt match {
-                            case Assignment(_, _, c: StaticFunctionCall[V]) ⇒
-                                processFunctionCall(propertyStore, m, c, resultMap)
-                            case Assignment(_, _, c: VirtualFunctionCall[V]) ⇒
-                                processFunctionCall(propertyStore, m, c, resultMap)
-                            case _ ⇒
-                        }
-                        case ExprStmt.ASTID ⇒ stmt match {
-                            case ExprStmt(_, c: StaticFunctionCall[V]) ⇒
-                                processFunctionCall(propertyStore, m, c, resultMap)
-                            case ExprStmt(_, c: VirtualFunctionCall[V]) ⇒
-                                processFunctionCall(propertyStore, m, c, resultMap)
-                            case _ ⇒
-                        }
-                        case _ ⇒
+                var tac: TACode[TACMethodParameter, DUVar[ValueInformation]] = null
+                val tacaiEOptP = propertyStore(m, TACAI.key)
+                if (tacaiEOptP.hasUBP) {
+                    if (tacaiEOptP.ub.tac.isEmpty) {
+                        // No TAC available, e.g., because the method has no body
+                        println(s"No body for method: ${m.classFile.fqn}#${m.name}")
+                    } else {
+                        tac = tacaiEOptP.ub.tac.get
+                        processStatements(propertyStore, tac.stmts, m, resultMap)
                     }
+                } else {
+                    InterimResult(
+                        m,
+                        StringConstancyProperty.ub,
+                        StringConstancyProperty.lb,
+                        List(tacaiEOptP),
+                        continuation(propertyStore, m, resultMap)
+                    )
                 }
             }
         }
 
-        // TODO: The call to waitOnPhaseCompletion is not 100 % correct, however, without it
-        //       resultMap does not get filled at all
+        val t0 = System.currentTimeMillis()
         propertyStore.waitOnPhaseCompletion()
         entityContext.foreach {
             case (e, callName) ⇒
                 propertyStore.properties(e).toIndexedSeq.foreach {
-                    case FinalP(p) ⇒
-                        resultMap(callName).append(
-                            p.asInstanceOf[StringConstancyProperty].stringConstancyInformation
-                        )
+                    case FinalP(p: StringConstancyProperty) ⇒
+                        resultMap(callName).append(p.stringConstancyInformation)
+                    case InterimELUBP(_, _, ub: StringConstancyProperty) ⇒
+                        resultMap(callName).append(ub.stringConstancyInformation)
                     case _ ⇒
+                        println(s"Neither a final nor an interim result for $e in $callName; "+
+                            "this should never be the case!")
                 }
         }
 
