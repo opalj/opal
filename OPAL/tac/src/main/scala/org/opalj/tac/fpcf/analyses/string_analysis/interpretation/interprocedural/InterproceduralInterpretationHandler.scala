@@ -354,8 +354,12 @@ class InterproceduralInterpretationHandler(
         params: Seq[Seq[StringConstancyInformation]], defSite: Int
     ): StringConstancyInformation = {
         val paramPos = Math.abs(defSite + 2)
-        val paramScis = params.map(_(paramPos)).distinct
-        StringConstancyInformation.reduceMultiple(paramScis)
+        if (params.exists(_.length <= paramPos)) {
+            StringConstancyInformation.lb
+        } else {
+            val paramScis = params.map(_(paramPos)).distinct
+            StringConstancyInformation.reduceMultiple(paramScis)
+        }
     }
 
     /**
