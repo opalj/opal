@@ -82,6 +82,14 @@ case class InterproceduralComputationState(entity: P) {
     val interimFpe2sci: mutable.Map[Int, ListBuffer[StringConstancyInformation]] = mutable.Map()
 
     /**
+     * Used by [[appendToInterimFpe2Sci]] to track for which entities a value was appended to
+     * [[interimFpe2sci]]. For a discussion of the necessity, see the documentation of
+     * [[interimFpe2sci]].
+     */
+    private val entity2lastInterimFpe2SciValue: mutable.Map[V, StringConstancyInformation] =
+        mutable.Map()
+
+    /**
      * An analysis may depend on the evaluation of its parameters. This number indicates how many
      * of such dependencies are still to be computed.
      */
@@ -159,21 +167,55 @@ case class InterproceduralComputationState(entity: P) {
     }
 
     /**
-     * Appends a [[StringConstancyInformation]] element to [[interimFpe2sci]].
+     * Appends a [[StringConstancyInformation]] element to [[interimFpe2sci]]. The rules for
+     * appending are as follows:
+     * <ul>
+     *     <li>If no element has been added to the interim result list belonging to `defSite`, the
+     *     element is guaranteed to be added.</li>
+     *     <li>If no entity is given, i.e., `None`, and the list at `defSite` does not contain
+     *     `sci`, `sci` is guaranteed to be added. If necessary, the oldest element in the list
+     *     belonging to `defSite` is removed.</li>
+     *     <li>If a non-empty entity is given, it is checked whether an entry for that element has
+     *     been added before by making use of [[entity2lastInterimFpe2SciValue]]. If so, the list is
+     *     updated only if that element equals [[StringConstancyInformation.lb]]. The reason being
+     *     is that otherwise the result of updating the upper bound might always produce a new
+     *     result which would not make the analysis terminate. Basically, it might happen that the
+     *     analysis produces for an entity ''e_1'' the result "(e1|e2)" which the analysis of
+     *     entity ''e_2'' uses to update its state to "((e1|e2)|e3)". The analysis of ''e_1'', which
+     *     depends on ''e_2'' and vice versa, will update its state producing "((e1|e2)|e3)" which
+     *     makes the analysis of ''e_2'' update its to (((e1|e2)|e3)|e3) and so on.</li>
+     * </ul>
      *
      * @param defSite The definition site to which append the given `sci` element for.
      * @param sci The [[StringConstancyInformation]] to add to the list of interim results for the
      *            given definition site.
+     * @param entity Optional. The entity for which the `sci` element was computed.
      */
     def appendToInterimFpe2Sci(
-        defSite: Int, sci: StringConstancyInformation
+        defSite: Int, sci: StringConstancyInformation, entity: Option[V] = None
     ): Unit = {
+        val numElements = var2IndexMapping.values.flatten.count(_ == defSite)
+        var addedNewList = false
         if (!interimFpe2sci.contains(defSite)) {
             interimFpe2sci(defSite) = ListBuffer()
+            addedNewList = true
         }
         // Append an element
-        if (!interimFpe2sci(defSite).contains(sci)) {
+        val containsSci = interimFpe2sci(defSite).contains(sci)
+        if (!containsSci && entity.isEmpty) {
+            if (!addedNewList && interimFpe2sci(defSite).length == numElements) {
+                interimFpe2sci(defSite).remove(0)
+            }
             interimFpe2sci(defSite).append(sci)
+        } else if (!containsSci && entity.nonEmpty) {
+            if (!entity2lastInterimFpe2SciValue.contains(entity.get) ||
+                entity2lastInterimFpe2SciValue(entity.get) == StringConstancyInformation.lb) {
+                entity2lastInterimFpe2SciValue(entity.get) = sci
+                if (interimFpe2sci(defSite).nonEmpty) {
+                    interimFpe2sci(defSite).remove(0)
+                }
+                interimFpe2sci(defSite).append(sci)
+            }
         }
     }
 
