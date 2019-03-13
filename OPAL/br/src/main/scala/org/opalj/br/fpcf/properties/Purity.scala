@@ -259,7 +259,7 @@ object Purity extends PurityPropertyMetaInformation {
             // In the following cases, we can distinguish a number of patterns,
             // which are definitively always pure:
 
-            case 0 | 1 | 2 ⇒
+            case 1 | 2 ⇒
                 // A method with this size can't throw a _new_ exception or have a control-flow
                 // statement. Given that the method has to return a value/throw a value the
                 // only preceding instruction could be load or const instruction.
@@ -298,7 +298,7 @@ object Purity extends PurityPropertyMetaInformation {
 
                     case _ ⇒
                         // handle "NEWARRAY" case => compile-time pure
-                        
+
                         None
                     ///continueAnalysisOfMethod(method)
                 }
