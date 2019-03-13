@@ -275,7 +275,6 @@ object Purity extends PurityPropertyMetaInformation {
                         LLOAD.opcode | DLOAD.opcode ⇒
                         Some(CompileTimePure);
                     case _ ⇒
-                        // TODO Can we identify situations where we are definitively impure?
                         // The patterns handled above are:
                         //      LoadPrimitveConstant - return
                         //      BIPUSH - return
@@ -296,13 +295,23 @@ object Purity extends PurityPropertyMetaInformation {
                     case GETSTATIC.opcode | INVOKESTATIC.opcode ⇒
                         // not handled by the subsequent algorithm....
                         None
+
                     case _ ⇒
-                        // TODO Can we identify situations where we are definitively impure?
-                        //None
-                        continueAnalysisOfMethod(method)
+                        // handle "NEWARRAY" case => compile-time pure
+                        
+                        None
+                    ///continueAnalysisOfMethod(method)
                 }
+
+            case 5 ⇒
+                // putstatic as second instruction => impure
+                // anewarray  as second instruction => compile-time pure
+                // else...
+                None
+
             case _ ⇒
-                continueAnalysisOfMethod(method)
+                if (false) continueAnalysisOfMethod(method)
+                None
         }
     }
 
