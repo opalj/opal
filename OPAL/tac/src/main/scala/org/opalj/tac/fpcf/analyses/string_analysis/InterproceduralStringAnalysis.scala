@@ -399,8 +399,11 @@ class InterproceduralStringAnalysis(
                         }
                     case InterimLUBP(_: StringConstancyProperty, ub: StringConstancyProperty) ⇒
                         state.dependees = eps :: state.dependees
-                        state.var2IndexMapping(eps.e.asInstanceOf[P]._1).foreach { i ⇒
-                            state.appendToInterimFpe2Sci(i, ub.stringConstancyInformation)
+                        val uvar = eps.e.asInstanceOf[P]._1
+                        state.var2IndexMapping(uvar).foreach { i ⇒
+                            state.appendToInterimFpe2Sci(
+                                i, ub.stringConstancyInformation, Some(uvar)
+                            )
                         }
                         getInterimResult(state)
                     case _ ⇒
