@@ -3,16 +3,16 @@ package org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedur
 
 import org.opalj.tac.fpcf.analyses.string_analysis.InterproceduralComputationState
 import org.opalj.tac.fpcf.analyses.string_analysis.V
-import org.opalj.tac.GetField
+import org.opalj.tac.FieldRead
 
 class GetFieldFinalizer(
         state: InterproceduralComputationState
 ) extends AbstractFinalizer(state) {
 
-    override protected type T = GetField[V]
+    override protected type T = FieldRead[V]
 
     /**
-     * Finalizes [[GetField]]s.
+     * Finalizes [[FieldRead]]s.
      * <p>
      * @inheritdoc
      */

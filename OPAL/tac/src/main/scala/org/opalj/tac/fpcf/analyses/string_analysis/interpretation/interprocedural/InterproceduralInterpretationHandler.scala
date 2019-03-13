@@ -48,6 +48,7 @@ import org.opalj.tac.TACode
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedural.finalizer.GetFieldFinalizer
 import org.opalj.tac.SimpleValueConst
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedural.finalizer.StaticFunctionCallFinalizer
+import org.opalj.tac.FieldRead
 
 /**
  * `InterproceduralInterpretationHandler` is responsible for processing expressions that are
@@ -106,8 +107,8 @@ class InterproceduralInterpretationHandler(
             case Assignment(_, _, expr: ArrayLoad[V]) ⇒
                 processArrayLoad(expr, defSite, params)
             case Assignment(_, _, expr: New)                    ⇒ processNew(expr, defSite)
-            case Assignment(_, _, expr: GetStatic)              ⇒ processGetStatic(expr, defSite)
-            case ExprStmt(_, expr: GetStatic)                   ⇒ processGetStatic(expr, defSite)
+            case Assignment(_, _, expr: GetStatic)              ⇒ processGetField(expr, defSite)
+            case ExprStmt(_, expr: GetStatic)                   ⇒ processGetField(expr, defSite)
             case Assignment(_, _, expr: VirtualFunctionCall[V]) ⇒ processVFC(expr, defSite, params)
             case ExprStmt(_, expr: VirtualFunctionCall[V])      ⇒ processVFC(expr, defSite, params)
             case Assignment(_, _, expr: StaticFunctionCall[V]) ⇒
@@ -179,19 +180,6 @@ class InterproceduralInterpretationHandler(
         state.appendToFpe2Sci(defSite, sci)
         state.appendToInterimFpe2Sci(defSite, sci)
         finalEP
-    }
-
-    /**
-     * Helper / utility function for processing [[GetStatic]]s.
-     */
-    private def processGetStatic(
-        expr: GetStatic, defSite: Int
-    ): EOptionP[Entity, StringConstancyProperty] = {
-        val result = new InterproceduralGetStaticInterpreter(cfg, this).interpret(
-            expr, defSite
-        )
-        doInterimResultHandling(result, defSite)
-        result
     }
 
     /**
@@ -269,7 +257,7 @@ class InterproceduralInterpretationHandler(
      * Helper / utility function for processing [[GetField]]s.
      */
     private def processGetField(
-        expr: GetField[V], defSite: Int
+        expr: FieldRead[V], defSite: Int
     ): EOptionP[Entity, StringConstancyProperty] = {
         val r = new InterproceduralFieldInterpreter(
             state, this, ps, fieldAccessInformation
@@ -380,10 +368,10 @@ class InterproceduralInterpretationHandler(
                     VirtualFunctionCallFinalizer(state, cfg).finalizeInterpretation(vfc, defSite)
                 case ExprStmt(_, vfc: VirtualFunctionCall[V]) ⇒
                     VirtualFunctionCallFinalizer(state, cfg).finalizeInterpretation(vfc, defSite)
-                case Assignment(_, _, gf: GetField[V]) ⇒
-                    GetFieldFinalizer(state).finalizeInterpretation(gf, defSite)
-                case ExprStmt(_, gf: GetField[V]) ⇒
-                    GetFieldFinalizer(state).finalizeInterpretation(gf, defSite)
+                case Assignment(_, _, fr: FieldRead[V]) ⇒
+                    GetFieldFinalizer(state).finalizeInterpretation(fr, defSite)
+                case ExprStmt(_, fr: FieldRead[V]) ⇒
+                    GetFieldFinalizer(state).finalizeInterpretation(fr, defSite)
                 case Assignment(_, _, sfc: StaticFunctionCall[V]) ⇒
                     StaticFunctionCallFinalizer(state).finalizeInterpretation(sfc, defSite)
                 case ExprStmt(_, sfc: StaticFunctionCall[V]) ⇒

@@ -12,17 +12,19 @@ import org.opalj.br.analyses.FieldAccessInformation
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel
-import org.opalj.tac.GetField
 import org.opalj.tac.fpcf.analyses.string_analysis.V
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.AbstractStringInterpreter
 import org.opalj.tac.fpcf.analyses.string_analysis.InterproceduralComputationState
 import org.opalj.tac.fpcf.analyses.string_analysis.InterproceduralStringAnalysis
+import org.opalj.tac.FieldRead
+import org.opalj.tac.PutField
+import org.opalj.tac.PutStatic
+import org.opalj.tac.Stmt
 
 /**
- * The `InterproceduralFieldInterpreter` is responsible for processing [[GetField]]s. In this
- * implementation, there is currently only primitive support for fields, i.e., they are not analyzed
- * but a constant [[org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation]]
- * is returned (see [[interpret]] of this class).
+ * The `InterproceduralFieldInterpreter` is responsible for processing instances of [[FieldRead]]s.
+ * At this moment, this includes instances of [[PutField]] and [[PutStatic]]. For the processing
+ * procedure, see [[InterproceduralFieldInterpreter#interpret]].
  *
  * @see [[AbstractStringInterpreter]]
  *
@@ -35,14 +37,15 @@ class InterproceduralFieldInterpreter(
         fieldAccessInformation: FieldAccessInformation,
 ) extends AbstractStringInterpreter(state.tac.cfg, exprHandler) {
 
-    override type T = GetField[V]
+    override type T = FieldRead[V]
 
     /**
-     * Currently, fields are not interpreted. Thus, this function always returns a list with a
-     * single element consisting of
-     * [[org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel.DYNAMIC]],
-     * [[org.opalj.br.fpcf.properties.string_definition.StringConstancyType.APPEND]] and
-     * [[org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation.UnknownWordSymbol]].
+     * Currently, fields are approximated using the following approach. If a field of a type not
+     * supported by the [[InterproceduralStringAnalysis]] is passed,
+     * [[StringConstancyInformation.lb]] will be produces. Otherwise, all write accesses are
+     * considered and analyzed. If a field is not initialized within a constructor or the class
+     * itself, it will be approximated using all write accesses as well as with the lower bound and
+     * "null" => in these cases fields are [[StringConstancyLevel.DYNAMIC]].
      *
      * @note For this implementation, `defSite` plays a role!
      *
@@ -59,7 +62,7 @@ class InterproceduralFieldInterpreter(
         val results = ListBuffer[EOptionP[Entity, StringConstancyProperty]]()
         fieldAccessInformation.writeAccesses(instr.declaringClass, instr.name).foreach {
             case (m, pcs) ⇒ pcs.foreach { pc ⇒
-                if (m.name == "<init>") {
+                if (m.name == "<init>" || m.name == "<clinit>") {
                     hasInit = true
                 }
                 val (tacEps, tac) = getTACAI(ps, m, state)
@@ -69,7 +72,7 @@ class InterproceduralFieldInterpreter(
                     tac match {
                         case Some(methodTac) ⇒
                             val stmt = methodTac.stmts(methodTac.pcToIndex(pc))
-                            val entity = (stmt.asPutField.value.asVar, m)
+                            val entity = (extractUVarFromPut(stmt), m)
                             val eps = ps(entity, StringConstancyProperty.key)
                             if (eps.isRefinable) {
                                 state.dependees = eps :: state.dependees
@@ -122,6 +125,16 @@ class InterproceduralFieldInterpreter(
                 results.find(!_.isFinal).get
             }
         }
+    }
+
+    /**
+     * This function extracts a DUVar from a given statement which is required to be either of type
+     * [[PutStatic]] or [[PutField]].
+     */
+    private def extractUVarFromPut(field: Stmt[V]): V = field match {
+        case PutStatic(_, _, _, _, value) ⇒ value.asVar
+        case PutField(_, _, _, _, _, value) ⇒ value.asVar
+        case _ ⇒ throw new IllegalArgumentException(s"Type of $field is currently not supported!")
     }
 
 }
