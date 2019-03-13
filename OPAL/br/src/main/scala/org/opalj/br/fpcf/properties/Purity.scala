@@ -31,44 +31,8 @@ import org.opalj.br.instructions.DLOAD
 import org.opalj.br.instructions.FLOAD
 import org.opalj.br.instructions.ILOAD
 import org.opalj.br.instructions.LLOAD
-import org.opalj.br.instructions.AALOAD
-import org.opalj.br.instructions.AASTORE
-import org.opalj.br.instructions.ARETURN
-import org.opalj.br.instructions.ARRAYLENGTH
-import org.opalj.br.instructions.BALOAD
-import org.opalj.br.instructions.BASTORE
-import org.opalj.br.instructions.CALOAD
-import org.opalj.br.instructions.CASTORE
-import org.opalj.br.instructions.DALOAD
-import org.opalj.br.instructions.DASTORE
-import org.opalj.br.instructions.DRETURN
-import org.opalj.br.instructions.FALOAD
-import org.opalj.br.instructions.FASTORE
-import org.opalj.br.instructions.FRETURN
-import org.opalj.br.instructions.GETFIELD
-import org.opalj.br.instructions.GETSTATIC
-import org.opalj.br.instructions.IALOAD
-import org.opalj.br.instructions.IASTORE
-import org.opalj.br.instructions.IF_ACMPEQ
-import org.opalj.br.instructions.IF_ACMPNE
-import org.opalj.br.instructions.INVOKEDYNAMIC
-import org.opalj.br.instructions.INVOKEINTERFACE
-import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.instructions.INVOKESTATIC
-import org.opalj.br.instructions.INVOKEVIRTUAL
-import org.opalj.br.instructions.IRETURN
-import org.opalj.br.instructions.LALOAD
-import org.opalj.br.instructions.LASTORE
-import org.opalj.br.instructions.LRETURN
-import org.opalj.br.instructions.MethodInvocationInstruction
-import org.opalj.br.instructions.MONITORENTER
-import org.opalj.br.instructions.MONITOREXIT
-import org.opalj.br.instructions.NonVirtualMethodInvocationInstruction
-import org.opalj.br.instructions.PUTFIELD
-import org.opalj.br.instructions.PUTSTATIC
-import org.opalj.br.instructions.RETURN
-import org.opalj.br.instructions.SALOAD
-import org.opalj.br.instructions.SASTORE
+import org.opalj.br.instructions.GETSTATIC
 
 sealed trait PurityPropertyMetaInformation extends PropertyMetaInformation {
 
@@ -298,9 +262,7 @@ object Purity extends PurityPropertyMetaInformation {
 
                     case _ ⇒
                         // handle "NEWARRAY" case => compile-time pure
-
                         None
-                    ///continueAnalysisOfMethod(method)
                 }
 
             case 5 ⇒
@@ -310,85 +272,8 @@ object Purity extends PurityPropertyMetaInformation {
                 None
 
             case _ ⇒
-                if (false) continueAnalysisOfMethod(method)
                 None
         }
-    }
-
-    /** Only defined for methods which are not (static synchronized) and which have a body. */
-    private[this] def continueAnalysisOfMethod(method: Method): Option[Purity] = {
-        val body = method.body.get
-        if (body.codeSize > 36) {
-            // The number 36 is dervived from a careful analysis of the JDK's method w.r.t purity
-            // using the algorithm below; i.e., for methods which are longer than 36 byte, no
-            // pure method was found.
-            return None;
-        }
-        if (method.isSynchronized || method.returnType.isReferenceType) {
-            // we just don't handle this type of methods...
-            return None;
-        }
-
-        val methodName = method.name
-        val methodDescriptor = method.descriptor
-        val declaringClassType = method.classFile.thisType
-
-        val isPure =
-            body.iterator.forall { instruction ⇒
-                instruction.opcode match {
-                    case INVOKESPECIAL.opcode | INVOKESTATIC.opcode ⇒ instruction match {
-
-                        case MethodInvocationInstruction(`declaringClassType`, _, `methodName`, `methodDescriptor`) ⇒
-                            // We have a self-recursive call; such calls do not influence
-                            // the computation of the method's purity and are ignored.
-                            // Let's continue with the evaluation of the next instruction.
-                            true
-
-                        case mii: NonVirtualMethodInvocationInstruction ⇒ false
-                    }
-
-                    case GETSTATIC.opcode | GETFIELD.opcode |
-                        PUTFIELD.opcode | PUTSTATIC.opcode |
-                        AALOAD.opcode | AASTORE.opcode |
-                        BALOAD.opcode | BASTORE.opcode |
-                        CALOAD.opcode | CASTORE.opcode |
-                        SALOAD.opcode | SASTORE.opcode |
-                        IALOAD.opcode | IASTORE.opcode |
-                        LALOAD.opcode | LASTORE.opcode |
-                        DALOAD.opcode | DASTORE.opcode |
-                        FALOAD.opcode | FASTORE.opcode |
-                        ARRAYLENGTH.opcode |
-                        MONITORENTER.opcode | MONITOREXIT.opcode |
-                        INVOKEDYNAMIC.opcode |
-                        INVOKEVIRTUAL.opcode | INVOKEINTERFACE.opcode ⇒
-                        false
-
-                    case ARETURN.opcode |
-                        IRETURN.opcode | FRETURN.opcode | DRETURN.opcode | LRETURN.opcode |
-                        RETURN.opcode ⇒
-                        // if we have a monitor instruction the method is impure anyway..
-                        // hence, we can ignore the monitor related implicit exception
-                        true
-
-                    // Reference comparisons may have different results for structurally equal values
-                    case IF_ACMPEQ.opcode | IF_ACMPNE.opcode ⇒
-                        false
-
-                    case _ ⇒
-                        // All other instructions (IFs, Load/Stores, Arith., etc.) are pure
-                        // as long as no implicit exceptions are raised.
-                        // Remember that NEW/NEWARRAY/etc. may raise OutOfMemoryExceptions.
-                        instruction.jvmExceptions.isEmpty
-                    // JVM Exceptions reify the stack and, hence, make the method impure as
-                    // the calling context is now an explicit part of the method's result.
-                    //Impure
-                }
-            }
-
-        if (isPure)
-            Some(CompileTimePure)
-        else
-            None
     }
 
     /**
