@@ -290,13 +290,12 @@ object Purity extends PurityPropertyMetaInformation {
                 val firstInstruction = instructions(0)
                 firstInstruction.opcode match {
                     case LDC_W.opcode if firstInstruction.isInstanceOf[PrimitiveLDC[_]] ⇒
-                        Some(CompileTimePure);
+                        Some(CompileTimePure)
                     case LDC2_W.opcode | SIPUSH.opcode ⇒
-                        Some(CompileTimePure);
-                    case SIPUSH.opcode ⇒
-                        Some(CompileTimePure);
-                    case GetStatic.opcode | INVOKESTATIC.opcode =>
-                        return None
+                        Some(CompileTimePure)
+                    case GETSTATIC.opcode | INVOKESTATIC.opcode ⇒
+                        // not handled by the subsequent algorithm....
+                        None
                     case _ ⇒
                         // TODO Can we identify situations where we are definitively impure?
                         //None
