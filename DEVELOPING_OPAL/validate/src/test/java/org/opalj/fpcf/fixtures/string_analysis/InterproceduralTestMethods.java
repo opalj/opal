@@ -41,6 +41,8 @@ public class InterproceduralTestMethods {
 
     private float secretNumber;
 
+    public static String someKey = "will not be revealed here";
+
     /**
      * {@see LocalTestMethods#analyzeString}
      */
@@ -269,8 +271,8 @@ public class InterproceduralTestMethods {
                     + "is involved",
             stringDefinitions = {
                     @StringDefinitions(
-                            expectedLevel = DYNAMIC,
-                            expectedStrings = "\\w"
+                            expectedLevel = PARTIALLY_CONSTANT,
+                            expectedStrings = "\\wImpl_Stub"
                     )
 
             })
@@ -650,6 +652,18 @@ public class InterproceduralTestMethods {
         analyzeString(String.valueOf('c'));
         analyzeString(String.valueOf((float) 42.3));
         analyzeString(String.valueOf(getRuntimeClassName()));
+    }
+
+    @StringDefinitionsCollection(
+            value = "a case where a static property is read",
+            stringDefinitions = {
+                    @StringDefinitions(
+                            expectedLevel = CONSTANT,
+                            expectedStrings = "will not be revealed here"
+                    )
+            })
+    public void getStaticFieldTest() {
+        analyzeString(someKey);
     }
 
     private String getRuntimeClassName() {
