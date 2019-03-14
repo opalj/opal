@@ -36,7 +36,7 @@ object StringConstancyInformation {
      * This string stores the value that is to be used when a string is dynamic, i.e., can have
      * arbitrary values.
      */
-    val UnknownWordSymbol: String = "\\w"
+    val UnknownWordSymbol: String = ".*"
 
     /**
      * The stringified version of a (dynamic) integer value.

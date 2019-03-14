@@ -114,7 +114,7 @@ public class InterproceduralTestMethods {
             stringDefinitions = {
                     @StringDefinitions(
                             expectedLevel = DYNAMIC,
-                            expectedStrings = "\\w"
+                            expectedStrings = ".*"
                     ),
 
             })
@@ -128,7 +128,7 @@ public class InterproceduralTestMethods {
             stringDefinitions = {
                     @StringDefinitions(
                             expectedLevel = DYNAMIC,
-                            expectedStrings = "(\\w)*"
+                            expectedStrings = "(.*)*"
                     )
 
             })
@@ -147,8 +147,8 @@ public class InterproceduralTestMethods {
             stringDefinitions = {
                     @StringDefinitions(
                             expectedLevel = DYNAMIC,
-                            expectedStrings = "(java.lang.Object|\\w|java.lang.(Integer|"
-                                    + "Object|Runtime)|\\w)"
+                            expectedStrings = "(java.lang.Object|.*|java.lang.(Integer|"
+                                    + "Object|Runtime)|.*)"
                     )
 
             })
@@ -188,7 +188,7 @@ public class InterproceduralTestMethods {
             stringDefinitions = {
                     @StringDefinitions(
                             expectedLevel = PARTIALLY_CONSTANT,
-                            expectedStrings = "classname:StringBuilder,osname:\\w"
+                            expectedStrings = "classname:StringBuilder,osname:.*"
                     )
 
             })
@@ -272,7 +272,7 @@ public class InterproceduralTestMethods {
             stringDefinitions = {
                     @StringDefinitions(
                             expectedLevel = PARTIALLY_CONSTANT,
-                            expectedStrings = "\\wImpl_Stub"
+                            expectedStrings = ".*Impl_Stub"
                     )
 
             })
@@ -325,7 +325,7 @@ public class InterproceduralTestMethods {
             stringDefinitions = {
                     @StringDefinitions(
                             expectedLevel = PARTIALLY_CONSTANT,
-                            expectedStrings = "get(\\w|Hello, Worldjava.lang.Runtime)"
+                            expectedStrings = "get(.*|Hello, Worldjava.lang.Runtime)"
                     )
 
             })
@@ -435,7 +435,7 @@ public class InterproceduralTestMethods {
             stringDefinitions = {
                     @StringDefinitions(
                             expectedLevel = PARTIALLY_CONSTANT,
-                            expectedStrings = "(\\w\\w_tie|\\w_tie)"
+                            expectedStrings = "(.*.*_tie|.*_tie)"
                     )
             })
     public String tieName(String var0, Remote remote) {
@@ -476,7 +476,7 @@ public class InterproceduralTestMethods {
             stringDefinitions = {
                     @StringDefinitions(
                             expectedLevel = DYNAMIC,
-                            expectedStrings = "(^null$|\\w)"
+                            expectedStrings = "(^null$|.*)"
                     )
             })
     public void fieldWithNoWriteTest() {
@@ -488,7 +488,7 @@ public class InterproceduralTestMethods {
             stringDefinitions = {
                     @StringDefinitions(
                             expectedLevel = DYNAMIC,
-                            expectedStrings = "\\w"
+                            expectedStrings = ".*"
                     )
             })
     public void nonSupportedFieldTypeRead() {
@@ -536,7 +536,7 @@ public class InterproceduralTestMethods {
             stringDefinitions = {
                     @StringDefinitions(
                             expectedLevel = DYNAMIC,
-                            expectedStrings = "(\\w|value)"
+                            expectedStrings = "(.*|value)"
                     )
             })
     public String cyclicDependencyTest(String s) {
@@ -606,11 +606,11 @@ public class InterproceduralTestMethods {
             stringDefinitions = {
                     @StringDefinitions(
                             expectedLevel = DYNAMIC,
-                            expectedStrings = "\\w"
+                            expectedStrings = ".*"
                     ),
                     @StringDefinitions(
                             expectedLevel = DYNAMIC,
-                            expectedStrings = "\\w"
+                            expectedStrings = ".*"
                     )
             })
     public void functionWithNoReturnValueTest1() {
