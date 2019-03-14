@@ -134,7 +134,7 @@ public class LocalTestMethods {
             value = "at this point, function call cannot be handled => DYNAMIC",
             stringDefinitions = {
                     @StringDefinitions(
-                            expectedLevel = DYNAMIC, expectedStrings = "\\w"
+                            expectedLevel = DYNAMIC, expectedStrings = ".*"
                     )
             })
     public void fromFunctionCall() {
@@ -146,7 +146,7 @@ public class LocalTestMethods {
             value = "constant string + string from function call => PARTIALLY_CONSTANT",
             stringDefinitions = {
                     @StringDefinitions(
-                            expectedLevel = PARTIALLY_CONSTANT, expectedStrings = "java.lang.\\w"
+                            expectedLevel = PARTIALLY_CONSTANT, expectedStrings = "java.lang..*"
                     )
             })
     public void fromConstantAndFunctionCall() {
@@ -198,8 +198,8 @@ public class LocalTestMethods {
             stringDefinitions = {
                     @StringDefinitions(
                             expectedLevel = DYNAMIC,
-                            expectedStrings = "((java.lang.Object|\\w)|java.lang.System|"
-                                    + "java.lang.\\w|\\w)"
+                            expectedStrings = "((java.lang.Object|.*)|java.lang.System|"
+                                    + "java.lang..*|.*)"
                     )
             })
     public void multipleDefSites(int value) {
@@ -497,7 +497,7 @@ public class LocalTestMethods {
                     ),
                     @StringDefinitions(
                             expectedLevel = PARTIALLY_CONSTANT,
-                            expectedStrings = "(iv1|iv2): ((great!)?)*(\\w)?"
+                            expectedStrings = "(iv1|iv2): ((great!)?)*(.*)?"
                     )
             })
     public void extensive(boolean cond) {
@@ -530,7 +530,7 @@ public class LocalTestMethods {
             value = "an example with a throw (and no try-catch-finally)",
             stringDefinitions = {
                     @StringDefinitions(
-                            expectedLevel = PARTIALLY_CONSTANT, expectedStrings = "File Content:\\w"
+                            expectedLevel = PARTIALLY_CONSTANT, expectedStrings = "File Content:.*"
                     )
             })
     public void withThrow(String filename) throws IOException {
@@ -548,15 +548,15 @@ public class LocalTestMethods {
             stringDefinitions = {
                     @StringDefinitions(
                             expectedLevel = PARTIALLY_CONSTANT,
-                            expectedStrings = "File Content:(\\w)?"
+                            expectedStrings = "File Content:(.*)?"
                     ),
                     @StringDefinitions(
                             expectedLevel = PARTIALLY_CONSTANT,
-                            expectedStrings = "File Content:(\\w)?"
+                            expectedStrings = "File Content:(.*)?"
                     ),
                     @StringDefinitions(
                             expectedLevel = PARTIALLY_CONSTANT,
-                            expectedStrings = "File Content:(\\w)?"
+                            expectedStrings = "File Content:(.*)?"
                     )
             })
     public void withException(String filename) {
@@ -574,13 +574,13 @@ public class LocalTestMethods {
             value = "case with a try-catch-finally exception",
             stringDefinitions = {
                     @StringDefinitions(
-                            expectedLevel = PARTIALLY_CONSTANT, expectedStrings = "=====(\\w|=====)"
+                            expectedLevel = PARTIALLY_CONSTANT, expectedStrings = "=====(.*|=====)"
                     ),
                     @StringDefinitions(
-                            expectedLevel = PARTIALLY_CONSTANT, expectedStrings = "=====(\\w|=====)"
+                            expectedLevel = PARTIALLY_CONSTANT, expectedStrings = "=====(.*|=====)"
                     ),
                     @StringDefinitions(
-                            expectedLevel = PARTIALLY_CONSTANT, expectedStrings = "=====(\\w|=====)"
+                            expectedLevel = PARTIALLY_CONSTANT, expectedStrings = "=====(.*|=====)"
                     )
             })
     public void tryCatchFinally(String filename) {
@@ -603,13 +603,13 @@ public class LocalTestMethods {
                             // "EOS" can not be found for the first case (the difference to the case
                             // tryCatchFinally is that a second CatchNode is not present in the
                             // throwable case)
-                            expectedLevel = PARTIALLY_CONSTANT, expectedStrings = "BOS:(\\w|:EOS)"
+                            expectedLevel = PARTIALLY_CONSTANT, expectedStrings = "BOS:(.*|:EOS)"
                     ),
                     @StringDefinitions(
-                            expectedLevel = PARTIALLY_CONSTANT, expectedStrings = "BOS:(\\w|:EOS)"
+                            expectedLevel = PARTIALLY_CONSTANT, expectedStrings = "BOS:(.*|:EOS)"
                     ),
                     @StringDefinitions(
-                            expectedLevel = PARTIALLY_CONSTANT, expectedStrings = "BOS:(\\w|:EOS)"
+                            expectedLevel = PARTIALLY_CONSTANT, expectedStrings = "BOS:(.*|:EOS)"
                     )
             })
     public void tryCatchFinallyWithThrowable(String filename) {
@@ -628,10 +628,10 @@ public class LocalTestMethods {
             value = "simple examples to clear a StringBuilder",
             stringDefinitions = {
                     @StringDefinitions(
-                            expectedLevel = DYNAMIC, expectedStrings = "\\w"
+                            expectedLevel = DYNAMIC, expectedStrings = ".*"
                     ),
                     @StringDefinitions(
-                            expectedLevel = DYNAMIC, expectedStrings = "\\w"
+                            expectedLevel = DYNAMIC, expectedStrings = ".*"
                     )
             })
     public void simpleClearExamples() {
@@ -671,11 +671,11 @@ public class LocalTestMethods {
             value = "a simple and a little more advanced example with a StringBuilder#replace call",
             stringDefinitions = {
                     @StringDefinitions(
-                            expectedLevel = DYNAMIC, expectedStrings = "\\w"
+                            expectedLevel = DYNAMIC, expectedStrings = ".*"
                     ),
                     @StringDefinitions(
                             expectedLevel = PARTIALLY_CONSTANT,
-                            expectedStrings = "(init_value:Hello, world!Goodbye|\\wGoodbye)"
+                            expectedStrings = "(init_value:Hello, world!Goodbye|.*Goodbye)"
                     )
             })
     public void replaceExamples(int value) {
@@ -705,7 +705,7 @@ public class LocalTestMethods {
                             expectedLevel = CONSTANT, expectedStrings = ""
                     ),
                     @StringDefinitions(
-                            expectedLevel = DYNAMIC, expectedStrings = "((\\w)?)*"
+                            expectedLevel = DYNAMIC, expectedStrings = "((.*)?)*"
                     )
             })
     public void breakContinueExamples(int value) {
@@ -810,7 +810,7 @@ public class LocalTestMethods {
             value = "an example that uses a non final field",
             stringDefinitions = {
                     @StringDefinitions(
-                            expectedLevel = PARTIALLY_CONSTANT, expectedStrings = "Field Value:\\w"
+                            expectedLevel = PARTIALLY_CONSTANT, expectedStrings = "Field Value:.*"
                     )
             })
     public void nonFinalFieldRead() {
@@ -863,16 +863,16 @@ public class LocalTestMethods {
             value = "examples that use a passed parameter to define strings that are analyzed",
             stringDefinitions = {
                     @StringDefinitions(
-                            expectedLevel = DYNAMIC, expectedStrings = "\\w"
+                            expectedLevel = DYNAMIC, expectedStrings = ".*"
                     ),
                     @StringDefinitions(
-                            expectedLevel = DYNAMIC, expectedStrings = "\\w"
+                            expectedLevel = DYNAMIC, expectedStrings = ".*"
                     ),
                     @StringDefinitions(
-                            expectedLevel = PARTIALLY_CONSTANT, expectedStrings = "value=\\w"
+                            expectedLevel = PARTIALLY_CONSTANT, expectedStrings = "value=.*"
                     ),
                     @StringDefinitions(
-                            expectedLevel = PARTIALLY_CONSTANT, expectedStrings = "value=\\w\\w"
+                            expectedLevel = PARTIALLY_CONSTANT, expectedStrings = "value=.*.*"
                     )
             })
     public void parameterRead(String stringValue, StringBuilder sbValue) {
@@ -895,7 +895,7 @@ public class LocalTestMethods {
             stringDefinitions = {
                     @StringDefinitions(
                             expectedLevel = PARTIALLY_CONSTANT,
-                            expectedStrings = "(set\\w|s\\w)"
+                            expectedStrings = "(set.*|s.*)"
                     ),
             })
     public void twoDefinitionsOneUsage(String getName) throws ClassNotFoundException {
@@ -921,7 +921,7 @@ public class LocalTestMethods {
             stringDefinitions = {
                     @StringDefinitions(
                             expectedLevel = PARTIALLY_CONSTANT,
-                            expectedStrings = "Hello: (\\w|\\w|\\w)?"
+                            expectedStrings = "Hello: (.*|.*|.*)?"
                     ),
             })
     protected void setDebugFlags(String[] var1) {
@@ -967,8 +967,8 @@ public class LocalTestMethods {
     @StringDefinitionsCollection(
             value = "an example with an unknown character read",
             stringDefinitions = {
-                    @StringDefinitions(expectedLevel = DYNAMIC, expectedStrings = "\\w"),
-                    @StringDefinitions(expectedLevel = DYNAMIC, expectedStrings = "\\w"),
+                    @StringDefinitions(expectedLevel = DYNAMIC, expectedStrings = ".*"),
+                    @StringDefinitions(expectedLevel = DYNAMIC, expectedStrings = ".*"),
             })
     public void unknownCharValue() {
         int charCode = new Random().nextInt(200);
