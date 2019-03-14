@@ -87,7 +87,7 @@ class InterproceduralStringAnalysis(
      * up to which number of callers parameter information are gathered. For "number of callers
      * greater than [[callersThreshold]]", parameters are approximated with the lower bound.
      */
-    private val callersThreshold = 10 // TODO: Is it possible to make this parameter configurable from the outise?
+    private val callersThreshold = 10 // TODO: Is it possible to make this parameter configurable from the outside?
     private val declaredMethods = project.get(DeclaredMethodsKey)
     private final val fieldAccessInformation = project.get(FieldAccessInformationKey)
 
