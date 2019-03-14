@@ -27,12 +27,15 @@ import org.opalj.br.instructions.LDC
 import org.opalj.br.instructions.LDC_W
 import org.opalj.br.instructions.LDC2_W
 import org.opalj.br.instructions.ALOAD
+import org.opalj.br.instructions.ANEWARRAY
 import org.opalj.br.instructions.DLOAD
 import org.opalj.br.instructions.FLOAD
 import org.opalj.br.instructions.ILOAD
 import org.opalj.br.instructions.LLOAD
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.instructions.GETSTATIC
+import org.opalj.br.instructions.NEWARRAY
+import org.opalj.br.instructions.PUTSTATIC
 
 sealed trait PurityPropertyMetaInformation extends PropertyMetaInformation {
 
@@ -151,8 +154,8 @@ sealed trait PurityPropertyMetaInformation extends PropertyMetaInformation {
  * @author Dominik Helm
  */
 sealed abstract class Purity
-    extends IndividualProperty[Purity, VirtualMethodPurity]
-    with PurityPropertyMetaInformation {
+        extends IndividualProperty[Purity, VirtualMethodPurity]
+        with PurityPropertyMetaInformation {
 
     /**
      * The globally unique key of the [[Purity]] property.
@@ -213,7 +216,8 @@ object Purity extends PurityPropertyMetaInformation {
 
     def fastTrackForConcreteMethod(method: Method): Option[Purity] = {
         if (method.isSynchronized && method.isStatic) {
-            // TODO Why "&& isStatic"?
+            // Synchronized static methods are impure because locking of the associated monitor is
+            // observable globally
             return Some(ImpureByAnalysis);
         }
 
@@ -250,26 +254,32 @@ object Purity extends PurityPropertyMetaInformation {
                 }
 
             case 4 ⇒
-                val firstInstruction = instructions(0)
-                firstInstruction.opcode match {
-                    case LDC_W.opcode if firstInstruction.isInstanceOf[PrimitiveLDC[_]] ⇒
-                        Some(CompileTimePure)
-                    case LDC2_W.opcode | SIPUSH.opcode ⇒
-                        Some(CompileTimePure)
-                    case GETSTATIC.opcode | INVOKESTATIC.opcode ⇒
-                        // not handled by the subsequent algorithm....
-                        None
-
-                    case _ ⇒
-                        // handle "NEWARRAY" case => compile-time pure
-                        None
+                val secondInstruction = instructions(1)
+                if (secondInstruction != null && secondInstruction.opcode == NEWARRAY.opcode)
+                    Some(CompileTimePure)
+                else {
+                    val firstInstruction = instructions(0)
+                    firstInstruction.opcode match {
+                        case LDC_W.opcode if firstInstruction.isInstanceOf[PrimitiveLDC[_]] ⇒
+                            Some(CompileTimePure)
+                        case LDC2_W.opcode | SIPUSH.opcode ⇒
+                            Some(CompileTimePure)
+                        case _ ⇒
+                            None
+                    }
                 }
 
             case 5 ⇒
-                // putstatic as second instruction => impure
-                // anewarray  as second instruction => compile-time pure
-                // else...
-                None
+                val secondInstruction = instructions(1)
+                if (secondInstruction != null) {
+                    secondInstruction.opcode match {
+                        case ANEWARRAY.opcode ⇒
+                            Some(CompileTimePure)
+                        case PUTSTATIC.opcode ⇒
+                            Some(ImpureByAnalysis)
+                    }
+                } else
+                    None
 
             case _ ⇒
                 None
