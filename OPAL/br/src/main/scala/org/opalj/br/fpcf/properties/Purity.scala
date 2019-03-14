@@ -32,8 +32,6 @@ import org.opalj.br.instructions.DLOAD
 import org.opalj.br.instructions.FLOAD
 import org.opalj.br.instructions.ILOAD
 import org.opalj.br.instructions.LLOAD
-import org.opalj.br.instructions.INVOKESTATIC
-import org.opalj.br.instructions.GETSTATIC
 import org.opalj.br.instructions.NEWARRAY
 import org.opalj.br.instructions.PUTSTATIC
 
@@ -154,8 +152,8 @@ sealed trait PurityPropertyMetaInformation extends PropertyMetaInformation {
  * @author Dominik Helm
  */
 sealed abstract class Purity
-        extends IndividualProperty[Purity, VirtualMethodPurity]
-        with PurityPropertyMetaInformation {
+    extends IndividualProperty[Purity, VirtualMethodPurity]
+    with PurityPropertyMetaInformation {
 
     /**
      * The globally unique key of the [[Purity]] property.
@@ -277,6 +275,8 @@ object Purity extends PurityPropertyMetaInformation {
                             Some(CompileTimePure)
                         case PUTSTATIC.opcode ⇒
                             Some(ImpureByAnalysis)
+                        case _ ⇒
+                            None
                     }
                 } else
                     None
