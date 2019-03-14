@@ -214,7 +214,7 @@ object EscapeProperty extends EscapePropertyMetaInformation {
         fastTrack _
     )
 
-    def foo(instruction: Instruction): Option[EscapeProperty] = {
+    private[this] def escapesViaReturnOrThrow(instruction: Instruction): Option[EscapeProperty] = {
         instruction.opcode match {
             case ARETURN.opcode ⇒ Some(EscapeViaReturn)
             case ATHROW.opcode  ⇒ Some(EscapeViaAbnormalReturn)
@@ -242,23 +242,23 @@ object EscapeProperty extends EscapePropertyMetaInformation {
 
                             case ALOAD_0.opcode ⇒
                                 if (registerIndexToParameterIndex(m.isStatic, m.descriptor, 0) == parameterIndex)
-                                    foo(code.instructions(1))
+                                    escapesViaReturnOrThrow(code.instructions(1))
                                 else
                                     Some(NoEscape)
 
                             case ALOAD_1.opcode ⇒
                                 if (registerIndexToParameterIndex(m.isStatic, m.descriptor, 1) == parameterIndex)
-                                    foo(code.instructions(1))
+                                    escapesViaReturnOrThrow(code.instructions(1))
                                 else
                                     Some(NoEscape)
                             case ALOAD_2.opcode ⇒
                                 if (registerIndexToParameterIndex(m.isStatic, m.descriptor, 2) == parameterIndex)
-                                    foo(code.instructions(1))
+                                    escapesViaReturnOrThrow(code.instructions(1))
                                 else
                                     Some(NoEscape)
                             case ALOAD_3.opcode ⇒
                                 if (registerIndexToParameterIndex(m.isStatic, m.descriptor, 3) == parameterIndex)
-                                    foo(code.instructions(1))
+                                    escapesViaReturnOrThrow(code.instructions(1))
                                 else
                                     Some(NoEscape)
                         }
@@ -271,7 +271,7 @@ object EscapeProperty extends EscapePropertyMetaInformation {
                         case ALOAD.opcode ⇒
                             val index = code.instructions(0).asInstanceOf[ALOAD].lvIndex
                             if (registerIndexToParameterIndex(m.isStatic, m.descriptor, index) == parameterIndex)
-                                foo(code.instructions(2))
+                                escapesViaReturnOrThrow(code.instructions(2))
                             else
                                 Some(NoEscape)
                         case _ ⇒ None
