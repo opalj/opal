@@ -122,7 +122,11 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
                             // If the conditional is encloses in a try-catch block, consider this
                             // bounds and otherwise the bounds of the surrounding element
                             cfg.bb(nextBlock).successors.find(_.isInstanceOf[CatchNode]) match {
-                                case Some(cs: CatchNode) ⇒ endSite = cs.endPC
+                                case Some(cs: CatchNode) ⇒
+                                    endSite = cs.endPC
+                                    if (endSite == -1) {
+                                        endSite = nextBlock
+                                    }
                                 case _ ⇒
                                     endSite = if (nextBlock > branchingSite) nextBlock - 1 else
                                         cfg.findNaturalLoops().find {
