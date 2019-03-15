@@ -140,7 +140,9 @@ sealed abstract class StringTreeElement(val children: ListBuffer[StringTreeEleme
             case StringTreeRepetition(c, lowerBound, upperBound) ⇒
                 val times = if (lowerBound.isDefined && upperBound.isDefined)
                     (upperBound.get - lowerBound.get).toString else InfiniteRepetitionSymbol
-                val reduced = reduceAcc(c).head
+                val reducedAcc = reduceAcc(c)
+                val reduced = if (reducedAcc.nonEmpty) reducedAcc.head else
+                    StringConstancyInformation.lb
                 List(StringConstancyInformation(
                     reduced.constancyLevel,
                     reduced.constancyType,
