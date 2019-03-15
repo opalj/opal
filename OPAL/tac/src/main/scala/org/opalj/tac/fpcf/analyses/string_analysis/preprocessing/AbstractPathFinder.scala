@@ -204,9 +204,11 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
         // little bit more complicated to find the end of the "if": Go up to the element that points
         // to the if target element
         if (ifTarget < branchingSite) {
+            val seenElements: mutable.Map[Int, Unit] = mutable.Map()
             val toVisit = mutable.Stack[Int](branchingSite)
             while (toVisit.nonEmpty) {
                 val popped = toVisit.pop()
+                seenElements(popped) = Unit
                 val relevantSuccessors = cfg.bb(popped).successors.filter {
                     _.isInstanceOf[BasicBlock]
                 }.map(_.asBasicBlock)
@@ -214,8 +216,8 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
                     endIndex = cfg.bb(popped).endPC
                     toVisit.clear()
                 } else {
-                    toVisit.pushAll(relevantSuccessors.filter {
-                        _.nodeId != ifTarget
+                    toVisit.pushAll(relevantSuccessors.filter { s ⇒
+                        s.nodeId != ifTarget && !seenElements.contains(s.nodeId)
                     }.map(_.startPC))
                 }
             }
