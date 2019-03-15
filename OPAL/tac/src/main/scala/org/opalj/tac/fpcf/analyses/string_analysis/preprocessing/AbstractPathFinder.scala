@@ -153,6 +153,9 @@ abstract class AbstractPathFinder(cfg: CFG[Stmt[V], TACStmts[V]]) {
                         }
                 }
             }
+            if (endSite < branchingSite) {
+                endSite = nextBlock
+            }
         }
 
         (branchingSite, endSite)
