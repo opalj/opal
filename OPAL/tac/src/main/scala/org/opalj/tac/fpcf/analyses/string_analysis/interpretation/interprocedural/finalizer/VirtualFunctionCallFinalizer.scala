@@ -66,9 +66,11 @@ class VirtualFunctionCallFinalizer(
                 state.iHandler.finalizeDefSite(ds, state)
             }
         }
-        val appendSci = StringConstancyInformation.reduceMultiple(
-            paramDefSites.flatMap(state.fpe2sci(_))
-        )
+        val appendSci = if (paramDefSites.forall(state.fpe2sci.contains)) {
+            StringConstancyInformation.reduceMultiple(
+                paramDefSites.flatMap(state.fpe2sci(_))
+            )
+        } else StringConstancyInformation.lb
 
         val finalSci = if (receiverSci.isTheNeutralElement && appendSci.isTheNeutralElement) {
             receiverSci
