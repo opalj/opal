@@ -1,7 +1,10 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
+
 package tac
+
 package fpcf
+
 package analyses
 
 import scala.annotation.switch
@@ -49,93 +52,128 @@ import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.TheTACAI
 
 /**
- * A framework for IFDS analyses.
- *
- * @tparam DataFlowFact The type of flow facts the concrete analysis wants to track
- *
- * @author Dominik Helm
- */
+  * A framework for IFDS analyses.
+  *
+  * @tparam DataFlowFact The type of flow facts the concrete analysis wants to track
+  * @author Dominik Helm
+  */
 abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
 
     /**
-     * Provides the concrete property key (that must be unique for every distinct concrete analysis
-     * and the lower bound for the IFDSProperty.
-     */
-    val property: IFDSPropertyMetaInformation[DataFlowFact]
-
-    /** Creates the concrete IFDSProperty. */
-    def createProperty(result: Map[Statement, Set[DataFlowFact]]): IFDSProperty[DataFlowFact]
+      * Provides the concrete property key that must be unique for every distinct concrete analysis
+      * and the lower bound for the IFDSProperty.
+      */
+    val propertyKey: IFDSPropertyMetaInformation[DataFlowFact]
 
     /**
-     * Computes the DataFlowFacts valid after statement `stmt` on the CFG edge to statement `succ`
-     * if the DataFlowFacts `in` held before `stmt`.
-     */
+      * Creates an IFDSProperty containing the `result` of the analysis.
+      * The result maps from return nodes to the data flow facts valid after these return nodes.
+      */
+    def createPropertyValue(result: Map[Statement, Set[DataFlowFact]]): IFDSProperty[DataFlowFact]
+
+    /**
+      * Computes the DataFlowFacts valid after statement `stmt` on the CFG edge to statement `succ`
+      * if the DataFlowFacts `in` held before `stmt`.
+      */
     def normalFlow(stmt: Statement, succ: Statement, in: Set[DataFlowFact]): Set[DataFlowFact]
 
     /**
-     * Computes the DataFlowFacts valid on entry to method `callee` when it is called from statement
-     * `stmt` if the DataFlowFacts `in` held before `stmt`.
-     */
+      * Computes the DataFlowFacts valid on entry to method `callee` when it is called from statement
+      * `stmt` if the DataFlowFacts `in` held before `stmt`.
+      */
     def callFlow(stmt: Statement, callee: DeclaredMethod, in: Set[DataFlowFact]): Set[DataFlowFact]
 
     /**
-     * Computes the DataFlowFacts valid on the CFG edge from statement `stmt` to `succ` if `callee`
-     * was invoked by `stmt` and DataFlowFacts `in` held before the final statement `exit` of
-     * `callee`.
-     */
-    def returnFlow(stmt: Statement, callee: DeclaredMethod, exit: Statement, succ: Statement, in: Set[DataFlowFact]): Set[DataFlowFact]
+      * Computes the DataFlowFacts valid on the CFG edge from statement `stmt` to `succ` if `callee`
+      * was invoked by `stmt` and DataFlowFacts `in` held before the final statement `exit` of
+      * `callee`.
+      */
+    def returnFlow(
+                    stmt:   Statement,
+                    callee: DeclaredMethod,
+                    exit:   Statement,
+                    succ:   Statement,
+                    in:     Set[DataFlowFact]
+                  ): Set[DataFlowFact]
 
     /**
-     * Computes the DataFlowFacts valid on the CFG edge from statement `stmt` to `succ` irrespective
-     * of the call in `stmt` if the DataFlowFacts `in` held before `stmt`.
-     */
+      * Computes the DataFlowFacts valid on the CFG edge from statement `stmt` to `succ` irrespective
+      * of the call in `stmt` if the DataFlowFacts `in` held before `stmt`.
+      */
     def callToReturnFlow(stmt: Statement, succ: Statement, in: Set[DataFlowFact]): Set[DataFlowFact]
 
-    protected[this] final val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
-
-    class State(
-            val declClass:     ObjectType,
-            val method:        Method,
-            val source:        (DeclaredMethod, DataFlowFact),
-            val code:          Array[Stmt[V]],
-            val cfg:           CFG[Stmt[V], TACStmts[V]],
-            var ifdsData:      Map[(DeclaredMethod, DataFlowFact), Set[(BasicBlock, Int)]],
-            var ifdsDependees: Map[(DeclaredMethod, DataFlowFact), EOptionP[(DeclaredMethod, DataFlowFact), IFDSProperty[DataFlowFact]]] = Map.empty,
-            var tacDependees:  Map[Method, EOptionP[Method, TACAI]]                                                                      = Map.empty,
-            var tacData:       Map[Method, Set[(BasicBlock, Int)]]                                                                       = Map.empty,
-            // DataFlowFacts known to be valid on entry to a basic block
-            var incoming: Map[BasicBlock, Set[DataFlowFact]] = Map.empty,
-            // DataFlowFacts known to be valid on exit from a basic block on the cfg edge to a specific successor
-            var outgoing: Map[BasicBlock, Map[CFGNode, Set[DataFlowFact]]] = Map.empty
-    )
+    final protected[this] val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
 
     /**
-     * Performs IFDS analysis for one specific entity, i.e. one DeclaredMethod/DataFlowFact pair.
-     */
-    def performAnalysis(source: (DeclaredMethod, DataFlowFact)): ProperPropertyComputationResult = {
-        val (declaredMethod, sourceFact) = source
+      * The state of the analysis. For each method and source fact, there is a separate state.
+      *
+      * @param declaredClass The class defining the method that is analyzed.
+      * @param method The method that is analyzed.
+      * @param source The source fact that holds at the beginning of `method`.
+      * @param code The code of `method`.
+      * @param cfg The Control Flow Graph of `method`.
+      * @param pendingIfdsCallSites Maps methods called by the analyzed `method` together with their input facts
+      *                             to the basic block and statement index of the call site(s) in the analyzed `method`.
+      * @param pendingIfdsDependees Maps methods called by the analyzed `method` together with their input facts
+      *                             to the intermediate result of their IFDS analysis.
+      *                             Only contains method-fact-pairs, for which this analysis is waiting for a result.
+      * @param pendingTacDependees Maps methods called by the analyzed `method` to
+      *                            the intermediate result of their three address code analysis.#
+      *                            Only contains methods, for which this analysis is waiting for a result.
+      * @param pendingTacCallSites Maps methods called by the analyzed `method`
+      *                            to the basic block and statement index of the call site(s) of the analyzed method.
+      * @param incomingFacts Maps each basic block to the data flow facts valid at its first statement.
+      * @param outgoingFacts Maps each basic block and each exit node of that block
+      *                      to the data flow facts valid after the exit node
+      */
+    class State(
+                 val declaredClass:        ObjectType,
+                 val method:               Method,
+                 val source:               (DeclaredMethod, DataFlowFact),
+                 val code:                 Array[Stmt[V]],
+                 val cfg:                  CFG[Stmt[V], TACStmts[V]],
+                 var pendingIfdsCallSites: Map[(DeclaredMethod, DataFlowFact), Set[(BasicBlock, Int)]],
+                 var pendingIfdsDependees: Map[(DeclaredMethod, DataFlowFact), EOptionP[(DeclaredMethod, DataFlowFact), IFDSProperty[DataFlowFact]]] = Map.empty,
+                 var pendingTacDependees:  Map[Method, EOptionP[Method, TACAI]]                                                                      = Map.empty,
+                 var pendingTacCallSites:  Map[Method, Set[(BasicBlock, Int)]]                                                                       = Map.empty,
+                 var incomingFacts:        Map[BasicBlock, Set[DataFlowFact]]                                                                        = Map.empty,
+                 var outgoingFacts:        Map[BasicBlock, Map[CFGNode, Set[DataFlowFact]]]                                                          = Map.empty
+               )
 
-        // Deal only with single defined methods for now
+    /**
+      * Performs an IFDS analysis for a method-fact-pair.
+      *
+      * @param entity The method-fact-pair that will be analyzed.
+      * @return An IFDS property mapping from return nodes to the data flow facts valid after these return nodes,
+      *         if all dependent TAC and IFDS properties are present.
+      *         An interim result if the TAC of this method
+      *         or any callee is missing or if a callee has to be analyzed with some input fact.
+      */
+    def performAnalysis(entity: (DeclaredMethod, DataFlowFact)): ProperPropertyComputationResult = {
+        val (declaredMethod, sourceFact) = entity
+
+        // The analysis can only handle single defined methods
+        // If a method is not single defined, this analysis assumes that it does not create any facts.
         if (!declaredMethod.hasSingleDefinedMethod)
-            return Result(source, createProperty(Map.empty));
+            return Result(entity, createPropertyValue(Map.empty))
 
         val method = declaredMethod.definedMethod
         val declaringClass: ObjectType = method.classFile.thisType
 
-        // If this is not the method's declaration, but a non-overwritten method in a subtype,
-        // don't re-analyze the code
+        // If this is not the method's declaration, but a non-overwritten method in a subtype, do not re-analyze the code.
         if (declaringClass ne declaredMethod.declaringClassType)
-            return baseMethodResult(source);
+            return baseMethodResult(entity)
 
+        // Fetch the method's three address code. If it is not present, return an empty interim result.
         val (code, cfg) = propertyStore(method, TACAI.key) match {
             case FinalP(TheTACAI(tac)) ⇒ (tac.stmts, tac.cfg)
 
             case epk: EPK[Method, TACAI] ⇒
                 return InterimResult.forUB(
-                    source,
-                    createProperty(Map.empty),
+                    entity,
+                    createPropertyValue(Map.empty),
                     Seq(epk),
-                    _ ⇒ performAnalysis(source),
+                    _ ⇒ performAnalysis(entity),
                     DefaultPropertyComputation
                 );
 
@@ -143,32 +181,30 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
                 throw new UnknownError(s"can't handle intermediate TACs ($tac)")
         }
 
-        implicit val state: State =
-            new State(declaringClass, method, source, code, cfg, Map(source → Set.empty))
-
         // Start processing at the start of the cfg with the given source fact
+        implicit val state: State =
+            new State(declaringClass, method, entity, code, cfg, Map(entity → Set.empty))
         val start = cfg.startBlock
-        state.incoming += start → Set(sourceFact)
+        state.incomingFacts += start → Set(sourceFact)
         process(mutable.Queue((start, Set(sourceFact), None, None, None)))
-
         createResult()
     }
 
     /**
-     * Processes a queue of BasicBlocks where new DataFlowFacts are available.
-     */
+      * Processes a queue of BasicBlocks where new DataFlowFacts are available.
+      */
     def process(
-        worklist: mutable.Queue[(BasicBlock, Set[DataFlowFact], Option[Int], Option[Set[Method]], Option[DataFlowFact])]
-    )(
-        implicit
-        state: State
-    ): Unit = {
+                 worklist: mutable.Queue[(BasicBlock, Set[DataFlowFact], Option[Int], Option[Set[Method]], Option[DataFlowFact])]
+               )(
+                 implicit
+                 state: State
+               ): Unit = {
         while (worklist.nonEmpty) {
             val (bb, in, callIndex, callee, dataFlowFact) = worklist.dequeue()
-            val oldOut = state.outgoing.getOrElse(bb, Map.empty)
+            val oldOut = state.outgoingFacts.getOrElse(bb, Map.empty)
             val nextOut = analyzeBasicBlock(bb, in, callIndex, callee, dataFlowFact)
             val allOut = mergeMaps(oldOut, nextOut)
-            state.outgoing = state.outgoing.updated(bb, allOut)
+            state.outgoingFacts = state.outgoingFacts.updated(bb, allOut)
 
             for (successor ← bb.successors) {
                 if (successor.isExitNode) {
@@ -185,8 +221,8 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
                     }).asBasicBlock
 
                     val nextIn = nextOut.getOrElse(successor, Set.empty)
-                    val oldIn = state.incoming.getOrElse(succ, Set.empty)
-                    state.incoming = state.incoming.updated(succ, oldIn ++ nextIn)
+                    val oldIn = state.incomingFacts.getOrElse(succ, Set.empty)
+                    state.incomingFacts = state.incomingFacts.updated(succ, oldIn ++ nextIn)
                     val newIn = nextIn -- oldIn
                     if (newIn.nonEmpty) {
                         worklist.enqueue((succ, newIn, None, None, None))
@@ -197,9 +233,9 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
     }
 
     /**
-     * Merges two maps that have sets as values. The resulting map has the keys from both maps with
-     * the associated values being the union of the value from both input maps.
-     */
+      * Merges two maps that have sets as values. The resulting map has the keys from both maps with
+      * the associated values being the union of the value from both input maps.
+      */
     def mergeMaps[S, T](map1: Map[S, Set[T]], map2: Map[S, Set[T]]): Map[S, Set[T]] = {
         var result = map1
         for ((key, values) ← map2) {
@@ -209,12 +245,12 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
     }
 
     /**
-     * Gets, for an ExitNode of the CFG, the DataFlowFacts valid on each CFG edge from a
-     * statement to that ExitNode.
-     */
+      * Gets, for an ExitNode of the CFG, the DataFlowFacts valid on each CFG edge from a
+      * statement to that ExitNode.
+      */
     def collectResult(node: CFGNode)(implicit state: State): Map[Statement, Set[DataFlowFact]] =
         node.predecessors.collect {
-            case bb: BasicBlock if state.outgoing.contains(bb) && state.outgoing(bb).contains(node) ⇒
+            case bb: BasicBlock if state.outgoingFacts.contains(bb) && state.outgoingFacts(bb).contains(node) ⇒
                 val index = bb.endPC
                 Statement(
                     state.method,
@@ -222,12 +258,12 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
                     index,
                     state.code,
                     state.cfg
-                ) → state.outgoing(bb)(node)
+                ) → state.outgoingFacts(bb)(node)
         }.toMap
 
     /**
-     * Creates the analysis result from the current state.
-     */
+      * Creates the analysis result from the current state.
+      */
     def createResult()(implicit state: State): ProperPropertyComputationResult = {
 
         val result = mergeMaps(
@@ -235,14 +271,14 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
             collectResult(state.cfg.abnormalReturnNode)
         )
 
-        val dependees = state.ifdsDependees.values ++ state.tacDependees.values
+        val dependees = state.pendingIfdsDependees.values ++ state.pendingTacDependees.values
 
         if (dependees.isEmpty) {
-            Result(state.source, createProperty(result))
+            Result(state.source, createPropertyValue(result))
         } else {
             InterimResult.forUB(
                 state.source,
-                createProperty(result),
+                createPropertyValue(result),
                 dependees,
                 c,
                 DefaultPropertyComputation
@@ -258,8 +294,8 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
 
             case FinalEP(m: Method, _: TACAI) ⇒
                 handleCallUpdate(m)
-                state.tacData -= m
-                state.tacDependees -= m
+                state.pendingTacCallSites -= m
+                state.pendingTacDependees -= m
 
             case InterimUBP(_: TACAI) ⇒ throw new UnknownError("Can not handle intermediate TAC")
         }
@@ -268,36 +304,39 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
     }
 
     /**
-     *  Computes for one BasicBlock `bb` the DataFlowFacts valid on each CFG edge leaving the
-     *  BasicBlock if the DataFlowFacts `sources` held on entry to the BasicBlock.
-     *  @param callIndex The index of a call where the information for one callee was updated or
-     *                   None if analyzeBasicBlock was not called as the result of such update.
-     *  @param callee The callee that got its information updated or None if analyzeBasicBlock
-     *                was not called as the result of such update.
-     *  @param fact The DataFlowFact that the callee was updated for or None if analyzeBasicBlock
-     *              was not called as the result of such update.
-     */
+      *  Computes for one BasicBlock `bb` the DataFlowFacts valid on each CFG edge leaving the
+      *  BasicBlock if the DataFlowFacts `sources` held on entry to the BasicBlock.
+      *
+      *  @param callIndex The index of a call where the information for one callee was updated or
+      *                   None if analyzeBasicBlock was not called as the result of such update.
+      *  @param callee The callee that got its information updated or None if analyzeBasicBlock
+      *                was not called as the result of such update.
+      *  @param fact The DataFlowFact that the callee was updated for or None if analyzeBasicBlock
+      *              was not called as the result of such update.
+      */
 
     def analyzeBasicBlock(
-        bb:        BasicBlock,
-        sources:   Set[DataFlowFact],
-        callIndex: Option[Int], //TODO IntOption
-        callee:    Option[Set[Method]],
-        fact:      Option[DataFlowFact]
-    )(
-        implicit
-        state: State
-    ): Map[CFGNode, Set[DataFlowFact]] = {
+                           bb:        BasicBlock,
+                           sources:   Set[DataFlowFact],
+                           callIndex: Option[Int], //TODO IntOption
+                           callee:    Option[Set[Method]],
+                           fact:      Option[DataFlowFact]
+                         )(
+                           implicit
+                           state: State
+                         ): Map[CFGNode, Set[DataFlowFact]] = {
 
         var flows: Set[DataFlowFact] = sources
 
         /**
-         * Collects information about the TAC Stmt at `index`: The corresponding Statement object,
-         * the Set of relevant callees for that statement (None if the statement has no call) and
-         * the fact that was updated for the call if analyseBasicBlock was called because of an
-         * update.
-         */
-        def collectInformation(index: Int): (Statement, Option[SomeSet[Method]], Option[DataFlowFact]) = {
+          * Collects information about the TAC Stmt at `index`: The corresponding Statement object,
+          * the Set of relevant callees for that statement (None if the statement has no call) and
+          * the fact that was updated for the call if analyseBasicBlock was called because of an
+          * update.
+          */
+        def collectInformation(
+                                index: Int
+                              ): (Statement, Option[SomeSet[Method]], Option[DataFlowFact]) = {
             val stmt = state.code(index)
             val statement = Statement(state.method, stmt, index, state.code, state.cfg)
             val calleesO = if (callIndex.contains(index)) callee else getCallees(stmt)
@@ -312,13 +351,12 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
         val max = bb.endPC
         while (index < max) {
             val (statement, calleesO, callFact) = collectInformation(index)
-            flows =
-                if (calleesO.isEmpty) {
-                    val successor =
-                        Statement(state.method, state.code(index + 1), index + 1, state.code, state.cfg)
-                    normalFlow(statement, successor, flows)
-                } else
-                    handleCall(bb, statement, calleesO.get, flows, callFact).values.head
+            flows = if (calleesO.isEmpty) {
+                val successor =
+                    Statement(state.method, state.code(index + 1), index + 1, state.code, state.cfg)
+                normalFlow(statement, successor, flows)
+            } else
+                handleCall(bb, statement, calleesO.get, flows, callFact).values.head
             index += 1
         }
 
@@ -350,30 +388,47 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
     }
 
     /**
-     * Gets the set of all methods possibly called by `stmt` or None if `stmt` contains no call.
-     */
+      * Gets the set of all methods possibly called by `stmt` or None if `stmt` contains no call.
+      */
     def getCallees(stmt: Stmt[V])(implicit state: State): Option[SomeSet[Method]] = {
         (stmt.astID: @switch) match {
             case StaticMethodCall.ASTID ⇒
                 Some(stmt.asStaticMethodCall.resolveCallTarget.toSet.filter(_.body.isDefined))
 
             case NonVirtualMethodCall.ASTID ⇒
-                Some(stmt.asNonVirtualMethodCall.resolveCallTarget(state.declClass).toSet.filter(_.body.isDefined))
+                Some(
+                    stmt.asNonVirtualMethodCall
+                      .resolveCallTarget(state.declaredClass)
+                      .toSet
+                      .filter(_.body.isDefined)
+                )
 
             case VirtualMethodCall.ASTID ⇒
-                Some(stmt.asVirtualMethodCall.resolveCallTargets(state.declClass).filter(_.body.isDefined))
+                Some(
+                    stmt.asVirtualMethodCall.resolveCallTargets(state.declaredClass).filter(_.body.isDefined)
+                )
 
             case Assignment.ASTID ⇒
                 expr(stmt).astID match {
                     case StaticFunctionCall.ASTID ⇒
-                        Some(stmt.asAssignment.expr.asStaticFunctionCall.resolveCallTarget.toSet.filter(_.body.isDefined))
+                        Some(
+                            stmt.asAssignment.expr.asStaticFunctionCall.resolveCallTarget.toSet
+                              .filter(_.body.isDefined)
+                        )
 
                     case NonVirtualFunctionCall.ASTID ⇒
-                        Some(stmt.asAssignment.expr.asNonVirtualFunctionCall.resolveCallTarget(state.declClass).toSet.filter(_.body.isDefined))
+                        Some(
+                            stmt.asAssignment.expr.asNonVirtualFunctionCall
+                              .resolveCallTarget(state.declaredClass)
+                              .toSet
+                              .filter(_.body.isDefined)
+                        )
 
                     case VirtualFunctionCall.ASTID ⇒
                         Some(
-                            stmt.asAssignment.expr.asVirtualFunctionCall.resolveCallTargets(state.declClass).filter(_.body.isDefined)
+                            stmt.asAssignment.expr.asVirtualFunctionCall
+                              .resolveCallTargets(state.declaredClass)
+                              .filter(_.body.isDefined)
                         )
 
                     case _ ⇒ None
@@ -383,14 +438,24 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
                 expr(stmt).astID match {
 
                     case StaticFunctionCall.ASTID ⇒
-                        Some(stmt.asExprStmt.expr.asStaticFunctionCall.resolveCallTarget.toSet.filter(_.body.isDefined))
+                        Some(
+                            stmt.asExprStmt.expr.asStaticFunctionCall.resolveCallTarget.toSet
+                              .filter(_.body.isDefined)
+                        )
 
                     case NonVirtualFunctionCall.ASTID ⇒
-                        Some(stmt.asExprStmt.expr.asNonVirtualFunctionCall.resolveCallTarget(state.declClass).toSet.filter(_.body.isDefined))
+                        Some(
+                            stmt.asExprStmt.expr.asNonVirtualFunctionCall
+                              .resolveCallTarget(state.declaredClass)
+                              .toSet
+                              .filter(_.body.isDefined)
+                        )
 
                     case VirtualFunctionCall.ASTID ⇒
                         Some(
-                            stmt.asExprStmt.expr.asVirtualFunctionCall.resolveCallTargets(state.declClass).filter(_.body.isDefined)
+                            stmt.asExprStmt.expr.asVirtualFunctionCall
+                              .resolveCallTargets(state.declaredClass)
+                              .filter(_.body.isDefined)
                         )
                     case _ ⇒ None
                 }
@@ -400,66 +465,67 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
     }
 
     /**
-     * Starts processing all BasicBlocks that have to be reevaluated because a callee they may
-     * invoke got its TAC computed.
-     */
+      * Starts processing all BasicBlocks that have to be reevaluated because a callee they may
+      * invoke got its TAC computed.
+      */
     def handleCallUpdate(m: Method)(implicit state: State): Unit = {
-        val blocks = state.tacData(m)
+        val blocks = state.pendingTacCallSites(m)
         val queue: mutable.Queue[(BasicBlock, Set[DataFlowFact], Option[Int], Option[Set[Method]], Option[DataFlowFact])] =
             mutable.Queue.empty
         for ((block, callSite) ← blocks)
             queue.enqueue(
                 (
-                    block,
-                    state.incoming(block),
-                    Some(callSite),
-                    Some(Set(m)),
-                    None
+                  block,
+                  state.incomingFacts(block),
+                  Some(callSite),
+                  Some(Set(m)),
+                  None
                 )
             )
         process(queue)
     }
 
     /**
-     * Starts processing all BasicBlocks that have to be reevaluated because a callee they may
-     * invoke got updated.
-     */
+      * Starts processing all BasicBlocks that have to be reevaluated because a callee they may
+      * invoke got updated.
+      */
     def handleCallUpdate(e: (DeclaredMethod, DataFlowFact))(implicit state: State): Unit = {
-        val blocks = state.ifdsData(e)
+        val blocks = state.pendingIfdsCallSites(e)
         val queue: mutable.Queue[(BasicBlock, Set[DataFlowFact], Option[Int], Option[Set[Method]], Option[DataFlowFact])] =
             mutable.Queue.empty
         for ((block, callSite) ← blocks)
             queue.enqueue(
                 (
-                    block,
-                    state.incoming(block),
-                    Some(callSite),
-                    Some(Set(e._1.definedMethod)),
-                    Some(e._2)
+                  block,
+                  state.incomingFacts(block),
+                  Some(callSite),
+                  Some(Set(e._1.definedMethod)),
+                  Some(e._2)
                 )
             )
         process(queue)
     }
 
     /**
-     * Processes a statement with a call.
-     * @param callBB The block that contains the statement
-     * @param call The statement with the call
-     * @param callees The methods possibly invoked by the call.
-     * @param in The DataFlowFacts valid before the call statement.
-     * @param fact A single DataFlowFact valid before the call statement or None if handleCall is
-     *             not invoked because of an update to a callee.
-     */
+      * Processes a statement with a call.
+      *
+      * @param callBB The block that contains the statement
+      * @param call The statement with the call
+      * @param callees The methods possibly invoked by the call.
+      * @param in The DataFlowFacts valid before the call statement.
+      * @param fact A single DataFlowFact valid before the call statement or None if handleCall is
+      *             not invoked because of an update to a callee.
+      */
     def handleCall(
-        callBB:  BasicBlock,
-        call:    Statement,
-        callees: SomeSet[Method],
-        in:      Set[DataFlowFact],
-        fact:    Option[DataFlowFact]
-    )(
-        implicit
-        state: State
-    ): Map[CFGNode, Set[DataFlowFact]] = {
+                    callBB:  BasicBlock,
+                    call:    Statement,
+                    callees: SomeSet[Method],
+                    in:      Set[DataFlowFact],
+                    fact:    Option[DataFlowFact]
+                  )(
+                    implicit
+                    state: State
+                  ): Map[CFGNode, Set[DataFlowFact]] = {
         // DataFlowFacts valid on the CFG edge to each successor after the call
         var flows: Map[CFGNode, Set[DataFlowFact]] = Map.empty
 
@@ -480,8 +546,8 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
             for (fact ← toCall) {
                 if ((calledMethod eq state.method) && fact == state.source._2) {
                     val newDependee =
-                        state.ifdsData.getOrElse(state.source, Set.empty) + ((callBB, call.index))
-                    state.ifdsData = state.ifdsData.updated(state.source, newDependee)
+                        state.pendingIfdsCallSites.getOrElse(state.source, Set.empty) + ((callBB, call.index))
+                    state.pendingIfdsCallSites = state.pendingIfdsCallSites.updated(state.source, newDependee)
                     fromCall = mergeMaps(
                         fromCall,
                         mergeMaps(
@@ -492,28 +558,29 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
                 } else {
                     val e = (callee, fact)
 
-                    val callFlows = propertyStore(e, property.key).asInstanceOf[EOptionP[(DeclaredMethod, DataFlowFact), IFDSProperty[DataFlowFact]]]
+                    val callFlows = propertyStore(e, propertyKey.key)
+                      .asInstanceOf[EOptionP[(DeclaredMethod, DataFlowFact), IFDSProperty[DataFlowFact]]]
 
-                    val oldState = state.ifdsDependees.get(e)
+                    val oldState = state.pendingIfdsDependees.get(e)
 
                     fromCall = mergeMaps(
                         fromCall,
                         mapDifference( // Only process new facts, that were not known in `oldState`
                             callFlows match {
                                 case ep: FinalEP[_, IFDSProperty[DataFlowFact]] ⇒
-                                    state.ifdsDependees -= e
+                                    state.pendingIfdsDependees -= e
                                     ep.p.flows
                                 case ep: InterimEUBP[_, IFDSProperty[DataFlowFact]] ⇒
                                     val newDependee =
-                                        state.ifdsData.getOrElse(e, Set.empty) + ((callBB, call.index))
-                                    state.ifdsData = state.ifdsData.updated(e, newDependee)
-                                    state.ifdsDependees += e → callFlows
+                                        state.pendingIfdsCallSites.getOrElse(e, Set.empty) + ((callBB, call.index))
+                                    state.pendingIfdsCallSites = state.pendingIfdsCallSites.updated(e, newDependee)
+                                    state.pendingIfdsDependees += e → callFlows
                                     ep.ub.flows
                                 case _ ⇒
                                     val newDependee =
-                                        state.ifdsData.getOrElse(e, Set.empty) + ((callBB, call.index))
-                                    state.ifdsData = state.ifdsData.updated(e, newDependee)
-                                    state.ifdsDependees += e → callFlows
+                                        state.pendingIfdsCallSites.getOrElse(e, Set.empty) + ((callBB, call.index))
+                                    state.pendingIfdsCallSites = state.pendingIfdsCallSites.updated(e, newDependee)
+                                    state.pendingIfdsDependees += e → callFlows
                                     Map.empty
                             },
                             if (oldState.isDefined) {
@@ -553,8 +620,8 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
     }
 
     /**
-     * Removes all values that are in the second map from the corresponding keys in the first map.
-     */
+      * Removes all values that are in the second map from the corresponding keys in the first map.
+      */
     def mapDifference[S, T](map1: Map[S, Set[T]], map2: Map[S, Set[T]]): Map[S, Set[T]] = {
         var result = map1
         for ((key, values) ← map2) {
@@ -564,9 +631,9 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
     }
 
     /**
-     * Gets the Call for a statement that contains a call (MethodCall Stmt or ExprStmt/Assigment
-     * with FunctionCall)
-     */
+      * Gets the Call for a statement that contains a call (MethodCall Stmt or ExprStmt/Assigment
+      * with FunctionCall)
+      */
     protected[this] def asCall(stmt: Stmt[V]): Call[V] = stmt.astID match {
         case Assignment.ASTID ⇒ stmt.asAssignment.expr.asFunctionCall
         case ExprStmt.ASTID   ⇒ stmt.asExprStmt.expr.asFunctionCall
@@ -574,9 +641,9 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
     }
 
     /**
-     * Gets the first statement of a BasicBlock or the first statement of the handler BasicBlock of
-     * a CatchNode.
-     */
+      * Gets the first statement of a BasicBlock or the first statement of the handler BasicBlock of
+      * a CatchNode.
+      */
     @tailrec
     private def firstStatement(node: CFGNode)(implicit state: State): Statement = {
         if (node.isBasicBlock) {
@@ -589,21 +656,21 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
     }
 
     /**
-     * Memoizes results of getExits.
-     */
+      * Memoizes results of getExits.
+      */
     val exits: ConcurrentHashMap[Method, Set[Statement]] = new ConcurrentHashMap
 
     /**
-     * Finds all statements that may terminate the given method.
-     */
+      * Finds all statements that may terminate the given method.
+      */
     def getExits(
-        method:    Method,
-        callBB:    BasicBlock,
-        callIndex: Int
-    )(
-        implicit
-        state: State
-    ): Set[Statement] = {
+                  method:    Method,
+                  callBB:    BasicBlock,
+                  callIndex: Int
+                )(
+                  implicit
+                  state: State
+                ): Set[Statement] = {
         val result = exits.get(method)
 
         if (result == null) {
@@ -612,30 +679,32 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
                     (tac.stmts, tac.cfg)
 
                 case epk: EPK[Method, TACAI] ⇒
-                    state.tacDependees += method → epk
-                    state.tacData += method →
-                        (state.tacData.getOrElse(method, Set.empty) + ((callBB, callIndex)))
+                    state.pendingTacDependees += method → epk
+                    state.pendingTacCallSites += method →
+                      (state.pendingTacCallSites.getOrElse(method, Set.empty) + ((callBB, callIndex)))
                     return Set.empty;
 
                 case tac ⇒
                     throw new UnknownError(s"can't handle intermediate TACs ($tac)")
             }
 
-            exits.computeIfAbsent(method, _ ⇒ {
-                (cfg.abnormalReturnNode.predecessors ++ cfg.normalReturnNode.predecessors).map {
-                    block ⇒
+            exits.computeIfAbsent(
+                method,
+                _ ⇒ {
+                    (cfg.abnormalReturnNode.predecessors ++ cfg.normalReturnNode.predecessors).map { block ⇒
                         val endPC = block.asBasicBlock.endPC
                         Statement(method, code(endPC), endPC, code, cfg)
+                    }
                 }
-            })
+            )
         } else
             result
     }
 
     /**
-     * Retrieves and commits the method's result as calculated for its declaring class type for the
-     * current DefinedMethod that represents the non-overwritten method in a subtype.
-     */
+      * Retrieves and commits the method's result as calculated for its declaring class type for the
+      * current DefinedMethod that represents the non-overwritten method in a subtype.
+      */
     def baseMethodResult(source: (DeclaredMethod, DataFlowFact)): ProperPropertyComputationResult = {
         def c(eps: SomeEOptionP): ProperPropertyComputationResult = eps match {
             case FinalP(p) ⇒ Result(source, p)
@@ -645,25 +714,29 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
 
             case epk ⇒
                 InterimResult.forUB(
-                    source, createProperty(Map.empty), Seq(epk), c, CheapPropertyComputation
+                    source,
+                    createPropertyValue(Map.empty),
+                    Seq(epk),
+                    c,
+                    CheapPropertyComputation
                 )
         }
-        c(propertyStore((declaredMethods(source._1.definedMethod), source._2), property.key))
+        c(propertyStore((declaredMethods(source._1.definedMethod), source._2), propertyKey.key))
     }
 
     val entryPoints: Map[DeclaredMethod, DataFlowFact]
 }
 
 /**
- * Provides information about a statement that may be needed by the concrete analysis.
- */
+  * Provides information about a statement that may be needed by the concrete analysis.
+  */
 case class Statement(
-        method: Method,
-        stmt:   Stmt[V],
-        index:  Int,
-        code:   Array[Stmt[V]],
-        cfg:    CFG[Stmt[V], TACStmts[V]]
-) {
+                      method: Method,
+                      stmt:   Stmt[V],
+                      index:  Int,
+                      code:   Array[Stmt[V]],
+                      cfg:    CFG[Stmt[V], TACStmts[V]]
+                    ) {
 
     override def hashCode(): Int = method.hashCode() * 31 + index
 
@@ -696,25 +769,25 @@ abstract class IFDSAnalysis[DataFlowFact] extends FPCFLazyAnalysisScheduler {
     override def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
 
     /**
-     * Registers the analysis as a lazy computation, that is, the method
-     * will call `ProperytStore.scheduleLazyComputation`.
-     */
+      * Registers the analysis as a lazy computation, that is, the method
+      * will call `ProperytStore.scheduleLazyComputation`.
+      */
     final override def register(
-        p:        SomeProject,
-        ps:       PropertyStore,
-        analysis: AbstractIFDSAnalysis[DataFlowFact]
-    ): FPCFAnalysis = {
+                                 p:        SomeProject,
+                                 ps:       PropertyStore,
+                                 analysis: AbstractIFDSAnalysis[DataFlowFact]
+                               ): FPCFAnalysis = {
         ps.registerLazyPropertyComputation(property.key, analysis.performAnalysis)
-        for (e ← analysis.entryPoints) { ps.force(e, analysis.property.key) }
+        for (e ← analysis.entryPoints) { ps.force(e, analysis.propertyKey.key) }
         analysis
     }
 
     override def afterPhaseScheduling(ps: PropertyStore, analysis: FPCFAnalysis): Unit = {}
 
     override def afterPhaseCompletion(
-        p:        SomeProject,
-        ps:       PropertyStore,
-        analysis: FPCFAnalysis
-    ): Unit = {}
+                                       p:        SomeProject,
+                                       ps:       PropertyStore,
+                                       analysis: FPCFAnalysis
+                                     ): Unit = {}
 
 }
