@@ -81,13 +81,25 @@ class InterproceduralStringAnalysis(
         val project: SomeProject
 ) extends FPCFAnalysis {
 
+    // TODO: Is it possible to make the following two parameters configurable from the outside?
+
     /**
      * To analyze an expression within a method ''m'', callers information might be necessary, e.g.,
      * to know with which arguments ''m'' is called. [[callersThreshold]] determines the threshold
      * up to which number of callers parameter information are gathered. For "number of callers
      * greater than [[callersThreshold]]", parameters are approximated with the lower bound.
      */
-    private val callersThreshold = 10 // TODO: Is it possible to make this parameter configurable from the outside?
+    private val callersThreshold = 10
+
+    /**
+     * To analyze a read operation of field, ''f'', all write accesses, ''wa_f'', to ''f'' have to
+     * be analyzed. ''fieldWriteThreshold'' determines the threshold of ''|wa_f|'' when ''f'' is to
+     * be approximated as the lower bound, i.e., ''|wa_f|'' is greater than ''fieldWriteThreshold''
+     * then the read operation of ''f'' is approximated as the lower bound. Otherwise, if ''|wa_f|''
+     * is less or equal than ''fieldWriteThreshold'', analyze all ''wa_f'' to approximate the read
+     * of ''f''.
+     */
+    private val fieldWriteThreshold = 100
     private val declaredMethods = project.get(DeclaredMethodsKey)
     private final val fieldAccessInformation = project.get(FieldAccessInformationKey)
 
@@ -122,7 +134,7 @@ class InterproceduralStringAnalysis(
     ): StringConstancyProperty = StringConstancyProperty.lb
 
     def analyze(data: P): ProperPropertyComputationResult = {
-        val state = InterproceduralComputationState(data)
+        val state = InterproceduralComputationState(data, fieldWriteThreshold)
         val dm = declaredMethods(data._2)
 
         val tacaiEOptP = ps(data._2, TACAI.key)
