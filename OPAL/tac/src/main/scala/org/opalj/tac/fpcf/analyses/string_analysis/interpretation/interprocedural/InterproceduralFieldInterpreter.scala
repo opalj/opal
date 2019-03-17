@@ -53,14 +53,20 @@ class InterproceduralFieldInterpreter(
      */
     override def interpret(instr: T, defSite: Int): EOptionP[Entity, StringConstancyProperty] = {
         val defSitEntity: Integer = defSite
+        // Unknown type => Cannot further approximate
         if (!InterproceduralStringAnalysis.isSupportedType(instr.declaredFieldType)) {
-            // Unknown type => Cannot further approximate
+            return FinalEP(instr, StringConstancyProperty.lb)
+        }
+        // No write accesses or the number of write accesses exceeds the threshold => approximate
+        // with lower bound
+        val writeAccesses = fieldAccessInformation.writeAccesses(instr.declaringClass, instr.name)
+        if (writeAccesses.isEmpty || writeAccesses.length > state.fieldWriteThreshold) {
             return FinalEP(instr, StringConstancyProperty.lb)
         }
 
         var hasInit = false
         val results = ListBuffer[EOptionP[Entity, StringConstancyProperty]]()
-        fieldAccessInformation.writeAccesses(instr.declaringClass, instr.name).foreach {
+        writeAccesses.foreach {
             case (m, pcs) ⇒ pcs.foreach { pc ⇒
                 if (m.name == "<init>" || m.name == "<clinit>") {
                     hasInit = true

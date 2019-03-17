@@ -26,8 +26,10 @@ import org.opalj.tac.VirtualFunctionCall
  * have all required information ready for a final result.
  *
  * @param entity The entity for which the analysis was started with.
+ * @param fieldWriteThreshold See the documentation of
+ *                            [[InterproceduralStringAnalysis#fieldWriteThreshold]].
  */
-case class InterproceduralComputationState(entity: P) {
+case class InterproceduralComputationState(entity: P, fieldWriteThreshold: Int = 100) {
     /**
      * The Three-Address Code of the entity's method
      */
