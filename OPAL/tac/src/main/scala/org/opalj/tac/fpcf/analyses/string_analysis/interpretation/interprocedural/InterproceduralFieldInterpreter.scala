@@ -52,6 +52,9 @@ class InterproceduralFieldInterpreter(
      * @see [[AbstractStringInterpreter.interpret]]
      */
     override def interpret(instr: T, defSite: Int): EOptionP[Entity, StringConstancyProperty] = {
+        // TODO: The approximation of fields might be outsourced into a dedicated analysis. Then,
+        //  one could add a finer-grained processing or provide different abstraction levels. This
+        //  String analysis could then use the field analysis.
         val defSitEntity: Integer = defSite
         // Unknown type => Cannot further approximate
         if (!InterproceduralStringAnalysis.isSupportedType(instr.declaredFieldType)) {
