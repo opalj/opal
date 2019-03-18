@@ -1,10 +1,7 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
-
 package tac
-
 package fpcf
-
 package analyses
 
 import scala.annotation.switch
@@ -118,7 +115,7 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
     /**
      * The state of the analysis. For each method and source fact, there is a separate state.
      *
-     * @param declaredClass The class defining the method that is analyzed.
+     * @param declaringClass The class defining the method that is analyzed.
      * @param method The method that is analyzed.
      * @param source The source fact that holds at the beginning of `method`.
      * @param code The code of `method`.
@@ -134,11 +131,10 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
      * @param pendingTacCallSites Maps methods called by the analyzed `method`
      *                            to the basic block and statement index of the call site(s) of the analyzed method.
      * @param incomingFacts Maps each basic block to the data flow facts valid at its first statement.
-     * @param outgoingFacts Maps each basic block and each exit node of that block
-     *                      to the data flow facts valid after the exit node
+     * @param outgoingFacts Maps each basic block to the data flow facts valid at the edges to its successors.
      */
     class State(
-            val declaredClass:        ObjectType,
+            val declaringClass:        ObjectType,
             val method:               Method,
             val source:               (DeclaredMethod, DataFlowFact),
             val code:                 Array[Stmt[V]],
@@ -383,10 +379,10 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
         ): (Statement, Option[SomeSet[Method]], Option[DataFlowFact]) = {
             val stmt = state.code(index)
             val statement = Statement(state.method, stmt, index, state.code, state.cfg)
-            val callees =
+            val calleesO =
                 if (calleeWithUpdateIndex.contains(index)) calleeWithUpdate else getCallees(stmt)
             val calleeFact = if (calleeWithUpdateIndex.contains(index)) calleeWithUpdateFact else None
-            (statement, callees, calleeFact)
+            (statement, calleesO, calleeFact)
         }
 
         var flows: Set[DataFlowFact] = sources
@@ -394,28 +390,28 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
 
         // Iterate over all statements but the last one, only keeping the resulting DataFlowFacts.
         while (index < bb.endPC) {
-            val (statement, callees, calleeFact) = collectInformation(index)
-            flows = if (callees.isEmpty) {
+            val (statement, calleesO, calleeFact) = collectInformation(index)
+            flows = if (calleesO.isEmpty) {
                 val successor =
                     Statement(state.method, state.code(index + 1), index + 1, state.code, state.cfg)
                 normalFlow(statement, successor, flows)
             } else
                 // Inside a basic block, we only have one successor --> Take the head
-                handleCall(bb, statement, callees.get, flows, calleeFact).values.head
+                handleCall(bb, statement, calleesO.get, flows, calleeFact).values.head
             index += 1
         }
 
         // Analyze the last statement for each possible successor statement.
-        val (statement, callees, callFact) = collectInformation(bb.endPC)
+        val (statement, calleesO, callFact) = collectInformation(bb.endPC)
         var result =
-            if (callees.isEmpty) {
+            if (calleesO.isEmpty) {
                 var result: Map[CFGNode, Set[DataFlowFact]] = Map.empty
                 for (node ← bb.successors) {
                     result += node → normalFlow(statement, firstStatement(node), flows)
                 }
                 result
             } else {
-                handleCall(bb, statement, callees.get, flows, callFact)
+                handleCall(bb, statement, calleesO.get, flows, callFact)
             }
 
         // Propagate the null fact.
@@ -454,14 +450,14 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
             case NonVirtualMethodCall.ASTID ⇒
                 Some(
                     stmt.asNonVirtualMethodCall
-                        .resolveCallTarget(state.declaredClass)
+                        .resolveCallTarget(state.declaringClass)
                         .toSet
                         .filter(_.body.isDefined)
                 )
 
             case VirtualMethodCall.ASTID ⇒
                 Some(
-                    stmt.asVirtualMethodCall.resolveCallTargets(state.declaredClass).filter(_.body.isDefined)
+                    stmt.asVirtualMethodCall.resolveCallTargets(state.declaringClass).filter(_.body.isDefined)
                 )
 
             case Assignment.ASTID ⇒
@@ -476,7 +472,7 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
                     case NonVirtualFunctionCall.ASTID ⇒
                         Some(
                             stmt.asAssignment.expr.asNonVirtualFunctionCall
-                                .resolveCallTarget(state.declaredClass)
+                                .resolveCallTarget(state.declaringClass)
                                 .toSet
                                 .filter(_.body.isDefined)
                         )
@@ -484,7 +480,7 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
                     case VirtualFunctionCall.ASTID ⇒
                         Some(
                             stmt.asAssignment.expr.asVirtualFunctionCall
-                                .resolveCallTargets(state.declaredClass)
+                                .resolveCallTargets(state.declaringClass)
                                 .filter(_.body.isDefined)
                         )
 
@@ -503,7 +499,7 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
                     case NonVirtualFunctionCall.ASTID ⇒
                         Some(
                             stmt.asExprStmt.expr.asNonVirtualFunctionCall
-                                .resolveCallTarget(state.declaredClass)
+                                .resolveCallTarget(state.declaringClass)
                                 .toSet
                                 .filter(_.body.isDefined)
                         )
@@ -511,7 +507,7 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
                     case VirtualFunctionCall.ASTID ⇒
                         Some(
                             stmt.asExprStmt.expr.asVirtualFunctionCall
-                                .resolveCallTargets(state.declaredClass)
+                                .resolveCallTargets(state.declaringClass)
                                 .filter(_.body.isDefined)
                         )
                     case _ ⇒ None
