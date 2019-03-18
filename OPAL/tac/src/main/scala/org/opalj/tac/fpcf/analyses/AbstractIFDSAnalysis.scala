@@ -264,6 +264,31 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
     }
 
     /**
+      * Merges two maps that have sets as values. The resulting map has the keys from both maps with
+      * the associated values being the union of the values from both input maps.
+      */
+    def mergeMaps[S, T](map1: Map[S, Set[T]], map2: Map[S, Set[T]]): Map[S, Set[T]] = {
+        var result = map1
+        for ((key, values) ← map2) {
+            result = result.updated(key, result.getOrElse(key, Set.empty) ++ values)
+        }
+        result
+    }
+
+    /**
+      * Gets, for an ExitNode of the CFG, the DataFlowFacts valid on each CFG edge from a
+      * statement to that ExitNode.
+      * TODO Why don't we have those facts on the exit node itself?
+      */
+    def collectResult(node: CFGNode)(implicit state: State): Map[Statement, Set[DataFlowFact]] =
+        node.predecessors.collect {
+            case bb: BasicBlock if state.outgoingFacts.contains(bb) && state.outgoingFacts(bb).contains(node) ⇒
+                val index = bb.endPC
+                Statement(state.method, state.code(index), index, state.code, state.cfg) → state
+                  .outgoingFacts(bb)(node)
+        }.toMap
+
+    /**
      * Creates the analysis result from the current state.
      * If the analysis is waiting for the TAC or IFDS property of another method, an interim result will be returned.
      */
@@ -288,19 +313,6 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
             )
         }
     }
-
-    /**
-     * Gets, for an ExitNode of the CFG, the DataFlowFacts valid on each CFG edge from a
-     * statement to that ExitNode.
-     * TODO Why don't we have those facts on the exit node itself?
-     */
-    def collectResult(node: CFGNode)(implicit state: State): Map[Statement, Set[DataFlowFact]] =
-        node.predecessors.collect {
-            case bb: BasicBlock if state.outgoingFacts.contains(bb) && state.outgoingFacts(bb).contains(node) ⇒
-                val index = bb.endPC
-                Statement(state.method, state.code(index), index, state.code, state.cfg) → state
-                    .outgoingFacts(bb)(node)
-        }.toMap
 
     /**
      * Called, when some property, this analysis depends on, has been computed.
@@ -416,6 +428,18 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
     }
 
     /**
+      * Retrieves the expression of an assignment or expression statement.
+      *
+      * @param stmt The statement. Must be an Assignment or ExprStmt.
+      * @return The statement's expression
+      */
+    def expr(stmt: Stmt[V]): Expr[V] = stmt.astID match {
+        case Assignment.ASTID ⇒ stmt.asAssignment.expr
+        case ExprStmt.ASTID   ⇒ stmt.asExprStmt.expr
+        case _                ⇒ throw new UnknownError("Unexpected statement")
+    }
+
+    /**
      * Gets the set of all methods possibly called at some statement.
      *
      * @param stmt The statement
@@ -495,18 +519,6 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
 
             case _ ⇒ None
         }
-    }
-
-    /**
-     * Retrieves the expression of an assignment or expression statement.
-     *
-     * @param stmt The statement. Must be an Assignment or ExprStmt.
-     * @return The statement's expression
-     */
-    def expr(stmt: Stmt[V]): Expr[V] = stmt.astID match {
-        case Assignment.ASTID ⇒ stmt.asAssignment.expr
-        case ExprStmt.ASTID   ⇒ stmt.asExprStmt.expr
-        case _                ⇒ throw new UnknownError("Unexpected statement")
     }
 
     /**
@@ -670,18 +682,6 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
             }
         }
         summaryEdges
-    }
-
-    /**
-     * Merges two maps that have sets as values. The resulting map has the keys from both maps with
-     * the associated values being the union of the values from both input maps.
-     */
-    def mergeMaps[S, T](map1: Map[S, Set[T]], map2: Map[S, Set[T]]): Map[S, Set[T]] = {
-        var result = map1
-        for ((key, values) ← map2) {
-            result = result.updated(key, result.getOrElse(key, Set.empty) ++ values)
-        }
-        result
     }
 
     /**
