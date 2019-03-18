@@ -200,12 +200,14 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
    *        calleeWithUpdateIndex The index of a call site, for which some property was computed.
    *        calleeWithUpdate The method called at `calleeWithUpdateIndex`, for which some property was computed.
    *                         At `callIndexWithUpdate`, only this method will be analyzed.
-   *                         Present, iff callIndexWithUpdate is present
+   *                         Present, iff callIndexWithUpdate is present.
    *        calleeWithUpdateFact If this parameter is present, `calleeWithUpdate` will only be analyzed with this fact
    *                             instead of the facts returned by `callFlow`.
+   *                             Can only be present if `calleeWithUpdate` is present.
+   *
+   * TODO calleeWithUpdate always has one element
+   * TODO Make a tuple of the last three queue elements
    */
-  //TODO calleeWithUpdate always has one element
-  //TODO Make a tuple of the last three queue elements
   def process(
       worklist: mutable.Queue[(BasicBlock, Set[DataFlowFact], Option[Int], Option[Set[Method]], Option[DataFlowFact])]
   )(
@@ -255,8 +257,35 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
   }
 
   /**
+    * Creates the analysis result from the current state.
+    * If the analysis is waiting for the TAC or IFDS property of another method, an interim result will be returned.
+    */
+  def createResult()(implicit state: State): ProperPropertyComputationResult = {
+    //TODO directly call createPropertyValue
+    val result = mergeMaps(
+      collectResult(state.cfg.normalReturnNode),
+      collectResult(state.cfg.abnormalReturnNode)
+    )
+
+    val dependees = state.pendingIfdsDependees.values ++ state.pendingTacDependees.values
+
+    if (dependees.isEmpty) {
+      Result(state.source, createPropertyValue(result))
+    } else {
+      InterimResult.forUB(
+        state.source,
+        createPropertyValue(result),
+        dependees,
+        propertyHasBeenComputed,
+        DefaultPropertyComputation
+      )
+    }
+  }
+
+  /**
    * Gets, for an ExitNode of the CFG, the DataFlowFacts valid on each CFG edge from a
    * statement to that ExitNode.
+   * TODO Why don't we have those facts on the exit node itself?
    */
   def collectResult(node: CFGNode)(implicit state: State): Map[Statement, Set[DataFlowFact]] =
     node.predecessors.collect {
@@ -273,36 +302,20 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
     }.toMap
 
   /**
-   * Creates the analysis result from the current state.
+   * Called, when some property, this analysis depends on, has been computed.
+   * If there is a new (interim) result for an IFDS property
+   * If there is a final TAC result, the method will be removed from `pendingTacCallSites` and `pendingTacDependees`.
+   *
+   * @param eps The computed property store value.
+   * @return The new (interim) result of the analysis.
    */
-  def createResult()(implicit state: State): ProperPropertyComputationResult = {
-
-    val result = mergeMaps(
-      collectResult(state.cfg.normalReturnNode),
-      collectResult(state.cfg.abnormalReturnNode)
-    )
-
-    val dependees = state.pendingIfdsDependees.values ++ state.pendingTacDependees.values
-
-    if (dependees.isEmpty) {
-      Result(state.source, createPropertyValue(result))
-    } else {
-      InterimResult.forUB(
-        state.source,
-        createPropertyValue(result),
-        dependees,
-        c,
-        DefaultPropertyComputation
-      )
-    }
-  }
-
-  def c(eps: SomeEPS)(implicit state: State): ProperPropertyComputationResult = {
+  def propertyHasBeenComputed(eps: SomeEPS)(implicit state: State): ProperPropertyComputationResult = {
     (eps: @unchecked) match {
       case FinalE(e: (DeclaredMethod, DataFlowFact) @unchecked) ⇒ handleCallUpdate(e)
 
       case InterimEUB(e: (DeclaredMethod, DataFlowFact) @unchecked) ⇒ handleCallUpdate(e)
 
+      //TODO Do we need a FinalEP or is a FinalE sufficient?
       case FinalEP(m: Method, _: TACAI) ⇒
         handleCallUpdate(m)
         state.pendingTacCallSites -= m
@@ -315,75 +328,81 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
   }
 
   /**
-   *  Computes for one BasicBlock `bb` the DataFlowFacts valid on each CFG edge leaving the
-   *  BasicBlock if the DataFlowFacts `sources` held on entry to the BasicBlock.
+   * Computes for one BasicBlock the DataFlowFacts valid on each CFG edge leaving the BasicBlock if the DataFlowFacts
+   * `sources` held on entry to the BasicBlock.
    *
-   *  @param callIndex The index of a call where the information for one callee was updated or
-   *                   None if analyzeBasicBlock was not called as the result of such update.
-   *  @param callee The callee that got its information updated or None if analyzeBasicBlock
-   *                was not called as the result of such update.
-   *  @param fact The DataFlowFact that the callee was updated for or None if analyzeBasicBlock
-   *              was not called as the result of such update.
+   * @param bb The basic block, that will be analyzed.
+   * @param sources The source facts, that hold at the beginning of the basic block.
+   * @param calleeWithUpdateIndex The index of a call site, for which some property was computed.
+   * @param calleeWithUpdate The method called at `calleeWithUpdateIndex`, for which some property was computed.
+   *               At `callIndexWithUpdate`, only this method will be analyzed.
+   *               Present, iff callIndexWithUpdate is present.
+   * @param calleeWithUpdateFact If this parameter is present, `calleeWithUpdate` will only be analyzed with this fact
+   *                             instead of the facts returned by `callFlow`.
+   *                             Can only be present if `calleeWithUpdate` is present.
    */
-
   def analyzeBasicBlock(
       bb: BasicBlock,
       sources: Set[DataFlowFact],
-      callIndex: Option[Int], //TODO IntOption
-      callee: Option[Set[Method]],
-      fact: Option[DataFlowFact]
+      calleeWithUpdateIndex: Option[Int], //TODO IntOption
+      calleeWithUpdate: Option[Set[Method]],
+      calleeWithUpdateFact: Option[DataFlowFact]
   )(
       implicit
       state: State
   ): Map[CFGNode, Set[DataFlowFact]] = {
 
-    var flows: Set[DataFlowFact] = sources
-
     /**
-     * Collects information about the TAC Stmt at `index`: The corresponding Statement object,
-     * the Set of relevant callees for that statement (None if the statement has no call) and
-     * the fact that was updated for the call if analyseBasicBlock was called because of an
-     * update.
+     * Collects information about a TAC statement
+     *
+     * @param index The index of the TAC statement
+     * @return A tuple of the following elements:
+     *         statement: The statement object at `index`
+     *         calees: The methods possibly called at this statement, if it contains a call.
+     *                 If `index` equals `calleeWithUpdateIndex`, only `calleeWithUpdate` will be returned.
+     *         calleeFact: If `index` equals `calleeWithUpdateIndex`, only `calleeWithUpdateFact` will be returned.
      */
     def collectInformation(
         index: Int
     ): (Statement, Option[SomeSet[Method]], Option[DataFlowFact]) = {
       val stmt = state.code(index)
       val statement = Statement(state.method, stmt, index, state.code, state.cfg)
-      val calleesO = if (callIndex.contains(index)) callee else getCallees(stmt)
-      val callFact = if (callIndex.contains(index)) fact else None
-      (statement, calleesO, callFact)
+      val callees = if (calleeWithUpdateIndex.contains(index)) calleeWithUpdate else getCallees(stmt)
+      val calleeFact = if (calleeWithUpdateIndex.contains(index)) calleeWithUpdateFact else None
+      (statement, callees, calleeFact)
     }
 
-    // Iterate over all statements but the last one in linear order, only keeping the resulting
-    // DataFlowFacts.
-
+    var flows: Set[DataFlowFact] = sources
     var index = bb.startPC
-    val max = bb.endPC
-    while (index < max) {
-      val (statement, calleesO, callFact) = collectInformation(index)
-      flows = if (calleesO.isEmpty) {
+
+    // Iterate over all statements but the last one, only keeping the resulting DataFlowFacts.
+    while (index < bb.endPC) {
+      val (statement, callees, calleeFact) = collectInformation(index)
+      flows = if (callees.isEmpty) {
         val successor =
           Statement(state.method, state.code(index + 1), index + 1, state.code, state.cfg)
         normalFlow(statement, successor, flows)
       } else
-        handleCall(bb, statement, calleesO.get, flows, callFact).values.head
+        // Inside a basic block, we only have one successor --> Take the head
+        handleCall(bb, statement, callees.get, flows, calleeFact).values.head
       index += 1
     }
 
-    // Analyse the last statement for each possible successor statement.
-
-    val (statement, calleesO, callFact) = collectInformation(bb.endPC)
+    // Analyze the last statement for each possible successor statement.
+    val (statement, callees, callFact) = collectInformation(bb.endPC)
     var result =
-      if (calleesO.isEmpty) {
+      if (callees.isEmpty) {
         var result: Map[CFGNode, Set[DataFlowFact]] = Map.empty
         for (node ← bb.successors) {
           result += node → normalFlow(statement, firstStatement(node), flows)
         }
         result
       } else {
-        handleCall(bb, statement, calleesO.get, flows, callFact)
+        handleCall(bb, statement, callees.get, flows, callFact)
       }
+
+    // Propagate the null fact.
+    // TODO At which point do we add the null fact initially?
     if (sources.contains(null.asInstanceOf[DataFlowFact]))
       result = result.map { result ⇒
         result._1 → (result._2 + null.asInstanceOf[DataFlowFact])
