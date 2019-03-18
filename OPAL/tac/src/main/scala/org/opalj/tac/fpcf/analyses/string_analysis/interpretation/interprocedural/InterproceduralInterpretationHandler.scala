@@ -246,6 +246,8 @@ class InterproceduralInterpretationHandler(
     private def processBinaryExpr(
         expr: BinaryExpr[V], defSite: Int
     ): EOptionP[Entity, StringConstancyProperty] = {
+        // TODO: For binary expressions, use the underlying domain to retrieve the result of such
+        //  expressions
         val result = new BinaryExprInterpreter(cfg, this).interpret(expr, defSite)
         val sci = result.asFinal.p.stringConstancyInformation
         state.appendToInterimFpe2Sci(defSite, sci)
