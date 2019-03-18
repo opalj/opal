@@ -52,9 +52,9 @@ class TestTaintAnalysis private (
         val project: SomeProject
 ) extends AbstractIFDSAnalysis[Fact] {
 
-    override val property: IFDSPropertyMetaInformation[Fact] = Taint
+    override val propertyKey: IFDSPropertyMetaInformation[Fact] = Taint
 
-    override def createProperty(result: Map[Statement, Set[Fact]]): IFDSProperty[Fact] = {
+    override def createPropertyValue(result: Map[Statement, Set[Fact]]): IFDSProperty[Fact] = {
         new Taint(result)
     }
 
