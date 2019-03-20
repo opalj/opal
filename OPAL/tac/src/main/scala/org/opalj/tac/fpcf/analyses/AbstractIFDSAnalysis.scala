@@ -69,35 +69,39 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
     def createPropertyValue(result: Map[Statement, Set[DataFlowFact]]): IFDSProperty[DataFlowFact]
 
     /**
-     * Computes the DataFlowFacts valid after statement `stmt` on the CFG edge to statement `succ`
-     * if the DataFlowFacts `in` held before `stmt`.
+     * Computes the DataFlowFacts valid after statement `statement` on the CFG edge to statement `succ`
+     * if the DataFlowFacts `in` held before `statement`.
      */
-    def normalFlow(stmt: Statement, succ: Statement, in: Set[DataFlowFact]): Set[DataFlowFact]
+    def normalFlow(statement: Statement, succ: Statement, in: Set[DataFlowFact]): Set[DataFlowFact]
 
     /**
      * Computes the DataFlowFacts valid on entry to method `callee` when it is called from statement
-     * `stmt` if the DataFlowFacts `in` held before `stmt`.
+     * `statement` if the DataFlowFacts `in` held before `statement`.
      */
-    def callFlow(stmt: Statement, callee: DeclaredMethod, in: Set[DataFlowFact]): Set[DataFlowFact]
-
-    /**
-     * Computes the DataFlowFacts valid on the CFG edge from statement `stmt` to `succ` if `callee`
-     * was invoked by `stmt` and DataFlowFacts `in` held before the final statement `exit` of
-     * `callee`.
-     */
-    def returnFlow(
-        stmt:   Statement,
-        callee: DeclaredMethod,
-        exit:   Statement,
-        succ:   Statement,
-        in:     Set[DataFlowFact]
+    def callFlow(
+        statement: Statement, callee: DeclaredMethod, in: Set[DataFlowFact]
     ): Set[DataFlowFact]
 
     /**
-     * Computes the DataFlowFacts valid on the CFG edge from statement `stmt` to `succ` irrespective
-     * of the call in `stmt` if the DataFlowFacts `in` held before `stmt`.
+     * Computes the DataFlowFacts valid on the CFG edge from statement `statement` to `succ` if `callee`
+     * was invoked by `statement` and DataFlowFacts `in` held before the final statement `exit` of
+     * `callee`.
      */
-    def callToReturnFlow(stmt: Statement, succ: Statement, in: Set[DataFlowFact]): Set[DataFlowFact]
+    def returnFlow(
+        statement: Statement,
+        callee:    DeclaredMethod,
+        exit:      Statement,
+        succ:      Statement,
+        in:        Set[DataFlowFact]
+    ): Set[DataFlowFact]
+
+    /**
+     * Computes the DataFlowFacts valid on the CFG edge from statement `statement` to `succ` irrespective
+     * of the call in `statement` if the DataFlowFacts `in` held before `statement`.
+     */
+    def callToReturnFlow(
+        statement: Statement, succ: Statement, in: Set[DataFlowFact]
+    ): Set[DataFlowFact]
 
     /**
      * All declared methods in the project.
@@ -134,7 +138,7 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
      * @param outgoingFacts Maps each basic block to the data flow facts valid at the edges to its successors.
      */
     class State(
-            val declaringClass:        ObjectType,
+            val declaringClass:       ObjectType,
             val method:               Method,
             val source:               (DeclaredMethod, DataFlowFact),
             val code:                 Array[Stmt[V]],
@@ -260,9 +264,9 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
     }
 
     /**
-      * Merges two maps that have sets as values. The resulting map has the keys from both maps with
-      * the associated values being the union of the values from both input maps.
-      */
+     * Merges two maps that have sets as values. The resulting map has the keys from both maps with
+     * the associated values being the union of the values from both input maps.
+     */
     def mergeMaps[S, T](map1: Map[S, Set[T]], map2: Map[S, Set[T]]): Map[S, Set[T]] = {
         var result = map1
         for ((key, values) ← map2) {
@@ -272,16 +276,16 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
     }
 
     /**
-      * Gets, for an ExitNode of the CFG, the DataFlowFacts valid on each CFG edge from a
-      * statement to that ExitNode.
-      * TODO Why don't we have those facts on the exit node itself?
-      */
+     * Gets, for an ExitNode of the CFG, the DataFlowFacts valid on each CFG edge from a
+     * statement to that ExitNode.
+     * TODO Why don't we have those facts on the exit node itself?
+     */
     def collectResult(node: CFGNode)(implicit state: State): Map[Statement, Set[DataFlowFact]] =
         node.predecessors.collect {
             case bb: BasicBlock if state.outgoingFacts.contains(bb) && state.outgoingFacts(bb).contains(node) ⇒
                 val index = bb.endPC
                 Statement(state.method, state.code(index), index, state.code, state.cfg) → state
-                  .outgoingFacts(bb)(node)
+                    .outgoingFacts(bb)(node)
         }.toMap
 
     /**
@@ -424,11 +428,11 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
     }
 
     /**
-      * Retrieves the expression of an assignment or expression statement.
-      *
-      * @param stmt The statement. Must be an Assignment or ExprStmt.
-      * @return The statement's expression
-      */
+     * Retrieves the expression of an assignment or expression statement.
+     *
+     * @param stmt The statement. Must be an Assignment or ExprStmt.
+     * @return The statement's expression
+     */
     def expr(stmt: Stmt[V]): Expr[V] = stmt.astID match {
         case Assignment.ASTID ⇒ stmt.asAssignment.expr
         case ExprStmt.ASTID   ⇒ stmt.asExprStmt.expr
@@ -590,7 +594,8 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
             val callToStart =
                 if (calleeWithUpdateFact.isDefined) calleeWithUpdateFact.toSet
                 else callFlow(call, callee, in)
-            var exitFacts: Map[Statement, Set[DataFlowFact]] = Map.empty
+            var allNewExitFacts: Map[Statement, Set[DataFlowFact]] = Map.empty
+            // Collect exit facts for each start fact separately
             for (fact ← callToStart) {
                 /*
                 * If this is a recursive call with the same input facts, we assume that the call only produces the facts
@@ -601,8 +606,8 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
                     val newDependee =
                         state.pendingIfdsCallSites.getOrElse(state.source, Set.empty) + ((callBB, call.index))
                     state.pendingIfdsCallSites = state.pendingIfdsCallSites.updated(state.source, newDependee)
-                    exitFacts = mergeMaps(
-                        exitFacts,
+                    allNewExitFacts = mergeMaps(
+                        allNewExitFacts,
                         mergeMaps(
                             collectResult(state.cfg.normalReturnNode),
                             collectResult(state.cfg.abnormalReturnNode)
@@ -612,48 +617,42 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
                     val e = (callee, fact)
                     val callFlows = propertyStore(e, propertyKey.key)
                         .asInstanceOf[EOptionP[(DeclaredMethod, DataFlowFact), IFDSProperty[DataFlowFact]]]
+                    val oldValue = state.pendingIfdsDependees.get(e)
+                    val oldExitFacts: Map[Statement, Set[DataFlowFact]] = oldValue match {
+                        case Some(ep: InterimEUBP[_, IFDSProperty[DataFlowFact]]) ⇒ ep.ub.flows
+                        case _ ⇒ Map.empty
+                    }
+                    val exitFacts: Map[Statement, Set[DataFlowFact]] = callFlows match {
+                        case ep: FinalEP[_, IFDSProperty[DataFlowFact]] ⇒
+                            state.pendingIfdsDependees -= e
+                            ep.p.flows
+                        case ep: InterimEUBP[_, IFDSProperty[DataFlowFact]] ⇒
+                            /*
+                            * Add the call site to `pendingIfdsCallSites` and `pendingIfdsDependees` and
+                            * continue with the facts in the interim result for now. When the analysis for the
+                            * callee finishes, the analysis for this call site will be triggered again.
+                            */
+                            val newDependee =
+                                state.pendingIfdsCallSites.getOrElse(e, Set.empty) + ((callBB, call.index))
+                            state.pendingIfdsCallSites = state.pendingIfdsCallSites.updated(e, newDependee)
+                            state.pendingIfdsDependees += e → callFlows
+                            ep.ub.flows
+                        // TODO Can we merge both cases to one case?
+                        case _ ⇒
+                            val newDependee =
+                                state.pendingIfdsCallSites.getOrElse(e, Set.empty) + ((callBB, call.index))
+                            state.pendingIfdsCallSites = state.pendingIfdsCallSites.updated(e, newDependee)
+                            state.pendingIfdsDependees += e → callFlows
+                            Map.empty
+                    }
                     // Only process new facts that are not in `oldExitFacts`
-                    val oldExitFacts = state.pendingIfdsDependees.get(e)
-                    exitFacts = mergeMaps(
-                        exitFacts,
-                        mapDifference(
-                            callFlows match {
-                                case ep: FinalEP[_, IFDSProperty[DataFlowFact]] ⇒
-                                    state.pendingIfdsDependees -= e
-                                    ep.p.flows
-                                case ep: InterimEUBP[_, IFDSProperty[DataFlowFact]] ⇒
-                                    /*
-                                    * Add the call site to `pendingIfdsCallSites` and `pendingIfdsDependees` and
-                                    * continue with the facts in the interim result for now. When the analysis for the
-                                    * callee finishes, the analysis for this call site will be triggered again.
-                                    */
-                                    val newDependee =
-                                        state.pendingIfdsCallSites.getOrElse(e, Set.empty) + ((callBB, call.index))
-                                    state.pendingIfdsCallSites = state.pendingIfdsCallSites.updated(e, newDependee)
-                                    state.pendingIfdsDependees += e → callFlows
-                                    ep.ub.flows
-                                // TODO Can we merge both cases to one case?
-                                case _ ⇒
-                                    val newDependee =
-                                        state.pendingIfdsCallSites.getOrElse(e, Set.empty) + ((callBB, call.index))
-                                    state.pendingIfdsCallSites = state.pendingIfdsCallSites.updated(e, newDependee)
-                                    state.pendingIfdsDependees += e → callFlows
-                                    Map.empty
-                            },
-                            if (oldExitFacts.isDefined) {
-                                oldExitFacts.get match {
-                                    case ep: InterimEUBP[_, IFDSProperty[DataFlowFact]] ⇒ ep.ub.flows
-                                    case _                                              ⇒ Map.empty
-                                }
-                            } else Map.empty
-                        )
-                    )
+                    allNewExitFacts = mergeMaps(allNewExitFacts, mapDifference(exitFacts, oldExitFacts))
                     /*
                     * If new exit facts were discovered for the callee-fact-pair, all call sites depending on this pair have to
-                    * be re-evaluated.
-                    * TODO Can we remove a call site from pendingIfdsCallSites safely when we get a FinalEP?
+                    * be re-evaluated. oldValue is undefined if the callee-fact pair has not been queried before or returned a FinalEP.
+                    * TODO Can we remove a call site from pendingIfdsCallSites safely when we got a FinalEP?
                     */
-                    if (oldExitFacts.isDefined && oldExitFacts.get != callFlows) {
+                    if (!oldValue.isDefined && oldExitFacts != exitFacts) {
                         handleCallUpdate(e)
                     }
                 }
@@ -662,19 +661,19 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
             // Map facts valid on each exit statement of the callee back to the caller
             val calleeExitStatements = getExits(calledMethod, callBB, call.index)
             for {
-                successorBlocks ← callBB.successors
+                successorBlock ← callBB.successors
                 exitStatement ← calleeExitStatements
             } {
-                val successorStatement = firstStatement(successorBlocks)
-                val oldSummaryEdges = summaryEdges.getOrElse(successorBlocks, Set.empty[DataFlowFact])
+                val successorStatement = firstStatement(successorBlock)
+                val oldSummaryEdges = summaryEdges.getOrElse(successorBlock, Set.empty[DataFlowFact])
                 val exitToReturnFacts = returnFlow(
                     call,
                     callee,
                     exitStatement,
                     successorStatement,
-                    exitFacts.getOrElse(exitStatement, Set.empty)
+                    allNewExitFacts.getOrElse(exitStatement, Set.empty)
                 )
-                summaryEdges += successorBlocks → (oldSummaryEdges ++ exitToReturnFacts)
+                summaryEdges += successorBlock → (oldSummaryEdges ++ exitToReturnFacts)
             }
         }
         summaryEdges
