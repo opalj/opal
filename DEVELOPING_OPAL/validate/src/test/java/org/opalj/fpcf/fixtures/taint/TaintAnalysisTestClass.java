@@ -36,13 +36,28 @@ public class TaintAnalysisTestClass {
         new TaintAnalysisTestClass().run();
     }
 
-    @TaintedFlow("run,a")
     public void run() {
-        String s = source();
-        a(s);
+        callChain();
+        passInCatch();
     }
 
-    public void a(String s) {
+    @TaintedFlow("callChain,passToSink")
+    public void callChain() {
+        String s = source();
+        passToSink(s);
+    }
+
+    @TaintedFlow("passInCatch")
+    public void passInCatch() {
+        String s = source();
+        try {
+            throw new RuntimeException();
+        } catch(RuntimeException e) {
+            sink(s);
+        }
+    }
+
+    public void passToSink(String s) {
         sink(s);
     }
 

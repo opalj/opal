@@ -77,6 +77,7 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
     /**
      * Computes the DataFlowFacts valid on entry to method `callee` when it is called from statement
      * `statement` if the DataFlowFacts `in` held before `statement`.
+      * This method must not handle propagating the null fact.
      */
     def callFlow(
         statement: Statement, callee: DeclaredMethod, in: Set[DataFlowFact]
@@ -593,7 +594,11 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
             val callee = declaredMethods(calledMethod)
             val callToStart =
                 if (calleeWithUpdateFact.isDefined) calleeWithUpdateFact.toSet
-                else callFlow(call, callee, in)
+                else {
+                    var cf = callFlow(call, callee, in)
+                    if(in.contains(null.asInstanceOf[DataFlowFact])) cf += null.asInstanceOf[DataFlowFact]
+                    cf
+                }
             var allNewExitFacts: Map[Statement, Set[DataFlowFact]] = Map.empty
             // Collect exit facts for each start fact separately
             for (fact ← callToStart) {
