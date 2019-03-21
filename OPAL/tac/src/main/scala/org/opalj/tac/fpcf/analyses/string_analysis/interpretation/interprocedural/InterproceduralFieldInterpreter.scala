@@ -60,10 +60,9 @@ class InterproceduralFieldInterpreter(
         if (!InterproceduralStringAnalysis.isSupportedType(instr.declaredFieldType)) {
             return FinalEP(instr, StringConstancyProperty.lb)
         }
-        // No write accesses or the number of write accesses exceeds the threshold => approximate
-        // with lower bound
+        // Write accesses exceeds the threshold => approximate with lower bound
         val writeAccesses = fieldAccessInformation.writeAccesses(instr.declaringClass, instr.name)
-        if (writeAccesses.isEmpty || writeAccesses.length > state.fieldWriteThreshold) {
+        if (writeAccesses.length > state.fieldWriteThreshold) {
             return FinalEP(instr, StringConstancyProperty.lb)
         }
 
