@@ -28,18 +28,22 @@
  */
 package org.opalj.fpcf.fixtures.taint;
 
-public class TaintAnalysisTest {
+import org.opalj.fpcf.properties.taint.TaintedFlow;
 
+public class TaintAnalysisTestClass {
+
+    @TaintedFlow("run->sink")
     public void run() {
         String s = source();
         sink(s);
     }
 
-    public String source() {
+    @TaintedFlow("run->sink")
+    private String source() {
         return "source";
     }
 
-    public void sink(String data) {
+    private void sink(String data) {
         System.out.println(data);
     }
 

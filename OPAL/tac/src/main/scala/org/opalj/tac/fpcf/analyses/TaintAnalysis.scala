@@ -1,5 +1,5 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.tac.fpcf.analysis
+package org.opalj.tac.fpcf.analyses
 
 import java.io.File
 
@@ -14,12 +14,6 @@ import org.opalj.fpcf.{PropertyKey, PropertyStore, PropertyStoreContext}
 import org.opalj.log.LogContext
 import org.opalj.tac.fpcf.analyses.AbstractIFDSAnalysis.V
 import org.opalj.tac._
-import org.opalj.tac.fpcf.analyses.{
-    AbstractIFDSAnalysis,
-    IFDSAnalysis,
-    LazyTACAIProvider,
-    Statement
-}
 import org.opalj.tac.fpcf.properties.{IFDSProperty, IFDSPropertyMetaInformation}
 import org.opalj.util.PerformanceEvaluation.time
 
@@ -45,11 +39,11 @@ class TaintAnalysis private (implicit val project: SomeProject) extends Abstract
     val entryPoints: Map[DeclaredMethod, Fact] = Map(
         p.allProjectClassFiles
             .filter(classFile ⇒
-                classFile.thisType.fqn == "org/opalj/fpcf/fixtures/taint/TaintAnalysisTest")
+                classFile.thisType.fqn == "org/opalj/fpcf/fixtures/taint/TaintAnalysisTestClass")
             .flatMap(classFile ⇒ classFile.methods)
             .filter(method ⇒ method.name == "run")
             .map(method ⇒ declaredMethods(method))
-            .head -> NullFact()
+            .head -> null
     )
 
     override def createPropertyValue(result: Map[Statement, Set[Fact]]): IFDSProperty[Fact] = {
@@ -244,7 +238,7 @@ class TaintAnalysis private (implicit val project: SomeProject) extends Abstract
         def isRefTypeParam(index: Int): Boolean =
             if (index == -1) true
             else {
-                callee.descriptor.parameterType(switchParamAndVariableIndex(index, false)).isReferenceType
+                callee.descriptor.parameterType(switchParamAndVariableIndex(index, isStaticMethod = false)).isReferenceType
             }
 
         if (callee.name == "source" && statement.stmt.astID == Assignment.ASTID)

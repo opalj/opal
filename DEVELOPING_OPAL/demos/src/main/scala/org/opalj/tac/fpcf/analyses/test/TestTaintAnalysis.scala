@@ -1,17 +1,17 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj
-package tac
-package fpcf
-package analyses
+package org.opalj.tac.fpcf.analyses.test
+
+import org.opalj.bytecode
 
 import scala.collection.immutable.ListSet
-
 import org.opalj.log.LogContext
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.collection.immutable.RefArray
 import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.PropertyStoreContext
+import org.opalj.tac._
+import org.opalj.tac.fpcf.analyses.{AbstractIFDSAnalysis, IFDSAnalysis, LazyTACAIProvider, Statement}
 //import org.opalj.fpcf.par.PKEFJPoolPropertyStore
 import org.opalj.fpcf.seq.PKESequentialPropertyStore
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
