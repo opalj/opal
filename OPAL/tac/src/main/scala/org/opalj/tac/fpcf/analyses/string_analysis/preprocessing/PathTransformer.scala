@@ -152,11 +152,9 @@ class PathTransformer(val interpretationHandler: InterpretationHandler) {
                     StringTreeConst(StringConstancyProperty.lb.stringConstancyInformation)
                 )
             case _ ⇒
-                val concatElement = StringTreeConcat(
-                    path.elements.map { ne ⇒
-                        pathToTreeAcc(ne, fpe2Sci)
-                    }.filter(_.isDefined).map(_.get).to[ListBuffer]
-                )
+                val concatElement = StringTreeConcat(path.elements.map { ne ⇒
+                    pathToTreeAcc(ne, fpe2Sci)
+                }.filter(_.isDefined).map(_.get).to[ListBuffer])
                 // It might be that concat has only one child (because some interpreters might have
                 // returned an empty list => In case of one child, return only that one
                 if (concatElement.children.size == 1) {

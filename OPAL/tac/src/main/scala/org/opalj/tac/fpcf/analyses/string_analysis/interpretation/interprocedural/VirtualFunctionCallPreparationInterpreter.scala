@@ -340,7 +340,11 @@ class VirtualFunctionCallPreparationInterpreter(
                         StringConstancyProperty.lb.stringConstancyInformation
                     } else {
                         val charSciValues = sciValues.filter(_.possibleStrings != "") map { sci ⇒
-                            sci.copy(possibleStrings = sci.possibleStrings.toInt.toChar.toString)
+                            if (isIntegerValue(sci.possibleStrings)) {
+                                sci.copy(possibleStrings = sci.possibleStrings.toInt.toChar.toString)
+                            } else {
+                                sci
+                            }
                         }
                         StringConstancyInformation.reduceMultiple(charSciValues)
                     }
@@ -379,5 +383,10 @@ class VirtualFunctionCallPreparationInterpreter(
         instr: VirtualFunctionCall[V]
     ): EOptionP[Entity, StringConstancyProperty] =
         FinalEP(instr, InterpretationHandler.getStringConstancyPropertyForReplace)
+
+    /**
+     * Checks whether a given string is an integer value, i.e. contains only numbers.
+     */
+    private def isIntegerValue(toTest: String): Boolean = toTest.forall(_.isDigit)
 
 }
