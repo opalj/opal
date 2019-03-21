@@ -43,6 +43,8 @@ public class InterproceduralTestMethods {
 
     public static String someKey = "will not be revealed here";
 
+    private String[] monthNames = { "January", "February", "March", getApril() };
+
     /**
      * {@see LocalTestMethods#analyzeString}
      */
@@ -666,6 +668,18 @@ public class InterproceduralTestMethods {
         analyzeString(someKey);
     }
 
+    @StringDefinitionsCollection(
+            value = "a case where a String array field is read",
+            stringDefinitions = {
+                    @StringDefinitions(
+                            expectedLevel = CONSTANT,
+                            expectedStrings = "(January|February|March|April)"
+                    )
+            })
+    public void getStringArrayField(int i) {
+        analyzeString(monthNames[i]);
+    }
+
     private String getRuntimeClassName() {
         return "java.lang.Runtime";
     }
@@ -696,6 +710,10 @@ public class InterproceduralTestMethods {
 
     private static String getHelperClass() {
         return "my.helper.Class";
+    }
+
+    private String getApril() {
+        return "April";
     }
 
 }

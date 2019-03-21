@@ -48,7 +48,7 @@ import org.opalj.tac.TACMethodParameter
 import org.opalj.tac.TACode
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.NestedPathType
 import org.opalj.tac.ArrayLoad
-import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedural.ArrayPreparationInterpreter
+import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedural.ArrayLoadPreparer
 import org.opalj.tac.BinaryExpr
 import org.opalj.tac.Expr
 
@@ -674,7 +674,7 @@ class InterproceduralStringAnalysis(
     private def hasParamUsageAlongPath(path: Path, stmts: Array[Stmt[V]]): Boolean = {
         def hasExprParamUsage(expr: Expr[V]): Boolean = expr match {
             case al: ArrayLoad[V] ⇒
-                ArrayPreparationInterpreter.getStoreAndLoadDefSites(al, stmts).exists(_ < 0)
+                ArrayLoadPreparer.getStoreAndLoadDefSites(al, stmts).exists(_ < 0)
             case duvar: V            ⇒ duvar.definedBy.exists(_ < 0)
             case fc: FunctionCall[V] ⇒ fc.params.exists(hasExprParamUsage)
             case mc: MethodCall[V]   ⇒ mc.params.exists(hasExprParamUsage)
@@ -838,7 +838,7 @@ object InterproceduralStringAnalysis {
      */
     def isSupportedType(typeName: String): Boolean =
         typeName == "char" || isSupportedPrimitiveNumberType(typeName) ||
-            typeName == "java.lang.String"
+            typeName == "java.lang.String" || typeName == "java.lang.String[]"
 
     /**
      * Determines whether a given [[V]] element ([[DUVar]]) is supported by the string analysis.
