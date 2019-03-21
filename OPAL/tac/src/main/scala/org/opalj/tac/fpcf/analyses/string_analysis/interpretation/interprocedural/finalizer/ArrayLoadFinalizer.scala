@@ -9,13 +9,13 @@ import org.opalj.tac.fpcf.analyses.string_analysis.V
 import org.opalj.tac.ArrayLoad
 import org.opalj.tac.Stmt
 import org.opalj.tac.TACStmts
-import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedural.ArrayPreparationInterpreter
+import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedural.ArrayLoadPreparer
 import org.opalj.tac.fpcf.analyses.string_analysis.InterproceduralComputationState
 
 /**
  * @author Patrick Mell
  */
-class ArrayFinalizer(
+class ArrayLoadFinalizer(
         state: InterproceduralComputationState, cfg: CFG[Stmt[V], TACStmts[V]]
 ) extends AbstractFinalizer(state) {
 
@@ -27,7 +27,7 @@ class ArrayFinalizer(
      * @inheritdoc
      */
     override def finalizeInterpretation(instr: T, defSite: Int): Unit = {
-        val allDefSites = ArrayPreparationInterpreter.getStoreAndLoadDefSites(
+        val allDefSites = ArrayLoadPreparer.getStoreAndLoadDefSites(
             instr, state.tac.stmts
         )
 
@@ -38,16 +38,18 @@ class ArrayFinalizer(
         }
 
         state.fpe2sci(defSite) = ListBuffer(StringConstancyInformation.reduceMultiple(
-            allDefSites.sorted.flatMap(state.fpe2sci(_))
+            allDefSites.filter(state.fpe2sci.contains).sorted.flatMap { ds ⇒
+                state.fpe2sci(ds)
+            }
         ))
     }
 
 }
 
-object ArrayFinalizer {
+object ArrayLoadFinalizer {
 
     def apply(
         state: InterproceduralComputationState, cfg: CFG[Stmt[V], TACStmts[V]]
-    ): ArrayFinalizer = new ArrayFinalizer(state, cfg)
+    ): ArrayLoadFinalizer = new ArrayLoadFinalizer(state, cfg)
 
 }

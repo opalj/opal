@@ -34,7 +34,7 @@ import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.common.BinaryE
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.common.DoubleValueInterpreter
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.common.FloatValueInterpreter
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.common.IntegerValueInterpreter
-import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedural.finalizer.ArrayFinalizer
+import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedural.finalizer.ArrayLoadFinalizer
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.InterpretationHandler
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.common.NewInterpreter
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.common.StringConstInterpreter
@@ -49,6 +49,8 @@ import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedura
 import org.opalj.tac.SimpleValueConst
 import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedural.finalizer.StaticFunctionCallFinalizer
 import org.opalj.tac.FieldRead
+import org.opalj.tac.NewArray
+import org.opalj.tac.fpcf.analyses.string_analysis.interpretation.interprocedural.finalizer.NewArrayFinalizer
 
 /**
  * `InterproceduralInterpretationHandler` is responsible for processing expressions that are
@@ -106,6 +108,8 @@ class InterproceduralInterpretationHandler(
             case Assignment(_, _, expr: DoubleConst) ⇒ processConstExpr(expr, defSite)
             case Assignment(_, _, expr: ArrayLoad[V]) ⇒
                 processArrayLoad(expr, defSite, params)
+            case Assignment(_, _, expr: NewArray[V]) ⇒
+                processNewArray(expr, defSite, params)
             case Assignment(_, _, expr: New)                    ⇒ processNew(expr, defSite)
             case Assignment(_, _, expr: GetStatic)              ⇒ processGetField(expr, defSite)
             case ExprStmt(_, expr: GetStatic)                   ⇒ processGetField(expr, defSite)
@@ -156,7 +160,26 @@ class InterproceduralInterpretationHandler(
     private def processArrayLoad(
         expr: ArrayLoad[V], defSite: Int, params: List[Seq[StringConstancyInformation]]
     ): EOptionP[Entity, StringConstancyProperty] = {
-        val r = new ArrayPreparationInterpreter(
+        val r = new ArrayLoadPreparer(
+            cfg, this, state, params
+        ).interpret(expr, defSite)
+        val sci = if (r.isFinal) {
+            r.asFinal.p.asInstanceOf[StringConstancyProperty].stringConstancyInformation
+        } else {
+            processedDefSites.remove(defSite)
+            StringConstancyInformation.lb
+        }
+        state.appendToInterimFpe2Sci(defSite, sci)
+        r
+    }
+
+    /**
+     * Helper / utility function for processing [[NewArray]]s.
+     */
+    private def processNewArray(
+        expr: NewArray[V], defSite: Int, params: List[Seq[StringConstancyInformation]]
+    ): EOptionP[Entity, StringConstancyProperty] = {
+        val r = new NewArrayPreparer(
             cfg, this, state, params
         ).interpret(expr, defSite)
         val sci = if (r.isFinal) {
@@ -365,7 +388,9 @@ class InterproceduralInterpretationHandler(
                 case nvmc: NonVirtualMethodCall[V] ⇒
                     NonVirtualMethodCallFinalizer(state).finalizeInterpretation(nvmc, defSite)
                 case Assignment(_, _, al: ArrayLoad[V]) ⇒
-                    ArrayFinalizer(state, cfg).finalizeInterpretation(al, defSite)
+                    ArrayLoadFinalizer(state, cfg).finalizeInterpretation(al, defSite)
+                case Assignment(_, _, na: NewArray[V]) ⇒
+                    NewArrayFinalizer(state, cfg).finalizeInterpretation(na, defSite)
                 case Assignment(_, _, vfc: VirtualFunctionCall[V]) ⇒
                     VirtualFunctionCallFinalizer(state, cfg).finalizeInterpretation(vfc, defSite)
                 case ExprStmt(_, vfc: VirtualFunctionCall[V]) ⇒
