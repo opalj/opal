@@ -32,18 +32,25 @@ import org.opalj.fpcf.properties.taint.TaintedFlow;
 
 public class TaintAnalysisTestClass {
 
-    @TaintedFlow("run->sink")
+    public static void main(String[] args) {
+        new TaintAnalysisTestClass().run();
+    }
+
+    @TaintedFlow("run,a")
     public void run() {
         String s = source();
+        a(s);
+    }
+
+    public void a(String s) {
         sink(s);
     }
 
-    @TaintedFlow("run->sink")
-    private String source() {
+    public String source() {
         return "source";
     }
 
-    private void sink(String data) {
+    public void sink(String data) {
         System.out.println(data);
     }
 

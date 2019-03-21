@@ -17,14 +17,12 @@ import org.opalj.tac._
 import org.opalj.tac.fpcf.properties.{IFDSProperty, IFDSPropertyMetaInformation}
 import org.opalj.util.PerformanceEvaluation.time
 
-import scala.collection.immutable.ListSet
-
 trait Fact
 case class NullFact() extends Fact
 case class Variable(index: Int) extends Fact
 case class ArrayElement(index: Int, element: Int) extends Fact
 case class InstanceField(index: Int, classType: ObjectType, fieldName: String) extends Fact
-case class FlowFact(flow: ListSet[Method]) extends Fact {
+case class FlowFact(flow: Seq[Method]) extends Fact {
     override val hashCode: Int = {
         var r = 1
         flow.foreach(f ⇒ r = (r + f.hashCode()) * 31)
@@ -57,21 +55,21 @@ class TaintAnalysis private (implicit val project: SomeProject) extends Abstract
             case ArrayStore.ASTID ⇒
                 val store = statement.stmt.asArrayStore
                 val definedBy = store.arrayRef.asVar.definedBy
-                val index = getIntConstant(store.index, statement.code)
+                val arrayIndex = getIntConstant(store.index, statement.code)
                 if (isTainted(store.value, in)) {
-                    if (index.isDefined)
+                    if (arrayIndex.isDefined)
                         // Taint a known array index
                         definedBy.foldLeft(in) { (c, n) ⇒
-                            c + ArrayElement(n, index.get)
+                            c + ArrayElement(n, arrayIndex.get)
                         }
                     else
                         // Taint the whole array if the index is unknown
                         definedBy.foldLeft(in) { (c, n) ⇒
                             c + Variable(n)
                         }
-                } else if (index.isDefined && definedBy.size == 1)
+                } else if (arrayIndex.isDefined && definedBy.size == 1)
                     // Untaint if possible
-                    in - ArrayElement(definedBy.head, index.get)
+                    in - ArrayElement(definedBy.head, arrayIndex.get)
                 else in
             case _ ⇒ in
         }
@@ -171,16 +169,10 @@ class TaintAnalysis private (implicit val project: SomeProject) extends Abstract
      */
     override def callFlow(statement: Statement, callee: DeclaredMethod, in: Set[Fact]): Set[Fact] = {
         val allParams = asCall(statement.stmt).receiverOption ++ asCall(statement.stmt).params
-        if (callee.name == "sink") {
-            if (in.exists {
-                case Variable(index) ⇒ allParams.exists(p ⇒ p.asVar.definedBy.contains(index))
-                case _               ⇒ false
-            })
-                println(s"Found flow to sink: $statement")
+        // Do not analyze the internals of source and sink.
+        if (callee.name == "source" || callee.name == "sink") {
             Set.empty
-            //TODO Why this condition?
-        } else if ((callee.descriptor.returnType eq ObjectType.Class) ||
-            (callee.descriptor.returnType eq ObjectType.Object)) {
+        } else {
             in.collect {
 
                 // Taint formal parameter if actual parameter is tainted
@@ -200,7 +192,7 @@ class TaintAnalysis private (implicit val project: SomeProject) extends Abstract
                             )
                     }
             }.flatten
-        } else Set.empty
+        }
     }
 
     /**
@@ -209,13 +201,19 @@ class TaintAnalysis private (implicit val project: SomeProject) extends Abstract
      */
     override def callToReturnFlow(statement: Statement, succ: Statement, in: Set[Fact]): Set[Fact] = {
         val call = asCall(statement.stmt)
-        if (call.name == "sink") {
+        // Taint assigned variable, if source was called
+        if (call.name == "source") statement.stmt.astID match {
+            case Assignment.ASTID ⇒ in + Variable(statement.index)
+            case _                ⇒ in
+        }
+        // Create a flow fact, if sink was called with a tainted parameter
+        else if (call.name == "sink") {
             if (in.exists {
                 case Variable(index) ⇒
                     asCall(statement.stmt).params.exists(p ⇒ p.asVar.definedBy.contains(index))
                 case _ ⇒ false
             }) {
-                in ++ Set(FlowFact(ListSet(statement.method)))
+                in ++ Set(FlowFact(Seq(statement.method)))
             } else {
                 in
             }
@@ -238,57 +236,55 @@ class TaintAnalysis private (implicit val project: SomeProject) extends Abstract
         def isRefTypeParam(index: Int): Boolean =
             if (index == -1) true
             else {
-                callee.descriptor.parameterType(switchParamAndVariableIndex(index, isStaticMethod = false)).isReferenceType
+                callee.descriptor
+                    .parameterType(switchParamAndVariableIndex(index, isStaticMethod = false))
+                    .isReferenceType
             }
 
-        if (callee.name == "source" && statement.stmt.astID == Assignment.ASTID)
-            Set(Variable(statement.index))
-        else {
-            val allParams = (asCall(statement.stmt).receiverOption ++ asCall(statement.stmt).params).toSeq
-            var flows: Set[Fact] = Set.empty
-            for (fact ← in) {
-                fact match {
+        val allParams = (asCall(statement.stmt).receiverOption ++ asCall(statement.stmt).params).toSeq
+        var flows: Set[Fact] = Set.empty
+        for (fact ← in) {
+            fact match {
 
-                    // Taint actual parameter if formal parameter is tainted
-                    case Variable(index) if index < 0 && index > -100 && isRefTypeParam(index) ⇒
-                        val param =
-                            allParams(switchParamAndVariableIndex(index, !callee.definedMethod.isStatic))
-                        flows ++= param.asVar.definedBy.iterator.map(Variable)
+                // Taint actual parameter if formal parameter is tainted
+                case Variable(index) if index < 0 && index > -100 && isRefTypeParam(index) ⇒
+                    val param =
+                        allParams(switchParamAndVariableIndex(index, !callee.definedMethod.isStatic))
+                    flows ++= param.asVar.definedBy.iterator.map(Variable)
 
-                    // Taint element of actual parameter if element of formal parameter is tainted
-                    case ArrayElement(index, taintedIndex) if index < 0 && index > -100 ⇒
-                        val param =
-                            allParams(switchParamAndVariableIndex(index, !callee.definedMethod.isStatic))
-                        flows ++= param.asVar.definedBy.iterator.map(ArrayElement(_, taintedIndex))
+                // Taint element of actual parameter if element of formal parameter is tainted
+                case ArrayElement(index, taintedIndex) if index < 0 && index > -100 ⇒
+                    val param =
+                        allParams(switchParamAndVariableIndex(index, !callee.definedMethod.isStatic))
+                    flows ++= param.asVar.definedBy.iterator.map(ArrayElement(_, taintedIndex))
 
-                    // Taint field of actual parameter if field of formal parameter is tainted
-                    case InstanceField(index, declClass, taintedField) if index < 0 && index > -10 ⇒
-                        val param =
-                            allParams(switchParamAndVariableIndex(index, !callee.definedMethod.isStatic))
-                        flows ++= param.asVar.definedBy.iterator.map(InstanceField(_, declClass, taintedField))
+                // Taint field of actual parameter if field of formal parameter is tainted
+                case InstanceField(index, declClass, taintedField) if index < 0 && index > -10 ⇒
+                    val param =
+                        allParams(switchParamAndVariableIndex(index, !callee.definedMethod.isStatic))
+                    flows ++= param.asVar.definedBy.iterator.map(InstanceField(_, declClass, taintedField))
 
-                    // Track the call chain to the sink back
-                    case FlowFact(flow) ⇒
-                        flows += FlowFact(flow + statement.method)
-                    case _ ⇒
-                }
+                // Track the call chain to the sink back
+                case FlowFact(flow) ⇒
+                    flows += FlowFact(statement.method +: flow)
+                case _ ⇒
             }
-
-            // Propagate taints of the return value
-            if (exit.stmt.astID == ReturnValue.ASTID && statement.stmt.astID == Assignment.ASTID) {
-                val returnValue = exit.stmt.asReturnValue.expr.asVar
-                flows ++= in.collect {
-                    case Variable(index) if returnValue.definedBy.contains(index) ⇒
-                        Variable(statement.index)
-                    case ArrayElement(index, taintedIndex) if returnValue.definedBy.contains(index) ⇒
-                        ArrayElement(statement.index, taintedIndex)
-                    case InstanceField(index, declClass, taintedField) if returnValue.definedBy.contains(index) ⇒
-                        InstanceField(statement.index, declClass, taintedField)
-                }
-            }
-
-            flows
         }
+
+        // Propagate taints of the return value
+        if (exit.stmt.astID == ReturnValue.ASTID && statement.stmt.astID == Assignment.ASTID) {
+            val returnValue = exit.stmt.asReturnValue.expr.asVar
+            flows ++= in.collect {
+                case Variable(index) if returnValue.definedBy.contains(index) ⇒
+                    Variable(statement.index)
+                case ArrayElement(index, taintedIndex) if returnValue.definedBy.contains(index) ⇒
+                    ArrayElement(statement.index, taintedIndex)
+                case InstanceField(index, declClass, taintedField) if returnValue.definedBy.contains(index) ⇒
+                    InstanceField(statement.index, declClass, taintedField)
+            }
+        }
+
+        flows
     }
 
     /**
