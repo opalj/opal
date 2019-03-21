@@ -289,9 +289,25 @@ class InterproceduralStringAnalysis(
 
         if (attemptFinalResultComputation) {
             if (state.dependees.isEmpty && computeResultsForPath(state.computedLeanPath, state)) {
-                sci = new PathTransformer(state.iHandler).pathToStringTree(
-                    state.computedLeanPath, state.fpe2sci
-                ).reduce(true)
+                // Check whether we deal with the empty string; it requires special treatment as the
+                // PathTransformer#pathToStringTree would not handle it correctly (as
+                // PathTransformer#pathToStringTree is involved in a mutual recursion)
+                val isEmptyString = if (state.computedLeanPath.elements.length == 1) {
+                    state.computedLeanPath.elements.head match {
+                        case FlatPathElement(i) ⇒
+                            state.fpe2sci.contains(i) && state.fpe2sci(i).length == 1 &&
+                            state.fpe2sci(i).head == StringConstancyInformation.getNeutralElement
+                        case _ ⇒ false
+                    }
+                } else false
+
+                sci = if (isEmptyString) {
+                    StringConstancyInformation.getNeutralElement
+                } else {
+                    new PathTransformer(state.iHandler).pathToStringTree(
+                        state.computedLeanPath, state.fpe2sci
+                    ).reduce(true)
+                }
             }
         }
 
