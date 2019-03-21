@@ -15,6 +15,9 @@ import org.opalj.br.instructions.ALOAD_0
 import org.opalj.br.instructions.ALOAD_1
 import org.opalj.br.instructions.ALOAD_2
 import org.opalj.br.instructions.ALOAD_3
+import org.opalj.br.instructions.ARETURN
+import org.opalj.br.instructions.ATHROW
+import org.opalj.br.instructions.Instruction
 import org.opalj.br.instructions.LDC
 import org.opalj.br.instructions.LDC_W
 import org.opalj.br.instructions.NEWARRAY
@@ -38,8 +41,8 @@ sealed trait ReturnValueFreshnessPropertyMetaInformation extends PropertyMetaInf
  * @author Florian Kuebler
  */
 sealed abstract class ReturnValueFreshness
-    extends Property
-    with ReturnValueFreshnessPropertyMetaInformation {
+        extends Property
+        with ReturnValueFreshnessPropertyMetaInformation {
 
     final def key: PropertyKey[ReturnValueFreshness] = ReturnValueFreshness.key
 
@@ -76,15 +79,15 @@ object ReturnValueFreshness extends ReturnValueFreshnessPropertyMetaInformation 
                 code.codeSize match {
                     case 2 ⇒ code.instructions(0).opcode match {
                         case ACONST_NULL.opcode ⇒ Some(FreshReturnValue)
-                        case ALOAD_0.opcode     ⇒ Some(NoFreshReturnValue)
-                        case ALOAD_1.opcode     ⇒ Some(NoFreshReturnValue)
-                        case ALOAD_2.opcode     ⇒ Some(NoFreshReturnValue)
-                        case ALOAD_3.opcode     ⇒ Some(NoFreshReturnValue)
+                        case ALOAD_0.opcode     ⇒ normalAndAbnormalReturn(code.instructions(1))
+                        case ALOAD_1.opcode     ⇒ normalAndAbnormalReturn(code.instructions(1))
+                        case ALOAD_2.opcode     ⇒ normalAndAbnormalReturn(code.instructions(1))
+                        case ALOAD_3.opcode     ⇒ normalAndAbnormalReturn(code.instructions(1))
                         case _                  ⇒ None
                     }
                     case 3 ⇒ code.instructions(0).opcode match {
                         case LDC.opcode   ⇒ Some(FreshReturnValue)
-                        case ALOAD.opcode ⇒ Some(NoFreshReturnValue)
+                        case ALOAD.opcode ⇒ normalAndAbnormalReturn(code.instructions(2))
                         case _            ⇒ None
                     }
 
@@ -96,16 +99,30 @@ object ReturnValueFreshness extends ReturnValueFreshnessPropertyMetaInformation 
                         else if (code.instructions(0).opcode == LDC_W.opcode)
                             Some(FreshReturnValue)
                         else if (i2 != null && i2.opcode == AALOAD.opcode)
-                            Some(NoFreshReturnValue)
+                            normalAndAbnormalReturn(code.instructions(3))
                         else
                             None
 
-                    case 1 ⇒ None //todo this can not happen
+                    case 1 ⇒ throw new IllegalStateException(s"${m.toJava} unexpected bytecode: ${code.instructions.mkString}")
 
                     case _ ⇒ None
                 }
             }
         }
+    }
+
+    private[this] def normalAndAbnormalReturn(
+        instr: Instruction
+    ): Option[ReturnValueFreshness] = instr.opcode match {
+        case ATHROW.opcode  ⇒
+          println("asdasdansbjhwsbasfda")
+            Some(FreshReturnValue)
+
+        case ARETURN.opcode ⇒
+            Some(NoFreshReturnValue)
+
+        case _              ⇒
+            throw new IllegalArgumentException(s"unexpected instruction $instr")
     }
 
 }
