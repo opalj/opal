@@ -87,7 +87,7 @@ class VirtualFunctionCallPreparationInterpreter(
                         interpretArbitraryCall(instr, defSite)
                     case _ ⇒
                         val e: Integer = defSite
-                        FinalEP(e, StringConstancyProperty.getNeutralElement)
+                        FinalEP(e, StringConstancyProperty.lb)
                 }
         }
 
