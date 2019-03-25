@@ -1,3 +1,4 @@
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.properties.taint;
 
 import org.opalj.fpcf.properties.PropertyValidator;
@@ -12,5 +13,5 @@ public @interface TaintedFlow {
 
     String PROPERTY_VALIDATOR_KEY = "TaintedFlow";
 
-    String value();
+    String[] value();
 }
