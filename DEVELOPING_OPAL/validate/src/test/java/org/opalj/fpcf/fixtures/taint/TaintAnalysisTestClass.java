@@ -1,7 +1,7 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.taint;
 
-import org.opalj.fpcf.properties.taint.TaintedFlow;
+import org.opalj.fpcf.properties.taint.FlowPath;
 
 public class TaintAnalysisTestClass {
 
@@ -14,13 +14,13 @@ public class TaintAnalysisTestClass {
         passInCatch();
     }
 
-    @TaintedFlow("callChain,passToSink")
+    @FlowPath({"callChain", "passToSink"})
     public void callChain() {
         String s = source();
         passToSink(s);
     }
 
-    @TaintedFlow("passInCatch")
+    @FlowPath({"passInCatch"})
     public void passInCatch() {
         String s = source();
         try {

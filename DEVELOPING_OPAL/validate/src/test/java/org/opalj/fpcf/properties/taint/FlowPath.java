@@ -5,13 +5,13 @@ import org.opalj.fpcf.properties.PropertyValidator;
 
 import java.lang.annotation.*;
 
-@PropertyValidator(key = TaintedFlow.PROPERTY_VALIDATOR_KEY, validator = TaintedFlowMatcher.class)
+@PropertyValidator(key = FlowPath.PROPERTY_VALIDATOR_KEY, validator = FlowPathMatcher.class)
 @Target(ElementType.METHOD)
 @Documented
 @Retention(RetentionPolicy.CLASS)
-public @interface TaintedFlow {
+public @interface FlowPath {
 
-    String PROPERTY_VALIDATOR_KEY = "TaintedFlow";
+    String PROPERTY_VALIDATOR_KEY = "FlowPath";
 
     String[] value();
 }
