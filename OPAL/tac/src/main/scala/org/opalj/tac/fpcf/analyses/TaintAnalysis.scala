@@ -81,31 +81,41 @@ class TaintAnalysis private (implicit val project: SomeProject) extends Abstract
 
     /**
      * Handles assignment statements. Propagates all incoming facts.
-     * A new fact for the assigned variable will be created, if:
-     * - The source expression is a tainted variable
-     * - The source expression is a load operation of a tainted array
-     * - The source expression is a load operation with a constant index from an array, in which this index is tainted
+     * A new fact for the assigned variable will be created,
+     * if the expression contains a tainted variable.
      *
      * @param statement The assignment
      * @param in The incoming facts
      * @return The incoming and the new facts.
      *
-     * TODO Why don't we untaint the assigned variable?
+     * TODO Why don't we untaint the assigned variable? (Do not forget that source and target variable can be the same)
      */
     def handleAssignment(statement: Statement, in: Set[Fact]): Set[Fact] = {
-        val sourceExpr = statement.stmt.asAssignment.expr
-        sourceExpr.astID match {
+        in ++ createNewTaints(statement.stmt.asAssignment.expr, statement, in)
+    }
+
+    /**
+     * Creates new facts for an assignment. A new fact for the assigned variable will be created,
+     * if the expression contains a tainted variable
+     *
+     * @param expr The source expression of the assignment
+     * @param statement The assignment statement
+     * @param in The incoming facts
+     * @return The new facts, created by the assignment
+     */
+    def createNewTaints(expr: Expr[V], statement: Statement, in: Set[Fact]): Set[Fact] =
+        expr.astID match {
             case Var.ASTID ⇒
-                val sourceDefinedBy = sourceExpr.asVar.definedBy
+                val definedBy = expr.asVar.definedBy
                 in ++ in.collect {
-                    case Variable(index) if sourceDefinedBy.contains(index) ⇒
+                    case Variable(index) if definedBy.contains(index) ⇒
                         Some(Variable(statement.index))
-                    case ArrayElement(index, taintedElement) if sourceDefinedBy.contains(index) ⇒
+                    case ArrayElement(index, taintedElement) if definedBy.contains(index) ⇒
                         Some(ArrayElement(statement.index, taintedElement))
                     case _ ⇒ None
                 }.flatten
             case ArrayLoad.ASTID ⇒
-                val loadExpr = sourceExpr.asArrayLoad
+                val loadExpr = expr.asArrayLoad
                 val arrayDefinedBy = loadExpr.arrayRef.asVar.definedBy
                 if (in.exists {
                     // One specific array element may be tainted
@@ -116,13 +126,15 @@ class TaintAnalysis private (implicit val project: SomeProject) extends Abstract
                     // Or the whole array
                     case Variable(index) ⇒ arrayDefinedBy.contains(index)
                     case _               ⇒ false
-                })
-                    in + Variable(statement.index)
+                }) Set(Variable(statement.index))
                 else
-                    in
-            case _ ⇒ in
+                    Set.empty
+            case BinaryExpr.ASTID | PrefixExpr.ASTID | Compare.ASTID | PrimitiveTypecastExpr.ASTID | NewArray.ASTID | ArrayLength.ASTID ⇒
+                (0 until expr.subExprCount).foldLeft(Set.empty[Fact])((acc, subExpr) ⇒
+                    acc ++ createNewTaints(expr.subExpr(subExpr), statement, in))
+            // TODO GetField, GetStatic
+            case _ ⇒ Set.empty
         }
-    }
 
     /**
      * Checks, if some expression always evaluates to the same int constant.

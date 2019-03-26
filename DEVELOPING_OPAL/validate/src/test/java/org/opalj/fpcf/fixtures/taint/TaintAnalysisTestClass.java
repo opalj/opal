@@ -16,45 +16,74 @@ public class TaintAnalysisTestClass {
         callChain();
         twoPaths();
         passToCatch();
+        binaryExpression();
+        unaryExpression();
+        arrayLength();
     }
 
     @FlowPath({"callChain", "passToSink"})
     public void callChain() {
-        String s = source();
-        passToSink(s);
+        int i = source();
+        passToSink(i);
     }
 
     @FlowPath({"twoPaths", "indirectPassToSink", "passToSink"})
     public void twoPaths() {
-        String s = source();
-        passToSink(s);
-        indirectPassToSink(s);
+        int i = source();
+        passToSink(i);
+        indirectPassToSink(i);
     }
 
     @FlowPath({"passToCatch"})
     public void passToCatch() {
-        String s = source();
+        int i = source();
         try {
             throw new RuntimeException();
         } catch(RuntimeException e) {
-            sink(s);
+            sink(i);
         }
     }
 
-    public void passToSink(String s) {
-        sink(s);
+    @FlowPath({"unaryExpression"})
+    public void unaryExpression() {
+        int i = source();
+        int j = -i;
+        sink(j);
     }
 
-    public void indirectPassToSink(String s) {
-        passToSink(s);
+    @FlowPath({"binaryExpression"})
+    public void binaryExpression() {
+        int i = source();
+        int j = i + 1;
+        sink(j);
     }
 
-    public String source() {
-        return "source";
+    @FlowPath({"arrayLength"})
+    public void arrayLength() {
+        int i = source();
+        Object[] arr = new Object[i];
+        int j = arr.length;
+        sink(j);
     }
 
-    public void sink(String data) {
-        System.out.println(data);
+    public void passToSink(int i) {
+        sink(i);
+    }
+
+    public void indirectPassToSink(int i) {
+        passToSink(i);
+    }
+
+    public int source() {
+        return 1;
+    }
+
+    public void sink(int i) {
+        System.out.println(i);
+    }
+
+    public void sink(boolean b) {
+        System.out.println(b);
     }
 
 }

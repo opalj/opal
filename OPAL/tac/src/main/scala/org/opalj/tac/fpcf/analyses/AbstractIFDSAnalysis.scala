@@ -469,6 +469,7 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
                     stmt.asVirtualMethodCall.resolveCallTargets(state.declaringClass).filter(_.body.isDefined)
                 )
 
+            //TODO One method for Assignment and Expression
             case Assignment.ASTID ⇒
                 expr(stmt).astID match {
 
@@ -734,9 +735,10 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
      * @return All possible exit nodes.
      */
     def getExits(
-        method: Method,
+        method:       Method,
         callingBlock: BasicBlock,
-        callIndex: Int)(
+        callIndex:    Int
+    )(
         implicit
         state: State
     ): Set[Statement] = {
