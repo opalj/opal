@@ -14,6 +14,8 @@ public class TaintAnalysisTestClass {
 
     public void run() {
         callChain();
+        instanceSource();
+        privateSource();
         twoPaths();
         passToCatch();
         binaryExpression();
@@ -25,6 +27,16 @@ public class TaintAnalysisTestClass {
     public void callChain() {
         int i = source();
         passToSink(i);
+    }
+    @FlowPath({"instanceSource"})
+    public void instanceSource() {
+        int i = callSourceNonStatic();
+        sink(i);
+    }
+    @FlowPath({"privateSource"})
+    public void privateSource() {
+        int i = callSourcePrivate();
+        sink(i);
     }
 
     @FlowPath({"twoPaths", "indirectPassToSink", "passToSink"})
@@ -66,6 +78,14 @@ public class TaintAnalysisTestClass {
         sink(j);
     }
 
+    public int callSourceNonStatic() {
+        return source();
+    }
+
+    private int callSourcePrivate() {
+        return source();
+    }
+
     public void passToSink(int i) {
         sink(i);
     }
@@ -74,16 +94,12 @@ public class TaintAnalysisTestClass {
         passToSink(i);
     }
 
-    public int source() {
+    public static int source() {
         return 1;
     }
 
-    public void sink(int i) {
+    public static void sink(int i) {
         System.out.println(i);
-    }
-
-    public void sink(boolean b) {
-        System.out.println(b);
     }
 
 }
