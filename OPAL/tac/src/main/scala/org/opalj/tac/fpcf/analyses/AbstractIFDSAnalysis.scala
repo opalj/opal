@@ -328,6 +328,7 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
         state: State
     ): ProperPropertyComputationResult = {
         (eps: @unchecked) match {
+            //TODO nichts tun, wenn nur Null-Fact zurückgegeben wird
             case FinalE(e: (DeclaredMethod, DataFlowFact) @unchecked)     ⇒ handleCallUpdate(e)
 
             case InterimEUB(e: (DeclaredMethod, DataFlowFact) @unchecked) ⇒ handleCallUpdate(e)
@@ -657,7 +658,7 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
                     * be re-evaluated. oldValue is undefined if the callee-fact pair has not been queried before or returned a FinalEP.
                     * TODO Can we remove a call site from pendingIfdsCallSites safely when we got a FinalEP?
                     */
-                    if (!oldValue.isDefined && oldExitFacts != exitFacts) {
+                    if (oldValue.isDefined && oldExitFacts != exitFacts) {
                         handleCallUpdate(e)
                     }
                 }

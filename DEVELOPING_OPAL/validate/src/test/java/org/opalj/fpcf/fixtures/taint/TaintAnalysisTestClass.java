@@ -11,7 +11,8 @@ public class TaintAnalysisTestClass {
 
     public void run() {
         callChain();
-        passInCatch();
+        twoPaths();
+        passToCatch();
     }
 
     @FlowPath({"callChain", "passToSink"})
@@ -20,8 +21,15 @@ public class TaintAnalysisTestClass {
         passToSink(s);
     }
 
-    @FlowPath({"passInCatch"})
-    public void passInCatch() {
+    @FlowPath({"twoPaths", "indirectPassToSink", "passToSink"})
+    public void twoPaths() {
+        String s = source();
+        passToSink(s);
+        indirectPassToSink(s);
+    }
+
+    @FlowPath({"passToCatch"})
+    public void passToCatch() {
         String s = source();
         try {
             throw new RuntimeException();
@@ -32,6 +40,10 @@ public class TaintAnalysisTestClass {
 
     public void passToSink(String s) {
         sink(s);
+    }
+
+    public void indirectPassToSink(String s) {
+        passToSink(s);
     }
 
     public String source() {
