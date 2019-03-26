@@ -44,7 +44,7 @@ case class FlowFact(flow: ListSet[Method]) extends Fact {
 /**
  * A simple IFDS taint analysis.
  *
- * @author Dominik Helm
+ * @author Dominik Helm, Mario Trageser
  */
 class TestTaintAnalysis private (
         implicit

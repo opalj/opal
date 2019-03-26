@@ -3,6 +3,9 @@ package org.opalj.fpcf.fixtures.taint;
 
 import org.opalj.fpcf.properties.taint.FlowPath;
 
+/**
+ * @author Mario Trageser
+ */
 public class TaintAnalysisTestClass {
 
     public static void main(String[] args) {

@@ -8,6 +8,9 @@ import org.opalj.fpcf.properties.AbstractPropertyMatcher
 import org.opalj.br.ElementValue
 import org.opalj.tac.fpcf.analyses.{FlowFact, Taint}
 
+/**
+ * @author Mario Trageser
+ */
 class FlowPathMatcher extends AbstractPropertyMatcher {
 
     def validateProperty(
@@ -28,11 +31,9 @@ class FlowPathMatcher extends AbstractPropertyMatcher {
                 .flows
                 .values
                 .fold(Set.empty)((acc, facts) ⇒ acc ++ facts)
-                .map(_ match {
+                .collect {
                     case FlowFact(methods) ⇒ methods.map(_.name)
-                    case _                 ⇒ Seq.empty
-                })
-                .filter(!_.isEmpty)
+                }
             if (flows.exists(_ == expectedFlow)) None
             else Some(expectedFlow.mkString(", "))
         }

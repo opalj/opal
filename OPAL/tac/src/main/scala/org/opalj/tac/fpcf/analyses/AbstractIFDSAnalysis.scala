@@ -52,7 +52,7 @@ import org.opalj.tac.fpcf.properties.TheTACAI
  * A framework for IFDS analyses.
  *
  * @tparam DataFlowFact The type of flow facts the concrete analysis wants to track
- * @author Dominik Helm
+ * @author Dominik Helm, Mario Trageser
  */
 abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
 
@@ -174,7 +174,7 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
 
         // If this is not the method's declaration, but a non-overwritten method in a subtype, do not re-analyze the code.
         if (declaringClass ne declaredMethod.declaringClassType)
-            return baseMethodResult(entity)
+            return baseMethodResult(entity);
 
         // Fetch the method's three address code. If it is not present, return an empty interim result.
         val (code, cfg) = propertyStore(method, TACAI.key) match {
@@ -221,7 +221,10 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
      */
     def process(
         worklist: mutable.Queue[(BasicBlock, Set[DataFlowFact], Option[Int], Option[Set[Method]], Option[DataFlowFact])]
-    )(implicit state: State): Unit = {
+    )(
+        implicit
+        state: State
+    ): Unit = {
         while (worklist.nonEmpty) {
             val (bb, in, calleeWithUpdateIndex, calleeWithUpdate, calleeWithUpdateFact) =
                 worklist.dequeue()
@@ -730,7 +733,10 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
      * @param callIndex The index if the `callingBlock`, where the method is called.
      * @return All possible exit nodes.
      */
-    def getExits(method: Method, callingBlock: BasicBlock, callIndex: Int)(
+    def getExits(
+        method: Method,
+        callingBlock: BasicBlock,
+        callIndex: Int)(
         implicit
         state: State
     ): Set[Statement] = {

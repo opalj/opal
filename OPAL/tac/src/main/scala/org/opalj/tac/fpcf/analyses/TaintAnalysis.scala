@@ -30,6 +30,11 @@ case class FlowFact(flow: Seq[Method]) extends Fact {
     }
 }
 
+/**
+ *
+ * @param project
+ * @author Mario Trageser
+ */
 class TaintAnalysis private (implicit val project: SomeProject) extends AbstractIFDSAnalysis[Fact] {
 
     override val propertyKey: IFDSPropertyMetaInformation[Fact] = Taint

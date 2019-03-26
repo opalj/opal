@@ -8,6 +8,9 @@ import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.br.analyses.{DeclaredMethodsKey, Project}
 import org.opalj.tac.fpcf.analyses.{LazyTACAIProvider, TaintAnalysis}
 
+/**
+ * @author Mario Trageser
+ */
 class TaintAnalysisTest extends PropertiesTest {
 
     override def init(p: Project[URL]): Unit = {
@@ -22,7 +25,9 @@ class TaintAnalysisTest extends PropertiesTest {
         val testContext = executeAnalyses(Set(LazyTACAIProvider, TaintAnalysis))
         val project = testContext.project
         val declaredMethods = project.get(DeclaredMethodsKey)
-        val eas = methodsWithAnnotations(project).map(x ⇒ ((declaredMethods(x._1), null), x._2, x._3))
+        val eas = methodsWithAnnotations(project).map {
+            case (methods, entityString, annotations) ⇒ ((declaredMethods(methods), null), entityString, annotations)
+        }
         testContext.propertyStore.shutdown()
         validateProperties(testContext, eas, Set(FlowPath.PROPERTY_VALIDATOR_KEY))
     }
