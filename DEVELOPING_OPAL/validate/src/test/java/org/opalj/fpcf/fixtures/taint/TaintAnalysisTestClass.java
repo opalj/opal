@@ -17,6 +17,7 @@ public class TaintAnalysisTestClass {
         instanceSource();
         privateSource();
         twoPaths();
+        callRecursiveFunction();
         passToCatch();
         binaryExpression();
         unaryExpression();
@@ -44,6 +45,20 @@ public class TaintAnalysisTestClass {
         int i = source();
         passToSink(i);
         indirectPassToSink(i);
+    }
+
+    @FlowPath({"callRecursiveFunction"})
+    public void callRecursiveFunction() {
+        int i = recursion(0);
+        sink(i);
+    }
+
+    public int recursion(int i) {
+        if(i == 0) {
+            return recursion(source());
+        } else {
+            return i;
+        }
     }
 
     @FlowPath({"passToCatch"})
