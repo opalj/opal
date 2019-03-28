@@ -624,7 +624,10 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
                     } else if (file.isDirectory) {
                         collectFiles(file.listFiles())
                     } else {
-                        throw new UnknownError(s"$file is neither a file nor a directory")
+                        info(
+                            "class file reader",
+                            s"ignored: $file it is neither a file nor a directory"
+                        )
                     }
                 }
             }
