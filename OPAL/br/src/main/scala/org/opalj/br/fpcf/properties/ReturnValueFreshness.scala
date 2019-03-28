@@ -115,7 +115,6 @@ object ReturnValueFreshness extends ReturnValueFreshnessPropertyMetaInformation 
         instr: Instruction
     ): Option[ReturnValueFreshness] = instr.opcode match {
         case ATHROW.opcode  ⇒
-          println("asdasdansbjhwsbasfda")
             Some(FreshReturnValue)
 
         case ARETURN.opcode ⇒
