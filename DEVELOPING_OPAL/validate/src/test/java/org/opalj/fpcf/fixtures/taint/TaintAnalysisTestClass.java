@@ -13,51 +13,59 @@ public class TaintAnalysisTestClass {
     }
 
     public void run() {
-        callChain();
-        instanceSource();
-        privateSource();
-        twoPaths();
-        callRecursiveFunction();
-        passToCatch();
-        binaryExpression();
-        unaryExpression();
-        arrayLength();
-        taintedArrayIndex();
-        wholeArrayTainted();
-        passTaintedArrayElement();
-        taintArrayAfterCall();
-        taintArrayElementAfterCall();
-        untaintedArrayIndex();
-        reassignArrayElement();
-        passUntaintedArrayElement();
-        doNotTaintAllArrayElementsAfterCall();
+        callChainsAreConsidered();
+        returnEdgesFromInstanceMethodsArePresent();
+        returnEdgesFromPrivateMethodsArePresent();
+        multiplePathsAreConsidered_1();
+        multiplePathsAreConsidered_2();
+        summaryEdgesOfRecursiveFunctionsAreComputedCorrectly();
+        codeInCatchNodesIsConsidered();
+        binaryExpressionsPropagateTaints();
+        unaryExpressionsPropagateTaints();
+        arrayLengthPropagatesTaints();
+        singleArrayIndicesAreTainted_1();
+        wholeArrayTaintedIfIndexUnknown();
+        arrayElementTaintsArePropagatedToCallee_1();
+        arrayElementTaintsArePropagatedBack_1();
+        callerParameterIsTaintedIfCalleeTaintsFormalParameter();
+        singleArrayIndicesAreTainted_2();
+        taintDisappearsWhenReassigning();
+        arrayElementTaintsArePropagatedToCallee_2();
+        arrayElementTaintsArePropagatedBack_2();
     }
 
-    @FlowPath({"callChain", "passToSink"})
-    public void callChain() {
+    @FlowPath({"callChainsAreConsidered", "passToSink"})
+    public void callChainsAreConsidered() {
         int i = source();
         passToSink(i);
     }
-    @FlowPath({"instanceSource"})
-    public void instanceSource() {
+    @FlowPath({"returnEdgesFromInstanceMethodsArePresent"})
+    public void returnEdgesFromInstanceMethodsArePresent() {
         int i = callSourceNonStatic();
         sink(i);
     }
-    @FlowPath({"privateSource"})
-    public void privateSource() {
+    @FlowPath({"returnEdgesFromPrivateMethodsArePresent"})
+    public void returnEdgesFromPrivateMethodsArePresent() {
         int i = callSourcePrivate();
         sink(i);
     }
 
-    @FlowPath({"twoPaths", "indirectPassToSink", "passToSink"})
-    public void twoPaths() {
+    @FlowPath({"multiplePathsAreConsidered_1", "indirectPassToSink", "passToSink"})
+    public void multiplePathsAreConsidered_1() {
         int i = source();
         passToSink(i);
         indirectPassToSink(i);
     }
 
-    @FlowPath({"callRecursiveFunction"})
-    public void callRecursiveFunction() {
+    @FlowPath({"multiplePathsAreConsidered_2", "passToSink"})
+    public void multiplePathsAreConsidered_2() {
+        int i = source();
+        passToSink(i);
+        indirectPassToSink(i);
+    }
+
+    @FlowPath({"summaryEdgesOfRecursiveFunctionsAreComputedCorrectly"})
+    public void summaryEdgesOfRecursiveFunctionsAreComputedCorrectly() {
         sink(recursion(0));
     }
 
@@ -65,8 +73,8 @@ public class TaintAnalysisTestClass {
         return i == 0 ? recursion(source()) : i;
     }
 
-    @FlowPath({"passToCatch"})
-    public void passToCatch() {
+    @FlowPath({"codeInCatchNodesIsConsidered"})
+    public void codeInCatchNodesIsConsidered() {
         int i = source();
         try {
             throw new RuntimeException();
@@ -75,90 +83,90 @@ public class TaintAnalysisTestClass {
         }
     }
 
-    @FlowPath({"unaryExpression"})
-    public void unaryExpression() {
+    @FlowPath({"unaryExpressionsPropagateTaints"})
+    public void unaryExpressionsPropagateTaints() {
         int i = source();
         int j = -i;
         sink(j);
     }
 
-    @FlowPath({"binaryExpression"})
-    public void binaryExpression() {
+    @FlowPath({"binaryExpressionsPropagateTaints"})
+    public void binaryExpressionsPropagateTaints() {
         int i = source();
         int j = i + 1;
         sink(j);
     }
 
-    @FlowPath({"arrayLength"})
-    public void arrayLength() {
+    @FlowPath({"arrayLengthPropagatesTaints"})
+    public void arrayLengthPropagatesTaints() {
         int i = source();
         Object[] arr = new Object[i];
         int j = arr.length;
         sink(j);
     }
 
-    @FlowPath({"taintedArrayIndex"})
-    public void taintedArrayIndex() {
+    @FlowPath({"singleArrayIndicesAreTainted_1"})
+    public void singleArrayIndicesAreTainted_1() {
         int[] arr = new int[2];
         arr[0] = source();
         sink(arr[0]);
     }
 
-    @FlowPath({"wholeArrayTainted"})
-    public void wholeArrayTainted() {
+    @FlowPath({})
+    public void singleArrayIndicesAreTainted_2() {
+        int[] arr = new int[2];
+        arr[0] = source();
+        sink(arr[1]);
+    }
+
+    @FlowPath({"wholeArrayTaintedIfIndexUnknown"})
+    public void wholeArrayTaintedIfIndexUnknown() {
         int[] arr = new int[2];
         arr[(int) Math.random() * 2] = source();
         sink(arr[0]);
     }
 
-    @FlowPath({"passTaintedArrayElement", "passFirstArrayElementToSink"})
-    public void passTaintedArrayElement() {
+    @FlowPath({"arrayElementTaintsArePropagatedToCallee_1", "passFirstArrayElementToSink"})
+    public void arrayElementTaintsArePropagatedToCallee_1() {
         int[] arr = new int[2];
         arr[0] = source();
         passFirstArrayElementToSink(arr);
     }
 
-    @FlowPath({"taintArrayAfterCall", "passFirstArrayElementToSink"})
-    public void taintArrayAfterCall() {
-        int[] arr = new int[2];
-        taintRandomElement(arr);
-        passFirstArrayElementToSink(arr);
-    }
-
-    @FlowPath({"taintArrayElementAfterCall", "passFirstArrayElementToSink"})
-    public void taintArrayElementAfterCall() {
-        int[] arr = new int[2];
-        taintRandomElement(arr);
-        passFirstArrayElementToSink(arr);
-    }
-
     @FlowPath({})
-    public void untaintedArrayIndex() {
-        int[] arr = new int[2];
-        arr[0] = source();
-        sink(arr[1]);
-    }
-
-    @FlowPath({})
-    public void reassignArrayElement() {
-        int[] arr = new int[2];
-        arr[0] = source();
-        arr[0] = 0;
-        sink(arr[0]);
-    }
-
-    @FlowPath({})
-    public void passUntaintedArrayElement() {
+    public void arrayElementTaintsArePropagatedToCallee_2() {
         int[] arr = new int[2];
         arr[1] = source();
         passFirstArrayElementToSink(arr);
     }
 
+    @FlowPath({"arrayElementTaintsArePropagatedBack_1", "passFirstArrayElementToSink"})
+    public void arrayElementTaintsArePropagatedBack_1() {
+        int[] arr = new int[2];
+        taintRandomElement(arr);
+        passFirstArrayElementToSink(arr);
+    }
+
     @FlowPath({})
-    public void doNotTaintAllArrayElementsAfterCall() {
+    public void arrayElementTaintsArePropagatedBack_2() {
         int[] arr = new int[2];
         taintFirstElement(arr);
         sink(arr[1]);
+    }
+
+    @FlowPath({"callerParameterIsTaintedIfCalleeTaintsFormalParameter", "passFirstArrayElementToSink"})
+    public void callerParameterIsTaintedIfCalleeTaintsFormalParameter() {
+        int[] arr = new int[2];
+        taintRandomElement(arr);
+        passFirstArrayElementToSink(arr);
+    }
+
+    @FlowPath({})
+    public void taintDisappearsWhenReassigning() {
+        int[] arr = new int[2];
+        arr[0] = source();
+        arr[0] = 0;
+        sink(arr[0]);
     }
 
     public int callSourceNonStatic() {

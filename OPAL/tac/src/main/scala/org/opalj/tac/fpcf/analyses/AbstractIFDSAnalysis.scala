@@ -634,6 +634,9 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
                     }
                     val exitFacts: Map[Statement, Set[DataFlowFact]] = callFlows match {
                         case ep: FinalEP[_, IFDSProperty[DataFlowFact]] ⇒
+                            val newDependee =
+                                state.pendingIfdsCallSites.getOrElse(e, Set.empty) - ((callBB, call.index))
+                            state.pendingIfdsCallSites = state.pendingIfdsCallSites.updated(e, newDependee)
                             state.pendingIfdsDependees -= e
                             ep.p.flows
                         case ep: InterimEUBP[_, IFDSProperty[DataFlowFact]] ⇒
@@ -660,7 +663,7 @@ abstract class AbstractIFDSAnalysis[DataFlowFact] extends FPCFAnalysis {
                     /*
                     * If new exit facts were discovered for the callee-fact-pair, all call sites depending on this pair have to
                     * be re-evaluated. oldValue is undefined if the callee-fact pair has not been queried before or returned a FinalEP.
-                    * TODO Can we remove a call site from pendingIfdsCallSites safely when we got a FinalEP?
+                    * TODO Can we remove a call site from pendingIfdsCallSites safely when we got a FinalEP? -> I think so
                     */
                     if (oldValue.isDefined && oldExitFacts != exitFacts) {
                         handleCallUpdate(e)
