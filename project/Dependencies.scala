@@ -11,12 +11,12 @@ object Dependencies {
 
     object version {
         val junit = "4.12"
-        val scalatest = "3.0.5"
+        val scalatest = "3.0.7"
         val scalacheck = "1.14.0"
 
         val scalaxml = "1.1.1"
-        val playjson = "2.6.13"
-        val ficus = "1.4.4"
+        val playjson = "2.7.2"
+        val ficus = "1.4.5"
         val commonstext = "1.6"
         val scalaparsercombinators = "1.1.1"
 
