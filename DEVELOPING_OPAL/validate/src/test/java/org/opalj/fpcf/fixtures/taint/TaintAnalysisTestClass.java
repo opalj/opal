@@ -22,6 +22,15 @@ public class TaintAnalysisTestClass {
         binaryExpression();
         unaryExpression();
         arrayLength();
+        taintedArrayIndex();
+        wholeArrayTainted();
+        passTaintedArrayElement();
+        taintArrayAfterCall();
+        taintArrayElementAfterCall();
+        untaintedArrayIndex();
+        reassignArrayElement();
+        passUntaintedArrayElement();
+        doNotTaintAllArrayElementsAfterCall();
     }
 
     @FlowPath({"callChain", "passToSink"})
@@ -49,16 +58,11 @@ public class TaintAnalysisTestClass {
 
     @FlowPath({"callRecursiveFunction"})
     public void callRecursiveFunction() {
-        int i = recursion(0);
-        sink(i);
+        sink(recursion(0));
     }
 
     public int recursion(int i) {
-        if(i == 0) {
-            return recursion(source());
-        } else {
-            return i;
-        }
+        return i == 0 ? recursion(source()) : i;
     }
 
     @FlowPath({"passToCatch"})
@@ -93,6 +97,70 @@ public class TaintAnalysisTestClass {
         sink(j);
     }
 
+    @FlowPath({"taintedArrayIndex"})
+    public void taintedArrayIndex() {
+        int[] arr = new int[2];
+        arr[0] = source();
+        sink(arr[0]);
+    }
+
+    @FlowPath({"wholeArrayTainted"})
+    public void wholeArrayTainted() {
+        int[] arr = new int[2];
+        arr[(int) Math.random() * 2] = source();
+        sink(arr[0]);
+    }
+
+    @FlowPath({"passTaintedArrayElement", "passFirstArrayElementToSink"})
+    public void passTaintedArrayElement() {
+        int[] arr = new int[2];
+        arr[0] = source();
+        passFirstArrayElementToSink(arr);
+    }
+
+    @FlowPath({"taintArrayAfterCall", "passFirstArrayElementToSink"})
+    public void taintArrayAfterCall() {
+        int[] arr = new int[2];
+        taintRandomElement(arr);
+        passFirstArrayElementToSink(arr);
+    }
+
+    @FlowPath({"taintArrayElementAfterCall", "passFirstArrayElementToSink"})
+    public void taintArrayElementAfterCall() {
+        int[] arr = new int[2];
+        taintRandomElement(arr);
+        passFirstArrayElementToSink(arr);
+    }
+
+    @FlowPath({})
+    public void untaintedArrayIndex() {
+        int[] arr = new int[2];
+        arr[0] = source();
+        sink(arr[1]);
+    }
+
+    @FlowPath({})
+    public void reassignArrayElement() {
+        int[] arr = new int[2];
+        arr[0] = source();
+        arr[0] = 0;
+        sink(arr[0]);
+    }
+
+    @FlowPath({})
+    public void passUntaintedArrayElement() {
+        int[] arr = new int[2];
+        arr[1] = source();
+        passFirstArrayElementToSink(arr);
+    }
+
+    @FlowPath({})
+    public void doNotTaintAllArrayElementsAfterCall() {
+        int[] arr = new int[2];
+        taintFirstElement(arr);
+        sink(arr[1]);
+    }
+
     public int callSourceNonStatic() {
         return source();
     }
@@ -107,6 +175,18 @@ public class TaintAnalysisTestClass {
 
     public void indirectPassToSink(int i) {
         passToSink(i);
+    }
+
+    public void passFirstArrayElementToSink(int[] arr) {
+        sink(arr[0]);
+    }
+
+    public void taintRandomElement(int[] arr) {
+        arr[Math.random() < .5 ? 0 : 1] = source();
+    }
+
+    public void taintFirstElement(int[] arr) {
+        arr[0] = source();
     }
 
     public static int source() {

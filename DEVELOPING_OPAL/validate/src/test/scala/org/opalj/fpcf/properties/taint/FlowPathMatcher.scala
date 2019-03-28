@@ -23,17 +23,18 @@ class FlowPathMatcher extends AbstractPropertyMatcher {
         val expectedFlow = a.elementValuePairs.map((evp: ElementValuePair) ⇒
             evp.value.asArrayValue.values.map((value: ElementValue) ⇒
                 value.asStringValue.value)).head
-        val taintProperty = properties.filter(_.isInstanceOf[Taint])
-        if (taintProperty.isEmpty) Some(expectedFlow.mkString(", "))
-        else {
-            val flows = taintProperty.head
-                .asInstanceOf[Taint]
-                .flows
-                .values
-                .fold(Set.empty)((acc, facts) ⇒ acc ++ facts)
-                .collect {
-                    case FlowFact(methods) ⇒ methods.map(_.name)
-                }
+        val flows = properties.filter(_.isInstanceOf[Taint]).head
+            .asInstanceOf[Taint]
+            .flows
+            .values
+            .fold(Set.empty)((acc, facts) ⇒ acc ++ facts)
+            .collect {
+                case FlowFact(methods) ⇒ methods.map(_.name)
+            }
+        if (expectedFlow.isEmpty) {
+            if (!flows.isEmpty) return Some(s"There should be no flow for $entity")
+            return None
+        } else {
             if (flows.exists(_ == expectedFlow)) None
             else Some(expectedFlow.mkString(", "))
         }
