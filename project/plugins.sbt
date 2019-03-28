@@ -24,3 +24,5 @@ addSbtPlugin("org.xerial.sbt" % "sbt-sonatype" % "2.3")
 // CONFIGURATION OF SCALARIFORM
 // TODO Use scalariform to automatically format the build files!
 addSbtPlugin("org.scalariform" % "sbt-scalariform" % "1.8.2")
+
+addSbtPlugin("net.vonbuchholtz" % "sbt-dependency-check" % "0.2.10")
