@@ -16,7 +16,7 @@ import org.opalj.ai.domain.RecordDefUse
 object ComputeTAC {
 
     def main(args: Array[String]): Unit = {
-        time {
+        val tacProvider = time {
             val p = Project(org.opalj.bytecode.JRELibraryFolder)
             p.updateProjectInformationKeyInitializationData(
                 EagerDetachedTACAIKey,
@@ -29,5 +29,8 @@ object ComputeTAC {
         } { t ⇒
             println("Loading the project and computing the tac for all methods took: "+t.toSeconds)
         }
+
+        // Now, you can use the TACProvider to get the TAC for a specific method.
+        println(tacProvider.asInstanceOf[scala.collection.Map[_, _]].size)
     }
 }
