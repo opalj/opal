@@ -21,7 +21,7 @@ import org.opalj.br.MethodDescriptor.WriteObjectDescriptor
 import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.br.MethodDescriptor.ReadObjectDescriptor
 import org.opalj.br.MethodDescriptor.JustReturnsObject
-import org.opalj.tac.DefaultTACAIKey
+import org.opalj.tac.LazyTACUsingAIKey
 import org.opalj.tac.TACode
 import org.opalj.tac.VirtualMethodCall
 import org.opalj.tac.DUVar
@@ -84,7 +84,7 @@ class Serialization(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
         implicit val locations: Array[LocationsContainer[S]] =
             Array.fill(featureIDs.size)(new LocationsContainer[S])
 
-        val tacai = project.get(DefaultTACAIKey)
+        val tacai = project.get(LazyTACUsingAIKey)
 
         implicit val p: Project[_] = project
         implicit val classHierarchy: ClassHierarchy = project.classHierarchy

@@ -9,5 +9,5 @@ import org.opalj.value.ValueInformation
 /**
  * @author Michael Eichberg
  */
-trait TACAIKey
-    extends ProjectInformationKey[Method ⇒ TACode[TACMethodParameter, DUVar[ValueInformation]], Nothing]
+trait TACAIKey[I <: AnyRef]
+    extends ProjectInformationKey[Method ⇒ TACode[TACMethodParameter, DUVar[ValueInformation]], I]
