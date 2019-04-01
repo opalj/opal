@@ -35,10 +35,12 @@ import org.opalj.log.OPALLogger.error
 import org.opalj.log.OPALLogger.info
 import org.opalj.control.fillArrayOfInt
 import org.opalj.io.process
+
 import org.opalj.concurrent.OPALExecutionContextTaskSupport
 import org.opalj.concurrent.NumberOfThreadsForIOBoundTasks
 import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.collection.immutable.RefArray
+import org.opalj.concurrent.Tasks
 
 /**
  * Implements the template method to read in a Java class file. Additionally,
@@ -705,6 +707,40 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
     }
 
     /**
+     * Goes over all files in parallel find in a specific folder and calls back the given
+     * function which has to be thread-safe!
+     */
+    def processClassFiles(
+        files:              Traversable[File],
+        progressReporter:   File ⇒ Unit,
+        classFileProcessor: ((ClassFile, URL)) ⇒ Unit,
+        exceptionHandler:   ExceptionHandler          = defaultExceptionHandler
+    ): Unit = {
+        implicit val ec = org.opalj.concurrent.ExecutionContextN(NumberOfThreadsForIOBoundTasks)
+        val ts = Tasks[File] { (tasks: Tasks[File], file: File) ⇒
+            if (file.isFile && file.length() > 0) {
+                val filename = file.getName
+
+                if (isClassFileRepository(filename, None)) {
+                    if (!filename.endsWith("-javadoc.jar") &&
+                        !filename.endsWith("-sources.jar")) {
+                        progressReporter(file)
+                        processJar(file, exceptionHandler).foreach(classFileProcessor)
+                    }
+                } else if (filename.endsWith(".class")) {
+                    progressReporter(file)
+                    processClassFile(file, exceptionHandler).foreach(classFileProcessor)
+                }
+            } else if (file.isDirectory) {
+                progressReporter(file)
+                file.listFiles().foreach(tasks.submit)
+            }
+        }
+        files.foreach(ts.submit)
+        ts.join()
+    }
+
+    /**
      * Searches for the first class file that is accepted by the filter. If no class file
      * can be found that is accepted by the filter the set of all class names is returned.
      *
@@ -728,13 +764,13 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
                         if (!filename.endsWith("-javadoc.jar") &&
                             !filename.endsWith("-sources.jar")) {
                             progressReporter(file)
-                            processJar(file)
+                            processJar(file, exceptionHandler)
                         } else {
                             Nil
                         }
                     } else if (filename.endsWith(".class")) {
                         progressReporter(file)
-                        processClassFile(file)
+                        processClassFile(file, exceptionHandler)
                     } else {
                         Nil
                     }
@@ -769,5 +805,7 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
 object ClassFileReader {
 
     type ExceptionHandler = (AnyRef, Throwable) ⇒ Unit
+
+    final val SuppressExceptionHandler: ExceptionHandler = (_, _) ⇒ {}
 
 }
