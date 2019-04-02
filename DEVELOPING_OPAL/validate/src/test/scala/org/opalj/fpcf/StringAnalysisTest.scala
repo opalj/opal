@@ -8,9 +8,8 @@ import java.net.URL
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
-import org.opalj.log.LogContext
+import org.opalj.collection.immutable.Chain
 import org.opalj.collection.immutable.ConstArray
-import org.opalj.fpcf.seq.PKESequentialPropertyStore
 import org.opalj.br.analyses.Project
 import org.opalj.br.Annotation
 import org.opalj.br.Method
@@ -25,6 +24,7 @@ import org.opalj.br.fpcf.cg.properties.ThreadRelatedIncompleteCallSites
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
+import org.opalj.tac.DefaultTACAIKey
 import org.opalj.tac.Stmt
 import org.opalj.tac.TACStmts
 import org.opalj.tac.VirtualMethodCall
@@ -33,6 +33,7 @@ import org.opalj.tac.fpcf.analyses.cg.RTACallGraphAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.TriggeredFinalizerAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.TriggeredSerializationRelatedCallsAnalysis
 import org.opalj.tac.fpcf.analyses.string_analysis.IntraproceduralStringAnalysis
+import org.opalj.tac.fpcf.analyses.string_analysis.LazyInterproceduralStringAnalysis
 import org.opalj.tac.fpcf.analyses.string_analysis.V
 import org.opalj.tac.fpcf.analyses.TriggeredSystemPropertiesAnalysis
 import org.opalj.tac.fpcf.analyses.cg.LazyCalleesAnalysis
@@ -42,8 +43,6 @@ import org.opalj.tac.fpcf.analyses.TACAITransformer
 import org.opalj.tac.fpcf.analyses.cg.TriggeredInstantiatedTypesAnalysis
 import org.opalj.tac.fpcf.analyses.cg.TriggeredLoadedClassesAnalysis
 import org.opalj.tac.fpcf.analyses.string_analysis.LazyIntraproceduralStringAnalysis
-import org.opalj.tac.DefaultTACAIKey
-import org.opalj.tac.fpcf.analyses.string_analysis.LazyInterproceduralStringAnalysis
 
 /**
  * @param fqTestMethodsClass The fully-qualified name of the class that contains the test methods.
@@ -56,9 +55,6 @@ sealed class StringAnalysisTestRunner(
         val nameTestMethod:     String,
         val filesToLoad:        List[String]
 ) extends PropertiesTest {
-
-    private val fqStringDefAnnotation =
-        "org.opalj.fpcf.properties.string_analysis.StringDefinitionsCollection"
 
     /**
      * @return Returns all relevant project files (NOT including library files) to run the tests.
@@ -74,33 +70,6 @@ sealed class StringAnalysisTestRunner(
     }
 
     /**
-     * Extracts [[org.opalj.tac.UVar]]s from a set of statements. The locations of the UVars are
-     * identified by the argument to the very first call to LocalTestMethods#analyzeString.
-     *
-     * @param cfg The control flow graph from which to extract the UVar, usually derived from the
-     *            method that contains the call(s) to LocalTestMethods#analyzeString.
-     * @return Returns the arguments of the LocalTestMethods#analyzeString as a DUVars list in the
-     *         order in which they occurred in the given statements.
-     */
-    def extractUVars(cfg: CFG[Stmt[V], TACStmts[V]]): List[V] = {
-        cfg.code.instructions.filter {
-            case VirtualMethodCall(_, declClass, _, name, _, _, _) ⇒
-                declClass.toJavaClass.getName == fqTestMethodsClass && name == nameTestMethod
-            case _ ⇒ false
-        }.map(_.asVirtualMethodCall.params.head.asVar).toList
-    }
-
-    /**
-     * Takes an annotation and checks if it is a
-     * [[org.opalj.fpcf.properties.string_analysis.StringDefinitions]] annotation.
-     *
-     * @param a The annotation to check.
-     * @return True if the `a` is of type StringDefinitions and false otherwise.
-     */
-    def isStringUsageAnnotation(a: Annotation): Boolean =
-        a.annotationType.toJavaClass.getName == fqStringDefAnnotation
-
-    /**
      * Extracts a `StringDefinitions` annotation from a `StringDefinitionsCollection` annotation.
      * Make sure that you pass an instance of `StringDefinitionsCollection` and that the element at
      * the given index really exists. Otherwise an exception will be thrown.
@@ -114,9 +83,9 @@ sealed class StringAnalysisTestRunner(
         a.head.elementValuePairs(1).value.asArrayValue.values(index).asAnnotationValue.annotation
 
     def determineEAS(
-        p: Project[URL],
-        ps: PropertyStore,
-        allMethodsWithBody: ConstArray[Method],
+        p:                  Project[URL],
+        ps:                 PropertyStore,
+        allMethodsWithBody: ConstArray[Method]
     ): Traversable[((V, Method), String ⇒ String, List[Annotation])] = {
         // We need a "method to entity" matching for the evaluation (see further below)
         val m2e = mutable.HashMap[Method, Entity]()
@@ -124,17 +93,19 @@ sealed class StringAnalysisTestRunner(
         val tacProvider = p.get(DefaultTACAIKey)
         allMethodsWithBody.filter {
             _.runtimeInvisibleAnnotations.foldLeft(false)(
-                (exists, a) ⇒ exists || isStringUsageAnnotation(a)
+                (exists, a) ⇒ exists || StringAnalysisTestRunner.isStringUsageAnnotation(a)
             )
         } foreach { m ⇒
-            extractUVars(tacProvider(m).cfg).foreach { uvar ⇒
-                if (!m2e.contains(m)) {
-                    m2e += m → ListBuffer(uvar)
-                } else {
-                    m2e(m).asInstanceOf[ListBuffer[V]].append(uvar)
+            StringAnalysisTestRunner.extractUVars(
+                tacProvider(m).cfg, fqTestMethodsClass, nameTestMethod
+            ).foreach { uvar ⇒
+                    if (!m2e.contains(m)) {
+                        m2e += m → ListBuffer(uvar)
+                    } else {
+                        m2e(m).asInstanceOf[ListBuffer[V]].append(uvar)
+                    }
+                    //ps.force((uvar, m), StringConstancyProperty.key)
                 }
-                ps.force((uvar, m), StringConstancyProperty.key)
-            }
         }
 
         // As entity, we need not the method but a tuple (DUVar, Method), thus this transformation
@@ -150,6 +121,44 @@ sealed class StringAnalysisTestRunner(
         }
 
         eas
+    }
+
+}
+
+object StringAnalysisTestRunner {
+
+    private val fqStringDefAnnotation =
+        "org.opalj.fpcf.properties.string_analysis.StringDefinitionsCollection"
+
+    /**
+     * Takes an annotation and checks if it is a
+     * [[org.opalj.fpcf.properties.string_analysis.StringDefinitions]] annotation.
+     *
+     * @param a The annotation to check.
+     * @return True if the `a` is of type StringDefinitions and false otherwise.
+     */
+    def isStringUsageAnnotation(a: Annotation): Boolean =
+        a.annotationType.toJavaClass.getName == fqStringDefAnnotation
+
+    /**
+     * Extracts [[org.opalj.tac.UVar]]s from a set of statements. The locations of the UVars are
+     * identified by the argument to the very first call to LocalTestMethods#analyzeString.
+     *
+     * @param cfg The control flow graph from which to extract the UVar, usually derived from the
+     *            method that contains the call(s) to LocalTestMethods#analyzeString.
+     * @return Returns the arguments of the LocalTestMethods#analyzeString as a DUVars list in the
+     *         order in which they occurred in the given statements.
+     */
+    def extractUVars(
+        cfg:                CFG[Stmt[V], TACStmts[V]],
+        fqTestMethodsClass: String,
+        nameTestMethod:     String
+    ): List[V] = {
+        cfg.code.instructions.filter {
+            case VirtualMethodCall(_, declClass, _, name, _, _, _) ⇒
+                declClass.toJavaClass.getName == fqTestMethodsClass && name == nameTestMethod
+            case _ ⇒ false
+        }.map(_.asVirtualMethodCall.params.head.asVar).toList
     }
 
 }
@@ -202,14 +211,30 @@ object IntraproceduralStringAnalysisTest {
  * Tests whether the InterproceduralStringAnalysis works correctly with respect to some
  * well-defined tests.
  *
- * @note We could use a manager to run the analyses, however, doing so leads to the fact that the
- *       property store does not compute all properties, especially TAC. The reason being is that
- *       a ''shutdown'' call prevents further computations. Thus, we do all this manually here.
- *       (Detected and fixed in a session with Dominik.)
- *
  * @author Patrick Mell
  */
 class InterproceduralStringAnalysisTest extends PropertiesTest {
+
+    private def determineEntitiesToAnalyze(
+        project: Project[URL]
+    ): Iterable[(V, Method)] = {
+        val entitiesToAnalyze = ListBuffer[(V, Method)]()
+        val tacProvider = project.get(DefaultTACAIKey)
+        project.allMethodsWithBody.filter {
+            _.runtimeInvisibleAnnotations.foldLeft(false)(
+                (exists, a) ⇒ exists || StringAnalysisTestRunner.isStringUsageAnnotation(a)
+            )
+        } foreach { m ⇒
+            StringAnalysisTestRunner.extractUVars(
+                tacProvider(m).cfg,
+                InterproceduralStringAnalysisTest.fqTestMethodsClass,
+                InterproceduralStringAnalysisTest.nameTestMethod
+            ).foreach { uvar ⇒
+                    entitiesToAnalyze.append((uvar, m))
+                }
+        }
+        entitiesToAnalyze
+    }
 
     describe("the org.opalj.fpcf.InterproceduralStringAnalysis is started") {
         val runner = new StringAnalysisTestRunner(
@@ -218,15 +243,10 @@ class InterproceduralStringAnalysisTest extends PropertiesTest {
             InterproceduralStringAnalysisTest.filesToLoad
         )
         val p = Project(runner.getRelevantProjectFiles, Array[File]())
-        p.getOrCreateProjectInformationKeyInitializationData(
-            PropertyStoreKey,
-            (context:List[PropertyStoreContext[AnyRef]]) ⇒ {
-                implicit val lg:LogContext = p.logContext
-                PropertyStore.updateTraceFallbacks(true)
-                PKESequentialPropertyStore.apply(context:_*)
-        })
 
-        val analyses: Set[ComputationSpecification[FPCFAnalysis]] = Set(TACAITransformer,
+        val manager = p.get(FPCFAnalysesManagerKey)
+        val analysesToRun = Set(
+            TACAITransformer,
             LazyL0BaseAIAnalysis,
             RTACallGraphAnalysisScheduler,
             TriggeredStaticInitializerAnalysis,
@@ -245,24 +265,22 @@ class InterproceduralStringAnalysisTest extends PropertiesTest {
             )),
             LazyInterproceduralStringAnalysis
         )
+
         val ps = p.get(PropertyStoreKey)
-        ps.setupPhase(analyses.flatMap(_.derives.map(_.pk)))
-        var initData: Map[ComputationSpecification[_], Any] = Map()
-        analyses.foreach{a ⇒
-            initData += a → a.init(ps)
-            a.beforeSchedule(ps)
-        }
-        var scheduledAnalyses: List[FPCFAnalysis] = List()
-        analyses.foreach{a ⇒
-            scheduledAnalyses ::=a.schedule(ps, initData(a).asInstanceOf[a.InitializationData])
-        }
+        val (_, analyses) = manager.runAll(
+            analysesToRun,
+            { _: Chain[ComputationSpecification[FPCFAnalysis]] ⇒
+                determineEntitiesToAnalyze(p).foreach(ps.force(_, StringConstancyProperty.key))
+            }
+        )
 
-        val testContext = TestContext(p, ps, scheduledAnalyses)
-
+        val testContext = TestContext(p, ps, analyses.map(_._2))
         val eas = runner.determineEAS(p, ps, p.allMethodsWithBody)
-        validateProperties(testContext, eas, Set("StringConstancy"))
-        testContext.propertyStore.shutdown()
+
         ps.waitOnPhaseCompletion()
+        ps.shutdown()
+
+        validateProperties(testContext, eas, Set("StringConstancy"))
     }
 
 }
