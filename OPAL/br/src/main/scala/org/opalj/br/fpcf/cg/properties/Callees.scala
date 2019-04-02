@@ -140,6 +140,8 @@ sealed trait Callees extends Property with CalleesPropertyMetaInformation {
 
     def indirectCallReceiver(pc: Int, callee: DeclaredMethod): Option[(ValueInformation, PCs)]
 
+
+    // todo: document
     def updateWithCallees(
         directCallees:          IntMap[IntTrieSet],
         indirectCallees:        IntMap[IntTrieSet],
