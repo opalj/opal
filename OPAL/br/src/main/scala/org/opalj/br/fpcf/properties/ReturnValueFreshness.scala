@@ -41,8 +41,8 @@ sealed trait ReturnValueFreshnessPropertyMetaInformation extends PropertyMetaInf
  * @author Florian Kuebler
  */
 sealed abstract class ReturnValueFreshness
-        extends Property
-        with ReturnValueFreshnessPropertyMetaInformation {
+    extends Property
+    with ReturnValueFreshnessPropertyMetaInformation {
 
     final def key: PropertyKey[ReturnValueFreshness] = ReturnValueFreshness.key
 
@@ -114,14 +114,13 @@ object ReturnValueFreshness extends ReturnValueFreshnessPropertyMetaInformation 
     private[this] def normalAndAbnormalReturn(
         instr: Instruction
     ): Option[ReturnValueFreshness] = instr.opcode match {
-        case ATHROW.opcode  ⇒
-          println("asdasdansbjhwsbasfda")
+        case ATHROW.opcode ⇒
             Some(FreshReturnValue)
 
         case ARETURN.opcode ⇒
             Some(NoFreshReturnValue)
 
-        case _              ⇒
+        case _ ⇒
             throw new IllegalArgumentException(s"unexpected instruction $instr")
     }
 
